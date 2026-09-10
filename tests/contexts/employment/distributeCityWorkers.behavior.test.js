@@ -2,13 +2,14 @@
  * Behavior tests — Employment: DistributeCityWorkers
  *
  * Worker distribution is skill-based: each pass staffs workplaces that
- * require a given skill using only level-2 citizens of the matching group.
- * See WorkplaceSkillRequirementPolicy.js and Housing GroupSkillPolicy (via composition).
+ * require a given skill (at a given level) using citizens whose house
+ * provides that skill. See WorkplaceSkillRequirementPolicy.js and Housing
+ * GroupSkillPolicy (via composition).
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createEmploymentBuildingSnapshot } from '../../../src/contexts/employment/domain/EmploymentBuildingSnapshot.js';
-import { houseCitizenHasSkill } from '../../../src/contexts/housing/domain/policies/GroupSkillPolicy.js';
+import { houseCitizenHasSkillAtLevel } from '../../../src/contexts/housing/domain/policies/GroupSkillPolicy.js';
 import { residentialGroupForType } from '../../../src/contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 import {
   hasRoadAccess,
@@ -86,12 +87,18 @@ function workplace(id, { workerNeed, sector, roadCount = 1, worker = 0, type = '
   });
 }
 
-/** Wires Housing skill rules into Employment (same as composition root). */
-function citizenProvidesSkill(house, skillKey) {
-  const level = house.level === 1 ? 1 : 2;
-  return houseCitizenHasSkill(
-    { level, residentialGroup: residentialGroupForType(house.type) },
+/**
+ * Wires Housing skill rules into Employment (same as composition root —
+ * see createHousingContext.js's citizenProvidesSkillAtLevel). The house's
+ * real tier (1-5) is passed straight through, NOT collapsed to "1 or 2":
+ * a skill level granted only from tier 5 onward (e.g. `medical` 2) must
+ * stay reachable.
+ */
+function citizenProvidesSkillAtLevel(house, skillKey, requiredLevel) {
+  return houseCitizenHasSkillAtLevel(
+    { level: house.level ?? 2, residentialGroup: residentialGroupForType(house.type) },
     skillKey,
+    requiredLevel,
   );
 }
 
@@ -152,7 +159,7 @@ describe('Employment — DistributeCityWorkers', () => {
           type: 'Windmill-001',
         }),
       ]);
-      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkill });
+      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
     });
 
     test('houses with roads contribute pop; without roads do not', async () => {
@@ -172,26 +179,31 @@ describe('Employment — DistributeCityWorkers', () => {
         house('House-Red-1-1', 4, 1),
         workplace('Farm-Wheat-0-0', { workerNeed: 3, sector: 1, roadCount: 0 }),
       ]);
-      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkill });
+      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
       const result = await useCase.execute({ sectorPriorities: { 1: 1 } });
       expect(result.assignments).toEqual([{ buildingId: 'Farm-Wheat-0-0', workers: 3 }]);
     });
 
-    test('level 1 artisan houses contribute no workers', async () => {
+    test('level 1 artisan houses count as headcount but cannot staff fermier-gated farms (spiritual only)', async () => {
       repo = new InMemoryEmploymentBuildingRepository([
         house('House-Red-1-1', 5, 1, 'House-Red', 1),
         workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 }),
       ]);
-      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkill });
+      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
       const result = await useCase.execute({ sectorPriorities: { 1: 1 } });
-      expect(result).toEqual({ availableWorkers: 0, assignments: [] });
+      // Tier 1 grants 'spiritual' + 'subsistence-forager', not 'fermier' —
+      // so this house's 5 citizens count toward `availableWorkers` (total
+      // city headcount) but leave the farm at 0, with nothing to spend them
+      // on (no Chapel in this repo).
+      expect(result).toEqual({ availableWorkers: 5, assignments: [] });
+      expect(repo.get('Farm-Wheat-a').worker).toBe(0);
     });
   });
 
   describe('DistributeCityWorkers — skill isolation between groups', () => {
-    test('each group staffs only its mapped workplaces', async () => {
+    test('each group staffs its mapped workplace; Chapel is shared via everyone\'s tier-1 spiritual skill', async () => {
       const repo = new InMemoryEmploymentBuildingRepository([
         house('House-Red-1-1', 5, 1, 'House-Red'),
         house('House-Blue-2-2', 3, 1, 'House-Blue'),
@@ -201,7 +213,7 @@ describe('Employment — DistributeCityWorkers', () => {
         workplace('Windmill-c', { workerNeed: 4, sector: 4, type: 'Windmill-001' }),
         workplace('Chapel-d', { workerNeed: 2, sector: 6, type: 'Chapel' }),
       ]);
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkill });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
       const result = await useCase.execute({ sectorPriorities: { 1: 1, 2: 1, 4: 1, 6: 1 } });
 
@@ -209,7 +221,10 @@ describe('Employment — DistributeCityWorkers', () => {
       expect(repo.get('Farm-Wheat-a').worker).toBe(3);
       expect(repo.get('Market-Stall-b').worker).toBe(2);
       expect(repo.get('Windmill-c').worker).toBe(4);
-      expect(repo.get('Chapel-d').worker).toBe(0);
+      // The bug this whole file used to pin: Chapel has no group of its
+      // own (every group grants 'spiritual' at tier 1), so it must get
+      // staffed from the shared pool — not stay at 0 forever.
+      expect(repo.get('Chapel-d').worker).toBe(2);
     });
 
     test('surplus artisans cannot staff commerçant workplaces', async () => {
@@ -219,7 +234,7 @@ describe('Employment — DistributeCityWorkers', () => {
         workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 }),
         workplace('Market-Stall-b', { workerNeed: 5, sector: 2, type: 'Market-Stall-Red' }),
       ]);
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkill });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
       await useCase.execute({ sectorPriorities: { 1: 1, 2: 1 } });
 
@@ -228,10 +243,11 @@ describe('Employment — DistributeCityWorkers', () => {
     });
 
     test('a skill shared by two groups lets both staff the same workplace', async () => {
-      // No group pre-filter — citizenProvidesSkill alone decides eligibility,
-      // so a skill catalog that grants 'fermier' to more than one group (not
-      // the case in production data today, but a supported shape) must let
-      // both groups' houses staff a fermier-requiring workplace.
+      // No group pre-filter — citizenProvidesSkillAtLevel alone decides
+      // eligibility, so a skill catalog that grants 'fermier' to more than
+      // one group (not the case in production data today, but a supported
+      // shape) must let both groups' houses staff a fermier-requiring
+      // workplace.
       const sharedSkill = (house, skillKey) =>
         skillKey === 'fermier' && (house.type === 'House-Red' || house.type === 'House-Blue');
 
@@ -240,12 +256,65 @@ describe('Employment — DistributeCityWorkers', () => {
         house('House-Blue-2-2', 2, 1, 'House-Blue'),
         workplace('Farm-Wheat-a', { workerNeed: 4, sector: 1 }),
       ]);
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkill: sharedSkill });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel: sharedSkill });
 
       const result = await useCase.execute({ sectorPriorities: { 1: 1 } });
 
       expect(result.availableWorkers).toBe(4);
       expect(repo.get('Farm-Wheat-a').worker).toBe(4);
+    });
+  });
+
+  describe('DistributeCityWorkers — cold-start deadlock regression', () => {
+    test('a single tier-1 house can staff Chapel from turn one, with no other building placed', async () => {
+      const repo = new InMemoryEmploymentBuildingRepository([
+        house('House-Red-1-1', 5, 1, 'House-Red', 1),
+        workplace('Chapel-x', { workerNeed: 2, sector: 6, type: 'Chapel' }),
+      ]);
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+
+      const result = await useCase.execute({ sectorPriorities: { 6: 1 } });
+
+      expect(result.availableWorkers).toBe(5);
+      expect(result.assignments).toEqual([{ buildingId: 'Chapel-x', workers: 2 }]);
+      expect(repo.get('Chapel-x').worker).toBe(2);
+    });
+  });
+
+  describe('DistributeCityWorkers — skill levels (medical: Doctor vs Hospital)', () => {
+    test('a level-2 citizen can also fill a level-1 job, spending the higher-level job first', async () => {
+      const repo = new InMemoryEmploymentBuildingRepository([
+        house('House-Purple-hi', 6, 1, 'House-Purple', 5), // tier 5: medical level 2
+        workplace('Doctor-a', { workerNeed: 2, sector: 6, type: 'Doctor' }),
+        workplace('Hospital-a', { workerNeed: 4, sector: 6, type: 'Hospital' }),
+      ]);
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+
+      await useCase.execute({ sectorPriorities: { 6: 1 } });
+
+      // 6 citizens total: Hospital (level 2, processed first) takes its
+      // full deficit of 4, leaving exactly 2 for Doctor (level 1).
+      expect(repo.get('Hospital-a').worker).toBe(4);
+      expect(repo.get('Doctor-a').worker).toBe(2);
+    });
+
+    test('a level-1-only citizen cannot staff a level-2 job, even with a surplus', async () => {
+      const repo = new InMemoryEmploymentBuildingRepository([
+        house('House-Purple-lo', 3, 1, 'House-Purple', 2), // tier 2: medical level 1 only
+        house('House-Purple-hi', 2, 1, 'House-Purple', 5), // tier 5: medical level 2
+        workplace('Doctor-a', { workerNeed: 4, sector: 6, type: 'Doctor' }),
+        workplace('Hospital-a', { workerNeed: 1, sector: 6, type: 'Hospital' }),
+      ]);
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+
+      await useCase.execute({ sectorPriorities: { 6: 1 } });
+
+      // Hospital (level 2) can only draw from the level-2 house: 1 of its
+      // 2 citizens. Doctor (level 1) then draws from BOTH the level-1-only
+      // house (3) and the level-2 house's 1 leftover citizen = 4, exactly
+      // its deficit — proving the level-1-only house never touches Hospital.
+      expect(repo.get('Hospital-a').worker).toBe(1);
+      expect(repo.get('Doctor-a').worker).toBe(4);
     });
   });
 });

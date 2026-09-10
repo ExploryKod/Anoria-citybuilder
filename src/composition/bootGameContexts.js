@@ -36,7 +36,8 @@ export function bootGameContexts() {
   const supply = getOrCreateSupplyContext();
   const housing = getOrCreateHousingContext();
   const employment = getOrCreateEmploymentContext({
-    citizenProvidesSkill: (house, skillKey) => housing.citizenProvidesSkill(house, skillKey),
+    citizenProvidesSkillAtLevel: (house, skillKey, requiredLevel) =>
+      housing.citizenProvidesSkillAtLevel(house, skillKey, requiredLevel),
   });
   employment.ensureSectorPrioritiesInitialized();
   const gameplay = getOrCreateGameplayContext();

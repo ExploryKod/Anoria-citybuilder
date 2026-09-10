@@ -5,14 +5,11 @@
  * - Palace: up to 6 citizens + élites beyond citizen cap (pop 7 → 6 citizens + 1 élite).
  * - workerPop excludes élites; food consumes full pop (élites eat).
  *
- * Employment eligibility rules are defined in the shared population catalog
- * (shared/population/CitizenStatusCatalog.js).
+ * Which SKILL a house's citizens can work with, at which level, is a
+ * catalog fact (shared/population/socialCategoryCatalog.js via
+ * GroupSkillPolicy.js) — this module only turns `pop` into a headcount,
+ * it doesn't gate who's employable.
  */
-
-import {
-  resolveCitizenStatusFromLevel,
-  getCitizenStatusProfile,
-} from '../../../../shared/population/CitizenStatusCatalog.js';
 
 /** Max citizen slots per house (regular or palace). */
 export const HOUSE_CITIZEN_CAP = 6;
@@ -63,37 +60,35 @@ export function elitePopFromHouse(type, pop) {
 /**
  * Citizens (non-élite residents); eligible for worker jobs.
  *
- * Level 1 (autarky / hunter-gatherer) houses are outside the labor market by
- * design — 0 regardless of `pop`. Level defaults to 2 for backward
- * compatibility with callers that don't track it yet (e.g. Palace, which has
- * no level concept and always contributes its citizens).
- *
- * Uses shared population catalog to determine labor pool eligibility.
+ * Eligibility for any ONE job is entirely skill-driven (does this house's
+ * tier grant the job's required skill, at the required level? — see
+ * GroupSkillPolicy.js / socialCategoryCatalog.js), never gated here by
+ * house level: a level-1 (hunter-gatherer) house's citizens do hold a
+ * skill — `spiritual` — so they must be countable as headcount just like
+ * any other house; DistributeCityWorkers only ever calls this for houses
+ * that already passed its own per-skill filter, so no separate blanket
+ * "is this level employable at all" flag is needed (or read) here.
  *
  * @param {string} type
  * @param {number} pop
- * @param {1 | 2} [level=2]
  * @returns {number}
  */
-export function citizenPopFromHouse(type, pop, level = 2) {
-  const statusKey = resolveCitizenStatusFromLevel(level);
-  const profile = getCitizenStatusProfile(statusKey);
-
-  if (!profile.employment.countsInLaborPool) return 0;
-
+export function citizenPopFromHouse(type, pop) {
   const p = clampPop(pop);
   return p - elitePopFromHouse(type, p);
 }
 
 /**
  * Worker pool contribution from a house (citizens only — élites excluded).
+ * Callers may still pass a `level` (unused here — kept accepted, not read,
+ * so existing call sites built around a per-house snapshot don't need an
+ * unrelated signature edit) for skill eligibility, decided upstream.
  * @param {string} type
  * @param {number} pop
- * @param {1 | 2} [level=2]
  * @returns {number}
  */
-export function workerPopFromHouse(type, pop, level = 2) {
-  return citizenPopFromHouse(type, pop, level);
+export function workerPopFromHouse(type, pop) {
+  return citizenPopFromHouse(type, pop);
 }
 
 /**

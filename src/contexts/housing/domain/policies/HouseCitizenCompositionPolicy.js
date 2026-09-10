@@ -71,7 +71,15 @@ function computeSkillCounts(profiles, residentialGroup, level) {
   const eliteEntry = profiles.find((profile) => profile.statusKey === 'elite');
 
   if (hunterEntry?.count > 0) {
-    counts['subsistence-forager'] = hunterEntry.count;
+    // Route through the catalog instead of hardcoding 'subsistence-forager':
+    // tier 1 also grants 'spiritual' (see socialCategoryCatalog.js) — falls
+    // back to the bare forager skill only when the group itself is unknown.
+    const tier1Skills = residentialGroup
+      ? getCitizenSkillsForHouse({ level: 1, residentialGroup })
+      : ['subsistence-forager'];
+    for (const skillKey of tier1Skills) {
+      counts[skillKey] = (counts[skillKey] ?? 0) + hunterEntry.count;
+    }
   }
 
   if (workerEntry?.count > 0 && residentialGroup) {

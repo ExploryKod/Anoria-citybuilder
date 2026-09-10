@@ -43,6 +43,19 @@ describe('buildingInfoGroupRegistry tabs', () => {
     ]);
   });
 
+  test('service (Chapel, School, Doctor, ...) exposes état + staff + common context tabs, not market tabs', () => {
+    const ids = tabIds(BUILDING_INFO_GROUPS.service);
+    expect(ids).not.toContain(BUILDING_INFO_TAB_IDS.stocks);
+    expect(ids).not.toContain(BUILDING_INFO_TAB_IDS.trade);
+    expect(ids).toEqual([
+      BUILDING_INFO_TAB_IDS.foyer,
+      BUILDING_INFO_TAB_IDS.staff,
+      BUILDING_INFO_TAB_IDS.services,
+      BUILDING_INFO_TAB_IDS.neighbors,
+      BUILDING_INFO_TAB_IDS.messages,
+    ]);
+  });
+
   test('nature only exposes resource + neighbors + messages', () => {
     expect(tabIds(BUILDING_INFO_GROUPS.nature)).toEqual([
       BUILDING_INFO_TAB_IDS.foyer,

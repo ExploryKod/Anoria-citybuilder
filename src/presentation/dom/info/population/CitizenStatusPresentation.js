@@ -40,17 +40,13 @@ export const GROUP_CITIZEN_PRESENTATION = Object.freeze({
   }),
 });
 
-/** @type {Readonly<Record<string, { label: string, emoji: string }>>} */
-export const SKILL_PRESENTATION = Object.freeze({
-  'subsistence-forager': Object.freeze({ label: 'Chasse-cueillette', emoji: '🏹' }),
-  fermier: Object.freeze({ label: 'Fermier', emoji: '🌾' }),
-  'vente-alimentaire': Object.freeze({ label: 'Vente alimentaire', emoji: '🛒' }),
-  'stockage-alimentaire': Object.freeze({ label: 'Stockage alimentaire', emoji: '🌬️' }),
-  governance: Object.freeze({ label: 'Gouvernance', emoji: '👑' }),
-  administration: Object.freeze({ label: 'Administration', emoji: '🏛️' }),
-  'elder-wisdom': Object.freeze({ label: 'Sagesse', emoji: '📜' }),
-  learning: Object.freeze({ label: 'Apprentissage', emoji: '📚' }),
-});
+// Skill display (label/emoji + preferred order) lives in
+// shared/population/skillCatalog.js — the one source of truth every skill
+// id anywhere (socialCategoryCatalog.js, CitizenStatusCatalog.js,
+// buildingEconomy.js's requiredSkill) is drawn from, instead of this file
+// keeping its own parallel dictionary that can drift out of sync (it used
+// to: two skills went missing here after being added to the catalog).
+// See formatHousePopulationPresentation.js for the consumer.
 
 export const DEFAULT_RESIDENTIAL_GROUP = 'artisans';
 
@@ -58,15 +54,4 @@ export const PROFILE_DISPLAY_ORDER = Object.freeze([
   'hunter-gatherer',
   'worker',
   'elite',
-]);
-
-export const SKILL_DISPLAY_ORDER = Object.freeze([
-  'subsistence-forager',
-  'fermier',
-  'vente-alimentaire',
-  'stockage-alimentaire',
-  'governance',
-  'administration',
-  'elder-wisdom',
-  'learning',
 ]);

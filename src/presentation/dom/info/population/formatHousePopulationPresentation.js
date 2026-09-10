@@ -6,10 +6,9 @@ import {
   DEFAULT_RESIDENTIAL_GROUP,
   GROUP_CITIZEN_PRESENTATION,
   PROFILE_DISPLAY_ORDER,
-  SKILL_DISPLAY_ORDER,
-  SKILL_PRESENTATION,
   STATUS_PRESENTATION,
 } from './CitizenStatusPresentation.js';
+import { SKILL_CATALOG, getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
 
 /**
  * @param {string} statusKey
@@ -42,8 +41,7 @@ function toProfileDisplayItem(statusKey, count, residentialGroup) {
 function toSkillDisplayItem(skillKey, count) {
   if (count <= 0) return null;
 
-  const meta = SKILL_PRESENTATION[skillKey];
-  if (!meta) return null;
+  const meta = getSkillDisplay(skillKey);
 
   return {
     skillKey,
@@ -67,7 +65,18 @@ export function formatHousePopulationPresentation(composition, residentialGroup)
     .map((statusKey) => toProfileDisplayItem(statusKey, countByStatus[statusKey] ?? 0, residentialGroup))
     .filter(Boolean);
 
-  const skills = SKILL_DISPLAY_ORDER
+  // Every skill the catalog actually grants this house (`composition.skills`,
+  // domain-computed — see HouseCitizenCompositionPolicy.js), not a fixed
+  // list: SKILL_CATALOG's key order only decides ORDERING for the ones it
+  // knows about, then any other skill (present in the catalog, absent from
+  // that curated order) is appended after — so nothing is silently dropped.
+  const preferredSkillOrder = Object.keys(SKILL_CATALOG);
+  const skillKeys = Object.keys(composition.skills);
+  const orderedSkillKeys = [
+    ...preferredSkillOrder.filter((skillKey) => skillKeys.includes(skillKey)),
+    ...skillKeys.filter((skillKey) => !preferredSkillOrder.includes(skillKey)),
+  ];
+  const skills = orderedSkillKeys
     .map((skillKey) => toSkillDisplayItem(skillKey, composition.skills[skillKey] ?? 0))
     .filter(Boolean);
 
