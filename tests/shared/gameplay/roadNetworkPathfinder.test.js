@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
-import { findRoadPathBetweenBuildings, findShortestRoadPath } from '../../../src/shared/gameplay/roadNetworkPathfinder.js';
+import { findRoadPathBetweenBuildings, findShortestRoadPath, findFarthestRoadPath } from '../../../src/shared/gameplay/roadNetworkPathfinder.js';
 
 /**
  * Grid legend: 'B' = building, 'R' = road, '.' = empty.
@@ -114,6 +114,60 @@ describe('findShortestRoadPath', () => {
       { x: 0, y: 0 },
       { x: 1, y: 0 },
       { x: 2, y: 0 },
+    ]);
+  });
+});
+
+describe('findFarthestRoadPath', () => {
+  test('walks to the end of a straight road', () => {
+    const rows = ['RRRRR'];
+    const isRoadTile = gridFromRows(rows);
+
+    const path = findFarthestRoadPath({ x: 0, y: 0 }, isRoadTile);
+
+    expect(path).toEqual([
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+      { x: 3, y: 0 },
+      { x: 4, y: 0 },
+    ]);
+  });
+
+  test('returns just the start tile when it has no road neighbors at all', () => {
+    const rows = ['R'];
+    const isRoadTile = gridFromRows(rows);
+
+    const path = findFarthestRoadPath({ x: 0, y: 0 }, isRoadTile);
+
+    expect(path).toEqual([{ x: 0, y: 0 }]);
+  });
+
+  test('follows a bend to the true farthest tile by hop count, not straight-line distance', () => {
+    const rows = [
+      '.....R',
+      '.....R',
+      'RRRRRR',
+    ];
+    const isRoadTile = gridFromRows(rows);
+
+    const path = findFarthestRoadPath({ x: 0, y: 2 }, isRoadTile);
+
+    // (0,2) -> ... -> (5,2) is 5 hops, then north to (5,1) -> (5,0) is 2 more: 7 hops, 8 tiles inclusive.
+    expect(path[path.length - 1]).toEqual({ x: 5, y: 0 });
+    expect(path).toHaveLength(8);
+  });
+
+  test('a farthest-tile-then-retrace loop returns to the exact start with no gaps', () => {
+    const rows = ['RRRR'];
+    const isRoadTile = gridFromRows(rows);
+
+    const outbound = findFarthestRoadPath({ x: 0, y: 0 }, isRoadTile);
+    const loop = [...outbound, ...outbound.slice(0, -1).reverse()];
+
+    expect(loop).toEqual([
+      { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 },
+      { x: 2, y: 0 }, { x: 1, y: 0 }, { x: 0, y: 0 },
     ]);
   });
 });

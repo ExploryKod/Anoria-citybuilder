@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { AnimationMixer } from 'three';
 import { assetsConfig } from '../presentationConfig.js';
 
@@ -43,6 +44,14 @@ export class CitizenManager {
         this.citizenCoolAnimationsLoaded = false;
         this.citizen02Count = 0;
         this.currentCitySize = 16;
+        // Parsed GLB scene + embedded animations, loaded from the network
+        // ONCE per citizenType and cloned (via SkeletonUtils, so skinned
+        // meshes stay bound to their own skeleton) for every instance —
+        // see loadCitizenTemplate(). Without this, every single walker
+        // spawn re-fetched and re-parsed the GLB from scratch, which is
+        // what made a burst of spawns (e.g. a market's round-robin reaching
+        // many houses in one distribution cycle) freeze the tab.
+        this.citizenTemplates = {};
     }
 
     /**
@@ -188,42 +197,41 @@ export class CitizenManager {
     }
 
     /**
-     * Creates a new citizen instance by loading the GLB file
+     * Loads and parses a citizen type's GLB exactly ONCE (network fetch +
+     * traverse + material fixup), caching the resulting template scene +
+     * embedded animations for every future `createCitizenInstance` call to
+     * clone. A failed load is NOT cached — it's removed so the next spawn
+     * attempt retries fresh, matching the old always-retry behavior for a
+     * transient error, while a successful load stays cached forever.
      */
-    createCitizenInstance(citizenType = 'citizen02') {
-        return new Promise((resolve) => {
+    loadCitizenTemplate(citizenType) {
+        if (this.citizenTemplates[citizenType]) {
+            return this.citizenTemplates[citizenType];
+        }
+
+        const promise = new Promise((resolve, reject) => {
             const gltfLoader = new GLTFLoader();
             const baseUrl = assetsConfig.baseUrl || '/';
-            
-            let citizenPath, citizenName, animationsToUse;
-            if (citizenType === 'citizen-cool') {
-                citizenPath = `${baseUrl}citizenCool/citizenCoolTwoAnim.glb`.replace(/\/+/g, '/');
-                citizenName = `citizen-cool-${this.citizens.length}`;
-                animationsToUse = this.citizenCoolAnimations;
-                this.loadCitizenCoolAnimations();
-            } else {
-                citizenPath = `${baseUrl}citizen02/citizenAnimated02.glb`.replace(/\/+/g, '/');
-                citizenName = `citizen-${this.citizens.length}`;
-                animationsToUse = this.citizenAnimations;
-                this.loadCitizenAnimations();
-            }
-            
+            const citizenPath = citizenType === 'citizen-cool'
+                ? `${baseUrl}citizenCool/citizenCoolTwoAnim.glb`.replace(/\/+/g, '/')
+                : `${baseUrl}citizen02/citizenAnimated02.glb`.replace(/\/+/g, '/');
+
             gltfLoader.load(
                 citizenPath,
                 (gltf) => {
-                    const citizen = gltf.scene;
-                    if (!citizen) {
-                        console.error('[CitizenManager] No scene found in GLB file:', citizenPath);
-                        resolve(null);
+                    const scene = gltf.scene;
+                    if (!scene) {
+                        const error = new Error(`[CitizenManager] No scene found in GLB file: ${citizenPath}`);
+                        console.error(error.message);
+                        reject(error);
                         return;
                     }
-                    citizen.name = citizenName;
-                    
+
                     const characterScale = 0.5;
-                    citizen.scale.set(characterScale, characterScale, characterScale);
+                    scene.scale.set(characterScale, characterScale, characterScale);
 
                     const lightsToStrip = [];
-                    citizen.traverse((child) => {
+                    scene.traverse((child) => {
                         // GLBs ship with KHR_lights_punctual DirectionalLight — if left
                         // in the graph it moves with the character and flashes the whole city.
                         if (child.isLight) {
@@ -255,49 +263,87 @@ export class CitizenManager {
                         light.parent?.remove(light);
                         light.dispose?.();
                     }
-                    
-                    const citizenData = new CitizenData();
-                    citizenData.character = citizen;
-                    citizenData.citizenType = citizenType;
-                    
-                    let animationsToUseFinal = animationsToUse;
-                    if (Object.keys(animationsToUseFinal).length === 0 && gltf.animations && gltf.animations.length > 0) {
-                        const tempAnimations = {};
-                        gltf.animations.forEach((clip) => {
-                            tempAnimations[clip.name] = clip;
-                        });
-                        animationsToUseFinal = tempAnimations;
-                    }
-                    
-                    if (Object.keys(animationsToUseFinal).length > 0) {
-                        citizenData.mixer = new AnimationMixer(citizen);
-                        
-                        const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
-                        let idleAnimation = null;
-                        for (const name of idleNames) {
-                            if (animationsToUseFinal[name]) {
-                                idleAnimation = name;
-                                break;
-                            }
-                        }
-                        if (!idleAnimation && Object.keys(animationsToUseFinal).length > 0) {
-                            idleAnimation = Object.keys(animationsToUseFinal)[0];
-                        }
-                        if (idleAnimation) {
-                            const action = citizenData.mixer.clipAction(animationsToUseFinal[idleAnimation]);
-                            action.play();
-                            citizenData.currentAction = action;
-                        }
-                    }
-                    
-                    resolve(citizenData);
+
+                    const animations = {};
+                    (gltf.animations ?? []).forEach((clip) => {
+                        animations[clip.name] = clip;
+                    });
+
+                    resolve({ scene, animations });
                 },
                 null,
                 (error) => {
                     console.error('[CitizenManager] Error loading citizen character:', error);
-                    resolve(null);
+                    reject(error);
                 }
             );
+        });
+
+        this.citizenTemplates[citizenType] = promise;
+        promise.catch(() => {
+            if (this.citizenTemplates[citizenType] === promise) {
+                delete this.citizenTemplates[citizenType];
+            }
+        });
+        return promise;
+    }
+
+    /**
+     * Creates a new citizen instance by cloning the cached template for
+     * this citizenType (see loadCitizenTemplate) — never re-loads the GLB
+     * itself. Resolves `null` on failure rather than rejecting, same
+     * contract as before, so existing callers (`updateCitizens`,
+     * WalkerEventController) don't need to change.
+     */
+    createCitizenInstance(citizenType = 'citizen02') {
+        // Keeps the shared clip-name lookup tables (this.citizenAnimations /
+        // citizenCoolAnimations) warm for switchCitizenAnimation/
+        // getCitizenAnimations, which read them directly rather than
+        // through a per-instance template.
+        if (citizenType === 'citizen-cool') {
+            this.loadCitizenCoolAnimations();
+        } else {
+            this.loadCitizenAnimations();
+        }
+
+        return this.loadCitizenTemplate(citizenType).then(({ scene: templateScene, animations: templateAnimations }) => {
+            const citizen = cloneSkinned(templateScene);
+            citizen.name = citizenType === 'citizen-cool'
+                ? `citizen-cool-${this.citizens.length}`
+                : `citizen-${this.citizens.length}`;
+
+            const citizenData = new CitizenData();
+            citizenData.character = citizen;
+            citizenData.citizenType = citizenType;
+
+            const sharedAnimations = citizenType === 'citizen-cool' ? this.citizenCoolAnimations : this.citizenAnimations;
+            const animationsToUseFinal = Object.keys(sharedAnimations).length > 0 ? sharedAnimations : templateAnimations;
+
+            if (Object.keys(animationsToUseFinal).length > 0) {
+                citizenData.mixer = new AnimationMixer(citizen);
+
+                const idleNames = ['idle', 'Idle', 'Standing Idle', 'standing_idle', 'mixamo.com'];
+                let idleAnimation = null;
+                for (const name of idleNames) {
+                    if (animationsToUseFinal[name]) {
+                        idleAnimation = name;
+                        break;
+                    }
+                }
+                if (!idleAnimation && Object.keys(animationsToUseFinal).length > 0) {
+                    idleAnimation = Object.keys(animationsToUseFinal)[0];
+                }
+                if (idleAnimation) {
+                    const action = citizenData.mixer.clipAction(animationsToUseFinal[idleAnimation]);
+                    action.play();
+                    citizenData.currentAction = action;
+                }
+            }
+
+            return citizenData;
+        }).catch((error) => {
+            console.error('[CitizenManager] Error creating citizen instance:', error);
+            return null;
         });
     }
 

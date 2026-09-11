@@ -23,6 +23,13 @@ models
 .env.*
 !.env.example
 
+# Shell/login dotfiles (leak in from the host home directory, not project files)
+.bashrc
+.bash_profile
+.zshrc
+.zprofile
+.profile
+
 /public/ios
 /public/windows11
 

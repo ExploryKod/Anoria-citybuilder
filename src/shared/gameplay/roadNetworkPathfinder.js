@@ -109,6 +109,59 @@ export function findShortestRoadPath(startRoad, endRoad, isRoadTile) {
 }
 
 /**
+ * Breadth-first walk from `startRoad` across the whole connected road
+ * network, returning the tile path to whichever reachable tile is FARTHEST
+ * (most hops) from the start — a Caesar 3-style patrol walker's outbound
+ * leg: walk to the end of your road network, then turn back the way you
+ * came (the caller mirrors this path to build the return leg; see
+ * WalkerEventController).
+ *
+ * BFS visits tiles in non-decreasing distance order, so the last tile ever
+ * added to the queue is guaranteed to be at the maximum depth reached —
+ * no separate distance bookkeeping needed. Ties (multiple tiles at the
+ * same max depth) are broken by BFS visit order, deterministic for a given
+ * road layout and `DIRECTIONS` order.
+ *
+ * @param {Tile} startRoad
+ * @param {(x: number, y: number) => boolean} isRoadTile
+ * @returns {Tile[]} tile path from startRoad to the farthest tile,
+ *   inclusive — `[startRoad]` if it has no road neighbors at all.
+ */
+export function findFarthestRoadPath(startRoad, isRoadTile) {
+  const startKey = tileKey(startRoad);
+  const cameFrom = new Map();
+  const visited = new Set([startKey]);
+  const queue = [startRoad];
+  let farthestKey = startKey;
+
+  for (let head = 0; head < queue.length; head += 1) {
+    const current = queue[head];
+    const currentKey = tileKey(current);
+
+    for (const next of getRoadNeighbors(current, isRoadTile)) {
+      const nextKey = tileKey(next);
+      if (visited.has(nextKey)) continue;
+      visited.add(nextKey);
+      cameFrom.set(nextKey, currentKey);
+      queue.push(next);
+      farthestKey = nextKey;
+    }
+  }
+
+  if (farthestKey === startKey) return [startRoad];
+
+  const path = [];
+  let key = farthestKey;
+  while (key !== startKey) {
+    const [x, y] = key.split(',').map(Number);
+    path.push({ x, y });
+    key = cameFrom.get(key);
+  }
+  path.push(startRoad);
+  return path.reverse();
+}
+
+/**
  * Finds a full route between two building tiles: origin building → its
  * adjacent road → shortest road-network path → destination's adjacent
  * road → destination building.

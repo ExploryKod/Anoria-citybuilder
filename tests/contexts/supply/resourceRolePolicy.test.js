@@ -15,9 +15,9 @@ describe('ResourceRolePolicy', () => {
     expect(getCategoriesForRole('Farm-Wheat', 'producer')).toEqual(['wheat']);
   });
 
-  test('a market is a distributor with a range', () => {
+  test('a market is a distributor with an unlimited range (debugging aid, 2026-09-11)', () => {
     expect(hasResourceRole('Market-Stall', 'distributor', 'wheat')).toBe(true);
-    expect(getRangeForRole('Market-Stall', 'distributor')).toBe(5);
+    expect(getRangeForRole('Market-Stall', 'distributor')).toBe(Infinity);
   });
 
   test('a windmill holds both a collector and a hub role, with no range', () => {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { findShortestRoadPath } from '../../../shared/gameplay/roadNetworkPathfinder.js';
+import { findFarthestRoadPath } from '../../../shared/gameplay/roadNetworkPathfinder.js';
 import { WALKER_EVENT_CATALOG } from '../../../shared/gameplay/walkerEventCatalog.js';
 import { resolveTileByInstanceId } from '../../../shared/gameplay/resolveTileByInstanceId.js';
 import { zoneBordersBuildings } from '../../../contexts/parcels/infrastructure/spatial/sceneNeighborhoodScan.js';
@@ -17,8 +17,8 @@ let nextWalkerId = 0;
 /**
  * Spawns a walker in reaction to a domain event, per `WALKER_EVENT_CATALOG`
  * (shared/gameplay/walkerEventCatalog.js) — the only source of truth for
- * which events spawn a walker and where its origin/destination/road
- * requirement come from. This controller never scans the map for
+ * which events spawn a walker and where its origin/road requirement come
+ * from. This controller never scans the map for
  * "walker-capable" buildings and never hardcodes an event type: it
  * subscribes generically to every event type the catalog declares, so a
  * new event-triggered walker is a catalog edit plus the owning bounded
@@ -72,21 +72,6 @@ export function createWalkerEventController({ scene, citizenManager, citizenPath
     return road ? { tile: road, isRoadEntry: true } : null;
   }
 
-  /**
-   * Full tile path for one origin→destination journey, or null if
-   * unreachable. When both ends require road access, this is a real
-   * road-network walk. When either end skips the road requirement, that
-   * leg connects directly (straight line) instead.
-   */
-  function resolveJourney(origin, originEntry, destination, destinationEntry) {
-    if (originEntry.isRoadEntry && destinationEntry.isRoadEntry) {
-      const isRoadTile = citizenPathfinding.isRoadTile.bind(citizenPathfinding);
-      const roadPath = findShortestRoadPath(originEntry.tile, destinationEntry.tile, isRoadTile);
-      return roadPath ? [origin, ...roadPath, destination] : null;
-    }
-    return [origin, destination];
-  }
-
   // Only one visual set ('citizen02') is wired today, so `walkerType` is
   // accepted but not yet used to pick a model — see WALKER_EVENT_CATALOG's
   // doc comment. Once more exist, this becomes the lookup point.
@@ -109,14 +94,21 @@ export function createWalkerEventController({ scene, citizenManager, citizenPath
     activeWalkers.set(walkerId, { citizen, path, index: 0, walkerId });
   }
 
+  /**
+   * A Caesar 3-style patrol, not a delivery run: leave origin, walk the
+   * road network out to its farthest reachable point, then retrace the
+   * exact same tiles back to origin (origin doubles as both start and
+   * target — see walkerEventCatalog.js's own doc comment for why the
+   * route doesn't chain through specific consumers). WHO actually got
+   * served this cycle is already a settled economic fact server-side; this
+   * only builds the visual path.
+   */
   function handleWalkerEvent(eventType, descriptor, event) {
     const originId = event[descriptor.origin.field];
-    const destinationId = event[descriptor.destination.field];
 
     const origin = resolveTileByInstanceId(city, originId);
-    const destination = resolveTileByInstanceId(city, destinationId);
-    if (!origin || !destination) {
-      console.debug(`[WalkerEventController] ${eventType}: could not resolve origin/destination tile (origin=${originId}, destination=${destinationId}).`);
+    if (!origin) {
+      console.debug(`[WalkerEventController] ${eventType}: could not resolve origin tile (origin=${originId}).`);
       return;
     }
 
@@ -126,17 +118,11 @@ export function createWalkerEventController({ scene, citizenManager, citizenPath
       return;
     }
 
-    const destinationEntry = resolveEntryPoint(destination, descriptor.destination.requiresRoad);
-    if (!destinationEntry) {
-      console.debug(`[WalkerEventController] ${eventType}: destination (${destination.x},${destination.y}) requires road access but none is within range.`);
-      return;
-    }
-
-    const path = resolveJourney(origin, originEntry, destination, destinationEntry);
-    if (!path) {
-      console.debug(`[WalkerEventController] ${eventType}: no route from (${origin.x},${origin.y}) to (${destination.x},${destination.y}).`);
-      return;
-    }
+    const isRoadTile = citizenPathfinding.isRoadTile.bind(citizenPathfinding);
+    const outbound = findFarthestRoadPath(originEntry.tile, isRoadTile);
+    // Retrace the outbound tiles in reverse (dropping the farthest tile's
+    // own duplicate) to come back, then step off the road into origin.
+    const path = [origin, ...outbound, ...outbound.slice(0, -1).reverse(), origin];
 
     spawnWalker(descriptor.walkerType, path);
   }

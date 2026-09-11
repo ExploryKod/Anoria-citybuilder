@@ -8,10 +8,9 @@ function tabIds(groupId) {
 }
 
 describe('buildingInfoGroupRegistry tabs', () => {
-  test('house exposes foyer, diet, resources (stocks) and common context tabs', () => {
+  test('house exposes foyer, resources (stocks) and common context tabs (no more Régime — see messagesInfoFormat.js)', () => {
     expect(tabIds(BUILDING_INFO_GROUPS.house)).toEqual([
       BUILDING_INFO_TAB_IDS.foyer,
-      BUILDING_INFO_TAB_IDS.diet,
       BUILDING_INFO_TAB_IDS.stocks,
       BUILDING_INFO_TAB_IDS.services,
       BUILDING_INFO_TAB_IDS.neighbors,
@@ -19,10 +18,8 @@ describe('buildingInfoGroupRegistry tabs', () => {
     ]);
   });
 
-  test('hub storage does not expose house diet tab', () => {
-    const ids = tabIds(BUILDING_INFO_GROUPS.hubStorage);
-    expect(ids).not.toContain(BUILDING_INFO_TAB_IDS.diet);
-    expect(ids).toEqual([
+  test('hub storage exposes foyer, staff and common context tabs', () => {
+    expect(tabIds(BUILDING_INFO_GROUPS.hubStorage)).toEqual([
       BUILDING_INFO_TAB_IDS.foyer,
       BUILDING_INFO_TAB_IDS.staff,
       BUILDING_INFO_TAB_IDS.services,

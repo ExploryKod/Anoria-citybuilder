@@ -20,39 +20,6 @@ import {
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
 
 /**
- * "Fed or not" — total quantity only. Diet variety (which food types) is a
- * separate, not-yet-built feature.
- * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
- * @returns {{ totalUnfed: number, month: number | null }}
- */
-function resolveHouseDietShortages(vm) {
-  return {
-    totalUnfed: vm.lastConsumption?.totalUnfed ?? 0,
-    month: vm.lastConsumption?.month ?? null,
-  };
-}
-
-function resolveStockGroups(stocks) {
-  const wheat = stocks.wheat || 0;
-  const cabbage = stocks.cabbage || 0;
-  const carrot = stocks.carrot || 0;
-  const fruits = stocks.fruit || 0;
-  const game = stocks.game || 0;
-
-  return {
-    subsistence: [
-      { emoji: '🍎', value: fruits, ariaLabel: `Fruits cueillis : ${fruits} panier${fruits > 1 ? 's' : ''}` },
-      { emoji: '🦌', value: game, ariaLabel: `Gibier : ${game} panier${game > 1 ? 's' : ''}` },
-    ],
-    farms: [
-      { emoji: '🌾', value: wheat, ariaLabel: `Blé : ${wheat} panier${wheat > 1 ? 's' : ''}` },
-      { emoji: '🥬', value: cabbage, ariaLabel: `Légumes verts : ${cabbage} panier${cabbage > 1 ? 's' : ''}` },
-      { emoji: '🥕', value: carrot, ariaLabel: `Autres légumes : ${carrot} panier${carrot > 1 ? 's' : ''}` },
-    ],
-  };
-}
-
-/**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  */
 export function formatHouseLayoutHeader(vm) {
@@ -148,26 +115,4 @@ export function formatHouseResourcesModel(vm) {
   return {
     cards: [...categoryCards, totalCard],
   };
-}
-
-/**
- * Diet (régime) tab model — food stocks, consumption, production details.
- * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
- */
-export function formatHouseDietModel(vm) {
-  const model = {
-    stockGroups: null,
-    shortages: resolveHouseDietShortages(vm),
-  };
-
-  // Stocks actuels (déplacé depuis foyer)
-  if (vm.stocks && Object.hasOwn(vm.stocks, 'food')) {
-    const groups = resolveStockGroups(vm.stocks);
-    model.stockGroups = {
-      subsistence: groups.subsistence,
-      farms: groups.farms,
-    };
-  }
-
-  return model;
 }

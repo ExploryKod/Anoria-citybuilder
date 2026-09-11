@@ -81,15 +81,19 @@ describe('Supply — house market reach', () => {
       useCase = new UpdateConsumerDistributorReach(repo);
     });
 
-    test('marks houses outside range as marketTooFar', async () => {
+    test('every road-connected house is in range — Market-Stall has unlimited reach (debugging aid, 2026-09-11)', async () => {
+      // `maxDistance: 5` here is only the FALLBACK for a distributor with no
+      // catalog-declared range — Market-Stall declares its own (`Infinity`,
+      // see buildingEconomy.js), which always wins via `?? maxDistance`, so
+      // even the house at distance 10 is in range.
       const outcome = await useCase.execute({ maxDistance: 5 });
 
       expect(outcome.houses).toBe(2);
       expect(outcome.marketsWithRoad).toBe(1);
-      expect(outcome.inRange).toBe(1);
-      expect(outcome.tooFar).toBe(1);
+      expect(outcome.inRange).toBe(2);
+      expect(outcome.tooFar).toBe(0);
       expect(repo.flag('House-Blue-5-6', 'distributorTooFar')).toBe(false);
-      expect(repo.flag('House-Blue-0-0', 'distributorTooFar')).toBe(true);
+      expect(repo.flag('House-Blue-0-0', 'distributorTooFar')).toBe(false);
     });
 
     test('ignores markets without road access', async () => {

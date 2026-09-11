@@ -263,21 +263,36 @@ export const BUILDING_ECONOMY = {
     displayName: 'Étal',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1, requiredSkill: 'vente-alimentaire' },
-    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5, totalKey: 'food', schedule: { unit: 'always' }, hubLink: { sourceLinkField: 'supplyHubId' } }],
+    // Unlimited reach (2026-09-11, same reasoning as Chapel below) — a
+    // debugging aid so a house's food access is never confounded by tile
+    // distance while chasing other bugs; `placementRequires`'s hub range
+    // just below is a DIFFERENT mechanic (construction placement gating,
+    // not service reach) and is deliberately left untouched.
+    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: Infinity, totalKey: 'food', schedule: { unit: 'always' }, hubLink: { sourceLinkField: 'supplyHubId' } }],
     placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },
   'Market-Stall-Blue': {
     displayName: 'Étal bleu',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1, requiredSkill: 'vente-alimentaire' },
-    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5, totalKey: 'food', schedule: { unit: 'always' }, hubLink: { sourceLinkField: 'supplyHubId' } }],
+    // Unlimited reach (2026-09-11, same reasoning as Chapel below) — a
+    // debugging aid so a house's food access is never confounded by tile
+    // distance while chasing other bugs; `placementRequires`'s hub range
+    // just below is a DIFFERENT mechanic (construction placement gating,
+    // not service reach) and is deliberately left untouched.
+    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: Infinity, totalKey: 'food', schedule: { unit: 'always' }, hubLink: { sourceLinkField: 'supplyHubId' } }],
     placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },
   'Market-Stall-Red': {
     displayName: 'Étal rouge',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, eliteNeed: 1, requiredSkill: 'vente-alimentaire' },
-    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: 5, totalKey: 'food', schedule: { unit: 'always' }, hubLink: { sourceLinkField: 'supplyHubId' } }],
+    // Unlimited reach (2026-09-11, same reasoning as Chapel below) — a
+    // debugging aid so a house's food access is never confounded by tile
+    // distance while chasing other bugs; `placementRequires`'s hub range
+    // just below is a DIFFERENT mechanic (construction placement gating,
+    // not service reach) and is deliberately left untouched.
+    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: Infinity, totalKey: 'food', schedule: { unit: 'always' }, hubLink: { sourceLinkField: 'supplyHubId' } }],
     placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
   },
 
@@ -344,52 +359,59 @@ export const BUILDING_ECONOMY = {
   // `eligibleSectors: [6]` for that group. Where two buildings cover the
   // same need at different scale (Doctor/Hospital, Library-BookShop/School,
   // Cinema/Theatre), the bigger one requires the skill's level-2 grant.
+  //
+  // range: Infinity (2026-09-11, same reasoning as Chapel/Market above) —
+  // a debugging aid: with distance never a confound, a house failing to
+  // reach a tier or hold a skill is provably a REAL bug (allocation order,
+  // a missing skill grant, ...), not just "too far from the service." Once
+  // gameplay balancing starts, these can get real per-building ranges back
+  // one at a time.
   School: {
     displayName: 'École',
     construction: { price: 90, category: 'public' },
     employment: { sector: 6, workerNeed: 3, eliteNeed: 0, requiredSkill: 'education', requiredSkillLevel: 2 },
-    resourceRoles: [{ role: 'distributor', categories: ['school'], range: 5, schedule: { unit: 'always' }, consumption: 'flag' }],
+    resourceRoles: [{ role: 'distributor', categories: ['school'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Library: {
     displayName: 'Bibliothèque',
     construction: { price: 50, category: 'public' },
     employment: { sector: 6, workerNeed: 2, eliteNeed: 0, requiredSkill: 'education' },
-    resourceRoles: [{ role: 'distributor', categories: ['library'], range: 5, schedule: { unit: 'always' }, consumption: 'flag' }],
+    resourceRoles: [{ role: 'distributor', categories: ['library'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Doctor: {
     displayName: 'Cabinet médical',
     construction: { price: 55, category: 'public' },
     employment: { sector: 6, workerNeed: 2, eliteNeed: 0, requiredSkill: 'medical' },
-    resourceRoles: [{ role: 'distributor', categories: ['doctor'], range: 5, schedule: { unit: 'always' }, consumption: 'flag' }],
+    resourceRoles: [{ role: 'distributor', categories: ['doctor'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Hospital: {
     displayName: 'Hôpital',
     construction: { price: 140, category: 'public' },
     employment: { sector: 6, workerNeed: 4, eliteNeed: 0, requiredSkill: 'medical', requiredSkillLevel: 2 },
-    resourceRoles: [{ role: 'distributor', categories: ['hospital'], range: 5, schedule: { unit: 'always' }, consumption: 'flag' }],
+    resourceRoles: [{ role: 'distributor', categories: ['hospital'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   PublicBath: {
     displayName: 'Bains publics',
     construction: { price: 85, category: 'public' },
     employment: { sector: 6, workerNeed: 3, eliteNeed: 0, requiredSkill: 'hygiene' },
-    resourceRoles: [{ role: 'distributor', categories: ['publicBath'], range: 5, schedule: { unit: 'always' }, consumption: 'flag' }],
+    resourceRoles: [{ role: 'distributor', categories: ['publicBath'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Theatre: {
     displayName: 'Théâtre',
     construction: { price: 130, category: 'public' },
     employment: { sector: 6, workerNeed: 4, eliteNeed: 0, requiredSkill: 'entertainment', requiredSkillLevel: 2 },
-    resourceRoles: [{ role: 'distributor', categories: ['theatre'], range: 5, schedule: { unit: 'always' }, consumption: 'flag' }],
+    resourceRoles: [{ role: 'distributor', categories: ['theatre'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Cinema: {
     displayName: 'Cinéma',
     construction: { price: 95, category: 'public' },
     employment: { sector: 6, workerNeed: 3, eliteNeed: 0, requiredSkill: 'entertainment' },
-    resourceRoles: [{ role: 'distributor', categories: ['cinema'], range: 5, schedule: { unit: 'always' }, consumption: 'flag' }],
+    resourceRoles: [{ role: 'distributor', categories: ['cinema'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Pub: {
     displayName: 'Taverne',
     construction: { price: 45, category: 'public' },
     employment: { sector: 6, workerNeed: 2, eliteNeed: 0, requiredSkill: 'hospitality' },
-    resourceRoles: [{ role: 'distributor', categories: ['pub'], range: 5, schedule: { unit: 'always' }, consumption: 'flag' }],
+    resourceRoles: [{ role: 'distributor', categories: ['pub'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
 };

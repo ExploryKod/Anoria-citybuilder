@@ -681,7 +681,7 @@ export function createScene(_gameStore, assetManager, deps) {
 
         // Event-driven walkers: spawns a character whenever a bounded
         // context publishes an event listed in WALKER_EVENT_CATALOG (e.g.
-        // Supply's 'supply.resourceDelivered') through the shared event
+        // Supply's 'supply.resourceDeliveryRoute') through the shared event
         // bus. See src/presentation/three/walkers/WalkerEventController.js
         // and shared/gameplay/walkerEventCatalog.js.
         walkerEventController = createWalkerEventController({

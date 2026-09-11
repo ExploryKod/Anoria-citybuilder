@@ -4,6 +4,7 @@
  */
 
 import { formatServicesModel } from './presenters/formats/servicesInfoFormat.js';
+import { formatMessagesModel } from './presenters/formats/messagesInfoFormat.js';
 import { renderServicesTab } from './views/servicesInfoView.js';
 import { renderNeighborsTab, renderMessagesTab } from './layout/buildingInfoLayout.js';
 import { BUILDING_INFO_TAB_IDS } from './buildingInfoTabCatalog.js';
@@ -38,8 +39,8 @@ export const SHARED_BUILDING_INFO_TAB_HANDLERS = Object.freeze({
     render: (container, model) => renderNeighborsTab(container, /** @type {ReadonlyArray<object>} */ (model ?? [])),
   },
   [BUILDING_INFO_TAB_IDS.messages]: {
-    format: () => null,
-    render: (container) => renderMessagesTab(container),
+    format: (vm) => formatMessagesModel(vm),
+    render: (container, model) => renderMessagesTab(container, model),
     alwaysRender: true,
   },
 });

@@ -26,9 +26,14 @@ export class RunCityResourceCycle {
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
    * @param {import('../distribution/DistributeResourceToConsumers.js').DistributeResourceToConsumers} distributeResourceToConsumers
    * @param {{ publish: (event: object) => void }} [eventPublisher] Optional — one
-   *   'supply.resourceDelivered' event per distribute transfer (see
-   *   shared/gameplay/walkerEventCatalog.js). Resource-agnostic: the event
-   *   only ever carries sourceId/consumerId/category/amount.
+   *   'supply.resourceDeliveryRoute' event per distributor PER CYCLE (see
+   *   shared/gameplay/walkerEventCatalog.js), not per unit-transfer: the
+   *   round-robin distribution can move many units to many consumers in one
+   *   pass, but that's one economic batch, not one walker each. The event
+   *   carries sourceId + the distinct consumerIds actually reached this
+   *   cycle (order = first-served order, i.e. round-robin's own consumerIds
+   *   order) — WalkerEventController turns that into ONE walker's route.
+   *   Resource-agnostic either way.
    * @param {object} [hooks]
    * @param {import('./TransferHubToHub.js').TransferHubToHub} [hooks.transferHubToHub] Omit for a resource with no hub leg.
    * @param {(distributorId: string, hasHubLink: boolean) => Promise<void>} [hooks.onHubLinkResolved]
@@ -127,13 +132,16 @@ export class RunCityResourceCycle {
           await this.onDistribute(distributor.id, distributeOutcome.transfers, timeInfo);
         }
 
-        for (const transfer of distributeOutcome.transfers) {
+        // One walker per distributor per cycle, not one per unit moved —
+        // see this method's own @param doc. `transfers` can hold many
+        // entries per consumer (one per unit/category/round-robin pass);
+        // collapse to the distinct consumerIds, first-served order.
+        const consumerIds = [...new Set(distributeOutcome.transfers.map((t) => t.consumerId))];
+        if (consumerIds.length > 0) {
           this.eventPublisher?.publish({
-            type: 'supply.resourceDelivered',
+            type: 'supply.resourceDeliveryRoute',
             sourceId: distributor.id,
-            consumerId: transfer.consumerId,
-            category: transfer.category,
-            amount: transfer.amount,
+            consumerIds,
           });
         }
       }
