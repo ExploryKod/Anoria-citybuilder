@@ -1,14 +1,19 @@
 import { DexieEmploymentBuildingRepository } from '../contexts/employment/infrastructure/dexie/DexieEmploymentBuildingRepository.js';
 import { DistributeCityWorkers } from '../contexts/employment/application/commands/DistributeCityWorkers.js';
 import { GetCityEmploymentSummary } from '../contexts/employment/application/queries/GetCityEmploymentSummary.js';
-import { LocalStorageSectorPriorityRepository } from '../contexts/employment/infrastructure/browser/LocalStorageSectorPriorityRepository.js';
+import { LocalStorageSkillPriorityRepository } from '../contexts/employment/infrastructure/browser/LocalStorageSkillPriorityRepository.js';
 import {
-  getStoredOrDefaultPriorities,
-  mergeAllSectorPriorities,
-  resolveSectorPriorityValue,
-  swapSectorPriority,
-} from '../contexts/employment/domain/policies/SectorPriorityPolicy.js';
+  mergeTabPriorities,
+  resolveSkillPriorityValue,
+  swapSkillPriority,
+} from '../contexts/employment/domain/policies/SkillPriorityPolicy.js';
 import { getEmploymentSectorName } from '../contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
+import {
+  allPriorityTabs,
+  skillsForTab,
+  tabForSkill,
+  SHARED_SKILL_TAB_ID,
+} from '../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 
 /**
  * Composition root — Employment bounded context.
@@ -20,8 +25,7 @@ import { getEmploymentSectorName } from '../contexts/employment/domain/catalogs/
 export function createEmploymentContext({ employmentBuildingRepository, citizenProvidesSkillAtLevel } = {}) {
   const employmentBuildingRepositoryImpl =
     employmentBuildingRepository ?? new DexieEmploymentBuildingRepository();
-  const sectorPriorityRepository =
-    new LocalStorageSectorPriorityRepository();
+  const skillPriorityRepository = new LocalStorageSkillPriorityRepository();
   const distributeCityWorkersCommand = new DistributeCityWorkers(
     employmentBuildingRepositoryImpl,
     { citizenProvidesSkillAtLevel },
@@ -32,33 +36,67 @@ export function createEmploymentContext({ employmentBuildingRepository, citizenP
 
   return {
     employmentBuildingRepository: employmentBuildingRepositoryImpl,
-    sectorPriorityRepository,
+    skillPriorityRepository,
     distributeCityWorkersCommand,
     getCityEmploymentSummaryQuery,
 
-    ensureSectorPrioritiesInitialized() {
-      sectorPriorityRepository.ensureInitialized();
+    /**
+     * Priority-tab structure: one per social group (`allSocialGroups()`,
+     * catalog-driven) plus the shared-skill tab — see
+     * HouseGroupSectorEligibilityPolicy.js. `kind` ('group' | 'shared') lets
+     * presentation branch without importing this context's domain catalog
+     * directly (it may only cross into `shared/`, not into another BC's
+     * domain layer — see sessionApi.js's own boundary note). No labels here
+     * (presentation's job — skill labels come from
+     * shared/population/skillCatalog.js, group labels from presentation's
+     * own CitizenStatusPresentation.js) and no need/have numbers (that's
+     * getCityEmploymentSummary().bySkill).
+     * @returns {Array<{ id: string, kind: 'group' | 'shared', skillIds: string[] }>}
+     */
+    getPriorityTabs() {
+      return allPriorityTabs().map((tabId) => ({
+        id: tabId,
+        kind: tabId === SHARED_SKILL_TAB_ID ? 'shared' : 'group',
+        skillIds: [...skillsForTab(tabId)],
+      }));
     },
 
-    getSectorPriority(sector) {
-      const userPriorities = sectorPriorityRepository.loadUserPriorities();
-      return resolveSectorPriorityValue(sector, userPriorities);
+    /** @param {string} skillId */
+    getSkillPriority(skillId) {
+      const tabSkillIds = skillsForTab(tabForSkill(skillId));
+      const userPriorities = skillPriorityRepository.loadUserPriorities();
+      return resolveSkillPriorityValue(skillId, userPriorities, tabSkillIds);
     },
 
-    getAllSectorPriorities() {
-      const userPriorities = sectorPriorityRepository.loadUserPriorities();
-      return getStoredOrDefaultPriorities(userPriorities);
+    /** @param {string} tabId */
+    getMergedTabPriorities(tabId) {
+      const userPriorities = skillPriorityRepository.loadUserPriorities();
+      return mergeTabPriorities(userPriorities, skillsForTab(tabId));
     },
 
-    getMergedSectorPriorities() {
-      const userPriorities = sectorPriorityRepository.loadUserPriorities();
-      return mergeAllSectorPriorities(userPriorities);
+    /**
+     * @param {string} skillId
+     * @param {number} newPriority
+     */
+    updateSkillPrioritySync(skillId, newPriority) {
+      const tabSkillIds = skillsForTab(tabForSkill(skillId));
+      const userPriorities = skillPriorityRepository.loadUserPriorities();
+      const updated = swapSkillPriority(skillId, newPriority, userPriorities, tabSkillIds);
+      skillPriorityRepository.saveUserPriorities(updated);
     },
 
-    updateSectorPrioritySync(sector, newPriority) {
-      const userPriorities = sectorPriorityRepository.loadUserPriorities();
-      const updated = swapSectorPriority(sector, newPriority, userPriorities);
-      sectorPriorityRepository.saveUserPriorities(updated);
+    /**
+     * Flat merged map across every tab (skill ids are globally unique, no
+     * collision) — what the monthly redistribution actually reads.
+     * @returns {Record<string, number>}
+     */
+    getAllSkillPriorities() {
+      const userPriorities = skillPriorityRepository.loadUserPriorities();
+      const merged = {};
+      for (const tabId of allPriorityTabs()) {
+        Object.assign(merged, mergeTabPriorities(userPriorities, skillsForTab(tabId)));
+      }
+      return merged;
     },
 
     getSectorName(sector) {
@@ -66,7 +104,7 @@ export function createEmploymentContext({ employmentBuildingRepository, citizenP
     },
 
     /**
-     * @param {{ sectorPriorities?: Record<number|string, number> }} [params]
+     * @param {{ skillPriorities?: Record<string, number> }} [params]
      */
     async distributeCityWorkers(params = {}) {
       return distributeCityWorkersCommand.execute(params);

@@ -6,7 +6,7 @@ import {
 } from '../../../../src/presentation/dom/info/presenters/formats/serviceInfoFormat.js';
 
 const fakeEmployment = {
-  getSectorPriority: () => 2,
+  getSkillPriority: () => 2,
   getSectorName: () => 'Services Publics',
 };
 

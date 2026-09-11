@@ -54,7 +54,7 @@ import { pickTileFromRaycast } from './scene-board/tileRaycast.js';
 import { pickEditorTileOnGroundPlane } from './scene-board/editorTileGroundPick.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
-import { ASSET_CATALOG, resolveAndCreateBuildingMesh } from './meshs/resolveBuildingMesh.js';
+import { ASSET_CATALOG, resolveAndCreateBuildingMesh, resolveVisualBuildingId } from './meshs/resolveBuildingMesh.js';
 import { scenePresentation } from './presentationConfig.js';
 import { createSceneFog } from '../../shared/terrain-catalog/terrainAtmosphere.js';
 import { isEditorMode } from '../../composition/sessionShell.js';
@@ -734,6 +734,12 @@ export function createScene(_gameStore, assetManager, deps) {
 
             const nextType = tileHouse.type;
             const instanceId = tileHouse.id;
+            // Tier-aware mesh id — same logical house type can render a
+            // different (declaratively-mapped) mesh per level, see
+            // resolveVisualBuildingId in resolveBuildingMesh.js. `nextType`
+            // itself (the real house type persisted everywhere else — city
+            // tiles, instance tracking) is never replaced by this.
+            const nextVisualId = resolveVisualBuildingId(nextType, tileHouse.level);
 
             // city.tiles is placement SoT — do not rewrite a cleared (bulldozed) tile
             if (city.tiles[x]?.[y]?.buildingId) {
@@ -741,9 +747,19 @@ export function createScene(_gameStore, assetManager, deps) {
                 city.tiles[x][y].instanceId = instanceId;
             }
 
-            if (nextType !== meshBuildingId) {
+            const currentVisualId = buildings[x]?.[y]?.userData?.visualBuildingId ?? meshBuildingId;
+            if (nextVisualId !== currentVisualId) {
                 removeInteractiveObject(buildings[x][y]);
-                const nextMesh = assetManager.createAsset(nextType, x, y);
+                // resolveAndCreateBuildingMesh is already fully source-agnostic — it
+                // routes through buildingSourceAdapterRegistry by the catalog entry's
+                // own `source` (the 'villageTown' adapter itself delegates to
+                // assetManager.createAsset internally). Never branch on source here.
+                let nextMesh;
+                try {
+                    nextMesh = await resolveAndCreateBuildingMesh({ buildingId: nextVisualId, x, y, assetManager });
+                } catch (error) {
+                    console.warn(`[scene] Failed to resolve mesh for "${nextVisualId}":`, error);
+                }
                 if (!nextMesh) {
                     return {
                         buildingId: meshBuildingId,
@@ -752,6 +768,13 @@ export function createScene(_gameStore, assetManager, deps) {
                     };
                 }
                 buildings[x][y] = nextMesh;
+                // No manual centering here: resolveAndCreateBuildingMesh's contract
+                // (buildingSourceAdapterRegistry.js) is to return a FULLY positioned
+                // mesh, footprint centering included — the adapter owns that, not
+                // this caller (see the fix note in
+                // contexts/supply/docs/period-lock-catalog-refactor.md — this used to
+                // double-center Kenney meshes, since KenneyCityKitMeshAdapter already
+                // centers internally).
                 scene.userData.requestShadowRefresh?.();
                 const citySize = city.size || 16;
                 const zoneIndex = resolveTerrainZoneIndex(
@@ -772,6 +795,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 buildings[x][y].userData.instanceId = instanceId;
                 buildings[x][y].userData.type = nextType;
                 buildings[x][y].userData.id = nextType;
+                buildings[x][y].userData.visualBuildingId = nextVisualId;
             }
 
             return { buildingId: nextType, instanceId, synced: true };
@@ -814,35 +838,13 @@ export function createScene(_gameStore, assetManager, deps) {
                     throw new Error(`[buildingAssets] No catalog entry for "${newBuildingId}"`);
                 }
 
-                if (catalogEntry.source === 'kenneyCityKit') {
-                    const kenneyMesh = await resolveAndCreateBuildingMesh({
-                        buildingId: newBuildingId,
-                        x,
-                        y,
-                        rotationStep: placementRotationStep,
-                        assetManager,
-                    });
-                    removeInteractiveObject(buildings[x][y]);
-                    buildings[x][y] = kenneyMesh;
-                    scene.userData.requestShadowRefresh?.();
-                    const citySize = city.size || 16;
-                    const zoneIndex = resolveTerrainZoneIndex(
-                        x,
-                        y,
-                        citySize,
-                        ZONE_SIZE,
-                        terrainZonePadding
-                    );
-                    const interactiveGroupRef =
-                        scene.interactiveGroup || scene.getObjectByName('interactive-objects');
-                    if (zoneGroups[zoneIndex]) {
-                        zoneGroups[zoneIndex].add(kenneyMesh);
-                    } else if (interactiveGroupRef) {
-                        interactiveGroupRef.add(kenneyMesh);
-                    }
-                    return;
-                }
-
+                // One flow regardless of source — resolveAndCreateBuildingMesh already
+                // routes through buildingSourceAdapterRegistry by the catalog entry's
+                // own `source`; this function never needs to know Kenney from
+                // villageTown itself. (Previously split in two here, which is how the
+                // instanceId/parcels-sync below went missing for every Kenney-sourced
+                // building — nothing about them made it wrong, it was just never added
+                // when the Kenney branch was split out.)
                 const mesh = await resolveAndCreateBuildingMesh({
                     buildingId: newBuildingId,
                     x,
@@ -852,12 +854,11 @@ export function createScene(_gameStore, assetManager, deps) {
                 });
                 removeInteractiveObject(buildings[x][y]);
                 buildings[x][y] = mesh;
-                // Center multi-tile meshes on their footprint (anchor is NW corner).
-                if (gridSize > 1) {
-                    const centerOffset = (gridSize - 1) / 2;
-                    mesh.position.x += centerOffset;
-                    mesh.position.z += centerOffset;
-                }
+                // No manual centering here — resolveAndCreateBuildingMesh's contract
+                // is to return a fully positioned mesh, footprint centering included
+                // (see buildingSourceAdapterRegistry.js and the villageTown/Kenney
+                // adapters). This used to double-center Kenney meshes and skip
+                // centering for villageTown's own multi-tile meshes entirely.
                 scene.userData.requestShadowRefresh?.();
                 const citySize = city.size || 16;
                 const zoneIndex = resolveTerrainZoneIndex(
@@ -867,8 +868,12 @@ export function createScene(_gameStore, assetManager, deps) {
                     ZONE_SIZE,
                     terrainZonePadding
                 );
+                const interactiveGroupRef =
+                    scene.interactiveGroup || scene.getObjectByName('interactive-objects');
                 if (zoneGroups[zoneIndex]) {
                     zoneGroups[zoneIndex].add(mesh);
+                } else if (interactiveGroupRef) {
+                    interactiveGroupRef.add(mesh);
                 } else {
                     scene.add(mesh);
                 }

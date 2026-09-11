@@ -16,6 +16,25 @@ import '../adapters/registerBuildingSourceAdapters.js';
 export const ASSET_CATALOG = { ...BUILDING_ASSETS, ...NATURE_ASSETS, ...TERRAIN_ASSETS };
 
 /**
+ * Resolves the catalog id that should actually render for a placed
+ * building, given its own gameplay tier `level` — a declarative override,
+ * not a naming convention: a catalog entry opts in via its own
+ * `levelVariants: { [level]: otherId }` fact (see House-Red/Blue/Purple in
+ * buildingAssets.js). No level, no `levelVariants` fact, or an unmapped
+ * level all fall back to the base id unchanged — this is why every
+ * existing (non-house) placeable id needs zero changes.
+ *
+ * @param {string} buildingId
+ * @param {number} [level]
+ * @returns {string}
+ */
+export function resolveVisualBuildingId(buildingId, level) {
+  if (level == null) return buildingId;
+  const variantId = ASSET_CATALOG[buildingId]?.levelVariants?.[level];
+  return variantId && ASSET_CATALOG[variantId] ? variantId : buildingId;
+}
+
+/**
  * Resolves and creates the mesh for a stable placeable id, via whichever
  * adapter its catalog entry names. Single source of truth for mesh
  * creation — used by the real game (scene.js) and by the /placement.html
@@ -37,23 +56,25 @@ export const ASSET_CATALOG = { ...BUILDING_ASSETS, ...NATURE_ASSETS, ...TERRAIN_
  * @param {number} params.x
  * @param {number} params.y
  * @param {number} [params.rotationStep]
+ * @param {number} [params.level] House tier — see `resolveVisualBuildingId`.
  * @param {object} params.assetManager - the VillageTownAssetManager instance
  * @returns {Promise<import('three').Object3D>}
  */
-export async function resolveAndCreateBuildingMesh({ buildingId, x, y, rotationStep = 0, assetManager }) {
-  const catalogEntry = ASSET_CATALOG[buildingId];
+export async function resolveAndCreateBuildingMesh({ buildingId, x, y, rotationStep = 0, level, assetManager }) {
+  const visualBuildingId = resolveVisualBuildingId(buildingId, level);
+  const catalogEntry = ASSET_CATALOG[visualBuildingId];
   if (!catalogEntry) {
-    throw new Error(`[buildingAssets] No catalog entry for "${buildingId}"`);
+    throw new Error(`[buildingAssets] No catalog entry for "${visualBuildingId}"`);
   }
 
   const adapter = getBuildingSourceAdapter(catalogEntry.source);
   if (!adapter) {
-    throw new Error(`[buildingAssets] No adapter registered for source "${catalogEntry.source}" (id "${buildingId}")`);
+    throw new Error(`[buildingAssets] No adapter registered for source "${catalogEntry.source}" (id "${visualBuildingId}")`);
   }
 
-  const mesh = await adapter.createMesh(x, y, { catalogEntry, rotationStep, assetManager });
+  const mesh = await adapter.createMesh(x, y, { catalogEntry, buildingId: visualBuildingId, rotationStep, assetManager });
   if (!mesh) {
-    throw new Error(`[buildingAssets] No mesh produced for "${buildingId}" (source "${catalogEntry.source}")`);
+    throw new Error(`[buildingAssets] No mesh produced for "${visualBuildingId}" (source "${catalogEntry.source}")`);
   }
   return mesh;
 }

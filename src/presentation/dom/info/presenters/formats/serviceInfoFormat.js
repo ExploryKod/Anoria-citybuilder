@@ -14,26 +14,7 @@
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
-
-/**
- * Curated French label for a service's distributed category — cosmetic
- * only (an unlisted category still displays, just as its raw id): the
- * gameplay-facing catalogs (socialCategoryCatalog.js's `serviceCoverage`
- * requirements, buildingEconomy.js's `resourceRoles` categories) are the
- * single source of truth for which category exists at all.
- * @type {Readonly<Record<string, string>>}
- */
-const SERVICE_CATEGORY_LABELS = Object.freeze({
-  faith: 'Foi',
-  school: 'Éducation',
-  library: 'Savoir',
-  doctor: 'Soins médicaux',
-  hospital: 'Soins hospitaliers',
-  publicBath: 'Hygiène publique',
-  theatre: 'Spectacles',
-  cinema: 'Cinéma',
-  pub: 'Convivialité',
-});
+import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
 
 /**
  * @param {string} buildingType
@@ -94,7 +75,7 @@ export function formatServiceOverviewModel(vm) {
       rows: [
         { label: 'État', value: state },
         ...(category
-          ? [{ label: 'Service rendu', value: SERVICE_CATEGORY_LABELS[category] ?? category }]
+          ? [{ label: 'Service rendu', value: getServiceCategoryDisplay(category).label }]
           : []),
         ...(range != null ? [{ label: 'Portée', value: `${range} cases` }] : []),
       ],

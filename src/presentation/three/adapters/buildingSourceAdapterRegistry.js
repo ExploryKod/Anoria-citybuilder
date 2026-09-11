@@ -11,10 +11,15 @@ const adapters = new Map();
 
 /**
  * @typedef {object} BuildingSourceAdapter
- * @property {(x: number, y: number, options: { catalogEntry: object, rotationStep: number, assetManager: object }) => (import('three').Object3D | null | Promise<import('three').Object3D | null>)} createMesh
- *   Builds a fully positioned/rotated mesh for one catalog entry at tile (x,y).
- *   May return synchronously or a Promise — callers must handle both, since
- *   sources genuinely differ here (a local mesh clone vs. a GLB/network load).
+ * @property {(x: number, y: number, options: { catalogEntry: object, buildingId: string, rotationStep: number, assetManager: object }) => (import('three').Object3D | null | Promise<import('three').Object3D | null>)} createMesh
+ *   Builds a fully positioned/rotated mesh for one catalog entry at tile
+ *   (x,y) — "fully positioned" includes multi-tile footprint centering; no
+ *   caller ever adjusts the returned mesh's position afterward. `buildingId`
+ *   is the resolved placeable id (for adapters that derive their own
+ *   footprint via shared/asset-footprint/resolveFootprint.js instead of a
+ *   source-specific prefab catalog). May return synchronously or a Promise —
+ *   callers must handle both, since sources genuinely differ here (a local
+ *   mesh clone vs. a GLB/network load).
  * @property {(mesh: import('three').Object3D, x: number, y: number, options: object) => void} repositionGhost
  *   Repositions/rotates an ALREADY-BUILT ghost mesh in place, without calling
  *   createMesh again — perf-sensitive, called every hover frame. Ghost use only.

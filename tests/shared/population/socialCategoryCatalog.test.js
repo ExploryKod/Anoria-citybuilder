@@ -5,25 +5,25 @@ const CUMULATIVE_REQUIREMENTS = (min) => {
   const base = [
     { kind: 'roadAccess' },
     { kind: 'population', min },
-    { kind: 'serviceCoverage', category: 'faith' },
+    { kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 },
   ];
   if (min < 4) return base;
   const withDoctor = [
     ...base,
     { kind: 'demandMet' },
-    { kind: 'serviceCoverage', category: 'doctor' },
+    { kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 },
   ];
   if (min < 8) return withDoctor;
   const withBathAndPub = [
     ...withDoctor,
-    { kind: 'serviceCoverage', category: 'publicBath' },
-    { kind: 'serviceCoverage', category: 'pub' },
+    { kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 },
+    { kind: 'serviceCoverage', category: 'pub', coveragePeriods: 2 },
   ];
   if (min < 12) return withBathAndPub;
   return [
     ...withBathAndPub,
-    { kind: 'serviceCoverage', category: 'school' },
-    { kind: 'serviceCoverage', category: 'cinema' },
+    { kind: 'serviceCoverage', category: 'school', coveragePeriods: 2 },
+    { kind: 'serviceCoverage', category: 'cinema', coveragePeriods: 2 },
     { kind: 'goodsVariety', min: 2 },
   ];
 };

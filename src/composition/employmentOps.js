@@ -32,7 +32,7 @@ export function isEmploymentWorkplaceType(buildingType) {
 export async function redistributeCityEmployment() {
   const employment = getOrCreateEmploymentContext();
   await employment.distributeCityWorkers({
-    sectorPriorities: employment.getAllSectorPriorities(),
+    skillPriorities: employment.getAllSkillPriorities(),
   });
 }
 
@@ -41,25 +41,26 @@ export function getBuildingSector(buildingType) {
   return getBuildingEmploymentSector(buildingType);
 }
 
-export function ensureSectorPrioritiesInitialized() {
-  getOrCreateEmploymentContext().ensureSectorPrioritiesInitialized();
+export function getPriorityTabs() {
+  return getOrCreateEmploymentContext().getPriorityTabs();
 }
 
-/** @param {number} sector */
-export function getSectorPriority(sector) {
-  return getOrCreateEmploymentContext().getSectorPriority(sector);
+/** @param {string} skillId */
+export function getSkillPriority(skillId) {
+  return getOrCreateEmploymentContext().getSkillPriority(skillId);
 }
 
-export function getAllSectorPriorities() {
-  return getOrCreateEmploymentContext().getAllSectorPriorities();
+/** @param {string} tabId */
+export function getMergedTabPriorities(tabId) {
+  return getOrCreateEmploymentContext().getMergedTabPriorities(tabId);
 }
 
-export function getMergedSectorPriorities() {
-  return getOrCreateEmploymentContext().getMergedSectorPriorities();
+export function getAllSkillPriorities() {
+  return getOrCreateEmploymentContext().getAllSkillPriorities();
 }
 
-export function updateSectorPrioritySync(sector, newPriority) {
-  getOrCreateEmploymentContext().updateSectorPrioritySync(sector, newPriority);
+export function updateSkillPrioritySync(skillId, newPriority) {
+  getOrCreateEmploymentContext().updateSkillPrioritySync(skillId, newPriority);
 }
 
 /** @param {number} sector */

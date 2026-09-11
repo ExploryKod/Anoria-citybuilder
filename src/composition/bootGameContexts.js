@@ -39,7 +39,6 @@ export function bootGameContexts() {
     citizenProvidesSkillAtLevel: (house, skillKey, requiredLevel) =>
       housing.citizenProvidesSkillAtLevel(house, skillKey, requiredLevel),
   });
-  employment.ensureSectorPrioritiesInitialized();
   const gameplay = getOrCreateGameplayContext();
   const construction = getOrCreateConstructionContext();
   const cityAssets = getOrCreateCityAssetsContext();
@@ -65,7 +64,7 @@ export function bootGameContexts() {
     getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
     toSupplySeason,
     toSupplyMonth,
-    getSectorPriorities: () => employment.getAllSectorPriorities(),
+    getSkillPriorities: () => employment.getAllSkillPriorities(),
     foodDistributionDistance: DEFAULT_FOOD_DISTRIBUTION_DISTANCE,
   });
 

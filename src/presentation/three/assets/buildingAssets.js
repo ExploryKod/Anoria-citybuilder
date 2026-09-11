@@ -561,13 +561,7 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
       instanceable: true,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'Market Stall Blue',
-      tooltip: 'Market Stall Blue',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>' },
-    },
+    button: null, // not a distinct carousel entry — Market-Stall-Red is the one placeable market, user request 2026-09-08 ("I need only one market in this game")
     tags: ['markets', 'building'],
   },
   // Étal rouge
@@ -736,29 +730,29 @@ export const BUILDING_ASSETS = Object.freeze({
     button: null, // not a distinct carousel entry — crossroad variant of StonePath-001, selected via R-key rotation cycling, never placed directly by clicking a button
     tags: ['infrastructure', 'building', 'road'],
   },
-  // Chapelle
+  // Chapelle — RÉASSIGNÉ au kit Kenney Industrial building-l (geometry
+  // copied from Kenney-Industrial-building-l below; economy/footprint stay
+  // keyed to 'Chapel', untouched). Tower/chimney silhouette chosen as the
+  // least-mismatched available Kenney mesh for a spiritual-center reskin —
+  // no religious-themed Kenney asset exists in this project.
   'Chapel': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Chapel',
+      glb: null,
+      sourceKey: null,
       aliases: [],
-      kit: null,
-      buildingId: null,
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-l',
     },
     transform: {
-      rotationDeg: {
-        x: 0,
-        y: 180,
-        z: 0,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 0.8,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
+      castShadow: true,
+      receiveShadow: true,
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
@@ -768,7 +762,7 @@ export const BUILDING_ASSETS = Object.freeze({
       editorGroup: null,
       label: 'Chapel',
       tooltip: 'Chapel',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 20v-9H2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M18 11V4H6v7"/><path d="M15 22v-4a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3v4"/><path d="M22 11V9"/><path d="M2 11V9"/><path d="M6 4V2"/><path d="M18 4V2"/><path d="M10 4V2"/><path d="M14 4V2"/></svg>' },
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-l.png' },
     },
     tags: ['public', 'building'],
   },
@@ -861,12 +855,13 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: null, // not a distinct carousel entry — Market-Stall (below) is the placeable id for this mesh
+    button: null, // not a distinct carousel entry — no placeable id uses this mesh (Market-Stall-Red is the one placeable market)
     tags: ['commercial', 'building'],
   },
   // Étal — RÉASSIGNÉ au kit Kenney Commercial building-a (geometry copied from
   // Kenney-Commercial-building-a above; economy/footprint stay keyed to
-  // 'Market-Stall', untouched).
+  // 'Market-Stall', untouched). Legacy save-compat id — Market-Stall-Red is
+  // the one placeable market (user request 2026-09-08).
   'Market-Stall': {
     source: 'kenneyCityKit',
     geometry: {
@@ -890,13 +885,7 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
       instanceable: true,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'a',
-      tooltip: 'Kenney commercial — building-a (1×1, 10€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-a.png' },
-    },
+    button: null, // not a distinct carousel entry — Market-Stall-Red is the one placeable market
     tags: ['commercial', 'building'],
   },
   // Commerce — building-b
@@ -922,13 +911,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'b',
-      tooltip: 'Kenney commercial — building-b (1×1, 10€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-b.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
   // Commerce — building-c
@@ -954,16 +937,12 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'c',
-      tooltip: 'Kenney commercial — building-c (1×2, 16€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-c.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
   // Commerce — building-d
+  // Bibliothèque (below) réassigne cette geometry — plus d'entrée carousel
+  // "Commerce" distincte pour building-d, voir Library.
   'Kenney-Commercial-building-d': {
     source: 'kenneyCityKit',
     geometry: {
@@ -986,14 +965,43 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
+    button: null, // not a distinct carousel entry — Library (below) is the placeable id for this mesh
+    tags: ['commercial', 'building'],
+  },
+  // Bibliothèque — RÉASSIGNÉ au kit Kenney Commercial building-d (geometry
+  // copied from Kenney-Commercial-building-d above; economy/footprint stay
+  // keyed to 'Library', untouched). Education-layer service — see
+  // shared/asset-economy/buildingEconomy.js.
+  'Library': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-d',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
     button: {
-      group: 'markets',
+      group: 'public',
       editorGroup: null,
-      label: 'd',
-      tooltip: 'Kenney commercial — building-d (1×1, 10€)',
+      label: 'Bibliothèque',
+      tooltip: 'Bibliothèque',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-d.png' },
     },
-    tags: ['commercial', 'building'],
+    tags: ['public', 'building'],
   },
   // Commerce — building-e
   'Kenney-Commercial-building-e': {
@@ -1018,16 +1026,11 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'e',
-      tooltip: 'Kenney commercial — building-e (2×1, 16€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-e.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
-  // Commerce — building-f
+  // Cabinet médical (below) réassigne cette geometry — plus d'entrée
+  // carousel "Commerce" distincte pour building-f, voir Doctor.
   'Kenney-Commercial-building-f': {
     source: 'kenneyCityKit',
     geometry: {
@@ -1050,14 +1053,42 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
+    button: null, // not a distinct carousel entry — Doctor (below) is the placeable id for this mesh
+    tags: ['commercial', 'building'],
+  },
+  // Cabinet médical — RÉASSIGNÉ au kit Kenney Commercial building-f
+  // (geometry copied from Kenney-Commercial-building-f above; economy/
+  // footprint stay keyed to 'Doctor', untouched). Medical-layer service.
+  'Doctor': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-f',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
     button: {
-      group: 'markets',
+      group: 'public',
       editorGroup: null,
-      label: 'f',
-      tooltip: 'Kenney commercial — building-f (1×1, 10€)',
+      label: 'Cabinet médical',
+      tooltip: 'Cabinet médical',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-f.png' },
     },
-    tags: ['commercial', 'building'],
+    tags: ['public', 'building'],
   },
   // Commerce — building-g
   'Kenney-Commercial-building-g': {
@@ -1082,13 +1113,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'g',
-      tooltip: 'Kenney commercial — building-g (1×1, 10€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-g.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
   // Commerce — building-h
@@ -1114,16 +1139,11 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'h',
-      tooltip: 'Kenney commercial — building-h (1×1, 10€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-h.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
-  // Commerce — building-i
+  // École (below) réassigne cette geometry — plus d'entrée carousel
+  // "Commerce" distincte pour building-i, voir School.
   'Kenney-Commercial-building-i': {
     source: 'kenneyCityKit',
     geometry: {
@@ -1146,16 +1166,45 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'i',
-      tooltip: 'Kenney commercial — building-i (2×2, 28€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-i.png' },
-    },
+    button: null, // not a distinct carousel entry — School (below) is the placeable id for this mesh
     tags: ['commercial', 'building'],
   },
-  // Commerce — building-j
+  // École — RÉASSIGNÉ au kit Kenney Commercial building-i (geometry copied
+  // from Kenney-Commercial-building-i above; economy/footprint stay keyed
+  // to 'School', untouched). Education-layer service.
+  'School': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-i',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      group: 'public',
+      editorGroup: null,
+      label: 'École',
+      tooltip: 'École',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-i.png' },
+    },
+    tags: ['public', 'building'],
+  },
+  // Hôpital (below) réassigne cette geometry — plus d'entrée carousel
+  // "Commerce" distincte pour building-j, voir Hospital.
   'Kenney-Commercial-building-j': {
     source: 'kenneyCityKit',
     geometry: {
@@ -1178,14 +1227,42 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
+    button: null, // not a distinct carousel entry — Hospital (below) is the placeable id for this mesh
+    tags: ['commercial', 'building'],
+  },
+  // Hôpital — RÉASSIGNÉ au kit Kenney Commercial building-j (geometry
+  // copied from Kenney-Commercial-building-j above; economy/footprint stay
+  // keyed to 'Hospital', untouched). Medical-layer service.
+  'Hospital': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-j',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
     button: {
-      group: 'markets',
+      group: 'public',
       editorGroup: null,
-      label: 'j',
-      tooltip: 'Kenney commercial — building-j (3×2, 40€)',
+      label: 'Hôpital',
+      tooltip: 'Hôpital',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-j.png' },
     },
-    tags: ['commercial', 'building'],
+    tags: ['public', 'building'],
   },
   // Commerce — building-k
   'Kenney-Commercial-building-k': {
@@ -1210,13 +1287,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'k',
-      tooltip: 'Kenney commercial — building-k (3×1, 22€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-k.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
   // Commerce — building-l
@@ -1242,16 +1313,11 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'l',
-      tooltip: 'Kenney commercial — building-l (2×2, 28€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-l.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
-  // Commerce — building-m
+  // Cinéma (below) réassigne cette geometry — plus d'entrée carousel
+  // "Commerce" distincte pour building-m, voir Cinema.
   'Kenney-Commercial-building-m': {
     source: 'kenneyCityKit',
     geometry: {
@@ -1274,16 +1340,45 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'm',
-      tooltip: 'Kenney commercial — building-m (2×2, 28€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-m.png' },
-    },
+    button: null, // not a distinct carousel entry — Cinema (below) is the placeable id for this mesh
     tags: ['commercial', 'building'],
   },
-  // Commerce — building-n
+  // Cinéma — RÉASSIGNÉ au kit Kenney Commercial building-m (geometry copied
+  // from Kenney-Commercial-building-m above; economy/footprint stay keyed
+  // to 'Cinema', untouched). Entertainment-layer service.
+  'Cinema': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-m',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      group: 'public',
+      editorGroup: null,
+      label: 'Cinéma',
+      tooltip: 'Cinéma',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-m.png' },
+    },
+    tags: ['public', 'building'],
+  },
+  // Théâtre (below) réassigne cette geometry — plus d'entrée carousel
+  // "Commerce" distincte pour building-n, voir Theatre.
   'Kenney-Commercial-building-n': {
     source: 'kenneyCityKit',
     geometry: {
@@ -1306,14 +1401,42 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
+    button: null, // not a distinct carousel entry — Theatre (below) is the placeable id for this mesh
+    tags: ['commercial', 'building'],
+  },
+  // Théâtre — RÉASSIGNÉ au kit Kenney Commercial building-n (geometry
+  // copied from Kenney-Commercial-building-n above; economy/footprint stay
+  // keyed to 'Theatre', untouched). Entertainment-layer service.
+  'Theatre': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-n',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
     button: {
-      group: 'markets',
+      group: 'public',
       editorGroup: null,
-      label: 'n',
-      tooltip: 'Kenney commercial — building-n (3×2, 40€)',
+      label: 'Théâtre',
+      tooltip: 'Théâtre',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-n.png' },
     },
-    tags: ['commercial', 'building'],
+    tags: ['public', 'building'],
   },
   // Commerce — building-skyscraper-a
   'Kenney-Commercial-building-skyscraper-a': {
@@ -1338,13 +1461,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'skyscraper-a',
-      tooltip: 'Kenney commercial — building-skyscraper-a (2×2, 28€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-a.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
   // Commerce — building-skyscraper-b
@@ -1370,13 +1487,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'skyscraper-b',
-      tooltip: 'Kenney commercial — building-skyscraper-b (2×2, 28€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-b.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
   // Commerce — building-skyscraper-c
@@ -1402,13 +1513,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'skyscraper-c',
-      tooltip: 'Kenney commercial — building-skyscraper-c (2×2, 28€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-c.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
   // Commerce — building-skyscraper-d
@@ -1434,13 +1539,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'skyscraper-d',
-      tooltip: 'Kenney commercial — building-skyscraper-d (2×2, 28€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-d.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
   // Commerce — building-skyscraper-e
@@ -1466,13 +1565,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'markets',
-      editorGroup: null,
-      label: 'skyscraper-e',
-      tooltip: 'Kenney commercial — building-skyscraper-e (2×2, 28€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-e.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
   // Industrie — building-a
@@ -1498,13 +1591,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'a',
-      tooltip: 'Kenney industrial — building-a (3×2, 75€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-a.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Industrie — building-b
@@ -1530,13 +1617,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'b',
-      tooltip: 'Kenney industrial — building-b (3×2, 75€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-b.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Industrie — building-c
@@ -1562,17 +1643,42 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'c',
-      tooltip: 'Kenney industrial — building-c (2×3, 75€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-c.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Industrie — building-d
+  // Atelier de plats (below) réassigne cette geometry — plus d'entrée
+  // carousel "Industrie" distincte pour building-d, voir Factory-Plate.
   'Kenney-Industrial-building-d': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-d',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — Factory-Plate (below) is the placeable id for this mesh
+    tags: ['industrial', 'building'],
+  },
+  // Atelier de plats — RÉASSIGNÉ au kit Kenney Industrial building-d
+  // (geometry copied from Kenney-Industrial-building-d above; economy/
+  // footprint stay keyed to 'Factory-Plate', untouched). Pottery workshop
+  // (see buildingEconomy.js).
+  'Factory-Plate': {
     source: 'kenneyCityKit',
     geometry: {
       glb: null,
@@ -1597,13 +1703,15 @@ export const BUILDING_ASSETS = Object.freeze({
     button: {
       group: 'industry',
       editorGroup: null,
-      label: 'd',
-      tooltip: 'Kenney industrial — building-d (1×2, 35€)',
+      label: 'Atelier de plats',
+      tooltip: 'Atelier de plats',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-d.png' },
     },
-    tags: ['industrial', 'building'],
+    tags: ['industry', 'building'],
   },
   // Industrie — building-e
+  // Bains publics (below) réassigne cette geometry — plus d'entrée
+  // carousel "Industrie" distincte pour building-e, voir PublicBath.
   'Kenney-Industrial-building-e': {
     source: 'kenneyCityKit',
     geometry: {
@@ -1626,14 +1734,43 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
+    button: null, // not a distinct carousel entry — PublicBath (below) is the placeable id for this mesh
+    tags: ['industrial', 'building'],
+  },
+  // Bains publics — RÉASSIGNÉ au kit Kenney Industrial building-e
+  // (geometry copied from Kenney-Industrial-building-e above; economy/
+  // footprint stay keyed to 'PublicBath', untouched). Medical-layer
+  // service (grouped with Doctor/Hospital — see buildingEconomy.js).
+  'PublicBath': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-e',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
     button: {
-      group: 'industry',
+      group: 'public',
       editorGroup: null,
-      label: 'e',
-      tooltip: 'Kenney industrial — building-e (2×2, 55€)',
+      label: 'Bains publics',
+      tooltip: 'Bains publics',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-e.png' },
     },
-    tags: ['industrial', 'building'],
+    tags: ['public', 'building'],
   },
   // Industrie — building-f
   'Kenney-Industrial-building-f': {
@@ -1658,17 +1795,40 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'f',
-      tooltip: 'Kenney industrial — building-f (2×2, 55€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-f.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
-  // Industrie — building-g
+  // Atelier de pots (below) réassigne cette geometry — plus d'entrée
+  // carousel "Industrie" distincte pour building-g, voir Factory-Pot.
   'Kenney-Industrial-building-g': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-g',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — Factory-Pot (below) is the placeable id for this mesh
+    tags: ['industrial', 'building'],
+  },
+  // Atelier de pots — RÉASSIGNÉ au kit Kenney Industrial building-g
+  // (geometry copied from Kenney-Industrial-building-g above; economy/
+  // footprint stay keyed to 'Factory-Pot', untouched). Pottery workshop.
+  'Factory-Pot': {
     source: 'kenneyCityKit',
     geometry: {
       glb: null,
@@ -1693,14 +1853,43 @@ export const BUILDING_ASSETS = Object.freeze({
     button: {
       group: 'industry',
       editorGroup: null,
-      label: 'g',
-      tooltip: 'Kenney industrial — building-g (2×2, 55€)',
+      label: 'Atelier de pots',
+      tooltip: 'Atelier de pots',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-g.png' },
     },
+    tags: ['industry', 'building'],
+  },
+  // Atelier d'amphores (below) réassigne cette geometry — plus d'entrée
+  // carousel "Industrie" distincte pour building-h, voir Factory-Amphora.
+  'Kenney-Industrial-building-h': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-h',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — Factory-Amphora (below) is the placeable id for this mesh
     tags: ['industrial', 'building'],
   },
-  // Industrie — building-h
-  'Kenney-Industrial-building-h': {
+  // Atelier d'amphores — RÉASSIGNÉ au kit Kenney Industrial building-h
+  // (geometry copied from Kenney-Industrial-building-h above; economy/
+  // footprint stay keyed to 'Factory-Amphora', untouched). Pottery workshop.
+  'Factory-Amphora': {
     source: 'kenneyCityKit',
     geometry: {
       glb: null,
@@ -1725,11 +1914,11 @@ export const BUILDING_ASSETS = Object.freeze({
     button: {
       group: 'industry',
       editorGroup: null,
-      label: 'h',
-      tooltip: 'Kenney industrial — building-h (2×2, 55€)',
+      label: 'Atelier d\'amphores',
+      tooltip: 'Atelier d\'amphores',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-h.png' },
     },
-    tags: ['industrial', 'building'],
+    tags: ['industry', 'building'],
   },
   // Industrie — building-i
   'Kenney-Industrial-building-i': {
@@ -1754,13 +1943,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'i',
-      tooltip: 'Kenney industrial — building-i (1×2, 35€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-i.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Industrie — building-j
@@ -1786,16 +1969,12 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'j',
-      tooltip: 'Kenney industrial — building-j (1×2, 35€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-j.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Industrie — building-k
+  // Taverne (below) réassigne cette geometry — plus d'entrée carousel
+  // "Industrie" distincte pour building-k, voir Pub.
   'Kenney-Industrial-building-k': {
     source: 'kenneyCityKit',
     geometry: {
@@ -1818,16 +1997,45 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'k',
-      tooltip: 'Kenney industrial — building-k (2×1, 35€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-k.png' },
-    },
+    button: null, // not a distinct carousel entry — Pub (below) is the placeable id for this mesh
     tags: ['industrial', 'building'],
   },
+  // Taverne — RÉASSIGNÉ au kit Kenney Industrial building-k (geometry
+  // copied from Kenney-Industrial-building-k above; economy/footprint stay
+  // keyed to 'Pub', untouched). Entertainment-layer service.
+  'Pub': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-k',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      group: 'public',
+      editorGroup: null,
+      label: 'Taverne',
+      tooltip: 'Taverne',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-k.png' },
+    },
+    tags: ['public', 'building'],
+  },
   // Industrie — building-l
+  // not a distinct carousel entry — Chapel (above) is the placeable id for this mesh
   'Kenney-Industrial-building-l': {
     source: 'kenneyCityKit',
     geometry: {
@@ -1850,13 +2058,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'l',
-      tooltip: 'Kenney industrial — building-l (3×2, 75€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-l.png' },
-    },
+    button: null, // not a distinct carousel entry — Chapel (above) is the placeable id for this mesh
     tags: ['industrial', 'building'],
   },
   // Industrie — building-m
@@ -1882,13 +2084,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'm',
-      tooltip: 'Kenney industrial — building-m (2×2, 55€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-m.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Industrie — building-n
@@ -1914,13 +2110,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'n',
-      tooltip: 'Kenney industrial — building-n (1×2, 35€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-n.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Industrie — building-o
@@ -1946,13 +2136,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'o',
-      tooltip: 'Kenney industrial — building-o (1×2, 35€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-o.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Industrie — building-p
@@ -1978,13 +2162,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'p',
-      tooltip: 'Kenney industrial — building-p (2×1, 35€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-p.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Industrie — building-q
@@ -2010,13 +2188,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'q',
-      tooltip: 'Kenney industrial — building-q (3×2, 75€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-q.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Industrie — building-r
@@ -2042,13 +2214,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'r',
-      tooltip: 'Kenney industrial — building-r (3×2, 75€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-r.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Industrie — building-s
@@ -2074,13 +2240,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 's',
-      tooltip: 'Kenney industrial — building-s (3×1, 45€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-s.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Industrie — building-t
@@ -2106,13 +2266,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 't',
-      tooltip: 'Kenney industrial — building-t (2×2, 55€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-t.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
   // Maison — building-type-a — kept as its own entry (button: null) so its own
@@ -2178,6 +2332,19 @@ export const BUILDING_ASSETS = Object.freeze({
       icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-a.png' },
     },
     tags: ['suburban', 'building'],
+    // Visible tier evolution for artisans — see HouseLevelPolicy.js/
+    // socialCategoryCatalog.js for the gameplay tiers this mirrors. Each
+    // entry reuses an existing, otherwise-unused Kenney suburban geometry —
+    // see resolveBuildingMesh.js's resolveVisualBuildingId.
+    // All 3 variants are 2×1 like the base (type-a) — a mismatched footprint
+    // (e.g. type-f is 2×2) shifts the mesh's centering at evolution time,
+    // since footprint size drives the placement offset. Keep any future
+    // level variant assignment footprint-matched to its base house.
+    levelVariants: {
+      2: 'Kenney-Suburban-building-type-d',
+      3: 'Kenney-Suburban-building-type-e',
+      4: 'Kenney-Suburban-building-type-o',
+    },
   },
   // Maison — building-type-b — kept as its own entry (button: null), same reason as type-a above.
   'Kenney-Suburban-building-type-b': {
@@ -2239,6 +2406,13 @@ export const BUILDING_ASSETS = Object.freeze({
       icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-b.png' },
     },
     tags: ['suburban', 'building'],
+    // Visible tier evolution for merchants — all 3 variants are 2×2 like the
+    // base (type-b); see the footprint-matching note on House-Red above.
+    levelVariants: {
+      2: 'Kenney-Suburban-building-type-f',
+      3: 'Kenney-Suburban-building-type-g',
+      4: 'Kenney-Suburban-building-type-m',
+    },
   },
   // Maison — building-type-c — kept as its own entry (button: null), same reason as type-a above.
   'Kenney-Suburban-building-type-c': {
@@ -2300,6 +2474,13 @@ export const BUILDING_ASSETS = Object.freeze({
       icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-c.png' },
     },
     tags: ['suburban', 'building'],
+    // Visible tier evolution for scholars — all 3 variants are 2×1 like the
+    // base (type-c); see the footprint-matching note on House-Red above.
+    levelVariants: {
+      2: 'Kenney-Suburban-building-type-h',
+      3: 'Kenney-Suburban-building-type-i',
+      4: 'Kenney-Suburban-building-type-j',
+    },
   },
   // Maison — building-type-d
   'Kenney-Suburban-building-type-d': {
@@ -2324,13 +2505,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-d',
-      tooltip: 'Kenney suburban — building-type-d (2×1, 18€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-d.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-e
@@ -2356,13 +2531,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-e',
-      tooltip: 'Kenney suburban — building-type-e (2×1, 18€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-e.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-f
@@ -2388,13 +2557,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-f',
-      tooltip: 'Kenney suburban — building-type-f (2×2, 34€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-f.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-g
@@ -2420,13 +2583,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-g',
-      tooltip: 'Kenney suburban — building-type-g (2×2, 34€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-g.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-h
@@ -2452,13 +2609,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-h',
-      tooltip: 'Kenney suburban — building-type-h (2×1, 18€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-h.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-i
@@ -2484,13 +2635,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-i',
-      tooltip: 'Kenney suburban — building-type-i (2×1, 18€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-i.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-j
@@ -2516,13 +2661,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-j',
-      tooltip: 'Kenney suburban — building-type-j (2×1, 18€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-j.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-k
@@ -2548,13 +2687,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-k',
-      tooltip: 'Kenney suburban — building-type-k (1×1, 10€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-k.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-l
@@ -2580,13 +2713,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-l',
-      tooltip: 'Kenney suburban — building-type-l (1×1, 10€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-l.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-m
@@ -2612,13 +2739,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-m',
-      tooltip: 'Kenney suburban — building-type-m (2×2, 34€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-m.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-n
@@ -2644,13 +2765,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-n',
-      tooltip: 'Kenney suburban — building-type-n (2×2, 34€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-n.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-o
@@ -2676,13 +2791,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-o',
-      tooltip: 'Kenney suburban — building-type-o (2×1, 18€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-o.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-p
@@ -2708,13 +2817,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-p',
-      tooltip: 'Kenney suburban — building-type-p (2×1, 18€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-p.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-q
@@ -2740,13 +2843,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-q',
-      tooltip: 'Kenney suburban — building-type-q (2×1, 18€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-q.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-r
@@ -2772,13 +2869,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-r',
-      tooltip: 'Kenney suburban — building-type-r (1×1, 10€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-r.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-s
@@ -2804,13 +2895,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-s',
-      tooltip: 'Kenney suburban — building-type-s (2×2, 34€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-s.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-t
@@ -2836,13 +2921,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-t',
-      tooltip: 'Kenney suburban — building-type-t (2×2, 34€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-t.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
   // Maison — building-type-u
@@ -2868,13 +2947,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'type-u',
-      tooltip: 'Kenney suburban — building-type-u (2×2, 34€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-u.png' },
-    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
   },
 });

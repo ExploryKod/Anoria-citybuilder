@@ -297,7 +297,13 @@ export const BUILDING_ECONOMY = {
     resourceRoles: [{
       role: 'distributor',
       categories: ['faith'],
-      range: 5,
+      // Unlimited — faith reaches every road-connected house on the map,
+      // not just ones within a fixed tile radius (2026-09-11: was `range: 5`).
+      // `Infinity` is honest about "every tile present in the game" without
+      // hardcoding any particular map's dimensions — ResourceRangePolicy's
+      // `isWithinRange` is a plain `<=` comparison, so this flows through
+      // with no special-casing anywhere it's read.
+      range: Infinity,
       schedule: { unit: 'always' },
       consumption: 'flag',
     }],

@@ -17,6 +17,10 @@ import { footprintFromRecord, footprintOccupiesTile } from '../../../../shared/b
 export class DexieHousingBuildingRepository {
   #toSnapshot(house) {
     return createHousingBuildingSnapshot({
+      // Passed first so any field this BC doesn't explicitly name (e.g.
+      // Supply's `servedFlags`) rides along — the explicit keys below then
+      // override with their proper row->snapshot remapping/coercion.
+      ...house,
       id: instanceIdFromHouseRow(house),
       type: house.type || '',
       x: house.x ?? null,

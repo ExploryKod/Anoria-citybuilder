@@ -6,6 +6,7 @@ import {
 import { workerPopFromHouse } from '../../domain/policies/LaborPoolPolicy.js';
 import {
   allocateWorkers,
+  orderSkillsByPriority,
   orderWorkplacesByPriority,
 } from '../../domain/policies/WorkerAllocationPolicy.js';
 import {
@@ -23,9 +24,11 @@ import {
  * one social group, since the housing skill catalog can grant the same
  * skill to more than one group.
  *
- * Two kinds of overlap a house's population needs to be shared across
- * (2026-09-10, once a tier could grant more than one workplace-relevant
- * skill at once — see socialCategoryCatalog.js):
+ * `skillPriorities` (per-skill, not per-sector — see SkillPriorityPolicy.js)
+ * decides the ORDER skills are visited in, which is what makes priority do
+ * real work: two kinds of overlap a house's population needs to be shared
+ * across (2026-09-10, once a tier could grant more than one
+ * workplace-relevant skill at once — see socialCategoryCatalog.js):
  *
  * 1. LEVELS within one skill — e.g. Doctor needs `medical` 1, Hospital
  *    needs `medical` 2. A citizen with a higher level can also do a
@@ -33,6 +36,8 @@ import {
  * 2. DIFFERENT skills held by the same house — e.g. an artisans tier-2
  *    house holds both `fermier` and `artisanat` at once; its population
  *    can staff a farm OR a pottery workshop, never both at the same time.
+ *    Which one gets first claim is exactly what the player's per-skill
+ *    priority ranking (within that house's own social-group tab) decides.
  *
  * Both reduce to the same rule: a citizen takes at most one job a month.
  * `remainingPopById` is a single shared ledger, one entry per labor
@@ -40,11 +45,11 @@ import {
  * from it — so by the time a later (skill, level) pass reads "how many
  * are still available", houses already tapped by an earlier pass
  * correctly show less, regardless of whether that earlier pass was a
- * higher level of the SAME skill or a wholly different skill. Levels
- * within one skill are still processed highest → lowest so a citizen who
- * qualifies for both gets reserved for the higher-level job first (the
- * ledger alone doesn't know to prefer that — nothing stops a level-1 pass
- * from spending a dual-qualified citizen first if it ran first).
+ * higher level of the SAME skill or a wholly different (possibly
+ * lower-priority) skill. Levels within one skill are still always
+ * processed highest → lowest (independent of player priority — see point 1)
+ * so a citizen who qualifies for both gets reserved for the higher-level
+ * job first; player priority only orders BETWEEN different skills.
  */
 export class DistributeCityWorkers {
   /**
@@ -59,13 +64,13 @@ export class DistributeCityWorkers {
 
   /**
    * @param {object} [params]
-   * @param {Record<number|string, number>} [params.sectorPriorities]
+   * @param {Record<string, number>} [params.skillPriorities]
    * @returns {Promise<{
    *   availableWorkers: number,
    *   assignments: Array<{ buildingId: string, workers: number }>,
    * }>}
    */
-  async execute({ sectorPriorities = {} } = {}) {
+  async execute({ skillPriorities = {} } = {}) {
     await this.employmentBuildingRepository.resetWorkplaceWorkers();
 
     const laborSources = (await this.employmentBuildingRepository.listLaborSources()).filter(
@@ -115,7 +120,8 @@ export class DistributeCityWorkers {
     const workerCountById = new Map(workplaces.map((w) => [w.id, 0]));
     const allAssignments = [];
 
-    for (const skillKey of allWorkplaceEmploymentSkills()) {
+    const orderedSkillKeys = orderSkillsByPriority(allWorkplaceEmploymentSkills(), skillPriorities);
+    for (const skillKey of orderedSkillKeys) {
       const skillWorkplaces = workplaces.filter(
         (workplace) => getRequiredSkillForBuilding(workplace.type) === skillKey,
       );
@@ -133,7 +139,7 @@ export class DistributeCityWorkers {
           .filter((w) => getRequiredSkillLevelForBuilding(w.type) === level)
           .map((w) => ({ ...w, worker: workerCountById.get(w.id) ?? 0 }));
 
-        const ordered = orderWorkplacesByPriority(levelWorkplaces, sectorPriorities);
+        const ordered = orderWorkplacesByPriority(levelWorkplaces);
         const { assignments } = allocateWorkers(availableForLevel, ordered);
 
         for (const { buildingId, workers } of assignments) {

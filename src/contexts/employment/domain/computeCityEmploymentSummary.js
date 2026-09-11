@@ -13,6 +13,7 @@ import {
   eligibleSectorsForGroup,
   residentialGroupForType,
 } from './catalogs/HouseGroupSectorEligibilityPolicy.js';
+import { getRequiredSkillForBuilding } from './policies/WorkplaceSkillRequirementPolicy.js';
 
 /**
  * Pure read model: city-wide employment summary from building snapshots.
@@ -33,6 +34,7 @@ import {
  *   lack: number,
  *   understaffedBuildingIds: ReadonlyArray<string>,
  *   bySector: Readonly<Record<number, { workerNeed: number, workers: number, need: number }>>,
+ *   bySkill: Readonly<Record<string, { workerNeed: number, workers: number, need: number }>>,
  *   byGroup: Readonly<Record<string, { workerPool: number, assigned: number, unemployed: number }>>,
  * }}
  */
@@ -46,6 +48,8 @@ export function computeCityEmploymentSummary(buildings) {
   const understaffedBuildingIds = [];
   /** @type {Record<number, { workerNeed: number, workers: number, need: number }>} */
   const bySector = {};
+  /** @type {Record<string, { workerNeed: number, workers: number, need: number }>} */
+  const bySkill = {};
 
   for (const building of buildings) {
     if (isLaborSource(building) && hasRoadAccess(building)) {
@@ -75,6 +79,16 @@ export function computeCityEmploymentSummary(buildings) {
     bySector[sector].workerNeed += need;
     bySector[sector].workers += worker;
     bySector[sector].need = Math.max(0, bySector[sector].workerNeed - bySector[sector].workers);
+
+    const skillId = getRequiredSkillForBuilding(building.type);
+    if (skillId) {
+      if (!bySkill[skillId]) {
+        bySkill[skillId] = { workerNeed: 0, workers: 0, need: 0 };
+      }
+      bySkill[skillId].workerNeed += need;
+      bySkill[skillId].workers += worker;
+      bySkill[skillId].need = Math.max(0, bySkill[skillId].workerNeed - bySkill[skillId].workers);
+    }
   }
 
   const population = computePopulationBreakdown({
@@ -100,6 +114,7 @@ export function computeCityEmploymentSummary(buildings) {
     lack,
     understaffedBuildingIds: Object.freeze([...understaffedBuildingIds]),
     bySector: Object.freeze(bySector),
+    bySkill: Object.freeze(bySkill),
     byGroup,
   });
 }

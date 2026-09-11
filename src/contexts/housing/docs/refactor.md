@@ -11,6 +11,7 @@
 - **City population summary (H6):** `GetCityPopulationSummary`, UI peel via `getCityTotalPopulation` — see [`docs/city-population-summary.md`](city-population-summary.md)
 - **ECS:** `housing.populationGrowth`, `housing.evolution` (after food consumption + growth)
 - **Legacy peel:** evolution persistence removed from `scene.js`; famished + food icons via Housing context queries
+- **Service coverage tier requirement (H7):** generic `serviceCoverage` requirement `kind` (category-parameterized, no service name in code) reading Supply's `servedFlags`, plus goods-generic `demandMet`/`goodsVariety` reading Supply's `lastConsumption` — see [`docs/service-coverage.md`](service-coverage.md). Wired into a 5-tier cumulative ladder (cabane→manoir), identical across all 3 social categories: tier2 faith, tier3 +demandMet+doctor, tier4 +publicBath+pub, tier5 +school+cinema+2-category goods variety. `Library`/`Hospital`/`Theatre` built but not yet wired to any tier.
 
 ## ECS simulation order
 
@@ -39,9 +40,11 @@ Housing **owns what it mutates** and publishes **facts**. It does **not** own Em
 
 ## DDD — boundaries with Supply (H4)
 
-| Field | Writer | Housing H4 |
+| Field | Writer | Housing H4/H7 |
 |---|---|---|
 | `stocks.food` | Supply | read-only via Dexie port |
+| `servedFlags` | Supply | read-only via Dexie port (H7 — `serviceCoverage` requirement) |
+| `lastConsumption` (incl. `categoriesTaken`) | Supply | read-only via Dexie port (H7 — `demandMet`/`goodsVariety` requirements) |
 | famished formula | Housing | `FamishedPopulationPolicy` |
 
 No `import` from `contexts/supply/domain/**`.

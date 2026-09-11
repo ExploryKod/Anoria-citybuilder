@@ -55,6 +55,18 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
     }
   }
 
+  if (groupId === BUILDING_INFO_GROUPS.house) {
+    // Needed to tell "served THIS period" from a stale flag — see
+    // HouseTierRequirementPolicy.js's serviceCoverage descriptor and
+    // HouseLevelPolicy.describeRelevantServiceCoverage, the Services tab's
+    // Chapel/Doctor/... chips.
+    extra.servedFlags = vm.buildingRow?.servedFlags ?? null;
+    const budget = await vm.accounting.getTreasurySnapshot();
+    extra.periodKey = budget?.turn !== undefined
+      ? (TimeManager.getTimeInfo(budget.turn)?.monthIndex ?? null)
+      : null;
+  }
+
   if (groupId === BUILDING_INFO_GROUPS.hubStorage) {
     const hubKind = vm.supplyView?.kind === 'windmill' ? 'windmill' : null;
     if (hubKind) {

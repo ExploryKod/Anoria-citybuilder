@@ -2,6 +2,12 @@ import { createSupplyStock } from './value-objects/SupplyStock.js';
 
 /**
  * Read model for Supply use cases.
+ *
+ * Any field beyond the named ones below (`...rest`) passes through as-is —
+ * this is what lets a catalog-declared `periodLock`/`hubLink` field name
+ * (see PeriodLockPolicy.js / ResourceRolePolicy.getHubLinkForRole) survive a
+ * read without this file needing to know that field name exists. Only
+ * fields this read model actually validates/coerces are named explicitly.
  */
 export function createSupplyBuildingSnapshot({
   id,
@@ -22,12 +28,14 @@ export function createSupplyBuildingSnapshot({
   level = 1,
   supplyHubId = null,
   linkedDistributors = [],
+  ...rest
 } = {}) {
   if (!id || typeof id !== 'string') {
     throw new Error('SupplyBuildingSnapshot: id is required');
   }
 
   return Object.freeze({
+    ...rest,
     id,
     type: typeof type === 'string' ? type : '',
     x: typeof x === 'number' ? x : null,
@@ -56,8 +64,13 @@ export function createSupplyBuildingSnapshot({
         : Number.isFinite(lastSubsistenceMonth)
           ? Math.floor(lastSubsistenceMonth)
           : null,
+    // `...lastConsumption` passthrough first — same fix as `servedFlags`
+    // (see PeriodLockPolicy.js docs): a field this constructor doesn't name
+    // explicitly (e.g. `categoriesTaken`, added for diet-variety tracking)
+    // must still round-trip, not silently vanish on next read.
     lastConsumption: lastConsumption
       ? Object.freeze({
+          ...lastConsumption,
           month: Number.isFinite(lastConsumption.month) ? Math.floor(lastConsumption.month) : 0,
           demand: Number.isFinite(lastConsumption.demand) ? lastConsumption.demand : 0,
           taken: Number.isFinite(lastConsumption.taken) ? lastConsumption.taken : 0,
@@ -66,7 +79,7 @@ export function createSupplyBuildingSnapshot({
       : null,
     pop: Number.isFinite(pop) ? Math.max(0, Math.floor(pop)) : 0,
     // Houses only (1 = autarky). Unused by non-residential buildings.
-    level: level === 2 ? 2 : 1,
+    level: Number.isFinite(level) && level >= 1 ? Math.floor(level) : 1,
     supplyHubId:
       typeof supplyHubId === 'string' && supplyHubId.length > 0
         ? supplyHubId

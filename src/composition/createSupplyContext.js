@@ -62,6 +62,12 @@ export function createSupplyContext({
 } = {}) {
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
   const producerCategories = getAllCategoriesForRole('producer');
+  // Every category any distributor covers — food (has a producer/hub leg)
+  // and any hub-less service like Chapel's 'faith' (none) alike. Kept
+  // separate from producerCategories: the hub-link plumbing below
+  // (assign/detach/rebalance) is specifically about the production→hub
+  // chain, which a hub-less service never enters.
+  const distributionCategories = getAllCategoriesForRole('distributor');
   const supplyBuildingRepositoryImpl =
     supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
   const foodTraceabilityRepositoryImpl =
@@ -169,7 +175,7 @@ export function createSupplyContext({
     runConsumerCommand,
     traceability,
     runSubsistenceCommand,
-    { categories: producerCategories }
+    { categories: distributionCategories, reachCategories: producerCategories }
   );
   const getBuildingSupplyViewQuery = new GetBuildingSupplyView(
     supplyBuildingRepositoryImpl

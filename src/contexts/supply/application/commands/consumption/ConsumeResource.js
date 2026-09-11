@@ -16,8 +16,17 @@ import {
  * per-capita rate (demand = pop × amount) — the only way 'consumer'
  * interprets `amount` differently from producer/collector/distributor, which
  * treat it as a flat quantity. Drains the total (whichever categories have
- * stock), not a specific one — this only answers "was demand met," not
- * "which food."
+ * stock), not a specific one — "was demand met" (`totalUnfed`) is the
+ * primary answer, but `categoriesTaken` also records which distinct
+ * categories contributed this period, for a diet-variety-style need (see
+ * HouseTierRequirementPolicy.js's `goodsVariety` kind) without this command
+ * needing to know that concept exists.
+ *
+ * Only ever targets the 'quantity'-consumption consumer entry — a building
+ * can also hold a 'flag'-consumption consumer entry (a service coverage
+ * need, e.g. Chapel's faith service) with no stock to drain at all; that
+ * entry is handled entirely inside DistributeResourceToConsumers.js and
+ * never reaches this command.
  */
 export class ConsumeResource {
   /**
@@ -39,6 +48,7 @@ export class ConsumeResource {
    *   demand?: number,
    *   taken?: number,
    *   totalUnfed?: number,
+   *   categoriesTaken?: string[],
    * }>}
    */
   async execute({ buildingId, period }) {
@@ -47,12 +57,12 @@ export class ConsumeResource {
       return { consumed: false, reason: 'building_not_found' };
     }
 
-    const schedule = getScheduleForRole(building.type, 'consumer');
+    const schedule = getScheduleForRole(building.type, 'consumer', undefined, 'quantity');
     if (!matchesSchedule(schedule, period)) {
       return { consumed: false, reason: 'not_consumption_period' };
     }
 
-    const periodLock = getPeriodLockForRole(building.type, 'consumer');
+    const periodLock = getPeriodLockForRole(building.type, 'consumer', undefined, 'quantity');
     if (isLockedForPeriod(building, periodLock, period)) {
       return { consumed: false, reason: 'already_consumed_this_period' };
     }
@@ -62,22 +72,24 @@ export class ConsumeResource {
       return { consumed: false, reason: 'no_population' };
     }
 
-    const perCapita = getAmountForRole(building.type, 'consumer') ?? 0;
-    const categories = getCategoriesForRole(building.type, 'consumer');
-    const totalKey = getTotalKeyForRole(building.type, 'consumer');
+    const perCapita = getAmountForRole(building.type, 'consumer', undefined, 'quantity') ?? 0;
+    const categories = getCategoriesForRole(building.type, 'consumer', undefined, 'quantity');
+    const totalKey = getTotalKeyForRole(building.type, 'consumer', undefined, 'quantity');
     const demand = pop * perCapita;
 
-    const { nextStock, taken } = takeAcrossCategories(building.stocks, categories, totalKey, demand);
+    const { nextStock, taken, categoriesTaken } = takeAcrossCategories(building.stocks, categories, totalKey, demand);
     const totalUnfed = Math.max(0, Math.ceil(demand - taken));
 
     await this.supplyBuildingRepository.saveStocks(buildingId, nextStock);
     if (periodLock) {
       await this.supplyBuildingRepository.updateBuildingFields(
         buildingId,
-        buildLockUpdate(periodLock, period, { lastConsumption: { month: period.monthIndex, demand, taken, totalUnfed } })
+        buildLockUpdate(building, periodLock, period, categories[0], {
+          lastConsumption: { month: period.monthIndex, demand, taken, totalUnfed, categoriesTaken },
+        })
       );
     }
 
-    return { consumed: true, buildingId, pop, demand, taken, totalUnfed };
+    return { consumed: true, buildingId, pop, demand, taken, totalUnfed, categoriesTaken };
   }
 }

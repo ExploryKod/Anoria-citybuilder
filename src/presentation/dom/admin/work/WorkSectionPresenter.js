@@ -1,3 +1,24 @@
+import { getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
+import { GROUP_CITIZEN_PRESENTATION } from '../../info/population/CitizenStatusPresentation.js';
+
+/**
+ * Tab-chrome labels — reuses the exact same French group labels the
+ * population panel already shows (CitizenStatusPresentation.js), so this
+ * isn't a second, independently-maintained copy of "what an artisan is
+ * called". 'Commun' has no equivalent there since it isn't a real social
+ * category (see createEmploymentContext.js's `kind: 'shared'`), so it's the
+ * one label owned here.
+ */
+const SHARED_TAB_LABEL = 'Commun';
+
+/**
+ * @param {string} groupId
+ * @returns {string}
+ */
+function groupTabLabel(groupId) {
+    return GROUP_CITIZEN_PRESENTATION[groupId]?.label ?? groupId;
+}
+
 export class WorkSectionPresenter {
     /**
      * @param {{ accounting: object, employment: object, housing: object }} deps
@@ -91,32 +112,23 @@ export class WorkSectionPresenter {
             unemploymentIncreaseBtn.addEventListener('click', () => this.adjustUnemploymentRate(5));
         }
 
-        // Priority inputs are now handled in renderWorkTable() with event listeners attached during creation
-        // This avoids issues with dynamically generated elements
+        // Priority inputs are handled in renderWorkTable(), tab clicks in
+        // renderGroupTabs() — both attach listeners during element creation
+        // (rows/tabs are rebuilt from scratch on every render).
     }
 
     async loadWorkData() {
-        const allPriorities = this.employment.getMergedSectorPriorities();
-        if (this.workData) {
-            this.workData.sectors.forEach(sector => {
-                if (sector.sectorNumber !== undefined) {
-                    sector.priority = allPriorities[sector.sectorNumber] || sector.priority;
-                }
-            });
-        }
-        
-        // Generate or regenerate work data
         this.workData = this.generatePlaceholderWorkData();
-        
+
         // Load employee statistics from IndexedDB (independent of service)
         await this.updateEmployeeStatistics();
-        
+
         // Réattacher les event listeners au cas où le panneau vient d'être rendu
         this.setupEventListeners();
-        
+
         this.render();
     }
-    
+
     /**
      * Update employee statistics from Employment BC read model.
      */
@@ -124,26 +136,25 @@ export class WorkSectionPresenter {
         try {
             const summary = await this.employment.getCityEmploymentSummary();
 
-            if (this.workData && this.workData.sectors) {
-                this.workData.sectors.forEach(sector => {
-                    if (sector.sectorNumber === undefined) return;
-
-                    const sectorStats = summary.bySector[sector.sectorNumber] || {
-                        workerNeed: 0,
-                        workers: 0,
-                        need: 0,
-                    };
-
-                    sector.workerNeed = sectorStats.workerNeed || 0;
-                    sector.eliteNeed = 0;
-                    sector.workers = sectorStats.workers || 0;
-                    sector.elites = 0;
-                    sector.availableWorkers = summary.workerPool;
-                    sector.availableElites = summary.elitePool;
-                    sector.initialNeed = sector.workerNeed;
-                    sector.have = sector.workers;
-                    sector.need = sectorStats.need || 0;
-                });
+            if (this.workData?.tabs) {
+                for (const tab of this.workData.tabs) {
+                    for (const skill of tab.skills) {
+                        const stats = summary.bySkill[skill.skillId] || {
+                            workerNeed: 0,
+                            workers: 0,
+                            need: 0,
+                        };
+                        skill.workerNeed = stats.workerNeed || 0;
+                        skill.eliteNeed = 0;
+                        skill.workers = stats.workers || 0;
+                        skill.elites = 0;
+                        skill.availableWorkers = summary.workerPool;
+                        skill.availableElites = summary.elitePool;
+                        skill.initialNeed = skill.workerNeed;
+                        skill.have = skill.workers;
+                        skill.need = stats.need || 0;
+                    }
+                }
             }
 
             this.workData.totalEmployed = summary.totalAssigned;
@@ -161,45 +172,54 @@ export class WorkSectionPresenter {
         }
     }
 
+    /**
+     * Builds one tab per social group + the shared-skill tab (see
+     * createEmploymentContext.getPriorityTabs — catalog-driven, so a future
+     * 4th social category shows up here with zero code change), one row per
+     * skill that tab actually covers (see SkillPriorityPolicy.js).
+     */
     generatePlaceholderWorkData() {
-        // Get sectors from config
-        const sectors = this.employment.EMPLOYMENT_SECTOR_NAMES;
-        const defaultPriorities = this.employment.DEFAULT_SECTOR_PRIORITIES;
-        
-        // Generate sectors from config
-        const sectorList = Object.entries(sectors).map(([sectorNum, sectorName]) => {
-            const secNum = parseInt(sectorNum, 10);
-            // Get priority from service if available, otherwise use default
-            let priority = defaultPriorities[secNum] || 1;
-            priority = this.employment.getSectorPriority(secNum);
-            
-            return {
-                id: `sector-${secNum}`, // Use sector number as ID
-                sectorNumber: secNum, // Store sector number for priority updates
-                name: sectorName,
-                priority: priority,
-                need: 0, // Combined worker + elite need
-                have: 0, // Combined worker + elite assigned
+        const previousActiveTabId = this.workData?.activeTabId ?? null;
+
+        const tabs = this.employment.getPriorityTabs().map(({ id, kind, skillIds }) => ({
+            id,
+            label: kind === 'shared' ? SHARED_TAB_LABEL : groupTabLabel(id),
+            skills: skillIds.map((skillId) => ({
+                skillId,
+                label: getSkillDisplay(skillId).label,
+                priority: this.employment.getSkillPriority(skillId),
+                need: 0,
+                initialNeed: 0,
+                have: 0,
                 workerNeed: 0,
                 eliteNeed: 0,
                 workers: 0,
                 elites: 0,
                 availableWorkers: 0,
-                availableElites: 0
-            };
-        });
-        
+                availableElites: 0,
+            })),
+        }));
+
+        const activeTabId = tabs.some((tab) => tab.id === previousActiveTabId)
+            ? previousActiveTabId
+            : (tabs[0]?.id ?? null);
+
         return {
-            sectors: sectorList,
+            tabs,
+            activeTabId,
             totalEmployed: 0,
             totalUnemployed: 0,
             unemploymentPercentage: 0
         };
     }
 
+    #activeTab() {
+        return this.workData?.tabs?.find((tab) => tab.id === this.workData.activeTabId) ?? null;
+    }
+
     adjustSalary(delta) {
         const newSalary = Math.max(10, Math.min(500, this.salary + delta));
-        
+
         if (newSalary !== this.salary) {
             const settings = this.accounting.setSalarySettings({ salaryPerMonth: newSalary });
             this.salary = settings.salaryPerMonth;
@@ -209,7 +229,7 @@ export class WorkSectionPresenter {
 
     adjustSalaryTaxRate(delta) {
         const newRate = Math.max(0, Math.min(1, this.salaryTaxRate + delta));
-        
+
         if (newRate !== this.salaryTaxRate) {
             const settings = this.accounting.setSalarySettings({ salaryTaxRate: newRate });
             this.salaryTaxRate = settings.salaryTaxRate;
@@ -231,30 +251,27 @@ export class WorkSectionPresenter {
         }
     }
 
-    updatePriority(sector, priority) {
+    /**
+     * @param {string} skillId
+     * @param {number} priority
+     */
+    updatePriority(skillId, priority) {
         if (!this.workData) return;
 
-        const sectorData = this.workData.sectors.find(s => s.id === sector);
-        if (sectorData && sectorData.sectorNumber !== undefined) {
-            // Get max sectors directly from config (source of truth)
-            const maxSectors = this.employment.EMPLOYMENT_MAX_SECTORS;
-            
-            // Clamp priority to valid range (1 to max sectors)
-            const clampedPriority = Math.max(1, Math.min(maxSectors, priority));
-            
-            this.employment.updateSectorPrioritySync(
-                sectorData.sectorNumber,
-                clampedPriority
-            );
+        const activeTab = this.#activeTab();
+        const skillData = activeTab?.skills.find((s) => s.skillId === skillId);
+        if (skillData) {
+            const maxPriority = Math.max(1, activeTab.skills.length);
+            const clampedPriority = Math.max(1, Math.min(maxPriority, priority));
 
-            const allPriorities = this.employment.getMergedSectorPriorities();
+            this.employment.updateSkillPrioritySync(skillId, clampedPriority);
 
-            this.workData.sectors.forEach(sec => {
-                if (sec.sectorNumber !== undefined) {
-                    const newPriority = allPriorities[sec.sectorNumber];
-                    if (newPriority !== undefined) {
-                        sec.priority = newPriority;
-                    }
+            const tabPriorities = this.employment.getMergedTabPriorities(activeTab.id);
+
+            activeTab.skills.forEach((skill) => {
+                const newPriority = tabPriorities[skill.skillId];
+                if (newPriority !== undefined) {
+                    skill.priority = newPriority;
                 }
             });
 
@@ -317,7 +334,7 @@ export class WorkSectionPresenter {
             );
             annualBillDisplay.textContent = Math.round(payroll.cityExpenseTotal * 12);
         }
-        
+
         this.updateSalaryTaxDisplay();
     }
 
@@ -386,11 +403,43 @@ export class WorkSectionPresenter {
     render() {
         if (!this.workData) return;
 
+        this.renderGroupTabs();
         this.renderWorkTable();
         this.renderSummary();
         this.updateSalaryDisplay();
         this.updateSalaryTaxDisplay();
         this.updateUnemploymentDisplay();
+    }
+
+    /**
+     * Tab strip — one button per social group + "Commun", switching
+     * `activeTabId` and re-rendering the table on click. Rebuilt from
+     * scratch every render, same pattern as renderWorkTable() below.
+     */
+    renderGroupTabs() {
+        const tabsContainer = document.getElementById('work-group-tabs');
+        if (!tabsContainer || !this.workData) return;
+
+        tabsContainer.innerHTML = '';
+
+        this.workData.tabs.forEach((tab) => {
+            const isActive = tab.id === this.workData.activeTabId;
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'work-tab-btn' + (isActive ? ' active' : '');
+            btn.id = `work-tab-${tab.id}`;
+            btn.textContent = tab.label;
+            btn.setAttribute('role', 'tab');
+            btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            btn.addEventListener('click', () => {
+                if (this.workData.activeTabId === tab.id) return;
+                this.workData.activeTabId = tab.id;
+                this.render();
+            });
+
+            tabsContainer.appendChild(btn);
+        });
     }
 
     renderWorkTable() {
@@ -402,48 +451,40 @@ export class WorkSectionPresenter {
         // Clear existing rows (except header)
         tableBody.innerHTML = '';
 
-        // Generate rows dynamically from config
-        this.workData.sectors.forEach(sector => {
+        const activeTab = this.#activeTab();
+        const maxPriority = Math.max(1, activeTab?.skills.length ?? 1);
+
+        // Generate rows dynamically from the active tab's skills
+        (activeTab?.skills ?? []).forEach(skill => {
             const row = document.createElement('tr');
-            row.setAttribute('data-sector', sector.id);
-            row.setAttribute('data-sector-number', sector.sectorNumber); // Store sector number as data attribute
-            
+            row.setAttribute('data-skill', skill.skillId);
+
             // Priority column
             const priorityCell = document.createElement('td');
             priorityCell.className = 'priority-col';
             const priorityInput = document.createElement('input');
             priorityInput.type = 'number';
             priorityInput.className = 'work-priority-input';
-            priorityInput.id = `priority-${sector.id}`;
-            // Get max sectors directly from config (source of truth)
-            const maxSectors = this.employment.EMPLOYMENT_MAX_SECTORS;
+            priorityInput.id = `priority-${skill.skillId}`;
             priorityInput.min = '1';
-            priorityInput.max = maxSectors.toString();
+            priorityInput.max = maxPriority.toString();
             priorityInput.step = '1'; // Only allow integers
-            // Ensure priority value is set (use sector.priority or get from service)
-            let priorityValue = sector.priority;
-            if (!priorityValue && sector.sectorNumber !== undefined) {
-                priorityValue = this.employment.getSectorPriority(sector.sectorNumber);
-            }
-            if (!priorityValue) {
-                priorityValue = this.employment.DEFAULT_SECTOR_PRIORITIES[sector.sectorNumber] || 1;
-            }
+            const priorityValue = skill.priority || 1;
             priorityInput.value = priorityValue;
-            // Also update sector.priority to ensure consistency
-            sector.priority = priorityValue;
-            priorityInput.setAttribute('aria-label', `Priorité ${sector.name}`);
-            priorityInput.setAttribute('title', `Priorité entre 1 et ${maxSectors}`);
-            
-            // Store max value for validation (from config source of truth)
-            priorityInput.dataset.maxSectors = maxSectors.toString();
-            
+            skill.priority = priorityValue;
+            priorityInput.setAttribute('aria-label', `Priorité ${skill.label}`);
+            priorityInput.setAttribute('title', `Priorité entre 1 et ${maxPriority}`);
+
+            // Store max value for validation
+            priorityInput.dataset.maxPriority = maxPriority.toString();
+
             // Prevent typing invalid values
             priorityInput.addEventListener('keydown', (e) => {
-                const max = parseInt(priorityInput.dataset.maxSectors);
+                const max = parseInt(priorityInput.dataset.maxPriority);
                 const currentValue = priorityInput.value;
                 const selectionStart = priorityInput.selectionStart;
                 const selectionEnd = priorityInput.selectionEnd;
-                
+
                 // Allow: backspace, delete, tab, escape, enter, and arrow keys
                 if ([8, 9, 27, 13, 46, 37, 38, 39, 40].indexOf(e.keyCode) !== -1 ||
                     // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
@@ -453,23 +494,23 @@ export class WorkSectionPresenter {
                     (e.keyCode === 88 && e.ctrlKey === true)) {
                     return;
                 }
-                
+
                 // Allow numbers only
                 const isNumber = (e.keyCode >= 48 && e.keyCode <= 57) || (e.keyCode >= 96 && e.keyCode <= 105);
                 if (!isNumber) {
                     e.preventDefault();
                     return;
                 }
-                
+
                 // Get the digit being typed
                 const digit = String.fromCharCode(e.keyCode >= 96 ? e.keyCode - 48 : e.keyCode);
-                
+
                 // Calculate what the new value would be
                 const beforeSelection = currentValue.substring(0, selectionStart);
                 const afterSelection = currentValue.substring(selectionEnd);
                 const newValueStr = beforeSelection + digit + afterSelection;
                 const newValue = parseInt(newValueStr);
-                
+
                 // Prevent if the new value would exceed max
                 if (!isNaN(newValue) && newValue > max) {
                     e.preventDefault();
@@ -479,17 +520,17 @@ export class WorkSectionPresenter {
                     return;
                 }
             });
-            
+
             // Validate and clamp on input
             priorityInput.addEventListener('input', (e) => {
                 let value = parseInt(e.target.value);
-                const max = parseInt(e.target.dataset.maxSectors);
-                
+                const max = parseInt(e.target.dataset.maxPriority);
+
                 // If empty or invalid, allow it temporarily (user might be typing)
                 if (isNaN(value) || value === '') {
                     return;
                 }
-                
+
                 // Clamp to valid range immediately
                 if (value < 1) {
                     e.target.value = '1';
@@ -497,12 +538,12 @@ export class WorkSectionPresenter {
                     e.target.value = max.toString();
                 }
             });
-            
+
             // Clamp on blur (when user leaves the field)
             priorityInput.addEventListener('blur', (e) => {
                 let value = parseInt(e.target.value);
-                const max = parseInt(e.target.dataset.maxSectors);
-                
+                const max = parseInt(e.target.dataset.maxPriority);
+
                 // If empty or invalid, set to minimum
                 if (isNaN(value) || value === '' || value < 1) {
                     e.target.value = '1';
@@ -511,18 +552,18 @@ export class WorkSectionPresenter {
                     e.target.value = max.toString();
                     value = max;
                 }
-                
+
                 // Update priority with clamped value (synchronous)
-                this.updatePriority(sector.id, value);
+                this.updatePriority(skill.skillId, value);
             });
-            
+
             // Handle paste events to clamp pasted values
             priorityInput.addEventListener('paste', (e) => {
                 // Allow paste, then validate in next tick
                 setTimeout(() => {
                     let value = parseInt(e.target.value);
-                    const max = parseInt(e.target.dataset.maxSectors);
-                    
+                    const max = parseInt(e.target.dataset.maxPriority);
+
                     if (isNaN(value) || value < 1) {
                         e.target.value = '1';
                         value = 1;
@@ -530,19 +571,19 @@ export class WorkSectionPresenter {
                         e.target.value = max.toString();
                         value = max;
                     }
-                    
+
                     // Update if value changed (synchronous)
-                    if (value !== sector.priority) {
-                        this.updatePriority(sector.id, value);
+                    if (value !== skill.priority) {
+                        this.updatePriority(skill.skillId, value);
                     }
                 }, 0);
             });
-            
+
             // Also handle change event
             priorityInput.addEventListener('change', (e) => {
                 let value = parseInt(e.target.value);
-                const max = parseInt(e.target.dataset.maxSectors);
-                
+                const max = parseInt(e.target.dataset.maxPriority);
+
                 // Clamp value
                 if (isNaN(value) || value < 1) {
                     value = 1;
@@ -551,34 +592,34 @@ export class WorkSectionPresenter {
                     value = max;
                     e.target.value = max.toString();
                 }
-                
+
                 // Update priority (synchronous)
-                this.updatePriority(sector.id, value);
+                this.updatePriority(skill.skillId, value);
             });
-            
+
             priorityCell.appendChild(priorityInput);
-            
-            // Sector name column
-            const sectorCell = document.createElement('td');
-            sectorCell.className = 'sector-col';
-            sectorCell.textContent = sector.name;
-            
+
+            // Skill (activity) name column
+            const skillCell = document.createElement('td');
+            skillCell.className = 'sector-col';
+            skillCell.textContent = skill.label;
+
             // Need column - remaining workers needed (Caesar 3 style)
             // Shows: remaining need (initial need in gray if different)
             const needCell = document.createElement('td');
             needCell.className = 'need-col';
             const needContainer = document.createElement('div');
             needContainer.className = 'work-need-container';
-            
-            const remainingNeed = sector.need || 0;
-            const initialNeed = sector.initialNeed || 0;
-            
+
+            const remainingNeed = skill.need || 0;
+            const initialNeed = skill.initialNeed || 0;
+
             const needSpan = document.createElement('span');
             needSpan.className = remainingNeed > 0 ? 'work-need-lack' : 'work-need-ok';
-            needSpan.setAttribute('data-field', `need-${sector.id}`);
+            needSpan.setAttribute('data-field', `need-${skill.skillId}`);
             needSpan.textContent = remainingNeed;
             needContainer.appendChild(needSpan);
-            
+
             // Show initial need in gray parentheses if there are workers assigned
             if (initialNeed > 0 && remainingNeed !== initialNeed) {
                 const initialSpan = document.createElement('span');
@@ -587,7 +628,7 @@ export class WorkSectionPresenter {
                 initialSpan.title = 'Besoin initial si aucun ouvrier assigné';
                 needContainer.appendChild(initialSpan);
             }
-            
+
             // Add detail tooltip
             const needDetail = document.createElement('div');
             needDetail.className = 'work-detail-tooltip';
@@ -603,70 +644,70 @@ export class WorkSectionPresenter {
             `;
             needContainer.appendChild(needDetail);
             needCell.appendChild(needContainer);
-            
+
             // Have column - workers currently assigned
             const haveCell = document.createElement('td');
             haveCell.className = 'have-col';
             const haveContainer = document.createElement('div');
             haveContainer.className = 'work-have-container';
-            
+
             const haveSpan = document.createElement('span');
-            haveSpan.setAttribute('data-field', `have-${sector.id}`);
-            haveSpan.textContent = sector.have || 0;
+            haveSpan.setAttribute('data-field', `have-${skill.skillId}`);
+            haveSpan.textContent = skill.have || 0;
             haveContainer.appendChild(haveSpan);
-            
+
             // Add detail tooltip showing assigned workers and city-wide available
             const haveDetail = document.createElement('div');
             haveDetail.className = 'work-detail-tooltip';
             haveDetail.innerHTML = `
                 <div class="work-detail-item">
                     <span class="work-detail-label">Ouvriers assignés:</span>
-                    <span class="work-detail-value">${sector.workers || 0}</span>
+                    <span class="work-detail-value">${skill.workers || 0}</span>
                 </div>
                 <div class="work-detail-item" style="border-top: 1px solid rgba(255, 255, 255, 0.3); margin-top: 6px; padding-top: 6px;">
                     <span class="work-detail-label">Ouvriers disponibles (ville):</span>
-                    <span class="work-detail-value">${sector.availableWorkers || 0}</span>
+                    <span class="work-detail-value">${skill.availableWorkers || 0}</span>
                 </div>
             `;
             haveContainer.appendChild(haveDetail);
             haveCell.appendChild(haveContainer);
-            
+
             row.appendChild(priorityCell);
-            row.appendChild(sectorCell);
+            row.appendChild(skillCell);
             row.appendChild(needCell);
             row.appendChild(haveCell);
-            
+
             tableBody.appendChild(row);
         });
-        
+
         // Add legend after the table (if not already present)
         this.renderLegend();
     }
-    
+
     /**
      * Renders the legend under the work table
      */
     renderLegend() {
         const tableBody = document.getElementById('work-table-body');
         if (!tableBody) return;
-        
+
         const table = tableBody.closest('table');
         if (!table) return;
-        
+
         // Check if legend already exists
         let legend = table.nextElementSibling;
         if (legend && legend.classList.contains('work-legend')) {
             // Legend already exists, no need to recreate
             return;
         }
-        
+
         // Create legend
         legend = document.createElement('div');
         legend.className = 'work-legend';
         legend.innerHTML = `
             <div class="work-legend-item">
                 <span class="work-legend-label">Besoin :</span>
-                <span class="work-legend-desc">Ouvriers encore nécessaires pour ce secteur</span>
+                <span class="work-legend-desc">Ouvriers encore nécessaires pour cette activité</span>
             </div>
             <div class="work-legend-item">
                 <span class="work-legend-label">(n) :</span>
@@ -674,10 +715,10 @@ export class WorkSectionPresenter {
             </div>
             <div class="work-legend-item">
                 <span class="work-legend-label">Embauchés :</span>
-                <span class="work-legend-desc">Ouvriers actuellement embauchés dans ce secteur</span>
+                <span class="work-legend-desc">Ouvriers actuellement embauchés dans cette activité</span>
             </div>
         `;
-        
+
         // Insert legend after table
         table.parentNode.insertBefore(legend, table.nextSibling);
     }
@@ -695,7 +736,7 @@ export class WorkSectionPresenter {
         if (unemployedElement) {
             const percentage = this.workData.unemploymentPercentage;
             const lack = this.workData.totalLack || 0;
-            
+
             if (lack > 0) {
                 // Show lack if there's a shortage
                 unemployedElement.textContent = `Manque: ${lack} employés`;
@@ -711,18 +752,4 @@ export class WorkSectionPresenter {
             }
         }
     }
-
-    updateWorkData(sectors, totalEmployed, totalUnemployed) {
-        if (!this.workData) return;
-
-        this.workData.sectors = sectors;
-        this.workData.totalEmployed = totalEmployed;
-        this.workData.totalUnemployed = totalUnemployed;
-        this.workData.unemploymentPercentage = totalEmployed > 0 
-            ? Math.round((totalUnemployed / (totalEmployed + totalUnemployed)) * 100)
-            : 0;
-
-        this.render();
-    }
 }
-

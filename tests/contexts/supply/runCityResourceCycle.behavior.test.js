@@ -66,6 +66,14 @@ class FakeSupplyBuildingRepository {
     const b = this.rows.get(hubId);
     if (b) b.linkedDistributors = linkedDistributors;
   }
+
+  async updateBuildingFields(id, fields) {
+    const b = this.rows.get(id);
+    if (!b) return;
+    for (const key of Object.keys(fields)) {
+      if (fields[key] !== undefined) b[key] = fields[key];
+    }
+  }
 }
 
 const MARKET_ID = createBuildingInstanceId();
@@ -99,6 +107,23 @@ function house(id, overrides = {}) {
     worker: 0,
     workerNeed: 0,
     stocks: { wheat: 0, food: 0 },
+    ...overrides,
+  };
+}
+
+const CHAPEL_ID = createBuildingInstanceId();
+
+function chapel(overrides = {}) {
+  return {
+    id: CHAPEL_ID,
+    type: 'Chapel',
+    x: 5,
+    y: 5,
+    roads: 1,
+    roadCount: 1,
+    worker: 2,
+    workerNeed: 2,
+    stocks: {},
     ...overrides,
   };
 }
@@ -176,5 +201,65 @@ describe('RunCityResourceCycle', () => {
     expect(hubLinkResolved).toEqual({ marketId: MARKET_ID, hasHubLink: true });
     const houseRow = await repo.findBuildingRow(HOUSE_ID);
     expect(houseRow.stocks.wheat).toBeGreaterThan(0);
+  });
+
+  test('a hub-less flag distributor (chapel) marks houses served, no stock leg at all', async () => {
+    const repo = new FakeSupplyBuildingRepository([chapel(), house(HOUSE_ID)]);
+    const distribute = new DistributeResourceToConsumers(repo);
+    const events = [];
+    const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
+
+    const result = await cycle.execute({
+      categories: ['faith'],
+      season: 'summer',
+      month: 'January',
+      timeInfo: { turn: 1, monthIndex: 5 },
+      maxDistance: 5,
+    });
+
+    expect(result.distributorsProcessed).toBe(1);
+    const houseRow = await repo.findBuildingRow(HOUSE_ID);
+    // Pinned to the EXACT monthIndex, not just "some number" — this is the
+    // regression the bug hid behind: `period` built here used to omit
+    // `monthIndex` (only `season`/`month`, the string name), so
+    // PeriodLockPolicy.resolvePeriodKey('month', ...) fell back to 0 every
+    // time. A house's tier-2 `serviceCoverage: 'faith'` requirement compares
+    // this flag against the REAL current monthIndex (see
+    // HouseTierRequirementPolicy.js), so a flag stuck at 0 only ever matched
+    // in month 0 and looked permanently unserved (or caused a demotion)
+    // every month after — Chapel could be fully staffed and in range and
+    // houses would still never reach tier 2.
+    expect(houseRow.servedFlags).toEqual({ faith: 5 });
+    expect(events).toEqual([
+      expect.objectContaining({
+        type: 'supply.resourceDelivered',
+        sourceId: CHAPEL_ID,
+        consumerId: HOUSE_ID,
+        category: 'faith',
+        amount: 1,
+      }),
+    ]);
+  });
+
+  test('the served flag tracks the REAL current month across cycles, not a stuck value', async () => {
+    const repo = new FakeSupplyBuildingRepository([chapel(), house(HOUSE_ID)]);
+    const distribute = new DistributeResourceToConsumers(repo);
+    const cycle = new RunCityResourceCycle(repo, distribute);
+
+    await cycle.execute({
+      categories: ['faith'],
+      season: 'summer',
+      timeInfo: { turn: 1, monthIndex: 6 },
+      maxDistance: 5,
+    });
+    expect((await repo.findBuildingRow(HOUSE_ID)).servedFlags).toEqual({ faith: 6 });
+
+    await cycle.execute({
+      categories: ['faith'],
+      season: 'summer',
+      timeInfo: { turn: 2, monthIndex: 7 },
+      maxDistance: 5,
+    });
+    expect((await repo.findBuildingRow(HOUSE_ID)).servedFlags).toEqual({ faith: 7 });
   });
 });

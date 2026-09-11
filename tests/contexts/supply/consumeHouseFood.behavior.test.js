@@ -158,6 +158,22 @@ describe('Supply — house consumption', () => {
       expect((await repo.findById('House-Blue-1-2')).stocks.wheat).toBe(0);
     });
 
+    test('records which distinct categories were drawn from this period (diet variety)', async () => {
+      repo = new InMemorySupplyBuildingRepository([
+        house('House-Blue-1-2', { pop: 2, stocks: { wheat: 1, carrot: 1, food: 2 } }),
+      ]);
+      useCase = new ConsumeResource(repo);
+
+      const outcome = await useCase.execute({
+        buildingId: 'House-Blue-1-2',
+        period: { monthIndex: 3 },
+      });
+
+      expect(outcome.categoriesTaken.sort()).toEqual(['carrot', 'wheat']);
+      const updated = await repo.findById('House-Blue-1-2');
+      expect(updated.lastConsumption.categoriesTaken.sort()).toEqual(['carrot', 'wheat']);
+    });
+
     test('skips houses with zero population', async () => {
       repo = new InMemorySupplyBuildingRepository([
         house('House-Blue-1-2', { pop: 0, stocks: { wheat: 5, food: 5 } }),

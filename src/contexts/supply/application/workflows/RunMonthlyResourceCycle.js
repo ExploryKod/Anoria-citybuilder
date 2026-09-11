@@ -21,7 +21,14 @@ export class RunMonthlyResourceCycle {
    * @param {{ recordHouseConsumptions: Function }} traceability
    * @param {import('../commands/RunResourceCommandForRole.js').RunResourceCommandForRole} [runSubsistenceCommand]
    * @param {object} config
-   * @param {ReadonlyArray<string>} config.categories
+   * @param {ReadonlyArray<string>} config.categories Every category any
+   *   distributor covers — drives the actual distribution/restock leg,
+   *   deliberately broader than just food (see createSupplyContext.js).
+   * @param {ReadonlyArray<string>} [config.reachCategories] Narrower set
+   *   the too-far reach check (`updateDistributorReach`) scopes to — keep
+   *   this to just food's categories so a hub-less service like a chapel
+   *   (also a 'distributor') never counts as "in range" for a house's food
+   *   access. Omitted falls back to `categories` (pre-service behavior).
    */
   constructor(
     runProducerCommand,
@@ -80,7 +87,10 @@ export class RunMonthlyResourceCycle {
       maxDistance,
     });
 
-    await this.updateDistributorReach.execute({ maxDistance });
+    await this.updateDistributorReach.execute({
+      maxDistance,
+      category: this.config.reachCategories ?? this.config.categories,
+    });
 
     if (this.runSubsistenceCommand) {
       await this.runSubsistenceCommand.execute({

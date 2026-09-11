@@ -22,11 +22,6 @@ import {
   isObjectiveRequirementMet,
 } from '../contexts/accounting/domain/catalogs/ObjectiveCatalog.js';
 import { computeReferenceSalaryPayrollBreakdown } from '../contexts/accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
-import {
-  EMPLOYMENT_MAX_SECTORS,
-  EMPLOYMENT_SECTOR_NAMES,
-  DEFAULT_SECTOR_PRIORITIES,
-} from '../contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
 import { hasRoadAccessFromCount } from '../contexts/parcels/domain/value-objects/RoadAccess.js';
 import {
   getBuildingsNamesInZone,
@@ -170,13 +165,11 @@ export function createSupplySessionApi(supply) {
  */
 export function createEmploymentSessionApi(employment) {
   return Object.freeze({
-    EMPLOYMENT_MAX_SECTORS,
-    EMPLOYMENT_SECTOR_NAMES,
-    DEFAULT_SECTOR_PRIORITIES,
-    getSectorPriority: (sector) => employment.getSectorPriority(sector),
-    getMergedSectorPriorities: () => employment.getMergedSectorPriorities(),
-    updateSectorPrioritySync: (sector, priority) =>
-      employment.updateSectorPrioritySync(sector, priority),
+    getPriorityTabs: () => employment.getPriorityTabs(),
+    getSkillPriority: (skillId) => employment.getSkillPriority(skillId),
+    getMergedTabPriorities: (tabId) => employment.getMergedTabPriorities(tabId),
+    updateSkillPrioritySync: (skillId, priority) =>
+      employment.updateSkillPrioritySync(skillId, priority),
     getSectorName: (sector) => employment.getSectorName(sector),
     getCityEmploymentSummary: () => employment.getCityEmploymentSummary(),
   });

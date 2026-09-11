@@ -188,6 +188,19 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(summary.bySector[2]).toBeUndefined();
     });
 
+    test('bySkill aggregates by the workplace\'s required skill (the work panel\'s per-tab rows)', () => {
+      const summary = computeCityEmploymentSummary([
+        workplace('farm-a', { workerNeed: 3, sector: 1, worker: 1, type: 'Farm-Wheat' }),
+        workplace('farm-b', { workerNeed: 3, sector: 1, worker: 2, type: 'Farm-Carrot' }),
+        workplace('market-a', { workerNeed: 2, sector: 2, worker: 0, type: 'Market-Stall-Red' }),
+      ]);
+
+      // Farm-Wheat and Farm-Carrot both require 'fermier' — aggregated together.
+      expect(summary.bySkill.fermier).toEqual({ workerNeed: 6, workers: 3, need: 3 });
+      expect(summary.bySkill['vente-alimentaire']).toEqual({ workerNeed: 2, workers: 0, need: 2 });
+      expect(summary.bySkill.medical).toBeUndefined();
+    });
+
     test('byGroup breaks the pool/assignment down per social group (global aggregate unchanged)', () => {
       const summary = computeCityEmploymentSummary([
         house('red-house', 5, 1, 'House-Red'), // artisans

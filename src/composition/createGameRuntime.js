@@ -25,7 +25,7 @@ import { recordDeaths } from './gameplayMortalityState.js';
  * @param {(time: number) => object} [deps.getTimeInfo]
  * @param {Function} deps.toSupplySeason
  * @param {Function} deps.toSupplyMonth
- * @param {() => Record<number|string, number>} deps.getSectorPriorities
+ * @param {() => Record<string, number>} deps.getSkillPriorities
  * @param {number} [deps.foodDistributionDistance=5]
  */
 export function createGameRuntime({
@@ -38,7 +38,7 @@ export function createGameRuntime({
   getTimeInfo: getTimeInfoDep,
   toSupplySeason,
   toSupplyMonth,
-  getSectorPriorities,
+  getSkillPriorities,
   foodDistributionDistance = 5,
 }) {
   if (!parcels) {
@@ -59,8 +59,8 @@ export function createGameRuntime({
   if (!intelligence) {
     throw new Error('createGameRuntime: intelligence context required');
   }
-  if (typeof getSectorPriorities !== 'function') {
-    throw new Error('createGameRuntime: getSectorPriorities required');
+  if (typeof getSkillPriorities !== 'function') {
+    throw new Error('createGameRuntime: getSkillPriorities required');
   }
 
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
@@ -81,10 +81,10 @@ export function createGameRuntime({
     areFamineLimitsEnabled: isLoseMode,
     onFamineDeaths: recordDeaths,
   });
-  const housingEvolution = createHousingEvolutionSystem({ housing });
+  const housingEvolution = createHousingEvolutionSystem({ housing, getTimeInfo });
   const employmentRedistribute = createEmploymentRedistributeSystem({
     employment,
-    getSectorPriorities,
+    getSkillPriorities,
   });
   pipeline
     .group('simulation')

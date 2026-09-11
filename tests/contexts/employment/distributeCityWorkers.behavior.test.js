@@ -22,8 +22,9 @@ import {
 } from '../../../src/contexts/employment/domain/policies/BuildingRolePolicy.js';
 import {
   allocateWorkers,
+  orderSkillsByPriority,
   orderWorkplacesByPriority,
-  resolveSectorPriority,
+  resolveSkillPriority,
 } from '../../../src/contexts/employment/domain/policies/WorkerAllocationPolicy.js';
 import { DistributeCityWorkers } from '../../../src/contexts/employment/application/commands/DistributeCityWorkers.js';
 
@@ -118,27 +119,30 @@ describe('Employment — DistributeCityWorkers', () => {
       expect(hasRoadAccess({ roadCount: 0 })).toBe(false);
     });
 
-    test('sector priority 1 is highest; missing sector is lowest', () => {
-      expect(resolveSectorPriority(1, { 1: 1, 2: 6 })).toBe(1);
-      expect(resolveSectorPriority(2, { 1: 1, 2: 6 })).toBe(6);
-      expect(resolveSectorPriority(0, { 1: 1 })).toBe(99);
+    test('skill priority 1 is highest; missing skill is lowest', () => {
+      expect(resolveSkillPriority('fermier', { fermier: 1, 'vente-alimentaire': 6 })).toBe(1);
+      expect(resolveSkillPriority('vente-alimentaire', { fermier: 1, 'vente-alimentaire': 6 })).toBe(6);
+      expect(resolveSkillPriority('unranked', { fermier: 1 })).toBe(99);
     });
 
-    test('allocation fills by priority and respects deficit', () => {
-      const rows = orderWorkplacesByPriority(
-        [
-          workplace('low', { workerNeed: 5, sector: 2 }),
-          workplace('high', { workerNeed: 3, sector: 1 }),
-        ],
-        { 1: 1, 2: 6 },
-      );
-      expect(rows.map((r) => r.workplace.id)).toEqual(['high', 'low']);
+    test('orderSkillsByPriority sorts ascending — this decides which skill DistributeCityWorkers visits first', () => {
+      expect(
+        orderSkillsByPriority(['vente-alimentaire', 'fermier'], { fermier: 1, 'vente-alimentaire': 6 }),
+      ).toEqual(['fermier', 'vente-alimentaire']);
+    });
+
+    test('orderWorkplacesByPriority only computes deficits now (priority moved one level up, to the skill)', () => {
+      const rows = orderWorkplacesByPriority([
+        workplace('low', { workerNeed: 5, sector: 2 }),
+        workplace('high', { workerNeed: 3, sector: 1 }),
+      ]);
+      // No sort — every workplace here already shares one (skill, level)
+      // bucket by construction in DistributeCityWorkers, so input order
+      // (not a sector lookup) is all that's left to preserve.
+      expect(rows.map((r) => r.workplace.id)).toEqual(['low', 'high']);
 
       const { assignments, remaining } = allocateWorkers(4, rows);
-      expect(assignments).toEqual([
-        { buildingId: 'high', workers: 3 },
-        { buildingId: 'low', workers: 1 },
-      ]);
+      expect(assignments).toEqual([{ buildingId: 'low', workers: 4 }]);
       expect(remaining).toBe(0);
     });
   });
@@ -163,12 +167,12 @@ describe('Employment — DistributeCityWorkers', () => {
     });
 
     test('houses with roads contribute pop; without roads do not', async () => {
-      const result = await useCase.execute({ sectorPriorities: { 1: 1 } });
+      const result = await useCase.execute({});
       expect(result.availableWorkers).toBe(5);
     });
 
     test('artisans only staff farms, not windmills', async () => {
-      const result = await useCase.execute({ sectorPriorities: { 1: 1, 4: 1 } });
+      const result = await useCase.execute({});
       expect(result.assignments.find((a) => a.buildingId === 'Windmill-001-5-5')).toBeUndefined();
       expect(repo.get('Windmill-001-5-5').worker).toBe(0);
       expect(repo.get('Farm-Wheat-3-3').worker).toBe(3);
@@ -181,7 +185,7 @@ describe('Employment — DistributeCityWorkers', () => {
       ]);
       useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
-      const result = await useCase.execute({ sectorPriorities: { 1: 1 } });
+      const result = await useCase.execute({});
       expect(result.assignments).toEqual([{ buildingId: 'Farm-Wheat-0-0', workers: 3 }]);
     });
 
@@ -192,7 +196,7 @@ describe('Employment — DistributeCityWorkers', () => {
       ]);
       useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
-      const result = await useCase.execute({ sectorPriorities: { 1: 1 } });
+      const result = await useCase.execute({});
       // Tier 1 grants 'spiritual' + 'subsistence-forager', not 'fermier' —
       // so this house's 5 citizens count toward `availableWorkers` (total
       // city headcount) but leave the farm at 0, with nothing to spend them
@@ -215,7 +219,7 @@ describe('Employment — DistributeCityWorkers', () => {
       ]);
       const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
-      const result = await useCase.execute({ sectorPriorities: { 1: 1, 2: 1, 4: 1, 6: 1 } });
+      const result = await useCase.execute({});
 
       expect(result.availableWorkers).toBe(12);
       expect(repo.get('Farm-Wheat-a').worker).toBe(3);
@@ -236,7 +240,7 @@ describe('Employment — DistributeCityWorkers', () => {
       ]);
       const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
-      await useCase.execute({ sectorPriorities: { 1: 1, 2: 1 } });
+      await useCase.execute({});
 
       expect(repo.get('Farm-Wheat-a').worker).toBe(3);
       expect(repo.get('Market-Stall-b').worker).toBe(1);
@@ -258,7 +262,7 @@ describe('Employment — DistributeCityWorkers', () => {
       ]);
       const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel: sharedSkill });
 
-      const result = await useCase.execute({ sectorPriorities: { 1: 1 } });
+      const result = await useCase.execute({});
 
       expect(result.availableWorkers).toBe(4);
       expect(repo.get('Farm-Wheat-a').worker).toBe(4);
@@ -273,7 +277,7 @@ describe('Employment — DistributeCityWorkers', () => {
       ]);
       const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
-      const result = await useCase.execute({ sectorPriorities: { 6: 1 } });
+      const result = await useCase.execute({});
 
       expect(result.availableWorkers).toBe(5);
       expect(result.assignments).toEqual([{ buildingId: 'Chapel-x', workers: 2 }]);
@@ -290,7 +294,7 @@ describe('Employment — DistributeCityWorkers', () => {
       ]);
       const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
-      await useCase.execute({ sectorPriorities: { 6: 1 } });
+      await useCase.execute({});
 
       // 6 citizens total: Hospital (level 2, processed first) takes its
       // full deficit of 4, leaving exactly 2 for Doctor (level 1).
@@ -307,7 +311,7 @@ describe('Employment — DistributeCityWorkers', () => {
       ]);
       const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
-      await useCase.execute({ sectorPriorities: { 6: 1 } });
+      await useCase.execute({});
 
       // Hospital (level 2) can only draw from the level-2 house: 1 of its
       // 2 citizens. Doctor (level 1) then draws from BOTH the level-1-only
@@ -315,6 +319,41 @@ describe('Employment — DistributeCityWorkers', () => {
       // its deficit — proving the level-1-only house never touches Hospital.
       expect(repo.get('Hospital-a').worker).toBe(1);
       expect(repo.get('Doctor-a').worker).toBe(4);
+    });
+  });
+
+  describe('DistributeCityWorkers — skill priority (2026-09-10 per-group redesign)', () => {
+    // A dual-skilled artisans house (fermier + artisanat, same tier-2 grant
+    // — see socialCategoryCatalog.js) is the one real case where priority
+    // now does something: not enough of its own population for both a farm
+    // AND a pottery workshop, so whichever skill the player ranked higher
+    // in the artisans tab gets first claim on the shared labor.
+    function dualSkillRepo() {
+      return new InMemoryEmploymentBuildingRepository([
+        house('House-Red-1-1', 4, 1, 'House-Red'),
+        workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1, type: 'Farm-Wheat' }),
+        workplace('Factory-Plate-a', { workerNeed: 3, sector: 3, type: 'Factory-Plate' }),
+      ]);
+    }
+
+    test('ranking artisanat above fermier sends the shared labor to the factory first', async () => {
+      const repo = dualSkillRepo();
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+
+      await useCase.execute({ skillPriorities: { artisanat: 1, fermier: 2 } });
+
+      expect(repo.get('Factory-Plate-a').worker).toBe(3);
+      expect(repo.get('Farm-Wheat-a').worker).toBe(1);
+    });
+
+    test('flipping the ranking sends the shared labor to the farm instead', async () => {
+      const repo = dualSkillRepo();
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+
+      await useCase.execute({ skillPriorities: { fermier: 1, artisanat: 2 } });
+
+      expect(repo.get('Farm-Wheat-a').worker).toBe(3);
+      expect(repo.get('Factory-Plate-a').worker).toBe(1);
     });
   });
 });

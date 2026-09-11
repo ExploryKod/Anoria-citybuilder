@@ -1,14 +1,25 @@
 /**
- * Generic once-per-period lock: reads/writes a single building field whose
- * name and period unit are declared per `resourceRoles` entry in the
- * building catalog (`periodLock` — see buildingCatalog.js). This module has
- * no notion of "producer", "consumer", or any other named role — only "a
- * field, a unit, a value" — so a new role or resource never needs a new
- * named bookkeeping shape here, only a `periodLock` fact on its own catalog
- * entry. Replaces the old ResourceBookkeepingCatalog.js
+ * Generic once-per-period lock. Two storage shapes, chosen by whether the
+ * catalog's `periodLock` fact declares a `field`:
+ *
+ *  - `{ field, unit }` — a single dedicated building field (e.g. a farm's
+ *    `lastProductionYear`). Reserve this for a role that will only ever
+ *    hold ONE such lock (today: quantity-mode food production/consumption).
+ *  - `{ unit }` (no `field`) — the SHARED_FLAG_FIELD object, keyed by
+ *    category (e.g. `servedFlags: { faith: 3, education: 4 }`). This is
+ *    the same "one field, many keys" shape `stocks` already uses for
+ *    quantity resources (`{ wheat, carrot, food }`) — applied here to
+ *    flag-mode services so adding the Nth service (Chapel, a school, ...)
+ *    never needs a new top-level field name, only a new catalog entry.
+ *
+ * Either way this module has no notion of "producer", "consumer", or any
+ * particular resource/service name — only "a place to remember a period
+ * key". Replaces the old ResourceBookkeepingCatalog.js
  * PRODUCER_BOOKKEEPING/CONSUMER_BOOKKEEPING named exports — see
  * docs/period-lock-catalog-refactor.md.
  */
+
+export const SHARED_FLAG_FIELD = 'servedFlags';
 
 /**
  * @param {'year' | 'month'} unit
@@ -28,23 +39,40 @@ function resolvePeriodKey(unit, period) {
 
 /**
  * @param {object} building
- * @param {{ field: string, unit: 'year' | 'month' }} periodLock
+ * @param {{ field?: string, unit: 'year' | 'month' }} periodLock
  * @param {object} period
+ * @param {string} [category] Required when `periodLock.field` is absent —
+ *   the key into the shared flag field.
  * @returns {boolean} True when this building already ran for this period.
  */
-export function isLockedForPeriod(building, periodLock, period) {
+export function isLockedForPeriod(building, periodLock, period, category) {
   if (!periodLock) return false;
-  return building[periodLock.field] === resolvePeriodKey(periodLock.unit, period);
+  const periodKey = resolvePeriodKey(periodLock.unit, period);
+  if (periodLock.field) {
+    return building[periodLock.field] === periodKey;
+  }
+  return building[SHARED_FLAG_FIELD]?.[category] === periodKey;
 }
 
 /**
- * @param {{ field: string, unit: 'year' | 'month' }} periodLock
+ * @param {object} building Current building row/snapshot — read (not
+ *   mutated) when the shared flag field needs merging with its other keys,
+ *   so setting one service's flag never clobbers another's.
+ * @param {{ field?: string, unit: 'year' | 'month' }} periodLock
  * @param {object} period
+ * @param {string} [category] Required when `periodLock.field` is absent.
  * @param {object} [extraFields] Additional fields to persist alongside the
  *   lock (e.g. a consumption record) — caller-specific, not part of the
  *   lock's own identity.
  * @returns {object} Field update to pass to `repository.updateBuildingFields`.
  */
-export function buildLockUpdate(periodLock, period, extraFields = {}) {
-  return { [periodLock.field]: resolvePeriodKey(periodLock.unit, period), ...extraFields };
+export function buildLockUpdate(building, periodLock, period, category, extraFields = {}) {
+  const periodKey = resolvePeriodKey(periodLock.unit, period);
+  if (periodLock.field) {
+    return { [periodLock.field]: periodKey, ...extraFields };
+  }
+  return {
+    [SHARED_FLAG_FIELD]: { ...building[SHARED_FLAG_FIELD], [category]: periodKey },
+    ...extraFields,
+  };
 }

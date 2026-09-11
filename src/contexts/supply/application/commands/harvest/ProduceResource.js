@@ -75,7 +75,10 @@ export class ProduceResource {
     const nextStock = addCategoryAmount(building.stocks, category, amount, categories, totalKey);
     await this.supplyBuildingRepository.saveStocks(buildingId, nextStock);
     if (periodLock) {
-      await this.supplyBuildingRepository.updateBuildingFields(buildingId, buildLockUpdate(periodLock, period));
+      await this.supplyBuildingRepository.updateBuildingFields(
+        buildingId,
+        buildLockUpdate(building, periodLock, period, category)
+      );
     }
 
     return { produced: true, buildingId, category, amount };

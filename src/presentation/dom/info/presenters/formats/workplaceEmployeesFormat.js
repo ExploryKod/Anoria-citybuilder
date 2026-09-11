@@ -2,6 +2,9 @@
  * Workplace employees — pure format (no DOM, no I/O).
  */
 
+import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
+import { getSkillDisplay } from '../../../../../shared/population/skillCatalog.js';
+
 /**
  * @param {object | null | undefined} buildingData
  * @param {{ fullyStaffed: string, noWorkers: string, partialWorkers: string }} messages
@@ -20,7 +23,11 @@ export function formatWorkplaceEmployeesPanel(buildingData, messages, employment
   const workers = employees.worker || 0;
   const elites = employees.elite || 0;
   const sector = employees.sector || 0;
-  const priority = employment.getSectorPriority(sector);
+  // Priority is set per skill now, not per sector (see SkillPriorityPolicy.js
+  // — a sector like "Services Publics" spans several unrelated skills, each
+  // ranked independently in its own social-group's work-panel tab).
+  const requiredSkill = getBuildingDefinition(buildingType)?.employment?.requiredSkill ?? null;
+  const priority = requiredSkill ? employment.getSkillPriority(requiredSkill) : null;
 
   if (roadCount <= 0 && !farmExemptFromRoad) {
     return {
@@ -51,7 +58,12 @@ export function formatWorkplaceEmployeesPanel(buildingData, messages, employment
       title: 'Employés',
       rows: [
         { label: 'Secteur', value: `${sector} : ${employment.getSectorName(sector)}` },
-        { label: 'Priorité', value: `${priority}` },
+        ...(requiredSkill
+          ? [
+              { label: 'Compétence requise', value: getSkillDisplay(requiredSkill).label },
+              { label: 'Priorité', value: `${priority}` },
+            ]
+          : []),
         { label: 'Ouvriers', value: `${workers}/${workerNeed}` },
         { label: 'Élites', value: `${elites}/${eliteNeed}` },
       ],

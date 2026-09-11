@@ -66,17 +66,22 @@ export function addCategoryAmount(stock, category, amount, categories, totalKey 
  * Drain up to `amount` units from the aggregate total, taking from whichever
  * categories have stock (in declared order) rather than a specific one —
  * for a need that only cares about the total (e.g. "fed or not"), not which
- * category satisfied it.
+ * category satisfied it. Also reports which categories actually contributed
+ * (`categoriesTaken`) — e.g. a house drawing from both `wheat` and `carrot`
+ * this period, for a "diet variety" need that DOES care how many distinct
+ * categories were involved (see HouseTierRequirementPolicy.js's
+ * `goodsVariety` kind).
  *
  * @param {Record<string, number>} stock
  * @param {readonly string[]} categories
  * @param {string} totalKey
  * @param {number} amount
- * @returns {{ nextStock: Readonly<Record<string, number>>, taken: number }}
+ * @returns {{ nextStock: Readonly<Record<string, number>>, taken: number, categoriesTaken: string[] }}
  */
 export function takeAcrossCategories(stock, categories, totalKey, amount) {
   let remaining = nonNegInt(amount);
   let current = createResourceStock(stock, categories, totalKey);
+  const categoriesTaken = [];
   for (const category of categories) {
     if (remaining <= 0) break;
     const available = getCategoryAmount(current, category);
@@ -84,9 +89,10 @@ export function takeAcrossCategories(stock, categories, totalKey, amount) {
     if (taken > 0) {
       current = takeCategoryAmount(current, category, taken, categories, totalKey);
       remaining -= taken;
+      categoriesTaken.push(category);
     }
   }
-  return { nextStock: current, taken: nonNegInt(amount) - remaining };
+  return { nextStock: current, taken: nonNegInt(amount) - remaining, categoriesTaken };
 }
 
 /**

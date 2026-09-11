@@ -7,4 +7,5 @@ export const MOBILE_TOOLBAR_CATEGORIES = [
   { id: 'industry', label: 'Industrie', sourceBtnId: 'industry-btn' },
   { id: 'roads', label: 'Routes', sourceBtnId: 'roads-btn' },
   { id: 'markets', label: 'Commerce', sourceBtnId: 'market-btn' },
+  { id: 'public', label: 'Services publics', sourceBtnId: 'public-btn' },
 ];
