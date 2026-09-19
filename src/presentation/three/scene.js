@@ -704,7 +704,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 removeInteractiveObject(buildings[x][y]);
                 // resolveAndCreateBuildingMesh is already fully source-agnostic — it
                 // routes through buildingSourceAdapterRegistry by the catalog entry's
-                // own `source` (the 'villageTown' adapter itself delegates to
+                // own `source` (the 'sceneTile' adapter itself delegates to
                 // assetManager.createAsset internally). Never branch on source here.
                 let nextMesh;
                 try {
@@ -793,7 +793,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 // One flow regardless of source — resolveAndCreateBuildingMesh already
                 // routes through buildingSourceAdapterRegistry by the catalog entry's
                 // own `source`; this function never needs to know Kenney from
-                // villageTown itself. (Previously split in two here, which is how the
+                // sceneTile itself. (Previously split in two here, which is how the
                 // instanceId/parcels-sync below went missing for every Kenney-sourced
                 // building — nothing about them made it wrong, it was just never added
                 // when the Kenney branch was split out.)
@@ -808,9 +808,9 @@ export function createScene(_gameStore, assetManager, deps) {
                 buildings[x][y] = mesh;
                 // No manual centering here — resolveAndCreateBuildingMesh's contract
                 // is to return a fully positioned mesh, footprint centering included
-                // (see buildingSourceAdapterRegistry.js and the villageTown/Kenney
+                // (see buildingSourceAdapterRegistry.js and the sceneTile/Kenney
                 // adapters). This used to double-center Kenney meshes and skip
-                // centering for villageTown's own multi-tile meshes entirely.
+                // centering for sceneTile's own multi-tile meshes entirely.
                 scene.userData.requestShadowRefresh?.();
                 const citySize = city.size || 16;
                 const zoneIndex = resolveTerrainZoneIndex(

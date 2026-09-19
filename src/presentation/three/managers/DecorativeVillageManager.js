@@ -117,7 +117,7 @@ export class DecorativeVillageManager {
       try {
         // Ids reassigned to another source (e.g. roads → kenneyGlb) have no
         // village-manager factory any more: resolve them through their adapter.
-        if (ASSET_CATALOG[element.type] && ASSET_CATALOG[element.type].source !== 'villageTown') {
+        if (ASSET_CATALOG[element.type] && ASSET_CATALOG[element.type].source !== 'sceneTile') {
           resolveAndCreateBuildingMesh({
             buildingId: element.type,
             x: element.x,

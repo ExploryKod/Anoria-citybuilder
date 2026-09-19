@@ -7,7 +7,7 @@ import {
   countAssetsByFilter,
   sectionMatchesFilter,
 } from './assetsPageFilters.js';
-import { renderGlbThumbnail, renderVillageThumbnail } from './villageThumbnailRenderer.js';
+import { renderGlbThumbnail, renderSceneTileThumbnail } from './assetThumbnailRenderer.js';
 
 const PREVIEW_HEIGHT_PX = 104;
 const root = document.getElementById('assets-root');
@@ -120,7 +120,7 @@ function createAssetCard(item) {
     previewWrap.appendChild(canvas);
     const render = item.glbUrl
       ? renderGlbThumbnail(item.glbUrl, canvas, PREVIEW_HEIGHT_PX)
-      : renderVillageThumbnail(item.id, canvas, PREVIEW_HEIGHT_PX);
+      : renderSceneTileThumbnail(item.id, canvas, PREVIEW_HEIGHT_PX);
     render.catch(() => {});
   }
 

@@ -1,7 +1,7 @@
 // Generic per-source building-mesh adapter registry.
 //
 // No file that consumes this registry (resolveBuildingMesh.js, placementGhost.js)
-// may hardcode a source name ('kenneyCityKit', 'villageTown', or any future one) —
+// may hardcode a source name ('kenneyCityKit', 'sceneTile', or any future one) —
 // every source registers its own adapter here instead. Adding a new GLB pack means
 // writing one adapter file that calls registerBuildingSourceAdapter once; nothing
 // in the generic mesh-resolution or ghost-placement code changes.

@@ -87,8 +87,8 @@ describe('buildAssetsPageCatalog', () => {
     // Nature ids come from the Kenney nature kit
     expect(byId('Tree-Pine-001')?.source).toBe('kenney-nature');
     expect(byId('Tree-Pine-001')?.kenneyGlbFile).toBe('tree_pineDefaultA.glb');
-    // Only the procedural ground still comes from the village GLB
-    expect(byId('grass')?.source).toBe('village');
+    // Only the procedural ground is a scene tile
+    expect(byId('grass')?.source).toBe('scene-tile');
   });
 
   test('each pack header is emitted once (sections are grouped by pack)', () => {

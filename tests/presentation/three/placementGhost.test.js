@@ -74,7 +74,7 @@ describe('placementGhost', () => {
   });
 
   test('moves Kenney ghost mesh when hover tile changes', async () => {
-    // House-Blue is villageTown-labelled but catalog-reassigned to a Kenney
+    // House-Blue is sceneTile-labelled but catalog-reassigned to a Kenney
     // mesh (buildingAssets.js) — this is the exact case that must take the
     // Kenney branch by catalog `source`, not by an id-prefix guess.
     controller.show('House-Blue', 2, 3, true, { gridSize: 1 });
@@ -103,7 +103,7 @@ describe('placementGhost', () => {
     syncController.rotateStep();
     expect(syncController.rotationStep).toBe(0);
 
-    // grass (procedural) stays villageTown-sourced (farms, houses and nature are all
+    // grass (procedural) stays sceneTile-sourced (farms, houses and nature are all
     // reassigned to Kenney now) — the synchronous createAsset path, not the
     // async Kenney adapter.
     syncController.show('grass', 2, 3, true, { gridSize: 1 });

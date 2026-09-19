@@ -22,20 +22,18 @@
  * Two separate category systems exist because two separate UIs exist:
  * `button.group` is the REAL in-game gameplay category the normal build
  * carousel (ToolPanel.js) routes on (nature/decoration/tombs/infrastructure)
- * — set for the 35 villageTown entries, `null` for all 234 kenneyNatureProp
- * entries (they're never placed via the normal gameplay carousel).
+ * — set for the seven kenneyGlb trees / rock (placed by world generation, not
+ * the carousel), `null` for all 234 kenneyNatureProp entries (they're never
+ * placed via the normal gameplay carousel).
  * `button.editorGroup` is the separate map-editor toolbar's own finer
  * category (e.g. 'editorTrees') — set only for the 234 kenneyNatureProp
- * entries, `null` for villageTown entries (they have no editor-toolbar
+ * entries, `null` for the kenneyGlb ones (they have no editor-toolbar
  * presence). Exactly one of the two is non-null per entry.
  *
  * Field notes:
- *  - transform.rotationDeg: 'AUTO_DETECTED_AT_RUNTIME' means the real engine
- *    code (the scene asset manager) decides this per-mesh via
- *    a bounding-box heuristic (isLocalYUpMesh), not a fixed declared value —
- *    flagged instead of guessed. Every other villageTown entry uses the
- *    pack's default authoring rotation (90,180,180) unless the source code
- *    hardcodes a named exception (Chapel, StonePath turns).
+ *  - transform.rotationDeg: fixed yaw (degrees) declared per entry; the player's R
+ *    key adds 90° steps on top. `null` for kenneyCityKit entries (the adapter
+ *    derives orientation from the prefab).
  *  - kenneyCityKit entries: geometry.glb is intentionally null — the actual
  *    GLB path lives in the single runtime-fetched catalog JSON
  *    (/resources/kenney_city_kits_catalog.json via kenneyCityKitConfig.js),
@@ -49,7 +47,7 @@
  *  - kenneyGlb entries: geometry.glb is the full public URL of one nature-kit GLB
  *    (trees, rock); transform.rotationDeg.y is the base yaw, scale/positionOffsetY
  *    tune size and height above the world platform — see kenneyGlbBuildingAdapter.js.
- *  - villageTown 'grass'/'terrain' use geometry.sourceKey as a
+ *  - sceneTile 'grass'/'terrain' use geometry.sourceKey as a
  *    procedural-material key instead of a GLB mesh name — these three are
  *    procedural THREE geometry
  *    with a shared Lambert material, not cloned GLB meshes.

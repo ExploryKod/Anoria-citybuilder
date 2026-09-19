@@ -1,10 +1,10 @@
 /**
- * Unit tests — villageTownBuildingAdapter.createMesh: per
+ * Unit tests — sceneTileBuildingAdapter.createMesh: per
  * buildingSourceAdapterRegistry.js's contract, createMesh must return a
  * FULLY positioned mesh (footprint centering included), same as the Kenney
  * adapter already does internally. Regression guard for the bug where
  * scene.js used to add its own external centering on top — correct for
- * villageTown (which didn't self-center) but double-applied for Kenney
+ * sceneTile (which didn't self-center) but double-applied for Kenney
  * (which does), causing houses to visibly shift on evolution and the
  * placement ghost (which already trusted adapters to self-center) to look
  * "uncentered" relative to where the real building landed.
@@ -18,14 +18,14 @@ function fakeMesh() {
   return { position: { x: 0, y: 0, z: 0, set(x, y, z) { this.x = x; this.y = y; this.z = z; } }, userData: {} };
 }
 
-describe('villageTownBuildingAdapter.createMesh', () => {
-  const adapter = getBuildingSourceAdapter('villageTown');
+describe('sceneTileBuildingAdapter.createMesh', () => {
+  const adapter = getBuildingSourceAdapter('sceneTile');
 
   test('is registered', () => {
     expect(adapter).toBeTruthy();
   });
 
-  test('a 1x1 villageTown mesh (the procedural grass tile) is left at whatever position assetManager.createAsset set — no spurious extra offset added', () => {
+  test('a 1x1 sceneTile mesh (the procedural grass tile) is left at whatever position assetManager.createAsset set — no spurious extra offset added', () => {
     // Mirrors SceneAssetManager#createBuilding's own real positioning
     // (object3D.position.set(placerPos.x, yOffset, placerPos.y)).
     const assetManager = {
@@ -36,7 +36,7 @@ describe('villageTownBuildingAdapter.createMesh', () => {
       },
     };
     const catalogEntry = ASSET_CATALOG['grass'];
-    expect(catalogEntry.source).toBe('villageTown');
+    expect(catalogEntry.source).toBe('sceneTile');
 
     const result = adapter.createMesh(3, 5, {
       catalogEntry,

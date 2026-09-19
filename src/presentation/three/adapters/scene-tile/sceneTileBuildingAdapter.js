@@ -1,4 +1,4 @@
-// villageTown's BuildingSourceAdapter registration — everything specific to
+// sceneTile's BuildingSourceAdapter registration — everything specific to
 // how this source creates, positions, and rotates a building lives here.
 // No other file (resolveBuildingMesh.js, placementGhost.js) may know this
 // source's name or behavior.
@@ -24,11 +24,11 @@ function setTilePosition(mesh, x, y, gridSize = 1) {
   }
 }
 
-registerBuildingSourceAdapter('villageTown', {
+registerBuildingSourceAdapter('sceneTile', {
   createMesh(x, y, { catalogEntry, buildingId, rotationStep, assetManager }) {
     const sourceKey = catalogEntry.geometry.sourceKey;
     if (!sourceKey) {
-      throw new Error('[villageTownBuildingAdapter] catalog entry is villageTown-sourced but has no geometry.sourceKey');
+      throw new Error('[sceneTileBuildingAdapter] catalog entry is sceneTile-sourced but has no geometry.sourceKey');
     }
     // Synchronous by design: a village mesh is an already-loaded clone, no
     // network/GLB load involved — callers may rely on this being immediate.
@@ -37,7 +37,7 @@ registerBuildingSourceAdapter('villageTown', {
     // return a FULLY positioned mesh — assetManager.createAsset itself only
     // places it at the tile's raw (x,y), so a multi-tile footprint needs
     // this adapter to center it, same as the Kenney adapter already does
-    // internally. Isotropic here (villageTown has no non-square footprints
+    // internally. Isotropic here (sceneTile has no non-square footprints
     // today) — revisit if one is ever added. Footprint comes from the same
     // shared source scene.js/placementGhost.js used to derive gridSize
     // before this adapter took over positioning — one source of truth.

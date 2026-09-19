@@ -31,12 +31,9 @@
  * Church-002 (legacy save-compat id, not a placeable tool).
  *
  * Field notes:
- *  - transform.rotationDeg: 'AUTO_DETECTED_AT_RUNTIME' means the real engine
- *    code (the scene asset manager) decides this per-mesh via
- *    a bounding-box heuristic (isLocalYUpMesh), not a fixed declared value —
- *    flagged instead of guessed. Every other villageTown entry uses the
- *    pack's default authoring rotation (90,180,180) unless the source code
- *    hardcodes a named exception (Chapel, StonePath turns).
+ *  - transform.rotationDeg: fixed yaw (degrees) declared per entry; the player's R
+ *    key adds 90° steps on top. `null` for kenneyCityKit entries (the adapter
+ *    derives orientation from the prefab).
  *  - selectableMeshes (optional): ordered array of catalog ids the S key cycles
  *    through while the entry's tool is active — see resolveSelectedMeshId in
  *    resolveBuildingMesh.js. Only StonePath-001 declares it today.
@@ -60,14 +57,13 @@
  *    src/shared/editor-catalog/kenneyPlacementProfiles.generated.js; this
  *    file intentionally does not re-duplicate that generated, auto-scanned
  *    data by hand.
- *  - villageTown 'grass'/'terrain' use geometry.sourceKey as a
+ *  - sceneTile 'grass'/'terrain' (see terrainAssets.js) use geometry.sourceKey as a
  *    procedural-material key instead of a GLB mesh name — these three are
  *    procedural THREE geometry
  *    with a shared Lambert material, not cloned GLB meshes.
  */
 
 export const BUILDING_ASSETS = Object.freeze({
-  // ---- villageTown ----
   // Palais
   'House-2Story': {
     source: 'kenneyCityKit',

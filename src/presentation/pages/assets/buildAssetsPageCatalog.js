@@ -35,8 +35,8 @@ export const KENNEY_ROAD_PACK_ID = 'kenney-city-roads';
 export const KENNEY_ROAD_PACK_LABEL = 'Kenney City Kit Roads';
 export const KENNEY_FARM_PACK_ID = 'kenney-farm-field';
 export const KENNEY_FARM_PACK_LABEL = 'Kenney Nature Kit (champs)';
-export const VILLAGE_PACK_ID = 'village-legacy';
-export const VILLAGE_PACK_LABEL = 'Village (legacy GLB)';
+export const SCENE_TILE_PACK_ID = 'scene-tiles';
+export const SCENE_TILE_PACK_LABEL = 'Sol procédural (tuiles de scène)';
 
 /** Display order of the playable packs (nature kit sections stay first). */
 const PLAYABLE_PACK_ORDER = Object.freeze([
@@ -44,7 +44,7 @@ const PLAYABLE_PACK_ORDER = Object.freeze([
   KENNEY_CITY_PACK_ID,
   KENNEY_ROAD_PACK_ID,
   KENNEY_FARM_PACK_ID,
-  VILLAGE_PACK_ID,
+  SCENE_TILE_PACK_ID,
 ]);
 
 const PACK_LABELS = Object.freeze({
@@ -52,7 +52,7 @@ const PACK_LABELS = Object.freeze({
   [KENNEY_CITY_PACK_ID]: KENNEY_CITY_PACK_LABEL,
   [KENNEY_ROAD_PACK_ID]: KENNEY_ROAD_PACK_LABEL,
   [KENNEY_FARM_PACK_ID]: KENNEY_FARM_PACK_LABEL,
-  [VILLAGE_PACK_ID]: VILLAGE_PACK_LABEL,
+  [SCENE_TILE_PACK_ID]: SCENE_TILE_PACK_LABEL,
 });
 
 /** @type {Readonly<Record<string, string>>} */
@@ -175,10 +175,10 @@ function buildItemFromCatalogEntry(id, category, filterGroup) {
   return {
     id,
     category,
-    source: 'village',
+    source: 'scene-tile',
     filterGroup,
-    packId: VILLAGE_PACK_ID,
-    packLabel: VILLAGE_PACK_LABEL,
+    packId: SCENE_TILE_PACK_ID,
+    packLabel: SCENE_TILE_PACK_LABEL,
     displayName,
     ...(meshAssetId ? { meshAssetId } : {}),
     ...(category === 'nature' ? { proceduralOnly: true } : {}),
@@ -239,7 +239,7 @@ function buildPlayableAssetSections() {
     }
 
     // One section per pack inside a category (e.g. infrastructure mixes Kenney
-    // roads and the remaining village pieces).
+    // roads and the procedural ground tiles).
     for (const packId of PLAYABLE_PACK_ORDER) {
       const packItems = items.filter((item) => item.packId === packId);
       if (packItems.length === 0) continue;

@@ -8,15 +8,14 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { resolveTerrainDisplayColorCss } from '../../../shared/terrain-catalog/terrainDisplayColor.js';
 
 /**
- * Village thumbnails: nothing of the village GLB is rendered any more — its
- * meshes were all reassigned to Kenney packs. Only the procedural ground still
- * belongs to this source, drawn as a flat colour.
+ * Scene-tile thumbnails: only the procedural ground belongs to the `sceneTile`
+ * source, drawn as a flat colour.
  *
  * @param {string} toolId
  * @param {HTMLCanvasElement} canvas
  * @param {number} size
  */
-export async function renderVillageThumbnail(toolId, canvas, size = 104) {
+export async function renderSceneTileThumbnail(toolId, canvas, size = 104) {
   if (toolId === 'grass') {
     renderGrassPlaceholder(canvas, size);
     return;
