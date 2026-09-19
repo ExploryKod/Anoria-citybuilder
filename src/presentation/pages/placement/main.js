@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import VillageTownAssetManager from '../../three/meshs/VillageTownAssetManager.js';
+import SceneAssetManager from '../../three/meshs/SceneAssetManager.js';
 import { getKenneyCityKitMeshAdapter } from '../../three/adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
 import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
 import { resolveAndCreateBuildingMesh } from '../../three/meshs/resolveBuildingMesh.js';
@@ -94,7 +94,7 @@ renderer.init().then(() => {
   });
 });
 
-const assetManager = new VillageTownAssetManager();
+const assetManager = new SceneAssetManager();
 
 let currentMesh = null;
 let boxHelper = null;

@@ -180,7 +180,7 @@ merge-doesn't-clobber case). `chapelServesHouses.behavior.test.js` and
 Not part of this refactor's own scope, but discovered testing the tier
 system live: `scene.js`'s `syncResidentialHouseMeshFromDb` (the per-tick
 mesh resync for a residential tile) called `assetManager.createAsset(...)`
-unconditionally — but `VillageTownAssetManager`'s `#assets` factory
+unconditionally — but `SceneAssetManager`'s `#assets` factory
 dictionary is only ever populated for `source: 'villageTown'` catalog
 entries (its own registration loop explicitly skips anything else). Every
 House-Blue/Red/Purple level-variant id is `source: 'kenneyCityKit'`, so

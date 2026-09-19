@@ -24,7 +24,7 @@ export const BUILDING_ECONOMY = {
   // since "the road" now means StonePath. (Every placed road, whichever
   // variant, still gets its runtime type/name marker set to the string
   // 'roads' for connectivity — see BuildingKind.js /
-  // VillageTownAssetManager#createBuilding — so EmploymentSectorCatalog.js
+  // SceneAssetManager#createBuilding — so EmploymentSectorCatalog.js
   // and BuildingMaintenanceBreakdownPolicy.js alias that marker to this
   // entry's facts instead of expecting a 'roads' catalog id.)
   'StonePath-001': {

@@ -1,4 +1,4 @@
-import VillageTownAssetManager from '../../three/meshs/VillageTownAssetManager.js';
+import SceneAssetManager from '../../three/meshs/SceneAssetManager.js';
 import {
   registerAppFunction,
   registerAppService,
@@ -38,7 +38,7 @@ import { loadBudgetStates } from '../compta/compte-de-resultat/CompteDeResultatP
 import { mountCookieConsent } from '../../pages/site/mountCookieBanner.js';
 
 export async function initAppBoot() {
-  const assetManager = new VillageTownAssetManager();
+  const assetManager = new SceneAssetManager();
 
   bindPopupManagerDeps({ pauseGame, playGame });
 

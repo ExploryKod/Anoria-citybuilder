@@ -72,11 +72,14 @@ describe('buildAssetsPageCatalog', () => {
     const byId = (id) => items.find((item) => item.id === id);
 
     // Reassigned to Kenney city kits
-    expect(byId('Farm-Carrot')?.source).toBe('kenney-city');
-    expect(byId('Farm-Carrot')?.usesKenneyId).toMatch(/^Kenney-/);
+    expect(byId('Hay-Bale')?.source).toBe('kenney-city');
+    expect(byId('Hay-Bale')?.usesKenneyId).toMatch(/^Kenney-/);
     // The wheat field is assembled from a ground GLB + one wheat GLB per growth stage
     expect(byId('Farm-Wheat')?.source).toBe('kenney-farm');
     expect(byId('Farm-Wheat')?.cropGlbFile).toBe('crops_wheatStageA.glb, crops_wheatStageB.glb');
+    expect(byId('Farm-Carrot')?.source).toBe('kenney-farm');
+    expect(byId('Farm-Carrot')?.cropGlbFile).toBe('crop_carrot.glb');
+    expect(byId('Farm-Cabbage')?.cropGlbFile).toBe('crops_leafsStageA.glb, crops_leafsStageB.glb');
     // Roads come from the Kenney roads pack
     expect(byId('StonePath-Tee-001')?.source).toBe('kenney-road');
     expect(byId('StonePath-Tee-001')?.kenneyGlbFile).toBe('road-intersection.glb');

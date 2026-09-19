@@ -32,7 +32,7 @@
  *
  * Field notes:
  *  - transform.rotationDeg: 'AUTO_DETECTED_AT_RUNTIME' means the real engine
- *    code (the village asset manager) decides this per-mesh via
+ *    code (the scene asset manager) decides this per-mesh via
  *    a bounding-box heuristic (isLocalYUpMesh), not a fixed declared value —
  *    flagged instead of guessed. Every other villageTown entry uses the
  *    pack's default authoring rotation (90,180,180) unless the source code
@@ -219,18 +219,34 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Champ de carottes
   'Farm-Carrot': {
-    source: 'kenneyCityKit',
+    source: 'kenneyFarmField',
     geometry: {
-      glb: null,
+      glb: '/resources/kenney_nature-kit/Models/GLTF format/crops_dirtDoubleRow.glb',
       sourceKey: null,
       aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-g',
+      kit: null,
+      buildingId: null,
     },
     transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      // Same clearance as the wheat field: the ground piece is only 0.05 thick.
+      positionOffsetY: 0.05,
+      scale: 1,
+    },
+    // Assembled field like Farm-Wheat. The nature kit has a single (mature) carrot model:
+    // the young stage reuses it at half size.
+    crop: {
+      perTile: 3,
+      stages: {
+        fallow: null,
+        growing: { glb: '/resources/kenney_nature-kit/Models/GLTF format/crop_carrot.glb', scale: 0.5 },
+        ripe: { glb: '/resources/kenney_nature-kit/Models/GLTF format/crop_carrot.glb' },
+      },
+      stageBySeason: { Hiver: 'fallow', Printemps: 'growing', 'Été': 'ripe', Automne: 'ripe' },
+      defaultStage: 'ripe',
+      requiresStaff: true,
+      idleStage: 'fallow',
+      previewStage: 'ripe',
     },
     presentation: {
       mode: 'lit',
@@ -252,18 +268,34 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Champ de choux
   'Farm-Cabbage': {
-    source: 'kenneyCityKit',
+    source: 'kenneyFarmField',
     geometry: {
-      glb: null,
+      glb: '/resources/kenney_nature-kit/Models/GLTF format/crops_dirtDoubleRow.glb',
       sourceKey: null,
       aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-k',
+      kit: null,
+      buildingId: null,
     },
     transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      // Same clearance as the other fields: the ground piece is only 0.05 thick.
+      positionOffsetY: 0.05,
+      scale: 1,
+    },
+    // Assembled field like Farm-Wheat. The nature kit has no cabbage: the leafy-crop
+    // models (2 growth stages) stand in for it.
+    crop: {
+      perTile: 2,
+      stages: {
+        fallow: null,
+        growing: { glb: '/resources/kenney_nature-kit/Models/GLTF format/crops_leafsStageA.glb' },
+        ripe: { glb: '/resources/kenney_nature-kit/Models/GLTF format/crops_leafsStageB.glb' },
+      },
+      stageBySeason: { Hiver: 'fallow', Printemps: 'growing', 'Été': 'ripe', Automne: 'ripe' },
+      defaultStage: 'ripe',
+      requiresStaff: true,
+      idleStage: 'fallow',
+      previewStage: 'ripe',
     },
     presentation: {
       mode: 'lit',

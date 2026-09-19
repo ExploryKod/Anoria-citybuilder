@@ -26,7 +26,7 @@ describe('villageTownBuildingAdapter.createMesh', () => {
   });
 
   test('a 1x1 villageTown mesh (the procedural grass tile) is left at whatever position assetManager.createAsset set — no spurious extra offset added', () => {
-    // Mirrors VillageTownAssetManager#createBuilding's own real positioning
+    // Mirrors SceneAssetManager#createBuilding's own real positioning
     // (object3D.position.set(placerPos.x, yOffset, placerPos.y)).
     const assetManager = {
       createAsset: (id, x, y) => {

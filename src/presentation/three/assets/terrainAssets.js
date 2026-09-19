@@ -30,7 +30,7 @@
  *
  * Field notes:
  *  - transform.rotationDeg: 'AUTO_DETECTED_AT_RUNTIME' means the real engine
- *    code (the village asset manager) decides this per-mesh via
+ *    code (the scene asset manager) decides this per-mesh via
  *    a bounding-box heuristic (isLocalYUpMesh), not a fixed declared value —
  *    flagged instead of guessed. Every other villageTown entry uses the
  *    pack's default authoring rotation (90,180,180) unless the source code

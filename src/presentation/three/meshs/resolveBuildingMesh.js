@@ -85,7 +85,7 @@ export function resolveSelectedMeshId(toolId, selectionIndex = 0) {
  * @param {number} params.y
  * @param {number} [params.rotationStep]
  * @param {number} [params.level] House tier — see `resolveVisualBuildingId`.
- * @param {object} params.assetManager - the VillageTownAssetManager instance
+ * @param {object} params.assetManager - the SceneAssetManager instance
  * @returns {Promise<import('three').Object3D>}
  */
 export async function resolveAndCreateBuildingMesh({ buildingId, x, y, rotationStep = 0, level, assetManager }) {

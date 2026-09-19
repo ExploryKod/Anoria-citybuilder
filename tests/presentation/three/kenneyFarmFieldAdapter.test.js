@@ -114,4 +114,44 @@ describe('kenneyFarmField adapter (assembled field)', () => {
     field.userData.applySeason('???');
     expect(plantedCount(field)).toBe(catalogEntry.crop.perTile ** 2);
   });
+
+  test('Farm-Carrot uses the same assembly: one model, half size while growing', async () => {
+    const carrot = ASSET_CATALOG['Farm-Carrot'];
+    expect(carrot.source).toBe('kenneyFarmField');
+    const field = await adapter.createMesh(2, 3, { catalogEntry: carrot, buildingId: 'Farm-Carrot' });
+    field.userData.applyStaffing(true);
+
+    const activeScale = () => {
+      const active = instancedMeshesOf(field).find((set) => set.count > 0);
+      const matrix = new THREE.Matrix4();
+      active.getMatrixAt(0, matrix);
+      return matrix.getMaxScaleOnAxis();
+    };
+
+    field.userData.applySeason('Printemps');
+    const growing = activeScale();
+    field.userData.applySeason('Été');
+    const ripe = activeScale();
+    expect(growing).toBeLessThan(ripe);
+    expect(plantedCount(field)).toBe(carrot.crop.perTile ** 2);
+
+    field.userData.applySeason('Hiver');
+    expect(plantedCount(field)).toBe(0);
+  });
+
+  test('every crop farm is an assembled field with the same season / staffing rules', async () => {
+    for (const id of ['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage']) {
+      const entry = ASSET_CATALOG[id];
+      expect(entry.source).toBe('kenneyFarmField');
+      expect(entry.crop.requiresStaff).toBe(true);
+
+      const field = await adapter.createMesh(0, 0, { catalogEntry: entry, buildingId: id });
+      expect(plantedCount(field)).toBe(0); // placed unstaffed
+      field.userData.applyStaffing(true);
+      field.userData.applySeason('Été');
+      expect(plantedCount(field)).toBe(entry.crop.perTile ** 2);
+      field.userData.applySeason('Hiver');
+      expect(plantedCount(field)).toBe(0);
+    }
+  });
 });

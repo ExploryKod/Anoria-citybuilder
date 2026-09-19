@@ -18,7 +18,7 @@ import {
  * and nature piece is created through its own BuildingSourceAdapter (see
  * resolveBuildingMesh.js) — nothing here loads a GLB any more.
  */
-class VillageTownAssetManager {
+class SceneAssetManager {
     #geometry = new THREE.BoxGeometry(1, 1, 1);
     #assets = {};
 
@@ -53,7 +53,7 @@ class VillageTownAssetManager {
         if (!this.#sharedTerrainMaterials) {
             // Vérifier que les textures sont chargées
             if (!textures['grass']) {
-                console.error('[VillageTownAssetManager] Textures not loaded yet!', {
+                console.error('[SceneAssetManager] Textures not loaded yet!', {
                     grass: !!textures['grass']
                 });
             }
@@ -121,7 +121,7 @@ class VillageTownAssetManager {
 
     createAsset(assetId, x, y, options = null) {
         if (!(assetId in this.#assets)) {
-            console.warn(`[VillageTownAssetManager] Asset ${assetId} does not exist`);
+            console.warn(`[SceneAssetManager] Asset ${assetId} does not exist`);
             return undefined;
         }
         const mesh = this.#assets[assetId](x, y);
@@ -328,4 +328,4 @@ class VillageTownAssetManager {
     }
 }
 
-export default VillageTownAssetManager;
+export default SceneAssetManager;

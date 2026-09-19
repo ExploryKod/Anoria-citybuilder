@@ -12,7 +12,7 @@ const TREE_TYPES = ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001'];
 export class DecorativeVillageManager {
   /**
    * @param {THREE.Scene} scene
-   * @param {import('../meshs/VillageTownAssetManager.js').default} assetManager
+   * @param {import('../meshs/SceneAssetManager.js').default} assetManager
    */
   constructor(scene, assetManager) {
     this.scene = scene;
