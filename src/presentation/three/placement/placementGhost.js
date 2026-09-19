@@ -66,10 +66,41 @@ function createGhostMaterial(valid, mode = 'hover') {
 }
 
 /**
- * @param {THREE.Object3D} root
- * @param {{ valid?: boolean, mode?: 'hover' | 'anchored' }} [options]
+ * "Preview" ghost style: the mesh keeps its real textured materials (a flat
+ * tint hides the detail of pieces like roads) and is only made slightly
+ * translucent with a state-coloured glow, so it still reads as "not placed yet".
+ * Materials are cloned — the originals are shared with the cached template.
+ *
+ * @param {THREE.Material} source
+ * @param {boolean} valid
+ * @param {'hover' | 'anchored'} mode
+ * @returns {THREE.Material}
  */
-export function applyGhostAppearance(root, { valid = true, mode = 'hover' } = {}) {
+function createPreviewGhostMaterial(source, valid, mode) {
+  const anchored = mode === 'anchored';
+  const tint = anchored ? GHOST_ANCHORED : valid ? GHOST_VALID : GHOST_INVALID;
+  const material = source.clone();
+  material.transparent = true;
+  material.opacity = valid || anchored ? 0.78 : 0.68;
+  material.depthWrite = false;
+  material.polygonOffset = true;
+  material.polygonOffsetFactor = -1;
+  material.polygonOffsetUnits = -1;
+  if (material.emissive) {
+    material.emissive = tint.clone();
+    material.emissiveIntensity = 0.4;
+  } else if (material.color) {
+    material.color = material.color.clone().lerp(tint, 0.35);
+  }
+  return material;
+}
+
+/**
+ * @param {THREE.Object3D} root
+ * @param {{ valid?: boolean, mode?: 'hover' | 'anchored', style?: 'tint' | 'preview' }} [options]
+ *   `style` comes from the catalog entry's `presentation.ghostStyle` ('tint' by default).
+ */
+export function applyGhostAppearance(root, { valid = true, mode = 'hover', style = 'tint' } = {}) {
   if (!root) return;
 
   root.traverse((obj) => {
@@ -83,6 +114,13 @@ export function applyGhostAppearance(root, { valid = true, mode = 'hover' } = {}
       isPlacementGhost: true,
       nonInteractive: true,
     };
+
+    if (style === 'preview') {
+      obj.material = Array.isArray(obj.material)
+        ? obj.material.map((mat) => createPreviewGhostMaterial(mat, valid, mode))
+        : createPreviewGhostMaterial(obj.material, valid, mode);
+      return;
+    }
 
     const count = Array.isArray(obj.material) ? obj.material.length : 1;
     const ghostMats = Array.from({ length: count }, () => createGhostMaterial(valid, mode));
@@ -297,7 +335,9 @@ export function createPlacementGhostController({ scene, assetManager }) {
    * @param {{ gridSize?: number, rotationStep?: number }} options
    */
   function mountGhost(mesh, assetId, x, y, valid, mode, options = {}) {
-    applyGhostAppearance(mesh, { valid, mode });
+    // Assembled meshes (e.g. a planted field) can show their finished look on the ghost.
+    mesh.userData?.showPreview?.();
+    applyGhostAppearance(mesh, { valid, mode, style: ASSET_CATALOG[assetId]?.presentation?.ghostStyle });
     if (isEditorGhostPlacement(assetId, options) && options.placementBaseLocalY != null) {
       applyEditorStackGhostTransform(
         mesh,

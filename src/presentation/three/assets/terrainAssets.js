@@ -30,11 +30,11 @@
  *
  * Field notes:
  *  - transform.rotationDeg: 'AUTO_DETECTED_AT_RUNTIME' means the real engine
- *    code (VillageTownAssetManager#createBuilding) decides this per-mesh via
+ *    code (the village asset manager) decides this per-mesh via
  *    a bounding-box heuristic (isLocalYUpMesh), not a fixed declared value —
  *    flagged instead of guessed. Every other villageTown entry uses the
  *    pack's default authoring rotation (90,180,180) unless the source code
- *    hardcodes a named exception (Chapel, BookShop-001, StonePath turns).
+ *    hardcodes a named exception (Chapel, StonePath turns).
  *  - kenneyCityKit entries: geometry.glb is intentionally null — the actual
  *    GLB path lives in the single runtime-fetched catalog JSON
  *    (/resources/kenney_city_kits_catalog.json via kenneyCityKitConfig.js),

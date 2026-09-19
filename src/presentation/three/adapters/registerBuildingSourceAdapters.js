@@ -10,3 +10,5 @@
 
 import './village-town/villageTownBuildingAdapter.js';
 import './kenney-city-kit/kenneyCityKitBuildingAdapter.js';
+import './kenney-glb/kenneyGlbBuildingAdapter.js';
+import './kenney-farm/kenneyFarmFieldAdapter.js';

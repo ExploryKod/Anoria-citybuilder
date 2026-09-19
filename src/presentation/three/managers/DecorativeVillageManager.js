@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ASSET_CATALOG, resolveAndCreateBuildingMesh } from '../meshs/resolveBuildingMesh.js';
 import { buildNeighborHamletDecoSpots } from '../../../core/persistence/hamlet/neighborHamletDecoSpots.js';
 
 const HOUSE_TYPES = ['House-Blue', 'House-Red', 'House-Purple'];
@@ -81,14 +82,6 @@ export class DecorativeVillageManager {
         }
       }
 
-      if (hamlet.hasWell) {
-        const x = hamlet.centerX + 1;
-        const z = hamlet.centerZ;
-        if (this.#isValidDecoTile(x, z, playableMinX, playableMaxX, playableMinZ, playableMaxZ, worldMinX, worldMaxX, worldMinZ, worldMaxZ)) {
-          decorativeElements.push({ hamletId: hamlet.hamletId, type: 'Well-001', x, z });
-        }
-      }
-
       hamlet.houses.forEach((houseOffset, houseIndex) => {
         if (houseIndex === 0) return;
         const prevHouse = hamlet.houses[houseIndex - 1];
@@ -104,21 +97,38 @@ export class DecorativeVillageManager {
       });
     });
 
+    const addDecorative = (element, asset) => {
+      if (!asset) return;
+      asset.userData.isDecorative = true;
+      asset.userData.nonInteractive = true;
+      asset.userData.hamletId = element.hamletId;
+      asset.name = `decorative-${element.hamletId}-${element.type}-${element.x}-${element.z}`;
+      asset.position.set(element.x, worldPlatformHeight, element.z);
+      villageGroup.add(asset);
+    };
+    const warnFailed = (element, error) => {
+      console.warn(
+        `[DecorativeVillageManager] Failed to create decorative ${element.type} for ${element.hamletId} at (${element.x}, ${element.z}):`,
+        error
+      );
+    };
+
     decorativeElements.forEach((element) => {
       try {
-        const asset = this.assetManager.createAsset(element.type, element.x, element.z);
-        if (!asset) return;
-        asset.userData.isDecorative = true;
-        asset.userData.nonInteractive = true;
-        asset.userData.hamletId = element.hamletId;
-        asset.name = `decorative-${element.hamletId}-${element.type}-${element.x}-${element.z}`;
-        asset.position.set(element.x, worldPlatformHeight, element.z);
-        villageGroup.add(asset);
+        // Ids reassigned to another source (e.g. roads → kenneyGlb) have no
+        // village-manager factory any more: resolve them through their adapter.
+        if (ASSET_CATALOG[element.type] && ASSET_CATALOG[element.type].source !== 'villageTown') {
+          resolveAndCreateBuildingMesh({
+            buildingId: element.type,
+            x: element.x,
+            y: element.z,
+            assetManager: this.assetManager,
+          }).then((asset) => addDecorative(element, asset)).catch((error) => warnFailed(element, error));
+          return;
+        }
+        addDecorative(element, this.assetManager.createAsset(element.type, element.x, element.z));
       } catch (error) {
-        console.warn(
-          `[DecorativeVillageManager] Failed to create decorative ${element.type} for ${element.hamletId} at (${element.x}, ${element.z}):`,
-          error
-        );
+        warnFailed(element, error);
       }
     });
 

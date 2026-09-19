@@ -72,8 +72,12 @@ describe('Employment — SkillPriorityPolicy', () => {
     });
 
     test('a single-skill tab clamps to rank 1 always', () => {
-      const updated = swapSkillPriority('vente-alimentaire', 5, {}, ['vente-alimentaire']);
-      expect(updated['vente-alimentaire']).toBe(1);
+      const tab = ['vente-alimentaire'];
+      const updated = swapSkillPriority('vente-alimentaire', 5, {}, tab);
+      // Effective rank, not the raw key: rank 1 is already this skill's default
+      // in a one-skill tab, so the swap is a no-op and stores nothing.
+      expect(resolveSkillPriorityValue('vente-alimentaire', updated, tab)).toBe(1);
+      expect(updated).toEqual({});
     });
   });
 });

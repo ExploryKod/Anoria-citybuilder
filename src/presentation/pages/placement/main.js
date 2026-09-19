@@ -207,27 +207,9 @@ showBoxCheckbox.addEventListener('change', updateBoxHelper);
   input.addEventListener('input', updateIconPreview);
 });
 
-// Mirrors AssetLoader.js's loadGameAssets — every building category the
-// catalog can reference, loaded eagerly (no idle-callback deferral: this
-// tool needs everything ready before you pick a building, not fast boot).
-const VILLAGE_TOWN_BUILDING_CATEGORIES = [
-  'houses',
-  'palaces',
-  'markets',
-  'industry',
-  'public',
-  'decoration',
-  'tombs',
-  'farms',
-  'infrastructure',
-];
-
 async function boot() {
   outputEl.textContent = 'Loading assets...';
   await getKenneyCityKitMeshAdapter().initialize();
-  await Promise.all(
-    VILLAGE_TOWN_BUILDING_CATEGORIES.map((category) => assetManager.initializeBuildings(category))
-  );
   await loadSelectedBuilding();
 }
 

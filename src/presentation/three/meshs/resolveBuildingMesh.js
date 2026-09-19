@@ -35,6 +35,34 @@ export function resolveVisualBuildingId(buildingId, level) {
 }
 
 /**
+ * Catalog ids the S key cycles through for a tool, from its declarative
+ * `selectableMeshes` fact — empty when the tool offers no choice.
+ *
+ * @param {string} toolId
+ * @returns {readonly string[]}
+ */
+export function getSelectableMeshIds(toolId) {
+  const ids = ASSET_CATALOG[toolId]?.selectableMeshes;
+  return Array.isArray(ids) && ids.length > 1 ? ids : [];
+}
+
+/**
+ * The catalog id actually placed/previewed for a tool once the player has
+ * pressed S `selectionIndex` times (wraps around). No `selectableMeshes` fact
+ * or an unknown entry falls back to the tool id unchanged.
+ *
+ * @param {string} toolId
+ * @param {number} [selectionIndex]
+ * @returns {string}
+ */
+export function resolveSelectedMeshId(toolId, selectionIndex = 0) {
+  const ids = getSelectableMeshIds(toolId);
+  if (ids.length === 0) return toolId;
+  const id = ids[((selectionIndex % ids.length) + ids.length) % ids.length];
+  return ASSET_CATALOG[id] ? id : toolId;
+}
+
+/**
  * Resolves and creates the mesh for a stable placeable id, via whichever
  * adapter its catalog entry names. Single source of truth for mesh
  * creation — used by the real game (scene.js) and by the /placement.html

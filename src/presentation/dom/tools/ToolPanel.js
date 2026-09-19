@@ -93,6 +93,8 @@ const GROUP_CREATORS = {
         'StonePath-Right-001',
         'StonePath-Left-001',
         'StonePath-Cross-001',
+        'StonePath-Tee-001',
+        'StonePath-End-001',
       ],
     }),
   public: () => fillPanelFromToolIds('public'),
@@ -264,6 +266,8 @@ const CATEGORY_EXCLUDES = {
     'StonePath-Right-001',
     'StonePath-Left-001',
     'StonePath-Cross-001',
+    'StonePath-Tee-001',
+    'StonePath-End-001',
   ],
 };
 

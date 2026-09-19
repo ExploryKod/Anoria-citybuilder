@@ -31,11 +31,11 @@
  *
  * Field notes:
  *  - transform.rotationDeg: 'AUTO_DETECTED_AT_RUNTIME' means the real engine
- *    code (VillageTownAssetManager#createBuilding) decides this per-mesh via
+ *    code (the village asset manager) decides this per-mesh via
  *    a bounding-box heuristic (isLocalYUpMesh), not a fixed declared value —
  *    flagged instead of guessed. Every other villageTown entry uses the
  *    pack's default authoring rotation (90,180,180) unless the source code
- *    hardcodes a named exception (Chapel, BookShop-001, StonePath turns).
+ *    hardcodes a named exception (Chapel, StonePath turns).
  *  - kenneyCityKit entries: geometry.glb is intentionally null — the actual
  *    GLB path lives in the single runtime-fetched catalog JSON
  *    (/resources/kenney_city_kits_catalog.json via kenneyCityKitConfig.js),
@@ -46,6 +46,9 @@
  *    src/shared/editor-catalog/kenneyPlacementProfiles.generated.js; this
  *    file intentionally does not re-duplicate that generated, auto-scanned
  *    data by hand.
+ *  - kenneyGlb entries: geometry.glb is the full public URL of one nature-kit GLB
+ *    (trees, rock); transform.rotationDeg.y is the base yaw, scale/positionOffsetY
+ *    tune size and height above the world platform — see kenneyGlbBuildingAdapter.js.
  *  - villageTown 'grass'/'terrain' use geometry.sourceKey as a
  *    procedural-material key instead of a GLB mesh name — these three are
  *    procedural THREE geometry
@@ -53,25 +56,21 @@
  */
 
 export const NATURE_ASSETS = Object.freeze({
-  // ---- villageTown ----
+  // ---- kenneyGlb (nature kit) ----
   // Sapin
   'Tree-Pine-001': {
-    source: 'villageTown',
+    source: 'kenneyGlb',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Tree-Pine-001',
-      aliases: ['Tree_Pine', 'Tree_Pine001', 'Tree_Pine002', 'Tree_Pine003', 'Tree_Pine004', 'Tree_Pine005', 'Tree_Pine006', 'Tree_Pine007', 'Tree_Pine008', 'Tree_Pine009', 'Tree_Pine010', 'Tree_Pine011', 'Tree_Pine012', 'Tree_Pine013', 'Tree_Pine014', 'Tree_Pine015', 'Tree_Pine016', 'Tree_Pine017', 'Tree_Pine018', 'Tree_Pine019', 'Tree_Pine020', 'Tree_Pine021', 'Tree_Pine022', 'Tree_Pine023', 'Tree_Pine024', 'Tree_Pine025', 'Tree_Pine026', 'Tree_Pine027', 'Tree_Pine028', 'Tree_Pine029', 'Tree_Pine030', 'Tree_Pine031', 'Tree_Pine032', 'Tree_Pine033', 'Tree_Pine034', 'Tree_Pine035', 'Tree_Pine036', 'Tree_Pine037', 'Tree_Pine038', 'Tree_Pine039', 'Tree_Pine040', 'Tree_Pine041', 'Tree_Pine042'],
+      glb: '/resources/kenney_nature-kit/Models/GLTF format/tree_pineDefaultA.glb',
+      sourceKey: null,
+      aliases: [],
       kit: null,
       buildingId: null,
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.02,
+      scale: 1,
     },
     presentation: {
       mode: 'lit',
@@ -92,22 +91,18 @@ export const NATURE_ASSETS = Object.freeze({
   },
   // Arbuste
   'Tree-Square-001': {
-    source: 'villageTown',
+    source: 'kenneyGlb',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Tree-Square-001',
-      aliases: ['Tree_Square', 'Tree_Square001', 'Tree_Square002', 'Tree_Square003', 'Tree_Square004', 'TreeSquare005', 'TreeSquare008', 'TreeSquare009', 'TreeSquare010'],
+      glb: '/resources/kenney_nature-kit/Models/GLTF format/plant_bush.glb',
+      sourceKey: null,
+      aliases: [],
       kit: null,
       buildingId: null,
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.02,
+      scale: 1,
     },
     presentation: {
       mode: 'lit',
@@ -128,22 +123,18 @@ export const NATURE_ASSETS = Object.freeze({
   },
   // Chêne
   'Tree-Tall-001': {
-    source: 'villageTown',
+    source: 'kenneyGlb',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Tree-Tall-001',
-      aliases: ['Tree_Tall', 'TreeTall001', 'TreeTall002', 'TreeTall003', 'TreeTall004', 'TreeTall005', 'TreeTall006', 'TreeTall007', 'TreeTall008', 'TreeTall009', 'TreeTall010', 'TreeTall011', 'TreeTall012', 'TreeTall013', 'TreeTall014', 'TreeTall015', 'TreeTall016', 'TreeTall017'],
+      glb: '/resources/kenney_nature-kit/Models/GLTF format/tree_tall.glb',
+      sourceKey: null,
+      aliases: [],
       kit: null,
       buildingId: null,
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.02,
+      scale: 1,
     },
     presentation: {
       mode: 'lit',
@@ -164,22 +155,18 @@ export const NATURE_ASSETS = Object.freeze({
   },
   // Sapin (id FR legacy → alias VILLAGE_NATURE_MESH_ALIASES vers Tree-Pine-001)
   'Tree-Sapin': {
-    source: 'villageTown',
+    source: 'kenneyGlb',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Tree-Pine-001',
+      glb: '/resources/kenney_nature-kit/Models/GLTF format/tree_pineTallA.glb',
+      sourceKey: null,
       aliases: [],
       kit: null,
       buildingId: null,
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.02,
+      scale: 1,
     },
     presentation: {
       mode: 'lit',
@@ -200,22 +187,18 @@ export const NATURE_ASSETS = Object.freeze({
   },
   // Arbuste (id FR legacy → alias VILLAGE_NATURE_MESH_ALIASES vers Tree-Square-001)
   'Tree-Arbuste': {
-    source: 'villageTown',
+    source: 'kenneyGlb',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Tree-Square-001',
+      glb: '/resources/kenney_nature-kit/Models/GLTF format/plant_bushLarge.glb',
+      sourceKey: null,
       aliases: [],
       kit: null,
       buildingId: null,
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.02,
+      scale: 1,
     },
     presentation: {
       mode: 'lit',
@@ -236,22 +219,18 @@ export const NATURE_ASSETS = Object.freeze({
   },
   // Chêne (id FR legacy → alias VILLAGE_NATURE_MESH_ALIASES vers Tree-Tall-001)
   'Tree-Chene': {
-    source: 'villageTown',
+    source: 'kenneyGlb',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Tree-Tall-001',
+      glb: '/resources/kenney_nature-kit/Models/GLTF format/tree_oak.glb',
+      sourceKey: null,
       aliases: [],
       kit: null,
       buildingId: null,
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.02,
+      scale: 1,
     },
     presentation: {
       mode: 'lit',
@@ -272,22 +251,18 @@ export const NATURE_ASSETS = Object.freeze({
   },
   // Rocher
   'Boulder-001': {
-    source: 'villageTown',
+    source: 'kenneyGlb',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Boulder-001',
-      aliases: ['Boulder', 'Boulder001', 'Boulder002', 'Boulder003', 'Boulder004', 'Boulder005', 'Boulder006', 'Boulder007', 'Boulder008', 'Boulder009'],
+      glb: '/resources/kenney_nature-kit/Models/GLTF format/rock_largeA.glb',
+      sourceKey: null,
+      aliases: [],
       kit: null,
       buildingId: null,
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.02,
+      scale: 1,
     },
     presentation: {
       mode: 'lit',
@@ -305,1017 +280,6 @@ export const NATURE_ASSETS = Object.freeze({
       icon: { kind: "svg", value: "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m8 3 4 8 5-5 5 15H2L8 3z\"/></svg>" },
     },
     tags: ['nature', 'decoration'],
-  },
-  // Banc
-  'Bench': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Bench',
-      aliases: [],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'decoration',
-      editorGroup: null,
-      label: "Bench",
-      tooltip: "Bench",
-      icon: { kind: "emoji", value: "🪑" },
-    },
-    tags: ['decoration'],
-  },
-  // Table de pique-nique
-  'Picnic-Table': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Picnic-Table',
-      aliases: ['Picnic_Table'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'decoration',
-      editorGroup: null,
-      label: "Picnic Table",
-      tooltip: "Picnic Table",
-      icon: { kind: "emoji", value: "🧺" },
-    },
-    tags: ['decoration'],
-  },
-  // Buisson en pot
-  'Potted-Bush': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Potted-Bush',
-      aliases: ['Potted_Bush'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'decoration',
-      editorGroup: null,
-      label: "Potted Bush",
-      tooltip: "Potted Bush",
-      icon: { kind: "emoji", value: "🪴" },
-    },
-    tags: ['decoration'],
-  },
-  // Marguerite
-  'Daisy': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Daisy',
-      aliases: [],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'decoration',
-      editorGroup: null,
-      label: "Daisy",
-      tooltip: "Daisy",
-      icon: { kind: "emoji", value: "🌼" },
-    },
-    tags: ['decoration'],
-  },
-  // Champignon
-  'Shroom': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Shroom',
-      aliases: [],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'decoration',
-      editorGroup: null,
-      label: "Shroom",
-      tooltip: "Shroom",
-      icon: { kind: "emoji", value: "🍄" },
-    },
-    tags: ['decoration'],
-  },
-  // Arche
-  'Arch': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Arch',
-      aliases: [],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'decoration',
-      editorGroup: null,
-      label: "Arch",
-      tooltip: "Arch",
-      icon: { kind: "emoji", value: "🏛️" },
-    },
-    tags: ['decoration'],
-  },
-  // Obélisque
-  'Obelisk': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Obelisk',
-      aliases: [],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'decoration',
-      editorGroup: null,
-      label: "Obelisk",
-      tooltip: "Obelisk",
-      icon: { kind: "emoji", value: "🗿" },
-    },
-    tags: ['decoration'],
-  },
-  // Pilier
-  'Pillar': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Pillar',
-      aliases: [],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'decoration',
-      editorGroup: null,
-      label: "Pillar",
-      tooltip: "Pillar",
-      icon: { kind: "emoji", value: "🪵" },
-    },
-    tags: ['decoration'],
-  },
-  // Guirlande
-  'Garland': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Garland',
-      aliases: [],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'decoration',
-      editorGroup: null,
-      label: "Garland",
-      tooltip: "Garland",
-      icon: { kind: "emoji", value: "🎀" },
-    },
-    tags: ['decoration'],
-  },
-  // Tonneau
-  'Barrell': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Barrell',
-      aliases: [],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'decoration',
-      editorGroup: null,
-      label: "Barrell",
-      tooltip: "Barrell",
-      icon: { kind: "emoji", value: "🛢️" },
-    },
-    tags: ['decoration'],
-  },
-  // Fontaine
-  'Fountain-001': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Fountain-001',
-      aliases: ['Fountain', 'Fountain001'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.8,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'infrastructure',
-      editorGroup: null,
-      label: "Fountain 001",
-      tooltip: "Fountain 001",
-      icon: { kind: "svg", value: "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z\"/></svg>" },
-    },
-    tags: ['infrastructure', 'decoration'],
-  },
-  // Puits
-  'Well-001': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Well-001',
-      aliases: ['Well', 'Well001'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.8,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'infrastructure',
-      editorGroup: null,
-      label: "Well 001",
-      tooltip: "Well 001",
-      icon: { kind: "svg", value: "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4.5-4-6.5c-.5 2-1.5 3.9-3 5.5S5 13 5 15a7 7 0 0 0 7 7z\"/></svg>" },
-    },
-    tags: ['infrastructure', 'decoration'],
-  },
-  // Réverbère (pas de Streetlight015 dans le pack)
-  'Streetlight-001': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Streetlight-001',
-      aliases: ['Streetlight', 'Streetlight001', 'Streetlight002', 'Streetlight003', 'Streetlight004', 'Streetlight005', 'Streetlight006', 'Streetlight007', 'Streetlight008', 'Streetlight009', 'Streetlight010', 'Streetlight011', 'Streetlight012', 'Streetlight013', 'Streetlight014', 'Streetlight016', 'Streetlight017'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.8,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'infrastructure',
-      editorGroup: null,
-      label: "Streetlight 001",
-      tooltip: "Streetlight 001",
-      icon: { kind: "svg", value: "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 2h8l4 10H4L8 2Z\"/><path d=\"M12 12v6\"/><path d=\"M8 22v-2c0-1.1.9-2 2-2h4a2 2 0 0 1 2 2v2H8Z\"/></svg>" },
-    },
-    tags: ['infrastructure', 'decoration'],
-  },
-  // Clôture
-  'Fence-001': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Fence-001',
-      aliases: ['Fence'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.8,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'infrastructure',
-      editorGroup: null,
-      label: "Fence 001",
-      tooltip: "Fence 001",
-      icon: { kind: "emoji", value: "🧱" },
-    },
-    tags: ['infrastructure', 'decoration'],
-  },
-  // Étang
-  'Pond-001': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Pond-001',
-      aliases: ['Pond'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.8,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'infrastructure',
-      editorGroup: null,
-      label: "Pond 001",
-      tooltip: "Pond 001",
-      icon: { kind: "emoji", value: "🌊" },
-    },
-    tags: ['infrastructure', 'decoration'],
-  },
-  // Dalle petite
-  'Plane-001': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Plane-001',
-      aliases: ['Plane001'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.8,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'infrastructure',
-      editorGroup: null,
-      label: "Plane 001",
-      tooltip: "Plane 001",
-      icon: { kind: "emoji", value: "🟫" },
-    },
-    tags: ['infrastructure', 'decoration'],
-  },
-  // Dalle moyenne
-  'Plane-004': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Plane-004',
-      aliases: ['Plane004'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.8,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'infrastructure',
-      editorGroup: null,
-      label: "Plane 004",
-      tooltip: "Plane 004",
-      icon: { kind: "emoji", value: "🟧" },
-    },
-    tags: ['infrastructure', 'decoration'],
-  },
-  // Dalle grande
-  'Plane-007': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Plane-007',
-      aliases: ['Plane007'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.8,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'infrastructure',
-      editorGroup: null,
-      label: "Plane 007",
-      tooltip: "Plane 007",
-      icon: { kind: "emoji", value: "🟥" },
-    },
-    tags: ['infrastructure', 'decoration'],
-  },
-  // Bloc
-  'Cube': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Cube',
-      aliases: [],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.8,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'infrastructure',
-      editorGroup: null,
-      label: "Cube",
-      tooltip: "Cube",
-      icon: { kind: "emoji", value: "⬛" },
-    },
-    tags: ['infrastructure', 'decoration'],
-  },
-  // Sphère
-  'Sphere-001': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Sphere-001',
-      aliases: ['Sphere001'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.8,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'infrastructure',
-      editorGroup: null,
-      label: "Sphere 001",
-      tooltip: "Sphere 001",
-      icon: { kind: "emoji", value: "⚪" },
-    },
-    tags: ['infrastructure', 'decoration'],
-  },
-  // Sphère sombre
-  'Sphere-002': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Sphere-002',
-      aliases: ['Sphere002'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.8,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'infrastructure',
-      editorGroup: null,
-      label: "Sphere 002",
-      tooltip: "Sphere 002",
-      icon: { kind: "emoji", value: "⚫" },
-    },
-    tags: ['infrastructure', 'decoration'],
-  },
-  // Tombe
-  'Grave-1': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Grave-1',
-      aliases: ['Grave_1'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'tombs',
-      editorGroup: null,
-      label: "Grave 1",
-      tooltip: "Grave 1",
-      icon: { kind: "emoji", value: "⚰️" },
-    },
-    tags: ['tombs'],
-  },
-  // Tombe
-  'Grave-2': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Grave-2',
-      aliases: ['Grave_2'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'tombs',
-      editorGroup: null,
-      label: "Grave 2",
-      tooltip: "Grave 2",
-      icon: { kind: "emoji", value: "⚰️" },
-    },
-    tags: ['tombs'],
-  },
-  // Pierre tombale
-  'Tombstone-1': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Tombstone-1',
-      aliases: ['Tombstone_1'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-      instanceable: true,
-    },
-    button: {
-      group: 'tombs',
-      editorGroup: null,
-      label: "Tombstone 1",
-      tooltip: "Tombstone 1",
-      icon: { kind: "emoji", value: "🪦" },
-    },
-    tags: ['tombs'],
-  },
-  // Pierre tombale
-  'Tombstone-2': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Tombstone-2',
-      aliases: ['Tombstone_2'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-      instanceable: true,
-    },
-    button: {
-      group: 'tombs',
-      editorGroup: null,
-      label: "Tombstone 2",
-      tooltip: "Tombstone 2",
-      icon: { kind: "emoji", value: "🪦" },
-    },
-    tags: ['tombs'],
-  },
-  // Pierre tombale
-  'Tombstone-3': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Tombstone-3',
-      aliases: ['Tombstone_3'],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-      instanceable: true,
-    },
-    button: {
-      group: 'tombs',
-      editorGroup: null,
-      label: "Tombstone 3",
-      tooltip: "Tombstone 3",
-      icon: { kind: "emoji", value: "🪦" },
-    },
-    tags: ['tombs'],
-  },
-  // Tombeau
-  'Tomb': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Tomb',
-      aliases: [],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'tombs',
-      editorGroup: null,
-      label: "Tomb",
-      tooltip: "Tomb",
-      icon: { kind: "emoji", value: "⚱️" },
-    },
-    tags: ['tombs'],
-  },
-  // Cercueil
-  'Coffin': {
-    source: 'villageTown',
-    geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Coffin',
-      aliases: [],
-      kit: null,
-      buildingId: null,
-    },
-    transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
-      scale: 0.5,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'tombs',
-      editorGroup: null,
-      label: "Coffin",
-      tooltip: "Coffin",
-      icon: { kind: "emoji", value: "⚰️" },
-    },
-    tags: ['tombs'],
   },
   // ---- kenneyNatureProp ----
   // Bed

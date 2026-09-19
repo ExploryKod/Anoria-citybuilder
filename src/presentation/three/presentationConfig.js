@@ -1,9 +1,5 @@
 export const assetsConfig = {
   baseUrl: '/',
-  models: {
-    mainModel: '/resources/lowpoly/village_town_assets_v2.glb',
-    catalog: '/village_town_assets.json',
-  },
   textures: {
     base: '/resources/textures/maps/base.png',
     specular: '/resources/textures/maps/specular.png',
@@ -33,10 +29,8 @@ export const renderingConfig = {
   },
 };
 
-/** Scene layers while Kenney terrain / backdrop are being integrated. */
+/** Scene layers of the Kenney terrain / backdrop. */
 export const scenePresentation = {
-  villageWorldPlatformEnabled: false,
-  villageBoundaryFencesEnabled: false,
   /** Kenney organic island shore — disabled; grass grid only. */
   islandBeachBorderEnabled: false,
 };

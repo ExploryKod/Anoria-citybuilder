@@ -101,6 +101,15 @@ db.version(7).stores({}).upgrade(async (tx) => {
   });
 });
 
+// v8: the decoration / cemetery / infrastructure-prop catalog is retired
+// (benches, fountains, tombs, primitives…): those ids no longer exist in the
+// asset catalogs, so any placed row would throw on scene render. They are
+// removed from saves.
+const RETIRED_PROP_TYPES = ['Bench', 'Picnic-Table', 'Potted-Bush', 'Daisy', 'Shroom', 'Arch', 'Obelisk', 'Pillar', 'Garland', 'Barrell', 'Fountain-001', 'Well-001', 'Streetlight-001', 'Fence-001', 'Pond-001', 'Plane-001', 'Plane-004', 'Plane-007', 'Cube', 'Sphere-001', 'Sphere-002', 'Grave-1', 'Grave-2', 'Tombstone-1', 'Tombstone-2', 'Tombstone-3', 'Tomb', 'Coffin'];
+db.version(8).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').anyOf(RETIRED_PROP_TYPES).delete();
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

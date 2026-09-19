@@ -34,5 +34,3 @@ export const textures = Object.freeze({
 })
 
 // Economy catalog (buildingPlacementCatalog, type lists) → src/shared/building-catalog/
-// Raw-GLB-mesh-name → canonical id resolution → resolveMeshAlias.js (reads
-// geometry.aliases straight off the declarative catalogs, no separate table here).

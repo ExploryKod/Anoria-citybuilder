@@ -45,6 +45,14 @@ export const BUILDING_ECONOMY = {
     displayName: 'Chemin de pierre',
     construction: { price: 5, category: 'infrastructure' },
   },
+  'StonePath-Tee-001': {
+    displayName: 'Chemin de pierre',
+    construction: { price: 5, category: 'infrastructure' },
+  },
+  'StonePath-End-001': {
+    displayName: 'Chemin de pierre',
+    construction: { price: 5, category: 'infrastructure' },
+  },
 
   // Houses — color = permanent social group (never changes after placement).
   // Mutable progression (autarky vs specialized profession) lives in `level`,

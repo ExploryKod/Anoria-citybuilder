@@ -25,7 +25,7 @@ describe('BuildToolHoverPreview', () => {
 
   test('uses compact profile for high-res isometric previews', () => {
     expect(resolveToolPreviewProfile('nature:ground_grass')).toBe('high-res');
-    expect(resolveToolPreviewProfile('Windmill-001')).toBe('high-res');
+    expect(resolveToolPreviewProfile('StonePath-001')).toBe('high-res');
   });
 
   test('resolves editor nature preview URLs', () => {

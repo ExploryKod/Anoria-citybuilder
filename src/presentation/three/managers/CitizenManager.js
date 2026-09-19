@@ -39,9 +39,7 @@ export class CitizenManager {
         this.citizens = [];
         this.previousPopulation = 0;
         this.citizenAnimations = {}; // Shared animation clips for citizen02
-        this.citizenCoolAnimations = {}; // Shared animation clips for citizen-cool
         this.citizenAnimationsLoaded = false;
-        this.citizenCoolAnimationsLoaded = false;
         this.citizen02Count = 0;
         this.currentCitySize = 16;
         // Parsed GLB scene + embedded animations, loaded from the network
@@ -59,7 +57,6 @@ export class CitizenManager {
      */
     async initialize() {
         this.loadCitizenAnimations();
-        this.loadCitizenCoolAnimations();
     }
 
     /**
@@ -124,41 +121,10 @@ export class CitizenManager {
     }
 
     /**
-     * Loads animation clips for citizen-cool
-     */
-    loadCitizenCoolAnimations() {
-        if (this.citizenCoolAnimationsLoaded) {
-            return;
-        }
-        
-        const gltfLoader = new GLTFLoader();
-        const baseUrl = assetsConfig.baseUrl || '/';
-        const citizenPath = `${baseUrl}citizenCool/citizenCoolTwoAnim.glb`.replace(/\/+/g, '/');
-        
-        gltfLoader.load(
-            citizenPath,
-            (gltf) => {
-                if (gltf.animations && gltf.animations.length > 0) {
-                    gltf.animations.forEach((clip) => {
-                        this.citizenCoolAnimations[clip.name] = clip;
-                    });
-                    this.citizenCoolAnimationsLoaded = true;
-                } else {
-                    console.warn('[CitizenManager] No animations found in citizen-cool GLB file');
-                }
-            },
-            null,
-            (error) => {
-                console.error('[CitizenManager] Error loading citizen-cool animations:', error);
-            }
-        );
-    }
-
-    /**
      * Gets the appropriate animation set for a citizen based on their type
      */
     getCitizenAnimations(citizen) {
-        return citizen && citizen.citizenType === 'citizen-cool' ? this.citizenCoolAnimations : this.citizenAnimations;
+        return this.citizenAnimations;
     }
 
     /**
@@ -212,9 +178,7 @@ export class CitizenManager {
         const promise = new Promise((resolve, reject) => {
             const gltfLoader = new GLTFLoader();
             const baseUrl = assetsConfig.baseUrl || '/';
-            const citizenPath = citizenType === 'citizen-cool'
-                ? `${baseUrl}citizenCool/citizenCoolTwoAnim.glb`.replace(/\/+/g, '/')
-                : `${baseUrl}citizen02/citizenAnimated02.glb`.replace(/\/+/g, '/');
+            const citizenPath = `${baseUrl}citizen02/citizenAnimated02.glb`.replace(/\/+/g, '/');
 
             gltfLoader.load(
                 citizenPath,
@@ -296,27 +260,20 @@ export class CitizenManager {
      * WalkerEventController) don't need to change.
      */
     createCitizenInstance(citizenType = 'citizen02') {
-        // Keeps the shared clip-name lookup tables (this.citizenAnimations /
-        // citizenCoolAnimations) warm for switchCitizenAnimation/
-        // getCitizenAnimations, which read them directly rather than
-        // through a per-instance template.
-        if (citizenType === 'citizen-cool') {
-            this.loadCitizenCoolAnimations();
-        } else {
-            this.loadCitizenAnimations();
-        }
+        // Keeps the shared clip-name lookup table (this.citizenAnimations)
+        // warm for switchCitizenAnimation/getCitizenAnimations, which read it
+        // directly rather than through a per-instance template.
+        this.loadCitizenAnimations();
 
         return this.loadCitizenTemplate(citizenType).then(({ scene: templateScene, animations: templateAnimations }) => {
             const citizen = cloneSkinned(templateScene);
-            citizen.name = citizenType === 'citizen-cool'
-                ? `citizen-cool-${this.citizens.length}`
-                : `citizen-${this.citizens.length}`;
+            citizen.name = `citizen-${this.citizens.length}`;
 
             const citizenData = new CitizenData();
             citizenData.character = citizen;
             citizenData.citizenType = citizenType;
 
-            const sharedAnimations = citizenType === 'citizen-cool' ? this.citizenCoolAnimations : this.citizenAnimations;
+            const sharedAnimations = this.citizenAnimations;
             const animationsToUseFinal = Object.keys(sharedAnimations).length > 0 ? sharedAnimations : templateAnimations;
 
             if (Object.keys(animationsToUseFinal).length > 0) {
@@ -359,24 +316,12 @@ export class CitizenManager {
             const citizensToSpawn = targetCitizenCount - currentCitizenCount;
             for (let i = 0; i < citizensToSpawn; i++) {
                 if (this.citizens.length < MAX_CITIZENS) {
-                    let citizenType = 'citizen02';
-                    const citizenCoolCount = this.citizens.filter(c => c && c.citizenType === 'citizen-cool').length;
-                    
-                    if (this.citizen02Count >= 2) {
-                        const totalCreatedAfterFirstTwo = (this.citizen02Count - 2) + citizenCoolCount;
-                        if (totalCreatedAfterFirstTwo % 2 === 0) {
-                            citizenType = 'citizen-cool';
-                        } else {
-                            citizenType = 'citizen02';
-                        }
-                    }
+                    const citizenType = 'citizen02';
                     
                     this.createCitizenInstance(citizenType).then(newCitizen => {
                         if (newCitizen) {
                             this.citizens.push(newCitizen);
-                            if (citizenType === 'citizen02') {
-                                this.citizen02Count++;
-                            }
+                            this.citizen02Count++;
                             this.spawnCitizenCharacter(newCitizen, city, findBorderRoads, createRoadPath);
                         }
                     });

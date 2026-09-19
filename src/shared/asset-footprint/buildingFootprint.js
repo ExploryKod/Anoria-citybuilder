@@ -61,6 +61,8 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'Market-Stall-Red': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-Cross-001': Object.freeze({ width: 1, depth: 1 }),
+  'StonePath-Tee-001': Object.freeze({ width: 1, depth: 1 }),
+  'StonePath-End-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-Left-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-Right-001': Object.freeze({ width: 1, depth: 1 }),
   'Windmill-001': Object.freeze({ width: 1, depth: 1 }),

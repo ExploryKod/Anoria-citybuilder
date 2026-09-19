@@ -29,7 +29,6 @@ import { BackdropManager } from './managers/BackdropManager.js';
 import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
 import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js';
-import { ensureNeighborHamletDecoAssets } from '../dom/boot/neighborHamletDecoAssets.js';
 import { listUnlockedNeighborHamletIds } from '../../core/persistence/hamlet/hamletAccess.js';
 import gameUIDefault from '../dom/shell/GameUI.js';
 import { syncPopRailHud } from '../../composition/syncSessionHud.js';
@@ -408,7 +407,6 @@ export function createScene(_gameStore, assetManager, deps) {
     async function syncNeighborHamletDeco(city) {
         const citySize = city?.size;
         if (typeof citySize !== 'number' || citySize <= 0) return;
-        await ensureNeighborHamletDecoAssets(assetManager);
         const unlockedHamletIds = await listUnlockedNeighborHamletIds();
         decorativeVillageManager.syncUnlockedNeighborHamlets(citySize, unlockedHamletIds);
     }
@@ -418,11 +416,6 @@ export function createScene(_gameStore, assetManager, deps) {
         const seedNature = options.seedNature === true;
         editorStackHydrationEnabled = usesEditorLikePresentation() || options.hydrateEditorLayout === true;
 
-        // Store world platform before clearing scene (legacy village ground — optional)
-        let worldPlatform = scenePresentation.villageWorldPlatformEnabled
-            ? scene.getObjectByName('world-platform')
-            : null;
-        
         scene.clear();
         zoneGroups.length = 0;
         zoneGroupsInitialized = false;
@@ -444,47 +437,6 @@ export function createScene(_gameStore, assetManager, deps) {
         const citySize = city && typeof city.size === 'number' ? city.size : 16;
         if (city && typeof city.size === 'number') {
             currentCitySize = city.size;
-        }
-        
-        // Village world platform (legacy) — Kenney terrain tiles replace it when disabled.
-        if (scenePresentation.villageWorldPlatformEnabled) {
-            if (worldPlatform) {
-                const existingScale = worldPlatform.scale.x;
-                const expectedScale = (citySize + 2) / (existingScale > 0 ? 1 / existingScale : 1);
-                if (Math.abs(existingScale - expectedScale) > 0.1) {
-                    scene.remove(worldPlatform);
-                    worldPlatform = null;
-                } else {
-                    scene.add(worldPlatform);
-                }
-            }
-
-            if (!worldPlatform) {
-                try {
-                    await assetManager.loadWorldPlatform(scene, citySize);
-                } catch (error) {
-                    console.warn('[Scene] Could not load world platform:', error);
-                }
-            }
-        } else {
-            const stalePlatform = scene.getObjectByName('world-platform');
-            if (stalePlatform) {
-                scene.remove(stalePlatform);
-            }
-        }
-        
-        // Village boundary fences (legacy) — optional while Kenney scene is integrated.
-        const existingFenceGroup = scene.getObjectByName('boundary-fences');
-        if (existingFenceGroup) {
-            scene.remove(existingFenceGroup);
-        }
-
-        if (scenePresentation.villageBoundaryFencesEnabled) {
-            try {
-                await assetManager.loadBoundaryFences(scene, citySize);
-            } catch (error) {
-                console.warn('[Scene] Could not load boundary fences:', error);
-            }
         }
         
         // Reset citizen state
@@ -1269,7 +1221,13 @@ export function createScene(_gameStore, assetManager, deps) {
                         });
                     }
 
-                    if (buildings[x][y]) {
+                    // Status layers are exclusive, in order: no road → only the no-road icon (no worker
+                    // is possible); no worker → only the no-work icon (refreshEmploymentPresentation);
+                    // otherwise the activity sprites (buying / no-food). Unknown staffing (not yet
+                    // refreshed) counts as unstaffed.
+                    const marketIsStaffed = buildings[x][y]?.userData?.isUnderstaffed === false
+                        && buildings[x][y]?.userData?.hasRoadAccess !== false;
+                    if (buildings[x][y] && marketIsStaffed) {
                         const marketSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const isBuying = marketSupply?.isBuying === true;
                         const noFarmsNearby = marketSupply?.noFarmsNearby === true;
@@ -1372,7 +1330,11 @@ export function createScene(_gameStore, assetManager, deps) {
                         });
                     }
 
-                    if (buildings[x][y]) {
+                    // Same layering as markets: no road → only no-road; no worker → only no-work;
+                    // otherwise the collecting sprite.
+                    const windmillIsStaffed = buildings[x][y]?.userData?.isUnderstaffed === false
+                        && buildings[x][y]?.userData?.hasRoadAccess !== false;
+                    if (buildings[x][y] && windmillIsStaffed) {
                         const windmillSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const isCollecting = windmillSupply?.isCollecting === true;
                         const collectingMeta = statutsIconsMeta.isCollecting;
@@ -1419,6 +1381,15 @@ export function createScene(_gameStore, assetManager, deps) {
                     const timeInfo = TimeManager.getTimeInfo(time);
                     const season = timeInfo.season;
 
+                    // Assembled fields (e.g. the Kenney farm field) plant / clear their crop
+                    // for the season through the hook their adapter put on the mesh.
+                    buildings[x][y].userData?.applySeason?.(season);
+
+                    // A farm with no worker produces nothing: the season / harvest / sale
+                    // status layer is hidden, only the no-work icon (refreshEmploymentPresentation)
+                    // shows. Unknown staffing (not yet refreshed) counts as unstaffed.
+                    const farmIsStaffed = buildings[x][y].userData?.isUnderstaffed === false;
+
                     // Season sprites from Supply/time — employment icons via refreshEmploymentPresentation
                     let spriteTexture, spriteName, spriteColor, spritePosition, spriteScale, backgroundColor;
                     
@@ -1459,7 +1430,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     }
                     
                     // Show the appropriate sprite for the current season (only one sprite per season)
-                    if(buildings[x][y] && spriteTexture) {
+                    if(farmIsStaffed && buildings[x][y] && spriteTexture) {
                         const seasonIcon = resolveIconAppearance(buildings[x][y], spriteName, spritePosition, spriteScale);
                         assetManager.setStatusSprite(
                             buildings[x][y],
@@ -1475,7 +1446,7 @@ export function createScene(_gameStore, assetManager, deps) {
 
                     // In December, show additional sprite if farm sold to windmill
                     // This sprite appears alongside the winter season sprite to indicate windmill collection
-                    if (buildings[x][y] && season === 'Hiver' && timeInfo.monthIndex === 11) {
+                    if (farmIsStaffed && buildings[x][y] && season === 'Hiver' && timeInfo.monthIndex === 11) {
                         const farmSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const soldToWindmill = farmSupply?.soldToWindmill === true;
                         const windmillSaleMeta = statutsIconsMeta['sold-to-windmill'];
@@ -1695,6 +1666,11 @@ export function createScene(_gameStore, assetManager, deps) {
                     ?? null;
                 if (!instanceId) continue;
 
+                // Assembled meshes (e.g. a planted field) react to having workers or not —
+                // same rule as the no-work icon below: understaffed = no worker at all.
+                mesh.userData.isUnderstaffed = understaffed.has(instanceId);
+                mesh.userData.applyStaffing?.(!mesh.userData.isUnderstaffed);
+
                 const isMarket = commerce.includes(currentBuildingId);
                 const isFarm = farms.includes(currentBuildingId);
                 const isWindmill =
@@ -1702,7 +1678,10 @@ export function createScene(_gameStore, assetManager, deps) {
 
                 if (!isMarket && !isFarm && !isWindmill) continue;
 
-                if (understaffed.has(instanceId)) {
+                // No road → the no-road icon is the only status: no-work only makes sense once
+                // the building is connected (there can be no worker without a road).
+                const hasRoadAccess = mesh.userData.hasRoadAccess !== false;
+                if (understaffed.has(instanceId) && hasRoadAccess) {
                     const noWorkMeta = (isMarket || isWindmill)
                         ? STATUS_ICON_DEFAULTS['no-work-market-windmill']
                         : STATUS_ICON_DEFAULTS['no-work'];
@@ -2662,6 +2641,22 @@ function onTouchEnd(event) {
             }
         }
 
+        // Build behavior: S picks the next mesh among the tool's selectableMeshes
+        if (
+            event.key
+            && event.key.toLowerCase() === 's'
+            && !event.ctrlKey
+            && !event.altKey
+            && !event.metaKey
+            && typeof this.onCycleMeshSelection === 'function'
+        ) {
+            const handled = this.onCycleMeshSelection(event);
+            if (handled) {
+                event.preventDefault?.();
+                return;
+            }
+        }
+
         // Placeable tool: arrows nudge the ghost; Enter confirms placement (keyboard autonomy).
         if (typeof this.onPlacementKeyboard === 'function') {
             const handled = this.onPlacementKeyboard(event);
@@ -2771,6 +2766,8 @@ function onTouchEnd(event) {
         onRoadPaintEnd: undefined,
         /** @type {((event?: KeyboardEvent) => boolean) | undefined} */
         onRotateBuildingTool: undefined,
+        /** @type {((event?: KeyboardEvent) => boolean) | undefined} */
+        onCycleMeshSelection: undefined,
         /**
          * Keyboard placement while a build tool is active (arrows nudge, Enter places).
          * @type {((event: KeyboardEvent) => boolean) | undefined}

@@ -1,22 +1,25 @@
 import { footprintCenterOffset, projectWorldToScreen } from './placementRotation.js';
 
 /**
- * Floating HUD beside an anchored placement ghost (rotate + confirm).
+ * Floating HUD beside an anchored placement ghost (rotate + select mesh + confirm).
  *
  * @param {object} options
  * @param {() => void} [options.onRotate]
+ * @param {() => void} [options.onSelectMesh] S-key equivalent, shown only when `show({ canSelectMesh })`
  * @param {() => void | Promise<void>} [options.onConfirm]
  * @param {() => import('three').Camera | null | undefined} [options.getCamera]
  * @param {() => HTMLElement | null | undefined} [options.getCanvas]
  */
 export function createPlacementRotationHud({
   onRotate,
+  onSelectMesh,
   onConfirm,
   getCamera = () => null,
   getCanvas = () => document.querySelector('canvas'),
 } = {}) {
   const root = document.getElementById('placement-rotation-hud');
   const rotateBtn = document.getElementById('placement-rotation-turn');
+  const selectBtn = document.getElementById('placement-rotation-select');
   const confirmBtn = document.getElementById('placement-rotation-confirm');
 
   let rafId = null;
@@ -69,7 +72,7 @@ export function createPlacementRotationHud({
     rafId = requestAnimationFrame(loop);
   }
 
-  function show({ x, y, gridSize }) {
+  function show({ x, y, gridSize, canSelectMesh = false }) {
     if (!root) {
       console.warn('[placementRotationHud] #placement-rotation-hud missing from DOM');
       return;
@@ -85,6 +88,10 @@ export function createPlacementRotationHud({
     root.removeAttribute('inert');
     root.setAttribute('aria-hidden', 'false');
     rotateBtn?.removeAttribute('tabindex');
+    selectBtn?.classList.toggle('hidden', !canSelectMesh);
+    if (canSelectMesh) {
+      selectBtn?.removeAttribute('tabindex');
+    }
     confirmBtn?.removeAttribute('tabindex');
     updatePosition();
     track();
@@ -100,6 +107,7 @@ export function createPlacementRotationHud({
       root.setAttribute('inert', '');
       root.setAttribute('aria-hidden', 'true');
       rotateBtn?.setAttribute('tabindex', '-1');
+      selectBtn?.setAttribute('tabindex', '-1');
       confirmBtn?.setAttribute('tabindex', '-1');
     }
   }
@@ -108,6 +116,12 @@ export function createPlacementRotationHud({
     e.preventDefault();
     e.stopPropagation();
     onRotate?.();
+  });
+
+  selectBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onSelectMesh?.();
   });
 
   confirmBtn?.addEventListener('click', (e) => {

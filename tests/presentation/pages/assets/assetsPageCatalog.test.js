@@ -66,4 +66,39 @@ describe('buildAssetsPageCatalog', () => {
     expect(counts.decoration).toBeGreaterThan(0);
     expect(counts.people).toBe(0);
   });
+
+  test('classifies each playable id by the pack its mesh actually comes from', () => {
+    const items = buildAssetsPageSections().flatMap((section) => section.items);
+    const byId = (id) => items.find((item) => item.id === id);
+
+    // Reassigned to Kenney city kits
+    expect(byId('Farm-Carrot')?.source).toBe('kenney-city');
+    expect(byId('Farm-Carrot')?.usesKenneyId).toMatch(/^Kenney-/);
+    // The wheat field is assembled from a ground GLB + one wheat GLB per growth stage
+    expect(byId('Farm-Wheat')?.source).toBe('kenney-farm');
+    expect(byId('Farm-Wheat')?.cropGlbFile).toBe('crops_wheatStageA.glb, crops_wheatStageB.glb');
+    // Roads come from the Kenney roads pack
+    expect(byId('StonePath-Tee-001')?.source).toBe('kenney-road');
+    expect(byId('StonePath-Tee-001')?.kenneyGlbFile).toBe('road-intersection.glb');
+    // Still on the village GLB
+    // Nature ids come from the Kenney nature kit
+    expect(byId('Tree-Pine-001')?.source).toBe('kenney-nature');
+    expect(byId('Tree-Pine-001')?.kenneyGlbFile).toBe('tree_pineDefaultA.glb');
+    // Only the procedural ground still comes from the village GLB
+    expect(byId('grass')?.source).toBe('village');
+  });
+
+  test('each pack header is emitted once (sections are grouped by pack)', () => {
+    const sections = buildAssetsPageSections();
+    const packOrder = sections.map((section) => section.packId);
+    const seenClosed = new Set();
+    let previous = null;
+    for (const packId of packOrder) {
+      if (packId !== previous) {
+        expect(seenClosed.has(packId)).toBe(false);
+        if (previous) seenClosed.add(previous);
+        previous = packId;
+      }
+    }
+  });
 });

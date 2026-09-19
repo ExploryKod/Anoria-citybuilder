@@ -31,6 +31,11 @@ export function setupRoadAccessIcons(parcels, { assetManager, textures }) {
     const hasAccess = result?.roadAccess?.hasAccess ?? false;
     const roadCount = result?.roadAccess?.roadCount ?? 0;
 
+    // Recorded even when the bus already updated the icon (`result.updated`).
+    if (mesh?.userData) {
+      mesh.userData.hasRoadAccess = hasAccess;
+    }
+
     if (mesh && !result?.updated) {
       setRoadAccessIcon({ assetManager, mesh, textures, position, scale, hasAccess });
     }

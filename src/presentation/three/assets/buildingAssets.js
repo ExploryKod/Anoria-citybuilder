@@ -32,11 +32,24 @@
  *
  * Field notes:
  *  - transform.rotationDeg: 'AUTO_DETECTED_AT_RUNTIME' means the real engine
- *    code (VillageTownAssetManager#createBuilding) decides this per-mesh via
+ *    code (the village asset manager) decides this per-mesh via
  *    a bounding-box heuristic (isLocalYUpMesh), not a fixed declared value —
  *    flagged instead of guessed. Every other villageTown entry uses the
  *    pack's default authoring rotation (90,180,180) unless the source code
- *    hardcodes a named exception (Chapel, BookShop-001, StonePath turns).
+ *    hardcodes a named exception (Chapel, StonePath turns).
+ *  - selectableMeshes (optional): ordered array of catalog ids the S key cycles
+ *    through while the entry's tool is active — see resolveSelectedMeshId in
+ *    resolveBuildingMesh.js. Only StonePath-001 declares it today.
+ *  - presentation.ghostStyle (optional): 'tint' (default, flat coloured ghost) or
+ *    'preview' (real textured mesh, translucent + state glow) — for pieces too
+ *    detailed to read as a flat ghost, e.g. roads.
+ *  - kenneyFarmField entries: `geometry.glb` is the ground GLB (tiled per footprint tile) and
+ *    `crop` describes the crop planted on it (perTile, stages — one GLB per growth stage —, stageBySeason,
+ *    defaultStage, requiresStaff, idleStage, previewStage) — see
+ *    kenneyFarmFieldAdapter.js. The game drives it through mesh.userData.applySeason(season)
+ *    and mesh.userData.applyStaffing(staffed).
+ *  - kenneyGlb entries: geometry.glb is the full public URL of a single-tile GLB (road piece,
+ *    nature-kit tree/rock); transform.rotationDeg.y is the base yaw (R adds 90° steps on top).
  *  - kenneyCityKit entries: geometry.glb is intentionally null — the actual
  *    GLB path lives in the single runtime-fetched catalog JSON
  *    (/resources/kenney_city_kits_catalog.json via kenneyCityKitConfig.js),
@@ -57,22 +70,18 @@ export const BUILDING_ASSETS = Object.freeze({
   // ---- villageTown ----
   // Palais
   'House-2Story': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'House-2Story',
-      aliases: ['House_2Story', 'House_2Story_Purple', 'House_2Story_Purple001', 'House_2Story_Purple002', 'House_2Story_Purple003', 'House_2Story_Purple004', 'House_2Story_Purple005', 'House_2Story_Purple006', 'House_2Story_Purple007', 'House_2Story_Purple008', 'House_2Story_Purple009'],
-      kit: null,
-      buildingId: null,
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-building-type-g',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 0.5,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -94,22 +103,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Maison rouge
   'House-Red-Legacy': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'House-Red',
+      glb: null,
+      sourceKey: null,
       aliases: [],
-      kit: null,
-      buildingId: null,
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-building-type-h',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 0.5,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -131,22 +136,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Maison violette
   'House-Purple-Legacy': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'House-Purple',
+      glb: null,
+      sourceKey: null,
       aliases: [],
-      kit: null,
-      buildingId: null,
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-building-type-i',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 0.5,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -168,22 +169,35 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Champ de blé
   'Farm-Wheat': {
-    source: 'villageTown',
+    source: 'kenneyFarmField',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Farm-Wheat',
+      glb: '/resources/kenney_nature-kit/Models/GLTF format/crops_dirtDoubleRow.glb',
+      sourceKey: null,
       aliases: [],
       kit: null,
       buildingId: null,
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.2,
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      // Same clearance as the roads: the ground piece is only 0.05 thick, so it must
+      // sit above the terrain surface (a fallow field draws nothing else).
+      positionOffsetY: 0.05,
       scale: 1,
+    },
+    // Assembled field: the ground above + one wheat model per growth stage (nature kit).
+    crop: {
+      perTile: 2,
+      stages: {
+        fallow: null,
+        growing: { glb: '/resources/kenney_nature-kit/Models/GLTF format/crops_wheatStageA.glb' },
+        ripe: { glb: '/resources/kenney_nature-kit/Models/GLTF format/crops_wheatStageB.glb' },
+      },
+      stageBySeason: { Hiver: 'fallow', Printemps: 'growing', 'Été': 'ripe', Automne: 'ripe' },
+      defaultStage: 'ripe',
+      // No workers → no crop at all (constant fallow); the ghost still previews it.
+      requiresStaff: true,
+      idleStage: 'fallow',
+      previewStage: 'ripe',
     },
     presentation: {
       mode: 'lit',
@@ -205,22 +219,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Champ de carottes
   'Farm-Carrot': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Farm-Carrot',
+      glb: null,
+      sourceKey: null,
       aliases: [],
-      kit: null,
-      buildingId: null,
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-g',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 1,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -242,22 +252,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Champ de choux
   'Farm-Cabbage': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Farm-Cabbage',
+      glb: null,
+      sourceKey: null,
       aliases: [],
-      kit: null,
-      buildingId: null,
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-k',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 1,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -279,22 +285,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Botte de foin
   'Hay-Bale': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Hay-Bale',
-      aliases: ['Hay_Bale'],
-      kit: null,
-      buildingId: null,
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-b',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 1,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -315,22 +317,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Chariot de foin
   'Hay-Cart': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Hay-Cart',
-      aliases: ['Hay_Cart'],
-      kit: null,
-      buildingId: null,
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-h',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 1,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -351,22 +349,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Meule de foin
   'Hay-Pile': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Hay-Pile',
-      aliases: ['Hay_Pile'],
-      kit: null,
-      buildingId: null,
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-i',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 1,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -387,22 +381,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Moulin (taille alignée sur houses, override explicite)
   'Windmill-001': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Windmill-001',
-      aliases: ['Windmill', 'Windmill001', 'Windmill002', 'Windmill003'],
-      kit: null,
-      buildingId: null,
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-j',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 0.5,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -426,22 +416,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Caisse
   'Crate-001': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Crate-001',
-      aliases: ['Crate', 'Crate001', 'Crate002', 'Crate003', 'Crate004', 'Crate005', 'Crate006', 'Crate007', 'Crate008', 'Crate009', 'Crate010', 'Crate011', 'Crate012', 'Crate013', 'Crate014', 'Crate015', 'Crate016', 'Crate017', 'Crate018', 'Crate019', 'Crate020', 'Crate021', 'Crate022', 'Crate023', 'Crate024', 'Crate025', 'Crate026', 'Crate027', 'Crate028', 'Crate029', 'Crate030', 'Crate031', 'Crate032', 'Crate033', 'Crate034'],
-      kit: null,
-      buildingId: null,
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-m',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 0.5,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -462,22 +448,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Silo à blé
   'Cylinder': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Cylinder',
-      aliases: ['Cylinder007', 'Cylinder008', 'Cylinder009', 'Cylinder011', 'Cylinder012', 'Cylinder013'],
-      kit: null,
-      buildingId: null,
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-n',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 5,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -498,22 +480,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Étal (alias legacy → mesh bleu)
   'Market-Stall-Legacy': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Market-Stall-Blue',
+      glb: null,
+      sourceKey: null,
       aliases: [],
-      kit: null,
-      buildingId: null,
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-a',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 0.7,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -535,22 +513,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Étal bleu
   'Market-Stall-Blue': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Market-Stall-Blue',
-      aliases: ['Market_Stall_Blue'],
-      kit: null,
-      buildingId: null,
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-b',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 0.7,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -566,22 +540,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Étal rouge
   'Market-Stall-Red': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Market-Stall-Red',
-      aliases: ['Market_Stall_Red'],
-      kit: null,
-      buildingId: null,
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-c',
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 0.7,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -603,28 +573,23 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Chemin de pierre
   'StonePath-001': {
-    source: 'villageTown',
+    source: 'kenneyGlb',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'StonePath-001',
-      aliases: ['StonePath', 'StonePath001', 'StonePath002', 'StonePath003', 'StonePath004', 'StonePath005', 'StonePath006', 'StonePath007', 'StonePath008', 'StonePath009'],
+      glb: '/resources/kenney_city-kit-roads/Models/GLB format/road-straight.glb',
+      sourceKey: null,
+      aliases: [],
       kit: null,
       buildingId: null,
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      // A near-flat ground mesh, coplanar with the World platform's own top
-      // surface at 0.2 — a hair higher than every other id (0.2) so it clears
-      // the platform instead of z-fighting into invisibility.
-      positionOffsetY: 0.24,
-      scale: 0.8,
+      // Yaw only (degrees): the Kenney road pieces are flat, Y-up, 1×1 tiles.
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.05,
+      scale: 1,
     },
     presentation: {
       mode: 'lit',
+      ghostStyle: 'preview',
       castShadow: null,
       receiveShadow: null,
       renderOrder: null,
@@ -635,32 +600,35 @@ export const BUILDING_ASSETS = Object.freeze({
       group: 'infrastructure',
       editorGroup: null,
       label: 'Chemin de pierre',
-      tooltip: 'Chemin de pierre — touche R pour tourner',
+      tooltip: 'Chemin de pierre — R pour tourner, S pour changer de forme',
       icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="16"/><line x1="16" y1="14" x2="16" y2="16"/></svg>' },
     },
     tags: ['infrastructure', 'building', 'road'],
+    // Ordered catalog ids the S key cycles through while this tool is active
+    // (the first one is the default). Each id is a full catalog entry of its
+    // own, so the placed tile keeps that id; R still rotates whichever mesh is
+    // selected. See resolveBuildingMesh.js's resolveSelectedMeshId.
+    selectableMeshes: ['StonePath-001', 'StonePath-Right-001', 'StonePath-Tee-001', 'StonePath-Cross-001', 'StonePath-End-001'],
   },
   // Chemin de pierre (virage droite, réutilise le mesh StonePath-001)
   'StonePath-Right-001': {
-    source: 'villageTown',
+    source: 'kenneyGlb',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'StonePath-001',
+      glb: '/resources/kenney_city-kit-roads/Models/GLB format/road-bend.glb',
+      sourceKey: null,
       aliases: [],
       kit: null,
       buildingId: null,
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 270,
-      },
-      positionOffsetY: 0.24,
-      scale: 0.8,
+      // Yaw only (degrees): the Kenney road pieces are flat, Y-up, 1×1 tiles.
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.05,
+      scale: 1,
     },
     presentation: {
       mode: 'lit',
+      ghostStyle: 'preview',
       castShadow: null,
       receiveShadow: null,
       renderOrder: null,
@@ -672,25 +640,23 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Chemin de pierre (virage gauche, réutilise le mesh StonePath-001)
   'StonePath-Left-001': {
-    source: 'villageTown',
+    source: 'kenneyGlb',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'StonePath-001',
+      glb: '/resources/kenney_city-kit-roads/Models/GLB format/road-bend.glb',
+      sourceKey: null,
       aliases: [],
       kit: null,
       buildingId: null,
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 90,
-      },
-      positionOffsetY: 0.24,
-      scale: 0.8,
+      // Yaw only (degrees): the Kenney road pieces are flat, Y-up, 1×1 tiles.
+      rotationDeg: { x: 0, y: 180, z: 0 },
+      positionOffsetY: 0.05,
+      scale: 1,
     },
     presentation: {
       mode: 'lit',
+      ghostStyle: 'preview',
       castShadow: null,
       receiveShadow: null,
       renderOrder: null,
@@ -702,25 +668,23 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Croisement (réutilise le mesh StonePath-001)
   'StonePath-Cross-001': {
-    source: 'villageTown',
+    source: 'kenneyGlb',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'StonePath-001',
+      glb: '/resources/kenney_city-kit-roads/Models/GLB format/road-crossroad.glb',
+      sourceKey: null,
       aliases: [],
       kit: null,
       buildingId: null,
     },
     transform: {
-      rotationDeg: {
-        x: 90,
-        y: 180,
-        z: 180,
-      },
-      positionOffsetY: 0.24,
-      scale: 0.8,
+      // Yaw only (degrees): the Kenney road pieces are flat, Y-up, 1×1 tiles.
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.05,
+      scale: 1,
     },
     presentation: {
       mode: 'lit',
+      ghostStyle: 'preview',
       castShadow: null,
       receiveShadow: null,
       renderOrder: null,
@@ -728,6 +692,60 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: null, // not a distinct carousel entry — crossroad variant of StonePath-001, selected via R-key rotation cycling, never placed directly by clicking a button
+    tags: ['infrastructure', 'building', 'road'],
+  },
+  // Chemin de pierre en T (variante sélectionnable par S, jamais un bouton à part)
+  'StonePath-Tee-001': {
+    source: 'kenneyGlb',
+    geometry: {
+      glb: '/resources/kenney_city-kit-roads/Models/GLB format/road-intersection.glb',
+      sourceKey: null,
+      aliases: [],
+      kit: null,
+      buildingId: null,
+    },
+    transform: {
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.05,
+      scale: 1,
+    },
+    presentation: {
+      mode: 'lit',
+      ghostStyle: 'preview',
+      castShadow: null,
+      receiveShadow: null,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — selected via the S key on StonePath-001
+    tags: ['infrastructure', 'building', 'road'],
+  },
+  // Bout de chemin (variante sélectionnable par S, jamais un bouton à part)
+  'StonePath-End-001': {
+    source: 'kenneyGlb',
+    geometry: {
+      glb: '/resources/kenney_city-kit-roads/Models/GLB format/road-end.glb',
+      sourceKey: null,
+      aliases: [],
+      kit: null,
+      buildingId: null,
+    },
+    transform: {
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.05,
+      scale: 1,
+    },
+    presentation: {
+      mode: 'lit',
+      ghostStyle: 'preview',
+      castShadow: null,
+      receiveShadow: null,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — selected via the S key on StonePath-001
     tags: ['infrastructure', 'building', 'road'],
   },
   // Chapelle — RÉASSIGNÉ au kit Kenney Industrial building-l (geometry
@@ -768,22 +786,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Librairie — chargée depuis viking_carrot_farm_v1.glb (hors GLB partagé)
   'BookShop-001': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'BookShop-001',
+      glb: null,
+      sourceKey: null,
       aliases: [],
-      kit: null,
-      buildingId: null,
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-e',
     },
     transform: {
-      rotationDeg: {
-        x: 0,
-        y: 180,
-        z: 0,
-      },
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 0.002,
+      scale: null,
     },
     presentation: {
       mode: 'lit',
@@ -804,18 +818,18 @@ export const BUILDING_ASSETS = Object.freeze({
   },
   // Chapelle (alias de sauvegarde legacy, réutilise le mesh Chapel — upright-ness non forcée par nom pour cet id, dépend de la détection runtime isLocalYUpMesh)
   'Church-002': {
-    source: 'villageTown',
+    source: 'kenneyCityKit',
     geometry: {
-      glb: 'village_town_assets_v2.glb',
-      sourceKey: 'Chapel',
+      glb: null,
+      sourceKey: null,
       aliases: [],
-      kit: null,
-      buildingId: null,
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-l',
     },
     transform: {
-      rotationDeg: 'AUTO_DETECTED_AT_RUNTIME',
+      rotationDeg: null,
       positionOffsetY: 0.2,
-      scale: 0.8,
+      scale: null,
     },
     presentation: {
       mode: 'lit',

@@ -25,7 +25,7 @@ describe('villageTownBuildingAdapter.createMesh', () => {
     expect(adapter).toBeTruthy();
   });
 
-  test('a 1x1 villageTown building (BookShop-001) is left at whatever position assetManager.createAsset set — no spurious extra offset added', () => {
+  test('a 1x1 villageTown mesh (the procedural grass tile) is left at whatever position assetManager.createAsset set — no spurious extra offset added', () => {
     // Mirrors VillageTownAssetManager#createBuilding's own real positioning
     // (object3D.position.set(placerPos.x, yOffset, placerPos.y)).
     const assetManager = {
@@ -35,12 +35,11 @@ describe('villageTownBuildingAdapter.createMesh', () => {
         return mesh;
       },
     };
-    const catalogEntry = ASSET_CATALOG['BookShop-001'];
+    const catalogEntry = ASSET_CATALOG['grass'];
     expect(catalogEntry.source).toBe('villageTown');
 
     const result = adapter.createMesh(3, 5, {
       catalogEntry,
-      buildingId: 'BookShop-001',
       rotationStep: 0,
       assetManager,
     });
@@ -52,8 +51,7 @@ describe('villageTownBuildingAdapter.createMesh', () => {
   test('returns null/undefined untouched when assetManager.createAsset fails to resolve a mesh', () => {
     const assetManager = { createAsset: () => undefined };
     const result = adapter.createMesh(0, 0, {
-      catalogEntry: ASSET_CATALOG['BookShop-001'],
-      buildingId: 'BookShop-001',
+      catalogEntry: ASSET_CATALOG['grass'],
       rotationStep: 0,
       assetManager,
     });

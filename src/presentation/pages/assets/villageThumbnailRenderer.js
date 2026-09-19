@@ -1,82 +1,17 @@
 /**
- * Renders village GLB meshes into canvases for the assets reference page.
+ * Thumbnails for the assets reference page (Kenney road GLBs + procedural ground).
  */
 
 import * as THREE from 'three';
-import { WebGPURenderer } from 'three/webgpu';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-import { VILLAGE_NATURE_MESH_ALIASES } from '../../../shared/building-catalog/villageAssetSets.js';
 import { resolveTerrainDisplayColorCss } from '../../../shared/terrain-catalog/terrainDisplayColor.js';
 
-const VILLAGE_GLB_URL = '/resources/lowpoly/village_town_assets_v2.glb';
-
-/** @type {Promise<{ scene: THREE.Object3D }> | null} */
-let villageGltfPromise = null;
-
-/** @type {Map<string, THREE.Mesh> | null} */
-let meshByToolId = null;
-
 /**
- * @param {string} meshName
- * @returns {string | null}
- */
-function meshNameToToolId(meshName) {
-  const baseName = meshName.split('_Material')[0];
-  const normalized = baseName.replace(/[.\s]/g, '_');
-  const parts = normalized.split('_');
-
-  if (parts[0] === 'StonePath') return 'StonePath-001';
-  if (parts[0] === 'Hay' && parts[1] === 'Bale') return 'Hay-Bale';
-  if (parts[0] === 'Hay' && parts[1] === 'Cart') return 'Hay-Cart';
-  if (parts[0] === 'Hay' && parts[1] === 'Pile') return 'Hay-Pile';
-  if (parts[0] === 'Farm' && parts[1] === 'Wheat') return 'Farm-Wheat';
-  if (parts[0] === 'Farm' && parts[1] === 'Carrot') return 'Farm-Carrot';
-  if (parts[0] === 'Farm' && parts[1] === 'Cabbage') return 'Farm-Cabbage';
-  if (parts[0] === 'Tree' && parts[1] === 'Pine') return 'Tree-Pine-001';
-  if (parts[0] === 'Tree' && parts[1] === 'Square') return 'Tree-Square-001';
-  if (parts[0] === 'Tree' && parts[1] === 'Tall') return 'Tree-Tall-001';
-  if (parts[0] === 'Boulder') return 'Boulder-001';
-
-  if (parts.length >= 2) {
-    return `${parts[0]}-${parts[1]}`.replace(/-$/, '');
-  }
-
-  return null;
-}
-
-/**
- * @param {string} toolId
- * @returns {string}
- */
-function resolveMeshToolId(toolId) {
-  if (toolId.startsWith('StonePath')) return 'StonePath-001';
-  return VILLAGE_NATURE_MESH_ALIASES[toolId] ?? toolId;
-}
-
-async function loadVillageMeshes() {
-  if (meshByToolId) {
-    return meshByToolId;
-  }
-
-  if (!villageGltfPromise) {
-    villageGltfPromise = new GLTFLoader().loadAsync(VILLAGE_GLB_URL);
-  }
-
-  const gltf = await villageGltfPromise;
-  meshByToolId = new Map();
-
-  gltf.scene.traverse((child) => {
-    if (!(child instanceof THREE.Mesh)) return;
-    const toolId = meshNameToToolId(child.name);
-    if (!toolId || meshByToolId.has(toolId)) return;
-    meshByToolId.set(toolId, child);
-  });
-
-  return meshByToolId;
-}
-
-/**
+ * Village thumbnails: nothing of the village GLB is rendered any more — its
+ * meshes were all reassigned to Kenney packs. Only the procedural ground still
+ * belongs to this source, drawn as a flat colour.
+ *
  * @param {string} toolId
  * @param {HTMLCanvasElement} canvas
  * @param {number} size
@@ -86,41 +21,52 @@ export async function renderVillageThumbnail(toolId, canvas, size = 104) {
     renderGrassPlaceholder(canvas, size);
     return;
   }
+  renderMissingPlaceholder(canvas, size, toolId);
+}
 
-  const meshLookup = await loadVillageMeshes();
-  const sourceMesh = meshLookup.get(resolveMeshToolId(toolId));
-
-  if (!sourceMesh) {
-    renderMissingPlaceholder(canvas, size, toolId);
-    return;
+/**
+ * Renders any Y-up GLB (e.g. a Kenney road piece) into a canvas.
+ *
+ * @param {string} glbUrl
+ * @param {HTMLCanvasElement} canvas
+ * @param {number} size
+ */
+export async function renderGlbThumbnail(glbUrl, canvas, size = 104) {
+  try {
+    const gltf = await new GLTFLoader().loadAsync(encodeURI(glbUrl));
+    await renderObjectToCanvas(gltf.scene, canvas, size);
+  } catch (error) {
+    console.warn('[assets] thumbnail failed:', glbUrl, error);
+    renderMissingPlaceholder(canvas, size, glbUrl.split('/').pop() ?? glbUrl);
   }
+}
 
+/**
+ * Frames `root` with an isometric orthographic camera and draws it once.
+ *
+ * @param {THREE.Object3D} root
+ * @param {HTMLCanvasElement} canvas
+ * @param {number} size
+ */
+async function renderObjectToCanvas(root, canvas, size) {
   const width = size * 2;
   const height = size * 2;
   canvas.width = width;
   canvas.height = height;
 
-  const renderer = new WebGPURenderer({
-    canvas,
-    antialias: true,
-    alpha: true,
-    preserveDrawingBuffer: true,
-  });
-  await renderer.init();
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
   renderer.setSize(width, height, false);
   renderer.setClearColor(0x000000, 0);
 
   const scene = new THREE.Scene();
-  const mesh = sourceMesh.clone();
-  mesh.rotation.x = -Math.PI / 2;
-  scene.add(mesh);
+  scene.add(root);
 
-  const box = new THREE.Box3().setFromObject(mesh);
+  const box = new THREE.Box3().setFromObject(root);
   const center = new THREE.Vector3();
   const sizeVec = new THREE.Vector3();
   box.getCenter(center);
   box.getSize(sizeVec);
-  mesh.position.sub(center);
+  root.position.sub(center);
 
   const maxDim = Math.max(sizeVec.x, sizeVec.y, sizeVec.z, 0.01);
   const camera = new THREE.OrthographicCamera(
@@ -134,22 +80,17 @@ export async function renderVillageThumbnail(toolId, canvas, size = 104) {
   camera.position.set(maxDim * 1.2, maxDim * 1.4, maxDim * 1.2);
   camera.lookAt(0, 0, 0);
 
-  const ambient = new THREE.AmbientLight(0xffffff, 0.85);
-  const key = new THREE.DirectionalLight(0xffffff, 0.9);
+  const ambient = new THREE.AmbientLight(0xffffff, 1.6);
+  const key = new THREE.DirectionalLight(0xffffff, 2);
   key.position.set(2, 4, 3);
   scene.add(ambient, key);
 
-  await renderer.renderAsync(scene, camera);
+  renderer.render(scene, camera);
 
-  mesh.geometry?.dispose();
-  if (Array.isArray(mesh.material)) {
-    mesh.material.forEach((mat) => mat.dispose());
-  } else {
-    mesh.material?.dispose();
-  }
+  // Geometry/materials belong to the cached GLTF (roads) or a clone that shares
+  // them (village) — only the renderer is released here.
   renderer.dispose();
 }
-
 
 /**
  * @param {HTMLCanvasElement} canvas
