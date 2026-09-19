@@ -28,6 +28,10 @@ export function applyTerrainDisplayCssVariables(root = document.documentElement)
  * @param {HTMLElement} [root]
  */
 export function applyEditorTerrainDisplayCssVariables(root = document.documentElement) {
+  root.style.setProperty(
+    '--terrain-grass-color',
+    resolveTerrainDisplayColorCss('nature:ground_grass')
+  );
   root.style.setProperty('--terrain-editor-backdrop-color', SCENE_EDITOR_BACKDROP_COLOR_CSS);
   root.style.setProperty('--terrain-editor-sky-color', SCENE_EDITOR_SKY_COLOR_CSS);
   root.style.setProperty('--terrain-editor-sea-color', SCENE_EDITOR_SEA_COLOR_CSS);

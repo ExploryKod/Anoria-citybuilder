@@ -7,8 +7,9 @@
  * is, not a static fact about a building type (contrast with how
  * buildingCatalog.js works: no `walker` fact lives there). Each entry here
  * says, for one event type:
- *   - walkerType: which visual/animation set to use (see CitizenManager's
- *     citizenType for the ids in use today).
+ *   - walkerType: the logical kind of walker — a key of WALKER_TYPES in
+ *     presentation/three/assets/walkerAssets.js, which declares which
+ *     character models it can use (this file never names a model).
  *   - origin: which field on the event payload holds the journey's
  *     starting building instance id, and whether it requires road access.
  *
@@ -43,7 +44,7 @@ export const WALKER_EVENT_CATALOG = Object.freeze({
   // cycle) rides along on the event as a factual record, but the walker's
   // route doesn't chain through them — see this file's own doc comment.
   'supply.resourceDeliveryRoute': Object.freeze({
-    walkerType: 'citizen02',
+    walkerType: 'citizen',
     origin: Object.freeze({ field: 'sourceId', requiresRoad: true }),
   }),
 });

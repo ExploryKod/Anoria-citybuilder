@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { applyPlacementRotationStep } from '../placement/placementRotation.js';
 import { textures } from './data.js';
+import { KENNEY_GROUND_GRASS_COLOR } from '../../../shared/terrain-catalog/terrainAtmosphere.js';
 import { ASSET_IDS_BY_CATEGORY } from '../../../shared/building-catalog/assetIdsByCategory.js';
 import { attachSceneTilePort } from '../scene-board/SceneTilePort.js';
 import { createSceneTile } from '../scene-board/SceneObjectRegistry.js';
@@ -64,13 +65,13 @@ class SceneAssetManager {
             this.#sharedTerrainMaterials = {
                 'grass': new THREE.MeshLambertMaterial({
                     // map: textures['grass'],  // Texture commented out - using solid color instead
-                    color: 0x6DB973,  // Match world platform color #6DB973
+                    color: KENNEY_GROUND_GRASS_COLOR, // single source: terrainAtmosphere.js
                     transparent: false,
                     side: THREE.FrontSide
                 }),
                 'terrain': new THREE.MeshLambertMaterial({
                     // map: textures['grass'],
-                    color: 0x6DB973,
+                    color: KENNEY_GROUND_GRASS_COLOR,
                     emissive: 0x220000,
                     transparent: false,
                     side: THREE.FrontSide

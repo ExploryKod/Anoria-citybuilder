@@ -6,12 +6,6 @@ import { zoneBordersBuildings } from '../../../contexts/parcels/infrastructure/s
 
 const WALK_SPEED = 2; // units per second, same pace as the legacy citizens
 
-const WALK_NAMES = ['walk', 'Walk', 'Walking', 'walking'];
-
-function pickAnimation(animationsToUse, names) {
-  return names.find((name) => animationsToUse[name]) ?? null;
-}
-
 let nextWalkerId = 0;
 
 /**
@@ -72,19 +66,17 @@ export function createWalkerEventController({ scene, citizenManager, citizenPath
     return road ? { tile: road, isRoadEntry: true } : null;
   }
 
-  // Only one visual set ('citizen02') is wired today, so `walkerType` is
-  // accepted but not yet used to pick a model — see WALKER_EVENT_CATALOG's
-  // doc comment. Once more exist, this becomes the lookup point.
-  async function spawnWalker(_walkerType, path) {
-    const citizen = await citizenManager.createCitizenInstance('citizen02');
+  // `walkerType` is a key of WALKER_TYPES (assets/walkerAssets.js): the catalog
+  // decides which character model this walker gets, and where its feet stand.
+  async function spawnWalker(walkerType, path) {
+    const citizen = await citizenManager.createCitizenInstance(walkerType);
     if (!citizen) return;
 
-    citizen.character.position.set(path[0].x, 0.21, path[0].y);
+    citizen.character.position.set(path[0].x, citizen.groundY, path[0].y);
     citizen.character.visible = true;
     scene.add(citizen.character);
 
-    const animationsToUse = citizenManager.getCitizenAnimations(citizen);
-    const walkAnimation = pickAnimation(animationsToUse, WALK_NAMES);
+    const walkAnimation = citizenManager.pickAnimationName(citizen, 'walk');
     if (walkAnimation) {
       citizenManager.switchCitizenAnimation(citizen, walkAnimation, true, 0.2);
     }
@@ -153,7 +145,7 @@ export function createWalkerEventController({ scene, citizenManager, citizenPath
       }
 
       const currentPos = citizen.character.position;
-      const targetPos = new THREE.Vector3(target.x, 0.21, target.y);
+      const targetPos = new THREE.Vector3(target.x, citizen.groundY, target.y);
       const direction = new THREE.Vector3().subVectors(targetPos, currentPos);
       const distance = direction.length();
 

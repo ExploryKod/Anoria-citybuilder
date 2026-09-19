@@ -37,6 +37,8 @@
  *  - selectableMeshes (optional): ordered array of catalog ids the S key cycles
  *    through while the entry's tool is active — see resolveSelectedMeshId in
  *    resolveBuildingMesh.js. Only StonePath-001 declares it today.
+ *  - presentation.brightness (optional, kenneyGlb): multiplies the model's colors
+ *    (1 = as authored, >1 lighter) — a pure look tweak, tunable without code.
  *  - presentation.ghostStyle (optional): 'tint' (default, flat coloured ghost) or
  *    'preview' (real textured mesh, translucent + state glow) — for pieces too
  *    detailed to read as a flat ghost, e.g. roads.
@@ -618,6 +620,8 @@ export const BUILDING_ASSETS = Object.freeze({
     presentation: {
       mode: 'lit',
       ghostStyle: 'preview',
+      // The Kenney asphalt is dark and blends with the walkers: >1 lightens the whole piece.
+      brightness: 1.5,
       castShadow: null,
       receiveShadow: null,
       renderOrder: null,
@@ -657,6 +661,8 @@ export const BUILDING_ASSETS = Object.freeze({
     presentation: {
       mode: 'lit',
       ghostStyle: 'preview',
+      // The Kenney asphalt is dark and blends with the walkers: >1 lightens the whole piece.
+      brightness: 1.5,
       castShadow: null,
       receiveShadow: null,
       renderOrder: null,
@@ -685,6 +691,8 @@ export const BUILDING_ASSETS = Object.freeze({
     presentation: {
       mode: 'lit',
       ghostStyle: 'preview',
+      // The Kenney asphalt is dark and blends with the walkers: >1 lightens the whole piece.
+      brightness: 1.5,
       castShadow: null,
       receiveShadow: null,
       renderOrder: null,
@@ -713,6 +721,8 @@ export const BUILDING_ASSETS = Object.freeze({
     presentation: {
       mode: 'lit',
       ghostStyle: 'preview',
+      // The Kenney asphalt is dark and blends with the walkers: >1 lightens the whole piece.
+      brightness: 1.5,
       castShadow: null,
       receiveShadow: null,
       renderOrder: null,
@@ -740,6 +750,8 @@ export const BUILDING_ASSETS = Object.freeze({
     presentation: {
       mode: 'lit',
       ghostStyle: 'preview',
+      // The Kenney asphalt is dark and blends with the walkers: >1 lightens the whole piece.
+      brightness: 1.5,
       castShadow: null,
       receiveShadow: null,
       renderOrder: null,
@@ -767,6 +779,8 @@ export const BUILDING_ASSETS = Object.freeze({
     presentation: {
       mode: 'lit',
       ghostStyle: 'preview',
+      // The Kenney asphalt is dark and blends with the walkers: >1 lightens the whole piece.
+      brightness: 1.5,
       castShadow: null,
       receiveShadow: null,
       renderOrder: null,

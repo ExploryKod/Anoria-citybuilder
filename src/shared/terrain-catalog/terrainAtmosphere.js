@@ -3,13 +3,18 @@ import * as THREE from 'three';
 import { blendTerrainColorHex, terrainColorHexToCss } from './terrainColorBlend.js';
 
 /**
- * Kenney `ground_grass` unlit display color — calibrated from
- * `kenney_nature-kit/Isometric/ground_grass_NE.png` (isometric preview).
+ * Ground grass unlit display color — the ONE value the ground tiles, the
+ * infinite ground plane, the fog blend and the CSS tokens all derive from.
+ *
+ * Deliberately a fresh green (#5fc48a), between Kenney's own teal `ground_grass`
+ * preview (#2fe7c5), which clashed with the yellow-green trees and crops of the
+ * same pack, and the village-era warm green (#6DB973), which was slightly too
+ * warm. Tune it here, nowhere else.
  *
  * Do **not** use the GLB/MTL baseColor (~`#74ecdd`) or the infinite ground
  * plane will show a different green than the playable tiles.
  */
-export const KENNEY_GROUND_GRASS_COLOR = 0x2fe7c5;
+export const KENNEY_GROUND_GRASS_COLOR = 0x5fc48a;
 
 /** @deprecated prefer resolveTerrainDisplayColorCss('nature:ground_grass') */
 export const KENNEY_GROUND_GRASS_COLOR_CSS = terrainColorHexToCss(

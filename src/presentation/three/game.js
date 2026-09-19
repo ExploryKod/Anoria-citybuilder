@@ -1231,17 +1231,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
     pause() {
       isPause = true;
       gameUI.setPaused(true);
-      if (scene.pauseCitizen) {
-        scene.pauseCitizen();
-      }
     },
 
     async play() {
       isPause = false;
       gameUI.setPaused(false);
-      if (scene.resumeCitizen) {
-        scene.resumeCitizen();
-      }
       if (objectivesTracker.enabled) {
         await objectivesTracker.checkObjectives(0);
       }

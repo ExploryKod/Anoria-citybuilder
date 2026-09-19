@@ -48,6 +48,8 @@
  *    with a shared Lambert material, not cloned GLB meshes.
  */
 
+import { KENNEY_GROUND_GRASS_COLOR } from '../../../shared/terrain-catalog/terrainAtmosphere.js';
+
 export const TERRAIN_ASSETS = Object.freeze({
   // ---- sceneTile (procedural) ----
   // Herbe — géométrie procédurale (BoxGeometry partagée) + matériau Lambert partagé, pas de GLB
@@ -2030,7 +2032,7 @@ export const TERRAIN_ASSETS = Object.freeze({
       receiveShadow: true,
       renderOrder: null,
       frustumCulled: false,
-      displayColor: 0x2fe7c5,
+      displayColor: KENNEY_GROUND_GRASS_COLOR,
     },
     button: {
       group: null,
@@ -3288,7 +3290,7 @@ export const TERRAIN_ASSETS = Object.freeze({
       receiveShadow: true,
       renderOrder: null,
       frustumCulled: false,
-      displayColor: 0x2fe7c5,
+      displayColor: KENNEY_GROUND_GRASS_COLOR,
     },
     button: {
       group: null,

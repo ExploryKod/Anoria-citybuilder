@@ -12,6 +12,7 @@ Les bâtiments, routes, arbres, rochers et champs cultivés proviennent des pack
 - [City Kit (Suburban)](https://kenney.nl/assets/city-kit-suburban) — habitations
 - [City Kit (Roads)](https://kenney.nl/assets/city-kit-roads) — routes
 - [Nature Kit](https://kenney.nl/assets/nature-kit) — arbres, rochers, cultures (blé, carottes, feuilles) et sols de champs
+- [Mini Characters](https://kenney.nl/assets/mini-characters) — les personnages qui parcourent les routes (modèles animés)
 
 Soutien Kenney : [kenney.nl/donate](https://kenney.nl/donate)
 
@@ -24,6 +25,7 @@ Les premières versions d'Eraanurbs ont été construites avec les modèles ci-d
 - ["Ancient Greek book shop"](https://skfb.ly/6TIZZ) (librairie) by YunaOthmer — [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
 - ["Viking Carrot Farm"](https://skfb.ly/o69Lt) (ferme) by Tom Verbeeck — [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
 - ["Japan Castle"](https://skfb.ly/onQt9) (hôtel de ville) by Koycho — [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
+- Personnage « Peasant Girl » et ses animations (attente, marche) — le premier citoyen du jeu — [Mixamo](https://www.mixamo.com) (Adobe)
 
 ## Icones 
 

@@ -37,8 +37,9 @@
     --game-chrome-blur: blur(10px);
     --game-chrome-shadow: 0 4px 20px rgba(29, 34, 40, 0.1);
 
-    /* Terrain atmosphere — values overwritten at boot from terrain catalog */
-    --terrain-grass-color: #2fe7c5;
+    /* Terrain atmosphere — values overwritten at boot from terrain catalog.
+       --terrain-grass-color is published ONLY by applyTerrainDisplayCssVariables
+       (single source: terrainAtmosphere.js), never hardcoded here. */
     --terrain-sky-color: #b7d4ea;
     --terrain-fog-color: #68dfd5;
     --terrain-editor-backdrop-color: #4aafc9;

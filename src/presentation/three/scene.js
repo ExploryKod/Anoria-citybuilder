@@ -2806,9 +2806,6 @@ function onTouchEnd(event) {
         // Expose camera for mobile controls
         get camera() { return camera; },
         suppressInput,
-        // Expose pause/resume control for citizen characters
-        pauseCitizen,
-        resumeCitizen,
         refreshEmploymentPresentation,
         /** Semi-transparent placement preview (StonePath trial). */
         placementGhost,
@@ -2834,19 +2831,5 @@ function onTouchEnd(event) {
         isProductionIconsVisible() {
             return mapOverlayVisibility.isProductionIconsVisible();
         },
-    }
-
-    /**
-     * Pauses all citizen animations (switches to idle)
-     */
-    function pauseCitizen() {
-        citizenManager.pauseCitizens();
-    }
-
-    /**
-     * Resumes all citizen animations (switches back to walk if was walking)
-     */
-    function resumeCitizen() {
-        citizenManager.resumeCitizens();
     }
 }

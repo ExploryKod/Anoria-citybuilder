@@ -11,6 +11,8 @@
 //               road-paint logic key on those, not on the mesh's source.
 //  - 'nature' → Kenney's lit presentation (normalized materials + shadows).
 //  - 'building' → `userData.isBuilding` (trees/rocks are not buildings).
+// `presentation.brightness` (default 1) multiplies the model's colors — e.g. to
+// lighten dark asphalt so walkers stand out; it lives in the catalog, not here.
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -26,12 +28,32 @@ const loader = new GLTFLoader();
 const templateCache = new Map();
 
 /**
+ * Multiplies every material color of a template (materials are cloned first:
+ * the loaded GLB's own materials are never shared across differently-tuned uses).
+ *
+ * @param {THREE.Object3D} root
+ * @param {number} brightness
+ */
+function applyBrightness(root, brightness) {
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    const tune = (material) => {
+      const tuned = material.clone();
+      tuned.color?.multiplyScalar(brightness);
+      return tuned;
+    };
+    child.material = Array.isArray(child.material) ? child.material.map(tune) : tune(child.material);
+  });
+}
+
+/**
  * @param {string} glbUrl
  * @param {boolean} lit apply Kenney's lit presentation (nature pieces)
+ * @param {number} [brightness] color multiplier from the catalog (1 = untouched)
  * @returns {Promise<THREE.Object3D>}
  */
-function loadTemplate(glbUrl, lit) {
-  const cacheKey = `${glbUrl}::${lit ? 'lit' : 'raw'}`;
+function loadTemplate(glbUrl, lit, brightness = 1) {
+  const cacheKey = `${glbUrl}::${lit ? 'lit' : 'raw'}::${brightness}`;
   if (!templateCache.has(cacheKey)) {
     const promise = loader.loadAsync(encodeURI(glbUrl)).then((gltf) => {
       if (lit) {
@@ -42,6 +64,9 @@ function loadTemplate(glbUrl, lit) {
             child.receiveShadow = true;
           }
         });
+      }
+      if (brightness !== 1) {
+        applyBrightness(gltf.scene, brightness);
       }
       return gltf.scene;
     });
@@ -72,7 +97,7 @@ registerBuildingSourceAdapter('kenneyGlb', {
     }
     const tags = catalogEntry.tags ?? [];
     const isRoad = tags.includes('road');
-    const template = await loadTemplate(glb, tags.includes('nature'));
+    const template = await loadTemplate(glb, tags.includes('nature'), catalogEntry.presentation?.brightness ?? 1);
 
     const group = new THREE.Group();
     group.add(template.clone(true));

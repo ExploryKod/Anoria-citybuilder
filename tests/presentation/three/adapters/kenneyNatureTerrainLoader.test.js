@@ -1,4 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
+import { KENNEY_GROUND_GRASS_COLOR } from '../../../../src/shared/terrain-catalog/terrainAtmosphere.js';
 import * as THREE from 'three';
 import { applyFlatTerrainMeshPresentation } from '../../../../src/presentation/three/adapters/kenney-nature-terrain/KenneyNatureTerrainLoader.js';
 
@@ -11,6 +12,6 @@ describe('KenneyNatureTerrainLoader presentation', () => {
 
     applyFlatTerrainMeshPresentation(mesh, 'nature:ground_grass');
 
-    expect(mesh.material.color.getHex()).toBe(0x2fe7c5);
+    expect(mesh.material.color.getHex()).toBe(KENNEY_GROUND_GRASS_COLOR);
   });
 });
