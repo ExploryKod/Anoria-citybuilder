@@ -2158,29 +2158,28 @@ footer .footer-links a:hover {
     letter-spacing: 0.4px;
 }
 
-/* Key/Value responsive list */
+/* Key/Value responsive list — same flat-row language as
+   .building-info-neighbors-table (border-bottom rows, no per-row card),
+   so every plain list in the info panel (État/Personnel/Voisins) reads as
+   one unified presentation instead of each tab inventing its own. */
 .kv-row {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 8px;
-    padding: 6px 8px;
-    border: 1px solid rgba(0,0,0,0.06);
-    border-radius: var(--border-radius-small);
-    background: #fff;
-    transition: background 140ms ease, border-color 140ms ease;
+    padding: 10px 8px;
+    border-bottom: 1px solid #eceff1;
 }
-/* No hover visuals for non-interactive list rows */
 .kv-key {
     color: #424242;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 14px;
     text-align: left;
 }
 .kv-value {
     color: #111;
     font-weight: 700;
-    font-size: 13px;
+    font-size: 14px;
     text-align: left;
 }
 

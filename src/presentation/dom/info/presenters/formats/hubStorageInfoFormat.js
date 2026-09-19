@@ -28,19 +28,7 @@ export function formatHubStorageStaffModel(vm) {
   const { hubKind, buildingRow, employment } = vm;
   if (!hubKind) return null;
 
-  const messages = hubKind === 'windmill'
-    ? {
-        fullyStaffed: '✅ Le moulin tourne à plein régime',
-        noWorkers: '❌ Le moulin manque de bras, il ne peut fonctionner',
-        partialWorkers: '⚠️ Le moulin tourne avec peine car trop peu d\'employés',
-      }
-    : {
-        fullyStaffed: '✅ La grange peut stocker jusqu\'à sa capacité',
-        noWorkers: '❌ Aucun magasinier — stockage impossible',
-        partialWorkers: '⚠️ Capacité limitée par le nombre d\'ouvriers',
-      };
-
-  return formatWorkplaceEmployeesPanel(buildingRow, messages, employment);
+  return formatWorkplaceEmployeesPanel(buildingRow, employment);
 }
 
 /** @deprecated Prefer formatHubStorageStaffModel */

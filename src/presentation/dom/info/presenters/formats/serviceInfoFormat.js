@@ -44,9 +44,11 @@ export function formatServiceLayoutOptions() {
 }
 
 /**
- * État tab — operational state + which need this building serves, entirely
- * from catalog facts and the building's own row (roads/employees), same
- * inputs formatWorkplaceEmployeesPanel already reads for the staff tab.
+ * État tab — catalog reference facts only (which need this building serves,
+ * how far). Operational status ("no road", "no employees") is a Messages-
+ * tab complaint now (see messagesInfoFormat.js's personnelComplaint, which
+ * reads this same buildingRow.roads/employees shape) — repeating it here
+ * would just be the same fact said twice.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
@@ -56,45 +58,27 @@ export function formatServiceOverviewModel(vm) {
 
   const def = getBuildingDefinition(buildingType);
   const { category, range } = resolveServiceRole(buildingType);
-  const roadCount = buildingRow.roads ?? 0;
-  const workerNeed = buildingRow.employees.worker_need || 0;
-  const worker = buildingRow.employees.worker || 0;
-
-  let state;
-  if (roadCount <= 0) {
-    state = '🚧 Route nécessaire pour desservir le quartier';
-  } else if (workerNeed > 0 && worker === 0) {
-    state = '🔴 Inactif : pas d\'employés';
-  } else {
-    state = '🟢 En service';
-  }
 
   return {
     sections: [{
       title: `État — ${def?.displayName ?? buildingType}`,
       rows: [
-        { label: 'État', value: state },
         ...(category
           ? [{ label: 'Service rendu', value: getServiceCategoryDisplay(category).label }]
           : []),
-        ...(range != null ? [{ label: 'Portée', value: `${range} cases` }] : []),
+        ...(range != null ? [{ label: 'Portée', value: range === Infinity ? 'illimitée' : `${range} cases` }] : []),
       ],
     }],
   };
 }
 
 /**
- * Staff tab — same generic panel every workplace group uses, with copy
- * built from the building's own displayName instead of hand-written
- * per-building strings (so a new service building needs no new copy here).
+ * Staff tab — same generic panel every workplace group uses (see
+ * workplaceEmployeesFormat.js): staffing numbers only, no per-building
+ * copy needed here — "lacks personnel" is a Messages-tab complaint now.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
 export function formatServiceStaffModel(vm) {
-  const name = getBuildingDefinition(vm.buildingType)?.displayName ?? vm.buildingType;
-  return formatWorkplaceEmployeesPanel(vm.buildingRow, {
-    fullyStaffed: `✅ ${name} fonctionne à plein régime`,
-    noWorkers: `❌ ${name} manque de personnel, il ne peut fonctionner`,
-    partialWorkers: `⚠️ ${name} tourne au ralenti, faute de personnel suffisant`,
-  }, vm.employment);
+  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment);
 }

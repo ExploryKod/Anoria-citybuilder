@@ -40,24 +40,25 @@ describe('serviceInfoFormat — one generic format, driven entirely by catalog f
     expect(formatServiceLayoutHeader(vmFor('Chapel')).title).toBe('Chapelle');
   });
 
-  test('no road access blocks service, independent of staffing', () => {
-    const model = formatServiceOverviewModel(vmFor('Chapel', { roads: 0, worker: 2 }));
-    expect(model.sections[0].rows[0]).toEqual({ label: 'État', value: expect.stringContaining('Route nécessaire') });
-  });
-
-  test('road but no workers reports inactive; fully staffed reports in service', () => {
+  test('reports catalog reference facts only — road/staffing status moved to Messages, not repeated here', () => {
+    const noRoad = formatServiceOverviewModel(vmFor('Chapel', { roads: 0, worker: 2 }));
     const understaffed = formatServiceOverviewModel(vmFor('Chapel', { roads: 1, worker: 0, workerNeed: 2 }));
-    expect(understaffed.sections[0].rows[0].value).toContain('Inactif');
-
     const staffed = formatServiceOverviewModel(vmFor('Chapel', { roads: 1, worker: 2, workerNeed: 2 }));
-    expect(staffed.sections[0].rows[0].value).toContain('En service');
+
+    // Same reference facts regardless of operational state — the row set
+    // doesn't change with road/staffing, only the catalog-derived content.
+    for (const model of [noRoad, understaffed, staffed]) {
+      expect(model.sections[0].rows).toEqual([
+        { label: 'Service rendu', value: 'Foi' },
+        { label: 'Portée', value: 'illimitée' },
+      ]);
+    }
   });
 
-  test('staff tab banner text is derived from the building displayName, not hardcoded per building', () => {
-    const chapelStaff = formatServiceStaffModel(vmFor('Chapel', { worker: 0, workerNeed: 2 }));
-    const doctorStaff = formatServiceStaffModel(vmFor('Doctor', { worker: 0, workerNeed: 2 }));
+  test('staff tab reports staffing numbers only — no "lack of personnel" banner (that\'s a Messages-tab complaint now)', () => {
+    const understaffed = formatServiceStaffModel(vmFor('Chapel', { worker: 0, workerNeed: 2 }));
 
-    expect(chapelStaff.sections[0].banners[0].text).toContain('Chapelle');
-    expect(doctorStaff.sections[0].banners[0].text).toContain('Cabinet médical');
+    expect(understaffed.sections[0].rows).toContainEqual({ label: 'Ouvriers', value: '0/2' });
+    expect(understaffed.sections[0].banners).toBeUndefined();
   });
 });
