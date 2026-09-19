@@ -8,10 +8,10 @@ import {
   KENNEY_CITY_KIT_PREFAB_BY_BUILDING_ID,
 } from '../../../shared/building-catalog/kenneyCityKitRegistry.generated.js';
 import {
-  VILLAGE_MESH_TOOL_IDS_BY_CATEGORY,
-  VILLAGE_NATURE_GAME_IDS,
-  VILLAGE_NATURE_MESH_ALIASES,
-} from '../../../shared/building-catalog/villageAssetSets.js';
+  ASSET_IDS_BY_CATEGORY,
+  NATURE_GAME_IDS,
+  NATURE_MESH_ALIASES,
+} from '../../../shared/building-catalog/assetIdsByCategory.js';
 import { buildingCatalog } from '../../../shared/building-catalog/buildingCatalog.js';
 import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
 import { NATURE_ASSETS } from '../../three/assets/natureAssets.js';
@@ -171,7 +171,7 @@ function buildItemFromCatalogEntry(id, category, filterGroup) {
     };
   }
 
-  const meshAssetId = VILLAGE_NATURE_MESH_ALIASES[id] ?? null;
+  const meshAssetId = NATURE_MESH_ALIASES[id] ?? null;
   return {
     id,
     category,
@@ -229,10 +229,10 @@ function buildPlayableAssetSections() {
       seen.add(id);
     }
 
-    const villageIds = category === 'nature'
-      ? VILLAGE_NATURE_GAME_IDS
-      : (VILLAGE_MESH_TOOL_IDS_BY_CATEGORY[category] || []);
-    for (const id of villageIds) {
+    const categoryIds = category === 'nature'
+      ? NATURE_GAME_IDS
+      : (ASSET_IDS_BY_CATEGORY[category] || []);
+    for (const id of categoryIds) {
       if (seen.has(id)) continue;
       items.push(buildItemFromCatalogEntry(id, category, filterGroup));
       seen.add(id);

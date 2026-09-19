@@ -1,6 +1,10 @@
 /**
- * Village GLB asset sets. Kenney buildings are registered separately; see
- * kenneyCityKitRegistry.generated.js.
+ * Placeable asset ids grouped by gameplay category (houses, farms, industry,
+ * markets, infrastructure, public, nature, zones…) — the list the /assets
+ * reference page enumerates. Which pack renders an id is NOT declared here:
+ * that is the `source` of its entry in the presentation catalogs
+ * (buildingAssets.js / natureAssets.js / terrainAssets.js). Kenney city-kit
+ * tools are registered separately; see kenneyCityKitRegistry.generated.js.
  *
  * There used to be a second, narrower "playable" list here (only farms +
  * roads), disconnected from the actual rendering/economy catalogs — it
@@ -8,14 +12,14 @@
  * priced, rendered buildings from ever being placed. Every buildingCatalog
  * entry with a construction fact is playable, full stop — see
  * asset-placement/buildingPlacementCatalog.js — so this file only needs to declare the one real fact:
- * every village mesh id that exists.
+ * which ids exist in each category.
  */
 
 /**
  * Nature ids written to tiles / Dexie during world generation (not in the placement toolbar).
- * Logical tree names map to GLB mesh ids via {@link VILLAGE_NATURE_MESH_ALIASES}.
+ * Logical tree names map to their canonical mesh ids via {@link NATURE_MESH_ALIASES}.
  */
-export const VILLAGE_NATURE_GAME_IDS = Object.freeze([
+export const NATURE_GAME_IDS = Object.freeze([
   'Tree-Sapin',
   'Tree-Arbuste',
   'Tree-Chene',
@@ -26,15 +30,15 @@ export const VILLAGE_NATURE_GAME_IDS = Object.freeze([
 ]);
 
 /** @type {Readonly<Record<string, string>>} */
-export const VILLAGE_NATURE_MESH_ALIASES = Object.freeze({
+export const NATURE_MESH_ALIASES = Object.freeze({
   'Tree-Sapin': 'Tree-Pine-001',
   'Tree-Arbuste': 'Tree-Square-001',
   'Tree-Chene': 'Tree-Tall-001',
 });
 
-/** Full village mesh load list — kept for legacy saves and procedural nature. */
+/** Every placeable id per category — kept for legacy saves and procedural nature. */
 /** @type {Readonly<Record<string, ReadonlyArray<string>>>} */
-export const VILLAGE_MESH_TOOL_IDS_BY_CATEGORY = Object.freeze({
+export const ASSET_IDS_BY_CATEGORY = Object.freeze({
   zones: Object.freeze(['grass']),
   houses: Object.freeze(['House-Blue', 'House-Red', 'House-Purple']),
   farms: Object.freeze([

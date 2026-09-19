@@ -30,8 +30,8 @@ registerBuildingSourceAdapter('sceneTile', {
     if (!sourceKey) {
       throw new Error('[sceneTileBuildingAdapter] catalog entry is sceneTile-sourced but has no geometry.sourceKey');
     }
-    // Synchronous by design: a village mesh is an already-loaded clone, no
-    // network/GLB load involved — callers may rely on this being immediate.
+    // Synchronous by design: a scene tile is built from shared materials and
+    // geometry, no network/GLB load involved — callers may rely on this being immediate.
     const mesh = assetManager.createAsset(sourceKey, x, y, { rotationStep });
     // createMesh's contract (see buildingSourceAdapterRegistry.js) is to
     // return a FULLY positioned mesh — assetManager.createAsset itself only
@@ -59,7 +59,6 @@ registerBuildingSourceAdapter('sceneTile', {
   },
   // A single-tile mesh rotating in place — no footprint to recompute.
   rotationRequiresRespawn: false,
-  // Village GLB meshes carry their own authored yaw (Z-up vs Y-up mesh
-  // conventions) — read it off the mesh itself, not assumed to be 0.
+  // Read the authored yaw off the mesh itself rather than assuming 0.
   resolveBaseYawAngle: (mesh) => getPlacementYawAngle(mesh),
 });

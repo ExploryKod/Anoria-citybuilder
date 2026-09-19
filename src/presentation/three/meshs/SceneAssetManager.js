@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { applyPlacementRotationStep } from '../placement/placementRotation.js';
 import { textures } from './data.js';
-import { VILLAGE_MESH_TOOL_IDS_BY_CATEGORY } from '../../../shared/building-catalog/villageAssetSets.js';
+import { ASSET_IDS_BY_CATEGORY } from '../../../shared/building-catalog/assetIdsByCategory.js';
 import { attachSceneTilePort } from '../scene-board/SceneTilePort.js';
 import { createSceneTile } from '../scene-board/SceneObjectRegistry.js';
 import { registerTerrainSceneFactories } from '../scene-board/terrain/registerTerrainSceneFactories.js';
@@ -98,7 +98,7 @@ class SceneAssetManager {
         });
         registerNatureSceneFactories();
 
-        VILLAGE_MESH_TOOL_IDS_BY_CATEGORY.zones.forEach(toolId => {
+        ASSET_IDS_BY_CATEGORY.zones.forEach(toolId => {
             this.#assets[toolId] = (x, y) => this.#createTerrain(x, y, toolId);
         });
 
