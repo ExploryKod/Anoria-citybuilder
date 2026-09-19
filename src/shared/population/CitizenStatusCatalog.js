@@ -492,11 +492,11 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
  * Resolve citizen status from house level (current game state).
  * Palace élites are tracked separately via `elitePopFromHouse`.
  *
- * @param {1 | 2} level
+ * @param {number} level
  * @returns {keyof typeof CITIZEN_STATUS_PROFILES}
  */
 export function resolveCitizenStatusFromLevel(level) {
-  return level === 2 ? 'worker' : 'hunter-gatherer';
+  return level >= 2 ? 'worker' : 'hunter-gatherer';
 }
 
 /**

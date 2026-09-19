@@ -1,4 +1,4 @@
-import { createSupplyMonthlyFoodSystem } from '../contexts/supply/infrastructure/runtime/supplyMonthlyFoodSystem.js';
+import { createSupplyMonthlyResourceSystem } from '../contexts/supply/infrastructure/runtime/supplyMonthlyResourceSystem.js';
 
 /**
  * Composition root — monthly Supply Chain tick (food v1).
@@ -17,19 +17,19 @@ export function createMonthlySupplyPipeline({
   toSupplyMonth,
   foodDistributionDistance = 5,
 }) {
-  if (!supply?.runMonthlyFoodSupplyCycle) {
+  if (!supply?.runMonthlyResourceCycle) {
     throw new Error('createMonthlySupplyPipeline: supply context required');
   }
 
-  const runMonthlyFood = createSupplyMonthlyFoodSystem({
+  const runMonthlyResourceCycle = createSupplyMonthlyResourceSystem({
     supply,
     timeManager,
     toSupplySeason,
     toSupplyMonth,
-    foodDistributionDistance,
+    resourceDistributionDistance: foodDistributionDistance,
   });
 
   return {
-    runMonthly: runMonthlyFood,
+    runMonthly: runMonthlyResourceCycle,
   };
 }

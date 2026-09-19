@@ -1,6 +1,8 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
-import { VitePWA } from 'vite-plugin-pwa'
+import { createMapsApiPlugin, resolveMapsDirectory } from './scripts/dev/mapsApiPlugin.mjs'
+
+const mapsDir = resolveMapsDirectory(__dirname)
 
 const cleanRoutes = [
   { path: '/game', file: '/game.html' },
@@ -12,6 +14,7 @@ const cleanRoutes = [
   { path: '/terms', file: '/terms.html' },
   { path: '/legal', file: '/legal.html' },
   { path: '/credits', file: '/credits.html' },
+  { path: '/assets', file: '/assets.html' },
 ]
 
 // https://vitejs.dev/config/
@@ -40,10 +43,13 @@ export default defineConfig({
         terms: resolve(__dirname, 'terms.html'),
         legal: resolve(__dirname, 'legal.html'),
         credits: resolve(__dirname, 'credits.html'),
+        assets: resolve(__dirname, 'assets.html'),
+        placement: resolve(__dirname, 'placement.html'),
       },
     },
   },
   plugins: [
+    createMapsApiPlugin(mapsDir),
     {
       name: 'rewrite-clean-routes',
       configureServer(server) {
@@ -61,76 +67,12 @@ export default defineConfig({
         });
       },
     },
-    VitePWA({
-    registerType: 'autoUpdate',
-    // Enregistrement manuel via src/pwa.js (toast js-toast-notifier) —
-    // évite un double register sur /game.
-    injectRegister: false,
-
-    pwaAssets: {
-      disabled: false,
-      config: true,
-    },
-
-    manifest: {
-      name: 'anoria',
-      short_name: 'anoria',
-      description: 'A 3D city builder game',
-      theme_color: '#db4938',
-      start_url: '/',
-      scope: '/',
-    },
-
-    workbox: {
-      globPatterns: ['**/*.{js,css,html,ico}'],
-      cleanupOutdatedCaches: true,
-      skipWaiting: true,
-      clientsClaim: true,
-      maximumFileSizeToCacheInBytes: 6000000,
-      navigateFallback: '/index.html',
-      navigateFallbackDenylist: [/^\/assets\//, /^\/game/, /^\/hamlets/, /^\/world/, /^\/privacy/, /^\/terms/, /^\/legal/, /^\/credits/],
-      // Modèles 3D (.glb/.gltf/.fbx), leurs textures/JSON associés et les sprites de statut
-      // pèsent plusieurs dizaines de Mo au total (village_town_assets_v2.glb, citizenCool...).
-      // Les précacher bloquerait l'installation du SW ; on les met en cache à l'exécution
-      // (CacheFirst) après le premier chargement, ce qui rend les visites suivantes rapides
-      // et robustes aux réseaux mobiles instables — sans télécharger 150 Mo dès l'install.
-      runtimeCaching: [
-        {
-          urlPattern: ({ url }) =>
-            /^\/(resources|citizen02|citizenCool)\//.test(url.pathname) ||
-            url.pathname === '/village_town_assets.json',
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'anoria-game-assets',
-            expiration: {
-              maxEntries: 500,
-              maxAgeSeconds: 60 * 60 * 24 * 60, // 60 jours
-            },
-            cacheableResponse: { statuses: [0, 200] },
-          },
-        },
-        {
-          urlPattern: ({ url }) => /\.(png|jpg|jpeg|webp|svg|ico)$/i.test(url.pathname),
-          handler: 'StaleWhileRevalidate',
-          options: {
-            cacheName: 'anoria-images',
-            expiration: {
-              maxEntries: 200,
-              maxAgeSeconds: 60 * 60 * 24 * 30, // 30 jours
-            },
-            cacheableResponse: { statuses: [0, 200] },
-          },
-        },
-      ],
-    },
-
-    devOptions: {
-      enabled: true,
-      navigateFallback: '/index.html',
-      suppressWarnings: true,
-      type: 'module',
-      disableDevLogs: true,
-    },
-    }),
+    // PWA (vite-plugin-pwa / workbox) removed 2026-09-07 — not needed right
+    // now, and workbox-build's dependency tree was tripping Socket
+    // Firewall's supply-chain trust check on install (blocking every
+    // `pnpm install`). See src/pwa.js for how to restore it: re-add
+    // `vite-plugin-pwa`/`workbox-window`/`@vite-pwa/assets-generator` to
+    // package.json, re-import `VitePWA` here, and paste the removed plugin
+    // config back (kept in git history on this commit).
   ],
 })

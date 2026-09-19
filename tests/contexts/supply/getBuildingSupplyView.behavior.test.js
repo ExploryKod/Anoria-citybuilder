@@ -5,7 +5,7 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingView } from '../../../src/contexts/supply/domain/SupplyBuildingView.js';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
-import { GetBuildingSupplyView } from '../../../src/contexts/supply/application/queries/GetBuildingSupplyView.js';
+import { GetBuildingSupplyView, classifySupplyKind } from '../../../src/contexts/supply/application/queries/GetBuildingSupplyView.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(views = [], snapshots = {}) {
@@ -22,13 +22,7 @@ class InMemorySupplyBuildingRepository {
   }
 
   async saveStocks() {}
-  async saveMarketFlags() {}
-  async findMarkets() {
-    return [];
-  }
-  async findHouses() {
-    return [];
-  }
+  async saveSupplyFlags() {}
 }
 
 describe('Supply — GetBuildingSupplyView', () => {
@@ -43,7 +37,7 @@ describe('Supply — GetBuildingSupplyView', () => {
         stocks: { wheat: 10, food: 10 },
         maxStock: 500,
         isBuying: true,
-        noFarmsNearby: false,
+        noSourcesNearby: false,
         neighbors: [
           { name: 'House-Blue', type: 'House-Blue', x: 5, y: 6 },
           { name: 'Farm-Wheat', type: 'Farm-Wheat', x: 4, y: 5 },
@@ -53,14 +47,14 @@ describe('Supply — GetBuildingSupplyView', () => {
         id: 'House-Blue-0-0',
         type: 'House-Blue',
         stocks: { wheat: 2, food: 2 },
-        marketTooFar: true,
+        distributorTooFar: true,
       }),
       createSupplyBuildingView({
         id: 'Farm-Wheat-3-3',
         type: 'Farm-Wheat',
         stocks: { wheat: 5, food: 5 },
-        salesToMarket: [{ year: 1, productType: 'wheat', quantity: 3 }],
-        salesToWindmill: [],
+        salesToDistributor: [{ year: 1, productType: 'wheat', quantity: 3 }],
+        salesToHub: [],
       }),
       createSupplyBuildingView({
         id: 'Windmill-001-8-8',
@@ -178,5 +172,51 @@ describe('Supply — GetBuildingSupplyView', () => {
     const query = new GetBuildingSupplyView(repo);
     expect((await query.execute('Market-Stall-1-1')).isBuying).toBe(false);
     expect((await query.execute('Windmill-001-1-1')).isCollecting).toBe(false);
+  });
+
+  describe('classifySupplyKind — flag-distributor services vs quantity-distributor markets', () => {
+    test('a quantity distributor (sells a depleting stock) classifies as market', () => {
+      expect(classifySupplyKind('Market-Stall')).toBe('market');
+      expect(classifySupplyKind('Market-Stall-Red')).toBe('market');
+    });
+
+    test('a flag distributor (marks houses "served", no stock) classifies as service, not market', () => {
+      // The bug this pins: Chapel and every other flag-mode public service
+      // building used to fall into 'market' (any 'distributor' role, no
+      // consumption-mode check) and rendered Market-Stall's copy/tabs.
+      expect(classifySupplyKind('Chapel')).toBe('service');
+      expect(classifySupplyKind('School')).toBe('service');
+      expect(classifySupplyKind('Library')).toBe('service');
+      expect(classifySupplyKind('Doctor')).toBe('service');
+      expect(classifySupplyKind('Hospital')).toBe('service');
+      expect(classifySupplyKind('PublicBath')).toBe('service');
+      expect(classifySupplyKind('Theatre')).toBe('service');
+      expect(classifySupplyKind('Cinema')).toBe('service');
+      expect(classifySupplyKind('Pub')).toBe('service');
+    });
+  });
+
+  test('Chapel view classifies as service (not market) via the real repository path', async () => {
+    const repo = new InMemorySupplyBuildingRepository(
+      [
+        createSupplyBuildingView({
+          id: 'Chapel-1-1',
+          type: 'Chapel',
+          stocks: {},
+        }),
+      ],
+      {
+        'Chapel-1-1': createSupplyBuildingSnapshot({
+          id: 'Chapel-1-1',
+          type: 'Chapel',
+          roadCount: 1,
+          worker: 2,
+          workerNeed: 2,
+        }),
+      },
+    );
+    const dto = await new GetBuildingSupplyView(repo).execute('Chapel-1-1');
+    expect(dto.kind).toBe('service');
+    expect(dto.isBuying).toBeUndefined();
   });
 });

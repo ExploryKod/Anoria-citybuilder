@@ -5,14 +5,15 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyBuildingView } from '../../../src/contexts/supply/domain/SupplyBuildingView.js';
-import { createFoodStock } from '../../../src/contexts/supply/domain/value-objects/FoodStock.js';
+import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { ListSupplyMapBuildings } from '../../../src/contexts/supply/application/queries/ListSupplyMapBuildings.js';
-import { ListWindmillSupplyViews } from '../../../src/contexts/supply/application/queries/ListWindmillSupplyViews.js';
+import { ListHubSupplyViews } from '../../../src/contexts/supply/application/queries/ListHubSupplyViews.js';
 import { ListSupplyStockSnapshots } from '../../../src/contexts/supply/application/queries/ListSupplyStockSnapshots.js';
-import { MarkWindmillCollectingSeason } from '../../../src/contexts/supply/application/commands/surplus/MarkWindmillCollectingSeason.js';
-import { ResetFarmsSoldToWindmill } from '../../../src/contexts/supply/application/commands/surplus/ResetFarmsSoldToWindmill.js';
-import { UpdateMarketFarmProximity } from '../../../src/contexts/supply/application/commands/procurement/UpdateMarketFarmProximity.js';
-import { isWithinMarketRange } from '../../../src/composition/supplyOps.js';
+import { MarkHubCollectingSchedule } from '../../../src/contexts/supply/application/commands/surplus/MarkHubCollectingSchedule.js';
+import { ResetSourcesCollectedFlag } from '../../../src/contexts/supply/application/commands/surplus/ResetSourcesCollectedFlag.js';
+import { UpdateDistributorSourceProximity } from '../../../src/contexts/supply/application/commands/procurement/UpdateDistributorSourceProximity.js';
+import { isWithinRange } from '../../../src/composition/supplyOps.js';
+import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 
 class InMemorySupplyBuildingRepository {
   constructor({ snapshots = [], views = [] } = {}) {
@@ -23,7 +24,7 @@ class InMemorySupplyBuildingRepository {
 
   async findById(id) {
     const b = this.snapshots.get(id);
-    return b ? { ...b, stocks: createFoodStock(b.stocks) } : null;
+    return b ? { ...b, stocks: createSupplyStock(b.stocks) } : null;
   }
 
   async findSupplyView(id) {
@@ -47,7 +48,7 @@ class InMemorySupplyBuildingRepository {
 
   async saveStocks() {}
 
-  async saveMarketFlags(id, flags) {
+  async saveSupplyFlags(id, flags) {
     this.flags.set(id, { ...(this.flags.get(id) || {}), ...flags });
     const v = this.views.get(id);
     if (v) {
@@ -55,31 +56,15 @@ class InMemorySupplyBuildingRepository {
     }
   }
 
-  async findMarkets() {
-    return [...this.snapshots.values()].filter((b) => b.type.includes('Market'));
-  }
-
-  async findHouses() {
-    return [...this.snapshots.values()].filter((b) => b.type.includes('House'));
-  }
-
-  async findWindmills() {
-    return [...this.snapshots.values()].filter(
-      (b) => b.type.includes('Windmill') || b.type.includes('windmill')
-    );
-  }
-
-  async findFarms() {
-    return [...this.snapshots.values()].filter(
-      (b) => b.type.includes('Farm') || b.type.includes('farm')
-    );
+  async findByResourceRole(role, categories) {
+    return [...this.snapshots.values()].filter((b) => hasResourceRole(b.type, role, categories));
   }
 }
 
 describe('Supply — cleanup queries and flag commands', () => {
-  test('ACL exports isWithinMarketRange', () => {
-    expect(isWithinMarketRange({ x: 0, y: 0 }, { x: 2, y: 2 }, 5)).toBe(true);
-    expect(isWithinMarketRange({ x: 0, y: 0 }, { x: 5, y: 1 }, 5)).toBe(false);
+  test('ACL exports isWithinRange', () => {
+    expect(isWithinRange({ x: 0, y: 0 }, { x: 2, y: 2 }, 5)).toBe(true);
+    expect(isWithinRange({ x: 0, y: 0 }, { x: 5, y: 1 }, 5)).toBe(false);
   });
 
   test('ListSupplyMapBuildings exposes hasFood and marketTooFar', async () => {
@@ -91,7 +76,7 @@ describe('Supply — cleanup queries and flag commands', () => {
           x: 1,
           y: 1,
           stocks: { wheat: 0, food: 0 },
-          marketTooFar: true,
+          distributorTooFar: true,
           pop: 3,
         }),
         createSupplyBuildingView({
@@ -152,7 +137,7 @@ describe('Supply — cleanup queries and flag commands', () => {
     expect(market.stocks.wheat).toBe(8);
   });
 
-  test('ListWindmillSupplyViews returns windmills only', async () => {
+  test('ListHubSupplyViews returns windmills only', async () => {
     const repo = new InMemorySupplyBuildingRepository({
       views: [
         createSupplyBuildingView({
@@ -170,14 +155,14 @@ describe('Supply — cleanup queries and flag commands', () => {
       ],
     });
 
-    const list = await new ListWindmillSupplyViews(repo).execute();
+    const list = await new ListHubSupplyViews(repo).execute();
     expect(list).toHaveLength(1);
     expect(list[0].buildingId).toBe('Windmill-001-5-5');
     expect(list[0].stocks.wheat).toBe(10);
     expect(list[0].isCollecting).toBe(true);
   });
 
-  test('MarkWindmillCollectingSeason sets isCollecting in december only', async () => {
+  test('MarkHubCollectingSchedule sets isCollecting in december only', async () => {
     const mill = createSupplyBuildingSnapshot({
       id: 'Windmill-001-5-5',
       type: 'Windmill-001',
@@ -196,7 +181,7 @@ describe('Supply — cleanup queries and flag commands', () => {
       ],
     });
 
-    const cmd = new MarkWindmillCollectingSeason(repo);
+    const cmd = new MarkHubCollectingSchedule(repo);
     await cmd.execute('december');
     expect(repo.flags.get('Windmill-001-5-5').isCollecting).toBe(true);
 
@@ -204,7 +189,7 @@ describe('Supply — cleanup queries and flag commands', () => {
     expect(repo.flags.get('Windmill-001-5-5').isCollecting).toBe(false);
   });
 
-  test('ResetFarmsSoldToWindmill clears flags', async () => {
+  test('ResetSourcesCollectedFlag clears flags', async () => {
     const farm = createSupplyBuildingSnapshot({
       id: 'Farm-Wheat-1-1',
       type: 'Farm-Wheat',
@@ -217,17 +202,17 @@ describe('Supply — cleanup queries and flag commands', () => {
           id: 'Farm-Wheat-1-1',
           type: 'Farm-Wheat',
           stocks: { wheat: 1, food: 1 },
-          soldToWindmill: true,
+          collectedByHub: true,
         }),
       ],
     });
 
-    const outcome = await new ResetFarmsSoldToWindmill(repo).execute();
+    const outcome = await new ResetSourcesCollectedFlag(repo).execute();
     expect(outcome.cleared).toBe(1);
-    expect(repo.flags.get('Farm-Wheat-1-1').soldToWindmill).toBe(false);
+    expect(repo.flags.get('Farm-Wheat-1-1').collectedByHub).toBe(false);
   });
 
-  test('UpdateMarketFarmProximity persists noFarmsNearby', async () => {
+  test('UpdateDistributorSourceProximity persists noSourcesNearby', async () => {
     const repo = new InMemorySupplyBuildingRepository({
       views: [
         createSupplyBuildingView({
@@ -238,10 +223,10 @@ describe('Supply — cleanup queries and flag commands', () => {
       ],
     });
 
-    await new UpdateMarketFarmProximity(repo).execute({
-      marketId: 'Market-Stall-5-5',
-      hasFarmsNearby: false,
+    await new UpdateDistributorSourceProximity(repo).execute({
+      distributorId: 'Market-Stall-5-5',
+      hasSourcesNearby: false,
     });
-    expect(repo.flags.get('Market-Stall-5-5').noFarmsNearby).toBe(true);
+    expect(repo.flags.get('Market-Stall-5-5').noSourcesNearby).toBe(true);
   });
 });

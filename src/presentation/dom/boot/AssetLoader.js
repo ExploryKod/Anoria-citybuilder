@@ -1,45 +1,18 @@
-import { setToolPanelAssets } from '../tools/ToolPanel.js';
 import { updateSpeedDisplay } from './SpeedControls.js';
+import { getKenneyCityKitMeshAdapter } from '../../three/adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
+import { getKenneyNatureTerrainAdapter } from '../../three/adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js';
+import { getKenneyNaturePropAdapter } from '../../three/adapters/kenney-nature-props/KenneyNaturePropAdapter.js';
+import { applyTerrainDisplayCssVariables } from '../../../shared/terrain-catalog/applyTerrainDisplayCssVariables.js';
 
 export async function loadGameAssets(assetManager) {
+  applyTerrainDisplayCssVariables();
   await assetManager.initializeTerrains();
 
-  // Houses + nature are needed before scene.initialize / ResourceManager
-  // (trees write Tree-Sapin etc. into city.tiles; meshes must exist or every
-  // game tick retries createAsset(undefined) → THREE.Object3D.add spam).
-  await Promise.all([
-    assetManager.initializeBuildings('houses'),
-    assetManager.initializeBuildings('nature'),
-  ]);
+  await getKenneyNatureTerrainAdapter().initialize();
+  await getKenneyNaturePropAdapter().initialize();
+  await getKenneyCityKitMeshAdapter().initialize();
 
-  const loadNonCriticalAssets = () => {
-    Promise.all([
-      assetManager.initializeBuildings('palaces'),
-      assetManager.initializeBuildings('markets'),
-      assetManager.initializeBuildings('farms'),
-      assetManager.initializeBuildings('industry'),
-      assetManager.initializeBuildings('infrastructure'),
-      assetManager.initializeBuildings('public'),
-      assetManager.initializeBuildings('decoration'),
-      assetManager.initializeBuildings('tombs'),
-    ])
-      .then(() => {
-        setToolPanelAssets(assetManager.getButtonData(), assetManager.getToolIds());
-      })
-      .catch(() => {});
-  };
-
-  if (typeof requestIdleCallback !== 'undefined') {
-    requestIdleCallback(loadNonCriticalAssets, { timeout: 3000 });
-  } else {
-    setTimeout(loadNonCriticalAssets, 500);
-  }
-
-  const initUI = () => {
-    setToolPanelAssets(assetManager.getButtonData(), assetManager.getToolIds());
-    updateSpeedDisplay();
-  };
-
+  const initUI = () => updateSpeedDisplay();
   if (typeof requestIdleCallback !== 'undefined') {
     requestIdleCallback(initUI, { timeout: 1000 });
   } else {
@@ -55,11 +28,4 @@ export function initButtonStateRegistry(buttonStateManager = null) {
     console.warn('⚠️ ButtonStateManager not available');
     return;
   }
-
-  ['palace-btn', 'infrastructure-btn', 'workshop-btn'].forEach((id) => {
-    const button = document.getElementById(id);
-    if (button) {
-      buttonStateManager.registerButton(id, button);
-    }
-  });
 }

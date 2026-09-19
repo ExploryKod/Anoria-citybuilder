@@ -4,11 +4,11 @@
  */
 export function createEmploymentRedistributeSystem({
   employment,
-  getSectorPriorities,
+  getSkillPriorities,
 }) {
   return async function employmentRedistribute(_world, context = {}) {
     await employment.distributeCityWorkers({
-      sectorPriorities: getSectorPriorities(),
+      skillPriorities: getSkillPriorities(),
     });
   };
 }

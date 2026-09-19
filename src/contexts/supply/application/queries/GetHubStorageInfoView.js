@@ -1,22 +1,14 @@
-import {
-  HUB_KIND,
-  getHubProductEmoji,
-  getHubProductLabel,
-} from '../../domain/catalogs/HubStorageCatalog.js';
-import { createEmptyCommerceStocks } from '../../domain/catalogs/BarnCommerceCatalog.js';
-import {
-  getBarnCapacitySummary,
-} from '../../domain/policies/BarnStockPolicy.js';
+import { getResourceCategoryPresentation } from '../../domain/catalogs/ResourceCategoryCatalog.js';
 import { buildHubStorageLines } from '../../domain/policies/HubStorageOrdersPolicy.js';
 import { buildHubStoragePieSegments } from '../../domain/policies/HubStoragePiePolicy.js';
 
 /**
- * Read model for barn / windmill hub info overlay (Cesar III inspired).
+ * Read model for windmill hub info overlay (Cesar III inspired).
  */
 export class GetHubStorageInfoView {
   /**
    * @param {object} params
-   * @param {'barn'|'windmill'} params.hubKind
+   * @param {'windmill'} params.hubKind
    * @param {object|null|undefined} params.buildingRow
    * @param {Record<string, number>|null|undefined} [params.stocks]
    * @param {number|null|undefined} [params.maxStock]
@@ -26,59 +18,20 @@ export class GetHubStorageInfoView {
       return Object.freeze({ hubKind, lines: Object.freeze([]), pieSegments: Object.freeze([]) });
     }
 
-    if (hubKind === HUB_KIND.BARN) {
-      const commerceStocks = createEmptyCommerceStocks(
-        stocks ?? buildingRow.commerceStocks ?? {}
-      );
-      const capacity = getBarnCapacitySummary(buildingRow, commerceStocks);
-      const storage = buildHubStorageLines({
-        hubKind,
-        stocks: commerceStocks,
-        rawOrders: buildingRow.hubStorageOrders,
-        totalCapacity: capacity.maxTotal,
-      });
-
-      const lines = Object.freeze(
-        storage.lines.map((line) =>
-          Object.freeze({
-            ...line,
-            emoji: getHubProductEmoji(line.productId),
-            label: getHubProductLabel(hubKind, line.productId),
-          })
-        )
-      );
-
-      return Object.freeze({
-        hubKind,
-        title: 'Entrepôt commerce',
-        workers: capacity.workers,
-        workerNeed: buildingRow.employees?.worker_need ?? 0,
-        ...storage,
-        lines,
-        pieSegments: buildHubStoragePieSegments({
-          lines,
-          totalCapacity: capacity.maxTotal,
-        }),
-      });
-    }
-
     const hubStocks = stocks ?? buildingRow.stocks ?? {};
     const totalCapacity = maxStock ?? buildingRow.maxStock ?? 1000;
     const storage = buildHubStorageLines({
-      hubKind,
+      buildingType: buildingRow.type,
       stocks: hubStocks,
       rawOrders: buildingRow.hubStorageOrders,
       totalCapacity,
     });
 
     const lines = Object.freeze(
-      storage.lines.map((line) =>
-        Object.freeze({
-          ...line,
-          emoji: getHubProductEmoji(line.productId),
-          label: getHubProductLabel(hubKind, line.productId),
-        })
-      )
+      storage.lines.map((line) => {
+        const { emoji, label } = getResourceCategoryPresentation(line.productId);
+        return Object.freeze({ ...line, emoji, label });
+      })
     );
 
     return Object.freeze({
@@ -93,9 +46,9 @@ export class GetHubStorageInfoView {
         totalCapacity,
       }),
       linkedMarkets: Object.freeze(
-        (buildingRow.linkedMarkets ?? []).map((entry) =>
+        (buildingRow.linkedDistributors ?? []).map((entry) =>
           Object.freeze({
-            marketId: entry.marketId,
+            marketId: entry.distributorId,
             x: entry.x,
             y: entry.y,
             allocatedStocks: Object.freeze({ ...entry.allocatedStocks }),

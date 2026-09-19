@@ -1,4 +1,4 @@
-import { assertBuildingInstanceId } from '../../../../shared/building-identity/BuildingInstanceId.js';
+import { assertBuildingInstanceId } from '../../../../shared/building-identity/BuildingIdentifiers.js';
 
 /**
  * Événement de domaine : la liste des voisins d'un bâtiment a été mise à jour.

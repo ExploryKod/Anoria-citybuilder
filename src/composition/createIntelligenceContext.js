@@ -8,8 +8,6 @@ import { ListIncomingNews } from '../contexts/intelligence/application/queries/L
 import { ListArchivedNews } from '../contexts/intelligence/application/queries/ListArchivedNews.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
 import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
-import { getOrCreateSupplyContext } from './createSupplyContext.js';
-import { getOrCreateCommerceContext } from './createCommerceContext.js';
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
 
 /**
@@ -53,19 +51,9 @@ export function createIntelligenceContext({
       };
     });
 
-  const resolveBarn =
-    hasOperationalBarn ??
-    (async () => getOrCreateSupplyContext().hasOperationalCommerceBarn());
+  const resolveBarn = hasOperationalBarn ?? (async () => false);
 
-  const resolveTradeRoute =
-    hasActiveTradeRoute ??
-    (() => {
-      const partners =
-        getOrCreateCommerceContext().commerceRepository.loadOrSeedPartners?.() ??
-        getOrCreateCommerceContext().commerceRepository.loadPartners?.() ??
-        [];
-      return (partners || []).some((p) => p?.isActive === true);
-    });
+  const resolveTradeRoute = hasActiveTradeRoute ?? (() => false);
 
   const resolveSettle =
     settleContribution ??

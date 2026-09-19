@@ -1,11 +1,12 @@
-import {
-  isMarketBuildingType,
-  isWindmillBuildingType,
-} from '../shared/building-catalog/BuildingSupplyTypes.js';
+import { hasResourceRole, getPlacementRequirements } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { refreshSupplyPlacementIndex } from '../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
 
 /**
  * Event-driven supply link maintenance after placement / demolition.
+ * Generic — driven by catalog roles/placementRequires (see
+ * ResourceRolePolicy.js), not a hardcoded windmill/market type check: any
+ * 'hub'-role building gets cascade-destroy + link init, any building with
+ * `placementRequires` gets assign/detach.
  *
  * @param {object} params
  * @param {object} params.supply
@@ -30,28 +31,32 @@ export async function syncSupplyLinksAfterBuildingChange({
 }) {
   let outcome = { handled: false };
 
-  if (event === 'bulldozed' && isWindmillBuildingType(buildingType) && instanceId && city) {
-    outcome = await supply.cascadeDestroyWindmillMarkets({
-      windmillId: instanceId,
+  const isHub = hasResourceRole(buildingType, 'hub');
+  const hasPlacementRequirements = getPlacementRequirements(buildingType).length > 0;
+
+  if (event === 'bulldozed' && isHub && instanceId && city) {
+    outcome = await supply.cascadeDestroyHubDistributors({
+      hubId: instanceId,
       city,
       bulldozeBuildingAtTile: (params) => construction.bulldozeBuildingAtTile(params),
     });
   }
 
-  if (event === 'placed' && isMarketBuildingType(buildingType) && instanceId) {
-    outcome = await supply.assignMarketToWindmill({
-      marketId: instanceId,
+  if (event === 'placed' && hasPlacementRequirements && instanceId) {
+    outcome = await supply.assignDistributorToHub({
+      distributorId: instanceId,
+      distributorType: buildingType,
       x: x ?? 0,
       y: y ?? 0,
     });
   }
 
-  if (event === 'bulldozed' && isMarketBuildingType(buildingType) && instanceId) {
-    outcome = await supply.detachMarketFromWindmill({ marketId: instanceId });
+  if (event === 'bulldozed' && hasPlacementRequirements && instanceId) {
+    outcome = await supply.detachDistributorFromHub({ distributorId: instanceId });
   }
 
-  if (event === 'placed' && isWindmillBuildingType(buildingType) && instanceId) {
-    await supply.initializeWindmillLinks({ windmillId: instanceId });
+  if (event === 'placed' && isHub && instanceId) {
+    await supply.initializeHubLinks({ hubId: instanceId });
     outcome = { handled: true, initialized: true };
   }
 

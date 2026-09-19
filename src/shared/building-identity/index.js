@@ -2,9 +2,6 @@ export {
   createTileCoord,
   tryCreateTileCoord,
   toGridInteger,
-} from './TileCoord.js';
-
-export {
   createBuildingId,
   tryCreateBuildingId,
   toBuildingIdString,
@@ -12,15 +9,12 @@ export {
   parseBuildingId,
   tryParseBuildingId,
   isPublishedBuildingIdString,
-} from './BuildingId.js';
-
-export {
   createBuildingInstanceId,
   isBuildingInstanceId,
   assertBuildingInstanceId,
   tryBuildingInstanceId,
   formatInstanceIdForLog,
-} from './BuildingInstanceId.js';
+} from './BuildingIdentifiers.js';
 
 export {
   footprintFromAnchor,
@@ -34,7 +28,6 @@ export {
   BUILDING_KIND_HOUSE,
   BUILDING_KIND_FARM,
   BUILDING_KIND_MARKET,
-  BUILDING_KIND_FACTORY,
   BUILDING_KIND_WINDMILL,
   BUILDING_KIND_ROAD,
   BUILDING_KIND_NATURE,

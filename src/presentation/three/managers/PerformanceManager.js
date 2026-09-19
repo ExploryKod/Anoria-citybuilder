@@ -1,8 +1,11 @@
 import * as THREE from 'three';
+import { getSceneTilePortFromObject } from '../scene-board/SceneTilePort.js';
 
 /**
  * Manages performance optimizations (frustum culling, shadow casting)
  */
+const MIN_ZONE_BOUNDS_HEIGHT = 0.5;
+
 export class PerformanceManager {
     constructor(scene, camera, zoneGroups, buildings) {
         this.scene = scene;
@@ -16,9 +19,22 @@ export class PerformanceManager {
     }
 
     /**
-     * Update frustum culling for zone groups
+     * Force the next frustum pass to run (e.g. after placing editor tiles into an empty zone).
      */
-    updateFrustumCulling() {
+    invalidateFrustumCache() {
+        this.lastFrustumUpdateCameraPosition.set(Infinity, Infinity, Infinity);
+    }
+
+    /**
+     * @param {boolean} [editorMode=false] — editor keeps all zones visible (no aggressive culling).
+     */
+    updateFrustumCulling(editorMode = false) {
+        if (editorMode) {
+            this.zoneGroups.forEach((zoneGroup) => {
+                zoneGroup.visible = zoneGroup.children.length > 0;
+            });
+            return;
+        }
         const currentCameraPos = this.camera.camera.position.clone();
         const distanceMoved = currentCameraPos.distanceTo(this.lastFrustumUpdateCameraPosition);
 
@@ -40,11 +56,32 @@ export class PerformanceManager {
             }
 
             const box = new THREE.Box3();
-            zoneGroup.children.forEach(child => {
-                if (child instanceof THREE.Mesh) {
-                    box.expandByObject(child);
+            zoneGroup.children.forEach((child) => {
+                const port = getSceneTilePortFromObject(child);
+                if (port) {
+                    const tileBounds = port.getBounds();
+                    if (!tileBounds.isEmpty()) {
+                        box.union(tileBounds);
+                    }
+                    return;
                 }
+                box.expandByObject(child);
             });
+
+            if (!box.isEmpty()) {
+                const height = box.max.y - box.min.y;
+                if (height < MIN_ZONE_BOUNDS_HEIGHT) {
+                    const centerY = (box.min.y + box.max.y) * 0.5;
+                    const halfHeight = MIN_ZONE_BOUNDS_HEIGHT * 0.5;
+                    box.min.y = centerY - halfHeight;
+                    box.max.y = centerY + halfHeight;
+                }
+            }
+
+            if (box.isEmpty()) {
+                zoneGroup.visible = false;
+                return;
+            }
 
             zoneGroup.visible = frustum.intersectsBox(box);
         });

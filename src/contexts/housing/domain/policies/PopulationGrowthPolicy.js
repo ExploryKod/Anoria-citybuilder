@@ -77,7 +77,7 @@ export function computePopulationAfterGrowth({
     return { pop, changed: false, lastPopulationGrowthMonth };
   }
 
-  const maxPopulation = maxPopulationForLevel(level === 2 ? 2 : 1);
+  const maxPopulation = maxPopulationForLevel(level);
 
   if (pop > maxPopulation) {
     return {

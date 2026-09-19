@@ -2,6 +2,7 @@ packages:
   - '.'
 
 allowBuilds:
+  '@parcel/watcher': true
   esbuild: true
   sharp: true
   unrs-resolver: true
@@ -10,3 +11,19 @@ overrides:
   caniuse-lite: 1.0.30001806
   sharp: 0.32.6
   sharp-ico: 0.1.5
+  semver: '^7.6.0'
+  workbox-window: '^7.4.1'
+
+minimumReleaseAge: 10080
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false
+
+trustPolicy: no-downgrade
+blockExoticSubdeps: true
+trustLockfile: false
+
+strictDepBuilds: true
+dangerouslyAllowAllBuilds: false
+
+audit:
+  level: high

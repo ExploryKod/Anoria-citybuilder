@@ -51,6 +51,65 @@ db.version(4).stores({
 // v5: unlock is explicit (cheat / future rules) — not inferred from natureSeeded visits.
 db.version(5).stores({}).upgrade(reconcileHamletUnlockFlags);
 
+// v6: the legacy procedural 'roads' tile/mesh is retired — StonePath-001 is
+// the only road tool now (see buildingEconomy.js). Any house row still
+// carrying the old type would throw on scene render (no catalog entry).
+db.version(6).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').equals('roads').modify((row) => {
+    row.type = 'StonePath-001';
+  });
+});
+
+// v7: Supply's stored fields are renamed off resource-specific words
+// (windmill/market/farm) to their generic hub/distributor/producer-source
+// role names — the Supply mechanism itself no longer names any resource in
+// code, only in declarative catalog data (see ResourceRolePolicy.js).
+const SUPPLY_FIELD_RENAMES = {
+  supplyWindmillId: 'supplyHubId',
+  linkedMarkets: 'linkedDistributors',
+  soldToWindmill: 'collectedByHub',
+  marketTooFar: 'distributorTooFar',
+  noFarmsNearby: 'noSourcesNearby',
+  salesToMarket: 'salesToDistributor',
+  salesToWindmill: 'salesToHub',
+};
+db.version(7).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').toCollection().modify((row) => {
+    for (const [oldField, newField] of Object.entries(SUPPLY_FIELD_RENAMES)) {
+      if (oldField in row) {
+        row[newField] = row[oldField];
+        delete row[oldField];
+      }
+    }
+    if (Array.isArray(row.linkedDistributors)) {
+      row.linkedDistributors = row.linkedDistributors.map((entry) =>
+        entry && 'marketId' in entry
+          ? { ...entry, distributorId: entry.marketId, marketId: undefined }
+          : entry
+      );
+    }
+    if (Array.isArray(row.salesToHub)) {
+      row.salesToHub = row.salesToHub.map((sale) =>
+        sale && 'windmillId' in sale ? { ...sale, hubId: sale.windmillId, windmillId: undefined } : sale
+      );
+    }
+    if (Array.isArray(row.salesToDistributor)) {
+      row.salesToDistributor = row.salesToDistributor.map((sale) =>
+        sale && 'marketId' in sale ? { ...sale, distributorId: sale.marketId, marketId: undefined } : sale
+      );
+    }
+  });
+});
+
+// v8: the decoration / cemetery / infrastructure-prop catalog is retired
+// (benches, fountains, tombs, primitives…): those ids no longer exist in the
+// asset catalogs, so any placed row would throw on scene render. They are
+// removed from saves.
+const RETIRED_PROP_TYPES = ['Bench', 'Picnic-Table', 'Potted-Bush', 'Daisy', 'Shroom', 'Arch', 'Obelisk', 'Pillar', 'Garland', 'Barrell', 'Fountain-001', 'Well-001', 'Streetlight-001', 'Fence-001', 'Pond-001', 'Plane-001', 'Plane-004', 'Plane-007', 'Cube', 'Sphere-001', 'Sphere-002', 'Grave-1', 'Grave-2', 'Tombstone-1', 'Tombstone-2', 'Tombstone-3', 'Tomb', 'Coffin'];
+db.version(8).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').anyOf(RETIRED_PROP_TYPES).delete();
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

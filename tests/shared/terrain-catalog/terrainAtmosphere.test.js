@@ -1,0 +1,35 @@
+import { describe, expect, test } from '@jest/globals';
+import {
+  KENNEY_GROUND_GRASS_COLOR,
+  SCENE_EDITOR_BACKDROP_COLOR,
+  SCENE_EDITOR_FOG_COLOR,
+  SCENE_FOG_COLOR,
+  SCENE_SEA_COLOR,
+  SCENE_SKY_COLOR,
+  createSceneFog,
+} from '../../../src/shared/terrain-catalog/terrainAtmosphere.js';
+import { blendTerrainColorHex } from '../../../src/shared/terrain-catalog/terrainColorBlend.js';
+
+describe('terrainAtmosphere', () => {
+  test('the ground grass color is a hex number (single source of the ground look)', () => {
+    expect(typeof KENNEY_GROUND_GRASS_COLOR).toBe('number');
+  });
+
+  test('fog color is blended from grass and sky', () => {
+    expect(SCENE_FOG_COLOR).toBe(
+      blendTerrainColorHex(KENNEY_GROUND_GRASS_COLOR, SCENE_SKY_COLOR, 0.42)
+    );
+  });
+
+  test('editor fog color matches unified editor backdrop', () => {
+    const fog = createSceneFog({ editor: true });
+    expect(fog.color.getHex()).toBe(SCENE_EDITOR_FOG_COLOR);
+    expect(fog.color.getHex()).toBe(SCENE_EDITOR_BACKDROP_COLOR);
+  });
+
+  test('createSceneFog returns FogExp2', () => {
+    const fog = createSceneFog();
+    expect(fog.isFogExp2).toBe(true);
+    expect(fog.density).toBeGreaterThan(0);
+  });
+});

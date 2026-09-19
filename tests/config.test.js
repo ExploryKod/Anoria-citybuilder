@@ -126,9 +126,8 @@ describe('config.employment', () => {
             expect(sectorMap['Market-Stall']).toBe(2);
         });
 
-        test('les moulins et granges sont dans le secteur 4 (Stockage)', () => {
+        test('les moulins sont dans le secteur 4 (Stockage)', () => {
             expect(sectorMap['Windmill-001']).toBe(4);
-            expect(sectorMap['Barn-001']).toBe(4);
         });
 
         test('les routes sont dans le secteur 5 (Infrastructure)', () => {

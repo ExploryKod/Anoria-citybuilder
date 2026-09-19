@@ -20,74 +20,49 @@ export class SupplyBuildingRepository {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  /** Persist farm harvest timing (`lastProductionYear`, …). */
-  async saveHarvestMetadata(_buildingId, _metadata) {
-    throw new Error('SupplyBuildingRepository: port not implemented');
-  }
-
-  /** Persist house consumption timing (`lastConsumptionMonth`). */
-  async saveConsumptionMetadata(_buildingId, _metadata) {
-    throw new Error('SupplyBuildingRepository: port not implemented');
-  }
-
-  /** 
-   * Persist house consumption details (consumed, demanded, unfed by type).
-   * @param {string} _buildingId
-   * @param {{
-   *   month: number,
-   *   consumed: Record<string, number>,
-   *   demanded: Record<string, number>,
-   *   unfed: Record<string, number>,
-   *   totalUnfed: number,
-   * }} _consumptionRecord
+  /**
+   * Generic field merge — circuit descriptors use this for their own
+   * bookkeeping (timing fields, per-circuit records, ...) instead of each
+   * needing a dedicated repository method.
    */
-  async saveConsumptionRecord(_buildingId, _consumptionRecord) {
+  async updateBuildingFields(_buildingId, _fields) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  /** Persist level-1 subsistence food timing (`lastSubsistenceMonth`). */
-  async saveSubsistenceMetadata(_buildingId, _metadata) {
+  async saveHubLastCollection(_hubId, _lastCollection) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async saveWindmillLastCollection(_buildingId, _lastCollection) {
+  async recordSourceSaleToHub(_sourceId, _sale) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async recordFarmSaleToWindmill(_farmId, _sale) {
+  async resetSourceSalesForYear(_year) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async resetFarmSalesForYear(_year) {
+  /** Persist UI / status flags (isBuying, distributorTooFar, …). */
+  async saveSupplyFlags(_buildingId, _flags) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  /** Persist UI / status flags (isBuying, marketTooFar, …). */
-  async saveMarketFlags(_buildingId, _flags) {
+  async saveDistributorHubId(_distributorId, _hubId) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async saveSupplyWindmillId(_marketId, _windmillId) {
+  async saveHubLinkedDistributors(_hubId, _linkedDistributors) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async saveLinkedMarkets(_windmillId, _linkedMarkets) {
-    throw new Error('SupplyBuildingRepository: port not implemented');
-  }
-
-  async findMarkets() {
-    throw new Error('SupplyBuildingRepository: port not implemented');
-  }
-
-  async findHouses() {
-    throw new Error('SupplyBuildingRepository: port not implemented');
-  }
-
-  async findWindmills() {
-    throw new Error('SupplyBuildingRepository: port not implemented');
-  }
-
-  async findFarms() {
+  /**
+   * Generic role/category building selection (see ResourceRolePolicy) — the
+   * one every resource cycle uses. No named shortcuts (findDistributors/
+   * findConsumers/findHubs/findProducers) — callers pass the role they mean
+   * ('distributor'/'consumer'/'hub'/'producer').
+   * @param {import('../../domain/policies/ResourceRolePolicy.js').ResourceRoleKind} _role
+   * @param {string | string[]} [_categories]
+   */
+  async findByResourceRole(_role, _categories) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
@@ -100,7 +75,7 @@ export class SupplyBuildingRepository {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async recordFarmSaleToMarket(_farmId, _sale) {
+  async recordSourceSaleToDistributor(_sourceId, _sale) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 }

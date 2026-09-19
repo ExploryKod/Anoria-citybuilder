@@ -1,11 +1,13 @@
 import * as THREE from 'three';
+import { WebGPURenderer } from 'three/webgpu';
 import {createCamera} from './camera.js';
 import { createPerfHud } from './PerfHud.js';
 import { adoptHudFabDockChildren } from '../dom/shell/hudFabDock.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
-import {applyHoverColor, resetHoveredObject, resetObjectColor} from './meshUtils.js';
+import {applyHoverColor, resetHoveredObject, resetObjectColor} from './meshs/meshUtils.js';
+import { resolveIconAppearance, STATUS_ICON_DEFAULTS } from './meshs/statusIconAnchors.js';
 import {  textures  } from './meshs/data.js'
 import {
     bulldozeSelected,
@@ -14,14 +16,12 @@ import {
     gameWindow,
 } from '../dom/shell/nodes.js';
 import {
-    assetsPrices,
+    buildingPlacementCatalog,
     buildingsObjects,
-    commerce,
-    factories,
     farms,
-    houses,
     palaces,
 } from '../../shared/building-catalog/index.js';
+import { commerce, houses } from './assets/buildingCategories.js';
 import { setupRoadAccessIcons } from '../../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
 import { TimeManager } from '../../shared/time/TimeManager.js';
 import { LightingManager } from './managers/LightingManager.js';
@@ -29,12 +29,13 @@ import { BackdropManager } from './managers/BackdropManager.js';
 import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
 import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js';
-import { ensureNeighborHamletDecoAssets } from '../dom/boot/neighborHamletDecoAssets.js';
 import { listUnlockedNeighborHamletIds } from '../../core/persistence/hamlet/hamletAccess.js';
 import gameUIDefault from '../dom/shell/GameUI.js';
 import { syncPopRailHud } from '../../composition/syncSessionHud.js';
 import { CitizenManager } from './managers/CitizenManager.js';
 import { CitizenPathfinding } from './managers/CitizenPathfinding.js';
+import { createWalkerEventController } from './walkers/WalkerEventController.js';
+import { getSharedEventBus } from '../../composition/sharedEventBus.js';
 import { TileGridOverlay } from './managers/TileGridOverlay.js';
 import {
   MapOverlayVisibility,
@@ -47,9 +48,41 @@ import {
   getSessionService,
   getSessionGameUI,
 } from '../../composition/sessionRuntime.js';
-import { createPlacementGhostController } from './placementGhost.js';
+import { createPlacementGhostController } from './placement/placementGhost.js';
+import { pickTileFromRaycast } from './scene-board/tileRaycast.js';
+import { pickEditorTileOnGroundPlane } from './scene-board/editorTileGroundPick.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import { showWarningToast, showInfoToast } from '../dom/shell/ToastNotifier.js';
+import { ASSET_CATALOG, resolveAndCreateBuildingMesh, resolveVisualBuildingId } from './meshs/resolveBuildingMesh.js';
+import { scenePresentation } from './presentationConfig.js';
+import { createSceneFog } from '../../shared/terrain-catalog/terrainAtmosphere.js';
+import { isEditorMode } from '../../composition/sessionShell.js';
+import { isCustomMapLayoutActive } from '../../shared/gameplay/customMapLayout.js';
+import { resolveKenneyGltfPresentationMode } from './adapters/kenney-nature/kenneyGltfPresentation.js';
+import { getTerrainZoneCounts, resolveTerrainZoneIndex } from '../../shared/terrain-catalog/terrainZoneLayout.js';
+import { spawnIslandShore } from './scene-board/terrain/spawnIslandShore.js';
+import {
+  restoreGrassMaterialOnTerrainTile,
+} from './scene-board/terrain/terrainSceneTileOps.js';
+import { createKenneyNatureSceneTile } from './scene-board/nature/createKenneyNatureSceneTile.js';
+import { createKenneyTerrainSceneTile } from './scene-board/terrain/createKenneyTerrainSceneTile.js';
+import { attachSceneTilePort } from './scene-board/SceneTilePort.js';
+import {
+  addEditorStackObject,
+  getEditorStackObjects,
+  removeEditorStackObjectById,
+  removeEditorStackObjectsAtTile,
+  removeTopEditorStackObjectAt,
+  resetEditorNatureLayout,
+} from './editor/editorNatureLayout.js';
+import {
+  resolveEditorPlacementTarget,
+  resolveEditorStackPlacement,
+  resolveEditorGhostPlacementPreview as computeEditorGhostPlacementPreview,
+} from '../../shared/editor-catalog/editorStackPlacement.js';
+import { applyKenneyVerticalEdgeMountToObject } from '../../shared/editor-catalog/editorVerticalFaceMount.js';
+import { WORLD_PLATFORM_Y } from '../../shared/terrain-catalog/terrainWorldContract.js';
+import { EDITOR_SEA_TERRAIN_ID, isEditorSeaTerrain } from '../../shared/terrain-catalog/editorSeaTerrain.js';
 
 /** Terminaux tactiles / petits écrans — GPU plus souvent limité (mémoire, contexte WebGL). */
 function isMobileDevice() {
@@ -94,8 +127,9 @@ export function createScene(_gameStore, assetManager, deps) {
       construction.ensureBuildingEmployeesSchema(id, type);
 
     const scene = new THREE.Scene();
-    // Subtle atmospheric fog to blend far terrain and sky (tuned to match background)
-    try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
+    try {
+        scene.fog = usesEditorLikePresentation() ? null : createSceneFog({ editor: false });
+    } catch (_) {}
 
     const placementGhost = createPlacementGhostController({ scene, assetManager });
     
@@ -135,8 +169,7 @@ export function createScene(_gameStore, assetManager, deps) {
       }
     }
 
-    // Lowpoly day dome (follows camera in draw). Solid colour as horizon fallback.
-    void backdropManager.initializeSky();
+    backdropManager.applyAtmosphere();
     
     // Initialize citizen manager
     citizenManager.initialize();
@@ -144,10 +177,14 @@ export function createScene(_gameStore, assetManager, deps) {
     // PerformanceManager and CitizenPathfinding will be created in initialize() after zoneGroups/buildings/terrain are set up
     let performanceManager = null;
     let citizenPathfinding = null;
+    let walkerEventController = null;
 
     const camera = createCamera(gameWindow);
     const runningOnMobile = isMobileDevice();
-    const renderer = new THREE.WebGLRenderer({
+    // WebGPURenderer bascule automatiquement sur un backend WebGL2 si le
+    // navigateur n'expose pas `navigator.gpu` (Safari en retard, contexte
+    // restreint, etc.) — pas de détection manuelle à faire ici.
+    const renderer = new WebGPURenderer({
         // Sur mobile, on désactive l'antialiasing (coûteux en mémoire GPU) et on
         // évite que le navigateur refuse purement et simplement le contexte WebGL
         // sur un GPU jugé "faible" (failIfMajorPerformanceCaveat bloquerait sinon
@@ -157,6 +194,9 @@ export function createScene(_gameStore, assetManager, deps) {
         failIfMajorPerformanceCaveat: false,
         preserveDrawingBuffer: false,
     });
+    // Le backend (WebGPU ou WebGL2 de secours) n'est prêt qu'après cette
+    // promesse : tout rendu avant résolution serait silencieusement ignoré.
+    let rendererReady = renderer.init();
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
     if (runningOnMobile) {
         // Cap le pixel ratio sur mobile pour limiter la pression mémoire GPU
@@ -212,6 +252,20 @@ export function createScene(_gameStore, assetManager, deps) {
             );
         }
     });
+
+    // Pendant, `onDeviceLost` couvre les deux backends (natif WebGPU et
+    // fallback WebGL2) ; les listeners 'webglcontextlost/restored' ci-dessus
+    // ne se déclenchent que sous le backend WebGL2.
+    renderer.onDeviceLost = (info) => {
+        if (webglContextLost) return;
+        webglContextLost = true;
+        console.error('[WebGPU] Device lost — ressources GPU insuffisantes.', info);
+        loaderManager.hide(0);
+        showWarningToast(
+            "Le rendu 3D a rencontré un problème (ressources graphiques insuffisantes). Tentative de récupération automatique…",
+            { timeout: 6000 }
+        );
+    };
 
     renderer.setClearColor(0x000000, 0);
     if (!runningOnMobile) {
@@ -285,6 +339,8 @@ export function createScene(_gameStore, assetManager, deps) {
     const mouse = new THREE.Vector2();
     let selectedObject = undefined; // Object that is currently selected (clicked)
     let focusedObject = undefined; // Object currently under cursor (hover)
+    /** @type {((focused: object | null) => void) | undefined} */
+    let onPlacementHoverHandler = undefined;
     // Référence une fonction appelée si un objet est sélectionné
     let onObjectSelected = undefined;
 
@@ -316,6 +372,8 @@ export function createScene(_gameStore, assetManager, deps) {
     //  Variables de items
     let terrain = [];
     let buildings = [];
+    /** @type {Map<string, import('three').Object3D>} */
+    const editorStackMeshes = new Map();
     let loadingPromises = [];
     let currentCitySize = 16; // Store current city size for citizen pathfinding
     let currentCity = null; // Store current city object for citizen updates
@@ -334,7 +392,13 @@ export function createScene(_gameStore, assetManager, deps) {
     // Group buildings/terrain by zones (4x4 tiles per zone) for efficient frustum culling
     const zoneGroups = [];
     const ZONE_SIZE = 4; // 4x4 tiles per zone
+    let terrainZonePadding = 0;
     let zoneGroupsInitialized = false;
+    let editorStackHydrationEnabled = false;
+
+    function usesEditorLikePresentation() {
+        return isEditorMode() || isCustomMapLayoutActive();
+    }
 
     // Variables de gameplay
     let delay = 0;
@@ -343,37 +407,29 @@ export function createScene(_gameStore, assetManager, deps) {
     async function syncNeighborHamletDeco(city) {
         const citySize = city?.size;
         if (typeof citySize !== 'number' || citySize <= 0) return;
-        await ensureNeighborHamletDecoAssets(assetManager);
         const unlockedHamletIds = await listUnlockedNeighborHamletIds();
         decorativeVillageManager.syncUnlockedNeighborHamlets(citySize, unlockedHamletIds);
     }
 
     async function initialize(city, options = {}) {
+        await rendererReady;
         const seedNature = options.seedNature === true;
+        editorStackHydrationEnabled = usesEditorLikePresentation() || options.hydrateEditorLayout === true;
 
-        // Store world platform before clearing scene
-        let worldPlatform = scene.getObjectByName('world-platform');
-        
-        // Drop sky before clear so BackdropManager does not keep a stale instance
-        backdropManager.detachSky();
-        const skySphere = scene.getObjectByName('sky-sphere');
-        if (skySphere) {
-            scene.remove(skySphere);
-            if (skySphere.geometry) skySphere.geometry.dispose();
-            if (skySphere.material) skySphere.material.dispose();
-        }
-        
         scene.clear();
         zoneGroups.length = 0;
         zoneGroupsInitialized = false;
-        // Re-apply fog after clear
-        try { scene.fog = new THREE.FogExp2(0xfff3d6, 0.015); } catch(_) {}
-        
-        // Re-attach sky dome (cached GLB template)
-        await backdropManager.initializeSky();
-        backdropManager.syncSkyToCamera(camera.camera);
+        // Re-apply fog and flat background after clear
+        try {
+            scene.fog = usesEditorLikePresentation() ? null : createSceneFog({ editor: false });
+        } catch (_) {}
+        backdropManager.applyAtmosphere();
         terrain = [];
         buildings = [];
+        editorStackMeshes.clear();
+        if (isEditorMode()) {
+            resetEditorNatureLayout();
+        }
         loadingPromises = [];
         
         // Store city object and size for citizen pathfinding and World platform scaling
@@ -381,44 +437,6 @@ export function createScene(_gameStore, assetManager, deps) {
         const citySize = city && typeof city.size === 'number' ? city.size : 16;
         if (city && typeof city.size === 'number') {
             currentCitySize = city.size;
-        }
-        
-        // Re-add world platform if it existed, otherwise load it
-        // If it exists but city size changed, remove and reload with new size
-        if (worldPlatform) {
-            // Check if we need to rescale (city size might have changed)
-            const existingScale = worldPlatform.scale.x;
-            const expectedScale = (citySize + 2) / (existingScale > 0 ? 1 / existingScale : 1);
-            if (Math.abs(existingScale - expectedScale) > 0.1) {
-                // City size changed, remove old and reload
-                scene.remove(worldPlatform);
-                worldPlatform = null;
-            } else {
-                scene.add(worldPlatform);
-            }
-        }
-        
-        if (!worldPlatform) {
-            // Load world platform (base ground) first, before other assets
-            // Pass city size to scale the World platform accordingly
-            try {
-                await assetManager.loadWorldPlatform(scene, citySize);
-            } catch (error) {
-                console.warn('[Scene] Could not load world platform:', error);
-            }
-        }
-        
-        // Load boundary fences at north, south, east, west limits
-        // Remove existing fences if they exist (in case of scene reset)
-        const existingFenceGroup = scene.getObjectByName('boundary-fences');
-        if (existingFenceGroup) {
-            scene.remove(existingFenceGroup);
-        }
-        
-        try {
-            await assetManager.loadBoundaryFences(scene, citySize);
-        } catch (error) {
-            console.warn('[Scene] Could not load boundary fences:', error);
         }
         
         // Reset citizen state
@@ -448,14 +466,28 @@ export function createScene(_gameStore, assetManager, deps) {
         
         // OPTIMIZATION: Initialize zone groups for frustum culling
         if (!zoneGroupsInitialized) {
-            const numZonesX = Math.ceil(city.size / ZONE_SIZE);
-            const numZonesY = Math.ceil(city.size / ZONE_SIZE);
-            
+            const organicPadding = scenePresentation.islandShoreOrganicPadding
+                ?? scenePresentation.islandBeachBorderRingWidth
+                ?? 4;
+            terrainZonePadding = scenePresentation.islandBeachBorderEnabled
+                ? Math.ceil((organicPadding + 1) / ZONE_SIZE)
+                : 0;
+            const { numZonesX, numZonesY } = getTerrainZoneCounts(
+                city.size,
+                ZONE_SIZE,
+                terrainZonePadding
+            );
+
             for (let zoneX = 0; zoneX < numZonesX; zoneX++) {
                 for (let zoneY = 0; zoneY < numZonesY; zoneY++) {
                     const zoneGroup = new THREE.Group();
                     zoneGroup.name = `zone_${zoneX}_${zoneY}`;
-                    zoneGroup.userData = { zoneX, zoneY, minX: zoneX * ZONE_SIZE, minY: zoneY * ZONE_SIZE };
+                    zoneGroup.userData = {
+                        zoneX,
+                        zoneY,
+                        minX: (zoneX - terrainZonePadding) * ZONE_SIZE,
+                        minY: (zoneY - terrainZonePadding) * ZONE_SIZE,
+                    };
                     scene.add(zoneGroup);
                     zoneGroups.push(zoneGroup);
                 }
@@ -472,20 +504,27 @@ export function createScene(_gameStore, assetManager, deps) {
             buildings.push([...Array(city.size)]);
         }
         
-        // Create terrain efficiently
+        // Create terrain efficiently — editor starts empty (sea tiles, no base meshes).
         for(let x = 0; x < city.size; x++) {
             let column = [];
             for(let y = 0; y < city.size; y++) {
-                // Grass
                 const terrainId = city.tiles[x][y].terrainId;
+                if (usesEditorLikePresentation() || isEditorSeaTerrain(terrainId)) {
+                    column.push(null);
+                    continue;
+                }
                 const mesh = assetManager.createAsset(terrainId, x, y);
                 mesh.name = terrainId;
                 
                 // OPTIMIZATION: Add to zone group (zone groups are in scene)
                 // This allows frustum culling to work properly
-                const zoneX = Math.floor(x / ZONE_SIZE);
-                const zoneY = Math.floor(y / ZONE_SIZE);
-                const zoneIndex = zoneX * Math.ceil(city.size / ZONE_SIZE) + zoneY;
+                const zoneIndex = resolveTerrainZoneIndex(
+                    x,
+                    y,
+                    city.size,
+                    ZONE_SIZE,
+                    terrainZonePadding
+                );
                 
                 // For roads, ensure they are properly positioned above World platform
                 // and force matrix update to ensure visibility
@@ -510,6 +549,26 @@ export function createScene(_gameStore, assetManager, deps) {
         lightingManager.setUpLights(city.size);
         scene.userData.requestShadowRefresh?.();
 
+        backdropManager.syncGroundFill(citySize);
+
+        if (scenePresentation.islandBeachBorderEnabled && !usesEditorLikePresentation()) {
+            const organicPadding = scenePresentation.islandShoreOrganicPadding
+                ?? scenePresentation.islandBeachBorderRingWidth
+                ?? 4;
+            const beach = spawnIslandShore({
+                citySize,
+                zoneSize: ZONE_SIZE,
+                zonePadding: terrainZonePadding,
+                zoneGroups,
+                scene,
+                padding: organicPadding,
+                seed: scenePresentation.islandShoreSeed ?? 42,
+            });
+            if (beach.tileCount === 0) {
+                console.warn('[Scene] Island beach border: no tiles spawned');
+            }
+        }
+
         // Visual tile grid (indication only — rebuilt after scene.clear())
         tileGridOverlay.rebuild(scene, city.size);
         
@@ -524,15 +583,22 @@ export function createScene(_gameStore, assetManager, deps) {
         if (loadingPromises.length > 0) {
             await Promise.all(loadingPromises);
         }
+
+        await syncEditorStackFromLayout();
         
         // Set camera bounds based on city size (with small margins)
         if (camera.setBounds && city && typeof city.size === 'number') {
-            const margin = 2;
+            const organicPadding = scenePresentation.islandShoreOrganicPadding
+                ?? scenePresentation.islandBeachBorderRingWidth
+                ?? 4;
+            const beachMargin = scenePresentation.islandBeachBorderEnabled
+                ? organicPadding + 1
+                : 2;
             camera.setBounds({
-                minX: -margin,
-                maxX: city.size + margin,
-                minZ: -margin,
-                maxZ: city.size + margin
+                minX: -beachMargin,
+                maxX: city.size + beachMargin - 1,
+                minZ: -beachMargin,
+                maxZ: city.size + beachMargin - 1,
             });
             
             // Center camera on the city (critical for proper raycasting coordinates)
@@ -541,9 +607,8 @@ export function createScene(_gameStore, assetManager, deps) {
             }
         }
 
-        // No backdrop needed - World platform provides sharp cutoff with sky background
-        // addBackdrop(citySize); // Disabled to prevent visible edges at horizon
-        
+        // No extra backdrop — syncGroundFill covers the infinite ground aspect.
+
         // Initialize resources (trees, boulders) only on a virgin hamlet.
         // Returning to a saved hamlet hydrates tiles from Dexie instead.
         if (seedNature) {
@@ -565,6 +630,20 @@ export function createScene(_gameStore, assetManager, deps) {
         
         // Initialize CitizenPathfinding after buildings and terrain are created
         citizenPathfinding = new CitizenPathfinding(buildings, terrain);
+
+        // Event-driven walkers: spawns a character whenever a bounded
+        // context publishes an event listed in WALKER_EVENT_CATALOG (e.g.
+        // Supply's 'supply.resourceDeliveryRoute') through the shared event
+        // bus. See src/presentation/three/walkers/WalkerEventController.js
+        // and shared/gameplay/walkerEventCatalog.js.
+        walkerEventController = createWalkerEventController({
+            scene,
+            citizenManager,
+            citizenPathfinding,
+            buildings,
+            city: currentCity,
+            eventPublisher: getSharedEventBus(),
+        });
     }
 
     /** @type {Promise<void>} */
@@ -607,6 +686,12 @@ export function createScene(_gameStore, assetManager, deps) {
 
             const nextType = tileHouse.type;
             const instanceId = tileHouse.id;
+            // Tier-aware mesh id — same logical house type can render a
+            // different (declaratively-mapped) mesh per level, see
+            // resolveVisualBuildingId in resolveBuildingMesh.js. `nextType`
+            // itself (the real house type persisted everywhere else — city
+            // tiles, instance tracking) is never replaced by this.
+            const nextVisualId = resolveVisualBuildingId(nextType, tileHouse.level);
 
             // city.tiles is placement SoT — do not rewrite a cleared (bulldozed) tile
             if (city.tiles[x]?.[y]?.buildingId) {
@@ -614,9 +699,19 @@ export function createScene(_gameStore, assetManager, deps) {
                 city.tiles[x][y].instanceId = instanceId;
             }
 
-            if (nextType !== meshBuildingId) {
+            const currentVisualId = buildings[x]?.[y]?.userData?.visualBuildingId ?? meshBuildingId;
+            if (nextVisualId !== currentVisualId) {
                 removeInteractiveObject(buildings[x][y]);
-                const nextMesh = assetManager.createAsset(nextType, x, y);
+                // resolveAndCreateBuildingMesh is already fully source-agnostic — it
+                // routes through buildingSourceAdapterRegistry by the catalog entry's
+                // own `source` (the 'sceneTile' adapter itself delegates to
+                // assetManager.createAsset internally). Never branch on source here.
+                let nextMesh;
+                try {
+                    nextMesh = await resolveAndCreateBuildingMesh({ buildingId: nextVisualId, x, y, assetManager });
+                } catch (error) {
+                    console.warn(`[scene] Failed to resolve mesh for "${nextVisualId}":`, error);
+                }
                 if (!nextMesh) {
                     return {
                         buildingId: meshBuildingId,
@@ -625,11 +720,22 @@ export function createScene(_gameStore, assetManager, deps) {
                     };
                 }
                 buildings[x][y] = nextMesh;
+                // No manual centering here: resolveAndCreateBuildingMesh's contract
+                // (buildingSourceAdapterRegistry.js) is to return a FULLY positioned
+                // mesh, footprint centering included — the adapter owns that, not
+                // this caller (see the fix note in
+                // contexts/supply/docs/period-lock-catalog-refactor.md — this used to
+                // double-center Kenney meshes, since KenneyCityKitMeshAdapter already
+                // centers internally).
                 scene.userData.requestShadowRefresh?.();
-                const zoneX = Math.floor(x / ZONE_SIZE);
-                const zoneY = Math.floor(y / ZONE_SIZE);
                 const citySize = city.size || 16;
-                const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                const zoneIndex = resolveTerrainZoneIndex(
+                    x,
+                    y,
+                    citySize,
+                    ZONE_SIZE,
+                    terrainZonePadding
+                );
                 if (zoneGroups[zoneIndex]) {
                     zoneGroups[zoneIndex].add(nextMesh);
                 } else {
@@ -641,6 +747,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 buildings[x][y].userData.instanceId = instanceId;
                 buildings[x][y].userData.type = nextType;
                 buildings[x][y].userData.id = nextType;
+                buildings[x][y].userData.visualBuildingId = nextVisualId;
             }
 
             return { buildingId: nextType, instanceId, synced: true };
@@ -652,46 +759,8 @@ export function createScene(_gameStore, assetManager, deps) {
                 return;
             }
             const newBuildingId = tileBuildingId;
-            if (newBuildingId === 'roads') {
-                const placementRotationStep = city.tiles[x]?.[y]?.placementRotationStep ?? 0;
-                if (terrain[x] && terrain[x][y]) {
-                    const terrainMesh = terrain[x][y];
-                    const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                    if (sharedMaterials && sharedMaterials['roads']) {
-                        terrainMesh.material = sharedMaterials['roads'];
-                        terrainMesh.name = 'roads';
-                        terrainMesh.userData.id = 'roads';
-                        terrainMesh.userData.type = 'roads';
-                        terrainMesh.userData.isRoad = true;
-                        terrainMesh.userData.x = x;
-                        terrainMesh.userData.y = y;
-                        terrainMesh.rotation.y = placementRotationStep * (Math.PI / 2);
-                        terrainMesh.updateMatrixWorld(true);
-                    }
-                }
-                if (!buildings[x][y] || buildings[x][y] !== terrain[x][y]) {
-                    buildings[x][y] = terrain[x][y];
-                }
-                const roadInstanceId = city.tiles[x]?.[y]?.instanceId;
-                if (roadInstanceId && terrain[x]?.[y]) {
-                    terrain[x][y].userData.instanceId = roadInstanceId;
-                }
-                if (roadInstanceId) {
-                    try {
-                        await parcels.syncPlacedBuilding({
-                            instanceId: roadInstanceId,
-                            x,
-                            y,
-                            type: 'roads',
-                        });
-                    } catch (err) {
-                        console.warn('[Scene] Failed parcels place for road', roadInstanceId, err);
-                    }
-                }
-                return;
-            }
 
-            const buildingData = assetsPrices[newBuildingId];
+            const buildingData = buildingPlacementCatalog[newBuildingId];
             const gridSize = buildingData?.gridSize || 1;
             const placedInstanceId = city.tiles[x]?.[y]?.instanceId;
 
@@ -713,33 +782,50 @@ export function createScene(_gameStore, assetManager, deps) {
                 }
             }
 
-            const assetId = newBuildingId === 'roads' ? 'StonePath-001' : newBuildingId;
             const placementRotationStep = city.tiles[x]?.[y]?.placementRotationStep ?? 0;
 
             if (isOriginTile) {
-                const mesh = assetManager.createAsset(assetId, x, y, {
-                    rotationStep: placementRotationStep,
-                });
-                // Asset pas encore chargé / id inconnu : ne pas écraser ni .add(undefined)
-                // (sinon spam THREE à chaque tick via needsMeshPlacement).
-                if (!mesh) {
-                    return;
+                const catalogEntry = ASSET_CATALOG[newBuildingId];
+                if (!catalogEntry) {
+                    throw new Error(`[buildingAssets] No catalog entry for "${newBuildingId}"`);
                 }
+
+                // One flow regardless of source — resolveAndCreateBuildingMesh already
+                // routes through buildingSourceAdapterRegistry by the catalog entry's
+                // own `source`; this function never needs to know Kenney from
+                // sceneTile itself. (Previously split in two here, which is how the
+                // instanceId/parcels-sync below went missing for every Kenney-sourced
+                // building — nothing about them made it wrong, it was just never added
+                // when the Kenney branch was split out.)
+                const mesh = await resolveAndCreateBuildingMesh({
+                    buildingId: newBuildingId,
+                    x,
+                    y,
+                    rotationStep: placementRotationStep,
+                    assetManager,
+                });
                 removeInteractiveObject(buildings[x][y]);
                 buildings[x][y] = mesh;
-                // Center multi-tile meshes on their footprint (anchor is NW corner).
-                if (gridSize > 1) {
-                    const centerOffset = (gridSize - 1) / 2;
-                    mesh.position.x += centerOffset;
-                    mesh.position.z += centerOffset;
-                }
+                // No manual centering here — resolveAndCreateBuildingMesh's contract
+                // is to return a fully positioned mesh, footprint centering included
+                // (see buildingSourceAdapterRegistry.js and the sceneTile/Kenney
+                // adapters). This used to double-center Kenney meshes and skip
+                // centering for sceneTile's own multi-tile meshes entirely.
                 scene.userData.requestShadowRefresh?.();
-                const zoneX = Math.floor(x / ZONE_SIZE);
-                const zoneY = Math.floor(y / ZONE_SIZE);
                 const citySize = city.size || 16;
-                const zoneIndex = zoneX * Math.ceil(citySize / ZONE_SIZE) + zoneY;
+                const zoneIndex = resolveTerrainZoneIndex(
+                    x,
+                    y,
+                    citySize,
+                    ZONE_SIZE,
+                    terrainZonePadding
+                );
+                const interactiveGroupRef =
+                    scene.interactiveGroup || scene.getObjectByName('interactive-objects');
                 if (zoneGroups[zoneIndex]) {
                     zoneGroups[zoneIndex].add(mesh);
+                } else if (interactiveGroupRef) {
+                    interactiveGroupRef.add(mesh);
                 } else {
                     scene.add(mesh);
                 }
@@ -782,65 +868,8 @@ export function createScene(_gameStore, assetManager, deps) {
             }
         }
 
-        // Define status icons metadata for all buildings
-        const statutsIconsMeta = {
-            road: {
-                position : {x: -1, y: 1, z: 1},
-                scale : {x: 1.2, y: 1.2, z: 1},
-                spriteColor: null,
-                backgroundColor: null
-            },
-            food: {
-                position : {x: -0.5, y: 1, z: 0},
-                scale : {x: 1.0, y: 1.0, z: 1},
-                spriteColor: null,
-                backgroundColor: null
-            },
-            // Different positions for different farm sprites
-            'no-food': {
-                position : {x: -0.5, y: 1, z: 0},
-                scale : {x: 1.0, y: 1.0, z: 1},
-                spriteColor: null,
-                backgroundColor: null
-            },
-            'no-food-farm': {
-                position : {x: -0.8, y: 0.5, z: -0.2},
-                scale : {x: 0.6, y: 0.6, z: 0.6},
-                spriteColor: 0xFFFF00, // Yellow
-                backgroundColor: null
-            },
-            'grow-food': {
-                position : {x: -0.8, y: 0.5, z: -0.2},
-                scale : {x: 0.4, y: 0.4, z: 0.4},
-                spriteColor: null, // Keep original colors
-                backgroundColor: 0xFFE8E8 
-            },
-            'harvest': {
-                position : {x: -0.8, y: 0.5, z: -0.2},
-                scale : {x: 0.4, y: 0.4, z: 0.4},
-                spriteColor: null, // Keep original colors
-                backgroundColor: 0xFFE8E8
-            },
-            'sell-food': {
-                position : {x: -0.8, y: 0.5, z: -0.2},
-                scale : {x: 0.4, y: 0.4, z: 0.4},
-                spriteColor: null, // Keep original colors
-                backgroundColor: 0xFFE8E8
-            },
-            'isBuying': {
-                position : {x: -0.5, y: 0.5, z: 0},
-                scale : {x: 0.6, y: 0.6, z: 1},
-                spriteColor: 0x00FF00, // Green color
-                backgroundColor: 0xFFFFFF // White background
-            },
-            // No worker sprite (red) - shown when farm has no employees
-            'no-work': {
-                position : {x: -0.8, y: 0.5, z: -0.2},
-                scale : {x: 0.5, y: 0.5, z: 0.5},
-                spriteColor: 0xFF0000, // Red color
-                backgroundColor: 0xFFE8E8 // Light red background
-            }
-        };
+        // Status icon defaults — shared with /placement.html, see meshs/statusIconAnchors.js
+        const statutsIconsMeta = STATUS_ICON_DEFAULTS;
 
         for(let x = 0; x < city.size; x++) {
             for(let y = 0; y < city.size; y++) {
@@ -869,15 +898,14 @@ export function createScene(_gameStore, assetManager, deps) {
                       }
                   } else {
                       // Terrain has road material but city.tiles doesn't - restore to grass
-                      const terrainMesh = terrain[x][y];
+                      const terrainNode = terrain[x][y];
                       const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                      if (sharedMaterials && sharedMaterials['grass'] && terrainMesh.material) {
-                          terrainMesh.material = sharedMaterials['grass'];
-                          terrainMesh.name = 'grass';
-                          terrainMesh.userData.id = 'grass';
-                          terrainMesh.userData.type = 'grass';
-                          terrainMesh.userData.isRoad = false;
-                          terrainMesh.rotation.y = 0;
+                      if (sharedMaterials?.grass) {
+                          restoreGrassMaterialOnTerrainTile(
+                              terrainNode,
+                              sharedMaterials.grass,
+                              { x, y }
+                          );
                       }
                   }
               }
@@ -939,18 +967,13 @@ export function createScene(_gameStore, assetManager, deps) {
                         );
                     if (!tileBuildingId && ghostIsRoad) {
                         if (terrain[x] && terrain[x][y]) {
-                            const terrainMesh = terrain[x][y];
                             const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                            if (sharedMaterials?.['grass'] && terrainMesh.material) {
-                                terrainMesh.material = sharedMaterials['grass'];
-                                terrainMesh.name = 'grass';
-                                terrainMesh.userData.id = 'grass';
-                                terrainMesh.userData.type = 'grass';
-                                terrainMesh.userData.isRoad = false;
-                                terrainMesh.rotation.y = 0;
-                                terrainMesh.userData.x = x;
-                                terrainMesh.userData.y = y;
-                                delete terrainMesh.userData.instanceId;
+                            if (sharedMaterials?.grass) {
+                                restoreGrassMaterialOnTerrainTile(
+                                    terrain[x][y],
+                                    sharedMaterials.grass,
+                                    { x, y }
+                                );
                             }
                         }
                         if (ghostMesh && ghostMesh !== terrain[x]?.[y]) {
@@ -1009,18 +1032,13 @@ export function createScene(_gameStore, assetManager, deps) {
                         );
                     if (!tileHasRoad) {
                         if (terrain[x] && terrain[x][y]) {
-                            const terrainMesh = terrain[x][y];
                             const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                            if (sharedMaterials && sharedMaterials['grass'] && terrainMesh.material) {
-                                terrainMesh.material = sharedMaterials['grass'];
-                                terrainMesh.name = 'grass';
-                                terrainMesh.userData.id = 'grass';
-                                terrainMesh.userData.type = 'grass';
-                                terrainMesh.userData.isRoad = false;
-                                terrainMesh.rotation.y = 0;
-                                terrainMesh.userData.x = x;
-                                terrainMesh.userData.y = y;
-                                delete terrainMesh.userData.instanceId;
+                            if (sharedMaterials?.grass) {
+                                restoreGrassMaterialOnTerrainTile(
+                                    terrain[x][y],
+                                    sharedMaterials.grass,
+                                    { x, y }
+                                );
                             }
                         }
                         const roadMesh = buildings[x][y];
@@ -1132,18 +1150,13 @@ export function createScene(_gameStore, assetManager, deps) {
                                 console.warn('[Scene] Failed parcels remove for road', currentInstanceId, err);
                             }
                             if (terrain[x] && terrain[x][y]) {
-                                const terrainMesh = terrain[x][y];
                                 const sharedMaterials = assetManager.getSharedTerrainMaterials();
-                                if (sharedMaterials && sharedMaterials['grass']) {
-                                    terrainMesh.material = sharedMaterials['grass'];
-                                    terrainMesh.name = 'grass';
-                                    terrainMesh.userData.id = 'grass';
-                                    terrainMesh.userData.type = 'grass';
-                                    terrainMesh.userData.isRoad = false;
-                                terrainMesh.rotation.y = 0;
-                                    terrainMesh.userData.x = x;
-                                    terrainMesh.userData.y = y;
-                                    delete terrainMesh.userData.instanceId;
+                                if (sharedMaterials?.grass) {
+                                    restoreGrassMaterialOnTerrainTile(
+                                        terrain[x][y],
+                                        sharedMaterials.grass,
+                                        { x, y }
+                                    );
                                 }
                             }
                             if (buildings[x][y] && buildings[x][y] !== terrain[x]?.[y]) {
@@ -1197,29 +1210,41 @@ export function createScene(_gameStore, assetManager, deps) {
                     };
 
                     if (buildings[x][y]) {
+                        const marketRoadIcon = resolveIconAppearance(
+                            buildings[x][y], 'road', statutsIconsMeta.road.position, marketRoadScale
+                        );
                         await syncRoadAccess({
                             instanceId: currentInstanceId,
                             mesh: buildings[x][y],
-                            position: statutsIconsMeta.road.position,
-                            scale: marketRoadScale,
+                            position: marketRoadIcon.position,
+                            scale: marketRoadIcon.scale,
                         });
                     }
 
-                    if (buildings[x][y]) {
+                    // Status layers are exclusive, in order: no road → only the no-road icon (no worker
+                    // is possible); no worker → only the no-work icon (refreshEmploymentPresentation);
+                    // otherwise the activity sprites (buying / no-food). Unknown staffing (not yet
+                    // refreshed) counts as unstaffed.
+                    const marketIsStaffed = buildings[x][y]?.userData?.isUnderstaffed === false
+                        && buildings[x][y]?.userData?.hasRoadAccess !== false;
+                    if (buildings[x][y] && marketIsStaffed) {
                         const marketSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const isBuying = marketSupply?.isBuying === true;
                         const noFarmsNearby = marketSupply?.noFarmsNearby === true;
 
                         if (isBuying === true) {
                             const buyingMeta = statutsIconsMeta['isBuying'];
+                            const buyingIcon = resolveIconAppearance(
+                                buildings[x][y], 'isBuying', buyingMeta.position, buyingMeta.scale
+                            );
 
                             if (!noFarmsNearby) {
                                 assetManager.setStatusSprite(
                                     buildings[x][y],
                                     textures['isBuying'],
                                     'isBuying',
-                                    buyingMeta.scale,
-                                    buyingMeta.position,
+                                    buyingIcon.scale,
+                                    buyingIcon.position,
                                     productionSpriteVisible(true),
                                     buyingMeta.spriteColor,
                                     buyingMeta.backgroundColor
@@ -1229,20 +1254,26 @@ export function createScene(_gameStore, assetManager, deps) {
                                     buildings[x][y],
                                     textures['isBuying'],
                                     'isBuying',
-                                    buyingMeta.scale,
-                                    buyingMeta.position,
+                                    buyingIcon.scale,
+                                    buyingIcon.position,
                                     productionSpriteVisible(true),
                                     0xFF6600,
                                     0xFFCCCC
                                 );
                             }
                         } else {
+                            const buyingIcon = resolveIconAppearance(
+                                buildings[x][y],
+                                'isBuying',
+                                statutsIconsMeta['isBuying'].position,
+                                statutsIconsMeta['isBuying'].scale
+                            );
                             assetManager.setStatusSprite(
                                 buildings[x][y],
                                 textures['isBuying'],
                                 'isBuying',
-                                statutsIconsMeta['isBuying'].scale,
-                                statutsIconsMeta['isBuying'].position,
+                                buyingIcon.scale,
+                                buyingIcon.position,
                                 false,
                                 null,
                                 null
@@ -1256,12 +1287,15 @@ export function createScene(_gameStore, assetManager, deps) {
                             (marketSupplyStocks.cabbage || 0) > 0 ||
                             (marketSupplyStocks.food || 0) > 0;
 
+                        const marketNoFoodIcon = resolveIconAppearance(
+                            buildings[x][y], 'no-food', statutsIconsMeta['no-food'].position, statutsIconsMeta['no-food'].scale
+                        );
                         assetManager.setStatusSprite(
                             buildings[x][y],
                             textures['nofood'],
                             'no-food',
-                            statutsIconsMeta['no-food'].scale,
-                            statutsIconsMeta['no-food'].position,
+                            marketNoFoodIcon.scale,
+                            marketNoFoodIcon.position,
                             productionSpriteVisible(!hasFoodBaskets)
                         );
                     }
@@ -1285,31 +1319,36 @@ export function createScene(_gameStore, assetManager, deps) {
                     };
 
                     if (buildings[x][y]) {
+                        const windmillRoadIcon = resolveIconAppearance(
+                            buildings[x][y], 'road', statutsIconsMeta.road.position, windmillRoadScale
+                        );
                         await syncRoadAccess({
                             instanceId: currentInstanceId,
                             mesh: buildings[x][y],
-                            position: statutsIconsMeta.road.position,
-                            scale: windmillRoadScale,
+                            position: windmillRoadIcon.position,
+                            scale: windmillRoadIcon.scale,
                         });
                     }
 
-                    if (buildings[x][y]) {
+                    // Same layering as markets: no road → only no-road; no worker → only no-work;
+                    // otherwise the collecting sprite.
+                    const windmillIsStaffed = buildings[x][y]?.userData?.isUnderstaffed === false
+                        && buildings[x][y]?.userData?.hasRoadAccess !== false;
+                    if (buildings[x][y] && windmillIsStaffed) {
                         const windmillSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const isCollecting = windmillSupply?.isCollecting === true;
+                        const collectingMeta = statutsIconsMeta.isCollecting;
+                        const collectingIcon = resolveIconAppearance(
+                            buildings[x][y], 'isCollecting', collectingMeta.position, collectingMeta.scale
+                        );
 
                         if (isCollecting === true) {
-                            const collectingMeta = {
-                                position: {x: -0.5, y: 0.5, z: 0},
-                                scale: {x: 0.6, y: 0.6, z: 1},
-                                spriteColor: 0x00FF00,
-                                backgroundColor: 0xFFFFFF
-                            };
                             assetManager.setStatusSprite(
                                 buildings[x][y],
                                 textures['isCollecting'],
                                 'isCollecting',
-                                collectingMeta.scale,
-                                collectingMeta.position,
+                                collectingIcon.scale,
+                                collectingIcon.position,
                                 productionSpriteVisible(true),
                                 collectingMeta.spriteColor,
                                 collectingMeta.backgroundColor
@@ -1319,32 +1358,14 @@ export function createScene(_gameStore, assetManager, deps) {
                                 buildings[x][y],
                                 textures['isCollecting'],
                                 'isCollecting',
-                                {x: 0.6, y: 0.6, z: 1},
-                                {x: -0.5, y: 0.5, z: 0},
+                                collectingIcon.scale,
+                                collectingIcon.position,
                                 false,
                                 null,
                                 null
                             );
                         }
                     }
-                }
-
-                // Accès routier grange (BC Parcels + icône no-road, même mécanisme que maisons / moulin)
-                if (
-                    (currentBuildingId.includes('Barn') || currentBuildingId === 'Barn-001')
-                    && buildings[x][y]
-                ) {
-                    const barnRoadScale = {
-                        x: statutsIconsMeta.road.scale.x * 0.714,
-                        y: statutsIconsMeta.road.scale.y * 0.714,
-                        z: statutsIconsMeta.road.scale.z * 0.714,
-                    };
-                    await syncRoadAccess({
-                        instanceId: currentInstanceId,
-                        mesh: buildings[x][y],
-                        position: statutsIconsMeta.road.position,
-                        scale: barnRoadScale,
-                    });
                 }
 
                 // Process farms: season-specific sprites (harvest stocks → Supply BC)
@@ -1359,6 +1380,15 @@ export function createScene(_gameStore, assetManager, deps) {
 
                     const timeInfo = TimeManager.getTimeInfo(time);
                     const season = timeInfo.season;
+
+                    // Assembled fields (e.g. the Kenney farm field) plant / clear their crop
+                    // for the season through the hook their adapter put on the mesh.
+                    buildings[x][y].userData?.applySeason?.(season);
+
+                    // A farm with no worker produces nothing: the season / harvest / sale
+                    // status layer is hidden, only the no-work icon (refreshEmploymentPresentation)
+                    // shows. Unknown staffing (not yet refreshed) counts as unstaffed.
+                    const farmIsStaffed = buildings[x][y].userData?.isUnderstaffed === false;
 
                     // Season sprites from Supply/time — employment icons via refreshEmploymentPresentation
                     let spriteTexture, spriteName, spriteColor, spritePosition, spriteScale, backgroundColor;
@@ -1400,39 +1430,37 @@ export function createScene(_gameStore, assetManager, deps) {
                     }
                     
                     // Show the appropriate sprite for the current season (only one sprite per season)
-                    if(buildings[x][y] && spriteTexture) {
+                    if(farmIsStaffed && buildings[x][y] && spriteTexture) {
+                        const seasonIcon = resolveIconAppearance(buildings[x][y], spriteName, spritePosition, spriteScale);
                         assetManager.setStatusSprite(
                             buildings[x][y],
                             spriteTexture,
                             spriteName,
-                            spriteScale,
-                            spritePosition,
+                            seasonIcon.scale,
+                            seasonIcon.position,
                             productionSpriteVisible(true),
                             spriteColor,
                             backgroundColor
                         );
                     }
-                    
+
                     // In December, show additional sprite if farm sold to windmill
                     // This sprite appears alongside the winter season sprite to indicate windmill collection
-                    if (buildings[x][y] && season === 'Hiver' && timeInfo.monthIndex === 11) {
+                    if (farmIsStaffed && buildings[x][y] && season === 'Hiver' && timeInfo.monthIndex === 11) {
                         const farmSupply = await supply.getBuildingSupplyView(currentInstanceId);
                         const soldToWindmill = farmSupply?.soldToWindmill === true;
+                        const windmillSaleMeta = statutsIconsMeta['sold-to-windmill'];
+                        const windmillSaleIcon = resolveIconAppearance(
+                            buildings[x][y], 'sold-to-windmill', windmillSaleMeta.position, windmillSaleMeta.scale
+                        );
                         if (soldToWindmill === true) {
                             // Show windmill collection sprite (green, similar to windmill's isCollecting)
-                            // Position it differently from the season sprite to avoid overlap
-                            const windmillSaleMeta = {
-                                position: {x: 0.5, y: 0.5, z: 0}, // Different position from season sprite (top-right)
-                                scale: {x: 0.5, y: 0.5, z: 1},
-                                spriteColor: 0x00FF00, // Green color
-                                backgroundColor: 0xFFFFFF // White background
-                            };
                             assetManager.setStatusSprite(
                                 buildings[x][y],
                                 textures['isCollecting'], // Reuse windmill collecting icon
                                 'sold-to-windmill',
-                                windmillSaleMeta.scale,
-                                windmillSaleMeta.position,
+                                windmillSaleIcon.scale,
+                                windmillSaleIcon.position,
                                 productionSpriteVisible(true),
                                 windmillSaleMeta.spriteColor,
                                 windmillSaleMeta.backgroundColor
@@ -1443,8 +1471,8 @@ export function createScene(_gameStore, assetManager, deps) {
                                 buildings[x][y],
                                 textures['isCollecting'],
                                 'sold-to-windmill',
-                                {x: 0.5, y: 0.5, z: 1},
-                                {x: 0.5, y: 0.5, z: 0},
+                                windmillSaleIcon.scale,
+                                windmillSaleIcon.position,
                                 false,
                                 null,
                                 null
@@ -1465,7 +1493,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     }
 
                     // IMPORTANT: IndexedDB is the source of truth for stocks
-                    // Supply BC updates IndexedDB first (ECS supply.monthlyFood), then we read from it
+                    // Supply BC updates IndexedDB first (ECS supply.monthlyResourceCycle), then we read from it
                     // DO NOT write userData.stocks back to IndexedDB - it would overwrite service updates!
                     
                     // Removed old code that wrote userData.stocks to IndexedDB:
@@ -1506,12 +1534,15 @@ export function createScene(_gameStore, assetManager, deps) {
                     // hasFood is computed above from IndexedDB stocks (source of truth)
                     if(buildings[x][y]) {
                         const showNoFoodIcon = !hasFood; // Show icon when NO food
+                        const houseNoFoodIcon = resolveIconAppearance(
+                            buildings[x][y], 'no-food', statutsIconsMeta.food.position, statutsIconsMeta.food.scale
+                        );
                         assetManager.setStatusSprite(
                             buildings[x][y],
                             textures['nofood'],
                             'no-food',
-                            statutsIconsMeta.food.scale,
-                            statutsIconsMeta.food.position,
+                            houseNoFoodIcon.scale,
+                            houseNoFoodIcon.position,
                             productionSpriteVisible(showNoFoodIcon)
                         );
                     }
@@ -1545,33 +1576,24 @@ export function createScene(_gameStore, assetManager, deps) {
           updateBuildingFields,
         });
 
-        // Sync residential + barn road icons after neighbors (evolution may have run in ECS)
+        // Sync residential road icons after neighbors (evolution may have run in ECS)
         for (let nx = 0; nx < city.size; nx++) {
             for (let ny = 0; ny < city.size; ny++) {
                 const tileType = city.tiles[nx]?.[ny]?.buildingId;
                 const instanceId = city.tiles[nx]?.[ny]?.instanceId;
                 if (!instanceId || !tileType) continue;
                 const isResidential = houses.includes(tileType) || palaces.includes(tileType);
-                const isBarn = tileType.includes('Barn') || tileType === 'Barn-001';
-                if (!isResidential && !isBarn) continue;
-                if (isResidential) {
-                    const meshType = buildings[nx]?.[ny]?.userData?.type || buildings[nx]?.[ny]?.userData?.id;
-                    await syncResidentialHouseMeshFromDb(nx, ny, meshType || tileType);
-                }
+                if (!isResidential) continue;
+                const meshType = buildings[nx]?.[ny]?.userData?.type || buildings[nx]?.[ny]?.userData?.id;
+                await syncResidentialHouseMeshFromDb(nx, ny, meshType || tileType);
                 const mesh = buildings[nx]?.[ny];
                 if (!mesh?.userData) continue;
-                const roadScale = isBarn
-                    ? {
-                        x: statutsIconsMeta.road.scale.x * 0.714,
-                        y: statutsIconsMeta.road.scale.y * 0.714,
-                        z: statutsIconsMeta.road.scale.z * 0.714,
-                      }
-                    : statutsIconsMeta.road.scale;
+                const residentialRoadIcon = resolveIconAppearance(mesh, 'road', statutsIconsMeta.road.position, statutsIconsMeta.road.scale);
                 await syncRoadAccess({
                     instanceId,
                     mesh,
-                    position: statutsIconsMeta.road.position,
-                    scale: roadScale,
+                    position: residentialRoadIcon.position,
+                    scale: residentialRoadIcon.scale,
                 });
             }
         }
@@ -1601,23 +1623,10 @@ export function createScene(_gameStore, assetManager, deps) {
 
 
         // Display results in UI — population read at start of update (ECS already applied)
-        const currentPopulation = totalPop;
-
-        // Manage multiple citizens based on current population state (from IndexedDB)
-        // Only update if citizenPathfinding is initialized
-        if (citizenPathfinding) {
-            await citizenManager.updateCitizens(
-                currentPopulation,
-                city,
-                citizenPathfinding.findBorderRoads.bind(citizenPathfinding),
-                citizenPathfinding.createRoadPath.bind(citizenPathfinding),
-                (citizen) => citizenPathfinding.recalculateCitizenPath(citizen, citizenManager),
-                citizenPathfinding.validatePath.bind(citizenPathfinding)
-            );
-        }
-        
         // Famished / deaths / pop rail — owned by syncPopRailHud (tick + refreshEmploymentPresentation)
 
+        // Walkers are event-driven now (see walkerEventController above) —
+        // no per-turn scan needed here.
     }
 
     /**
@@ -1657,28 +1666,33 @@ export function createScene(_gameStore, assetManager, deps) {
                     ?? null;
                 if (!instanceId) continue;
 
+                // Assembled meshes (e.g. a planted field) react to having workers or not —
+                // same rule as the no-work icon below: understaffed = no worker at all.
+                mesh.userData.isUnderstaffed = understaffed.has(instanceId);
+                mesh.userData.applyStaffing?.(!mesh.userData.isUnderstaffed);
+
                 const isMarket = commerce.includes(currentBuildingId);
                 const isFarm = farms.includes(currentBuildingId);
                 const isWindmill =
                     currentBuildingId.includes('Windmill') || currentBuildingId.includes('windmill');
-                const isFactory = factories.includes(currentBuildingId);
 
-                if (!isMarket && !isFarm && !isWindmill && !isFactory) continue;
+                if (!isMarket && !isFarm && !isWindmill) continue;
 
-                if (understaffed.has(instanceId)) {
-                    let position = { x: -0.8, y: 0.5, z: -0.2 };
-                    let scale = { x: 0.5, y: 0.5, z: 0.5 };
-                    if (isMarket || isWindmill) {
-                        position = { x: -0.5, y: 0.5, z: 0 };
-                        scale = { x: 0.6, y: 0.6, z: 1 };
-                    }
+                // No road → the no-road icon is the only status: no-work only makes sense once
+                // the building is connected (there can be no worker without a road).
+                const hasRoadAccess = mesh.userData.hasRoadAccess !== false;
+                if (understaffed.has(instanceId) && hasRoadAccess) {
+                    const noWorkMeta = (isMarket || isWindmill)
+                        ? STATUS_ICON_DEFAULTS['no-work-market-windmill']
+                        : STATUS_ICON_DEFAULTS['no-work'];
+                    const noWorkIcon = resolveIconAppearance(mesh, 'no-work', noWorkMeta.position, noWorkMeta.scale);
 
                     assetManager.setStatusSprite(
                         mesh,
                         textures['no-work'],
                         'no-work',
-                        scale,
-                        position,
+                        noWorkIcon.scale,
+                        noWorkIcon.position,
                         productionSpriteVisible(true),
                         noWorkSpriteColor,
                         noWorkBackgroundColor
@@ -1701,31 +1715,29 @@ export function createScene(_gameStore, assetManager, deps) {
      * Since objects are now in zone groups, we collect them from all zone groups
      */
     function getInteractiveObjects() {
-        // Collect all objects from zone groups (they contain buildings + terrain)
-        // Exclude decorative elements (non-interactive)
         const objects = [];
-        zoneGroups.forEach(zoneGroup => {
-            zoneGroup.children.forEach(child => {
-                if (child instanceof THREE.Mesh && 
-                    !child.userData.isDecorative && 
-                    !child.userData.nonInteractive &&
-                    child.name && !child.name.startsWith('decorative-')) {
-                    objects.push(child);
-                }
+        zoneGroups.forEach((zoneGroup) => {
+            zoneGroup.children.forEach((child) => {
+                if (child.userData?.isDecorative) return;
+                if (child.userData?.nonInteractive) return;
+                if (child.name?.startsWith('decorative-')) return;
+                objects.push(child);
             });
         });
-        // Fallback: filter scene children to exclude decorative elements
         if (objects.length === 0) {
-            scene.children.forEach(child => {
-                if (child instanceof THREE.Mesh && 
-                    !child.userData.isDecorative && 
-                    !child.userData.nonInteractive &&
-                    child.name && !child.name.startsWith('decorative-') &&
-                    child.name !== 'world-platform' &&
-                    child.name !== 'infinite-ground-base' &&
-                    child.name !== 'infinite-ground-large') {
-                    objects.push(child);
+            scene.children.forEach((child) => {
+                if (child.userData?.isDecorative) return;
+                if (child.userData?.nonInteractive) return;
+                if (child.name?.startsWith('decorative-')) return;
+                if (
+                    child.name === 'world-platform'
+                    || child.name === 'kenney-ground-fill'
+                    || child.name === 'infinite-ground-base'
+                    || child.name === 'infinite-ground-large'
+                ) {
+                    return;
                 }
+                objects.push(child);
             });
         }
         return objects;
@@ -1740,6 +1752,304 @@ export function createScene(_gameStore, assetManager, deps) {
      * OPTIMIZATION: Ensures objects are properly cleaned up
      * Objects are now in zone groups (not directly in scene or interactive group)
      */
+    function addMeshToTileZone(mesh, x, y, citySize = currentCitySize) {
+        const zoneIndex = resolveTerrainZoneIndex(
+            x,
+            y,
+            citySize,
+            ZONE_SIZE,
+            terrainZonePadding
+        );
+        if (zoneGroups[zoneIndex]) {
+            zoneGroups[zoneIndex].add(mesh);
+            zoneGroups[zoneIndex].visible = true;
+        } else {
+            scene.add(mesh);
+        }
+        mesh.updateMatrixWorld(true);
+        performanceManager?.invalidateFrustumCache();
+    }
+
+    /**
+     * Replace the Kenney terrain mesh at (x, y). Updates `terrain[][]` only.
+     * @param {object} city
+     * @param {number} x
+     * @param {number} y
+     * @param {string} terrainId
+     * @param {number} [rotationStep=0]
+     * @returns {boolean}
+     */
+    function replaceTerrainAt(city, x, y, terrainId, rotationStep = 0) {
+        const oldMesh = terrain[x]?.[y];
+        if (oldMesh) {
+            removeInteractiveObject(oldMesh);
+        }
+
+        const mesh = assetManager.createAsset(terrainId, x, y);
+        if (!mesh) {
+            console.warn('[Scene] replaceTerrainAt: failed to create mesh', { terrainId, x, y });
+            return false;
+        }
+
+        const normalizedStep = ((rotationStep % 4) + 4) % 4;
+        mesh.rotation.y = normalizedStep * (Math.PI / 2);
+        mesh.name = terrainId;
+        if (!terrain[x]) {
+            terrain[x] = [];
+        }
+        terrain[x][y] = mesh;
+        addMeshToTileZone(mesh, x, y, city?.size ?? currentCitySize);
+        scene.userData.requestShadowRefresh?.();
+        return true;
+    }
+
+    /**
+     * @param {import('./editor/editorNatureLayout.js').EditorStackObject} entry
+     * @returns {Promise<import('three').Object3D | null>}
+     */
+    async function createEditorStackMesh(entry) {
+        const {
+            assetId,
+            x,
+            y,
+            rotationY,
+            baseLocalY,
+            id,
+            mountMode,
+            faceDirection,
+            hostAssetId,
+        } = entry;
+        const kenneyPresentation = resolveKenneyGltfPresentationMode();
+
+        if (assetId.startsWith('nature-prop:')) {
+            const { getKenneyNaturePropAdapter } = await import(
+                './adapters/kenney-nature-props/KenneyNaturePropAdapter.js'
+            );
+            await getKenneyNaturePropAdapter().ensurePropLoaded(assetId, kenneyPresentation);
+            const port = createKenneyNatureSceneTile(assetId, x, y, rotationY ?? 0, {
+                baseLocalY,
+                editorStackId: id,
+                presentation: kenneyPresentation,
+            });
+            attachSceneTilePort(port);
+            port.root.traverse((child) => {
+                child.frustumCulled = false;
+            });
+            return port.root;
+        }
+
+        const { getKenneyNatureTerrainAdapter } = await import(
+            './adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js'
+        );
+        await getKenneyNatureTerrainAdapter().ensureTerrainTemplate(assetId, kenneyPresentation);
+        const port = createKenneyTerrainSceneTile(assetId, x, y, {
+            presentation: kenneyPresentation,
+            baseLocalY,
+            editorStackId: id,
+            rotationY: rotationY ?? 0,
+        });
+        attachSceneTilePort(port);
+        port.root.traverse((child) => {
+            child.frustumCulled = false;
+        });
+
+        if (mountMode === 'verticalFace' && faceDirection) {
+            port.root.rotation.set(0, 0, 0);
+            applyKenneyVerticalEdgeMountToObject(
+                port.root,
+                faceDirection,
+                assetId,
+                x,
+                y,
+                baseLocalY,
+                WORLD_PLATFORM_Y
+            );
+        }
+
+        return port.root;
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {object | null | undefined} pickedObject
+     * @param {string} childToolId
+     * @returns {number | null}
+     */
+    function resolveEditorPlacementAnchorLocalY(x, y, pickedObject, childToolId) {
+        const terrainId = currentCity?.tiles?.[x]?.[y]?.terrainId ?? 'grass';
+        const target = resolveEditorPlacementTarget(
+            pickedObject,
+            x,
+            y,
+            terrainId,
+            getEditorStackObjects()
+        );
+        const placement = resolveEditorStackPlacement(target, childToolId, getEditorStackObjects());
+        return placement.ok ? placement.baseLocalY : null;
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {object | null | undefined} pickedObject
+     * @param {string} childToolId
+     * @param {number} [rotationStep=0]
+     */
+    function resolveEditorGhostPlacementPreview(x, y, pickedObject, childToolId, rotationStep = 0) {
+        const terrainId = currentCity?.tiles?.[x]?.[y]?.terrainId ?? 'grass';
+        const citySize = currentCity?.size ?? 0;
+        return computeEditorGhostPlacementPreview(
+            pickedObject,
+            x,
+            y,
+            terrainId,
+            childToolId,
+            getEditorStackObjects(),
+            rotationStep,
+            citySize,
+            (tx, ty) => currentCity?.tiles?.[tx]?.[ty]?.terrainId ?? 'grass'
+        );
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {string} assetId
+     * @param {number} [rotationY=0]
+     * @param {object | null | undefined} [pickedObject]
+     * @param {{ mountMode?: import('../../shared/editor-catalog/editorKenneyAssetBehavior.js').EditorAssetMountMode, faceDirection?: import('../../shared/editor-catalog/editorKenneyAssetBehavior.js').EditorVerticalFaceDirection }} [mountOptions]
+     * @returns {Promise<boolean>}
+     */
+    async function placeEditorStackObject(x, y, assetId, rotationY = 0, pickedObject = null, mountOptions = {}) {
+        const terrainId = currentCity?.tiles?.[x]?.[y]?.terrainId ?? 'grass';
+        const target = resolveEditorPlacementTarget(
+            pickedObject,
+            x,
+            y,
+            terrainId,
+            getEditorStackObjects()
+        );
+        const placement = resolveEditorStackPlacement(
+            target,
+            assetId,
+            getEditorStackObjects(),
+            {
+                ...mountOptions,
+                citySize: currentCity?.size ?? 0,
+                getTerrainIdAt: (tx, ty) => currentCity?.tiles?.[tx]?.[ty]?.terrainId ?? 'grass',
+            }
+        );
+        if (!placement.ok) {
+            return false;
+        }
+
+        const placedAssetId = placement.placedAssetId ?? assetId;
+        const entry = addEditorStackObject(
+            placedAssetId,
+            placement.x,
+            placement.y,
+            rotationY,
+            placement
+        );
+        const mesh = await createEditorStackMesh(entry);
+        if (!mesh) {
+            removeEditorStackObjectById(entry.id);
+            return false;
+        }
+
+        editorStackMeshes.set(entry.id, mesh);
+        addMeshToTileZone(mesh, placement.x, placement.y);
+        scene.userData.requestShadowRefresh?.();
+        return true;
+    }
+
+    /** @deprecated use placeEditorStackObject */
+    async function placeEditorNatureProp(x, y, propId, rotationY = 0) {
+        return placeEditorStackObject(x, y, propId, rotationY, null);
+    }
+
+    /**
+     * Bulldoze tile base terrain to editor sea. Removes all stack pieces on the tile.
+     * @param {object} city
+     * @param {number} x
+     * @param {number} y
+     * @returns {boolean}
+     */
+    function clearEditorTileBaseToSea(city, x, y) {
+        const terrainId = city?.tiles?.[x]?.[y]?.terrainId;
+        if (!terrainId || isEditorSeaTerrain(terrainId)) {
+            return false;
+        }
+
+        const removedStacks = removeEditorStackObjectsAtTile(x, y);
+        for (const obj of removedStacks) {
+            const mesh = editorStackMeshes.get(obj.id);
+            if (mesh) {
+                removeInteractiveObject(mesh);
+                editorStackMeshes.delete(obj.id);
+            }
+        }
+
+        const oldMesh = terrain[x]?.[y];
+        if (oldMesh) {
+            removeInteractiveObject(oldMesh);
+        }
+        if (!terrain[x]) {
+            terrain[x] = [];
+        }
+        terrain[x][y] = null;
+        city.tiles[x][y].terrainId = EDITOR_SEA_TERRAIN_ID;
+        scene.userData.requestShadowRefresh?.();
+        return true;
+    }
+
+    /**
+     * @param {string} stackId
+     * @returns {boolean}
+     */
+    function removeEditorStackById(stackId) {
+        const mesh = editorStackMeshes.get(stackId);
+        if (mesh) {
+            removeInteractiveObject(mesh);
+            editorStackMeshes.delete(stackId);
+            scene.userData.requestShadowRefresh?.();
+        }
+        const removed = removeEditorStackObjectById(stackId);
+        return Boolean(removed || mesh);
+    }
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @returns {boolean}
+     */
+    function removeEditorNaturePropAt(x, y) {
+        const top = removeTopEditorStackObjectAt(x, y);
+        if (!top) return false;
+        return removeEditorStackById(top.id);
+    }
+
+    /**
+     * Hydrate editor stack meshes from the in-memory layout (after initialize).
+     */
+    async function syncEditorStackFromLayout() {
+        if (!editorStackHydrationEnabled) return;
+        for (const obj of getEditorStackObjects()) {
+            if (editorStackMeshes.has(obj.id)) continue;
+            const mesh = await createEditorStackMesh(obj);
+            if (!mesh) continue;
+            editorStackMeshes.set(obj.id, mesh);
+            addMeshToTileZone(mesh, obj.x, obj.y);
+        }
+        scene.userData.requestShadowRefresh?.();
+    }
+
+    /** @deprecated */
+    async function syncEditorNaturePropsFromLayout() {
+        return syncEditorStackFromLayout();
+    }
+
     function removeInteractiveObject(object) {
         if (!object) return;
         
@@ -1765,6 +2075,13 @@ export function createScene(_gameStore, assetManager, deps) {
      * OPTIMIZED: Only raycast against interactive objects (buildings + terrain)
      * instead of all scene children (backdrop, lights, etc.)
      */
+    function pickInteractiveTile(raycaster) {
+        return pickTileFromRaycast(raycaster, getInteractiveObjects())
+            ?? (isEditorMode() && currentCity
+                ? pickEditorTileOnGroundPlane(raycaster, currentCity.size)
+                : null);
+    }
+
     function updateFocusedObject() {
         const inputMouse = (getSessionService('inputManager')?.mouse ?? null);
         if (!inputMouse) {
@@ -1777,11 +2094,7 @@ export function createScene(_gameStore, assetManager, deps) {
         
         raycaster.setFromCamera(mouse, camera.camera);
         
-        // OPTIMIZATION: Only test interactive objects (buildings + terrain)
-        // This dramatically reduces raycast tests (from ~300+ objects to ~256 for 16×16 city)
-        const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
-        
-        const newFocusedObject = intersections.length > 0 ? intersections[0].object : null;
+        const newFocusedObject = pickInteractiveTile(raycaster);
         
         // Only update if changed (prevent unnecessary updates)
         if (newFocusedObject !== focusedObject) {
@@ -1885,28 +2198,20 @@ export function createScene(_gameStore, assetManager, deps) {
         const deltaTime = (currentTime - lastFrameTime) / 1000; // Convert to seconds
         lastFrameTime = currentTime;
         
-        // Update all citizens (skip while game is paused)
-        if (citizenPathfinding && currentCity && !gameUI.isPaused) {
-            citizenManager.updateAllCitizens(
-                deltaTime,
-                currentCity,
-                citizenPathfinding.isRoadTile.bind(citizenPathfinding),
-                citizenPathfinding.hasBuilding.bind(citizenPathfinding),
-                citizenPathfinding.worldToTile.bind(citizenPathfinding),
-                citizenPathfinding.getAdjacentRoads.bind(citizenPathfinding),
-                citizenPathfinding.createRoadPath.bind(citizenPathfinding),
-                (citizen) => citizenPathfinding.recalculateCitizenPath(citizen, citizenManager),
-                citizenPathfinding.validatePath.bind(citizenPathfinding),
-                citizenPathfinding.findBorderRoads.bind(citizenPathfinding)
-            );
+        // Legacy border-bounce citizen spawn/update (CitizenManager.updateCitizens /
+        // updateAllCitizens) retired — superseded by walkerEventController below.
+
+        if (walkerEventController && !gameUI.isPaused) {
+            walkerEventController.update(deltaTime);
         }
-        
+
         updateFocusedObject(); // Update focused object every frame
-        // Keep the sky dome locked to the camera (iso + perspective)
-        backdropManager.syncSkyToCamera(camera.camera);
+        if (typeof onPlacementHoverHandler === 'function') {
+            onPlacementHoverHandler(focusedObject ?? null);
+        }
         // OPTIMIZATION: Update frustum culling for zone groups (throttled)
         if (performanceManager) {
-            performanceManager.updateFrustumCulling();
+            performanceManager.updateFrustumCulling(usesEditorLikePresentation());
             // OPTIMIZATION: Update shadow casting based on camera distance (throttled, not every frame)
             performanceManager.updateShadowCasting(50); // 50 unit distance threshold - objects beyond this won't cast shadows
         }
@@ -1942,8 +2247,7 @@ export function createScene(_gameStore, assetManager, deps) {
             mouse.x = (p.x / renderer.domElement.clientWidth) * 2 - 1;
             mouse.y = -(p.y / renderer.domElement.clientHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera.camera);
-            const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
-            objectToSelect = intersections.length > 0 ? intersections[0].object : null;
+            objectToSelect = pickInteractiveTile(raycaster);
         }
         return objectToSelect;
     }
@@ -2071,15 +2375,8 @@ function onMouseMove(event) {
 
     // Perform raycasting (OPTIMIZED: only interactive objects)
     raycaster.setFromCamera(mouse, camera.camera);
-    const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
-
-    if(intersections.length) {
-        focusedObject = intersections[0].object;
-        hoveredObjectName = intersections[0]?.object?.name || ""
-    } else {
-        focusedObject = null;
-        hoveredObjectName = '';
-    }
+    focusedObject = pickInteractiveTile(raycaster);
+    hoveredObjectName = focusedObject?.name || '';
 
     if (typeof this.onPlacementHover === 'function') {
         this.onPlacementHover(focusedObject);
@@ -2108,8 +2405,7 @@ function raycastTouchClient(clientX, clientY) {
     mouse.x = (clientX / renderer.domElement.clientWidth) * 2 - 1;
     mouse.y = -(clientY / renderer.domElement.clientHeight) * 2 + 1;
     raycaster.setFromCamera(mouse, camera.camera);
-    const intersections = raycaster.intersectObjects(getInteractiveObjects(), false);
-    return intersections.length > 0 ? intersections[0].object : null;
+    return pickInteractiveTile(raycaster);
 }
 
 function emitPlacementHoverFromTouch(object) {
@@ -2315,10 +2611,21 @@ function onTouchEnd(event) {
 
 
     function onKeyBoardDown(event){
+        if (
+            event.key === 'Escape'
+            && typeof this.shouldEscapeToSelectMode === 'function'
+            && this.shouldEscapeToSelectMode()
+            && typeof this.onEnterSelectMode === 'function'
+        ) {
+            this.onEnterSelectMode();
+            event.preventDefault?.();
+            return;
+        }
+
         if (isGameWorldInputLocked()) {
             return;
         }
-        // StonePath tool: R rotates path orientation (Cesar-style), not the camera
+        // Build behavior: R rotates the ghost (or is reserved); camera R runs only in select behavior
         if (
             event.key
             && event.key.toLowerCase() === 'r'
@@ -2328,6 +2635,22 @@ function onTouchEnd(event) {
             && typeof this.onRotateBuildingTool === 'function'
         ) {
             const handled = this.onRotateBuildingTool(event);
+            if (handled) {
+                event.preventDefault?.();
+                return;
+            }
+        }
+
+        // Build behavior: S picks the next mesh among the tool's selectableMeshes
+        if (
+            event.key
+            && event.key.toLowerCase() === 's'
+            && !event.ctrlKey
+            && !event.altKey
+            && !event.metaKey
+            && typeof this.onCycleMeshSelection === 'function'
+        ) {
+            const handled = this.onCycleMeshSelection(event);
             if (handled) {
                 event.preventDefault?.();
                 return;
@@ -2416,6 +2739,14 @@ function onTouchEnd(event) {
         onObjectSelected,
         initialize,
         update,
+        replaceTerrainAt,
+        placeEditorStackObject,
+        placeEditorNatureProp,
+        removeEditorNaturePropAt,
+        removeEditorStackById,
+        clearEditorTileBaseToSea,
+        resolveEditorPlacementAnchorLocalY,
+        resolveEditorGhostPlacementPreview,
         syncNeighborHamletDeco,
         start,
         stop,
@@ -2435,24 +2766,35 @@ function onTouchEnd(event) {
         onRoadPaintEnd: undefined,
         /** @type {((event?: KeyboardEvent) => boolean) | undefined} */
         onRotateBuildingTool: undefined,
+        /** @type {((event?: KeyboardEvent) => boolean) | undefined} */
+        onCycleMeshSelection: undefined,
         /**
          * Keyboard placement while a build tool is active (arrows nudge, Enter places).
          * @type {((event: KeyboardEvent) => boolean) | undefined}
          */
         onPlacementKeyboard: undefined,
         /** @type {((focused: object | null) => void) | undefined} */
-        onPlacementHover: undefined,
+        get onPlacementHover() {
+            return onPlacementHoverHandler;
+        },
+        set onPlacementHover(handler) {
+            onPlacementHoverHandler = handler;
+        },
         /**
          * When true, single-finger drag updates the placement ghost instead of panning.
          * @type {(() => boolean) | undefined}
          */
         preferPlacementTouchDrag: undefined,
         /**
-         * Called before a right-click inspect selects a building.
-         * Should switch the active tool to select-object and update toolbar UI.
+         * Switch to select behavior (toolbar + activeToolId). Orthogonal to map mode (editor / solo).
          * @type {(() => void) | undefined}
          */
         onEnterSelectMode: undefined,
+        /**
+         * When true, Escape should switch back to select behavior (from build or erase).
+         * @type {(() => boolean) | undefined}
+         */
+        shouldEscapeToSelectMode: undefined,
         // Expose focused/selected for external access if needed
         get focusedObject() { return focusedObject; },
         get selectedObject() { return selectedObject; },
@@ -2464,9 +2806,6 @@ function onTouchEnd(event) {
         // Expose camera for mobile controls
         get camera() { return camera; },
         suppressInput,
-        // Expose pause/resume control for citizen characters
-        pauseCitizen,
-        resumeCitizen,
         refreshEmploymentPresentation,
         /** Semi-transparent placement preview (StonePath trial). */
         placementGhost,
@@ -2492,19 +2831,5 @@ function onTouchEnd(event) {
         isProductionIconsVisible() {
             return mapOverlayVisibility.isProductionIconsVisible();
         },
-    }
-
-    /**
-     * Pauses all citizen animations (switches to idle)
-     */
-    function pauseCitizen() {
-        citizenManager.pauseCitizens();
-    }
-
-    /**
-     * Resumes all citizen animations (switches back to walk if was walking)
-     */
-    function resumeCitizen() {
-        citizenManager.resumeCitizens();
     }
 }

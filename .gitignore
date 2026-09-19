@@ -23,6 +23,13 @@ models
 .env.*
 !.env.example
 
+# Shell/login dotfiles (leak in from the host home directory, not project files)
+.bashrc
+.bash_profile
+.zshrc
+.zprofile
+.profile
+
 /public/ios
 /public/windows11
 
@@ -49,4 +56,5 @@ server/*/**
 /public/citizen02/Standing_Idle.fbx
 /public/citizen02/Walking.fbx
 /public/citizenCool/citizenCoolScene.gltf
-.claude
+# Assets sources retirés de public/ (non servis)
+assets-src/

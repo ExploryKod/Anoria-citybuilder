@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="robots" content="noindex, nofollow">
     <meta name="googlebot" content="noindex, nofollow">
@@ -21,12 +22,13 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/hud-shell-menus.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/cheat-code-prompt.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/toolbar-panel.css">
-    
-    <!-- Modal Styles -->
+    <link rel="stylesheet" href="./src/presentation/dom/styles/editor-mode.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/global.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loader-modal.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-controls.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-compact-toolbar.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/build-tool-hover-preview.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/editor-toolbar.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/placement-rotation-hud.css">
     
     <!-- OPTIMIZATION: Load non-critical modal CSS asynchronously using media="print" trick -->
@@ -46,8 +48,6 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/report-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/work-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/storage-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/factory-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/commerce-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/archives-section.css" media="print" onload="this.media='all'">
@@ -68,8 +68,6 @@
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/report-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/work-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/storage-section.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/factory-section.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/commerce-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/archives-section.css">
@@ -119,6 +117,21 @@
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M21 12a9 9 0 1 1-3-6.7"/>
                     <path d="M21 3v6h-6"/>
+                </svg>
+            </button>
+            <button
+                type="button"
+                id="placement-rotation-select"
+                class="placement-rotation-hud__btn hidden"
+                title="Changer de forme"
+                aria-label="Changer de forme"
+                tabindex="-1"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M17 3l4 4-4 4"/>
+                    <path d="M3 7h18"/>
+                    <path d="M7 21l-4-4 4-4"/>
+                    <path d="M21 17H3"/>
                 </svg>
             </button>
             <button
@@ -227,7 +240,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-plus-icon lucide-house-plus"><path d="M12.35 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .71-1.53l7-6a2 2 0 0 1 2.58 0l7 6A2 2 0 0 1 21 10v2.35"/><path d="M14.8 12.4A1 1 0 0 0 14 12h-4a1 1 0 0 0-1 1v8"/><path d="M15 18h6"/><path d="M18 15v6"/>
                         </svg>
                     </button>
-                    <button type="button" id="palace-btn" class="toolbar-btn" data-group="palaces" title="Palais" aria-label="Palais">
+                    <button type="button" id="palace-btn" class="toolbar-btn" data-group="palaces" title="Palais" aria-label="Palais" hidden>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle-icon lucide-castle"><path d="M10 5V3"/><path d="M14 5V3"/><path d="M15 21v-3a3 3 0 0 0-6 0v3"/><path d="M18 3v8"/><path d="M18 5H6"/><path d="M22 11H2"/><path d="M22 9v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9"/><path d="M6 3v8"/></svg>
                     </button>
                   
@@ -256,9 +269,6 @@
                             <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
                             <path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>
                     </button>
-                    <button type="button" id="workshop-btn" class="toolbar-btn" data-group="industry" title="Industrie (incl. winery)" aria-label="Industrie (incl. winery)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wine"><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 15a5 5 0 0 0 5-5c0-2-.5-4-2-8H9c-1.5 4-2 6-2 8a5 5 0 0 0 5 5Z"/></svg>
-                    </button>
                 </div>
             </div>
         </div>
@@ -267,7 +277,7 @@
             <div class="toolbar__sub-container">
                 <div class="toolbar__label">Infrastructure</div>
                 <div class="toolbar__buttons">
-                    <button type="button" id="infrastructure-btn" class="toolbar-btn" data-group="infrastructure" title="Infrastructure" aria-label="Infrastructure">
+                    <button type="button" id="infrastructure-btn" class="toolbar-btn" data-group="infrastructure" title="Infrastructure" aria-label="Infrastructure" hidden>
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-utility-pole-icon lucide-utility-pole"><path d="M12 2v20"/><path d="M2 5h20"/><path d="M3 3v2"/><path d="M7 3v2"/><path d="M17 3v2"/><path d="M21 3v2"/><path d="m19 5-7 7-7-7"/></svg>
                     </button>
                     <button type="button" id="roads-btn" class="toolbar-btn" data-group="roads" title="Routes et chemins" aria-label="Routes et chemins">
@@ -282,7 +292,7 @@
 
                 <div class="toolbar__container">
                     <div class="toolbar__sub-container">
-                        <div class="toolbar__label">Services</div>
+                        <div class="toolbar__label">Commerce</div>
                         <div class="toolbar__buttons">
                             <button type="button" id="market-btn" class="toolbar-btn" data-group="markets" title="Commerce">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/>
@@ -295,11 +305,11 @@
                     </div>
                 </div>
 
-                <div class="toolbar__container">
+                <div class="toolbar__container" hidden>
                     <div class="toolbar__sub-container">
                         <div class="toolbar__label">Nature & décor</div>
                         <div class="toolbar__buttons">
-                            <button type="button" id="nature-btn" class="toolbar-btn" data-group="nature" title="Nature">
+                            <button type="button" id="nature-btn" class="toolbar-btn" data-group="nature" title="Nature" hidden>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trees">
                                     <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-2.1-5.2l.3-.3h.2a2.5 2.5 0 0 1 2-4l.4-.4a2 2 0 0 1 2.9-.2 1 1 0 0 0 1.4 0"/>
                                     <path d="M14 10v.2A3 3 0 0 0 15.1 16H19a3 3 0 0 0 2.1-5.2l-.3-.3h-.2a2.5 2.5 0 0 0-2-4l-.4-.4a2 2 0 0 0-2.9-.2 1 1 0 0 1-1.4 0"/>
@@ -307,10 +317,10 @@
                                     <path d="M12 2v4"/>
                                 </svg>
                             </button>
-                            <button type="button" id="decoration-btn" class="toolbar-btn" data-group="decoration" title="Décor urbain">
+                            <button type="button" id="decoration-btn" class="toolbar-btn" data-group="decoration" title="Décor urbain" hidden>
                                 <span class="tool-emoji" aria-hidden="true">🏛️</span>
                             </button>
-                            <button type="button" id="tombs-btn" class="toolbar-btn" data-group="tombs" title="Cimetière">
+                            <button type="button" id="tombs-btn" class="toolbar-btn" data-group="tombs" title="Cimetière" hidden>
                                 <span class="tool-emoji" aria-hidden="true">🪦</span>
                             </button>
                         </div>
@@ -406,6 +416,61 @@
                     </svg>
                   </span>
                   <span class="sr-only">Ouvrir la barre de construction</span>
+                </button>
+              </div>
+
+              <div class="legend-btns editor-toolbar-fab editor-toolbar-fab--terrain">
+                <button
+                  type="button"
+                  id="editor-terrain-fab"
+                  class="toolbar-toggle-btn"
+                  title="Peindre le terrain"
+                  aria-label="Outils terrain"
+                  aria-expanded="false"
+                  aria-controls="editor-build-bar"
+                >
+                  <span class="toolbar-toggle-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="m8 3 4 8 5-5 5 15H2L8 3z"/>
+                      <path d="M4.14 15.08c2.62-1.57 5.24-1.43 7.86.42 2.74 1.94 5.49 2 8.23.19"/>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+              <div class="legend-btns editor-toolbar-fab editor-toolbar-fab--nature">
+                <button
+                  type="button"
+                  id="editor-nature-fab"
+                  class="toolbar-toggle-btn"
+                  title="Placer objets nature"
+                  aria-label="Outils nature"
+                  aria-expanded="false"
+                  aria-controls="editor-build-bar"
+                >
+                  <span class="toolbar-toggle-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-2.1-5.2l.3-.3h.2a2.5 2.5 0 0 1 2-4l.4-.4a2 2 0 0 1 2.9-.2 1 1 0 0 0 1.4 0"/>
+                      <path d="M14 10v.2A3 3 0 0 0 15.1 16H19a3 3 0 0 0 2.1-5.2l-.3-.3h-.2a2.5 2.5 0 0 0-2-4l-.4-.4a2 2 0 0 0-2.9-.2 1 1 0 0 1-1.4 0"/>
+                      <path d="M12 22v-8"/><path d="M12 2v4"/>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+              <div class="legend-btns editor-toolbar-fab editor-toolbar-fab--export">
+                <button
+                  type="button"
+                  id="editor-export-fab"
+                  class="toolbar-toggle-btn"
+                  title="Exporter la carte (JSON)"
+                  aria-label="Exporter la carte"
+                >
+                  <span class="toolbar-toggle-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 15V3"/><path d="m7 10 5 5 5-5"/><path d="M20 21H4"/>
+                    </svg>
+                  </span>
                 </button>
               </div>
 
@@ -578,26 +643,6 @@
                             height="14"
                             decoding="async"
                         />
-                    </button>
-                    <button
-                        type="button"
-                        class="hud-pop-rail__tab hud-pop-rail__tab--ressources-commerce"
-                        id="hud-pop-tab-ressources-commerce"
-                        role="tab"
-                        aria-selected="false"
-                        aria-controls="hud-pop-panel-ressources-commerce"
-                        data-tab="pop-ressources-commerce"
-                        tabindex="-1"
-                        title="Ressources commerce"
-                        aria-label="Ressources commerce"
-                    >
-                        <!-- Bateau marchand -->
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M3 17h18"/>
-                            <path d="M5 17c1.5 2.5 4 3.5 7 3.5s5.5-1 7-3.5"/>
-                            <path d="M12 3v11"/>
-                            <path d="M12 5c3 .5 5.5 2 7 5H5c1.5-3 4-4.5 7-5z"/>
-                        </svg>
                     </button>
                     <button
                         type="button"
@@ -814,58 +859,6 @@
                     </div>
                     <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="carrot">
                         <span class="pop-detail-emoji" title="Carottes" aria-hidden="true">🥕</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="wood">
-                        <span class="pop-detail-emoji" title="Bois" aria-hidden="true">🪵</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="furniture">
-                        <span class="pop-detail-emoji" title="Meubles" aria-hidden="true">🪑</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="figs">
-                        <span class="pop-detail-emoji" title="Figues" aria-hidden="true">🍇</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
-                </div>
-            </section>
-            <section
-                id="hud-pop-panel-ressources-commerce"
-                class="info-box infos-pop-ressources hud-pop-rail__panel"
-                role="tabpanel"
-                aria-labelledby="hud-pop-tab-ressources-commerce"
-                hidden
-            >
-                <div class="pop-detail-groups" aria-label="Stocks réservés au commerce">
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="commerce" data-product="wood">
-                        <span class="pop-detail-emoji" title="Bois" aria-hidden="true">🪵</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="commerce" data-product="furniture">
-                        <span class="pop-detail-emoji" title="Meubles" aria-hidden="true">🪑</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="commerce" data-product="figs">
-                        <span class="pop-detail-emoji" title="Figues" aria-hidden="true">🍇</span>
                         <span class="pop-detail-values">
                             <span class="pop-detail-value pop-detail-value--country">0</span>
                             <span class="pop-detail-value pop-detail-value--hamlet">0</span>
@@ -1268,6 +1261,60 @@
                     </button>
                 </div>
                 <div class="mobile-build-bar__carousel splide" id="mobile-build-bar-tools" role="tabpanel" aria-label="Outils">
+                    <div class="splide__arrows mobile-build-bar__arrows">
+                        <button type="button" class="splide__arrow splide__arrow--prev mobile-build-bar__arrow" aria-label="Outils précédents">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m15 18-6-6 6-6"/>
+                            </svg>
+                        </button>
+                        <button type="button" class="splide__arrow splide__arrow--next mobile-build-bar__arrow" aria-label="Outils suivants">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m9 18 6-6-6-6"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="splide__track">
+                        <ul class="splide__list"></ul>
+                    </div>
+                </div>
+            </section>
+
+            <section
+                id="editor-build-bar"
+                class="mobile-build-bar editor-build-bar"
+                hidden
+                role="dialog"
+                aria-modal="true"
+                aria-hidden="true"
+                aria-label="Éditeur"
+            >
+                <header class="mobile-build-bar__header">
+                    <span class="mobile-build-bar__title">Éditeur</span>
+                    <button type="button" id="editor-build-bar-close" class="mobile-build-bar__close" title="Fermer" aria-label="Fermer la barre éditeur">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m18 6-12 12"/>
+                            <path d="m6 6 12 12"/>
+                        </svg>
+                    </button>
+                </header>
+                <div class="mobile-build-bar__pills-row editor-build-bar__pills-row">
+                    <button type="button" id="editor-build-bar-pills-prev" class="mobile-build-bar__arrow mobile-build-bar__pills-arrow" aria-label="Catégories précédentes">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m15 18-6-6 6-6"/>
+                        </svg>
+                    </button>
+                    <nav
+                        class="mobile-build-bar__pills editor-build-bar__pills"
+                        role="tablist"
+                        aria-label="Catégories éditeur"
+                    ></nav>
+                    <button type="button" id="editor-build-bar-pills-next" class="mobile-build-bar__arrow mobile-build-bar__pills-arrow" aria-label="Catégories suivantes">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m9 18 6-6-6-6"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="mobile-build-bar__carousel splide" id="editor-build-bar-tools" role="tabpanel" aria-label="Outils éditeur">
                     <div class="splide__arrows mobile-build-bar__arrows">
                         <button type="button" class="splide__arrow splide__arrow--prev mobile-build-bar__arrow" aria-label="Outils précédents">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -2024,24 +2071,8 @@
                     <span class="sr-only">Santé</span>
                 </button>
                 
-                <button 
-                    class="administrator-nav-btn" 
-                    id="admin-nav-commerce"
-                    data-section="commerce"
-                    title="Commerce"
-                    aria-label="Ouvrir la section Commerce">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store">
-                        <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/>
-                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                        <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/>
-                        <path d="M2 7h20"/>
-                        <path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/>
-                    </svg>
-                    <span class="sr-only">Commerce</span>
-                </button>
-                
-                <button 
-                    class="administrator-nav-btn" 
+                <button
+                    class="administrator-nav-btn"
                     id="admin-nav-work"
                     data-section="work"
                     title="Travail"
@@ -2071,23 +2102,8 @@
                     <span class="sr-only">Unités de Stock</span>
                 </button>
                 
-                <button 
-                    class="administrator-nav-btn" 
-                    id="admin-nav-factory"
-                    data-section="factory"
-                    title="Industries"
-                    aria-label="Ouvrir la section Industries">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-factory">
-                        <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
-                        <path d="M17 18h1"/>
-                        <path d="M12 18h1"/>
-                        <path d="M7 18h1"/>
-                    </svg>
-                    <span class="sr-only">Industries</span>
-                </button>
-                
-                <button 
-                    class="administrator-nav-btn" 
+                <button
+                    class="administrator-nav-btn"
                     id="admin-nav-food-traceability"
                     data-section="food-traceability"
                     title="Traçabilité Alimentaire"
@@ -2513,32 +2529,6 @@
                     </div>
                 </div>
                 
-                <!-- Commerce Section -->
-                <div class="administrator-section" id="admin-section-commerce">
-                    <div class="administrator-section-title commerce-section-toolbar">
-                        <span class="commerce-section-title-left">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store">
-                                <path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/>
-                                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                                <path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/>
-                                <path d="M2 7h20"/>
-                                <path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/>
-                            </svg>
-                            Commerce
-                        </span>
-                        <a href="/world" class="commerce-open-map-btn" id="commerce-open-map-btn" title="Ouvrir la carte du monde" aria-label="Ouvrir la carte du monde">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M14.106 5.553a2 2 0 0 0-1.788 0l-7 3.5a2 2 0 0 0-1.106 1.789V19a2 2 0 0 0 1.106 1.789l7 3.5a2 2 0 0 0 1.788 0l7-3.5A2 2 0 0 0 22 19V10.842a2 2 0 0 0-1.106-1.789z"/>
-                                <path d="M15 21.764V15a2 2 0 0 0-2-2H5"/>
-                            </svg>
-                            Carte
-                        </a>
-                    </div>
-                    <div class="administrator-section-content">
-                        <div id="commerce-goods-list"></div>
-                    </div>
-                </div>
-                
                 <!-- Work Section -->
                 <div class="administrator-section" id="admin-section-work">
                     <div class="administrator-section-title">
@@ -2564,17 +2554,21 @@
                                 <h3 class="work-header-title">Allocation de la Main-d'œuvre</h3>
                             </div>
 
+                            <div class="work-group-tabs" id="work-group-tabs" role="tablist" aria-label="Groupes sociaux">
+                                <!-- Tabs are generated dynamically, one per social group + "Commun" -->
+                            </div>
+
                             <table class="work-table">
                                 <thead>
                                     <tr>
                                         <th class="priority-col">Priorité</th>
-                                        <th class="sector-col">Secteur</th>
+                                        <th class="sector-col">Activité</th>
                                         <th class="need-col">Besoin</th>
                                         <th class="have-col">Embauchés</th>
                                     </tr>
                                 </thead>
                                 <tbody id="work-table-body">
-                                    <!-- Rows are generated dynamically from config.employment.categories -->
+                                    <!-- Rows are generated dynamically for the active group tab's skills -->
                                 </tbody>
                             </table>
 
@@ -2719,76 +2713,6 @@
                                 <div class="storage-loading">Chargement des moulins...</div>
                             </div>
                         </div>
-                </div>
-            </div>
-            
-            <!-- Factory Section -->
-            <div class="administrator-section" id="admin-section-factory">
-                <div class="administrator-section-title">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-factory">
-                        <path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/>
-                        <path d="M17 18h1"/>
-                        <path d="M12 18h1"/>
-                        <path d="M7 18h1"/>
-                    </svg>
-                    Industries
-                </div>
-                <div class="administrator-section-content">
-                    <div class="factory-board" id="factory-board">
-                        <div class="factory-header-section">
-                            <div class="factory-refresh-section">
-                                <button class="factory-refresh-btn" id="factory-refresh-btn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
-                                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                                        <path d="M21 3v5h-5"/>
-                                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                                        <path d="M3 21v-5h5"/>
-                                    </svg>
-                                    Actualiser
-                                </button>
-                            </div>
-                            <!-- Factory Tabs -->
-                            <div class="factory-tabs">
-                                <button class="factory-tab active" data-tab="factories">🏭 Vue par Factory</button>
-                                <button class="factory-tab" data-tab="production-journal">📋 Journal de Production</button>
-                            </div>
-                            <!-- Factory Tab Content -->
-                            <div class="factory-tab-content active" id="factory-tab-factories">
-                                <div class="factory-select-section">
-                                    <label for="factory-select" class="factory-select-label">Sélectionner une usine:</label>
-                                    <select id="factory-select" class="factory-select">
-                                        <option value="all">Toutes les usines</option>
-                                    </select>
-                                </div>
-                                <div class="factory-factories-list" id="factory-factories-list">
-                                    <div class="factory-loading">Chargement des usines...</div>
-                                </div>
-                            </div>
-                            <!-- Production Journal Tab Content -->
-                            <div class="factory-tab-content" id="factory-tab-production-journal">
-                                <div class="production-journal-header">
-                                    <div class="factory-select-section">
-                                        <label for="production-journal-factory-select" class="factory-select-label">Sélectionner une usine:</label>
-                                        <select id="production-journal-factory-select" class="factory-select">
-                                            <option value="all">Toutes les usines</option>
-                                        </select>
-                                    </div>
-                                    <button class="factory-refresh-btn" id="production-journal-refresh-btn">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
-                                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                                            <path d="M21 3v5h-5"/>
-                                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                                            <path d="M3 21v-5h5"/>
-                                        </svg>
-                                        Actualiser le journal
-                                    </button>
-                                </div>
-                                <div class="production-journal-content" id="production-journal-content">
-                                    <div class="factory-loading">Chargement du journal...</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
             

@@ -32,6 +32,52 @@ Codes disponibles :
 
 Les activations sont enregistrées dans IndexedDB (table `cheatCodes`).
 
+### Claude Code
+
+Ce projet utilise **pnpm exclusivement** (jamais npm, yarn ni bun). Les réglages locaux (`.claude/settings.local.json`, non versionnés) bloquent toute commande npm/yarn/bun et exigent une validation manuelle pour chaque commande git.
+
+Un hook Claude Code (`.claude/hooks/check-pnpm.sh` / `.claude/hooks/check-pnpm.ps1`) bloque également les installs pnpm bruts (`pnpm add|install|update|dlx`) et impose de passer par [Socket Firewall](https://socket.dev/) (`sfw pnpm ...`) pour scanner les dépendances avant installation, contre le risque de chaîne d'approvisionnement compromise (paquets malveillants/typosquattés).
+
+**Avant de contribuer**, installez Socket Firewall vous-même sur votre machine (indépendamment de Claude) : regardez cette vidéo → https://www.youtube.com/watch?v=9T3H1LEZPpE, puis créez le script de garde en suivant ses instructions.
+
+Ces réglages n'étant pas versionnés (`.claude/settings.local.json` est propre à chaque machine), créez le vôtre en copiant ceci :
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "Bash(npm *)",
+      "Bash(yarn *)",
+      "Bash(bun *)"
+    ],
+    "ask": [
+      "Bash(git *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/check-pnpm.sh"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Le JSON n'accepte pas de commentaires, donc une précision ici : `args` pointe vers un script différent selon le terminal utilisé sur votre machine — `check-pnpm.sh` (bash, Linux/macOS/Windows avec Git Bash) par défaut ci-dessus, ou `check-pnpm.ps1` (PowerShell, Windows sans Git Bash) en remplaçant `"command"`/`"args"` par :
+
+```json
+"command": "powershell.exe",
+"args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${CLAUDE_PROJECT_DIR}/.claude/hooks/check-pnpm.ps1"]
+```
+
 ### Le Projet 
 
 Je m'initie avec ce projet au en web 3D via Three JS. 

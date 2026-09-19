@@ -22,60 +22,19 @@ import {
   isObjectiveRequirementMet,
 } from '../contexts/accounting/domain/catalogs/ObjectiveCatalog.js';
 import { computeReferenceSalaryPayrollBreakdown } from '../contexts/accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
-import {
-  EMPLOYMENT_MAX_SECTORS,
-  EMPLOYMENT_SECTOR_NAMES,
-  DEFAULT_SECTOR_PRIORITIES,
-} from '../contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
-import {
-  getFactoryMaxStorage,
-  getFactoryWorkerNeed,
-  getFactoryEmployeeRoleType,
-} from '../contexts/supply/domain/manufacturing/ProductRecipeCatalog.js';
-import {
-  getBuildingSupplyFlow,
-  SUPPLY_FLOW,
-} from '../contexts/supply/domain/manufacturing/SupplyFlow.js';
-import {
-  canFactoryCollectResource,
-  canFactoryProduceProduct,
-  getSupplyFlowLabel,
-} from '../contexts/supply/domain/manufacturing/FactorySupplyFlowPolicy.js';
-import {
-  factoryLineDestinationKey,
-  getFactoryLineMaxCapDisplayValue,
-  getFactoryLineMaxCapsPair,
-  rebalanceFactoryLineMaxCaps,
-  stockForDestinationCap,
-  getFactoryLineDestinationsForCommodity,
-} from '../contexts/supply/domain/manufacturing/FactoryLineAllocationPolicy.js';
-import { applyFactoryLineCapChanges } from './factoryAdminOps.js';
 import { hasRoadAccessFromCount } from '../contexts/parcels/domain/value-objects/RoadAccess.js';
 import {
   getBuildingsNamesInZone,
 } from '../contexts/parcels/infrastructure/spatial/sceneNeighborhoodScan.js';
 import {
-  getPartnerQuotaStatus,
-} from '../contexts/commerce/domain/policies/PartnerQuotaPolicy.js';
-import {
-  getProductStockKey,
-  getProductDisplayName,
-} from '../contexts/commerce/domain/catalogs/ProductCatalog.js';
-import {
-  evaluatePartnerActivationConditions,
-} from '../contexts/commerce/domain/policies/PartnerActivationPolicy.js';
-import {
   canPlaceBuildingAtTileWithSupplyRules,
 } from './canPlaceBuildingAtTileWithSupplyRules.js';
+import {
+  hasResourceRole,
+  getPlacementRequirements,
+} from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { isRoadBuildingType } from '../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
 import { listRoadPaintCells } from '../contexts/construction/domain/policies/RoadPaintPolicy.js';
-import {
-  cycleStonePathOrientationIndex,
-  isStonePathTool,
-  stonePathOrientationIndex,
-  stonePathOrientationLabel,
-  stonePathTypeForIndex,
-} from '../contexts/construction/domain/policies/StonePathOrientationPolicy.js';
 
 /**
  * @param {ReturnType<import('./createConstructionContext.js').createConstructionContext>} construction
@@ -103,11 +62,6 @@ export function createConstructionSessionApi(construction) {
     canPlaceBuildingAtTile: (params) => canPlaceBuildingAtTileWithSupplyRules(params),
     isRoadBuildingType: (buildingType) => isRoadBuildingType(buildingType),
     listRoadPaintCells: (...args) => listRoadPaintCells(...args),
-    isStonePathTool: (buildingType) => isStonePathTool(buildingType),
-    stonePathTypeForIndex: (index) => stonePathTypeForIndex(index),
-    stonePathOrientationLabel: (index) => stonePathOrientationLabel(index),
-    cycleStonePathOrientationIndex: (index) => cycleStonePathOrientationIndex(index),
-    stonePathOrientationIndex: (buildingType) => stonePathOrientationIndex(buildingType),
   });
 }
 
@@ -183,53 +137,26 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
  */
 export function createSupplySessionApi(supply) {
   return Object.freeze({
-    listWindmillSupplyViews: () => supply.listWindmillSupplyViews(),
+    listHubSupplyViews: () => supply.listHubSupplyViews(),
     listSupplyMapBuildings: () => supply.listSupplyMapBuildings(),
     listSupplyStockSnapshots: () => supply.listSupplyStockSnapshots(),
-    listCityFactories: () => supply.listCityFactories(),
     listNatureResources: () => supply.listNatureResources(),
-    getFactoryById: (id) => supply.getFactoryById(id),
-    updateFactoryFields: (id, fields) => supply.updateFactoryFields(id, fields),
     listCommercializableWindmills: async () => {
-      const windmills = await supply.listWindmillSupplyViews();
+      const windmills = await supply.listHubSupplyViews();
       return windmills.filter((w) => w.isActive && w.commercializeEnabled);
     },
-    getCommerceHubStocks: () => supply.getCommerceHubStocks(),
     updateSupplyBuildingFields: (id, fields) => supply.updateSupplyBuildingFields(id, fields),
     getSupplyBuildingRow: (id) => supply.getSupplyBuildingRow(id),
-    listProductionJournalEntries: (factoryId = null, turn = null) =>
-      supply.listProductionJournalEntries(factoryId, turn),
-    getFactoryProductionJournalEntries: (factoryId) =>
-      supply.getFactoryProductionJournalEntries(factoryId),
-    getAllFoodTraceabilityTransactions: (maxAge = null) =>
-      supply.getAllFoodTraceabilityTransactions(maxAge),
-    getFactoryMaxStorage: (...args) => getFactoryMaxStorage(...args),
-    getFactoryWorkerNeed: (...args) => getFactoryWorkerNeed(...args),
-    getFactoryEmployeeRoleType: (...args) => getFactoryEmployeeRoleType(...args),
-    getFactoryWorkerPlanView: (factory, options = {}) =>
-      supply.getFactoryWorkerPlanView(factory, options),
+    getAllSupplyTraceabilityTransactions: (maxAge = null) =>
+      supply.getAllSupplyTraceabilityTransactions(maxAge),
     getHubStorageInfoView: (hubKind, buildingRow, options = {}) =>
       supply.getHubStorageInfoView(hubKind, buildingRow, options),
     updateHubStorageOrderMode: (hubKind, buildingId, productId) =>
       supply.updateHubStorageOrderMode(hubKind, buildingId, productId),
     adjustHubStorageOrderShare: (hubKind, buildingId, productId, delta) =>
       supply.adjustHubStorageOrderShare(hubKind, buildingId, productId, delta),
-    executeHubFetchOrders: (hubKind, buildingId) =>
-      supply.executeHubFetchOrders(hubKind, buildingId),
-    applyFactoryLineCapChanges: () => applyFactoryLineCapChanges(),
-
-    SUPPLY_FLOW,
-    getBuildingSupplyFlow: (...args) => getBuildingSupplyFlow(...args),
-    canFactoryCollectResource: (...args) => canFactoryCollectResource(...args),
-    canFactoryProduceProduct: (...args) => canFactoryProduceProduct(...args),
-    getSupplyFlowLabel: (...args) => getSupplyFlowLabel(...args),
-    factoryLineDestinationKey: (...args) => factoryLineDestinationKey(...args),
-    getFactoryLineMaxCapDisplayValue: (...args) => getFactoryLineMaxCapDisplayValue(...args),
-    getFactoryLineMaxCapsPair: (...args) => getFactoryLineMaxCapsPair(...args),
-    rebalanceFactoryLineMaxCaps: (...args) => rebalanceFactoryLineMaxCaps(...args),
-    stockForDestinationCap: (...args) => stockForDestinationCap(...args),
-    getFactoryLineDestinationsForCommodity: (...args) =>
-      getFactoryLineDestinationsForCommodity(...args),
+    hasResourceRole: (buildingType, role, category) => hasResourceRole(buildingType, role, category),
+    getPlacementRequirements: (buildingType) => getPlacementRequirements(buildingType),
   });
 }
 
@@ -238,13 +165,11 @@ export function createSupplySessionApi(supply) {
  */
 export function createEmploymentSessionApi(employment) {
   return Object.freeze({
-    EMPLOYMENT_MAX_SECTORS,
-    EMPLOYMENT_SECTOR_NAMES,
-    DEFAULT_SECTOR_PRIORITIES,
-    getSectorPriority: (sector) => employment.getSectorPriority(sector),
-    getMergedSectorPriorities: () => employment.getMergedSectorPriorities(),
-    updateSectorPrioritySync: (sector, priority) =>
-      employment.updateSectorPrioritySync(sector, priority),
+    getPriorityTabs: () => employment.getPriorityTabs(),
+    getSkillPriority: (skillId) => employment.getSkillPriority(skillId),
+    getMergedTabPriorities: (tabId) => employment.getMergedTabPriorities(tabId),
+    updateSkillPrioritySync: (skillId, priority) =>
+      employment.updateSkillPrioritySync(skillId, priority),
     getSectorName: (sector) => employment.getSectorName(sector),
     getCityEmploymentSummary: () => employment.getCityEmploymentSummary(),
   });
@@ -260,26 +185,6 @@ export function createHousingSessionApi(housing) {
       return totalPop;
     },
     getCityPopulationSummary: () => housing.getCityPopulationSummary(),
-  });
-}
-
-/**
- * @param {ReturnType<import('./createCommerceContext.js').createCommerceContext>} commerce
- */
-export function createCommerceSessionApi(commerce) {
-  const repo = commerce.commerceRepository;
-  return Object.freeze({
-    loadOrSeedCommercePartners: () => repo.loadOrSeedPartners(),
-    saveCommercePartners: (data) => repo.savePartners(data),
-    loadCommerceStats: () => repo.loadStats(),
-    loadOrSeedCommerceConfig: () => repo.loadOrSeedConfig(),
-    saveCommerceConfig: (data) => repo.saveConfig(data),
-    clearCommercePersistence: () => commerce.clear(),
-    getPartnerQuotaStatus: (...args) => getPartnerQuotaStatus(...args),
-    getProductStockKey: (...args) => getProductStockKey(...args),
-    getProductDisplayName: (...args) => getProductDisplayName(...args),
-    evaluatePartnerActivationConditions: (...args) =>
-      evaluatePartnerActivationConditions(...args),
   });
 }
 
@@ -301,7 +206,6 @@ export function createParcelsSessionApi(_parcels = null) {
  *   supply?: object,
  *   employment?: object,
  *   housing?: object,
- *   commerce?: object,
  *   parcels?: object,
  *   intelligence?: object,
  * }} contexts
@@ -313,7 +217,6 @@ export function assembleSessionApi({
   supply = null,
   employment = null,
   housing = null,
-  commerce = null,
   parcels = null,
   intelligence = null,
 }) {
@@ -331,9 +234,6 @@ export function assembleSessionApi({
   }
   if (housing) {
     api.housing = createHousingSessionApi(housing);
-  }
-  if (commerce) {
-    api.commerce = createCommerceSessionApi(commerce);
   }
   if (parcels) {
     api.parcels = createParcelsSessionApi(parcels);

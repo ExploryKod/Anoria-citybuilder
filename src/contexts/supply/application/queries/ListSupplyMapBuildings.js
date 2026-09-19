@@ -1,4 +1,5 @@
 import { classifySupplyKind } from './GetBuildingSupplyView.js';
+import { getResourceStockShape } from '../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Query: city-map cells with Supply fields (hasFood, marketTooFar) + layout helpers.
@@ -30,11 +31,7 @@ export class ListSupplyMapBuildings {
     return views.map((view) => {
       const kind = classifySupplyKind(view.type);
       const stocks = view.stocks || {};
-      const hasFood =
-        (stocks.food || 0) > 0 ||
-        (stocks.wheat || 0) > 0 ||
-        (stocks.carrot || 0) > 0 ||
-        (stocks.cabbage || 0) > 0;
+      const hasFood = (stocks[getResourceStockShape().totalKey] || 0) > 0;
 
       return {
         id: view.id,
@@ -43,7 +40,7 @@ export class ListSupplyMapBuildings {
         y: view.y,
         kind,
         hasFood,
-        marketTooFar: kind === 'house' ? view.marketTooFar === true : false,
+        marketTooFar: kind === 'house' ? view.distributorTooFar === true : false,
         roadCount: view.roadCount,
         neighbors: [...(view.neighbors || [])],
         pop: view.pop || 0,

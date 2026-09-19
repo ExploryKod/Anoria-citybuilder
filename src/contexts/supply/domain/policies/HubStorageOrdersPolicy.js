@@ -1,4 +1,4 @@
-import { listHubProducts } from '../catalogs/HubStorageCatalog.js';
+import { getCategoriesForRole } from './ResourceRolePolicy.js';
 
 /** @typedef {'accept'|'refuse'|'fetch'} HubStorageMode */
 
@@ -259,13 +259,13 @@ export function getHubProductExportableAmount(orders, stocks, productId) {
 
 /**
  * @param {object} params
- * @param {'barn'|'windmill'} params.hubKind
+ * @param {string} params.buildingType
  * @param {Record<string, number>} params.stocks
  * @param {Record<string, HubStorageProductOrder>|null|undefined} params.rawOrders
  * @param {number} params.totalCapacity
  */
-export function buildHubStorageLines({ hubKind, stocks, rawOrders, totalCapacity }) {
-  const productIds = listHubProducts(hubKind);
+export function buildHubStorageLines({ buildingType, stocks, rawOrders, totalCapacity }) {
+  const productIds = getCategoriesForRole(buildingType, 'hub');
   const orders = normalizeHubStorageOrders(rawOrders, productIds);
   const currentTotal = productIds.reduce(
     (sum, id) => sum + Math.max(0, Math.floor(Number(stocks[id]) || 0)),

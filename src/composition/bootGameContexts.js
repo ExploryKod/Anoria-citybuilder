@@ -8,7 +8,6 @@ import { getOrCreateParcelsContext } from './createParcelsContext.js';
 import { getOrCreateSupplyContext } from './createSupplyContext.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
 import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
-import { getOrCreateCommerceContext } from './createCommerceContext.js';
 import { getOrCreateGameplayContext } from './createGameplayContext.js';
 import { getOrCreateConstructionContext } from './createConstructionContext.js';
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
@@ -24,7 +23,6 @@ import { assembleSessionApi } from './sessionApi.js';
  *   supply: object,
  *   housing: object,
  *   employment: object,
- *   commerce: object,
  *   gameplay: object,
  *   construction: object,
  *   accounting: object,
@@ -38,11 +36,8 @@ export function bootGameContexts() {
   const supply = getOrCreateSupplyContext();
   const housing = getOrCreateHousingContext();
   const employment = getOrCreateEmploymentContext({
-    citizenProvidesSkill: (house, skillKey) => housing.citizenProvidesSkill(house, skillKey),
-  });
-  employment.ensureSectorPrioritiesInitialized();
-  const commerce = getOrCreateCommerceContext({
-    barnStockOperations: supply.barnStockOperations,
+    citizenProvidesSkillAtLevel: (house, skillKey, requiredLevel) =>
+      housing.citizenProvidesSkillAtLevel(house, skillKey, requiredLevel),
   });
   const gameplay = getOrCreateGameplayContext();
   const construction = getOrCreateConstructionContext();
@@ -56,7 +51,6 @@ export function bootGameContexts() {
     supply,
     employment,
     housing,
-    commerce,
     parcels,
     intelligence,
   });
@@ -65,13 +59,12 @@ export function bootGameContexts() {
     supply,
     housing,
     employment,
-    commerce,
     gameplay,
     intelligence,
     getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
     toSupplySeason,
     toSupplyMonth,
-    getSectorPriorities: () => employment.getAllSectorPriorities(),
+    getSkillPriorities: () => employment.getAllSkillPriorities(),
     foodDistributionDistance: DEFAULT_FOOD_DISTRIBUTION_DISTANCE,
   });
 
@@ -80,7 +73,6 @@ export function bootGameContexts() {
     supply,
     housing,
     employment,
-    commerce,
     gameplay,
     construction,
     accounting,

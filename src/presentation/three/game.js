@@ -3,9 +3,25 @@
  * Context / treasury / tick wiring live in composition/.
  */
 
-import { registerAppService, getMultiplayerManager, invokeStartTutorial, getObjectivesManager, getButtonStateManager } from '../../composition/sessionShell.js';
+import {
+  registerAppService,
+  getMultiplayerManager,
+  invokeStartTutorial,
+  getObjectivesManager,
+  getButtonStateManager,
+  isEditorMode,
+} from '../../composition/sessionShell.js';
+import {
+  getMissionMapLayoutId,
+  isCustomMapLayoutActive,
+  setCustomMapLayoutActive,
+} from '../../shared/gameplay/customMapLayout.js';
+import { loadEditorMapLayout } from '../../contexts/world-layout/application/queries/LoadEditorMapLayout.js';
+import { applyEditorMapLayoutToCity } from '../../contexts/world-layout/application/services/ApplyEditorMapLayoutToCity.js';
+import { createEditorNatureStackLayoutPort } from '../../contexts/world-layout/infrastructure/adapters/presentation/EditorNatureStackLayoutAdapter.js';
+import { getEditorMapRepository } from '../../composition/editorMapRepository.js';
 import { createScene } from './scene.js';
-import { createCity, clearCityTiles } from './city.js';
+import { createCity, clearCityTiles, initializeEditorCityTiles } from './city.js';
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
 import { syncSupplyLinksAfterBuildingChange } from '../../composition/syncSupplyLinksAfterBuildingChange.js';
 import { refreshSupplyPlacementIndex } from '../../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
@@ -23,14 +39,16 @@ import {
 } from '../../core/persistence/hamlet/hamletSession.js';
 import { HAMLET_ACCESS_CHANGED_EVENT, canTravelToHamlet } from '../../core/persistence/hamlet/hamletAccess.js';
 import { runGameTick } from '../../composition/runGameTick.js';
+import { presentIncomingNewsEvents } from '../dom/intelligence/NewsEventModal.js';
 import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
 import { notifyBudgetCleanupIfNeeded } from '../dom/compta/tresorerie/CleanupNotificationPresenter.js';
 import {
-  disableGatedPlacementTools,
-  refreshSkillPlacementGating,
-} from '../dom/shell/SkillPlacementGating.js';
+  BEHAVIOR_MODE,
+  resolveBehaviorMode,
+  shouldReturnToSelectOnEscape,
+} from '../../shared/gameplay/behaviorMode.js';
 import { DEFAULT_TICK_MS, snapTickMs } from '../../shared/gameplay/SimulationDefaults.js';
 import { GameLoop } from '../../engine/loop/GameLoop.js';
 import {
@@ -39,7 +57,9 @@ import {
   infoObjectCloseBtn,
 } from '../dom/shell/nodes.js';
 import { closeBuildingInfoOverlay } from '../dom/info/layout/buildingInfoLayout.js';
-import { activateSelectToolButton } from '../dom/tools/ToolPanel.js';
+import { activateSelectToolButton, closeModal } from '../dom/tools/ToolPanel.js';
+import { close as closeMobileBuildBar } from '../dom/tools/MobileCompactToolbar.js';
+import { close as closeEditorBuildBar } from '../dom/editor/EditorNatureToolbar.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import objectivesTracker, {
   bindObjectivesTrackerDeps,
@@ -48,6 +68,10 @@ import InputManager from './InputManager.js';
 import gameUI, {
   bindGameUIDeps,
 } from '../dom/shell/GameUI.js';
+import {
+  playBulldozeSound,
+  playPlaceBuildingSound,
+} from '../audio/SoundEffects.js';
 import { popupManager } from '../dom/shell/PopupManager.js';
 import {
   showInsufficientFundsNotification,
@@ -56,21 +80,48 @@ import {
 } from '../dom/shell/BuildingNotifications.js';
 import { showErrorToast } from '../dom/shell/ToastNotifier.js';
 import { presentBuildingInfoSelection } from '../dom/info/presenters/useBuildingInfoSelection.js';
-import { assetsPrices } from '../../shared/building-catalog/index.js';
-import { isWindmillBuildingType, isMarketBuildingType } from '../../shared/building-catalog/BuildingSupplyTypes.js';
+import { buildingPlacementCatalog } from '../../shared/building-catalog/index.js';
 import {
   createPlacementGhostSession,
   isPlaceableBuildingTool,
-  resolveGhostVisualAssetId,
-} from './placementGhostSession.js';
+} from './placement/placementGhostSession.js';
+import {
+  isEditorNatureTool,
+  isEditorPlacementTool,
+  isEditorTerrainTool,
+} from '../../shared/editor-catalog/editorToolIds.js';
+import {
+  isEditorRiverAsset,
+  resolveRiverMountFromRotationStep,
+} from '../../shared/editor-catalog/editorKenneyAssetBehavior.js';
+import { getKenneyNatureTerrainAdapter } from './adapters/kenney-nature-terrain/KenneyNatureTerrainAdapter.js';
+import { getKenneyNaturePropAdapter } from './adapters/kenney-nature-props/KenneyNaturePropAdapter.js';
 import {
   isPlacementNudgeArrowKey,
   gridDeltaForArrowKey,
   clampGridTile,
-} from './placementKeyboardNudge.js';
+} from './placement/placementKeyboardNudge.js';
 import { prefersTouchPlacementFlow } from './touchPlacementInput.js';
 import { canPlaceBuildingAtTileWithSupplyRules } from '../../composition/canPlaceBuildingAtTileWithSupplyRules.js';
-import { createPlacementRotationHud } from './placementRotationHud.js';
+import { isRoadBuildingType } from '../../composition/constructionCatalog.js';
+import { createPlacementRotationHud } from './placement/placementRotationHud.js';
+import { getSelectableMeshIds, resolveSelectedMeshId } from './meshs/resolveBuildingMesh.js';
+
+/**
+ * @param {object | null | undefined} object
+ * @returns {string | null}
+ */
+function resolveEditorStackIdFromObject(object) {
+  let current = object ?? null;
+  while (current) {
+    const stackId = current.userData?.editorStackId;
+    if (typeof stackId === 'string' && stackId.length > 0) {
+      return stackId;
+    }
+    current = current.parent ?? null;
+  }
+  return null;
+}
 
 ensureGameRuntimeBootstrapped();
 
@@ -78,6 +129,13 @@ export function createGame(gameStore, assetManager, citySize = null) {
   resetCumulativeDeaths();
 
   let activeToolId = '';
+  /** How many times S was pressed for the active tool — see resolveSelectedMeshId. */
+  let selectedMeshIndex = 0;
+
+  /** Catalog id actually previewed/placed for the active tool (S-selected mesh). */
+  function resolvePlacementBuildingId(toolId = activeToolId) {
+    return toolId === activeToolId ? resolveSelectedMeshId(toolId, selectedMeshIndex) : toolId;
+  }
   let time = 0;
   let isPause;
   let isOver;
@@ -96,23 +154,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
     busy: false,
   };
 
-  /** 0 = horizontal (StonePath-001), 1 = vertical (StonePath-Right-001). */
-  let stonePathOrientation = 0;
-
   /** Touch/tablet: anchor ghost + rotation HUD before confirming placement. */
   let touchPendingPlacement = null;
 
   function usesTouchPlacementRotationFlow(toolId) {
     return prefersTouchPlacementFlow()
-      && isPlaceableBuildingTool(toolId, assetsPrices);
-  }
-
-  /** Touch placement always uses base mesh + placementRotationStep (roads included). */
-  function resolveTouchPlacementBuildingType(toolId) {
-    if (isStonePathTool(toolId)) {
-      return 'StonePath-001';
-    }
-    return toolId;
+      && isPlaceableBuildingTool(toolId, buildingPlacementCatalog);
   }
 
   /** @type {ReturnType<typeof createPlacementRotationHud> | null} */
@@ -135,22 +182,25 @@ export function createGame(gameStore, assetManager, citySize = null) {
   }
 
   function beginTouchPendingPlacement(placeX, placeY, toolId) {
-    const buildingType = resolveTouchPlacementBuildingType(toolId);
-    const gridSize = assetsPrices[toolId]?.gridSize ?? assetsPrices[buildingType]?.gridSize ?? 1;
-    const visualAssetId = resolveGhostVisualAssetId(buildingType);
+    const buildingType = resolvePlacementBuildingId(toolId);
+    const gridSize = buildingPlacementCatalog[buildingType]?.gridSize ?? 1;
+    const rotationStep = scene.placementGhost?.rotationStep ?? 0;
     touchPendingPlacement = {
       x: placeX,
       y: placeY,
       buildingType,
       toolId,
-      rotationStep: 0,
+      rotationStep,
       gridSize,
     };
-    scene.placementGhost.anchor(visualAssetId, placeX, placeY, true, gridSize);
+    scene.placementGhost.anchor(buildingType, placeX, placeY, true, gridSize, {
+      rotationStep,
+    });
     placementRotationHud?.show({
       x: placeX,
       y: placeY,
       gridSize,
+      canSelectMesh: getSelectableMeshIds(toolId).length > 0,
     });
   }
 
@@ -174,6 +224,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
         showGenericErrorNotification(buildingType, result.reason);
       }
       return false;
+    }
+
+    if (!isRoadBuildingType(buildingType)) {
+      playPlaceBuildingSound();
     }
 
     await scene.update(city, time);
@@ -221,7 +275,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
     supply,
     housing,
     employment,
-    commerce,
     gameplay,
     construction,
     accounting,
@@ -232,27 +285,44 @@ export function createGame(gameStore, assetManager, citySize = null) {
   const {
     isRoadBuildingType,
     listRoadPaintCells,
-    isStonePathTool,
-    stonePathTypeForIndex,
-    stonePathOrientationLabel,
-    cycleStonePathOrientationIndex,
-    stonePathOrientationIndex,
     canPlaceBuildingAtTile,
   } = constructionApi;
 
-  function getEffectiveBuildingToolId() {
-    if (isStonePathTool(activeToolId)) {
-      return stonePathTypeForIndex(stonePathOrientation);
-    }
-    return activeToolId;
+  function getPlacementRotationStep() {
+    return scene.placementGhost?.rotationStep ?? 0;
   }
 
-  function updateStonePathToolHint() {
-    const btn = document.querySelector('[data-stone-path-tool="1"]');
-    if (!btn) return;
-    const label = stonePathOrientationLabel(stonePathOrientation);
-    btn.title = `Chemin de pierre (${label}) — touche R pour tourner`;
-    btn.dataset.orientation = String(stonePathOrientation);
+  function getEditorStackMountOptions() {
+    const step = getPlacementRotationStep();
+    if (!isEditorRiverAsset(activeToolId)) {
+      return { mountMode: 'surface', faceDirection: 'north', rotationStep: step };
+    }
+    const resolved = resolveRiverMountFromRotationStep(step);
+    return {
+      mountMode: resolved.mountMode,
+      faceDirection: resolved.faceDirection,
+      rotationStep: step,
+    };
+  }
+
+  function getPlacementRotationY() {
+    if (isEditorRiverAsset(activeToolId)) {
+      const { surfaceRotationStep } = resolveRiverMountFromRotationStep(getPlacementRotationStep());
+      return surfaceRotationStep * (Math.PI / 2);
+    }
+    return getPlacementRotationStep() * (Math.PI / 2);
+  }
+
+  /** Build behavior: playable buildings + editor terrain/props (ghost, R rotation, placement). */
+  function isActivePlacementTool(toolId = activeToolId) {
+    return isEditorPlacementTool(toolId)
+      || isPlaceableBuildingTool(toolId, buildingPlacementCatalog);
+  }
+
+  const behaviorModeOptions = { isPlacementTool: isActivePlacementTool };
+
+  function resolveActiveBehaviorMode(toolId = activeToolId) {
+    return resolveBehaviorMode(toolId, behaviorModeOptions);
   }
 
   bindObjectivesTrackerDeps({
@@ -280,10 +350,32 @@ export function createGame(gameStore, assetManager, citySize = null) {
   async function loadActiveHamletScene() {
     await ensureHamletCatalog();
     const rows = await constructionApi.listAllBuildingRows();
-    hydrateCityTilesFromRows(city, rows, assetsPrices);
+    const mapLayoutId = getMissionMapLayoutId();
+    let hydrateEditorLayout = false;
+
+    if (mapLayoutId) {
+      setCustomMapLayoutActive(true);
+      const layout = await loadEditorMapLayout(getEditorMapRepository(), mapLayoutId);
+      if (city.size !== layout.citySize) {
+        throw new Error(
+          `City size ${city.size} does not match custom map ${layout.citySize}`
+        );
+      }
+      applyEditorMapLayoutToCity(city, layout, createEditorNatureStackLayoutPort());
+      hydrateEditorLayout = true;
+    } else if (isEditorMode()) {
+      initializeEditorCityTiles(city);
+    } else {
+      hydrateCityTilesFromRows(city, rows, buildingPlacementCatalog);
+    }
+
     const hamlet = await getHamlet(getActiveHamletId());
-    const seedNature = !hamlet?.natureSeeded && rows.length === 0;
-    await scene.initialize(city, { seedNature });
+    const seedNature = !isEditorMode()
+      && !hydrateEditorLayout
+      && !isCustomMapLayoutActive()
+      && !hamlet?.natureSeeded
+      && rows.length === 0;
+    await scene.initialize(city, { seedNature, hydrateEditorLayout });
     if (seedNature) {
       await markHamletNatureSeeded(getActiveHamletId());
     }
@@ -340,6 +432,23 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
   }
 
+  /** S / HUD button while a touch placement is pending: re-anchor the ghost on the next mesh. */
+  function selectMeshForPendingPlacement() {
+    if (!touchPendingPlacement) {
+      return;
+    }
+    const { x, y, toolId, rotationStep } = touchPendingPlacement;
+    if (getSelectableMeshIds(toolId).length === 0) {
+      return;
+    }
+    selectedMeshIndex += 1;
+    const buildingType = resolvePlacementBuildingId(toolId);
+    const gridSize = buildingPlacementCatalog[buildingType]?.gridSize ?? 1;
+    touchPendingPlacement.buildingType = buildingType;
+    touchPendingPlacement.gridSize = gridSize;
+    scene.placementGhost.anchor(buildingType, x, y, true, gridSize, { rotationStep });
+  }
+
   placementRotationHud = createPlacementRotationHud({
     getCamera: () => scene.camera?.camera ?? null,
     getCanvas: () => scene.domElement ?? document.querySelector('canvas'),
@@ -350,6 +459,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       scene.placementGhost.rotateStep();
       touchPendingPlacement.rotationStep = scene.placementGhost.rotationStep;
     },
+    onSelectMesh: () => selectMeshForPendingPlacement(),
     onConfirm: async () => {
       if (!touchPendingPlacement) {
         return;
@@ -371,26 +481,56 @@ export function createGame(gameStore, assetManager, citySize = null) {
     getGhost: () => scene.placementGhost,
     getCity: () => city,
     getActiveToolId: () => activeToolId,
-    getEffectiveAssetId: () => {
-      if (prefersTouchPlacementFlow() && isStonePathTool(activeToolId)) {
-        return 'StonePath-001';
-      }
-      return getEffectiveBuildingToolId();
-    },
-    assetCatalog: assetsPrices,
+    getEffectiveAssetId: () => resolvePlacementBuildingId(),
+    assetCatalog: buildingPlacementCatalog,
+    isPlaceableTool: (toolId) => isActivePlacementTool(toolId),
     getFocusedObject: () => scene.focusedObject,
-    canPlaceBuildingAtTile,
+    canPlaceBuildingAtTile: (params) => {
+      if (isEditorPlacementTool(params.buildingType)) {
+        const preview = scene.resolveEditorGhostPlacementPreview?.(
+          params.x,
+          params.y,
+          scene.focusedObject,
+          params.buildingType,
+          params.rotationStep ?? 0
+        );
+        return {
+          ok: preview?.ok ?? false,
+          gridSize: 1,
+          footprintWidth: 1,
+          footprintHeight: 1,
+        };
+      }
+      return canPlaceBuildingAtTile(params);
+    },
+    getPlacementAnchorLocalY: (x, y) => {
+      if (!isEditorPlacementTool(activeToolId)) {
+        return null;
+      }
+      return scene.resolveEditorPlacementAnchorLocalY?.(
+        x,
+        y,
+        scene.focusedObject,
+        activeToolId
+      ) ?? null;
+    },
+    getEditorGhostPreview: (x, y, rotationStep) => {
+      if (!isEditorPlacementTool(activeToolId)) {
+        return null;
+      }
+      return scene.resolveEditorGhostPlacementPreview?.(
+        x,
+        y,
+        scene.focusedObject,
+        activeToolId,
+        rotationStep
+      ) ?? null;
+    },
   });
-
-  disableGatedPlacementTools(getButtonStateManager());
 
   async function refreshPlacementPresentation() {
     const rows = await constructionApi.listAllBuildingRows();
     refreshSupplyPlacementIndex(rows);
-    await refreshSkillPlacementGating({
-      housing,
-      buttonStateManager: getButtonStateManager(),
-    });
   }
 
   bindGameUIDeps({ getScene: () => scene });
@@ -403,7 +543,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
     supply,
     housing,
     employment,
-    commerce,
     gameplay,
     ecsRuntime: runtime,
     sessionApi,
@@ -412,6 +551,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   hamletSceneGate = loadActiveHamletScene().then(async () => {
     await refreshPlacementPresentation();
     loaderManager.hide(500);
+    scene.onEnterSelectMode?.();
     if (sessionStorage.getItem('anoria.startTutorial') === '1') {
       sessionStorage.removeItem('anoria.startTutorial');
       setTimeout(() => {
@@ -479,7 +619,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       return 'skip';
     }
 
-    const buildingType = getEffectiveBuildingToolId();
+    const buildingType = resolvePlacementBuildingId();
     const tile = city.tiles[x][y];
     const canOverwriteRoad = !tile.buildingId || isRoadBuildingType(tile.buildingId);
     if (!canOverwriteRoad) {
@@ -492,6 +632,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       y,
       buildingType,
       gameTurn: time,
+      placementRotationStep: getPlacementRotationStep(),
     });
 
     if (!result.success) {
@@ -592,9 +733,27 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
   }
 
+  function isModalBlockingEscapeToSelect() {
+    if (infoObjectOverlay.classList.contains('active')) return true;
+    if ((popupManager?.getActivePopups?.() || []).length > 0) return true;
+    if (document.getElementById('parameters-panel')?.classList.contains('visible')) return true;
+    if (document.getElementById('tutorial-panel')?.classList.contains('visible')) return true;
+    if (document.getElementById('objectives-panel')?.classList.contains('visible')) return true;
+    if (loaderManager.isShowing()) return true;
+    return false;
+  }
+
   scene.onEnterSelectMode = () => {
+    closeMobileBuildBar();
+    closeEditorBuildBar();
+    closeModal();
     activateSelectToolButton();
     game.setActiveToolId('select-object');
+  };
+
+  scene.shouldEscapeToSelectMode = () => {
+    if (isModalBlockingEscapeToSelect()) return false;
+    return shouldReturnToSelectOnEscape(activeToolId, behaviorModeOptions);
   };
 
   scene.onObjectSelected = async (selectedObject) => {
@@ -620,25 +779,73 @@ export function createGame(gameStore, assetManager, citySize = null) {
       return;
     }
 
-    if (activeToolId === 'bulldoze') {
+    const behaviorMode = resolveActiveBehaviorMode();
+
+    if (isEditorMode()) {
+      if (behaviorMode === BEHAVIOR_MODE.BUILD) {
+        if (isEditorPlacementTool(activeToolId)) {
+          await scene.placeEditorStackObject(
+            x,
+            y,
+            activeToolId,
+            getPlacementRotationY(),
+            selectedObject,
+            getEditorStackMountOptions()
+          );
+          placementGhostSession.suppressGhostAtFootprint(x, y, 1);
+          return;
+        }
+        // Playable buildings / roads use the standard build handlers below.
+      } else if (behaviorMode === BEHAVIOR_MODE.ERASE) {
+        const stackId = resolveEditorStackIdFromObject(selectedObject);
+        if (stackId && scene.removeEditorStackById(stackId)) {
+          placementGhostSession.sync(selectedObject);
+          return;
+        }
+        if (
+          selectedObject?.userData?.isKenneyNatureTerrain
+          && !selectedObject?.userData?.editorStackId
+        ) {
+          if (scene.clearEditorTileBaseToSea(city, x, y)) {
+            placementGhostSession.sync(selectedObject);
+            return;
+          }
+        }
+        if (scene.removeEditorNaturePropAt(x, y)) {
+          placementGhostSession.sync(selectedObject);
+          return;
+        }
+        // Erase behavior does not clear bare terrain (editor is not god mode).
+        if (!tile.buildingId && !tile.instanceId) {
+          return;
+        }
+        // Fall through to standard building bulldoze below.
+      } else if (behaviorMode === BEHAVIOR_MODE.SELECT) {
+        await presentBuildingInfoSelection(selectedObject, {
+          city,
+          parcels,
+          supply,
+          housing,
+          scene,
+          game,
+          time,
+          runScenePresentationPass,
+          construction: constructionApi,
+          employment: sessionApi.employment,
+          accounting: sessionApi.accounting,
+        });
+        return;
+      }
+    }
+
+    if (behaviorMode === BEHAVIOR_MODE.ERASE) {
       const removedInstanceId = selectedObject.userData?.instanceId ?? tile.instanceId ?? null;
-      const isWindmill = isWindmillBuildingType(tile.buildingId);
-      const isMarket = isMarketBuildingType(tile.buildingId);
+      const isHub = supply.hasResourceRole(tile.buildingId, 'hub');
+      const hasPlacementRequirements = supply.getPlacementRequirements(tile.buildingId).length > 0;
 
       let cascadeOutcome = null;
-      if (isWindmill && removedInstanceId) {
+      if ((isHub || hasPlacementRequirements) && removedInstanceId) {
         cascadeOutcome = await syncSupplyLinksAfterBuildingChange({
-          supply,
-          construction: constructionApi,
-          city,
-          event: 'bulldozed',
-          buildingType: tile.buildingId,
-          instanceId: removedInstanceId,
-          x,
-          y,
-        });
-      } else if (isMarket && removedInstanceId) {
-        await syncSupplyLinksAfterBuildingChange({
           supply,
           construction: constructionApi,
           city,
@@ -657,7 +864,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
         meshInstanceId: removedInstanceId,
       });
 
-      if (isWindmill && cascadeOutcome?.destroyed?.length) {
+      if (buildingId) {
+        playBulldozeSound();
+      }
+
+      if (cascadeOutcome?.destroyed?.length) {
         showWindmillCascadeNotification(cascadeOutcome.destroyed);
       }
 
@@ -665,7 +876,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       await syncEmploymentAfterBuildingChange(scene, city, buildingId);
       await refreshPlacementPresentation();
       await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
-    } else if (activeToolId === 'select-object') {
+    } else if (behaviorMode === BEHAVIOR_MODE.SELECT) {
       await presentBuildingInfoSelection(selectedObject, {
         city,
         parcels,
@@ -708,8 +919,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
           city,
           x,
           y,
-          buildingType: activeToolId,
-          assetCatalog: assetsPrices,
+          buildingType: resolvePlacementBuildingId(),
+          assetCatalog: buildingPlacementCatalog,
         });
         if (!placementCheck.ok) {
           if (placementCheck.reason) {
@@ -759,8 +970,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
           city,
           x: placeX,
           y: placeY,
-          buildingType: activeToolId,
-          assetCatalog: assetsPrices,
+          buildingType: resolvePlacementBuildingId(),
+          assetCatalog: buildingPlacementCatalog,
+          rotationStep: getPlacementRotationStep(),
         });
         if (!placementCheck.ok) {
           if (placementCheck.reason) {
@@ -772,11 +984,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
         return;
       }
 
-      const placed = await finalizeBuildingPlacement(placeX, placeY, activeToolId, 0);
+      const placed = await finalizeBuildingPlacement(
+        placeX,
+        placeY,
+        resolvePlacementBuildingId(),
+        getPlacementRotationStep(),
+      );
       if (placed) {
-        const effectiveType = getEffectiveBuildingToolId();
-        const gridSize =
-          assetsPrices[activeToolId]?.gridSize ?? assetsPrices[effectiveType]?.gridSize ?? 1;
+        const gridSize = buildingPlacementCatalog[resolvePlacementBuildingId()]?.gridSize ?? 1;
         placementGhostSession.suppressGhostAtFootprint(placeX, placeY, gridSize);
       } else {
         placementGhostSession.sync(selectedObject);
@@ -814,20 +1029,52 @@ export function createGame(gameStore, assetManager, citySize = null) {
     if (touchPendingPlacement) {
       return false;
     }
-    return isPlaceableBuildingTool(activeToolId, assetsPrices);
+    return resolveActiveBehaviorMode() === BEHAVIOR_MODE.BUILD;
   };
 
   /**
-   * R while StonePath tool is active: toggle H/V (does not rotate camera).
-   * @returns {boolean} true if handled
+   * Build mode: R is reserved for the placement ghost (camera R is blocked).
+   * Rotates the ghost mesh when it is visible; otherwise R is consumed but has no effect.
+   * @returns {boolean} true if build mode is active (blocks camera rotation)
    */
-  scene.onRotateBuildingTool = () => {
-    if (!isStonePathTool(activeToolId)) {
+  /**
+   * Build mode: S selects the next mesh of the active tool's `selectableMeshes`.
+   * Only consumed (blocking camera S) when the tool actually offers a choice.
+   * @returns {boolean}
+   */
+  function cycleMeshSelection() {
+    if (resolveActiveBehaviorMode() !== BEHAVIOR_MODE.BUILD) {
       return false;
     }
-    stonePathOrientation = cycleStonePathOrientationIndex(stonePathOrientation);
-    updateStonePathToolHint();
+    if (getSelectableMeshIds(activeToolId).length === 0) {
+      return false;
+    }
+    if (touchPendingPlacement) {
+      selectMeshForPendingPlacement();
+      return true;
+    }
+    selectedMeshIndex += 1;
     placementGhostSession.sync();
+    return true;
+  }
+  scene.onCycleMeshSelection = cycleMeshSelection;
+
+  scene.onRotateBuildingTool = () => {
+    if (resolveActiveBehaviorMode() !== BEHAVIOR_MODE.BUILD) {
+      return false;
+    }
+
+    if (touchPendingPlacement) {
+      if (scene.placementGhost?.active) {
+        scene.placementGhost.rotateStep();
+        touchPendingPlacement.rotationStep = scene.placementGhost.rotationStep;
+      }
+      return true;
+    }
+
+    if (scene.placementGhost?.active) {
+      placementGhostSession.rotateGhostStep();
+    }
     return true;
   };
 
@@ -839,7 +1086,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
    * @returns {boolean}
    */
   scene.onPlacementKeyboard = (event) => {
-    if (!isPlaceableBuildingTool(activeToolId, assetsPrices)) {
+    if (resolveActiveBehaviorMode() !== BEHAVIOR_MODE.BUILD) {
       return false;
     }
     if (touchPendingPlacement || scene.placementGhost?.anchored) {
@@ -970,14 +1217,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
         refreshEmploymentPresentation: refreshEmploymentPresentationForCity,
         objectivesTracker,
         notifyBudgetCleanup: notifyBudgetCleanupIfNeeded,
-        refreshPlacementToolGating: ({ housing: housingCtx }) =>
-          refreshSkillPlacementGating({
-            housing: housingCtx,
-            buttonStateManager: getButtonStateManager(),
-          }),
         onGameOver: () => {
           isOver = true;
         },
+        presentIncomingNewsEvents,
       });
     },
 
@@ -988,17 +1231,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
     pause() {
       isPause = true;
       gameUI.setPaused(true);
-      if (scene.pauseCitizen) {
-        scene.pauseCitizen();
-      }
     },
 
     async play() {
       isPause = false;
       gameUI.setPaused(false);
-      if (scene.resumeCitizen) {
-        scene.resumeCitizen();
-      }
       if (objectivesTracker.enabled) {
         await objectivesTracker.checkObjectives(0);
       }
@@ -1013,7 +1250,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
       resetCumulativeDeaths();
 
       try {
-        sessionApi.commerce.clearCommercePersistence();
         localStorage.removeItem('journal_year_end_balances');
         localStorage.removeItem('citizen_tax_amount');
         localStorage.removeItem('work_salary_per_month');
@@ -1053,18 +1289,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
     setActiveToolId(toolId) {
       cancelTouchPendingPlacement();
       activeToolId = toolId;
+      selectedMeshIndex = 0;
       gameUI.activeToolId = toolId;
-      if (isStonePathTool(toolId)) {
-        // Selecting the single StonePath button keeps current orientation;
-        // legacy Left/Right ids normalize to the matching index.
-        if (toolId !== 'StonePath-001') {
-          stonePathOrientation = stonePathOrientationIndex(toolId);
-          activeToolId = 'StonePath-001';
-          gameUI.activeToolId = 'StonePath-001';
-        }
-        updateStonePathToolHint();
-      }
       placementGhostSession.onToolChanged();
+      if (isEditorTerrainTool(toolId)) {
+        void getKenneyNatureTerrainAdapter().ensureTerrainTemplate(toolId);
+      } else if (isEditorNatureTool(toolId)) {
+        void getKenneyNaturePropAdapter().ensurePropLoaded(toolId);
+      }
       if (!isRoadBuildingType(toolId) && roadPaint.active) {
         void finalizeRoadPaintSession();
       }

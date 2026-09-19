@@ -1,3 +1,5 @@
+import { resolveAndCreateBuildingMesh } from '../meshs/resolveBuildingMesh.js';
+
 export class ResourceManager {
     constructor() {
         this.resources = new Map();
@@ -28,12 +30,7 @@ export class ResourceManager {
 
     async placeRandomTrees(city, assetManager, buildings, zoneGroups, count, constructionApi) {
         const { placeBuildingRecord } = constructionApi;
-        const treeMapping = {
-            'Tree-Sapin': 'Tree-Pine-001',
-            'Tree-Arbuste': 'Tree-Square-001',
-            'Tree-Chene': 'Tree-Tall-001',
-        };
-        const treeTypes = Object.keys(treeMapping);
+        const treeTypes = ['Tree-Sapin', 'Tree-Arbuste', 'Tree-Chene'];
         const ZONE_SIZE = 4;
         let placed = 0;
 
@@ -44,14 +41,13 @@ export class ResourceManager {
 
             if (tile && !tile.buildingId && tile.terrainId === 'grass' && !buildings[x][y]) {
                 const treeTypeId = treeTypes[Math.floor(Math.random() * treeTypes.length)];
-                const treeAssetId = treeMapping[treeTypeId];
                 const treeId = `${treeTypeId}-${x}-${y}`;
 
                 tile.buildingId = treeTypeId;
                 tile.buildingCoord = { x, y };
 
                 try {
-                    const mesh = assetManager.createAsset(treeAssetId, x, y);
+                    const mesh = await resolveAndCreateBuildingMesh({ buildingId: treeTypeId, x, y, assetManager });
                     if (mesh) {
                         mesh.name = treeId;
                         mesh.userData.id = treeTypeId;
@@ -126,7 +122,7 @@ export class ResourceManager {
                 tile.buildingCoord = { x, y };
 
                 try {
-                    const mesh = assetManager.createAsset(boulderType, x, y);
+                    const mesh = await resolveAndCreateBuildingMesh({ buildingId: boulderType, x, y, assetManager });
                     if (mesh) {
                         mesh.name = boulderId;
                         mesh.userData.id = boulderType;

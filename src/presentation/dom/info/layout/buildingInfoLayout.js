@@ -8,6 +8,7 @@ import {
   resolveBuildingInfoTabLabel,
 } from '../buildingInfoTabCatalog.js';
 import { createModalFocusSession } from '../../shell/modalFocus.js';
+import { getBuildingDefinition } from '../../../../shared/building-catalog/index.js';
 
 /** @deprecated Prefer BUILDING_INFO_TAB_IDS — kept for existing imports */
 export const BUILDING_INFO_TABS = BUILDING_INFO_TAB_IDS;
@@ -246,35 +247,6 @@ export function appendIconStatRow(container, items) {
 
 /**
  * @param {HTMLElement} container
- * @param {ReadonlyArray<{ emoji: string, value: number, label: string, ariaLabel: string }>} profiles
- */
-export function appendHouseholdProfiles(container, profiles) {
-  if (!profiles?.length) return null;
-
-  const wrap = document.createElement('div');
-  wrap.className = 'building-info-household';
-
-  const title = document.createElement('h3');
-  title.className = 'building-info-section-label';
-  title.textContent = 'Profils du foyer';
-  wrap.appendChild(title);
-
-  appendIconStatRow(
-    wrap,
-    profiles.map((profile) => ({
-      emoji: profile.emoji,
-      value: profile.count,
-      label: profile.label,
-      ariaLabel: profile.ariaLabel,
-    })),
-  );
-
-  container.appendChild(wrap);
-  return wrap;
-}
-
-/**
- * @param {HTMLElement} container
  * @param {ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }>} skills
  */
 export function appendHouseholdSkills(container, skills) {
@@ -300,6 +272,33 @@ export function appendHouseholdSkills(container, skills) {
 
   container.appendChild(wrap);
   return wrap;
+}
+
+/**
+ * Generic metric-card grid — one card shape for any icon+value fact (a
+ * resource's have/need, a tier requirement's current/target, ...). Adding a
+ * new one never touches this function: it only reads
+ * {icon, label, met, valueText, ariaLabel}.
+ * @param {HTMLElement} container
+ * @param {ReadonlyArray<{ kind: string, icon: string, label: string, met: boolean, valueText: string, ariaLabel: string }>} cards
+ */
+export function appendMetricCards(container, cards) {
+  if (!cards?.length) return null;
+
+  const grid = document.createElement('div');
+  grid.className = 'building-info-metrics';
+
+  for (const card of cards) {
+    const el = document.createElement('div');
+    el.className = `building-info-metric-card${card.met ? ' building-info-metric-card--met' : ''}`;
+    el.title = card.ariaLabel;
+    el.setAttribute('aria-label', card.ariaLabel);
+    el.innerHTML = `<span class="building-info-metric-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-metric-card__label">${card.label}</span><span class="building-info-metric-card__value">${card.valueText}</span>`;
+    grid.appendChild(el);
+  }
+
+  container.appendChild(grid);
+  return grid;
 }
 
 /**
@@ -417,7 +416,13 @@ export function renderNeighborsTab(container, neighbors) {
   for (const neighbor of neighbors) {
     if (neighbor.x == null || neighbor.y == null) continue;
     const tr = document.createElement('tr');
-    const label = neighbor.type || neighbor.instanceId || '—';
+    // French catalog name, not the raw building/type id — same
+    // displayName every other info-panel format already reads via
+    // getBuildingDefinition (see useBuildingInfoSelection.js).
+    const label = getBuildingDefinition(neighbor.type)?.displayName
+      ?? neighbor.type
+      ?? neighbor.instanceId
+      ?? '—';
     tr.innerHTML = `<td>${label}</td><td>(${neighbor.x}, ${neighbor.y})</td>`;
     tbody.appendChild(tr);
   }
@@ -425,14 +430,30 @@ export function renderNeighborsTab(container, neighbors) {
   container.appendChild(table);
 }
 
-/** @param {HTMLElement} container */
-export function renderMessagesTab(container) {
+/**
+ * @param {HTMLElement} container
+ * @param {{ complaints: ReadonlyArray<string> }} [model]
+ */
+export function renderMessagesTab(container, model) {
+  const complaints = model?.complaints ?? [];
+  const hasComplaints = complaints.length > 0;
+
   container.innerHTML = `
     <div class="building-info-messages">
-      <p class="building-info-messages-empty" role="status">Aucun message pour ce bâtiment.</p>
+      <p class="building-info-messages-empty" role="status" ${hasComplaints ? 'hidden' : ''}>Aucun message pour ce bâtiment.</p>
       <ul class="building-info-messages-list" aria-label="Messages du bâtiment"></ul>
     </div>
   `;
+
+  if (!hasComplaints) return;
+
+  const list = container.querySelector('.building-info-messages-list');
+  for (const text of complaints) {
+    const li = document.createElement('li');
+    li.className = 'building-info-messages-item';
+    li.textContent = text;
+    list.appendChild(li);
+  }
 }
 
 export function setBuildingInfoAriaHidden(hidden) {

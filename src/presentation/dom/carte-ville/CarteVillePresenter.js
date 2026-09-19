@@ -15,7 +15,6 @@ export function getBuildingCode(type) {
   if (type.includes('Market')) return 'M';
   if (type.includes('Farm')) return 'F';
   if (type.includes('Windmill')) return 'WM';
-  if (type.includes('Barn')) return 'BA';
   if (type.includes('Church')) return 'CH';
   if (type.includes('Well')) return 'WE';
   if (type.includes('Fountain')) return 'FO';

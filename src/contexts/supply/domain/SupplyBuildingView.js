@@ -1,4 +1,4 @@
-import { createFoodStock } from './value-objects/FoodStock.js';
+import { createSupplyStock } from './value-objects/SupplyStock.js';
 
 /**
  * Read-side model for Supply UI queries (richer than command snapshot).
@@ -14,32 +14,29 @@ export function createSupplyBuildingView({
   neighbors = [],
   pop = 0,
   isBuying = false,
-  noFarmsNearby = false,
-  marketTooFar = false,
+  noSourcesNearby = false,
+  distributorTooFar = false,
   isCollecting = false,
-  soldToWindmill = false,
+  collectedByHub = false,
   lastCollection = null,
   lastImport = null,
   lastImportDetails = null,
-  salesToMarket = [],
-  salesToWindmill = [],
-  /** @deprecated until Commerce BC — windmill export UI flags */
+  salesToDistributor = [],
+  salesToHub = [],
+  /** @deprecated until Commerce BC — hub export UI flags */
   isActive = true,
-  /** @deprecated until Commerce BC — windmill export UI flags */
+  /** @deprecated until Commerce BC — hub export UI flags */
   commercializeEnabled = true,
-  supplyWindmillId = null,
-  linkedMarkets = [],
+  supplyHubId = null,
+  linkedDistributors = [],
 } = {}) {
   if (!id || typeof id !== 'string') {
     throw new Error('SupplyBuildingView: id is required');
   }
 
-  const food = createFoodStock(stocks);
+  const stock = createSupplyStock(stocks);
   const presentationStocks = Object.freeze({
-    wheat: food.wheat,
-    carrot: food.carrot,
-    cabbage: food.cabbage,
-    food: food.food,
+    ...stock,
     dattes: nonNegInt(stocks?.dattes),
     wood: nonNegInt(stocks?.wood),
   });
@@ -56,34 +53,34 @@ export function createSupplyBuildingView({
       Number.isFinite(maxStock) && maxStock > 0 ? Math.floor(maxStock) : 500,
     neighbors: Object.freeze(Array.isArray(neighbors) ? [...neighbors] : []),
     isBuying: isBuying === true,
-    noFarmsNearby: noFarmsNearby === true,
-    marketTooFar: marketTooFar === true,
+    noSourcesNearby: noSourcesNearby === true,
+    distributorTooFar: distributorTooFar === true,
     isCollecting: isCollecting === true,
-    soldToWindmill: soldToWindmill === true,
+    collectedByHub: collectedByHub === true,
     lastCollection: lastCollection ? Object.freeze({ ...lastCollection }) : null,
     lastImport: lastImport ? Object.freeze({ ...lastImport }) : null,
     lastImportDetails: lastImportDetails
       ? Object.freeze({ ...lastImportDetails })
       : null,
-    salesToMarket: Object.freeze(
-      Array.isArray(salesToMarket) ? salesToMarket.map((s) => ({ ...s })) : []
+    salesToDistributor: Object.freeze(
+      Array.isArray(salesToDistributor) ? salesToDistributor.map((s) => ({ ...s })) : []
     ),
-    salesToWindmill: Object.freeze(
-      Array.isArray(salesToWindmill)
-        ? salesToWindmill.map((s) => ({ ...s }))
+    salesToHub: Object.freeze(
+      Array.isArray(salesToHub)
+        ? salesToHub.map((s) => ({ ...s }))
         : []
     ),
     isActive: isActive !== false,
     commercializeEnabled: commercializeEnabled !== false,
-    supplyWindmillId:
-      typeof supplyWindmillId === 'string' && supplyWindmillId.length > 0
-        ? supplyWindmillId
+    supplyHubId:
+      typeof supplyHubId === 'string' && supplyHubId.length > 0
+        ? supplyHubId
         : null,
-    linkedMarkets: Object.freeze(
-      Array.isArray(linkedMarkets)
-        ? linkedMarkets.map((entry) =>
+    linkedDistributors: Object.freeze(
+      Array.isArray(linkedDistributors)
+        ? linkedDistributors.map((entry) =>
             Object.freeze({
-              marketId: entry.marketId,
+              distributorId: entry.distributorId,
               x: entry.x,
               y: entry.y,
               allocatedStocks: Object.freeze({ ...entry.allocatedStocks }),

@@ -1,4 +1,4 @@
-import AssetManager from '../../three/meshs/AssetManager.js';
+import SceneAssetManager from '../../three/meshs/SceneAssetManager.js';
 import {
   registerAppFunction,
   registerAppService,
@@ -11,7 +11,6 @@ import {
 import { getSessionGame, getSessionScene } from '../../../composition/sessionRuntime.js';
 import { registerActiveToolHandler } from './ActiveToolRegistration.js';
 import { loadGameAssets, initButtonStateRegistry } from './AssetLoader.js';
-import { disableGatedPlacementTools } from '../shell/SkillPlacementGating.js';
 import { bootstrapGameSession } from './GameSessionBootstrap.js';
 import { initPlaybackControls } from './PlaybackControls.js';
 import { initSpeedControls } from './SpeedControls.js';
@@ -25,6 +24,8 @@ import { adoptHudFabDockChildren } from '../shell/hudFabDock.js';
 import { initHudShellMenus } from '../shell/HudShellMenus.js';
 import { initCheatCodePrompt } from '../shell/CheatCodePrompt.js';
 import { initMobileCompactToolbar } from '../tools/MobileCompactToolbar.js';
+import { initBuildToolHoverPreview } from '../tools/BuildToolHoverPreview.js';
+import { initEditorNatureToolbar } from '../editor/EditorNatureToolbar.js';
 import { initMobileClickStateFab } from '../tools/MobileClickStateFab.js';
 import { initMissingTooltips, observeMissingTooltips } from './TooltipTitles.js';
 import { bindToolPanelDeps } from '../tools/ToolPanel.js';
@@ -37,7 +38,7 @@ import { loadBudgetStates } from '../compta/compte-de-resultat/CompteDeResultatP
 import { mountCookieConsent } from '../../pages/site/mountCookieBanner.js';
 
 export async function initAppBoot() {
-  const assetManager = new AssetManager();
+  const assetManager = new SceneAssetManager();
 
   bindPopupManagerDeps({ pauseGame, playGame });
 
@@ -48,7 +49,6 @@ export async function initAppBoot() {
   });
   await loadGameAssets(assetManager);
   initButtonStateRegistry(buttonStateManager);
-  disableGatedPlacementTools(buttonStateManager);
   bindToolPanelDeps({
     popupManager,
     buttonStateManager,
@@ -71,6 +71,8 @@ export async function initAppBoot() {
     invokeSetActiveTool,
     buttonStateManager,
   });
+  initBuildToolHoverPreview();
+  initEditorNatureToolbar({ invokeSetActiveTool });
   initMobileClickStateFab({ invokeSetActiveTool });
   initHudTimeBarMinWidth();
   initMobileToolbar();

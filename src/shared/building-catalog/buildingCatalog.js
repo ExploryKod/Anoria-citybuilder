@@ -13,6 +13,16 @@
  *      (e.g. there is intentionally no "dependencies" section until a real
  *      duplicated fact justifies one).
  *
+ * The raw per-id entries live in shared/asset-economy/ (buildingEconomy.js /
+ * natureEconomy.js / terrainEconomy.js), split by the same theme every other
+ * declarative catalog in this codebase uses. This file only merges the three
+ * theme catalogs and re-exports under the historic name — it has NO idea
+ * Kenney exists, or any other source; that knowledge lives inside
+ * buildingEconomy.js itself (which folds Kenney's auto-generated registry
+ * into the building theme, same pattern as
+ * shared/asset-footprint/buildingFootprint.js). Edit an id's facts in its
+ * theme file, never here.
+ *
  * Each bounded context keeps its own accessor/policy file (e.g.
  * `EmploymentSectorCatalog.js`, `BuildingMaintenanceBreakdownPolicy.js`,
  * `HouseTypeCatalog.js`, `BuildingNotifications.js`) and derives its
@@ -23,28 +33,119 @@
  *
  * Section ownership:
  *   displayName      → presentation (toasts, tooltips, UI labels)
- *   construction     → construction BC + presentation (cost, UI category, footprint)
+ *   construction     → construction BC + presentation (cost, UI category)
  *   employment       → employment BC (sector, worker/elite requirements)
  *   accounting       → accounting BC (recurring maintenance cost)
  *   residentialGroup → permanent social group tied to a house color (Housing +
  *     Employment). Never changes after placement — unlike `level`, which is
  *     mutable per-instance state persisted on the house row, not a catalog fact.
+ *   resourceRoles    → Supply BC (which resource categories this building type
+ *     produces/collects/holds/distributes/consumes, and at what range). Structural
+ *     facts about the TYPE (a farm always produces wheat) — unlike a walker
+ *     journey, which is conditional and belongs to an event, not a type.
+ *     See contexts/supply/domain/policies/ResourceRolePolicy.js.
+ *
+ * No `walker` section here on purpose: a walker never exists without a
+ * triggering domain event, so origin/destination/road-requirement are
+ * facts about that EVENT, not about a building type — see
+ * shared/gameplay/walkerEventCatalog.js.
+ *
+ * Collision footprint (gridSize/footprintWidth/footprintDepth) does NOT live
+ * here — it's a single-sourced fact in shared/asset-footprint/resolveFootprint.js
+ * (Kenney's own auto-generated registry for Kenney ids, a sparse hand-authored
+ * override elsewhere for anything non-1×1, default 1×1). Call resolveFootprint(id)
+ * / resolveGridSize(id) instead of expecting it on a construction entry here.
  *
  * @typedef {Object} BuildingConstructionFacts
  * @property {number} price
  * @property {string} category
- * @property {number} gridSize
  *
  * @typedef {Object} BuildingEmploymentFacts
  * @property {number} sector
  * @property {number} [workerNeed] Omitted when computed dynamically by the
- *   owning bounded context (see Barn-001 below).
+ *   owning bounded context.
  * @property {number} [eliteNeed]
+ * @property {string} [requiredSkill] Citizen skill a worker must have to staff
+ *   this workplace (see shared/population/socialCategoryCatalog.js). Omitted
+ *   means any worker can staff it.
  *
  * @typedef {Object} BuildingAccountingFacts
  * @property {number} maintenance
  *
  * @typedef {'artisans' | 'merchants' | 'scholars'} ResidentialGroup
+ *
+ * @typedef {'producer' | 'collector' | 'hub' | 'distributor' | 'consumer'} ResourceRoleKind
+ *
+ * @typedef {Object} ResourceRoleFacts
+ * @property {ResourceRoleKind} role
+ * @property {string[]} categories Resource categories this role applies to (e.g. ['wheat']).
+ * @property {number} [range] Manhattan tiles this role reaches — only meaningful for
+ *   'collector' (pulls from nearby producer/hub) and 'distributor' (pushes to
+ *   nearby consumers). Omitted for 'producer'/'hub'/'consumer', which don't reach.
+ * @property {number} [linkCapacity] Max number of distributors a 'hub' can
+ *   stay linked to at once (e.g. how many markets one windmill can serve).
+ *   Only meaningful for 'hub'.
+ * @property {number} [maxStock] Max total units a 'hub' can hold before it's
+ *   full. Omitted falls back to a small default (see
+ *   DexieSupplyBuildingRepository#defaultMaxStock) — declare it explicitly
+ *   for a hub that should hold more (or less) than that default.
+ * @property {{ unit: string }} [schedule] When this role only acts on a
+ *   schedule (a farm harvesting once a year, a windmill collecting only in
+ *   December) — see contexts/supply/domain/policies/ResourceSchedulePolicy.js
+ *   for the shape per `unit`. Omitted means unconditional (fires whenever
+ *   the owning command runs, e.g. a market restocking/distributing monthly).
+ * @property {number} [amount] Units this role produces/moves per scheduled
+ *   occurrence (a farm's annual yield, a distributor's batch size) — the
+ *   same concept regardless of role, not a "yield" special case. On a
+ *   'consumer' role only, read as a per-capita rate (demand = pop × amount),
+ *   not a flat quantity — see ConsumeResource.js.
+ * @property {string} [totalKey] Which stock field aggregates this role's
+ *   categories (e.g. 'food' for wheat/carrot/cabbage/fruit/game). Required
+ *   when `categories` has more than one entry — a role with 0 or 1 category
+ *   needs none, it's its own total. See ResourceRolePolicy.getTotalKeyForRole.
+ * @property {'quantity' | 'flag'} [consumption] Whether this role's transfers
+ *   move a depleting numeric stock ('quantity', the default — take/add,
+ *   source can run out) or simply mark the consumer "served this period"
+ *   with no stock movement at all ('flag' — a coverage-style service, e.g.
+ *   a chapel's faith service reaching nearby houses). See
+ *   DistributeResourceToConsumers.js. A building type can hold more than one
+ *   entry for the SAME role when they differ by category and/or this field
+ *   (e.g. a house is both a 'quantity' food consumer and a 'flag' faith
+ *   consumer) — see ResourceRolePolicy's `category`/`consumption` accessor
+ *   params, which disambiguate exactly that case.
+ * @property {{ field?: string, unit: 'year' | 'month' }} [periodLock] Once-per-period
+ *   lock for this role, and at what granularity. Two shapes:
+ *   `{ field, unit }` uses one dedicated building field (e.g. a farm's
+ *   `lastProductionYear`) — reserve this for a role that will only ever
+ *   hold ONE such lock. `{ unit }` (no `field`) uses the SHARED
+ *   `servedFlags` object keyed by category (e.g. `{ faith: 3 }`) — the same
+ *   "one field, many keys" shape `stocks` already uses for quantity
+ *   resources — so a new 'flag'-consumption service (a school, a bath
+ *   house, ...) never needs a new field name, only a new catalog entry.
+ *   Omitted `periodLock` entirely means the role never locks (nothing to
+ *   gate, e.g. an unconditional distributor). This is the ONLY place a
+ *   lock field name (when one is used at all) is declared — see
+ *   contexts/supply/domain/policies/PeriodLockPolicy.js, which knows
+ *   nothing about "producer", "consumer", or any resource/service name.
+ * @property {{ sourceLinkField?: string, linksField?: string, linkTargetIdField?: string, allocationField?: string }} [hubLink]
+ *   Hub-to-distributor link storage field names for this role — the
+ *   'distributor' side declares `sourceLinkField` (which of its own fields
+ *   points at its assigned hub); the 'hub' side declares `linksField`/
+ *   `linkTargetIdField`/`allocationField` (its own linked-distributors list
+ *   shape). Omitted means this role never participates in a hub link (e.g.
+ *   a distributor with no hub leg, like a school). Resolved via
+ *   ResourceRolePolicy.getHubLinkForRole — no separate policy module, since
+ *   there's nothing to compute here, only field names to read (unlike
+ *   periodLock's unit-resolution logic).
+ *
+ * @typedef {Object} PlacementRequirement
+ * @property {ResourceRoleKind} role Role another, already-placed building must
+ *   hold (e.g. 'hub') for this placement to be allowed.
+ * @property {string[]} categories Which of that role's categories satisfy it.
+ * @property {number} [range] Manhattan tiles to search within. Omitted means
+ *   anywhere in the city (no distance limit).
+ * @property {boolean} [requiresCapacity] When true, the found building must
+ *   also have room under its own `linkCapacity` (not already at its cap).
  *
  * @typedef {Object} BuildingDefinition
  * @property {string} [displayName]
@@ -52,7 +153,18 @@
  * @property {BuildingEmploymentFacts} [employment]
  * @property {BuildingAccountingFacts} [accounting]
  * @property {ResidentialGroup} [residentialGroup]
+ * @property {ResourceRoleFacts[]} [resourceRoles] A building can hold more than
+ *   one role at once (e.g. a windmill both collects from farms and holds a hub
+ *   stock for markets to pull from).
+ * @property {PlacementRequirement[]} [placementRequires] One or more other
+ *   buildings that must already be placed (and, if `requiresCapacity`, have
+ *   room) before this building can be placed at all — e.g. a market can't be
+ *   placed without a windmill hub in range. Omitted/empty means unconstrained.
  */
+
+import { BUILDING_ECONOMY } from '../asset-economy/buildingEconomy.js';
+import { NATURE_ECONOMY } from '../asset-economy/natureEconomy.js';
+import { TERRAIN_ECONOMY } from '../asset-economy/terrainEconomy.js';
 
 /** @param {any} value */
 function deepFreeze(value) {
@@ -63,186 +175,21 @@ function deepFreeze(value) {
   return value;
 }
 
-/** @type {Record<string, BuildingDefinition>} */
-const RAW_CATALOG = {
-  // Zones
-  grass: { displayName: 'Herbe', construction: { price: 0, category: 'zones', gridSize: 1 } },
-  terrain: { construction: { price: 0, category: 'zones', gridSize: 1 } },
-
-  // Roads (StonePath variants reuse one mesh with different rotations)
-  roads: {
-    displayName: 'Route',
-    construction: { price: 5, category: 'infrastructure', gridSize: 1 },
-    employment: { sector: 5, workerNeed: 0, eliteNeed: 0 },
-    accounting: { maintenance: 4 },
-  },
-  'StonePath-001': {
-    displayName: 'Chemin de pierre',
-    construction: { price: 5, category: 'infrastructure', gridSize: 1 },
-  },
-  'StonePath-Right-001': {
-    displayName: 'Chemin de pierre',
-    construction: { price: 5, category: 'infrastructure', gridSize: 1 },
-  },
-  'StonePath-Left-001': {
-    displayName: 'Chemin de pierre',
-    construction: { price: 5, category: 'infrastructure', gridSize: 1 },
-  },
-  'StonePath-Cross-001': {
-    displayName: 'Chemin de pierre',
-    construction: { price: 5, category: 'infrastructure', gridSize: 1 },
-  },
-
-  // Houses — color = permanent social group (never changes after placement).
-  // Mutable progression (autarky vs specialized profession) lives in `level`,
-  // a per-instance house row field owned by Housing — not a catalog fact.
-  'House-Blue': {
-    displayName: 'Maison bleue',
-    construction: { price: 10, category: 'houses', gridSize: 1 },
-    accounting: { maintenance: 6 },
-    residentialGroup: 'merchants',
-  },
-  'House-Red': {
-    displayName: 'Maison rouge',
-    construction: { price: 10, category: 'houses', gridSize: 1 },
-    accounting: { maintenance: 6 },
-    residentialGroup: 'artisans',
-  },
-  'House-Purple': {
-    displayName: 'Maison violette',
-    construction: { price: 10, category: 'houses', gridSize: 1 },
-    accounting: { maintenance: 6 },
-    residentialGroup: 'scholars',
-  },
-
-  // Palaces
-  'House-2Story': {
-    displayName: 'Palais',
-    construction: { price: 20, category: 'palaces', gridSize: 1 },
-    accounting: { maintenance: 6 },
-  },
-
-  // Tombs / cemetery
-  'Tombstone-1': { displayName: 'Pierre tombale', construction: { price: 2, category: 'tombs', gridSize: 1 } },
-  'Tombstone-2': { displayName: 'Pierre tombale', construction: { price: 4, category: 'tombs', gridSize: 1 } },
-  'Tombstone-3': { displayName: 'Pierre tombale', construction: { price: 8, category: 'tombs', gridSize: 1 } },
-  'Grave-1': { displayName: 'Tombe', construction: { price: 3, category: 'tombs', gridSize: 1 } },
-  'Grave-2': { displayName: 'Tombe', construction: { price: 3, category: 'tombs', gridSize: 1 } },
-  Tomb: { displayName: 'Tombeau', construction: { price: 5, category: 'tombs', gridSize: 1 } },
-  Coffin: { displayName: 'Cercueil', construction: { price: 4, category: 'tombs', gridSize: 1 } },
-
-  // Farms
-  'Farm-Wheat': {
-    displayName: 'Champ de blé',
-    construction: { price: 10, category: 'farms', gridSize: 1 },
-    employment: { sector: 1, workerNeed: 3, eliteNeed: 0 },
-  },
-  'Farm-Carrot': {
-    displayName: 'Champ de carottes',
-    construction: { price: 20, category: 'farms', gridSize: 1 },
-    employment: { sector: 1, workerNeed: 3, eliteNeed: 0 },
-  },
-  'Farm-Cabbage': {
-    displayName: 'Champ de choux',
-    construction: { price: 30, category: 'farms', gridSize: 1 },
-    employment: { sector: 1, workerNeed: 3, eliteNeed: 0 },
-  },
-  'Hay-Bale': { displayName: 'Botte de foin', construction: { price: 2, category: 'farms', gridSize: 1 } },
-  'Hay-Cart': { displayName: 'Chariot de foin', construction: { price: 5, category: 'farms', gridSize: 1 } },
-  'Hay-Pile': { displayName: 'Meule de foin', construction: { price: 2, category: 'farms', gridSize: 1 } },
-
-  // Industry
-  'Windmill-001': {
-    displayName: 'Moulin',
-    construction: { price: 50, category: 'industry', gridSize: 1 },
-    employment: { sector: 4, workerNeed: 4, eliteNeed: 2 },
-  },
-  'Barn-001': {
-    displayName: 'Grange',
-    construction: { price: 40, category: 'industry', gridSize: 2 },
-    // Worker capacity is derived from storage rules owned by the supply
-    // bounded context (see BarnCommerceCatalog.getBarnMaxWorkers) — not a
-    // fixed catalog fact, so workerNeed/eliteNeed are intentionally absent.
-    employment: { sector: 4 },
-  },
-  'Crate-001': { displayName: 'Caisse', construction: { price: 2, category: 'industry', gridSize: 1 } },
-  'Winery-001': {
-    displayName: 'Chai',
-    construction: { price: 50, category: 'industry', gridSize: 1 },
-    employment: { sector: 3, workerNeed: 18, eliteNeed: 0 },
-  },
-  // Wheat silo (all Cylinder* meshes pool to this one tool)
-  Cylinder: { displayName: 'Silo à blé', construction: { price: 15, category: 'industry', gridSize: 1 } },
-
-  // Markets
-  'Market-Stall': {
-    displayName: 'Étal',
-    construction: { price: 10, category: 'markets', gridSize: 1 },
-    employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
-  },
-  'Market-Stall-Blue': {
-    displayName: 'Étal bleu',
-    construction: { price: 10, category: 'markets', gridSize: 1 },
-    employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
-  },
-  'Market-Stall-Red': {
-    displayName: 'Étal rouge',
-    construction: { price: 10, category: 'markets', gridSize: 1 },
-    employment: { sector: 2, workerNeed: 2, eliteNeed: 1 },
-  },
-
-  // Infrastructure
-  'Well-001': { displayName: 'Puits', construction: { price: 15, category: 'infrastructure', gridSize: 1 } },
-  'Fountain-001': { displayName: 'Fontaine', construction: { price: 25, category: 'infrastructure', gridSize: 1 } },
-  'Streetlight-001': { displayName: 'Réverbère', construction: { price: 5, category: 'infrastructure', gridSize: 1 } },
-  'Fence-001': { displayName: 'Clôture', construction: { price: 3, category: 'infrastructure', gridSize: 1 } },
-  'Pond-001': { displayName: 'Étang', construction: { price: 20, category: 'infrastructure', gridSize: 1 } },
-  'Plane-001': { displayName: 'Dalle petite', construction: { price: 8, category: 'infrastructure', gridSize: 1 } },
-  'Plane-004': { displayName: 'Dalle moyenne', construction: { price: 12, category: 'infrastructure', gridSize: 1 } },
-  'Plane-007': { displayName: 'Dalle grande', construction: { price: 16, category: 'infrastructure', gridSize: 1 } },
-  Cube: { displayName: 'Bloc', construction: { price: 5, category: 'infrastructure', gridSize: 1 } },
-  'Sphere-001': { displayName: 'Sphère', construction: { price: 5, category: 'infrastructure', gridSize: 1 } },
-  'Sphere-002': { displayName: 'Sphère sombre', construction: { price: 5, category: 'infrastructure', gridSize: 1 } },
-
-  // Public (Chapel only — Church-002 mesh discarded as broken duplicate)
-  // Sector 6 (Services Publics) — scholars' workplaces.
-  Chapel: {
-    displayName: 'Chapelle',
-    construction: { price: 60, category: 'public', gridSize: 1 },
-    employment: { sector: 6, workerNeed: 2, eliteNeed: 0 },
-  },
-  'BookShop-001': {
-    displayName: 'Librairie',
-    construction: { price: 60, category: 'public', gridSize: 1 },
-    employment: { sector: 6, workerNeed: 2, eliteNeed: 0 },
-  },
-  // Legacy save alias — same building as Chapel, kept for old saves
-  'Church-002': { displayName: 'Chapelle', construction: { price: 60, category: 'public', gridSize: 1 } },
-
-  // Nature
-  'Tree-Pine-001': { displayName: 'Sapin', construction: { price: 3, category: 'nature', gridSize: 1 } },
-  'Tree-Square-001': { displayName: 'Arbuste', construction: { price: 3, category: 'nature', gridSize: 1 } },
-  'Tree-Tall-001': { displayName: 'Chêne', construction: { price: 3, category: 'nature', gridSize: 1 } },
-  'Tree-Sapin': { displayName: 'Sapin', construction: { price: 3, category: 'nature', gridSize: 1 } },
-  'Tree-Arbuste': { displayName: 'Arbuste', construction: { price: 3, category: 'nature', gridSize: 1 } },
-  'Tree-Chene': { displayName: 'Chêne', construction: { price: 3, category: 'nature', gridSize: 1 } },
-  'Boulder-001': { displayName: 'Rocher', construction: { price: 2, category: 'nature', gridSize: 1 } },
-
-  // Decoration
-  Bench: { displayName: 'Banc', construction: { price: 2, category: 'decoration', gridSize: 1 } },
-  'Picnic-Table': { displayName: 'Table de pique-nique', construction: { price: 4, category: 'decoration', gridSize: 1 } },
-  'Potted-Bush': { displayName: 'Buisson en pot', construction: { price: 2, category: 'decoration', gridSize: 1 } },
-  Daisy: { displayName: 'Marguerite', construction: { price: 1, category: 'decoration', gridSize: 1 } },
-  Shroom: { displayName: 'Champignon', construction: { price: 1, category: 'decoration', gridSize: 1 } },
-  Arch: { displayName: 'Arche', construction: { price: 10, category: 'decoration', gridSize: 1 } },
-  Obelisk: { displayName: 'Obélisque', construction: { price: 12, category: 'decoration', gridSize: 1 } },
-  Pillar: { displayName: 'Pilier', construction: { price: 5, category: 'decoration', gridSize: 1 } },
-  Garland: { displayName: 'Guirlande', construction: { price: 2, category: 'decoration', gridSize: 1 } },
-  Barrell: { displayName: 'Tonneau', construction: { price: 2, category: 'decoration', gridSize: 1 } },
-};
-
-/** @type {Readonly<Record<string, BuildingDefinition>>} */
-export const buildingCatalog = deepFreeze(RAW_CATALOG);
+/**
+ * Merge of the three theme-split economy catalogs (asset-economy/) — kept
+ * as one compat export so every existing bounded-context derivation point
+ * (EmploymentSectorCatalog.js, BuildingMaintenanceBreakdownPolicy.js,
+ * HouseTypeCatalog.js, BuildingNotifications.js, ...) needs zero changes.
+ * Add/edit an entry in its theme file (buildingEconomy.js / natureEconomy.js
+ * / terrainEconomy.js), never here — this file itself never names a source.
+ *
+ * @type {Readonly<Record<string, BuildingDefinition>>}
+ */
+export const buildingCatalog = deepFreeze({
+  ...BUILDING_ECONOMY,
+  ...NATURE_ECONOMY,
+  ...TERRAIN_ECONOMY,
+});
 
 /**
  * @param {string} id

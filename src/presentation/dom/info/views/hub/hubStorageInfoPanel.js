@@ -1,9 +1,4 @@
-import {
-  clearHubInfoOverlayMode,
-  getInfoBuildingBody,
-  setHubInfoOverlayMode,
-  setInfoBuildingTitle,
-} from './hubStorageInfoDom.js';
+import { getBuildingInfoBody, setBuildingInfoTitle } from '../../layout/buildingInfoLayout.js';
 import { patchHubStoragePieChart, renderHubStoragePieChart } from './hubStoragePieChart.js';
 
 /**
@@ -100,12 +95,12 @@ function patchOrdersPanelRows(ordersPanel, view, orderWarning) {
  */
 async function softRefreshHubPanel(ctx, orderWarning = null) {
   const { hubKind, buildingId, supply, buildingRow, supplyView } = ctx;
-  const body = getInfoBuildingBody();
+  const body = getBuildingInfoBody();
   if (!body) return null;
 
   const freshRow = await supply.getSupplyBuildingRow(buildingId);
   const freshView = supply.getHubStorageInfoView(hubKind, freshRow ?? buildingRow, {
-    stocks: hubKind === 'barn' ? freshRow?.commerceStocks : freshRow?.stocks,
+    stocks: freshRow?.stocks,
     maxStock: supplyView?.maxStock,
   });
 
@@ -143,11 +138,10 @@ export async function renderHubStorageInfoPanel({
   supplyView = null,
   ordersOpen = false,
 }) {
-  const body = getInfoBuildingBody();
+  const body = getBuildingInfoBody();
   if (!body || !view) return;
 
-  setInfoBuildingTitle(view.title);
-  setHubInfoOverlayMode(view.hubKind);
+  setBuildingInfoTitle(view.title);
 
   /** Mutable panel context for soft refresh + event delegation */
   const ctx = {
@@ -170,16 +164,6 @@ export async function renderHubStorageInfoPanel({
       statusMessage = '🟢 Collecte active (décembre).';
     } else {
       statusMessage = '⏸️ En attente — collecte en décembre.';
-    }
-  } else if (view.hubKind === 'barn') {
-    if ((buildingRow.roads ?? 0) <= 0) {
-      statusMessage = '⚠️ Sans route la grange ne peut pas recevoir de marchandises.';
-    } else if (view.workers <= 0) {
-      statusMessage = '❌ Sans magasinier, stockage impossible.';
-    } else if (view.currentTotal >= view.totalCapacity) {
-      statusMessage = '⚠️ Entrepôt plein — libérez du stock ou embauchez.';
-    } else {
-      statusMessage = '✅ Prêt à recevoir les transferts usine et le commerce.';
     }
   }
 
@@ -303,5 +287,3 @@ function renderHubOrdersPanelShell(ordersPanel, view) {
 
   patchOrdersPanelRows(ordersPanel, view, null);
 }
-
-export { clearHubInfoOverlayMode };

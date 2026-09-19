@@ -153,7 +153,7 @@ describe('architecture boundaries', () => {
           if (/composition\/facades\//.test(importSpec) || /\/facades\//.test(importSpec)) {
             violations.push(`${fileRel} imports "${importSpec}" — presentation must not import facades`);
           }
-          if (importSpec.includes('Ops.js')) {
+          if (/(^|\/)composition\/\w*Ops\.js$/.test(importSpec)) {
             violations.push(`${fileRel} imports "${importSpec}" — presentation must use sessionApi, not *Ops`);
           }
         }
@@ -192,39 +192,4 @@ describe('architecture boundaries', () => {
     expect(ALLOWLIST.size).toBe(0);
   });
 
-  test('commerce BC does not read UI goodsData via presenter/registry', () => {
-    const commerceRoot = path.join(SRC_ROOT, 'contexts', 'commerce');
-    const files = listJsFiles(commerceRoot);
-    const violations = [];
-
-    const forbidden = [
-      /getCommerceSectionPresenter\s*\(/,
-      /commerceSectionPresenter/,
-      /commerceSectionManager/,
-      /from\s+['"][^'"]*\/presentation\/dom\//,
-      /\.goodsData\b/,
-    ];
-
-    for (const absolutePath of files) {
-      const fileRel = toSrcRelative(absolutePath);
-      const content = fs.readFileSync(absolutePath, 'utf8');
-
-      if (/\w+\.goodsData\b/.test(content) && !/saveConfig\s*\(\s*goodsData/.test(content)) {
-        const propertyReads = content.match(/\w+\.goodsData\b/g) || [];
-        for (const hit of propertyReads) {
-          if (hit === 'this.goodsData' || hit.includes('Presenter') || hit.includes('Manager')) {
-            violations.push(`${fileRel} accesses "${hit}"`);
-          }
-        }
-      }
-
-      for (const pattern of forbidden.slice(0, 4)) {
-        if (pattern.test(content)) {
-          violations.push(`${fileRel} matches ${pattern}`);
-        }
-      }
-    }
-
-    expect(violations).toEqual([]);
-  });
 });

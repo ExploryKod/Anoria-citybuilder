@@ -1,6 +1,5 @@
 /** Employment sector catalog — language shared with work-section UI. */
 
-import { getBarnMaxWorkers } from '../../../supply/domain/catalogs/BarnCommerceCatalog.js';
 import { buildingCatalog } from '../../../../shared/building-catalog/buildingCatalog.js';
 
 export const EMPLOYMENT_MAX_SECTORS = 6;
@@ -27,22 +26,24 @@ export const DEFAULT_SECTOR_PRIORITIES = Object.freeze({
 
 /**
  * Derived from `buildingCatalog` (single source of truth for the static
- * `sector` fact per building type).
+ * `sector` fact per building type). `roads` is aliased to StonePath-001's
+ * facts: every placed road (any StonePath variant) gets its runtime type
+ * marker set to the string 'roads' for connectivity (see BuildingKind.js),
+ * so that's the key sector lookups actually use — 'roads' itself is not a
+ * real building id, StonePath-001 is the one true road tool.
  * @type {Readonly<Record<string, number>>}
  */
-export const BUILDING_SECTOR_MAP = Object.freeze(
-  Object.fromEntries(
+export const BUILDING_SECTOR_MAP = Object.freeze({
+  ...Object.fromEntries(
     Object.entries(buildingCatalog)
       .filter(([, def]) => def.employment)
       .map(([id, def]) => [id, def.employment.sector])
-  )
-);
+  ),
+  roads: buildingCatalog['StonePath-001'].employment.sector,
+});
 
 /**
- * Derived from `buildingCatalog` for every type with static worker/elite
- * needs. Barn-001 is the one exception: its capacity is computed from
- * storage rules owned by the supply bounded context (not a fixed fact),
- * so it's merged in separately instead of being baked into the catalog.
+ * Derived from `buildingCatalog` for every type with static worker/elite needs.
  * @type {Readonly<Record<string, { worker_need: number, elite_need: number }>>}
  */
 export const BUILDING_EMPLOYEE_NEEDS = Object.freeze({
@@ -54,7 +55,11 @@ export const BUILDING_EMPLOYEE_NEEDS = Object.freeze({
         { worker_need: def.employment.workerNeed, elite_need: def.employment.eliteNeed ?? 0 },
       ])
   ),
-  'Barn-001': { worker_need: getBarnMaxWorkers(), elite_need: 0 },
+  // Same 'roads' runtime-marker alias as BUILDING_SECTOR_MAP above.
+  roads: {
+    worker_need: buildingCatalog['StonePath-001'].employment.workerNeed,
+    elite_need: buildingCatalog['StonePath-001'].employment.eliteNeed ?? 0,
+  },
 });
 
 /**

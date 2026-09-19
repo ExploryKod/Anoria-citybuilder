@@ -74,14 +74,11 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(maxTotalPopForHouse('House-Blue')).toBe(6);
     });
 
-    test('level 1 (autarkic) houses contribute zero workers/citizens regardless of pop', () => {
-      expect(citizenPopFromHouse('House-Red', 6, 1)).toBe(0);
-      expect(workerPopFromHouse('House-Red', 6, 1)).toBe(0);
-    });
-
-    test('level 2 (or unspecified, for backward compatibility) contributes full pop as citizens', () => {
-      expect(citizenPopFromHouse('House-Red', 6, 2)).toBe(6);
+    test('house pop contributes full headcount regardless of level (eligibility is skill-driven, not gated here)', () => {
+      expect(citizenPopFromHouse('House-Red', 6)).toBe(6);
       expect(workerPopFromHouse('House-Red', 6)).toBe(6);
+      // A `level` argument, if still passed by a caller, is accepted and ignored.
+      expect(workerPopFromHouse('House-Red', 6, 1)).toBe(6);
     });
   });
 
@@ -191,6 +188,19 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(summary.bySector[2]).toBeUndefined();
     });
 
+    test('bySkill aggregates by the workplace\'s required skill (the work panel\'s per-tab rows)', () => {
+      const summary = computeCityEmploymentSummary([
+        workplace('farm-a', { workerNeed: 3, sector: 1, worker: 1, type: 'Farm-Wheat' }),
+        workplace('farm-b', { workerNeed: 3, sector: 1, worker: 2, type: 'Farm-Carrot' }),
+        workplace('market-a', { workerNeed: 2, sector: 2, worker: 0, type: 'Market-Stall-Red' }),
+      ]);
+
+      // Farm-Wheat and Farm-Carrot both require 'fermier' — aggregated together.
+      expect(summary.bySkill.fermier).toEqual({ workerNeed: 6, workers: 3, need: 3 });
+      expect(summary.bySkill['vente-alimentaire']).toEqual({ workerNeed: 2, workers: 0, need: 2 });
+      expect(summary.bySkill.medical).toBeUndefined();
+    });
+
     test('byGroup breaks the pool/assignment down per social group (global aggregate unchanged)', () => {
       const summary = computeCityEmploymentSummary([
         house('red-house', 5, 1, 'House-Red'), // artisans
@@ -220,7 +230,12 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(summary.totalAssigned).toBe(4);
     });
 
-    test('level 1 (autarkic) houses are excluded from their group pool', () => {
+    test('level 1 (autarkic) houses now count toward their group pool (headcount is skill-agnostic here)', () => {
+      // computeCityEmploymentSummary's byGroup is a coarse, skill-agnostic
+      // pool/assigned breakdown (see its own docstring) — it doesn't know a
+      // level-1 house can only actually staff Chapel (sector 6), not this
+      // farm (sector 1); DistributeCityWorkers is what enforces that via
+      // skill matching, and is covered separately.
       const summary = computeCityEmploymentSummary([
         createEmploymentBuildingSnapshot({
           id: 'red-house',
@@ -233,11 +248,11 @@ describe('Employment — GetCityEmploymentSummary', () => {
       ]);
 
       expect(summary.byGroup['artisans']).toEqual({
-        workerPool: 0,
+        workerPool: 5,
         assigned: 0,
-        unemployed: 0,
+        unemployed: 5,
       });
-      expect(summary.workerPool).toBe(0);
+      expect(summary.workerPool).toBe(5);
     });
   });
 

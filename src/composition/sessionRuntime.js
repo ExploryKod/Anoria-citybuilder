@@ -22,7 +22,6 @@ const state = {
   supply: null,
   housing: null,
   employment: null,
-  commerce: null,
   gameplay: null,
   ecsRuntime: null,
   popupManager: null,
@@ -153,11 +152,6 @@ export function getSessionHousingApi() {
   return getSessionApi()?.housing ?? null;
 }
 
-/** @returns {ReturnType<import('./sessionApi.js').createCommerceSessionApi> | null} */
-export function getSessionCommerceApi() {
-  return getSessionApi()?.commerce ?? null;
-}
-
 /** @returns {ReturnType<import('./sessionApi.js').createParcelsSessionApi> | null} */
 export function getSessionParcelsApi() {
   return getSessionApi()?.parcels ?? null;
@@ -208,14 +202,6 @@ export function requireSessionHousingApi() {
   return api;
 }
 
-/** @returns {ReturnType<import('./sessionApi.js').createCommerceSessionApi>} */
-export function requireSessionCommerceApi() {
-  const api = getSessionCommerceApi();
-  if (!api) {
-    throw new Error('sessionApi.commerce is not bound (bootGameContexts / bindSessionRuntime)');
-  }
-  return api;
-}
 
 /** @returns {ReturnType<import('./sessionApi.js').createParcelsSessionApi>} */
 export function requireSessionParcelsApi() {

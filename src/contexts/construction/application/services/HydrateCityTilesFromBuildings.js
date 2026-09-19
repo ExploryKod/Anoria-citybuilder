@@ -1,5 +1,5 @@
 import {
-  resolveGridSize,
+  resolveFootprintDimensions,
   stampBuildingFootprint,
 } from '../../domain/policies/FootprintAvailabilityPolicy.js';
 
@@ -39,14 +39,12 @@ export function hydrateCityTilesFromRows(city, rows, assetCatalog = {}) {
       continue;
     }
 
-    const gridSize = Math.max(
-      1,
-      Number(row.footprintWidth)
-        || Number(row.gridSize)
-        || resolveGridSize(assetCatalog, type)
-    );
     const rotationStep = row.placementRotationStep ?? 0;
-    stampBuildingFootprint(city, x, y, gridSize, type, instanceId, {
+    const { width, height } = resolveFootprintDimensions(assetCatalog, type, rotationStep);
+    const footprintWidth = Number(row.footprintWidth) || width;
+    const footprintHeight = Number(row.footprintHeight) || height;
+    stampBuildingFootprint(city, x, y, footprintWidth, type, instanceId, {
+      footprintHeight,
       placementRotationStep: rotationStep,
     });
   }

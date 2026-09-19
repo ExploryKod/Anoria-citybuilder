@@ -72,15 +72,17 @@
  * @property {ReadonlyArray<object>} neighborRows
  * @property {object | null} supplyView
  * @property {object | null} stocks
- * @property {1 | 2} houseLevel
+ * @property {number} houseLevel
  * @property {object | null} lastConsumption
  * @property {object} employment
  * @property {object} supply
  * @property {object} accounting
  * @property {object} construction
  * @property {number} [currentYear]
- * @property {'barn' | 'windmill' | null} [hubKind]
+ * @property {'windmill' | null} [hubKind]
  * @property {object | null} [hubView]
+ * @property {Record<string, number> | null} [servedFlags] House group only — see HouseLevelPolicy.describeRelevantServiceCoverage.
+ * @property {number | null} [periodKey] House group only — current month index, paired with servedFlags.
  */
 
 /**
@@ -127,7 +129,7 @@ export function createBuildingInfoViewModel(params) {
     neighborRows: (neighbors ?? []).filter((n) => n.x != null && n.y != null),
     supplyView,
     stocks,
-    houseLevel: buildingRow?.level === 2 ? 2 : 1,
+    houseLevel: Number.isFinite(buildingRow?.level) && buildingRow.level >= 1 ? Math.floor(buildingRow.level) : 1,
     lastConsumption: buildingRow?.lastConsumption ?? null,
     employment,
     supply,

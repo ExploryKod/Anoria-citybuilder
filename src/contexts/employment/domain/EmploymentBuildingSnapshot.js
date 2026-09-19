@@ -24,9 +24,13 @@ export function createEmploymentBuildingSnapshot({
     y: typeof y === 'number' ? y : null,
     roadCount: Number.isInteger(roadCount) ? roadCount : 0,
     pop: Number.isFinite(pop) ? Math.max(0, Math.floor(pop)) : 0,
-    // Houses only (level 1 = autarky, outside the labor pool). Defaults to 2
-    // so non-house workplaces / Palace (no level concept) keep prior behavior.
-    level: level === 1 ? 1 : 2,
+    // The house's real tier (1-5 — see socialCategoryCatalog.js), needed
+    // as-is (not collapsed to "1 or 2") so a house's skill LEVEL (e.g.
+    // `medical` 2, only granted from tier 5) is resolvable from this
+    // snapshot alone. Defaults to 2 so non-house workplaces / Palace (no
+    // tier concept) keep prior behavior (skills of a level-2, i.e. any
+    // "already past tier 1", house).
+    level: Number.isInteger(level) && level >= 1 ? level : 2,
     worker: Number.isFinite(worker) ? Math.max(0, Math.floor(worker)) : 0,
     workerNeed: Number.isFinite(workerNeed) ? Math.max(0, Math.floor(workerNeed)) : 0,
     sector: Number.isFinite(sector) ? Math.floor(sector) : 0,

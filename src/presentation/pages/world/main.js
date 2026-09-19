@@ -1,10 +1,15 @@
 import { bootSiteChrome } from '../site/bootSiteChrome.js';
+import { redirectToLandingUnlessWorldEntryAllowed } from '../site/bootSession.js';
 import { bootMapContexts } from '../../../composition/bootMapContexts.js';
 import { WorldMapController } from '../../dom/maps/WorldMapController.js';
 
 bootSiteChrome({ legalFooter: false });
 
 async function main() {
+  if (redirectToLandingUnlessWorldEntryAllowed()) {
+    return;
+  }
+
   const root = document.getElementById('map-root');
   if (!root) {
     throw new Error('world map root not found');

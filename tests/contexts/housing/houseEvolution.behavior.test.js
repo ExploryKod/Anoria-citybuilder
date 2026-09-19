@@ -94,37 +94,138 @@ describe('Housing — house progression', () => {
   });
 
   describe('HouseLevelPolicy.resolveHouseLevel (Blue/Red/Purple)', () => {
-    test('level 1 -> 2 requires road access and a positive population', () => {
-      const result = resolveHouseLevel({ level: 1, pop: 3, roadCount: 1 });
+    test('level 1 -> 2 requires road access, a positive population, and faith coverage', () => {
+      const result = resolveHouseLevel({
+        level: 1,
+        pop: 3,
+        roadCount: 1,
+        residentialGroup: 'artisans',
+        servedFlags: { faith: 5 },
+        periodKey: 5,
+      });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_SPECIALIZED);
       expect(result.changed).toBe(true);
       expect(result.reason).toBe('level1_to_level2');
     });
 
+    test('level 1 does not advance to level 2 without faith coverage, even with road and population', () => {
+      const result = resolveHouseLevel({
+        level: 1,
+        pop: 3,
+        roadCount: 1,
+        residentialGroup: 'artisans',
+        servedFlags: {},
+        periodKey: 5,
+      });
+      expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
+      expect(result.changed).toBe(false);
+    });
+
     test('level 1 stays autarkic without road access', () => {
-      const result = resolveHouseLevel({ level: 1, pop: 3, roadCount: 0 });
+      const result = resolveHouseLevel({ level: 1, pop: 3, roadCount: 0, residentialGroup: 'artisans' });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
       expect(result.changed).toBe(false);
     });
 
     test('level 1 stays autarkic when uninhabited, even with road access', () => {
-      const result = resolveHouseLevel({ level: 1, pop: 0, roadCount: 1 });
+      const result = resolveHouseLevel({ level: 1, pop: 0, roadCount: 1, residentialGroup: 'artisans' });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
       expect(result.changed).toBe(false);
     });
 
     test('level 2 regresses to level 1 when road access is lost, population clamped to the level-1 cap', () => {
-      const result = resolveHouseLevel({ level: 2, pop: 10, roadCount: 0 });
+      const result = resolveHouseLevel({ level: 2, pop: 10, roadCount: 0, residentialGroup: 'artisans' });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
       expect(result.targetPop).toBe(HOUSE_LEVEL_1_MAX_POP);
       expect(result.changed).toBe(true);
-      expect(result.reason).toBe('level2_to_level1_no_road');
+      expect(result.reason).toBe('level2_to_level1_requirements_lost');
     });
 
-    test('level 2 stays specialized while road access is kept', () => {
-      const result = resolveHouseLevel({ level: 2, pop: 10, roadCount: 1 });
+    test('level 2 stays specialized while road access and faith are kept, below tier 3\'s population threshold', () => {
+      const result = resolveHouseLevel({
+        level: 2,
+        pop: 2,
+        roadCount: 1,
+        residentialGroup: 'artisans',
+        servedFlags: { faith: 5 },
+        periodKey: 5,
+      });
       expect(result.changed).toBe(false);
       expect(result.targetLevel).toBe(HOUSE_LEVEL_SPECIALIZED);
+    });
+
+    test('level 2 regresses to level 1 when faith coverage is lost, even with road and population kept', () => {
+      const result = resolveHouseLevel({
+        level: 2,
+        pop: 2,
+        roadCount: 1,
+        residentialGroup: 'artisans',
+        servedFlags: {},
+        periodKey: 5,
+      });
+      expect(result.changed).toBe(true);
+      expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
+      expect(result.reason).toBe('level2_to_level1_requirements_lost');
+    });
+
+    test('level 2 advances to level 3 once population, fed, and doctor coverage are all met', () => {
+      const result = resolveHouseLevel({
+        level: 2,
+        pop: 4,
+        roadCount: 1,
+        residentialGroup: 'artisans',
+        servedFlags: { faith: 5, doctor: 5 },
+        lastConsumption: { month: 5, totalUnfed: 0 },
+        periodKey: 5,
+      });
+      expect(result.changed).toBe(true);
+      expect(result.targetLevel).toBe(3);
+      expect(result.reason).toBe('level2_to_level3');
+    });
+
+    test('level 2 does not advance to level 3 on population alone, missing fed/doctor coverage', () => {
+      const result = resolveHouseLevel({
+        level: 2,
+        pop: 4,
+        roadCount: 1,
+        residentialGroup: 'artisans',
+        servedFlags: { faith: 5 },
+        periodKey: 5,
+      });
+      expect(result.changed).toBe(false);
+      expect(result.targetLevel).toBe(HOUSE_LEVEL_SPECIALIZED);
+    });
+
+    test('scholars stay at level 2 without faith coverage even with population and road access', () => {
+      const result = resolveHouseLevel({
+        level: 1,
+        pop: 3,
+        roadCount: 1,
+        residentialGroup: 'scholars',
+        servedFlags: {},
+        periodKey: 5,
+      });
+      expect(result.changed).toBe(false);
+      expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
+    });
+
+    test('scholars advance to level 2 once faith is served for the current period', () => {
+      const result = resolveHouseLevel({
+        level: 1,
+        pop: 3,
+        roadCount: 1,
+        residentialGroup: 'scholars',
+        servedFlags: { faith: 5 },
+        periodKey: 5,
+      });
+      expect(result.changed).toBe(true);
+      expect(result.targetLevel).toBe(HOUSE_LEVEL_SPECIALIZED);
+    });
+
+    test('unknown residential group never advances past tier 1', () => {
+      const result = resolveHouseLevel({ level: 1, pop: 3, roadCount: 1, residentialGroup: null });
+      expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
+      expect(result.changed).toBe(false);
     });
   });
 
@@ -147,13 +248,18 @@ describe('Housing — house progression', () => {
 
     beforeEach(() => {
       repo = new InMemoryHousingEvolutionRepository([
-        house('House-Red-2-3', HOUSE_TYPE_RED, { pop: 2, level: 1, roadCount: 1 }),
+        house('House-Red-2-3', HOUSE_TYPE_RED, {
+          pop: 2,
+          level: 1,
+          roadCount: 1,
+          servedFlags: { faith: 5 },
+        }),
       ]);
       command = new EvolveHouseBuilding(repo);
     });
 
     test('promotes a Blue/Red/Purple house to level 2 without ever changing its color', async () => {
-      const result = await command.execute({ houseId: 'House-Red-2-3' });
+      const result = await command.execute({ houseId: 'House-Red-2-3', periodKey: 5 });
       expect(result.changed).toBe(true);
       expect(result.previousLevel).toBe(1);
       expect(result.targetLevel).toBe(2);

@@ -1,12 +1,12 @@
 import Phaser from 'phaser';
 import { HAMLET_ACCESS } from '../../../core/persistence/hamlet/hamletAccess.js';
-import { resolveKenneyPhaserFrame } from '../../../contexts/geography/domain/catalogs/HexAssetCatalog.js';
-import { TRADE_MAP_CITY_CATEGORIES } from '../../../contexts/commerce/domain/catalogs/TradeMapCityCatalog.js';
 import {
+  resolveKenneyPhaserFrame,
   WORLD_MAP_HEX_SIZE,
   WORLD_MAP_LAND_TILES,
   isWorldMapLandHex,
-} from '../../../contexts/geography/domain/world/worldMapDefinition.js';
+} from '../../../composition/geographyCatalog.js';
+import { WORLD_CITY_CATEGORIES } from '../../../composition/worldCityCatalog.js';
 import { axialToPixel, hexCornerPoints, hexKey, pixelToAxial } from '../../../shared/geography/hexCoordinates.js';
 import { loadKenneyHexAtlases } from '../shared/loadKenneyHexAtlases.js';
 import { consumePendingWorldBootstrap } from './worldMapBootstrapState.js';
@@ -379,7 +379,7 @@ export class WorldHexScene extends Phaser.Scene {
       return;
     }
 
-    if (category === TRADE_MAP_CITY_CATEGORIES.enemy) {
+    if (category === WORLD_CITY_CATEGORIES.enemy) {
       building.setTint(0xcc6666);
     } else if (cityId === 'anoria') {
       building.setTint(0xffd4a8);

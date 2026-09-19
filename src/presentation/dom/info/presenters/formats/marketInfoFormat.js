@@ -22,65 +22,23 @@ export function formatMarketLayoutOptions() {
 }
 
 /**
- * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
- * @returns {{ marketState: string, hasNoWorkersForState: boolean } | null}
- */
-function resolveMarketState(vm) {
-  const { supplyView, stocks, buildingRow } = vm;
-  if (!supplyView || !Object.hasOwn(stocks || {}, 'food')) return null;
-
-  const marketData = buildingRow;
-  const hasNoWorkersForState = (marketData?.roads ?? 0) > 0
-    && (marketData?.employees?.worker || 0) === 0
-    && (marketData?.employees?.worker_need || 0) > 0;
-
-  const buyingPeriodName = 'Automne';
-  let marketState;
-  if (hasNoWorkersForState) {
-    marketState = '🔴 Inactif : pas d\'employés';
-  } else if (supplyView.isBuying === true) {
-    marketState = '🟢 Achats en cours : c\'est le mois des affaires !';
-  } else {
-    marketState = `⏸️ En attente : le marché n'achète qu'en ${buyingPeriodName}`;
-  }
-
-  return { marketState, hasNoWorkersForState };
-}
-
-/**
- * Overview — état + approvisionnement.
+ * Overview — reference fact only (which season the market buys in).
+ * Operational/supply-chain status (inactive, no farms nearby, no houses
+ * nearby) is a Messages-tab complaint now — see messagesInfoFormat.js's
+ * personnelComplaint (staffing/road) and marketSupplyComplaints (fermes/
+ * maisons). Repeating those here would just be the same fact said twice.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
 export function formatMarketOverviewModel(vm) {
-  const resolved = resolveMarketState(vm);
-  if (!resolved) return null;
+  const { supplyView, stocks } = vm;
+  if (!supplyView || !Object.hasOwn(stocks || {}, 'food')) return null;
 
-  const { supplyView } = vm;
   return {
-    sections: [
-      {
-        title: 'État du marché',
-        rows: [{ label: 'État', value: resolved.marketState }],
-      },
-      {
-        title: 'Approvisionnement',
-        rows: [
-          {
-            label: 'Fermes',
-            value: supplyView.noFarmsNearby === true
-              ? '❌ Aucune ferme à proximité'
-              : '✅ Fermes accessibles',
-          },
-          {
-            label: 'Distribution',
-            value: !supplyView.hasHousesNearby
-              ? '❌ Aucune maison à portée'
-              : '✅ Maisons à portée',
-          },
-        ],
-      },
-    ],
+    sections: [{
+      title: 'État du marché',
+      rows: [{ label: 'Période d\'achat', value: 'Automne' }],
+    }],
   };
 }
 
@@ -113,11 +71,7 @@ export function formatMarketStocksModel(vm) {
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
 export function formatMarketStaffModel(vm) {
-  return formatWorkplaceEmployeesPanel(vm.buildingRow, {
-    fullyStaffed: '✅ Le marché marche à plein régime',
-    noWorkers: '❌ Le marché manque de bras, il ne peut fonctionner',
-    partialWorkers: '⚠️ Le marché tente de vendre avec peine car trop peu d\'employés',
-  }, vm.employment);
+  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment);
 }
 
 /** @deprecated Prefer thematic tab formatters */

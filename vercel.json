@@ -1,4 +1,10 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "**": false
+    }
+  },
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
   "installCommand": "npx pnpm@11.17.0 install --frozen-lockfile",
@@ -9,7 +15,8 @@
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
     { "source": "/legal", "destination": "/legal.html" },
-    { "source": "/credits", "destination": "/credits.html" }
+    { "source": "/credits", "destination": "/credits.html" },
+    { "source": "/assets", "destination": "/assets.html" }
   ],
   "headers": [
     {

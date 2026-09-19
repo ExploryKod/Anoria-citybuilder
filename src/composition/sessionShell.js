@@ -36,6 +36,14 @@ export {
   getGameCity,
 };
 
+export {
+  getGameMode,
+  isEditorMode,
+  isMissionMode,
+  isTutorialMode,
+  GAME_MODES,
+} from '../shared/gameplay/gameMode.js';
+
 export function getGameUI() {
   return getSessionGameUI();
 }
@@ -115,14 +123,6 @@ export function getWorkSectionPresenter() {
 
 export function getFinancesSectionPresenter() {
   return getSessionService('financesSectionPresenter');
-}
-
-export function getCommerceSectionPresenter() {
-  return getSessionService('commerceSectionPresenter');
-}
-
-export function getFactorySectionPresenter() {
-  return getSessionService('factorySectionPresenter');
 }
 
 export function getStorageSectionPresenter() {

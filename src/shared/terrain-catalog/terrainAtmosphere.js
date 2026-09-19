@@ -1,0 +1,67 @@
+import * as THREE from 'three';
+
+import { blendTerrainColorHex, terrainColorHexToCss } from './terrainColorBlend.js';
+
+/**
+ * Ground grass unlit display color — the ONE value the ground tiles, the
+ * infinite ground plane, the fog blend and the CSS tokens all derive from.
+ *
+ * Deliberately a fresh green (#5fc48a), between Kenney's own teal `ground_grass`
+ * preview (#2fe7c5), which clashed with the yellow-green trees and crops of the
+ * same pack, and the village-era warm green (#6DB973), which was slightly too
+ * warm. Tune it here, nowhere else.
+ *
+ * Do **not** use the GLB/MTL baseColor (~`#74ecdd`) or the infinite ground
+ * plane will show a different green than the playable tiles.
+ */
+export const KENNEY_GROUND_GRASS_COLOR = 0x5fc48a;
+
+/** @deprecated prefer resolveTerrainDisplayColorCss('nature:ground_grass') */
+export const KENNEY_GROUND_GRASS_COLOR_CSS = terrainColorHexToCss(
+  KENNEY_GROUND_GRASS_COLOR
+);
+
+/** Infinite sea around the island (Kenney water tone). */
+export const SCENE_SEA_COLOR = 0x5ec4e8;
+export const SCENE_SEA_COLOR_CSS = terrainColorHexToCss(SCENE_SEA_COLOR);
+
+/** Flat scene background (sky) until a Kenney sky dome is added. */
+export const SCENE_SKY_COLOR = 0xb7d4ea;
+export const SCENE_SKY_COLOR_CSS = terrainColorHexToCss(SCENE_SKY_COLOR);
+
+/**
+ * Editor empty map — sky, fog, and infinite sea plane share one backdrop family
+ * so zooming out never reveals a contrasting rectangle around the build area.
+ */
+export const SCENE_EDITOR_BACKDROP_COLOR = 0x4aafc9;
+export const SCENE_EDITOR_BACKDROP_COLOR_CSS = terrainColorHexToCss(SCENE_EDITOR_BACKDROP_COLOR);
+export const SCENE_EDITOR_SKY_COLOR = SCENE_EDITOR_BACKDROP_COLOR;
+export const SCENE_EDITOR_SKY_COLOR_CSS = SCENE_EDITOR_BACKDROP_COLOR_CSS;
+export const SCENE_EDITOR_SEA_COLOR = SCENE_EDITOR_BACKDROP_COLOR;
+export const SCENE_EDITOR_SEA_COLOR_CSS = SCENE_EDITOR_BACKDROP_COLOR_CSS;
+
+/**
+ * Fog tint at the horizon — blended from grass + sky (default gameplay).
+ */
+export const SCENE_FOG_COLOR = blendTerrainColorHex(
+  KENNEY_GROUND_GRASS_COLOR,
+  SCENE_SKY_COLOR,
+  0.42
+);
+export const SCENE_FOG_COLOR_CSS = terrainColorHexToCss(SCENE_FOG_COLOR);
+
+/** Editor mode — matches backdrop so the sea plane edge is invisible. */
+export const SCENE_EDITOR_FOG_COLOR = SCENE_EDITOR_BACKDROP_COLOR;
+export const SCENE_EDITOR_FOG_COLOR_CSS = SCENE_EDITOR_BACKDROP_COLOR_CSS;
+
+/** FogExp2 density — raise slightly if the substrate edge is still visible. */
+export const SCENE_FOG_DENSITY = 0.012;
+
+/**
+ * @param {{ editor?: boolean }} [options]
+ * @returns {THREE.FogExp2}
+ */
+export function createSceneFog(options = {}) {
+  const fogColor = options.editor ? SCENE_EDITOR_FOG_COLOR : SCENE_FOG_COLOR;
+  return new THREE.FogExp2(fogColor, SCENE_FOG_DENSITY);
+}

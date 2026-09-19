@@ -1,12 +1,7 @@
 export { buildingCatalog, getBuildingDefinition } from './buildingCatalog.js';
-export { assetsPrices } from './assetsPrices.js';
+export { buildingPlacementCatalog } from '../asset-placement/buildingPlacementCatalog.js';
 export {
-  houses,
-  firstHouses,
   palaces,
   farms,
-  commerce,
-  factories,
-  wantedHouses,
   buildingsObjects,
 } from './buildingCategories.js';

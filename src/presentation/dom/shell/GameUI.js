@@ -30,7 +30,6 @@ import {
     popGroupWorkerNodes,
     popGroupLaborNodes,
     popResourceCityNodes,
-    popResourceCommerceNodes,
     popResourceNatureNodes,
     displayFunds,
     infoObjectOverlay,
@@ -43,11 +42,10 @@ import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { SEASON_KEYS } from '../../../shared/time/TimeCalendar.js';
 import { msToSpeedLevel, SPEED_LEVEL_MAX } from '../../../shared/gameplay/SimulationDefaults.js';
 import { getResidentialGroupTitle } from './ResidentialGroupLabels.js';
-import { allSocialGroups } from '../../../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
+import { allSocialGroups } from '../../../composition/employmentCatalog.js';
 import { laborSlotFromStats } from '../../../composition/hudPopulationAggregates.js';
 import {
     HUD_CITY_RESOURCE_PRODUCTS,
-    HUD_FLOW_SHARED_PRODUCTS,
     HUD_NATURE_RESOURCE_PRODUCTS,
 } from '../../../composition/hudResourceAggregates.js';
 
@@ -414,13 +412,11 @@ class GameUI {
     }
 
     /**
-     * Dual-column resource rail: city, commerce, and map nature deposits.
+     * Dual-column resource rail: city and map nature deposits.
      *
      * @param {{
      *   cityCountry?: Record<string, number>,
      *   cityHamlet?: Record<string, number>,
-     *   commerceCountry?: Record<string, number>,
-     *   commerceHamlet?: Record<string, number>,
      *   natureCountry?: Record<string, number>,
      *   natureHamlet?: Record<string, number>,
      * }} payload
@@ -431,12 +427,6 @@ class GameUI {
             if (!nodes) continue;
             setHudCount(nodes.country, payload.cityCountry?.[product] ?? 0);
             setHudCount(nodes.hamlet, payload.cityHamlet?.[product] ?? 0);
-        }
-        for (const product of HUD_FLOW_SHARED_PRODUCTS) {
-            const nodes = popResourceCommerceNodes[product];
-            if (!nodes) continue;
-            setHudCount(nodes.country, payload.commerceCountry?.[product] ?? 0);
-            setHudCount(nodes.hamlet, payload.commerceHamlet?.[product] ?? 0);
         }
         for (const product of HUD_NATURE_RESOURCE_PRODUCTS) {
             const nodes = popResourceNatureNodes[product];
