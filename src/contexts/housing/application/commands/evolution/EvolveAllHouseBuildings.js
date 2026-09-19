@@ -12,6 +12,10 @@ export class EvolveAllHouseBuildings {
   }
 
   /**
+   * @param {object} [params]
+   * @param {number} [params.periodKey] Current month index, forwarded to
+   *   every house — only needed by tiers with a `serviceCoverage`
+   *   requirement (see HouseLevelPolicy.js).
    * @returns {Promise<{
    *   housesProcessed: number,
    *   housesChanged: number,
@@ -28,12 +32,12 @@ export class EvolveAllHouseBuildings {
    *   }>,
    * }>}
    */
-  async execute() {
+  async execute({ periodKey } = {}) {
     const houses = await this.repository.findResidentialHouses();
     const changes = [];
 
     for (const house of houses) {
-      const result = await this.evolveHouseBuilding.execute({ houseId: house.id });
+      const result = await this.evolveHouseBuilding.execute({ houseId: house.id, periodKey });
       if (result.changed) {
         changes.push({
           houseId: result.houseId,

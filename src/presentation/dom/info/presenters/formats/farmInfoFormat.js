@@ -143,11 +143,7 @@ export function formatFarmTradeModel(vm) {
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
 export function formatFarmStaffModel(vm) {
-  return formatWorkplaceEmployeesPanel(vm.buildingRow, {
-    fullyStaffed: '✅ La ferme a tout ce qu\'il faut pour fonctionner',
-    noWorkers: '❌ La ferme n\'a aucun employé et ne peut pas fonctionner',
-    partialWorkers: '⚠️ La ferme ne peut fonctionner à sa pleine capacité',
-  }, vm.employment);
+  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment);
 }
 
 /** @deprecated Prefer thematic tab formatters */

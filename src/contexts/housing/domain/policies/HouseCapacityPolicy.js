@@ -13,10 +13,22 @@ export const HOUSE_LEVEL_1_MAX_POP = REGULAR_HOUSE_MAX_POP;
 /** Level 2 (group profession, road required): double the level-1 cap. */
 export const HOUSE_LEVEL_2_MAX_POP = HOUSE_LEVEL_1_MAX_POP * 2;
 
+/** Level 3 (established): steady growth beyond level 2. */
+export const HOUSE_LEVEL_3_MAX_POP = HOUSE_LEVEL_2_MAX_POP + HOUSE_LEVEL_1_MAX_POP;
+
+/** Level 4 (affluent): steady growth beyond level 3. */
+export const HOUSE_LEVEL_4_MAX_POP = HOUSE_LEVEL_3_MAX_POP + HOUSE_LEVEL_1_MAX_POP;
+
+/** Level 5 ("manoir"): steady growth beyond level 4. */
+export const HOUSE_LEVEL_5_MAX_POP = HOUSE_LEVEL_4_MAX_POP + HOUSE_LEVEL_1_MAX_POP;
+
 /** Population cap per house tier — add a key here for a new tier, no code change. */
 const HOUSE_TIER_MAX_POP = Object.freeze({
   1: HOUSE_LEVEL_1_MAX_POP,
   2: HOUSE_LEVEL_2_MAX_POP,
+  3: HOUSE_LEVEL_3_MAX_POP,
+  4: HOUSE_LEVEL_4_MAX_POP,
+  5: HOUSE_LEVEL_5_MAX_POP,
 });
 
 /**

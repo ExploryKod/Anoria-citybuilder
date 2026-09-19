@@ -184,11 +184,13 @@ a {
 }
 
 .asset-card--kenney-city .asset-card__preview-wrap,
+.asset-card--kenney-road .asset-card__preview-wrap,
+.asset-card--kenney-farm .asset-card__preview-wrap,
 .asset-card--kenney-nature .asset-card__preview-wrap {
   background: #2b2b30;
 }
 
-.asset-card--village .asset-card__preview-wrap {
+.asset-card--scene-tile .asset-card__preview-wrap {
   background: #fafafa;
 }
 

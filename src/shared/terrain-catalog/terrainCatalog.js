@@ -1,5 +1,6 @@
 import { kenneyNatureGlbUrl } from '../editor-catalog/editorKenneyCatalog.js';
 import { KENNEY_NATURE_ASSETS } from '../editor-catalog/kenneyNatureKitManifest.generated.js';
+import { KENNEY_GROUND_GRASS_COLOR } from './terrainAtmosphere.js';
 
 const CLIFF_STONE_MATERIALS = Object.freeze({
   grass: 'nature:ground_grass',
@@ -28,7 +29,7 @@ function cliffStoneEntry(glbName, tags = ['cliff', 'shore', 'editor']) {
  * @param {number} displayColor
  * @param {string[]} [tags]
  */
-function flatGroundEntry(glbName, displayColor = 0x2fe7c5, tags = ['grass', 'flat', 'editor']) {
+function flatGroundEntry(glbName, displayColor = KENNEY_GROUND_GRASS_COLOR, tags = ['grass', 'flat', 'editor']) {
   return {
     kind: 'terrain',
     glb: kenneyNatureGlbUrl(glbName),
@@ -79,7 +80,7 @@ function buildKenneyTerrainCatalogEntry(glbName) {
     return {
       kind: 'terrain',
       glb: kenneyNatureGlbUrl(glbName),
-      displayColor: 0x2fe7c5,
+      displayColor: KENNEY_GROUND_GRASS_COLOR,
       surfaceY: 0.02,
       tier: 0,
       tags: ['grass', 'flat', 'editor'],
@@ -91,7 +92,7 @@ function buildKenneyTerrainCatalogEntry(glbName) {
     return flatGroundEntry(glbName, 0xb8dce8, ['stone', 'platform', 'editor']);
   }
 
-  return flatGroundEntry(glbName, 0x2fe7c5, ['ground', 'editor']);
+  return flatGroundEntry(glbName, KENNEY_GROUND_GRASS_COLOR, ['ground', 'editor']);
 }
 
 /** Gameplay + shore autotile terrains that must be warm on boot. */
@@ -99,7 +100,7 @@ const CORE_TERRAIN_OVERRIDES = Object.freeze({
   'nature:ground_grass': {
     kind: 'terrain',
     glb: kenneyNatureGlbUrl('ground_grass'),
-    displayColor: 0x2fe7c5,
+    displayColor: KENNEY_GROUND_GRASS_COLOR,
     surfaceY: 0.02,
     tier: 0,
     tags: ['grass', 'flat', 'core'],

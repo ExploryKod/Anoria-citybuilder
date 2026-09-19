@@ -31,6 +31,20 @@ export function getRequiredSkillForBuilding(buildingType) {
   return WORKPLACE_REQUIRED_SKILL[buildingType] ?? null;
 }
 
+/**
+ * Minimum skill level a citizen needs to staff this building — 1 when the
+ * catalog doesn't say otherwise (most buildings only ever need level 1; a
+ * building can opt into a higher level via `employment.requiredSkillLevel`,
+ * e.g. Hospital's `medical` level 2 vs Doctor's level 1 — see
+ * buildingEconomy.js).
+ *
+ * @param {string} buildingType
+ * @returns {number}
+ */
+export function getRequiredSkillLevelForBuilding(buildingType) {
+  return buildingCatalog[buildingType]?.employment?.requiredSkillLevel ?? 1;
+}
+
 /** @returns {ReadonlyArray<string>} */
 export function allWorkplaceEmploymentSkills() {
   return Object.freeze([...new Set(Object.values(WORKPLACE_REQUIRED_SKILL))]);

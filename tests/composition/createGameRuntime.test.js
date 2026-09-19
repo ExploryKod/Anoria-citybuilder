@@ -91,7 +91,7 @@ function baseRuntimeDeps(overrides = {}) {
     getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
     toSupplySeason: () => 'summer',
     toSupplyMonth: () => 'july',
-    getSectorPriorities: () => ({}),
+    getSkillPriorities: () => ({}),
     ...overrides,
   };
 }

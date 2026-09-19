@@ -55,6 +55,18 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
     }
   }
 
+  if (groupId === BUILDING_INFO_GROUPS.house) {
+    // Needed to tell "served THIS period" from a stale flag — see
+    // HouseTierRequirementPolicy.js's serviceCoverage descriptor and
+    // HouseLevelPolicy.describeRelevantServiceCoverage, the Services tab's
+    // Chapel/Doctor/... chips.
+    extra.servedFlags = vm.buildingRow?.servedFlags ?? null;
+    const budget = await vm.accounting.getTreasurySnapshot();
+    extra.periodKey = budget?.turn !== undefined
+      ? (TimeManager.getTimeInfo(budget.turn)?.monthIndex ?? null)
+      : null;
+  }
+
   if (groupId === BUILDING_INFO_GROUPS.hubStorage) {
     const hubKind = vm.supplyView?.kind === 'windmill' ? 'windmill' : null;
     if (hubKind) {
@@ -139,7 +151,16 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
     const roadAccess = await parcels.getRoadAccess(uniqueId);
     const neighbors = uniqueId ? await parcels.getNeighbors(uniqueId) : [];
     const supplyView = uniqueId ? await supply.getBuildingSupplyView(uniqueId) : null;
-    const buildingType = selectedObject.userData.id;
+    // The persisted building's own `type` (the catalog/economy id every
+    // format reads via getBuildingDefinition/residentialGroupForType/etc.,
+    // e.g. "PublicBath") — NOT `selectedObject.userData.id`, which is the
+    // 3D scene object's VISUAL/mesh id and can differ from the logical type
+    // for any building borrowing a Kenney mesh under a different id (every
+    // service building — Doctor, PublicBath, School, ... — see
+    // buildingAssets.js's building-id/mesh-id bridge). Falls back to the
+    // scene object's id only when there's no tracked building row at all
+    // (decorative/nature objects with no economic identity).
+    const buildingType = buildingRow?.type ?? selectedObject.userData.id;
 
     let vm = createBuildingInfoViewModel({
       buildingType,

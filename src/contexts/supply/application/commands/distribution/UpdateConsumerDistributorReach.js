@@ -23,6 +23,12 @@ export class UpdateConsumerDistributorReach {
    * @param {import('../../../domain/policies/ResourceRolePolicy.js').ResourceRoleKind} [params.sourceRole='distributor']
    * @param {import('../../../domain/policies/ResourceRolePolicy.js').ResourceRoleKind} [params.targetRole='consumer']
    * @param {string} [params.tooFarFlag='distributorTooFar']
+   * @param {string | string[]} [params.category] Scopes both the source and
+   *   target search to this category — required once more than one
+   *   'distributor'/'consumer' need exists (e.g. food vs. a chapel's faith
+   *   service), so this flag doesn't conflate "too far for food" with "too
+   *   far for an unrelated service". Omitted keeps the old unscoped
+   *   behavior (every source/target holding the role, regardless of need).
    * @returns {Promise<{
    *   houses: number,
    *   marketsWithRoad: number,
@@ -35,9 +41,10 @@ export class UpdateConsumerDistributorReach {
     sourceRole = 'distributor',
     targetRole = 'consumer',
     tooFarFlag = 'distributorTooFar',
+    category,
   } = {}) {
-    const sources = await this.supplyBuildingRepository.findByResourceRole(sourceRole);
-    const targets = await this.supplyBuildingRepository.findByResourceRole(targetRole);
+    const sources = await this.supplyBuildingRepository.findByResourceRole(sourceRole, category);
+    const targets = await this.supplyBuildingRepository.findByResourceRole(targetRole, category);
 
     let tooFar = 0;
     let inRange = 0;
@@ -52,6 +59,7 @@ export class UpdateConsumerDistributorReach {
         sources,
         {
           role: sourceRole,
+          category,
           maxDistance: (source) => getRangeForRole(source.type, sourceRole) ?? maxDistance,
         }
       );

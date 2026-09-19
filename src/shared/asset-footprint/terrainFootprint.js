@@ -1,5 +1,5 @@
 /**
- * Collision footprint (in tiles) for every villageTown-sourced terrain/zone
+ * Collision footprint (in tiles) for every sceneTile-sourced terrain/zone
  * id — see resolveFootprint.js. Explicit for every id, no default: changing
  * a tile's footprint means editing exactly this one line, in this one file,
  * nothing else.

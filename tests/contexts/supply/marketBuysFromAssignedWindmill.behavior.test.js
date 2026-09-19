@@ -5,7 +5,6 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
-import { HUB_TRANSFER_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/ResourceBookkeepingCatalog.js';
 import { TransferHubToHub } from '../../../src/contexts/supply/application/commands/procurement/TransferHubToHub.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
@@ -89,7 +88,6 @@ describe('Supply — market buys from assigned windmill', () => {
     const outcome = await command.execute({
       targetId: marketId,
       period: {},
-      bookkeeping: HUB_TRANSFER_BOOKKEEPING,
     });
 
     expect(outcome.transferred).toBe(true);
@@ -113,7 +111,6 @@ describe('Supply — market buys from assigned windmill', () => {
     const outcome = await command.execute({
       targetId: orphanId,
       period: {},
-      bookkeeping: HUB_TRANSFER_BOOKKEEPING,
     });
     expect(outcome.transferred).toBe(false);
     expect(outcome.reason).toBe('no_source_link');

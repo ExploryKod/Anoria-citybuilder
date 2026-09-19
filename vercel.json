@@ -1,4 +1,10 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "**": false
+    }
+  },
   "buildCommand": "pnpm run build",
   "outputDirectory": "dist",
   "installCommand": "npx pnpm@11.17.0 install --frozen-lockfile",

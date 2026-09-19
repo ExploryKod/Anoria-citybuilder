@@ -3,11 +3,13 @@
  * hub surplus collection, hub-to-distributor transfer, distributor reach,
  * subsistence gathering, and consumption. Every step is the generic
  * RunResourceCommandForRole/RunCityResourceCycle/RunHubSurplusCycle/
- * UpdateConsumerDistributorReach mechanism — this class only sequences them and
- * carries the one piece nothing else can infer: which bookkeeping and
- * categories belong to which step, given to it as config (composition root
- * reads that from the declarative catalogs, e.g. ResourceBookkeepingCatalog.js
- * — this class never imports one).
+ * UpdateConsumerDistributorReach mechanism — this class only sequences them.
+ * Producer/consumer once-per-period locking and the hub-transfer leg's
+ * link-storage field names are both self-resolved by each command from the
+ * building's own catalog facts now (`periodLock` — see PeriodLockPolicy.js;
+ * `hubLink` — see ResourceRolePolicy.getHubLinkForRole) — this class no
+ * longer threads any bookkeeping config through at all. See
+ * docs/period-lock-catalog-refactor.md.
  */
 export class RunMonthlyResourceCycle {
   /**
@@ -19,10 +21,14 @@ export class RunMonthlyResourceCycle {
    * @param {{ recordHouseConsumptions: Function }} traceability
    * @param {import('../commands/RunResourceCommandForRole.js').RunResourceCommandForRole} [runSubsistenceCommand]
    * @param {object} config
-   * @param {ReadonlyArray<string>} config.categories
-   * @param {object} config.producerBookkeeping
-   * @param {object} config.hubTransferBookkeeping
-   * @param {object} config.consumerBookkeeping
+   * @param {ReadonlyArray<string>} config.categories Every category any
+   *   distributor covers — drives the actual distribution/restock leg,
+   *   deliberately broader than just food (see createSupplyContext.js).
+   * @param {ReadonlyArray<string>} [config.reachCategories] Narrower set
+   *   the too-far reach check (`updateDistributorReach`) scopes to — keep
+   *   this to just food's categories so a hub-less service like a chapel
+   *   (also a 'distributor') never counts as "in range" for a house's food
+   *   access. Omitted falls back to `categories` (pre-service behavior).
    */
   constructor(
     runProducerCommand,
@@ -62,7 +68,6 @@ export class RunMonthlyResourceCycle {
       buildParams: (source) => ({
         buildingId: source.id,
         period: { season, year: timeInfo.year ?? 0, monthIndex: timeInfo.monthIndex },
-        bookkeeping: this.config.producerBookkeeping,
       }),
       successKey: 'produced',
     });
@@ -76,14 +81,16 @@ export class RunMonthlyResourceCycle {
 
     await this.runCityResourceCycle.execute({
       categories: this.config.categories,
-      hubTransferBookkeeping: this.config.hubTransferBookkeeping,
       season,
       month,
       timeInfo,
       maxDistance,
     });
 
-    await this.updateDistributorReach.execute({ maxDistance });
+    await this.updateDistributorReach.execute({
+      maxDistance,
+      category: this.config.reachCategories ?? this.config.categories,
+    });
 
     if (this.runSubsistenceCommand) {
       await this.runSubsistenceCommand.execute({
@@ -98,7 +105,6 @@ export class RunMonthlyResourceCycle {
       buildParams: (house) => ({
         buildingId: house.id,
         period: { monthIndex: timeInfo.monthIndex },
-        bookkeeping: this.config.consumerBookkeeping,
       }),
       successKey: 'consumed',
     });

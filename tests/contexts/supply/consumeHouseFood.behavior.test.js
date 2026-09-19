@@ -11,7 +11,6 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { getAmountForRole, hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
-import { CONSUMER_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/ResourceBookkeepingCatalog.js';
 import { ConsumeResource } from '../../../src/contexts/supply/application/commands/consumption/ConsumeResource.js';
 import { RunResourceCommandForRole } from '../../../src/contexts/supply/application/commands/RunResourceCommandForRole.js';
 
@@ -101,7 +100,6 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 5 },
-        bookkeeping: CONSUMER_BOOKKEEPING,
       });
 
       expect(outcome.consumed).toBe(true);
@@ -119,12 +117,10 @@ describe('Supply — house consumption', () => {
       await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 5 },
-        bookkeeping: CONSUMER_BOOKKEEPING,
       });
       const second = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 5 },
-        bookkeeping: CONSUMER_BOOKKEEPING,
       });
 
       expect(second.consumed).toBe(false);
@@ -140,7 +136,6 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 1 },
-        bookkeeping: CONSUMER_BOOKKEEPING,
       });
       expect(outcome.consumed).toBe(true);
       expect(outcome.totalUnfed).toBe(2);
@@ -156,12 +151,27 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 1 },
-        bookkeeping: CONSUMER_BOOKKEEPING,
       });
 
       expect(outcome.taken).toBe(2);
       expect(outcome.totalUnfed).toBe(1);
       expect((await repo.findById('House-Blue-1-2')).stocks.wheat).toBe(0);
+    });
+
+    test('records which distinct categories were drawn from this period (diet variety)', async () => {
+      repo = new InMemorySupplyBuildingRepository([
+        house('House-Blue-1-2', { pop: 2, stocks: { wheat: 1, carrot: 1, food: 2 } }),
+      ]);
+      useCase = new ConsumeResource(repo);
+
+      const outcome = await useCase.execute({
+        buildingId: 'House-Blue-1-2',
+        period: { monthIndex: 3 },
+      });
+
+      expect(outcome.categoriesTaken.sort()).toEqual(['carrot', 'wheat']);
+      const updated = await repo.findById('House-Blue-1-2');
+      expect(updated.lastConsumption.categoriesTaken.sort()).toEqual(['carrot', 'wheat']);
     });
 
     test('skips houses with zero population', async () => {
@@ -173,7 +183,6 @@ describe('Supply — house consumption', () => {
       const outcome = await useCase.execute({
         buildingId: 'House-Blue-1-2',
         period: { monthIndex: 1 },
-        bookkeeping: CONSUMER_BOOKKEEPING,
       });
       expect(outcome.consumed).toBe(false);
       expect(outcome.reason).toBe('no_population');
@@ -203,7 +212,6 @@ describe('Supply — house consumption', () => {
         buildParams: (house) => ({
           buildingId: house.id,
           period: { monthIndex: 7 },
-          bookkeeping: CONSUMER_BOOKKEEPING,
         }),
         successKey: 'consumed',
       });

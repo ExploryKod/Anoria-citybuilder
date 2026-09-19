@@ -29,12 +29,9 @@
  * Exactly one of the two is non-null per entry with a non-null `button`.
  *
  * Field notes:
- *  - transform.rotationDeg: 'AUTO_DETECTED_AT_RUNTIME' means the real engine
- *    code (VillageTownAssetManager#createBuilding) decides this per-mesh via
- *    a bounding-box heuristic (isLocalYUpMesh), not a fixed declared value —
- *    flagged instead of guessed. Every other villageTown entry uses the
- *    pack's default authoring rotation (90,180,180) unless the source code
- *    hardcodes a named exception (Chapel, BookShop-001, StonePath turns).
+ *  - transform.rotationDeg: fixed yaw (degrees) declared per entry; the player's R
+ *    key adds 90° steps on top. `null` for kenneyCityKit entries (the adapter
+ *    derives orientation from the prefab).
  *  - kenneyCityKit entries: geometry.glb is intentionally null — the actual
  *    GLB path lives in the single runtime-fetched catalog JSON
  *    (/resources/kenney_city_kits_catalog.json via kenneyCityKitConfig.js),
@@ -45,17 +42,19 @@
  *    src/shared/editor-catalog/kenneyPlacementProfiles.generated.js; this
  *    file intentionally does not re-duplicate that generated, auto-scanned
  *    data by hand.
- *  - villageTown 'grass'/'terrain' use geometry.sourceKey as a
+ *  - sceneTile 'grass'/'terrain' use geometry.sourceKey as a
  *    procedural-material key instead of a GLB mesh name — these three are
  *    procedural THREE geometry
  *    with a shared Lambert material, not cloned GLB meshes.
  */
 
+import { KENNEY_GROUND_GRASS_COLOR } from '../../../shared/terrain-catalog/terrainAtmosphere.js';
+
 export const TERRAIN_ASSETS = Object.freeze({
-  // ---- villageTown (procedural) ----
+  // ---- sceneTile (procedural) ----
   // Herbe — géométrie procédurale (BoxGeometry partagée) + matériau Lambert partagé, pas de GLB
   'grass': {
-    source: 'villageTown',
+    source: 'sceneTile',
     geometry: {
       glb: null,
       sourceKey: 'grass',
@@ -81,7 +80,7 @@ export const TERRAIN_ASSETS = Object.freeze({
   },
   // Terrain générique — géométrie procédurale, matériau Lambert avec emissive, pas de GLB
   'terrain': {
-    source: 'villageTown',
+    source: 'sceneTile',
     geometry: {
       glb: null,
       sourceKey: 'terrain',
@@ -2033,7 +2032,7 @@ export const TERRAIN_ASSETS = Object.freeze({
       receiveShadow: true,
       renderOrder: null,
       frustumCulled: false,
-      displayColor: 0x2fe7c5,
+      displayColor: KENNEY_GROUND_GRASS_COLOR,
     },
     button: {
       group: null,
@@ -3291,7 +3290,7 @@ export const TERRAIN_ASSETS = Object.freeze({
       receiveShadow: true,
       renderOrder: null,
       frustumCulled: false,
-      displayColor: 0x2fe7c5,
+      displayColor: KENNEY_GROUND_GRASS_COLOR,
     },
     button: {
       group: null,

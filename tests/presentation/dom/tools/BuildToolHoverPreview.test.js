@@ -6,12 +6,16 @@ import {
 
 describe('BuildToolHoverPreview', () => {
   test('resolves Kenney city kit preview URLs', () => {
-    // Market-Stall is the reassigned, buttoned id for this Kenney mesh — the
-    // raw Kenney-Commercial-building-a entry stays button: null (fallback
-    // only), so it has no preview of its own anymore.
-    const url = resolveToolPreviewUrl('Market-Stall');
+    // Library is the reassigned, buttoned id for Kenney-Commercial-building-d
+    // — the raw Kenney entry itself stays button: null (fallback only), so
+    // it has no preview of its own anymore. (Market-Stall used to be this
+    // example, but Market-Stall-Red is now the one placeable market — see
+    // buildingAssets.js, user request 2026-09-08 — so Market-Stall's own
+    // button, and the raw Kenney-Commercial-building-a it borrows from, are
+    // both null now too.)
+    const url = resolveToolPreviewUrl('Library');
     expect(url).toMatch(/kenney_city-kit-commercial/);
-    expect(url).toMatch(/building-a\.png$/);
+    expect(url).toMatch(/building-d\.png$/);
   });
 
   test('uses enlarged upscale profile for city-kit sprites', () => {
@@ -21,7 +25,7 @@ describe('BuildToolHoverPreview', () => {
 
   test('uses compact profile for high-res isometric previews', () => {
     expect(resolveToolPreviewProfile('nature:ground_grass')).toBe('high-res');
-    expect(resolveToolPreviewProfile('Windmill-001')).toBe('high-res');
+    expect(resolveToolPreviewProfile('StonePath-001')).toBe('high-res');
   });
 
   test('resolves editor nature preview URLs', () => {

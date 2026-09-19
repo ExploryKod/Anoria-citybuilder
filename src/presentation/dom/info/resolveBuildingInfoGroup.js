@@ -10,6 +10,7 @@ export const BUILDING_INFO_GROUPS = Object.freeze({
   hubStorage: 'hubStorage',
   farm: 'farm',
   market: 'market',
+  service: 'service',
   generic: 'generic',
 });
 
@@ -32,6 +33,13 @@ export function resolveBuildingInfoGroup({ buildingRow, supplyView }) {
   }
   if (supplyView?.kind === 'market') {
     return BUILDING_INFO_GROUPS.market;
+  }
+  // 'service' — a flag-distributor (Chapel, School, Library, Doctor,
+  // Hospital, PublicBath, Theatre, Cinema, Pub, ...): see classifySupplyKind
+  // in GetBuildingSupplyView.js. Its own group, not market's, since it has
+  // no stock/buying-period concept at all.
+  if (supplyView?.kind === 'service') {
+    return BUILDING_INFO_GROUPS.service;
   }
   return BUILDING_INFO_GROUPS.generic;
 }

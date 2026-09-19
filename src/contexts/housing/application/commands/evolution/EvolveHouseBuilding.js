@@ -22,6 +22,8 @@ export class EvolveHouseBuilding {
   /**
    * @param {object} params
    * @param {string} params.houseId
+   * @param {number} [params.periodKey] Current month index — only needed by
+   *   tiers with a `serviceCoverage` requirement (see HouseLevelPolicy.js).
    * @returns {Promise<{
    *   changed: boolean,
    *   houseId?: string,
@@ -35,7 +37,7 @@ export class EvolveHouseBuilding {
    *   reason?: string,
    * }>}
    */
-  async execute({ houseId }) {
+  async execute({ houseId, periodKey }) {
     const house = await this.repository.findById(houseId);
     if (!house) {
       return { changed: false, reason: 'house_not_found' };
@@ -45,7 +47,7 @@ export class EvolveHouseBuilding {
       return this.#executePalaceEvolution(house);
     }
 
-    return this.#executeLevelResolution(house);
+    return this.#executeLevelResolution(house, periodKey);
   }
 
   /** @param {import('../../../domain/HousingBuildingSnapshot.js').HousingBuildingSnapshot} house */
@@ -87,13 +89,19 @@ export class EvolveHouseBuilding {
     };
   }
 
-  /** @param {import('../../../domain/HousingBuildingSnapshot.js').HousingBuildingSnapshot} house */
-  async #executeLevelResolution(house) {
+  /**
+   * @param {import('../../../domain/HousingBuildingSnapshot.js').HousingBuildingSnapshot} house
+   * @param {number} [periodKey]
+   */
+  async #executeLevelResolution(house, periodKey) {
     const resolution = resolveHouseLevel({
       level: house.level,
       pop: house.pop,
       roadCount: house.roadCount,
       residentialGroup: residentialGroupForHouseType(house.type),
+      servedFlags: house.servedFlags,
+      lastConsumption: house.lastConsumption,
+      periodKey,
     });
 
     if (!resolution.changed) {

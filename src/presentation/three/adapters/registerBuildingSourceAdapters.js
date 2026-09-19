@@ -8,5 +8,7 @@
 // BuildingSourceAdapter (see buildingSourceAdapterRegistry.js), add one
 // import line below. Nothing else in the codebase changes.
 
-import './village-town/villageTownBuildingAdapter.js';
+import './scene-tile/sceneTileBuildingAdapter.js';
 import './kenney-city-kit/kenneyCityKitBuildingAdapter.js';
+import './kenney-glb/kenneyGlbBuildingAdapter.js';
+import './kenney-farm/kenneyFarmFieldAdapter.js';

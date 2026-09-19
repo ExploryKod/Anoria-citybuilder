@@ -7,7 +7,6 @@
 
 export const BUILDING_INFO_TAB_IDS = Object.freeze({
   foyer: 'foyer',
-  diet: 'diet',
   stocks: 'stocks',
   trade: 'trade',
   staff: 'staff',
@@ -19,7 +18,6 @@ export const BUILDING_INFO_TAB_IDS = Object.freeze({
 /** Default labels — groups may override per tab. */
 export const BUILDING_INFO_TAB_LABELS = Object.freeze({
   [BUILDING_INFO_TAB_IDS.foyer]: '🏠 Bâtiment',
-  [BUILDING_INFO_TAB_IDS.diet]: '🍽️ Régime',
   [BUILDING_INFO_TAB_IDS.stocks]: '📦 Stocks',
   [BUILDING_INFO_TAB_IDS.trade]: '💰 Ventes',
   [BUILDING_INFO_TAB_IDS.staff]: '👷 Personnel',
@@ -31,7 +29,6 @@ export const BUILDING_INFO_TAB_LABELS = Object.freeze({
 /** All known tab ids (stable order for DOM sync). */
 export const BUILDING_INFO_TAB_ORDER = Object.freeze([
   BUILDING_INFO_TAB_IDS.foyer,
-  BUILDING_INFO_TAB_IDS.diet,
   BUILDING_INFO_TAB_IDS.stocks,
   BUILDING_INFO_TAB_IDS.trade,
   BUILDING_INFO_TAB_IDS.staff,

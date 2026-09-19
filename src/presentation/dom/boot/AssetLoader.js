@@ -12,34 +12,6 @@ export async function loadGameAssets(assetManager) {
   await getKenneyNaturePropAdapter().initialize();
   await getKenneyCityKitMeshAdapter().initialize();
 
-  // Houses + nature are needed before scene.initialize / ResourceManager
-  // (trees write Tree-Sapin etc. into city.tiles; meshes must exist or every
-  // game tick retries createAsset(undefined) → THREE.Object3D.add spam).
-  await Promise.all([
-    assetManager.initializeBuildings('houses'),
-    assetManager.initializeBuildings('nature'),
-  ]);
-
-  // Legacy mesh categories still load in the background for saves and procedural nature.
-  const loadNonCriticalAssets = () => {
-    Promise.all([
-      assetManager.initializeBuildings('palaces'),
-      assetManager.initializeBuildings('markets'),
-      assetManager.initializeBuildings('industry'),
-      assetManager.initializeBuildings('public'),
-      assetManager.initializeBuildings('decoration'),
-      assetManager.initializeBuildings('tombs'),
-      assetManager.initializeBuildings('farms'),
-      assetManager.initializeBuildings('infrastructure'),
-    ]).catch(() => {});
-  };
-
-  if (typeof requestIdleCallback !== 'undefined') {
-    requestIdleCallback(loadNonCriticalAssets, { timeout: 3000 });
-  } else {
-    setTimeout(loadNonCriticalAssets, 500);
-  }
-
   const initUI = () => updateSpeedDisplay();
   if (typeof requestIdleCallback !== 'undefined') {
     requestIdleCallback(initUI, { timeout: 1000 });

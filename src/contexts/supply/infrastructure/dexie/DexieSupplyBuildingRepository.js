@@ -29,6 +29,10 @@ export class DexieSupplyBuildingRepository {
     const employees = house.employees || {};
     const type = house.type || '';
     return createSupplyBuildingSnapshot({
+      // Passed first so any catalog-declared field (e.g. a periodLock's
+      // `field` name) rides along unnamed — the explicit keys below then
+      // override with their proper row->snapshot remapping/coercion.
+      ...house,
       id: instanceIdFromHouseRow(house),
       type,
       x: house.x ?? null,

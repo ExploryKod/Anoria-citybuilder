@@ -43,4 +43,32 @@ describe('roadAccessIcons', () => {
     expect(calls).toHaveLength(2);
     expect(calls[1][5]).toBe(false);
   });
+
+  test('mémorise l\'accès routier sur le mesh (ordre des couches de statut)', async () => {
+    const events = new InMemoryDomainEventPublisher();
+    const instanceId = createBuildingInstanceId();
+    const mesh = { name: 'Market-Stall', userData: {} };
+    const assetManager = { setStatusSprite: () => {} };
+    const textures = { 'no-roads': 'tex-no-road' };
+
+    const syncRoadAccess = setupRoadAccessIcons(
+      { eventPublisher: events, recalculateRoadAccessForBuilding: { execute: async () => ({ updated: false, roadAccess: { hasAccess: false, roadCount: 0 } }) } },
+      { assetManager, textures }
+    );
+
+    const position = { x: 0, y: 1, z: 0 };
+    const scale = { x: 1, y: 1, z: 1 };
+    await syncRoadAccess({ instanceId, mesh, position, scale });
+    expect(mesh.userData.hasRoadAccess).toBe(false);
+
+    // A road gets built: the bus event flips it.
+    events.publish(
+      createRoadAccessChanged({
+        instanceId,
+        previousRoadCount: 0,
+        newRoadAccess: { roadCount: 1, hasAccess: true },
+      })
+    );
+    expect(mesh.userData.hasRoadAccess).toBe(true);
+  });
 });

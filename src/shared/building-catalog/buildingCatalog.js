@@ -103,6 +103,40 @@
  *   categories (e.g. 'food' for wheat/carrot/cabbage/fruit/game). Required
  *   when `categories` has more than one entry — a role with 0 or 1 category
  *   needs none, it's its own total. See ResourceRolePolicy.getTotalKeyForRole.
+ * @property {'quantity' | 'flag'} [consumption] Whether this role's transfers
+ *   move a depleting numeric stock ('quantity', the default — take/add,
+ *   source can run out) or simply mark the consumer "served this period"
+ *   with no stock movement at all ('flag' — a coverage-style service, e.g.
+ *   a chapel's faith service reaching nearby houses). See
+ *   DistributeResourceToConsumers.js. A building type can hold more than one
+ *   entry for the SAME role when they differ by category and/or this field
+ *   (e.g. a house is both a 'quantity' food consumer and a 'flag' faith
+ *   consumer) — see ResourceRolePolicy's `category`/`consumption` accessor
+ *   params, which disambiguate exactly that case.
+ * @property {{ field?: string, unit: 'year' | 'month' }} [periodLock] Once-per-period
+ *   lock for this role, and at what granularity. Two shapes:
+ *   `{ field, unit }` uses one dedicated building field (e.g. a farm's
+ *   `lastProductionYear`) — reserve this for a role that will only ever
+ *   hold ONE such lock. `{ unit }` (no `field`) uses the SHARED
+ *   `servedFlags` object keyed by category (e.g. `{ faith: 3 }`) — the same
+ *   "one field, many keys" shape `stocks` already uses for quantity
+ *   resources — so a new 'flag'-consumption service (a school, a bath
+ *   house, ...) never needs a new field name, only a new catalog entry.
+ *   Omitted `periodLock` entirely means the role never locks (nothing to
+ *   gate, e.g. an unconditional distributor). This is the ONLY place a
+ *   lock field name (when one is used at all) is declared — see
+ *   contexts/supply/domain/policies/PeriodLockPolicy.js, which knows
+ *   nothing about "producer", "consumer", or any resource/service name.
+ * @property {{ sourceLinkField?: string, linksField?: string, linkTargetIdField?: string, allocationField?: string }} [hubLink]
+ *   Hub-to-distributor link storage field names for this role — the
+ *   'distributor' side declares `sourceLinkField` (which of its own fields
+ *   points at its assigned hub); the 'hub' side declares `linksField`/
+ *   `linkTargetIdField`/`allocationField` (its own linked-distributors list
+ *   shape). Omitted means this role never participates in a hub link (e.g.
+ *   a distributor with no hub leg, like a school). Resolved via
+ *   ResourceRolePolicy.getHubLinkForRole — no separate policy module, since
+ *   there's nothing to compute here, only field names to read (unlike
+ *   periodLock's unit-resolution logic).
  *
  * @typedef {Object} PlacementRequirement
  * @property {ResourceRoleKind} role Role another, already-placed building must

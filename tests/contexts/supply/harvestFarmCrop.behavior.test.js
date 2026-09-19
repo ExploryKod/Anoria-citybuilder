@@ -7,7 +7,6 @@ import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domai
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { matchesSchedule } from '../../../src/contexts/supply/domain/policies/ResourceSchedulePolicy.js';
 import { getAmountForRole, getScheduleForRole, hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
-import { PRODUCER_BOOKKEEPING } from '../../../src/contexts/supply/domain/catalogs/ResourceBookkeepingCatalog.js';
 import { ProduceResource } from '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js';
 import { RunResourceCommandForRole } from '../../../src/contexts/supply/application/commands/RunResourceCommandForRole.js';
 
@@ -101,7 +100,6 @@ describe('Supply — farm harvest', () => {
       const outcome = await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3, monthIndex: 9 },
-        bookkeeping: PRODUCER_BOOKKEEPING,
       });
 
       expect(outcome).toEqual({
@@ -121,13 +119,11 @@ describe('Supply — farm harvest', () => {
       await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3 },
-        bookkeeping: PRODUCER_BOOKKEEPING,
       });
 
       const second = await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3 },
-        bookkeeping: PRODUCER_BOOKKEEPING,
       });
 
       expect(second.produced).toBe(false);
@@ -139,12 +135,10 @@ describe('Supply — farm harvest', () => {
       await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3 },
-        bookkeeping: PRODUCER_BOOKKEEPING,
       });
       await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 4 },
-        bookkeeping: PRODUCER_BOOKKEEPING,
       });
 
       expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(156);
@@ -154,7 +148,6 @@ describe('Supply — farm harvest', () => {
       const outcome = await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'summer', year: 3 },
-        bookkeeping: PRODUCER_BOOKKEEPING,
       });
       expect(outcome.produced).toBe(false);
       expect(outcome.reason).toBe('not_production_period');
@@ -172,7 +165,6 @@ describe('Supply — farm harvest', () => {
           await useCase.execute({
             buildingId: 'Farm-Wheat-2-3',
             period: { season: 'autumn', year: 1 },
-            bookkeeping: PRODUCER_BOOKKEEPING,
           })
         ).reason
       ).toBe('not_operational');
@@ -181,7 +173,6 @@ describe('Supply — farm harvest', () => {
           await useCase.execute({
             buildingId: 'Farm-Carrot-4-5',
             period: { season: 'autumn', year: 1 },
-            bookkeeping: PRODUCER_BOOKKEEPING,
           })
         ).reason
       ).toBe('not_operational');
@@ -203,7 +194,6 @@ describe('Supply — farm harvest', () => {
         buildParams: (farm) => ({
           buildingId: farm.id,
           period: { season: 'autumn', year: 2, monthIndex: 9 },
-          bookkeeping: PRODUCER_BOOKKEEPING,
         }),
         successKey: 'produced',
       });

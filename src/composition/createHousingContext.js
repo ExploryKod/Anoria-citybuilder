@@ -12,7 +12,7 @@ import { EvaluateHouseFoodAffluence } from '../contexts/housing/application/quer
 import { PreviewHouseEvolution } from '../contexts/housing/application/queries/PreviewHouseEvolution.js';
 import {
   getCitizenSkillsForHouse,
-  houseCitizenHasSkill,
+  houseCitizenHasSkillAtLevel,
   residentialGroupForHouseType,
 } from '../contexts/housing/domain/policies/GroupSkillPolicy.js';
 import { computeHouseCitizenComposition } from '../contexts/housing/domain/policies/HouseCitizenCompositionPolicy.js';
@@ -86,8 +86,8 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
       return evolveHouseBuilding.execute({ houseId });
     },
 
-    async evolveAllHouseBuildings() {
-      return evolveAllHouseBuildings.execute();
+    async evolveAllHouseBuildings({ periodKey } = {}) {
+      return evolveAllHouseBuildings.execute({ periodKey });
     },
 
     async getCityPopulationSummary() {
@@ -128,9 +128,8 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
      * @returns {ReadonlyArray<string>}
      */
     getCitizenSkillsForLaborSource(house) {
-      const level = house.level === 1 ? 1 : 2;
       return getCitizenSkillsForHouse({
-        level,
+        level: house.level ?? 2,
         residentialGroup: residentialGroupForHouseType(house.type),
       });
     },
@@ -138,13 +137,14 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     /**
      * @param {{ type?: string, level?: number }} house
      * @param {string} skillKey
+     * @param {number} [requiredLevel]
      * @returns {boolean}
      */
-    citizenProvidesSkill(house, skillKey) {
-      const level = house.level === 1 ? 1 : 2;
-      return houseCitizenHasSkill(
-        { level, residentialGroup: residentialGroupForHouseType(house.type) },
+    citizenProvidesSkillAtLevel(house, skillKey, requiredLevel) {
+      return houseCitizenHasSkillAtLevel(
+        { level: house.level ?? 2, residentialGroup: residentialGroupForHouseType(house.type) },
         skillKey,
+        requiredLevel,
       );
     },
 

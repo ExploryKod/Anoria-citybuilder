@@ -15,6 +15,18 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   dattes: Object.freeze({ emoji: '🌴', label: 'Dattes' }),
   wood: Object.freeze({ emoji: '🪵', label: 'Bois' }),
   food: Object.freeze({ emoji: '🍽️', label: 'Nourriture' }),
+  plate: Object.freeze({ emoji: '🍽️', label: 'Plat' }),
+  pot: Object.freeze({ emoji: '🍲', label: 'Pot' }),
+  amphora: Object.freeze({ emoji: '🏺', label: 'Amphore' }),
+  faith: Object.freeze({ emoji: '🙏', label: 'Foi' }),
+  school: Object.freeze({ emoji: '🎓', label: 'École' }),
+  library: Object.freeze({ emoji: '📖', label: 'Bibliothèque' }),
+  doctor: Object.freeze({ emoji: '🩺', label: 'Cabinet médical' }),
+  hospital: Object.freeze({ emoji: '🏥', label: 'Hôpital' }),
+  publicBath: Object.freeze({ emoji: '🛁', label: 'Bains publics' }),
+  theatre: Object.freeze({ emoji: '🎭', label: 'Théâtre' }),
+  cinema: Object.freeze({ emoji: '🎬', label: 'Cinéma' }),
+  pub: Object.freeze({ emoji: '🍺', label: 'Taverne' }),
 });
 
 /**

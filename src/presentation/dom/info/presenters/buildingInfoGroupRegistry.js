@@ -30,7 +30,6 @@ import {
 import {
   formatHouseSkillsModel,
   formatHouseResourcesModel,
-  formatHouseDietModel,
   formatHouseLayoutHeader,
   formatHouseLayoutOptions,
 } from './formats/houseInfoFormat.js';
@@ -52,8 +51,13 @@ import {
   formatNatureLayoutHeader,
   formatNatureLayoutOptions,
 } from './formats/natureInfoFormat.js';
+import {
+  formatServiceLayoutHeader,
+  formatServiceLayoutOptions,
+  formatServiceOverviewModel,
+  formatServiceStaffModel,
+} from './formats/serviceInfoFormat.js';
 import { renderHouseSkillsView, renderHouseResourcesView } from '../views/houseInfoView.js';
-import { renderDietTab } from '../views/dietInfoView.js';
 import { renderHubStorageFoyerView } from '../views/hub/hubStorageFoyerView.js';
 import { renderKvPanelView } from '../views/kvPanelView.js';
 
@@ -70,11 +74,6 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         label: '🧠 Savoirs',
         format: formatHouseSkillsModel,
         render: (container, model) => renderHouseSkillsView(container, model),
-      },
-      {
-        id: BUILDING_INFO_TAB_IDS.diet,
-        format: formatHouseDietModel,
-        render: (container, model) => renderDietTab(container, model),
       },
       {
         id: BUILDING_INFO_TAB_IDS.stocks,
@@ -162,6 +161,24 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
       {
         id: BUILDING_INFO_TAB_IDS.staff,
         format: formatMarketStaffModel,
+        render: (container, model) => renderKvPanelView(container, model),
+      },
+      ...COMMON_BUILDING_INFO_TAB_SPECS,
+    ],
+  },
+  [BUILDING_INFO_GROUPS.service]: {
+    formatLayoutOptions: formatServiceLayoutOptions,
+    formatLayoutHeader: formatServiceLayoutHeader,
+    tabs: [
+      {
+        id: BUILDING_INFO_TAB_IDS.foyer,
+        label: '⛪ État',
+        format: formatServiceOverviewModel,
+        render: (container, model) => renderKvPanelView(container, model),
+      },
+      {
+        id: BUILDING_INFO_TAB_IDS.staff,
+        format: formatServiceStaffModel,
         render: (container, model) => renderKvPanelView(container, model),
       },
       ...COMMON_BUILDING_INFO_TAB_SPECS,

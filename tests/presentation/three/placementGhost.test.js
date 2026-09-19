@@ -53,7 +53,7 @@ jest.unstable_mockModule(
   })
 );
 
-const { createPlacementGhostController } = await import(
+const { createPlacementGhostController, applyGhostAppearance } = await import(
   '../../../src/presentation/three/placement/placementGhost.js'
 );
 
@@ -74,7 +74,7 @@ describe('placementGhost', () => {
   });
 
   test('moves Kenney ghost mesh when hover tile changes', async () => {
-    // House-Blue is villageTown-labelled but catalog-reassigned to a Kenney
+    // House-Blue is sceneTile-labelled but catalog-reassigned to a Kenney
     // mesh (buildingAssets.js) — this is the exact case that must take the
     // Kenney branch by catalog `source`, not by an id-prefix guess.
     controller.show('House-Blue', 2, 3, true, { gridSize: 1 });
@@ -103,10 +103,10 @@ describe('placementGhost', () => {
     syncController.rotateStep();
     expect(syncController.rotationStep).toBe(0);
 
-    // Farm-Wheat stays villageTown-sourced (House-Blue/Red/Purple are all
+    // grass (procedural) stays sceneTile-sourced (farms, houses and nature are all
     // reassigned to Kenney now) — the synchronous createAsset path, not the
     // async Kenney adapter.
-    syncController.show('Farm-Wheat', 2, 3, true, { gridSize: 1 });
+    syncController.show('grass', 2, 3, true, { gridSize: 1 });
     syncController.rotateStep();
     expect(syncController.rotationStep).toBe(1);
   });
@@ -157,5 +157,37 @@ describe('placementGhost', () => {
 
     const ghost = scene.children.find((child) => child.name === 'placement-ghost');
     expect(ghost).toBeTruthy();
+  });
+});
+
+describe('applyGhostAppearance styles', () => {
+  const makeMesh = () => {
+    const map = new THREE.Texture();
+    const material = new THREE.MeshStandardMaterial({ map });
+    return { mesh: new THREE.Mesh(new THREE.BoxGeometry(), material), material, map };
+  };
+
+  test("'tint' (default) replaces the material with a flat untextured one", () => {
+    const { mesh } = makeMesh();
+    applyGhostAppearance(mesh, { valid: true });
+    expect(mesh.material.map).toBeNull();
+  });
+
+  test("'preview' keeps the real texture on a cloned, translucent material", () => {
+    const { mesh, material, map } = makeMesh();
+    applyGhostAppearance(mesh, { valid: true, style: 'preview' });
+    expect(mesh.material).not.toBe(material); // original is shared with the cached template
+    expect(mesh.material.map).toBe(map);
+    expect(mesh.material.transparent).toBe(true);
+    expect(mesh.material.opacity).toBeLessThan(1);
+    expect(material.transparent).toBe(false);
+  });
+
+  test("'preview' glows differently when the position is invalid", () => {
+    const valid = makeMesh().mesh;
+    const invalid = makeMesh().mesh;
+    applyGhostAppearance(valid, { valid: true, style: 'preview' });
+    applyGhostAppearance(invalid, { valid: false, style: 'preview' });
+    expect(valid.material.emissive.getHex()).not.toBe(invalid.material.emissive.getHex());
   });
 });

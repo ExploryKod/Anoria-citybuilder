@@ -21,7 +21,6 @@ export const buildingsObjects = Object.freeze([
   'Market-Stall',
   'Market-Stall-Blue',
   'Market-Stall-Red',
-  'Tombstone-1',
   'Farm-Carrot',
   'Farm-Wheat',
   'Farm-Cabbage',

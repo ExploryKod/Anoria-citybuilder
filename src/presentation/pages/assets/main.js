@@ -7,7 +7,7 @@ import {
   countAssetsByFilter,
   sectionMatchesFilter,
 } from './assetsPageFilters.js';
-import { renderVillageThumbnail } from './villageThumbnailRenderer.js';
+import { renderGlbThumbnail, renderSceneTileThumbnail } from './assetThumbnailRenderer.js';
 
 const PREVIEW_HEIGHT_PX = 104;
 const root = document.getElementById('assets-root');
@@ -118,7 +118,10 @@ function createAssetCard(item) {
     canvas.setAttribute('role', 'img');
     canvas.setAttribute('aria-label', item.displayName || item.id);
     previewWrap.appendChild(canvas);
-    renderVillageThumbnail(item.id, canvas, PREVIEW_HEIGHT_PX).catch(() => {});
+    const render = item.glbUrl
+      ? renderGlbThumbnail(item.glbUrl, canvas, PREVIEW_HEIGHT_PX)
+      : renderSceneTileThumbnail(item.id, canvas, PREVIEW_HEIGHT_PX);
+    render.catch(() => {});
   }
 
   const body = document.createElement('div');
@@ -151,7 +154,10 @@ function createAssetCard(item) {
     body.appendChild(fieldRow('Placement', 'Procedural only (no toolbar)'));
   }
 
-  if (item.source === 'kenney-city' || item.source === 'kenney-nature') {
+  if (item.source === 'kenney-city' || item.source === 'kenney-nature' || item.source === 'kenney-road' || item.source === 'kenney-farm') {
+    if (item.usesKenneyId) {
+      body.appendChild(fieldRow('Rendered as', item.usesKenneyId));
+    }
     if (item.kenneyPrefabKey) {
       body.appendChild(fieldRow('Kenney prefab', item.kenneyPrefabKey));
     }
@@ -160,6 +166,9 @@ function createAssetCard(item) {
     }
     if (item.kenneyGlbPath) {
       body.appendChild(fieldRow('GLB path', item.kenneyGlbPath));
+    }
+    if (item.cropGlbFile) {
+      body.appendChild(fieldRow('Crop GLBs (par stade)', item.cropGlbFile));
     }
     if (item.kitId) {
       body.appendChild(fieldRow('Kit', item.kitId));

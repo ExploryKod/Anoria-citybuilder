@@ -105,6 +105,7 @@ import { prefersTouchPlacementFlow } from './touchPlacementInput.js';
 import { canPlaceBuildingAtTileWithSupplyRules } from '../../composition/canPlaceBuildingAtTileWithSupplyRules.js';
 import { isRoadBuildingType } from '../../composition/constructionCatalog.js';
 import { createPlacementRotationHud } from './placement/placementRotationHud.js';
+import { getSelectableMeshIds, resolveSelectedMeshId } from './meshs/resolveBuildingMesh.js';
 
 /**
  * @param {object | null | undefined} object
@@ -128,6 +129,13 @@ export function createGame(gameStore, assetManager, citySize = null) {
   resetCumulativeDeaths();
 
   let activeToolId = '';
+  /** How many times S was pressed for the active tool — see resolveSelectedMeshId. */
+  let selectedMeshIndex = 0;
+
+  /** Catalog id actually previewed/placed for the active tool (S-selected mesh). */
+  function resolvePlacementBuildingId(toolId = activeToolId) {
+    return toolId === activeToolId ? resolveSelectedMeshId(toolId, selectedMeshIndex) : toolId;
+  }
   let time = 0;
   let isPause;
   let isOver;
@@ -174,8 +182,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
   }
 
   function beginTouchPendingPlacement(placeX, placeY, toolId) {
-    const buildingType = toolId;
-    const gridSize = buildingPlacementCatalog[toolId]?.gridSize ?? 1;
+    const buildingType = resolvePlacementBuildingId(toolId);
+    const gridSize = buildingPlacementCatalog[buildingType]?.gridSize ?? 1;
     const rotationStep = scene.placementGhost?.rotationStep ?? 0;
     touchPendingPlacement = {
       x: placeX,
@@ -192,6 +200,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       x: placeX,
       y: placeY,
       gridSize,
+      canSelectMesh: getSelectableMeshIds(toolId).length > 0,
     });
   }
 
@@ -423,6 +432,23 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
   }
 
+  /** S / HUD button while a touch placement is pending: re-anchor the ghost on the next mesh. */
+  function selectMeshForPendingPlacement() {
+    if (!touchPendingPlacement) {
+      return;
+    }
+    const { x, y, toolId, rotationStep } = touchPendingPlacement;
+    if (getSelectableMeshIds(toolId).length === 0) {
+      return;
+    }
+    selectedMeshIndex += 1;
+    const buildingType = resolvePlacementBuildingId(toolId);
+    const gridSize = buildingPlacementCatalog[buildingType]?.gridSize ?? 1;
+    touchPendingPlacement.buildingType = buildingType;
+    touchPendingPlacement.gridSize = gridSize;
+    scene.placementGhost.anchor(buildingType, x, y, true, gridSize, { rotationStep });
+  }
+
   placementRotationHud = createPlacementRotationHud({
     getCamera: () => scene.camera?.camera ?? null,
     getCanvas: () => scene.domElement ?? document.querySelector('canvas'),
@@ -433,6 +459,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       scene.placementGhost.rotateStep();
       touchPendingPlacement.rotationStep = scene.placementGhost.rotationStep;
     },
+    onSelectMesh: () => selectMeshForPendingPlacement(),
     onConfirm: async () => {
       if (!touchPendingPlacement) {
         return;
@@ -454,7 +481,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     getGhost: () => scene.placementGhost,
     getCity: () => city,
     getActiveToolId: () => activeToolId,
-    getEffectiveAssetId: () => activeToolId,
+    getEffectiveAssetId: () => resolvePlacementBuildingId(),
     assetCatalog: buildingPlacementCatalog,
     isPlaceableTool: (toolId) => isActivePlacementTool(toolId),
     getFocusedObject: () => scene.focusedObject,
@@ -592,7 +619,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       return 'skip';
     }
 
-    const buildingType = activeToolId;
+    const buildingType = resolvePlacementBuildingId();
     const tile = city.tiles[x][y];
     const canOverwriteRoad = !tile.buildingId || isRoadBuildingType(tile.buildingId);
     if (!canOverwriteRoad) {
@@ -892,7 +919,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
           city,
           x,
           y,
-          buildingType: activeToolId,
+          buildingType: resolvePlacementBuildingId(),
           assetCatalog: buildingPlacementCatalog,
         });
         if (!placementCheck.ok) {
@@ -943,7 +970,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
           city,
           x: placeX,
           y: placeY,
-          buildingType: activeToolId,
+          buildingType: resolvePlacementBuildingId(),
           assetCatalog: buildingPlacementCatalog,
           rotationStep: getPlacementRotationStep(),
         });
@@ -960,11 +987,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
       const placed = await finalizeBuildingPlacement(
         placeX,
         placeY,
-        activeToolId,
+        resolvePlacementBuildingId(),
         getPlacementRotationStep(),
       );
       if (placed) {
-        const gridSize = buildingPlacementCatalog[activeToolId]?.gridSize ?? 1;
+        const gridSize = buildingPlacementCatalog[resolvePlacementBuildingId()]?.gridSize ?? 1;
         placementGhostSession.suppressGhostAtFootprint(placeX, placeY, gridSize);
       } else {
         placementGhostSession.sync(selectedObject);
@@ -1010,6 +1037,28 @@ export function createGame(gameStore, assetManager, citySize = null) {
    * Rotates the ghost mesh when it is visible; otherwise R is consumed but has no effect.
    * @returns {boolean} true if build mode is active (blocks camera rotation)
    */
+  /**
+   * Build mode: S selects the next mesh of the active tool's `selectableMeshes`.
+   * Only consumed (blocking camera S) when the tool actually offers a choice.
+   * @returns {boolean}
+   */
+  function cycleMeshSelection() {
+    if (resolveActiveBehaviorMode() !== BEHAVIOR_MODE.BUILD) {
+      return false;
+    }
+    if (getSelectableMeshIds(activeToolId).length === 0) {
+      return false;
+    }
+    if (touchPendingPlacement) {
+      selectMeshForPendingPlacement();
+      return true;
+    }
+    selectedMeshIndex += 1;
+    placementGhostSession.sync();
+    return true;
+  }
+  scene.onCycleMeshSelection = cycleMeshSelection;
+
   scene.onRotateBuildingTool = () => {
     if (resolveActiveBehaviorMode() !== BEHAVIOR_MODE.BUILD) {
       return false;
@@ -1182,17 +1231,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
     pause() {
       isPause = true;
       gameUI.setPaused(true);
-      if (scene.pauseCitizen) {
-        scene.pauseCitizen();
-      }
     },
 
     async play() {
       isPause = false;
       gameUI.setPaused(false);
-      if (scene.resumeCitizen) {
-        scene.resumeCitizen();
-      }
       if (objectivesTracker.enabled) {
         await objectivesTracker.checkObjectives(0);
       }
@@ -1246,6 +1289,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     setActiveToolId(toolId) {
       cancelTouchPendingPlacement();
       activeToolId = toolId;
+      selectedMeshIndex = 0;
       gameUI.activeToolId = toolId;
       placementGhostSession.onToolChanged();
       if (isEditorTerrainTool(toolId)) {

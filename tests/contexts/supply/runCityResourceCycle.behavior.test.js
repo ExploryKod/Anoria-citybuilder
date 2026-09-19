@@ -14,19 +14,11 @@ import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/Re
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
 // Market-Stall/Windmill-001/House-Blue are real catalog types — schedule,
-// categories, and totalKey now come from buildingCatalog.js (see
-// buildingEconomy.js), not a test-local circuit. Only the hub-link field
-// names (not yet generalized across resources) are still passed in.
+// categories, totalKey, and hub-link field names all come from
+// buildingCatalog.js (see buildingEconomy.js `hubLink` facts), not a
+// test-local circuit.
 const CATEGORIES = ['wheat', 'carrot', 'cabbage'];
 const TOTAL_KEY = 'food';
-
-const HUB_TRANSFER_BOOKKEEPING = {
-  sourceLinkField: 'supplyHubId',
-  linksField: 'linkedDistributors',
-  allocationField: 'allocatedStocks',
-  linkTargetIdField: 'distributorId',
-  saveLinks: async (repository, sourceId, links) => repository.saveHubLinkedDistributors(sourceId, links),
-};
 
 function toSnapshot(b) {
   return createSupplyBuildingSnapshot({
@@ -74,11 +66,20 @@ class FakeSupplyBuildingRepository {
     const b = this.rows.get(hubId);
     if (b) b.linkedDistributors = linkedDistributors;
   }
+
+  async updateBuildingFields(id, fields) {
+    const b = this.rows.get(id);
+    if (!b) return;
+    for (const key of Object.keys(fields)) {
+      if (fields[key] !== undefined) b[key] = fields[key];
+    }
+  }
 }
 
 const MARKET_ID = createBuildingInstanceId();
 const WINDMILL_ID = createBuildingInstanceId();
 const HOUSE_ID = createBuildingInstanceId();
+const HOUSE2_ID = createBuildingInstanceId();
 
 function market(overrides = {}) {
   return {
@@ -111,6 +112,23 @@ function house(id, overrides = {}) {
   };
 }
 
+const CHAPEL_ID = createBuildingInstanceId();
+
+function chapel(overrides = {}) {
+  return {
+    id: CHAPEL_ID,
+    type: 'Chapel',
+    x: 5,
+    y: 5,
+    roads: 1,
+    roadCount: 1,
+    worker: 2,
+    workerNeed: 2,
+    stocks: {},
+    ...overrides,
+  };
+}
+
 describe('RunCityResourceCycle', () => {
   test('distributes directly to consumers when no hub leg is configured', async () => {
     const repo = new FakeSupplyBuildingRepository([
@@ -131,18 +149,50 @@ describe('RunCityResourceCycle', () => {
     expect(result.distributorsProcessed).toBe(1);
     const houseRow = await repo.findBuildingRow(HOUSE_ID);
     expect(houseRow.stocks.wheat).toBeGreaterThan(0);
-    // Round-robin distributes 1 unit/pass to the sole consumer — several
-    // events, all for the same source/consumer/category pair.
-    expect(events.length).toBeGreaterThan(0);
-    expect(events.reduce((sum, e) => sum + e.amount, 0)).toBe(houseRow.stocks.wheat);
-    for (const event of events) {
-      expect(event).toMatchObject({
-        type: 'supply.resourceDelivered',
+    // Round-robin moves many units to the sole consumer across several
+    // passes, but that's ONE walker event for the whole cycle — not one
+    // per unit — carrying the distinct consumerIds reached.
+    expect(events).toEqual([
+      {
+        type: 'supply.resourceDeliveryRoute',
         sourceId: MARKET_ID,
-        consumerId: HOUSE_ID,
-        category: 'wheat',
-      });
-    }
+        consumerIds: [HOUSE_ID],
+      },
+    ]);
+  });
+
+  test('one event per cycle even when round-robin moves many units to many consumers', async () => {
+    const repo = new FakeSupplyBuildingRepository([
+      market({ stocks: { wheat: 10, food: 10 } }),
+      house(HOUSE_ID),
+      house(HOUSE2_ID),
+    ]);
+    const distribute = new DistributeResourceToConsumers(repo);
+    const events = [];
+    const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
+
+    await cycle.execute({
+      categories: CATEGORIES,
+      season: 'summer',
+      timeInfo: { turn: 1 },
+      maxDistance: 5,
+    });
+
+    // Each house received several units across round-robin passes (proving
+    // the underlying transfers really are per-unit), yet exactly one
+    // aggregated event fires for the whole cycle, listing each distinct
+    // consumer once, in first-served order.
+    const house1Stock = (await repo.findBuildingRow(HOUSE_ID)).stocks.wheat;
+    const house2Stock = (await repo.findBuildingRow(HOUSE2_ID)).stocks.wheat;
+    expect(house1Stock).toBeGreaterThan(1);
+    expect(house2Stock).toBeGreaterThan(1);
+    expect(events).toEqual([
+      {
+        type: 'supply.resourceDeliveryRoute',
+        sourceId: MARKET_ID,
+        consumerIds: [HOUSE_ID, HOUSE2_ID],
+      },
+    ]);
   });
 
   test('restocks from a linked hub first when a hub leg is configured, then distributes', async () => {
@@ -175,7 +225,6 @@ describe('RunCityResourceCycle', () => {
 
     await cycle.execute({
       categories: CATEGORIES,
-      hubTransferBookkeeping: HUB_TRANSFER_BOOKKEEPING,
       season: 'summer',
       month: 'January',
       timeInfo: { turn: 1 },
@@ -185,5 +234,63 @@ describe('RunCityResourceCycle', () => {
     expect(hubLinkResolved).toEqual({ marketId: MARKET_ID, hasHubLink: true });
     const houseRow = await repo.findBuildingRow(HOUSE_ID);
     expect(houseRow.stocks.wheat).toBeGreaterThan(0);
+  });
+
+  test('a hub-less flag distributor (chapel) marks houses served, no stock leg at all', async () => {
+    const repo = new FakeSupplyBuildingRepository([chapel(), house(HOUSE_ID)]);
+    const distribute = new DistributeResourceToConsumers(repo);
+    const events = [];
+    const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
+
+    const result = await cycle.execute({
+      categories: ['faith'],
+      season: 'summer',
+      month: 'January',
+      timeInfo: { turn: 1, monthIndex: 5 },
+      maxDistance: 5,
+    });
+
+    expect(result.distributorsProcessed).toBe(1);
+    const houseRow = await repo.findBuildingRow(HOUSE_ID);
+    // Pinned to the EXACT monthIndex, not just "some number" — this is the
+    // regression the bug hid behind: `period` built here used to omit
+    // `monthIndex` (only `season`/`month`, the string name), so
+    // PeriodLockPolicy.resolvePeriodKey('month', ...) fell back to 0 every
+    // time. A house's tier-2 `serviceCoverage: 'faith'` requirement compares
+    // this flag against the REAL current monthIndex (see
+    // HouseTierRequirementPolicy.js), so a flag stuck at 0 only ever matched
+    // in month 0 and looked permanently unserved (or caused a demotion)
+    // every month after — Chapel could be fully staffed and in range and
+    // houses would still never reach tier 2.
+    expect(houseRow.servedFlags).toEqual({ faith: 5 });
+    expect(events).toEqual([
+      {
+        type: 'supply.resourceDeliveryRoute',
+        sourceId: CHAPEL_ID,
+        consumerIds: [HOUSE_ID],
+      },
+    ]);
+  });
+
+  test('the served flag tracks the REAL current month across cycles, not a stuck value', async () => {
+    const repo = new FakeSupplyBuildingRepository([chapel(), house(HOUSE_ID)]);
+    const distribute = new DistributeResourceToConsumers(repo);
+    const cycle = new RunCityResourceCycle(repo, distribute);
+
+    await cycle.execute({
+      categories: ['faith'],
+      season: 'summer',
+      timeInfo: { turn: 1, monthIndex: 6 },
+      maxDistance: 5,
+    });
+    expect((await repo.findBuildingRow(HOUSE_ID)).servedFlags).toEqual({ faith: 6 });
+
+    await cycle.execute({
+      categories: ['faith'],
+      season: 'summer',
+      timeInfo: { turn: 2, monthIndex: 7 },
+      maxDistance: 5,
+    });
+    expect((await repo.findBuildingRow(HOUSE_ID)).servedFlags).toEqual({ faith: 7 });
   });
 });

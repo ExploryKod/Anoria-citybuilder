@@ -4,6 +4,7 @@ import {
   hasResourceRole,
   getCategoriesForRole,
   getRangeForRole,
+  getResourceStockShape,
 } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 
 describe('ResourceRolePolicy', () => {
@@ -14,9 +15,9 @@ describe('ResourceRolePolicy', () => {
     expect(getCategoriesForRole('Farm-Wheat', 'producer')).toEqual(['wheat']);
   });
 
-  test('a market is a distributor with a range', () => {
+  test('a market is a distributor with an unlimited range (debugging aid, 2026-09-11)', () => {
     expect(hasResourceRole('Market-Stall', 'distributor', 'wheat')).toBe(true);
-    expect(getRangeForRole('Market-Stall', 'distributor')).toBe(5);
+    expect(getRangeForRole('Market-Stall', 'distributor')).toBe(Infinity);
   });
 
   test('a windmill holds both a collector and a hub role, with no range', () => {
@@ -33,5 +34,22 @@ describe('ResourceRolePolicy', () => {
     expect(getResourceRoles('StonePath-001')).toEqual([]);
     expect(hasResourceRole('StonePath-001', 'producer')).toBe(false);
     expect(getRangeForRole('StonePath-001', 'distributor')).toBeUndefined();
+  });
+
+  describe('getResourceStockShape — the shared stock shape for every building row', () => {
+    test('includes a producer-only category with no consumer anywhere yet (pottery)', () => {
+      // Regression guard: this shape used to only look at 'consumer'
+      // 'quantity' entries, so a producer-only good (e.g. Factory-Plate's
+      // 'plate', which nothing consumes yet) would silently vanish on every
+      // stock round-trip (createSupplyStock only keeps listed categories).
+      const { categories } = getResourceStockShape();
+      expect(categories).toEqual(expect.arrayContaining(['plate', 'pot', 'amphora']));
+    });
+
+    test('still aggregates food under the one shared totalKey — pottery does not get one', () => {
+      const { categories, totalKey } = getResourceStockShape();
+      expect(totalKey).toBe('food');
+      expect(categories).toEqual(expect.arrayContaining(['wheat', 'carrot', 'cabbage', 'fruit', 'game']));
+    });
   });
 });

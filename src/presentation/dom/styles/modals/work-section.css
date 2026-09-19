@@ -34,6 +34,40 @@
     text-align: left;
 }
 
+/* Group tabs — one per social group + "Commun" (shared skills), rendered
+   dynamically by WorkSectionPresenter.js from the catalog (never a fixed
+   count here): each tab's table only ever lists what that group can
+   actually staff, instead of one global sector list implying every citizen
+   could work every sector. */
+.work-group-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.work-tab-btn {
+    border: none;
+    border-radius: var(--border-radius-small);
+    padding: 8px 16px;
+    background: #fafafa;
+    color: var(--cta);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.work-tab-btn:hover {
+    background-color: var(--cta);
+    color: white;
+}
+
+.work-tab-btn.active {
+    background-color: var(--lightgreen);
+    color: white;
+}
+
 .work-table {
     width: 100%;
     border-collapse: collapse;

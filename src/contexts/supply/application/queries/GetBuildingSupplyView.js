@@ -6,7 +6,7 @@
  * isBuying / isCollecting are gated by OperationalGatePolicy (route + staff).
  */
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
-import { hasResourceRole } from '../../domain/policies/ResourceRolePolicy.js';
+import { hasResourceRole, getConsumptionModeForRole } from '../../domain/policies/ResourceRolePolicy.js';
 
 export class GetBuildingSupplyView {
   /**
@@ -88,13 +88,21 @@ export class GetBuildingSupplyView {
 
 /**
  * @param {string} type
- * @returns {'market' | 'windmill' | 'farm' | 'house' | 'other'} UI/DTO
- *   vocabulary kept as-is for presentation compatibility — derived from the
- *   type's declarative resourceRoles (see ResourceRolePolicy.js), not a
- *   name-string match.
+ * @returns {'market' | 'service' | 'windmill' | 'farm' | 'house' | 'other'}
+ *   UI/DTO vocabulary kept as-is for presentation compatibility — derived
+ *   from the type's declarative resourceRoles (see ResourceRolePolicy.js),
+ *   not a name-string match. A 'distributor' role splits into two kinds by
+ *   its `consumption` mode: 'market' moves a depleting numeric stock
+ *   (Market-Stall selling food), 'service' just marks nearby consumers
+ *   "served this period" with no stock at all (Chapel's faith, School,
+ *   Doctor, ... — see DistributeResourceToConsumers.js) — these need very
+ *   different info-panel content (no stock to show, no buying-period
+ *   state), previously both silently routed to the market panel.
  */
 export function classifySupplyKind(type) {
-  if (hasResourceRole(type, 'distributor')) return 'market';
+  if (hasResourceRole(type, 'distributor')) {
+    return getConsumptionModeForRole(type, 'distributor') === 'flag' ? 'service' : 'market';
+  }
   if (hasResourceRole(type, 'hub')) return 'windmill';
   if (hasResourceRole(type, 'producer')) return 'farm';
   if (hasResourceRole(type, 'consumer')) return 'house';
