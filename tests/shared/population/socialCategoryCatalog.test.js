@@ -71,7 +71,7 @@ describe('SOCIAL_CATEGORY — single source for the 3 social categories', () => 
     expect(scholars.tiers[2].skills).toEqual({ 'stockage-alimentaire': 1, medical: 1 });
     expect(scholars.tiers[3].skills).toEqual({ hygiene: 1, hospitality: 1 });
     expect(scholars.tiers[4].skills).toEqual({ education: 1, entertainment: 1 });
-    expect(scholars.tiers[5].skills).toEqual({ medical: 2, entertainment: 2, education: 2 });
+    expect(scholars.tiers[5].skills).toEqual({ medical: 2, entertainment: 2 });
   });
 
   test('each requirement kind from an earlier tier is repeated in every later tier (cumulative, not inherited)', () => {

@@ -365,8 +365,8 @@ export const BUILDING_ECONOMY = {
   // one of scholars' service skills (medical/education/hygiene/
   // entertainment/hospitality — see socialCategoryCatalog.js), matching
   // `eligibleSectors: [6]` for that group. Where two buildings cover the
-  // same need at different scale (Doctor/Hospital, Library-BookShop/School,
-  // Cinema/Theatre), the bigger one requires the skill's level-2 grant.
+  // same need at different scale (Doctor/Hospital, Cinema/Theatre), the bigger
+  // one requires the skill's level-2 grant — unless it gates a house tier (School).
   //
   // range: Infinity (2026-09-11, same reasoning as Chapel/Market above) —
   // a debugging aid: with distance never a confound, a house failing to
@@ -374,10 +374,17 @@ export const BUILDING_ECONOMY = {
   // a missing skill grant, ...), not just "too far from the service." Once
   // gameplay balancing starts, these can get real per-building ranges back
   // one at a time.
+  // School gates tier 5 (`serviceCoverage: 'school'`), and a distributor only serves
+  // while staffed — so, like Doctor and Cinema (the other tier gates), it needs the
+  // skill's level 1, which scholars get at tier 4, one tier AHEAD of the gate. A
+  // `requiredSkillLevel: 2` here (granted only from tier 5) deadlocked the ladder:
+  // no house could reach tier 5 without a running School, and none could staff it
+  // before tier 5. Only buildings that gate NO tier (Hospital, Theatre) take the
+  // level-2 grant — see tests/shared/population/serviceStaffingReadiness.test.js.
   School: {
     displayName: 'École',
     construction: { price: 90, category: 'public' },
-    employment: { sector: 6, workerNeed: 3, eliteNeed: 0, requiredSkill: 'education', requiredSkillLevel: 2 },
+    employment: { sector: 6, workerNeed: 3, eliteNeed: 0, requiredSkill: 'education' },
     resourceRoles: [{ role: 'distributor', categories: ['school'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Library: {

@@ -322,6 +322,20 @@ describe('Employment — DistributeCityWorkers', () => {
     });
   });
 
+  describe('DistributeCityWorkers — the School is staffable BEFORE tier 5 (no tier-gate deadlock)', () => {
+    test('tier-5 coverage needs a running School, so tier-4 scholars (education level 1) must be able to staff it', async () => {
+      const repo = new InMemoryEmploymentBuildingRepository([
+        house('House-Purple-lo', 8, 1, 'House-Purple', 4), // tier 4: the highest tier reachable without a School
+        workplace('School-a', { workerNeed: 3, sector: 6, type: 'School' }),
+      ]);
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+
+      await useCase.execute({});
+
+      expect(repo.get('School-a').worker).toBe(3);
+    });
+  });
+
   describe('DistributeCityWorkers — skill priority (2026-09-10 per-group redesign)', () => {
     // A dual-skilled artisans house (fermier + artisanat, same tier-2 grant
     // — see socialCategoryCatalog.js) is the one real case where priority

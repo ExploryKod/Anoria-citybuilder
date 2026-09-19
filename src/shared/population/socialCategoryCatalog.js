@@ -241,11 +241,12 @@ export const SOCIAL_CATEGORY = Object.freeze({
           Object.freeze({ kind: 'serviceCoverage', category: 'cinema', coveragePeriods: 2 }),
           Object.freeze({ kind: 'goodsVariety', min: 2 }),
         ]),
-        // Level-2 raise for the buildings not wired to any tier gate yet
-        // (Hospital, Theatre) plus School (level-2 'education', bigger
-        // staff than Library/BookShop's level-1) — end-game unlocks, no
-        // house needs these to advance further.
-        skills: Object.freeze({ medical: 2, entertainment: 2, education: 2 }),
+        // Level-2 raise for the buildings not wired to any tier gate
+        // (Hospital, Theatre) — end-game unlocks, no house needs these to
+        // advance further. School is NOT one of them: it gates this very tier
+        // (`serviceCoverage: 'school'` above), so it is staffed by `education`
+        // level 1, granted at tier 4 — a level-2 grant here would come too late.
+        skills: Object.freeze({ medical: 2, entertainment: 2 }),
       }),
     }),
   }),
