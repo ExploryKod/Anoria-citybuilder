@@ -3,31 +3,27 @@
 > **Page site :** [/credits](https://anoria.vercel.app/credits) — contact : eklati@protonmail.com
 
 
-#### Les assets utilisées pour le village proviennent de cette source Creative Commons :
-  
-  <a href="https://sketchfab.com/3d-models/village-town-assets-adf2e5a787804ffcaaa1ad6d541278d5?utm_medium=embed&utm_campaign=share-popup&utm_content=adf2e5a787804ffcaaa1ad6d541278d5" 
-      target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;"> Village / Town Assets   </a> 
-      
-  by <a href="https://sketchfab.com/imwolfgang?utm_medium=embed&utm_campaign=share-popup&utm_content=adf2e5a787804ffcaaa1ad6d541278d5" 
-                                  target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;"> imwolfgang </a> 
-    on 
-    <a href="https://sketchfab.com?utm_medium=embed&utm_campaign=share-popup&utm_content=adf2e5a787804ffcaaa1ad6d541278d5" target="_blank" rel="nofollow" style="font-weight: bold; color: #1CAAD9;">
-      Sketchfab
-    </a>
+### Modèles 3D utilisés aujourd'hui — packs Kenney
 
-**Autre informations :** 
+Les bâtiments, routes, arbres, rochers et champs cultivés proviennent des packs de [Kenney](https://kenney.nl) (Kenney Vleugels), sous licence [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) (domaine public — attribution appréciée mais non obligatoire) :
 
-> "Village / Town Assets" [source ici](https://skfb.ly/otGwo) by imwolfgang is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
+- [City Kit (Commercial)](https://kenney.nl/assets/city-kit-commercial) — marchés, services et commerces
+- [City Kit (Industrial)](https://kenney.nl/assets/city-kit-industrial) — fermes, moulin, ateliers
+- [City Kit (Suburban)](https://kenney.nl/assets/city-kit-suburban) — habitations
+- [City Kit (Roads)](https://kenney.nl/assets/city-kit-roads) — routes
+- [Nature Kit](https://kenney.nl/assets/nature-kit) — arbres, rochers, cultures (blé, carottes, feuilles) et sols de champs
 
-#### Autres assets contribuant au village
+Soutien Kenney : [kenney.nl/donate](https://kenney.nl/donate)
 
-"Game Art Village House: Ancient Greek Winery" (in game: factory) [source](https://skfb.ly/6T7Dq) by Watse D'haene is licensed under [Creative Commons Attribution](http://creativecommons.org/licenses/by/4.0/).
+### Historique — les modèles du village d'origine
 
-"Ancient Greek book shop" [source](https://skfb.ly/6TIZZ) by YunaOthmer is licensed under [Creative Commons Attribution](http://creativecommons.org/licenses/by/4.0/).
+Les premières versions d'Eraanurbs ont été construites avec les modèles ci-dessous. Ils ont été remplacés par les packs Kenney, mais ils ont donné son premier visage au village et font partie de l'histoire du jeu. Un grand merci à leurs auteurs :
 
-"Viking Carrot Farm" [source](https://skfb.ly/o69Lt) by Tom Verbeeck is licensed under [Creative Commons Attribution](http://creativecommons.org/licenses/by/4.0/).
-
-"Japan Castle" (in game: city hall) [source](https://skfb.ly/onQt9) by Koycho is licensed under [Creative Commons Attribution](http://creativecommons.org/licenses/by/4.0/).
+- [Village / Town Assets](https://skfb.ly/otGwo) by [imwolfgang](https://sketchfab.com/imwolfgang) on [Sketchfab](https://sketchfab.com) — les modèles principaux du village (maisons, fermes, marchés, chemins, arbres, décors) — [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
+- ["Game Art Village House: Ancient Greek Winery"](https://skfb.ly/6T7Dq) (usine) by Watse D'haene — [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
+- ["Ancient Greek book shop"](https://skfb.ly/6TIZZ) (librairie) by YunaOthmer — [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
+- ["Viking Carrot Farm"](https://skfb.ly/o69Lt) (ferme) by Tom Verbeeck — [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
+- ["Japan Castle"](https://skfb.ly/onQt9) (hôtel de ville) by Koycho — [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
 
 ## Icones 
 
