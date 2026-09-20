@@ -19,6 +19,7 @@ import {
     hasChainGoods,
 } from './FoodTraceabilityPresenter.js';
 import { createEmptyStocks } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 
 /** @type {{ supply: object } | null} */
 let deps = null;
@@ -131,6 +132,11 @@ export function initializeFoodTraceabilityTabs() {
     }
     
     tabsInitialized = true;
+}
+
+/** The name the catalog gives a building type — what the player reads, whatever the origin (market, chapel, windmill…). */
+function buildingLabelOf(type) {
+    return getBuildingDefinition(type)?.displayName ?? type ?? '—';
 }
 
 /**
@@ -260,7 +266,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                 
                 // Reverse farm-to-market transactions (farm sold)
                 monthTransactions.filter(t => 
-                    t.transactionType === 'farm_to_market' && matchesBuilding(t, true)
+                    t.transactionType === 'source_to_distributor' && matchesBuilding(t, true)
                 ).forEach(t => {
                     // Farm sold, so before = after + sold
                     if (isChainGood(t.foodType)) stocksBefore[t.foodType] = (stocksBefore[t.foodType] || 0) + t.quantity;
@@ -268,11 +274,11 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                 
                 // Reverse market purchases from farms (market bought)
                 monthTransactions.filter(t => 
-                    t.transactionType === 'farm_to_market' && matchesBuilding(t, false)
+                    t.transactionType === 'source_to_distributor' && matchesBuilding(t, false)
                 ).forEach(t => {
                     // Market bought, so before = after - bought + sold (need to account for sales)
                     const salesThisMonth = monthTransactions.filter(st => 
-                        st.transactionType === 'market_to_house' && 
+                        st.transactionType === 'distributor_to_consumer' && 
                         matchesBuilding(st, true) &&
                         st.foodType === t.foodType
                     ).reduce((sum, st) => sum + st.quantity, 0);
@@ -282,7 +288,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                 
                 // Reverse market-to-house transactions (market sold)
                 monthTransactions.filter(t => 
-                    t.transactionType === 'market_to_house' && matchesBuilding(t, true)
+                    t.transactionType === 'distributor_to_consumer' && matchesBuilding(t, true)
                 ).forEach(t => {
                     // Market sold, so before = after + sold
                     if (isChainGood(t.foodType)) stocksBefore[t.foodType] = (stocksBefore[t.foodType] || 0) + t.quantity;
@@ -290,7 +296,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                 
                 // Reverse house purchases (house bought)
                 monthTransactions.filter(t => 
-                    t.transactionType === 'market_to_house' && matchesBuilding(t, false)
+                    t.transactionType === 'distributor_to_consumer' && matchesBuilding(t, false)
                 ).forEach(t => {
                     // House bought, so before = after - bought + consumed
                     const consumptionThisMonth = monthTransactions.filter(ct => 
@@ -329,7 +335,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             
             // 1. Group Farm-Market transactions
             const farmMarketPairs = {};
-            transactions.filter(t => t.transactionType === 'farm_to_market').forEach(transaction => {
+            transactions.filter(t => t.transactionType === 'source_to_distributor').forEach(transaction => {
                 const farmKey = transaction.fromId || transaction.fromCoords;
                 const marketKey = transaction.toId || transaction.toCoords;
                 const pairKey = `${farmKey}-${marketKey}`;
@@ -338,8 +344,10 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                     farmMarketPairs[pairKey] = {
                         farmKey,
                         farmCoords: transaction.fromCoords,
+                        fromLabel: buildingLabelOf(transaction.fromType),
                         marketKey,
                         marketCoords: transaction.toCoords,
+                        toLabel: buildingLabelOf(transaction.toType),
                         transactions: [],
                         byFoodType: {}
                     };
@@ -356,7 +364,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             
             // 2. Group Market-House transactions
             const marketHousePairs = {};
-            transactions.filter(t => t.transactionType === 'market_to_house').forEach(transaction => {
+            transactions.filter(t => t.transactionType === 'distributor_to_consumer').forEach(transaction => {
                 const marketKey = transaction.fromId || transaction.fromCoords;
                 const houseKey = transaction.toId || transaction.toCoords;
                 const pairKey = `${marketKey}-${houseKey}`;
@@ -365,8 +373,10 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                     marketHousePairs[pairKey] = {
                         marketKey,
                         marketCoords: transaction.fromCoords,
+                        fromLabel: buildingLabelOf(transaction.fromType),
                         houseKey,
                         houseCoords: transaction.toCoords,
+                        toLabel: buildingLabelOf(transaction.toType),
                         transactions: [],
                         byFoodType: {}
                     };
@@ -405,7 +415,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                 // Also account for market sales this month
                 const marketSalesThisMonth = emptyGoodsTally();
                 transactions.filter(t => 
-                    t.transactionType === 'market_to_house' && 
+                    t.transactionType === 'distributor_to_consumer' && 
                     (t.fromId === pair.marketKey || t.fromCoords === pair.marketCoords)
                 ).forEach(t => {
                     if (isChainGood(t.foodType)) marketSalesThisMonth[t.foodType] += t.quantity;
@@ -467,7 +477,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                     
                     // Apply transactions to get stocks after
                     transactions.filter(t => 
-                        t.transactionType === 'farm_to_market' && 
+                        t.transactionType === 'source_to_distributor' && 
                         (t.fromId === farmKey || t.fromCoords === building.x + ',' + building.y)
                     ).forEach(t => {
                         if (isChainGood(t.foodType)) farmStocksAfter[t.foodType] = Math.max(0, (farmStocksAfter[t.foodType] || 0) - t.quantity);
@@ -476,7 +486,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                     
                     if (farmStocksAfter[chainTotalKey] > 0 || hasChainGoods(farmStocks)) {
                         const hasTransactions = transactions.some(t => 
-                            t.transactionType === 'farm_to_market' && 
+                            t.transactionType === 'source_to_distributor' && 
                             (t.fromId === farmKey || t.fromCoords === building.x + ',' + building.y)
                         );
                         if (!hasTransactions) {
@@ -495,14 +505,14 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                     
                     // Apply transactions
                     transactions.filter(t => 
-                        t.transactionType === 'farm_to_market' && 
+                        t.transactionType === 'source_to_distributor' && 
                         (t.toId === marketKey || t.toCoords === building.x + ',' + building.y)
                     ).forEach(t => {
                         if (isChainGood(t.foodType)) marketStocksAfter[t.foodType] = (marketStocksAfter[t.foodType] || 0) + t.quantity;
                     });
                     
                     transactions.filter(t => 
-                        t.transactionType === 'market_to_house' && 
+                        t.transactionType === 'distributor_to_consumer' && 
                         (t.fromId === marketKey || t.fromCoords === building.x + ',' + building.y)
                     ).forEach(t => {
                         if (isChainGood(t.foodType)) marketStocksAfter[t.foodType] = Math.max(0, (marketStocksAfter[t.foodType] || 0) - t.quantity);
@@ -525,7 +535,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                     
                     // Apply transactions
                     transactions.filter(t => 
-                        t.transactionType === 'market_to_house' && 
+                        t.transactionType === 'distributor_to_consumer' && 
                         (t.toId === houseKey || t.toCoords === building.x + ',' + building.y)
                     ).forEach(t => {
                         if (isChainGood(t.foodType)) houseStocksAfter[t.foodType] = (houseStocksAfter[t.foodType] || 0) + t.quantity;

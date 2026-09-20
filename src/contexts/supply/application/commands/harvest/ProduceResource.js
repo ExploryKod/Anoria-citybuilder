@@ -73,6 +73,7 @@ export class ProduceResource {
       if (
         entry.requiresOperational !== false &&
         !isOperational({
+          type: building.type,
           roadCount: building.roadCount,
           worker: building.worker,
           workerNeed: building.workerNeed,

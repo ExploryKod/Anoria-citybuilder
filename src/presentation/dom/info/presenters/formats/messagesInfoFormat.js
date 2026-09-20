@@ -1,3 +1,4 @@
+import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 /**
  * Messages tab — pure format (VM → display model).
  *
@@ -30,17 +31,6 @@ function unfedComplaint(totalUnfed) {
 }
 
 /**
- * Same road-exemption rule `formatWorkplaceEmployeesPanel` used to apply:
- * farms don't need road access to be staffed.
- * @param {string} buildingType
- * @returns {boolean}
- */
-function isFarmExemptFromRoad(buildingType) {
-  const type = buildingType || '';
-  return type.includes('Farm') || type.includes('farm');
-}
-
-/**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  * @returns {string | null}
  */
@@ -49,7 +39,7 @@ function personnelComplaint(vm) {
   if (!employees) return null;
 
   const roadCount = vm.buildingRow?.roads ?? 0;
-  if (roadCount <= 0 && !isFarmExemptFromRoad(vm.buildingType)) {
+  if (!isRoadNeedMet(vm.buildingType, roadCount)) {
     return "Aucune route ne dessert ce lieu, personne ne peut venir y travailler";
   }
 

@@ -1,12 +1,8 @@
+import { isRoadNeedMet } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+
 /**
  * Classify buildings for employment roles.
  */
-
-/** @param {string} type */
-export function isFarmType(type) {
-  const t = type || '';
-  return t.includes('Farm') || t.includes('farm');
-}
 
 /**
  * @param {string} type
@@ -45,21 +41,20 @@ export function isWorkplace(building) {
 }
 
 /**
- * Building has road access (Parcels truth persisted as roadCount).
- * @param {{ roadCount?: number }} building
+ * The building's road need is met: it has a road (Parcels truth persisted as
+ * roadCount), or its type needs none — the catalog's `requiresRoad`.
+ * @param {{ type?: string, roadCount?: number }} building
  */
 export function hasRoadAccess(building) {
-  return (building?.roadCount || 0) > 0;
+  return isRoadNeedMet(building?.type, building?.roadCount);
 }
 
 /**
- * Workplace eligible for hiring / employment aggregates.
- * Farms employ without road access; other workplaces require roadCount > 0.
+ * Workplace eligible for hiring / employment aggregates: its road need is met
+ * (a type the catalog declares `requiresRoad: false` employs without a road).
  *
  * @param {{ type?: string, workerNeed?: number, roadCount?: number }} building
  */
 export function isEligibleWorkplace(building) {
-  if (!isWorkplace(building)) return false;
-  if (isFarmType(building.type)) return true;
-  return hasRoadAccess(building);
+  return isWorkplace(building) && hasRoadAccess(building);
 }

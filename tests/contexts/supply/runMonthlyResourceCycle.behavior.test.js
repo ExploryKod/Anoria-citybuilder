@@ -137,7 +137,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
     expect(sales[0].quantity).toBeGreaterThan(0);
   });
 
-  test('logs the population of each house, and why a farm did not sell on the collection turn', async () => {
+  test('logs the population of each house, and why a farm did not sell on the collection turn (a road is not one)', async () => {
     const rowFor = (instanceId, type, x, extra) =>
       makeHouseRecord({
         instanceId,
@@ -148,14 +148,14 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       });
     const farmStock = { food: 78, wheat: 78, carrot: 0, cabbage: 0 };
     const houseId = createBuildingInstanceId();
-    const noRoadId = createBuildingInstanceId();
+    const roadlessId = createBuildingInstanceId();
     const noHarvestId = createBuildingInstanceId();
     const fullHubFarmId = createBuildingInstanceId();
     const hubId = createBuildingInstanceId();
     const staffed = { worker: 3, worker_need: 3 };
 
     await seedBuilding(rowFor(houseId, 'House-Red', 1, { pop: 12 }));
-    await seedBuilding(rowFor(noRoadId, 'Farm-Wheat', 2, { roads: 0, stocks: farmStock, employees: staffed }));
+    await seedBuilding(rowFor(roadlessId, 'Farm-Wheat', 2, { roads: 0, stocks: farmStock, employees: staffed }));
     await seedBuilding(rowFor(noHarvestId, 'Farm-Wheat', 3, { employees: staffed }));
     await seedBuilding(rowFor(fullHubFarmId, 'Farm-Wheat', 4, { stocks: farmStock, employees: staffed }));
     // A hub already at its ceiling has no room for another basket
@@ -177,8 +177,96 @@ describe('Supply — RunMonthlyResourceCycle', () => {
     const cause = Object.fromEntries(
       rows.filter((t) => t.transactionType === 'sale_missed').map((t) => [t.fromId, t.cause])
     );
-    expect(cause[noRoadId]).toBe('no_road');
+    // Fields need no road: the roadless farm is held back by the full hub, like the others
+    expect(cause[roadlessId]).toBe('hub_full');
     expect(cause[noHarvestId]).toBe('no_workers');
     expect(cause[fullHubFarmId]).toBe('hub_full');
+  });
+
+  test('a farm without a road is bought by the hub like any other', async () => {
+    const roadlessId = createBuildingInstanceId();
+    const hubId = createBuildingInstanceId();
+    const row = (instanceId, type, x, extra) =>
+      makeHouseRecord({
+        instanceId,
+        type,
+        x,
+        y: 1,
+        extra: { roads: 1, neighbors: [{ name: 'roads', isRoad: true }], ...extra },
+      });
+    await seedBuilding(
+      row(roadlessId, 'Farm-Wheat', 2, {
+        roads: 0,
+        stocks: { food: 78, wheat: 78, carrot: 0, cabbage: 0 },
+        employees: { worker: 3, worker_need: 3 },
+      })
+    );
+    await seedBuilding(row(hubId, 'Windmill-001', 5, { employees: { worker: 4, worker_need: 4 } }));
+
+    let december = 0;
+    while (TimeManager.getTimeInfo(december).month !== 'Décembre') december += 1;
+    await runAtTime(december);
+
+    const sales = (await supply.getAllSupplyTraceabilityTransactions()).filter(
+      (t) => t.transactionType === 'source_to_hub' && t.fromId === roadlessId
+    );
+    expect(sales.map((t) => t.quantity)).toEqual([78]);
+  });
+
+  describe('the goods a house holds stay consistent with its total', () => {
+    const CATEGORIES = ['wheat', 'carrot', 'cabbage', 'fruit', 'game'];
+    const row = (instanceId, type, x, extra) =>
+      makeHouseRecord({
+        instanceId,
+        type,
+        x,
+        y: 1,
+        extra: { roads: 1, neighbors: [{ name: 'roads', isRoad: true }], ...extra },
+      });
+
+    test('a market delivery keeps what the house gathered, and the total is the sum of its goods', async () => {
+      const houseId = createBuildingInstanceId();
+      const marketId = createBuildingInstanceId();
+      await seedBuilding(
+        row(houseId, 'House-Red', 1, {
+          pop: 1,
+          stocks: { wheat: 0, carrot: 0, cabbage: 0, fruit: 3, game: 3, food: 6 },
+        })
+      );
+      await seedBuilding(
+        row(marketId, 'Market-Stall', 3, {
+          stocks: { wheat: 40, carrot: 0, cabbage: 0, fruit: 0, game: 0, food: 40 },
+          employees: { worker: 2, worker_need: 2 },
+        })
+      );
+
+      await runAtTime(0);
+
+      const { stocks } = await getBuildingRow(houseId);
+      const sum = CATEGORIES.reduce((total, category) => total + (stocks[category] || 0), 0);
+      // The delivery reached the house, and did not wipe the fruit and game it had
+      expect(stocks.wheat).toBeGreaterThan(0);
+      expect(stocks.fruit).toBeGreaterThanOrEqual(3);
+      expect(stocks.game).toBeGreaterThanOrEqual(3);
+      expect(stocks.food).toBe(sum);
+    });
+
+    test('a service rides the supply chain, and is logged as leaving the building that distributes it', async () => {
+      const houseId = createBuildingInstanceId();
+      const chapelId = createBuildingInstanceId();
+      await seedBuilding(row(houseId, 'House-Red', 1, { pop: 12 }));
+      await seedBuilding(row(chapelId, 'Chapel', 3, { employees: { worker: 2, worker_need: 2 } }));
+
+      await runAtTime(0);
+
+      const faith = (await supply.getAllSupplyTraceabilityTransactions()).filter(
+        (t) => t.toId === houseId && t.foodType === 'faith'
+      );
+      expect(faith).toHaveLength(1);
+      // From the chapel — and not typed as a market delivery
+      expect(faith[0].fromId).toBe(chapelId);
+      expect(faith[0].fromType).toBe('Chapel');
+      expect(faith[0].transactionType).toBe('distributor_to_consumer');
+    });
   });
 });

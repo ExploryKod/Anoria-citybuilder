@@ -83,6 +83,7 @@ export class RunCityResourceCycle {
 
     if (
       !isOperational({
+        type: distributor.type,
         roadCount: distributorRow.roads ?? distributor.roadCount,
         worker: distributor.worker,
         workerNeed: distributor.workerNeed,

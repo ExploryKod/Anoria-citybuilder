@@ -13,6 +13,7 @@ import {
   getScheduleForRole,
   getTotalKeyForRole,
 } from '../../../domain/policies/ResourceRolePolicy.js';
+import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Command: a hub building collects resource units from a list of source
@@ -54,6 +55,7 @@ export class CollectResourceToHub {
 
     if (
       !isOperational({
+        type: hub.type,
         roadCount: hub.roadCount,
         worker: hub.worker,
         workerNeed: hub.workerNeed,
@@ -81,7 +83,7 @@ export class CollectResourceToHub {
       const source = await this.supplyBuildingRepository.findById(sourceId);
       if (!source) continue;
 
-      if (source.roadCount <= 0) continue;
+      if (!isRoadNeedMet(source.type, source.roadCount)) continue;
 
       // Only goods this hub collects: a producer of anything else (household
       // gathering, another chain's output) is simply not this hub's business.

@@ -16,6 +16,7 @@ import {
   getConsumptionModeForRole,
   getPeriodLockForRole,
 } from '../../../domain/policies/ResourceRolePolicy.js';
+import { getCategoriesForTotalKey, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Command: a source building distributes resource units to consumers in
@@ -68,6 +69,7 @@ export class DistributeResourceToConsumers {
 
     if (
       !isOperational({
+        type: source.type,
         roadCount: source.roadCount,
         worker: source.worker,
         workerNeed: source.workerNeed,
@@ -92,7 +94,12 @@ export class DistributeResourceToConsumers {
     }
 
     const totalKey = getTotalKeyForRole(source.type, 'distributor');
-    const sourceStock = createResourceStock(source.stocks, categories, totalKey);
+    // A stock is rebuilt with EVERY good filed under its total, not just the ones this
+    // distributor moves: a house also holds what it gathered (fruit, game), and rebuilding
+    // it from the distributor's goods alone wiped those while the total kept counting them.
+    const filedUnderTotal = getCategoriesForTotalKey(totalKey);
+    const stockCategories = filedUnderTotal.length > 0 ? filedUnderTotal : categories;
+    const sourceStock = createResourceStock(source.stocks, stockCategories, totalKey);
     const availableTotal = categories.reduce(
       (sum, category) => sum + getCategoryAmount(sourceStock, category),
       0,
@@ -105,13 +112,13 @@ export class DistributeResourceToConsumers {
       categories,
       sourceStock,
       consumerIds,
-      isEligible: (consumer) => consumer.roadCount > 0,
+      isEligible: (consumer) => isRoadNeedMet(consumer.type, consumer.roadCount),
       repository: this.supplyBuildingRepository,
-      createStock: (raw) => createResourceStock(raw, categories, totalKey),
+      createStock: (raw) => createResourceStock(raw, stockCategories, totalKey),
       takeCategory: (stock, category, amount) =>
-        takeCategoryAmount(stock, category, amount, categories, totalKey),
+        takeCategoryAmount(stock, category, amount, stockCategories, totalKey),
       addCategory: (stock, category, amount) =>
-        addCategoryAmount(stock, category, amount, categories, totalKey),
+        addCategoryAmount(stock, category, amount, stockCategories, totalKey),
       getAmount: getCategoryAmount,
     });
 
@@ -149,7 +156,7 @@ export class DistributeResourceToConsumers {
     const transfers = [];
     for (const consumerId of consumerIds) {
       const consumer = await this.supplyBuildingRepository.findById(consumerId);
-      if (!consumer || consumer.roadCount <= 0) continue;
+      if (!consumer || !isRoadNeedMet(consumer.type, consumer.roadCount)) continue;
 
       const periodLock = getPeriodLockForRole(consumer.type, 'consumer', category, 'flag');
       if (!periodLock || isLockedForPeriod(consumer, periodLock, period, category)) continue;

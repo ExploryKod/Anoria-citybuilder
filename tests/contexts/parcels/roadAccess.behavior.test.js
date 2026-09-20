@@ -116,6 +116,39 @@ describe('Accès routier des bâtiments', () => {
       expect(harness.persistedRoadCounts()).toHaveLength(0);
     });
 
+    test('un champ sans route reste desservi : le catalogue dit route non requise', async () => {
+      const fieldId = createBuildingInstanceId();
+      const marketId = createBuildingInstanceId();
+      harness = createRoadAccessHarness([
+        makeParcelHouseSnapshot({ instanceId: fieldId, type: 'Farm-Wheat', neighbors: [] }),
+        makeParcelHouseSnapshot({ instanceId: marketId, type: 'Market-Stall', neighbors: [] }),
+      ]);
+
+      const field = await harness.whenRoadAccessIsRecalculatedFor(fieldId);
+      const market = await harness.whenRoadAccessIsRecalculatedFor(marketId);
+
+      // The count stays what is really there; the status is never falsely negative
+      expect(field.roadAccess.roadCount).toBe(0);
+      expect(field.roadAccess.hasAccess).toBe(true);
+      expect(market.roadAccess.hasAccess).toBe(false);
+      expect((await harness.roadAccessOf(fieldId)).hasAccess).toBe(true);
+    });
+
+    test('quand la route d\'un champ disparaît, son statut reste positif', async () => {
+      const fieldId = createBuildingInstanceId();
+      harness = createRoadAccessHarness([
+        makeParcelHouseSnapshot({ instanceId: fieldId, type: 'Farm-Wheat', neighbors: [], roadCount: 1 }),
+      ]);
+
+      await harness.whenRoadAccessIsRecalculatedFor(fieldId);
+      await harness.whenAllRoadAccessIsRecalculated();
+
+      expect(harness.persistedRoadCounts()).toEqual([{ instanceId: fieldId, roadCount: 0 }]);
+      const events = harness.roadAccessChangedEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0].hasAccess).toBe(true);
+    });
+
     test('quand une route disparaît, la desserte est corrigée en base', async () => {
       const houseId = createBuildingInstanceId();
       harness = createRoadAccessHarness([

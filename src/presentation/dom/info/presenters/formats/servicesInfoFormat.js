@@ -5,6 +5,7 @@
 import { residentialGroupForType } from '../../../shell/ResidentialGroupLabels.js';
 import { describeRelevantServiceCoverage } from '../../../../../composition/housingCatalog.js';
 import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
+import { requiresRoad } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 function isResidentialHouse(buildingType) {
   return typeof buildingType === 'string' && buildingType.includes('House');
@@ -15,7 +16,9 @@ function isResidentialHouse(buildingType) {
  */
 export function formatServicesModel(vm) {
   const roadCount = vm.roadAccess?.roadCount ?? 0;
-  const hasRoad = vm.roadAccess?.hasAccess === true || roadCount > 0;
+  // A type the catalog declares `requiresRoad: false` has no road status to lose: always positive.
+  const roadRequired = requiresRoad(vm.buildingType);
+  const hasRoad = !roadRequired || vm.roadAccess?.hasAccess === true || roadCount > 0;
 
   /** @type {ReadonlyArray<{
    *   emoji: string,
@@ -28,11 +31,13 @@ export function formatServicesModel(vm) {
     {
       emoji: '🛣️',
       label: 'Route',
-      value: hasRoad ? String(roadCount) : null,
+      value: !roadRequired ? '✓' : hasRoad ? String(roadCount) : null,
       status: hasRoad ? 'ok' : 'off',
-      ariaLabel: hasRoad
-        ? `${roadCount} route${roadCount > 1 ? 's' : ''} adjacente${roadCount > 1 ? 's' : ''}`
-        : 'Aucune route adjacente',
+      ariaLabel: !roadRequired
+        ? 'Route non requise'
+        : hasRoad
+          ? `${roadCount} route${roadCount > 1 ? 's' : ''} adjacente${roadCount > 1 ? 's' : ''}`
+          : 'Aucune route adjacente',
     },
   ];
 

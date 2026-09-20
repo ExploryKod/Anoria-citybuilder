@@ -60,6 +60,7 @@ export class ProcessHubCollection {
 
     if (
       !isOperational({
+        type: hub.type,
         roadCount: hub.roadCount,
         worker: hub.worker,
         workerNeed: hub.workerNeed,

@@ -3,6 +3,7 @@ import {
   getResourceRoles,
   getResourceStockShape,
   hasQuantityConsumer,
+  isRoadNeedMet,
 } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
 
@@ -115,6 +116,8 @@ export class SupplyTraceability {
     const distributorData = await this.supplyBuildingRepository.findRowById(distributorId);
     if (!distributorData) return;
 
+    // A service rides the same chain as a good (a chapel's "basket" of faith), so it is
+    // logged like one — from the building that distributes it, which is not always a market.
     for (const transfer of transfers) {
       const houseData = await this.supplyBuildingRepository.findRowById(transfer.houseId);
       if (!houseData) continue;
@@ -199,6 +202,7 @@ export class SupplyTraceability {
         { id: building.id, x: building.x, y: building.y, type: building.type },
         category,
         isOperational({
+          type: building.type,
           roadCount: building.roadCount,
           worker: building.worker,
           workerNeed: building.workerNeed,
@@ -285,7 +289,7 @@ export class SupplyTraceability {
 
       const category = entry.categories[0];
       const cause =
-        building.roadCount <= 0
+        !isRoadNeedMet(building.type, building.roadCount)
           ? 'no_road'
           : (building.stocks?.[category] ?? 0) <= 0
             ? 'no_workers'

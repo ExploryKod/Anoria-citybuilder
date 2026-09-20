@@ -55,6 +55,7 @@ export class TransferHubToHub {
 
     if (
       !isOperational({
+        type: target.type,
         roadCount: target.roadCount,
         worker: target.worker,
         workerNeed: target.workerNeed,
@@ -78,6 +79,7 @@ export class TransferHubToHub {
 
     if (
       !isOperational({
+        type: source.type,
         roadCount: source.roadCount,
         worker: source.worker,
         workerNeed: source.workerNeed,

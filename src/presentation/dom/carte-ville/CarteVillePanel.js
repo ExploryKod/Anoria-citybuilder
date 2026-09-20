@@ -8,6 +8,8 @@ import {
   renderCityMapLoadingHtml,
   renderCityMapErrorHtml,
   buildCityExport,
+  renderCityMapLegendHtml,
+  enrichMapBuildings,
 } from './CarteVillePresenter.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
 
@@ -111,6 +113,17 @@ export async function generateCarteVille() {
       buildings = [];
     }
 
+    // Staff and stock live on the stored rows, not in the supply map query
+    try {
+      buildings = enrichMapBuildings(
+        buildings,
+        await deps.construction.listAllBuildingRows(),
+        (sector) => deps.employment?.getSectorName?.(sector) ?? null
+      );
+    } catch (error) {
+      console.warn('Could not enrich map buildings:', error);
+    }
+
     const buildingMap = new Map();
     buildings.forEach((building) => {
       if (
@@ -129,6 +142,10 @@ export async function generateCarteVille() {
       buildingMap,
       hasRoadAccessFromCount: (...args) => parcels.hasRoadAccessFromCount(...args),
     });
+
+    // The legend lists what the map shows, named by the catalog (the status dots stay static)
+    const legendBuildings = document.getElementById('city-map-legend-buildings');
+    if (legendBuildings) legendBuildings.innerHTML = renderCityMapLegendHtml(buildings);
   } catch (error) {
     console.error('Error generating city map:', error);
     cityMapGrid.innerHTML = renderCityMapErrorHtml(error);

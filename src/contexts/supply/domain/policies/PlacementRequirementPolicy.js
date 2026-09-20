@@ -1,5 +1,6 @@
 import { hasResourceRole, getLinkCapacityForRole, getPlacementRequirements } from './ResourceRolePolicy.js';
 import { isWithinRange, manhattanDistance } from './ResourceRangePolicy.js';
+import { isRoadNeedMet } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Generic "does this building need another building already placed" gate —
@@ -21,7 +22,7 @@ export function rankRequirementCandidates(pos, candidates, requirement) {
   return [...candidates]
     .filter((candidate) => {
       if (candidate.x == null || candidate.y == null) return false;
-      if ((candidate.roadCount ?? 0) <= 0) return false;
+      if (!isRoadNeedMet(candidate.type, candidate.roadCount)) return false;
       if (!hasResourceRole(candidate.type, requirement.role, requirement.categories)) return false;
       if (requirement.range != null && !isWithinRange(pos, candidate, requirement.range)) return false;
 

@@ -30,6 +30,7 @@ export class GetBuildingSupplyView {
     const operational =
       snapshot &&
       isOperational({
+        type: snapshot.type,
         roadCount: snapshot.roadCount,
         worker: snapshot.worker,
         workerNeed: snapshot.workerNeed,

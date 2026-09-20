@@ -14,12 +14,18 @@ const RESIDENTIAL_GROUP_BY_TYPE = Object.fromEntries(
         .map(([id, def]) => [id, def.residentialGroup])
 );
 
-/** @type {Readonly<Record<string, string>>} */
-const GROUP_LABELS = Object.freeze({
-    artisans: 'Artisans-ouvriers',
-    merchants: 'Commerçants',
-    scholars: 'Savants',
-});
+/**
+ * A group's label is the name the catalog gives its house (one house type per
+ * social group) — the single place that name is written.
+ * @type {Readonly<Record<string, string>>}
+ */
+const GROUP_LABELS = Object.freeze(
+    Object.fromEntries(
+        Object.values(buildingCatalog)
+            .filter((def) => def.residentialGroup && def.displayName)
+            .map((def) => [def.residentialGroup, def.displayName])
+    )
+);
 
 /** @type {Readonly<Record<string, string>>} */
 const GROUP_TITLES = Object.freeze({

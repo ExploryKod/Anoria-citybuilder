@@ -5,6 +5,7 @@ import {
   maxPopulationForLevel,
   residentialGroupOfType,
 } from './HouseCapacityPolicy.js';
+import { isRoadNeedMet } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Compute next population for a residential house at a monthly tick.
@@ -45,7 +46,7 @@ export function computePopulationAfterGrowth({
 
   if (isPalaceHouseType(type)) {
     const maxPopulation = maxPopulationForHouseType(type);
-    const hasRoadAccess = (roadCount ?? 0) > 0;
+    const hasRoadAccess = isRoadNeedMet(type, roadCount);
 
     if (!hasRoadAccess) {
       if (pop > 0) {

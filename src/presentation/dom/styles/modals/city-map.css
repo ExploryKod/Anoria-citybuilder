@@ -322,76 +322,18 @@
     font-size: 0.85rem;
 }
 
-/* Legend color codes */
-.legend-code-small.hb {
-    background: #3b82f6;
-    color: white;
-}
+/* A house wears its social group's colour (the catalog's residentialGroup) */
+.legend-code-small.group-merchants { background: #3b82f6; color: white; }
+.legend-code-small.group-artisans { background: #ef4444; color: white; }
+.legend-code-small.group-scholars { background: #a855f7; color: white; }
 
-.legend-code-small.hr {
-    background: #ef4444;
-    color: white;
-}
-
-.legend-code-small.hp {
-    background: #a855f7;
-    color: white;
-}
-
-.legend-code-small.m {
-    background: #10b981;
-    color: white;
-}
-
-.legend-code-small.f {
-    background: #f59e0b;
-    color: white;
-}
-
-.legend-code-small.r {
-    background: #64748b;
-    color: white;
-}
-
-.legend-code-small.h2s {
-    background: #ec4899;
-    color: white;
-}
-
-.legend-code-small.wm {
-    background: #f97316;
-    color: white;
-}
-
-.legend-code-small.ba {
-    background: #d97706;
-    color: white;
-}
-
-.legend-code-small.ch {
-    background: #8b5cf6;
-    color: white;
-}
-
-.legend-code-small.cp {
-    background: #a78bfa;
-    color: white;
-}
-
-.legend-code-small.we {
-    background: #06b6d4;
-    color: white;
-}
-
-.legend-code-small.fo {
-    background: #0ea5e9;
-    color: white;
-}
-
-.legend-code-small.to {
-    background: #475569;
-    color: white;
-}
+.legend-code-small.sector-1 { background: #f59e0b; color: white; }
+.legend-code-small.sector-2 { background: #10b981; color: white; }
+.legend-code-small.sector-3 { background: #b45309; color: white; }
+.legend-code-small.sector-4 { background: #0d9488; color: white; }
+.legend-code-small.sector-5 { background: #64748b; color: white; }
+.legend-code-small.sector-6 { background: #0ea5e9; color: white; }
+.legend-code-small.sector-none { background: rgba(100, 116, 139, 0.35); color: #1b1b1b; }
 
 .legend-code-small.grass {
     background: rgba(255, 152, 0, 0.12);
@@ -578,41 +520,19 @@
     color: #ffffff;
 }
 
-/* House Blue */
-.building-code.hb {
-    background: #3b82f6;
-    color: white;
-}
+/* A house wears its social group's colour (the catalog's residentialGroup) */
+.building-code.group-merchants { background: #3b82f6; color: white; }
+.building-code.group-artisans { background: #ef4444; color: white; }
+.building-code.group-scholars { background: #a855f7; color: white; }
 
-/* House Red */
-.building-code.hr {
-    background: #ef4444;
-    color: white;
-}
-
-/* House Purple */
-.building-code.hp {
-    background: #a855f7;
-    color: white;
-}
-
-/* Market */
-.building-code.m {
-    background: #10b981;
-    color: white;
-}
-
-/* Farm */
-.building-code.f {
-    background: #f59e0b;
-    color: white;
-}
-
-/* Road */
-.building-code.r {
-    background: #64748b;
-    color: white;
-}
+/* Colour by employment sector (the catalog's employment.sector); a type with none is neutral */
+.building-code.sector-1 { background: #f59e0b; color: white; } /* Production alimentaire */
+.building-code.sector-2 { background: #10b981; color: white; } /* Commerces */
+.building-code.sector-3 { background: #b45309; color: white; } /* Industries */
+.building-code.sector-4 { background: #0d9488; color: white; } /* Stockage */
+.building-code.sector-5 { background: #64748b; color: white; } /* Infrastructure */
+.building-code.sector-6 { background: #0ea5e9; color: white; } /* Services publics */
+.building-code.sector-none { background: rgba(100, 116, 139, 0.35); color: #1b1b1b; }
 
 /* Grass (empty cells) */
 .building-code.grass {

@@ -27,6 +27,46 @@ function isQuantityConsumer(entry) {
 }
 
 /**
+ * The code the city map writes for a type: the first two letters of the name
+ * the player reads (the catalog's `displayName`, accents dropped, upper case) —
+ * never of the id the code uses. A type without a display name falls back to
+ * its id. Nothing is declared per building: renaming one renames its code.
+ * @param {string | null | undefined} buildingType
+ * @returns {string}
+ */
+export function getMapCode(buildingType) {
+  if (!buildingType) return '';
+  const name = getBuildingDefinition(buildingType)?.displayName ?? buildingType;
+  return name
+    .normalize('NFD')
+    .replace(/[^A-Za-z]/g, '')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+/**
+ * Whether a building type depends on a road to do anything at all — the
+ * catalog's `requiresRoad` (true unless it says `false`). Unknown types keep
+ * the default (a road is required).
+ * @param {string | null | undefined} buildingType
+ * @returns {boolean}
+ */
+export function requiresRoad(buildingType) {
+  return getBuildingDefinition(buildingType)?.requiresRoad !== false;
+}
+
+/**
+ * The road side of "can this building act": true when the type needs no road,
+ * or when it has one. Every context asks this instead of comparing road counts.
+ * @param {string | null | undefined} buildingType
+ * @param {number | null | undefined} roadCount
+ * @returns {boolean}
+ */
+export function isRoadNeedMet(buildingType, roadCount) {
+  return !requiresRoad(buildingType) || (Number.isFinite(roadCount) ? roadCount : 0) > 0;
+}
+
+/**
  * @param {string} buildingType
  * @returns {boolean} True when the type drains a numeric stock for its inhabitants (a house).
  */

@@ -1,4 +1,4 @@
-import { needsRoadAccess } from '../../domain/policies/BuildingTypePolicy.js';
+import { needsRoadAccess, withRoadNeed } from '../../domain/policies/BuildingTypePolicy.js';
 import { evaluateRoadAccess } from '../../domain/policies/RoadAccessPolicy.js';
 
 /**
@@ -34,7 +34,7 @@ export class GetBuildingRoadAccess {
     return {
       instanceId,
       type: building.type,
-      roadAccess: evaluateRoadAccess(building.neighbors),
+      roadAccess: withRoadNeed(building.type, evaluateRoadAccess(building.neighbors)),
       applicable: true,
     };
   }

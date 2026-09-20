@@ -1,4 +1,5 @@
 import { isPalaceHouseType } from '../../domain/policies/HouseCapacityPolicy.js';
+import { isRoadNeedMet } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Command: zero out population on Palace houses without road access.
@@ -31,7 +32,7 @@ export class ClearPopulationWithoutRoadAccess {
     for (const house of houses) {
       if (!isPalaceHouseType(house.type)) continue;
 
-      const hasRoadAccess = (house.roadCount ?? 0) > 0;
+      const hasRoadAccess = isRoadNeedMet(house.type, house.roadCount);
       const currentPop = house.pop || 0;
 
       if (!hasRoadAccess && currentPop > 0) {

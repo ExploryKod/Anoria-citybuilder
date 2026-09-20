@@ -1,4 +1,5 @@
 import { hasResourceRole } from './ResourceRolePolicy.js';
+import { isRoadNeedMet } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Manhattan distance in tiles.
@@ -47,7 +48,6 @@ export function findBuildingsWithRoleInRange(origin, buildings, { role, category
     if (building.x == null || building.y == null) return false;
     const distance = typeof maxDistance === 'function' ? maxDistance(building) : maxDistance;
     if (!isWithinRange(origin, { x: building.x, y: building.y }, distance)) return false;
-    const roadCount = building.roads ?? building.roadCount ?? 0;
-    return roadCount > 0;
+    return isRoadNeedMet(building.type, building.roads ?? building.roadCount ?? 0);
   });
 }

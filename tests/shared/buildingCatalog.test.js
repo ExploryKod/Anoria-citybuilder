@@ -6,6 +6,11 @@
 
 import { describe, test, expect } from '@jest/globals';
 import { buildingCatalog, getBuildingDefinition } from '../../src/shared/building-catalog/buildingCatalog.js';
+import {
+  getMapCode,
+  isRoadNeedMet,
+  requiresRoad,
+} from '../../src/shared/building-catalog/resourceRoleQueries.js';
 import { buildingPlacementCatalog } from '../../src/shared/asset-placement/buildingPlacementCatalog.js';
 import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../../src/shared/building-catalog/kenneyCityKitRegistry.generated.js';
 import {
@@ -132,12 +137,41 @@ describe('buildingPlacementCatalog — every buildingCatalog entry with a constr
 
 describe('BuildingNotifications — derived display names', () => {
   test('resolves catalog display names', () => {
-    expect(getBuildingDisplayName('House-Blue')).toBe('Maison bleue');
+    // A house is named after its social category, not its colour
+    expect(getBuildingDisplayName('House-Blue')).toBe('Commerçants');
     expect(getBuildingDisplayName('Farm-Wheat')).toBe('Champ de blé');
   });
 
   test('keeps the legacy "Road" alias not present in the catalog', () => {
     expect(getBuildingDisplayName('Road')).toBe('Route');
     expect(buildingCatalog.Road).toBeUndefined();
+  });
+});
+
+describe('Declared facts the city map and every context read from the catalog', () => {
+  test('the map code is the first two letters of the name the player reads, not of the id', () => {
+    expect(getMapCode('House-Red')).toBe('AR'); // Artisans-ouvriers
+    expect(getMapCode('Farm-Cabbage')).toBe('CH'); // Champ de choux
+    expect(getMapCode('Windmill-001')).toBe('MO'); // Moulin
+    expect(getMapCode('Chapel')).toBe('CH'); // Chapelle
+    expect(getMapCode('Market-Stall')).toBe('ET'); // Étal — accent dropped
+    expect(getMapCode('')).toBe('');
+  });
+
+  test('renaming a type renames its code: every code follows displayName', () => {
+    for (const [id, definition] of Object.entries(buildingCatalog)) {
+      if (!definition.displayName) continue;
+      const expected = definition.displayName.normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase();
+      expect(getMapCode(id)).toBe(expected);
+    }
+  });
+
+  test('a type needs a road unless the catalog says otherwise, and the road need reads only that fact', () => {
+    expect(requiresRoad('Farm-Wheat')).toBe(false);
+    expect(requiresRoad('House-Red')).toBe(true);
+    expect(requiresRoad('Type-Nobody-Declared')).toBe(true);
+    expect(isRoadNeedMet('Farm-Wheat', 0)).toBe(true);
+    expect(isRoadNeedMet('House-Red', 0)).toBe(false);
+    expect(isRoadNeedMet('House-Red', 2)).toBe(true);
   });
 });

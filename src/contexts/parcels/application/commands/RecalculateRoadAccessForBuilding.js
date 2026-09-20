@@ -1,4 +1,4 @@
-import { needsRoadAccess } from '../../domain/policies/BuildingTypePolicy.js';
+import { needsRoadAccess, withRoadNeed } from '../../domain/policies/BuildingTypePolicy.js';
 import { evaluateRoadAccess } from '../../domain/policies/RoadAccessPolicy.js';
 import { createRoadAccessChanged } from '../../domain/events/RoadAccessChanged.js';
 
@@ -34,7 +34,7 @@ export class RecalculateRoadAccessForBuilding {
       };
     }
 
-    const roadAccess = evaluateRoadAccess(building.neighbors);
+    const roadAccess = withRoadNeed(building.type, evaluateRoadAccess(building.neighbors));
     const previousRoadCount = building.roadCount;
 
     if (roadAccess.roadCount === previousRoadCount) {

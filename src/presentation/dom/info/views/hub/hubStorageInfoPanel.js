@@ -1,5 +1,6 @@
 import { getBuildingInfoBody, setBuildingInfoTitle } from '../../layout/buildingInfoLayout.js';
 import { patchHubStoragePieChart, renderHubStoragePieChart } from './hubStoragePieChart.js';
+import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * @param {object} line
@@ -158,7 +159,7 @@ export async function renderHubStorageInfoPanel({
 
   let statusMessage = '';
   if (view.hubKind === 'windmill' && supplyView) {
-    if ((buildingRow.roads ?? 0) <= 0) {
+    if (!isRoadNeedMet(buildingRow.type, buildingRow.roads)) {
       statusMessage = '⚠️ Sans route le moulin ne peut pas stocker.';
     } else if (supplyView.isCollecting) {
       statusMessage = '🟢 Collecte active (décembre).';

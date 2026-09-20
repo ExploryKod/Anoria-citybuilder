@@ -1,5 +1,6 @@
 import { findBuildingsWithRoleInRange } from '../../../domain/policies/ResourceRangePolicy.js';
 import { requireRangeForRole } from '../../../domain/policies/ResourceRolePolicy.js';
+import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Command: flag each target-role building (houses/'consumer' by default) as
@@ -71,7 +72,7 @@ export class UpdateConsumerDistributorReach {
 
     return {
       houses: tooFar + inRange,
-      marketsWithRoad: sources.filter((s) => (s.roads ?? s.roadCount ?? 0) > 0).length,
+      marketsWithRoad: sources.filter((s) => isRoadNeedMet(s.type, s.roads ?? s.roadCount ?? 0)).length,
       tooFar,
       inRange,
     };

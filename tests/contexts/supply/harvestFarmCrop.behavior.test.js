@@ -7,6 +7,7 @@ import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domai
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { matchesSchedule } from '../../../src/contexts/supply/domain/policies/ResourceSchedulePolicy.js';
 import { getAmountForRole, getScheduleForRole, hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { isOperational } from '../../../src/contexts/supply/domain/policies/OperationalGatePolicy.js';
 import { ProduceResource } from '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js';
 import { RunResourceCommandForRole } from '../../../src/contexts/supply/application/commands/RunResourceCommandForRole.js';
 
@@ -153,29 +154,31 @@ describe('Supply — farm harvest', () => {
       expect(outcome.reason).toBe('not_production_period');
     });
 
-    test('refuses farm without road access or workers', async () => {
+    test('a farm needs its workers, not a road (the catalog says fields need none)', async () => {
       repo = new InMemorySupplyBuildingRepository([
         farm('Farm-Wheat-2-3', 'Farm-Wheat', { roadCount: 0 }),
         farm('Farm-Carrot-4-5', 'Farm-Carrot', { worker: 0, workerNeed: 1 }),
       ]);
       useCase = new ProduceResource(repo);
 
-      expect(
-        (
-          await useCase.execute({
-            buildingId: 'Farm-Wheat-2-3',
-            period: { season: 'autumn', year: 1 },
-          })
-        ).reason
-      ).toBe('not_operational');
-      expect(
-        (
-          await useCase.execute({
-            buildingId: 'Farm-Carrot-4-5',
-            period: { season: 'autumn', year: 1 },
-          })
-        ).reason
-      ).toBe('not_operational');
+      const roadless = await useCase.execute({
+        buildingId: 'Farm-Wheat-2-3',
+        period: { season: 'autumn', year: 1 },
+      });
+      expect(roadless.produced).toBe(true);
+
+      const unstaffed = await useCase.execute({
+        buildingId: 'Farm-Carrot-4-5',
+        period: { season: 'autumn', year: 1 },
+      });
+      expect(unstaffed.reason).toBe('not_operational');
+    });
+
+    test('the road need is the catalog\'s call, whatever the building', () => {
+      expect(isOperational({ type: 'Farm-Wheat', roadCount: 0, worker: 3, workerNeed: 3 })).toBe(true);
+      expect(isOperational({ type: 'Farm-Wheat', roadCount: 0, worker: 0, workerNeed: 3 })).toBe(false);
+      expect(isOperational({ type: 'Market-Stall', roadCount: 0, worker: 2, workerNeed: 2 })).toBe(false);
+      expect(isOperational({ type: 'Market-Stall', roadCount: 1, worker: 2, workerNeed: 2 })).toBe(true);
     });
   });
 

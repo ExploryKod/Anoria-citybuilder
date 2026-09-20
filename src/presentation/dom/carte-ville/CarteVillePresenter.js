@@ -3,32 +3,26 @@
  */
 
 import { TimeManager } from '../../../shared/time/TimeManager.js';
+import { getBuildingDefinition } from '../../../shared/building-catalog/buildingCatalog.js';
+import { isRoadBuildingType } from '../../../composition/constructionCatalog.js';
 import {
+  getAnnualSupplyEntry,
   getAnnualYieldPerProducer,
+  getMapCode,
   getMaxStockForBuilding,
   getPerCapitaDemand,
+  getResourceRoles,
+  getResourceStockShape,
+  requiresRoad,
 } from '../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
+ * The map code of a type — derived from its catalog name (see getMapCode), never named here.
  * @param {string|null|undefined} type
  * @returns {string}
  */
 export function getBuildingCode(type) {
-  if (!type) return '';
-  if (type.includes('House-Blue')) return 'HB';
-  if (type.includes('House-Red')) return 'HR';
-  if (type.includes('House-Purple')) return 'HP';
-  if (type.includes('House-2Story') || type.includes('House_2Story')) return 'H2S';
-  if (type.includes('Market')) return 'M';
-  if (type.includes('Farm')) return 'F';
-  if (type.includes('Windmill')) return 'WM';
-  if (type.includes('Church')) return 'CH';
-  if (type.includes('Well')) return 'WE';
-  if (type.includes('Fountain')) return 'FO';
-  if (type.includes('Tombstone') || type.includes('Tomb')) return 'TO';
-  if (type.includes('roads')) return 'R';
-  if (type.includes('Road')) return 'R';
-  return type.charAt(0).toUpperCase();
+  return getMapCode(type);
 }
 
 /**
@@ -50,6 +44,140 @@ export function getNeighborCodes(neighbors) {
       return code;
     })
     .join(' ');
+}
+
+/** @param {unknown} value @returns {string} Safe inside an HTML attribute or text node. */
+function escapeHtml(value) {
+  return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/** Shown on a field whose stock is empty: not an alarm outside the harvest window. */
+const EMPTY_HARVEST_STOCK_NOTE = 'Stock vide (normal entre la vente et la prochaine récolte)';
+
+/**
+ * CSS class carrying a type's colour, read from the catalog: a house wears its
+ * social group's (`residentialGroup`), any other building its employment
+ * sector's (`employment.sector`), and a type with neither the neutral one.
+ * The colours themselves live in the stylesheet, one rule per group or sector.
+ * @param {string} type
+ * @returns {string} A leading-space class, ready to append.
+ */
+function styleClassOf(type) {
+  const definition = getBuildingDefinition(type);
+  if (definition?.residentialGroup) return ` group-${escapeHtml(definition.residentialGroup)}`;
+  if (definition?.employment?.sector) return ` sector-${escapeHtml(definition.employment.sector)}`;
+  return ' sector-none';
+}
+
+/** The catalog's name for a type, the raw id when it has none. */
+function displayNameOf(type) {
+  return getBuildingDefinition(type)?.displayName ?? type;
+}
+
+/**
+ * Whether a type holds a stock of the goods the supply chain carries and is
+ * not merely a hub buffer: a house, a market, a field. Read from the catalog's
+ * roles — a service (`flag` consumption) or a hub does not count.
+ * @param {string} buildingType
+ * @returns {boolean}
+ */
+function holdsFood(buildingType) {
+  const goods = new Set(getResourceStockShape().categories);
+  return getResourceRoles(buildingType).some(
+    (entry) =>
+      entry.role !== 'hub' &&
+      entry.role !== 'collector' &&
+      entry.consumption !== 'flag' &&
+      entry.categories.some((category) => goods.has(category))
+  );
+}
+
+/**
+ * The map buildings with what the supply query does not carry: staff present
+ * and needed, and the stock total, taken from the stored building rows.
+ * @param {Array<object>} buildings Map buildings (ListSupplyMapBuildings).
+ * @param {Array<object>} rows Raw building rows.
+ * @param {(sector: number) => string | null} [getSectorName] The employment catalog's sector names.
+ * @returns {Array<object>}
+ */
+export function enrichMapBuildings(buildings, rows, getSectorName = () => null) {
+  const rowById = new Map(rows.map((row) => [row.instanceId ?? row.id, row]));
+  const { totalKey } = getResourceStockShape();
+  return buildings.map((building) => {
+    const sector = getBuildingDefinition(building.type)?.employment?.sector;
+    const withSector = sector ? { ...building, sectorName: getSectorName(sector) } : building;
+    const row = rowById.get(building.id);
+    if (!row) return withSector;
+    return {
+      ...withSector,
+      worker: row.employees?.worker ?? null,
+      workerNeed: row.employees?.worker_need ?? null,
+      stockTotal: row.stocks?.[totalKey] ?? null,
+    };
+  });
+}
+
+/**
+ * Tooltip of a map cell, every label taken from the catalog: the building's
+ * name, its coordinates, its inhabitants, and its road and stock status.
+ * @param {object} building A map building (see ListSupplyMapBuildings).
+ * @returns {string}
+ */
+export function describeMapBuilding(building) {
+  const lines = [displayNameOf(building.type), `Case ${building.x},${building.y}`];
+
+  if (building.kind === 'house') {
+    lines.push(`Habitants : ${Number(building.pop || 0)}`);
+  }
+
+  if (isRoadBuildingType(building.type)) {
+    // A road tile has no road need to report
+  } else if (!requiresRoad(building.type)) {
+    lines.push('Route non requise');
+  } else {
+    const roadCount = Number(building.roadCount || 0);
+    lines.push(roadCount > 0 ? `Routes adjacentes : ${roadCount}` : 'Pas de route');
+  }
+
+  if (building.sectorName) {
+    lines.push(`Secteur : ${building.sectorName}`);
+  }
+
+  if (building.workerNeed > 0) {
+    lines.push(`Travailleurs : ${building.worker ?? 0} / ${building.workerNeed}`);
+  }
+
+  if (holdsFood(building.type) && building.stockTotal != null) {
+    lines.push(`Nourriture en stock : ${building.stockTotal}`);
+  }
+  if (getAnnualSupplyEntry(building.type) && building.hasFood === false) {
+    lines.push(EMPTY_HARVEST_STOCK_NOTE);
+  }
+  return lines.join('\n');
+}
+
+/**
+ * The building part of the legend, built from what the map really shows: one
+ * row per name the player reads (the catalog's `displayName`) with the code its
+ * cells carry. Several names can share a code — each still gets its own row.
+ * @param {Array<{ type?: string }>} buildings
+ * @returns {string}
+ */
+export function renderCityMapLegendHtml(buildings) {
+  const rows = new Map();
+  for (const building of buildings) {
+    if (!building.type) continue;
+    const name = displayNameOf(building.type);
+    rows.set(name, { code: getBuildingCode(building.type), styleClass: styleClassOf(building.type) });
+  }
+
+  return [...rows.entries()]
+    .sort(([nameA, a], [nameB, b]) => a.code.localeCompare(b.code) || nameA.localeCompare(nameB))
+    .map(
+      ([name, { code, styleClass }]) =>
+        `<div class="legend-item"><span class="legend-code legend-code-small ${escapeHtml(code.toLowerCase())}${styleClass}">${escapeHtml(code)}</span><span class="legend-label">${escapeHtml(name)}</span></div>`
+    )
+    .join('');
 }
 
 /**
@@ -81,42 +209,23 @@ export function renderCityMapGridHtml({ citySize, buildingMap, hasRoadAccessFrom
         const neighbors = building.neighbors || [];
         const neighborCodes = getNeighborCodes(neighbors);
 
-        const isRoad = building.type.includes('roads') || building.type.includes('Road');
-        const needsRoadAccess = !isRoad;
+        const isRoad =
+          building.type.includes('roads') || building.type.includes('Road') || isRoadBuildingType(building.type);
+        const needsRoadAccess = !isRoad && requiresRoad(building.type);
 
         const hasRoad = needsRoadAccess ? hasRoadAccessFromCount(building.roadCount) : true;
 
-        const canHaveFood =
-          building.type.includes('House') ||
-          building.type.includes('Market') ||
-          building.type.includes('Farm');
+        const canHaveFood = holdsFood(building.type);
 
         const hasFood = canHaveFood ? building.hasFood === true : true;
 
         const isHouse = building.kind === 'house';
         const marketTooFar = isHouse ? building.marketTooFar === true : false;
 
-        let category = 'services';
-        if (building.type && (building.type.includes('House') || building.type.includes('Palace'))) {
-          category = 'houses';
-        } else if (
-          building.type &&
-          (building.type.includes('roads') || building.type.includes('Road'))
-        ) {
-          category = 'infrastructure';
-        } else if (
-          building.type &&
-          (building.type.includes('Well') || building.type.includes('Church'))
-        ) {
-          category = 'services';
-        } else if (
-          building.type &&
-          (building.type.includes('Market') || building.type.includes('Farm'))
-        ) {
-          category = 'services';
-        }
+        // Filter group: what the building is, not what it is called
+        const category = building.kind === 'house' ? 'houses' : isRoad ? 'infrastructure' : 'services';
 
-        tableHTML += `<td class="grid-cell" data-category="${category}">`;
+        tableHTML += `<td class="grid-cell" data-category="${category}" title="${escapeHtml(describeMapBuilding(building))}">`;
 
         tableHTML += `<div class="status-indicators">`;
         if (needsRoadAccess && !hasRoad) {
@@ -125,11 +234,12 @@ export function renderCityMapGridHtml({ citySize, buildingMap, hasRoadAccessFrom
         if (isHouse && !hasFood && marketTooFar) {
           tableHTML += `<span class="status-indicator market-too-far" title="Marché trop loin"></span>`;
         } else if (canHaveFood && !hasFood && !marketTooFar) {
-          tableHTML += `<span class="status-indicator no-food" title="Pas de nourriture"></span>`;
+          const noFoodTitle = getAnnualSupplyEntry(building.type) ? EMPTY_HARVEST_STOCK_NOTE : 'Pas de nourriture';
+          tableHTML += `<span class="status-indicator no-food" title="${escapeHtml(noFoodTitle)}"></span>`;
         }
         tableHTML += `</div>`;
 
-        tableHTML += `<span class="building-code ${code.toLowerCase()}">${code}</span>`;
+        tableHTML += `<span class="building-code ${code.toLowerCase()}${styleClassOf(building.type)}">${code}</span>`;
         if (neighborCodes) {
           tableHTML += `<div class="neighbors-list">${neighborCodes}</div>`;
         }

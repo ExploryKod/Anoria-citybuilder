@@ -167,6 +167,12 @@
  * @property {ResourceRoleFacts[]} [resourceRoles] A building can hold more than
  *   one role at once (e.g. a windmill both collects from farms and holds a hub
  *   stock for markets to pull from).
+ * @property {boolean} [requiresRoad] Whether the building needs a road next to
+ *   it to work: to employ, to produce, to trade, to be served, to host
+ *   inhabitants. Omitted means true. `false` means NOTHING the building does
+ *   depends on a road — every context reads this one fact (via
+ *   resourceRoleQueries.requiresRoad / isRoadNeedMet) instead of checking
+ *   road counts or type names on its own.
  * @property {PlacementRequirement[]} [placementRequires] One or more other
  *   buildings that must already be placed (and, if `requiresCapacity`, have
  *   room) before this building can be placed at all — e.g. a market can't be

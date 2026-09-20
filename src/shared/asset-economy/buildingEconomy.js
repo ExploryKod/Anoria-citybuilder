@@ -145,22 +145,24 @@ export const BUILDING_ECONOMY = {
   // shared/population/socialCategoryCatalog.js for which tier requires
   // which. Adding a 10th service later means one more line here per house
   // type, never a new field name (see `servedFlags` in PeriodLockPolicy.js).
+  // A house is named after the social category living in it (the colour in the id
+  // is only how the code tells the three apart) — `displayName` is what the player reads.
   'House-Blue': {
-    displayName: 'Maison bleue',
+    displayName: 'Commerçants',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'merchants',
     resourceRoles: HOUSE_RESOURCE_ROLES,
   },
   'House-Red': {
-    displayName: 'Maison rouge',
+    displayName: 'Artisans-ouvriers',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'artisans',
     resourceRoles: HOUSE_RESOURCE_ROLES,
   },
   'House-Purple': {
-    displayName: 'Maison violette',
+    displayName: 'Savants',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'scholars',
@@ -175,12 +177,14 @@ export const BUILDING_ECONOMY = {
     resourceRoles: HOUSE_RESOURCE_ROLES,
   },
 
-  // Farms
+  // Farms — fields, no road needed (`requiresRoad: false`): they employ, produce
+  // and are collected by a hub whether or not a road touches them.
   // `schedule`/`amount` below: farms harvest their annual crop once, in
   // autumn (see ResourceSchedulePolicy.js for the schedule shape). 78 =
   // 6 citizens x 12 months + a 6-basket buffer.
   'Farm-Wheat': {
     displayName: 'Champ de blé',
+    requiresRoad: false,
     construction: { price: 10, category: 'farms' },
     employment: { sector: 1, workerNeed: 3, eliteNeed: 0, requiredSkill: 'fermier' },
     resourceRoles: [{
@@ -193,6 +197,7 @@ export const BUILDING_ECONOMY = {
   },
   'Farm-Carrot': {
     displayName: 'Champ de carottes',
+    requiresRoad: false,
     construction: { price: 20, category: 'farms' },
     employment: { sector: 1, workerNeed: 3, eliteNeed: 0, requiredSkill: 'fermier' },
     resourceRoles: [{
@@ -205,6 +210,7 @@ export const BUILDING_ECONOMY = {
   },
   'Farm-Cabbage': {
     displayName: 'Champ de choux',
+    requiresRoad: false,
     construction: { price: 30, category: 'farms' },
     employment: { sector: 1, workerNeed: 3, eliteNeed: 0, requiredSkill: 'fermier' },
     resourceRoles: [{

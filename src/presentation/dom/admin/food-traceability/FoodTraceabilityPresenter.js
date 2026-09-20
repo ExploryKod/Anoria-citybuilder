@@ -240,10 +240,10 @@ export function createFarmMarketSectionHTML(
   return `
         <div class="food-traceability-transaction-section">
             <div class="food-traceability-transaction-section-header">
-                <span class="food-traceability-building-type">Ferme</span>
+                <span class="food-traceability-building-type">${pair.fromLabel}</span>
                 <span class="food-traceability-coords-pill farm">${pair.farmCoords || 'N/A'}</span>
                 <span class="food-traceability-arrow">→</span>
-                <span class="food-traceability-building-type">Marché</span>
+                <span class="food-traceability-building-type">${pair.toLabel}</span>
                 <span class="food-traceability-coords-pill market">${pair.marketCoords || 'N/A'}</span>
             </div>
             <div class="food-traceability-transaction-table">
@@ -252,7 +252,7 @@ export function createFarmMarketSectionHTML(
                         <div class="food-traceability-cell-header">Stocks avant transaction</div>
                         <div class="food-traceability-stocks-column">
                             <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">Ferme</div>
+                                <div class="food-traceability-stocks-label">${pair.fromLabel}</div>
                                 <div class="food-traceability-stocks-details">
                                     ${stockLines(farmStocksBefore)}
                                     <div class="food-traceability-stocks-total">Total: ${farmStocksBefore[chainTotalKey] || 0}</div>
@@ -264,7 +264,7 @@ export function createFarmMarketSectionHTML(
                         <div class="food-traceability-cell-header">Stocks avant transaction</div>
                         <div class="food-traceability-stocks-column">
                             <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">Marché</div>
+                                <div class="food-traceability-stocks-label">${pair.toLabel}</div>
                                 <div class="food-traceability-stocks-details">
                                     ${stockLines(marketStocksBefore)}
                                     <div class="food-traceability-stocks-total">Total: ${marketStocksBefore[chainTotalKey] || 0}</div>
@@ -278,7 +278,7 @@ export function createFarmMarketSectionHTML(
                         <div class="food-traceability-cell-header">Transaction</div>
                         <div class="food-traceability-transaction-details">
                             <div class="food-traceability-transaction-type farm-to-market">Vente</div>
-                            <div class="food-traceability-transaction-subtitle">Vente au marché</div>
+                            <div class="food-traceability-transaction-subtitle">Vente à ${pair.toLabel}</div>
                             ${transactionDetails}
                         </div>
                     </div>
@@ -286,7 +286,7 @@ export function createFarmMarketSectionHTML(
                         <div class="food-traceability-cell-header">Transaction</div>
                         <div class="food-traceability-transaction-details">
                             <div class="food-traceability-transaction-type farm-to-market">Achat</div>
-                            <div class="food-traceability-transaction-subtitle">Achat à la ferme</div>
+                            <div class="food-traceability-transaction-subtitle">Achat à ${pair.fromLabel}</div>
                             ${transactionDetails}
                         </div>
                     </div>
@@ -296,7 +296,7 @@ export function createFarmMarketSectionHTML(
                         <div class="food-traceability-cell-header">Stocks après transaction (prévision)</div>
                         <div class="food-traceability-stocks-column">
                             <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">Ferme</div>
+                                <div class="food-traceability-stocks-label">${pair.fromLabel}</div>
                                 <div class="food-traceability-stocks-details">
                                     ${stockLines(farmStocksAfter)}
                                     <div class="food-traceability-stocks-total">Total: ${farmStocksAfter[chainTotalKey] || 0}</div>
@@ -308,7 +308,7 @@ export function createFarmMarketSectionHTML(
                         <div class="food-traceability-cell-header">Stocks après transaction (prévision)</div>
                         <div class="food-traceability-stocks-column">
                             <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">Marché</div>
+                                <div class="food-traceability-stocks-label">${pair.toLabel}</div>
                                 <div class="food-traceability-stocks-details">
                                     ${stockLines(marketStocksAfter)}
                                     <div class="food-traceability-stocks-total">Total: ${marketStocksAfter[chainTotalKey] || 0}</div>
@@ -349,10 +349,10 @@ export function createMarketHouseSectionHTML(
   return `
         <div class="food-traceability-transaction-section">
             <div class="food-traceability-transaction-section-header">
-                <span class="food-traceability-building-type">Marché</span>
+                <span class="food-traceability-building-type">${pair.fromLabel}</span>
                 <span class="food-traceability-coords-pill market">${pair.marketCoords || 'N/A'}</span>
                 <span class="food-traceability-arrow">→</span>
-                <span class="food-traceability-building-type">Maison</span>
+                <span class="food-traceability-building-type">${pair.toLabel}</span>
                 <span class="food-traceability-coords-pill house">${pair.houseCoords || 'N/A'}</span>
             </div>
             <div class="food-traceability-transaction-table">
@@ -361,7 +361,7 @@ export function createMarketHouseSectionHTML(
                         <div class="food-traceability-cell-header">Stocks avant transaction</div>
                         <div class="food-traceability-stocks-column">
                             <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">Marché</div>
+                                <div class="food-traceability-stocks-label">${pair.fromLabel}</div>
                                 <div class="food-traceability-stocks-details">
                                     ${stockLines(marketStocksBefore)}
                                     <div class="food-traceability-stocks-total">Total: ${marketStocksBefore[chainTotalKey] || 0}</div>
@@ -373,7 +373,7 @@ export function createMarketHouseSectionHTML(
                         <div class="food-traceability-cell-header">Stocks avant transaction</div>
                         <div class="food-traceability-stocks-column">
                             <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">Maison</div>
+                                <div class="food-traceability-stocks-label">${pair.toLabel}</div>
                                 <div class="food-traceability-stocks-details">
                                     ${stockLines(houseStocksBefore)}
                                     <div class="food-traceability-stocks-total">Total: ${houseStocksBefore[chainTotalKey] || 0}</div>
@@ -387,7 +387,7 @@ export function createMarketHouseSectionHTML(
                         <div class="food-traceability-cell-header">Transaction</div>
                         <div class="food-traceability-transaction-details">
                             <div class="food-traceability-transaction-type market-to-house">Vente</div>
-                            <div class="food-traceability-transaction-subtitle">Vente à la maison</div>
+                            <div class="food-traceability-transaction-subtitle">Vente à ${pair.toLabel}</div>
                             ${transactionDetails}
                         </div>
                     </div>
@@ -395,7 +395,7 @@ export function createMarketHouseSectionHTML(
                         <div class="food-traceability-cell-header">Transaction</div>
                         <div class="food-traceability-transaction-details">
                             <div class="food-traceability-transaction-type market-to-house">Achat</div>
-                            <div class="food-traceability-transaction-subtitle">Achat au marché</div>
+                            <div class="food-traceability-transaction-subtitle">Achat à ${pair.fromLabel}</div>
                             ${transactionDetails}
                         </div>
                     </div>
@@ -405,7 +405,7 @@ export function createMarketHouseSectionHTML(
                         <div class="food-traceability-cell-header">Stocks après transaction (prévision)</div>
                         <div class="food-traceability-stocks-column">
                             <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">Marché</div>
+                                <div class="food-traceability-stocks-label">${pair.fromLabel}</div>
                                 <div class="food-traceability-stocks-details">
                                     ${stockLines(marketStocksAfter)}
                                     <div class="food-traceability-stocks-total">Total: ${marketStocksAfter[chainTotalKey] || 0}</div>
@@ -417,7 +417,7 @@ export function createMarketHouseSectionHTML(
                         <div class="food-traceability-cell-header">Stocks après transaction (prévision)</div>
                         <div class="food-traceability-stocks-column">
                             <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">Maison</div>
+                                <div class="food-traceability-stocks-label">${pair.toLabel}</div>
                                 <div class="food-traceability-stocks-details">
                                     ${stockLines(houseStocksAfter)}
                                     <div class="food-traceability-stocks-total">Total: ${houseStocksAfter[chainTotalKey] || 0}</div>

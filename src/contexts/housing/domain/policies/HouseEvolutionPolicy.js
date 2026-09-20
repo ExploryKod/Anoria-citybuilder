@@ -1,4 +1,4 @@
-import { getPerCapitaDemand } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getPerCapitaDemand, isRoadNeedMet } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import {
   HOUSE_TYPE_BLUE,
   HOUSE_TYPE_RED,
@@ -131,7 +131,7 @@ export function canEvolveToPalace({ stocks, population, buildingType }) {
 export function resolveHouseEvolution({ type, pop, roadCount, stocks }) {
   const previousType = normalizeResidentialType(type);
   const previousPop = clampPop(pop);
-  const hasRoadAccess = (roadCount ?? 0) > 0;
+  const hasRoadAccess = isRoadNeedMet(type, roadCount);
 
   let targetType = previousType;
   let targetPop = previousPop;
