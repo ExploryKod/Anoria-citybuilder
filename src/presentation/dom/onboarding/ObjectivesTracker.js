@@ -334,7 +334,7 @@ class ObjectivesTracker {
         
         // Créer une notification
         showSuccessToast(
-          `🎉 Objectif réussi ! ${objective.title} — 🏰 Maison Violette déverrouillée`,
+          `🎉 Objectif réussi ! ${objective.title} — 🏰 ${budgetChallengeDefinition.unlockedBuildingName} déverrouillés`,
           { timeout: 5000 }
         );
     }

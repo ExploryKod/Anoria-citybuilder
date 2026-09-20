@@ -1,9 +1,17 @@
+import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+
+/** The building an objective unlocks, named as the catalog names it — the player's word, not the id. */
+const UNLOCKED_BUILDING = 'House-Purple';
+const unlockedBuildingName = getBuildingDefinition(UNLOCKED_BUILDING)?.displayName ?? UNLOCKED_BUILDING;
+
 /** Canonical objective definitions (financial unlock rules). */
 export const OBJECTIVE_CATALOG = Object.freeze({
   budget_challenge_5000: Object.freeze({
     id: 'budget_challenge_5000',
     title: '💰 Objectif Financier',
-    description: 'Atteindre 5000€ de fonds pour déverrouiller la Maison Violette.',
+    unlockedBuilding: UNLOCKED_BUILDING,
+    unlockedBuildingName,
+    description: `Atteindre 5000€ de fonds pour déverrouiller les ${unlockedBuildingName}.`,
     fundThreshold: 5000,
     requirementText: 'Les fonds doivent atteindre au moins 5000€',
   }),
