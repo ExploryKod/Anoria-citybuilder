@@ -337,6 +337,58 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       expect(dataByYearMonth['0-3']).toMatchObject({ fedPopulation: 12, unfedPopulation: 0 });
     });
 
+    test('the city\'s employment is logged when it changes, and the export shows it month by month', async () => {
+      const summary = (unemployed) => ({
+        totalPopulation: 48,
+        laborPool: 44,
+        totalAssigned: 44 - unemployed,
+        totalNeed: 30,
+        unemployed,
+        unemploymentPercentage: Math.round((unemployed / 44) * 100),
+        lack: 0,
+        byGroup: { artisans: { workerPool: 24, assigned: 24 - unemployed, unemployed } },
+        bySkill: {},
+      });
+      // Isolate this test from the employment rows other tests left in the table
+      const start = TimeManager.getTimeInfo(0);
+      const months = [
+        { year: start.year, month: 0, fedPopulation: 1, unfedPopulation: 0 },
+        { year: start.year, month: 1, fedPopulation: 1, unfedPopulation: 0 },
+      ];
+
+      await supply.recordEmploymentSummary({ ...start, turn: 10, monthIndex: 0 }, summary(10));
+      await supply.recordEmploymentSummary({ ...start, turn: 11, monthIndex: 0 }, summary(10)); // unchanged: no row
+      await supply.recordEmploymentSummary({ ...start, turn: 20, monthIndex: 1 }, summary(4));
+
+      const rows = (await supply.getAllSupplyTraceabilityTransactions()).filter(
+        (t) => t.transactionType === 'employment_summary' && [10, 11, 20].includes(t.turn)
+      );
+      expect(rows.map((t) => t.turn).sort((a, b) => a - b)).toEqual([10, 20]);
+
+      const [year] = buildFoodTraceabilityExport(rows, months).years;
+      expect(year.months.map((m) => m.unemployment.unemployed)).toEqual([10, 4]);
+      expect(year.months[1].unemployment.byGroup.artisans.unemployed).toBe(4);
+    });
+
+    test('a farm demolished before the harvest is sold says so, instead of "unknown"', () => {
+      const at = { turn: 1, date: '2026-01-01', year: 0 };
+      const farm = (id) => ({ fromId: id, fromType: 'Farm-Wheat', fromCoords: '1,1' });
+      const rows = [
+        { ...at, month: 3, transactionType: 'chain_state', quantity: 1, ...farm('kept') },
+        { ...at, month: 3, transactionType: 'chain_state', quantity: 1, ...farm('gone') },
+        { ...at, month: 3, transactionType: 'chain_state', quantity: 1, fromId: 'mill', fromType: 'Windmill-001' },
+        { ...at, month: 4, transactionType: 'game_event', event: 'building_demolished', ...farm('gone') },
+        { ...at, month: 11, transactionType: 'source_to_hub', quantity: 78, toId: 'mill', ...farm('kept') },
+      ];
+      const [year] = buildFoodTraceabilityExport(rows, [
+        { year: 0, month: 3, fedPopulation: 1, unfedPopulation: 0 },
+        { year: 0, month: 11, fedPopulation: 1, unfedPopulation: 0 },
+      ]).years;
+
+      expect(year.farms).toMatchObject({ total: 2, sold: 1, unsold: 1 });
+      expect(year.farms.causes).toEqual([{ id: 'demolished', count: 1 }]);
+    });
+
     test('a demolition carries what was demolished, by the catalog\'s category', async () => {
       await supply.recordBuildingEvent({
         timeInfo: TimeManager.getTimeInfo(0),

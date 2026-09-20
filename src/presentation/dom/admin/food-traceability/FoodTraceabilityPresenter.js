@@ -68,6 +68,8 @@ export function summarizeChain(transactions, year) {
   const soldFarms = new Set();
   const activeHubs = new Set();
   const missedCause = new Map();
+  const farmIds = new Set();
+  const demolishedIds = new Set();
   let hubType = null;
 
   // Oldest turn first, so the last row of a month is really the last tick of it.
@@ -75,9 +77,14 @@ export function summarizeChain(transactions, year) {
     (a, b) => a.turn - b.turn || new Date(a.date) - new Date(b.date)
   );
   for (const t of chronological) {
+    // A demolition counts whenever it happened before the farm's year ended
+    if (t.transactionType === 'game_event' && t.event === 'building_demolished' && t.year <= year) {
+      demolishedIds.add(t.fromId || t.fromCoords);
+    }
     if (t.year !== year) continue;
     if (t.transactionType === 'chain_state') {
       const kind = isHubType(t.fromType) ? 'hubs' : 'farms';
+      if (kind === 'farms') farmIds.add(t.fromId || t.fromCoords);
       if (kind === 'hubs') hubType = t.fromType;
       const month = (stateByMonth[t.month] ??= { farms: new Map(), hubs: new Map() });
       month[kind].set(t.fromId || t.fromCoords, t.quantity > 0);
@@ -122,6 +129,15 @@ export function summarizeChain(transactions, year) {
     if (kept > 0) causes.push({ id, count: kept });
     explained += kept;
   }
+  // A farm the player demolished before the harvest was sold has no missed sale to explain it
+  const demolishedUnsold = [...farmIds].filter(
+    (id) => demolishedIds.has(id) && !soldFarms.has(id) && !missedCause.has(id)
+  ).length;
+  const keptDemolished = Math.min(demolishedUnsold, farms.unsold - explained);
+  if (keptDemolished > 0) {
+    causes.push({ id: 'demolished', count: keptDemolished });
+    explained += keptDemolished;
+  }
   if (farms.unsold > explained) {
     causes.push({ id: hubs.total === 0 ? 'no_hub' : 'unknown', count: farms.unsold - explained });
   }
@@ -151,6 +167,7 @@ const NON_SALE_CAUSES = {
   hub_full: (capacity) => `📦 moulin plein${capacity ? ` (plafond ${capacity} paniers)` : ''}`,
   hub_idle: () => '🏚️ moulin sans travailleurs',
   no_hub: () => '❌ pas de moulin',
+  demolished: () => '🚧 démolie avant la vente',
   unknown: () => '❔ cause non enregistrée',
 };
 
@@ -586,7 +603,7 @@ export function renderFoodStats(container, dataByYear) {
 }
 
 /** Per-tick states are folded into the monthly figures; every other row is an event worth keeping. */
-const STATE_TRANSACTION_TYPES = new Set(['chain_state', 'population_state', 'building_state']);
+const STATE_TRANSACTION_TYPES = new Set(['chain_state', 'population_state', 'building_state', 'employment_summary']);
 
 /** What a building's stock counts as in the monthly figures, read from the catalog's roles. */
 function stockKindOf(type) {
@@ -620,6 +637,34 @@ function aggregateBuildingStates(current) {
     }
   }
   return out;
+}
+
+/**
+ * The city's employment as of the end of each month, from the logged summaries: the last row
+ * at or before that month, or null before the first.
+ * @param {Array<object>} transactions
+ * @param {number} year
+ * @param {number[]} monthIndexes
+ * @returns {Record<number, object | null>}
+ */
+export function summarizeEmploymentHistory(transactions, year, monthIndexes) {
+  const rows = [...transactions]
+    .filter((t) => t.transactionType === 'employment_summary')
+    .sort((a, b) => a.turn - b.turn || new Date(a.date) - new Date(b.date));
+
+  const byMonth = {};
+  let current = null;
+  let next = 0;
+  for (const month of [...monthIndexes].sort((a, b) => a - b)) {
+    while (
+      next < rows.length &&
+      (rows[next].year < year || (rows[next].year === year && rows[next].month <= month))
+    ) {
+      current = rows[next++].summary;
+    }
+    byMonth[month] = current;
+  }
+  return byMonth;
 }
 
 /**
@@ -684,6 +729,7 @@ export function buildFoodTraceabilityExport(transactions, monthlyStats) {
       const months = monthlyStats.filter((month) => month.year === year).sort((a, b) => a.month - b.month);
       const chain = summarizeChain(transactions, year);
       const history = summarizeBuildingHistory(transactions, year, months.map((month) => month.month));
+      const employmentHistory = summarizeEmploymentHistory(transactions, year, months.map((month) => month.month));
       const coverage = fullCoverageSummary(months);
       // The newest year, with a hub but no sale yet: its farm balance is not computable
       const inProgress = year === years[years.length - 1] && chain.hubs.total > 0 && !chain.collectionDone;
@@ -699,6 +745,7 @@ export function buildFoodTraceabilityExport(transactions, monthlyStats) {
           farms: chain.byMonth[month.month]?.farms ?? null,
           hubs: chain.byMonth[month.month]?.hubs ?? null,
           buildings: history?.byMonth[month.month] ?? null,
+          unemployment: employmentHistory[month.month] ?? null,
         })),
         endOfYearBuildings: history?.endOfYear ?? null,
         farms: inProgress ? { total: chain.farms.total } : chain.farms,

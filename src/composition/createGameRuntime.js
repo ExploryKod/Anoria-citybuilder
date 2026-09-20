@@ -11,6 +11,7 @@ import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { isLoseMode } from '../config/loseMode.js';
 import { recordDeaths } from './gameplayMortalityState.js';
 import { getSharedEventBus } from './sharedEventBus.js';
+import { TimeManager } from '../shared/time/TimeManager.js';
 
 /**
  * Composition root du runtime ECS (engine + systèmes minces).
@@ -94,6 +95,12 @@ export function createGameRuntime({
     employment,
     getSkillPriorities,
   });
+  // The city's employment at each month's end, for its history (the log keeps a row only on change)
+  const historyEmploymentSummary = async (_world, context = {}) => {
+    const timeInfo = getTimeInfo(context.time ?? 0);
+    if (timeInfo.dayInMonth !== TimeManager.DAYS_PER_MONTH) return;
+    await supply.recordEmploymentSummary(timeInfo, await employment.getCityEmploymentSummary());
+  };
   pipeline
     .group('simulation')
     .register('parcels.roadAccess', createParcelsRoadAccessSystem(parcels))
@@ -101,6 +108,7 @@ export function createGameRuntime({
     .register('housing.populationGrowth', housingPopulationGrowth)
     .register('housing.evolution', housingEvolution)
     .register('employment.redistribute', employmentRedistribute)
+    .register('history.employmentSummary', historyEmploymentSummary)
     .register('gameplay.randomEvents', createRandomEventsSystem({ gameplay }))
     .register(
       'intelligence.monthlyNews',

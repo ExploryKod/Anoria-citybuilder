@@ -331,6 +331,11 @@ export function createSupplyContext({
       return traceability.recordBuildingEvent(timeInfo, event, building);
     },
 
+    /** The city's employment at the end of a month, kept in its history. */
+    async recordEmploymentSummary(timeInfo, summary) {
+      return traceability.recordEmploymentSummary(timeInfo, summary);
+    },
+
     /** Houses that went up or down a level this month. */
     async recordHouseChanges(timeInfo, changes) {
       return traceability.recordHouseChanges(timeInfo, changes);

@@ -31,6 +31,7 @@ export class SupplyTraceability {
     /** Last logged state of each building, as text — a row is written only when it changes. */
     this.lastLoggedStates = new Map();
     this.lastLoggedTurn = -1;
+    this.lastLoggedEmployment = null;
   }
 
   /**
@@ -355,6 +356,37 @@ export class SupplyTraceability {
         state
       );
     }
+  }
+
+  /**
+   * The city's employment (jobs, unemployed, by social group), logged when it changes.
+   * @param {object} timeInfo
+   * @param {object} summary What the employment context computes for the city.
+   */
+  async recordEmploymentSummary(timeInfo, summary) {
+    const compact = {
+      totalPopulation: summary.totalPopulation,
+      laborPool: summary.laborPool,
+      totalAssigned: summary.totalAssigned,
+      totalNeed: summary.totalNeed,
+      unemployed: summary.unemployed,
+      unemploymentPercentage: summary.unemploymentPercentage,
+      lack: summary.lack,
+      byGroup: summary.byGroup,
+      bySkill: summary.bySkill,
+    };
+    const signature = JSON.stringify(compact);
+    const turn = turnOf(timeInfo);
+    if (turn < this.lastLoggedTurn) this.lastLoggedEmployment = null; // a new game began
+    if (signature === this.lastLoggedEmployment) return;
+    this.lastLoggedEmployment = signature;
+
+    await this.traceabilityRepository.recordEmploymentSummary(
+      turn,
+      timeInfo.monthIndex || 0,
+      timeInfo.year || 0,
+      compact
+    );
   }
 
   /**

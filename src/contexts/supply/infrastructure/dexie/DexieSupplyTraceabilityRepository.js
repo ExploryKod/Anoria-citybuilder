@@ -88,6 +88,14 @@ export class DexieSupplyTraceabilityRepository {
   }
 
   /**
+   * The city's employment at a month's end (jobs, unemployed, by social group): the log keeps
+   * a row only when it differs from the last one.
+   */
+  async recordEmploymentSummary(turn, month, year, summary) {
+    await this.addTransaction(turn, month, year, 'employment_summary', null, null, null, 0, 0, { summary });
+  }
+
+  /**
    * Something that happened to the city (a house went up a level, people died of
    * famine, a building was placed or demolished): `event` says what, `subject` is
    * the building concerned (or null), `details` the numbers that explain it.
