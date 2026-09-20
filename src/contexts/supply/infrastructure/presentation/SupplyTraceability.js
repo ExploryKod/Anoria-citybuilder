@@ -1,4 +1,8 @@
-import { getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import {
+  getAnnualSupplyEntry,
+  getResourceStockShape,
+} from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
 
 /**
  * Side-effect adapter — records supply chain movements in the traceability log.
@@ -157,6 +161,64 @@ export class SupplyTraceability {
         entry.taken,
         entry.pop
       );
+    }
+  }
+
+  /**
+   * Logs whether each annual producer (a farm) can work on this monthly tick —
+   * the state the traceability panel shows per month, faithful to the game:
+   * a farm deleted later still shows as it was.
+   * @param {object} timeInfo
+   */
+  async recordProducerStates(timeInfo) {
+    const producers = await this.supplyBuildingRepository.findByResourceRole('producer');
+
+    for (const building of producers) {
+      const entry = getAnnualSupplyEntry(building.type);
+      if (!entry) continue;
+
+      await this.traceabilityRepository.recordProducerState(
+        timeInfo.turn || 0,
+        timeInfo.monthIndex || 0,
+        timeInfo.year || 0,
+        { id: building.id, x: building.x, y: building.y, type: building.type },
+        entry.categories[0],
+        isOperational({
+          roadCount: building.roadCount,
+          worker: building.worker,
+          workerNeed: building.workerNeed,
+        })
+          ? 1
+          : 0
+      );
+    }
+  }
+
+  /**
+   * Logs each harvest a hub bought from a producer, on the turn of the sale.
+   * @param {object} timeInfo
+   * @param {Array<{ hubId?: string, transfers?: Array<{ sourceId: string, category: string, amount: number }> }>} hubResults
+   */
+  async recordHarvestSales(timeInfo, hubResults = []) {
+    for (const hubResult of hubResults) {
+      if (!hubResult?.transfers?.length) continue;
+      const hubData = await this.supplyBuildingRepository.findRowById(hubResult.hubId);
+      if (!hubData) continue;
+
+      for (const transfer of hubResult.transfers) {
+        const sourceData = await this.supplyBuildingRepository.findRowById(transfer.sourceId);
+        if (!sourceData) continue;
+
+        await this.traceabilityRepository.recordSourceToHub(
+          timeInfo.turn || 0,
+          timeInfo.monthIndex || 0,
+          timeInfo.year || 0,
+          { id: transfer.sourceId, x: sourceData.x, y: sourceData.y, type: sourceData.type },
+          { id: hubResult.hubId, x: hubData.x, y: hubData.y, type: hubData.type },
+          transfer.category,
+          transfer.amount
+        );
+      }
     }
   }
 }

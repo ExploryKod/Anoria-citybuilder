@@ -3,8 +3,85 @@
  */
 
 import { tryResolveBuildingInstanceIdFromRef } from '../../../../shared/building-identity/index.js';
-import { getAllCategoriesForRole, getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import {
+  getAllCategoriesForRole,
+  getAnnualHarvestSchedule,
+  getAnnualYieldPerProducer,
+  getPerCapitaDemand,
+  getResourceStockShape,
+} from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { getResourceCategoryPresentation } from '../../../../composition/supplyCatalog.js';
+import { getTimeInfo, MONTHS, SEASON_EMOJI } from '../../../../shared/time/TimeCalendar.js';
+import { toSupplySeason } from '../../../../composition/supplyTimeLabels.js';
+import { BUILDING_ASSETS } from '../../../three/assets/buildingAssets.js';
+
+const NO_WORK_ICON = '/resources/textures/status/no-work.png';
+
+/** French label per crop stage — the stages themselves come from the crop catalog. */
+const CROP_STAGE_LABELS = Object.freeze({ fallow: 'Jachère', growing: 'Semailles', ripe: 'Maturité' });
+
+/** Season → crop stage, read from the first field that declares one. */
+const cropStageBySeason =
+  Object.values(BUILDING_ASSETS).find((asset) => asset.crop?.stageBySeason)?.crop.stageBySeason ?? {};
+
+const harvestSchedule = getAnnualHarvestSchedule();
+
+/**
+ * Season icon and what the fields are doing, for the corner of a month card.
+ * @param {number} monthIndex
+ * @returns {{ emoji: string, label: string }}
+ */
+function seasonBadge(monthIndex) {
+  const { season } = getTimeInfo(monthIndex, 1);
+  const isHarvest =
+    harvestSchedule?.unit === 'season' && harvestSchedule.values?.includes(toSupplySeason(season));
+  const label = isHarvest ? 'Récolte' : (CROP_STAGE_LABELS[cropStageBySeason[season]] ?? '');
+  return { emoji: SEASON_EMOJI[season] ?? '', label };
+}
+
+/**
+ * Farms of one year from the log. Per month: how many existed and how many
+ * were idle (last state of the month). For the year: `total` is the most
+ * farms standing at the same time (never a sum — a farm replaced by another
+ * is still one), and a farm only counts as `sold` if a hub bought its
+ * harvest — no workers, a wiped-out crop or a closed hub all mean no sale.
+ * `unsold` is what is left, the slot where further causes (closure, disease,
+ * weather…) can later be split out.
+ * @param {Array<object>} transactions
+ * @param {number} year
+ * @returns {{ byMonth: Record<number, { present: number, idle: number }>, total: number, sold: number, unsold: number }}
+ */
+export function summarizeFarms(transactions, year) {
+  const stateByMonth = {};
+  const sold = new Set();
+  for (const t of transactions) {
+    if (t.year !== year) continue;
+    const farm = t.fromId || t.fromCoords;
+    if (t.transactionType === 'producer_state') {
+      (stateByMonth[t.month] ??= new Map()).set(farm, t.quantity > 0);
+    } else if (t.transactionType === 'source_to_hub' && t.quantity > 0) {
+      sold.add(farm);
+    }
+  }
+  const byMonth = Object.fromEntries(
+    Object.entries(stateByMonth).map(([month, farms]) => [
+      month,
+      { present: farms.size, idle: [...farms.values()].filter((working) => !working).length },
+    ])
+  );
+  const peak = Math.max(0, ...Object.values(byMonth).map((month) => month.present));
+  // Without monthly states (older saves) the sales are the only farms known.
+  const total = peak > 0 ? peak : sold.size;
+  const soldCount = Math.min(sold.size, total);
+  return { byMonth, total, sold: soldCount, unsold: total - soldCount };
+}
+
+const noWorkIconHTML = `<img class="food-stat-no-work-icon" src="${NO_WORK_ICON}" alt="Fermes inactives" title="Fermes inactives">`;
+
+/** Year row: farms that sold their harvest, out of the most farms standing at once that year. */
+function farmsSoldHTML({ sold, total, unsold }) {
+  return `${sold}/${total} ${noWorkIconHTML} : ${unsold}`;
+}
 
 /** Goods the supply chain carries, and the aggregate they are filed under — both from the catalog. */
 const chainGoods = getAllCategoriesForRole('hub');
@@ -314,89 +391,73 @@ export function createBuildingStocksHTML(buildingType, coords, stocks, pillClass
 }
 
 /**
- * @param {HTMLElement} container
- * @param {Record<string, { months: Array<object> }>} dataByYear
- * @param {string|null} selectedYear
+ * Farms a year would have needed for full coverage, with its detailed calculation:
+ * Σ monthly population × per-capita demand ÷ annual yield per farm (all from the catalog).
+ * @param {Array<object>} months
+ * @returns {{ farmsNeeded: number, population: string, detail: string }|null} Null when the catalog has no yield to divide by.
  */
-export function renderFoodStats(container, dataByYear, selectedYear) {
-  const monthNames = [
-    'Janvier',
-    'Février',
-    'Mars',
-    'Avril',
-    'Mai',
-    'Juin',
-    'Juillet',
-    'Août',
-    'Septembre',
-    'Octobre',
-    'Novembre',
-    'Décembre',
-  ];
+function fullCoverageSummary(months) {
+  const yieldPerFarm = getAnnualYieldPerProducer();
+  if (yieldPerFarm <= 0) return null;
+  const perCapita = getPerCapitaDemand();
+  const residentMonths = months.reduce(
+    (sum, month) => sum + (month.fedPopulation || 0) + (month.unfedPopulation || 0),
+    0
+  );
+  const demand = residentMonths * perCapita;
+  const farmsNeeded = Math.ceil(demand / yieldPerFarm);
+  const monthCount = months.length;
+  const averagePopulation = residentMonths / monthCount;
+  const populationLabel = Number.isInteger(averagePopulation)
+    ? `${averagePopulation}`
+    : `~${Math.round(averagePopulation)}`;
+  const exact = (demand / yieldPerFarm).toFixed(1).replace('.', ',');
+  return {
+    farmsNeeded,
+    population: populationLabel,
+    detail: `${populationLabel} habitants × ${monthCount} mois × ${perCapita} panier par mois = ${demand} paniers à couvrir ÷ ${yieldPerFarm} paniers par ferme et par an = ${exact}, arrondi à ${farmsNeeded}`,
+  };
+}
+
+/** The row every month card ends with: the farms that stood in the city that month. */
+function monthFarmRowHTML(monthData, farms, coverage) {
+  const month = farms?.byMonth[monthData.month];
+  const figure = month
+    ? `${month.present}/${coverage ? coverage.farmsNeeded : '?'} ${noWorkIconHTML} : (${month.idle})`
+    : '—';
+  return `<div class="food-stat-month-item farms">
+                                        <span class="food-stat-month-icon">🌾</span>
+                                        <span class="food-stat-month-label">Fermes:</span>
+                                        <span class="food-stat-month-value">${figure}</span>
+                                    </div>`;
+}
+
+/**
+ * @param {HTMLElement} container
+ * @param {Record<string, { months: Array<object>, farms?: object }>} dataByYear
+ */
+export function renderFoodStats(container, dataByYear) {
+  const monthNames = MONTHS;
 
   const years = Object.keys(dataByYear).sort((a, b) => parseInt(b) - parseInt(a));
 
   let html = '';
 
-  if (selectedYear === null) {
-    let totalFed = 0;
-    let totalUnfed = 0;
-
-    years.forEach((year) => {
-      const yearData = dataByYear[year];
-      yearData.months.forEach((month) => {
-        totalFed += month.fedPopulation || 0;
-        totalUnfed += month.unfedPopulation || 0;
-      });
-    });
-
-    const totalPopulation = totalFed + totalUnfed;
-
-    html += `
-            <div class="food-stats-summary">
-                <h4 class="food-stats-summary-title">📊 Vue Globale (Toutes années)</h4>
-                <div class="food-stats-summary-grid">
-                    <div class="food-stat-card fed">
-                        <div class="food-stat-icon">✅</div>
-                        <div class="food-stat-label">Population Nourrie</div>
-                        <div class="food-stat-value">${totalFed}</div>
-                        <div class="food-stat-unit">citoyens</div>
-                    </div>
-                    <div class="food-stat-card unfed">
-                        <div class="food-stat-icon">⚠️</div>
-                        <div class="food-stat-label">Population Non Nourrie</div>
-                        <div class="food-stat-value">${totalUnfed}</div>
-                        <div class="food-stat-unit">citoyens</div>
-                    </div>
-                    <div class="food-stat-card total">
-                        <div class="food-stat-icon">👥</div>
-                        <div class="food-stat-label">Population Totale</div>
-                        <div class="food-stat-value">${totalPopulation}</div>
-                        <div class="food-stat-unit">citoyens</div>
-                    </div>
-                </div>
-            </div>
-        `;
-  }
-
   years.forEach((year) => {
     const yearData = dataByYear[year];
-    let yearFed = 0;
-    let yearUnfed = 0;
-
-    yearData.months.forEach((month) => {
-      yearFed += month.fedPopulation || 0;
-      yearUnfed += month.unfedPopulation || 0;
-    });
+    const monthsWithoutFamine = yearData.months.filter(
+      (month) => (month.unfedPopulation || 0) === 0
+    ).length;
+    const coverage = fullCoverageSummary(yearData.months);
 
     html += `
             <div class="food-stats-year-section">
                 <div class="food-stats-year-header">
                     <h4 class="food-stats-year-title">Année ${year}</h4>
                     <div class="food-stats-year-summary">
-                        <span class="food-stat-badge fed">✅ ${yearFed}</span>
-                        <span class="food-stat-badge unfed">⚠️ ${yearUnfed}</span>
-                        <span class="food-stat-badge total">👥 ${yearFed + yearUnfed}</span>
+                        <span class="food-stat-badge ${monthsWithoutFamine === yearData.months.length ? 'fed' : 'unfed'}">✅ ${monthsWithoutFamine}/${yearData.months.length} mois sans famine</span>
+                        ${yearData.farms && yearData.farms.total > 0 ? `<span class="food-stat-farms sold">🌾 Fermes ayant vendu leur récolte : ${farmsSoldHTML(yearData.farms)}</span>` : ''}
+                        ${coverage ? `<span class="food-stat-farms coverage">Fermes nécessaires pour nourrir les ${coverage.population} personnes : ${coverage.farmsNeeded}</span><span class="food-stat-farms detail">${coverage.detail}</span>` : ''}
                     </div>
                 </div>
                 <div class="food-stats-months">
@@ -408,6 +469,7 @@ export function renderFoodStats(container, dataByYear, selectedYear) {
                             <div class="food-stat-month-card">
                                 <div class="food-stat-month-header">
                                     <span class="food-stat-month-name">${monthNames[monthData.month] || `Mois ${monthData.month + 1}`}</span>
+                                    <span class="food-stat-month-season">${seasonBadge(monthData.month).emoji} <small>${seasonBadge(monthData.month).label}</small></span>
                                 </div>
                                 <div class="food-stat-month-details">
                                     <div class="food-stat-month-item fed">
@@ -420,6 +482,7 @@ export function renderFoodStats(container, dataByYear, selectedYear) {
                                         <span class="food-stat-month-label">Non nourris:</span>
                                         <span class="food-stat-month-value">${monthData.unfedPopulation || 0}</span>
                                     </div>
+                                    ${monthFarmRowHTML(monthData, yearData.farms, coverage)}
                                     <div class="food-stat-month-item total">
                                         <span class="food-stat-month-icon">👥</span>
                                         <span class="food-stat-month-label">Total:</span>

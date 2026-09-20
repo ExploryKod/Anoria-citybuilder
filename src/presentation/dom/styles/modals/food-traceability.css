@@ -586,72 +586,6 @@
     font-size: 16px;
 }
 
-/* Summary Cards */
-.food-stats-summary {
-    margin-bottom: 30px;
-    padding: 20px;
-    background: #f8f9fa;
-    border-radius: 8px;
-}
-
-.food-stats-summary-title {
-    margin: 0 0 20px 0;
-    font-size: 18px;
-    color: var(--primary);
-}
-
-.food-stats-summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-}
-
-.food-stat-card {
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border-left: 4px solid;
-}
-
-.food-stat-card.fed {
-    border-left-color: #28a745;
-}
-
-.food-stat-card.unfed {
-    border-left-color: #dc3545;
-}
-
-.food-stat-card.total {
-    border-left-color: #17a2b8;
-}
-
-.food-stat-icon {
-    font-size: 32px;
-    margin-bottom: 8px;
-}
-
-.food-stat-label {
-    font-size: 13px;
-    color: #6c757d;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    font-weight: 500;
-}
-
-.food-stat-value {
-    font-size: 28px;
-    font-weight: bold;
-    color: var(--primary);
-    margin-bottom: 4px;
-}
-
-.food-stat-unit {
-    font-size: 12px;
-    color: #6c757d;
-}
-
 /* Year Sections */
 .food-stats-year-section {
     margin-bottom: 30px;
@@ -680,8 +614,25 @@
 
 .food-stats-year-summary {
     display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.food-stat-farms {
+    font-size: 13px;
+    color: #6c757d;
+    text-align: right;
+    max-width: 520px;
+}
+
+.food-stat-farms.coverage {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.food-stat-farms.detail {
+    font-size: 12px;
 }
 
 .food-stat-badge {
@@ -704,11 +655,6 @@
     color: #721c24;
 }
 
-.food-stat-badge.total {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
 /* Month Cards */
 .food-stats-months {
     display: grid;
@@ -724,9 +670,26 @@
 }
 
 .food-stat-month-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
     margin-bottom: 12px;
     padding-bottom: 8px;
     border-bottom: 1px solid #dee2e6;
+}
+
+.food-stat-month-season {
+    font-size: 16px;
+}
+
+.food-stat-month-season small {
+    font-size: 11px;
+    color: #6c757d;
+}
+
+.food-stat-farms.sold {
+    color: var(--primary);
+    font-weight: 600;
 }
 
 .food-stat-month-name {
@@ -772,6 +735,16 @@
     color: #dc3545;
 }
 
+.food-stat-month-item.farms .food-stat-month-value {
+    color: #b8860b;
+}
+
+.food-stat-no-work-icon {
+    width: 16px;
+    height: 16px;
+    vertical-align: text-bottom;
+}
+
 .food-stat-month-item.total .food-stat-month-value {
     color: #17a2b8;
 }
@@ -784,10 +757,6 @@
     .food-traceability-tab {
         padding: 10px 16px;
         font-size: 13px;
-    }
-    
-    .food-stats-summary-grid {
-        grid-template-columns: 1fr;
     }
     
     .food-stats-year-header {

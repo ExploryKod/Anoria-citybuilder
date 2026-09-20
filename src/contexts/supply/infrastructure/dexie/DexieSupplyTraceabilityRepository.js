@@ -67,6 +67,19 @@ export class DexieSupplyTraceabilityRepository {
     );
   }
 
+  /**
+   * State of one annual producer on a monthly tick: `quantity` is 1 when it
+   * can work (road + staff), 0 when it is idle.
+   */
+  async recordProducerState(turn, month, year, producer, foodType, quantity) {
+    await this.addTransaction(turn, month, year, 'producer_state', producer, null, foodType, quantity, 0);
+  }
+
+  /** A producer's harvest bought by a hub on that turn — the only proof it really delivered. */
+  async recordSourceToHub(turn, month, year, source, hub, foodType, quantity) {
+    await this.addTransaction(turn, month, year, 'source_to_hub', source, hub, foodType, quantity, 0);
+  }
+
   async recordDistributorToConsumer(turn, month, year, distributor, consumer, foodType, quantity, price = 1) {
     await this.addTransaction(
       turn,

@@ -19,7 +19,7 @@ export class RunMonthlyResourceCycle {
    * @param {import('../commands/distribution/UpdateConsumerDistributorReach.js').UpdateConsumerDistributorReach} updateDistributorReach
    * @param {import('../commands/surplus/RunHubSurplusCycle.js').RunHubSurplusCycle} runHubSurplusCycle
    * @param {import('../commands/RunResourceCommandForRole.js').RunResourceCommandForRole} runConsumerCommand
-   * @param {{ recordHouseConsumptions: Function }} traceability
+   * @param {{ recordHouseConsumptions: Function, recordProducerStates: Function, recordHarvestSales: Function }} traceability
    * @param {object} config
    * @param {ReadonlyArray<string>} config.categories Every category any
    *   distributor covers — drives the actual distribution/restock leg,
@@ -69,12 +69,16 @@ export class RunMonthlyResourceCycle {
       successKey: 'produced',
     });
 
-    await this.runHubSurplusCycle.execute({
+    await this.traceability.recordProducerStates(timeInfo);
+
+    const surplus = await this.runHubSurplusCycle.execute({
       month,
       monthIndex: timeInfo.monthIndex,
       dayInMonth: timeInfo.dayInMonth ?? 1,
       year: timeInfo.year ?? 0,
     });
+
+    await this.traceability.recordHarvestSales(timeInfo, surplus.hubs);
 
     await this.runCityResourceCycle.execute({
       categories: this.config.categories,

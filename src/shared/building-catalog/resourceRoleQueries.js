@@ -159,6 +159,49 @@ export function getSuppliedCategories() {
 }
 
 /**
+ * The 'producer' entry through which a building type feeds the distribution
+ * chain once per year (a supplied good with a `year` period lock), or
+ * `undefined` — what makes a building "a farm" without naming one.
+ * @param {string} buildingType
+ * @returns {import('./buildingCatalog.js').ResourceRoleFacts | undefined}
+ */
+export function getAnnualSupplyEntry(buildingType) {
+  const supplied = new Set(getSuppliedCategories());
+  return getResourceRoles(buildingType).find(
+    (entry) =>
+      entry.role === 'producer' &&
+      entry.periodLock?.unit === 'year' &&
+      entry.categories.some((category) => supplied.has(category))
+  );
+}
+
+/**
+ * When those producers harvest (the schedule of the first one the catalog
+ * declares), or `null`.
+ * @returns {{ unit: string, values?: string[] } | null}
+ */
+export function getAnnualHarvestSchedule() {
+  for (const type of Object.keys(buildingCatalog)) {
+    const entry = getAnnualSupplyEntry(type);
+    if (entry) return entry.schedule ?? null;
+  }
+  return null;
+}
+
+/**
+ * Units one such producer yields per harvest year, straight from the
+ * catalog: the smallest `amount` among them (conservative when crops
+ * differ). `0` when the catalog declares no such producer.
+ * @returns {number}
+ */
+export function getAnnualYieldPerProducer() {
+  const amounts = Object.keys(buildingCatalog)
+    .map((type) => getAnnualSupplyEntry(type)?.amount)
+    .filter((amount) => Number.isFinite(amount) && amount > 0);
+  return amounts.length > 0 ? Math.min(...amounts) : 0;
+}
+
+/**
  * Stock ceiling declared for a building type: the first `maxStock` found
  * on any of its role entries. `undefined` means the catalog declares no
  * ceiling (unbounded) — there is deliberately no hidden default.

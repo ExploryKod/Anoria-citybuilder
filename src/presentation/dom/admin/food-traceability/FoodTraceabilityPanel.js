@@ -9,6 +9,7 @@ import {
     createMarketHouseSectionHTML,
     createBuildingStocksHTML,
     renderFoodStats,
+    summarizeFarms,
     chainTotalKey,
     isChainGood,
     emptyGoodsTally,
@@ -706,8 +707,13 @@ export async function loadFoodCharts() {
             dataByYear[d.year].months.push(d);
         });
         
+        // Farms per month, and which ones sold their harvest, from the append-only log
+        Object.values(dataByYear).forEach(yearData => {
+            yearData.farms = summarizeFarms(transactions, yearData.year);
+        });
+
         // Render statistics
-        renderFoodStats(container, dataByYear, selectedYear);
+        renderFoodStats(container, dataByYear);
         
     } catch (error) {
         console.error('Error loading food statistics:', error);
