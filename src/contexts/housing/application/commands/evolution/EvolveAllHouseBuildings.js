@@ -1,4 +1,27 @@
 /**
+ * Inhabitants who left because a house's standing changed (its population was brought back to
+ * the cap of the lower level), and the requirements that no longer held.
+ * @param {Array<{ previousPop?: number, targetPop?: number, unmetRequirements?: Array<{ kind: string, category?: string }> }>} changes
+ * @returns {{ count: number, houses: number, unmet: Array<{ kind: string, category?: string }> } | null}
+ */
+function summarizeDeparture(changes) {
+  const leaving = changes.filter((change) => (change.previousPop ?? 0) > (change.targetPop ?? 0));
+  if (leaving.length === 0) return null;
+
+  const unmet = new Map();
+  for (const change of leaving) {
+    for (const { kind, category } of change.unmetRequirements ?? []) {
+      unmet.set(`${kind}:${category ?? ''}`, { kind, category });
+    }
+  }
+  return {
+    count: leaving.reduce((sum, change) => sum + (change.previousPop - change.targetPop), 0),
+    houses: leaving.length,
+    unmet: [...unmet.values()],
+  };
+}
+
+/**
  * Command: evaluate and persist house evolution for every residential building.
  */
 export class EvolveAllHouseBuildings {
@@ -58,6 +81,7 @@ export class EvolveAllHouseBuildings {
       housesProcessed: houses.length,
       housesChanged: changes.length,
       changes,
+      departure: summarizeDeparture(changes),
     };
   }
 }

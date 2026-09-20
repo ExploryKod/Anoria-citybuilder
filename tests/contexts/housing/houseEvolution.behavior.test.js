@@ -29,6 +29,7 @@ import {
 } from '../../../src/contexts/housing/domain/policies/HouseCapacityPolicy.js';
 import { SOCIAL_CATEGORY } from '../../../src/shared/population/socialCategoryCatalog.js';
 import { EvolveHouseBuilding } from '../../../src/contexts/housing/application/commands/evolution/EvolveHouseBuilding.js';
+import { EvolveAllHouseBuildings } from '../../../src/contexts/housing/application/commands/evolution/EvolveAllHouseBuildings.js';
 
 class InMemoryHousingEvolutionRepository {
   constructor(buildings = []) {
@@ -341,6 +342,43 @@ describe('Housing — house progression', () => {
       expect(result.changed).toBe(true);
       expect(result.targetType).toBe(HOUSE_TYPE_RED);
       expect(result.houseId).toBe(`${HOUSE_TYPE_RED}-2-3`);
+    });
+  });
+
+  describe('EvolveAllHouseBuildings — who leaves when standing drops', () => {
+    test('reports the inhabitants brought back to the lower cap, and which requirements no longer held', async () => {
+      const periodKey = 5;
+      const servedFlags = Object.fromEntries(
+        Object.values(SOCIAL_CATEGORY.artisans.tiers)
+          .flatMap((tier) => tier.requirements)
+          .filter((r) => r.kind === 'serviceCoverage')
+          .map((r) => [r.category, periodKey])
+      );
+      const starving = (id, x) => ({
+        ...house(id, 'House-Red', { x }),
+        level: 3,
+        pop: 18,
+        servedFlags,
+        lastConsumption: { month: periodKey, demand: 18, taken: 0, totalUnfed: 18, categoriesTaken: [] },
+      });
+      const repository = new InMemoryHousingEvolutionRepository([starving('a', 1), starving('b', 2)]);
+      const evolveAll = new EvolveAllHouseBuildings(repository, new EvolveHouseBuilding(repository));
+
+      const result = await evolveAll.execute({ periodKey });
+
+      // Two houses go from 18 residents to the level-2 cap: everyone above it leaves
+      const cap = maxPopulationForLevel(2, 'artisans');
+      expect(result.departure).toMatchObject({ count: 2 * (18 - cap), houses: 2 });
+      expect(result.departure.unmet).toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'demandMet' })]));
+    });
+
+    test('no departure when nobody had to leave', async () => {
+      const repository = new InMemoryHousingEvolutionRepository([house('a', 'House-Red', { pop: 3 })]);
+      const evolveAll = new EvolveAllHouseBuildings(repository, new EvolveHouseBuilding(repository));
+
+      const result = await evolveAll.execute({ periodKey: 5 });
+
+      expect(result.departure).toBeNull();
     });
   });
 });

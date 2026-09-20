@@ -25,7 +25,10 @@ import {
   HOUSE_TYPE_PURPLE,
   HOUSE_TYPE_PALACE,
 } from '../../src/contexts/housing/domain/HouseTypeCatalog.js';
-import { getBuildingDisplayName } from '../../src/presentation/dom/shell/BuildingNotifications.js';
+import {
+  buildPopulationDepartureMessage,
+  getBuildingDisplayName,
+} from '../../src/presentation/dom/shell/BuildingNotifications.js';
 
 describe('buildingCatalog — pure data contract', () => {
   test('is frozen at every level (no behavior can mutate it)', () => {
@@ -173,5 +176,30 @@ describe('Declared facts the city map and every context read from the catalog', 
     expect(isRoadNeedMet('Farm-Wheat', 0)).toBe(true);
     expect(isRoadNeedMet('House-Red', 0)).toBe(false);
     expect(isRoadNeedMet('House-Red', 2)).toBe(true);
+  });
+});
+
+describe('The message the player reads when inhabitants leave', () => {
+  test('says how many leave and why the standing changed, in the catalog\'s words', () => {
+    expect(
+      buildPopulationDepartureMessage({ count: 12, unmet: [{ kind: 'demandMet' }] })
+    ).toBe('12 habitants nous quittent car le standing a changé (nourriture insuffisante)');
+    expect(buildPopulationDepartureMessage({ count: 1, unmet: [] })).toBe(
+      '1 habitant nous quitte car le standing a changé'
+    );
+  });
+
+  test('names a lost service by its catalog label, and lists each reason once', () => {
+    const message = buildPopulationDepartureMessage({
+      count: 6,
+      unmet: [
+        { kind: 'serviceCoverage', category: 'faith' },
+        { kind: 'demandMet' },
+        { kind: 'demandMet' },
+      ],
+    });
+    expect(message).toMatch(/^6 habitants nous quittent car le standing a changé \(/);
+    expect(message.match(/nourriture insuffisante/g)).toHaveLength(1);
+    expect(message).toMatch(/plus de /);
   });
 });

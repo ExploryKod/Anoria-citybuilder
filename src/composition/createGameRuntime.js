@@ -10,6 +10,7 @@ import { createIntelligenceMonthlyNewsSystem } from '../contexts/intelligence/in
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { isLoseMode } from '../config/loseMode.js';
 import { recordDeaths } from './gameplayMortalityState.js';
+import { getSharedEventBus } from './sharedEventBus.js';
 
 /**
  * Composition root du runtime ECS (engine + systèmes minces).
@@ -85,6 +86,9 @@ export function createGameRuntime({
     housing,
     getTimeInfo,
     onChanges: (changes, timeInfo) => supply.recordHouseChanges(timeInfo, changes),
+    // The player is told, with the reason, when inhabitants leave (see BuildingNotifications.js)
+    onPopulationDeparted: (departure) =>
+      getSharedEventBus().publish({ type: 'housing.populationDeparted', ...departure }),
   });
   const employmentRedistribute = createEmploymentRedistributeSystem({
     employment,

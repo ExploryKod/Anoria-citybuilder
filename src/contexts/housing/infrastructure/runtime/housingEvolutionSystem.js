@@ -8,8 +8,15 @@
  * @param {(time: number) => { monthIndex: number }} deps.getTimeInfo
  * @param {(changes: object[], timeInfo: object) => (void | Promise<void>)} [deps.onChanges]
  *   Told which houses went up or down a level, injected from composition.
+ * @param {(departure: { count: number, houses: number, unmet: object[] }, timeInfo: object) => void} [deps.onPopulationDeparted]
+ *   Told when inhabitants left because a house's standing changed.
  */
-export function createHousingEvolutionSystem({ housing, getTimeInfo, onChanges = null }) {
+export function createHousingEvolutionSystem({
+  housing,
+  getTimeInfo,
+  onChanges = null,
+  onPopulationDeparted = null,
+}) {
   return async function housingEvolution(_world, context = {}) {
     const time = context.time ?? 0;
     const timeInfo = getTimeInfo(time);
@@ -17,6 +24,9 @@ export function createHousingEvolutionSystem({ housing, getTimeInfo, onChanges =
 
     if (result?.changes?.length > 0 && typeof onChanges === 'function') {
       await onChanges(result.changes, timeInfo);
+    }
+    if (result?.departure && typeof onPopulationDeparted === 'function') {
+      onPopulationDeparted(result.departure, timeInfo);
     }
   };
 }

@@ -25,6 +25,7 @@ import { createCity, clearCityTiles, initializeEditorCityTiles } from './city.js
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
 import { syncSupplyLinksAfterBuildingChange } from '../../composition/syncSupplyLinksAfterBuildingChange.js';
 import { resolveGetTimeInfo } from '../../composition/gameTimeBridge.js';
+import { getSharedEventBus } from '../../composition/sharedEventBus.js';
 import { refreshSupplyPlacementIndex } from '../../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
 import { ensureGameRuntimeBootstrapped } from '../../composition/ensureGameRuntimeBootstrapped.js';
 import { bootGameContexts } from '../../composition/bootGameContexts.js';
@@ -78,6 +79,7 @@ import {
   showInsufficientFundsNotification,
   showGenericErrorNotification,
   showWindmillCascadeNotification,
+  showPopulationDepartureNotification,
 } from '../dom/shell/BuildingNotifications.js';
 import { showErrorToast } from '../dom/shell/ToastNotifier.js';
 import { presentBuildingInfoSelection } from '../dom/info/presenters/useBuildingInfoSelection.js';
@@ -125,6 +127,9 @@ function resolveEditorStackIdFromObject(object) {
 }
 
 ensureGameRuntimeBootstrapped();
+
+/** Stops the previous game's listener when a new game is created in the same page. */
+let stopPopulationDepartureToasts = null;
 
 export function createGame(gameStore, assetManager, citySize = null) {
   resetCumulativeDeaths();
@@ -278,6 +283,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
   localStorage.setItem('speed', String(DEFAULT_TICK_MS));
 
   registerAppService('gameUI', gameUI);
+  // Inhabitants who leave because a house's standing changed: say so, with the reason
+  stopPopulationDepartureToasts?.();
+  stopPopulationDepartureToasts = getSharedEventBus().subscribe(
+    'housing.populationDeparted',
+    showPopulationDepartureNotification
+  );
   gameUI.updateTimeDisplay(time);
   bootTreasuryHud({ gameUI });
 

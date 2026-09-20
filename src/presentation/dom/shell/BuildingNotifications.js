@@ -7,6 +7,7 @@ import {
   showErrorToast,
   showWarningToast,
 } from './ToastNotifier.js';
+import { getResourceCategoryPresentation } from '../../../composition/supplyCatalog.js';
 
 /**
  * Legacy aliases that aren't a real building type id in `buildingCatalog`
@@ -108,4 +109,31 @@ export function showWebGLResourceWarning(_capabilities, requestedSize, maxSafeSi
   } catch {
     /* ignore */
   }
+}
+
+/** Why a house lost its standing, by the kind of tier requirement that stopped holding. */
+const UNMET_REQUIREMENT_LABELS = {
+  demandMet: () => 'nourriture insuffisante',
+  goodsVariety: () => 'alimentation trop peu variée',
+  roadAccess: () => 'plus de route',
+  population: () => 'population insuffisante',
+  serviceCoverage: (category) => `plus de ${getResourceCategoryPresentation(category).label.toLowerCase()}`,
+};
+
+/**
+ * "12 habitants nous quittent car le standing a changé (nourriture insuffisante)".
+ * @param {{ count: number, unmet?: Array<{ kind: string, category?: string }> }} departure
+ * @returns {string}
+ */
+export function buildPopulationDepartureMessage({ count, unmet = [] }) {
+  const reasons = [
+    ...new Set(unmet.map(({ kind, category }) => UNMET_REQUIREMENT_LABELS[kind]?.(category)).filter(Boolean)),
+  ];
+  const who = count > 1 ? `${count} habitants nous quittent` : '1 habitant nous quitte';
+  return `${who} car le standing a changé${reasons.length > 0 ? ` (${reasons.join(', ')})` : ''}`;
+}
+
+/** @param {{ count: number, unmet?: Array<{ kind: string, category?: string }> }} departure */
+export function showPopulationDepartureNotification(departure) {
+  showWarningToast(buildPopulationDepartureMessage(departure), { timeout: 6000 });
 }
