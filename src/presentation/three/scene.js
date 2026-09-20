@@ -308,8 +308,16 @@ export function createScene(_gameStore, assetManager, deps) {
         return infoOverlay && infoOverlay.classList.contains('active');
     }
 
-    function isMobileBuildBarOpen() {
-        return document.documentElement.classList.contains('mobile-build-bar-open');
+    /**
+     * Keys a focused control of the build bar owns (moving through the pills and the tools,
+     * activating one). Everything else — R, S, +, -, Enter on the map… — still drives construction:
+     * the bar being open does not freeze the world.
+     */
+    const BUILD_BAR_OWNED_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', ' ', 'Home', 'End', 'Tab']);
+    function isBuildBarKeyOwnedByBar(event) {
+        return BUILD_BAR_OWNED_KEYS.has(event.key)
+            && event.target instanceof Element
+            && Boolean(event.target.closest('#mobile-build-bar'));
     }
 
     /**
@@ -318,7 +326,6 @@ export function createScene(_gameStore, assetManager, deps) {
      * this guard freezes the game world separately.)
      */
     function isGameWorldInputLocked() {
-        if (isMobileBuildBarOpen()) return true;
         if (isInfoModalOpen()) return true;
         if ((popupManager?.getActivePopups?.() || []).length > 0) return true;
         if (document.getElementById('parameters-panel')?.classList.contains('visible')) return true;
@@ -2259,9 +2266,6 @@ export function createScene(_gameStore, assetManager, deps) {
         if (isInfoModalOpen()) {
             return;
         }
-        if (isMobileBuildBarOpen()) {
-            return;
-        }
         if (performance.now() < suppressInputUntilMs) {
             return;
         }
@@ -2339,10 +2343,6 @@ function onMouseMove(event) {
         return;
     }
     if (isInfoModalOpen()) {
-        resetCameraDragState();
-        return;
-    }
-    if (isMobileBuildBarOpen()) {
         resetCameraDragState();
         return;
     }
@@ -2426,9 +2426,6 @@ function onTouchStart(event) {
     if (isInfoModalOpen()) {
         return;
     }
-    if (isMobileBuildBarOpen()) {
-        return;
-    }
     if (performance.now() < suppressInputUntilMs) {
         return;
     }
@@ -2472,9 +2469,6 @@ function onTouchMove(event) {
         return;
     }
     if (isInfoModalOpen()) {
-        return;
-    }
-    if (isMobileBuildBarOpen()) {
         return;
     }
     if (performance.now() < suppressInputUntilMs) {
@@ -2616,6 +2610,10 @@ function onTouchEnd(event) {
             return;
         }
 
+        if (isBuildBarKeyOwnedByBar(event)) {
+            return;
+        }
+
         if (isGameWorldInputLocked()) {
             return;
         }
@@ -2698,9 +2696,6 @@ function onTouchEnd(event) {
             return;
         }
         if (isInfoModalOpen()) {
-            return;
-        }
-        if (isMobileBuildBarOpen()) {
             return;
         }
         if (performance.now() < suppressInputUntilMs) {

@@ -173,8 +173,9 @@
   line-height: 1;
 }
 
+/* A direct category (its pill is the tool) leaves the carousel's place blank: the bar keeps its size */
 .mobile-build-bar--direct .mobile-build-bar__carousel {
-  display: none;
+  visibility: hidden;
 }
 
 .mobile-build-bar__pill--active {

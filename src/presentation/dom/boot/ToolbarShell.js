@@ -5,6 +5,16 @@ import {
   toggle as toggleMobileBuildBar,
 } from '../tools/MobileCompactToolbar.js';
 import { isCameraDpadEnabled } from '../../../config/cameraDpad.js';
+import { getSessionGame } from '../../../composition/sessionRuntime.js';
+
+/**
+ * A construction tool (placing, bulldozing…) is armed: a click outside the bar is then an
+ * action on the map, not a way to dismiss the bar — construction runs with the bar open.
+ */
+function isConstructionToolArmed() {
+  const toolId = getSessionGame()?.activeToolId;
+  return Boolean(toolId) && toolId !== 'select-object';
+}
 
 /** Blocks toolbar auto-close while dragging or right after release. */
 let toolbarDragLockUntil = 0;
@@ -97,6 +107,7 @@ export function initMobileToolbar() {
   document.addEventListener('click', (e) => {
     if (Date.now() < toolbarDragLockUntil) return;
     if (!isMobileBuildBarOpen()) return;
+    if (isConstructionToolArmed()) return;
     // Keep FABs usable; only dismiss when clicking outside bar + construction FABs.
     if (
       !e.target.closest('#mobile-build-bar')

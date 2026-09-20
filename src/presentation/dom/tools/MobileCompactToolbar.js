@@ -40,6 +40,8 @@ let pillsNextBtn = null;
 let carouselEl = null;
 let listEl = null;
 let closeBtn = null;
+/** Height of the carousel when it lists tools — kept blank under a direct pill so the bar never resizes. */
+let lastCarouselHeightPx = 0;
 let activeCategoryId = 'houses';
 let isOpen = false;
 let keyboardHandlerBound = false;
@@ -289,42 +291,9 @@ function syncCarouselToolRovingTabIndex(activeIndex = -1) {
 function initBuildBarKeyboard() {
   if (keyboardHandlerBound || !buildBarEl) return;
   keyboardHandlerBound = true;
+  // Only keys typed inside the bar: with the bar open and a tool armed, arrows on the map
+  // belong to the map (pan, nudging the ghost), not to the carousel.
   buildBarEl.addEventListener('keydown', handleBuildBarKeyDown);
-  document.addEventListener('keydown', handleBuildBarDocumentKeyDown, true);
-}
-
-/**
- * Capture arrow keys only when focus left the UI for the canvas / document
- * (e.g. after map click) — do not steal arrows from other HUD controls.
- * @param {KeyboardEvent} event
- */
-function handleBuildBarDocumentKeyDown(event) {
-  if (!isOpen || !buildBarEl) return;
-  if (buildBarEl.contains(event.target)) return;
-  if (!isFocusOnGameSurface(document.activeElement)) return;
-
-  if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-    event.preventDefault();
-    event.stopPropagation();
-    navigateCarouselTools(event.key === 'ArrowLeft' ? -1 : 1);
-  }
-}
-
-/**
- * @param {EventTarget | null} el
- * @returns {boolean}
- */
-function isFocusOnGameSurface(el) {
-  if (!(el instanceof Element)) {
-    return true;
-  }
-  if (el === document.body || el === document.documentElement) {
-    return true;
-  }
-  if (el.tagName === 'CANVAS') {
-    return true;
-  }
-  return Boolean(el.closest?.('canvas'));
 }
 
 function focusInitialBuildBarControl() {
@@ -685,9 +654,12 @@ function renderCarousel(categoryId) {
 
   listEl.innerHTML = '';
   if (getDirectToolForCategory(categoryId)) {
+    // Blank, not gone: hold the size the carousel had with tools in it
+    if (carouselEl) carouselEl.style.minHeight = lastCarouselHeightPx ? `${lastCarouselHeightPx}px` : '';
     splideInstance?.refresh();
     return;
   }
+  if (carouselEl) carouselEl.style.minHeight = '';
   let toolInfos = getToolButtonInfosForCategory(categoryId);
 
   toolInfos.forEach((buttonInfo) => {
@@ -723,6 +695,12 @@ function renderCarousel(categoryId) {
     splideInstance.refresh();
     splideInstance.go(0);
   }
+
+  // Remember the populated height once laid out (0 while the bar is hidden)
+  requestAnimationFrame(() => {
+    const height = carouselEl?.offsetHeight ?? 0;
+    if (height > 0) lastCarouselHeightPx = height;
+  });
 }
 
 function getDirectToolIcon(toolId) {
