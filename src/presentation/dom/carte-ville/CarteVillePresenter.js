@@ -2,6 +2,13 @@
  * CarteVillePresenter — codes bâtiments et HTML grille carte ville.
  */
 
+import { TimeManager } from '../../../shared/time/TimeManager.js';
+import {
+  getAnnualYieldPerProducer,
+  getMaxStockForBuilding,
+  getPerCapitaDemand,
+} from '../../../shared/building-catalog/resourceRoleQueries.js';
+
 /**
  * @param {string|null|undefined} type
  * @returns {string}
@@ -180,4 +187,48 @@ export function renderCityMapErrorHtml(error) {
                 </button>
             </div>
         `;
+}
+
+/** Row fields left out of the export: bulky and redundant with the coordinates and footprint. */
+const EXPORT_OMITTED_FIELDS = ['neighbors', 'id', 'anchorX', 'anchorY', 'name'];
+
+/**
+ * The city as one JSON document, readable without the screen: every building
+ * with its whole stored state (population, staff, road, stocks, service
+ * coverage, hub links…), the employment and population summaries, the news,
+ * and the settings the numbers depend on.
+ * @param {object} params
+ * @param {Array<object>} params.buildingRows Raw building rows.
+ * @param {object|null} params.employmentSummary
+ * @param {object|null} params.populationSummary
+ * @param {{ incoming: Array<object>, archived: Array<object> }} params.news
+ * @param {number|null} params.citySize
+ * @param {Record<string, string>} params.errors Sections that could not be read, by name.
+ */
+export function buildCityExport({ buildingRows, employmentSummary, populationSummary, news, citySize, errors }) {
+  const buildings = buildingRows
+    .map((row) => {
+      const kept = { ...row };
+      for (const field of EXPORT_OMITTED_FIELDS) delete kept[field];
+      return kept;
+    })
+    .sort((a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0));
+
+  return {
+    exportDate: new Date().toISOString(),
+    config: {
+      citySize,
+      daysPerMonth: TimeManager.DAYS_PER_MONTH,
+      perCapitaDemand: getPerCapitaDemand(),
+      annualYieldPerProducer: getAnnualYieldPerProducer(),
+      hubMaxStock: getMaxStockForBuilding('Windmill-001') ?? null,
+      distributorMaxStock: getMaxStockForBuilding('Market-Stall') ?? null,
+    },
+    omittedBuildingFields: EXPORT_OMITTED_FIELDS,
+    buildings,
+    employmentSummary,
+    populationSummary,
+    news,
+    unreadableSections: errors,
+  };
 }

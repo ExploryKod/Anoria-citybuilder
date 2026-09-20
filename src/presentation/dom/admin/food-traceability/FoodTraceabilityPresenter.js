@@ -606,7 +606,10 @@ export function buildFoodTraceabilityExport(transactions, monthlyStats) {
       const months = monthlyStats.filter((month) => month.year === year).sort((a, b) => a.month - b.month);
       const chain = summarizeChain(transactions, year);
       const coverage = fullCoverageSummary(months);
+      // The newest year, with a hub but no sale yet: its farm balance is not computable
+      const inProgress = year === years[years.length - 1] && chain.hubs.total > 0 && !chain.collectionDone;
       return {
+        status: inProgress ? 'in_progress' : 'complete',
         year,
         monthsWithoutFamine: months.filter((month) => (month.unfedPopulation || 0) === 0).length,
         months: months.map((month) => ({
@@ -617,10 +620,10 @@ export function buildFoodTraceabilityExport(transactions, monthlyStats) {
           farms: chain.byMonth[month.month]?.farms ?? null,
           hubs: chain.byMonth[month.month]?.hubs ?? null,
         })),
-        farms: chain.farms,
+        farms: inProgress ? { total: chain.farms.total } : chain.farms,
         hubs: { ...chain.hubs, label: chain.hubLabel, capacity: chain.hubCapacity ?? null },
         harvestSold: chain.collectionDone,
-        farmsNeeded: coverage ? { count: coverage.farmsNeeded, calculation: coverage.detail } : null,
+        farmsNeeded: coverage && !inProgress ? { count: coverage.farmsNeeded, calculation: coverage.detail } : null,
       };
     }),
     events: chronological

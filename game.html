@@ -3195,12 +3195,15 @@
     <div class="city-map-wrapper">
         <div class="city-map-header">
             <h3>🗺️ Carte de la Ville</h3>
-            <button type="button" class="city-map-close-btn" title="Fermer" aria-label="Fermer le plan de la ville">
+            <div class="city-map-header-actions">
+                <button type="button" class="city-map-export-btn" id="city-map-export-btn" title="Télécharger l'état de la ville en JSON">Exporter la ville</button>
+                <button type="button" class="city-map-close-btn" title="Fermer" aria-label="Fermer le plan de la ville">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x" aria-hidden="true">
                     <path d="M18 6L6 18"/>
                     <path d="M6 6l12 12"/>
                 </svg>
             </button>
+            </div>
         </div>
         <div class="city-map-content">
             <div class="city-map-legend">

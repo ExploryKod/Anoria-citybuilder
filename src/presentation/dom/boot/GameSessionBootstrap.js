@@ -213,6 +213,8 @@ export async function bootstrapGameSession(assetManager) {
     housing: sessionApi.housing,
     supply: sessionApi.supply,
     parcels: sessionApi.parcels,
+    employment: sessionApi.employment,
+    intelligence: sessionApi.intelligence,
     popupManager,
     gameStore: gameSession,
     getCity: () => game.city ?? null,

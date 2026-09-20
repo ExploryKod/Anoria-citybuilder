@@ -48,6 +48,27 @@
     font-weight: 600;
 }
 
+.city-map-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.city-map-export-btn {
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: var(--border-radius-small);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    background: transparent;
+    color: #ffffff;
+    font: inherit;
+    font-size: 0.85rem;
+}
+
+.city-map-export-btn:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
 .city-map-close-btn {
     cursor: pointer;
     padding: 8px;

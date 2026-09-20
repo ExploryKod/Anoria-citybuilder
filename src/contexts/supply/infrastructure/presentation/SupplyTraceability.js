@@ -7,6 +7,14 @@ import {
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
 
 /**
+ * The game turn a time context stands for: the time info the game builds carries the
+ * day count as `days`, which is what the accounting journal calls the turn.
+ * @param {{ turn?: number, days?: number }} timeInfo
+ * @returns {number}
+ */
+const turnOf = (timeInfo) => timeInfo.turn ?? timeInfo.days ?? 0;
+
+/**
  * Side-effect adapter — records supply chain movements in the traceability log.
  */
 export class SupplyTraceability {
@@ -36,7 +44,7 @@ export class SupplyTraceability {
       if (!hubData) continue;
 
       await this.traceabilityRepository.recordSourceToDistributor(
-        timeInfo.turn || 0,
+        turnOf(timeInfo),
         timeInfo.monthIndex || 0,
         timeInfo.year || 0,
         {
@@ -74,7 +82,7 @@ export class SupplyTraceability {
       if (!sourceData) continue;
 
       await this.traceabilityRepository.recordSourceToDistributor(
-        timeInfo.turn || 0,
+        turnOf(timeInfo),
         timeInfo.monthIndex || 0,
         timeInfo.year || 0,
         {
@@ -112,7 +120,7 @@ export class SupplyTraceability {
       if (!houseData) continue;
 
       await this.traceabilityRepository.recordDistributorToConsumer(
-        timeInfo.turn || 0,
+        turnOf(timeInfo),
         timeInfo.monthIndex || 0,
         timeInfo.year || 0,
         {
@@ -155,7 +163,7 @@ export class SupplyTraceability {
       };
 
       await this.traceabilityRepository.recordHouseConsumption(
-        timeInfo.turn || 0,
+        turnOf(timeInfo),
         timeInfo.monthIndex,
         timeInfo.year || 0,
         houseRef,
@@ -185,7 +193,7 @@ export class SupplyTraceability {
 
     for (const { building, category } of chain) {
       await this.traceabilityRepository.recordChainState(
-        timeInfo.turn || 0,
+        turnOf(timeInfo),
         timeInfo.monthIndex || 0,
         timeInfo.year || 0,
         { id: building.id, x: building.x, y: building.y, type: building.type },
@@ -213,7 +221,7 @@ export class SupplyTraceability {
     for (const building of consumers) {
       if (!hasQuantityConsumer(building.type)) continue;
       await this.traceabilityRepository.recordPopulationState(
-        timeInfo.turn || 0,
+        turnOf(timeInfo),
         timeInfo.monthIndex || 0,
         timeInfo.year || 0,
         { id: building.id, x: building.x, y: building.y, type: building.type },
@@ -234,7 +242,7 @@ export class SupplyTraceability {
    */
   async recordHarvestSales(timeInfo, hubResults = []) {
     if (hubResults.length === 0) return;
-    const turn = timeInfo.turn || 0;
+    const turn = turnOf(timeInfo);
     const month = timeInfo.monthIndex || 0;
     const year = timeInfo.year || 0;
     const soldIds = new Set();
