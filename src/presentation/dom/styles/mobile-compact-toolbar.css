@@ -173,6 +173,10 @@
   line-height: 1;
 }
 
+.mobile-build-bar--direct .mobile-build-bar__carousel {
+  display: none;
+}
+
 .mobile-build-bar__pill--active {
   background: var(--cta);
   border-color: var(--cta);

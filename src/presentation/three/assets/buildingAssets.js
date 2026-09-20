@@ -26,7 +26,12 @@
  * is one of 'svg' (inline markup), 'png' (Kenney-style full-color preview
  * tile), 'icon' (a 24px monochrome silhouette PNG, styled like the SVGs —
  * used only where a raster icon predates this catalog, e.g. Windmill-001),
- * or 'emoji'. `button` is `null` for StonePath-Right/Left/Cross-001
+ * or 'emoji'. `button.pillCategory` (optional) names the build-bar category pill
+ * this tool IS: the pill itself activates the tool and no carousel is shown
+ * under it (a road has nothing to choose from — see
+ * buildingCategories.js's getDirectToolForCategory). Omitted, the pill of
+ * `group` opens a carousel of the tools of that group as usual.
+ * `button` is `null` for StonePath-Right/Left/Cross-001
  * (rotation variants of StonePath-001, never a distinct carousel button) and
  * Church-002 (legacy save-compat id, not a placeable tool).
  *
@@ -630,6 +635,8 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'infrastructure',
+      // The 'roads' pill is this tool: one click on it activates the road tool, no carousel.
+      pillCategory: 'roads',
       editorGroup: null,
       label: 'Chemin de pierre',
       tooltip: 'Chemin de pierre — R pour tourner, S pour changer de forme',

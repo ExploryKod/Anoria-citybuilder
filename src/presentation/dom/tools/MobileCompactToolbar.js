@@ -2,11 +2,12 @@ import Splide from '@splidejs/splide';
 import '@splidejs/splide/css/core';
 import {
   createToolButton,
+  getDirectToolForCategory,
   getToolButtonInfosForCategory,
   getButtonsUnactive,
   resolveIcon,
 } from './ToolPanel.js';
-import { hideBuildToolHoverPreview } from './BuildToolHoverPreview.js';
+import { attachBuildToolHoverPreview, hideBuildToolHoverPreview } from './BuildToolHoverPreview.js';
 import { MOBILE_TOOLBAR_CATEGORIES } from './mobileToolbarCategories.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
 import { getSessionGame } from '../../../composition/sessionRuntime.js';
@@ -578,6 +579,22 @@ function buildPills() {
     pill.setAttribute('tabindex', category.id === activeCategoryId ? '0' : '-1');
     pill.setAttribute('aria-controls', 'mobile-build-bar-tools');
     pill.title = category.label;
+
+    // A category whose pill IS a tool (catalog: button.pillCategory) — the pill is the tool's
+    // own button, so no carousel is shown for it
+    const directTool = getDirectToolForCategory(category.id);
+    if (directTool) {
+      const [toolInfo] = getToolButtonInfosForCategory(category.id);
+      pill.dataset.toolid = directTool;
+      pill.dataset.direct = 'true';
+      pill.title = toolInfo?.title || category.label;
+      // A button, not a tab: it controls no panel and reads as pressed while it is the active category
+      pill.setAttribute('role', 'button');
+      pill.removeAttribute('aria-controls');
+      pill.removeAttribute('aria-selected');
+      pill.setAttribute('aria-pressed', category.id === activeCategoryId ? 'true' : 'false');
+      if (toolInfo?.stonePathTool) pill.dataset.stonePathTool = '1';
+    }
     if (category.id === activeCategoryId) {
       pill.classList.add('mobile-build-bar__pill--active');
     }
@@ -599,6 +616,7 @@ function buildPills() {
     pill.addEventListener('click', (e) => {
       e.stopPropagation();
       selectCategory(category.id);
+      if (directTool) activateDirectTool(pill, directTool, e);
       pill.focus();
     });
 
@@ -606,11 +624,19 @@ function buildPills() {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         selectCategory(category.id);
-        requestAnimationFrame(() => focusCarouselTool(true));
+        if (directTool) {
+          activateDirectTool(pill, directTool, e);
+        } else {
+          requestAnimationFrame(() => focusCarouselTool(true));
+        }
       }
     });
 
     pillsEl.appendChild(pill);
+    if (directTool) {
+      attachBuildToolHoverPreview(pill, directTool);
+      deps?.buttonStateManager?.registerButton?.(directTool, pill);
+    }
   });
 
   requestAnimationFrame(syncPillsArrowState);
@@ -622,9 +648,12 @@ function selectCategory(categoryId) {
   pillsEl?.querySelectorAll('.mobile-build-bar__pill').forEach((pill) => {
     const isActive = pill.dataset.category === categoryId;
     pill.classList.toggle('mobile-build-bar__pill--active', isActive);
-    pill.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    pill.setAttribute(pill.dataset.direct ? 'aria-pressed' : 'aria-selected', isActive ? 'true' : 'false');
     pill.setAttribute('tabindex', isActive ? '0' : '-1');
   });
+
+  // A direct category (its pill is the tool) has nothing to show under the pills
+  buildBarEl?.classList.toggle('mobile-build-bar--direct', Boolean(getDirectToolForCategory(categoryId)));
 
   renderCarousel(categoryId);
 
@@ -635,10 +664,30 @@ function selectCategory(categoryId) {
   }
 }
 
+/**
+ * Activate the tool a pill stands for, exactly as its carousel button would.
+ * @param {HTMLElement} pill
+ * @param {string} toolId
+ * @param {Event} event
+ */
+function activateDirectTool(pill, toolId, event) {
+  hideBuildToolHoverPreview();
+  if (deps?.buttonStateManager?.isEnabled && !deps.buttonStateManager.isEnabled(toolId)) {
+    return;
+  }
+  getButtonsUnactive();
+  pill.classList.add('selected');
+  deps?.invokeSetActiveTool?.(event);
+}
+
 function renderCarousel(categoryId) {
   if (!listEl) return;
 
   listEl.innerHTML = '';
+  if (getDirectToolForCategory(categoryId)) {
+    splideInstance?.refresh();
+    return;
+  }
   let toolInfos = getToolButtonInfosForCategory(categoryId);
 
   toolInfos.forEach((buttonInfo) => {

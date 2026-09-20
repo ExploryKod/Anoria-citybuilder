@@ -17,6 +17,9 @@ import {
 import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
 import { NATURE_ASSETS } from '../../three/assets/natureAssets.js';
 import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
+import { getDirectToolForCategory } from '../../three/assets/buildingCategories.js';
+
+export { getDirectToolForCategory };
 
 /**
  * Single source of truth for every placeable id's carousel button (icon,
@@ -292,19 +295,19 @@ export function getToolButtonInfosForCategory(categoryKey) {
     ];
   }
 
-  if (categoryKey === 'roads') {
-    const infos = [];
-    if (ASSET_CATALOG['StonePath-001']?.button) {
-      const catalog = catalogButton('StonePath-001');
-      infos.push({
+  // A category whose pill IS a tool (the catalog's button.pillCategory) lists just that tool
+  const directTool = getDirectToolForCategory(categoryKey);
+  if (directTool) {
+    const catalog = catalogButton(directTool);
+    return [
+      {
         text: catalog.label,
-        tool: 'StonePath-001',
+        tool: directTool,
         group: catalog.group,
         title: catalog.tooltip,
-        stonePathTool: true,
-      });
-    }
-    return infos;
+        stonePathTool: Boolean(ASSET_CATALOG[directTool]?.selectableMeshes),
+      },
+    ];
   }
 
   const ids = getToolIdsForCategory(categoryKey);
