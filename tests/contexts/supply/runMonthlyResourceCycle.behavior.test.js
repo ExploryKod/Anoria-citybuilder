@@ -124,9 +124,10 @@ describe('Supply — RunMonthlyResourceCycle', () => {
 
     await runAtTime(firstDayOf((info) => info.season === 'Automne'));
 
-    const states = Object.fromEntries((await rows('producer_state')).map((t) => [t.fromId, t.quantity]));
+    const states = Object.fromEntries((await rows('chain_state')).map((t) => [t.fromId, t.quantity]));
     expect(states[staffedId]).toBe(1);
     expect(states[idleId]).toBe(0);
+    expect(states[hubId]).toBe(1);
     expect(await rows('source_to_hub')).toHaveLength(0);
 
     await runAtTime(firstDayOf((info) => info.month === 'Décembre'));
@@ -134,5 +135,50 @@ describe('Supply — RunMonthlyResourceCycle', () => {
     const sales = await rows('source_to_hub');
     expect(sales.map((t) => t.fromId)).toEqual([staffedId]);
     expect(sales[0].quantity).toBeGreaterThan(0);
+  });
+
+  test('logs the population of each house, and why a farm did not sell on the collection turn', async () => {
+    const rowFor = (instanceId, type, x, extra) =>
+      makeHouseRecord({
+        instanceId,
+        type,
+        x,
+        y: 1,
+        extra: { roads: 1, neighbors: [{ name: 'roads', isRoad: true }], ...extra },
+      });
+    const farmStock = { food: 78, wheat: 78, carrot: 0, cabbage: 0 };
+    const houseId = createBuildingInstanceId();
+    const noRoadId = createBuildingInstanceId();
+    const noHarvestId = createBuildingInstanceId();
+    const fullHubFarmId = createBuildingInstanceId();
+    const hubId = createBuildingInstanceId();
+    const staffed = { worker: 3, worker_need: 3 };
+
+    await seedBuilding(rowFor(houseId, 'House-Red', 1, { pop: 12 }));
+    await seedBuilding(rowFor(noRoadId, 'Farm-Wheat', 2, { roads: 0, stocks: farmStock, employees: staffed }));
+    await seedBuilding(rowFor(noHarvestId, 'Farm-Wheat', 3, { employees: staffed }));
+    await seedBuilding(rowFor(fullHubFarmId, 'Farm-Wheat', 4, { stocks: farmStock, employees: staffed }));
+    // A hub already at its ceiling has no room for another basket
+    await seedBuilding(
+      rowFor(hubId, 'Windmill-001', 5, {
+        stocks: { food: 1000, wheat: 1000, carrot: 0, cabbage: 0 },
+        employees: { worker: 4, worker_need: 4 },
+      })
+    );
+
+    let december = 0;
+    while (TimeManager.getTimeInfo(december).month !== 'Décembre') december += 1;
+    await runAtTime(december);
+
+    const rows = await supply.getAllSupplyTraceabilityTransactions();
+    const population = rows.filter((t) => t.transactionType === 'population_state');
+    expect(population.map((t) => [t.fromId, t.quantity])).toEqual([[houseId, 12]]);
+
+    const cause = Object.fromEntries(
+      rows.filter((t) => t.transactionType === 'sale_missed').map((t) => [t.fromId, t.cause])
+    );
+    expect(cause[noRoadId]).toBe('no_road');
+    expect(cause[noHarvestId]).toBe('no_workers');
+    expect(cause[fullHubFarmId]).toBe('hub_full');
   });
 });

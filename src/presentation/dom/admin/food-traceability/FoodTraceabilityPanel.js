@@ -9,7 +9,8 @@ import {
     createMarketHouseSectionHTML,
     createBuildingStocksHTML,
     renderFoodStats,
-    summarizeFarms,
+    summarizeChain,
+    buildFoodTraceabilityExport,
     chainTotalKey,
     isChainGood,
     emptyGoodsTally,
@@ -113,6 +114,14 @@ export function initializeFoodTraceabilityTabs() {
         });
     }
     
+    // Export the traceability as JSON, like the accounting journal
+    const chartsExportBtn = document.getElementById('food-charts-export-btn');
+    if (chartsExportBtn) {
+        chartsExportBtn.addEventListener('click', () => {
+            exportFoodTraceabilityToJSON();
+        });
+    }
+
     // Year selector
     const yearSelect = document.getElementById('food-charts-year-select');
     if (yearSelect) {
@@ -563,6 +572,161 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
 }
 
 /**
+ * Fed / unfed population of every month that has data, from the traceability log.
+ * @param {Array<object>} transactions
+ * @param {Array<object>} allHouses Current houses — only used for saves without a population log.
+ * @returns {{ dataByYearMonth: Record<string, { year: number, month: number, fedPopulation: number, unfedPopulation: number }>, years: Set<number> }}
+ */
+function computeMonthlyFoodStats(transactions, allHouses) {
+        // Group consumption transactions by year and month to get fed population
+        const dataByYearMonth = {};
+        const years = new Set();
+        
+        // First pass: collect all months with transactions
+        transactions.forEach(transaction => {
+            const year = transaction.year !== undefined ? transaction.year : 0;
+            years.add(year);
+        });
+        
+        // Oldest turn first, so "last tick of the month" really is the last
+        const chronological = [...transactions].sort(
+            (a, b) => (a.turn - b.turn) || (new Date(a.date) - new Date(b.date))
+        );
+
+        // Second pass: calculate fed/unfed for each month
+        years.forEach(year => {
+            for (let month = 0; month < 12; month++) {
+                const key = `${year}-${month}`;
+                
+                // Get all consumption transactions for this month
+                const monthConsumptions = transactions.filter(t => 
+                    t.transactionType === 'house_consumption' &&
+                    t.year === year &&
+                    t.month === month
+                );
+                
+                // Inhabitants each house really had that month (last tick of the month wins)
+                const monthPopulation = {};
+                chronological
+                    .filter(t =>
+                        t.transactionType === 'population_state' &&
+                        t.year === year &&
+                        t.month === month
+                    )
+                    .forEach(t => { monthPopulation[t.fromId || t.fromCoords] = t.quantity; });
+                const hasPopulationLog = Object.keys(monthPopulation).length > 0;
+
+                if (monthConsumptions.length === 0 && !hasPopulationLog) {
+                    // Nothing recorded for this month
+                    continue;
+                }
+                
+                // Group consumptions by house (one house can have multiple food types consumed)
+                // Each consumption transaction represents citizens fed (quantity = citizens who consumed that food type)
+                // But we need to group by house to avoid double counting
+                const housesFed = {}; // { houseKey: maxQuantity } - max because all food types should have same quantity
+                
+                monthConsumptions.forEach(consumption => {
+                    // Quantity represents citizens fed for this food type (1 basket = 1 citizen per month)
+                    const houseKey = consumption.fromId || consumption.fromCoords;
+                    if (houseKey) {
+                        if (!housesFed[houseKey]) {
+                            housesFed[houseKey] = 0;
+                        }
+                        // Take the maximum quantity per house (should be same for all food types, but use max to be safe)
+                        housesFed[houseKey] = Math.max(housesFed[houseKey], consumption.quantity || 0);
+                    }
+                });
+                
+                let fedPopulation = Object.values(housesFed).reduce((sum, citizens) => sum + citizens, 0);
+                let unfedPopulation = 0;
+
+                if (hasPopulationLog) {
+                    // Real population of that month, house by house — a house fed 2 of its 12 has 10 unfed
+                    fedPopulation = 0;
+                    Object.entries(monthPopulation).forEach(([houseKey, housePop]) => {
+                        const houseFed = Math.min(housesFed[houseKey] || 0, housePop);
+                        fedPopulation += houseFed;
+                        unfedPopulation += housePop - houseFed;
+                    });
+                } else {
+                // Older saves: no population log, fall back to today's houses
+                allHouses.forEach(house => {
+                    if (house.type && (house.type.includes('House') || house.type.includes('Maison'))) {
+                        const houseKey = buildingStockKey(house);
+                        const houseCoords = house.x !== undefined && house.y !== undefined ? `${house.x},${house.y}` : null;
+                        const housePop = house.pop || 0;
+                        
+                        if (housePop > 0) {
+                            // Check if this house consumed in this month
+                            const houseFedCount = housesFed[houseKey] || housesFed[houseCoords] || 0;
+                            
+                            if (houseFedCount === 0) {
+                                // House has population but didn't consume = unfed
+                                unfedPopulation += housePop;
+                            } else if (housePop > houseFedCount) {
+                                // House consumed but has more population than fed = difference is unfed
+                                unfedPopulation += (housePop - houseFedCount);
+                            }
+                        }
+                    }
+                });
+                }
+
+                if (fedPopulation + unfedPopulation === 0) {
+                    // No inhabitants that month (houses not yet populated)
+                    continue;
+                }
+
+                dataByYearMonth[key] = {
+                    year,
+                    month,
+                    fedPopulation: fedPopulation,
+                    unfedPopulation: unfedPopulation
+                };
+            }
+        });
+
+        return { dataByYearMonth, years };
+}
+
+/**
+ * Day plus time of day (2026-09-20-163045), so several exports never overwrite each other.
+ * @returns {string}
+ */
+function nextExportStamp() {
+    const now = new Date();
+    return `${now.toISOString().split('T')[0]}-${now.toTimeString().slice(0, 8).replace(/:/g, '')}`;
+}
+
+/**
+ * Downloads the whole traceability (per-year balance and events) as JSON.
+ */
+export async function exportFoodTraceabilityToJSON() {
+    try {
+        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions();
+        const allHouses = (await deps.supply.listSupplyStockSnapshots()).filter(
+            (b) => b.kind === 'house' || (b.type && (b.type.includes('House') || b.type.includes('Maison')))
+        );
+        const { dataByYearMonth } = computeMonthlyFoodStats(transactions, allHouses);
+        const payload = buildFoodTraceabilityExport(transactions, Object.values(dataByYearMonth));
+
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `food-traceability-${nextExportStamp()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error('[FoodTraceability] Error exporting to JSON:', error);
+        alert("Erreur lors de l'export JSON: " + error.message);
+    }
+}
+
+/**
  * Charge et affiche les graphiques alimentaires
  */
 export async function loadFoodCharts() {
@@ -586,87 +750,8 @@ export async function loadFoodCharts() {
             (b) => b.kind === 'house' || (b.type && (b.type.includes('House') || b.type.includes('Maison')))
         );
         
-        // Group consumption transactions by year and month to get fed population
-        const dataByYearMonth = {};
-        const years = new Set();
-        
-        // First pass: collect all months with transactions
-        transactions.forEach(transaction => {
-            const year = transaction.year !== undefined ? transaction.year : 0;
-            years.add(year);
-        });
-        
-        // Second pass: calculate fed/unfed for each month
-        years.forEach(year => {
-            for (let month = 0; month < 12; month++) {
-                const key = `${year}-${month}`;
-                
-                // Get all consumption transactions for this month
-                const monthConsumptions = transactions.filter(t => 
-                    t.transactionType === 'house_consumption' &&
-                    t.year === year &&
-                    t.month === month
-                );
-                
-                if (monthConsumptions.length === 0) {
-                    // Skip months with no consumption data
-                    continue;
-                }
-                
-                // Group consumptions by house (one house can have multiple food types consumed)
-                // Each consumption transaction represents citizens fed (quantity = citizens who consumed that food type)
-                // But we need to group by house to avoid double counting
-                const housesFed = {}; // { houseKey: maxQuantity } - max because all food types should have same quantity
-                
-                monthConsumptions.forEach(consumption => {
-                    // Quantity represents citizens fed for this food type (1 basket = 1 citizen per month)
-                    const houseKey = consumption.fromId || consumption.fromCoords;
-                    if (houseKey) {
-                        if (!housesFed[houseKey]) {
-                            housesFed[houseKey] = 0;
-                        }
-                        // Take the maximum quantity per house (should be same for all food types, but use max to be safe)
-                        housesFed[houseKey] = Math.max(housesFed[houseKey], consumption.quantity || 0);
-                    }
-                });
-                
-                // Fed population = sum of all unique houses that consumed
-                const fedPopulation = Object.values(housesFed).reduce((sum, citizens) => sum + citizens, 0);
-                
-                // Calculate unfed population
-                // Use current house data: houses with population but no consumption = unfed
-                let unfedPopulation = 0;
-                
-                allHouses.forEach(house => {
-                    if (house.type && (house.type.includes('House') || house.type.includes('Maison'))) {
-                        const houseKey = buildingStockKey(house);
-                        const houseCoords = house.x !== undefined && house.y !== undefined ? `${house.x},${house.y}` : null;
-                        const housePop = house.pop || 0;
-                        
-                        if (housePop > 0) {
-                            // Check if this house consumed in this month
-                            const houseFedCount = housesFed[houseKey] || housesFed[houseCoords] || 0;
-                            
-                            if (houseFedCount === 0) {
-                                // House has population but didn't consume = unfed
-                                unfedPopulation += housePop;
-                            } else if (housePop > houseFedCount) {
-                                // House consumed but has more population than fed = difference is unfed
-                                unfedPopulation += (housePop - houseFedCount);
-                            }
-                        }
-                    }
-                });
-                
-                dataByYearMonth[key] = {
-                    year,
-                    month,
-                    fedPopulation: fedPopulation,
-                    unfedPopulation: unfedPopulation
-                };
-            }
-        });
-        
+        const { dataByYearMonth, years } = computeMonthlyFoodStats(transactions, allHouses);
+
         // Update year selector
         yearSelect.innerHTML = '<option value="all">Toutes les années</option>';
         Array.from(years).sort((a, b) => b - a).forEach(year => {
@@ -707,9 +792,9 @@ export async function loadFoodCharts() {
             dataByYear[d.year].months.push(d);
         });
         
-        // Farms per month, and which ones sold their harvest, from the append-only log
+        // Farms and hubs per month, and which ones sold, from the append-only log
         Object.values(dataByYear).forEach(yearData => {
-            yearData.farms = summarizeFarms(transactions, yearData.year);
+            yearData.chain = summarizeChain(transactions, yearData.year);
         });
 
         // Render statistics

@@ -27,6 +27,14 @@ function isQuantityConsumer(entry) {
 }
 
 /**
+ * @param {string} buildingType
+ * @returns {boolean} True when the type drains a numeric stock for its inhabitants (a house).
+ */
+export function hasQuantityConsumer(buildingType) {
+  return getResourceRoles(buildingType).some(isQuantityConsumer);
+}
+
+/**
  * Every distinct category any building declares for a given role — e.g.
  * "a crop" is whatever some building declares as a 'producer' category,
  * not a hand-maintained list that can drift from what farms produce.

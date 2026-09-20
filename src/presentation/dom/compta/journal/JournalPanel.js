@@ -179,6 +179,12 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
   }
 }
 
+/** Day plus time of day (2026-09-20-163045), so several exports never overwrite each other. */
+function exportStamp() {
+  const now = new Date();
+  return `${now.toISOString().split('T')[0]}-${now.toTimeString().slice(0, 8).replace(/:/g, '')}`;
+}
+
 export async function exportJournalToJSON() {
   if (!deps?.accounting) return;
   try {
@@ -187,7 +193,7 @@ export async function exportJournalToJSON() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `journal-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `journal-${exportStamp()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -211,7 +217,7 @@ export async function exportJournalToPDF() {
     const url = URL.createObjectURL(pdfBlob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `journal-${new Date().toISOString().split('T')[0]}.pdf`;
+    a.download = `journal-${exportStamp()}.pdf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

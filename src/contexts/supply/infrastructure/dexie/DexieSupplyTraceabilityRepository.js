@@ -18,6 +18,7 @@ export class DexieSupplyTraceabilityRepository {
    * @param {string} foodType
    * @param {number} quantity
    * @param {number} [price=1]
+   * @param {Record<string, unknown>} [extra] Extra fields stored on the row (e.g. a `cause`).
    */
   async addTransaction(
     turn,
@@ -28,7 +29,8 @@ export class DexieSupplyTraceabilityRepository {
     to,
     foodType,
     quantity,
-    price = 1
+    price = 1,
+    extra = {}
   ) {
     try {
       await this.db.foodTraceability.add({
@@ -47,6 +49,7 @@ export class DexieSupplyTraceabilityRepository {
         quantity,
         price,
         totalPrice: quantity * price,
+        ...extra,
       });
     } catch (error) {
       console.error('[DexieSupplyTraceabilityRepository] Error adding transaction:', error);
@@ -68,11 +71,24 @@ export class DexieSupplyTraceabilityRepository {
   }
 
   /**
-   * State of one annual producer on a monthly tick: `quantity` is 1 when it
-   * can work (road + staff), 0 when it is idle.
+   * State of one building of the harvest chain (a farm or a hub) on a monthly
+   * tick: `quantity` is 1 when it can work (road + staff), 0 when it is idle.
    */
-  async recordProducerState(turn, month, year, producer, foodType, quantity) {
-    await this.addTransaction(turn, month, year, 'producer_state', producer, null, foodType, quantity, 0);
+  async recordChainState(turn, month, year, building, foodType, quantity) {
+    await this.addTransaction(turn, month, year, 'chain_state', building, null, foodType, quantity, 0);
+  }
+
+  /** Inhabitants of one house on a monthly tick, so past months show the population they really had. */
+  async recordPopulationState(turn, month, year, house, foodType, population) {
+    await this.addTransaction(turn, month, year, 'population_state', house, null, foodType, population, 0);
+  }
+
+  /**
+   * A producer whose harvest no hub bought on a collection turn, and why
+   * (`cause`: no_road, no_workers, hub_full, hub_idle, unknown).
+   */
+  async recordSaleMissed(turn, month, year, source, foodType, cause) {
+    await this.addTransaction(turn, month, year, 'sale_missed', source, null, foodType, 0, 0, { cause });
   }
 
   /** A producer's harvest bought by a hub on that turn — the only proof it really delivered. */

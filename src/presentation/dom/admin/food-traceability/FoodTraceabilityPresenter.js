@@ -7,12 +7,15 @@ import {
   getAllCategoriesForRole,
   getAnnualHarvestSchedule,
   getAnnualYieldPerProducer,
+  getMaxStockForBuilding,
   getPerCapitaDemand,
+  getResourceRoles,
   getResourceStockShape,
 } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { getResourceCategoryPresentation } from '../../../../composition/supplyCatalog.js';
 import { getTimeInfo, MONTHS, SEASON_EMOJI } from '../../../../shared/time/TimeCalendar.js';
 import { toSupplySeason } from '../../../../composition/supplyTimeLabels.js';
+import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { BUILDING_ASSETS } from '../../../three/assets/buildingAssets.js';
 
 const NO_WORK_ICON = '/resources/textures/status/no-work.png';
@@ -39,48 +42,129 @@ function seasonBadge(monthIndex) {
   return { emoji: SEASON_EMOJI[season] ?? '', label };
 }
 
+const isHubType = (type) => getResourceRoles(type).some((entry) => entry.role === 'hub');
+
+/** @param {Map<string, boolean>} states building → can work @returns {{ present: number, idle: number }} */
+const tally = (states) => ({
+  present: states.size,
+  idle: [...states.values()].filter((working) => !working).length,
+});
+
 /**
- * Farms of one year from the log. Per month: how many existed and how many
- * were idle (last state of the month). For the year: `total` is the most
- * farms standing at the same time (never a sum — a farm replaced by another
- * is still one), and a farm only counts as `sold` if a hub bought its
- * harvest — no workers, a wiped-out crop or a closed hub all mean no sale.
- * `unsold` is what is left, the slot where further causes (closure, disease,
- * weather…) can later be split out.
+ * The harvest chain of one year from the log, farms and hubs side by side.
+ * Per month: how many existed and how many were idle (last state of the
+ * month). For the year: `total` is the most standing at the same time (never
+ * a sum — a building replaced by another is still one). A farm only counts
+ * as `sold` if a hub bought its harvest — no workers, a wiped-out crop or a
+ * closed hub all mean no sale — and a hub only counts as `sold` if it bought
+ * something. `unsold` is what is left, the slot where further causes
+ * (closure, disease, weather…) can later be split out.
  * @param {Array<object>} transactions
  * @param {number} year
- * @returns {{ byMonth: Record<number, { present: number, idle: number }>, total: number, sold: number, unsold: number }}
  */
-export function summarizeFarms(transactions, year) {
+export function summarizeChain(transactions, year) {
   const stateByMonth = {};
-  const sold = new Set();
-  for (const t of transactions) {
+  const soldFarms = new Set();
+  const activeHubs = new Set();
+  const missedCause = new Map();
+  let hubType = null;
+
+  // Oldest turn first, so the last row of a month is really the last tick of it.
+  const chronological = [...transactions].sort(
+    (a, b) => a.turn - b.turn || new Date(a.date) - new Date(b.date)
+  );
+  for (const t of chronological) {
     if (t.year !== year) continue;
-    const farm = t.fromId || t.fromCoords;
-    if (t.transactionType === 'producer_state') {
-      (stateByMonth[t.month] ??= new Map()).set(farm, t.quantity > 0);
+    if (t.transactionType === 'chain_state') {
+      const kind = isHubType(t.fromType) ? 'hubs' : 'farms';
+      if (kind === 'hubs') hubType = t.fromType;
+      const month = (stateByMonth[t.month] ??= { farms: new Map(), hubs: new Map() });
+      month[kind].set(t.fromId || t.fromCoords, t.quantity > 0);
     } else if (t.transactionType === 'source_to_hub' && t.quantity > 0) {
-      sold.add(farm);
+      soldFarms.add(t.fromId || t.fromCoords);
+      activeHubs.add(t.toId || t.toCoords);
+    } else if (t.transactionType === 'sale_missed') {
+      missedCause.set(t.fromId || t.fromCoords, t.cause);
     }
   }
+
   const byMonth = Object.fromEntries(
-    Object.entries(stateByMonth).map(([month, farms]) => [
+    Object.entries(stateByMonth).map(([month, kinds]) => [
       month,
-      { present: farms.size, idle: [...farms.values()].filter((working) => !working).length },
+      { farms: tally(kinds.farms), hubs: tally(kinds.hubs) },
     ])
   );
-  const peak = Math.max(0, ...Object.values(byMonth).map((month) => month.present));
-  // Without monthly states (older saves) the sales are the only farms known.
-  const total = peak > 0 ? peak : sold.size;
-  const soldCount = Math.min(sold.size, total);
-  return { byMonth, total, sold: soldCount, unsold: total - soldCount };
+  const yearFigure = (kind, soldCount) => {
+    const peak = Math.max(0, ...Object.values(byMonth).map((month) => month[kind].present));
+    // Without monthly states (older saves) the sales are the only ones known.
+    const total = peak > 0 ? peak : soldCount;
+    const sold = Math.min(soldCount, total);
+    return { total, sold, unsold: total - sold };
+  };
+  const farms = yearFigure('farms', soldFarms.size);
+  const hubs = yearFigure('hubs', activeHubs.size);
+
+  // A collection turn (a sale or a missed sale) is what makes the year's
+  // farm balance computable; until one happens the year is still running.
+  const collectionDone = soldFarms.size > 0 || missedCause.size > 0;
+
+  // Why the farms that did not sell did not: the causes logged on collection
+  // turns, then, for the rest, what the year's data says (no hub at all).
+  const counts = new Map();
+  for (const [farm, cause] of missedCause) {
+    if (!soldFarms.has(farm)) counts.set(cause, (counts.get(cause) ?? 0) + 1);
+  }
+  let explained = 0;
+  const causes = [];
+  for (const [id, count] of counts) {
+    const kept = Math.min(count, farms.unsold - explained);
+    if (kept > 0) causes.push({ id, count: kept });
+    explained += kept;
+  }
+  if (farms.unsold > explained) {
+    causes.push({ id: hubs.total === 0 ? 'no_hub' : 'unknown', count: farms.unsold - explained });
+  }
+
+  return {
+    byMonth,
+    collectionDone,
+    farms: { ...farms, causes },
+    hubs,
+    hubLabel: getBuildingDefinition(hubType)?.displayName?.toLowerCase() ?? 'hub',
+    hubCapacity: getMaxStockForBuilding(hubType),
+  };
 }
 
 const noWorkIconHTML = `<img class="food-stat-no-work-icon" src="${NO_WORK_ICON}" alt="Fermes inactives" title="Fermes inactives">`;
 
+/** " et 1 moulin (icon : 0)" — the hubs next to the farms, empty when the game has none. */
+function hubsClauseHTML(count, idle, label) {
+  if (count <= 0) return '';
+  return ` et ${count} ${label}${count > 1 ? 's' : ''} (${noWorkIconHTML} : ${idle})`;
+}
+
+/** What a player can act on when a farm did not sell, by cause id. */
+const NON_SALE_CAUSES = {
+  no_workers: () => `${noWorkIconHTML} sans travailleurs à la récolte`,
+  no_road: () => '🛣️ sans route',
+  hub_full: (capacity) => `📦 moulin plein${capacity ? ` (plafond ${capacity} paniers)` : ''}`,
+  hub_idle: () => '🏚️ moulin sans travailleurs',
+  no_hub: () => '❌ pas de moulin',
+  unknown: () => '❔ cause non enregistrée',
+};
+
 /** Year row: farms that sold their harvest, out of the most farms standing at once that year. */
-function farmsSoldHTML({ sold, total, unsold }) {
-  return `${sold}/${total} ${noWorkIconHTML} : ${unsold}`;
+function farmsSoldHTML({ farms, hubs, hubLabel }) {
+  return `${farms.sold}/${farms.total}${hubsClauseHTML(hubs.total, hubs.unsold, hubLabel)}`;
+}
+
+/** "Sans vente : <cause> N · <cause> N" — empty when every farm sold. */
+function nonSaleCausesHTML({ farms, hubCapacity }) {
+  if (farms.causes.length === 0) return '';
+  const items = farms.causes.map(
+    ({ id, count }) => `${(NON_SALE_CAUSES[id] ?? NON_SALE_CAUSES.unknown)(hubCapacity)} : ${count}`
+  );
+  return `<span class="food-stat-farms causes">Sans vente : ${items.join(' · ')}</span>`;
 }
 
 /** Goods the supply chain carries, and the aggregate they are filed under — both from the catalog. */
@@ -392,38 +476,33 @@ export function createBuildingStocksHTML(buildingType, coords, stocks, pillClass
 
 /**
  * Farms a year would have needed for full coverage, with its detailed calculation:
- * Σ monthly population × per-capita demand ÷ annual yield per farm (all from the catalog).
+ * the year's peak population × 12 months × per-capita demand ÷ annual yield per farm
+ * (all from the catalog) — a full year of the largest population the city reached.
  * @param {Array<object>} months
  * @returns {{ farmsNeeded: number, population: string, detail: string }|null} Null when the catalog has no yield to divide by.
  */
-function fullCoverageSummary(months) {
+export function fullCoverageSummary(months) {
   const yieldPerFarm = getAnnualYieldPerProducer();
-  if (yieldPerFarm <= 0) return null;
+  if (yieldPerFarm <= 0 || months.length === 0) return null;
   const perCapita = getPerCapitaDemand();
-  const residentMonths = months.reduce(
-    (sum, month) => sum + (month.fedPopulation || 0) + (month.unfedPopulation || 0),
-    0
+  const peakPopulation = Math.max(
+    ...months.map((month) => (month.fedPopulation || 0) + (month.unfedPopulation || 0))
   );
-  const demand = residentMonths * perCapita;
+  const demand = peakPopulation * MONTHS.length * perCapita;
   const farmsNeeded = Math.ceil(demand / yieldPerFarm);
-  const monthCount = months.length;
-  const averagePopulation = residentMonths / monthCount;
-  const populationLabel = Number.isInteger(averagePopulation)
-    ? `${averagePopulation}`
-    : `~${Math.round(averagePopulation)}`;
   const exact = (demand / yieldPerFarm).toFixed(1).replace('.', ',');
   return {
     farmsNeeded,
-    population: populationLabel,
-    detail: `${populationLabel} habitants × ${monthCount} mois × ${perCapita} panier par mois = ${demand} paniers à couvrir ÷ ${yieldPerFarm} paniers par ferme et par an = ${exact}, arrondi à ${farmsNeeded}`,
+    population: `${peakPopulation}`,
+    detail: `${peakPopulation} habitants (le plus haut de l'année) × ${MONTHS.length} mois × ${perCapita} panier par mois = ${demand} paniers à couvrir ÷ ${yieldPerFarm} paniers par ferme et par an = ${exact}, arrondi à ${farmsNeeded}`,
   };
 }
 
 /** The row every month card ends with: the farms that stood in the city that month. */
-function monthFarmRowHTML(monthData, farms, coverage) {
-  const month = farms?.byMonth[monthData.month];
+function monthFarmRowHTML(monthData, chain, coverage) {
+  const month = chain?.byMonth[monthData.month];
   const figure = month
-    ? `${month.present}/${coverage ? coverage.farmsNeeded : '?'} ${noWorkIconHTML} : (${month.idle})`
+    ? `${month.farms.present}/${coverage ? coverage.farmsNeeded : '?'} ${noWorkIconHTML} : (${month.farms.idle})${hubsClauseHTML(month.hubs.present, month.hubs.idle, chain.hubLabel)}`
     : '—';
   return `<div class="food-stat-month-item farms">
                                         <span class="food-stat-month-icon">🌾</span>
@@ -434,7 +513,7 @@ function monthFarmRowHTML(monthData, farms, coverage) {
 
 /**
  * @param {HTMLElement} container
- * @param {Record<string, { months: Array<object>, farms?: object }>} dataByYear
+ * @param {Record<string, { months: Array<object>, chain?: object }>} dataByYear
  */
 export function renderFoodStats(container, dataByYear) {
   const monthNames = MONTHS;
@@ -449,6 +528,9 @@ export function renderFoodStats(container, dataByYear) {
       (month) => (month.unfedPopulation || 0) === 0
     ).length;
     const coverage = fullCoverageSummary(yearData.months);
+    // The newest year, with a hub but no sale yet: the balance cannot be computed
+    const inProgress =
+      year === years[0] && yearData.chain && yearData.chain.hubs.total > 0 && !yearData.chain.collectionDone;
 
     html += `
             <div class="food-stats-year-section">
@@ -456,8 +538,9 @@ export function renderFoodStats(container, dataByYear) {
                     <h4 class="food-stats-year-title">Année ${year}</h4>
                     <div class="food-stats-year-summary">
                         <span class="food-stat-badge ${monthsWithoutFamine === yearData.months.length ? 'fed' : 'unfed'}">✅ ${monthsWithoutFamine}/${yearData.months.length} mois sans famine</span>
-                        ${yearData.farms && yearData.farms.total > 0 ? `<span class="food-stat-farms sold">🌾 Fermes ayant vendu leur récolte : ${farmsSoldHTML(yearData.farms)}</span>` : ''}
-                        ${coverage ? `<span class="food-stat-farms coverage">Fermes nécessaires pour nourrir les ${coverage.population} personnes : ${coverage.farmsNeeded}</span><span class="food-stat-farms detail">${coverage.detail}</span>` : ''}
+                        ${inProgress ? `<span class="food-stat-farms in-progress">⏳ Année en cours — le bilan des fermes sera calculé une fois la récolte vendue</span>` : `${yearData.chain && yearData.chain.farms.total > 0 ? `<span class="food-stat-farms sold">🌾 Fermes ayant vendu leur récolte : ${farmsSoldHTML(yearData.chain)}</span>` : ''}
+                        ${yearData.chain && yearData.chain.farms.total > 0 ? nonSaleCausesHTML(yearData.chain) : ''}
+                        ${coverage ? `<span class="food-stat-farms coverage">Fermes nécessaires pour nourrir les ${coverage.population} personnes : ${coverage.farmsNeeded}</span><span class="food-stat-farms detail">${coverage.detail}</span>` : ''}`}
                     </div>
                 </div>
                 <div class="food-stats-months">
@@ -482,7 +565,7 @@ export function renderFoodStats(container, dataByYear) {
                                         <span class="food-stat-month-label">Non nourris:</span>
                                         <span class="food-stat-month-value">${monthData.unfedPopulation || 0}</span>
                                     </div>
-                                    ${monthFarmRowHTML(monthData, yearData.farms, coverage)}
+                                    ${monthFarmRowHTML(monthData, yearData.chain, coverage)}
                                     <div class="food-stat-month-item total">
                                         <span class="food-stat-month-icon">👥</span>
                                         <span class="food-stat-month-label">Total:</span>
@@ -499,4 +582,59 @@ export function renderFoodStats(container, dataByYear) {
   });
 
   container.innerHTML = html;
+}
+
+/** Per-tick states are folded into the monthly figures; every other row is an event worth keeping. */
+const STATE_TRANSACTION_TYPES = new Set(['chain_state', 'population_state']);
+
+/**
+ * The traceability as one JSON document, to read a finished game: per year, the
+ * balance the panel shows (months, farms, hubs, causes, farms needed) and the
+ * raw events in chronological order.
+ * @param {Array<object>} transactions
+ * @param {Array<{ year: number, month: number, fedPopulation: number, unfedPopulation: number }>} monthlyStats
+ */
+export function buildFoodTraceabilityExport(transactions, monthlyStats) {
+  const years = [...new Set(monthlyStats.map((month) => month.year))].sort((a, b) => a - b);
+  const chronological = [...transactions].sort(
+    (a, b) => a.turn - b.turn || new Date(a.date) - new Date(b.date)
+  );
+
+  return {
+    exportDate: new Date().toISOString(),
+    years: years.map((year) => {
+      const months = monthlyStats.filter((month) => month.year === year).sort((a, b) => a.month - b.month);
+      const chain = summarizeChain(transactions, year);
+      const coverage = fullCoverageSummary(months);
+      return {
+        year,
+        monthsWithoutFamine: months.filter((month) => (month.unfedPopulation || 0) === 0).length,
+        months: months.map((month) => ({
+          month: MONTHS[month.month],
+          fed: month.fedPopulation,
+          unfed: month.unfedPopulation,
+          total: month.fedPopulation + month.unfedPopulation,
+          farms: chain.byMonth[month.month]?.farms ?? null,
+          hubs: chain.byMonth[month.month]?.hubs ?? null,
+        })),
+        farms: chain.farms,
+        hubs: { ...chain.hubs, label: chain.hubLabel, capacity: chain.hubCapacity ?? null },
+        harvestSold: chain.collectionDone,
+        farmsNeeded: coverage ? { count: coverage.farmsNeeded, calculation: coverage.detail } : null,
+      };
+    }),
+    events: chronological
+      .filter((t) => !STATE_TRANSACTION_TYPES.has(t.transactionType))
+      .map((t) => ({
+        turn: t.turn,
+        year: t.year,
+        month: t.month,
+        type: t.transactionType,
+        from: t.fromType ? { id: t.fromId, type: t.fromType, coords: t.fromCoords } : null,
+        to: t.toType ? { id: t.toId, type: t.toType, coords: t.toCoords } : null,
+        good: t.foodType,
+        quantity: t.quantity,
+        ...(t.cause ? { cause: t.cause } : {}),
+      })),
+  };
 }

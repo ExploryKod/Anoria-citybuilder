@@ -1,6 +1,8 @@
 import {
   getAnnualSupplyEntry,
+  getResourceRoles,
   getResourceStockShape,
+  hasQuantityConsumer,
 } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
 
@@ -165,24 +167,29 @@ export class SupplyTraceability {
   }
 
   /**
-   * Logs whether each annual producer (a farm) can work on this monthly tick —
-   * the state the traceability panel shows per month, faithful to the game:
-   * a farm deleted later still shows as it was.
+   * Logs whether each building of the harvest chain — the annual producers
+   * (farms) and the hubs that buy from them — can work on this monthly tick.
+   * This is the state the traceability panel shows per month, faithful to the
+   * game: a building deleted later still shows as it was.
    * @param {object} timeInfo
    */
-  async recordProducerStates(timeInfo) {
-    const producers = await this.supplyBuildingRepository.findByResourceRole('producer');
+  async recordChainStates(timeInfo) {
+    const [producers, hubs] = await Promise.all([
+      this.supplyBuildingRepository.findByResourceRole('producer'),
+      this.supplyBuildingRepository.findByResourceRole('hub'),
+    ]);
+    const chain = [
+      ...producers.map((building) => ({ building, category: getAnnualSupplyEntry(building.type)?.categories[0] })),
+      ...hubs.map((building) => ({ building, category: getResourceRoles(building.type).find((entry) => entry.role === 'hub')?.categories[0] })),
+    ].filter(({ category }) => category);
 
-    for (const building of producers) {
-      const entry = getAnnualSupplyEntry(building.type);
-      if (!entry) continue;
-
-      await this.traceabilityRepository.recordProducerState(
+    for (const { building, category } of chain) {
+      await this.traceabilityRepository.recordChainState(
         timeInfo.turn || 0,
         timeInfo.monthIndex || 0,
         timeInfo.year || 0,
         { id: building.id, x: building.x, y: building.y, type: building.type },
-        entry.categories[0],
+        category,
         isOperational({
           roadCount: building.roadCount,
           worker: building.worker,
@@ -195,11 +202,43 @@ export class SupplyTraceability {
   }
 
   /**
-   * Logs each harvest a hub bought from a producer, on the turn of the sale.
+   * Logs the inhabitants of every house on this monthly tick, so the panel
+   * shows the population each past month really had (not today's).
    * @param {object} timeInfo
-   * @param {Array<{ hubId?: string, transfers?: Array<{ sourceId: string, category: string, amount: number }> }>} hubResults
+   */
+  async recordPopulationStates(timeInfo) {
+    const consumers = await this.supplyBuildingRepository.findByResourceRole('consumer');
+    const { totalKey } = getResourceStockShape();
+
+    for (const building of consumers) {
+      if (!hasQuantityConsumer(building.type)) continue;
+      await this.traceabilityRepository.recordPopulationState(
+        timeInfo.turn || 0,
+        timeInfo.monthIndex || 0,
+        timeInfo.year || 0,
+        { id: building.id, x: building.x, y: building.y, type: building.type },
+        totalKey,
+        Number.isFinite(building.pop) ? Math.max(0, Math.floor(building.pop)) : 0
+      );
+    }
+  }
+
+  /**
+   * Logs each harvest a hub bought from a producer, on the turn of the sale —
+   * and, for every annual producer no hub bought from on a collection turn,
+   * why not. The cause is what a player can act on: no road, nothing
+   * harvested (unstaffed during the season), a hub with no room left, or a
+   * hub that cannot work.
+   * @param {object} timeInfo
+   * @param {Array<{ hubId?: string, collected?: boolean, reason?: string, transfers?: Array<{ sourceId: string, category: string, amount: number }> }>} hubResults
    */
   async recordHarvestSales(timeInfo, hubResults = []) {
+    if (hubResults.length === 0) return;
+    const turn = timeInfo.turn || 0;
+    const month = timeInfo.monthIndex || 0;
+    const year = timeInfo.year || 0;
+    const soldIds = new Set();
+
     for (const hubResult of hubResults) {
       if (!hubResult?.transfers?.length) continue;
       const hubData = await this.supplyBuildingRepository.findRowById(hubResult.hubId);
@@ -208,17 +247,49 @@ export class SupplyTraceability {
       for (const transfer of hubResult.transfers) {
         const sourceData = await this.supplyBuildingRepository.findRowById(transfer.sourceId);
         if (!sourceData) continue;
+        soldIds.add(transfer.sourceId);
 
         await this.traceabilityRepository.recordSourceToHub(
-          timeInfo.turn || 0,
-          timeInfo.monthIndex || 0,
-          timeInfo.year || 0,
+          turn,
+          month,
+          year,
           { id: transfer.sourceId, x: sourceData.x, y: sourceData.y, type: sourceData.type },
           { id: hubResult.hubId, x: hubData.x, y: hubData.y, type: hubData.type },
           transfer.category,
           transfer.amount
         );
       }
+    }
+
+    const anyCollected = hubResults.some((hubResult) => hubResult.collected);
+    const hubCause = anyCollected
+      ? 'hub_full'
+      : hubResults.some((hubResult) => hubResult.reason === 'hub_not_operational')
+        ? 'hub_idle'
+        : hubResults.some((hubResult) => hubResult.reason === 'hub_full')
+          ? 'hub_full'
+          : 'unknown';
+
+    const producers = await this.supplyBuildingRepository.findByResourceRole('producer');
+    for (const building of producers) {
+      const entry = getAnnualSupplyEntry(building.type);
+      if (!entry || soldIds.has(building.id)) continue;
+
+      const category = entry.categories[0];
+      const cause =
+        building.roadCount <= 0
+          ? 'no_road'
+          : (building.stocks?.[category] ?? 0) <= 0
+            ? 'no_workers'
+            : hubCause;
+      await this.traceabilityRepository.recordSaleMissed(
+        turn,
+        month,
+        year,
+        { id: building.id, x: building.x, y: building.y, type: building.type },
+        category,
+        cause
+      );
     }
   }
 }
