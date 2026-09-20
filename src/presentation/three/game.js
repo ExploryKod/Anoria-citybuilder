@@ -24,6 +24,7 @@ import { createScene } from './scene.js';
 import { createCity, clearCityTiles, initializeEditorCityTiles } from './city.js';
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
 import { syncSupplyLinksAfterBuildingChange } from '../../composition/syncSupplyLinksAfterBuildingChange.js';
+import { resolveGetTimeInfo } from '../../composition/gameTimeBridge.js';
 import { refreshSupplyPlacementIndex } from '../../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
 import { ensureGameRuntimeBootstrapped } from '../../composition/ensureGameRuntimeBootstrapped.js';
 import { bootGameContexts } from '../../composition/bootGameContexts.js';
@@ -204,6 +205,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
     });
   }
 
+  /** Keep a placement / demolition in the city's history; history must never break the game. */
+  async function recordBuildingHistory(event, building) {
+    try {
+      await supply.recordBuildingEvent({ timeInfo: resolveGetTimeInfo()(time), event, building });
+    } catch (error) {
+      console.warn('[game] Could not record the building event:', error);
+    }
+  }
+
   async function finalizeBuildingPlacement(placeX, placeY, buildingType, rotationStep = 0) {
     const result = await constructionApi.placeBuildingAtTile({
       city,
@@ -229,6 +239,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     if (!isRoadBuildingType(buildingType)) {
       playPlaceBuildingSound();
     }
+    await recordBuildingHistory('placed', { id: result.instanceId, type: buildingType, x: placeX, y: placeY });
 
     await scene.update(city, time);
     await runSimulationPass(time);
@@ -866,6 +877,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
       if (buildingId) {
         playBulldozeSound();
+        await recordBuildingHistory('demolished', { id: removedInstanceId, type: tile.buildingId, x, y });
       }
 
       if (cascadeOutcome?.destroyed?.length) {

@@ -6,6 +6,7 @@ import { tryResolveBuildingInstanceIdFromRef } from '../../../../shared/building
 import {
   getAllCategoriesForRole,
   getAnnualHarvestSchedule,
+  getAnnualSupplyEntry,
   getAnnualYieldPerProducer,
   getMaxStockForBuilding,
   getPerCapitaDemand,
@@ -585,7 +586,84 @@ export function renderFoodStats(container, dataByYear) {
 }
 
 /** Per-tick states are folded into the monthly figures; every other row is an event worth keeping. */
-const STATE_TRANSACTION_TYPES = new Set(['chain_state', 'population_state']);
+const STATE_TRANSACTION_TYPES = new Set(['chain_state', 'population_state', 'building_state']);
+
+/** What a building's stock counts as in the monthly figures, read from the catalog's roles. */
+function stockKindOf(type) {
+  if (getBuildingDefinition(type)?.residentialGroup) return 'houses';
+  if (getAnnualSupplyEntry(type)) return 'farms';
+  const roles = getResourceRoles(type);
+  if (roles.some((entry) => entry.role === 'hub')) return 'hubs';
+  if (roles.some((entry) => entry.role === 'distributor' && entry.consumption !== 'flag')) return 'distributors';
+  return null;
+}
+
+/** @param {Map<string, { type: string, state: object }>} current The last state of every standing building. */
+function aggregateBuildingStates(current) {
+  const { totalKey } = getResourceStockShape();
+  const out = {
+    stocks: { houses: 0, farms: 0, hubs: 0, distributors: 0 },
+    employment: { workers: 0, workerNeed: 0, understaffedBuildings: 0 },
+    houseLevels: {},
+  };
+  for (const { type, state } of current.values()) {
+    const kind = stockKindOf(type);
+    if (kind) out.stocks[kind] += state.stocks?.[totalKey] ?? 0;
+    if (state.workerNeed > 0) {
+      out.employment.workers += state.workers ?? 0;
+      out.employment.workerNeed += state.workerNeed;
+      if ((state.workers ?? 0) < state.workerNeed) out.employment.understaffedBuildings += 1;
+    }
+    if (kind === 'houses') {
+      const level = String(state.level ?? state.tier ?? '?');
+      out.houseLevels[level] = (out.houseLevels[level] ?? 0) + 1;
+    }
+  }
+  return out;
+}
+
+/**
+ * The buildings' history of one year, rebuilt from the logged states: for each month with data
+ * the goods held, the staff and the house levels as of that month's end, and the state of every
+ * building standing at the end of the year. A demolished building leaves the picture.
+ * @param {Array<object>} transactions
+ * @param {number} year
+ * @param {number[]} monthIndexes
+ * @returns {{ byMonth: Record<number, object>, endOfYear: object[] } | null}
+ */
+export function summarizeBuildingHistory(transactions, year, monthIndexes) {
+  const rows = [...transactions]
+    .filter(
+      (t) =>
+        t.transactionType === 'building_state' ||
+        (t.transactionType === 'game_event' && t.event === 'building_demolished')
+    )
+    .sort((a, b) => a.turn - b.turn || new Date(a.date) - new Date(b.date));
+  if (!rows.some((t) => t.transactionType === 'building_state')) return null;
+
+  const current = new Map();
+  let next = 0;
+  const advanceTo = (isBefore) => {
+    while (next < rows.length && isBefore(rows[next])) {
+      const t = rows[next++];
+      const id = t.fromId || t.fromCoords;
+      if (t.transactionType === 'building_state') {
+        current.set(id, { type: t.fromType, x: t.fromCoords, id, state: t.state });
+      } else {
+        current.delete(id);
+      }
+    }
+  };
+
+  const byMonth = {};
+  for (const month of [...monthIndexes].sort((a, b) => a - b)) {
+    advanceTo((t) => t.year < year || (t.year === year && t.month <= month));
+    byMonth[month] = aggregateBuildingStates(current);
+  }
+  advanceTo((t) => t.year <= year);
+  const endOfYear = [...current.values()].map(({ id, type, x, state }) => ({ id, type, coords: x, ...state }));
+  return { byMonth, endOfYear };
+}
 
 /**
  * The traceability as one JSON document, to read a finished game: per year, the
@@ -605,6 +683,7 @@ export function buildFoodTraceabilityExport(transactions, monthlyStats) {
     years: years.map((year) => {
       const months = monthlyStats.filter((month) => month.year === year).sort((a, b) => a.month - b.month);
       const chain = summarizeChain(transactions, year);
+      const history = summarizeBuildingHistory(transactions, year, months.map((month) => month.month));
       const coverage = fullCoverageSummary(months);
       // The newest year, with a hub but no sale yet: its farm balance is not computable
       const inProgress = year === years[years.length - 1] && chain.hubs.total > 0 && !chain.collectionDone;
@@ -619,7 +698,9 @@ export function buildFoodTraceabilityExport(transactions, monthlyStats) {
           total: month.fedPopulation + month.unfedPopulation,
           farms: chain.byMonth[month.month]?.farms ?? null,
           hubs: chain.byMonth[month.month]?.hubs ?? null,
+          buildings: history?.byMonth[month.month] ?? null,
         })),
+        endOfYearBuildings: history?.endOfYear ?? null,
         farms: inProgress ? { total: chain.farms.total } : chain.farms,
         hubs: { ...chain.hubs, label: chain.hubLabel, capacity: chain.hubCapacity ?? null },
         harvestSold: chain.collectionDone,
@@ -638,6 +719,7 @@ export function buildFoodTraceabilityExport(transactions, monthlyStats) {
         good: t.foodType,
         quantity: t.quantity,
         ...(t.cause ? { cause: t.cause } : {}),
+        ...(t.event ? { event: t.event, details: t.details ?? {} } : {}),
       })),
   };
 }

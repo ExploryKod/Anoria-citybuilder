@@ -78,6 +78,24 @@ export class DexieSupplyTraceabilityRepository {
     await this.addTransaction(turn, month, year, 'chain_state', building, null, foodType, quantity, 0);
   }
 
+  /**
+   * Full state of one building (stocks, staff, level…) at the moment it changed:
+   * the log keeps a row only when something differs from the last one, so a state
+   * lasts until the next row.
+   */
+  async recordBuildingState(turn, month, year, building, state) {
+    await this.addTransaction(turn, month, year, 'building_state', building, null, null, 0, 0, { state });
+  }
+
+  /**
+   * Something that happened to the city (a house went up a level, people died of
+   * famine, a building was placed or demolished): `event` says what, `subject` is
+   * the building concerned (or null), `details` the numbers that explain it.
+   */
+  async recordGameEvent(turn, month, year, event, subject, quantity, details = {}) {
+    await this.addTransaction(turn, month, year, 'game_event', subject, null, null, quantity, 0, { event, details });
+  }
+
   /** Inhabitants of one house on a monthly tick, so past months show the population they really had. */
   async recordPopulationState(turn, month, year, house, foodType, population) {
     await this.addTransaction(turn, month, year, 'population_state', house, null, foodType, population, 0);

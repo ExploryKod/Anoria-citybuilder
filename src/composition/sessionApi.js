@@ -149,6 +149,7 @@ export function createSupplySessionApi(supply) {
     getSupplyBuildingRow: (id) => supply.getSupplyBuildingRow(id),
     getAllSupplyTraceabilityTransactions: (maxAge = null) =>
       supply.getAllSupplyTraceabilityTransactions(maxAge),
+    recordBuildingEvent: (params) => supply.recordBuildingEvent(params),
     getHubStorageInfoView: (hubKind, buildingRow, options = {}) =>
       supply.getHubStorageInfoView(hubKind, buildingRow, options),
     updateHubStorageOrderMode: (hubKind, buildingId, productId) =>

@@ -11,6 +11,7 @@ import { createBuildingInstanceId } from '../../../src/shared/building-identity/
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 import { clearBuildingsTable, seedBuilding, getBuildingRow } from '../../helpers/buildingDb.js';
 import { updateBuildingFields } from '../../../src/composition/constructionOps.js';
+import { buildFoodTraceabilityExport } from '../../../src/presentation/dom/admin/food-traceability/FoodTraceabilityPresenter.js';
 
 describe('Supply — RunMonthlyResourceCycle', () => {
   let supply;
@@ -267,6 +268,109 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       expect(faith[0].fromId).toBe(chapelId);
       expect(faith[0].fromType).toBe('Chapel');
       expect(faith[0].transactionType).toBe('distributor_to_consumer');
+    });
+  });
+
+  describe('the city\'s history: building states and game events', () => {
+    const row = (instanceId, type, x, extra) =>
+      makeHouseRecord({
+        instanceId,
+        type,
+        x,
+        y: 1,
+        extra: { roads: 1, neighbors: [{ name: 'roads', isRoad: true }], ...extra },
+      });
+    const stateRows = async (buildingId) =>
+      (await supply.getAllSupplyTraceabilityTransactions()).filter(
+        (t) => t.transactionType === 'building_state' && t.fromId === buildingId
+      );
+
+    test('a building state is logged when it changes, and only then', async () => {
+      const houseId = createBuildingInstanceId();
+      const farmId = createBuildingInstanceId();
+      await seedBuilding(row(houseId, 'House-Red', 1, { pop: 12, level: 2 }));
+      await seedBuilding(row(farmId, 'Farm-Wheat', 3, { employees: { worker: 3, worker_need: 3 } }));
+
+      await runAtTime(0);
+      const first = await stateRows(farmId);
+      expect(first).toHaveLength(1);
+      expect(first[0].state).toMatchObject({ workers: 3, workerNeed: 3 });
+      expect((await stateRows(houseId))[0].state).toMatchObject({ pop: 12, level: 2 });
+
+      // Nothing moved on the farm: no new row. Its staff leaves: one new row.
+      await runAtTime(0);
+      expect(await stateRows(farmId)).toHaveLength(1);
+      await updateBuildingFields(farmId, { employees: { worker: 0, worker_need: 3 } });
+      await runAtTime(0);
+      const afterLoss = await stateRows(farmId);
+      expect(afterLoss).toHaveLength(2);
+      expect(afterLoss[1].state.workers).toBe(0);
+    });
+
+    test('house level changes, famine deaths and building placements are kept as events', async () => {
+      const houseId = createBuildingInstanceId();
+      await seedBuilding(row(houseId, 'House-Red', 1, { pop: 12, level: 2 }));
+      const timeInfo = TimeManager.getTimeInfo(5);
+
+      await supply.recordHouseChanges(timeInfo, [
+        { houseId, previousLevel: 2, targetLevel: 3, previousPop: 12, targetPop: 18, reason: 'level2_to_level3' },
+        { houseId, previousLevel: 3, targetLevel: 2, previousPop: 18, targetPop: 12, reason: 'level3_to_level2' },
+      ]);
+      await supply.recordFamineDeaths(timeInfo, 4);
+      await supply.recordFamineDeaths(timeInfo, 0);
+      await supply.recordBuildingEvent({
+        timeInfo,
+        event: 'demolished',
+        building: { id: houseId, type: 'House-Red', x: 1, y: 1 },
+      });
+
+      const events = (await supply.getAllSupplyTraceabilityTransactions()).filter(
+        (t) => t.transactionType === 'game_event'
+      );
+      expect(events.map((t) => t.event).sort()).toEqual([
+        'building_demolished',
+        'famine_deaths',
+        'house_level_down',
+        'house_level_up',
+      ]);
+      expect(events.find((t) => t.event === 'famine_deaths').quantity).toBe(4);
+      expect(events.find((t) => t.event === 'house_level_up').details).toMatchObject({
+        previousLevel: 2,
+        targetLevel: 3,
+      });
+    });
+
+    test('the export rebuilds each month\'s stocks, staff and house levels, and drops a demolished building', async () => {
+      const houseId = createBuildingInstanceId();
+      const farmId = createBuildingInstanceId();
+      await seedBuilding(
+        row(houseId, 'House-Red', 1, { pop: 12, level: 2, stocks: { wheat: 6, food: 6 } })
+      );
+      await seedBuilding(row(farmId, 'Farm-Wheat', 3, { employees: { worker: 3, worker_need: 3 } }));
+      await runAtTime(0);
+
+      // The table also holds the buildings of the other tests: keep this test's own
+      const mine = async () =>
+        (await supply.getAllSupplyTraceabilityTransactions()).filter(
+          (t) => [houseId, farmId].includes(t.fromId)
+        );
+      const monthly = [{ year: 0, month: 0, fedPopulation: 12, unfedPopulation: 0 }];
+      const [year] = buildFoodTraceabilityExport(await mine(), monthly).years;
+
+      const january = year.months[0].buildings;
+      expect(january.employment).toEqual({ workers: 3, workerNeed: 3, understaffedBuildings: 0 });
+      expect(january.houseLevels).toEqual({ 2: 1 });
+      expect(january.stocks.houses).toBeGreaterThan(0);
+      expect(year.endOfYearBuildings.map((b) => b.id).sort()).toEqual([farmId, houseId].sort());
+
+      await supply.recordBuildingEvent({
+        timeInfo: TimeManager.getTimeInfo(0),
+        event: 'demolished',
+        building: { id: farmId, type: 'Farm-Wheat', x: 3, y: 1 },
+      });
+      const after = buildFoodTraceabilityExport(await mine(), monthly);
+      expect(after.years[0].endOfYearBuildings.map((b) => b.id)).toEqual([houseId]);
+      expect(after.events.some((e) => e.event === 'building_demolished')).toBe(true);
     });
   });
 });

@@ -19,7 +19,7 @@ export class RunMonthlyResourceCycle {
    * @param {import('../commands/distribution/UpdateConsumerDistributorReach.js').UpdateConsumerDistributorReach} updateDistributorReach
    * @param {import('../commands/surplus/RunHubSurplusCycle.js').RunHubSurplusCycle} runHubSurplusCycle
    * @param {import('../commands/RunResourceCommandForRole.js').RunResourceCommandForRole} runConsumerCommand
-   * @param {{ recordHouseConsumptions: Function, recordChainStates: Function, recordPopulationStates: Function, recordHarvestSales: Function }} traceability
+   * @param {{ recordHouseConsumptions: Function, recordChainStates: Function, recordPopulationStates: Function, recordBuildingStates: Function, recordHarvestSales: Function }} traceability
    * @param {object} config
    * @param {ReadonlyArray<string>} config.categories Every category any
    *   distributor covers — drives the actual distribution/restock leg,
@@ -71,6 +71,7 @@ export class RunMonthlyResourceCycle {
 
     await this.traceability.recordChainStates(timeInfo);
     await this.traceability.recordPopulationStates(timeInfo);
+    await this.traceability.recordBuildingStates(timeInfo);
 
     const surplus = await this.runHubSurplusCycle.execute({
       month,

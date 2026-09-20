@@ -76,9 +76,16 @@ export function createGameRuntime({
     housing,
     getTimeInfo,
     areFamineLimitsEnabled: isLoseMode,
-    onFamineDeaths: recordDeaths,
+    onFamineDeaths: (deaths, timeInfo) => {
+      recordDeaths(deaths);
+      void supply.recordFamineDeaths(timeInfo, deaths);
+    },
   });
-  const housingEvolution = createHousingEvolutionSystem({ housing, getTimeInfo });
+  const housingEvolution = createHousingEvolutionSystem({
+    housing,
+    getTimeInfo,
+    onChanges: (changes, timeInfo) => supply.recordHouseChanges(timeInfo, changes),
+  });
   const employmentRedistribute = createEmploymentRedistributeSystem({
     employment,
     getSkillPriorities,

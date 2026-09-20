@@ -325,6 +325,21 @@ export function createSupplyContext({
     async cleanupOldSupplyTraceabilityTransactions(maxAge = 60) {
       return foodTraceabilityRepositoryImpl.cleanupOldTransactions(maxAge);
     },
+
+    /** A building was placed / demolished — kept in the city's history. */
+    async recordBuildingEvent({ timeInfo, event, building }) {
+      return traceability.recordBuildingEvent(timeInfo, event, building);
+    },
+
+    /** Houses that went up or down a level this month. */
+    async recordHouseChanges(timeInfo, changes) {
+      return traceability.recordHouseChanges(timeInfo, changes);
+    },
+
+    /** Inhabitants lost to famine this month. */
+    async recordFamineDeaths(timeInfo, deaths) {
+      return traceability.recordFamineDeaths(timeInfo, deaths);
+    },
   };
 }
 

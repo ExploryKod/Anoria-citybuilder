@@ -6,6 +6,7 @@ import {
   isRoadNeedMet,
 } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
+import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 
 /**
  * The game turn a time context stands for: the time info the game builds carries the
@@ -27,6 +28,9 @@ export class SupplyTraceability {
   constructor({ foodTraceabilityRepository, supplyBuildingRepository }) {
     this.traceabilityRepository = foodTraceabilityRepository;
     this.supplyBuildingRepository = supplyBuildingRepository;
+    /** Last logged state of each building, as text — a row is written only when it changes. */
+    this.lastLoggedStates = new Map();
+    this.lastLoggedTurn = -1;
   }
 
   /**
@@ -303,5 +307,117 @@ export class SupplyTraceability {
         cause
       );
     }
+  }
+
+  /**
+   * Logs the full state of every building that stocks, employs or houses — its goods, its
+   * staff, its level, its inhabitants — but only when it differs from the last state logged
+   * for that building. The panel and the exports rebuild any month from these rows.
+   * @param {object} timeInfo
+   */
+  async recordBuildingStates(timeInfo) {
+    const turn = turnOf(timeInfo);
+    if (turn < this.lastLoggedTurn) this.lastLoggedStates.clear(); // a new game began
+    this.lastLoggedTurn = turn;
+
+    const rows = await this.supplyBuildingRepository.listAllBuildingRows();
+    for (const row of rows) {
+      const definition = getBuildingDefinition(row.type);
+      const isTracked =
+        definition?.resourceRoles?.length > 0 ||
+        definition?.employment?.workerNeed > 0 ||
+        Boolean(definition?.residentialGroup);
+      if (!isTracked) continue;
+
+      const id = row.instanceId ?? row.id;
+      const state = {
+        pop: row.pop ?? 0,
+        level: row.level ?? null,
+        tier: row.tier ?? null,
+        roads: row.roads ?? 0,
+        stocks: Object.fromEntries(Object.entries(row.stocks ?? {}).filter(([, amount]) => amount > 0)),
+        workers: row.employees?.worker ?? null,
+        workerNeed: row.employees?.worker_need ?? null,
+        elite: row.employees?.elite ?? null,
+        eliteNeed: row.employees?.elite_need ?? null,
+      };
+      const signature = JSON.stringify(state);
+      if (this.lastLoggedStates.get(id) === signature) continue;
+      this.lastLoggedStates.set(id, signature);
+
+      await this.traceabilityRepository.recordBuildingState(
+        turn,
+        timeInfo.monthIndex || 0,
+        timeInfo.year || 0,
+        { id, x: row.x, y: row.y, type: row.type },
+        state
+      );
+    }
+  }
+
+  /**
+   * A building was placed or demolished.
+   * @param {object} timeInfo
+   * @param {'placed' | 'demolished'} event
+   * @param {{ id?: string | null, type: string, x?: number, y?: number }} building
+   */
+  async recordBuildingEvent(timeInfo, event, building) {
+    await this.traceabilityRepository.recordGameEvent(
+      turnOf(timeInfo),
+      timeInfo.monthIndex || 0,
+      timeInfo.year || 0,
+      `building_${event}`,
+      { id: building.id ?? null, x: building.x, y: building.y, type: building.type },
+      1
+    );
+  }
+
+  /**
+   * Houses that went up or down a level (or changed type, for a palace).
+   * @param {object} timeInfo
+   * @param {Array<{ houseId: string, previousType?: string, targetType?: string, previousLevel?: number, targetLevel?: number, previousPop?: number, targetPop?: number, reason?: string }>} changes
+   */
+  async recordHouseChanges(timeInfo, changes = []) {
+    for (const change of changes) {
+      const row = await this.supplyBuildingRepository.findRowById(change.houseId);
+      const rose =
+        Number.isFinite(change.previousLevel) && Number.isFinite(change.targetLevel)
+          ? change.targetLevel > change.previousLevel
+          : null;
+      await this.traceabilityRepository.recordGameEvent(
+        turnOf(timeInfo),
+        timeInfo.monthIndex || 0,
+        timeInfo.year || 0,
+        rose === null ? 'house_type_changed' : rose ? 'house_level_up' : 'house_level_down',
+        { id: change.houseId, x: row?.x, y: row?.y, type: row?.type ?? change.targetType },
+        change.targetPop ?? 0,
+        {
+          previousLevel: change.previousLevel,
+          targetLevel: change.targetLevel,
+          previousType: change.previousType,
+          targetType: change.targetType,
+          previousPop: change.previousPop,
+          targetPop: change.targetPop,
+          reason: change.reason,
+        }
+      );
+    }
+  }
+
+  /**
+   * Inhabitants lost to famine this month.
+   * @param {object} timeInfo
+   * @param {number} deaths
+   */
+  async recordFamineDeaths(timeInfo, deaths) {
+    if (!(deaths > 0)) return;
+    await this.traceabilityRepository.recordGameEvent(
+      turnOf(timeInfo),
+      timeInfo.monthIndex || 0,
+      timeInfo.year || 0,
+      'famine_deaths',
+      null,
+      deaths
+    );
   }
 }
