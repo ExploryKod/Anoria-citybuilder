@@ -11,6 +11,7 @@ import { createBuildingInstanceId } from '../../../src/shared/building-identity/
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 import { clearBuildingsTable, seedBuilding, getBuildingRow } from '../../helpers/buildingDb.js';
 import { updateBuildingFields } from '../../../src/composition/constructionOps.js';
+import { computeMonthlyFoodStats } from '../../../src/presentation/dom/admin/food-traceability/FoodTraceabilityPanel.js';
 import { buildFoodTraceabilityExport } from '../../../src/presentation/dom/admin/food-traceability/FoodTraceabilityPresenter.js';
 
 describe('Supply — RunMonthlyResourceCycle', () => {
@@ -307,6 +308,47 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       expect(afterLoss[1].state.workers).toBe(0);
     });
 
+    test('a house state is taken at the end of the tick: the meal and the services are in it', async () => {
+      const houseId = createBuildingInstanceId();
+      await seedBuilding(row(houseId, 'House-Red', 1, { pop: 6, stocks: { wheat: 6, food: 6 } }));
+
+      await runAtTime(0);
+
+      const [first] = await stateRows(houseId);
+      // The meal happened during the tick, so this state already shows it
+      expect(first.state.lastConsumption).toMatchObject({ month: 0, demand: 6, taken: 6 });
+      expect(first.state).toHaveProperty('servedFlags');
+      // And the meal itself remembers how many sat at the table
+      const meals = (await supply.getAllSupplyTraceabilityTransactions()).filter(
+        (t) => t.transactionType === 'house_consumption' && t.fromId === houseId
+      );
+      expect(meals.map((t) => t.pop)).toEqual([6]);
+    });
+
+    test('inhabitants born after the meal are not counted as unfed', () => {
+      const at = { turn: 1, date: '2026-01-01', year: 0, month: 3 };
+      const { dataByYearMonth } = computeMonthlyFoodStats(
+        [
+          { ...at, transactionType: 'population_state', fromId: 'h1', quantity: 13 },
+          { ...at, transactionType: 'house_consumption', fromId: 'h1', quantity: 12, pop: 12 },
+        ],
+        []
+      );
+      expect(dataByYearMonth['0-3']).toMatchObject({ fedPopulation: 12, unfedPopulation: 0 });
+    });
+
+    test('a demolition carries what was demolished, by the catalog\'s category', async () => {
+      await supply.recordBuildingEvent({
+        timeInfo: TimeManager.getTimeInfo(0),
+        event: 'demolished',
+        building: { id: null, type: 'Tree-Pine-001', x: 2, y: 2 },
+      });
+      const demolition = (await supply.getAllSupplyTraceabilityTransactions()).find(
+        (t) => t.event === 'building_demolished' && t.fromType === 'Tree-Pine-001'
+      );
+      expect(demolition.details).toEqual({ category: 'nature' });
+    });
+
     test('house level changes, famine deaths and building placements are kept as events', async () => {
       const houseId = createBuildingInstanceId();
       await seedBuilding(row(houseId, 'House-Red', 1, { pop: 12, level: 2 }));
@@ -324,8 +366,9 @@ describe('Supply — RunMonthlyResourceCycle', () => {
         building: { id: houseId, type: 'House-Red', x: 1, y: 1 },
       });
 
+      // The table also holds the events of the other tests: keep this test's own
       const events = (await supply.getAllSupplyTraceabilityTransactions()).filter(
-        (t) => t.transactionType === 'game_event'
+        (t) => t.transactionType === 'game_event' && (t.fromId === houseId || t.event === 'famine_deaths')
       );
       expect(events.map((t) => t.event).sort()).toEqual([
         'building_demolished',
@@ -344,7 +387,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       const houseId = createBuildingInstanceId();
       const farmId = createBuildingInstanceId();
       await seedBuilding(
-        row(houseId, 'House-Red', 1, { pop: 12, level: 2, stocks: { wheat: 6, food: 6 } })
+        row(houseId, 'House-Red', 1, { pop: 12, level: 2, stocks: { wheat: 20, food: 20 } })
       );
       await seedBuilding(row(farmId, 'Farm-Wheat', 3, { employees: { worker: 3, worker_need: 3 } }));
       await runAtTime(0);
@@ -360,7 +403,8 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       const january = year.months[0].buildings;
       expect(january.employment).toEqual({ workers: 3, workerNeed: 3, understaffedBuildings: 0 });
       expect(january.houseLevels).toEqual({ 2: 1 });
-      expect(january.stocks.houses).toBeGreaterThan(0);
+      // 20 in the pantry + 2 gathered - 12 eaten, all during the tick: the state is the end of it
+      expect(january.stocks.houses).toBe(10);
       expect(year.endOfYearBuildings.map((b) => b.id).sort()).toEqual([farmId, houseId].sort());
 
       await supply.recordBuildingEvent({

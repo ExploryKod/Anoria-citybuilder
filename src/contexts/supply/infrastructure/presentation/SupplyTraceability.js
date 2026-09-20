@@ -340,6 +340,8 @@ export class SupplyTraceability {
         workerNeed: row.employees?.worker_need ?? null,
         elite: row.employees?.elite ?? null,
         eliteNeed: row.employees?.elite_need ?? null,
+        servedFlags: row.servedFlags ?? null,
+        lastConsumption: row.lastConsumption ?? null,
       };
       const signature = JSON.stringify(state);
       if (this.lastLoggedStates.get(id) === signature) continue;
@@ -368,7 +370,9 @@ export class SupplyTraceability {
       timeInfo.year || 0,
       `building_${event}`,
       { id: building.id ?? null, x: building.x, y: building.y, type: building.type },
-      1
+      1,
+      // What it was, by the catalog's own category: a tree and a house are not the same loss
+      { category: getBuildingDefinition(building.type)?.construction?.category ?? null }
     );
   }
 
@@ -399,6 +403,7 @@ export class SupplyTraceability {
           previousPop: change.previousPop,
           targetPop: change.targetPop,
           reason: change.reason,
+          unmetRequirements: change.unmetRequirements ?? null,
         }
       );
     }

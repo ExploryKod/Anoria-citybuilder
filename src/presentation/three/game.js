@@ -877,7 +877,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
       if (buildingId) {
         playBulldozeSound();
-        await recordBuildingHistory('demolished', { id: removedInstanceId, type: tile.buildingId, x, y });
+        await recordBuildingHistory('demolished', { id: removedInstanceId, type: buildingId, x, y });
       }
 
       if (cascadeOutcome?.destroyed?.length) {

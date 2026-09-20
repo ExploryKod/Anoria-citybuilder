@@ -135,6 +135,7 @@ export class EvolveHouseBuilding {
       previousPop: resolution.previousPop,
       targetPop: resolution.targetPop,
       reason: resolution.reason,
+      unmetRequirements: resolution.unmetRequirements,
     };
   }
 }

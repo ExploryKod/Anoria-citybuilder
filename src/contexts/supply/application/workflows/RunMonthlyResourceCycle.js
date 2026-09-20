@@ -71,7 +71,6 @@ export class RunMonthlyResourceCycle {
 
     await this.traceability.recordChainStates(timeInfo);
     await this.traceability.recordPopulationStates(timeInfo);
-    await this.traceability.recordBuildingStates(timeInfo);
 
     const surplus = await this.runHubSurplusCycle.execute({
       month,
@@ -106,5 +105,9 @@ export class RunMonthlyResourceCycle {
       timeInfo,
       consumptions.map((r) => ({ ...r, houseId: r.buildingId }))
     );
+
+    // Last, so the state is what the tick ended with — after collection, distribution and
+    // the meal — and not what it started from.
+    await this.traceability.recordBuildingStates(timeInfo);
   }
 }

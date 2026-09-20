@@ -587,7 +587,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
  * @param {Array<object>} allHouses Current houses — only used for saves without a population log.
  * @returns {{ dataByYearMonth: Record<string, { year: number, month: number, fedPopulation: number, unfedPopulation: number }>, years: Set<number> }}
  */
-function computeMonthlyFoodStats(transactions, allHouses) {
+export function computeMonthlyFoodStats(transactions, allHouses) {
         // Group consumption transactions by year and month to get fed population
         const dataByYearMonth = {};
         const years = new Set();
@@ -625,6 +625,15 @@ function computeMonthlyFoodStats(transactions, allHouses) {
                     )
                     .forEach(t => { monthPopulation[t.fromId || t.fromCoords] = t.quantity; });
                 const hasPopulationLog = Object.keys(monthPopulation).length > 0;
+
+                // A house that ate is counted at the size it had at the meal: people born
+                // afterwards this month did not eat yet, they are not "unfed"
+                monthConsumptions.forEach(consumption => {
+                    const houseKey = consumption.fromId || consumption.fromCoords;
+                    if (houseKey && Number.isFinite(consumption.pop) && houseKey in monthPopulation) {
+                        monthPopulation[houseKey] = consumption.pop;
+                    }
+                });
 
                 if (monthConsumptions.length === 0 && !hasPopulationLog) {
                     // Nothing recorded for this month

@@ -133,6 +133,38 @@ describe('Housing — house progression', () => {
       expect(result.changed).toBe(false);
     });
 
+    test('a demotion says which requirement of the tier no longer holds', () => {
+      // The lowest tier that asks for goods variety; every other requirement of it is met
+      const tiers = SOCIAL_CATEGORY.artisans.tiers;
+      const level = Number(
+        Object.keys(tiers).find((n) => tiers[n].requirements.some((r) => r.kind === 'goodsVariety'))
+      );
+      const periodKey = 5;
+      const servedFlags = Object.fromEntries(
+        Object.values(tiers)
+          .flatMap((tier) => tier.requirements)
+          .filter((r) => r.kind === 'serviceCoverage')
+          .map((r) => [r.category, periodKey])
+      );
+
+      const result = resolveHouseLevel({
+        level,
+        pop: 12,
+        roadCount: 1,
+        residentialGroup: 'artisans',
+        servedFlags,
+        // The house ate, but drew from one good only
+        lastConsumption: { month: periodKey, demand: 12, taken: 12, totalUnfed: 0, categoriesTaken: ['carrot'] },
+        periodKey,
+      });
+
+      expect(result.changed).toBe(true);
+      expect(result.reason).toMatch(/requirements_lost$/);
+      expect(result.unmetRequirements).toEqual([
+        expect.objectContaining({ kind: 'goodsVariety', min: 2, current: 1, target: 2 }),
+      ]);
+    });
+
     test('level 1 stays autarkic without road access', () => {
       const result = resolveHouseLevel({ level: 1, pop: 3, roadCount: 0, residentialGroup: 'artisans' });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);

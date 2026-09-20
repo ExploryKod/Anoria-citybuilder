@@ -73,6 +73,8 @@ export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, ser
   let targetLevel = previousLevel;
   let targetPop = previousPop;
   let reason;
+  /** Why a demotion happened: the requirements of the tier that no longer hold. */
+  let unmetRequirements;
 
   if (tiers) {
     const context = { pop: previousPop, roadCount: roadCount ?? 0, servedFlags, lastConsumption, periodKey };
@@ -87,6 +89,9 @@ export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, ser
         targetLevel = previousLevel - 1;
         targetPop = Math.min(previousPop, maxPopulationForLevel(targetLevel, residentialGroup));
         reason = `level${previousLevel}_to_level${targetLevel}_requirements_lost`;
+        unmetRequirements = describeTierRequirements(currentTier.requirements, context)
+          .filter((item) => !item.met)
+          .map(({ kind, category, min, current, target }) => ({ kind, category, min, current, target }));
       }
     }
   }
@@ -100,6 +105,7 @@ export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, ser
     previousPop,
     changed,
     reason,
+    unmetRequirements,
   };
 }
 

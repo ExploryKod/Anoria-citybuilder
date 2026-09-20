@@ -128,7 +128,7 @@ export class DexieSupplyTraceabilityRepository {
     );
   }
 
-  async recordHouseConsumption(turn, month, year, house, foodType, quantity, _citizens) {
+  async recordHouseConsumption(turn, month, year, house, foodType, quantity, citizens) {
     await this.addTransaction(
       turn,
       month,
@@ -138,7 +138,9 @@ export class DexieSupplyTraceabilityRepository {
       null,
       foodType,
       quantity,
-      0
+      0,
+      // Inhabitants who sat at the table: the ones born afterwards did not
+      { pop: Number.isFinite(citizens) ? citizens : null }
     );
   }
 

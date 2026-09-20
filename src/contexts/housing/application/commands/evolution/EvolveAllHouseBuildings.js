@@ -49,6 +49,7 @@ export class EvolveAllHouseBuildings {
           previousPop: result.previousPop,
           targetPop: result.targetPop,
           reason: result.reason,
+          unmetRequirements: result.unmetRequirements,
         });
       }
     }
