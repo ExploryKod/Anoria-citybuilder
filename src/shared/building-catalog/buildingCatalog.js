@@ -34,7 +34,7 @@
  * Section ownership:
  *   displayName      → presentation (toasts, tooltips, UI labels)
  *   construction     → construction BC + presentation (cost, UI category)
- *   employment       → employment BC (sector, worker/elite requirements)
+ *   employment       → employment BC (sector, worker requirements)
  *   accounting       → accounting BC (recurring maintenance cost)
  *   residentialGroup → permanent social group tied to a house color (Housing +
  *     Employment). Never changes after placement — unlike `level`, which is
@@ -64,7 +64,6 @@
  * @property {number} sector
  * @property {number} [workerNeed] Omitted when computed dynamically by the
  *   owning bounded context.
- * @property {number} [eliteNeed]
  * @property {string} [requiredSkill] Citizen skill a worker must have to staff
  *   this workplace (see shared/population/socialCategoryCatalog.js). Omitted
  *   means any worker can staff it.

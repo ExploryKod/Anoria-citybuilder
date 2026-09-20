@@ -217,13 +217,8 @@ export class StorageSectionPresenter {
                         <label>Ouvriers:</label>
                         <span class="storage-employee-value">${windmill.employees.worker || 0} / ${windmill.employees.worker_need || 0}</span>
                     </div>
-                    <div class="storage-employee-item">
-                        <label>Élites:</label>
-                        <span class="storage-employee-value">${windmill.employees.elite || 0} / ${windmill.employees.elite_need || 0}</span>
-                    </div>
                     <div class="storage-employee-status">
-                        ${(windmill.employees.worker || 0) >= (windmill.employees.worker_need || 0) && 
-                          (windmill.employees.elite || 0) >= (windmill.employees.elite_need || 0) 
+                        ${(windmill.employees.worker || 0) >= (windmill.employees.worker_need || 0)
                             ? '<span class="storage-status-success">✅ Le moulin a tout ce qu\'il faut pour fonctionner</span>'
                             : '<span class="storage-status-warning">⚠️ Le moulin ne peut fonctionner à sa pleine capacité</span>'}
                     </div>

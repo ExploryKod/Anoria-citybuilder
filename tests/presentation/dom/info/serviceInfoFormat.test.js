@@ -18,7 +18,7 @@ function vmFor(buildingType, { roads = 1, worker = 0, workerNeed = 2 } = {}) {
     buildingPop: 0,
     buildingRow: {
       roads,
-      employees: { worker, worker_need: workerNeed, elite: 0, elite_need: 0, sector: 6 },
+      employees: { worker, worker_need: workerNeed, sector: 6 },
     },
     employment: fakeEmployment,
   };

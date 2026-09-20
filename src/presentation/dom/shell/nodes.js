@@ -47,12 +47,6 @@ export const displayPopCitizens = document.querySelector(
 export const displayPopCitizensHamlet = document.querySelector(
     `${popHudRoot} .pop-segment--citizen .pop-segment-value--hamlet`
 );
-export const displayPopElites = document.querySelector(
-    `${popHudRoot} .pop-segment--elite .pop-segment-value.pop-detail-value--country`
-);
-export const displayPopElitesHamlet = document.querySelector(
-    `${popHudRoot} .pop-segment--elite .pop-segment-value--hamlet`
-);
 export const displayPopServants = document.querySelector(
     `${popHudRoot} .pop-segment--servant .pop-segment-value.pop-detail-value--country`
 );

@@ -12,7 +12,7 @@
  * change what unlocks one, in the catalog only.
  *
  * Palace (`House-2Story`) keeps its own frozen path in `HouseEvolutionPolicy`
- * — see `EvolveHouseBuilding` — untouched by this module. // TODO(elites)
+ * — see `EvolveHouseBuilding` — untouched by this module.
  */
 
 import { maxPopulationForLevel } from './HouseCapacityPolicy.js';

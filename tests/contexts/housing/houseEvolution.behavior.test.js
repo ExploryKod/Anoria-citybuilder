@@ -5,7 +5,7 @@
  * `HouseGroupSectorEligibilityPolicy` in Employment); only their `level`
  * (1 = autarky, 2 = group profession) evolves — see `HouseLevelPolicy`.
  * Palace (`House-2Story`) keeps its own frozen color-ladder path via
- * `HouseEvolutionPolicy.resolveHouseEvolution` // TODO(elites).
+ * `HouseEvolutionPolicy.resolveHouseEvolution`.
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';

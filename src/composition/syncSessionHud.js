@@ -52,13 +52,11 @@ export async function syncPopRailHud(gameUI) {
     gameUI.updatePopulationBreakdown?.(
       country.totalPop ?? 0,
       country.employment.activeCitizenCount ?? 0,
-      country.employment.elitePool ?? 0,
       country.employment.civilServantCount ?? 0,
       country.employment.activePopulationCount ?? 0,
       {
         totalPop: hamlet.totalPop ?? 0,
         activeCitizenCount: hamlet.employment.activeCitizenCount ?? 0,
-        elitePool: hamlet.employment.elitePool ?? 0,
         civilServantCount: hamlet.employment.civilServantCount ?? 0,
         activePopulationCount: hamlet.employment.activePopulationCount ?? 0,
       }

@@ -17,7 +17,7 @@ function workplaceVm(buildingType, { roads = 1, worker = 2, workerNeed = 2 } = {
     buildingType,
     buildingRow: {
       roads,
-      employees: { worker, worker_need: workerNeed, elite: 0, elite_need: 0, sector: 6 },
+      employees: { worker, worker_need: workerNeed, sector: 6 },
     },
   });
 }

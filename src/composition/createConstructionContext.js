@@ -195,8 +195,7 @@ export function createConstructionContext({
       const employees = buildingData.employees;
       const needsUpdate =
         employees.category !== undefined ||
-        employees.worker_need === undefined ||
-        employees.elite_need === undefined;
+        employees.worker_need === undefined;
 
       if (!needsUpdate) return;
 
@@ -206,9 +205,7 @@ export function createConstructionContext({
           priority:
             employees.priority !== undefined ? employees.priority : defaultEmployees.priority,
           worker_need: defaultEmployees.worker_need,
-          elite_need: defaultEmployees.elite_need,
           worker: employees.worker || 0,
-          elite: employees.elite || 0,
           sector:
             employees.category !== undefined
               ? employees.category

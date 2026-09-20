@@ -1,9 +1,8 @@
 /**
- * House population: citizens (worker-eligible) vs élites (additive at palace).
+ * House population: every resident is a citizen, worker-eligible.
  *
- * - Regular house: pop = citizens only (max 6).
- * - Palace: up to 6 citizens + élites beyond citizen cap (pop 7 → 6 citizens + 1 élite).
- * - workerPop excludes élites; food consumes full pop (élites eat).
+ * - Regular house: pop = citizens (max 6).
+ * - Palace: one more slot than a regular house (pop 7).
  *
  * Which SKILL a house's citizens can work with, at which level, is a
  * catalog fact (shared/population/socialCategoryCatalog.js via
@@ -17,7 +16,7 @@ export const HOUSE_CITIZEN_CAP = 6;
 /** Max total pop for a regular house (citizens only). */
 export const REGULAR_HOUSE_MAX_POP = HOUSE_CITIZEN_CAP;
 
-/** Max total pop for a palace (6 citizens + 1 élite slot at this stage). */
+/** Max total pop for a palace (one slot more than a regular house). */
 export const PALACE_MAX_POP = HOUSE_CITIZEN_CAP + 1;
 
 /**
@@ -46,19 +45,7 @@ function clampPop(pop) {
 }
 
 /**
- * Élites in a palace: population beyond the citizen cap (additive, not subtracted from citizens).
- * @param {string} type
- * @param {number} pop
- * @returns {number}
- */
-export function elitePopFromHouse(type, pop) {
-  const p = clampPop(pop);
-  if (p <= 0 || !isPalaceHouseType(type)) return 0;
-  return Math.max(0, p - HOUSE_CITIZEN_CAP);
-}
-
-/**
- * Citizens (non-élite residents); eligible for worker jobs.
+ * Citizens (every resident); eligible for worker jobs.
  *
  * Eligibility for any ONE job is entirely skill-driven (does this house's
  * tier grant the job's required skill, at the required level? — see
@@ -73,13 +60,12 @@ export function elitePopFromHouse(type, pop) {
  * @param {number} pop
  * @returns {number}
  */
-export function citizenPopFromHouse(type, pop) {
-  const p = clampPop(pop);
-  return p - elitePopFromHouse(type, p);
+export function citizenPopFromHouse(_type, pop) {
+  return clampPop(pop);
 }
 
 /**
- * Worker pool contribution from a house (citizens only — élites excluded).
+ * Worker pool contribution from a house (every resident).
  * Callers may still pass a `level` (unused here — kept accepted, not read,
  * so existing call sites built around a per-house snapshot don't need an
  * unrelated signature edit) for skill eligibility, decided upstream.
@@ -92,7 +78,7 @@ export function workerPopFromHouse(type, pop) {
 }
 
 /**
- * Pop granted when a house evolves into a palace (+1 élite, citizens unchanged).
+ * Pop granted when a house evolves into a palace (one more resident).
  * @param {number} currentPop
  * @returns {number}
  */
@@ -101,12 +87,12 @@ export function popAfterPalaceEvolution(currentPop) {
 }
 
 /**
- * Pop after palace regression (remove additive élites).
+ * Pop after palace regression (back to the regular house cap).
  * @param {string} palaceType
  * @param {number} currentPop
  * @returns {number}
  */
 export function popAfterPalaceRegression(palaceType, currentPop) {
   const p = clampPop(currentPop);
-  return Math.max(0, p - elitePopFromHouse(palaceType, p));
+  return isPalaceHouseType(palaceType) ? Math.min(p, HOUSE_CITIZEN_CAP) : p;
 }

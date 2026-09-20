@@ -16,7 +16,6 @@ describe('Shared Kernel: CitizenStatusCatalog', () => {
     'worker',
     'unemployed',
     'civil-servant',
-    'elite',
     'youth',
     'retired',
   ];
@@ -123,7 +122,8 @@ describe('Shared Kernel: CitizenStatusCatalog', () => {
     test('getSkillNames returns skill names array', () => {
       expect(getSkillNames('hunter-gatherer')).toEqual(['subsistence-forager']);
       expect(getSkillNames('worker')).toEqual(['subsistence-forager', 'employment-eligible']);
-      expect(getSkillNames('elite')).toEqual(['governance']);
+      // The élite status no longer exists: an unknown status has no skills
+      expect(CITIZEN_STATUS_PROFILES.elite).toBeUndefined();
     });
   });
 
@@ -154,12 +154,6 @@ describe('Shared Kernel: CitizenStatusCatalog', () => {
       expect(profile.employment.countsInLaborPool).toBe(false);
       expect(profile.accounting.incomeSource).toBe('city-paid');
       expect(profile.accounting.incomeMultiplier).toBe(1.0);
-    });
-
-    test('elites have income bonus and are outside labor pool', () => {
-      const profile = CITIZEN_STATUS_PROFILES.elite;
-      expect(profile.employment.countsInLaborPool).toBe(false);
-      expect(profile.accounting.incomeMultiplier).toBeGreaterThan(1.0);
     });
 
     test('youth and retired are not economically active', () => {
@@ -213,12 +207,6 @@ describe('Shared Kernel: CitizenStatusCatalog', () => {
       expect(CITIZEN_STATUS_PROFILES.unemployed.rights.income.source).toBe('city-paid');
     });
 
-    test('elite has NO subsistence skill (palace luxury)', () => {
-      const profile = CITIZEN_STATUS_PROFILES.elite;
-      expect(profile.skills['subsistence-forager']).toBeUndefined();
-      expect(profile.skills['governance']).toBeDefined();
-    });
-
     test('civil-servant has administration skill, not regular employment', () => {
       const profile = CITIZEN_STATUS_PROFILES['civil-servant'];
       expect(profile.skills['subsistence-forager']).toBeDefined();
@@ -261,12 +249,6 @@ describe('Shared Kernel: CitizenStatusCatalog', () => {
 
     test('civil-servant lives in level 2', () => {
       const profile = getCitizenStatusProfile('civil-servant');
-      expect(profile.housingMetadata.typicalLevel).toBe(2);
-      expect(profile.housingMetadata.constraint).toBe('none');
-    });
-
-    test('elite lives in level 2 (like other workers)', () => {
-      const profile = getCitizenStatusProfile('elite');
       expect(profile.housingMetadata.typicalLevel).toBe(2);
       expect(profile.housingMetadata.constraint).toBe('none');
     });

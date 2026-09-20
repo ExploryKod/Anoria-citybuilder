@@ -7,7 +7,7 @@ import { residentialGroupForHouseType } from '../../../domain/policies/GroupSkil
  * Command: evaluate and persist house progression for one residential building.
  *
  * - Palace (`House-2Story`): frozen legacy path — `resolveHouseEvolution`
- *   (color ladder), unchanged. // TODO(elites)
+ *   (color ladder), unchanged.
  * - Blue/Red/Purple: `HouseLevelPolicy` — color is permanent, only `level`
  *   (1 <-> 2) evolves.
  */

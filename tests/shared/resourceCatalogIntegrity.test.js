@@ -5,15 +5,21 @@
  *  - every distributor declares its own reach (`range`), no global fallback;
  *  - every stock-holding market/hub declares its `maxStock`;
  *  - every good a role uses has ONE presentation entry (name, emoji);
- *  - no good's name is written in the code (only catalogs may spell one).
+ *  - no good's name is written in the code (only catalogs may spell one);
+ *  - the food loop can be closed: the catalog's numbers never make feeding a city impossible.
  */
 
 import fs from 'fs';
 import path from 'path';
 import { describe, test, expect } from '@jest/globals';
 import { buildingCatalog } from '../../src/shared/building-catalog/buildingCatalog.js';
+import { SOCIAL_CATEGORY } from '../../src/shared/population/socialCategoryCatalog.js';
+import { CITIZENS_PER_CIVIL_SERVANT } from '../../src/contexts/accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
+import { MONTHS } from '../../src/shared/time/TimeCalendar.js';
 import {
   getAllCategoriesForRole,
+  getAnnualSupplyEntry,
+  getPerCapitaDemand,
   getResourceRoles,
   getResourceStockShape,
   getMaxStockForBuilding,
@@ -127,5 +133,51 @@ describe('no good is named in code', () => {
       if (pattern.test(stripComments(fs.readFileSync(file, 'utf8')))) offenders.push(relative);
     }
     expect(offenders).toEqual([]);
+  });
+});
+
+/**
+ * Can a city feed itself with these rules? Feeding P inhabitants for a year takes
+ * P × (baskets per inhabitant per year ÷ a farm's yield) farms, and each farm needs
+ * `workerNeed` farmers holding the farm's skill — a skill only some social groups have.
+ * So the farmers a city needs, per inhabitant, must fit inside the labor pool the
+ * farm-capable groups provide (every resident works, minus the civil servants).
+ * The share of the population that has to be farm-capable is the number to watch:
+ * at or above 100 % no city could ever feed itself, whatever the player builds.
+ *
+ * Trade may one day make that dependence deliberate; the expectation below is then to
+ * be changed consciously, not by accident when a number is tuned.
+ */
+describe('economy catalog — the food loop can be closed', () => {
+  const farms = Object.keys(buildingCatalog)
+    .filter((type) => getAnnualSupplyEntry(type))
+    .map((type) => ({
+      type,
+      skill: buildingCatalog[type].employment.requiredSkill,
+      farmersPerBasket: buildingCatalog[type].employment.workerNeed / getAnnualSupplyEntry(type).amount,
+    }));
+
+  const groupsGranting = (skill) =>
+    Object.entries(SOCIAL_CATEGORY)
+      .filter(([, group]) => Object.values(group.tiers).some((tier) => skill in tier.skills))
+      .map(([id]) => id);
+
+  test('every farm asks for a skill some social group can hold', () => {
+    expect(farms.length).toBeGreaterThan(0);
+    for (const { type, skill } of farms) {
+      expect({ type, groups: groupsGranting(skill).length > 0 }).toEqual({ type, groups: true });
+    }
+  });
+
+  test('the farmers needed per inhabitant fit in the labor pool of the farm-capable groups', () => {
+    const basketsPerInhabitantPerYear = getPerCapitaDemand() * MONTHS.length;
+    const workersPerInhabitant = 1 - 1 / CITIZENS_PER_CIVIL_SERVANT;
+
+    for (const { type, farmersPerBasket } of farms) {
+      const farmersPerInhabitant = basketsPerInhabitantPerYear * farmersPerBasket;
+      const farmCapableShareNeeded = farmersPerInhabitant / workersPerInhabitant;
+      // Below 1: a city made only of farm-capable residents can feed itself
+      expect({ type, soluble: farmCapableShareNeeded < 1 }).toEqual({ type, soluble: true });
+    }
   });
 });

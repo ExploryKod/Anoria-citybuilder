@@ -14,7 +14,7 @@ import { isRoadNeedMet } from '../../../../shared/building-catalog/resourceRoleQ
  * of road access — level 1 is autarkic by design (no road), and level 2's
  * road requirement is gated/enforced by `HouseLevelPolicy` (which demotes
  * the level, and clamps population, when the road is lost). Palace keeps its
- * historical road-gated behavior untouched (frozen path). // TODO(elites)
+ * historical road-gated behavior untouched (frozen path).
  *
  * @param {object} params
  * @param {string} params.type

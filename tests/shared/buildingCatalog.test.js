@@ -110,9 +110,9 @@ describe('EmploymentSectorCatalog — derived employment facts', () => {
   });
 
   test('static employee needs match catalog values', () => {
-    expect(BUILDING_EMPLOYEE_NEEDS['Farm-Wheat']).toEqual({ worker_need: 3, elite_need: 0 });
-    expect(BUILDING_EMPLOYEE_NEEDS['Windmill-001']).toEqual({ worker_need: 4, elite_need: 2 });
-    expect(BUILDING_EMPLOYEE_NEEDS['StonePath-001']).toEqual({ worker_need: 0, elite_need: 0 });
+    expect(BUILDING_EMPLOYEE_NEEDS['Farm-Wheat']).toEqual({ worker_need: 3 });
+    expect(BUILDING_EMPLOYEE_NEEDS['Windmill-001']).toEqual({ worker_need: 4 });
+    expect(BUILDING_EMPLOYEE_NEEDS['StonePath-001']).toEqual({ worker_need: 0 });
   });
 });
 

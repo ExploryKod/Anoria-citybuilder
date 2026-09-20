@@ -339,8 +339,6 @@ export class SupplyTraceability {
         stocks: Object.fromEntries(Object.entries(row.stocks ?? {}).filter(([, amount]) => amount > 0)),
         workers: row.employees?.worker ?? null,
         workerNeed: row.employees?.worker_need ?? null,
-        elite: row.employees?.elite ?? null,
-        eliteNeed: row.employees?.elite_need ?? null,
         servedFlags: row.servedFlags ?? null,
         lastConsumption: row.lastConsumption ?? null,
       };

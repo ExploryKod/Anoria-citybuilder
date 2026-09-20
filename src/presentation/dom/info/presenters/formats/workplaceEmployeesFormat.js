@@ -21,9 +21,7 @@ export function formatWorkplaceEmployeesPanel(buildingData, employment) {
   const buildingType = buildingData.type || '';
   const employees = buildingData.employees;
   const workerNeed = employees.worker_need || 0;
-  const eliteNeed = employees.elite_need || 0;
   const workers = employees.worker || 0;
-  const elites = employees.elite || 0;
   const sector = employees.sector || 0;
   // Priority is set per skill now, not per sector (see SkillPriorityPolicy.js
   // — a sector like "Services Publics" spans several unrelated skills, each
@@ -43,7 +41,6 @@ export function formatWorkplaceEmployeesPanel(buildingData, employment) {
             ]
           : []),
         { label: 'Ouvriers', value: `${workers}/${workerNeed}` },
-        { label: 'Élites', value: `${elites}/${eliteNeed}` },
       ],
     }],
   };

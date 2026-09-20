@@ -307,62 +307,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
   }),
 
   /**
-   * Elite (palace resident beyond citizen cap).
-   * Leadership role, no subsistence production (palace luxury).
-   */
-  elite: Object.freeze({
-    // Skills: NO subsistence (palace provides), governance/leadership only
-    skills: Object.freeze({
-      'governance': Object.freeze({
-        description: 'Direction et gouvernance',
-        providesService: 'leadership',
-        influencesPolicy: true, // Future: policy decisions
-      }),
-    }),
-    
-    // Duties: pays taxes, leadership obligation
-    duties: Object.freeze({
-      taxpayer: true, // Future: higher rate?
-      payrollTax: true,
-      leadership: true, // Must govern
-    }),
-    
-    // Rights: double income
-    rights: Object.freeze({
-      income: Object.freeze({
-        receives: true,
-        source: 'employer-paid', // Or 'palace-revenue'
-        multiplier: 2.0, // Elite income bonus
-      }),
-    }),
-    
-    // Housing metadata (descriptive, NOT enforced by this catalog)
-    housingMetadata: Object.freeze({
-      typicalLevel: 2, // Lives in masure (level 2) - including palace
-      constraint: 'none',
-      description: 'Réside en masure (niveau 2). Dirigeants et élites de la ville.',
-    }),
-    
-    // Legacy projections
-    housing: Object.freeze({
-      contributesToGrowth: false, // additive slot, not growth
-      consumesFood: true,
-    }),
-    employment: Object.freeze({
-      isEmployable: false,
-      eligibleSectors: 'none',
-      countsInLaborPool: false,
-    }),
-    accounting: Object.freeze({
-      paysCitizenTax: true,
-      paysPayrollTax: true,
-      receivesIncome: true,
-      incomeSource: 'employer-paid',
-      incomeMultiplier: 2.0,
-    }),
-  }),
-
-  /**
    * Youth (future: age < 16, not yet implemented).
    * Minor, not economically active, can attend school.
    */
@@ -485,7 +429,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
 
 /**
  * Resolve citizen status from house level (current game state).
- * Palace élites are tracked separately via `elitePopFromHouse`.
  *
  * @param {number} level
  * @returns {keyof typeof CITIZEN_STATUS_PROFILES}

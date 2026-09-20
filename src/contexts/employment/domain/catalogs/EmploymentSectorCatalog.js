@@ -43,22 +43,18 @@ export const BUILDING_SECTOR_MAP = Object.freeze({
 });
 
 /**
- * Derived from `buildingCatalog` for every type with static worker/elite needs.
- * @type {Readonly<Record<string, { worker_need: number, elite_need: number }>>}
+ * Derived from `buildingCatalog` for every type with a static worker need.
+ * @type {Readonly<Record<string, { worker_need: number }>>}
  */
 export const BUILDING_EMPLOYEE_NEEDS = Object.freeze({
   ...Object.fromEntries(
     Object.entries(buildingCatalog)
       .filter(([, def]) => def.employment?.workerNeed !== undefined)
-      .map(([id, def]) => [
-        id,
-        { worker_need: def.employment.workerNeed, elite_need: def.employment.eliteNeed ?? 0 },
-      ])
+      .map(([id, def]) => [id, { worker_need: def.employment.workerNeed }])
   ),
   // Same 'roads' runtime-marker alias as BUILDING_SECTOR_MAP above.
   roads: {
     worker_need: buildingCatalog['StonePath-001'].employment.workerNeed,
-    elite_need: buildingCatalog['StonePath-001'].employment.eliteNeed ?? 0,
   },
 });
 

@@ -10,12 +10,6 @@ export const STATUS_PRESENTATION = Object.freeze({
     singular: 'chasseur-cueilleur',
     plural: 'chasseurs-cueilleurs',
   }),
-  elite: Object.freeze({
-    label: 'Élites',
-    emoji: '👑',
-    singular: 'élite',
-    plural: 'élites',
-  }),
 });
 
 /** @type {Readonly<Record<string, { label: string, emoji: string, singular: string, plural: string }>>} */
@@ -53,5 +47,4 @@ export const DEFAULT_RESIDENTIAL_GROUP = 'artisans';
 export const PROFILE_DISPLAY_ORDER = Object.freeze([
   'hunter-gatherer',
   'worker',
-  'elite',
 ]);

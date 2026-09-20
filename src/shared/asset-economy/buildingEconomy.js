@@ -112,7 +112,7 @@ export const BUILDING_ECONOMY = {
   'StonePath-001': {
     displayName: 'Chemin de pierre',
     construction: { price: 5, category: 'infrastructure' },
-    employment: { sector: 5, workerNeed: 0, eliteNeed: 0 },
+    employment: { sector: 5, workerNeed: 0 },
     accounting: { maintenance: 4 },
   },
   'StonePath-Right-001': {
@@ -186,7 +186,7 @@ export const BUILDING_ECONOMY = {
     displayName: 'Champ de blé',
     requiresRoad: false,
     construction: { price: 10, category: 'farms' },
-    employment: { sector: 1, workerNeed: 3, eliteNeed: 0, requiredSkill: 'fermier' },
+    employment: { sector: 1, workerNeed: 3, requiredSkill: 'fermier' },
     resourceRoles: [{
       role: 'producer',
       categories: ['wheat'],
@@ -199,7 +199,7 @@ export const BUILDING_ECONOMY = {
     displayName: 'Champ de carottes',
     requiresRoad: false,
     construction: { price: 20, category: 'farms' },
-    employment: { sector: 1, workerNeed: 3, eliteNeed: 0, requiredSkill: 'fermier' },
+    employment: { sector: 1, workerNeed: 3, requiredSkill: 'fermier' },
     resourceRoles: [{
       role: 'producer',
       categories: ['carrot'],
@@ -212,7 +212,7 @@ export const BUILDING_ECONOMY = {
     displayName: 'Champ de choux',
     requiresRoad: false,
     construction: { price: 30, category: 'farms' },
-    employment: { sector: 1, workerNeed: 3, eliteNeed: 0, requiredSkill: 'fermier' },
+    employment: { sector: 1, workerNeed: 3, requiredSkill: 'fermier' },
     resourceRoles: [{
       role: 'producer',
       categories: ['cabbage'],
@@ -239,7 +239,7 @@ export const BUILDING_ECONOMY = {
   'Factory-Plate': {
     displayName: 'Atelier de plats',
     construction: { price: 40, category: 'industry' },
-    employment: { sector: 3, workerNeed: 2, eliteNeed: 0, requiredSkill: 'artisanat' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
     resourceRoles: [{
       role: 'producer',
       categories: ['plate'],
@@ -251,7 +251,7 @@ export const BUILDING_ECONOMY = {
   'Factory-Pot': {
     displayName: 'Atelier de pots',
     construction: { price: 55, category: 'industry' },
-    employment: { sector: 3, workerNeed: 2, eliteNeed: 0, requiredSkill: 'artisanat' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
     resourceRoles: [{
       role: 'producer',
       categories: ['pot'],
@@ -263,7 +263,7 @@ export const BUILDING_ECONOMY = {
   'Factory-Amphora': {
     displayName: 'Atelier d\'amphores',
     construction: { price: 70, category: 'industry' },
-    employment: { sector: 3, workerNeed: 2, eliteNeed: 0, requiredSkill: 'artisanat' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
     resourceRoles: [{
       role: 'producer',
       categories: ['amphora'],
@@ -277,7 +277,7 @@ export const BUILDING_ECONOMY = {
   'Windmill-001': {
     displayName: 'Moulin',
     construction: { price: 50, category: 'industry' },
-    employment: { sector: 4, workerNeed: 4, eliteNeed: 2, requiredSkill: 'stockage-alimentaire' },
+    employment: { sector: 4, workerNeed: 4, requiredSkill: 'stockage-alimentaire' },
     // No `range` on 'collector': today it collects city-wide (matches
     // RunHubSurplusCycle passing every source, unfiltered by distance).
     // A future resource can cap this with a range; food doesn't today.
@@ -309,7 +309,7 @@ export const BUILDING_ECONOMY = {
   'Market-Stall': {
     displayName: 'Étal',
     construction: { price: 10, category: 'markets' },
-    employment: { sector: 2, workerNeed: 2, eliteNeed: 1, requiredSkill: 'vente-alimentaire' },
+    employment: { sector: 2, workerNeed: 2, requiredSkill: 'vente-alimentaire' },
     // Unlimited reach (2026-09-11, same reasoning as Chapel below) — a
     // debugging aid so a house's food access is never confounded by tile
     // distance while chasing other bugs; `placementRequires`'s hub range
@@ -321,7 +321,7 @@ export const BUILDING_ECONOMY = {
   'Market-Stall-Blue': {
     displayName: 'Étal bleu',
     construction: { price: 10, category: 'markets' },
-    employment: { sector: 2, workerNeed: 2, eliteNeed: 1, requiredSkill: 'vente-alimentaire' },
+    employment: { sector: 2, workerNeed: 2, requiredSkill: 'vente-alimentaire' },
     // Unlimited reach (2026-09-11, same reasoning as Chapel below) — a
     // debugging aid so a house's food access is never confounded by tile
     // distance while chasing other bugs; `placementRequires`'s hub range
@@ -333,7 +333,7 @@ export const BUILDING_ECONOMY = {
   'Market-Stall-Red': {
     displayName: 'Étal rouge',
     construction: { price: 10, category: 'markets' },
-    employment: { sector: 2, workerNeed: 2, eliteNeed: 1, requiredSkill: 'vente-alimentaire' },
+    employment: { sector: 2, workerNeed: 2, requiredSkill: 'vente-alimentaire' },
     // Unlimited reach (2026-09-11, same reasoning as Chapel below) — a
     // debugging aid so a house's food access is never confounded by tile
     // distance while chasing other bugs; `placementRequires`'s hub range
@@ -352,7 +352,7 @@ export const BUILDING_ECONOMY = {
   Chapel: {
     displayName: 'Chapelle',
     construction: { price: 60, category: 'public' },
-    employment: { sector: 6, workerNeed: 2, eliteNeed: 0, requiredSkill: 'spiritual' },
+    employment: { sector: 6, workerNeed: 2, requiredSkill: 'spiritual' },
     // No hub leg — distributes straight from itself each cycle, same
     // pattern RunCityResourceCycle's own docstring anticipates for a
     // service like this (compare Market-Stall's hubLink above: none here).
@@ -377,7 +377,7 @@ export const BUILDING_ECONOMY = {
   'BookShop-001': {
     displayName: 'Librairie',
     construction: { price: 60, category: 'public' },
-    employment: { sector: 6, workerNeed: 2, eliteNeed: 0, requiredSkill: 'education' },
+    employment: { sector: 6, workerNeed: 2, requiredSkill: 'education' },
   },
   // Legacy save alias — same building as Chapel, kept for old saves
   'Church-002': { displayName: 'Chapelle', construction: { price: 60, category: 'public' } },
@@ -423,49 +423,49 @@ export const BUILDING_ECONOMY = {
   School: {
     displayName: 'École',
     construction: { price: 90, category: 'public' },
-    employment: { sector: 6, workerNeed: 3, eliteNeed: 0, requiredSkill: 'education' },
+    employment: { sector: 6, workerNeed: 3, requiredSkill: 'education' },
     resourceRoles: [{ role: 'distributor', categories: ['school'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Library: {
     displayName: 'Bibliothèque',
     construction: { price: 50, category: 'public' },
-    employment: { sector: 6, workerNeed: 2, eliteNeed: 0, requiredSkill: 'education' },
+    employment: { sector: 6, workerNeed: 2, requiredSkill: 'education' },
     resourceRoles: [{ role: 'distributor', categories: ['library'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Doctor: {
     displayName: 'Cabinet médical',
     construction: { price: 55, category: 'public' },
-    employment: { sector: 6, workerNeed: 2, eliteNeed: 0, requiredSkill: 'medical' },
+    employment: { sector: 6, workerNeed: 2, requiredSkill: 'medical' },
     resourceRoles: [{ role: 'distributor', categories: ['doctor'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Hospital: {
     displayName: 'Hôpital',
     construction: { price: 140, category: 'public' },
-    employment: { sector: 6, workerNeed: 4, eliteNeed: 0, requiredSkill: 'medical', requiredSkillLevel: 2 },
+    employment: { sector: 6, workerNeed: 4, requiredSkill: 'medical', requiredSkillLevel: 2 },
     resourceRoles: [{ role: 'distributor', categories: ['hospital'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   PublicBath: {
     displayName: 'Bains publics',
     construction: { price: 85, category: 'public' },
-    employment: { sector: 6, workerNeed: 3, eliteNeed: 0, requiredSkill: 'hygiene' },
+    employment: { sector: 6, workerNeed: 3, requiredSkill: 'hygiene' },
     resourceRoles: [{ role: 'distributor', categories: ['publicBath'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Theatre: {
     displayName: 'Théâtre',
     construction: { price: 130, category: 'public' },
-    employment: { sector: 6, workerNeed: 4, eliteNeed: 0, requiredSkill: 'entertainment', requiredSkillLevel: 2 },
+    employment: { sector: 6, workerNeed: 4, requiredSkill: 'entertainment', requiredSkillLevel: 2 },
     resourceRoles: [{ role: 'distributor', categories: ['theatre'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Cinema: {
     displayName: 'Cinéma',
     construction: { price: 95, category: 'public' },
-    employment: { sector: 6, workerNeed: 3, eliteNeed: 0, requiredSkill: 'entertainment' },
+    employment: { sector: 6, workerNeed: 3, requiredSkill: 'entertainment' },
     resourceRoles: [{ role: 'distributor', categories: ['cinema'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Pub: {
     displayName: 'Taverne',
     construction: { price: 45, category: 'public' },
-    employment: { sector: 6, workerNeed: 2, eliteNeed: 0, requiredSkill: 'hospitality' },
+    employment: { sector: 6, workerNeed: 2, requiredSkill: 'hospitality' },
     resourceRoles: [{ role: 'distributor', categories: ['pub'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
 };

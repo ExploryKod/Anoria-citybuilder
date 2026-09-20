@@ -21,17 +21,6 @@ function clampPop(pop) {
 }
 
 /**
- * @param {string} type
- * @param {number} pop
- * @returns {number}
- */
-export function elitePopFromHouse(type, pop) {
-  const p = clampPop(pop);
-  if (p <= 0 || !isPalaceHouseType(type)) return 0;
-  return Math.max(0, p - HOUSE_CITIZEN_CAP);
-}
-
-/**
  * @param {number} currentPop
  * @returns {number}
  */
@@ -46,7 +35,7 @@ export function popAfterPalaceEvolution(currentPop) {
  */
 export function popAfterPalaceRegression(palaceType, currentPop) {
   const p = clampPop(currentPop);
-  return Math.max(0, p - elitePopFromHouse(palaceType, p));
+  return isPalaceHouseType(palaceType) ? Math.min(p, HOUSE_CITIZEN_CAP) : p;
 }
 
 /**

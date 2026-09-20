@@ -142,23 +142,20 @@ describe('config.employment', () => {
             expect(buildingNeeds['Farm-Cabbage'].worker_need).toBe(3);
         });
 
-        test('les fermes ne nécessitent pas d\'élites', () => {
-            expect(buildingNeeds['Farm-Wheat'].elite_need).toBe(0);
+        test('les besoins ne comptent que des travailleurs', () => {
+            expect(buildingNeeds['Farm-Wheat']).toEqual({ worker_need: 3 });
         });
 
-        test('les marchés nécessitent des travailleurs ET des élites', () => {
+        test('les marchés nécessitent des travailleurs', () => {
             expect(buildingNeeds['Market-Stall'].worker_need).toBe(2);
-            expect(buildingNeeds['Market-Stall'].elite_need).toBe(1);
         });
 
         test('les moulins ont les plus gros besoins', () => {
             expect(buildingNeeds['Windmill-001'].worker_need).toBe(4);
-            expect(buildingNeeds['Windmill-001'].elite_need).toBe(2);
         });
 
         test('les routes ne nécessitent pas d\'employés', () => {
             expect(buildingNeeds['roads'].worker_need).toBe(0);
-            expect(buildingNeeds['roads'].elite_need).toBe(0);
         });
     });
 });
