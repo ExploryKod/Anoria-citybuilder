@@ -3,13 +3,19 @@
  */
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
+import { getResourceRoles, getResourceStockShape } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getResourceCategoryPresentation } from '../../../../../composition/supplyCatalog.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
 
 function productLabel(productType) {
-  if (productType === 'wheat') return 'Blé';
-  if (productType === 'carrot') return 'Carotte';
-  if (productType === 'cabbage') return 'Chou';
-  return productType;
+  return getResourceCategoryPresentation(productType).label;
+}
+
+/** Categories a building type produces, straight from the catalog. */
+function producedCategories(buildingType) {
+  return getResourceRoles(buildingType)
+    .filter((entry) => entry.role === 'producer')
+    .flatMap((entry) => entry.categories);
 }
 
 /**
@@ -17,10 +23,8 @@ function productLabel(productType) {
  * @returns {string}
  */
 function farmCropLabel(buildingType) {
-  if (buildingType.includes('Farm-Wheat')) return 'Blé';
-  if (buildingType.includes('Farm-Carrot')) return 'Carotte';
-  if (buildingType.includes('Farm-Cabbage')) return 'Chou';
-  return 'Culture';
+  const [category] = producedCategories(buildingType);
+  return category ? productLabel(category) : 'Culture';
 }
 
 /**
@@ -63,20 +67,15 @@ export function formatFarmOverviewModel(vm) {
  */
 export function formatFarmStocksModel(vm) {
   const { buildingType, stocks: initialStocks } = vm;
-  const houseStocks = initialStocks ?? { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+  const houseStocks = initialStocks ?? {};
+  const { totalKey } = getResourceStockShape();
 
   /** @type {import('../../buildingInfoTypes.js').InfoKvRow[]} */
-  const stockRows = [];
-  if (buildingType.includes('Farm-Wheat')) {
-    stockRows.push({ label: 'Blé', value: `${houseStocks.wheat || 0} paniers` });
-  }
-  if (buildingType.includes('Farm-Carrot')) {
-    stockRows.push({ label: 'Carottes', value: `${houseStocks.carrot || 0} paniers` });
-  }
-  if (buildingType.includes('Farm-Cabbage')) {
-    stockRows.push({ label: 'Légumes verts', value: `${houseStocks.cabbage || 0} paniers` });
-  }
-  stockRows.push({ label: 'Total', value: `${houseStocks.food || 0} paniers` });
+  const stockRows = producedCategories(buildingType).map((category) => ({
+    label: productLabel(category),
+    value: `${houseStocks[category] || 0} paniers`,
+  }));
+  stockRows.push({ label: 'Total', value: `${houseStocks[totalKey] || 0} paniers` });
 
   return {
     sections: [{ title: 'Stocks ferme', rows: stockRows }],

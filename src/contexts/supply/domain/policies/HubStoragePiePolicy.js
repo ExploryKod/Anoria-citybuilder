@@ -1,24 +1,11 @@
-/** Pie slice colors per commodity (dark = current stock). */
-export const HUB_STORAGE_PIE_COLORS = Object.freeze({
-  wood: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }),
-  furniture: Object.freeze({ dark: '#5D4037', pale: '#BCAAA4' }),
-  figs: Object.freeze({ dark: '#6A1B9A', pale: '#CE93D8' }),
-  wheat: Object.freeze({ dark: '#F9A825', pale: '#FFF59D' }),
-  cabbage: Object.freeze({ dark: '#388E3C', pale: '#A5D6A7' }),
-  carrot: Object.freeze({ dark: '#EF6C00', pale: '#FFCC80' }),
-  dattes: Object.freeze({ dark: '#795548', pale: '#D7CCC8' }),
-});
+import { getResourceCategoryColors } from '../catalogs/ResourceCategoryCatalog.js';
 
 /**
+ * Pie slice colors for a product — declared once, in ResourceCategoryCatalog.
  * @param {string} productId
  */
 export function getHubStoragePieColors(productId) {
-  return (
-    HUB_STORAGE_PIE_COLORS[productId] ?? {
-      dark: '#546E7A',
-      pale: '#B0BEC5',
-    }
-  );
+  return getResourceCategoryColors(productId);
 }
 
 /**

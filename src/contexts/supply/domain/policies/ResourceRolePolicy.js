@@ -1,20 +1,22 @@
-import { buildingCatalog, getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+import {
+  getResourceRoles,
+  getAllCategoriesForRole,
+  getResourceStockShape,
+  getMaxStockForBuilding,
+} from '../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Supply's derivation point for `resourceRoles` (see buildingCatalog.js) —
  * which resource categories a building type produces, collects, holds,
  * distributes, or consumes, and at what range. Building selection (which
  * type counts as a "farm" or "market" for a given step) reads this instead
- * of matching on the type's name string.
+ * of matching on the type's name string. The catalog-wide questions that
+ * other contexts also need (stock shape, all categories of a role, stock
+ * ceiling) live in shared/building-catalog/resourceRoleQueries.js and are
+ * re-exported here so Supply keeps a single import point.
  */
-
-/**
- * @param {string} buildingType
- * @returns {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleFacts[]}
- */
-export function getResourceRoles(buildingType) {
-  return getBuildingDefinition(buildingType)?.resourceRoles ?? [];
-}
+export { getResourceRoles, getAllCategoriesForRole, getResourceStockShape, getMaxStockForBuilding };
 
 /**
  * Resolves the one `resourceRoles` entry an accessor means, when a building
@@ -74,10 +76,32 @@ export function getCategoriesForRole(buildingType, role, category, consumption) 
  * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
  * @param {string} [category] Disambiguates when this role appears more than once.
  * @returns {number | undefined} Manhattan range for that role, or undefined
- *   (unbounded/not applicable) when the catalog doesn't declare one.
+ *   when the catalog doesn't declare one (see `requireRangeForRole` for the
+ *   strict variant a distributor must use).
  */
 export function getRangeForRole(buildingType, role, category) {
   return findRoleEntry(buildingType, role, { category })?.range;
+}
+
+/**
+ * A role's reach, or a loud error when the catalog forgot to declare it.
+ * `range` is the ONE place a building's reach lives (use `Infinity` for
+ * "everywhere") — there is deliberately no global fallback, so a missing
+ * declaration is a catalog bug to fix, never something to paper over.
+ * @param {string} buildingType
+ * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
+ * @param {string} [category]
+ * @returns {number}
+ * @throws {Error} When the catalog declares no `range` for this role.
+ */
+export function requireRangeForRole(buildingType, role, category) {
+  const range = getRangeForRole(buildingType, role, category);
+  if (range === undefined) {
+    throw new Error(
+      `[ResourceRolePolicy] "${buildingType}" role "${role}" declares no range in buildingEconomy.js`
+    );
+  }
+  return range;
 }
 
 /**
@@ -88,62 +112,6 @@ export function getRangeForRole(buildingType, role, category) {
  */
 export function getLinkCapacityForRole(buildingType, role) {
   return findRoleEntry(buildingType, role)?.linkCapacity;
-}
-
-/**
- * Every distinct category any building declares for a given role, derived
- * from the whole catalog — e.g. "a crop" is just "whatever some building
- * declares as a 'producer' category," not a hand-maintained list that can
- * drift from what farms actually produce.
- * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
- * @returns {ReadonlyArray<string>}
- */
-export function getAllCategoriesForRole(role) {
-  const categories = new Set();
-  for (const definition of Object.values(buildingCatalog)) {
-    for (const entry of definition.resourceRoles ?? []) {
-      if (entry.role !== role) continue;
-      for (const category of entry.categories) categories.add(category);
-    }
-  }
-  return Object.freeze([...categories]);
-}
-
-/**
- * The one stock shape shared by every building row today: every category any
- * building declares for a role that actually holds its own persistent
- * quantity stock — 'producer' (a farm's own harvest, a pottery workshop's
- * own output), 'collector'/'hub' (a windmill's pooled stock), and
- * 'consumer' in 'quantity' mode (a house's food demand). Categories/totalKey
- * are still a catalog fact, not a hand list — see buildingEconomy.js. A
- * 'distributor' role is excluded on purpose: 'quantity' mode pulls from a
- * linked hub rather than holding its own stock (see hubLink/allocatedStocks
- * on the hub side), and 'flag' mode (a service coverage need) carries no
- * stock at all — see DistributeResourceToConsumers.js.
- *
- * `totalKey` stays a single shared value because only ONE quantity good
- * (food) declares one today — a second independent good (e.g. pottery)
- * that only needs its own categories preserved, not an aggregate total,
- * works fine without one (see plate/pot/amphora in buildingEconomy.js,
- * each its own single-category role with no totalKey). If a second good
- * ever needs its OWN aggregate total (a pottery-collecting kiln/hub), this
- * function would need to return a totalKey PER good rather than one global
- * value — not needed yet.
- * @returns {{ categories: ReadonlyArray<string>, totalKey: string }}
- */
-export function getResourceStockShape() {
-  const categories = new Set();
-  let totalKey;
-  const STOCK_BEARING_ROLES = new Set(['producer', 'collector', 'hub']);
-  for (const definition of Object.values(buildingCatalog)) {
-    for (const entry of definition.resourceRoles ?? []) {
-      const isQuantityConsumer = entry.role === 'consumer' && (entry.consumption ?? 'quantity') === 'quantity';
-      if (!STOCK_BEARING_ROLES.has(entry.role) && !isQuantityConsumer) continue;
-      for (const category of entry.categories) categories.add(category);
-      if (entry.totalKey) totalKey = entry.totalKey;
-    }
-  }
-  return { categories: Object.freeze([...categories]), totalKey: totalKey ?? 'total' };
 }
 
 /**

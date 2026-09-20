@@ -81,14 +81,25 @@
  * @property {string[]} categories Resource categories this role applies to (e.g. ['wheat']).
  * @property {number} [range] Manhattan tiles this role reaches — only meaningful for
  *   'collector' (pulls from nearby producer/hub) and 'distributor' (pushes to
- *   nearby consumers). Omitted for 'producer'/'hub'/'consumer', which don't reach.
+ *   nearby consumers). REQUIRED on every 'distributor' (use Infinity for "everywhere"):
+ *   it is the only place a service's reach lives — no global fallback exists in code
+ *   (see ResourceRolePolicy.requireRangeForRole). Omitted for 'producer'/'hub'/'consumer'.
  * @property {number} [linkCapacity] Max number of distributors a 'hub' can
  *   stay linked to at once (e.g. how many markets one windmill can serve).
  *   Only meaningful for 'hub'.
- * @property {number} [maxStock] Max total units a 'hub' can hold before it's
- *   full. Omitted falls back to a small default (see
- *   DexieSupplyBuildingRepository#defaultMaxStock) — declare it explicitly
- *   for a hub that should hold more (or less) than that default.
+ * @property {number} [maxStock] Max total units this building type can hold
+ *   (a silo's storage, a market stall's shelves). Declared on the role
+ *   entry that holds the stock. Omitted means UNBOUNDED — there is no
+ *   hidden default anywhere in code; this is the only place a ceiling
+ *   is set. Read via resourceRoleQueries.getMaxStockForBuilding.
+ * @property {'building' | 'population'} [scale] Only for a 'producer'
+ *   entry on a building that has inhabitants (household gathering): how
+ *   `amount` is read. 'building' (default) = a fixed amount whatever the
+ *   population; 'population' = amount × the building's inhabitants.
+ * @property {boolean} [requiresOperational] A 'producer' is normally gated
+ *   on being operational (road + staffed, see OperationalGatePolicy.js).
+ *   `false` lifts that gate — e.g. a house gathering food without a road.
+ *   Defaults to true.
  * @property {{ unit: string }} [schedule] When this role only acts on a
  *   schedule (a farm harvesting once a year, a windmill collecting only in
  *   December) — see contexts/supply/domain/policies/ResourceSchedulePolicy.js

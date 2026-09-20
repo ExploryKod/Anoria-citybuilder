@@ -132,7 +132,8 @@ describe('Supply — GetBuildingSupplyView', () => {
     expect(dto.kind).toBe('windmill');
     expect(dto.isCollecting).toBe(true);
     expect(dto.lastCollection.wheat).toBe(20);
-    expect(dto.stocks.wood).toBe(1);
+    // A good the catalog does not declare is not carried through the view.
+    expect(dto.stocks.wood).toBeUndefined();
     expect(dto.maxStock).toBe(1000);
   });
 

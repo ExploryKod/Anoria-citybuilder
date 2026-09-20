@@ -1,4 +1,5 @@
 import { classifySupplyKind } from './GetBuildingSupplyView.js';
+import { createSupplyStock } from '../../domain/value-objects/SupplyStock.js';
 
 /**
  * Query: all buildings with Supply stocks (+ layout/pop) for admin food-traceability.
@@ -33,14 +34,7 @@ export class ListSupplyStockSnapshots {
       x: view.x,
       y: view.y,
       kind: classifySupplyKind(view.type),
-      stocks: {
-        wheat: view.stocks?.wheat || 0,
-        carrot: view.stocks?.carrot || 0,
-        cabbage: view.stocks?.cabbage || 0,
-        food: view.stocks?.food || 0,
-        dattes: view.stocks?.dattes || 0,
-        wood: view.stocks?.wood || 0,
-      },
+      stocks: createSupplyStock(view.stocks),
       pop: view.pop || 0,
     }));
   }

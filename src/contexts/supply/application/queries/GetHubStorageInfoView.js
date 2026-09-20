@@ -1,6 +1,7 @@
 import { getResourceCategoryPresentation } from '../../domain/catalogs/ResourceCategoryCatalog.js';
 import { buildHubStorageLines } from '../../domain/policies/HubStorageOrdersPolicy.js';
 import { buildHubStoragePieSegments } from '../../domain/policies/HubStoragePiePolicy.js';
+import { getMaxStockForBuilding } from '../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Read model for windmill hub info overlay (Cesar III inspired).
@@ -19,7 +20,7 @@ export class GetHubStorageInfoView {
     }
 
     const hubStocks = stocks ?? buildingRow.stocks ?? {};
-    const totalCapacity = maxStock ?? buildingRow.maxStock ?? 1000;
+    const totalCapacity = maxStock ?? getMaxStockForBuilding(buildingRow.type);
     const storage = buildHubStorageLines({
       buildingType: buildingRow.type,
       stocks: hubStocks,

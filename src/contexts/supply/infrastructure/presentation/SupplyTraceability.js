@@ -1,3 +1,5 @@
+import { getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+
 /**
  * Side-effect adapter — records supply chain movements in the traceability log.
  */
@@ -151,7 +153,7 @@ export class SupplyTraceability {
         timeInfo.monthIndex,
         timeInfo.year || 0,
         houseRef,
-        'food',
+        getResourceStockShape().totalKey,
         entry.taken,
         entry.pop
       );

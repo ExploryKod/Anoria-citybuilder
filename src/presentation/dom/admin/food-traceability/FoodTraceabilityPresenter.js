@@ -3,6 +3,46 @@
  */
 
 import { tryResolveBuildingInstanceIdFromRef } from '../../../../shared/building-identity/index.js';
+import { getAllCategoriesForRole, getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getResourceCategoryPresentation } from '../../../../composition/supplyCatalog.js';
+
+/** Goods the supply chain carries, and the aggregate they are filed under — both from the catalog. */
+const chainGoods = getAllCategoriesForRole('hub');
+export const chainTotalKey = getResourceStockShape().totalKey;
+
+/** @param {string} good */
+export const isChainGood = (good) => chainGoods.includes(good);
+
+/** @returns {Record<string, number>} A zeroed per-good tally. */
+export const emptyGoodsTally = () => Object.fromEntries(chainGoods.map((good) => [good, 0]));
+
+/** Subtract a per-good tally from a stock, never below zero. */
+export function deductGoods(stocks, tally) {
+  for (const good of chainGoods) {
+    stocks[good] = Math.max(0, (stocks[good] || 0) - (tally[good] || 0));
+  }
+}
+
+/** Recompute a stock's aggregate from its goods. */
+export function refreshChainTotal(stocks) {
+  stocks[chainTotalKey] = chainGoods.reduce((sum, good) => sum + (stocks[good] || 0), 0);
+}
+
+/** @param {Record<string, number> | null | undefined} stocks */
+export const hasChainGoods = (stocks) => chainGoods.some((good) => (stocks?.[good] || 0) > 0);
+
+/**
+ * One line per good the supply chain carries that is present in the stock —
+ * the goods and their labels come from the catalog, never from this file.
+ * @param {Record<string, number> | null | undefined} stocks
+ * @returns {string}
+ */
+function stockLines(stocks) {
+  return getAllCategoriesForRole('hub')
+    .filter((category) => (stocks?.[category] ?? 0) > 0)
+    .map((category) => `<div>${getResourceCategoryPresentation(category).label}: ${stocks[category]}</div>`)
+    .join('');
+}
 
 /**
  * @param {object|null|undefined} building
@@ -29,10 +69,9 @@ export function createFarmMarketSectionHTML(
   farmStocksAfter,
   marketStocksAfter
 ) {
-  const foodTypeLabels = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou' };
   const transactionDetails = Object.entries(byFoodType)
     .map(([foodType, quantity]) => {
-      const label = foodTypeLabels[foodType] || foodType;
+      const label = getResourceCategoryPresentation(foodType).label;
       return `<div>${label}: ${quantity} panier(s)</div>`;
     })
     .join('');
@@ -54,10 +93,8 @@ export function createFarmMarketSectionHTML(
                             <div class="food-traceability-stocks-cell">
                                 <div class="food-traceability-stocks-label">Ferme</div>
                                 <div class="food-traceability-stocks-details">
-                                    ${farmStocksBefore.wheat > 0 ? `<div>Blé: ${farmStocksBefore.wheat}</div>` : ''}
-                                    ${farmStocksBefore.carrot > 0 ? `<div>Carotte: ${farmStocksBefore.carrot}</div>` : ''}
-                                    ${farmStocksBefore.cabbage > 0 ? `<div>Chou: ${farmStocksBefore.cabbage}</div>` : ''}
-                                    <div class="food-traceability-stocks-total">Total: ${farmStocksBefore.food || 0}</div>
+                                    ${stockLines(farmStocksBefore)}
+                                    <div class="food-traceability-stocks-total">Total: ${farmStocksBefore[chainTotalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
@@ -68,10 +105,8 @@ export function createFarmMarketSectionHTML(
                             <div class="food-traceability-stocks-cell">
                                 <div class="food-traceability-stocks-label">Marché</div>
                                 <div class="food-traceability-stocks-details">
-                                    ${marketStocksBefore.wheat > 0 ? `<div>Blé: ${marketStocksBefore.wheat}</div>` : ''}
-                                    ${marketStocksBefore.carrot > 0 ? `<div>Carotte: ${marketStocksBefore.carrot}</div>` : ''}
-                                    ${marketStocksBefore.cabbage > 0 ? `<div>Chou: ${marketStocksBefore.cabbage}</div>` : ''}
-                                    <div class="food-traceability-stocks-total">Total: ${marketStocksBefore.food || 0}</div>
+                                    ${stockLines(marketStocksBefore)}
+                                    <div class="food-traceability-stocks-total">Total: ${marketStocksBefore[chainTotalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
@@ -102,10 +137,8 @@ export function createFarmMarketSectionHTML(
                             <div class="food-traceability-stocks-cell">
                                 <div class="food-traceability-stocks-label">Ferme</div>
                                 <div class="food-traceability-stocks-details">
-                                    ${farmStocksAfter.wheat > 0 ? `<div>Blé: ${farmStocksAfter.wheat}</div>` : ''}
-                                    ${farmStocksAfter.carrot > 0 ? `<div>Carotte: ${farmStocksAfter.carrot}</div>` : ''}
-                                    ${farmStocksAfter.cabbage > 0 ? `<div>Chou: ${farmStocksAfter.cabbage}</div>` : ''}
-                                    <div class="food-traceability-stocks-total">Total: ${farmStocksAfter.food || 0}</div>
+                                    ${stockLines(farmStocksAfter)}
+                                    <div class="food-traceability-stocks-total">Total: ${farmStocksAfter[chainTotalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
@@ -116,10 +149,8 @@ export function createFarmMarketSectionHTML(
                             <div class="food-traceability-stocks-cell">
                                 <div class="food-traceability-stocks-label">Marché</div>
                                 <div class="food-traceability-stocks-details">
-                                    ${marketStocksAfter.wheat > 0 ? `<div>Blé: ${marketStocksAfter.wheat}</div>` : ''}
-                                    ${marketStocksAfter.carrot > 0 ? `<div>Carotte: ${marketStocksAfter.carrot}</div>` : ''}
-                                    ${marketStocksAfter.cabbage > 0 ? `<div>Chou: ${marketStocksAfter.cabbage}</div>` : ''}
-                                    <div class="food-traceability-stocks-total">Total: ${marketStocksAfter.food || 0}</div>
+                                    ${stockLines(marketStocksAfter)}
+                                    <div class="food-traceability-stocks-total">Total: ${marketStocksAfter[chainTotalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
@@ -147,10 +178,9 @@ export function createMarketHouseSectionHTML(
   marketStocksAfter,
   houseStocksAfter
 ) {
-  const foodTypeLabels = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou' };
   const transactionDetails = Object.entries(byFoodType)
     .map(([foodType, quantity]) => {
-      const label = foodTypeLabels[foodType] || foodType;
+      const label = getResourceCategoryPresentation(foodType).label;
       return `<div>${label}: ${quantity} panier(s)</div>`;
     })
     .join('');
@@ -172,10 +202,8 @@ export function createMarketHouseSectionHTML(
                             <div class="food-traceability-stocks-cell">
                                 <div class="food-traceability-stocks-label">Marché</div>
                                 <div class="food-traceability-stocks-details">
-                                    ${marketStocksBefore.wheat > 0 ? `<div>Blé: ${marketStocksBefore.wheat}</div>` : ''}
-                                    ${marketStocksBefore.carrot > 0 ? `<div>Carotte: ${marketStocksBefore.carrot}</div>` : ''}
-                                    ${marketStocksBefore.cabbage > 0 ? `<div>Chou: ${marketStocksBefore.cabbage}</div>` : ''}
-                                    <div class="food-traceability-stocks-total">Total: ${marketStocksBefore.food || 0}</div>
+                                    ${stockLines(marketStocksBefore)}
+                                    <div class="food-traceability-stocks-total">Total: ${marketStocksBefore[chainTotalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
@@ -186,10 +214,8 @@ export function createMarketHouseSectionHTML(
                             <div class="food-traceability-stocks-cell">
                                 <div class="food-traceability-stocks-label">Maison</div>
                                 <div class="food-traceability-stocks-details">
-                                    ${houseStocksBefore.wheat > 0 ? `<div>Blé: ${houseStocksBefore.wheat}</div>` : ''}
-                                    ${houseStocksBefore.carrot > 0 ? `<div>Carotte: ${houseStocksBefore.carrot}</div>` : ''}
-                                    ${houseStocksBefore.cabbage > 0 ? `<div>Chou: ${houseStocksBefore.cabbage}</div>` : ''}
-                                    <div class="food-traceability-stocks-total">Total: ${houseStocksBefore.food || 0}</div>
+                                    ${stockLines(houseStocksBefore)}
+                                    <div class="food-traceability-stocks-total">Total: ${houseStocksBefore[chainTotalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
@@ -220,10 +246,8 @@ export function createMarketHouseSectionHTML(
                             <div class="food-traceability-stocks-cell">
                                 <div class="food-traceability-stocks-label">Marché</div>
                                 <div class="food-traceability-stocks-details">
-                                    ${marketStocksAfter.wheat > 0 ? `<div>Blé: ${marketStocksAfter.wheat}</div>` : ''}
-                                    ${marketStocksAfter.carrot > 0 ? `<div>Carotte: ${marketStocksAfter.carrot}</div>` : ''}
-                                    ${marketStocksAfter.cabbage > 0 ? `<div>Chou: ${marketStocksAfter.cabbage}</div>` : ''}
-                                    <div class="food-traceability-stocks-total">Total: ${marketStocksAfter.food || 0}</div>
+                                    ${stockLines(marketStocksAfter)}
+                                    <div class="food-traceability-stocks-total">Total: ${marketStocksAfter[chainTotalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
@@ -234,10 +258,8 @@ export function createMarketHouseSectionHTML(
                             <div class="food-traceability-stocks-cell">
                                 <div class="food-traceability-stocks-label">Maison</div>
                                 <div class="food-traceability-stocks-details">
-                                    ${houseStocksAfter.wheat > 0 ? `<div>Blé: ${houseStocksAfter.wheat}</div>` : ''}
-                                    ${houseStocksAfter.carrot > 0 ? `<div>Carotte: ${houseStocksAfter.carrot}</div>` : ''}
-                                    ${houseStocksAfter.cabbage > 0 ? `<div>Chou: ${houseStocksAfter.cabbage}</div>` : ''}
-                                    <div class="food-traceability-stocks-total">Total: ${houseStocksAfter.food || 0}</div>
+                                    ${stockLines(houseStocksAfter)}
+                                    <div class="food-traceability-stocks-total">Total: ${houseStocksAfter[chainTotalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
@@ -271,10 +293,8 @@ export function createBuildingStocksHTML(buildingType, coords, stocks, pillClass
                             <div class="food-traceability-stocks-cell">
                                 <div class="food-traceability-stocks-label">${buildingType}</div>
                                 <div class="food-traceability-stocks-details">
-                                    ${stocks.wheat > 0 ? `<div>Blé: ${stocks.wheat}</div>` : ''}
-                                    ${stocks.carrot > 0 ? `<div>Carotte: ${stocks.carrot}</div>` : ''}
-                                    ${stocks.cabbage > 0 ? `<div>Chou: ${stocks.cabbage}</div>` : ''}
-                                    <div class="food-traceability-stocks-total">Total: ${stocks.food || 0}</div>
+                                    ${stockLines(stocks)}
+                                    <div class="food-traceability-stocks-total">Total: ${stocks[chainTotalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>

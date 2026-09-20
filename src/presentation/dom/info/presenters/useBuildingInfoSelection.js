@@ -9,6 +9,7 @@
  * (services / neighbors / messages) resolve via buildingInfoSharedTabs.
  */
 
+import { getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { buildingsObjects } from '../../../../shared/building-catalog/index.js';
 import { infoObjectOverlay } from '../../shell/nodes.js';
@@ -71,7 +72,7 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
     const hubKind = vm.supplyView?.kind === 'windmill' ? 'windmill' : null;
     if (hubKind) {
       extra.hubKind = hubKind;
-      if (hubKind === 'windmill' && !Object.hasOwn(vm.stocks || {}, 'food')) {
+      if (hubKind === 'windmill' && !Object.hasOwn(vm.stocks || {}, getResourceStockShape().totalKey)) {
         extra.hubView = null;
       } else {
         extra.hubView = vm.supply.getHubStorageInfoView(hubKind, vm.buildingRow, {

@@ -28,13 +28,21 @@ const CUMULATIVE_REQUIREMENTS = (min) => {
   ];
 };
 
+// Population ceilings are asserted on their own below — the ladder assertions compare requirements + skills.
+const withoutCaps = (category) => ({
+  ...category,
+  tiers: Object.fromEntries(
+    Object.entries(category.tiers).map(([level, { maxPopulation: _cap, ...rest }]) => [level, rest])
+  ),
+});
+
 describe('SOCIAL_CATEGORY — single source for the 3 social categories', () => {
   test('declares exactly artisans, merchants, scholars', () => {
     expect(Object.keys(SOCIAL_CATEGORY).sort()).toEqual(['artisans', 'merchants', 'scholars']);
   });
 
   test('each category declares eligible sectors and a 5-tier ladder with skills', () => {
-    expect(SOCIAL_CATEGORY.artisans).toEqual({
+    expect(withoutCaps(SOCIAL_CATEGORY.artisans)).toEqual({
       eligibleSectors: [1, 3, 4],
       tiers: {
         1: { requirements: [], skills: { 'subsistence-forager': 1, spiritual: 1 } },
@@ -44,7 +52,7 @@ describe('SOCIAL_CATEGORY — single source for the 3 social categories', () => 
         5: { requirements: CUMULATIVE_REQUIREMENTS(12), skills: {} },
       },
     });
-    expect(SOCIAL_CATEGORY.merchants).toEqual({
+    expect(withoutCaps(SOCIAL_CATEGORY.merchants)).toEqual({
       eligibleSectors: [2],
       tiers: {
         1: { requirements: [], skills: { 'subsistence-forager': 1, spiritual: 1 } },
@@ -59,7 +67,7 @@ describe('SOCIAL_CATEGORY — single source for the 3 social categories', () => 
   test('all 3 categories share the exact same tier ladder (identical requirements shape; skills diverge per group)', () => {
     const scholars = SOCIAL_CATEGORY.scholars;
     expect(scholars.eligibleSectors).toEqual([6]);
-    expect(scholars.tiers[1]).toEqual({
+    expect(withoutCaps(scholars).tiers[1]).toEqual({
       requirements: [],
       skills: { 'subsistence-forager': 1, spiritual: 1 },
     });
@@ -92,6 +100,17 @@ describe('SOCIAL_CATEGORY — single source for the 3 social categories', () => 
     );
     expect(artisans.tiers[2].requirements).not.toBe(merchants.tiers[2].requirements);
     expect(merchants.tiers[2].requirements).not.toBe(scholars.tiers[2].requirements);
+  });
+
+  test('every tier declares a growing population ceiling, defined once and shared by default', () => {
+    for (const facts of Object.values(SOCIAL_CATEGORY)) {
+      const caps = Object.keys(facts.tiers)
+        .map(Number)
+        .sort((a, b) => a - b)
+        .map((level) => facts.tiers[level].maxPopulation);
+      expect(caps.every((cap) => Number.isInteger(cap) && cap > 0)).toBe(true);
+      expect([...caps].sort((a, b) => a - b)).toEqual(caps);
+    }
   });
 
   test('tier 1 never requires anything — it is the starting tier', () => {

@@ -1,58 +1,71 @@
+import {
+  getConsumableCategories,
+  getSelfProducedCategories,
+  getSuppliedCategories,
+  getResourceStockShape,
+} from '../../../../shared/building-catalog/resourceRoleQueries.js';
+
 /**
- * Food stock read model for housing (mirrors Supply food fields on house rows).
+ * Consumable-goods stock read model for housing (mirrors the Supply stock
+ * fields on house rows). Which categories exist, which a household gathers
+ * itself and which arrive through the distribution chain are all derived
+ * from the catalog (`resourceRoles`) — no good is named here.
  *
- * @typedef {object} FoodStocks
- * @property {number} [food]
- * @property {number} [wheat]
- * @property {number} [carrot]
- * @property {number} [cabbage]
- * @property {number} [fruit]
- * @property {number} [game]
+ * @typedef {Record<string, number>} FoodStocks
  */
 
 /**
- * Cueillette & chasse stockée dans les maisons (hors circuit marché).
+ * @param {FoodStocks | null | undefined} stocks
+ * @param {ReadonlyArray<string>} categories
+ * @returns {number}
+ */
+function sumCategories(stocks, categories) {
+  if (!stocks) return 0;
+  return categories.reduce((sum, category) => sum + (stocks[category] || 0), 0);
+}
+
+/**
+ * Goods the household produces itself (gathering), outside the market circuit.
  *
  * @param {FoodStocks | null | undefined} stocks
  * @returns {number}
  */
 export function gatheringBasketsFromStocks(stocks) {
-  if (!stocks) return 0;
-  return (stocks.fruit || 0) + (stocks.game || 0);
+  return sumCategories(stocks, getSelfProducedCategories());
 }
 
 /**
- * Denrées de ferme distribuées par les marchés (blé, carotte, salade).
+ * Goods distributed to the house through the supply chain (farm → hub → market).
  *
  * @param {FoodStocks | null | undefined} stocks
  * @returns {number}
  */
 export function marketBasketsFromStocks(stocks) {
-  if (!stocks) return 0;
-  return (stocks.wheat || 0) + (stocks.carrot || 0) + (stocks.cabbage || 0);
+  return sumCategories(stocks, getSuppliedCategories());
 }
 
 /**
- * Sum of visible edible categories (what the Régime tab shows).
+ * Sum of visible consumable categories (what the Régime tab shows).
  *
  * @param {FoodStocks | null | undefined} stocks
  * @returns {number}
  */
 export function edibleBasketsFromCategories(stocks) {
-  if (!stocks) return 0;
-  return gatheringBasketsFromStocks(stocks) + marketBasketsFromStocks(stocks);
+  return sumCategories(stocks, getConsumableCategories());
 }
 
 /**
- * Total food for affluence / evolution — prefers persisted `food` aggregate.
+ * Total consumable stock for affluence / evolution — prefers the persisted
+ * aggregate declared in the catalog (`totalKey`).
  *
  * @param {FoodStocks | null | undefined} stocks
  * @returns {number}
  */
 export function totalFoodFromStocks(stocks) {
   if (!stocks) return 0;
-  if (stocks.food !== undefined && stocks.food !== null) {
-    return stocks.food;
+  const { totalKey } = getResourceStockShape();
+  if (stocks[totalKey] !== undefined && stocks[totalKey] !== null) {
+    return stocks[totalKey];
   }
   return edibleBasketsFromCategories(stocks);
 }

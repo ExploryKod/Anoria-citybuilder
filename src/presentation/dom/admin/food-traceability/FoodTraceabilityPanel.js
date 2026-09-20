@@ -9,7 +9,14 @@ import {
     createMarketHouseSectionHTML,
     createBuildingStocksHTML,
     renderFoodStats,
+    chainTotalKey,
+    isChainGood,
+    emptyGoodsTally,
+    deductGoods,
+    refreshChainTotal,
+    hasChainGoods,
 } from './FoodTraceabilityPresenter.js';
+import { createEmptyStocks } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /** @type {{ supply: object } | null} */
 let deps = null;
@@ -215,7 +222,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             stocksByMonth[buildingKey] = {};
             // Start with current stocks (after all transactions)
             const currentMonthKey = 'current';
-            stocksByMonth[buildingKey][currentMonthKey] = { ...(currentStocks[buildingKey] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 }) };
+            stocksByMonth[buildingKey][currentMonthKey] = { ...(currentStocks[buildingKey] || createEmptyStocks()) };
         });
         
         // Process months in reverse chronological order (newest to oldest)
@@ -229,7 +236,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             allBuildingKeys.forEach(buildingKey => {
                 // Get stocks after this month (which is stocks before next month in reverse order)
                 const previousMonthKey = index === 0 ? 'current' : reversedKeys[index - 1];
-                const stocksAfter = stocksByMonth[buildingKey][previousMonthKey] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                const stocksAfter = stocksByMonth[buildingKey][previousMonthKey] || createEmptyStocks();
                 
                 // Calculate stocks before this month by reversing transactions
                 const stocksBefore = { ...stocksAfter };
@@ -246,9 +253,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                     t.transactionType === 'farm_to_market' && matchesBuilding(t, true)
                 ).forEach(t => {
                     // Farm sold, so before = after + sold
-                    if (t.foodType === 'wheat') stocksBefore.wheat = (stocksBefore.wheat || 0) + t.quantity;
-                    else if (t.foodType === 'carrot') stocksBefore.carrot = (stocksBefore.carrot || 0) + t.quantity;
-                    else if (t.foodType === 'cabbage') stocksBefore.cabbage = (stocksBefore.cabbage || 0) + t.quantity;
+                    if (isChainGood(t.foodType)) stocksBefore[t.foodType] = (stocksBefore[t.foodType] || 0) + t.quantity;
                 });
                 
                 // Reverse market purchases from farms (market bought)
@@ -262,9 +267,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                         st.foodType === t.foodType
                     ).reduce((sum, st) => sum + st.quantity, 0);
                     
-                    if (t.foodType === 'wheat') stocksBefore.wheat = Math.max(0, (stocksBefore.wheat || 0) - t.quantity + salesThisMonth);
-                    else if (t.foodType === 'carrot') stocksBefore.carrot = Math.max(0, (stocksBefore.carrot || 0) - t.quantity + salesThisMonth);
-                    else if (t.foodType === 'cabbage') stocksBefore.cabbage = Math.max(0, (stocksBefore.cabbage || 0) - t.quantity + salesThisMonth);
+                    if (isChainGood(t.foodType)) stocksBefore[t.foodType] = Math.max(0, (stocksBefore[t.foodType] || 0) - t.quantity + salesThisMonth);
                 });
                 
                 // Reverse market-to-house transactions (market sold)
@@ -272,9 +275,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                     t.transactionType === 'market_to_house' && matchesBuilding(t, true)
                 ).forEach(t => {
                     // Market sold, so before = after + sold
-                    if (t.foodType === 'wheat') stocksBefore.wheat = (stocksBefore.wheat || 0) + t.quantity;
-                    else if (t.foodType === 'carrot') stocksBefore.carrot = (stocksBefore.carrot || 0) + t.quantity;
-                    else if (t.foodType === 'cabbage') stocksBefore.cabbage = (stocksBefore.cabbage || 0) + t.quantity;
+                    if (isChainGood(t.foodType)) stocksBefore[t.foodType] = (stocksBefore[t.foodType] || 0) + t.quantity;
                 });
                 
                 // Reverse house purchases (house bought)
@@ -288,9 +289,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                         ct.foodType === t.foodType
                     ).reduce((sum, ct) => sum + ct.quantity, 0);
                     
-                    if (t.foodType === 'wheat') stocksBefore.wheat = Math.max(0, (stocksBefore.wheat || 0) - t.quantity + consumptionThisMonth);
-                    else if (t.foodType === 'carrot') stocksBefore.carrot = Math.max(0, (stocksBefore.carrot || 0) - t.quantity + consumptionThisMonth);
-                    else if (t.foodType === 'cabbage') stocksBefore.cabbage = Math.max(0, (stocksBefore.cabbage || 0) - t.quantity + consumptionThisMonth);
+                    if (isChainGood(t.foodType)) stocksBefore[t.foodType] = Math.max(0, (stocksBefore[t.foodType] || 0) - t.quantity + consumptionThisMonth);
                 });
                 
                 // Reverse house consumption
@@ -298,12 +297,10 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                     t.transactionType === 'house_consumption' && matchesBuilding(t, true)
                 ).forEach(t => {
                     // House consumed, so before = after + consumed
-                    if (t.foodType === 'wheat') stocksBefore.wheat = (stocksBefore.wheat || 0) + t.quantity;
-                    else if (t.foodType === 'carrot') stocksBefore.carrot = (stocksBefore.carrot || 0) + t.quantity;
-                    else if (t.foodType === 'cabbage') stocksBefore.cabbage = (stocksBefore.cabbage || 0) + t.quantity;
+                    if (isChainGood(t.foodType)) stocksBefore[t.foodType] = (stocksBefore[t.foodType] || 0) + t.quantity;
                 });
                 
-                stocksBefore.food = (stocksBefore.wheat || 0) + (stocksBefore.carrot || 0) + (stocksBefore.cabbage || 0);
+                refreshChainTotal(stocksBefore);
                 stocksByMonth[buildingKey][key] = stocksBefore;
             });
         });
@@ -380,8 +377,8 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             // Farm-Market sections
             Object.values(farmMarketPairs).forEach(pair => {
                 // Get stocks from calculated stocksByMonth
-                const farmStocksBefore = stocksByMonth[pair.farmKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-                const marketStocksBefore = stocksByMonth[pair.marketKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                const farmStocksBefore = stocksByMonth[pair.farmKey]?.[key] || createEmptyStocks();
+                const marketStocksBefore = stocksByMonth[pair.marketKey]?.[key] || createEmptyStocks();
                 
                 // Calculate stocks AFTER this month's transactions
                 const farmStocksAfter = { ...farmStocksBefore };
@@ -389,35 +386,25 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                 
                 // Apply transactions
                 Object.entries(pair.byFoodType).forEach(([foodType, quantity]) => {
-                    if (foodType === 'wheat') {
-                        farmStocksAfter.wheat = Math.max(0, (farmStocksAfter.wheat || 0) - quantity);
-                        marketStocksAfter.wheat = (marketStocksAfter.wheat || 0) + quantity;
-                    } else if (foodType === 'carrot') {
-                        farmStocksAfter.carrot = Math.max(0, (farmStocksAfter.carrot || 0) - quantity);
-                        marketStocksAfter.carrot = (marketStocksAfter.carrot || 0) + quantity;
-                    } else if (foodType === 'cabbage') {
-                        farmStocksAfter.cabbage = Math.max(0, (farmStocksAfter.cabbage || 0) - quantity);
-                        marketStocksAfter.cabbage = (marketStocksAfter.cabbage || 0) + quantity;
+                    if (isChainGood(foodType)) {
+                        farmStocksAfter[foodType] = Math.max(0, (farmStocksAfter[foodType] || 0) - quantity);
+                        marketStocksAfter[foodType] = (marketStocksAfter[foodType] || 0) + quantity;
                     }
                 });
                 
                 // Also account for market sales this month
-                const marketSalesThisMonth = { wheat: 0, carrot: 0, cabbage: 0 };
+                const marketSalesThisMonth = emptyGoodsTally();
                 transactions.filter(t => 
                     t.transactionType === 'market_to_house' && 
                     (t.fromId === pair.marketKey || t.fromCoords === pair.marketCoords)
                 ).forEach(t => {
-                    if (t.foodType === 'wheat') marketSalesThisMonth.wheat += t.quantity;
-                    else if (t.foodType === 'carrot') marketSalesThisMonth.carrot += t.quantity;
-                    else if (t.foodType === 'cabbage') marketSalesThisMonth.cabbage += t.quantity;
+                    if (isChainGood(t.foodType)) marketSalesThisMonth[t.foodType] += t.quantity;
                 });
                 
-                marketStocksAfter.wheat = Math.max(0, (marketStocksAfter.wheat || 0) - marketSalesThisMonth.wheat);
-                marketStocksAfter.carrot = Math.max(0, (marketStocksAfter.carrot || 0) - marketSalesThisMonth.carrot);
-                marketStocksAfter.cabbage = Math.max(0, (marketStocksAfter.cabbage || 0) - marketSalesThisMonth.cabbage);
+                deductGoods(marketStocksAfter, marketSalesThisMonth);
                 
-                farmStocksAfter.food = (farmStocksAfter.wheat || 0) + (farmStocksAfter.carrot || 0) + (farmStocksAfter.cabbage || 0);
-                marketStocksAfter.food = (marketStocksAfter.wheat || 0) + (marketStocksAfter.carrot || 0) + (marketStocksAfter.cabbage || 0);
+                refreshChainTotal(farmStocksAfter);
+                refreshChainTotal(marketStocksAfter);
                 
                 sections.push(createFarmMarketSectionHTML(pair, farmStocksBefore, marketStocksBefore, pair.byFoodType, farmStocksAfter, marketStocksAfter));
             });
@@ -425,8 +412,8 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             // Market-House sections
             Object.values(marketHousePairs).forEach(pair => {
                 // Get stocks from calculated stocksByMonth
-                const marketStocksBefore = stocksByMonth[pair.marketKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-                const houseStocksBefore = stocksByMonth[pair.houseKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                const marketStocksBefore = stocksByMonth[pair.marketKey]?.[key] || createEmptyStocks();
+                const houseStocksBefore = stocksByMonth[pair.houseKey]?.[key] || createEmptyStocks();
                 
                 // Calculate stocks AFTER this month's transactions
                 const marketStocksAfter = { ...marketStocksBefore };
@@ -434,35 +421,25 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                 
                 // Apply transactions
                 Object.entries(pair.byFoodType).forEach(([foodType, quantity]) => {
-                    if (foodType === 'wheat') {
-                        marketStocksAfter.wheat = Math.max(0, (marketStocksAfter.wheat || 0) - quantity);
-                        houseStocksAfter.wheat = (houseStocksAfter.wheat || 0) + quantity;
-                    } else if (foodType === 'carrot') {
-                        marketStocksAfter.carrot = Math.max(0, (marketStocksAfter.carrot || 0) - quantity);
-                        houseStocksAfter.carrot = (houseStocksAfter.carrot || 0) + quantity;
-                    } else if (foodType === 'cabbage') {
-                        marketStocksAfter.cabbage = Math.max(0, (marketStocksAfter.cabbage || 0) - quantity);
-                        houseStocksAfter.cabbage = (houseStocksAfter.cabbage || 0) + quantity;
+                    if (isChainGood(foodType)) {
+                        marketStocksAfter[foodType] = Math.max(0, (marketStocksAfter[foodType] || 0) - quantity);
+                        houseStocksAfter[foodType] = (houseStocksAfter[foodType] || 0) + quantity;
                     }
                 });
                 
                 // Also account for house consumption this month
-                const houseConsumptionThisMonth = { wheat: 0, carrot: 0, cabbage: 0 };
+                const houseConsumptionThisMonth = emptyGoodsTally();
                 transactions.filter(t => 
                     t.transactionType === 'house_consumption' && 
                     (t.fromId === pair.houseKey || t.fromCoords === pair.houseCoords)
                 ).forEach(t => {
-                    if (t.foodType === 'wheat') houseConsumptionThisMonth.wheat += t.quantity;
-                    else if (t.foodType === 'carrot') houseConsumptionThisMonth.carrot += t.quantity;
-                    else if (t.foodType === 'cabbage') houseConsumptionThisMonth.cabbage += t.quantity;
+                    if (isChainGood(t.foodType)) houseConsumptionThisMonth[t.foodType] += t.quantity;
                 });
                 
-                houseStocksAfter.wheat = Math.max(0, (houseStocksAfter.wheat || 0) - houseConsumptionThisMonth.wheat);
-                houseStocksAfter.carrot = Math.max(0, (houseStocksAfter.carrot || 0) - houseConsumptionThisMonth.carrot);
-                houseStocksAfter.cabbage = Math.max(0, (houseStocksAfter.cabbage || 0) - houseConsumptionThisMonth.cabbage);
+                deductGoods(houseStocksAfter, houseConsumptionThisMonth);
                 
-                marketStocksAfter.food = (marketStocksAfter.wheat || 0) + (marketStocksAfter.carrot || 0) + (marketStocksAfter.cabbage || 0);
-                houseStocksAfter.food = (houseStocksAfter.wheat || 0) + (houseStocksAfter.carrot || 0) + (houseStocksAfter.cabbage || 0);
+                refreshChainTotal(marketStocksAfter);
+                refreshChainTotal(houseStocksAfter);
                 
                 sections.push(createMarketHouseSectionHTML(pair, marketStocksBefore, houseStocksBefore, pair.byFoodType, marketStocksAfter, houseStocksAfter));
             });
@@ -475,21 +452,19 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             allBuildingsData.forEach(building => {
                 if (building.kind === 'farm' || (building.type && (building.type.includes('Farm') || building.type.includes('Farms')))) {
                     const farmKey = buildingStockKey(building);
-                    const farmStocks = stocksByMonth[farmKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-                    const farmStocksAfter = stocksByMonth[farmKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                    const farmStocks = stocksByMonth[farmKey]?.[key] || createEmptyStocks();
+                    const farmStocksAfter = stocksByMonth[farmKey]?.[key] || createEmptyStocks();
                     
                     // Apply transactions to get stocks after
                     transactions.filter(t => 
                         t.transactionType === 'farm_to_market' && 
                         (t.fromId === farmKey || t.fromCoords === building.x + ',' + building.y)
                     ).forEach(t => {
-                        if (t.foodType === 'wheat') farmStocksAfter.wheat = Math.max(0, (farmStocksAfter.wheat || 0) - t.quantity);
-                        else if (t.foodType === 'carrot') farmStocksAfter.carrot = Math.max(0, (farmStocksAfter.carrot || 0) - t.quantity);
-                        else if (t.foodType === 'cabbage') farmStocksAfter.cabbage = Math.max(0, (farmStocksAfter.cabbage || 0) - t.quantity);
+                        if (isChainGood(t.foodType)) farmStocksAfter[t.foodType] = Math.max(0, (farmStocksAfter[t.foodType] || 0) - t.quantity);
                     });
-                    farmStocksAfter.food = (farmStocksAfter.wheat || 0) + (farmStocksAfter.carrot || 0) + (farmStocksAfter.cabbage || 0);
+                    refreshChainTotal(farmStocksAfter);
                     
-                    if (farmStocksAfter.food > 0 || farmStocks.wheat > 0 || farmStocks.carrot > 0 || farmStocks.cabbage > 0) {
+                    if (farmStocksAfter[chainTotalKey] > 0 || hasChainGoods(farmStocks)) {
                         const hasTransactions = transactions.some(t => 
                             t.transactionType === 'farm_to_market' && 
                             (t.fromId === farmKey || t.fromCoords === building.x + ',' + building.y)
@@ -505,7 +480,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             allBuildingsData.forEach(building => {
                 if (building.kind === 'market' || (building.type && (building.type.includes('Market') || building.type.includes('Commerce')))) {
                     const marketKey = buildingStockKey(building);
-                    const marketStocks = stocksByMonth[marketKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                    const marketStocks = stocksByMonth[marketKey]?.[key] || createEmptyStocks();
                     const marketStocksAfter = { ...marketStocks };
                     
                     // Apply transactions
@@ -513,23 +488,19 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                         t.transactionType === 'farm_to_market' && 
                         (t.toId === marketKey || t.toCoords === building.x + ',' + building.y)
                     ).forEach(t => {
-                        if (t.foodType === 'wheat') marketStocksAfter.wheat = (marketStocksAfter.wheat || 0) + t.quantity;
-                        else if (t.foodType === 'carrot') marketStocksAfter.carrot = (marketStocksAfter.carrot || 0) + t.quantity;
-                        else if (t.foodType === 'cabbage') marketStocksAfter.cabbage = (marketStocksAfter.cabbage || 0) + t.quantity;
+                        if (isChainGood(t.foodType)) marketStocksAfter[t.foodType] = (marketStocksAfter[t.foodType] || 0) + t.quantity;
                     });
                     
                     transactions.filter(t => 
                         t.transactionType === 'market_to_house' && 
                         (t.fromId === marketKey || t.fromCoords === building.x + ',' + building.y)
                     ).forEach(t => {
-                        if (t.foodType === 'wheat') marketStocksAfter.wheat = Math.max(0, (marketStocksAfter.wheat || 0) - t.quantity);
-                        else if (t.foodType === 'carrot') marketStocksAfter.carrot = Math.max(0, (marketStocksAfter.carrot || 0) - t.quantity);
-                        else if (t.foodType === 'cabbage') marketStocksAfter.cabbage = Math.max(0, (marketStocksAfter.cabbage || 0) - t.quantity);
+                        if (isChainGood(t.foodType)) marketStocksAfter[t.foodType] = Math.max(0, (marketStocksAfter[t.foodType] || 0) - t.quantity);
                     });
                     
-                    marketStocksAfter.food = (marketStocksAfter.wheat || 0) + (marketStocksAfter.carrot || 0) + (marketStocksAfter.cabbage || 0);
+                    refreshChainTotal(marketStocksAfter);
                     
-                    if (marketStocksAfter.food > 0 || marketStocks.wheat > 0 || marketStocks.carrot > 0 || marketStocks.cabbage > 0) {
+                    if (marketStocksAfter[chainTotalKey] > 0 || hasChainGoods(marketStocks)) {
                         stocksSections.push(createBuildingStocksHTML('Marché', `${building.x},${building.y}`, marketStocksAfter, 'market'));
                     }
                 }
@@ -539,7 +510,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
             allBuildingsData.forEach(building => {
                 if (building.kind === 'house' || (building.type && (building.type.includes('House') || building.type.includes('Maison')))) {
                     const houseKey = buildingStockKey(building);
-                    const houseStocks = stocksByMonth[houseKey]?.[key] || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+                    const houseStocks = stocksByMonth[houseKey]?.[key] || createEmptyStocks();
                     const houseStocksAfter = { ...houseStocks };
                     
                     // Apply transactions
@@ -547,23 +518,19 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                         t.transactionType === 'market_to_house' && 
                         (t.toId === houseKey || t.toCoords === building.x + ',' + building.y)
                     ).forEach(t => {
-                        if (t.foodType === 'wheat') houseStocksAfter.wheat = (houseStocksAfter.wheat || 0) + t.quantity;
-                        else if (t.foodType === 'carrot') houseStocksAfter.carrot = (houseStocksAfter.carrot || 0) + t.quantity;
-                        else if (t.foodType === 'cabbage') houseStocksAfter.cabbage = (houseStocksAfter.cabbage || 0) + t.quantity;
+                        if (isChainGood(t.foodType)) houseStocksAfter[t.foodType] = (houseStocksAfter[t.foodType] || 0) + t.quantity;
                     });
                     
                     transactions.filter(t => 
                         t.transactionType === 'house_consumption' && 
                         (t.fromId === houseKey || t.fromCoords === building.x + ',' + building.y)
                     ).forEach(t => {
-                        if (t.foodType === 'wheat') houseStocksAfter.wheat = Math.max(0, (houseStocksAfter.wheat || 0) - t.quantity);
-                        else if (t.foodType === 'carrot') houseStocksAfter.carrot = Math.max(0, (houseStocksAfter.carrot || 0) - t.quantity);
-                        else if (t.foodType === 'cabbage') houseStocksAfter.cabbage = Math.max(0, (houseStocksAfter.cabbage || 0) - t.quantity);
+                        if (isChainGood(t.foodType)) houseStocksAfter[t.foodType] = Math.max(0, (houseStocksAfter[t.foodType] || 0) - t.quantity);
                     });
                     
-                    houseStocksAfter.food = (houseStocksAfter.wheat || 0) + (houseStocksAfter.carrot || 0) + (houseStocksAfter.cabbage || 0);
+                    refreshChainTotal(houseStocksAfter);
                     
-                    if (houseStocksAfter.food > 0 || houseStocks.wheat > 0 || houseStocks.carrot > 0 || houseStocks.cabbage > 0) {
+                    if (houseStocksAfter[chainTotalKey] > 0 || hasChainGoods(houseStocks)) {
                         stocksSections.push(createBuildingStocksHTML('Maison', `${building.x},${building.y}`, houseStocksAfter, 'house'));
                     }
                 }

@@ -1,5 +1,5 @@
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
-import { getScheduleForRole } from '../../../domain/policies/ResourceRolePolicy.js';
+import { getScheduleForRole, getAllCategoriesForRole } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Orchestration: monthly hub surplus cycle (flags, scheduled collection,
@@ -63,7 +63,8 @@ export class RunHubSurplusCycle {
       await this.markHubCollectingSchedule.execute(month);
     }
 
-    const sources = await this.supplyBuildingRepository.findByResourceRole('producer');
+    // Only producers of goods a hub collects — never a household gathering its own food.
+    const sources = await this.supplyBuildingRepository.findByResourceRole('producer', getAllCategoriesForRole('collector'));
     const sourceRefs = sources.map((source) => ({
       id: source.id,
       type: source.type,

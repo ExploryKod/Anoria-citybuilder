@@ -8,18 +8,13 @@ import {
   instanceIdFromHouseRow,
 } from '../../../../shared/building-identity/index.js';
 import {
-  getResourceRoles,
   hasResourceRole,
   getAllCategoriesForRole,
+  getMaxStockForBuilding,
 } from '../../domain/policies/ResourceRolePolicy.js';
 
 /** Supply port adapter — accès direct Dexie (table `houses`). */
 export class DexieSupplyBuildingRepository {
-  #defaultMaxStock(type) {
-    const hubEntry = getResourceRoles(type).find((entry) => entry.role === 'hub');
-    return hubEntry?.maxStock ?? 500;
-  }
-
   async #activeRows() {
     const rows = await db.houses.toArray();
     return rows.filter(isActiveHamletRow);
@@ -39,7 +34,8 @@ export class DexieSupplyBuildingRepository {
       y: house.y ?? null,
       roadCount: house.roads ?? 0,
       stocks: house.stocks || {},
-      maxStock: house.maxStock ?? this.#defaultMaxStock(type),
+      // The catalog is the only source of a stock ceiling — a stored row value never overrides it.
+      maxStock: getMaxStockForBuilding(type),
       worker: employees.worker ?? 0,
       workerNeed: employees.worker_need ?? 0,
       neighbors: house.neighbors || [],
@@ -63,7 +59,8 @@ export class DexieSupplyBuildingRepository {
       y: house.y ?? null,
       roadCount: house.roads ?? 0,
       stocks: house.stocks || {},
-      maxStock: house.maxStock ?? this.#defaultMaxStock(type),
+      // The catalog is the only source of a stock ceiling — a stored row value never overrides it.
+      maxStock: getMaxStockForBuilding(type),
       neighbors: house.neighbors || [],
       pop: house.pop ?? 0,
       isBuying: house.isBuying === true,

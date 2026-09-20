@@ -3,6 +3,7 @@ import {
   isResidentialHouseType,
   maxPopulationForHouseType,
   maxPopulationForLevel,
+  residentialGroupOfType,
 } from './HouseCapacityPolicy.js';
 
 /**
@@ -77,7 +78,7 @@ export function computePopulationAfterGrowth({
     return { pop, changed: false, lastPopulationGrowthMonth };
   }
 
-  const maxPopulation = maxPopulationForLevel(level);
+  const maxPopulation = maxPopulationForLevel(level, residentialGroupOfType(type));
 
   if (pop > maxPopulation) {
     return {

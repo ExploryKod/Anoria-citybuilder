@@ -26,7 +26,6 @@ import { recordDeaths } from './gameplayMortalityState.js';
  * @param {Function} deps.toSupplySeason
  * @param {Function} deps.toSupplyMonth
  * @param {() => Record<string, number>} deps.getSkillPriorities
- * @param {number} [deps.foodDistributionDistance=5]
  */
 export function createGameRuntime({
   parcels,
@@ -39,7 +38,6 @@ export function createGameRuntime({
   toSupplySeason,
   toSupplyMonth,
   getSkillPriorities,
-  foodDistributionDistance = 5,
 }) {
   if (!parcels) {
     throw new Error('createGameRuntime: parcels context required');
@@ -73,7 +71,6 @@ export function createGameRuntime({
     getTimeInfo,
     toSupplySeason,
     toSupplyMonth,
-    resourceDistributionDistance: foodDistributionDistance,
   });
   const housingPopulationGrowth = createHousingPopulationGrowthSystem({
     housing,

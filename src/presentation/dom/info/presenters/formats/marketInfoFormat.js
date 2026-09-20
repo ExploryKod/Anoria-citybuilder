@@ -3,6 +3,8 @@
  */
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
+import { getResourceRoles, getResourceStockShape } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getResourceCategoryPresentation } from '../../../../../composition/supplyCatalog.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
 
 /**
@@ -32,7 +34,7 @@ export function formatMarketLayoutOptions() {
  */
 export function formatMarketOverviewModel(vm) {
   const { supplyView, stocks } = vm;
-  if (!supplyView || !Object.hasOwn(stocks || {}, 'food')) return null;
+  if (!supplyView || !Object.hasOwn(stocks || {}, getResourceStockShape().totalKey)) return null;
 
   return {
     sections: [{
@@ -49,17 +51,20 @@ export function formatMarketOverviewModel(vm) {
  */
 export function formatMarketStocksModel(vm) {
   const { supplyView, stocks } = vm;
-  if (!supplyView || !Object.hasOwn(stocks || {}, 'food')) return null;
+  // Goods, aggregate and ceiling all come from the market's own catalog entry.
+  const entry = getResourceRoles(vm.buildingType).find((candidate) => candidate.role === 'distributor');
+  if (!supplyView || !entry?.totalKey || !Object.hasOwn(stocks || {}, entry.totalKey)) return null;
 
-  const maxStock = supplyView.maxStock || 500;
+  const cap = Number.isFinite(supplyView.maxStock) ? `/${supplyView.maxStock}` : '';
   return {
     sections: [{
       title: 'Stock marché',
       rows: [
-        { label: 'Blé', value: `${stocks.wheat || 0}/${maxStock} paniers` },
-        { label: 'Légumes verts', value: `${stocks.cabbage || 0}/${maxStock} paniers` },
-        { label: 'Autres légumes', value: `${stocks.carrot || 0}/${maxStock} paniers` },
-        { label: 'Total', value: `${stocks.food || 0}/${maxStock} paniers disponibles` },
+        ...entry.categories.map((category) => ({
+          label: getResourceCategoryPresentation(category).label,
+          value: `${stocks[category] || 0}${cap} paniers`,
+        })),
+        { label: 'Total', value: `${stocks[entry.totalKey] || 0}${cap} paniers disponibles` },
       ],
     }],
   };

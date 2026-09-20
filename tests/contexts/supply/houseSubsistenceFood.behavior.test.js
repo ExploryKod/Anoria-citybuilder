@@ -1,22 +1,27 @@
 /**
- * Behavior tests — Supply: monthly house gathering (fruit + game).
+ * Behavior tests — Supply: household gathering (fruit + game).
  *
- * Every inhabited house gains a FIXED basket of foraged fruit and hunted
- * game each month (1 each, regardless of population size — see
- * HouseSubsistencePolicy.js), independent from farms and markets. Level 2
- * houses still consume farm crops via `ConsumeResource`.
+ * Gathering is no longer a special mechanism: it is a 'producer' entry on
+ * every house in buildingEconomy.js (HOUSE_GATHERING), run by the same
+ * ProduceResource command as a farm. Amounts, the per-house/per-inhabitant
+ * `scale` and the road-free gate are all catalog facts — these tests read
+ * the catalog rather than assuming any number.
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect, beforeEach, jest } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import {
-  computeMonthlyGatheringCredit,
-  computeSubsistenceFoodCredit,
-} from '../../../src/contexts/supply/domain/policies/HouseSubsistencePolicy.js';
-import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
-import { ProduceConsumerSubsistence } from '../../../src/contexts/supply/application/commands/subsistence/ProduceConsumerSubsistence.js';
+  hasResourceRole,
+  getResourceRoles,
+} from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { ProduceResource } from '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js';
 import { RunResourceCommandForRole } from '../../../src/contexts/supply/application/commands/RunResourceCommandForRole.js';
+
+const gathering = getResourceRoles('House-Blue').find(
+  (entry) => entry.role === 'producer'
+);
+const perHouse = gathering.amount;
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -65,126 +70,160 @@ function house(id, extras = {}) {
     roadCount: 0,
     pop: 3,
     level: 1,
-    stocks: { wheat: 0, carrot: 0, cabbage: 0, fruit: 0, game: 0, food: 0 },
+    stocks: { food: 0 },
     ...extras,
   });
 }
 
-describe('Supply — house gathering (fruit & game)', () => {
-  describe('HouseSubsistencePolicy.computeMonthlyGatheringCredit', () => {
-    test('adds a fixed fruit and game basket per house each month, regardless of population', () => {
-      const result = computeMonthlyGatheringCredit({
-        pop: 4,
-        stocks: { food: 1, wheat: 1, fruit: 2, game: 1 },
-      });
+const period = (monthIndex) => ({ season: 'Été', year: 0, monthIndex });
 
-      expect(result.credited).toEqual({ fruit: 1, game: 1 });
-      expect(result.nextStock.fruit).toBe(3);
-      expect(result.nextStock.game).toBe(2);
-      expect(result.nextStock.wheat).toBe(1);
-      expect(result.nextStock.food).toBe(6);
-    });
-
-    test('accumulates on top of existing gathering stocks', () => {
-      const first = computeMonthlyGatheringCredit({ pop: 2, stocks: { fruit: 0, game: 0 } });
-      const second = computeMonthlyGatheringCredit({ pop: 2, stocks: first.nextStock });
-
-      expect(second.nextStock.fruit).toBe(2);
-      expect(second.nextStock.game).toBe(2);
-    });
-
-    test('zero population credits nothing', () => {
-      const result = computeMonthlyGatheringCredit({ pop: 0, stocks: { food: 0 } });
-      expect(result.credited).toEqual({ fruit: 0, game: 0 });
-      expect(result.nextStock.food).toBe(0);
-    });
-
-    test('legacy computeSubsistenceFoodCredit sums fruit + game credited', () => {
-      const result = computeSubsistenceFoodCredit({ pop: 3, stocks: { food: 0 } });
-      expect(result.credited).toBe(2);
-      expect(result.nextStock.fruit).toBe(1);
-      expect(result.nextStock.game).toBe(1);
-    });
+describe('Supply — household gathering declared in the catalog', () => {
+  test('every house type declares the gathering entry, with the same categories as its diet', () => {
+    for (const type of ['House-Blue', 'House-Red', 'House-Purple', 'House-2Story']) {
+      const producer = getResourceRoles(type).find((entry) => entry.role === 'producer');
+      expect(producer).toBeDefined();
+      expect(producer.scale).toBe('building');
+      expect(producer.requiresOperational).toBe(false);
+      const diet = getResourceRoles(type).find(
+        (entry) => entry.role === 'consumer' && (entry.consumption ?? 'quantity') === 'quantity'
+      );
+      for (const category of producer.categories) {
+        expect(diet.categories).toContain(category);
+      }
+    }
   });
 
-  describe('ProduceConsumerSubsistence', () => {
+  describe('ProduceResource on a house', () => {
     let repo;
     let useCase;
 
     beforeEach(() => {
-      repo = new InMemorySupplyBuildingRepository([
-        house('House-Blue-1-2', { pop: 3, stocks: { food: 0 } }),
-      ]);
-      useCase = new ProduceConsumerSubsistence(repo);
+      repo = new InMemorySupplyBuildingRepository([house('House-Blue-1-2', { pop: 3 })]);
+      useCase = new ProduceResource(repo);
     });
 
-    test('credits fruit and game for an inhabited house and marks the month', async () => {
-      const outcome = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 4 });
+    test('credits every gathered category and the diet total, without a road', async () => {
+      const outcome = await useCase.execute({ buildingId: 'House-Blue-1-2', period: period(4) });
 
       expect(outcome.produced).toBe(true);
-      expect(outcome.credited).toEqual({ fruit: 1, game: 1 });
-      expect(outcome.food).toBe(2);
-
       const updated = await repo.findById('House-Blue-1-2');
-      expect(updated.stocks.fruit).toBe(1);
-      expect(updated.stocks.game).toBe(1);
-      expect(updated.stocks.food).toBe(2);
+      for (const category of gathering.categories) {
+        expect(updated.stocks[category]).toBe(perHouse);
+      }
+      expect(updated.stocks[gathering.totalKey]).toBe(perHouse * gathering.categories.length);
       expect(updated.lastSubsistenceMonth).toBe(4);
     });
 
-    test('refuses a second production in the same month', async () => {
-      await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 4 });
-      const second = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 4 });
+    test('a fixed amount per house: population does not change it', async () => {
+      const small = new InMemorySupplyBuildingRepository([house('A', { pop: 1 })]);
+      const big = new InMemorySupplyBuildingRepository([house('B', { pop: 6 })]);
+      await new ProduceResource(small).execute({ buildingId: 'A', period: period(1) });
+      await new ProduceResource(big).execute({ buildingId: 'B', period: period(1) });
 
+      expect((await small.findById('A')).stocks.food).toBe((await big.findById('B')).stocks.food);
+    });
+
+    test('leaves the other goods of the diet untouched', async () => {
+      repo = new InMemorySupplyBuildingRepository([
+        house('House-Blue-1-2', { stocks: { wheat: 7, food: 7 } }),
+      ]);
+      await new ProduceResource(repo).execute({ buildingId: 'House-Blue-1-2', period: period(2) });
+
+      const updated = await repo.findById('House-Blue-1-2');
+      expect(updated.stocks.wheat).toBe(7);
+      expect(updated.stocks.food).toBe(7 + perHouse * gathering.categories.length);
+    });
+
+    test('refuses a second production in the same month, allows the next one', async () => {
+      await useCase.execute({ buildingId: 'House-Blue-1-2', period: period(4) });
+      const second = await useCase.execute({ buildingId: 'House-Blue-1-2', period: period(4) });
       expect(second.produced).toBe(false);
-      expect(second.reason).toBe('already_produced_this_month');
+      expect(second.reason).toBe('already_produced_this_period');
+
+      const next = await useCase.execute({ buildingId: 'House-Blue-1-2', period: period(5) });
+      expect(next.produced).toBe(true);
     });
 
     test('also produces for level 2 houses — gathering is independent from the market cycle', async () => {
-      repo = new InMemorySupplyBuildingRepository([
-        house('House-Blue-1-2', { pop: 3, level: 2, stocks: { food: 0 } }),
-      ]);
-      useCase = new ProduceConsumerSubsistence(repo);
-
-      const outcome = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 4 });
+      repo = new InMemorySupplyBuildingRepository([house('House-Blue-1-2', { pop: 3, level: 2 })]);
+      const outcome = await new ProduceResource(repo).execute({
+        buildingId: 'House-Blue-1-2',
+        period: period(4),
+      });
       expect(outcome.produced).toBe(true);
-      expect(outcome.credited).toEqual({ fruit: 1, game: 1 });
     });
 
     test('skips houses with zero population', async () => {
-      repo = new InMemorySupplyBuildingRepository([
-        house('House-Blue-1-2', { pop: 0, stocks: { food: 0 } }),
-      ]);
-      useCase = new ProduceConsumerSubsistence(repo);
-
-      const outcome = await useCase.execute({ houseId: 'House-Blue-1-2', monthIndex: 4 });
+      repo = new InMemorySupplyBuildingRepository([house('House-Blue-1-2', { pop: 0 })]);
+      const outcome = await new ProduceResource(repo).execute({
+        buildingId: 'House-Blue-1-2',
+        period: period(4),
+      });
       expect(outcome.produced).toBe(false);
       expect(outcome.reason).toBe('no_population');
     });
   });
 
-  describe('RunResourceCommandForRole (subsistence gathering)', () => {
+  describe('RunResourceCommandForRole over producers', () => {
     test('produces for every inhabited house, skips uninhabited ones', async () => {
       const repo = new InMemorySupplyBuildingRepository([
-        house('House-Blue-1-2', { pop: 2, stocks: { food: 0 } }),
-        house('House-Purple-3-4', { type: 'House-Purple', pop: 1, stocks: { food: 0 } }),
-        house('House-Red-5-6', { type: 'House-Red', pop: 3, level: 2, stocks: { food: 0 } }),
-        house('House-Blue-7-8', { pop: 0, stocks: { food: 0 } }),
+        house('House-Blue-1-2', { pop: 2 }),
+        house('House-Purple-3-4', { type: 'House-Purple', pop: 1 }),
+        house('House-Red-5-6', { type: 'House-Red', pop: 3, level: 2 }),
+        house('House-Blue-7-8', { pop: 0 }),
       ]);
-      const produceOne = new ProduceConsumerSubsistence(repo);
-      const runSubsistenceCommand = new RunResourceCommandForRole(repo, produceOne);
+      const run = new RunResourceCommandForRole(repo, new ProduceResource(repo));
 
-      const { count } = await runSubsistenceCommand.execute({
-        role: 'consumer',
-        buildParams: (house) => ({ houseId: house.id, monthIndex: 2 }),
+      const { count } = await run.execute({
+        role: 'producer',
+        categories: gathering.categories,
+        buildParams: (b) => ({ buildingId: b.id, period: period(2) }),
         successKey: 'produced',
       });
 
       expect(count).toBe(3);
-      expect((await repo.findById('House-Blue-1-2')).stocks).toMatchObject({ fruit: 1, game: 1 });
-      expect((await repo.findById('House-Purple-3-4')).stocks).toMatchObject({ fruit: 1, game: 1 });
-      expect((await repo.findById('House-Red-5-6')).stocks).toMatchObject({ fruit: 1, game: 1 });
+      for (const id of ['House-Blue-1-2', 'House-Purple-3-4', 'House-Red-5-6']) {
+        const stocks = (await repo.findById(id)).stocks;
+        for (const category of gathering.categories) expect(stocks[category]).toBe(perHouse);
+      }
       expect((await repo.findById('House-Blue-7-8')).stocks.food).toBe(0);
     });
+
+    test('a farm-only category filter never selects a house', async () => {
+      expect(hasResourceRole('House-Blue', 'producer', ['wheat'])).toBe(false);
+    });
+  });
+});
+
+describe('Supply — the `scale: "population"` option', () => {
+  test('multiplies amount by the inhabitants (entry supplied through the catalog accessor)', async () => {
+    const policyPath = '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
+    const actual = await import(policyPath);
+    jest.unstable_mockModule(policyPath, () => ({
+      ...actual,
+      getResourceRoles: (type) =>
+        type === 'Test-Forager'
+          ? [
+              {
+                role: 'producer',
+                categories: ['fruit'],
+                totalKey: 'food',
+                amount: 2,
+                scale: 'population',
+                requiresOperational: false,
+                schedule: { unit: 'always' },
+                periodLock: { field: 'lastSubsistenceMonth', unit: 'month' },
+              },
+            ]
+          : actual.getResourceRoles(type),
+    }));
+    const { ProduceResource: MockedProduce } = await import(
+      '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js?scaled'
+    );
+
+    const repo = new InMemorySupplyBuildingRepository([house('T', { type: 'Test-Forager', pop: 4 })]);
+    await new MockedProduce(repo).execute({ buildingId: 'T', period: period(3) });
+
+    expect((await repo.findById('T')).stocks.fruit).toBe(8);
   });
 });

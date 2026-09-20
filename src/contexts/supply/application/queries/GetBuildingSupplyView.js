@@ -104,8 +104,9 @@ export function classifySupplyKind(type) {
     return getConsumptionModeForRole(type, 'distributor') === 'flag' ? 'service' : 'market';
   }
   if (hasResourceRole(type, 'hub')) return 'windmill';
-  if (hasResourceRole(type, 'producer')) return 'farm';
+  // A house both consumes and gathers, so consumers are classified before producers.
   if (hasResourceRole(type, 'consumer')) return 'house';
+  if (hasResourceRole(type, 'producer')) return 'farm';
   return 'other';
 }
 

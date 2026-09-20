@@ -83,7 +83,10 @@ export class CollectResourceToHub {
 
       if (source.roadCount <= 0) continue;
 
-      const category = getCategoriesForRole(source.type, 'producer')[0] ?? null;
+      // Only goods this hub collects: a producer of anything else (household
+      // gathering, another chain's output) is simply not this hub's business.
+      const category =
+        getCategoriesForRole(source.type, 'producer').find((candidate) => categories.includes(candidate)) ?? null;
       if (!category) continue;
 
       const available = getCategoryAmount(source.stocks, category);

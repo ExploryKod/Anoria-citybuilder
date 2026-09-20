@@ -8,20 +8,11 @@ import {
   getOrCreateSupplyContext,
 } from './createSupplyContext.js';
 
-import { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
-
 export { createSupplyContext, getOrCreateSupplyContext };
 
 export { isWithinRange, manhattanDistance, findBuildingsWithRoleInRange } from '../contexts/supply/domain/policies/ResourceRangePolicy.js';
 
-export { DEFAULT_FOOD_DISTRIBUTION_DISTANCE };
-
 export { toSupplySeason, toSupplyMonth } from './supplyTimeLabels.js';
-
-/** @returns {number} */
-export function getDefaultFoodDistributionDistance() {
-  return DEFAULT_FOOD_DISTRIBUTION_DISTANCE;
-}
 
 /** Windmill DTOs for storage / commerce UI (stocks + export flags). */
 export async function listHubSupplyViews() {

@@ -13,7 +13,7 @@
    - `TimeManager` - Calculs de temps/saisons
    - `FoodTraceabilityService` - Traçabilité (peut être mocké)
    - `checkRoadAccess` (ModuleHelper) - Déjà testé ✅
-   - `config.simulation.foodDistributionDistance` - Configuration
+   - `range` de chaque distributeur - déclaré dans `buildingEconomy.js`
 
 2. **Logique métier complexe** ⚠️⚠️
    - **Saisons** : Fermes ne produisent pas en hiver (janvier-février-mars)

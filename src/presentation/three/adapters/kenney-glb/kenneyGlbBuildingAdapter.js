@@ -14,6 +14,7 @@
 // `presentation.brightness` (default 1) multiplies the model's colors — e.g. to
 // lighten dark asphalt so walkers stand out; it lives in the catalog, not here.
 
+import { createEmptyStocks } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { setPlacementRotationStep, getPlacementYawAngle } from '../../placement/placementRotation.js';
@@ -120,7 +121,7 @@ registerBuildingSourceAdapter('kenneyGlb', {
       footprintDepth: 1,
       neighbors: [],
       pop: 0,
-      stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+      stocks: createEmptyStocks(),
       time: 0,
       roads: 0,
       stage: 0,

@@ -1,4 +1,5 @@
 import { DexieConstructionBuildingRepository } from '../contexts/construction/infrastructure/dexie/DexieConstructionBuildingRepository.js';
+import { createEmptyStocks } from '../shared/building-catalog/resourceRoleQueries.js';
 import { GetBuildingAtTile } from '../contexts/construction/application/queries/GetBuildingAtTile.js';
 import { ListSceneBuildingTypes } from '../contexts/construction/application/queries/ListSceneBuildingTypes.js';
 import { PlaceBuildingWithPayment } from '../contexts/construction/application/services/PlaceBuildingWithPayment.js';
@@ -159,7 +160,7 @@ export function createConstructionContext({
       }
 
       const defaults = {
-        stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+        stocks: createEmptyStocks(),
         neighbors: [],
         pop: 0,
         roads: 0,

@@ -10,7 +10,7 @@ export function createSupplyBuildingView({
   y = null,
   roadCount = 0,
   stocks = {},
-  maxStock = 500,
+  maxStock,
   neighbors = [],
   pop = 0,
   isBuying = false,
@@ -35,11 +35,8 @@ export function createSupplyBuildingView({
   }
 
   const stock = createSupplyStock(stocks);
-  const presentationStocks = Object.freeze({
-    ...stock,
-    dattes: nonNegInt(stocks?.dattes),
-    wood: nonNegInt(stocks?.wood),
-  });
+  // The catalog-derived shape only — no good is added by name here.
+  const presentationStocks = Object.freeze({ ...stock });
 
   return Object.freeze({
     id,
@@ -50,7 +47,7 @@ export function createSupplyBuildingView({
     pop: Number.isFinite(pop) ? Math.max(0, Math.floor(pop)) : 0,
     stocks: presentationStocks,
     maxStock:
-      Number.isFinite(maxStock) && maxStock > 0 ? Math.floor(maxStock) : 500,
+      Number.isFinite(maxStock) && maxStock > 0 ? Math.floor(maxStock) : Infinity,
     neighbors: Object.freeze(Array.isArray(neighbors) ? [...neighbors] : []),
     isBuying: isBuying === true,
     noSourcesNearby: noSourcesNearby === true,

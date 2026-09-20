@@ -1,3 +1,5 @@
+import { getResourceCategoryPresentation } from '../../../../composition/supplyCatalog.js';
+import { getResourceRoles } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
@@ -101,8 +103,12 @@ export class StorageSectionPresenter {
         card.className = 'storage-windmill-card';
         card.dataset.windmillId = windmillInstanceId(windmill);
         
-        const stocks = windmill.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0, dattes: 0 };
-        const maxStock = windmill.maxStock || 1000;
+        const stocks = windmill.stocks || {};
+        // Goods and ceiling both come from the catalog (hub role of this building type).
+        const hubCategories = getResourceRoles(windmill.type)
+            .filter((entry) => entry.role === 'hub')
+            .flatMap((entry) => entry.categories);
+        const maxStockLabel = Number.isFinite(windmill.maxStock) ? windmill.maxStock : '∞';
         const isActive = windmill.isActive !== false; // Default to true
         const distributionEnabled = windmill.distributionEnabled !== false; // Default to true
         const commercializeEnabled = windmill.commercializeEnabled !== false; // Default to true
@@ -124,8 +130,6 @@ export class StorageSectionPresenter {
         // Helper function to build partner details HTML
         const buildPartnerDetailsHTML = (productId, partners, type) => {
             if (!partners || partners.length === 0) return '';
-            const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes', wood: 'Bois' };
-            const productName = productNames[productId] || productId;
             let html = '';
             partners.forEach(partnerInfo => {
                 html += `
@@ -150,66 +154,19 @@ export class StorageSectionPresenter {
 
             <div class="storage-windmill-stocks">
                 <h4 class="storage-subtitle">Stocks</h4>
+                ${hubCategories.map((category) => `
                 <div class="storage-stock-item">
-                    <label>Blé:</label>
-                    <span class="storage-stock-value">${stocks.wheat || 0} / ${maxStock}</span>
+                    <label>${getResourceCategoryPresentation(category).label}:</label>
+                    <span class="storage-stock-value">${stocks[category] || 0} / ${maxStockLabel}</span>
                     <div class="storage-trade-info">
-                        <span class="storage-export-info">Exportés: ${getTotalExports('wheat')}</span>
-                        <span class="storage-import-info">Importés: ${getTotalImports('wheat')}</span>
+                        <span class="storage-export-info">Exportés: ${getTotalExports(category)}</span>
+                        <span class="storage-import-info">Importés: ${getTotalImports(category)}</span>
                     </div>
                     <div class="storage-partner-details">
-                        ${buildPartnerDetailsHTML('wheat', lastExportDetails['wheat'], 'export')}
-                        ${buildPartnerDetailsHTML('wheat', lastImportDetails['wheat'], 'import')}
+                        ${buildPartnerDetailsHTML(category, lastExportDetails[category], 'export')}
+                        ${buildPartnerDetailsHTML(category, lastImportDetails[category], 'import')}
                     </div>
-                </div>
-                <div class="storage-stock-item">
-                    <label>Chou:</label>
-                    <span class="storage-stock-value">${stocks.cabbage || 0} / ${maxStock}</span>
-                    <div class="storage-trade-info">
-                        <span class="storage-export-info">Exportés: ${getTotalExports('cabbage')}</span>
-                        <span class="storage-import-info">Importés: ${getTotalImports('cabbage')}</span>
-                    </div>
-                    <div class="storage-partner-details">
-                        ${buildPartnerDetailsHTML('cabbage', lastExportDetails['cabbage'], 'export')}
-                        ${buildPartnerDetailsHTML('cabbage', lastImportDetails['cabbage'], 'import')}
-                    </div>
-                </div>
-                <div class="storage-stock-item">
-                    <label>Carotte:</label>
-                    <span class="storage-stock-value">${stocks.carrot || 0} / ${maxStock}</span>
-                    <div class="storage-trade-info">
-                        <span class="storage-export-info">Exportés: ${getTotalExports('carrot')}</span>
-                        <span class="storage-import-info">Importés: ${getTotalImports('carrot')}</span>
-                    </div>
-                    <div class="storage-partner-details">
-                        ${buildPartnerDetailsHTML('carrot', lastExportDetails['carrot'], 'export')}
-                        ${buildPartnerDetailsHTML('carrot', lastImportDetails['carrot'], 'import')}
-                    </div>
-                </div>
-                <div class="storage-stock-item">
-                    <label>Dattes:</label>
-                    <span class="storage-stock-value">${stocks.dattes || 0} / ${maxStock}</span>
-                    <div class="storage-trade-info">
-                        <span class="storage-export-info">Exportés: ${getTotalExports('dattes')}</span>
-                        <span class="storage-import-info">Importés: ${getTotalImports('dattes')}</span>
-                    </div>
-                    <div class="storage-partner-details">
-                        ${buildPartnerDetailsHTML('dattes', lastExportDetails['dattes'], 'export')}
-                        ${buildPartnerDetailsHTML('dattes', lastImportDetails['dattes'], 'import')}
-                    </div>
-                </div>
-                <div class="storage-stock-item">
-                    <label>Bois:</label>
-                    <span class="storage-stock-value">${stocks.wood || 0} / ${maxStock}</span>
-                    <div class="storage-trade-info">
-                        <span class="storage-export-info">Exportés: ${getTotalExports('wood')}</span>
-                        <span class="storage-import-info">Importés: ${getTotalImports('wood')}</span>
-                    </div>
-                    <div class="storage-partner-details">
-                        ${buildPartnerDetailsHTML('wood', lastExportDetails['wood'], 'export')}
-                        ${buildPartnerDetailsHTML('wood', lastImportDetails['wood'], 'import')}
-                    </div>
-                </div>
+                </div>`).join('')}
             </div>
 
             <div class="storage-windmill-controls">

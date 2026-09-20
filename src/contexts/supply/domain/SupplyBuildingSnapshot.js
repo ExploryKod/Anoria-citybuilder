@@ -16,7 +16,7 @@ export function createSupplyBuildingSnapshot({
   y = null,
   roadCount = 0,
   stocks = {},
-  maxStock = 500,
+  maxStock,
   worker = 0,
   workerNeed = 0,
   neighbors = [],
@@ -42,7 +42,8 @@ export function createSupplyBuildingSnapshot({
     y: typeof y === 'number' ? y : null,
     roadCount: Number.isInteger(roadCount) ? roadCount : 0,
     stocks: createSupplyStock(stocks),
-    maxStock: Number.isFinite(maxStock) && maxStock > 0 ? Math.floor(maxStock) : 500,
+    // Unbounded unless the catalog declared a ceiling (see getMaxStockForBuilding).
+    maxStock: Number.isFinite(maxStock) && maxStock > 0 ? Math.floor(maxStock) : Infinity,
     worker: Number.isFinite(worker) ? worker : 0,
     workerNeed: Number.isFinite(workerNeed) ? workerNeed : 0,
     neighbors: Object.freeze(Array.isArray(neighbors) ? [...neighbors] : []),

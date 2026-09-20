@@ -1,4 +1,5 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { createEmptyStocks } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { createHousingBuildingSnapshot } from '../../domain/HousingBuildingSnapshot.js';
 import { isResidentialHouseType } from '../../domain/policies/HouseCapacityPolicy.js';
@@ -31,7 +32,7 @@ export class DexieHousingBuildingRepository {
       lastPopulationGrowthMonth: house.lastPopulationGrowthMonth ?? null,
       lastFamineDeathMonth: house.lastFamineDeathMonth ?? null,
       lastConsumption: house.lastConsumption ?? null,
-      stocks: house.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 },
+      stocks: house.stocks || createEmptyStocks(),
       price: house.price ?? 0,
       neighbors: house.neighbors || [],
     });

@@ -1,45 +1,33 @@
-/** Max citizen slots per house (regular or palace). */
+import { SOCIAL_CATEGORY } from '../../../../shared/population/socialCategoryCatalog.js';
+import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+
+/** Max citizen slots per house (regular or palace) — beyond this a resident counts as élite. */
 export const HOUSE_CITIZEN_CAP = 6;
 
-/** Max total pop for a regular house (citizens only). */
-export const REGULAR_HOUSE_MAX_POP = HOUSE_CITIZEN_CAP;
-
-/** Max total pop for a palace (6 citizens + 1 élite slot at this stage). */
+/** Max total pop for a palace (citizen slots + 1 élite slot at this stage). */
 export const PALACE_MAX_POP = HOUSE_CITIZEN_CAP + 1;
 
-/** Level 1 (autarky, hunter-gatherer): reuses the historical regular-house cap. */
-export const HOUSE_LEVEL_1_MAX_POP = REGULAR_HOUSE_MAX_POP;
-
-/** Level 2 (group profession, road required): double the level-1 cap. */
-export const HOUSE_LEVEL_2_MAX_POP = HOUSE_LEVEL_1_MAX_POP * 2;
-
-/** Level 3 (established): steady growth beyond level 2. */
-export const HOUSE_LEVEL_3_MAX_POP = HOUSE_LEVEL_2_MAX_POP + HOUSE_LEVEL_1_MAX_POP;
-
-/** Level 4 (affluent): steady growth beyond level 3. */
-export const HOUSE_LEVEL_4_MAX_POP = HOUSE_LEVEL_3_MAX_POP + HOUSE_LEVEL_1_MAX_POP;
-
-/** Level 5 ("manoir"): steady growth beyond level 4. */
-export const HOUSE_LEVEL_5_MAX_POP = HOUSE_LEVEL_4_MAX_POP + HOUSE_LEVEL_1_MAX_POP;
-
-/** Population cap per house tier — add a key here for a new tier, no code change. */
-const HOUSE_TIER_MAX_POP = Object.freeze({
-  1: HOUSE_LEVEL_1_MAX_POP,
-  2: HOUSE_LEVEL_2_MAX_POP,
-  3: HOUSE_LEVEL_3_MAX_POP,
-  4: HOUSE_LEVEL_4_MAX_POP,
-  5: HOUSE_LEVEL_5_MAX_POP,
-});
-
 /**
- * Max population for a Blue/Red/Purple house at a given tier. An unknown
- * tier (including none reached yet) falls back to tier 1's cap.
- * Palace capacity stays governed by `maxPopulationForHouseType` (frozen path).
+ * Population ceiling of a house of `group` at `level`, straight from the
+ * social-category catalog (`tiers[level].maxPopulation`). An unknown level
+ * (including none reached yet) falls back to the group's first tier; an
+ * unknown group has no ceiling declared, so 0.
+ *
  * @param {number} level
+ * @param {string} group Residential group ('artisans' | 'merchants' | 'scholars' …).
  * @returns {number}
  */
-export function maxPopulationForLevel(level) {
-  return HOUSE_TIER_MAX_POP[level] ?? HOUSE_LEVEL_1_MAX_POP;
+export function maxPopulationForLevel(level, group) {
+  const tiers = SOCIAL_CATEGORY[group]?.tiers;
+  return tiers?.[level]?.maxPopulation ?? tiers?.[1]?.maxPopulation ?? 0;
+}
+
+/**
+ * @param {string} type Catalog house type.
+ * @returns {string | undefined} Its permanent residential group, if any.
+ */
+export function residentialGroupOfType(type) {
+  return getBuildingDefinition(type)?.residentialGroup;
 }
 
 /**
@@ -73,5 +61,5 @@ export function isResidentialHouseType(type) {
  */
 export function maxPopulationForHouseType(type) {
   if (!isResidentialHouseType(type)) return 0;
-  return isPalaceHouseType(type) ? PALACE_MAX_POP : REGULAR_HOUSE_MAX_POP;
+  return isPalaceHouseType(type) ? PALACE_MAX_POP : maxPopulationForLevel(1, residentialGroupOfType(type));
 }

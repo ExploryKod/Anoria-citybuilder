@@ -3,7 +3,6 @@
  */
 
 import { TimeManager } from '../shared/time/TimeManager.js';
-import { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
 import { getOrCreateParcelsContext } from './createParcelsContext.js';
 import { getOrCreateSupplyContext } from './createSupplyContext.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
@@ -65,7 +64,6 @@ export function bootGameContexts() {
     toSupplySeason,
     toSupplyMonth,
     getSkillPriorities: () => employment.getAllSkillPriorities(),
-    foodDistributionDistance: DEFAULT_FOOD_DISTRIBUTION_DISTANCE,
   });
 
   return {

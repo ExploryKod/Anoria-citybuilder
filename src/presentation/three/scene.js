@@ -1,3 +1,4 @@
+import { createEmptyStocks, getResourceStockShape, getAllCategoriesForRole } from '../../shared/building-catalog/resourceRoleQueries.js';
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import {createCamera} from './camera.js';
@@ -1280,12 +1281,10 @@ export function createScene(_gameStore, assetManager, deps) {
                             );
                         }
 
-                        const marketSupplyStocks = marketSupply?.stocks
-                            || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-                        const hasFoodBaskets = (marketSupplyStocks.wheat || 0) > 0 ||
-                            (marketSupplyStocks.carrot || 0) > 0 ||
-                            (marketSupplyStocks.cabbage || 0) > 0 ||
-                            (marketSupplyStocks.food || 0) > 0;
+                        const marketSupplyStocks = marketSupply?.stocks || createEmptyStocks();
+                        // Goods and aggregate come from the catalog (what a hub stores / its totalKey).
+                        const hasFoodBaskets = (marketSupplyStocks[getResourceStockShape().totalKey] || 0) > 0 ||
+                            getAllCategoriesForRole('hub').some((good) => (marketSupplyStocks[good] || 0) > 0);
 
                         const marketNoFoodIcon = resolveIconAppearance(
                             buildings[x][y], 'no-food', statutsIconsMeta['no-food'].position, statutsIconsMeta['no-food'].scale
@@ -1488,7 +1487,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     if(!Object.hasOwn(buildings[x][y], 'userData') || !Object.hasOwn(buildings[x][y].userData, 'stocks')) {
                         buildings[x][y].userData = {
                             ...buildings[x][y].userData,
-                            stocks: {food: 0, carrot: 0, cabbage: 0, wheat: 0}
+                            stocks: createEmptyStocks()
                         };
                     }
 
@@ -1498,7 +1497,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     
                     // Removed old code that wrote userData.stocks to IndexedDB:
                     // This was causing the service's updates to be overwritten
-                    // The service writes: stocks = {wheat: 0, carrot: 1, cabbage: 0, food: 1}
+                    // The service writes the stock row (one field per good + the aggregate)
                     // Then this code was reading empty userData.stocks and overwriting IndexedDB with 0s!
 
                     // Read stocks from Supply BC
@@ -1510,12 +1509,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     
                     // Sync Supply stocks to userData for visual display
                     if (houseFoodStocks && buildings[x][y] && buildings[x][y].userData) {
-                        buildings[x][y].userData.stocks = {
-                            food: houseFoodStocks.food || 0,
-                            wheat: houseFoodStocks.wheat || 0,
-                            carrot: houseFoodStocks.carrot || 0,
-                            cabbage: houseFoodStocks.cabbage || 0
-                        };
+                        buildings[x][y].userData.stocks = { ...createEmptyStocks(), ...houseFoodStocks };
                     }
                     
                     const houseData = await getBuildingById(currentInstanceId);

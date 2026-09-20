@@ -189,7 +189,8 @@ describe('Shared Kernel: CitizenStatusCatalog', () => {
     test('hunter-gatherer has subsistence-forager skill', () => {
       const profile = CITIZEN_STATUS_PROFILES['hunter-gatherer'];
       expect(profile.skills['subsistence-forager']).toBeDefined();
-      expect(profile.skills['subsistence-forager'].produces).toEqual({ fruit: 1, game: 1 });
+      // How much a house gathers is an economy fact (HOUSE_GATHERING in buildingEconomy.js), not declared here.
+      expect(profile.skills['subsistence-forager'].produces).toBeUndefined();
     });
 
     test('worker has CUMULATIVE skills (subsistence + employment)', () => {

@@ -25,10 +25,9 @@ import {
   resolveHouseLevel,
 } from '../../../src/contexts/housing/domain/policies/HouseLevelPolicy.js';
 import {
-  HOUSE_LEVEL_1_MAX_POP,
-  HOUSE_LEVEL_2_MAX_POP,
   maxPopulationForLevel,
 } from '../../../src/contexts/housing/domain/policies/HouseCapacityPolicy.js';
+import { SOCIAL_CATEGORY } from '../../../src/shared/population/socialCategoryCatalog.js';
 import { EvolveHouseBuilding } from '../../../src/contexts/housing/application/commands/evolution/EvolveHouseBuilding.js';
 
 class InMemoryHousingEvolutionRepository {
@@ -85,11 +84,24 @@ function house(id, type, extras = {}) {
 
 describe('Housing — house progression', () => {
   describe('HouseCapacityPolicy.maxPopulationForLevel', () => {
-    test('level 1 caps at 6, level 2 doubles to 12', () => {
-      expect(maxPopulationForLevel(1)).toBe(HOUSE_LEVEL_1_MAX_POP);
-      expect(maxPopulationForLevel(1)).toBe(6);
-      expect(maxPopulationForLevel(2)).toBe(HOUSE_LEVEL_2_MAX_POP);
-      expect(maxPopulationForLevel(2)).toBe(12);
+    test('each tier reads its ceiling from the social-category catalog', () => {
+      for (const group of ['artisans', 'merchants', 'scholars']) {
+        for (const [level, tier] of Object.entries(SOCIAL_CATEGORY[group].tiers)) {
+          expect(maxPopulationForLevel(Number(level), group)).toBe(tier.maxPopulation);
+        }
+      }
+    });
+
+    test('a deeper tier never holds fewer residents than the one below it', () => {
+      const tiers = SOCIAL_CATEGORY.artisans.tiers;
+      const levels = Object.keys(tiers).map(Number).sort((a, b) => a - b);
+      for (let i = 1; i < levels.length; i++) {
+        expect(tiers[levels[i]].maxPopulation).toBeGreaterThan(tiers[levels[i - 1]].maxPopulation);
+      }
+    });
+
+    test('an unknown group has no declared ceiling', () => {
+      expect(maxPopulationForLevel(1, 'nobody')).toBe(0);
     });
   });
 
@@ -136,7 +148,7 @@ describe('Housing — house progression', () => {
     test('level 2 regresses to level 1 when road access is lost, population clamped to the level-1 cap', () => {
       const result = resolveHouseLevel({ level: 2, pop: 10, roadCount: 0, residentialGroup: 'artisans' });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
-      expect(result.targetPop).toBe(HOUSE_LEVEL_1_MAX_POP);
+      expect(result.targetPop).toBe(SOCIAL_CATEGORY.artisans.tiers[1].maxPopulation);
       expect(result.changed).toBe(true);
       expect(result.reason).toBe('level2_to_level1_requirements_lost');
     });

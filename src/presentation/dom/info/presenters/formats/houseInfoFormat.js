@@ -26,7 +26,7 @@ export function formatHouseLayoutHeader(vm) {
   const group = residentialGroupForType(vm.buildingType);
   const title = group ? getResidentialGroupTitle(group) : (getBuildingDefinition(vm.buildingType)?.displayName ?? vm.buildingType);
 
-  const maxPop = maxPopulationForLevel(vm.houseLevel);
+  const maxPop = maxPopulationForLevel(vm.houseLevel, group);
   const dwellingLabel = getHouseDwellingLevelLabel(vm.houseLevel);
   const dwellingAria = getHouseDwellingLevelAriaLabel(vm.houseLevel);
   const meta = `<span aria-label="${dwellingAria}">${dwellingLabel}</span> · <span aria-label="${vm.buildingPop} habitants sur ${maxPop}">${vm.buildingPop}/${maxPop} hab.</span>`;

@@ -85,7 +85,7 @@ export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, ser
       const currentTier = tiers[previousLevel];
       if (previousLevel > HOUSE_LEVEL_AUTARKY && currentTier && !meetsTierRequirements(currentTier.requirements, context)) {
         targetLevel = previousLevel - 1;
-        targetPop = Math.min(previousPop, maxPopulationForLevel(targetLevel));
+        targetPop = Math.min(previousPop, maxPopulationForLevel(targetLevel, residentialGroup));
         reason = `level${previousLevel}_to_level${targetLevel}_requirements_lost`;
       }
     }

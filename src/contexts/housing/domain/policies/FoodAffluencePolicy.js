@@ -1,3 +1,4 @@
+import { getPerCapitaDemand, getSuppliedCategories } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { totalFoodFromStocks } from '../value-objects/FoodStocks.js';
 
 /**
@@ -16,14 +17,17 @@ export function checkFoodAffluence(stocks, population = 0) {
   const totalFood = totalFoodFromStocks(stocks);
   const hasFood = totalFood > 0;
 
+  // What the residents need per period comes from the catalog, never an assumed 1 each.
+  const need = pop * getPerCapitaDemand();
+
   let netFood = totalFood;
   if (totalFood > 0 && pop > 0) {
-    const net = totalFood - pop;
+    const net = totalFood - need;
     netFood = net > 0 ? net : 0;
   }
 
-  const meetsFoodGoal = pop > 5 && totalFood > pop * 2;
-  const isInsufficient = pop >= 2 && totalFood < pop;
+  const meetsFoodGoal = pop > 5 && totalFood > need * 2;
+  const isInsufficient = pop >= 2 && totalFood < need;
 
   return {
     hasFood,
@@ -40,10 +44,5 @@ export function checkFoodAffluence(stocks, population = 0) {
  */
 export function countAvailableCropTypes(stocks) {
   if (!stocks) return 0;
-  const types = [
-    (stocks.wheat || 0) > 0,
-    (stocks.carrot || 0) > 0,
-    (stocks.cabbage || 0) > 0,
-  ];
-  return types.filter(Boolean).length;
+  return getSuppliedCategories().filter((category) => (stocks[category] || 0) > 0).length;
 }

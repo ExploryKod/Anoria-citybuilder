@@ -1,7 +1,8 @@
 /**
  * Orchestration: full monthly resource supply chain tick — producer harvest,
  * hub surplus collection, hub-to-distributor transfer, distributor reach,
- * subsistence gathering, and consumption. Every step is the generic
+ * and consumption (household gathering is just another 'producer' entry,
+ * run by the producer step). Every step is the generic
  * RunResourceCommandForRole/RunCityResourceCycle/RunHubSurplusCycle/
  * UpdateConsumerDistributorReach mechanism — this class only sequences them.
  * Producer/consumer once-per-period locking and the hub-transfer leg's
@@ -19,7 +20,6 @@ export class RunMonthlyResourceCycle {
    * @param {import('../commands/surplus/RunHubSurplusCycle.js').RunHubSurplusCycle} runHubSurplusCycle
    * @param {import('../commands/RunResourceCommandForRole.js').RunResourceCommandForRole} runConsumerCommand
    * @param {{ recordHouseConsumptions: Function }} traceability
-   * @param {import('../commands/RunResourceCommandForRole.js').RunResourceCommandForRole} [runSubsistenceCommand]
    * @param {object} config
    * @param {ReadonlyArray<string>} config.categories Every category any
    *   distributor covers — drives the actual distribution/restock leg,
@@ -37,7 +37,6 @@ export class RunMonthlyResourceCycle {
     runHubSurplusCycle,
     runConsumerCommand,
     traceability,
-    runSubsistenceCommand,
     config
   ) {
     this.runProducerCommand = runProducerCommand;
@@ -46,7 +45,6 @@ export class RunMonthlyResourceCycle {
     this.runHubSurplusCycle = runHubSurplusCycle;
     this.runConsumerCommand = runConsumerCommand;
     this.traceability = traceability;
-    this.runSubsistenceCommand = runSubsistenceCommand;
     this.config = config;
   }
 
@@ -55,10 +53,9 @@ export class RunMonthlyResourceCycle {
    * @param {string | null} params.season
    * @param {string | null} params.month
    * @param {object} params.timeInfo
-   * @param {number} [params.maxDistance=5]
    * @returns {Promise<void>}
    */
-  async execute({ season, month, timeInfo, maxDistance = 5 }) {
+  async execute({ season, month, timeInfo }) {
     // No season gate here — each producer's own 'producer' schedule (see
     // buildingEconomy.js) decides whether it's an active period; the
     // once-per-year lock in ProduceResource still prevents double-production
@@ -84,21 +81,11 @@ export class RunMonthlyResourceCycle {
       season,
       month,
       timeInfo,
-      maxDistance,
     });
 
     await this.updateDistributorReach.execute({
-      maxDistance,
       category: this.config.reachCategories ?? this.config.categories,
     });
-
-    if (this.runSubsistenceCommand) {
-      await this.runSubsistenceCommand.execute({
-        role: 'consumer',
-        buildParams: (house) => ({ houseId: house.id, monthIndex: timeInfo.monthIndex }),
-        successKey: 'produced',
-      });
-    }
 
     const { results: consumptions } = await this.runConsumerCommand.execute({
       role: 'consumer',

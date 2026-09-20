@@ -1,3 +1,4 @@
+import { getAllCategoriesForRole } from '../../../domain/policies/ResourceRolePolicy.js';
 /**
  * Command: clear producer `collectedByHub` UI flags (outside the collection
  * period / day-1 reset).
@@ -16,7 +17,7 @@ export class ResetSourcesCollectedFlag {
    * @returns {Promise<{ sources: number, cleared: number }>}
    */
   async execute({ onlyIfSet = true } = {}) {
-    const sources = await this.supplyBuildingRepository.findByResourceRole('producer');
+    const sources = await this.supplyBuildingRepository.findByResourceRole('producer', getAllCategoriesForRole('collector'));
     let cleared = 0;
 
     for (const source of sources) {

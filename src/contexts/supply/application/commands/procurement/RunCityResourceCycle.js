@@ -1,6 +1,6 @@
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
 import { findBuildingsWithRoleInRange } from '../../../domain/policies/ResourceRangePolicy.js';
-import { getRangeForRole, getHubLinkForRole } from '../../../domain/policies/ResourceRolePolicy.js';
+import { requireRangeForRole, getHubLinkForRole } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Orchestration: generic resource cycle. Every building holding the
@@ -56,10 +56,9 @@ export class RunCityResourceCycle {
    * @param {string | null} [params.season]
    * @param {string | null} [params.month]
    * @param {object} params.timeInfo
-   * @param {number} [params.maxDistance] Fallback when a distributor's own catalog range is undeclared.
    * @returns {Promise<{ distributorsProcessed: number }>}
    */
-  async execute({ categories, season, month = null, timeInfo, maxDistance }) {
+  async execute({ categories, season, month = null, timeInfo }) {
     const distributors = await this.supplyBuildingRepository.findByResourceRole('distributor', categories);
     const allBuildings = await this.supplyBuildingRepository.listAllBuildingRows();
     let distributorsProcessed = 0;
@@ -71,7 +70,6 @@ export class RunCityResourceCycle {
         season,
         month,
         timeInfo,
-        maxDistance,
       });
       if (processed) distributorsProcessed += 1;
     }
@@ -79,7 +77,7 @@ export class RunCityResourceCycle {
     return { distributorsProcessed };
   }
 
-  async #processDistributor({ distributor, allBuildings, season, month, timeInfo, maxDistance }) {
+  async #processDistributor({ distributor, allBuildings, season, month, timeInfo }) {
     const distributorRow = await this.supplyBuildingRepository.findBuildingRow(distributor.id);
     if (!distributorRow) return false;
 
@@ -111,7 +109,7 @@ export class RunCityResourceCycle {
 
     const consumersInRange = findBuildingsWithRoleInRange(distributorRow, allBuildings, {
       role: 'consumer',
-      maxDistance: getRangeForRole(distributor.type, 'distributor') ?? maxDistance,
+      maxDistance: requireRangeForRole(distributor.type, 'distributor'),
     });
 
     if (consumersInRange.length > 0) {

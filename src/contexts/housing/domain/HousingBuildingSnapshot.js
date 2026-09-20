@@ -1,3 +1,6 @@
+import { getResourceStockShape } from '../../../shared/building-catalog/resourceRoleQueries.js';
+import { edibleBasketsFromCategories } from './value-objects/FoodStocks.js';
+
 /**
  * Read model for a residential building in the Housing BC.
  *
@@ -36,7 +39,7 @@ export function createHousingBuildingSnapshot({
   lastPopulationGrowthMonth = null,
   lastFamineDeathMonth = null,
   lastConsumption = null,
-  stocks = { food: 0, wheat: 0, carrot: 0, cabbage: 0 },
+  stocks = {},
   price = 0,
   neighbors = [],
   // Passed through as-is — this is what lets a Supply-context field the
@@ -72,15 +75,14 @@ export function createHousingBuildingSnapshot({
         }
       : null,
     stocks: (() => {
-      const wheat = stocks.wheat ?? 0;
-      const carrot = stocks.carrot ?? 0;
-      const cabbage = stocks.cabbage ?? 0;
-      const fruit = stocks.fruit ?? 0;
-      const game = stocks.game ?? 0;
-      const fromCategories = wheat + carrot + cabbage + fruit + game;
-      // Keep food aligned with visible categories when they carry stock.
-      const food = fromCategories > 0 ? fromCategories : (stocks.food ?? 0);
-      return { food, wheat, carrot, cabbage, fruit, game };
+      // Shape and aggregate come from the catalog — no good is named here.
+      const { categories, totalKey } = getResourceStockShape();
+      const next = {};
+      for (const category of categories) next[category] = stocks?.[category] ?? 0;
+      const fromCategories = edibleBasketsFromCategories(next);
+      // Keep the aggregate aligned with visible categories when they carry stock.
+      next[totalKey] = fromCategories > 0 ? fromCategories : (stocks?.[totalKey] ?? 0);
+      return next;
     })(),
     price: price ?? 0,
     neighbors: neighbors ?? [],

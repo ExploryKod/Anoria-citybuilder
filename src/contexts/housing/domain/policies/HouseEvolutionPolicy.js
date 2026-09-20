@@ -1,3 +1,4 @@
+import { getPerCapitaDemand } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import {
   HOUSE_TYPE_BLUE,
   HOUSE_TYPE_RED,
@@ -79,7 +80,7 @@ export function canEvolveToPurple({
   }
 
   const { totalFood } = checkFoodAffluence(stocks, population);
-  if (totalFood < population) {
+  if (totalFood < population * getPerCapitaDemand()) {
     return { canEvolve: false, reason: 'hunger_present' };
   }
 

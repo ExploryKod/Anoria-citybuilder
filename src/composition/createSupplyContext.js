@@ -14,7 +14,6 @@ import { SetHubCollectingFlag } from '../contexts/supply/application/commands/su
 import { MarkSourceCollectedByHub } from '../contexts/supply/application/commands/surplus/MarkSourceCollectedByHub.js';
 import { ProduceResource } from '../contexts/supply/application/commands/harvest/ProduceResource.js';
 import { ConsumeResource } from '../contexts/supply/application/commands/consumption/ConsumeResource.js';
-import { ProduceConsumerSubsistence } from '../contexts/supply/application/commands/subsistence/ProduceConsumerSubsistence.js';
 import { RunResourceCommandForRole } from '../contexts/supply/application/commands/RunResourceCommandForRole.js';
 import { ProcessHubCollection } from '../contexts/supply/application/commands/surplus/ProcessHubCollection.js';
 import { RunHubSurplusCycle } from '../contexts/supply/application/commands/surplus/RunHubSurplusCycle.js';
@@ -39,13 +38,14 @@ import {
   hasResourceRole,
   getPlacementRequirements,
   getAllCategoriesForRole,
+  getMaxStockForBuilding,
 } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 
 /**
- * Composition root — Supply bounded context. The only place allowed to name
- * a resource (food) — every class below (RunMonthlyResourceCycle,
- * RunHubSurplusCycle, ...) is resource-agnostic and only takes the resulting
- * category list as config. Once-per-period locking and hub-link storage
+ * Composition root — Supply bounded context. No good is named anywhere: the
+ * category lists below are derived from the catalog's `resourceRoles`, and
+ * every class (RunMonthlyResourceCycle, RunHubSurplusCycle, ...) is
+ * resource-agnostic and only takes the resulting category list as config. Once-per-period locking and hub-link storage
  * field names are no longer wired here at all — each command self-resolves
  * them from the building's own catalog facts (`periodLock`/`hubLink` — see
  * docs/period-lock-catalog-refactor.md in the supply context).
@@ -61,7 +61,9 @@ export function createSupplyContext({
   getTimeInfo: getTimeInfoDep,
 } = {}) {
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
-  const producerCategories = getAllCategoriesForRole('producer');
+  // Goods that travel the production → hub chain (what a hub stores) — NOT
+  // every producible good: household gathering never enters a hub.
+  const producerCategories = getAllCategoriesForRole('hub');
   // Every category any distributor covers — food (has a producer/hub leg)
   // and any hub-less service like Chapel's 'faith' (none) alike. Kept
   // separate from producerCategories: the hub-link plumbing below
@@ -118,13 +120,6 @@ export function createSupplyContext({
   const runProducerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, produceResource);
   const consumeResource = new ConsumeResource(supplyBuildingRepositoryImpl);
   const runConsumerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, consumeResource);
-  const produceConsumerSubsistence = new ProduceConsumerSubsistence(
-    supplyBuildingRepositoryImpl
-  );
-  const runSubsistenceCommand = new RunResourceCommandForRole(
-    supplyBuildingRepositoryImpl,
-    produceConsumerSubsistence
-  );
   const processHubCollection = new ProcessHubCollection(
     supplyBuildingRepositoryImpl,
     collectResourceToHub,
@@ -174,7 +169,6 @@ export function createSupplyContext({
     runHubSurplusCycle,
     runConsumerCommand,
     traceability,
-    runSubsistenceCommand,
     { categories: distributionCategories, reachCategories: producerCategories }
   );
   const getBuildingSupplyViewQuery = new GetBuildingSupplyView(
@@ -208,7 +202,6 @@ export function createSupplyContext({
     markSourceCollectedByHub,
     produceResource,
     consumeResource,
-    produceConsumerSubsistence,
     processHubCollection,
     runHubSurplusCycle,
     runCityResourceCycle,
@@ -236,12 +229,11 @@ export function createSupplyContext({
       return { initialized: true, hubId };
     },
 
-    async runMonthlyResourceCycle({ season, month, timeInfo, maxDistance = 5 }) {
+    async runMonthlyResourceCycle({ season, month, timeInfo }) {
       return runMonthlyResourceCycle.execute({
         season,
         month,
         timeInfo,
-        maxDistance,
       });
     },
 
@@ -268,7 +260,7 @@ export function createSupplyContext({
       const productIds = getCategoriesForRole(row?.type, 'hub');
       const orders = normalizeHubStorageOrders(row?.hubStorageOrders, productIds);
       const stocks = row?.stocks ?? {};
-      const totalCapacity = row?.maxStock ?? 1000;
+      const totalCapacity = getMaxStockForBuilding(row?.type);
 
       const currentAmount = Math.max(0, Math.floor(Number(stocks[productId]) || 0));
 

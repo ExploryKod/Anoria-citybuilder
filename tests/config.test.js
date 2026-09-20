@@ -50,10 +50,8 @@ describe('config.simulation', () => {
         expect(config.simulation.citySize).toBe(12);
     });
 
-    test('définit la distance de distribution de nourriture', () => {
-        // Distance en tuiles (Manhattan) pour la distribution marché → maisons
-        expect(config.simulation.foodDistributionDistance).toBeDefined();
-        expect(config.simulation.foodDistributionDistance).toBeGreaterThan(0);
+    test('ne porte plus de distance de distribution : la portée vit dans le catalogue économique', () => {
+        expect(config.simulation.foodDistributionDistance).toBeUndefined();
     });
 });
 

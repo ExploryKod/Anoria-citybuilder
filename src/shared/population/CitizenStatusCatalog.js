@@ -85,7 +85,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
     skills: Object.freeze({
       'subsistence-forager': Object.freeze({
         description: 'Cueillette et chasse autonome',
-        produces: Object.freeze({ fruit: 1, game: 1 }), // per house per month (TOTAL)
       }),
     }),
     
@@ -139,7 +138,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
     skills: Object.freeze({
       'subsistence-forager': Object.freeze({
         description: 'Cueillette et chasse (maintenue)',
-        produces: Object.freeze({ fruit: 1, game: 1 }), // per house per month - KEPT from level 1!
       }),
       'employment-eligible': Object.freeze({
         description: 'Employable dans les secteurs du groupe résidentiel',
@@ -198,7 +196,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
     skills: Object.freeze({
       'subsistence-forager': Object.freeze({
         description: 'Cueillette et chasse',
-        produces: Object.freeze({ fruit: 1, game: 1 }), // per house per month
       }),
       'employment-eligible': Object.freeze({
         description: 'Cherche emploi',
@@ -258,7 +255,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
     skills: Object.freeze({
       'subsistence-forager': Object.freeze({
         description: 'Cueillette et chasse',
-        produces: Object.freeze({ fruit: 1, game: 1 }), // per house per month
       }),
       'administration': Object.freeze({
         description: 'Service public (gouvernance)',
@@ -434,7 +430,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
     skills: Object.freeze({
       'subsistence-forager': Object.freeze({
         description: 'Cueillette et chasse réduites',
-        produces: Object.freeze({ fruit: 0.5, game: 0.5 }), // per house per month (reduced)
       }),
       'elder-wisdom': Object.freeze({
         description: 'Conseil des anciens',

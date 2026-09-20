@@ -14,6 +14,88 @@ import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../building-catalog/kenneyCityK
  * Same hard rules as buildingCatalog.js: data only, no behavior, no
  * `src/contexts/**` imports.
  */
+/**
+ * Goods, declared ONCE. Every list of categories below (a house's diet, a
+ * market's stock, the silo's collection) is built from these two arrays, so
+ * adding a good is one edit here — never a name written in code.
+ * Crops are supplied through the farm → silo → market → house chain; gathered
+ * goods are produced by the house itself (see HOUSE_GATHERING below).
+ */
+const SUPPLIED_GOODS = ['wheat', 'carrot', 'cabbage'];
+const GATHERED_GOODS = ['fruit', 'game'];
+/** Aggregate stock field summing every good a citizen can eat. */
+const DIET_TOTAL_KEY = 'food';
+
+/** A citizen's daily need: `amount` units per inhabitant per period (see ConsumeResource.js). */
+const HOUSE_DIET_CONSUMER = {
+  role: 'consumer',
+  categories: [...SUPPLIED_GOODS, ...GATHERED_GOODS],
+  totalKey: DIET_TOTAL_KEY,
+  amount: 1,
+  schedule: { unit: 'always' },
+  periodLock: { field: 'lastConsumptionMonth', unit: 'month' },
+};
+
+/**
+ * Free household gathering (autarky) — every house produces these on its own,
+ * outside farms and markets. `scale` picks how `amount` is read:
+ *   'building'   — a FIXED amount per house, whatever its population;
+ *   'population' — amount × the house's inhabitants.
+ * `requiresOperational: false` lets a house without a road still gather.
+ */
+const HOUSE_GATHERING = {
+  role: 'producer',
+  categories: [...GATHERED_GOODS],
+  totalKey: DIET_TOTAL_KEY,
+  amount: 1,
+  scale: 'building',
+  requiresOperational: false,
+  schedule: { unit: 'always' },
+  periodLock: { field: 'lastSubsistenceMonth', unit: 'month' },
+};
+
+/** One coverage-flag consumer per service category (see socialCategoryCatalog.js for which tier needs which). */
+const serviceConsumer = (category) => ({
+  role: 'consumer',
+  categories: [category],
+  consumption: 'flag',
+  schedule: { unit: 'always' },
+  periodLock: { unit: 'month' },
+});
+
+/** Everything a house-like building holds: diet, gathering, and every service it can be covered by. */
+const HOUSE_RESOURCE_ROLES = [
+  HOUSE_DIET_CONSUMER,
+  HOUSE_GATHERING,
+  serviceConsumer('faith'),
+  serviceConsumer('school'),
+  serviceConsumer('library'),
+  serviceConsumer('doctor'),
+  serviceConsumer('hospital'),
+  serviceConsumer('publicBath'),
+  serviceConsumer('theatre'),
+  serviceConsumer('cinema'),
+  serviceConsumer('pub'),
+];
+
+/** Stock ceiling of every market stall (units it can hold before the silo stops restocking it). */
+const MARKET_MAX_STOCK = 500;
+/** Tiles between a market and the silo feeding it (placement gate, not service reach). */
+const MARKET_SILO_PLACEMENT_RANGE = 5;
+
+const MARKET_RESOURCE_ROLES = [{
+  role: 'distributor',
+  categories: [...SUPPLIED_GOODS],
+  range: Infinity,
+  totalKey: DIET_TOTAL_KEY,
+  maxStock: MARKET_MAX_STOCK,
+  schedule: { unit: 'always' },
+  hubLink: { sourceLinkField: 'supplyHubId' },
+}];
+const MARKET_PLACEMENT_REQUIRES = [
+  { role: 'hub', categories: [...SUPPLIED_GOODS], range: MARKET_SILO_PLACEMENT_RANGE, requiresCapacity: true },
+];
+
 export const BUILDING_ECONOMY = {
   ...KENNEY_BUILDING_CATALOG_ENTRIES,
 
@@ -68,59 +150,21 @@ export const BUILDING_ECONOMY = {
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'merchants',
-    resourceRoles: [
-      { role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' }, periodLock: { field: 'lastConsumptionMonth', unit: 'month' } },
-      { role: 'consumer', categories: ['faith'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['school'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['library'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['doctor'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['hospital'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['publicBath'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['theatre'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['cinema'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['pub'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-    ],
+    resourceRoles: HOUSE_RESOURCE_ROLES,
   },
   'House-Red': {
     displayName: 'Maison rouge',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'artisans',
-    resourceRoles: [
-      { role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' }, periodLock: { field: 'lastConsumptionMonth', unit: 'month' } },
-      { role: 'consumer', categories: ['faith'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['school'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['library'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['doctor'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['hospital'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['publicBath'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['theatre'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['cinema'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['pub'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-    ],
+    resourceRoles: HOUSE_RESOURCE_ROLES,
   },
   'House-Purple': {
     displayName: 'Maison violette',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'scholars',
-    resourceRoles: [
-      { role: 'consumer',
-        categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'],
-        totalKey: 'food', amount: 1,
-        schedule: { unit: 'always' },
-        periodLock: { field: 'lastConsumptionMonth', unit: 'month' }
-      },
-      { role: 'consumer', categories: ['faith'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['school'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['library'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['doctor'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['hospital'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['publicBath'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['theatre'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['cinema'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['pub'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-    ]
+    resourceRoles: HOUSE_RESOURCE_ROLES
   },
 
   // Palaces
@@ -128,18 +172,7 @@ export const BUILDING_ECONOMY = {
     displayName: 'Palais',
     construction: { price: 20, category: 'palaces' },
     accounting: { maintenance: 6 },
-    resourceRoles: [
-      { role: 'consumer', categories: ['wheat', 'carrot', 'cabbage', 'fruit', 'game'], totalKey: 'food', amount: 1, schedule: { unit: 'always' }, periodLock: { field: 'lastConsumptionMonth', unit: 'month' } },
-      { role: 'consumer', categories: ['faith'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['school'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['library'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['doctor'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['hospital'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['publicBath'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['theatre'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['cinema'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-      { role: 'consumer', categories: ['pub'], consumption: 'flag', schedule: { unit: 'always' }, periodLock: { unit: 'month' } },
-    ],
+    resourceRoles: HOUSE_RESOURCE_ROLES,
   },
 
   // Farms
@@ -245,14 +278,14 @@ export const BUILDING_ECONOMY = {
     resourceRoles: [
       {
         role: 'collector',
-        categories: ['wheat', 'carrot', 'cabbage'],
-        totalKey: 'food',
+        categories: [...SUPPLIED_GOODS],
+        totalKey: DIET_TOTAL_KEY,
         schedule: { unit: 'month', values: ['december'] },
       },
       {
         role: 'hub',
-        categories: ['wheat', 'carrot', 'cabbage'],
-        totalKey: 'food',
+        categories: [...SUPPLIED_GOODS],
+        totalKey: DIET_TOTAL_KEY,
         linkCapacity: 2,
         maxStock: 1000,
         hubLink: { linksField: 'linkedDistributors', linkTargetIdField: 'distributorId', allocationField: 'allocatedStocks' },
@@ -276,8 +309,8 @@ export const BUILDING_ECONOMY = {
     // distance while chasing other bugs; `placementRequires`'s hub range
     // just below is a DIFFERENT mechanic (construction placement gating,
     // not service reach) and is deliberately left untouched.
-    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: Infinity, totalKey: 'food', schedule: { unit: 'always' }, hubLink: { sourceLinkField: 'supplyHubId' } }],
-    placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
+    resourceRoles: MARKET_RESOURCE_ROLES,
+    placementRequires: MARKET_PLACEMENT_REQUIRES,
   },
   'Market-Stall-Blue': {
     displayName: 'Étal bleu',
@@ -288,8 +321,8 @@ export const BUILDING_ECONOMY = {
     // distance while chasing other bugs; `placementRequires`'s hub range
     // just below is a DIFFERENT mechanic (construction placement gating,
     // not service reach) and is deliberately left untouched.
-    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: Infinity, totalKey: 'food', schedule: { unit: 'always' }, hubLink: { sourceLinkField: 'supplyHubId' } }],
-    placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
+    resourceRoles: MARKET_RESOURCE_ROLES,
+    placementRequires: MARKET_PLACEMENT_REQUIRES,
   },
   'Market-Stall-Red': {
     displayName: 'Étal rouge',
@@ -300,8 +333,8 @@ export const BUILDING_ECONOMY = {
     // distance while chasing other bugs; `placementRequires`'s hub range
     // just below is a DIFFERENT mechanic (construction placement gating,
     // not service reach) and is deliberately left untouched.
-    resourceRoles: [{ role: 'distributor', categories: ['wheat', 'carrot', 'cabbage'], range: Infinity, totalKey: 'food', schedule: { unit: 'always' }, hubLink: { sourceLinkField: 'supplyHubId' } }],
-    placementRequires: [{ role: 'hub', categories: ['wheat', 'carrot', 'cabbage'], range: 5, requiresCapacity: true }],
+    resourceRoles: MARKET_RESOURCE_ROLES,
+    placementRequires: MARKET_PLACEMENT_REQUIRES,
   },
 
   // Public (Chapel only — Church-002 mesh discarded as broken duplicate)
