@@ -231,7 +231,9 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       const marketId = createBuildingInstanceId();
       await seedBuilding(
         row(houseId, 'House-Red', 1, {
-          pop: 1,
+          // 10 inhabitants keep 20 units: the house has gathered some fruit and game by the time the
+          // market fills the gap, and the meal (10) is smaller than that delivery, so wheat is left over.
+          pop: 10,
           stocks: { wheat: 0, carrot: 0, cabbage: 0, fruit: 3, game: 3, food: 6 },
         })
       );

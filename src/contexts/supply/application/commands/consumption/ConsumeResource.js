@@ -2,7 +2,7 @@ import { takeAcrossCategories } from '../../../domain/value-objects/ResourceStoc
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import { isLockedForPeriod, buildLockUpdate } from '../../../domain/policies/PeriodLockPolicy.js';
 import {
-  getAmountForRole,
+  computeConsumerDemand,
   getCategoriesForRole,
   getScheduleForRole,
   getTotalKeyForRole,
@@ -72,10 +72,9 @@ export class ConsumeResource {
       return { consumed: false, reason: 'no_population' };
     }
 
-    const perCapita = getAmountForRole(building.type, 'consumer', undefined, 'quantity') ?? 0;
     const categories = getCategoriesForRole(building.type, 'consumer', undefined, 'quantity');
     const totalKey = getTotalKeyForRole(building.type, 'consumer', undefined, 'quantity');
-    const demand = pop * perCapita;
+    const demand = computeConsumerDemand(building);
 
     const { nextStock, taken, categoriesTaken } = takeAcrossCategories(building.stocks, categories, totalKey, demand);
     const totalUnfed = Math.max(0, Math.ceil(demand - taken));

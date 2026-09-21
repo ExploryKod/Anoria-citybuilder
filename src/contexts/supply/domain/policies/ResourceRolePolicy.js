@@ -209,3 +209,45 @@ export function getTotalKeyForRole(buildingType, role, category, consumption) {
     `[ResourceRolePolicy] "${buildingType}" role "${role}" spans multiple categories (${categories.join(', ')}) but declares no totalKey`
   );
 }
+
+/**
+ * @param {string} buildingType
+ * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
+ * @param {string} [category] Disambiguates when this role appears more than once.
+ * @param {'quantity' | 'flag'} [consumption] Disambiguates by consumption mode.
+ * @returns {{ periods: number } | undefined} How many periods of its own demand
+ *   this role wants to hold, or undefined when it holds no target (takes whatever it is given).
+ */
+export function getStockTargetForRole(buildingType, role, category, consumption) {
+  return findRoleEntry(buildingType, role, { category, consumption })?.stockTarget;
+}
+
+/**
+ * What a consumer eats in one period: inhabitants × the per-capita `amount` of its
+ * 'quantity' consumer role. The single formula behind both the meal (ConsumeResource)
+ * and the deficit a distributor fills (`computeConsumerDeficit`).
+ *
+ * @param {{ type: string, pop?: number }} building
+ * @returns {number}
+ */
+export function computeConsumerDemand(building) {
+  const pop = Number.isFinite(building.pop) ? Math.max(0, Math.floor(building.pop)) : 0;
+  const perCapita = getAmountForRole(building.type, 'consumer', undefined, 'quantity') ?? 0;
+  return pop * perCapita;
+}
+
+/**
+ * Units a consumer can still receive to reach the stock it wants to hold
+ * (`stockTarget.periods` × its demand, minus what it already holds). Infinity when
+ * its role declares no target — such a consumer takes whatever it is offered.
+ *
+ * @param {{ type: string, pop?: number, stocks?: Record<string, number> }} building
+ * @returns {number}
+ */
+export function computeConsumerDeficit(building) {
+  const target = getStockTargetForRole(building.type, 'consumer', undefined, 'quantity');
+  if (!target) return Infinity;
+  const totalKey = getTotalKeyForRole(building.type, 'consumer', undefined, 'quantity');
+  const held = Math.max(0, building.stocks?.[totalKey] ?? 0);
+  return Math.max(0, Math.ceil(computeConsumerDemand(building) * target.periods) - held);
+}

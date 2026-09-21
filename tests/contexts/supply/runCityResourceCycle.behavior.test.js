@@ -27,6 +27,7 @@ function toSnapshot(b) {
     roadCount: b.roadCount,
     worker: b.worker,
     workerNeed: b.workerNeed,
+    pop: b.pop,
     stocks: createResourceStock(b.stocks, CATEGORIES, TOTAL_KEY),
     maxStock: b.maxStock,
     supplyHubId: b.supplyHubId,
@@ -107,6 +108,8 @@ function house(id, overrides = {}) {
     roadCount: 1,
     worker: 0,
     workerNeed: 0,
+    // Inhabitants, so the house has a demand and therefore something to be filled up to.
+    pop: 10,
     stocks: { wheat: 0, food: 0 },
     ...overrides,
   };

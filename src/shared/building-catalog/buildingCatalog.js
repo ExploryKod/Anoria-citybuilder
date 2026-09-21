@@ -109,6 +109,10 @@
  *   same concept regardless of role, not a "yield" special case. On a
  *   'consumer' role only, read as a per-capita rate (demand = pop × amount),
  *   not a flat quantity — see ConsumeResource.js.
+ * @property {{ periods: number }} [stockTarget] On a 'consumer' role: how many
+ *   periods of its own demand (pop × `amount`) it wants to hold. A distributor
+ *   fills only the gap up to that target; omitted means the consumer takes
+ *   whatever it is offered. See ResourceRolePolicy.computeConsumerDeficit.
  * @property {string} [totalKey] Which stock field aggregates this role's
  *   categories (e.g. 'food' for wheat/carrot/cabbage/fruit/game). Required
  *   when `categories` has more than one entry — a role with 0 or 1 category

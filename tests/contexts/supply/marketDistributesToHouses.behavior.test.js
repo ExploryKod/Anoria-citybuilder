@@ -6,6 +6,7 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { DistributeResourceToConsumers } from '../../../src/contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
+import { fairShares } from '../../../src/contexts/supply/application/services/RoundRobinDistribution.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
 class InMemorySupplyBuildingRepository {
@@ -39,11 +40,12 @@ function market(id, stocks, extras = {}) {
   });
 }
 
-function house(id, stocks = {}, roadCount = 1) {
+function house(id, stocks = {}, roadCount = 1, pop = 10) {
   return createSupplyBuildingSnapshot({
     id,
     type: 'House-Blue',
     roadCount,
+    pop,
     stocks,
     maxStock: 100,
   });
@@ -133,5 +135,102 @@ describe('Supply — market distribution to houses', () => {
     });
     expect(outcome.distributed).toBe(false);
     expect(outcome.reason).toBe('no_consumers');
+  });
+});
+
+describe('fairShares — split what is available under each taker\'s cap', () => {
+  test('splits equally when every cap is out of reach', () => {
+    expect(fairShares([Infinity, Infinity], 5)).toEqual([2, 3]);
+  });
+
+  test('serves the small needs fully and gives the rest to the others', () => {
+    expect(fairShares([4, 20], 30)).toEqual([4, 20]);
+    expect(fairShares([4, 20], 12)).toEqual([4, 8]);
+  });
+
+  test('never hands out more than is available or than a cap', () => {
+    const shares = fairShares([3, 3, 3], 8);
+    expect(shares.reduce((a, b) => a + b, 0)).toBe(8);
+    shares.forEach((share) => expect(share).toBeLessThanOrEqual(3));
+  });
+
+  test('gives nothing when nothing is available or nothing is needed', () => {
+    expect(fairShares([5, 5], 0)).toEqual([0, 0]);
+    expect(fairShares([0, 0], 9)).toEqual([0, 0]);
+    expect(fairShares([], 9)).toEqual([]);
+  });
+});
+
+describe('Supply — a market only fills what each house still needs', () => {
+  // A house keeps two months of what its inhabitants eat (catalog `stockTarget`), 1 unit each.
+  const stockOf = async (repo, id) => (await repo.findById(id)).stocks.food;
+
+  async function distribute(buildings, marketId, houseIds) {
+    const repo = new InMemorySupplyBuildingRepository(buildings);
+    const outcome = await new DistributeResourceToConsumers(repo).execute({
+      sourceId: marketId,
+      period: { season: 'winter' },
+      consumerRefs: houseIds.map((instanceId) => ({ instanceId })),
+    });
+    return { repo, outcome };
+  }
+
+  test('stops at the target and keeps the rest in the market', async () => {
+    const marketId = createBuildingInstanceId();
+    const houseId = createBuildingInstanceId();
+    const { repo, outcome } = await distribute(
+      [market(marketId, { wheat: 100, food: 100 }), house(houseId, {}, 1, 10)],
+      marketId,
+      [houseId],
+    );
+
+    expect(outcome.totalUnits).toBe(20);
+    expect(await stockOf(repo, houseId)).toBe(20);
+    expect((await repo.findById(marketId)).stocks.food).toBe(80);
+  });
+
+  test('a house already holding stock only receives the difference', async () => {
+    const marketId = createBuildingInstanceId();
+    const houseId = createBuildingInstanceId();
+    const { repo } = await distribute(
+      [market(marketId, { wheat: 100, food: 100 }), house(houseId, { wheat: 15, food: 15 }, 1, 10)],
+      marketId,
+      [houseId],
+    );
+
+    expect(await stockOf(repo, houseId)).toBe(20);
+  });
+
+  test('shares a short stock fairly between houses of different sizes', async () => {
+    const marketId = createBuildingInstanceId();
+    const bigId = createBuildingInstanceId();
+    const smallId = createBuildingInstanceId();
+    const { repo } = await distribute(
+      [market(marketId, { wheat: 12, food: 12 }), house(bigId, {}, 1, 10), house(smallId, {}, 1, 2)],
+      marketId,
+      [bigId, smallId],
+    );
+
+    expect(await stockOf(repo, smallId)).toBe(4);
+    expect(await stockOf(repo, bigId)).toBe(8);
+  });
+
+  test('spreads the variety of goods across houses instead of emptying one good first', async () => {
+    const marketId = createBuildingInstanceId();
+    const houseIds = [createBuildingInstanceId(), createBuildingInstanceId()];
+    const { repo } = await distribute(
+      [
+        market(marketId, { wheat: 10, carrot: 10, food: 20 }),
+        ...houseIds.map((id) => house(id, {}, 1, 5)),
+      ],
+      marketId,
+      houseIds,
+    );
+
+    for (const id of houseIds) {
+      const stocks = (await repo.findById(id)).stocks;
+      expect(stocks.wheat).toBeGreaterThan(0);
+      expect(stocks.carrot).toBeGreaterThan(0);
+    }
   });
 });

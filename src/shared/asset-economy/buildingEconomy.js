@@ -32,6 +32,9 @@ const HOUSE_DIET_CONSUMER = {
   categories: [...SUPPLIED_GOODS, ...GATHERED_GOODS],
   totalKey: DIET_TOTAL_KEY,
   amount: 1,
+  // Keeps two periods of its own demand: the meal it eats now and one more it holds,
+  // so a house's stock is still readable after the meal (see computeConsumerDeficit).
+  stockTarget: { periods: 2 },
   schedule: { unit: 'always' },
   periodLock: { field: 'lastConsumptionMonth', unit: 'month' },
 };

@@ -15,6 +15,7 @@ import {
   getTotalKeyForRole,
   getConsumptionModeForRole,
   getPeriodLockForRole,
+  computeConsumerDeficit,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 import { getCategoriesForTotalKey, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
@@ -113,6 +114,7 @@ export class DistributeResourceToConsumers {
       sourceStock,
       consumerIds,
       isEligible: (consumer) => isRoadNeedMet(consumer.type, consumer.roadCount),
+      getCap: computeConsumerDeficit,
       repository: this.supplyBuildingRepository,
       createStock: (raw) => createResourceStock(raw, stockCategories, totalKey),
       takeCategory: (stock, category, amount) =>
