@@ -64,55 +64,64 @@ export function formatHouseSkillsModel(vm) {
   };
 }
 
+/** Says what the figures of the Ressources tab are: a house keeps no stock, it shows what it ate. */
+const CONSUMED_LAST_MONTH_CAPTION = 'Consommé le mois dernier :';
+const NO_MEAL_YET = '–';
+
 /**
- * Ressources tab — one tiny card per resource category the house's stock
- * declares (icon + current amount), plus one card for the aggregate total
- * (have vs. this period's consumption need). Icons/labels come from
- * ResourceCategoryCatalog.js, the category list from the stock itself (see
- * SupplyStock.js / ResourceRolePolicy.getResourceStockShape) — a new
+ * Ressources tab — what the house consumed last month: one tiny card per resource category
+ * (icon + units of it eaten), plus one card for the aggregate total, eaten over needed
+ * (8/8 = needs met, 4/8 = half of them unmet). The house holds no stock of its own — the hub
+ * does — so nothing here reads one; the figures come from the meal's own record
+ * (`lastConsumption`, see ConsumeResource.js). Icons/labels come from ResourceCategoryCatalog.js,
+ * the category list from the stock shape (see ResourceRolePolicy.getResourceStockShape) — a new
  * resource category needs a catalog entry, never a change here.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  */
 export function formatHouseResourcesModel(vm) {
-  const stocks = vm.stocks || {};
   const { categories, totalKey } = getResourceStockShape();
-  const need = vm.lastConsumption?.demand ?? null;
+  const last = vm.lastConsumption ?? null;
+  const whole = (value) => Math.max(0, Math.floor(Number(value) || 0));
 
   const categoryCards = categories.map((category) => {
-    const have = Math.max(0, Math.floor(Number(stocks[category]) || 0));
+    const eaten = whole(last?.takenByCategory?.[category]);
     const { emoji, label } = getResourceCategoryPresentation(category);
     return {
       kind: category,
       icon: emoji,
       label,
-      met: have > 0,
-      valueText: String(have),
-      ariaLabel: `${label} : ${have}`,
+      met: eaten > 0,
+      valueText: last ? String(eaten) : NO_MEAL_YET,
+      ariaLabel: last ? `${label} : ${eaten} consommé le mois dernier` : `${label} : pas encore de repas`,
     };
   });
 
-  const have = Math.max(0, Math.floor(Number(stocks[totalKey]) || 0));
   const { emoji, label } = getResourceCategoryPresentation(totalKey);
-  const totalCard =
-    need == null
-      ? {
+  const totalCard = last
+    ? (() => {
+        const eaten = whole(last.taken);
+        const need = whole(last.demand);
+        const met = need > 0 && eaten >= need;
+        return {
           kind: totalKey,
           icon: emoji,
           label,
-          met: have > 0,
-          valueText: String(have),
-          ariaLabel: `${label} : ${have}`,
-        }
-      : {
-          kind: totalKey,
-          icon: emoji,
-          label,
-          met: have >= need,
-          valueText: `${have}/${need}`,
-          ariaLabel: `${label} : ${have} sur ${need} nécessaires${have >= need ? ', besoin couvert' : ', besoin non couvert'}`,
+          met,
+          valueText: `${eaten}/${need}`,
+          ariaLabel: `${label} : ${eaten} sur ${need} nécessaires le mois dernier${met ? ', besoin couvert' : ', besoin non couvert'}`,
         };
+      })()
+    : {
+        kind: totalKey,
+        icon: emoji,
+        label,
+        met: false,
+        valueText: NO_MEAL_YET,
+        ariaLabel: `${label} : pas encore de repas`,
+      };
 
   return {
+    caption: CONSUMED_LAST_MONTH_CAPTION,
     cards: [...categoryCards, totalCard],
   };
 }

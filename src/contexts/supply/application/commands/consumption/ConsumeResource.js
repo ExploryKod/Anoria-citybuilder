@@ -49,6 +49,7 @@ export class ConsumeResource {
    *   taken?: number,
    *   totalUnfed?: number,
    *   categoriesTaken?: string[],
+ *   takenByCategory?: Record<string, number>,
    * }>}
    */
   async execute({ buildingId, period }) {
@@ -76,7 +77,7 @@ export class ConsumeResource {
     const totalKey = getTotalKeyForRole(building.type, 'consumer', undefined, 'quantity');
     const demand = computeConsumerDemand(building);
 
-    const { nextStock, taken, categoriesTaken } = takeAcrossCategories(building.stocks, categories, totalKey, demand);
+    const { nextStock, taken, categoriesTaken, takenByCategory } = takeAcrossCategories(building.stocks, categories, totalKey, demand);
     const totalUnfed = Math.max(0, Math.ceil(demand - taken));
 
     await this.supplyBuildingRepository.saveStocks(buildingId, nextStock);
@@ -84,11 +85,11 @@ export class ConsumeResource {
       await this.supplyBuildingRepository.updateBuildingFields(
         buildingId,
         buildLockUpdate(building, periodLock, period, categories[0], {
-          lastConsumption: { month: period.monthIndex, demand, taken, totalUnfed, categoriesTaken },
+          lastConsumption: { month: period.monthIndex, demand, taken, totalUnfed, categoriesTaken, takenByCategory },
         })
       );
     }
 
-    return { consumed: true, buildingId, pop, demand, taken, totalUnfed, categoriesTaken };
+    return { consumed: true, buildingId, pop, demand, taken, totalUnfed, categoriesTaken, takenByCategory };
   }
 }

@@ -162,7 +162,7 @@ describe('fairShares — split what is available under each taker\'s cap', () =>
 });
 
 describe('Supply — a market only fills what each house still needs', () => {
-  // A house keeps two months of what its inhabitants eat (catalog `stockTarget`), 1 unit each.
+  // A house asks for one month of what its inhabitants eat (catalog `stockTarget`), 1 unit each.
   const stockOf = async (repo, id) => (await repo.findById(id)).stocks.food;
 
   async function distribute(buildings, marketId, houseIds) {
@@ -184,21 +184,21 @@ describe('Supply — a market only fills what each house still needs', () => {
       [houseId],
     );
 
-    expect(outcome.totalUnits).toBe(20);
-    expect(await stockOf(repo, houseId)).toBe(20);
-    expect((await repo.findById(marketId)).stocks.food).toBe(80);
+    expect(outcome.totalUnits).toBe(10);
+    expect(await stockOf(repo, houseId)).toBe(10);
+    expect((await repo.findById(marketId)).stocks.food).toBe(90);
   });
 
   test('a house already holding stock only receives the difference', async () => {
     const marketId = createBuildingInstanceId();
     const houseId = createBuildingInstanceId();
     const { repo } = await distribute(
-      [market(marketId, { wheat: 100, food: 100 }), house(houseId, { wheat: 15, food: 15 }, 1, 10)],
+      [market(marketId, { wheat: 100, food: 100 }), house(houseId, { wheat: 6, food: 6 }, 1, 10)],
       marketId,
       [houseId],
     );
 
-    expect(await stockOf(repo, houseId)).toBe(20);
+    expect(await stockOf(repo, houseId)).toBe(10);
   });
 
   test('shares a short stock fairly between houses of different sizes', async () => {
@@ -206,13 +206,13 @@ describe('Supply — a market only fills what each house still needs', () => {
     const bigId = createBuildingInstanceId();
     const smallId = createBuildingInstanceId();
     const { repo } = await distribute(
-      [market(marketId, { wheat: 12, food: 12 }), house(bigId, {}, 1, 10), house(smallId, {}, 1, 2)],
+      [market(marketId, { wheat: 8, food: 8 }), house(bigId, {}, 1, 10), house(smallId, {}, 1, 2)],
       marketId,
       [bigId, smallId],
     );
 
-    expect(await stockOf(repo, smallId)).toBe(4);
-    expect(await stockOf(repo, bigId)).toBe(8);
+    expect(await stockOf(repo, smallId)).toBe(2);
+    expect(await stockOf(repo, bigId)).toBe(6);
   });
 
   test('spreads the variety of goods across houses instead of emptying one good first', async () => {

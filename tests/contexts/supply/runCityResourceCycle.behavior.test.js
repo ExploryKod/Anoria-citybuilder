@@ -263,14 +263,14 @@ describe('RunCityResourceCycle', () => {
 
     await cycle.execute({ categories: CATEGORIES, season: 'summer', month: 'January', timeInfo: { turn: 1 } });
 
-    // A house of 10 keeps two months of 1 unit each: 20. Nothing more leaves the hub.
-    expect((await repo.findBuildingRow(HOUSE_ID)).stocks.wheat).toBe(20);
-    expect((await repo.findBuildingRow(WINDMILL_ID)).stocks.wheat).toBe(80);
+    // A house of 10 asks for one month of 1 unit each: 10. Nothing more leaves the hub.
+    expect((await repo.findBuildingRow(HOUSE_ID)).stocks.wheat).toBe(10);
+    expect((await repo.findBuildingRow(WINDMILL_ID)).stocks.wheat).toBe(90);
     expect((await repo.findBuildingRow(MARKET_ID)).stocks.wheat).toBe(0);
 
-    // Next month the house is already full: the hub is left alone.
+    // The house has not eaten yet (no meal in this test), so it is still full: the hub is left alone.
     await cycle.execute({ categories: CATEGORIES, season: 'summer', month: 'February', timeInfo: { turn: 2 } });
-    expect((await repo.findBuildingRow(WINDMILL_ID)).stocks.wheat).toBe(80);
+    expect((await repo.findBuildingRow(WINDMILL_ID)).stocks.wheat).toBe(90);
   });
 
   test('a hub-less flag distributor (chapel) marks houses served, no stock leg at all', async () => {

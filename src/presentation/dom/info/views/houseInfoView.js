@@ -36,6 +36,7 @@ export function renderHouseSkillsView(container, model) {
 
 /**
  * @typedef {object} HouseResourcesViewModel
+ * @property {string} [caption] Says what the figures below are (e.g. "Consommé le mois dernier :")
  * @property {ReadonlyArray<{ kind: string, icon: string, label: string, met: boolean, valueText: string, ariaLabel: string }>} cards
  */
 
@@ -46,5 +47,11 @@ export function renderHouseSkillsView(container, model) {
 export function renderHouseResourcesView(container, model) {
   container.innerHTML = '';
 
+  if (model.caption) {
+    const caption = document.createElement('p');
+    caption.className = 'building-info-footnote';
+    caption.textContent = model.caption;
+    container.appendChild(caption);
+  }
   appendMetricCards(container, model.cards);
 }

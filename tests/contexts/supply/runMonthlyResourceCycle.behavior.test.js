@@ -231,8 +231,8 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       const marketId = createBuildingInstanceId();
       await seedBuilding(
         row(houseId, 'House-Red', 1, {
-          // 10 inhabitants keep 20 units: the house has gathered some fruit and game by the time the
-          // market fills the gap, and the meal (10) is smaller than that delivery, so wheat is left over.
+          // 10 inhabitants eat 10 units a month: the house has gathered some fruit and game by the
+          // time the market fills what is still missing.
           pop: 10,
           stocks: { wheat: 0, carrot: 0, cabbage: 0, fruit: 3, game: 3, food: 6 },
         })
@@ -246,12 +246,14 @@ describe('Supply — RunMonthlyResourceCycle', () => {
 
       await runAtTime(0);
 
-      const { stocks } = await getBuildingRow(houseId);
+      const { stocks, lastConsumption } = await getBuildingRow(houseId);
       const sum = CATEGORIES.reduce((total, category) => total + (stocks[category] || 0), 0);
-      // The delivery reached the house, and did not wipe the fruit and game it had
-      expect(stocks.wheat).toBeGreaterThan(0);
-      expect(stocks.fruit).toBeGreaterThanOrEqual(3);
-      expect(stocks.game).toBeGreaterThanOrEqual(3);
+      // The house asked for exactly this month's meal, so it holds nothing after eating: what it
+      // ate says what reached it. The delivery came in, and the fruit and game it had were not wiped.
+      expect(lastConsumption.totalUnfed).toBe(0);
+      expect(lastConsumption.takenByCategory.wheat).toBeGreaterThan(0);
+      expect(lastConsumption.takenByCategory.fruit).toBeGreaterThanOrEqual(3);
+      expect(lastConsumption.takenByCategory.game).toBeGreaterThanOrEqual(3);
       expect(stocks.food).toBe(sum);
     });
 
