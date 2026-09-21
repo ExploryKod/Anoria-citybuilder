@@ -26,12 +26,28 @@ const GATHERED_GOODS = ['fruit', 'game'];
 /** Aggregate stock field summing every good a citizen can eat. */
 const DIET_TOTAL_KEY = 'food';
 
-/** A citizen's daily need: `amount` units per inhabitant per period (see ConsumeResource.js). */
+/*
+ * The food chain's reference numbers. Every capacity and yield below is derived from these
+ * few figures, so the chain reads as one ratio (a farm feeds so many citizens, a hub holds
+ * so many farms' harvest, a market serves the citizens of one hub) and retuning it is one edit.
+ */
+/** Units of food a citizen eats per month. */
+const CITIZEN_MONTHLY_NEED = 1;
+const MONTHS_PER_YEAR = 12;
+/** Citizens one farm feeds all year — a tier-4 house (24), or four tier-1 houses (6 each). */
+const CITIZENS_FED_PER_FARM = 24;
+/** A farm's single annual harvest: exactly what its citizens eat over the year. */
+const FARM_ANNUAL_YIELD = CITIZENS_FED_PER_FARM * CITIZEN_MONTHLY_NEED * MONTHS_PER_YEAR;
+/** Farms whose harvest one hub can hold at once (a full year of their citizens). */
+const FARMS_PER_HUB = 10;
+const HUB_MAX_STOCK = FARMS_PER_HUB * FARM_ANNUAL_YIELD;
+
+/** A citizen's need: `amount` units per inhabitant per month (see ConsumeResource.js). */
 const HOUSE_DIET_CONSUMER = {
   role: 'consumer',
   categories: [...SUPPLIED_GOODS, ...GATHERED_GOODS],
   totalKey: DIET_TOTAL_KEY,
-  amount: 1,
+  amount: CITIZEN_MONTHLY_NEED,
   // Asks for exactly this period's meal and holds nothing back: the supply hub stays the
   // one place where the stock lives, and a house shows what it ate (`lastConsumption`).
   stockTarget: { periods: 1 },
@@ -81,8 +97,8 @@ const HOUSE_RESOURCE_ROLES = [
   serviceConsumer('pub'),
 ];
 
-/** Stock ceiling of every market stall (units it can hold before the silo stops restocking it). */
-const MARKET_MAX_STOCK = 500;
+/** Stock ceiling of every market stall: one month of the citizens the farms of one hub feed. */
+const MARKET_MAX_STOCK = FARMS_PER_HUB * CITIZENS_FED_PER_FARM * CITIZEN_MONTHLY_NEED;
 /** Tiles between a market and the silo feeding it (placement gate, not service reach). */
 const MARKET_SILO_PLACEMENT_RANGE = 5;
 
@@ -183,8 +199,8 @@ export const BUILDING_ECONOMY = {
   // Farms — fields, no road needed (`requiresRoad: false`): they employ, produce
   // and are collected by a hub whether or not a road touches them.
   // `schedule`/`amount` below: farms harvest their annual crop once, in
-  // autumn (see ResourceSchedulePolicy.js for the schedule shape). 78 =
-  // 6 citizens x 12 months + a 6-basket buffer.
+  // autumn (see ResourceSchedulePolicy.js for the schedule shape). The yield is
+  // FARM_ANNUAL_YIELD: what CITIZENS_FED_PER_FARM citizens eat over a year, no margin.
   'Farm-Wheat': {
     displayName: 'Champ de blé',
     requiresRoad: false,
@@ -194,7 +210,7 @@ export const BUILDING_ECONOMY = {
       role: 'producer',
       categories: ['wheat'],
       schedule: { unit: 'season', values: ['autumn'] },
-      amount: 78,
+      amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
   },
@@ -207,7 +223,7 @@ export const BUILDING_ECONOMY = {
       role: 'producer',
       categories: ['carrot'],
       schedule: { unit: 'season', values: ['autumn'] },
-      amount: 78,
+      amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
   },
@@ -220,7 +236,7 @@ export const BUILDING_ECONOMY = {
       role: 'producer',
       categories: ['cabbage'],
       schedule: { unit: 'season', values: ['autumn'] },
-      amount: 78,
+      amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
   },
@@ -296,7 +312,7 @@ export const BUILDING_ECONOMY = {
         categories: [...SUPPLIED_GOODS],
         totalKey: DIET_TOTAL_KEY,
         linkCapacity: 2,
-        maxStock: 1000,
+        maxStock: HUB_MAX_STOCK,
         hubLink: { linksField: 'linkedDistributors', linkTargetIdField: 'distributorId', allocationField: 'allocatedStocks' },
       },
     ],

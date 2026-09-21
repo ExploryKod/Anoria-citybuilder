@@ -10,6 +10,7 @@ import { toSupplySeason, toSupplyMonth } from '../../../src/composition/supplyOp
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 import { clearBuildingsTable, seedBuilding, getBuildingRow } from '../../helpers/buildingDb.js';
+import { getMaxStockForBuilding } from '../../../src/shared/building-catalog/resourceRoleQueries.js';
 import { updateBuildingFields } from '../../../src/composition/constructionOps.js';
 import { computeMonthlyFoodStats } from '../../../src/presentation/dom/admin/food-traceability/FoodTraceabilityPanel.js';
 import { buildFoodTraceabilityExport } from '../../../src/presentation/dom/admin/food-traceability/FoodTraceabilityPresenter.js';
@@ -155,6 +156,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
     const fullHubFarmId = createBuildingInstanceId();
     const hubId = createBuildingInstanceId();
     const staffed = { worker: 3, worker_need: 3 };
+    const HUB_CAP = getMaxStockForBuilding('Windmill-001');
 
     await seedBuilding(rowFor(houseId, 'House-Red', 1, { pop: 12 }));
     await seedBuilding(rowFor(roadlessId, 'Farm-Wheat', 2, { roads: 0, stocks: farmStock, employees: staffed }));
@@ -163,7 +165,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
     // A hub already at its ceiling has no room for another basket
     await seedBuilding(
       rowFor(hubId, 'Windmill-001', 5, {
-        stocks: { food: 1000, wheat: 1000, carrot: 0, cabbage: 0 },
+        stocks: { food: HUB_CAP, wheat: HUB_CAP, carrot: 0, cabbage: 0 },
         employees: { worker: 4, worker_need: 4 },
       })
     );

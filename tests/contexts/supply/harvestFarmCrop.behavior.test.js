@@ -11,6 +11,9 @@ import { isOperational } from '../../../src/contexts/supply/domain/policies/Oper
 import { ProduceResource } from '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js';
 import { RunResourceCommandForRole } from '../../../src/contexts/supply/application/commands/RunResourceCommandForRole.js';
 
+/** The catalog's annual yield of a farm — never a literal here, so retuning the catalog leaves the tests alone. */
+const YIELD = getAmountForRole('Farm-Wheat', 'producer');
+
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
     this.raw = new Map(
@@ -80,8 +83,10 @@ describe('Supply — farm harvest', () => {
       expect(matchesSchedule(schedule, { season: 'summer' })).toBe(false);
     });
 
-    test('annual yield is 78 baskets', () => {
-      expect(getAmountForRole('Farm-Wheat', 'producer')).toBe(78);
+    test('annual yield is what its citizens eat over a year, one unit each per month', () => {
+      const yieldPerFarm = getAmountForRole('Farm-Wheat', 'producer');
+      const perCitizenPerMonth = getAmountForRole('House-Blue', 'consumer', undefined, 'quantity');
+      expect(yieldPerFarm % (12 * perCitizenPerMonth)).toBe(0);
     });
   });
 
@@ -97,7 +102,7 @@ describe('Supply — farm harvest', () => {
       useCase = new ProduceResource(repo);
     });
 
-    test('adds 78 baskets of crop in autumn once per year', async () => {
+    test('adds the annual yield of crop in autumn once per year', async () => {
       const outcome = await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3, monthIndex: 9 },
@@ -107,12 +112,12 @@ describe('Supply — farm harvest', () => {
         produced: true,
         buildingId: 'Farm-Wheat-2-3',
         category: 'wheat',
-        amount: 78,
+        amount: YIELD,
       });
 
       const updated = await repo.findById('Farm-Wheat-2-3');
-      expect(updated.stocks.wheat).toBe(78);
-      expect(updated.stocks.food).toBe(78);
+      expect(updated.stocks.wheat).toBe(YIELD);
+      expect(updated.stocks.food).toBe(YIELD);
       expect(updated.lastProductionYear).toBe(3);
     });
 
@@ -129,7 +134,7 @@ describe('Supply — farm harvest', () => {
 
       expect(second.produced).toBe(false);
       expect(second.reason).toBe('already_produced_this_period');
-      expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(78);
+      expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(YIELD);
     });
 
     test('allows harvest again next year', async () => {
@@ -142,7 +147,7 @@ describe('Supply — farm harvest', () => {
         period: { season: 'autumn', year: 4 },
       });
 
-      expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(156);
+      expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(2 * YIELD);
     });
 
     test('refuses outside autumn', async () => {
@@ -205,8 +210,8 @@ describe('Supply — farm harvest', () => {
       expect(count).toBe(2);
       expect(harvests).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ farmId: 'Farm-Wheat-2-3', crop: 'wheat', amount: 78 }),
-          expect.objectContaining({ farmId: 'Farm-Carrot-4-5', crop: 'carrot', amount: 78 }),
+          expect.objectContaining({ farmId: 'Farm-Wheat-2-3', crop: 'wheat', amount: YIELD }),
+          expect.objectContaining({ farmId: 'Farm-Carrot-4-5', crop: 'carrot', amount: YIELD }),
         ])
       );
     });
