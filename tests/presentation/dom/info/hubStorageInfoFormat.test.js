@@ -30,4 +30,38 @@ describe('formatHubStockSummary', () => {
     const none = formatHubStockSummary({ currentTotal: 1440, totalCapacity: 2880, carryOverTotal: 0 });
     expect(none.some((line) => line.includes('précédentes'))).toBe(false);
   });
+
+  describe('against the next harvest', () => {
+    const view = (autonomyMonths, harvestInMonths) => ({ currentTotal: 670, totalCapacity: 2880, autonomyMonths, harvestInMonths });
+
+    test('says when the next harvest comes', () => {
+      expect(formatHubStockSummary(view(6, 5))).toContain('🌾 Récolte dans 5 mois');
+      expect(formatHubStockSummary(view(6, 1))).toContain('🌾 Récolte le mois prochain');
+    });
+
+    test('reassures when the stock reaches the harvest', () => {
+      // The harvest of the coming tick lands before that tick's meal: 5 months off needs 4 meals covered.
+      expect(formatHubStockSummary(view(4, 5))).toContain('✅ Tient jusqu\'à la récolte');
+      expect(formatHubStockSummary(view(6, 5))).toContain('✅ Tient jusqu\'à la récolte');
+    });
+
+    test('warns, with how many months will be short, when it does not', () => {
+      expect(formatHubStockSummary(view(2, 5))).toContain('⚠️ Il manquera environ 2 mois avant la récolte');
+      expect(formatHubStockSummary(view(0, 2))).toContain('⚠️ Il manquera environ 1 mois avant la récolte');
+    });
+
+    test('an empty hub says so, instead of reassuring about a harvest still to come', () => {
+      const lines = formatHubStockSummary({ currentTotal: 0, totalCapacity: 2880, autonomyMonths: 0, harvestInMonths: 1 });
+      expect(lines).toContain('⚠️ Le moulin est vide');
+      expect(lines.some((line) => line.includes('✅'))).toBe(false);
+    });
+
+    test('says nothing about the harvest when it is unknown, and no verdict without a pace', () => {
+      expect(formatHubStockSummary(view(6, null)).some((line) => line.includes('écolte'))).toBe(false);
+      const noPace = formatHubStockSummary(view(null, 5));
+      expect(noPace).toContain('🌾 Récolte dans 5 mois');
+      expect(noPace.some((line) => line.includes('✅') || line.includes('⚠️'))).toBe(false);
+    });
+  });
 });
+

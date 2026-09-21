@@ -230,7 +230,7 @@ describe('Supply — GetHubStorageInfoView: report and autonomy of a hub', () =>
     employees: { worker: 4, worker_need: 4 },
     ...extra,
   });
-  const view = (row) => new GetHubStorageInfoView().execute({ hubKind: 'windmill', buildingRow: row });
+  const view = (row, options = {}) => new GetHubStorageInfoView().execute({ hubKind: 'windmill', buildingRow: row, ...options });
 
   test('exposes what is left from before the last harvest', () => {
     const dto = view(hubRow({ lastCollection: { wheat: 1440, food: 1440 } }));
@@ -246,4 +246,14 @@ describe('Supply — GetHubStorageInfoView: report and autonomy of a hub', () =>
   test('has no autonomy while nothing has left the hub', () => {
     expect(view(hubRow({})).autonomyMonths).toBeNull();
   });
+
+  test('says in how many months the hub next collects, from the calendar it is given', () => {
+    const contextAhead = (monthsAhead) => ({ month: ['october', 'november', 'december'][monthsAhead] ?? 'january' });
+    expect(view(hubRow({}), { timeContextAhead: contextAhead }).harvestInMonths).toBe(2);
+  });
+
+  test('has no harvest date when no calendar is given', () => {
+    expect(view(hubRow({})).harvestInMonths).toBeNull();
+  });
 });
+

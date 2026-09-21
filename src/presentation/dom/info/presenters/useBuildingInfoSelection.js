@@ -11,6 +11,7 @@
 
 import { getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
+import { supplyTimeContextAhead } from '../../../../composition/supplyTimeLabels.js';
 import { buildingsObjects } from '../../../../shared/building-catalog/index.js';
 import { infoObjectOverlay } from '../../shell/nodes.js';
 import { createBuildingInfoViewModel } from '../buildingInfoTypes.js';
@@ -75,9 +76,16 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
       if (hubKind === 'windmill' && !Object.hasOwn(vm.stocks || {}, getResourceStockShape().totalKey)) {
         extra.hubView = null;
       } else {
+        // The calendar from now, so the hub can say when it next collects.
+        const budget = await vm.accounting.getTreasurySnapshot();
+        const turn = budget?.turn;
+        extra.hubTimeContextAhead = Number.isFinite(turn)
+          ? (monthsAhead) => supplyTimeContextAhead(turn, monthsAhead)
+          : null;
         extra.hubView = vm.supply.getHubStorageInfoView(hubKind, vm.buildingRow, {
           stocks: vm.stocks,
           maxStock: vm.supplyView?.maxStock,
+          timeContextAhead: extra.hubTimeContextAhead,
         });
       }
     }

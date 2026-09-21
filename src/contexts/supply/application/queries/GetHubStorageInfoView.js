@@ -1,7 +1,8 @@
 import { getResourceCategoryPresentation } from '../../domain/catalogs/ResourceCategoryCatalog.js';
 import { buildHubStorageLines } from '../../domain/policies/HubStorageOrdersPolicy.js';
 import { buildHubStoragePieSegments } from '../../domain/policies/HubStoragePiePolicy.js';
-import { getMaxStockForBuilding } from '../../domain/policies/ResourceRolePolicy.js';
+import { getMaxStockForBuilding, getScheduleForRole } from '../../domain/policies/ResourceRolePolicy.js';
+import { monthsUntilNextMatch } from '../../domain/policies/ResourceSchedulePolicy.js';
 import { computeCarryOver, computeAutonomyMonths } from '../../domain/policies/HubCapacityPolicy.js';
 
 /**
@@ -14,8 +15,9 @@ export class GetHubStorageInfoView {
    * @param {object|null|undefined} params.buildingRow
    * @param {Record<string, number>|null|undefined} [params.stocks]
    * @param {number|null|undefined} [params.maxStock]
+   * @param {((monthsAhead: number) => object)|null} [params.timeContextAhead] Calendar from now, to say when the hub next collects
    */
-  execute({ hubKind, buildingRow, stocks = null, maxStock = null }) {
+  execute({ hubKind, buildingRow, stocks = null, maxStock = null, timeContextAhead = null }) {
     if (!buildingRow) {
       return Object.freeze({ hubKind, lines: Object.freeze([]), pieSegments: Object.freeze([]) });
     }
@@ -51,6 +53,10 @@ export class GetHubStorageInfoView {
       // What is left from before the last harvest, and how long the stock lasts at last month's pace.
       carryOverTotal: lines.reduce((sum, line) => sum + line.carryOver, 0),
       autonomyMonths: computeAutonomyMonths(storage.currentTotal, buildingRow.lastOutflow?.units),
+      // Months until the hub's own collection schedule next fires (its harvest), when a calendar is given.
+      harvestInMonths: timeContextAhead
+        ? monthsUntilNextMatch(getScheduleForRole(buildingRow.type, 'collector'), timeContextAhead)
+        : null,
       pieSegments: buildHubStoragePieSegments({
         lines,
         totalCapacity,

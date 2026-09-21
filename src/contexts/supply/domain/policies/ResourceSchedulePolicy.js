@@ -43,3 +43,22 @@ export function matchesSchedule(schedule, context) {
 
   return false;
 }
+
+/**
+ * How many months until a schedule next fires, counting from the month after the current one
+ * (the current month has already run). The calendar stays outside: the caller supplies the time
+ * context of the month `monthsAhead` from now, so any calendar (and any schedule unit) works.
+ *
+ * @param {{ unit: string, values?: string[], interval?: number } | null | undefined} schedule
+ * @param {(monthsAhead: number) => Record<string, string | number | undefined>} contextAhead
+ * @param {number} [horizon] Furthest month to look at (a year by default).
+ * @returns {number | null} Months until it next fires, or null when it does not within the horizon.
+ */
+export function monthsUntilNextMatch(schedule, contextAhead, horizon = 12) {
+  if (!schedule) return null;
+  for (let monthsAhead = 1; monthsAhead <= horizon; monthsAhead += 1) {
+    if (matchesSchedule(schedule, contextAhead(monthsAhead))) return monthsAhead;
+  }
+  return null;
+}
+

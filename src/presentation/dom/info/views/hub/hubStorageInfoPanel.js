@@ -86,6 +86,7 @@ async function softRefreshHubPanel(ctx, orderWarning = null) {
   const freshView = supply.getHubStorageInfoView(hubKind, freshRow ?? buildingRow, {
     stocks: freshRow?.stocks,
     maxStock: supplyView?.maxStock,
+    timeContextAhead: ctx.timeContextAhead,
   });
 
   ctx.buildingRow = freshRow ?? buildingRow;
@@ -110,6 +111,7 @@ export async function renderHubStorageInfoPanel({
   supply,
   buildingRow,
   supplyView = null,
+  timeContextAhead = null,
   ordersOpen = false,
 }) {
   const body = getBuildingInfoBody();
@@ -125,6 +127,7 @@ export async function renderHubStorageInfoPanel({
     supply,
     buildingRow,
     supplyView,
+    timeContextAhead,
   };
 
   const workerLine = `${view.workers} / ${view.workerNeed} requis`;
