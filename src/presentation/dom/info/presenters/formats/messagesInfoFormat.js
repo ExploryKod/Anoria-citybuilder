@@ -1,4 +1,8 @@
 import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getBuildingDefinition } from '../../../../../shared/building-catalog/buildingCatalog.js';
+import { SOCIAL_CATEGORY } from '../../../../../shared/population/socialCategoryCatalog.js';
+import { getSkillDisplay } from '../../../../../shared/population/skillCatalog.js';
+import { getResidentialGroupLabel } from '../../../shell/ResidentialGroupLabels.js';
 /**
  * Messages tab — pure format (VM → display model).
  *
@@ -31,6 +35,52 @@ function unfedComplaint(totalUnfed) {
 }
 
 /**
+ * The social groups whose houses can hold a skill at a level, with the first house tier
+ * that grants it — read from the catalog, never a group named here.
+ * @param {string} skill
+ * @param {number} level
+ * @returns {Array<{ group: string, minTier: number }>}
+ */
+function groupsGrantingSkill(skill, level) {
+  return Object.entries(SOCIAL_CATEGORY).flatMap(([group, definition]) => {
+    const tier = Object.entries(definition.tiers)
+      .map(([number, details]) => [Number(number), details])
+      .sort(([a], [b]) => a - b)
+      .find(([, details]) => (details.skills?.[skill] ?? 0) >= level);
+    return tier ? [{ group, minTier: tier[0] }] : [];
+  });
+}
+
+/**
+ * Why a workplace stays unstaffed: who holds the skill it asks for, and what that group
+ * has to offer right now. Null when the city's employment was not read.
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @returns {string | null}
+ */
+function shortageCause(vm) {
+  const summary = vm.employmentSummary;
+  const employment = getBuildingDefinition(vm.buildingType)?.employment;
+  const skill = employment?.requiredSkill;
+  if (!summary || !skill) return null;
+
+  const skillLabel = getSkillDisplay(skill).label;
+  const causes = groupsGrantingSkill(skill, employment.requiredSkillLevel ?? 1).map(({ group, minTier }) => {
+    const label = getResidentialGroupLabel(group);
+    const stats = summary.byGroup?.[group];
+    if (!stats || !(stats.workerPool > 0)) {
+      return `aucune maison pour les ${label} : il en faut pour pourvoir ce poste`;
+    }
+    if (stats.unemployed > 0) {
+      return `des ${label} sont sans emploi, mais leurs maisons n'ont pas encore la compétence « ${skillLabel} » (niveau ${minTier} requis)`;
+    }
+    return `tous les ${label} ont déjà un emploi : il faut plus de maisons pour les ${label}`;
+  });
+  return causes.length > 0
+    ? causes.join(' ; ')
+    : `aucun habitant n'a la compétence « ${skillLabel} »`;
+}
+
+/**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  * @returns {string | null}
  */
@@ -47,11 +97,13 @@ function personnelComplaint(vm) {
   const workers = employees.worker || 0;
   if (workerNeed <= 0) return null;
 
+  const cause = shortageCause(vm);
+  const because = cause ? ` — ${cause}` : '';
   if (workers === 0) {
-    return "Nous manquons de personnel, l'activité est totalement à l'arrêt";
+    return `Nous manquons de personnel, l'activité est totalement à l'arrêt${because}`;
   }
   if (workers < workerNeed) {
-    return "Nous manquons de personnel pour fonctionner à plein régime";
+    return `Nous manquons de personnel pour fonctionner à plein régime${because}`;
   }
   return null;
 }

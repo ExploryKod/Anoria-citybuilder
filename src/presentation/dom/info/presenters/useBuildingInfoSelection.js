@@ -163,6 +163,18 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
     // (decorative/nature objects with no economic identity).
     const buildingType = buildingRow?.type ?? selectedObject.userData.id;
 
+    // Only an understaffed workplace needs the city's employment: it tells who could staff it
+    const employees = buildingRow?.employees;
+    const isUnderstaffed = (employees?.worker_need ?? 0) > (employees?.worker ?? 0);
+    let employmentSummary = null;
+    if (isUnderstaffed) {
+      try {
+        employmentSummary = await employment.getCityEmploymentSummary();
+      } catch (error) {
+        console.warn('[BuildingInfo] Could not read the employment summary:', error);
+      }
+    }
+
     let vm = createBuildingInfoViewModel({
       buildingType,
       uniqueId,
@@ -177,6 +189,7 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
       supplyView,
       stocks: supplyView?.stocks ?? null,
       employment,
+      employmentSummary,
       supply,
       accounting,
       construction,
