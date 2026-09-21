@@ -11,19 +11,38 @@ export function remainingHubCapacity(currentAmount, maxStock) {
 }
 
 /**
- * What a hub still holds from before its last harvest, per category. Goods leave a hub oldest
- * first, so the last harvest is the last part of the stock to be touched: whatever the stock
- * holds beyond it is older. No per-lot bookkeeping — the stock and the last collection say it.
+ * What a hub held, per category, just before a harvest came in — the part of its stock that is
+ * older than that harvest.
  *
  * @param {Record<string, number> | null | undefined} stocks
- * @param {Record<string, number> | null | undefined} lastCollection What the last harvest brought, per category.
  * @param {readonly string[]} categories
  * @returns {Record<string, number>}
  */
-export function computeCarryOver(stocks, lastCollection, categories) {
+export function snapshotCarryOver(stocks, categories) {
+  return Object.fromEntries(
+    categories.map((category) => [category, Math.max(0, Math.floor(Number(stocks?.[category]) || 0))])
+  );
+}
+
+/**
+ * What a hub still holds from before this year's harvest, per category. Goods leave a hub oldest
+ * first, so the stock is [old goods][this year's harvest] and the harvest is only touched once the
+ * old goods are gone: what is left of the old goods is the stock beyond the harvest, and never
+ * more than what was there before it. With no snapshot recorded, none.
+ *
+ * @param {Record<string, number> | null | undefined} stocks
+ * @param {Record<string, number> | null | undefined} snapshot What the hub held before the harvest (`snapshotCarryOver`).
+ * @param {Record<string, number> | null | undefined} harvested What came in since, per category.
+ * @param {readonly string[]} categories
+ * @returns {Record<string, number>}
+ */
+export function computeCarryOver(stocks, snapshot, harvested, categories) {
   const whole = (value) => Math.max(0, Math.floor(Number(value) || 0));
   return Object.fromEntries(
-    categories.map((category) => [category, Math.max(0, whole(stocks?.[category]) - whole(lastCollection?.[category]))])
+    categories.map((category) => [
+      category,
+      Math.min(whole(snapshot?.[category]), Math.max(0, whole(stocks?.[category]) - whole(harvested?.[category]))),
+    ])
   );
 }
 

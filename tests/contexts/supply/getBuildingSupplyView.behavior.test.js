@@ -233,9 +233,15 @@ describe('Supply — GetHubStorageInfoView: report and autonomy of a hub', () =>
   const view = (row, options = {}) => new GetHubStorageInfoView().execute({ hubKind: 'windmill', buildingRow: row, ...options });
 
   test('exposes what is left from before the last harvest', () => {
-    const dto = view(hubRow({ lastCollection: { wheat: 1440, food: 1440 } }));
+    // 10 held before the harvest; the hub holds 1450 now, the harvest (1440) is not carry-over.
+    const dto = view(hubRow({ carryOver: { year: 1, stocks: { wheat: 10 }, harvested: { wheat: 1440 } } }));
     expect(dto.carryOverTotal).toBe(10);
     expect(dto.lines.find((line) => line.productId === 'wheat').carryOver).toBe(10);
+  });
+
+  test('a stock with no recorded carry-over reports none — the whole stock is not carry-over', () => {
+    const dto = view(hubRow({ lastCollection: { wheat: 0, food: 0 } }));
+    expect(dto.carryOverTotal).toBe(0);
   });
 
   test('exposes how many months the stock lasts at last month\'s pace', () => {

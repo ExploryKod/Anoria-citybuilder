@@ -33,7 +33,8 @@ export class GetHubStorageInfoView {
 
     const carryOver = computeCarryOver(
       hubStocks,
-      buildingRow.lastCollection,
+      buildingRow.carryOver?.stocks,
+      buildingRow.carryOver?.harvested,
       storage.lines.map((line) => line.productId)
     );
     const lines = Object.freeze(

@@ -43,6 +43,7 @@ class InMemorySupplyBuildingRepository {
       workerNeed: b.workerNeed,
       stocks: createSupplyStock(b.stocks),
       maxStock: b.maxStock,
+      carryOver: b.carryOver,
     });
   }
 
@@ -64,6 +65,11 @@ class InMemorySupplyBuildingRepository {
   async saveSupplyFlags(id, flags) {
     const b = this.raw.get(id);
     if (b) b.flags = { ...b.flags, ...flags };
+  }
+
+  async updateBuildingFields(id, fields) {
+    const b = this.raw.get(id);
+    if (b) Object.assign(b, fields);
   }
 
   async saveHubLastCollection(id, lastCollection) {
@@ -219,4 +225,73 @@ describe('Supply — windmill surplus cycle', () => {
     expect(sales.find((sale) => sale.year === 1)).toBeUndefined();
     expect(sales.some((sale) => sale.year === 2)).toBe(true);
   });
+
+  describe('what the hub carries over from before a harvest', () => {
+    const december = (dayInMonth, year = 2) => ({ month: 'december', monthIndex: 11, dayInMonth, year });
+
+    test('the first harvest of the game carries nothing over: the hub was empty', async () => {
+      await runCycle.execute(december(1));
+
+      const { year, stocks, harvested } = repo.raw.get(windmillId).carryOver;
+      expect(year).toBe(2);
+      expect(Object.values(stocks).every((amount) => amount === 0)).toBe(true);
+      // What came in this year is kept apart, to tell the old stock from the new as the hub is drawn
+      expect(harvested.wheat).toBe(10);
+    });
+
+    test('a later harvest carries over what the hub still held before it, not the harvest itself', async () => {
+      repo.raw.get(windmillId).stocks = { wheat: 226, food: 226 };
+
+      await runCycle.execute(december(1));
+
+      expect((await repo.findById(windmillId)).stocks.wheat).toBe(236);
+      expect(repo.raw.get(windmillId).carryOver.stocks.wheat).toBe(226);
+    });
+
+    test('the next passes of the same December, with nothing left to collect, keep it as it was', async () => {
+      repo.raw.get(windmillId).stocks = { wheat: 226, food: 226 };
+
+      await runCycle.execute(december(1));
+      await runCycle.execute(december(2));
+      await runCycle.execute(december(5));
+
+      expect(repo.raw.get(windmillId).carryOver).toEqual({
+        year: 2,
+        stocks: expect.objectContaining({ wheat: 226 }),
+        harvested: expect.objectContaining({ wheat: 10 }),
+      });
+    });
+
+    test('a farm collected later in the same December does not turn the earlier harvest into carry-over', async () => {
+      repo.raw.get(windmillId).stocks = { wheat: 226, food: 226 };
+      const lateFarmId = createBuildingInstanceId();
+
+      await runCycle.execute(december(1));
+      repo.raw.set(lateFarmId, farm(lateFarmId, 'Farm-Wheat', { wheat: 50, food: 50 }, { salesToHub: [], salesToDistributor: [] }));
+      await runCycle.execute(december(3));
+
+      expect((await repo.findById(windmillId)).stocks.wheat).toBe(286);
+      expect(repo.raw.get(windmillId).carryOver.stocks.wheat).toBe(226);
+      // ...and the late farm adds to what came in this year
+      expect(repo.raw.get(windmillId).carryOver.harvested.wheat).toBe(60);
+    });
+
+    test('the next year takes a new snapshot', async () => {
+      repo.raw.get(windmillId).stocks = { wheat: 226, food: 226 };
+      await runCycle.execute(december(1, 2));
+
+      // A year on: 90 left of everything, new harvest waiting on the farm
+      repo.raw.get(windmillId).stocks = { wheat: 90, food: 90 };
+      repo.raw.get(wheatFarmId).flags.collectedByHub = false;
+      repo.raw.get(wheatFarmId).stocks = { wheat: 288, food: 288 };
+      await runCycle.execute(december(1, 3));
+
+      const record = repo.raw.get(windmillId).carryOver;
+      expect(record.year).toBe(3);
+      expect(record.stocks.wheat).toBe(90);
+      // Last year's harvest is not counted again: only what came in this year
+      expect(record.harvested.wheat).toBe(288);
+    });
+  });
 });
+

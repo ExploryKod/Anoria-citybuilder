@@ -3,6 +3,7 @@ import {
   getCategoriesForRole,
   getTotalKeyForRole,
 } from '../../../domain/policies/ResourceRolePolicy.js';
+import { snapshotCarryOver } from '../../../domain/policies/HubCapacityPolicy.js';
 
 /**
  * Command: collect surplus from all sources for one hub. Applies UI flags,
@@ -108,6 +109,7 @@ export class ProcessHubCollection {
     }
 
     const collectionYear = Number.isFinite(year) ? Math.floor(year) : 0;
+
     const lastCollection = { ...emptyCollection(), [totalKey]: outcome.totalUnits };
 
     for (const transfer of outcome.transfers) {
@@ -134,6 +136,21 @@ export class ProcessHubCollection {
       hubId,
       lastCollection
     );
+
+    // Tell the hub's old goods from this year's harvest, so the surplus of the years before can be
+    // told as it is drawn down. The snapshot is taken once per year, from what `hub` held before this
+    // collection (a later pass of the same month must not count the harvest already in as carried
+    // over); what comes in is added up over the passes of the year.
+    const previous = hub.carryOver?.year === collectionYear ? hub.carryOver : null;
+    await this.supplyBuildingRepository.updateBuildingFields(hubId, {
+      carryOver: {
+        year: collectionYear,
+        stocks: previous?.stocks ?? snapshotCarryOver(hub.stocks, categories),
+        harvested: Object.fromEntries(
+          categories.map((category) => [category, (previous?.harvested?.[category] ?? 0) + lastCollection[category]])
+        ),
+      },
+    });
 
     return {
       processed: true,
