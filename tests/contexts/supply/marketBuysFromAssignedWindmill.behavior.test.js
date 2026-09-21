@@ -1,5 +1,5 @@
 /**
- * Behavior tests — Supply: market buys from assigned windmill allocation
+ * Behavior tests — Supply: market pulls from its assigned windmill what its houses need
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
@@ -84,21 +84,60 @@ describe('Supply — market buys from assigned windmill', () => {
     command = new TransferHubToHub(repo);
   });
 
-  test('transfers only allocated amount to linked market', async () => {
-    const outcome = await command.execute({
-      targetId: marketId,
-      period: {},
-    });
+  const pull = (demand, targetId = marketId) => command.execute({ targetId, period: {}, demand });
+
+  test('pulls what its houses need, not a fixed share', async () => {
+    const outcome = await pull(6);
 
     expect(outcome.transferred).toBe(true);
     expect(outcome.totalUnits).toBe(6);
 
     const mill = await repo.findById(windmillId);
     const stall = await repo.findById(marketId);
+    expect(mill.stocks.food).toBe(4);
+    expect(stall.stocks.food).toBe(6);
+  });
 
-    expect(mill.stocks.wheat).toBe(4);
-    expect(stall.stocks.wheat).toBe(6);
-    expect(mill.linkedDistributors[0].allocatedStocks.wheat).toBe(0);
+  test('takes no more than the windmill holds', async () => {
+    const outcome = await pull(500);
+
+    expect(outcome.totalUnits).toBe(10);
+    expect((await repo.findById(windmillId)).stocks.food).toBe(0);
+  });
+
+  test('does not ask again for what the market already holds', async () => {
+    repo.raw.get(marketId).stocks = { wheat: 4, carrot: 0, cabbage: 0, food: 4 };
+
+    const outcome = await pull(6);
+
+    expect(outcome.totalUnits).toBe(2);
+    expect((await repo.findById(marketId)).stocks.food).toBe(6);
+  });
+
+  test('takes no more than the market has room for', async () => {
+    repo.raw.get(marketId).maxStock = 3;
+
+    const outcome = await pull(6);
+
+    expect(outcome.totalUnits).toBe(3);
+  });
+
+  test('spreads what it takes over the goods the windmill holds', async () => {
+    repo.raw.get(windmillId).stocks = { wheat: 10, carrot: 10, cabbage: 0, food: 20 };
+
+    await pull(10);
+
+    const stall = await repo.findById(marketId);
+    expect(stall.stocks.wheat).toBe(5);
+    expect(stall.stocks.carrot).toBe(5);
+  });
+
+  test('asks for nothing when its houses need nothing', async () => {
+    const outcome = await pull(0);
+
+    expect(outcome.transferred).toBe(false);
+    expect(outcome.reason).toBe('no_demand');
+    expect((await repo.findById(windmillId)).stocks.food).toBe(10);
   });
 
   test('refuses when market has no windmill link', async () => {
@@ -111,6 +150,7 @@ describe('Supply — market buys from assigned windmill', () => {
     const outcome = await command.execute({
       targetId: orphanId,
       period: {},
+      demand: 6,
     });
     expect(outcome.transferred).toBe(false);
     expect(outcome.reason).toBe('no_source_link');

@@ -1,6 +1,12 @@
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
 import { findBuildingsWithRoleInRange } from '../../../domain/policies/ResourceRangePolicy.js';
-import { requireRangeForRole, getHubLinkForRole } from '../../../domain/policies/ResourceRolePolicy.js';
+import {
+  requireRangeForRole,
+  getHubLinkForRole,
+  computeConsumerDeficit,
+} from '../../../domain/policies/ResourceRolePolicy.js';
+import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { resolveInstanceIdFromNeighborRef } from '../../../../../shared/building-identity/BuildingRecord.js';
 
 /**
  * Orchestration: generic resource cycle. Every building holding the
@@ -92,11 +98,19 @@ export class RunCityResourceCycle {
       return false;
     }
 
+    const consumersInRange = findBuildingsWithRoleInRange(distributorRow, allBuildings, {
+      role: 'consumer',
+      maxDistance: requireRangeForRole(distributor.type, 'distributor'),
+    });
+
     const distributorHubLink = getHubLinkForRole(distributor.type, 'distributor');
     if (this.transferHubToHub && distributorHubLink) {
+      // The pull is sized on what the consumers it serves still need — read fresh, since a
+      // distributor handled earlier this cycle may already have filled some of them.
       const hubOutcome = await this.transferHubToHub.execute({
         targetId: distributor.id,
         period: { month },
+        demand: await this.#demandOf(consumersInRange),
       });
 
       if (this.onHubLinkResolved) {
@@ -107,11 +121,6 @@ export class RunCityResourceCycle {
         await this.onHubTransfer(distributor.id, hubOutcome.transfers, timeInfo);
       }
     }
-
-    const consumersInRange = findBuildingsWithRoleInRange(distributorRow, allBuildings, {
-      role: 'consumer',
-      maxDistance: requireRangeForRole(distributor.type, 'distributor'),
-    });
 
     if (consumersInRange.length > 0) {
       const distributeOutcome = await this.distributeResourceToConsumers.execute({
@@ -147,5 +156,24 @@ export class RunCityResourceCycle {
     }
 
     return true;
+  }
+
+  /**
+   * Units the given consumers still need, road-connected ones only (the same gate the
+   * distribution applies), each read fresh from the repository.
+   * @param {object[]} consumerRefs
+   * @returns {Promise<number>}
+   */
+  async #demandOf(consumerRefs) {
+    const ids = new Set(
+      consumerRefs.map(resolveInstanceIdFromNeighborRef).filter((id) => typeof id === 'string' && id.length > 0)
+    );
+    let demand = 0;
+    for (const id of ids) {
+      const consumer = await this.supplyBuildingRepository.findById(id);
+      if (!consumer || !isRoadNeedMet(consumer.type, consumer.roadCount)) continue;
+      demand += computeConsumerDeficit(consumer);
+    }
+    return demand;
   }
 }

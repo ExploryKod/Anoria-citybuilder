@@ -7,6 +7,7 @@ import {
   addCategoryAmount,
 } from '../../../domain/value-objects/ResourceStock.js';
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
+import { fairShares } from '../../services/RoundRobinDistribution.js';
 import {
   getCategoriesForRole,
   getScheduleForRole,
@@ -15,9 +16,12 @@ import {
 } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
- * Command: a target hub restocks from its linked source hub's allocation
- * bucket (monthly market-from-windmill restock today; resource-agnostic
- * otherwise). WHAT/WHEN come from the target's own 'distributor' role in
+ * Command: a target hub restocks from its linked source hub by PULLING what its own
+ * consumers still need (`demand`, units) — minus what it already holds — limited by what
+ * the source has and by the room left in the target. The source's stock is therefore drawn
+ * down at the pace of real consumption instead of being handed out in shares (monthly
+ * market-from-windmill restock today; resource-agnostic otherwise). The pull is spread over
+ * the goods the source holds, so a variety of goods survives. WHAT/WHEN come from the target's own 'distributor' role in
  * the catalog; hub-link storage field names come from each side's own
  * `hubLink` catalog fact (target's 'distributor' role, source's 'hub' role)
  * — see ResourceRolePolicy.getHubLinkForRole. This command never names a
@@ -35,6 +39,7 @@ export class TransferHubToHub {
    * @param {object} params
    * @param {string} params.targetId
    * @param {object} params.period
+   * @param {number} params.demand Units the target's consumers still need (see computeConsumerDeficit).
    * @returns {Promise<{
    *   transferred: boolean,
    *   reason?: string,
@@ -42,7 +47,7 @@ export class TransferHubToHub {
    *   totalUnits: number,
    * }>}
    */
-  async execute({ targetId, period }) {
+  async execute({ targetId, period, demand }) {
     const target = await this.supplyBuildingRepository.findById(targetId);
     if (!target) {
       return { transferred: false, reason: 'target_not_found', transfers: [], totalUnits: 0 };
@@ -97,43 +102,38 @@ export class TransferHubToHub {
     const categories = getCategoriesForRole(target.type, 'distributor');
     const totalKey = getTotalKeyForRole(target.type, 'distributor');
 
-    let targetCapacity = remainingHubCapacity(target.stocks[totalKey], target.maxStock);
+    let sourceStock = createResourceStock(source.stocks, categories, totalKey);
+    let targetStock = createResourceStock(target.stocks, categories, totalKey);
+
+    const wanted = Math.max(0, demand - targetStock[totalKey]);
+    if (!(wanted > 0)) {
+      return { transferred: false, reason: 'no_demand', transfers: [], totalUnits: 0 };
+    }
+
+    const targetCapacity = remainingHubCapacity(target.stocks[totalKey], target.maxStock);
     if (targetCapacity <= 0) {
       return { transferred: false, reason: 'target_full', transfers: [], totalUnits: 0 };
     }
 
-    const allocation = links[linkIndex];
+    const amounts = fairShares(
+      categories.map((category) => getCategoryAmount(sourceStock, category)),
+      Math.min(wanted, targetCapacity)
+    );
+
     const transfers = [];
-    let sourceStock = createResourceStock(source.stocks, categories, totalKey);
-    let targetStock = createResourceStock(target.stocks, categories, totalKey);
-    const nextAllocated = {};
-    for (const category of categories) {
-      nextAllocated[category] = Math.max(0, Math.floor(allocation[sourceHubLink.allocationField]?.[category] ?? 0));
-    }
-
-    for (const category of categories) {
-      if (targetCapacity <= 0) break;
-
-      const allocated = nextAllocated[category];
-      const availableOnSource = getCategoryAmount(sourceStock, category);
-      const amount = Math.min(allocated, availableOnSource, targetCapacity);
-      if (amount <= 0) continue;
-
+    categories.forEach((category, index) => {
+      const amount = amounts[index];
+      if (amount <= 0) return;
       sourceStock = takeCategoryAmount(sourceStock, category, amount, categories, totalKey);
       targetStock = addCategoryAmount(targetStock, category, amount, categories, totalKey);
-      nextAllocated[category] = allocated - amount;
-      targetCapacity -= amount;
       transfers.push({ sourceId, category, amount });
-    }
+    });
 
     if (transfers.length === 0) {
       return { transferred: false, reason: 'nothing_to_transfer', transfers: [], totalUnits: 0 };
     }
 
-    links[linkIndex] = { ...allocation, [sourceHubLink.allocationField]: nextAllocated };
-
     await this.supplyBuildingRepository.saveStocks(sourceId, sourceStock);
-    await this.supplyBuildingRepository.saveHubLinkedDistributors(sourceId, links);
     await this.supplyBuildingRepository.saveStocks(targetId, targetStock);
 
     const totalUnits = transfers.reduce((sum, transfer) => sum + transfer.amount, 0);

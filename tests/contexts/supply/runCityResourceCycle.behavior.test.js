@@ -239,6 +239,40 @@ describe('RunCityResourceCycle', () => {
     expect(houseRow.stocks.wheat).toBeGreaterThan(0);
   });
 
+  test('the hub gives only what the houses need, and the market keeps nothing back', async () => {
+    const repo = new FakeSupplyBuildingRepository([
+      {
+        id: WINDMILL_ID,
+        type: 'Windmill-001',
+        x: 5,
+        y: 4,
+        roads: 1,
+        roadCount: 1,
+        worker: 0,
+        workerNeed: 0,
+        maxStock: 1000,
+        stocks: { wheat: 100, food: 100 },
+        linkedDistributors: [{ distributorId: MARKET_ID, allocatedStocks: { wheat: 100 } }],
+      },
+      market({ supplyHubId: WINDMILL_ID, stocks: { wheat: 0, food: 0 } }),
+      house(HOUSE_ID),
+    ]);
+    const cycle = new RunCityResourceCycle(repo, new DistributeResourceToConsumers(repo), undefined, {
+      transferHubToHub: new TransferHubToHub(repo),
+    });
+
+    await cycle.execute({ categories: CATEGORIES, season: 'summer', month: 'January', timeInfo: { turn: 1 } });
+
+    // A house of 10 keeps two months of 1 unit each: 20. Nothing more leaves the hub.
+    expect((await repo.findBuildingRow(HOUSE_ID)).stocks.wheat).toBe(20);
+    expect((await repo.findBuildingRow(WINDMILL_ID)).stocks.wheat).toBe(80);
+    expect((await repo.findBuildingRow(MARKET_ID)).stocks.wheat).toBe(0);
+
+    // Next month the house is already full: the hub is left alone.
+    await cycle.execute({ categories: CATEGORIES, season: 'summer', month: 'February', timeInfo: { turn: 2 } });
+    expect((await repo.findBuildingRow(WINDMILL_ID)).stocks.wheat).toBe(80);
+  });
+
   test('a hub-less flag distributor (chapel) marks houses served, no stock leg at all', async () => {
     const repo = new FakeSupplyBuildingRepository([chapel(), house(HOUSE_ID)]);
     const distribute = new DistributeResourceToConsumers(repo);
