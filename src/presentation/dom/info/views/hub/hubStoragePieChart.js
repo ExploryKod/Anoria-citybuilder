@@ -42,8 +42,9 @@ function labelPoint(cx, cy, r, midDeg) {
 
 /**
  * @param {object} view
+ * @param {ReadonlyArray<string>} [summaryLines] Short lines under the pie (capacity, autonomy, ...)
  */
-export function renderHubStoragePieChart(view) {
+export function renderHubStoragePieChart(view, summaryLines = []) {
   const segments = view.pieSegments ?? [];
   if (segments.length === 0) return '';
 
@@ -108,7 +109,7 @@ export function renderHubStoragePieChart(view) {
             <span class="hub-pie-legend-swatch-pale" style="background:${seg.colors.pale}"></span>
           </span>
           <span class="hub-pie-legend-emoji">${seg.emoji}</span>
-          <span class="hub-pie-legend-text">${seg.label} — ${seg.amount} / ${seg.maxCap} <span class="hub-pie-legend-pct">(max ${seg.maxPercent} %)</span>${seg.remainingInbound > 0 ? ` · encore possible ${seg.remainingInbound}` : ''}</span>
+          <span class="hub-pie-legend-text">${seg.label} — ${seg.amount}</span>
         </div>
       `;
     })
@@ -122,11 +123,7 @@ export function renderHubStoragePieChart(view) {
         ${labels}
       </svg>
       <div class="hub-pie-legend">${legend}</div>
-      <p class="hub-pie-caption">
-        Foncé = stock actuel · gris = place libre (<strong>premier arrivé</strong> si plusieurs denrées
-        peuvent la prendre — les plafonds % peuvent se chevaucher).
-        Capacité : <strong class="hub-pie-capacity">${view.currentTotal} / ${view.totalCapacity}</strong>.
-      </p>
+      <p class="hub-pie-caption">${summaryLines.map((line) => `<span class="hub-pie-summary-line">${line}</span>`).join('<br />')}</p>
     </div>
   `;
 }
@@ -136,11 +133,12 @@ export function renderHubStoragePieChart(view) {
  *
  * @param {HTMLElement} root
  * @param {object} view
+ * @param {ReadonlyArray<string>} [summaryLines]
  */
-export function patchHubStoragePieChart(root, view) {
+export function patchHubStoragePieChart(root, view, summaryLines = []) {
   const section = root.querySelector('.hub-storage-chart-section');
   if (!section) return;
   const title = section.querySelector('.hub-storage-chart-title');
-  const titleHtml = title ? title.outerHTML : `<h3 class="hub-storage-chart-title">Répartition de l'entrepôt</h3>`;
-  section.innerHTML = `${titleHtml}${renderHubStoragePieChart(view)}`;
+  const titleHtml = title ? title.outerHTML : `<h3 class="hub-storage-chart-title">Stock</h3>`;
+  section.innerHTML = `${titleHtml}${renderHubStoragePieChart(view, summaryLines)}`;
 }

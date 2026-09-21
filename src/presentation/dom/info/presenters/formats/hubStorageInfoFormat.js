@@ -49,3 +49,24 @@ export function formatHubStorageRenderParams(vm) {
     supplyView: vm.supplyView,
   };
 }
+
+/**
+ * The short lines under the hub's pie: how full it is, how long the stock lasts, and what is
+ * left of previous harvests. The pie itself carries the goods (icon + amount).
+ *
+ * @param {{ currentTotal: number, totalCapacity: number, autonomyMonths?: number | null, carryOverTotal?: number }} view
+ * @returns {string[]}
+ */
+export function formatHubStockSummary(view) {
+  const lines = [`📦 ${view.currentTotal} / ${view.totalCapacity}`];
+  if (view.autonomyMonths != null) {
+    lines.push(
+      view.autonomyMonths >= 1 ? `⏳ Tient environ ${view.autonomyMonths} mois` : "⏳ Tient moins d'un mois"
+    );
+  }
+  if ((view.carryOverTotal ?? 0) > 0) {
+    lines.push(`🗓️ dont ${view.carryOverTotal} des récoltes précédentes`);
+  }
+  return lines;
+}
+

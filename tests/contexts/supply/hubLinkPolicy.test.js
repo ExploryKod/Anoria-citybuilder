@@ -4,6 +4,7 @@ import {
   addHubLink,
   removeHubLink,
 } from '../../../src/contexts/supply/domain/policies/HubLinkPolicy.js';
+import { computeCarryOver, computeAutonomyMonths } from '../../../src/contexts/supply/domain/policies/HubCapacityPolicy.js';
 
 describe('HubLinkPolicy', () => {
   test('splits stock evenly across linked distributors, remainder to earlier links', () => {
@@ -50,5 +51,34 @@ describe('HubLinkPolicy', () => {
       'd1'
     );
     expect(links).toEqual([{ distributorId: 'd2', x: 1, y: 0, allocatedStocks: {} }]);
+  });
+});
+
+describe('hub stock — what is left from before the last harvest, and for how long it lasts', () => {
+  const categories = ['wheat', 'carrot'];
+
+  test('the carry-over is what the stock holds beyond the last harvest (oldest goods leave first)', () => {
+    expect(computeCarryOver({ wheat: 1450, carrot: 0 }, { wheat: 1440, carrot: 0 }, categories)).toEqual({
+      wheat: 10,
+      carrot: 0,
+    });
+  });
+
+  test('once the old stock is used up, the carry-over is nothing, not negative', () => {
+    expect(computeCarryOver({ wheat: 1220 }, { wheat: 1440 }, ['wheat'])).toEqual({ wheat: 0 });
+  });
+
+  test('with no harvest recorded, everything held counts as carried over', () => {
+    expect(computeCarryOver({ wheat: 40 }, null, ['wheat'])).toEqual({ wheat: 40 });
+  });
+
+  test('autonomy is the stock over the month\'s outflow, in whole months', () => {
+    expect(computeAutonomyMonths(670, 110)).toBe(6);
+    expect(computeAutonomyMonths(100, 110)).toBe(0);
+  });
+
+  test('autonomy is unknown while nothing has left the hub yet', () => {
+    expect(computeAutonomyMonths(670, 0)).toBeNull();
+    expect(computeAutonomyMonths(670, undefined)).toBeNull();
   });
 });

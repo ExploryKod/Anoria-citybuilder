@@ -38,7 +38,7 @@ export class TransferHubToHub {
   /**
    * @param {object} params
    * @param {string} params.targetId
-   * @param {object} params.period
+   * @param {{ year?: number, monthIndex?: number }} params.period The month, to add up what leaves the hub in it
    * @param {number} params.demand Units the target's consumers still need (see computeConsumerDeficit).
    * @returns {Promise<{
    *   transferred: boolean,
@@ -133,10 +133,21 @@ export class TransferHubToHub {
       return { transferred: false, reason: 'nothing_to_transfer', transfers: [], totalUnits: 0 };
     }
 
+    const totalUnits = transfers.reduce((sum, transfer) => sum + transfer.amount, 0);
+
     await this.supplyBuildingRepository.saveStocks(sourceId, sourceStock);
     await this.supplyBuildingRepository.saveStocks(targetId, targetStock);
+    // The pace at which the hub is drawn down: what left it this month, all its targets together.
+    const previous = source.lastOutflow;
+    const sameMonth = previous != null && previous.year === period?.year && previous.monthIndex === period?.monthIndex;
+    await this.supplyBuildingRepository.updateBuildingFields(sourceId, {
+      lastOutflow: {
+        year: period?.year,
+        monthIndex: period?.monthIndex,
+        units: (sameMonth ? previous.units : 0) + totalUnits,
+      },
+    });
 
-    const totalUnits = transfers.reduce((sum, transfer) => sum + transfer.amount, 0);
     return { transferred: true, transfers, totalUnits };
   }
 }

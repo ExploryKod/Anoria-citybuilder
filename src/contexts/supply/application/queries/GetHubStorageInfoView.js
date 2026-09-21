@@ -2,6 +2,7 @@ import { getResourceCategoryPresentation } from '../../domain/catalogs/ResourceC
 import { buildHubStorageLines } from '../../domain/policies/HubStorageOrdersPolicy.js';
 import { buildHubStoragePieSegments } from '../../domain/policies/HubStoragePiePolicy.js';
 import { getMaxStockForBuilding } from '../../domain/policies/ResourceRolePolicy.js';
+import { computeCarryOver, computeAutonomyMonths } from '../../domain/policies/HubCapacityPolicy.js';
 
 /**
  * Read model for windmill hub info overlay (Cesar III inspired).
@@ -28,10 +29,15 @@ export class GetHubStorageInfoView {
       totalCapacity,
     });
 
+    const carryOver = computeCarryOver(
+      hubStocks,
+      buildingRow.lastCollection,
+      storage.lines.map((line) => line.productId)
+    );
     const lines = Object.freeze(
       storage.lines.map((line) => {
         const { emoji, label } = getResourceCategoryPresentation(line.productId);
-        return Object.freeze({ ...line, emoji, label });
+        return Object.freeze({ ...line, emoji, label, carryOver: carryOver[line.productId] ?? 0 });
       })
     );
 
@@ -42,6 +48,9 @@ export class GetHubStorageInfoView {
       workerNeed: buildingRow.employees?.worker_need ?? 0,
       ...storage,
       lines,
+      // What is left from before the last harvest, and how long the stock lasts at last month's pace.
+      carryOverTotal: lines.reduce((sum, line) => sum + line.carryOver, 0),
+      autonomyMonths: computeAutonomyMonths(storage.currentTotal, buildingRow.lastOutflow?.units),
       pieSegments: buildHubStoragePieSegments({
         lines,
         totalCapacity,

@@ -5,6 +5,7 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingView } from '../../../src/contexts/supply/domain/SupplyBuildingView.js';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
+import { GetHubStorageInfoView } from '../../../src/contexts/supply/application/queries/GetHubStorageInfoView.js';
 import { GetBuildingSupplyView, classifySupplyKind } from '../../../src/contexts/supply/application/queries/GetBuildingSupplyView.js';
 
 class InMemorySupplyBuildingRepository {
@@ -219,5 +220,30 @@ describe('Supply — GetBuildingSupplyView', () => {
     const dto = await new GetBuildingSupplyView(repo).execute('Chapel-1-1');
     expect(dto.kind).toBe('service');
     expect(dto.isBuying).toBeUndefined();
+  });
+});
+
+describe('Supply — GetHubStorageInfoView: report and autonomy of a hub', () => {
+  const hubRow = (extra) => ({
+    type: 'Windmill-001',
+    stocks: { wheat: 1450, food: 1450 },
+    employees: { worker: 4, worker_need: 4 },
+    ...extra,
+  });
+  const view = (row) => new GetHubStorageInfoView().execute({ hubKind: 'windmill', buildingRow: row });
+
+  test('exposes what is left from before the last harvest', () => {
+    const dto = view(hubRow({ lastCollection: { wheat: 1440, food: 1440 } }));
+    expect(dto.carryOverTotal).toBe(10);
+    expect(dto.lines.find((line) => line.productId === 'wheat').carryOver).toBe(10);
+  });
+
+  test('exposes how many months the stock lasts at last month\'s pace', () => {
+    const dto = view(hubRow({ lastOutflow: { year: 1, monthIndex: 4, units: 110 } }));
+    expect(dto.autonomyMonths).toBe(13);
+  });
+
+  test('has no autonomy while nothing has left the hub', () => {
+    expect(view(hubRow({})).autonomyMonths).toBeNull();
   });
 });

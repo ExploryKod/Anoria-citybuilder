@@ -1,24 +1,7 @@
 import { getBuildingInfoBody, setBuildingInfoTitle } from '../../layout/buildingInfoLayout.js';
 import { patchHubStoragePieChart, renderHubStoragePieChart } from './hubStoragePieChart.js';
 import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
-
-/**
- * @param {object} line
- */
-function renderStockGridItem(line) {
-  const capHint = line.maxCap > 0 ? ` / ${line.maxCap}` : '';
-  const refused = line.mode === 'refuse' ? ' hub-stock-item--refused' : '';
-  const fetch = line.mode === 'fetch' ? ' hub-stock-item--fetch' : '';
-  const empty = line.amount <= 0 ? ' hub-stock-item--empty' : '';
-
-  return `
-    <div class="hub-stock-item${refused}${fetch}${empty}" data-product="${line.productId}">
-      <span class="hub-stock-emoji">${line.emoji}</span>
-      <span class="hub-stock-qty">${line.amount}${capHint}</span>
-      <span class="hub-stock-label">${line.label}</span>
-    </div>
-  `;
-}
+import { formatHubStockSummary } from '../../presenters/formats/hubStorageInfoFormat.js';
 
 /**
  * @param {HTMLElement} ordersPanel
@@ -108,17 +91,7 @@ async function softRefreshHubPanel(ctx, orderWarning = null) {
   ctx.buildingRow = freshRow ?? buildingRow;
   ctx.view = freshView;
 
-  const capacityEl = body.querySelector('.hub-info-capacity');
-  if (capacityEl) {
-    capacityEl.textContent = `📦 ${freshView.currentTotal} / ${freshView.totalCapacity} unités`;
-  }
-
-  const grid = body.querySelector('.hub-stock-grid');
-  if (grid) {
-    grid.innerHTML = freshView.lines.map(renderStockGridItem).join('');
-  }
-
-  patchHubStoragePieChart(body, freshView);
+  patchHubStoragePieChart(body, freshView, formatHubStockSummary(freshView));
 
   const ordersPanel = body.querySelector('.hub-orders-panel');
   if (ordersPanel && !ordersPanel.classList.contains('hidden')) {
@@ -155,7 +128,6 @@ export async function renderHubStorageInfoPanel({
   };
 
   const workerLine = `${view.workers} / ${view.workerNeed} requis`;
-  const capacityLine = `${view.currentTotal} / ${view.totalCapacity} unités`;
 
   let statusMessage = '';
   if (view.hubKind === 'windmill' && supplyView) {
@@ -172,15 +144,11 @@ export async function renderHubStorageInfoPanel({
     <div class="hub-info-panel">
       <div class="hub-info-summary">
         <div class="hub-info-workers">👷 ${workerLine}</div>
-        <div class="hub-info-capacity">📦 ${capacityLine}</div>
         ${statusMessage ? `<p class="hub-info-status">${statusMessage}</p>` : ''}
       </div>
-      <div class="hub-stock-grid">
-        ${view.lines.map(renderStockGridItem).join('')}
-      </div>
       <section class="hub-storage-chart-section">
-        <h3 class="hub-storage-chart-title">Répartition de l'entrepôt</h3>
-        ${renderHubStoragePieChart(view)}
+        <h3 class="hub-storage-chart-title">Stock</h3>
+        ${renderHubStoragePieChart(view, formatHubStockSummary(view))}
       </section>
       <div class="hub-info-actions">
         <button type="button" class="hub-orders-toggle-btn">${ordersOpen ? 'Masquer ordres' : 'Ordres'}</button>

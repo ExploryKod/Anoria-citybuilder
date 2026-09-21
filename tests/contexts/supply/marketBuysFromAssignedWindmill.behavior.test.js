@@ -29,6 +29,11 @@ class InMemorySupplyBuildingRepository {
     if (b) b.stocks = { ...createSupplyStock(stocks) };
   }
 
+  async updateBuildingFields(id, fields) {
+    const b = this.raw.get(id);
+    if (b) Object.assign(b, fields);
+  }
+
   async saveHubLinkedDistributors(id, linkedDistributors) {
     const b = this.raw.get(id);
     if (b) b.linkedDistributors = linkedDistributors.map((entry) => ({ ...entry, allocatedStocks: { ...entry.allocatedStocks } }));
@@ -84,7 +89,7 @@ describe('Supply — market buys from assigned windmill', () => {
     command = new TransferHubToHub(repo);
   });
 
-  const pull = (demand, targetId = marketId) => command.execute({ targetId, period: {}, demand });
+  const pull = (demand, targetId = marketId, period = {}) => command.execute({ targetId, period, demand });
 
   test('pulls what its houses need, not a fixed share', async () => {
     const outcome = await pull(6);
@@ -138,6 +143,19 @@ describe('Supply — market buys from assigned windmill', () => {
     expect(outcome.transferred).toBe(false);
     expect(outcome.reason).toBe('no_demand');
     expect((await repo.findById(windmillId)).stocks.food).toBe(10);
+  });
+
+  test('the hub keeps how much left it this month, adding up across pulls, and starts over next month', async () => {
+    const may = { year: 1, monthIndex: 4 };
+
+    await pull(6, marketId, may);
+    repo.raw.get(marketId).stocks = { wheat: 0, carrot: 0, cabbage: 0, food: 0 };
+    await pull(3, marketId, may);
+    expect((await repo.findById(windmillId)).lastOutflow).toEqual({ ...may, units: 9 });
+
+    repo.raw.get(marketId).stocks = { wheat: 0, carrot: 0, cabbage: 0, food: 0 };
+    await pull(1, marketId, { year: 1, monthIndex: 5 });
+    expect((await repo.findById(windmillId)).lastOutflow).toEqual({ year: 1, monthIndex: 5, units: 1 });
   });
 
   test('refuses when market has no windmill link', async () => {

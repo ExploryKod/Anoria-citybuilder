@@ -1781,51 +1781,6 @@ footer .footer-links a:hover {
     color: #495057;
 }
 
-.hub-stock-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-}
-
-.hub-stock-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 72px;
-    padding: 8px 6px;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    background: #fff;
-    text-align: center;
-}
-
-.hub-stock-item--empty {
-    opacity: 0.55;
-}
-
-.hub-stock-item--refused {
-    border-color: #ffc9c9;
-    background: #fff5f5;
-}
-
-.hub-stock-emoji {
-    font-size: 22px;
-    line-height: 1.1;
-}
-
-.hub-stock-qty {
-    font-weight: 700;
-    font-size: 14px;
-    margin-top: 4px;
-}
-
-.hub-stock-label {
-    font-size: 11px;
-    color: #6c757d;
-    margin-top: 2px;
-}
-
 .hub-info-actions {
     display: flex;
     justify-content: center;
@@ -1945,11 +1900,6 @@ footer .footer-links a:hover {
     text-align: center;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-}
-
-.hub-stock-item--fetch {
-    border-color: #90caf9;
-    background: #f3f9ff;
 }
 
 .hub-storage-chart-section {

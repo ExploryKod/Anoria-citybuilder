@@ -109,7 +109,7 @@ export class RunCityResourceCycle {
       // distributor handled earlier this cycle may already have filled some of them.
       const hubOutcome = await this.transferHubToHub.execute({
         targetId: distributor.id,
-        period: { month },
+        period: { month, year: timeInfo?.year, monthIndex: timeInfo?.monthIndex },
         demand: await this.#demandOf(consumersInRange),
       });
 
