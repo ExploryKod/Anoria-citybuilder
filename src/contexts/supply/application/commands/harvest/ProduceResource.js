@@ -1,9 +1,16 @@
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
-import { addCategoryAmount } from '../../../domain/value-objects/ResourceStock.js';
+import {
+  addCategoryAmount,
+  getCategoryAmount,
+  takeCategoryAmount,
+} from '../../../domain/value-objects/ResourceStock.js';
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import { isLockedForPeriod, buildLockUpdate } from '../../../domain/policies/PeriodLockPolicy.js';
 import { getResourceRoles } from '../../../domain/policies/ResourceRolePolicy.js';
-import { getCategoriesForTotalKey } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import {
+  getCategoriesForTotalKey,
+  getTotalKeyForCategory,
+} from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Command: a building produces resource units into its own stock, gated by
@@ -14,16 +21,40 @@ import { getCategoriesForTotalKey } from '../../../../../shared/building-catalog
  * entries; this command never names a resource or a lock field itself.
  *
  * A building can hold several 'producer' entries (a house that gathers, a
- * workshop with two outputs); each is evaluated independently. Two catalog
+ * workshop with two outputs); each is evaluated independently. Three catalog
  * facts refine an entry:
  *   - `scale: 'building' | 'population'` — an entry declaring `scale` belongs
  *     to inhabitants: it needs at least one, and `'population'` multiplies
  *     `amount` by their number (`'building'` = flat amount per building).
  *   - `requiresOperational: false` — lifts the road/staffing gate.
+ *   - `inputs: [{ category, amount }]` — makes the entry a TRANSFORMATION
+ *     rather than a source: it first takes those goods from the building's
+ *     own stock, and produces nothing at all unless every one of them is
+ *     there (a workshop idles without its raw material instead of
+ *     half-producing). Which good, how much, and what it becomes are all
+ *     catalog facts; this command still names none of them.
  * An entry with a `totalKey` writes through the full set of categories
  * filed under that aggregate, so the aggregate stays consistent and the
  * building's other goods are untouched.
  */
+/**
+ * The categories and aggregate a stock write about `category` must use, so
+ * that the right total stays in sync: the entry's own `totalKey` when it
+ * declares one, otherwise the aggregate the catalog files that good under
+ * (the good itself when it belongs to none, e.g. pottery today). Used for
+ * both sides of a transformation, so an input and an output are read and
+ * written by the same rule.
+ *
+ * @param {string} category
+ * @param {string} [declaredTotalKey]
+ * @returns {{ categories: readonly string[], totalKey: string }}
+ */
+function stockShapeFor(category, declaredTotalKey) {
+  const totalKey = declaredTotalKey ?? getTotalKeyForCategory(category);
+  const filedUnder = getCategoriesForTotalKey(totalKey);
+  return { categories: filedUnder.length > 0 ? filedUnder : [category], totalKey };
+}
+
 export class ProduceResource {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
@@ -88,28 +119,52 @@ export class ProduceResource {
         continue;
       }
 
-      let amount = entry.amount ?? 0;
+      let multiplier = 1;
       if (entry.scale) {
         const pop = Number.isFinite(building.pop) ? Math.max(0, Math.floor(building.pop)) : 0;
         if (pop <= 0) {
           firstFailure ??= 'no_population';
           continue;
         }
-        if (entry.scale === 'population') amount *= pop;
+        if (entry.scale === 'population') multiplier = pop;
+      }
+      const amount = (entry.amount ?? 0) * multiplier;
+
+      // A transformation: this entry turns goods the building already holds
+      // into its own output. All or nothing — short of any one input it
+      // produces nothing AND stays unlocked for the period, so it runs as
+      // soon as it is supplied. The same `multiplier` scales the recipe, so
+      // its ratio holds whatever scales the output.
+      const inputs = entry.inputs ?? [];
+      const inputNeed = (input) => (input.amount ?? 0) * multiplier;
+      if (inputs.some((input) => getCategoryAmount(building.stocks, input.category) < inputNeed(input))) {
+        firstFailure ??= 'missing_input';
+        continue;
       }
 
-      const sharesTotal = Boolean(entry.totalKey);
-      const shapeCategories = sharesTotal ? getCategoriesForTotalKey(entry.totalKey) : [category];
-      const totalKey = sharesTotal ? entry.totalKey : category;
-
+      // Each write is merged back into the whole row: a write scoped to one
+      // aggregate returns only that aggregate's fields, and a building that
+      // holds a good outside it (its inputs, another chain's output) would
+      // otherwise lose it on every production.
       let nextStock = building.stocks;
+      for (const input of inputs) {
+        const shape = stockShapeFor(input.category);
+        nextStock = {
+          ...nextStock,
+          ...takeCategoryAmount(nextStock, input.category, inputNeed(input), shape.categories, shape.totalKey),
+        };
+      }
+
       for (const produced of entry.categories) {
-        nextStock = addCategoryAmount(nextStock, produced, amount, shapeCategories, totalKey);
+        const shape = stockShapeFor(produced, entry.totalKey);
+        nextStock = {
+          ...nextStock,
+          ...addCategoryAmount(nextStock, produced, amount, shape.categories, shape.totalKey),
+        };
         credited[produced] = (credited[produced] ?? 0) + amount;
       }
 
-      const stocksToSave = sharesTotal ? { ...building.stocks, ...nextStock } : nextStock;
-      await this.supplyBuildingRepository.saveStocks(buildingId, stocksToSave);
+      await this.supplyBuildingRepository.saveStocks(buildingId, nextStock);
 
       const lockUpdate = entry.periodLock
         ? buildLockUpdate(building, entry.periodLock, period, category)
@@ -118,7 +173,7 @@ export class ProduceResource {
         await this.supplyBuildingRepository.updateBuildingFields(buildingId, lockUpdate);
       }
 
-      building = { ...building, stocks: stocksToSave, ...(lockUpdate ?? {}) };
+      building = { ...building, stocks: nextStock, ...(lockUpdate ?? {}) };
     }
 
     const categories = Object.keys(credited);

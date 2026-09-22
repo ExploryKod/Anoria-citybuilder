@@ -281,6 +281,27 @@ export function getMaxStockForBuilding(buildingType) {
 }
 
 /**
+ * The aggregate a good is filed under (e.g. 'wheat' → 'food'), or the good
+ * itself when the catalog files it under none — a single-category good is
+ * its own total (same rule as ResourceRolePolicy.getTotalKeyForRole).
+ *
+ * The symmetric counterpart of getCategoriesForTotalKey, for a caller that
+ * starts from the good rather than from the aggregate: a recipe names the
+ * good it consumes (see ProduceResource's `inputs`), and the stock write
+ * that takes it must still keep the right aggregate in sync.
+ * @param {string} category
+ * @returns {string}
+ */
+export function getTotalKeyForCategory(category) {
+  for (const definition of Object.values(buildingCatalog)) {
+    for (const entry of definition.resourceRoles ?? []) {
+      if (entry.totalKey && entry.categories.includes(category)) return entry.totalKey;
+    }
+  }
+  return category;
+}
+
+/**
  * Every category the catalog files under one aggregate `totalKey` (e.g.
  * everything a citizen can eat, whether farmed or gathered) — the shape a
  * stock write must use so it updates the aggregate consistently.
