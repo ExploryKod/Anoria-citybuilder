@@ -37,7 +37,12 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'School': Object.freeze({ width: 2, depth: 2 }),
   'Theatre': Object.freeze({ width: 3, depth: 2 }),
   'Crate-001': Object.freeze({ width: 1, depth: 1 }),
-  'Cylinder': Object.freeze({ width: 1, depth: 1 }),
+  // Cylinder/Windmill-001 reassign their geometry to a Kenney industrial mesh
+  // (see buildingAssets.js) whose real bounding box is 1x2 — footprint must
+  // match that prefab's real size, same reasoning as the pottery workshops
+  // and House-Blue/Purple/Red below (a mismatch here is what makes the mesh
+  // straddle its neighbour tile at placement time).
+  'Cylinder': Object.freeze({ width: 1, depth: 2 }),
   'Farm-Cabbage': Object.freeze({ width: 1, depth: 1 }),
   'Farm-Carrot': Object.freeze({ width: 1, depth: 1 }),
   'Farm-Wheat': Object.freeze({ width: 1, depth: 1 }),
@@ -65,5 +70,5 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'StonePath-End-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-Left-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-Right-001': Object.freeze({ width: 1, depth: 1 }),
-  'Windmill-001': Object.freeze({ width: 1, depth: 1 }),
+  'Windmill-001': Object.freeze({ width: 1, depth: 2 }),
 });
