@@ -898,6 +898,14 @@ canvas.pointer-events-disabled {
     height: 75%;
 }
 
+/* Road tool: same fixed size as the other monochrome icons (.tool-icon-img),
+   not the 75%-of-button relative sizing above, which made it look oversized
+   next to Kenney previews and other icon buttons in the same panel. */
+.panel-layout .panel-btn#StonePath-001 svg {
+    width: 24px;
+    height: 24px;
+}
+
 /* Kenney city-kit — official preview PNG on soft charcoal (no border/shadow) */
 .panel-layout .panel-btn.panel-btn--kenney-preview {
     padding: 6px;

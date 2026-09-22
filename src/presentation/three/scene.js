@@ -1211,15 +1211,9 @@ export function createScene(_gameStore, assetManager, deps) {
                     }
 
                     // Accès routier marché (BC Parcels + icône)
-                    const marketRoadScale = {
-                        x: statutsIconsMeta.road.scale.x * 0.714,
-                        y: statutsIconsMeta.road.scale.y * 0.714,
-                        z: statutsIconsMeta.road.scale.z * 0.714
-                    };
-
                     if (buildings[x][y]) {
                         const marketRoadIcon = resolveIconAppearance(
-                            buildings[x][y], 'road', statutsIconsMeta.road.position, marketRoadScale
+                            buildings[x][y], 'road', statutsIconsMeta.road.position, statutsIconsMeta.road.scale
                         );
                         await syncRoadAccess({
                             instanceId: currentInstanceId,
@@ -1318,15 +1312,9 @@ export function createScene(_gameStore, assetManager, deps) {
                     });
                     
                     // Accès routier moulin (BC Parcels + icône)
-                    const windmillRoadScale = {
-                        x: statutsIconsMeta.road.scale.x * 0.714,
-                        y: statutsIconsMeta.road.scale.y * 0.714,
-                        z: statutsIconsMeta.road.scale.z * 0.714
-                    };
-
                     if (buildings[x][y]) {
                         const windmillRoadIcon = resolveIconAppearance(
-                            buildings[x][y], 'road', statutsIconsMeta.road.position, windmillRoadScale
+                            buildings[x][y], 'road', statutsIconsMeta.road.position, statutsIconsMeta.road.scale
                         );
                         await syncRoadAccess({
                             instanceId: currentInstanceId,

@@ -11,7 +11,7 @@ import { resolveStatusIconPosition } from './meshUtils.js';
  * over these defaults (see resolveIconAppearance below).
  */
 export const STATUS_ICON_DEFAULTS = Object.freeze({
-  road: { position: { x: -1, y: 1, z: 1 }, scale: { x: 1.2, y: 1.2, z: 1 }, spriteColor: null, backgroundColor: null },
+  road: { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 0.6, y: 0.6, z: 1 }, spriteColor: null, backgroundColor: null },
   food: { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 1.0, y: 1.0, z: 1 }, spriteColor: null, backgroundColor: null },
   'no-food': { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 1.0, y: 1.0, z: 1 }, spriteColor: null, backgroundColor: null },
   'no-food-farm': {
