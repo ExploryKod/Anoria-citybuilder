@@ -123,7 +123,15 @@ export function capResourceStockAt(stock, maxTotal, categories, totalKey = 'tota
   return createResourceStock(next, categories, totalKey);
 }
 
-function nonNegInt(value) {
+/**
+ * A stock quantity as this mechanic stores one: a non-negative whole number,
+ * anything else read as 0. Exported so a caller normalizing a stock field
+ * this file doesn't own (a second good's aggregate — see SupplyStock.js)
+ * does it exactly the same way.
+ * @param {unknown} value
+ * @returns {number}
+ */
+export function nonNegInt(value) {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return 0;
   return Math.floor(n);

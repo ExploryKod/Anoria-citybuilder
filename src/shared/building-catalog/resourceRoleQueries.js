@@ -100,36 +100,53 @@ export function getAllCategoriesForRole(role) {
  * linked hub instead of holding its own stock, or carries no stock at all
  * in 'flag' mode).
  *
- * `totalKey` stays a single shared value because only ONE aggregated good
- * declares one today; a good with no aggregate (single-category role) just
- * has its own categories preserved. If a second good ever needs its own
- * aggregate total, this would have to return a totalKey PER good.
- * @returns {{ categories: ReadonlyArray<string>, totalKey: string }}
+ * `totalKeys` lists EVERY aggregate the catalog declares, because a row can
+ * hold more than one: a diet total ("can a citizen eat") and a warehouse's
+ * capacity total ("how full is it") are different questions about different
+ * goods, and neither may overwrite the other.
+ *
+ * `totalKey` is the aggregate the quantity CONSUMER declares — the total a
+ * citizen cares about — which is what a caller asking for "the total" means
+ * (house and market info, traceability, the city map). A caller that wants a
+ * specific good's aggregate asks that good's own role instead
+ * (getTotalKeyForRole), never this one.
+ * @returns {{ categories: ReadonlyArray<string>, totalKey: string, totalKeys: ReadonlyArray<string> }}
  */
 export function getResourceStockShape() {
   const categories = new Set();
-  let totalKey;
+  const totalKeys = new Set();
+  let consumerTotalKey;
   const STOCK_BEARING_ROLES = new Set(['producer', 'collector', 'hub']);
   for (const definition of Object.values(buildingCatalog)) {
     for (const entry of definition.resourceRoles ?? []) {
-      if (!STOCK_BEARING_ROLES.has(entry.role) && !isQuantityConsumer(entry)) continue;
+      const consumesQuantity = isQuantityConsumer(entry);
+      if (!STOCK_BEARING_ROLES.has(entry.role) && !consumesQuantity) continue;
       for (const category of entry.categories) categories.add(category);
-      if (entry.totalKey) totalKey = entry.totalKey;
+      if (!entry.totalKey) continue;
+      totalKeys.add(entry.totalKey);
+      if (consumesQuantity) consumerTotalKey = entry.totalKey;
     }
   }
-  return { categories: Object.freeze([...categories]), totalKey: totalKey ?? 'total' };
+  const totalKey = consumerTotalKey ?? 'total';
+  totalKeys.add(totalKey);
+  return {
+    categories: Object.freeze([...categories]),
+    totalKey,
+    totalKeys: Object.freeze([...totalKeys]),
+  };
 }
 
 /**
- * A fresh, all-zero stock row in the shared shape (every category + the
- * aggregate total) — what a newly placed building starts with.
+ * A fresh, all-zero stock row in the shared shape (every category + every
+ * aggregate total the catalog declares) — what a newly placed building
+ * starts with.
  * @returns {Record<string, number>}
  */
 export function createEmptyStocks() {
-  const { categories, totalKey } = getResourceStockShape();
+  const { categories, totalKeys } = getResourceStockShape();
   const stocks = {};
   for (const category of categories) stocks[category] = 0;
-  stocks[totalKey] = 0;
+  for (const totalKey of totalKeys) stocks[totalKey] = 0;
   return stocks;
 }
 

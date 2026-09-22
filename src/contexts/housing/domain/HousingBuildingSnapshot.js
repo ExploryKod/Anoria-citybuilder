@@ -76,12 +76,19 @@ export function createHousingBuildingSnapshot({
       : null,
     stocks: (() => {
       // Shape and aggregate come from the catalog — no good is named here.
-      const { categories, totalKey } = getResourceStockShape();
+      const { categories, totalKey, totalKeys } = getResourceStockShape();
       const next = {};
       for (const category of categories) next[category] = stocks?.[category] ?? 0;
       const fromCategories = edibleBasketsFromCategories(next);
       // Keep the aggregate aligned with visible categories when they carry stock.
       next[totalKey] = fromCategories > 0 ? fromCategories : (stocks?.[totalKey] ?? 0);
+      // Any OTHER good's aggregate round-trips untouched — same passthrough
+      // reasoning as `...lastConsumption` above: a total this snapshot doesn't
+      // name must not vanish just because a house never fills it.
+      for (const key of totalKeys) {
+        if (key === totalKey) continue;
+        next[key] = stocks?.[key] ?? 0;
+      }
       return next;
     })(),
     price: price ?? 0,
