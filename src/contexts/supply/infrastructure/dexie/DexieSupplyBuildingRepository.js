@@ -78,6 +78,7 @@ export class DexieSupplyBuildingRepository {
       commercializeEnabled: house.commercializeEnabled !== false,
       supplyHubId: house.supplyHubId ?? null,
       linkedDistributors: house.linkedDistributors ?? [],
+      cycleState: house.cycleState ?? null,
     });
   }
 

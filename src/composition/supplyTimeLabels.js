@@ -59,3 +59,6 @@ export function supplyTimeContextAhead(turn, monthsAhead) {
     monthIndex: info.monthIndex,
   };
 }
+
+/** A schedule (catalog `when` / `schedule`) against the game's time — the presentation reads it through here. */
+export { matchesSchedule } from '../contexts/supply/domain/policies/ResourceSchedulePolicy.js';

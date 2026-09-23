@@ -141,10 +141,16 @@
  *   lock field name (when one is used at all) is declared — see
  *   contexts/supply/domain/policies/PeriodLockPolicy.js, which knows
  *   nothing about "producer", "consumer", or any resource/service name.
- * @property {Array<{ season: 'spring' | 'summer' | 'autumn' | 'winter', status: string }>} [statusPhases]
- *   On a 'producer' entry that follows the seasons (a crop field): which status icon (a key of
- *   statusIconAnchors.js) the building shows in each season. Omitted means the building shows
- *   no seasonal icon.
+ * @property {Array<{ id: string, when?: object, amount?: number, factor?: number, inputs?: object[], missed?: number, wait?: boolean }>} [cycle]
+ *   On a 'producer' entry: a chain of steps instead of a single production. `when` is a schedule (see
+ *   ResourceSchedulePolicy.js); the first step sets a base (`amount`), each next one multiplies the running
+ *   value (`factor`); the product is credited to the stock when the last step is done. `missed` is the factor
+ *   applied when the window closed with the step undone (0 voids the cycle, 1 ignores the step, in between
+ *   degrades it); `wait: true` lets the step be done after its window instead. A step's `inputs` work as on
+ *   the entry. The step `id` names it for the graphics (see the mesh catalog's `cycleGraphics`).
+ * @property {{ schedule: object }} [sale]
+ *   On a 'producer' entry: when a hub may collect its goods. Outside this window they stay in its stock.
+ *   Omitted means no window of its own (the hub's schedule alone decides).
  * @property {Array<{ category: string, amount: number, from?: { role: ResourceRoleKind, range?: number } }>} [inputs]
  *   On a 'producer' entry: goods it consumes to make its output (a recipe rather than a source). Read
  *   from the building's own stock, or — with `from` — drawn from the nearest working buildings of that

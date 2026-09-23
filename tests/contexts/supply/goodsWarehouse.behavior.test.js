@@ -98,7 +98,7 @@ describe('Supply — goods warehouse', () => {
     expect(repo.raw.get(id.mill).flags.isCollecting).toBe(false);
   });
 
-  test('a workshop draws its wood from a warehouse in range, and idles when there is none', async () => {
+  test('a workshop draws its wood from a warehouse in range for its first step, and idles when there is none', async () => {
     const id = ids('wh', 'shop', 'lonely');
     const repo = new InMemoryRepository([
       { id: id.wh, type: 'Warehouse', x: 0, y: 0, stocks: { wood: 25, goods: 25 } },
@@ -106,15 +106,40 @@ describe('Supply — goods warehouse', () => {
       { id: id.lonely, type: 'Factory-Furniture', x: 50, y: 50, stocks: {} },
     ]);
     const produce = new ProduceResource(repo);
-    const period = { season: 'spring', year: 1, monthIndex: 3 };
+    const day = (monthIndex) => ({ season: 'spring', month: 'january', monthIndex, year: 1, dayInMonth: 1 });
 
-    const made = await produce.execute({ buildingId: id.shop, period });
+    await produce.execute({ buildingId: id.shop, period: day(0) });
+    expect(repo.raw.get(id.wh).stocks.wood).toBe(15);
+
+    const made = await produce.execute({ buildingId: id.shop, period: day(1) });
     expect(made.produced).toBe(true);
-    expect(repo.raw.get(id.shop).stocks.furniture).toBe(5);
-    expect(repo.raw.get(id.wh).stocks.wood).toBe(15);
+    expect(repo.raw.get(id.shop).stocks.furniture).toBe(10);
 
-    const out = await produce.execute({ buildingId: id.lonely, period });
-    expect(out).toEqual({ produced: false, reason: 'missing_input' });
+    // Too far from any warehouse: nothing to cut, so nothing moves and nothing is taken.
+    await produce.execute({ buildingId: id.lonely, period: day(0) });
+    const out = await produce.execute({ buildingId: id.lonely, period: day(1) });
+    expect(out.produced).toBe(false);
     expect(repo.raw.get(id.wh).stocks.wood).toBe(15);
+  });
+
+  test('a producer with a sale window is only collected inside it', async () => {
+    const id = ids('wh', 'pots');
+    const repo = new InMemoryRepository([
+      { id: id.wh, type: 'Warehouse', x: 0, y: 0, stocks: {} },
+      { id: id.pots, type: 'Factory-Pot', x: 4, y: 0, stocks: { pot: 10 } },
+    ]);
+
+    // Even month: the workshop's cycle is not complete, its window is closed.
+    await cycleOver(repo).execute({ month: 'january', monthIndex: 0, dayInMonth: 5, year: 1 });
+    expect(repo.raw.get(id.wh).stocks.pot ?? 0).toBe(0);
+
+    // Odd month: window open, the hub takes it and the producer shows it was collected.
+    await cycleOver(repo).execute({ month: 'february', monthIndex: 1, dayInMonth: 5, year: 1 });
+    expect(repo.raw.get(id.wh).stocks.pot).toBe(10);
+    expect(repo.raw.get(id.pots).flags.collectedByHub).toBe(true);
+
+    // The window closes: the flag goes with it.
+    await cycleOver(repo).execute({ month: 'march', monthIndex: 2, dayInMonth: 5, year: 1 });
+    expect(repo.raw.get(id.pots).flags.collectedByHub).toBe(false);
   });
 });

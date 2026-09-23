@@ -52,6 +52,11 @@
  *    defaultStage, requiresStaff, idleStage, previewStage) — see
  *    kenneyFarmFieldAdapter.js. The game drives it through mesh.userData.applySeason(season)
  *    and mesh.userData.applyStaffing(staffed).
+ *  - cycleGraphics (optional): what a producer shows at each point of its cycle, declared as
+ *    `[{ id, when | step, status }]` — `when` is a schedule on the game's time (seasons, months, ...),
+ *    `step` names a step of the building's own production cycle (see buildingEconomy.js `cycle`), `status` is a
+ *    key of statusIconAnchors.js. `id` is passed to the mesh's `applyPhase` hook, if it has one.
+ *    `saleStatus` (optional) picks the icon shown while a hub has collected its goods (default 'sold-to-hub').
  *  - kenneyGlb entries: geometry.glb is the full public URL of a single-tile GLB (road piece,
  *    nature-kit tree/rock); transform.rotationDeg.y is the base yaw (R adds 90° steps on top).
  *  - kenneyCityKit entries: geometry.glb is intentionally null — the actual
@@ -69,6 +74,14 @@
  *    procedural THREE geometry
  *    with a shared Lambert material, not cloned GLB meshes.
  */
+
+/** What a crop field shows through the year: one icon per season, the field's own look follows the same ids. */
+const CROP_CYCLE_GRAPHICS = Object.freeze([
+  { id: 'winter', when: { unit: 'season', values: ['winter'] }, status: 'no-food-farm' },
+  { id: 'spring', when: { unit: 'season', values: ['spring'] }, status: 'grow-food' },
+  { id: 'summer', when: { unit: 'season', values: ['summer'] }, status: 'harvest' },
+  { id: 'autumn', when: { unit: 'season', values: ['autumn'] }, status: 'sell-food' },
+]);
 
 export const BUILDING_ASSETS = Object.freeze({
   // Palais
@@ -188,6 +201,7 @@ export const BUILDING_ASSETS = Object.freeze({
       scale: 1,
     },
     // Assembled field: the ground above + one wheat model per growth stage (nature kit).
+    cycleGraphics: CROP_CYCLE_GRAPHICS,
     crop: {
       perTile: 2,
       stages: {
@@ -238,6 +252,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     // Assembled field like Farm-Wheat. The nature kit has a single (mature) carrot model:
     // the young stage reuses it at half size.
+    cycleGraphics: CROP_CYCLE_GRAPHICS,
     crop: {
       perTile: 3,
       stages: {
@@ -287,6 +302,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     // Assembled field like Farm-Wheat. The nature kit has no cabbage: the leafy-crop
     // models (2 growth stages) stand in for it.
+    cycleGraphics: CROP_CYCLE_GRAPHICS,
     crop: {
       perTile: 2,
       stages: {

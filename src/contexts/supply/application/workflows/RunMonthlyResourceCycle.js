@@ -56,6 +56,16 @@ export class RunMonthlyResourceCycle {
    * @returns {Promise<void>}
    */
   async execute({ season, month, timeInfo }) {
+    // ONE time context for every step (producers, hubs, sale windows): a schedule names whichever field
+    // it cares about (season, month, monthIndex, year, dayInMonth), whatever kind of building reads it.
+    const timeContext = {
+      season,
+      month,
+      monthIndex: timeInfo.monthIndex,
+      year: timeInfo.year ?? 0,
+      dayInMonth: timeInfo.dayInMonth ?? 1,
+    };
+
     // No season gate here — each producer's own 'producer' schedule (see
     // buildingEconomy.js) decides whether it's an active period; the
     // once-per-year lock in ProduceResource still prevents double-production
@@ -64,7 +74,7 @@ export class RunMonthlyResourceCycle {
       role: 'producer',
       buildParams: (source) => ({
         buildingId: source.id,
-        period: { season, year: timeInfo.year ?? 0, monthIndex: timeInfo.monthIndex },
+        period: timeContext,
       }),
       successKey: 'produced',
     });
@@ -72,12 +82,7 @@ export class RunMonthlyResourceCycle {
     await this.traceability.recordChainStates(timeInfo);
     await this.traceability.recordPopulationStates(timeInfo);
 
-    const surplus = await this.runHubSurplusCycle.execute({
-      month,
-      monthIndex: timeInfo.monthIndex,
-      dayInMonth: timeInfo.dayInMonth ?? 1,
-      year: timeInfo.year ?? 0,
-    });
+    const surplus = await this.runHubSurplusCycle.execute(timeContext);
 
     await this.traceability.recordHarvestSales(timeInfo, surplus.hubs);
 

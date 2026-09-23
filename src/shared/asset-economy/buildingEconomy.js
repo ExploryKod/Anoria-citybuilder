@@ -37,6 +37,23 @@ const GOODS_TOTAL_KEY = 'goods';
 const WAREHOUSE_RANGE = 12;
 const WAREHOUSE_MAX_STOCK = 500;
 
+/** When a crop is sold to its hub: the windmill's collection month, declared on the field it collects from. */
+const HARVEST_SALE = { schedule: { unit: 'month', values: ['december'] } };
+
+/**
+ * An industrial cycle of two steps, one a month: the first sets a base, the second multiplies it, and the
+ * product is credited when the second is done; it is sold in that same month, once the cycle is complete.
+ * The next cycle starts the following month, and selling never holds it up (see ProduceResource `cycle`).
+ * Change the numbers, the months or the step names here, one building at a time.
+ */
+const twoMonthCycle = ({ first, second, base, factor, inputs }) => ({
+  cycle: [
+    { id: first, when: { unit: 'monthIndex', interval: 2, offset: 0 }, amount: base, wait: true, ...(inputs ? { inputs } : {}) },
+    { id: second, when: { unit: 'monthIndex', interval: 2, offset: 1 }, factor, wait: true },
+  ],
+  sale: { schedule: { unit: 'monthIndex', interval: 2, offset: 1 } },
+});
+
 /*
  * The food chain's reference numbers. Every capacity and yield below is derived from these
  * few figures, so the chain reads as one ratio (a farm feeds so many citizens, a hub holds
@@ -52,19 +69,6 @@ const FARM_ANNUAL_YIELD = CITIZENS_FED_PER_FARM * CITIZEN_MONTHLY_NEED * MONTHS_
 /** Farms whose harvest one hub can hold at once (a full year of their citizens). */
 const FARMS_PER_HUB = 10;
 const HUB_MAX_STOCK = FARMS_PER_HUB * FARM_ANNUAL_YIELD;
-
-/**
- * What a crop field's status icon shows in each season (`statusPhases` on its producer entry).
- * `status` is the key of a status icon (see statusIconAnchors.js): the winter one says "nothing to
- * eat from this field", spring is growing, summer harvesting, autumn selling. Another crop or a
- * different calendar is an edit here.
- */
-const CROP_STATUS_PHASES = [
-  { season: 'winter', status: 'no-food-farm' },
-  { season: 'spring', status: 'grow-food' },
-  { season: 'summer', status: 'harvest' },
-  { season: 'autumn', status: 'sell-food' },
-];
 
 /** A citizen's need: `amount` units per inhabitant per month (see ConsumeResource.js). */
 const HOUSE_DIET_CONSUMER = {
@@ -234,7 +238,7 @@ export const BUILDING_ECONOMY = {
       role: 'producer',
       categories: ['wheat'],
       schedule: { unit: 'season', values: ['autumn'] },
-      statusPhases: CROP_STATUS_PHASES,
+      sale: HARVEST_SALE,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
@@ -248,7 +252,7 @@ export const BUILDING_ECONOMY = {
       role: 'producer',
       categories: ['carrot'],
       schedule: { unit: 'season', values: ['autumn'] },
-      statusPhases: CROP_STATUS_PHASES,
+      sale: HARVEST_SALE,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
@@ -262,7 +266,7 @@ export const BUILDING_ECONOMY = {
       role: 'producer',
       categories: ['cabbage'],
       schedule: { unit: 'season', values: ['autumn'] },
-      statusPhases: CROP_STATUS_PHASES,
+      sale: HARVEST_SALE,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
@@ -289,9 +293,8 @@ export const BUILDING_ECONOMY = {
     resourceRoles: [{
       role: 'producer',
       categories: ['plate'],
-      schedule: { unit: 'always' },
-      amount: 5,
-      periodLock: { field: 'lastProductionMonth', unit: 'month' },
+      // 2 in the first month, x5 in the second: 10 every two months, sold once complete.
+      ...twoMonthCycle({ first: 'shaping', second: 'firing', base: 2, factor: 5 }),
     }],
   },
   'Factory-Pot': {
@@ -301,9 +304,8 @@ export const BUILDING_ECONOMY = {
     resourceRoles: [{
       role: 'producer',
       categories: ['pot'],
-      schedule: { unit: 'always' },
-      amount: 5,
-      periodLock: { field: 'lastProductionMonth', unit: 'month' },
+      // 2 in the first month, x5 in the second: 10 every two months, sold once complete.
+      ...twoMonthCycle({ first: 'shaping', second: 'firing', base: 2, factor: 5 }),
     }],
   },
   'Factory-Amphora': {
@@ -313,9 +315,8 @@ export const BUILDING_ECONOMY = {
     resourceRoles: [{
       role: 'producer',
       categories: ['amphora'],
-      schedule: { unit: 'always' },
-      amount: 5,
-      periodLock: { field: 'lastProductionMonth', unit: 'month' },
+      // 2 in the first month, x5 in the second: 10 every two months, sold once complete.
+      ...twoMonthCycle({ first: 'shaping', second: 'firing', base: 2, factor: 5 }),
     }],
   },
 
@@ -348,10 +349,15 @@ export const BUILDING_ECONOMY = {
     resourceRoles: [{
       role: 'producer',
       categories: ['furniture'],
-      schedule: { unit: 'always' },
-      amount: 5,
-      inputs: [{ category: 'wood', amount: 10, from: { role: 'hub', range: WAREHOUSE_RANGE } }],
-      periodLock: { field: 'lastProductionMonth', unit: 'month' },
+      // Cutting takes the wood (from a warehouse in range) and waits for it if it is late; assembling
+      // multiplies: 10 furniture every two months for 10 wood, sold once complete.
+      ...twoMonthCycle({
+        first: 'cutting',
+        second: 'assembling',
+        base: 2,
+        factor: 5,
+        inputs: [{ category: 'wood', amount: 10, from: { role: 'hub', range: WAREHOUSE_RANGE } }],
+      }),
     }],
   },
 

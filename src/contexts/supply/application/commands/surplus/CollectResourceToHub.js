@@ -11,6 +11,7 @@ import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy
 import {
   getCategoriesForRole,
   getRangeForRole,
+  getResourceRoles,
   getScheduleForRole,
   getTotalKeyForRole,
 } from '../../../domain/policies/ResourceRolePolicy.js';
@@ -89,6 +90,11 @@ export class CollectResourceToHub {
 
       if (!isRoadNeedMet(source.type, source.roadCount)) continue;
       if (range !== Infinity && !isWithinRange(hub, source, range)) continue;
+      // A producer that declares its own `sale` window sells only inside it (its cycle is done by then).
+      const sale = getResourceRoles(source.type).find(
+        (entry) => entry.role === 'producer' && entry.sale && entry.categories.some((c) => categories.includes(c))
+      )?.sale;
+      if (sale && !matchesSchedule(sale.schedule, period)) continue;
 
       // Only goods this hub collects: a producer of anything else (household
       // gathering, another chain's output) is simply not this hub's business.

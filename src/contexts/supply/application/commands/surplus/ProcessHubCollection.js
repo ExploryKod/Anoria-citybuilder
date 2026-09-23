@@ -37,6 +37,7 @@ export class ProcessHubCollection {
    * @param {object[]} params.sourceRefs
    * @param {string} params.month
    * @param {number} params.year
+   * @param {object} [params.period] Full time context (falls back to `{ month }`).
    * @returns {Promise<{
    *   processed: boolean,
    *   collected: boolean,
@@ -46,7 +47,7 @@ export class ProcessHubCollection {
    *   transfers?: object[],
    * }>}
    */
-  async execute({ hubId, sourceRefs = [], month, year }) {
+  async execute({ hubId, sourceRefs = [], month, year, period = null }) {
     const hub = await this.supplyBuildingRepository.findById(hubId);
     if (!hub) {
       return { processed: false, collected: false, reason: 'hub_not_found' };
@@ -87,7 +88,7 @@ export class ProcessHubCollection {
     const outcome = await this.collectResourceToHub.execute({
       hubId,
       sourceRefs,
-      period: { month },
+      period: period ?? { month },
     });
 
     if (!outcome.collected) {

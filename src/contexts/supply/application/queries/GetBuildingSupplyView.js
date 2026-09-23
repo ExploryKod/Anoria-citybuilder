@@ -6,7 +6,7 @@
  * isBuying / isCollecting are gated by OperationalGatePolicy (route + staff).
  */
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
-import { hasResourceRole, getConsumptionModeForRole } from '../../domain/policies/ResourceRolePolicy.js';
+import { hasResourceRole, getConsumptionModeForRole, getResourceRoles } from '../../domain/policies/ResourceRolePolicy.js';
 
 export class GetBuildingSupplyView {
   /**
@@ -43,6 +43,8 @@ export class GetBuildingSupplyView {
       type: view.type,
       stocks: { ...view.stocks },
       maxStock: view.maxStock,
+      // The step of its production cycle a producer is on (its `cycle` in the catalog), for the graphics.
+      cycleStep: currentCycleStep(view),
     };
 
     if (kind === 'market') {
@@ -109,6 +111,14 @@ export function classifySupplyKind(type) {
   if (hasResourceRole(type, 'consumer')) return 'house';
   if (hasResourceRole(type, 'producer')) return 'farm';
   return 'other';
+}
+
+/** The id of the step a producer's cycle awaits, or null when it has no cycle. */
+function currentCycleStep(view) {
+  const entry = getResourceRoles(view.type).find((candidate) => candidate.role === 'producer' && candidate.cycle);
+  if (!entry) return null;
+  const index = view.cycleState?.[entry.categories[0]]?.index ?? 0;
+  return entry.cycle[index]?.id ?? null;
 }
 
 function neighborsMatch(neighbors, predicate) {

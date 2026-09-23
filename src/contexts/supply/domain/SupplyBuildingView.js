@@ -29,6 +29,7 @@ export function createSupplyBuildingView({
   commercializeEnabled = true,
   supplyHubId = null,
   linkedDistributors = [],
+  cycleState = null,
 } = {}) {
   if (!id || typeof id !== 'string') {
     throw new Error('SupplyBuildingView: id is required');
@@ -85,6 +86,7 @@ export function createSupplyBuildingView({
           )
         : []
     ),
+    cycleState: cycleState && typeof cycleState === 'object' ? Object.freeze({ ...cycleState }) : null,
   });
 }
 

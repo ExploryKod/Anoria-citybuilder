@@ -38,9 +38,11 @@ export class RunHubSurplusCycle {
    * @param {number} params.monthIndex - 0-based month index
    * @param {number} params.dayInMonth
    * @param {number} params.year
+   * @param {string | null} [params.season]
    * @returns {Promise<{ ranCollection: boolean, hubs?: object[] }>}
    */
-  async execute({ month, monthIndex, dayInMonth, year }) {
+  async execute({ month, monthIndex, dayInMonth, year, season = null }) {
+    const period = { season, month, monthIndex, year, dayInMonth };
     const hubs = await this.supplyBuildingRepository.findByResourceRole('hub');
     const isCollectionPeriod = hubs.some((hub) =>
       matchesSchedule(getScheduleForRole(hub.type, 'collector'), { month, monthIndex, year })
@@ -50,13 +52,16 @@ export class RunHubSurplusCycle {
       if (month) {
         await this.markHubCollectingSchedule.execute(month);
       }
-      await this.resetSourcesCollectedFlag.execute({ onlyIfSet: true });
+      await this.resetSourcesCollectedFlag.execute({ onlyIfSet: true, period });
       return { ranCollection: false };
     }
 
+    // A producer's flag follows its own sale window, which can close on any tick, not only on a month's first day.
+    await this.resetSourcesCollectedFlag.execute({ onlyIfSet: true, period, onlySaleWindows: true });
+
     if (dayInMonth === 1) {
       await this.supplyBuildingRepository.resetSourceSalesForYear(year);
-      await this.resetSourcesCollectedFlag.execute({ onlyIfSet: false });
+      await this.resetSourcesCollectedFlag.execute({ onlyIfSet: false, period });
     }
 
     if (month) {
@@ -83,6 +88,7 @@ export class RunHubSurplusCycle {
         sourceRefs,
         month,
         year,
+        period,
       });
       hubResults.push(outcome);
 

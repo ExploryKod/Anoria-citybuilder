@@ -1,5 +1,6 @@
 import { TimeManager } from '../../../shared/time/TimeManager.js';
-import { toSupplySeason } from '../../../composition/supplyTimeLabels.js';
+import { toSupplySeason, toSupplyMonth, matchesSchedule } from '../../../composition/supplyTimeLabels.js';
+import { ASSET_CATALOG } from './resolveBuildingMesh.js';
 import {
   createEmptyStocks,
   getSuppliedCategories,
@@ -10,7 +11,7 @@ import {
 /**
  * Activity sprites (what a building is doing) — decided by the ROLE a building holds in the
  * catalog, never by its type: a hub collects, a quantity distributor buys and sells out, a
- * producer with `statusPhases` shows its phase. A new building of an existing role needs a
+ * producer shows the point of its cycle it is at (mesh catalog `cycleGraphics`). A new building of an existing role needs a
  * catalog entry and nothing here. Road, worker and resource statuses are NOT here: they are
  * the exclusive layers refreshEmploymentPresentation (scene.js) applies first; these sprites
  * only show once the building is road-connected AND staffed ("unknown staffing counts as
@@ -18,7 +19,7 @@ import {
  */
 
 /**
- * Which texture and sprite name a catalog `statusPhases[].status` stands for. A status is the key
+ * Which texture and sprite name a mesh catalog `cycleGraphics[].status` stands for. A status is the key
  * of STATUS_ICON_DEFAULTS; most are their own texture and name, the exceptions are listed.
  */
 const STATUS_SPRITE = Object.freeze({
@@ -111,29 +112,52 @@ async function applyDistributorSprites(ctx, mesh, instanceId) {
   setSprite(ctx, mesh, 'no-food', { visible: ctx.productionSpriteVisible(!hasStock) });
 }
 
+/** The game's time in the vocabulary schedules use (see ResourceSchedulePolicy.js). */
+function timeContextOf(time) {
+  const info = TimeManager.getTimeInfo(time);
+  return {
+    season: toSupplySeason(info.season),
+    month: toSupplyMonth(info.month),
+    monthIndex: info.monthIndex,
+    year: info.year,
+    dayInMonth: info.dayInMonth,
+  };
+}
+
 /**
- * Producer with `statusPhases`: the sprite of the current season. Its own sprites are all cleared
- * first, so a phase never lingers into the next one; a mesh that follows the seasons (a planted
- * field) is told the season through the hook its adapter put on it.
+ * Producer graphics, both declared in the mesh catalog (`cycleGraphics`, `saleStatus`) and driven by the
+ * producer's cycle — no season, crop or building is named here:
+ *  - the icon of the point of the cycle it is at (the graphic whose `when` matches the time, or whose
+ *    `step` is the step its cycle is on), shown only while staffed; the mesh's own `applyPhase` hook hears
+ *    the same id;
+ *  - the "collected" icon, on any producer that has a sale window, while a hub holds what it sold.
+ * Its own sprites are all cleared first, so one point of the cycle never lingers into the next.
  */
-async function applyPhasedProducerSprites(ctx, mesh, instanceId, entry) {
-  const phaseSprites = entry.statusPhases.map((phase) => spriteOf(phase.status).name);
-  [...phaseSprites, 'no-food', 'sold-to-hub'].forEach((name) => {
+async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset) {
+  const graphics = asset?.cycleGraphics ?? [];
+  const saleStatus = asset?.saleStatus ?? 'sold-to-hub';
+  const names = graphics.map((graphic) => spriteOf(graphic.status).name);
+  [...names, 'no-food', saleStatus].forEach((name) => {
     ctx.assetManager.removeStatusSprite(mesh, name);
     ctx.assetManager.removeStatusSprite(mesh, `${name}-bg`);
   });
 
-  const timeInfo = TimeManager.getTimeInfo(ctx.time);
-  mesh.userData?.applySeason?.(timeInfo.season);
+  const timeContext = timeContextOf(ctx.time);
+  const needsView = graphics.some((graphic) => graphic.step) || saleEntry;
+  const view = needsView ? await ctx.supply.getBuildingSupplyView(instanceId) : null;
 
-  // A farm with no worker produces nothing: only its no-work icon shows. Unknown staffing counts as unstaffed.
-  if (mesh.userData?.isUnderstaffed !== false) return;
+  const current = graphics.find((graphic) =>
+    graphic.step ? graphic.step === view?.cycleStep : graphic.when && matchesSchedule(graphic.when, timeContext)
+  );
+  if (current) mesh.userData?.applyPhase?.(current.id);
 
-  const phase = entry.statusPhases.find((p) => p.season === toSupplySeason(timeInfo.season));
-  if (phase) {
-    const { texture, name } = spriteOf(phase.status);
-    const meta = ctx.statusIcons[phase.status];
-    setSprite(ctx, mesh, phase.status, {
+  // A building with no road or no worker shows only its no-road / no-work icon. Unknown staffing counts as unstaffed.
+  if (!isStaffedAndConnected(mesh)) return;
+
+  if (current) {
+    const { texture, name } = spriteOf(current.status);
+    const meta = ctx.statusIcons[current.status];
+    setSprite(ctx, mesh, current.status, {
       texture,
       name,
       visible: ctx.productionSpriteVisible(true),
@@ -142,18 +166,17 @@ async function applyPhasedProducerSprites(ctx, mesh, instanceId, entry) {
     });
   }
 
-  // Also say whether a hub collected this producer's goods. Supply raises that flag for the hub's own
-  // collection period (its `collector` schedule in the catalog) and clears it after, so no month is named here.
-  const view = await ctx.supply.getBuildingSupplyView(instanceId);
-  const meta = ctx.statusIcons['sold-to-hub'];
-  const collected = view?.soldToHub === true;
-  setSprite(ctx, mesh, 'sold-to-hub', {
-    texture: 'isCollecting',
-    name: 'sold-to-hub',
-    visible: collected ? ctx.productionSpriteVisible(true) : false,
-    color: collected ? meta.spriteColor : null,
-    backgroundColor: collected ? meta.backgroundColor : null,
-  });
+  if (saleEntry) {
+    const meta = ctx.statusIcons[saleStatus];
+    const collected = view?.soldToHub === true;
+    setSprite(ctx, mesh, saleStatus, {
+      texture: 'isCollecting',
+      name: saleStatus,
+      visible: collected ? ctx.productionSpriteVisible(true) : false,
+      color: collected ? meta.spriteColor : null,
+      backgroundColor: collected ? meta.backgroundColor : null,
+    });
+  }
 }
 
 /**
@@ -164,15 +187,19 @@ async function applyPhasedProducerSprites(ctx, mesh, instanceId, entry) {
 export async function applyRoleStatusSprites(ctx, { mesh, type, instanceId }) {
   const roles = getResourceRoles(type);
 
+  // A mesh that follows the calendar (a planted field) is told the season through the hook its adapter put on it.
+  mesh.userData?.applySeason?.(TimeManager.getTimeInfo(ctx.time).season);
+
   if (roles.some((entry) => entry.role === 'hub')) {
     await applyHubSprites(ctx, mesh, instanceId);
   }
   if (roles.some(isQuantityDistributorEntry)) {
     await applyDistributorSprites(ctx, mesh, instanceId);
   }
-  const phased = roles.find((entry) => entry.role === 'producer' && entry.statusPhases);
-  if (phased) {
-    await applyPhasedProducerSprites(ctx, mesh, instanceId, phased);
+  const asset = ASSET_CATALOG[type];
+  const saleEntry = roles.find((entry) => entry.role === 'producer' && entry.sale);
+  if (asset?.cycleGraphics || saleEntry) {
+    await applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset);
   }
 }
 

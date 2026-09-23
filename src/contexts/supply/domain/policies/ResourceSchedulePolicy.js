@@ -15,6 +15,8 @@
  *   - `interval` (a number): modulo check — `context[unit] % interval === 0`.
  *     Fits any unbounded, ever-increasing unit (year, totalDays, a future
  *     running turn count) that can't be enumerated as a finite list.
+ *     An optional `offset` shifts the modulo (`(context[unit] - offset) % interval === 0`), so
+ *     `{ unit: 'monthIndex', interval: 2, offset: 1 }` is every second month starting from the second.
  *   - `unit: 'always'`: fires unconditionally — a role with no gating at all
  *     (e.g. a market that restocks/distributes on every monthly tick).
  *
@@ -24,7 +26,7 @@
  */
 
 /**
- * @param {{ unit: string, values?: string[], interval?: number } | null | undefined} schedule
+ * @param {{ unit: string, values?: Array<string | number>, interval?: number, offset?: number } | null | undefined} schedule
  * @param {Record<string, string | number | undefined>} context
  * @returns {boolean}
  */
@@ -38,7 +40,8 @@ export function matchesSchedule(schedule, context) {
 
   if (Number.isFinite(schedule.interval)) {
     const value = context[schedule.unit];
-    return Number.isFinite(value) && schedule.interval > 0 && value % schedule.interval === 0;
+    const offset = Number.isFinite(schedule.offset) ? schedule.offset : 0;
+    return Number.isFinite(value) && schedule.interval > 0 && (((value - offset) % schedule.interval) + schedule.interval) % schedule.interval === 0;
   }
 
   return false;
