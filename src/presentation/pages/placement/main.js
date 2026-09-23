@@ -28,7 +28,7 @@ const ICON_TEXTURE_KEYS = {
   'grow-food': 'grow-food',
   harvest: 'harvest',
   'sell-food': 'sell-food',
-  'sold-to-windmill': 'isCollecting',
+  'sold-to-hub': 'isCollecting',
   'no-work': 'no-work',
 };
 

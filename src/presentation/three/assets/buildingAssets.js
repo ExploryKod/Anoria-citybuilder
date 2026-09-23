@@ -1772,6 +1772,40 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     tags: ['industry', 'building'],
   },
+  // Bûcheron — RÉASSIGNÉ au kit Kenney Industrial building-o (geometry copied
+  // from Kenney-Industrial-building-o; economy/footprint keyed to 'Lumberjack').
+  // Raw-material producer, see buildingEconomy.js.
+  'Lumberjack': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-o',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      group: 'industry',
+      editorGroup: null,
+      label: 'Bûcheron',
+      tooltip: 'Bûcheron',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-o.png' },
+    },
+    tags: ['industry', 'building'],
+  },
   // Industrie — building-e
   // Bains publics (below) réassigne cette geometry — plus d'entrée
   // carousel "Industrie" distincte pour building-e, voir PublicBath.

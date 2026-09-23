@@ -141,6 +141,18 @@
  *   lock field name (when one is used at all) is declared — see
  *   contexts/supply/domain/policies/PeriodLockPolicy.js, which knows
  *   nothing about "producer", "consumer", or any resource/service name.
+ * @property {Array<{ season: 'spring' | 'summer' | 'autumn' | 'winter', status: string }>} [statusPhases]
+ *   On a 'producer' entry that follows the seasons (a crop field): which status icon (a key of
+ *   statusIconAnchors.js) the building shows in each season. Omitted means the building shows
+ *   no seasonal icon.
+ * @property {{ resource: string, range: number, consume?: number }} [source]
+ *   Makes a 'producer' entry a RAW-MATERIAL producer: it only works while
+ *   `range` Manhattan tiles around the building hold a natural resource of
+ *   kind `resource` (see BuildingDefinition.naturalResource), and each
+ *   production uses up `consume` of them (default 1) — a depleted source is
+ *   removed from the game. The same fact gates placement (no ghost beyond the
+ *   range) and the "no resource" warning, so the range is declared once here.
+ *   Omitted means the entry needs nothing natural (a farm, a workshop).
  * @property {{ sourceLinkField?: string, linksField?: string, linkTargetIdField?: string, allocationField?: string }} [hubLink]
  *   Hub-to-distributor link storage field names for this role — the
  *   'distributor' side declares `sourceLinkField` (which of its own fields
@@ -170,6 +182,8 @@
  * @property {ResourceRoleFacts[]} [resourceRoles] A building can hold more than
  *   one role at once (e.g. a windmill both collects from farms and holds a hub
  *   stock for markets to pull from).
+ * @property {string} [naturalResource] The kind of natural resource this
+ *   building IS (a tree is 'wood'). Matched against a producer's `source`.
  * @property {boolean} [requiresRoad] Whether the building needs a road next to
  *   it to work: to employ, to produce, to trade, to be served, to host
  *   inhabitants. Omitted means true. `false` means NOTHING the building does

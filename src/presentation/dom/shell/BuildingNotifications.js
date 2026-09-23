@@ -36,6 +36,7 @@ const PLACEMENT_REASON_TRANSLATIONS = {
   persistence_conflict: 'Conflit de sauvegarde — réessaie dans un instant',
   no_windmill: "Construisez d'abord un moulin",
   windmill_too_far: 'Aucun moulin à proximité',
+  natural_resource_missing: 'Aucune ressource naturelle à proximité',
   windmill_full: 'Les moulins proches ont déjà 2 marchés',
 };
 

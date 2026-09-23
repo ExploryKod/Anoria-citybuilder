@@ -67,6 +67,28 @@ export function isRoadNeedMet(buildingType, roadCount) {
 }
 
 /**
+ * The kind of natural resource a building type IS (a tree is 'wood'), or
+ * undefined for anything that is not a natural resource.
+ * @param {string | null | undefined} buildingType
+ * @returns {string | undefined}
+ */
+export function getNaturalResourceKind(buildingType) {
+  return getBuildingDefinition(buildingType)?.naturalResource;
+}
+
+/**
+ * The natural sources a building type depends on: the `source` fact of each of
+ * its 'producer' entries (see buildingCatalog.js), empty for anything else.
+ * @param {string | null | undefined} buildingType
+ * @returns {Array<{ resource: string, range: number, consume?: number }>}
+ */
+export function getNaturalSources(buildingType) {
+  return getResourceRoles(buildingType)
+    .filter((entry) => entry.role === 'producer' && entry.source)
+    .map((entry) => entry.source);
+}
+
+/**
  * @param {string} buildingType
  * @returns {boolean} True when the type drains a numeric stock for its inhabitants (a house).
  */

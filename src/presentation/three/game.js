@@ -1245,6 +1245,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
         },
         presentIncomingNewsEvents,
       });
+      // Felled trees are gone: the placement gate must not count them anymore.
+      await refreshPlacementPresentation();
     },
 
     refreshEmployment: refreshEmploymentPresentationForCity,

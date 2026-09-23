@@ -1,6 +1,6 @@
 import { hasResourceRole, getLinkCapacityForRole, getPlacementRequirements } from './ResourceRolePolicy.js';
-import { isWithinRange, manhattanDistance } from './ResourceRangePolicy.js';
-import { isRoadNeedMet } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { isWithinRange, manhattanDistance, findNaturalSourcesInRange } from './ResourceRangePolicy.js';
+import { isRoadNeedMet, getNaturalSources } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Generic "does this building need another building already placed" gate —
@@ -61,9 +61,18 @@ export function pickRequirementOwner(pos, candidates, requirement) {
  * @param {Array<object>} params.candidates Every placed building that could
  *   satisfy any of this type's requirements (composition supplies this —
  *   today, every 'hub'-role building).
+ * @param {Array<object>} [params.naturalCandidates] Every placed natural
+ *   resource (a tree, ...), for a raw-material producer's `source` fact: it
+ *   cannot be placed unless its resource is within the catalog's range.
  * @returns {{ ok: boolean, reason?: string, ownerId?: string, role?: string }}
  */
-export function canPlaceBuildingAt({ x, y, buildingType, candidates }) {
+export function canPlaceBuildingAt({ x, y, buildingType, candidates, naturalCandidates = [] }) {
+  for (const source of getNaturalSources(buildingType)) {
+    if (findNaturalSourcesInRange({ x, y }, naturalCandidates, source).length === 0) {
+      return { ok: false, reason: 'natural_resource_missing' };
+    }
+  }
+
   const requirements = getPlacementRequirements(buildingType);
   if (requirements.length === 0) {
     return { ok: true };

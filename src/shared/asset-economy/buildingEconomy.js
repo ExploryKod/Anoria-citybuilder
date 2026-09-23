@@ -42,6 +42,19 @@ const FARM_ANNUAL_YIELD = CITIZENS_FED_PER_FARM * CITIZEN_MONTHLY_NEED * MONTHS_
 const FARMS_PER_HUB = 10;
 const HUB_MAX_STOCK = FARMS_PER_HUB * FARM_ANNUAL_YIELD;
 
+/**
+ * What a crop field's status icon shows in each season (`statusPhases` on its producer entry).
+ * `status` is the key of a status icon (see statusIconAnchors.js): the winter one says "nothing to
+ * eat from this field", spring is growing, summer harvesting, autumn selling. Another crop or a
+ * different calendar is an edit here.
+ */
+const CROP_STATUS_PHASES = [
+  { season: 'winter', status: 'no-food-farm' },
+  { season: 'spring', status: 'grow-food' },
+  { season: 'summer', status: 'harvest' },
+  { season: 'autumn', status: 'sell-food' },
+];
+
 /** A citizen's need: `amount` units per inhabitant per month (see ConsumeResource.js). */
 const HOUSE_DIET_CONSUMER = {
   role: 'consumer',
@@ -210,6 +223,7 @@ export const BUILDING_ECONOMY = {
       role: 'producer',
       categories: ['wheat'],
       schedule: { unit: 'season', values: ['autumn'] },
+      statusPhases: CROP_STATUS_PHASES,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
@@ -223,6 +237,7 @@ export const BUILDING_ECONOMY = {
       role: 'producer',
       categories: ['carrot'],
       schedule: { unit: 'season', values: ['autumn'] },
+      statusPhases: CROP_STATUS_PHASES,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
@@ -236,6 +251,7 @@ export const BUILDING_ECONOMY = {
       role: 'producer',
       categories: ['cabbage'],
       schedule: { unit: 'season', values: ['autumn'] },
+      statusPhases: CROP_STATUS_PHASES,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
@@ -288,6 +304,25 @@ export const BUILDING_ECONOMY = {
       categories: ['amphora'],
       schedule: { unit: 'always' },
       amount: 5,
+      periodLock: { field: 'lastProductionMonth', unit: 'month' },
+    }],
+  },
+
+  // Raw-material producer (2026-09-23): the first building whose output comes from
+  // the map itself. `source` is the whole mechanism — it works only while `range`
+  // tiles around it hold a natural resource of that kind (trees are 'wood', see
+  // natureEconomy.js), each month's production fells `consume` of them, and the
+  // same range gates its placement. Retune or reuse it for any natural resource.
+  'Lumberjack': {
+    displayName: 'Bûcheron',
+    construction: { price: 45, category: 'industry' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
+    resourceRoles: [{
+      role: 'producer',
+      categories: ['wood'],
+      schedule: { unit: 'always' },
+      amount: 10,
+      source: { resource: 'wood', range: 6, consume: 1 },
       periodLock: { field: 'lastProductionMonth', unit: 'month' },
     }],
   },

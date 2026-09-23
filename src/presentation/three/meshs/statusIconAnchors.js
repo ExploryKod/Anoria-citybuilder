@@ -50,19 +50,20 @@ export const STATUS_ICON_DEFAULTS = Object.freeze({
     spriteColor: 0x00ff00,
     backgroundColor: 0xffffff,
   },
-  'sold-to-windmill': {
+  'sold-to-hub': {
     position: { x: 0.5, y: 0.5, z: 0 },
     scale: { x: 0.5, y: 0.5, z: 1 },
     spriteColor: 0x00ff00,
     backgroundColor: 0xffffff,
   },
+  'no-resource': { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 0.6, y: 0.6, z: 1 }, spriteColor: null, backgroundColor: null },
   'no-work': {
     position: { x: -0.8, y: 0.5, z: -0.2 },
     scale: { x: 0.5, y: 0.5, z: 0.5 },
     spriteColor: 0xff0000,
     backgroundColor: 0xffe8e8,
   },
-  'no-work-market-windmill': {
+  'no-work-service': {
     position: { x: -0.5, y: 0.5, z: 0 },
     scale: { x: 0.6, y: 0.6, z: 1 },
     spriteColor: 0xff0000,

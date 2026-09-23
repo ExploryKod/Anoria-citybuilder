@@ -30,7 +30,9 @@ export const textures = Object.freeze({
     // Windmill collecting sprite (reuse isBuying icon)
     'isCollecting': loadTextures(`/resources/textures/status/isBuying.png`, true),
     // No worker sprite (black) - shown when building has no employees
-    'no-work': loadTextures(`/resources/textures/status/no-work.png`, true)
+    'no-work': loadTextures(`/resources/textures/status/no-work.png`, true),
+    // No natural resource left in range of a raw-material producer (see the catalog's `source` fact)
+    'no-resource': loadTextures(`/resources/textures/status/no-resource.svg`, true)
 })
 
 // Economy catalog (buildingPlacementCatalog, type lists) → src/shared/building-catalog/

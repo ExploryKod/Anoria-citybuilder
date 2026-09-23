@@ -67,7 +67,7 @@ export class GetBuildingSupplyView {
         ...base,
         salesToMarket: [...view.salesToDistributor],
         salesToWindmill: [...view.salesToHub],
-        soldToWindmill: view.collectedByHub,
+        soldToHub: view.collectedByHub,
       };
     }
 

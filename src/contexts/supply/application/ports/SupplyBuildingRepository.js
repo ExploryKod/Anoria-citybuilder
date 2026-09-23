@@ -66,6 +66,14 @@ export class SupplyBuildingRepository {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
+  /**
+   * Every placed natural resource (a tree, ...) as `{ id, type, x, y }` —
+   * what a raw-material producer draws on (see the `source` catalog fact).
+   */
+  async listNaturalResources() {
+    throw new Error('SupplyBuildingRepository: port not implemented');
+  }
+
   /** Raw Dexie rows for spatial / neighbor orchestration. */
   async listAllBuildingRows() {
     throw new Error('SupplyBuildingRepository: port not implemented');

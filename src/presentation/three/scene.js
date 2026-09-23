@@ -1,4 +1,5 @@
-import { createEmptyStocks, getResourceStockShape, getAllCategoriesForRole } from '../../shared/building-catalog/resourceRoleQueries.js';
+import { createEmptyStocks, getResourceStockShape, getAllCategoriesForRole, getResourceRoles, requiresRoad } from '../../shared/building-catalog/resourceRoleQueries.js';
+import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import {createCamera} from './camera.js';
@@ -19,10 +20,10 @@ import {
 import {
     buildingPlacementCatalog,
     buildingsObjects,
-    farms,
     palaces,
 } from '../../shared/building-catalog/index.js';
-import { commerce, houses } from './assets/buildingCategories.js';
+import { houses } from './assets/buildingCategories.js';
+import { applyRoleStatusSprites, isQuantityDistributor } from './meshs/roleStatusSprites.js';
 import { setupRoadAccessIcons } from '../../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
 import { TimeManager } from '../../shared/time/TimeManager.js';
 import { LightingManager } from './managers/LightingManager.js';
@@ -878,6 +879,15 @@ export function createScene(_gameStore, assetManager, deps) {
 
         // Status icon defaults — shared with /placement.html, see meshs/statusIconAnchors.js
         const statutsIconsMeta = STATUS_ICON_DEFAULTS;
+        const roleSpriteContext = {
+            assetManager,
+            textures,
+            statusIcons: STATUS_ICON_DEFAULTS,
+            resolveIconAppearance,
+            productionSpriteVisible,
+            supply,
+            time,
+        };
 
         for(let x = 0; x < city.size; x++) {
             for(let y = 0; y < city.size; y++) {
@@ -1193,286 +1203,24 @@ export function createScene(_gameStore, assetManager, deps) {
                     continue;
                 }
 
-                /* Only for commerce buildings */
-                if(commerce.includes(currentBuildingId)) {
+                // A building that buys and sells a stock keeps its own clock (a market).
+                if (isQuantityDistributor(currentBuildingId)) {
                     await incrementBuildingField({
                         instanceId: currentInstanceId,
                         field: 'time',
                         increment: 1,
                         condition: false,
                     });
-
-                    // Clean up market supply sprites (no-work → refreshEmploymentPresentation only)
-                    if (buildings[x][y]) {
-                        const marketSpriteNames = ['isBuying', 'isBuying-bg', 'no-food', 'no-food-bg'];
-                        marketSpriteNames.forEach(spriteName => {
-                            assetManager.removeStatusSprite(buildings[x][y], spriteName);
-                        });
-                    }
-
-                    // Accès routier marché (BC Parcels + icône)
-                    if (buildings[x][y]) {
-                        const marketRoadIcon = resolveIconAppearance(
-                            buildings[x][y], 'road', statutsIconsMeta.road.position, statutsIconsMeta.road.scale
-                        );
-                        await syncRoadAccess({
-                            instanceId: currentInstanceId,
-                            mesh: buildings[x][y],
-                            position: marketRoadIcon.position,
-                            scale: marketRoadIcon.scale,
-                        });
-                    }
-
-                    // Status layers are exclusive, in order: no road → only the no-road icon (no worker
-                    // is possible); no worker → only the no-work icon (refreshEmploymentPresentation);
-                    // otherwise the activity sprites (buying / no-food). Unknown staffing (not yet
-                    // refreshed) counts as unstaffed.
-                    const marketIsStaffed = buildings[x][y]?.userData?.isUnderstaffed === false
-                        && buildings[x][y]?.userData?.hasRoadAccess !== false;
-                    if (buildings[x][y] && marketIsStaffed) {
-                        const marketSupply = await supply.getBuildingSupplyView(currentInstanceId);
-                        const isBuying = marketSupply?.isBuying === true;
-                        const noFarmsNearby = marketSupply?.noFarmsNearby === true;
-
-                        if (isBuying === true) {
-                            const buyingMeta = statutsIconsMeta['isBuying'];
-                            const buyingIcon = resolveIconAppearance(
-                                buildings[x][y], 'isBuying', buyingMeta.position, buyingMeta.scale
-                            );
-
-                            if (!noFarmsNearby) {
-                                assetManager.setStatusSprite(
-                                    buildings[x][y],
-                                    textures['isBuying'],
-                                    'isBuying',
-                                    buyingIcon.scale,
-                                    buyingIcon.position,
-                                    productionSpriteVisible(true),
-                                    buyingMeta.spriteColor,
-                                    buyingMeta.backgroundColor
-                                );
-                            } else {
-                                assetManager.setStatusSprite(
-                                    buildings[x][y],
-                                    textures['isBuying'],
-                                    'isBuying',
-                                    buyingIcon.scale,
-                                    buyingIcon.position,
-                                    productionSpriteVisible(true),
-                                    0xFF6600,
-                                    0xFFCCCC
-                                );
-                            }
-                        } else {
-                            const buyingIcon = resolveIconAppearance(
-                                buildings[x][y],
-                                'isBuying',
-                                statutsIconsMeta['isBuying'].position,
-                                statutsIconsMeta['isBuying'].scale
-                            );
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isBuying'],
-                                'isBuying',
-                                buyingIcon.scale,
-                                buyingIcon.position,
-                                false,
-                                null,
-                                null
-                            );
-                        }
-
-                        const marketSupplyStocks = marketSupply?.stocks || createEmptyStocks();
-                        // Goods and aggregate come from the catalog (what a hub stores / its totalKey).
-                        const hasFoodBaskets = (marketSupplyStocks[getResourceStockShape().totalKey] || 0) > 0 ||
-                            getAllCategoriesForRole('hub').some((good) => (marketSupplyStocks[good] || 0) > 0);
-
-                        const marketNoFoodIcon = resolveIconAppearance(
-                            buildings[x][y], 'no-food', statutsIconsMeta['no-food'].position, statutsIconsMeta['no-food'].scale
-                        );
-                        assetManager.setStatusSprite(
-                            buildings[x][y],
-                            textures['nofood'],
-                            'no-food',
-                            marketNoFoodIcon.scale,
-                            marketNoFoodIcon.position,
-                            productionSpriteVisible(!hasFoodBaskets)
-                        );
-                    }
-
-                    // Market stocks — Supply BC / ECS (legacy updateMarketStocks removed)
                 }
 
-                // Process windmills: show road access and collecting status sprites
-                if((currentBuildingId.includes('Windmill') || currentBuildingId.includes('windmill')) && buildings[x][y]) {
-                    // Clean up windmill supply sprites (no-work → refreshEmploymentPresentation only)
-                    const windmillSpriteNames = ['isCollecting', 'isCollecting-bg'];
-                    windmillSpriteNames.forEach(spriteName => {
-                        assetManager.removeStatusSprite(buildings[x][y], spriteName);
+                // What each building is doing, by the roles the catalog gives it (hub, distributor, producer).
+                // Road / worker / resource statuses come first, from refreshEmploymentPresentation.
+                if (buildings[x][y]) {
+                    await applyRoleStatusSprites(roleSpriteContext, {
+                        mesh: buildings[x][y],
+                        type: currentBuildingId,
+                        instanceId: currentInstanceId,
                     });
-                    
-                    // Accès routier moulin (BC Parcels + icône)
-                    if (buildings[x][y]) {
-                        const windmillRoadIcon = resolveIconAppearance(
-                            buildings[x][y], 'road', statutsIconsMeta.road.position, statutsIconsMeta.road.scale
-                        );
-                        await syncRoadAccess({
-                            instanceId: currentInstanceId,
-                            mesh: buildings[x][y],
-                            position: windmillRoadIcon.position,
-                            scale: windmillRoadIcon.scale,
-                        });
-                    }
-
-                    // Same layering as markets: no road → only no-road; no worker → only no-work;
-                    // otherwise the collecting sprite.
-                    const windmillIsStaffed = buildings[x][y]?.userData?.isUnderstaffed === false
-                        && buildings[x][y]?.userData?.hasRoadAccess !== false;
-                    if (buildings[x][y] && windmillIsStaffed) {
-                        const windmillSupply = await supply.getBuildingSupplyView(currentInstanceId);
-                        const isCollecting = windmillSupply?.isCollecting === true;
-                        const collectingMeta = statutsIconsMeta.isCollecting;
-                        const collectingIcon = resolveIconAppearance(
-                            buildings[x][y], 'isCollecting', collectingMeta.position, collectingMeta.scale
-                        );
-
-                        if (isCollecting === true) {
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isCollecting'],
-                                'isCollecting',
-                                collectingIcon.scale,
-                                collectingIcon.position,
-                                productionSpriteVisible(true),
-                                collectingMeta.spriteColor,
-                                collectingMeta.backgroundColor
-                            );
-                        } else {
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isCollecting'],
-                                'isCollecting',
-                                collectingIcon.scale,
-                                collectingIcon.position,
-                                false,
-                                null,
-                                null
-                            );
-                        }
-                    }
-                }
-
-                // Process farms: season-specific sprites (harvest stocks → Supply BC)
-                if(farms.includes(currentBuildingId) && buildings[x][y]) {
-                    // First, clean up ALL possible farm sprites to prevent any leftover sprites
-                    const allFarmSpriteNames = ['no-food', 'grow-food', 'harvest', 'sell-food',
-                                                'no-food-bg', 'grow-food-bg', 'harvest-bg', 'sell-food-bg',
-                                                'sold-to-windmill', 'sold-to-windmill-bg'];
-                    allFarmSpriteNames.forEach(spriteName => {
-                        assetManager.removeStatusSprite(buildings[x][y], spriteName);
-                    });
-
-                    const timeInfo = TimeManager.getTimeInfo(time);
-                    const season = timeInfo.season;
-
-                    // Assembled fields (e.g. the Kenney farm field) plant / clear their crop
-                    // for the season through the hook their adapter put on the mesh.
-                    buildings[x][y].userData?.applySeason?.(season);
-
-                    // A farm with no worker produces nothing: the season / harvest / sale
-                    // status layer is hidden, only the no-work icon (refreshEmploymentPresentation)
-                    // shows. Unknown staffing (not yet refreshed) counts as unstaffed.
-                    const farmIsStaffed = buildings[x][y].userData?.isUnderstaffed === false;
-
-                    // Season sprites from Supply/time — employment icons via refreshEmploymentPresentation
-                    let spriteTexture, spriteName, spriteColor, spritePosition, spriteScale, backgroundColor;
-                    
-                    if (season === 'Hiver') {
-                        // Winter: no-food (yellow, no background)
-                        spriteTexture = textures['nofood'];
-                        spriteName = 'no-food';
-                        spritePosition = statutsIconsMeta['no-food-farm'].position;
-                        spriteScale = statutsIconsMeta['no-food-farm'].scale;
-                        spriteColor = statutsIconsMeta['no-food-farm'].spriteColor;
-                        backgroundColor = statutsIconsMeta['no-food-farm'].backgroundColor;
-                    } else {
-                        if (season === 'Printemps') {
-                            // Spring: grow-food with pastel green background
-                            spriteTexture = textures['grow-food'];
-                            spriteName = 'grow-food';
-                            spritePosition = statutsIconsMeta['grow-food'].position;
-                            spriteScale = statutsIconsMeta['grow-food'].scale;
-                            spriteColor = statutsIconsMeta['grow-food'].spriteColor;
-                            backgroundColor = statutsIconsMeta['grow-food'].backgroundColor;
-                        } else if (season === 'Été') {
-                            // Summer: harvest with pastel yellow/orange background
-                            spriteTexture = textures['harvest'];
-                            spriteName = 'harvest';
-                            spritePosition = statutsIconsMeta['harvest'].position;
-                            spriteScale = statutsIconsMeta['harvest'].scale;
-                            spriteColor = statutsIconsMeta['harvest'].spriteColor;
-                            backgroundColor = statutsIconsMeta['harvest'].backgroundColor;
-                        } else if (season === 'Automne') {
-                            // Autumn: sell-food with pastel orange/red background
-                            spriteTexture = textures['sell-food'];
-                            spriteName = 'sell-food';
-                            spritePosition = statutsIconsMeta['sell-food'].position;
-                            spriteScale = statutsIconsMeta['sell-food'].scale;
-                            spriteColor = statutsIconsMeta['sell-food'].spriteColor;
-                            backgroundColor = statutsIconsMeta['sell-food'].backgroundColor;
-                        }
-                    }
-                    
-                    // Show the appropriate sprite for the current season (only one sprite per season)
-                    if(farmIsStaffed && buildings[x][y] && spriteTexture) {
-                        const seasonIcon = resolveIconAppearance(buildings[x][y], spriteName, spritePosition, spriteScale);
-                        assetManager.setStatusSprite(
-                            buildings[x][y],
-                            spriteTexture,
-                            spriteName,
-                            seasonIcon.scale,
-                            seasonIcon.position,
-                            productionSpriteVisible(true),
-                            spriteColor,
-                            backgroundColor
-                        );
-                    }
-
-                    // In December, show additional sprite if farm sold to windmill
-                    // This sprite appears alongside the winter season sprite to indicate windmill collection
-                    if (farmIsStaffed && buildings[x][y] && season === 'Hiver' && timeInfo.monthIndex === 11) {
-                        const farmSupply = await supply.getBuildingSupplyView(currentInstanceId);
-                        const soldToWindmill = farmSupply?.soldToWindmill === true;
-                        const windmillSaleMeta = statutsIconsMeta['sold-to-windmill'];
-                        const windmillSaleIcon = resolveIconAppearance(
-                            buildings[x][y], 'sold-to-windmill', windmillSaleMeta.position, windmillSaleMeta.scale
-                        );
-                        if (soldToWindmill === true) {
-                            // Show windmill collection sprite (green, similar to windmill's isCollecting)
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isCollecting'], // Reuse windmill collecting icon
-                                'sold-to-windmill',
-                                windmillSaleIcon.scale,
-                                windmillSaleIcon.position,
-                                productionSpriteVisible(true),
-                                windmillSaleMeta.spriteColor,
-                                windmillSaleMeta.backgroundColor
-                            );
-                        } else {
-                            // Hide the sprite if not sold to windmill
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isCollecting'],
-                                'sold-to-windmill',
-                                windmillSaleIcon.scale,
-                                windmillSaleIcon.position,
-                                false,
-                                null,
-                                null
-                            );
-                        }
-                    }
                 }
 
                 //  only update if current building is a house or palace
@@ -1638,6 +1386,14 @@ export function createScene(_gameStore, assetManager, deps) {
         }
 
         const understaffed = new Set(understaffedBuildingIds);
+
+        /** @type {Set<string>} */
+        let noResourceBuildingIds = new Set();
+        try {
+            noResourceBuildingIds = new Set(await supply.listNoResourceBuildingIds());
+        } catch (error) {
+            console.warn('[scene.js] Error reading no-resource buildings:', error);
+        }
         const noWorkSpriteColor = 0xFF0000;
         const noWorkBackgroundColor = 0xFFE8E8;
 
@@ -1660,20 +1416,62 @@ export function createScene(_gameStore, assetManager, deps) {
                 mesh.userData.isUnderstaffed = understaffed.has(instanceId);
                 mesh.userData.applyStaffing?.(!mesh.userData.isUnderstaffed);
 
-                const isMarket = commerce.includes(currentBuildingId);
-                const isFarm = farms.includes(currentBuildingId);
-                const isWindmill =
-                    currentBuildingId.includes('Windmill') || currentBuildingId.includes('windmill');
+                // Every workplace the catalog gives employment to follows the same status rules —
+                // no type is named here, only what the catalog says the building is.
+                const isWorkplace = Boolean(getBuildingDefinition(currentBuildingId)?.employment);
 
-                if (!isMarket && !isFarm && !isWindmill) continue;
+                if (isWorkplace && requiresRoad(currentBuildingId)) {
+                    const roadIcon = resolveIconAppearance(
+                        mesh, 'road', STATUS_ICON_DEFAULTS.road.position, STATUS_ICON_DEFAULTS.road.scale
+                    );
+                    await syncRoadAccess({
+                        instanceId,
+                        mesh,
+                        position: roadIcon.position,
+                        scale: roadIcon.scale,
+                    });
+                }
+
+                // Status layers are exclusive, in this order: no road → only no-road; no worker → only
+                // no-work; only a road-connected, staffed building shows that it has no resource left in
+                // range. The sprite is created once and only shown/hidden after, so it never flickers.
+                const hasNoResource = noResourceBuildingIds.has(instanceId)
+                    && mesh.userData.hasRoadAccess !== false
+                    && !understaffed.has(instanceId);
+                const noResourceSprite = mesh.getObjectByName('no-resource');
+                if (hasNoResource) {
+                    if (noResourceSprite) {
+                        noResourceSprite.visible = productionSpriteVisible(true);
+                    } else {
+                        const noResourceIcon = resolveIconAppearance(
+                            mesh, 'no-resource',
+                            STATUS_ICON_DEFAULTS['no-resource'].position,
+                            STATUS_ICON_DEFAULTS['no-resource'].scale
+                        );
+                        assetManager.setStatusSprite(
+                            mesh,
+                            textures['no-resource'],
+                            'no-resource',
+                            noResourceIcon.scale,
+                            noResourceIcon.position,
+                            productionSpriteVisible(true)
+                        );
+                    }
+                } else if (noResourceSprite) {
+                    assetManager.removeStatusSprite(mesh, 'no-resource');
+                }
+
+                if (!isWorkplace) continue;
 
                 // No road → the no-road icon is the only status: no-work only makes sense once
                 // the building is connected (there can be no worker without a road).
                 const hasRoadAccess = mesh.userData.hasRoadAccess !== false;
                 if (understaffed.has(instanceId) && hasRoadAccess) {
-                    const noWorkMeta = (isMarket || isWindmill)
-                        ? STATUS_ICON_DEFAULTS['no-work-market-windmill']
-                        : STATUS_ICON_DEFAULTS['no-work'];
+                    // A producer's icon sits at the corner of its site; a service or hub building is compact.
+                    const isProducer = getResourceRoles(currentBuildingId).some((entry) => entry.role === 'producer');
+                    const noWorkMeta = isProducer
+                        ? STATUS_ICON_DEFAULTS['no-work']
+                        : STATUS_ICON_DEFAULTS['no-work-service'];
                     const noWorkIcon = resolveIconAppearance(mesh, 'no-work', noWorkMeta.position, noWorkMeta.scale);
 
                     assetManager.setStatusSprite(

@@ -175,7 +175,7 @@ describe('Supply — windmill surplus cycle', () => {
     );
   });
 
-  test('outside December clears soldToWindmill flags only when set', async () => {
+  test('outside December clears collectedByHub flags only when set', async () => {
     const outcome = await runCycle.execute({
       month: 'november',
       monthIndex: 10,

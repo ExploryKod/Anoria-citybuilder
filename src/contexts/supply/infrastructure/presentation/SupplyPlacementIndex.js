@@ -1,4 +1,5 @@
 import { hasResourceRole } from '../../domain/policies/ResourceRolePolicy.js';
+import { getNaturalResourceKind } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { instanceIdFromHouseRow } from '../../../../shared/building-identity/index.js';
 
 /**
@@ -16,6 +17,13 @@ let hubs = [];
 let distributors = [];
 
 /**
+ * Placed natural resources (trees, ...) — what a raw-material producer's
+ * `source` catalog fact is matched against, at placement time.
+ * @type {Array<{ id: string, type: string, x: number, y: number }>}
+ */
+let naturalResources = [];
+
+/**
  * @param {object[]} rows - Dexie building rows
  */
 export function refreshSupplyPlacementIndex(rows = []) {
@@ -30,6 +38,10 @@ export function refreshSupplyPlacementIndex(rows = []) {
       linkedDistributors: row.linkedDistributors ?? [],
     }));
 
+  naturalResources = rows
+    .filter((row) => getNaturalResourceKind(row.type) && row.x != null && row.y != null)
+    .map((row) => ({ id: instanceIdFromHouseRow(row), type: row.type, x: row.x, y: row.y }));
+
   distributors = rows
     .filter((row) => hasResourceRole(row.type, 'distributor'))
     .map((row) => ({
@@ -43,6 +55,10 @@ export function refreshSupplyPlacementIndex(rows = []) {
 
 export function getSupplyPlacementHubs() {
   return hubs;
+}
+
+export function getSupplyPlacementNaturalResources() {
+  return naturalResources;
 }
 
 export function getSupplyPlacementDistributors() {

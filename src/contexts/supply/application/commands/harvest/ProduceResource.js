@@ -7,6 +7,7 @@ import {
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import { isLockedForPeriod, buildLockUpdate } from '../../../domain/policies/PeriodLockPolicy.js';
 import { getResourceRoles } from '../../../domain/policies/ResourceRolePolicy.js';
+import { findNaturalSourcesInRange } from '../../../domain/policies/ResourceRangePolicy.js';
 import {
   getCategoriesForTotalKey,
   getTotalKeyForCategory,
@@ -33,6 +34,12 @@ import {
  *     there (a workshop idles without its raw material instead of
  *     half-producing). Which good, how much, and what it becomes are all
  *     catalog facts; this command still names none of them.
+ *   - `source: { resource, range, consume }` — makes the entry a RAW-MATERIAL
+ *     producer: it works only while enough natural resources of that kind lie
+ *     within `range` tiles, and each production uses `consume` of them up
+ *     (the nearest ones, removed from the game). No natural resource is named
+ *     here. The player's "no resource" warning is not stored: it is derived
+ *     from the same rule (see listNoResourceBuildingIds in createSupplyContext).
  * An entry with a `totalKey` writes through the full set of categories
  * filed under that aggregate, so the aggregate stays consistent and the
  * building's other goods are untouched.
@@ -58,10 +65,15 @@ function stockShapeFor(category, declaredTotalKey) {
 export class ProduceResource {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
+   * @param {{ removeBuilding?: (params: { instanceId: string }) => Promise<unknown> }} [deps]
+   *   `removeBuilding` deletes a used-up natural resource from the game (Parcels owns
+   *   building removal, so Supply is handed it rather than reaching into it).
    */
-  constructor(supplyBuildingRepository) {
+  constructor(supplyBuildingRepository, { removeBuilding } = {}) {
     this.supplyBuildingRepository = supplyBuildingRepository;
+    this.removeBuilding = removeBuilding ?? null;
   }
+
 
   /**
    * @param {object} params
@@ -94,6 +106,21 @@ export class ProduceResource {
       if (!category) {
         firstFailure ??= 'unknown_resource_category';
         continue;
+      }
+
+      // A raw-material producer needs its natural resource in range.
+      let sources = [];
+      const sourceNeed = entry.source ? (entry.source.consume ?? 1) : 0;
+      if (entry.source) {
+        sources = findNaturalSourcesInRange(
+          building,
+          await this.supplyBuildingRepository.listNaturalResources(),
+          entry.source
+        );
+        if (sources.length < sourceNeed) {
+          firstFailure ??= 'no_resource';
+          continue;
+        }
       }
 
       if (!matchesSchedule(entry.schedule, period)) {
@@ -140,6 +167,11 @@ export class ProduceResource {
       if (inputs.some((input) => getCategoryAmount(building.stocks, input.category) < inputNeed(input))) {
         firstFailure ??= 'missing_input';
         continue;
+      }
+
+      // Raw material: use up the nearest sources.
+      for (const used of sources.slice(0, sourceNeed)) {
+        await this.removeBuilding?.({ instanceId: used.id });
       }
 
       // Each write is merged back into the whole row: a write scoped to one

@@ -7,6 +7,7 @@ import {
   canonicalizeHouseRecord,
   instanceIdFromHouseRow,
 } from '../../../../shared/building-identity/index.js';
+import { getNaturalResourceKind } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import {
   hasResourceRole,
   getAllCategoriesForRole,
@@ -231,6 +232,13 @@ export class DexieSupplyBuildingRepository {
   async listNatureItems() {
     const rows = await this.#activeRows();
     return rows.filter((row) => (row.category || '') === 'nature');
+  }
+
+  async listNaturalResources() {
+    const rows = await this.#activeRows();
+    return rows
+      .filter((row) => getNaturalResourceKind(row.type) && row.x != null && row.y != null)
+      .map((row) => ({ id: instanceIdFromHouseRow(row), type: row.type, x: row.x, y: row.y }));
   }
 
   async listAllBuildingRows() {

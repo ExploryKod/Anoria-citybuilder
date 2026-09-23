@@ -21,6 +21,10 @@ import { RunCityResourceCycle } from '../contexts/supply/application/commands/pr
 import { RunMonthlyResourceCycle } from '../contexts/supply/application/workflows/RunMonthlyResourceCycle.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
+import { syncRemovedBuilding } from './parcelsOps.js';
+import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
+import { getNaturalSources } from '../shared/building-catalog/resourceRoleQueries.js';
+import { findNaturalSourcesInRange } from '../contexts/supply/domain/policies/ResourceRangePolicy.js';
 import { SupplyTraceability } from '../contexts/supply/infrastructure/presentation/SupplyTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
@@ -116,7 +120,10 @@ export function createSupplyContext({
   const markSourceCollectedByHub = new MarkSourceCollectedByHub(
     supplyBuildingRepositoryImpl
   );
-  const produceResource = new ProduceResource(supplyBuildingRepositoryImpl);
+  // A used-up natural resource (a felled tree) leaves the game like any demolished building.
+  const produceResource = new ProduceResource(supplyBuildingRepositoryImpl, {
+    removeBuilding: (params) => syncRemovedBuilding(params),
+  });
   const runProducerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, produceResource);
   const consumeResource = new ConsumeResource(supplyBuildingRepositoryImpl);
   const runConsumerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, consumeResource);
@@ -296,6 +303,23 @@ export function createSupplyContext({
 
     async listSupplyStockSnapshots() {
       return listSupplyStockSnapshotsQuery.execute();
+    },
+
+    /**
+     * Ids of the raw-material producers with no natural resource left in range — the "no
+     * resource" warning. Derived from the map every time it is asked (never stored), by the
+     * same `source` rule ProduceResource works with, so it can neither lag nor flicker.
+     */
+    async listNoResourceBuildingIds() {
+      const rows = await supplyBuildingRepositoryImpl.listAllBuildingRows();
+      const naturals = await supplyBuildingRepositoryImpl.listNaturalResources();
+      return rows
+        .filter((row) =>
+          getNaturalSources(row.type).some(
+            (source) => findNaturalSourcesInRange(row, naturals, source).length < (source.consume ?? 1)
+          )
+        )
+        .map((row) => instanceIdFromHouseRow(row));
     },
 
     async listNatureResources() {
