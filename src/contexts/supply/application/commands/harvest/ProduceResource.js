@@ -7,7 +7,11 @@ import {
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import { isLockedForPeriod, buildLockUpdate } from '../../../domain/policies/PeriodLockPolicy.js';
 import { getResourceRoles } from '../../../domain/policies/ResourceRolePolicy.js';
-import { findNaturalSourcesInRange } from '../../../domain/policies/ResourceRangePolicy.js';
+import {
+  findNaturalSourcesInRange,
+  isWithinRange,
+  manhattanDistance,
+} from '../../../domain/policies/ResourceRangePolicy.js';
 import {
   getCategoriesForTotalKey,
   getTotalKeyForCategory,
@@ -33,7 +37,10 @@ import {
  *     own stock, and produces nothing at all unless every one of them is
  *     there (a workshop idles without its raw material instead of
  *     half-producing). Which good, how much, and what it becomes are all
- *     catalog facts; this command still names none of them.
+ *     catalog facts; this command still names none of them. An input with
+ *     `from: { role, range }` is not read from the building's own stock but
+ *     drawn from the nearest working buildings of that role (a warehouse hub)
+ *     within `range` that hold the good, taken only once every input is there.
  *   - `source: { resource, range, consume }` — makes the entry a RAW-MATERIAL
  *     producer: it works only while enough natural resources of that kind lie
  *     within `range` tiles, and each production uses `consume` of them up
@@ -74,6 +81,43 @@ export class ProduceResource {
     this.removeBuilding = removeBuilding ?? null;
   }
 
+
+  /**
+   * Where an input declared with `from` would be drawn from: the nearest working buildings of that role
+   * within range holding the good, as `[{ holderId, category, amount }]`, or null when together they
+   * cannot cover `need`. Nothing is taken here — the caller commits once every input is covered.
+   */
+  async #planDraw(building, input, need) {
+    const { role, range = Infinity } = input.from;
+    const holders = (await this.supplyBuildingRepository.findByResourceRole(role, input.category))
+      .filter(
+        (holder) =>
+          holder.id !== building.id &&
+          holder.x != null &&
+          holder.y != null &&
+          isWithinRange(building, holder, range) &&
+          isOperational({
+            type: holder.type,
+            roadCount: holder.roadCount,
+            worker: holder.worker,
+            workerNeed: holder.workerNeed,
+          })
+      )
+      .sort(
+        (a, b) => manhattanDistance(building, a) - manhattanDistance(building, b) || a.id.localeCompare(b.id)
+      );
+
+    const draws = [];
+    let left = need;
+    for (const holder of holders) {
+      const amount = Math.min(getCategoryAmount(holder.stocks, input.category), left);
+      if (amount <= 0) continue;
+      draws.push({ holderId: holder.id, category: input.category, amount });
+      left -= amount;
+      if (left <= 0) break;
+    }
+    return left <= 0 ? draws : null;
+  }
 
   /**
    * @param {object} params
@@ -164,7 +208,18 @@ export class ProduceResource {
       // its ratio holds whatever scales the output.
       const inputs = entry.inputs ?? [];
       const inputNeed = (input) => (input.amount ?? 0) * multiplier;
-      if (inputs.some((input) => getCategoryAmount(building.stocks, input.category) < inputNeed(input))) {
+      const ownInputs = inputs.filter((input) => !input.from);
+      const draws = [];
+      let inputMissing = ownInputs.some(
+        (input) => getCategoryAmount(building.stocks, input.category) < inputNeed(input)
+      );
+      for (const input of inputs.filter((candidate) => candidate.from)) {
+        if (inputMissing) break;
+        const plan = await this.#planDraw(building, input, inputNeed(input));
+        if (plan) draws.push(...plan);
+        else inputMissing = true;
+      }
+      if (inputMissing) {
         firstFailure ??= 'missing_input';
         continue;
       }
@@ -178,8 +233,17 @@ export class ProduceResource {
       // aggregate returns only that aggregate's fields, and a building that
       // holds a good outside it (its inputs, another chain's output) would
       // otherwise lose it on every production.
+      for (const draw of draws) {
+        const holder = await this.supplyBuildingRepository.findById(draw.holderId);
+        const shape = stockShapeFor(draw.category);
+        await this.supplyBuildingRepository.saveStocks(draw.holderId, {
+          ...holder.stocks,
+          ...takeCategoryAmount(holder.stocks, draw.category, draw.amount, shape.categories, shape.totalKey),
+        });
+      }
+
       let nextStock = building.stocks;
-      for (const input of inputs) {
+      for (const input of ownInputs) {
         const shape = stockShapeFor(input.category);
         nextStock = {
           ...nextStock,

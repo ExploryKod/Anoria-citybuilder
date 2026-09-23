@@ -4,7 +4,7 @@
 
 import { tryResolveBuildingInstanceIdFromRef } from '../../../../shared/building-identity/index.js';
 import {
-  getAllCategoriesForRole,
+  getSuppliedCategories,
   getAnnualHarvestSchedule,
   getAnnualSupplyEntry,
   getAnnualYieldPerProducer,
@@ -186,7 +186,7 @@ function nonSaleCausesHTML({ farms, hubCapacity }) {
 }
 
 /** Goods the supply chain carries, and the aggregate they are filed under — both from the catalog. */
-const chainGoods = getAllCategoriesForRole('hub');
+const chainGoods = getSuppliedCategories();
 export const chainTotalKey = getResourceStockShape().totalKey;
 
 /** @param {string} good */
@@ -217,7 +217,7 @@ export const hasChainGoods = (stocks) => chainGoods.some((good) => (stocks?.[goo
  * @returns {string}
  */
 function stockLines(stocks) {
-  return getAllCategoriesForRole('hub')
+  return getSuppliedCategories()
     .filter((category) => (stocks?.[category] ?? 0) > 0)
     .map((category) => `<div>${getResourceCategoryPresentation(category).label}: ${stocks[category]}</div>`)
     .join('');

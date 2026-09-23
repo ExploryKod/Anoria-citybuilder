@@ -5,11 +5,11 @@
 
 import db from '../core/persistence/dexie/db.js';
 import { hamletIdOf, getActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
-import { getAllCategoriesForRole } from '../shared/building-catalog/resourceRoleQueries.js';
+import { getSuppliedCategories } from '../shared/building-catalog/resourceRoleQueries.js';
 import { createSupplyStock } from '../contexts/supply/domain/value-objects/SupplyStock.js';
 
-/** Goods stored by hubs, shown in the city block (moulins + granges ville) — derived from the catalog. */
-export const HUD_CITY_FOOD_PRODUCTS = getAllCategoriesForRole('hub');
+/** Goods the citizens eat that a hub stores, shown in the city block — derived from the catalog. */
+export const HUD_CITY_FOOD_PRODUCTS = getSuppliedCategories();
 
 /** All product keys rendered in the city block. */
 export const HUD_CITY_RESOURCE_PRODUCTS = Object.freeze([...HUD_CITY_FOOD_PRODUCTS]);

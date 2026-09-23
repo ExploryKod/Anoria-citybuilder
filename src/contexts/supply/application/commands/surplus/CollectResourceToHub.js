@@ -10,9 +10,11 @@ import { resolveInstanceIdFromNeighborRef } from '../../../../../shared/building
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import {
   getCategoriesForRole,
+  getRangeForRole,
   getScheduleForRole,
   getTotalKeyForRole,
 } from '../../../domain/policies/ResourceRolePolicy.js';
+import { isWithinRange } from '../../../domain/policies/ResourceRangePolicy.js';
 import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
@@ -66,6 +68,8 @@ export class CollectResourceToHub {
 
     const categories = getCategoriesForRole(hub.type, 'collector');
     const totalKey = getTotalKeyForRole(hub.type, 'collector');
+    // A collector that declares a `range` only collects from sources within it; none means city-wide.
+    const range = getRangeForRole(hub.type, 'collector') ?? Infinity;
 
     let capacity = remainingHubCapacity(hub.stocks[totalKey], hub.maxStock);
     if (capacity <= 0) {
@@ -84,6 +88,7 @@ export class CollectResourceToHub {
       if (!source) continue;
 
       if (!isRoadNeedMet(source.type, source.roadCount)) continue;
+      if (range !== Infinity && !isWithinRange(hub, source, range)) continue;
 
       // Only goods this hub collects: a producer of anything else (household
       // gathering, another chain's output) is simply not this hub's business.

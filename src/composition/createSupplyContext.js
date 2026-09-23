@@ -23,7 +23,7 @@ import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastruc
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { syncRemovedBuilding } from './parcelsOps.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
-import { getNaturalSources } from '../shared/building-catalog/resourceRoleQueries.js';
+import { getNaturalSources, getSuppliedCategories } from '../shared/building-catalog/resourceRoleQueries.js';
 import { findNaturalSourcesInRange } from '../contexts/supply/domain/policies/ResourceRangePolicy.js';
 import { SupplyTraceability } from '../contexts/supply/infrastructure/presentation/SupplyTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
@@ -65,9 +65,10 @@ export function createSupplyContext({
   getTimeInfo: getTimeInfoDep,
 } = {}) {
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
-  // Goods that travel the production → hub chain (what a hub stores) — NOT
-  // every producible good: household gathering never enters a hub.
-  const producerCategories = getAllCategoriesForRole('hub');
+  // Goods that travel the production → hub → market chain (what the citizens eat that a hub
+  // stores) — NOT every producible good (household gathering never enters a hub) and not every
+  // hub's goods (a goods warehouse has its own, and no market draws on it).
+  const producerCategories = getSuppliedCategories();
   // Every category any distributor covers — food (has a producer/hub leg)
   // and any hub-less service like Chapel's 'faith' (none) alike. Kept
   // separate from producerCategories: the hub-link plumbing below

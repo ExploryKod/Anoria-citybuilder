@@ -1,3 +1,4 @@
+import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { getResourceCategoryPresentation } from '../../domain/catalogs/ResourceCategoryCatalog.js';
 import { buildHubStorageLines } from '../../domain/policies/HubStorageOrdersPolicy.js';
 import { buildHubStoragePieSegments } from '../../domain/policies/HubStoragePiePolicy.js';
@@ -46,7 +47,7 @@ export class GetHubStorageInfoView {
 
     return Object.freeze({
       hubKind,
-      title: 'Grenier — Moulin',
+      title: `Stockage — ${getBuildingDefinition(buildingRow.type)?.displayName ?? buildingRow.type}`,
       workers: buildingRow.employees?.worker ?? 0,
       workerNeed: buildingRow.employees?.worker_need ?? 0,
       ...storage,

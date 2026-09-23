@@ -2,7 +2,7 @@ import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { toSupplySeason } from '../../../composition/supplyTimeLabels.js';
 import {
   createEmptyStocks,
-  getAllCategoriesForRole,
+  getSuppliedCategories,
   getResourceRoles,
   getResourceStockShape,
 } from '../../../shared/building-catalog/resourceRoleQueries.js';
@@ -104,10 +104,10 @@ async function applyDistributorSprites(ctx, mesh, instanceId) {
   }
 
   const stocks = view?.stocks || createEmptyStocks();
-  // Goods and aggregate come from the catalog (what a hub stores / its totalKey).
+  // Goods and aggregate come from the catalog (what the citizens eat that a hub stores / its totalKey).
   const hasStock =
     (stocks[getResourceStockShape().totalKey] || 0) > 0 ||
-    getAllCategoriesForRole('hub').some((good) => (stocks[good] || 0) > 0);
+    getSuppliedCategories().some((good) => (stocks[good] || 0) > 0);
   setSprite(ctx, mesh, 'no-food', { visible: ctx.productionSpriteVisible(!hasStock) });
 }
 

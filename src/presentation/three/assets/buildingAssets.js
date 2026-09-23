@@ -1806,6 +1806,70 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     tags: ['industry', 'building'],
   },
+  // Atelier de meubles — RÉASSIGNÉ au kit Kenney Industrial building-f (economy/footprint keyed to 'Factory-Furniture').
+  'Factory-Furniture': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-f',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      group: 'industry',
+      editorGroup: null,
+      label: 'Atelier de meubles',
+      tooltip: 'Atelier de meubles',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-f.png' },
+    },
+    tags: ['industry', 'building'],
+  },
+  // Entrepôt — RÉASSIGNÉ au kit Kenney Industrial building-a (economy/footprint keyed to 'Warehouse').
+  'Warehouse': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-a',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      group: 'industry',
+      editorGroup: null,
+      label: 'Entrepôt',
+      tooltip: 'Entrepôt',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-a.png' },
+    },
+    tags: ['industry', 'building'],
+  },
   // Industrie — building-e
   // Bains publics (below) réassigne cette geometry — plus d'entrée
   // carousel "Industrie" distincte pour building-e, voir PublicBath.

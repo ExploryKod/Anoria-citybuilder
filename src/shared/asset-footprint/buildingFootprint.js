@@ -52,6 +52,9 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'Factory-Plate': Object.freeze({ width: 1, depth: 2 }),
   'Factory-Pot': Object.freeze({ width: 2, depth: 2 }),
   // Lumberjack reassigns its geometry to Kenney industrial building-o (see buildingAssets.js) — 1x2 there.
+  // Furniture workshop / Warehouse reassign to Kenney industrial building-f (2x2) / building-a (3x2).
+  'Factory-Furniture': Object.freeze({ width: 2, depth: 2 }),
+  'Warehouse': Object.freeze({ width: 3, depth: 2 }),
   'Lumberjack': Object.freeze({ width: 1, depth: 2 }),
   'Hay-Bale': Object.freeze({ width: 1, depth: 1 }),
   'Hay-Cart': Object.freeze({ width: 1, depth: 1 }),

@@ -74,6 +74,10 @@ export class RunHubSurplusCycle {
 
     const hubResults = [];
     for (const hub of hubs) {
+      // Hubs keep their own rhythm: the windmill collects in one month while a warehouse collects all
+      // year, and one being due must not make the other run out of its period.
+      if (!matchesSchedule(getScheduleForRole(hub.type, 'collector'), { month, monthIndex, year })) continue;
+
       const outcome = await this.processHubCollection.execute({
         hubId: hub.id,
         sourceRefs,

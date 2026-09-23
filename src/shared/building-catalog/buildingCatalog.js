@@ -145,6 +145,10 @@
  *   On a 'producer' entry that follows the seasons (a crop field): which status icon (a key of
  *   statusIconAnchors.js) the building shows in each season. Omitted means the building shows
  *   no seasonal icon.
+ * @property {Array<{ category: string, amount: number, from?: { role: ResourceRoleKind, range?: number } }>} [inputs]
+ *   On a 'producer' entry: goods it consumes to make its output (a recipe rather than a source). Read
+ *   from the building's own stock, or — with `from` — drawn from the nearest working buildings of that
+ *   role (a warehouse hub) within `range` that hold the good. A recipe runs only when every input is there.
  * @property {{ resource: string, range: number, consume?: number }} [source]
  *   Makes a 'producer' entry a RAW-MATERIAL producer: it only works while
  *   `range` Manhattan tiles around the building hold a natural resource of

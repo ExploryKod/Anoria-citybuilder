@@ -26,6 +26,17 @@ const GATHERED_GOODS = ['fruit', 'game'];
 /** Aggregate stock field summing every good a citizen can eat. */
 const DIET_TOTAL_KEY = 'food';
 
+/**
+ * Manufactured and raw goods a goods warehouse stores, and the aggregate they are filed under.
+ * A warehouse is a hub like the windmill: what it accepts is only its own `categories`, so one hub
+ * can hold the diet's crops and another these goods, side by side.
+ */
+const STORED_GOODS = ['wood', 'furniture', 'plate', 'pot', 'amphora'];
+const GOODS_TOTAL_KEY = 'goods';
+/** Manhattan tiles around a warehouse from which it collects goods, and from which a workshop draws its supplies. */
+const WAREHOUSE_RANGE = 12;
+const WAREHOUSE_MAX_STOCK = 500;
+
 /*
  * The food chain's reference numbers. Every capacity and yield below is derived from these
  * few figures, so the chain reads as one ratio (a farm feeds so many citizens, a hub holds
@@ -325,6 +336,48 @@ export const BUILDING_ECONOMY = {
       source: { resource: 'wood', range: 6, consume: 1 },
       periodLock: { field: 'lastProductionMonth', unit: 'month' },
     }],
+  },
+
+  // Furniture workshop (2026-09-23): a recipe — it turns wood into furniture. Its `inputs[].from` says
+  // where the wood comes from: a hub (warehouse) within range that holds it, nearest first. With no wood
+  // there, it idles and runs again as soon as some arrives. Retune the ratio or the range here.
+  'Factory-Furniture': {
+    displayName: 'Atelier de meubles',
+    construction: { price: 60, category: 'industry' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
+    resourceRoles: [{
+      role: 'producer',
+      categories: ['furniture'],
+      schedule: { unit: 'always' },
+      amount: 5,
+      inputs: [{ category: 'wood', amount: 10, from: { role: 'hub', range: WAREHOUSE_RANGE } }],
+      periodLock: { field: 'lastProductionMonth', unit: 'month' },
+    }],
+  },
+
+  // Goods warehouse (2026-09-23): the windmill's counterpart for everything that is not eaten. It
+  // collects the goods (raw or manufactured) of the producers within `range`, all year round, and holds
+  // them for whoever draws on a hub (a workshop's recipe). Same hub mechanism as the windmill; only the
+  // goods it accepts, its capacity, its range and its rhythm differ, and all of them are declared here.
+  'Warehouse': {
+    displayName: 'Entrepôt',
+    construction: { price: 80, category: 'industry' },
+    employment: { sector: 4, workerNeed: 2, requiredSkill: 'artisanat' },
+    resourceRoles: [
+      {
+        role: 'collector',
+        categories: [...STORED_GOODS],
+        totalKey: GOODS_TOTAL_KEY,
+        range: WAREHOUSE_RANGE,
+        schedule: { unit: 'always' },
+      },
+      {
+        role: 'hub',
+        categories: [...STORED_GOODS],
+        totalKey: GOODS_TOTAL_KEY,
+        maxStock: WAREHOUSE_MAX_STOCK,
+      },
+    ],
   },
 
   // Industry

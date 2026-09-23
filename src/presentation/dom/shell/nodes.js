@@ -1,4 +1,4 @@
-import { getAllCategoriesForRole } from '../../../shared/building-catalog/resourceRoleQueries.js';
+import { getSuppliedCategories } from '../../../shared/building-catalog/resourceRoleQueries.js';
 // game.js
 export const displayTime = document.querySelector('.info-panel .display-time');
 export const displaySeason = document.querySelector('.info-panel .hud-season');
@@ -87,8 +87,8 @@ export const popGroupPopNodes = queryGroupMetricNodes('pop');
 export const popGroupWorkerNodes = queryGroupMetricNodes('workers');
 export const popGroupLaborNodes = queryGroupMetricNodes('labor');
 
-// Goods a hub stores, straight from the catalog — no good is named here.
-const POP_RESOURCE_CITY_PRODUCTS = getAllCategoriesForRole('hub');
+// Goods the citizens eat that a hub stores, straight from the catalog — no good is named here.
+const POP_RESOURCE_CITY_PRODUCTS = getSuppliedCategories();
 const POP_RESOURCE_NATURE_PRODUCTS = ['wood', 'rock', 'clay', 'iron', 'gold'];
 
 /**

@@ -2,6 +2,7 @@ import {
   getAnnualSupplyEntry,
   getResourceRoles,
   getResourceStockShape,
+  getSuppliedCategories,
   hasQuantityConsumer,
   isRoadNeedMet,
 } from '../../../../shared/building-catalog/resourceRoleQueries.js';
@@ -194,9 +195,14 @@ export class SupplyTraceability {
       this.supplyBuildingRepository.findByResourceRole('producer'),
       this.supplyBuildingRepository.findByResourceRole('hub'),
     ]);
+    const suppliedGoods = new Set(getSuppliedCategories());
     const chain = [
       ...producers.map((building) => ({ building, category: getAnnualSupplyEntry(building.type)?.categories[0] })),
-      ...hubs.map((building) => ({ building, category: getResourceRoles(building.type).find((entry) => entry.role === 'hub')?.categories[0] })),
+      // Only the hubs of the diet's goods belong to this harvest chain (a goods warehouse does not).
+      ...hubs.map((building) => ({
+        building,
+        category: getResourceRoles(building.type).find((entry) => entry.role === 'hub')?.categories.find((good) => suppliedGoods.has(good)),
+      })),
     ].filter(({ category }) => category);
 
     for (const { building, category } of chain) {
@@ -249,7 +255,15 @@ export class SupplyTraceability {
    * @param {object} timeInfo
    * @param {Array<{ hubId?: string, collected?: boolean, reason?: string, transfers?: Array<{ sourceId: string, category: string, amount: number }> }>} hubResults
    */
-  async recordHarvestSales(timeInfo, hubResults = []) {
+  async recordHarvestSales(timeInfo, allHubResults = []) {
+    // The harvest chain is the diet's: what another hub (a goods warehouse) collects is not a harvest sale.
+    const suppliedGoods = new Set(getSuppliedCategories());
+    const hubResults = [];
+    for (const hubResult of allHubResults) {
+      const hubRow = await this.supplyBuildingRepository.findRowById(hubResult?.hubId);
+      const stores = getResourceRoles(hubRow?.type).find((entry) => entry.role === 'hub')?.categories ?? [];
+      if (stores.some((good) => suppliedGoods.has(good))) hubResults.push(hubResult);
+    }
     if (hubResults.length === 0) return;
     const turn = turnOf(timeInfo);
     const month = timeInfo.monthIndex || 0;

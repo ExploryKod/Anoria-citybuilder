@@ -17,6 +17,7 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   dattes: Object.freeze({ emoji: '🌴', label: 'Dattes', colors: Object.freeze({ dark: '#795548', pale: '#D7CCC8' }) }),
   wood: Object.freeze({ emoji: '🪵', label: 'Bois', colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
   food: Object.freeze({ emoji: '🍽️', label: 'Nourriture' }),
+  furniture: Object.freeze({ emoji: '🪑', label: 'Meuble' }),
   plate: Object.freeze({ emoji: '🍽️', label: 'Plat' }),
   pot: Object.freeze({ emoji: '🍲', label: 'Pot' }),
   amphora: Object.freeze({ emoji: '🏺', label: 'Amphore' }),
