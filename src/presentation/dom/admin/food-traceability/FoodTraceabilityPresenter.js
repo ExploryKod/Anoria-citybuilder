@@ -13,7 +13,7 @@ import {
   getResourceRoles,
   getResourceStockShape,
 } from '../../../../shared/building-catalog/resourceRoleQueries.js';
-import { getResourceCategoryPresentation } from '../../../../composition/supplyCatalog.js';
+import { buildingNameInSentence, goodAmount, goodLabel, typesHoldingRole } from '../../shell/CatalogVocabulary.js';
 import { getTimeInfo, MONTHS, SEASON_EMOJI } from '../../../../shared/time/TimeCalendar.js';
 import { toSupplySeason } from '../../../../composition/supplyTimeLabels.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
@@ -147,7 +147,8 @@ export function summarizeChain(transactions, year) {
     collectionDone,
     farms: { ...farms, causes },
     hubs,
-    hubLabel: getBuildingDefinition(hubType)?.displayName?.toLowerCase() ?? 'hub',
+    // No hub seen that year: the one the catalog gives the diet's goods.
+    hubLabel: buildingNameInSentence(hubType ?? typesHoldingRole('hub', getSuppliedCategories())[0]),
     hubCapacity: getMaxStockForBuilding(hubType),
   };
 }
@@ -164,9 +165,9 @@ function hubsClauseHTML(count, idle, label) {
 const NON_SALE_CAUSES = {
   no_workers: () => `${noWorkIconHTML} sans travailleurs à la récolte`,
   no_road: () => '🛣️ sans route',
-  hub_full: (capacity) => `📦 moulin plein${capacity ? ` (plafond ${capacity} paniers)` : ''}`,
-  hub_idle: () => '🏚️ moulin sans travailleurs',
-  no_hub: () => '❌ pas de moulin',
+  hub_full: (capacity, hub) => `📦 ${hub} plein${capacity ? ` (plafond ${goodAmount(chainTotalKey, capacity)})` : ''}`,
+  hub_idle: (_capacity, hub) => `🏚️ ${hub} sans travailleurs`,
+  no_hub: (_capacity, hub) => `❌ pas de ${hub}`,
   demolished: () => '🚧 démolie avant la vente',
   unknown: () => '❔ cause non enregistrée',
 };
@@ -177,10 +178,10 @@ function farmsSoldHTML({ farms, hubs, hubLabel }) {
 }
 
 /** "Sans vente : <cause> N · <cause> N" — empty when every farm sold. */
-function nonSaleCausesHTML({ farms, hubCapacity }) {
+function nonSaleCausesHTML({ farms, hubCapacity, hubLabel }) {
   if (farms.causes.length === 0) return '';
   const items = farms.causes.map(
-    ({ id, count }) => `${(NON_SALE_CAUSES[id] ?? NON_SALE_CAUSES.unknown)(hubCapacity)} : ${count}`
+    ({ id, count }) => `${(NON_SALE_CAUSES[id] ?? NON_SALE_CAUSES.unknown)(hubCapacity, hubLabel)} : ${count}`
   );
   return `<span class="food-stat-farms causes">Sans vente : ${items.join(' · ')}</span>`;
 }
@@ -219,7 +220,7 @@ export const hasChainGoods = (stocks) => chainGoods.some((good) => (stocks?.[goo
 function stockLines(stocks) {
   return getSuppliedCategories()
     .filter((category) => (stocks?.[category] ?? 0) > 0)
-    .map((category) => `<div>${getResourceCategoryPresentation(category).label}: ${stocks[category]}</div>`)
+    .map((category) => `<div>${goodLabel(category)}: ${stocks[category]}</div>`)
     .join('');
 }
 
@@ -250,8 +251,7 @@ export function createFarmMarketSectionHTML(
 ) {
   const transactionDetails = Object.entries(byFoodType)
     .map(([foodType, quantity]) => {
-      const label = getResourceCategoryPresentation(foodType).label;
-      return `<div>${label}: ${quantity} panier(s)</div>`;
+      return `<div>${goodLabel(foodType)}: ${goodAmount(foodType, quantity)}</div>`;
     })
     .join('');
 
@@ -359,8 +359,7 @@ export function createMarketHouseSectionHTML(
 ) {
   const transactionDetails = Object.entries(byFoodType)
     .map(([foodType, quantity]) => {
-      const label = getResourceCategoryPresentation(foodType).label;
-      return `<div>${label}: ${quantity} panier(s)</div>`;
+      return `<div>${goodLabel(foodType)}: ${goodAmount(foodType, quantity)}</div>`;
     })
     .join('');
 
@@ -512,7 +511,7 @@ export function fullCoverageSummary(months) {
   return {
     farmsNeeded,
     population: `${peakPopulation}`,
-    detail: `${peakPopulation} habitants (le plus haut de l'année) × ${MONTHS.length} mois × ${perCapita} panier par mois = ${demand} paniers à couvrir ÷ ${yieldPerFarm} paniers par ferme et par an = ${exact}, arrondi à ${farmsNeeded}`,
+    detail: `${peakPopulation} habitants (le plus haut de l'année) × ${MONTHS.length} mois × ${goodAmount(chainTotalKey, perCapita)} par mois = ${goodAmount(chainTotalKey, demand)} à couvrir ÷ ${goodAmount(chainTotalKey, yieldPerFarm)} par ferme et par an = ${exact}, arrondi à ${farmsNeeded}`,
   };
 }
 

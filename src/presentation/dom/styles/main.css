@@ -1759,7 +1759,7 @@ footer .footer-links a:hover {
 
 /* Hub storage panel (barn / windmill) */
 .info-building-overlay--hub-barn .info-building-panel,
-.info-building-overlay--hub-windmill .info-building-panel {
+.info-building-overlay--hub .info-building-panel {
     max-height: min(78vh, 780px);
 }
 

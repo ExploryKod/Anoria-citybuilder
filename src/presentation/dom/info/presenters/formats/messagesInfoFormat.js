@@ -1,4 +1,5 @@
-import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getResourceRoles, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { buildingNameInSentence, goodLabel } from '../../../shell/CatalogVocabulary.js';
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/buildingCatalog.js';
 import { SOCIAL_CATEGORY } from '../../../../../shared/population/socialCategoryCatalog.js';
 import { getSkillDisplay } from '../../../../../shared/population/skillCatalog.js';
@@ -122,10 +123,12 @@ function marketSupplyComplaints(vm) {
 
   const complaints = [];
   if (supplyView.noFarmsNearby === true) {
-    complaints.push('Aucune ferme ne nous approvisionne');
+    // What this market sells, from its own catalog entry.
+    const goods = getResourceRoles(vm.buildingType).find((entry) => entry.role === 'distributor')?.categories ?? [];
+    complaints.push(`Aucun approvisionnement : ${goods.map(goodLabel).join(', ')}`);
   }
   if (!supplyView.hasHousesNearby) {
-    complaints.push("Aucune maison n'est à portée de nos étals");
+    complaints.push(`Aucune maison à portée : ${buildingNameInSentence(vm.buildingType)}`);
   }
   return complaints;
 }

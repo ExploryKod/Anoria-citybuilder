@@ -5,22 +5,25 @@
  * no other file may spell one out. Every category any building declares in its
  * `resourceRoles` (see buildingEconomy.js) should have an entry here so a
  * generic UI (resource cards, hub storage) can render it without a
- * per-category branch in code. A category with no entry falls back to a
- * neutral placeholder in `getResourceCategoryPresentation`.
+ * per-category branch in code. `unit` is how one is counted (`{ one, many }`,
+ * "1 panier", "12 paniers"). A category with no entry is shown as "…" with a
+ * warning by presentation/dom/shell/CatalogVocabulary.js, never as a made-up name.
  */
+const BASKET = Object.freeze({ one: 'panier', many: 'paniers' });
+const unitOf = (one, many) => Object.freeze({ one, many });
 export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
-  wheat: Object.freeze({ emoji: '🌾', label: 'Blé', colors: Object.freeze({ dark: '#F9A825', pale: '#FFF59D' }) }),
-  cabbage: Object.freeze({ emoji: '🥬', label: 'Chou', colors: Object.freeze({ dark: '#388E3C', pale: '#A5D6A7' }) }),
-  carrot: Object.freeze({ emoji: '🥕', label: 'Carotte', colors: Object.freeze({ dark: '#EF6C00', pale: '#FFCC80' }) }),
-  fruit: Object.freeze({ emoji: '🍎', label: 'Fruits' }),
-  game: Object.freeze({ emoji: '🦌', label: 'Gibier' }),
-  dattes: Object.freeze({ emoji: '🌴', label: 'Dattes', colors: Object.freeze({ dark: '#795548', pale: '#D7CCC8' }) }),
-  wood: Object.freeze({ emoji: '🪵', label: 'Bois', colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
-  food: Object.freeze({ emoji: '🍽️', label: 'Nourriture' }),
-  furniture: Object.freeze({ emoji: '🪑', label: 'Meuble' }),
-  plate: Object.freeze({ emoji: '🍽️', label: 'Plat' }),
-  pot: Object.freeze({ emoji: '🍲', label: 'Pot' }),
-  amphora: Object.freeze({ emoji: '🏺', label: 'Amphore' }),
+  wheat: Object.freeze({ emoji: '🌾', label: 'Blé', unit: BASKET, colors: Object.freeze({ dark: '#F9A825', pale: '#FFF59D' }) }),
+  cabbage: Object.freeze({ emoji: '🥬', label: 'Chou', unit: BASKET, colors: Object.freeze({ dark: '#388E3C', pale: '#A5D6A7' }) }),
+  carrot: Object.freeze({ emoji: '🥕', label: 'Carotte', unit: BASKET, colors: Object.freeze({ dark: '#EF6C00', pale: '#FFCC80' }) }),
+  fruit: Object.freeze({ emoji: '🍎', label: 'Fruits', unit: BASKET }),
+  game: Object.freeze({ emoji: '🦌', label: 'Gibier', unit: BASKET }),
+  dattes: Object.freeze({ emoji: '🌴', label: 'Dattes', unit: BASKET, colors: Object.freeze({ dark: '#795548', pale: '#D7CCC8' }) }),
+  wood: Object.freeze({ emoji: '🪵', label: 'Bois', unit: unitOf('bûche', 'bûches'), colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
+  food: Object.freeze({ emoji: '🍽️', label: 'Nourriture', unit: BASKET }),
+  furniture: Object.freeze({ emoji: '🪑', label: 'Meuble', unit: unitOf('meuble', 'meubles') }),
+  plate: Object.freeze({ emoji: '🍽️', label: 'Plat', unit: unitOf('plat', 'plats') }),
+  pot: Object.freeze({ emoji: '🍲', label: 'Pot', unit: unitOf('pot', 'pots') }),
+  amphora: Object.freeze({ emoji: '🏺', label: 'Amphore', unit: unitOf('amphore', 'amphores') }),
   faith: Object.freeze({ emoji: '🙏', label: 'Foi' }),
   school: Object.freeze({ emoji: '🎓', label: 'École' }),
   library: Object.freeze({ emoji: '📖', label: 'Bibliothèque' }),
@@ -34,10 +37,15 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
 
 /**
  * @param {string} category
- * @returns {{ emoji: string, label: string }}
+ * @returns {{ emoji: string, label: string, unit?: { one: string, many: string } }}
  */
 export function getResourceCategoryPresentation(category) {
   return RESOURCE_CATEGORY_PRESENTATION[category] ?? { emoji: '📦', label: category };
+}
+
+/** @param {string} category @returns {boolean} Whether the catalog names this category. */
+export function hasResourceCategoryPresentation(category) {
+  return Object.hasOwn(RESOURCE_CATEGORY_PRESENTATION, category);
 }
 
 /** Neutral chart colors for a category that declares none. */

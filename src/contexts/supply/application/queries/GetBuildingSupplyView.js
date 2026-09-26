@@ -68,12 +68,12 @@ export class GetBuildingSupplyView {
       return {
         ...base,
         salesToMarket: [...view.salesToDistributor],
-        salesToWindmill: [...view.salesToHub],
+        salesToHub: [...view.salesToHub],
         soldToHub: view.collectedByHub,
       };
     }
 
-    if (kind === 'windmill') {
+    if (kind === 'hub') {
       return {
         ...base,
         isCollecting: operational === true && view.isCollecting,
@@ -91,7 +91,7 @@ export class GetBuildingSupplyView {
 
 /**
  * @param {string} type
- * @returns {'market' | 'service' | 'windmill' | 'farm' | 'house' | 'other'}
+ * @returns {'market' | 'service' | 'hub' | 'farm' | 'house' | 'other'}
  *   UI/DTO vocabulary kept as-is for presentation compatibility — derived
  *   from the type's declarative resourceRoles (see ResourceRolePolicy.js),
  *   not a name-string match. A 'distributor' role splits into two kinds by
@@ -106,7 +106,7 @@ export function classifySupplyKind(type) {
   if (hasResourceRole(type, 'distributor')) {
     return getConsumptionModeForRole(type, 'distributor') === 'flag' ? 'service' : 'market';
   }
-  if (hasResourceRole(type, 'hub')) return 'windmill';
+  if (hasResourceRole(type, 'hub')) return 'hub';
   // A house both consumes and gathers, so consumers are classified before producers.
   if (hasResourceRole(type, 'consumer')) return 'house';
   if (hasResourceRole(type, 'producer')) return 'farm';

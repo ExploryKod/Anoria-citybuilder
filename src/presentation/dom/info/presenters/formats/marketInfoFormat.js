@@ -4,7 +4,7 @@
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
 import { getResourceRoles, getResourceStockShape } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
-import { getResourceCategoryPresentation } from '../../../../../composition/supplyCatalog.js';
+import { buildingName, goodLabel, goodUnit, scheduleLabel } from '../../../shell/CatalogVocabulary.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
 
 /**
@@ -38,8 +38,12 @@ export function formatMarketOverviewModel(vm) {
 
   return {
     sections: [{
-      title: 'État du marché',
-      rows: [{ label: 'Période d\'achat', value: 'Automne' }],
+      title: `État · ${buildingName(vm.buildingType)}`,
+      // The period the market's own catalog entry declares, in words.
+      rows: [{
+        label: 'Période d\'achat',
+        value: scheduleLabel(getResourceRoles(vm.buildingType).find((entry) => entry.role === 'distributor')?.schedule),
+      }],
     }],
   };
 }
@@ -58,13 +62,16 @@ export function formatMarketStocksModel(vm) {
   const cap = Number.isFinite(supplyView.maxStock) ? `/${supplyView.maxStock}` : '';
   return {
     sections: [{
-      title: 'Stock marché',
+      title: `Stock · ${buildingName(vm.buildingType)}`,
       rows: [
         ...entry.categories.map((category) => ({
-          label: getResourceCategoryPresentation(category).label,
-          value: `${stocks[category] || 0}${cap} paniers`,
+          label: goodLabel(category),
+          value: `${stocks[category] || 0}${cap} ${goodUnit(category, stocks[category] || 0)}`,
         })),
-        { label: 'Total', value: `${stocks[entry.totalKey] || 0}${cap} paniers disponibles` },
+        {
+          label: 'Total disponible',
+          value: `${stocks[entry.totalKey] || 0}${cap} ${goodUnit(entry.totalKey, stocks[entry.totalKey] || 0)}`,
+        },
       ],
     }],
   };

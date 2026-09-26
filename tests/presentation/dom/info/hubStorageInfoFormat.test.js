@@ -51,8 +51,10 @@ describe('formatHubStockSummary', () => {
     });
 
     test('an empty hub says so, instead of reassuring about a harvest still to come', () => {
-      const lines = formatHubStockSummary({ currentTotal: 0, totalCapacity: 2880, autonomyMonths: 0, harvestInMonths: 1 });
-      expect(lines).toContain('⚠️ Le moulin est vide');
+      const lines = formatHubStockSummary({ buildingType: 'Windmill-001', currentTotal: 0, totalCapacity: 2880, autonomyMonths: 0, harvestInMonths: 1 });
+      // The hub is named as the catalog names it: another hub type says its own name.
+      expect(lines).toContain('⚠️ Moulin vide');
+      expect(formatHubStockSummary({ buildingType: 'Warehouse', currentTotal: 0, totalCapacity: 500, harvestInMonths: 1 })).toContain('⚠️ Entrepôt vide');
       expect(lines.some((line) => line.includes('✅'))).toBe(false);
     });
 

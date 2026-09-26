@@ -183,7 +183,7 @@ describe('The message the player reads when inhabitants leave', () => {
   test('says how many leave and why the standing changed, in the catalog\'s words', () => {
     expect(
       buildPopulationDepartureMessage({ count: 12, unmet: [{ kind: 'demandMet' }] })
-    ).toBe('12 habitants nous quittent car le standing a changé (nourriture insuffisante)');
+    ).toBe('12 habitants nous quittent car le standing a changé (manque de nourriture)');
     expect(buildPopulationDepartureMessage({ count: 1, unmet: [] })).toBe(
       '1 habitant nous quitte car le standing a changé'
     );
@@ -199,7 +199,7 @@ describe('The message the player reads when inhabitants leave', () => {
       ],
     });
     expect(message).toMatch(/^6 habitants nous quittent car le standing a changé \(/);
-    expect(message.match(/nourriture insuffisante/g)).toHaveLength(1);
+    expect(message.match(/manque de nourriture/g)).toHaveLength(1);
     expect(message).toMatch(/plus de /);
   });
 });

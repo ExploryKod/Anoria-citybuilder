@@ -78,7 +78,7 @@ import { popupManager } from '../dom/shell/PopupManager.js';
 import {
   showInsufficientFundsNotification,
   showGenericErrorNotification,
-  showWindmillCascadeNotification,
+  showHubCascadeNotification,
   showPopulationDepartureNotification,
 } from '../dom/shell/BuildingNotifications.js';
 import { showErrorToast } from '../dom/shell/ToastNotifier.js';
@@ -892,7 +892,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
 
       if (cascadeOutcome?.destroyed?.length) {
-        showWindmillCascadeNotification(cascadeOutcome.destroyed);
+        showHubCascadeNotification(tile.buildingId, cascadeOutcome.destroyed);
       }
 
       await scene.update(city, time);

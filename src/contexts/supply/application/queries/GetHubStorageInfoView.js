@@ -12,7 +12,7 @@ import { computeCarryOver, computeAutonomyMonths } from '../../domain/policies/H
 export class GetHubStorageInfoView {
   /**
    * @param {object} params
-   * @param {'windmill'} params.hubKind
+   * @param {'hub'} params.hubKind
    * @param {object|null|undefined} params.buildingRow
    * @param {Record<string, number>|null|undefined} [params.stocks]
    * @param {number|null|undefined} [params.maxStock]
@@ -47,6 +47,7 @@ export class GetHubStorageInfoView {
 
     return Object.freeze({
       hubKind,
+      buildingType: buildingRow.type,
       title: `Stockage — ${getBuildingDefinition(buildingRow.type)?.displayName ?? buildingRow.type}`,
       workers: buildingRow.employees?.worker ?? 0,
       workerNeed: buildingRow.employees?.worker_need ?? 0,

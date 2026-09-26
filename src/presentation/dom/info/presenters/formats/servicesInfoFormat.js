@@ -5,7 +5,8 @@
 import { residentialGroupForType } from '../../../shell/ResidentialGroupLabels.js';
 import { describeRelevantServiceCoverage } from '../../../../../composition/housingCatalog.js';
 import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
-import { requiresRoad } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getSuppliedCategories, requiresRoad } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { namesOfBuildings } from '../../../shell/CatalogVocabulary.js';
 
 function isResidentialHouse(buildingType) {
   return typeof buildingType === 'string' && buildingType.includes('House');
@@ -43,12 +44,14 @@ export function formatServicesModel(vm) {
 
   if (isResidentialHouse(vm.buildingType)) {
     const hasMarket = vm.supplyView?.marketTooFar !== true;
+    // What feeds the house, named as the catalog names those buildings.
+    const suppliers = namesOfBuildings('distributor', getSuppliedCategories()).join('/');
     items.push({
       emoji: '🏪',
-      label: 'Marché',
+      label: suppliers,
       value: hasMarket ? '✓' : null,
       status: hasMarket ? 'ok' : 'off',
-      ariaLabel: hasMarket ? 'Marché à portée' : 'Marché hors de portée',
+      ariaLabel: hasMarket ? `${suppliers} à portée` : `${suppliers} hors de portée`,
     });
 
     // One chip per service this house needs to reach ITS NEXT tier (its

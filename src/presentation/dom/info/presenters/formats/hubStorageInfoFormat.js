@@ -3,6 +3,7 @@
  */
 
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
+import { buildingName } from '../../../shell/CatalogVocabulary.js';
 
 export function formatHubStorageLayoutHeader() {
   return null;
@@ -59,7 +60,7 @@ export function formatHubStorageRenderParams(vm) {
  * tick lands before that tick's meal, so a harvest `n` months off only needs the `n - 1` meals
  * before it covered.
  *
- * @param {{ currentTotal: number, totalCapacity: number, autonomyMonths?: number | null, carryOverTotal?: number, harvestInMonths?: number | null }} view
+ * @param {{ buildingType?: string, currentTotal: number, totalCapacity: number, autonomyMonths?: number | null, carryOverTotal?: number, harvestInMonths?: number | null }} view
  * @returns {string[]}
  */
 export function formatHubStockSummary(view) {
@@ -75,7 +76,7 @@ export function formatHubStockSummary(view) {
     );
     if (view.currentTotal <= 0) {
       // Nothing left to eat now, whatever the harvest to come: say so rather than reassure.
-      lines.push('⚠️ Le moulin est vide');
+      lines.push(`⚠️ ${buildingName(view.buildingType)} vide`);
     } else if (view.autonomyMonths != null) {
       const shortBy = view.harvestInMonths - 1 - view.autonomyMonths;
       lines.push(

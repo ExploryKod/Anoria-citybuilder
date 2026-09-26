@@ -17,7 +17,7 @@ export class ListHubSupplyViews {
   async execute() {
     const views = await this.supplyBuildingRepository.listAllSupplyViews();
     return views
-      .filter((view) => classifySupplyKind(view.type) === 'windmill')
+      .filter((view) => classifySupplyKind(view.type) === 'hub')
       .map((view) => ({
         instanceId: view.id,
         id: view.id,
@@ -26,7 +26,7 @@ export class ListHubSupplyViews {
         type: view.type,
         x: view.x,
         y: view.y,
-        kind: 'windmill',
+        kind: 'hub',
         stocks: { ...view.stocks },
         maxStock: view.maxStock,
         isCollecting: view.isCollecting,

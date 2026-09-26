@@ -5,6 +5,7 @@
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { getBuildingDefinition } from '../../../shared/building-catalog/buildingCatalog.js';
 import { isRoadBuildingType } from '../../../composition/constructionCatalog.js';
+import { goodLabel, namesOfBuildings } from '../shell/CatalogVocabulary.js';
 import {
   getAnnualSupplyEntry,
   getAnnualYieldPerProducer,
@@ -13,6 +14,7 @@ import {
   getPerCapitaDemand,
   getResourceRoles,
   getResourceStockShape,
+  getSuppliedCategories,
   requiresRoad,
 } from '../../../shared/building-catalog/resourceRoleQueries.js';
 
@@ -148,7 +150,7 @@ export function describeMapBuilding(building) {
   }
 
   if (holdsFood(building.type) && building.stockTotal != null) {
-    lines.push(`Nourriture en stock : ${building.stockTotal}`);
+    lines.push(`${goodLabel(getResourceStockShape().totalKey)} en stock : ${building.stockTotal}`);
   }
   if (getAnnualSupplyEntry(building.type) && building.hasFood === false) {
     lines.push(EMPTY_HARVEST_STOCK_NOTE);
@@ -232,9 +234,9 @@ export function renderCityMapGridHtml({ citySize, buildingMap, hasRoadAccessFrom
           tableHTML += `<span class="status-indicator no-road" title="Pas de route"></span>`;
         }
         if (isHouse && !hasFood && marketTooFar) {
-          tableHTML += `<span class="status-indicator market-too-far" title="Marché trop loin"></span>`;
+          tableHTML += `<span class="status-indicator market-too-far" title="${escapeHtml(`${namesOfBuildings('distributor', getSuppliedCategories()).join('/')} trop loin`)}"></span>`;
         } else if (canHaveFood && !hasFood && !marketTooFar) {
-          const noFoodTitle = getAnnualSupplyEntry(building.type) ? EMPTY_HARVEST_STOCK_NOTE : 'Pas de nourriture';
+          const noFoodTitle = getAnnualSupplyEntry(building.type) ? EMPTY_HARVEST_STOCK_NOTE : `Pas de ${goodLabel(getResourceStockShape().totalKey).toLowerCase()}`;
           tableHTML += `<span class="status-indicator no-food" title="${escapeHtml(noFoodTitle)}"></span>`;
         }
         tableHTML += `</div>`;

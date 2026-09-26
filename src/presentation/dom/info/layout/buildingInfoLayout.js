@@ -202,11 +202,11 @@ export function applyInfoPanelLayoutOptions(options = {}) {
 
   if (!overlay) return;
 
-  overlay.classList.remove('info-building-overlay--hub-barn', 'info-building-overlay--hub-windmill');
+  overlay.classList.remove('info-building-overlay--hub-barn', 'info-building-overlay--hub');
   if (hubOverlayMode === 'barn') {
     overlay.classList.add('info-building-overlay--hub-barn');
-  } else if (hubOverlayMode === 'windmill') {
-    overlay.classList.add('info-building-overlay--hub-windmill');
+  } else if (hubOverlayMode === 'hub') {
+    overlay.classList.add('info-building-overlay--hub');
   }
 }
 

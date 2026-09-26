@@ -19,7 +19,7 @@ describe('formatHousePopulationPresentation', () => {
     );
 
     expect(profiles).toEqual([
-      expect.objectContaining({ statusKey: 'worker', count: 12, label: 'citoyens artisans' }),
+      expect.objectContaining({ statusKey: 'worker', count: 12, label: 'citoyens artisans-ouvriers' }),
     ]);
     expect(skills).toEqual([
       expect.objectContaining({ skillKey: 'subsistence-forager', count: 12, label: 'chasse-cueillette' }),

@@ -70,10 +70,10 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
   }
 
   if (groupId === BUILDING_INFO_GROUPS.hubStorage) {
-    const hubKind = vm.supplyView?.kind === 'windmill' ? 'windmill' : null;
+    const hubKind = vm.supplyView?.kind === 'hub' ? 'hub' : null;
     if (hubKind) {
       extra.hubKind = hubKind;
-      if (hubKind === 'windmill' && !Object.hasOwn(vm.stocks || {}, getResourceStockShape().totalKey)) {
+      if (hubKind === 'hub' && !Object.hasOwn(vm.stocks || {}, getResourceStockShape().totalKey)) {
         extra.hubView = null;
       } else {
         // The calendar from now, so the hub can say when it next collects.

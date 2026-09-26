@@ -21,7 +21,7 @@
  * @typedef {object} BuildingInfoLayoutOptions
  * @property {BuildingInfoPanelLayoutMode} [layout]
  * @property {string | null} [accent]
- * @property {'barn' | 'windmill' | null} [hubOverlayMode]
+ * @property {'barn' | 'hub' | null} [hubOverlayMode]
  */
 
 /**
@@ -80,7 +80,7 @@
  * @property {object} accounting
  * @property {object} construction
  * @property {number} [currentYear]
- * @property {'windmill' | null} [hubKind]
+ * @property {'hub' | null} [hubKind]
  * @property {object | null} [hubView]
  * @property {((monthsAhead: number) => object) | null} [hubTimeContextAhead] Calendar from now (Supply time context per month), to date the hub's next harvest
  * @property {Record<string, number> | null} [servedFlags] House group only — see HouseLevelPolicy.describeRelevantServiceCoverage.

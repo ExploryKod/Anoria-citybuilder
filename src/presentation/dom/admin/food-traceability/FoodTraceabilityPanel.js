@@ -3,6 +3,7 @@
  * Rendu HTML : FoodTraceabilityPresenter.js
  */
 
+import { buildingName } from '../../shell/CatalogVocabulary.js';
 import {
     buildingStockKey,
     createFarmMarketSectionHTML,
@@ -490,7 +491,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                             (t.fromId === farmKey || t.fromCoords === building.x + ',' + building.y)
                         );
                         if (!hasTransactions) {
-                            stocksSections.push(createBuildingStocksHTML('Ferme', `${building.x},${building.y}`, farmStocksAfter, 'farm'));
+                            stocksSections.push(createBuildingStocksHTML(buildingName(building.type), `${building.x},${building.y}`, farmStocksAfter, 'farm'));
                         }
                     }
                 }
@@ -521,7 +522,7 @@ export async function loadFoodTraceabilityEntries(period = 'all') {
                     refreshChainTotal(marketStocksAfter);
                     
                     if (marketStocksAfter[chainTotalKey] > 0 || hasChainGoods(marketStocks)) {
-                        stocksSections.push(createBuildingStocksHTML('Marché', `${building.x},${building.y}`, marketStocksAfter, 'market'));
+                        stocksSections.push(createBuildingStocksHTML(buildingName(building.type), `${building.x},${building.y}`, marketStocksAfter, 'market'));
                     }
                 }
             });

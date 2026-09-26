@@ -24,7 +24,7 @@ describe('resolveBuildingInfoGroup', () => {
     expect(resolveBuildingInfoGroup({ buildingRow: {}, supplyView: { kind: 'farm' } })).toBe(
       BUILDING_INFO_GROUPS.farm,
     );
-    expect(resolveBuildingInfoGroup({ buildingRow: {}, supplyView: { kind: 'windmill' } })).toBe(
+    expect(resolveBuildingInfoGroup({ buildingRow: {}, supplyView: { kind: 'hub' } })).toBe(
       BUILDING_INFO_GROUPS.hubStorage,
     );
     expect(resolveBuildingInfoGroup({ buildingRow: { category: 'nature' }, supplyView: null })).toBe(

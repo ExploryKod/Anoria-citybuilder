@@ -4,11 +4,11 @@
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
 import { getResourceRoles, getResourceStockShape } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
-import { getResourceCategoryPresentation } from '../../../../../composition/supplyCatalog.js';
+import { buildingName, goodAmount, goodLabel, namesOfBuildings } from '../../../shell/CatalogVocabulary.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
 
 function productLabel(productType) {
-  return getResourceCategoryPresentation(productType).label;
+  return goodLabel(productType);
 }
 
 /** Categories a building type produces, straight from the catalog. */
@@ -73,12 +73,12 @@ export function formatFarmStocksModel(vm) {
   /** @type {import('../../buildingInfoTypes.js').InfoKvRow[]} */
   const stockRows = producedCategories(buildingType).map((category) => ({
     label: productLabel(category),
-    value: `${houseStocks[category] || 0} paniers`,
+    value: goodAmount(category, houseStocks[category] || 0),
   }));
-  stockRows.push({ label: 'Total', value: `${houseStocks[totalKey] || 0} paniers` });
+  stockRows.push({ label: 'Total', value: goodAmount(totalKey, houseStocks[totalKey] || 0) });
 
   return {
-    sections: [{ title: 'Stocks ferme', rows: stockRows }],
+    sections: [{ title: `Stocks · ${buildingName(buildingType)}`, rows: stockRows }],
   };
 }
 
@@ -88,13 +88,17 @@ export function formatFarmStocksModel(vm) {
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel}
  */
 export function formatFarmTradeModel(vm) {
-  const { supplyView, currentYear = 0 } = vm;
+  const { supplyView, currentYear = 0, buildingType } = vm;
   const salesToMarket = supplyView?.salesToMarket || [];
-  const salesToWindmill = supplyView?.salesToWindmill || [];
+  const salesToHub = supplyView?.salesToHub || [];
   const currentYearMarketSales = salesToMarket.filter((s) => s.year === currentYear);
-  const currentYearWindmillSales = salesToWindmill.filter((s) => s.year === currentYear);
+  const currentYearHubSales = salesToHub.filter((s) => s.year === currentYear);
+  // Who buys this building's goods, named as the catalog names those buildings.
+  const goods = producedCategories(buildingType);
+  const buyers = namesOfBuildings('distributor', goods).join(', ');
+  const collectors = namesOfBuildings('hub', goods).join(', ');
 
-  if (currentYearMarketSales.length === 0 && currentYearWindmillSales.length === 0) {
+  if (currentYearMarketSales.length === 0 && currentYearHubSales.length === 0) {
     return {
       sections: [{
         title: 'Ventes de l\'année',
@@ -107,25 +111,25 @@ export function formatFarmTradeModel(vm) {
   /** @type {import('../../buildingInfoTypes.js').InfoKvRow[]} */
   const saleRows = [];
   if (currentYearMarketSales.length > 0) {
-    saleRows.push({ label: 'Ventes au marché', value: `${currentYearMarketSales.length} vente(s)` });
+    saleRows.push({ label: `Ventes · ${buyers}`, value: `${currentYearMarketSales.length} vente(s)` });
     for (const sale of currentYearMarketSales) {
-      const subtext = `${sale.monthName || `Mois ${sale.month + 1}`} - Tour ${sale.turn}: ${sale.quantity} paniers`;
+      const subtext = `${sale.monthName || `Mois ${sale.month + 1}`} - Tour ${sale.turn}: ${goodAmount(sale.productType, sale.quantity)}`;
       saleRows.push({
         label: `  → ${productLabel(sale.productType)}`,
-        value: `${sale.quantity} paniers`,
+        value: goodAmount(sale.productType, sale.quantity),
         subtext,
       });
     }
   }
-  if (currentYearWindmillSales.length > 0) {
+  if (currentYearHubSales.length > 0) {
     saleRows.push({
-      label: 'Ventes au moulin',
-      value: `${currentYearWindmillSales.length} type(s) de produit`,
+      label: `Ventes · ${collectors}`,
+      value: `${currentYearHubSales.length} type(s) de produit`,
     });
-    for (const sale of currentYearWindmillSales) {
+    for (const sale of currentYearHubSales) {
       saleRows.push({
         label: `  → ${productLabel(sale.productType)}`,
-        value: `${sale.quantity} paniers`,
+        value: goodAmount(sale.productType, sale.quantity),
         subtext: `${sale.count || 1} collecte(s) cette année`,
       });
     }

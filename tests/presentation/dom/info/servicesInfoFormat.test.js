@@ -27,7 +27,7 @@ describe('servicesInfoFormat — house Services tab chips', () => {
   test('a tier-1 house shows Route, Marché, and Chapel (unmet — no faith flag yet)', () => {
     const model = formatServicesModel(houseVm({ servedFlags: null }));
 
-    expect(model.items.map((i) => i.label)).toEqual(['Route', 'Marché', 'Foi']);
+    expect(model.items.map((i) => i.label)).toEqual(['Route', 'Étal rouge', 'Foi']);
     const chapelChip = model.items.find((i) => i.label === 'Foi');
     expect(chapelChip).toMatchObject({ emoji: '⛪', status: 'off', value: null });
   });
@@ -58,7 +58,7 @@ describe('servicesInfoFormat — house Services tab chips', () => {
       houseVm({ houseLevel: 2, servedFlags: { faith: 4 }, periodKey: 4 }),
     );
 
-    expect(model.items.map((i) => i.label)).toEqual(['Route', 'Marché', 'Foi', 'Soins médicaux']);
+    expect(model.items.map((i) => i.label)).toEqual(['Route', 'Étal rouge', 'Foi', 'Soins médicaux']);
     expect(model.items.find((i) => i.label === 'Foi')).toMatchObject({ status: 'ok' });
     expect(model.items.find((i) => i.label === 'Soins médicaux')).toMatchObject({ status: 'off' });
   });

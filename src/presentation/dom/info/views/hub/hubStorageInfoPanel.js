@@ -1,6 +1,7 @@
 import { getBuildingInfoBody, setBuildingInfoTitle } from '../../layout/buildingInfoLayout.js';
 import { patchHubStoragePieChart, renderHubStoragePieChart } from './hubStoragePieChart.js';
-import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getResourceRoles, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { buildingName, scheduleLabel } from '../../../shell/CatalogVocabulary.js';
 import { formatHubStockSummary } from '../../presenters/formats/hubStorageInfoFormat.js';
 
 /**
@@ -133,13 +134,15 @@ export async function renderHubStorageInfoPanel({
   const workerLine = `${view.workers} / ${view.workerNeed} requis`;
 
   let statusMessage = '';
-  if (view.hubKind === 'windmill' && supplyView) {
+  if (view.hubKind === 'hub' && supplyView) {
+    // When this hub collects is the one its catalog entry declares, in words.
+    const collectsWhen = scheduleLabel(getResourceRoles(buildingRow.type).find((entry) => entry.role === 'collector')?.schedule);
     if (!isRoadNeedMet(buildingRow.type, buildingRow.roads)) {
-      statusMessage = '⚠️ Sans route le moulin ne peut pas stocker.';
+      statusMessage = `⚠️ Sans route, ${buildingName(buildingRow.type)} ne peut pas stocker.`;
     } else if (supplyView.isCollecting) {
-      statusMessage = '🟢 Collecte active (décembre).';
+      statusMessage = `🟢 Collecte active (${collectsWhen}).`;
     } else {
-      statusMessage = '⏸️ En attente — collecte en décembre.';
+      statusMessage = `⏸️ En attente — collecte : ${collectsWhen}.`;
     }
   }
 

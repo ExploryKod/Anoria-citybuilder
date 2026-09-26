@@ -130,7 +130,7 @@ describe('Supply — GetBuildingSupplyView', () => {
 
   test('windmill view exposes collecting state and lastCollection', async () => {
     const dto = await useCase.execute('Windmill-001-8-8');
-    expect(dto.kind).toBe('windmill');
+    expect(dto.kind).toBe('hub');
     expect(dto.isCollecting).toBe(true);
     expect(dto.lastCollection.wheat).toBe(20);
     // A good the catalog does not declare is not carried through the view.
@@ -230,7 +230,7 @@ describe('Supply — GetHubStorageInfoView: report and autonomy of a hub', () =>
     employees: { worker: 4, worker_need: 4 },
     ...extra,
   });
-  const view = (row, options = {}) => new GetHubStorageInfoView().execute({ hubKind: 'windmill', buildingRow: row, ...options });
+  const view = (row, options = {}) => new GetHubStorageInfoView().execute({ hubKind: 'hub', buildingRow: row, ...options });
 
   test('exposes what is left from before the last harvest', () => {
     // 10 held before the harvest; the hub holds 1450 now, the harvest (1440) is not carry-over.

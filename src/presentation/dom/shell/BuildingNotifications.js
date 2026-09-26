@@ -2,12 +2,16 @@
  * Construction / WebGL toast notifications (via js-toast-notifier).
  */
 
-import { buildingCatalog } from '../../../shared/building-catalog/buildingCatalog.js';
+import { getBuildingDefinition } from '../../../shared/building-catalog/buildingCatalog.js';
 import {
   showErrorToast,
   showWarningToast,
 } from './ToastNotifier.js';
-import { getResourceCategoryPresentation } from '../../../composition/supplyCatalog.js';
+import {
+  getResourceRoles,
+  getResourceStockShape,
+} from '../../../shared/building-catalog/resourceRoleQueries.js';
+import { UNRESOLVED_TERM, buildingName, goodLabel, namesOfBuildings, namesOfDependents, typesHoldingRole, unresolvedTerm } from './CatalogVocabulary.js';
 
 /**
  * Legacy aliases that aren't a real building type id in `buildingCatalog`
@@ -18,45 +22,49 @@ const EXTRA_TRANSLATIONS = {
   Road: 'Route',
 };
 
-/** Derived from `buildingCatalog` (single source of truth for display names). */
-const BUILDING_TRANSLATIONS = {
-  ...Object.fromEntries(
-    Object.entries(buildingCatalog)
-      .filter(([, def]) => def.displayName)
-      .map(([id, def]) => [id, def.displayName])
-  ),
-  ...EXTRA_TRANSLATIONS,
-};
+/**
+ * A building's name is the one the catalog gives it (`displayName`); the few legacy ids that are not in the
+ * catalog are named above. Anything else is shown as "…" and warned about, never guessed from its id.
+ */
+export function getBuildingDisplayName(buildingId) {
+  if (!buildingId) return buildingId;
+  return EXTRA_TRANSLATIONS[buildingId] ?? buildingName(buildingId);
+}
 
-const PLACEMENT_REASON_TRANSLATIONS = {
+const FIXED_PLACEMENT_REASONS = {
   area_not_available: 'Espace non disponible',
   insufficient_funds: 'Fonds insuffisants',
   building_already_exists: 'Un bâtiment existe déjà à cet emplacement',
   database_error: "Erreur lors de l'enregistrement du bâtiment",
   persistence_conflict: 'Conflit de sauvegarde — réessaie dans un instant',
-  no_windmill: "Construisez d'abord un moulin",
-  windmill_too_far: 'Aucun moulin à proximité',
   natural_resource_missing: 'Aucune ressource naturelle à proximité',
-  windmill_full: 'Les moulins proches ont déjà 2 marchés',
 };
 
-export function getBuildingDisplayName(buildingId) {
-  if (!buildingId) return buildingId;
-  if (BUILDING_TRANSLATIONS[buildingId]) {
-    return BUILDING_TRANSLATIONS[buildingId];
-  }
-  for (const [key, value] of Object.entries(BUILDING_TRANSLATIONS)) {
-    if (buildingId.startsWith(key)) {
-      return value;
+/**
+ * Why a placement is refused. A reason about a neighbouring building (`<role>_missing`, `_too_far`, `_full`)
+ * is put in words from the placed building's own catalog requirement: which buildings, how far, how many.
+ * @param {string} reason
+ * @param {string} buildingType
+ */
+function translateErrorReason(reason, buildingType) {
+  if (FIXED_PLACEMENT_REASONS[reason]) return FIXED_PLACEMENT_REASONS[reason];
+
+  const neighbour = /^([a-z]+)_(missing|too_far|full)$/.exec(reason);
+  const requirement = neighbour && (getBuildingDefinition(buildingType)?.placementRequires ?? []).find((candidate) => candidate.role === neighbour[1]);
+  if (!requirement) return unresolvedTerm('wording for the placement refusal', reason);
+
+  const names = namesOfBuildings(requirement.role, requirement.categories).join(', ');
+  switch (neighbour[2]) {
+    case 'missing':
+      return `Construisez d'abord : ${names}.`;
+    case 'too_far':
+      return Number.isFinite(requirement.range) ? `${names} trop loin (portée : ${requirement.range} cases).` : `${names} introuvable.`;
+    default: {
+      const [hubType] = typesHoldingRole(requirement.role, requirement.categories);
+      const capacity = getResourceRoles(hubType).find((entry) => entry.role === requirement.role)?.linkCapacity;
+      return `${names} à portée : plus de place (${capacity ?? UNRESOLVED_TERM} ${getBuildingDisplayName(buildingType)} au plus).`;
     }
   }
-  return String(buildingId)
-    .replace(/-\d+$/g, '')
-    .replace(/-/g, ' ');
-}
-
-function translateErrorReason(reason) {
-  return PLACEMENT_REASON_TRANSLATIONS[reason] || reason;
 }
 
 export function showInsufficientFundsNotification(buildingType, price) {
@@ -68,22 +76,22 @@ export function showInsufficientFundsNotification(buildingType, price) {
 
 export function showGenericErrorNotification(buildingType, reason) {
   const displayName = getBuildingDisplayName(buildingType);
-  const translatedReason = translateErrorReason(reason);
+  const translatedReason = translateErrorReason(reason, buildingType);
   showErrorToast(`Impossible de construire ${displayName}. ${translatedReason}`);
 }
 
 /**
- * @param {Array<{ x: number, y: number }>} destroyedMarkets
+ * A hub was demolished and took down the buildings that depended on it.
+ * @param {string} hubType The demolished hub's catalog id.
+ * @param {Array<{ x: number, y: number }>} destroyed
  */
-export function showWindmillCascadeNotification(destroyedMarkets = []) {
-  if (!destroyedMarkets.length) return;
+export function showHubCascadeNotification(hubType, destroyed = []) {
+  if (!destroyed.length) return;
 
-  const labels = destroyedMarkets
-    .map((market) => `(${market.x}, ${market.y})`)
-    .join(', ');
+  const labels = destroyed.map((building) => `(${building.x}, ${building.y})`).join(', ');
 
   showWarningToast(
-    `Moulin démoli — ${destroyedMarkets.length} marché(s) détruit(s) : ${labels}`,
+    `${buildingName(hubType)} démoli — ${destroyed.length} ${namesOfDependents(hubType).join('/')} détruit(s) : ${labels}`,
     { timeout: 6000 }
   );
 }
@@ -114,11 +122,11 @@ export function showWebGLResourceWarning(_capabilities, requestedSize, maxSafeSi
 
 /** Why a house lost its standing, by the kind of tier requirement that stopped holding. */
 const UNMET_REQUIREMENT_LABELS = {
-  demandMet: () => 'nourriture insuffisante',
+  demandMet: () => `manque de ${goodLabel(getResourceStockShape().totalKey).toLowerCase()}`,
   goodsVariety: () => 'alimentation trop peu variée',
   roadAccess: () => 'plus de route',
   population: () => 'population insuffisante',
-  serviceCoverage: (category) => `plus de ${getResourceCategoryPresentation(category).label.toLowerCase()}`,
+  serviceCoverage: (category) => `plus de ${goodLabel(category).toLowerCase()}`,
 };
 
 /**

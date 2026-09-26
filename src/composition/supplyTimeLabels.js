@@ -62,3 +62,22 @@ export function supplyTimeContextAhead(turn, monthsAhead) {
 
 /** A schedule (catalog `when` / `schedule`) against the game's time — the presentation reads it through here. */
 export { matchesSchedule } from '../contexts/supply/domain/policies/ResourceSchedulePolicy.js';
+
+/** The way back: the name the player reads for a month/season a catalog schedule names in English. */
+const SUPPLY_TO_DISPLAY_SEASON = Object.freeze(Object.fromEntries(Object.entries(LEGACY_SEASON_TO_SUPPLY).map(([display, supply]) => [supply, display])));
+const SUPPLY_TO_DISPLAY_MONTH = Object.freeze(Object.fromEntries(Object.entries(LEGACY_MONTH_TO_SUPPLY).map(([display, supply]) => [supply, display])));
+
+/** @param {string} supplySeason e.g. 'autumn' @returns {string | null} e.g. 'Automne' */
+export function toDisplaySeason(supplySeason) {
+  return SUPPLY_TO_DISPLAY_SEASON[supplySeason] ?? null;
+}
+
+/** @param {string} supplyMonth e.g. 'december' @returns {string | null} e.g. 'Décembre' */
+export function toDisplayMonth(supplyMonth) {
+  return SUPPLY_TO_DISPLAY_MONTH[supplyMonth] ?? null;
+}
+
+/** @param {number} monthIndex 0-based @returns {string | null} e.g. 'Janvier' */
+export function displayMonthByIndex(monthIndex) {
+  return Object.keys(LEGACY_MONTH_TO_SUPPLY)[monthIndex] ?? null;
+}
