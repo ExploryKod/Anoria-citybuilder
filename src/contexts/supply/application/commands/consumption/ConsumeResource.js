@@ -7,6 +7,7 @@ import {
   getScheduleForRole,
   getTotalKeyForRole,
   getPeriodLockForRole,
+  getRoleEntry,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
@@ -40,6 +41,8 @@ export class ConsumeResource {
    * @param {object} params
    * @param {string} params.buildingId
    * @param {object} params.period
+   * @param {string} [params.category] Any good of the need to consume when the building has several (a diet, the goods it
+   *   wears out); the primary need by default.
    * @returns {Promise<{
    *   consumed: boolean,
    *   reason?: string,
@@ -52,18 +55,18 @@ export class ConsumeResource {
  *   takenByCategory?: Record<string, number>,
    * }>}
    */
-  async execute({ buildingId, period }) {
+  async execute({ buildingId, period, category }) {
     const building = await this.supplyBuildingRepository.findById(buildingId);
     if (!building) {
       return { consumed: false, reason: 'building_not_found' };
     }
 
-    const schedule = getScheduleForRole(building.type, 'consumer', undefined, 'quantity');
+    const schedule = getScheduleForRole(building.type, 'consumer', category, 'quantity');
     if (!matchesSchedule(schedule, period)) {
       return { consumed: false, reason: 'not_consumption_period' };
     }
 
-    const periodLock = getPeriodLockForRole(building.type, 'consumer', undefined, 'quantity');
+    const periodLock = getPeriodLockForRole(building.type, 'consumer', category, 'quantity');
     if (isLockedForPeriod(building, periodLock, period)) {
       return { consumed: false, reason: 'already_consumed_this_period' };
     }
@@ -73,19 +76,25 @@ export class ConsumeResource {
       return { consumed: false, reason: 'no_population' };
     }
 
-    const categories = getCategoriesForRole(building.type, 'consumer', undefined, 'quantity');
-    const totalKey = getTotalKeyForRole(building.type, 'consumer', undefined, 'quantity');
-    const demand = computeConsumerDemand(building);
+    const categories = getCategoriesForRole(building.type, 'consumer', category, 'quantity');
+    const totalKey = getTotalKeyForRole(building.type, 'consumer', category, 'quantity');
+    const demand = computeConsumerDemand(building, category);
 
     const { nextStock, taken, categoriesTaken, takenByCategory } = takeAcrossCategories(building.stocks, categories, totalKey, demand);
     const totalUnfed = Math.max(0, Math.ceil(demand - taken));
 
     await this.supplyBuildingRepository.saveStocks(buildingId, nextStock);
     if (periodLock) {
+      // What the building used up is filed under the field this need declares (`outcomeField`), so that one
+      // need's outcome (its diet) is never overwritten by another's (the goods it wears out).
+      const { outcomeField } = getRoleEntry(building.type, 'consumer', { category, consumption: 'quantity' });
+      if (!outcomeField) {
+        throw new Error(`[ConsumeResource] "${building.type}" consumer of ${categories.join(', ')} declares no outcomeField`);
+      }
       await this.supplyBuildingRepository.updateBuildingFields(
         buildingId,
         buildLockUpdate(building, periodLock, period, categories[0], {
-          lastConsumption: { month: period.monthIndex, demand, taken, totalUnfed, categoriesTaken, takenByCategory },
+          [outcomeField]: { month: period.monthIndex, demand, taken, totalUnfed, categoriesTaken, takenByCategory },
         })
       );
     }

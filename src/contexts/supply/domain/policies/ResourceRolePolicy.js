@@ -44,6 +44,17 @@ function findRoleEntry(buildingType, role, { category, consumption } = {}) {
 }
 
 /**
+ * The role entry a caller means (see `findRoleEntry`), for the facts that have no accessor of their own.
+ * @param {string} buildingType
+ * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
+ * @param {{ category?: string, consumption?: 'quantity' | 'flag' }} [filter]
+ * @returns {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleFacts | undefined}
+ */
+export function getRoleEntry(buildingType, role, filter) {
+  return findRoleEntry(buildingType, role, filter);
+}
+
+/**
  * @param {string} buildingType
  * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
  * @param {string | string[]} [category] When given, also require this role
@@ -142,8 +153,30 @@ export function getPeriodLockForRole(buildingType, role, category, consumption) 
  *   Hub-link storage field names for this role, or undefined when the role
  *   doesn't participate in a hub link. See TransferHubToHub.js.
  */
-export function getHubLinkForRole(buildingType, role) {
-  return findRoleEntry(buildingType, role)?.hubLink;
+export function getHubLinkForRole(buildingType, role, category) {
+  return findRoleEntry(buildingType, role, { category })?.hubLink;
+}
+
+/**
+ * Every entry a building type declares for a role, in declaration order — a market holds one
+ * 'distributor' entry per thing it distributes, each with its own goods, ceiling and hub link.
+ * @param {string} buildingType
+ * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
+ * @returns {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleFacts[]}
+ */
+export function listRoleEntries(buildingType, role) {
+  return getResourceRoles(buildingType).filter((entry) => entry.role === role);
+}
+
+/**
+ * Stock ceiling of the role entry covering `category` (a market's ceiling for one thing it distributes).
+ * @param {string} buildingType
+ * @param {import('../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleKind} role
+ * @param {string} [category]
+ * @returns {number | undefined}
+ */
+export function getMaxStockForRole(buildingType, role, category) {
+  return findRoleEntry(buildingType, role, { category })?.maxStock;
 }
 
 /**
@@ -228,11 +261,12 @@ export function getStockTargetForRole(buildingType, role, category, consumption)
  * and the deficit a distributor fills (`computeConsumerDeficit`).
  *
  * @param {{ type: string, pop?: number }} building
+ * @param {string} [category] Any good the need covers, to pick which of the building's needs (default: its primary one).
  * @returns {number}
  */
-export function computeConsumerDemand(building) {
+export function computeConsumerDemand(building, category) {
   const pop = Number.isFinite(building.pop) ? Math.max(0, Math.floor(building.pop)) : 0;
-  const perCapita = getAmountForRole(building.type, 'consumer', undefined, 'quantity') ?? 0;
+  const perCapita = getAmountForRole(building.type, 'consumer', category, 'quantity') ?? 0;
   return pop * perCapita;
 }
 
@@ -244,10 +278,10 @@ export function computeConsumerDemand(building) {
  * @param {{ type: string, pop?: number, stocks?: Record<string, number> }} building
  * @returns {number}
  */
-export function computeConsumerDeficit(building) {
-  const target = getStockTargetForRole(building.type, 'consumer', undefined, 'quantity');
+export function computeConsumerDeficit(building, category) {
+  const target = getStockTargetForRole(building.type, 'consumer', category, 'quantity');
   if (!target) return Infinity;
-  const totalKey = getTotalKeyForRole(building.type, 'consumer', undefined, 'quantity');
+  const totalKey = getTotalKeyForRole(building.type, 'consumer', category, 'quantity');
   const held = Math.max(0, building.stocks?.[totalKey] ?? 0);
-  return Math.max(0, Math.ceil(computeConsumerDemand(building) * target.periods) - held);
+  return Math.max(0, Math.ceil(computeConsumerDemand(building, category) * target.periods) - held);
 }

@@ -38,6 +38,7 @@ export function renderHouseSkillsView(container, model) {
  * @typedef {object} HouseResourcesViewModel
  * @property {string} [caption] Says what the figures below are (e.g. "Consommé le mois dernier :")
  * @property {ReadonlyArray<{ kind: string, icon: string, label: string, met: boolean, valueText: string, ariaLabel: string }>} cards
+ * @property {ReadonlyArray<{ cards: HouseResourcesViewModel['cards'] }>} [extraNeeds] Further needs the catalog gives the house, one row of cards each.
  */
 
 /**
@@ -54,4 +55,7 @@ export function renderHouseResourcesView(container, model) {
     container.appendChild(caption);
   }
   appendMetricCards(container, model.cards);
+  for (const need of model.extraNeeds ?? []) {
+    appendMetricCards(container, need.cards);
+  }
 }

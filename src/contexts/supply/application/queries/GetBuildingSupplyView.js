@@ -6,7 +6,7 @@
  * isBuying / isCollecting are gated by OperationalGatePolicy (route + staff).
  */
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
-import { hasResourceRole, getConsumptionModeForRole, getResourceRoles } from '../../domain/policies/ResourceRolePolicy.js';
+import { hasResourceRole, getConsumptionModeForRole, getResourceRoles, listRoleEntries } from '../../domain/policies/ResourceRolePolicy.js';
 
 export class GetBuildingSupplyView {
   /**
@@ -52,6 +52,10 @@ export class GetBuildingSupplyView {
     if (kind === 'market') {
       return {
         ...base,
+        // Which hub each thing it distributes is drawn from (or none), as the catalog's hub links resolved it.
+        hubLinks: await this.#resolveHubLinks(view.type, snapshot),
+        // Which hub each thing it distributes is drawn from (or none), as the catalog's hub links resolved it.
+        hubLinks: await this.#resolveHubLinks(view.type, snapshot),
         isBuying: operational === true && view.isBuying,
         unmetDemand: view.unmetDemand,
         noFarmsNearby: view.noSourcesNearby,
@@ -89,6 +93,25 @@ export class GetBuildingSupplyView {
     }
 
     return base;
+  }
+
+  /**
+   * For each thing a distributor hands out that names a hub link: the goods, and the hub it is
+   * linked to now (its type and id), or none.
+   * @param {string} type
+   * @param {object | null} snapshot The building's own row.
+   * @returns {Promise<Array<{ categories: string[], hubId: string | null, hubType: string | null }>>}
+   */
+  async #resolveHubLinks(type, snapshot) {
+    const links = [];
+    for (const entry of listRoleEntries(type, 'distributor')) {
+      const field = entry.hubLink?.sourceLinkField;
+      if (!field) continue;
+      const hubId = snapshot?.[field] ?? null;
+      const hub = hubId ? await this.supplyBuildingRepository.findById(hubId) : null;
+      links.push({ categories: [...entry.categories], hubId: hub ? hubId : null, hubType: hub?.type ?? null });
+    }
+    return links;
   }
 }
 

@@ -120,6 +120,12 @@ export function computeBuildingReach(origin, buildings, roadTiles) {
 
       if (entry.role === 'distributor') {
         if (distance <= range && entriesFor(other.type, 'consumer', entry.categories).length) reach(other, 'out');
+        // The hub it may draw on: a hub of its goods within its hub link's range (and of the types it names).
+        const link = entry.hubLink;
+        if (link?.range != null && distance <= link.range && (!link.hubTypes || link.hubTypes.includes(other.type)) &&
+            entriesFor(other.type, 'hub', entry.categories).length) {
+          reach(other, 'in');
+        }
       } else if (entry.role === 'collector') {
         if (distance <= range && entriesFor(other.type, 'producer', entry.categories).length) reach(other, 'in');
       } else if (entry.role === 'producer') {
@@ -133,6 +139,13 @@ export function computeBuildingReach(origin, buildings, roadTiles) {
         // A hub is drawn on by the buildings whose placement or recipe names a hub of its goods.
         const drawsOnHub = (from) => from.role === 'hub' && distance <= (from.range ?? Infinity) &&
           (from.categories == null || sharesCategory(from.categories, entry.categories));
+        const linkedByOther = getResourceRoles(other.type).some(
+          (candidate) =>
+            candidate.role === 'distributor' && candidate.hubLink?.range != null && distance <= candidate.hubLink.range &&
+            (!candidate.hubLink.hubTypes || candidate.hubLink.hubTypes.includes(origin.type)) &&
+            sharesCategory(candidate.categories, entry.categories)
+        );
+        if (linkedByOther) reach(other, 'out');
         const requirements = getBuildingDefinition(other.type)?.placementRequires ?? [];
         const inputs = getResourceRoles(other.type).flatMap(cycleInputSources)
           .filter((from) => from.category == null || entry.categories.includes(from.category));

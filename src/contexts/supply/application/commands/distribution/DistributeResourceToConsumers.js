@@ -50,6 +50,7 @@ export class DistributeResourceToConsumers {
    * @param {string} params.sourceId
    * @param {object[]} params.consumerRefs
    * @param {object} params.period
+   * @param {string} [params.category] Any good of the source's 'distributor' entry to hand out, when it has several.
    * @returns {Promise<{
    *   distributed: boolean,
    *   reason?: string,
@@ -57,13 +58,13 @@ export class DistributeResourceToConsumers {
    *   totalUnits: number,
    * }>}
    */
-  async execute({ sourceId, consumerRefs = [], period }) {
+  async execute({ sourceId, consumerRefs = [], period, category }) {
     const source = await this.supplyBuildingRepository.findById(sourceId);
     if (!source) {
       return { distributed: false, reason: 'source_not_found', transfers: [], totalUnits: 0 };
     }
 
-    const schedule = getScheduleForRole(source.type, 'distributor');
+    const schedule = getScheduleForRole(source.type, 'distributor', category);
     if (!matchesSchedule(schedule, period)) {
       return { distributed: false, reason: 'not_distribution_period', transfers: [], totalUnits: 0 };
     }
@@ -79,7 +80,7 @@ export class DistributeResourceToConsumers {
       return { distributed: false, reason: 'source_not_operational', transfers: [], totalUnits: 0 };
     }
 
-    const categories = getCategoriesForRole(source.type, 'distributor');
+    const categories = getCategoriesForRole(source.type, 'distributor', category);
 
     const consumerIds = [
       ...new Set(
@@ -90,11 +91,11 @@ export class DistributeResourceToConsumers {
       return { distributed: false, reason: 'no_consumers', transfers: [], totalUnits: 0 };
     }
 
-    if (getConsumptionModeForRole(source.type, 'distributor') === 'flag') {
+    if (getConsumptionModeForRole(source.type, 'distributor', category) === 'flag') {
       return this.#distributeFlag({ categories, consumerIds, period });
     }
 
-    const totalKey = getTotalKeyForRole(source.type, 'distributor');
+    const totalKey = getTotalKeyForRole(source.type, 'distributor', category);
     // A stock is rebuilt with EVERY good filed under its total, not just the ones this
     // distributor moves: a house also holds what it gathered (fruit, game), and rebuilding
     // it from the distributor's goods alone wiped those while the total kept counting them.
@@ -114,7 +115,8 @@ export class DistributeResourceToConsumers {
       sourceStock,
       consumerIds,
       isEligible: (consumer) => isRoadNeedMet(consumer.type, consumer.roadCount),
-      getCap: computeConsumerDeficit,
+      // What each house still needs OF THIS GOOD: its need for these goods, not its first need.
+      getCap: (consumer) => computeConsumerDeficit(consumer, categories[0]),
       repository: this.supplyBuildingRepository,
       createStock: (raw) => createResourceStock(raw, stockCategories, totalKey),
       takeCategory: (stock, category, amount) =>

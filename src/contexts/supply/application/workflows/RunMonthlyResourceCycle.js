@@ -1,3 +1,5 @@
+import { listQuantityConsumerNeeds } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+
 /**
  * Orchestration: full monthly resource supply chain tick — producer harvest,
  * hub surplus collection, hub-to-distributor transfer, distributor reach,
@@ -97,14 +99,22 @@ export class RunMonthlyResourceCycle {
       category: this.config.reachCategories ?? this.config.categories,
     });
 
-    const { results: consumptions } = await this.runConsumerCommand.execute({
-      role: 'consumer',
-      buildParams: (house) => ({
-        buildingId: house.id,
-        period: { monthIndex: timeInfo.monthIndex },
-      }),
-      successKey: 'consumed',
-    });
+    // Every need citizens have is used up the same way, one pass each (the diet, the goods they wear
+    // out...). The traceability follows the first: the primary need.
+    let consumptions = [];
+    for (const [index, need] of listQuantityConsumerNeeds().entries()) {
+      const { results } = await this.runConsumerCommand.execute({
+        role: 'consumer',
+        categories: need.categories,
+        buildParams: (house) => ({
+          buildingId: house.id,
+          period: { monthIndex: timeInfo.monthIndex },
+          category: need.categories[0],
+        }),
+        successKey: 'consumed',
+      });
+      if (index === 0) consumptions = results;
+    }
 
     await this.traceability.recordHouseConsumptions(
       timeInfo,

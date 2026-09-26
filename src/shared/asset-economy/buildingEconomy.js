@@ -31,11 +31,20 @@ const DIET_TOTAL_KEY = 'food';
  * A warehouse is a hub like the windmill: what it accepts is only its own `categories`, so one hub
  * can hold the diet's crops and another these goods, side by side.
  */
-const STORED_GOODS = ['wood', 'furniture', 'plate', 'pot', 'amphora'];
+const RETAIL_GOODS = ['furniture', 'plate', 'pot', 'amphora'];
+const STORED_GOODS = ['wood', ...RETAIL_GOODS];
 const GOODS_TOTAL_KEY = 'goods';
 /** Manhattan tiles around a warehouse from which it collects goods, and from which a workshop draws its supplies. */
 const WAREHOUSE_RANGE = 12;
 const WAREHOUSE_MAX_STOCK = 500;
+/** Markets a warehouse can supply at once. */
+const WAREHOUSE_LINK_CAPACITY = 4;
+/** Tiles between a market and the warehouse it draws its goods from. */
+const MARKET_WAREHOUSE_RANGE = 8;
+/** Goods one market stall can hold at once. */
+const MARKET_GOODS_MAX_STOCK = 120;
+/** Units of goods a citizen uses up per month (a quarter: one unit per four citizens). */
+const CITIZEN_MONTHLY_GOODS_NEED = 0.25;
 
 /** When a crop is sold to its hub: the windmill's collection month, declared on the field it collects from. */
 const HARVEST_SALE = { schedule: { unit: 'month', values: ['december'] } };
@@ -81,6 +90,22 @@ const HOUSE_DIET_CONSUMER = {
   stockTarget: { periods: 1 },
   schedule: { unit: 'always' },
   periodLock: { field: 'lastConsumptionMonth', unit: 'month' },
+  outcomeField: 'lastConsumption',
+};
+
+/**
+ * A second need, wholly parallel to the diet: goods a citizen wears out, drawn from the market like
+ * the diet is. Same mechanism, only its goods, rate and fields differ — and all are declared here.
+ */
+const HOUSE_GOODS_CONSUMER = {
+  role: 'consumer',
+  categories: [...RETAIL_GOODS],
+  totalKey: GOODS_TOTAL_KEY,
+  amount: CITIZEN_MONTHLY_GOODS_NEED,
+  stockTarget: { periods: 1 },
+  schedule: { unit: 'always' },
+  periodLock: { field: 'lastGoodsConsumptionMonth', unit: 'month' },
+  outcomeField: 'lastGoodsConsumption',
 };
 
 /**
@@ -113,6 +138,7 @@ const serviceConsumer = (category) => ({
 /** Everything a house-like building holds: diet, gathering, and every service it can be covered by. */
 const HOUSE_RESOURCE_ROLES = [
   HOUSE_DIET_CONSUMER,
+  HOUSE_GOODS_CONSUMER,
   HOUSE_GATHERING,
   serviceConsumer('faith'),
   serviceConsumer('school'),
@@ -137,7 +163,20 @@ const MARKET_RESOURCE_ROLES = [{
   totalKey: DIET_TOTAL_KEY,
   maxStock: MARKET_MAX_STOCK,
   schedule: { unit: 'always' },
-  hubLink: { sourceLinkField: 'supplyHubId' },
+  // Which hub it draws on: any hub of these goods within this range (and its own field to remember it).
+  hubLink: { sourceLinkField: 'supplyHubId', range: MARKET_SILO_PLACEMENT_RANGE },
+},
+// The goods it also stocks and hands out, drawn from a warehouse: one more entry, nothing more. Give a
+// market other `categories`, a different `hubTypes` (catalog ids of the only hubs it may use) or drop this
+// entry, and that market stocks and serves exactly that.
+{
+  role: 'distributor',
+  categories: [...RETAIL_GOODS],
+  range: Infinity,
+  totalKey: GOODS_TOTAL_KEY,
+  maxStock: MARKET_GOODS_MAX_STOCK,
+  schedule: { unit: 'always' },
+  hubLink: { sourceLinkField: 'goodsHubId', range: MARKET_WAREHOUSE_RANGE, hubTypes: ['Warehouse'] },
 }];
 const MARKET_PLACEMENT_REQUIRES = [
   { role: 'hub', categories: [...SUPPLIED_GOODS], range: MARKET_SILO_PLACEMENT_RANGE, requiresCapacity: true },
@@ -370,7 +409,9 @@ export const BUILDING_ECONOMY = {
         role: 'hub',
         categories: [...STORED_GOODS],
         totalKey: GOODS_TOTAL_KEY,
+        linkCapacity: WAREHOUSE_LINK_CAPACITY,
         maxStock: WAREHOUSE_MAX_STOCK,
+        hubLink: { linksField: 'linkedDistributors', linkTargetIdField: 'distributorId', allocationField: 'allocatedStocks' },
       },
     ],
   },

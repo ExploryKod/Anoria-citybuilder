@@ -46,7 +46,7 @@ export class SupplyBuildingRepository {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async saveDistributorHubId(_distributorId, _hubId) {
+  async saveDistributorHubId(_distributorId, _hubId, _linkField) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 

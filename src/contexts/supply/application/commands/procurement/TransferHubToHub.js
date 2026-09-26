@@ -13,6 +13,7 @@ import {
   getScheduleForRole,
   getTotalKeyForRole,
   getHubLinkForRole,
+  getMaxStockForRole,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
@@ -40,6 +41,7 @@ export class TransferHubToHub {
    * @param {string} params.targetId
    * @param {{ year?: number, monthIndex?: number }} params.period The month, to add up what leaves the hub in it
    * @param {number} params.demand Units the target's consumers still need (see computeConsumerDeficit).
+   * @param {string} [params.category] Any good of the target's 'distributor' entry to restock, when it has several.
    * @returns {Promise<{
    *   transferred: boolean,
    *   reason?: string,
@@ -47,13 +49,13 @@ export class TransferHubToHub {
    *   totalUnits: number,
    * }>}
    */
-  async execute({ targetId, period, demand }) {
+  async execute({ targetId, period, demand, category }) {
     const target = await this.supplyBuildingRepository.findById(targetId);
     if (!target) {
       return { transferred: false, reason: 'target_not_found', transfers: [], totalUnits: 0 };
     }
 
-    const schedule = getScheduleForRole(target.type, 'distributor');
+    const schedule = getScheduleForRole(target.type, 'distributor', category);
     if (!matchesSchedule(schedule, period)) {
       return { transferred: false, reason: 'not_transfer_period', transfers: [], totalUnits: 0 };
     }
@@ -69,7 +71,7 @@ export class TransferHubToHub {
       return { transferred: false, reason: 'target_not_operational', transfers: [], totalUnits: 0 };
     }
 
-    const targetHubLink = getHubLinkForRole(target.type, 'distributor');
+    const targetHubLink = getHubLinkForRole(target.type, 'distributor', category);
     const sourceId = targetHubLink ? target[targetHubLink.sourceLinkField] : undefined;
     if (!sourceId) {
       return { transferred: false, reason: 'no_source_link', transfers: [], totalUnits: 0 };
@@ -99,8 +101,8 @@ export class TransferHubToHub {
       return { transferred: false, reason: 'target_not_linked', transfers: [], totalUnits: 0 };
     }
 
-    const categories = getCategoriesForRole(target.type, 'distributor');
-    const totalKey = getTotalKeyForRole(target.type, 'distributor');
+    const categories = getCategoriesForRole(target.type, 'distributor', category);
+    const totalKey = getTotalKeyForRole(target.type, 'distributor', category);
 
     let sourceStock = createResourceStock(source.stocks, categories, totalKey);
     let targetStock = createResourceStock(target.stocks, categories, totalKey);
@@ -110,7 +112,7 @@ export class TransferHubToHub {
       return { transferred: false, reason: 'no_demand', transfers: [], totalUnits: 0 };
     }
 
-    const targetCapacity = remainingHubCapacity(target.stocks[totalKey], target.maxStock);
+    const targetCapacity = remainingHubCapacity(target.stocks[totalKey], getMaxStockForRole(target.type, 'distributor', category));
     if (targetCapacity <= 0) {
       return { transferred: false, reason: 'target_full', transfers: [], totalUnits: 0 };
     }

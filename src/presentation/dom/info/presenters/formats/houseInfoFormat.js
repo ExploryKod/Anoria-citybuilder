@@ -13,10 +13,8 @@ import {
   residentialGroupForType,
 } from '../../../shell/ResidentialGroupLabels.js';
 import { computeHouseCitizenComposition } from '../../../../../composition/housingCatalog.js';
-import {
-  getResourceStockShape,
-  getResourceCategoryPresentation,
-} from '../../../../../composition/supplyCatalog.js';
+import { getResourceCategoryPresentation } from '../../../../../composition/supplyCatalog.js';
+import { getQuantityConsumerEntries, getQuantityConsumerEntry } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
 
 /**
@@ -79,8 +77,24 @@ const NO_MEAL_YET = '–';
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  */
 export function formatHouseResourcesModel(vm) {
-  const { categories, totalKey } = getResourceStockShape();
-  const last = vm.lastConsumption ?? null;
+  // The house's needs, in the order the catalog declares them: the first (its diet) is the model's own
+  // cards, each further one (goods it wears out...) is another row of cards, filed by its own `outcomeField`.
+  const primary = getQuantityConsumerEntry(vm.buildingType);
+  const others = vm.buildingType ? getQuantityConsumerEntries(vm.buildingType).slice(1) : [];
+  return {
+    caption: CONSUMED_LAST_MONTH_CAPTION,
+    cards: needCards(primary, vm.lastConsumption ?? null),
+    extraNeeds: others.map((entry) => ({ cards: needCards(entry, vm.buildingRow?.[entry.outcomeField] ?? null) })),
+  };
+}
+
+/**
+ * One need's cards: what was used up of each of its goods, then its total over what was needed.
+ * @param {import('../../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleFacts} entry
+ * @param {object | null} last The record of its last consumption.
+ */
+function needCards(entry, last) {
+  const { categories, totalKey } = entry;
   const whole = (value) => Math.max(0, Math.floor(Number(value) || 0));
 
   const categoryCards = categories.map((category) => {
@@ -120,8 +134,5 @@ export function formatHouseResourcesModel(vm) {
         ariaLabel: `${label} : pas encore de repas`,
       };
 
-  return {
-    caption: CONSUMED_LAST_MONTH_CAPTION,
-    cards: [...categoryCards, totalCard],
-  };
+  return [...categoryCards, totalCard];
 }

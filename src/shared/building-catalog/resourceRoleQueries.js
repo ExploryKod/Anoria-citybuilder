@@ -167,7 +167,9 @@ export function getResourceStockShape() {
       for (const category of entry.categories) categories.add(category);
       if (!entry.totalKey) continue;
       totalKeys.add(entry.totalKey);
-      if (consumesQuantity) consumerTotalKey = entry.totalKey;
+      // The first quantity consumer declared is the citizens' primary need (their diet): a later
+      // one (another good they use up) must not take its place as "the total".
+      if (consumesQuantity) consumerTotalKey ??= entry.totalKey;
     }
   }
   const totalKey = consumerTotalKey ?? 'total';
@@ -211,6 +213,31 @@ export function getQuantityConsumerEntry(buildingType) {
 }
 
 /**
+ * Every 'quantity' consumer entry a building type declares, in declaration order — one per thing
+ * it uses up (its diet, the goods it wears out...). The first is its primary need.
+ * @param {string} buildingType
+ * @returns {import('./buildingCatalog.js').ResourceRoleFacts[]}
+ */
+export function getQuantityConsumerEntries(buildingType) {
+  return getResourceRoles(buildingType).filter(isQuantityConsumer);
+}
+
+/**
+ * The distinct 'quantity' consumer entries declared anywhere in the catalog, keyed by their first
+ * category (one per thing a citizen uses up) — what a city-wide consumption pass iterates.
+ * @returns {ReadonlyArray<import('./buildingCatalog.js').ResourceRoleFacts>}
+ */
+export function listQuantityConsumerNeeds() {
+  const byKey = new Map();
+  for (const definition of Object.values(buildingCatalog)) {
+    for (const entry of definition.resourceRoles ?? []) {
+      if (isQuantityConsumer(entry) && !byKey.has(entry.categories[0])) byKey.set(entry.categories[0], entry);
+    }
+  }
+  return Object.freeze([...byKey.values()]);
+}
+
+/**
  * Units one inhabitant needs per period, straight from the catalog's
  * consumer `amount` — the single source for "how much does a citizen
  * eat", so no policy ever has to assume it.
@@ -229,10 +256,11 @@ export function getPerCapitaDemand(buildingType) {
 export function getConsumableCategories() {
   const categories = new Set();
   for (const definition of Object.values(buildingCatalog)) {
-    for (const entry of definition.resourceRoles ?? []) {
-      if (!isQuantityConsumer(entry)) continue;
-      for (const category of entry.categories) categories.add(category);
-    }
+    // The primary need only (the first quantity consumer entry): what else a building uses up is
+    // reached through `getQuantityConsumerEntries`.
+    const primary = (definition.resourceRoles ?? []).find(isQuantityConsumer);
+    if (!primary) continue;
+    for (const category of primary.categories) categories.add(category);
   }
   return Object.freeze([...categories]);
 }

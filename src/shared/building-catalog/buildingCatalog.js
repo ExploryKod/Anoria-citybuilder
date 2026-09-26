@@ -163,7 +163,9 @@
  *   removed from the game. The same fact gates placement (no ghost beyond the
  *   range) and the "no resource" warning, so the range is declared once here.
  *   Omitted means the entry needs nothing natural (a farm, a workshop).
- * @property {{ sourceLinkField?: string, linksField?: string, linkTargetIdField?: string, allocationField?: string }} [hubLink]
+ * @property {string} [outcomeField] On a 'quantity' 'consumer' role: the row field its outcome (units wanted, taken,
+ *   unfed) is filed under — one per need, so a building using up several things keeps each outcome apart.
+ * @property {{ sourceLinkField?: string, range?: number, hubTypes?: string[], linksField?: string, linkTargetIdField?: string, allocationField?: string }} [hubLink]
  *   Hub-to-distributor link storage field names for this role — the
  *   'distributor' side declares `sourceLinkField` (which of its own fields
  *   points at its assigned hub); the 'hub' side declares `linksField`/
@@ -173,6 +175,10 @@
  *   ResourceRolePolicy.getHubLinkForRole — no separate policy module, since
  *   there's nothing to compute here, only field names to read (unlike
  *   periodLock's unit-resolution logic).
+ *   The 'distributor' side also declares WHICH hub it may link to: `range` (Manhattan tiles, REQUIRED
+ *   with `sourceLinkField`) and, optionally, `hubTypes` (catalog ids of the only hubs it may use —
+ *   omitted means any hub holding its goods). A building with several 'distributor' entries links each
+ *   to its own hub, in its own `sourceLinkField`.
  *
  * @typedef {Object} PlacementRequirement
  * @property {ResourceRoleKind} role Role another, already-placed building must

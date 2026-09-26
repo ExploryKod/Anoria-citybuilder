@@ -121,8 +121,13 @@ export class DexieSupplyBuildingRepository {
     return rows.map((row) => this.#toView(row));
   }
 
+  /**
+   * A write names only the goods it moved: whatever else the row holds (the market's food while goods
+   * move, and the reverse) is kept as it was.
+   */
   async saveStocks(buildingId, stocks) {
-    await this.#putFields(buildingId, { stocks: createSupplyStock(stocks) });
+    const row = await db.houses.get(buildingId);
+    await this.#putFields(buildingId, { stocks: createSupplyStock({ ...(row?.stocks ?? {}), ...stocks }) });
   }
 
   async saveHubLastCollection(hubId, lastCollection) {
@@ -191,10 +196,14 @@ export class DexieSupplyBuildingRepository {
     await this.#putFields(buildingId, flags);
   }
 
-  async saveDistributorHubId(distributorId, hubId) {
-    await this.#putFields(distributorId, {
-      supplyHubId: hubId || null,
-    });
+  /**
+   * @param {string} distributorId
+   * @param {string | null} hubId
+   * @param {string} linkField The row field the catalog names for this link (`hubLink.sourceLinkField`).
+   */
+  async saveDistributorHubId(distributorId, hubId, linkField) {
+    if (!linkField) throw new Error('[saveDistributorHubId] the link field (hubLink.sourceLinkField) is required');
+    await this.#putFields(distributorId, { [linkField]: hubId || null });
   }
 
   async saveHubLinkedDistributors(hubId, linkedDistributors) {

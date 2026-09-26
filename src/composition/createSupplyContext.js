@@ -87,8 +87,7 @@ export function createSupplyContext({
   );
   const assignDistributorToHub = new AssignDistributorToHub(
     supplyBuildingRepositoryImpl,
-    rebalanceHubAllocations,
-    producerCategories
+    rebalanceHubAllocations
   );
   const detachDistributorFromHub = new DetachDistributorFromHub(
     supplyBuildingRepositoryImpl,
@@ -140,8 +139,10 @@ export function createSupplyContext({
     resetSourcesCollectedFlag,
     processHubCollection,
     {
-      execute: ({ hubId }) =>
-        rebalanceHubAllocations.execute({ hubId, categories: producerCategories }),
+      execute: async ({ hubId }) => {
+        const hub = await supplyBuildingRepositoryImpl.findById(hubId);
+        return rebalanceHubAllocations.execute({ hubId, categories: getCategoriesForRole(hub?.type, 'hub') });
+      },
     }
   );
   const traceability = new SupplyTraceability({
@@ -154,6 +155,7 @@ export function createSupplyContext({
     getSharedEventBus(),
     {
       transferHubToHub,
+      linkDistributorEntry: (params) => assignDistributorToHub.linkEntryToAnyHub(params),
       onHubLinkResolved: (distributorId, hasHubLink) =>
         updateDistributorHubLink.execute({ distributorId, hasHubLink }),
       onHubTransfer: (distributorId, transfers, timeInfo) =>
@@ -220,12 +222,22 @@ export function createSupplyContext({
     hasResourceRole,
     getPlacementRequirements,
 
-    async assignDistributorToHub({ distributorId, distributorType, x, y, ownerHubId }) {
-      return assignDistributorToHub.execute({ distributorId, distributorType, x, y, ownerHubId });
+    async assignDistributorToHub({ distributorId, distributorType, x, y }) {
+      return assignDistributorToHub.execute({ distributorId, distributorType, x, y });
+    },
+
+    /** A hub just placed: the distributors still lacking a hub it may serve are linked to it. */
+    async linkWaitingDistributors({ hubId }) {
+      return assignDistributorToHub.linkWaitingDistributors({ hubId });
     },
 
     async detachDistributorFromHub({ distributorId }) {
-      return detachDistributorFromHub.execute({ distributorId, categories: producerCategories });
+      return detachDistributorFromHub.execute({ distributorId });
+    },
+
+    /** What demolishing this hub would take down, for the player to confirm before it happens. */
+    async previewHubCascade({ hubId }) {
+      return cascadeDestroyHubDistributors.findDependents({ hubId });
     },
 
     async cascadeDestroyHubDistributors({ hubId, city, bulldozeBuildingAtTile }) {

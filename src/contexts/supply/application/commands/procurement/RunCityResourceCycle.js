@@ -4,6 +4,7 @@ import {
   requireRangeForRole,
   getHubLinkForRole,
   getConsumptionModeForRole,
+  listRoleEntries,
   computeConsumerDeficit,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
@@ -43,6 +44,7 @@ export class RunCityResourceCycle {
    *   Resource-agnostic either way.
    * @param {object} [hooks]
    * @param {import('./TransferHubToHub.js').TransferHubToHub} [hooks.transferHubToHub] Omit for a resource with no hub leg.
+   * @param {(params: { distributorId: string, x: number, y: number, entry: object }) => Promise<unknown>} [hooks.linkDistributorEntry]
    * @param {(distributorId: string, hasHubLink: boolean) => Promise<void>} [hooks.onHubLinkResolved]
    * @param {(distributorId: string, transfers: object[], timeInfo: object) => Promise<void>} [hooks.onHubTransfer]
    * @param {(distributorId: string, transfers: object[], timeInfo: object) => Promise<void>} [hooks.onDistribute]
@@ -52,6 +54,7 @@ export class RunCityResourceCycle {
     this.distributeResourceToConsumers = distributeResourceToConsumers;
     this.eventPublisher = eventPublisher;
     this.transferHubToHub = hooks.transferHubToHub;
+    this.linkDistributorEntry = hooks.linkDistributorEntry;
     this.onHubLinkResolved = hooks.onHubLinkResolved;
     this.onHubTransfer = hooks.onHubTransfer;
     this.onDistribute = hooks.onDistribute;
@@ -99,22 +102,41 @@ export class RunCityResourceCycle {
       return false;
     }
 
+    // One pass per thing the building distributes (a market: its diet, and each goods entry the catalog
+    // gives it), each with its own goods, reach, hub and ceiling.
+    const entries = listRoleEntries(distributor.type, 'distributor');
+    for (const [index, entry] of entries.entries()) {
+      await this.#processDistributorEntry({ distributor, distributorRow, entry, isPrimary: index === 0, allBuildings, season, month, timeInfo });
+    }
+
+    return true;
+  }
+
+  async #processDistributorEntry({ distributor, distributorRow, entry, isPrimary, allBuildings, season, month, timeInfo }) {
+    const category = entry.categories[0];
     const consumersInRange = findBuildingsWithRoleInRange(distributorRow, allBuildings, {
       role: 'consumer',
-      maxDistance: requireRangeForRole(distributor.type, 'distributor'),
+      category: entry.categories,
+      maxDistance: requireRangeForRole(distributor.type, 'distributor', category),
     });
 
-    const distributorHubLink = getHubLinkForRole(distributor.type, 'distributor');
+    const distributorHubLink = getHubLinkForRole(distributor.type, 'distributor', category);
+    // An entry still without a hub tries to find one (a hub built after it, a save from before the entry).
+    if (distributorHubLink && !distributor[distributorHubLink.sourceLinkField] && this.linkDistributorEntry) {
+      await this.linkDistributorEntry({ distributorId: distributor.id, x: distributorRow.x, y: distributorRow.y, entry });
+    }
     if (this.transferHubToHub && distributorHubLink) {
       // The pull is sized on what the consumers it serves still need — read fresh, since a
       // distributor handled earlier this cycle may already have filled some of them.
       const hubOutcome = await this.transferHubToHub.execute({
         targetId: distributor.id,
         period: { month, year: timeInfo?.year, monthIndex: timeInfo?.monthIndex },
-        demand: await this.#demandOf(consumersInRange),
+        demand: await this.#demandOf(consumersInRange, category),
+        category,
       });
 
-      if (this.onHubLinkResolved) {
+      // The "no hub" flag is about its main supply; another entry's hub is an extra it may lack.
+      if (this.onHubLinkResolved && isPrimary) {
         await this.onHubLinkResolved(distributor.id, Boolean(distributor[distributorHubLink.sourceLinkField]));
       }
 
@@ -134,6 +156,7 @@ export class RunCityResourceCycle {
       const distributeOutcome = await this.distributeResourceToConsumers.execute({
         sourceId: distributor.id,
         consumerRefs: consumersInRange,
+        category,
         // monthIndex is what PeriodLockPolicy.resolvePeriodKey('month', ...)
         // actually reads (not `month`, the season-relative name) — without
         // it, every flag-mode service (Chapel's faith, School, Doctor, ...)
@@ -165,23 +188,22 @@ export class RunCityResourceCycle {
 
     // A stall that buys just what its houses need and hands it all out leaves an empty stock every
     // tick, so "empty" says nothing. What says something is a house still waiting once it has done
-    // what it could: that is the shortfall its no-food icon reports.
-    if (getConsumptionModeForRole(distributor.type, 'distributor') !== 'flag') {
+    // what it could: that is the shortfall its no-food icon reports (its main supply only).
+    if (isPrimary && getConsumptionModeForRole(distributor.type, 'distributor', category) !== 'flag') {
       await this.supplyBuildingRepository.updateBuildingFields(distributor.id, {
-        unmetDemand: await this.#demandOf(consumersInRange),
+        unmetDemand: await this.#demandOf(consumersInRange, category),
       });
     }
-
-    return true;
   }
 
   /**
    * Units the given consumers still need, road-connected ones only (the same gate the
    * distribution applies), each read fresh from the repository.
    * @param {object[]} consumerRefs
+   * @param {string} category Any good of the need the units are counted for.
    * @returns {Promise<number>}
    */
-  async #demandOf(consumerRefs) {
+  async #demandOf(consumerRefs, category) {
     const ids = new Set(
       consumerRefs.map(resolveInstanceIdFromNeighborRef).filter((id) => typeof id === 'string' && id.length > 0)
     );
@@ -189,7 +211,7 @@ export class RunCityResourceCycle {
     for (const id of ids) {
       const consumer = await this.supplyBuildingRepository.findById(id);
       if (!consumer || !isRoadNeedMet(consumer.type, consumer.roadCount)) continue;
-      demand += computeConsumerDeficit(consumer);
+      demand += computeConsumerDeficit(consumer, category);
     }
     return demand;
   }

@@ -59,7 +59,7 @@ export class UpdateConsumerDistributorReach {
         {
           role: sourceRole,
           category,
-          maxDistance: (source) => requireRangeForRole(source.type, sourceRole),
+          maxDistance: (source) => requireRangeForRole(source.type, sourceRole, Array.isArray(category) ? category[0] : category),
         }
       );
 

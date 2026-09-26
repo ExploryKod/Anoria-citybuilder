@@ -6,6 +6,7 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { TransferHubToHub } from '../../../src/contexts/supply/application/commands/procurement/TransferHubToHub.js';
+import { getMaxStockForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 
 class InMemorySupplyBuildingRepository {
@@ -120,9 +121,11 @@ describe('Supply — market buys from assigned windmill', () => {
   });
 
   test('takes no more than the market has room for', async () => {
-    repo.raw.get(marketId).maxStock = 3;
+    // The ceiling is the catalog's: leave the stall three units below it.
+    const ceiling = getMaxStockForRole('Market-Stall', 'distributor', 'wheat');
+    repo.raw.get(marketId).stocks = { wheat: ceiling - 3, carrot: 0, cabbage: 0, food: ceiling - 3 };
 
-    const outcome = await pull(6);
+    const outcome = await pull(ceiling + 10);
 
     expect(outcome.totalUnits).toBe(3);
   });
