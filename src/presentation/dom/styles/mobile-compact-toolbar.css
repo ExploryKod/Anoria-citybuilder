@@ -384,13 +384,6 @@
   transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.mobile-build-bar .mobile-tool-btn[data-toolid="House-2Story"] {
-  background: #fafafa;
-  border-color: var(--house-big-color);
-  color: var(--house-big-color);
-  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
 @media (hover: hover) {
   .mobile-build-bar .mobile-tool-btn[data-toolid="House-Red"]:hover {
     background: var(--house-red-color);
@@ -410,11 +403,6 @@
     color: #fafafa;
   }
 
-  .mobile-build-bar .mobile-tool-btn[data-toolid="House-2Story"]:hover {
-    background: var(--house-big-color);
-    border-color: var(--house-big-color);
-    color: #fafafa;
-  }
 }
 
 .mobile-build-bar .mobile-tool-btn[data-toolid="House-Red"].selected,
@@ -435,13 +423,6 @@
 .mobile-build-bar .mobile-tool-btn[data-toolid="House-Purple"]:active {
   background: var(--house-purple-color);
   border-color: var(--house-purple-color);
-  color: #fafafa;
-}
-
-.mobile-build-bar .mobile-tool-btn[data-toolid="House-2Story"].selected,
-.mobile-build-bar .mobile-tool-btn[data-toolid="House-2Story"]:active {
-  background: var(--house-big-color);
-  border-color: var(--house-big-color);
   color: #fafafa;
 }
 

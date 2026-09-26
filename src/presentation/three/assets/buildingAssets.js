@@ -87,39 +87,6 @@ const CROP_CYCLE_GRAPHICS = Object.freeze([
 ]);
 
 export const BUILDING_ASSETS = Object.freeze({
-  // Palais
-  'House-2Story': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'suburban',
-      buildingId: 'Kenney-Suburban-building-type-g',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-      instanceable: true,
-    },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'House 2Story',
-      tooltip: 'House 2Story',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 20v-9H2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M18 11V4H6v7"/><path d="M15 22v-4a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3v4"/><path d="M22 11V9"/><path d="M2 11V9"/><path d="M6 4V2"/><path d="M18 4V2"/><path d="M10 4V2"/><path d="M14 4V2"/></svg>' },
-    },
-    tags: ['palaces', 'building'],
-  },
   // Maison rouge
   'House-Red-Legacy': {
     source: 'kenneyCityKit',
@@ -334,102 +301,6 @@ export const BUILDING_ASSETS = Object.freeze({
       label: 'Farm Cabbage',
       tooltip: 'Farm Cabbage',
       icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22c1.25-.987 2.27-1.975 3.9-2.2a5.56 5.56 0 0 1 3.8 1.5 4 4 0 0 0 6.187-2.353 3.5 3.5 0 0 0 3.69-5.116A3.5 3.5 0 0 0 20.95 8 3.5 3.5 0 1 0 16 3.05a3.5 3.5 0 0 0-5.831 1.373 3.5 3.5 0 0 0-5.116 3.69 4 4 0 0 0-2.348 6.155C3.499 15.42 4.409 16.712 4.2 18.1 3.926 19.743 3.014 20.732 2 22"/><path d="M2 22 17 7"/></svg>' },
-    },
-    tags: ['farms', 'building'],
-  },
-  // Botte de foin
-  'Hay-Bale': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-b',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'farms',
-      editorGroup: null,
-      label: 'Hay Bale',
-      tooltip: 'Hay Bale',
-      icon: { kind: 'emoji', value: '🌾' },
-    },
-    tags: ['farms', 'building'],
-  },
-  // Chariot de foin
-  'Hay-Cart': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-h',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'farms',
-      editorGroup: null,
-      label: 'Hay Cart',
-      tooltip: 'Hay Cart',
-      icon: { kind: 'emoji', value: '🛒' },
-    },
-    tags: ['farms', 'building'],
-  },
-  // Meule de foin
-  'Hay-Pile': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-i',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'farms',
-      editorGroup: null,
-      label: 'Hay Pile',
-      tooltip: 'Hay Pile',
-      icon: { kind: 'emoji', value: '📦' },
     },
     tags: ['farms', 'building'],
   },
@@ -788,38 +659,6 @@ export const BUILDING_ASSETS = Object.freeze({
       icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-l.png' },
     },
     tags: ['public', 'building'],
-  },
-  // Librairie — chargée depuis viking_carrot_farm_v1.glb (hors GLB partagé)
-  'BookShop-001': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'commercial',
-      buildingId: 'Kenney-Commercial-building-e',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: true,
-      receiveShadow: true,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'public',
-      editorGroup: null,
-      label: 'BookShop 001',
-      tooltip: 'BookShop 001',
-      icon: { kind: 'emoji', value: '📚' },
-    },
-    tags: ['public', 'building', 'standalone-glb'],
   },
   // Chapelle (alias de sauvegarde legacy, réutilise le mesh Chapel — upright-ness non forcée par nom pour cet id, dépend de la détection runtime isLocalYUpMesh)
   'Church-002': {

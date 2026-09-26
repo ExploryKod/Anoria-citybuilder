@@ -22,7 +22,6 @@ export const infoObjectOverlay = document.querySelector('.info-building-overlay'
 export const infoObjectCloseBtn = document.querySelector('.info-building-overlay .panel-close-btn');
 export {
     buildingsObjects,
-    palaces,
     farms,
 } from '../../../shared/building-catalog/index.js';
 export { houses, commerce } from '../../three/assets/buildingCategories.js';
@@ -141,7 +140,6 @@ export const bullDozeButton = document.getElementById('bulldoze-btn');
 export const selectButton = document.getElementById('select-btn');
 export const playerButton = document.getElementById('player-btn');
 export const housesButton = document.getElementById('residential-btn');
-export const palacesButton = document.getElementById('palace-btn');
 export const farmsButton = document.getElementById('farm-btn');
 export const industryButton = document.getElementById('industry-btn');
 export const marketButton = document.getElementById('market-btn');

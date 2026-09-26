@@ -1,4 +1,4 @@
-import { getPerCapitaDemand, getSuppliedCategories } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getPerCapitaDemand } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { totalFoodFromStocks } from '../value-objects/FoodStocks.js';
 
 /**
@@ -36,13 +36,4 @@ export function checkFoodAffluence(stocks, population = 0) {
     meetsFoodGoal,
     isInsufficient,
   };
-}
-
-/**
- * @param {import('../value-objects/FoodStocks.js').FoodStocks | null | undefined} stocks
- * @returns {number}
- */
-export function countAvailableCropTypes(stocks) {
-  if (!stocks) return 0;
-  return getSuppliedCategories().filter((category) => (stocks[category] || 0) > 0).length;
 }

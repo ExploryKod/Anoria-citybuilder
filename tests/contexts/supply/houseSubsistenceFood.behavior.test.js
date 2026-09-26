@@ -79,7 +79,7 @@ const period = (monthIndex) => ({ season: 'Été', year: 0, monthIndex });
 
 describe('Supply — household gathering declared in the catalog', () => {
   test('every house type declares the gathering entry, with the same categories as its diet', () => {
-    for (const type of ['House-Blue', 'House-Red', 'House-Purple', 'House-2Story']) {
+    for (const type of ['House-Blue', 'House-Red', 'House-Purple']) {
       const producer = getResourceRoles(type).find((entry) => entry.role === 'producer');
       expect(producer).toBeDefined();
       expect(producer.scale).toBe('building');

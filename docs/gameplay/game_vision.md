@@ -63,7 +63,6 @@ Une fois par **an** (mois de **novembre**, index 10) : **impôt citoyen** (25 �
 | Bâtiment | Route pour fonctionner ? | Route pour peupler / embaucher ? |
 |----------|--------------------------|----------------------------------|
 | **Maison (Bleue/Rouge/Violette)** | Non — niveau 1 autarcique sans route | Route requise seulement pour passer au niveau 2 (métier + emploi) |
-| **Palais (House-2Story)** | Oui (sinon population = 0) | Oui |
 | **Ferme** | Non pour embaucher ; oui pour récolte / opérations | Embauche sans route possible |
 | **Marché, moulin, grange, chai** | Oui | Oui (emploi) |
 
@@ -82,8 +81,6 @@ Depuis la refonte « groupes sociaux », la **couleur** d’une maison est un **
 | Rouge | Artisans-ouvriers | Alimentation (fermes), Industrie, Stockage (moulin/grange) |
 | Bleue | Commerçants | Commerce (marchés) |
 | Violette | Savants | Services publics (chapelle, librairie) |
-
-Le **Palais** (House-2Story) reste à part : c’est toujours l’ancien mécanisme d’élites (nourriture abondante + variété), débranché du nouveau système de groupes en attendant une passe dédiée.
 
 ### Niveaux (progression par instance)
 

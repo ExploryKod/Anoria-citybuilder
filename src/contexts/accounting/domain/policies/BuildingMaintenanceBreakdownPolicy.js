@@ -16,7 +16,6 @@ const DEFAULT_MAINTENANCE_COSTS = Object.freeze({
   'House-Blue': buildingCatalog['House-Blue'].accounting.maintenance,
   'House-Red': buildingCatalog['House-Red'].accounting.maintenance,
   'House-Purple': buildingCatalog['House-Purple'].accounting.maintenance,
-  'House-2Story': buildingCatalog['House-2Story'].accounting.maintenance,
   Farm: 2,
   Market: 2,
 });
@@ -35,8 +34,7 @@ function classifyMaintenanceBuilding(type, maintenanceCosts) {
   if (
     type === 'House-Blue' ||
     type === 'House-Red' ||
-    type === 'House-Purple' ||
-    type === 'House-2Story'
+    type === 'House-Purple'
   ) {
     return { category: 'houses', cost: maintenanceCosts['House-Blue'] };
   }
@@ -122,7 +120,6 @@ export function accumulateBuildingMaintenanceBreakdown(
       type === 'House-Blue' ||
       type === 'House-Red' ||
       type === 'House-Purple' ||
-      type === 'House-2Story' ||
       type.includes('House')
     ) {
       cost = maintenanceCosts['House-Blue'];

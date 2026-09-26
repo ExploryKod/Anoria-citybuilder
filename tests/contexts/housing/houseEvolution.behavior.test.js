@@ -1,11 +1,9 @@
 /**
  * Behavior tests — Housing: house progression.
  *
- * Blue/Red/Purple houses are permanent social groups (see
+ * Houses are permanent social groups (see
  * `HouseGroupSectorEligibilityPolicy` in Employment); only their `level`
  * (1 = autarky, 2 = group profession) evolves — see `HouseLevelPolicy`.
- * Palace (`House-2Story`) keeps its own frozen color-ladder path via
- * `HouseEvolutionPolicy.resolveHouseEvolution`.
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
@@ -13,12 +11,7 @@ import { createHousingBuildingSnapshot } from '../../../src/contexts/housing/dom
 import {
   HOUSE_TYPE_BLUE,
   HOUSE_TYPE_RED,
-  HOUSE_TYPE_PALACE,
 } from '../../../src/contexts/housing/domain/HouseTypeCatalog.js';
-import {
-  resolveHouseEvolution,
-  popAfterPalaceRegression,
-} from '../../../src/contexts/housing/domain/policies/HouseEvolutionPolicy.js';
 import {
   HOUSE_LEVEL_AUTARKY,
   HOUSE_LEVEL_SPECIALIZED,
@@ -49,23 +42,6 @@ class InMemoryHousingEvolutionRepository {
     const house = this.raw.get(houseId);
     house.level = targetLevel;
     house.pop = targetPop;
-  }
-
-  async applyEvolution({ oldId, targetType, targetPop }) {
-    const house = this.raw.get(oldId);
-    const newId = `${targetType}-${house.x}-${house.y}`;
-    if (newId !== oldId) {
-      this.raw.delete(oldId);
-      this.raw.set(newId, {
-        ...house,
-        id: newId,
-        type: targetType,
-        pop: targetPop,
-      });
-    } else {
-      house.pop = targetPop;
-    }
-    return { newId, previousId: oldId };
   }
 }
 
@@ -274,19 +250,6 @@ describe('Housing — house progression', () => {
     });
   });
 
-  describe('Palace evolution (frozen legacy path — HouseEvolutionPolicy)', () => {
-    test('palace regresses when palace conditions fail', () => {
-      const result = resolveHouseEvolution({
-        type: HOUSE_TYPE_PALACE,
-        pop: 7,
-        roadCount: 1,
-        stocks: { food: 2, wheat: 2 },
-      });
-      expect(result.targetType).toBe(HOUSE_TYPE_RED);
-      expect(result.targetPop).toBe(popAfterPalaceRegression(HOUSE_TYPE_PALACE, 7));
-    });
-  });
-
   describe('EvolveHouseBuilding command', () => {
     let repo;
     let command;
@@ -326,22 +289,6 @@ describe('Housing — house progression', () => {
       expect(result.changed).toBe(false);
       expect(result.targetType).toBe(HOUSE_TYPE_BLUE);
       expect(result.targetLevel).toBe(1);
-    });
-
-    test('Palace houses still use the frozen resolveHouseEvolution path', async () => {
-      repo = new InMemoryHousingEvolutionRepository([
-        house(`${HOUSE_TYPE_PALACE}-2-3`, HOUSE_TYPE_PALACE, {
-          pop: 7,
-          roadCount: 1,
-          stocks: { food: 2, wheat: 2 },
-        }),
-      ]);
-      command = new EvolveHouseBuilding(repo);
-
-      const result = await command.execute({ houseId: `${HOUSE_TYPE_PALACE}-2-3` });
-      expect(result.changed).toBe(true);
-      expect(result.targetType).toBe(HOUSE_TYPE_RED);
-      expect(result.houseId).toBe(`${HOUSE_TYPE_RED}-2-3`);
     });
   });
 

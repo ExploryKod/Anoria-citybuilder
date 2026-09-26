@@ -61,7 +61,6 @@
     --house-red-color:var(--red-300);
     --house-purple-color: #a90aa9;
     --house-blue-color: #191EA6FF;
-    --house-big-color: #ffc107;
 
     /* Taille des textes */
     --pre-title-size: 30px;
@@ -966,19 +965,6 @@ canvas.pointer-events-disabled {
 .panel-layout .panel-inner #House-Blue.selected {
     box-shadow: none;
     background: var(--house-blue-color);
-    color: #fafafa;
-}
-
-.panel-layout .panel-inner #House-2Story {
-    background-color: #fafafa;
-    color: var(--house-big-color);
-    box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
-}
-
-.panel-layout .panel-inner #House-2Story:hover,
-.panel-layout .panel-inner #House-2Story.selected {
-    box-shadow: none;
-    background: var(--house-big-color);
     color: #fafafa;
 }
 

@@ -45,9 +45,6 @@ export const ASSET_IDS_BY_CATEGORY = Object.freeze({
     'Farm-Wheat',
     'Farm-Carrot',
     'Farm-Cabbage',
-    'Hay-Bale',
-    'Hay-Cart',
-    'Hay-Pile',
   ]),
   industry: Object.freeze([
     'Windmill-001',
@@ -69,7 +66,6 @@ export const ASSET_IDS_BY_CATEGORY = Object.freeze({
   ]),
   public: Object.freeze([
     'Chapel',
-    'BookShop-001',
     'School',
     'Library',
     'Doctor',
@@ -79,7 +75,6 @@ export const ASSET_IDS_BY_CATEGORY = Object.freeze({
     'Cinema',
     'Pub',
   ]),
-  palaces: Object.freeze(['House-2Story']),
   nature: Object.freeze([
     'Tree-Pine-001',
     'Tree-Square-001',

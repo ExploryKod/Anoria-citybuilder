@@ -9,8 +9,6 @@
 
 import { KENNEY_CITY_KIT_BUILDING_IDS } from './kenneyCityKitRegistry.generated.js';
 
-export const palaces = Object.freeze(['House-2Story']);
-
 export const farms = Object.freeze(['Farm-Wheat', 'Farm-Carrot', 'Farm-Cabbage']);
 
 /** Types that open the building info overlay when selected. */
@@ -24,7 +22,6 @@ export const buildingsObjects = Object.freeze([
   'Farm-Carrot',
   'Farm-Wheat',
   'Farm-Cabbage',
-  'House-2Story',
   'Windmill-001',
   ...KENNEY_CITY_KIT_BUILDING_IDS,
 ]);

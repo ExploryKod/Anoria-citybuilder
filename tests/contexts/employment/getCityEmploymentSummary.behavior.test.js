@@ -7,8 +7,6 @@ import { createEmploymentBuildingSnapshot } from '../../../src/contexts/employme
 import {
   workerPopFromHouse,
   citizenPopFromHouse,
-  popAfterPalaceEvolution,
-  popAfterPalaceRegression,
   maxTotalPopForHouse,
 } from '../../../src/contexts/employment/domain/policies/LaborPoolPolicy.js';
 import { computeCityEmploymentSummary } from '../../../src/contexts/employment/domain/computeCityEmploymentSummary.js';
@@ -56,18 +54,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(workerPopFromHouse('House-Blue', 5)).toBe(5);
     });
 
-    test('palace pop=7: all 7 residents are citizens and workers', () => {
-      expect(citizenPopFromHouse('House-2Story', 7)).toBe(7);
-      expect(workerPopFromHouse('House-2Story', 7)).toBe(7);
-    });
-
-    test('palace evolution adds +1 pop; regression goes back to the regular cap', () => {
-      expect(popAfterPalaceEvolution(6)).toBe(7);
-      expect(popAfterPalaceRegression('House-2Story', 7)).toBe(6);
-    });
-
-    test('palace max total pop is 7 at this stage', () => {
-      expect(maxTotalPopForHouse('House-2Story')).toBe(7);
+    test('a house holds at most 6 residents', () => {
       expect(maxTotalPopForHouse('House-Blue')).toBe(6);
     });
 
@@ -84,7 +71,6 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(residentialGroupForType('House-Blue')).toBe('merchants');
       expect(residentialGroupForType('House-Red')).toBe('artisans');
       expect(residentialGroupForType('House-Purple')).toBe('scholars');
-      expect(residentialGroupForType('House-2Story')).toBeNull();
       expect(residentialGroupForType('Farm-Wheat')).toBeNull();
     });
 
@@ -104,7 +90,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
     test('worker pool counts every resident of a road-served house; totalPopulation = worker pool', () => {
       const summary = computeCityEmploymentSummary([
         house('h1', 5, 1),
-        house('h2', 7, 1, 'House-2Story'),
+        house('h2', 7, 1, 'House-Red'),
         house('h3', 4, 0), // no road
       ]);
 

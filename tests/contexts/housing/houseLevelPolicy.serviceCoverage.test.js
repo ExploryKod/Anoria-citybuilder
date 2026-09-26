@@ -30,7 +30,7 @@ describe('HouseLevelPolicy — relevantServiceCoverageRequirements', () => {
     ]);
   });
 
-  test('no residential group (e.g. a palace) has no service requirements to show', () => {
+  test('no residential group has no service requirements to show', () => {
     expect(relevantServiceCoverageRequirements({ level: 2, residentialGroup: null })).toEqual([]);
   });
 });

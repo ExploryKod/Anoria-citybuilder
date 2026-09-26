@@ -9,7 +9,7 @@ City metric: **total residents across residential houses**.
 ## Formula (v1)
 
 ```
-totalPop = Σ pop   (residential houses only: Blue, Red, Purple, Palace)
+totalPop = Σ pop   (residential houses only: Blue, Red, Purple)
 houseCount = number of residential rows
 ```
 

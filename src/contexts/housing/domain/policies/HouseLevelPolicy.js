@@ -1,8 +1,7 @@
 /**
  * House level (tier) policy — Blue/Red/Purple houses only.
  *
- * Replaces the old color-ladder (`HouseEvolutionPolicy.resolveHouseEvolution`)
- * for these three types: the house color (`type`) is a permanent social-group
+ * The house color (`type`) is a permanent social-group
  * marker set once at placement and never changes again. Only `level` evolves
  * per instance, one tier at a time, driven entirely by each social
  * category's declarative `tiers` (see shared/population/socialCategoryCatalog.js):
@@ -11,8 +10,6 @@
  * No tier count or requirement kind is hardcoded here — add a tier, or
  * change what unlocks one, in the catalog only.
  *
- * Palace (`House-2Story`) keeps its own frozen path in `HouseEvolutionPolicy`
- * — see `EvolveHouseBuilding` — untouched by this module.
  */
 
 import { maxPopulationForLevel } from './HouseCapacityPolicy.js';

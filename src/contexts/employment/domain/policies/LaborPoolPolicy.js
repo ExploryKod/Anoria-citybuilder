@@ -1,8 +1,7 @@
 /**
  * House population: every resident is a citizen, worker-eligible.
  *
- * - Regular house: pop = citizens (max 6).
- * - Palace: one more slot than a regular house (pop 7).
+ * - House: pop = citizens (max 6).
  *
  * Which SKILL a house's citizens can work with, at which level, is a
  * catalog fact (shared/population/socialCategoryCatalog.js via
@@ -10,30 +9,18 @@
  * it doesn't gate who's employable.
  */
 
-/** Max citizen slots per house (regular or palace). */
+/** Max citizen slots per house. */
 export const HOUSE_CITIZEN_CAP = 6;
 
-/** Max total pop for a regular house (citizens only). */
+/** Max total pop for a house (citizens only). */
 export const REGULAR_HOUSE_MAX_POP = HOUSE_CITIZEN_CAP;
-
-/** Max total pop for a palace (one slot more than a regular house). */
-export const PALACE_MAX_POP = HOUSE_CITIZEN_CAP + 1;
-
-/**
- * @param {string} type
- * @returns {boolean}
- */
-export function isPalaceHouseType(type) {
-  const t = type || '';
-  return t.includes('2Story') || t.includes('2-Story');
-}
 
 /**
  * @param {string} type
  * @returns {number}
  */
-export function maxTotalPopForHouse(type) {
-  return isPalaceHouseType(type) ? PALACE_MAX_POP : REGULAR_HOUSE_MAX_POP;
+export function maxTotalPopForHouse(_type) {
+  return REGULAR_HOUSE_MAX_POP;
 }
 
 /**
@@ -75,24 +62,4 @@ export function citizenPopFromHouse(_type, pop) {
  */
 export function workerPopFromHouse(type, pop) {
   return citizenPopFromHouse(type, pop);
-}
-
-/**
- * Pop granted when a house evolves into a palace (one more resident).
- * @param {number} currentPop
- * @returns {number}
- */
-export function popAfterPalaceEvolution(currentPop) {
-  return clampPop(currentPop) + 1;
-}
-
-/**
- * Pop after palace regression (back to the regular house cap).
- * @param {string} palaceType
- * @param {number} currentPop
- * @returns {number}
- */
-export function popAfterPalaceRegression(palaceType, currentPop) {
-  const p = clampPop(currentPop);
-  return isPalaceHouseType(palaceType) ? Math.min(p, HOUSE_CITIZEN_CAP) : p;
 }

@@ -20,7 +20,6 @@ import {
 import {
     buildingPlacementCatalog,
     buildingsObjects,
-    palaces,
 } from '../../shared/building-catalog/index.js';
 import { houses } from './assets/buildingCategories.js';
 import { applyRoleStatusSprites, isQuantityDistributor } from './meshs/roleStatusSprites.js';
@@ -679,7 +678,7 @@ export function createScene(_gameStore, assetManager, deps) {
         async function syncResidentialHouseMeshFromDb(x, y, meshBuildingId) {
             if (
                 !meshBuildingId ||
-                (!houses.includes(meshBuildingId) && !palaces.includes(meshBuildingId))
+                !houses.includes(meshBuildingId)
             ) {
                 return { buildingId: meshBuildingId, instanceId: null, synced: false };
             }
@@ -1011,7 +1010,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 // Never sync residential FROM Dexie onto a cleared tile (bulldoze / orphan)
                 if (
                     tileBuildingId &&
-                    (houses.includes(currentBuildingId) || palaces.includes(currentBuildingId))
+                    houses.includes(currentBuildingId)
                 ) {
                     const residentialSync = await syncResidentialHouseMeshFromDb(
                         x,
@@ -1077,7 +1076,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     if (
                         !buildingExists &&
                         tileBuildingId &&
-                        (houses.includes(currentBuildingId) || palaces.includes(currentBuildingId))
+                        houses.includes(currentBuildingId)
                     ) {
                         const tileHouse = await housing.getResidentialHouseAt({ x, y });
                         if (tileHouse) {
@@ -1229,8 +1228,8 @@ export function createScene(_gameStore, assetManager, deps) {
                     });
                 }
 
-                //  only update if current building is a house or palace
-                if((houses.includes(currentBuildingId) || palaces.includes(currentBuildingId)) && buildings[x][y]) {
+                //  only update if current building is a house
+                if(houses.includes(currentBuildingId) && buildings[x][y]) {
 
                     // Initialize stocks if not present
                     if(!Object.hasOwn(buildings[x][y], 'userData') || !Object.hasOwn(buildings[x][y].userData, 'stocks')) {
@@ -1325,7 +1324,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 const tileType = city.tiles[nx]?.[ny]?.buildingId;
                 const instanceId = city.tiles[nx]?.[ny]?.instanceId;
                 if (!instanceId || !tileType) continue;
-                const isResidential = houses.includes(tileType) || palaces.includes(tileType);
+                const isResidential = houses.includes(tileType);
                 if (!isResidential) continue;
                 const meshType = buildings[nx]?.[ny]?.userData?.type || buildings[nx]?.[ny]?.userData?.id;
                 await syncResidentialHouseMeshFromDb(nx, ny, meshType || tileType);

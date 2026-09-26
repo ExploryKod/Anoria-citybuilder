@@ -1,11 +1,8 @@
 import { SOCIAL_CATEGORY } from '../../../../shared/population/socialCategoryCatalog.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 
-/** Max citizen slots per house (regular or palace) — beyond this a resident counts as élite. */
+/** Max citizen slots per house. */
 export const HOUSE_CITIZEN_CAP = 6;
-
-/** Max total pop for a palace (citizen slots + 1 élite slot at this stage). */
-export const PALACE_MAX_POP = HOUSE_CITIZEN_CAP + 1;
 
 /**
  * Population ceiling of a house of `group` at `level`, straight from the
@@ -31,15 +28,6 @@ export function residentialGroupOfType(type) {
 }
 
 /**
- * @param {string} type
- * @returns {boolean}
- */
-export function isPalaceHouseType(type) {
-  const t = type || '';
-  return t.includes('2Story') || t.includes('2-Story');
-}
-
-/**
  * Residential house types that participate in population growth.
  * @param {string} type
  * @returns {boolean}
@@ -49,9 +37,7 @@ export function isResidentialHouseType(type) {
   return (
     t.includes('House-Blue') ||
     t.includes('House-Red') ||
-    t.includes('House-Purple') ||
-    t.includes('House-2Story') ||
-    t.includes('House_2Story')
+    t.includes('House-Purple')
   );
 }
 
@@ -61,5 +47,5 @@ export function isResidentialHouseType(type) {
  */
 export function maxPopulationForHouseType(type) {
   if (!isResidentialHouseType(type)) return 0;
-  return isPalaceHouseType(type) ? PALACE_MAX_POP : maxPopulationForLevel(1, residentialGroupOfType(type));
+  return maxPopulationForLevel(1, residentialGroupOfType(type));
 }

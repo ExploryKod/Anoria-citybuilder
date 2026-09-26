@@ -3,7 +3,7 @@ import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../building-catalog/kenneyCityK
 /**
  * Economy facts (price, category, employment, accounting, residentialGroup,
  * displayName) for the playable-building theme — houses, farms, industry,
- * markets, infrastructure, public, palaces. See buildingCatalog.js for the
+ * markets, infrastructure, public. See buildingCatalog.js for the
  * merged, compat-shaped export every bounded context still reads.
  *
  * Kenney building ids are folded in from their own auto-generated registry
@@ -186,7 +186,7 @@ export const BUILDING_ECONOMY = {
   // Houses — color = permanent social group (never changes after placement).
   // Mutable progression (autarky vs specialized profession) lives in `level`,
   // a per-instance house row field owned by Housing — not a catalog fact.
-  // Every house/palace holds one 'flag' consumer entry per service category:
+  // Every house holds one 'flag' consumer entry per service category:
   // faith (Chapel) + one per service building (school, library, doctor,
   // hospital, publicBath, theatre, cinema, pub) — see
   // shared/population/socialCategoryCatalog.js for which tier requires
@@ -214,14 +214,6 @@ export const BUILDING_ECONOMY = {
     accounting: { maintenance: 6 },
     residentialGroup: 'scholars',
     resourceRoles: HOUSE_RESOURCE_ROLES
-  },
-
-  // Palaces
-  'House-2Story': {
-    displayName: 'Palais',
-    construction: { price: 20, category: 'palaces' },
-    accounting: { maintenance: 6 },
-    resourceRoles: HOUSE_RESOURCE_ROLES,
   },
 
   // Farms — fields, no road needed (`requiresRoad: false`): they employ, produce
@@ -271,9 +263,6 @@ export const BUILDING_ECONOMY = {
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
   },
-  'Hay-Bale': { displayName: 'Botte de foin', construction: { price: 2, category: 'farms' } },
-  'Hay-Cart': { displayName: 'Chariot de foin', construction: { price: 5, category: 'farms' } },
-  'Hay-Pile': { displayName: 'Meule de foin', construction: { price: 2, category: 'farms' } },
 
   // Pottery workshops (2026-09-08) — a second independent quantity-good
   // chain, proving `demandMet`/`goodsVariety` (see HouseTierRequirementPolicy.js)
@@ -479,15 +468,6 @@ export const BUILDING_ECONOMY = {
       schedule: { unit: 'always' },
       consumption: 'flag',
     }],
-  },
-  // requiredSkill: 'education' (2026-09-10) — same skill/level as Library
-  // below (scholars' tier-4 skill); BookShop-001 is the earlier of the two
-  // library buildings and doesn't itself distribute a coverage flag (no
-  // `resourceRoles`) — kept placeable and staffable regardless.
-  'BookShop-001': {
-    displayName: 'Librairie',
-    construction: { price: 60, category: 'public' },
-    employment: { sector: 6, workerNeed: 2, requiredSkill: 'education' },
   },
   // Legacy save alias — same building as Chapel, kept for old saves
   'Church-002': { displayName: 'Chapelle', construction: { price: 60, category: 'public' } },

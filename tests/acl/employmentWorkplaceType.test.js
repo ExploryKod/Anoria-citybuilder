@@ -16,7 +16,6 @@ describe('ACL Employment — isEmploymentWorkplaceType', () => {
 
   test('houses and roads are excluded', () => {
     expect(isEmploymentWorkplaceType('House-Blue')).toBe(false);
-    expect(isEmploymentWorkplaceType('House-2Story')).toBe(false);
     expect(isEmploymentWorkplaceType('roads')).toBe(false);
     expect(isEmploymentWorkplaceType('StonePath-001')).toBe(false);
   });

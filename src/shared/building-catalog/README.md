@@ -6,7 +6,7 @@
 |---|---|---|
 | `buildingCatalog` | `buildingCatalog.js` | **Fichier central** — un objet par type, sections par bounded context (`construction`, `employment`, `accounting`, `displayName`) |
 | `assetsPrices` | `assetsPrices.js` | Dérivé de `buildingCatalog` — coût, catégorie UI, empreinte |
-| `houses`, `palaces`, `farms`, `commerce`, `factories` | `buildingCategories.js` | Filtres tick / logique |
+| `houses`, `farms`, `commerce`, `factories` | `buildingCategories.js` | Filtres tick / logique |
 | `wantedHouses` | `buildingCategories.js` | Variantes résidentielles (mesh loader) |
 | `buildingsObjects` | `buildingCategories.js` | Types ouvrant l’overlay info |
 

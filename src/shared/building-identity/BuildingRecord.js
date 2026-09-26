@@ -12,7 +12,6 @@ import {
   initialTierForToolId,
   isResidentialKind,
   resolveBuildingKind,
-  tierForResidentialType,
 } from './BuildingKind.js';
 
 /**
@@ -182,25 +181,4 @@ export function displayLabelFromHouseRow(row) {
  */
 export function toDisplayLabel(type, x, y) {
   return toBuildingIdString(type, x, y);
-}
-
-/**
- * Apply residential tier + type on an existing canonical row shape (evolution write).
- *
- * @param {object} params
- * @param {string} params.instanceId
- * @param {string} params.targetType
- * @param {number} [params.targetTier]
- */
-export function residentialTierPatch({ instanceId, targetType, targetTier }) {
-  assertBuildingInstanceId(instanceId);
-  const type = targetType || '';
-  const tier =
-    typeof targetTier === 'number'
-      ? targetTier
-      : tierForResidentialType(type);
-  return {
-    type,
-    tier,
-  };
 }

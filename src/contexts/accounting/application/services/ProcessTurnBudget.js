@@ -21,7 +21,6 @@ export class ProcessTurnBudget {
    * @param {() => Promise<number>} deps.getCityTotalPopulation
    * @param {() => Promise<{ unemployed: number }>} deps.getCityEmploymentSummary
    * @param {() => { salaryPerMonth: number, salaryTaxRate: number, unemploymentBenefitRate: number }} deps.getSalarySettings
-   * @param {() => Promise<object>} deps.clearPopulationWithoutRoadAccess
    * @param {() => Promise<void>|void} [deps.processLoanPayments]
    * @param {() => Promise<object>} deps.recalculateLoanTotals
    * @param {Function} deps.saveBudgetTurnEnrichment
@@ -228,11 +227,6 @@ export class ProcessTurnBudget {
           );
           this.lastMaintenanceCivilKey = civilMonthKey;
         }
-      }
-
-      const populationResult = await this.deps.clearPopulationWithoutRoadAccess();
-      if (populationResult.totalPopulationLost > 0) {
-        console.warn(`⚠️ ${populationResult.message}`);
       }
 
       if (this.deps.processLoanPayments) {

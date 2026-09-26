@@ -35,7 +35,6 @@ export {
   HOUSE_TYPE_BLUE,
   HOUSE_TYPE_RED,
   HOUSE_TYPE_PURPLE,
-  HOUSE_TYPE_PALACE,
   RESIDENTIAL_TIER_BY_TYPE,
   RESIDENTIAL_TYPE_BY_TIER,
   normalizeResidentialTypeLabel,
@@ -56,5 +55,4 @@ export {
   resolveInstanceIdFromNeighborRef,
   displayLabelFromHouseRow,
   toDisplayLabel,
-  residentialTierPatch,
 } from './BuildingRecord.js';

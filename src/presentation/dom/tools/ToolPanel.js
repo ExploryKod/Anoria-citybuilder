@@ -95,7 +95,6 @@ export function bindToolPanelDeps(panelDeps) {
 const GROUP_CREATORS = {
   houses: () => fillPanelFromToolIds('houses'),
   residential: () => fillPanelFromToolIds('houses'),
-  palaces: () => fillPanelFromToolIds('palaces'),
   farms: () => fillPanelFromToolIds('farms'),
   industry: () => fillPanelFromToolIds('industry'),
   markets: () => fillPanelFromToolIds('markets', { exclude: ['Market-Stall'] }),
@@ -188,10 +187,6 @@ export function toggleModal(e) {
     panelLayout.classList.remove('active');
     panelLayout.setAttribute('inert', '');
     panelLayout.setAttribute('aria-hidden', 'true');
-    return;
-  }
-
-  if (group === 'palaces' && deps?.buttonStateManager && !deps.buttonStateManager.isEnabled('palace-btn')) {
     return;
   }
 

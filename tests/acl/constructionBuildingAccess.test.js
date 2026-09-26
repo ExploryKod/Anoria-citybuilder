@@ -21,7 +21,7 @@ import {
   incrementBuildingField,
 } from '../../src/composition/constructionOps.js';
 import { getCityTotalBuildingValue, getCityBuildingPricesByType } from '../../src/composition/budgetOps.js';
-import { getCityTotalPopulation, getFamishedPopulation, clearPopulationWithoutRoadAccess } from '../../src/composition/housingOps.js';
+import { getCityTotalPopulation, getFamishedPopulation } from '../../src/composition/housingOps.js';
 
 describe('ACL Construction — building access', () => {
   beforeEach(async () => {
@@ -176,43 +176,5 @@ describe('ACL cross-context reads (formerly HousesStore facades)', () => {
     const byType = await getCityBuildingPricesByType();
     expect(byType['House-Blue']).toBe(10);
     expect(byType['Farm-Wheat']).toBe(20);
-  });
-
-  test('clearPopulationWithoutRoadAccess zeros pop without roads (Palace only — legacy safety net)', async () => {
-    // Blue/Red/Purple are level-based now (see HouseLevelPolicy): losing a
-    // road demotes level + clamps pop, it never hard-resets to 0 anymore.
-    const isolated = makeHouseRecord({
-      type: 'House-2Story',
-      x: 1,
-      y: 1,
-      extra: { pop: 3, roads: 0 },
-    });
-    const connected = makeHouseRecord({
-      type: 'House-2Story',
-      x: 2,
-      y: 2,
-      extra: { pop: 3, roads: 1 },
-    });
-    await seedBuilding(isolated);
-    await seedBuilding(connected);
-
-    const result = await clearPopulationWithoutRoadAccess();
-    expect(result.totalPopulationLost).toBe(3);
-    expect((await getBuildingRow(isolated.instanceId)).pop).toBe(0);
-    expect((await getBuildingRow(connected.instanceId)).pop).toBe(3);
-  });
-
-  test('clearPopulationWithoutRoadAccess leaves Blue/Red/Purple houses untouched (handled by HouseLevelPolicy instead)', async () => {
-    const isolated = makeHouseRecord({
-      type: 'House-Blue',
-      x: 1,
-      y: 1,
-      extra: { pop: 3, roads: 0 },
-    });
-    await seedBuilding(isolated);
-
-    const result = await clearPopulationWithoutRoadAccess();
-    expect(result.totalPopulationLost).toBe(0);
-    expect((await getBuildingRow(isolated.instanceId)).pop).toBe(3);
   });
 });

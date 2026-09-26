@@ -116,6 +116,22 @@ db.version(9).stores({}).upgrade(async (tx) => {
   await tx.table('houses').where('type').anyOf(RETIRED_BUILDING_TYPES).delete();
 });
 
+// v10: the hay bale, cart and pile are retired as well (village-era props, nothing to do in this game).
+const RETIRED_HAY_TYPES = ['Hay-Bale', 'Hay-Cart', 'Hay-Pile'];
+db.version(10).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').anyOf(RETIRED_HAY_TYPES).delete();
+});
+
+// v11: the bookshop is retired (the library does its job).
+db.version(11).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').equals('BookShop-001').delete();
+});
+
+// v12: the palace (House-2Story, the last of the elite mechanism) is retired.
+db.version(12).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').equals('House-2Story').delete();
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

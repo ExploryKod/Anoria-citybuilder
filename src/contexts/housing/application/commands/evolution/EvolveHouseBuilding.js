@@ -1,15 +1,11 @@
-import { resolveHouseEvolution } from '../../../domain/policies/HouseEvolutionPolicy.js';
 import { resolveHouseLevel } from '../../../domain/policies/HouseLevelPolicy.js';
-import { isPalaceHouseType } from '../../../domain/policies/HouseCapacityPolicy.js';
 import { residentialGroupForHouseType } from '../../../domain/policies/GroupSkillPolicy.js';
 
 /**
  * Command: evaluate and persist house progression for one residential building.
  *
- * - Palace (`House-2Story`): frozen legacy path — `resolveHouseEvolution`
- *   (color ladder), unchanged.
- * - Blue/Red/Purple: `HouseLevelPolicy` — color is permanent, only `level`
- *   (1 <-> 2) evolves.
+ * `HouseLevelPolicy` — the house's color (its social category) is permanent,
+ * only `level` evolves.
  */
 export class EvolveHouseBuilding {
   /**
@@ -43,50 +39,7 @@ export class EvolveHouseBuilding {
       return { changed: false, reason: 'house_not_found' };
     }
 
-    if (isPalaceHouseType(house.type)) {
-      return this.#executePalaceEvolution(house);
-    }
-
     return this.#executeLevelResolution(house, periodKey);
-  }
-
-  /** @param {import('../../../domain/HousingBuildingSnapshot.js').HousingBuildingSnapshot} house */
-  async #executePalaceEvolution(house) {
-    const resolution = resolveHouseEvolution({
-      type: house.type,
-      pop: house.pop,
-      roadCount: house.roadCount,
-      stocks: house.stocks,
-    });
-
-    if (!resolution.changed) {
-      return {
-        changed: false,
-        houseId: house.id,
-        previousType: resolution.previousType,
-        targetType: resolution.targetType,
-        previousPop: resolution.previousPop,
-        targetPop: resolution.targetPop,
-        reason: resolution.reason,
-      };
-    }
-
-    const { newId, previousId } = await this.repository.applyEvolution({
-      oldId: house.id,
-      targetType: resolution.targetType,
-      targetPop: resolution.targetPop,
-    });
-
-    return {
-      changed: true,
-      houseId: newId,
-      previousId,
-      previousType: resolution.previousType,
-      targetType: resolution.targetType,
-      previousPop: resolution.previousPop,
-      targetPop: resolution.targetPop,
-      reason: resolution.reason,
-    };
   }
 
   /**

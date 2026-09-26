@@ -421,7 +421,7 @@ export class SupplyTraceability {
   }
 
   /**
-   * Houses that went up or down a level (or changed type, for a palace).
+   * Houses that went up or down a level.
    * @param {object} timeInfo
    * @param {Array<{ houseId: string, previousType?: string, targetType?: string, previousLevel?: number, targetLevel?: number, previousPop?: number, targetPop?: number, reason?: string }>} changes
    */

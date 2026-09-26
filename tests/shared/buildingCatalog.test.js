@@ -19,11 +19,9 @@ import {
 } from '../../src/contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
 import { DEFAULT_MAINTENANCE_COSTS } from '../../src/contexts/accounting/domain/policies/BuildingMaintenanceBreakdownPolicy.js';
 import {
-  RESIDENTIAL_HOUSE_PRICES,
   HOUSE_TYPE_BLUE,
   HOUSE_TYPE_RED,
   HOUSE_TYPE_PURPLE,
-  HOUSE_TYPE_PALACE,
 } from '../../src/contexts/housing/domain/HouseTypeCatalog.js';
 import {
   buildPopulationDepartureMessage,
@@ -86,14 +84,6 @@ describe('buildingPlacementCatalog — derived from buildingCatalog', () => {
     expect(
       Object.keys(KENNEY_BUILDING_CATALOG_ENTRIES).every((id) => buildingCatalog[id] !== undefined)
     ).toBe(true);
-  });
-});
-
-describe('HouseTypeCatalog — no more duplicated house prices', () => {
-  test('RESIDENTIAL_HOUSE_PRICES matches buildingPlacementCatalog for every house type', () => {
-    for (const type of [HOUSE_TYPE_BLUE, HOUSE_TYPE_RED, HOUSE_TYPE_PURPLE, HOUSE_TYPE_PALACE]) {
-      expect(RESIDENTIAL_HOUSE_PRICES[type]).toBe(buildingPlacementCatalog[type].price);
-    }
   });
 });
 

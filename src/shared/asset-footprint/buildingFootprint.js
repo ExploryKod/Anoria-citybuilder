@@ -22,7 +22,6 @@ export const BUILDING_FOOTPRINT = Object.freeze({
       Object.freeze({ width: entry.construction.footprintWidth, depth: entry.construction.footprintDepth }),
     ])
   ),
-  'BookShop-001': Object.freeze({ width: 1, depth: 1 }),
   'Church-002': Object.freeze({ width: 1, depth: 1 }),
   // Service layers reassign their geometry to Kenney commercial/industrial
   // meshes (see buildingAssets.js) — footprint must match that prefab's real
@@ -49,10 +48,6 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'Factory-Furniture': Object.freeze({ width: 2, depth: 2 }),
   'Warehouse': Object.freeze({ width: 3, depth: 2 }),
   'Lumberjack': Object.freeze({ width: 1, depth: 2 }),
-  'Hay-Bale': Object.freeze({ width: 1, depth: 1 }),
-  'Hay-Cart': Object.freeze({ width: 1, depth: 1 }),
-  'Hay-Pile': Object.freeze({ width: 1, depth: 1 }),
-  'House-2Story': Object.freeze({ width: 1, depth: 1 }),
   // House-Blue/Purple/Red reassign their geometry to Kenney suburban
   // building-type-b/c/a (see buildingAssets.js) — footprint must match that
   // prefab's real size, not the village-era 1x1 these ids used to be.
