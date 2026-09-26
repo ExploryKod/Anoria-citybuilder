@@ -194,6 +194,9 @@
  *   stock for markets to pull from).
  * @property {string} [naturalResource] The kind of natural resource this
  *   building IS (a tree is 'wood'). Matched against a producer's `source`.
+ * @property {number} [roadRange] How far a road may be for this building to count as connected: tiles of
+ *   Manhattan distance from ANY tile of its footprint to a road tile. Omitted means 1 (a road touching it).
+ *   Only meaningful when the building needs a road (see `requiresRoad`).
  * @property {boolean} [requiresRoad] Whether the building needs a road next to
  *   it to work: to employ, to produce, to trade, to be served, to host
  *   inhabitants. Omitted means true. `false` means NOTHING the building does

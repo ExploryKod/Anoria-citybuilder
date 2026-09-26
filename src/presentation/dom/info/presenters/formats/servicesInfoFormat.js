@@ -36,8 +36,8 @@ export function formatServicesModel(vm) {
       ariaLabel: !roadRequired
         ? 'Route non requise'
         : hasRoad
-          ? `${roadCount} route${roadCount > 1 ? 's' : ''} adjacente${roadCount > 1 ? 's' : ''}`
-          : 'Aucune route adjacente',
+          ? `${roadCount} route${roadCount > 1 ? 's' : ''} à portée`
+          : 'Aucune route à portée',
     },
   ];
 

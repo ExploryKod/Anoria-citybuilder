@@ -24,6 +24,7 @@ export function applyRoadMaterialToTerrainTile(terrainRoot, roadMaterial, placem
   root.name = 'roads';
   root.userData.id = 'roads';
   root.userData.type = 'roads';
+  root.userData.catalogId = 'roads';
   root.userData.isRoad = true;
   root.userData.x = placement.x;
   root.userData.y = placement.y;
@@ -47,6 +48,7 @@ export function restoreGrassMaterialOnTerrainTile(terrainRoot, grassMaterial, pl
   root.name = 'grass';
   root.userData.id = 'grass';
   root.userData.type = 'grass';
+  root.userData.catalogId = 'grass';
   root.userData.isRoad = false;
   root.rotation.y = 0;
   root.userData.x = placement.x;

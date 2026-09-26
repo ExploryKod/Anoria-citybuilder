@@ -171,6 +171,13 @@ export async function bootstrapGameSession(assetManager) {
 
   bindSessionRuntime({ game });
 
+  // Dev only: console commands that hand a diagnostic to the dev server (see composition/devDiagnostics.js).
+  if (import.meta.env.DEV) {
+    import('../../../composition/devDiagnostics.js').then(({ registerDevDiagnostics }) =>
+      registerDevDiagnostics({ getScene: () => game.scene })
+    );
+  }
+
   if (
     multiplayerEnabled &&
     playerPseudo &&

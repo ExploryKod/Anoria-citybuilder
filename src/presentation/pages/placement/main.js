@@ -5,7 +5,7 @@ import SceneAssetManager from '../../three/meshs/SceneAssetManager.js';
 import { getKenneyCityKitMeshAdapter } from '../../three/adapters/kenney-city-kit/KenneyCityKitMeshAdapter.js';
 import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
 import { resolveAndCreateBuildingMesh } from '../../three/meshs/resolveBuildingMesh.js';
-import { STATUS_ICON_DEFAULTS, STATUS_ICON_ANCHOR_OVERRIDES } from '../../three/meshs/statusIconAnchors.js';
+import { STATUS_ICON_DEFAULTS } from '../../three/meshs/statusIconAnchors.js';
 import { getLocalBoundingBox, resolveStatusIconPosition } from '../../three/meshs/meshUtils.js';
 import { textures } from '../../three/meshs/data.js';
 
@@ -166,13 +166,13 @@ function updateIconPreview() {
   );
 
   const buildingId = buildingSelect.value;
-  outputEl.textContent = JSON.stringify({ [buildingId]: { [iconKey]: { position: offset, scale } } }, null, 2);
+  outputEl.textContent = `// paste into buildingAssets.js, in the entry of "${buildingId}":\nstatusIcons: ${JSON.stringify({ [iconKey]: { position: offset, scale } }, null, 2)},`;
 }
 
 function resetInputsForIcon() {
   const buildingId = buildingSelect.value;
   const iconKey = iconSelect.value;
-  const override = STATUS_ICON_ANCHOR_OVERRIDES[buildingId]?.[iconKey];
+  const override = BUILDING_ASSETS[buildingId]?.statusIcons?.[iconKey];
   const defaultMeta = STATUS_ICON_DEFAULTS[iconKey];
   fillInputsFromOffsetScale(override?.position ?? defaultMeta.position, override?.scale ?? defaultMeta.scale);
   updateIconPreview();

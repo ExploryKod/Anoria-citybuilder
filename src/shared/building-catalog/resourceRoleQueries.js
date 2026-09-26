@@ -56,6 +56,27 @@ export function requiresRoad(buildingType) {
 }
 
 /**
+ * Manhattan tiles, from any tile of a building's footprint, within which a road connects it — the
+ * catalog's `roadRange`, 1 (a road touching it) when it declares none.
+ * @param {string | null | undefined} buildingType
+ * @returns {number}
+ */
+export function getRoadRange(buildingType) {
+  const range = getBuildingDefinition(buildingType)?.roadRange;
+  return Number.isFinite(range) && range >= 1 ? Math.floor(range) : 1;
+}
+
+/**
+ * Whether a building type is a workplace: the catalog gives it staff to hire. A type that lists an
+ * `employment` with no staff to hire (a road piece) is not one.
+ * @param {string | null | undefined} buildingType
+ * @returns {boolean}
+ */
+export function isWorkplaceType(buildingType) {
+  return (getBuildingDefinition(buildingType)?.employment?.workerNeed ?? 0) > 0;
+}
+
+/**
  * The road side of "can this building act": true when the type needs no road,
  * or when it has one. Every context asks this instead of comparing road counts.
  * @param {string | null | undefined} buildingType

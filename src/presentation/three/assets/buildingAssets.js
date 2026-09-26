@@ -52,6 +52,9 @@
  *    defaultStage, requiresStaff, idleStage, previewStage) — see
  *    kenneyFarmFieldAdapter.js. The game drives it through mesh.userData.applySeason(season)
  *    and mesh.userData.applyStaffing(staffed).
+ *  - statusIcons (optional): where and how big this building's status icons are (`{ [iconKey]: { position?, scale? } }`,
+ *    iconKey as in statusIconAnchors.js). An icon it does not list uses the generic default. Tuned per building,
+ *    because it depends on that building's mesh; the /placement.html tool prints the entry to paste.
  *  - cycleGraphics (optional): what a producer shows at each point of its cycle, declared as
  *    `[{ id, when | step, status }]` — `when` is a schedule on the game's time (seasons, months, ...),
  *    `step` names a step of the building's own production cycle (see buildingEconomy.js `cycle`), `status` is a
@@ -565,6 +568,8 @@ export const BUILDING_ASSETS = Object.freeze({
   // Étal bleu
   'Market-Stall-Blue': {
     source: 'kenneyCityKit',
+    // The generic road icon is too big for a market stall's mesh (tune with /placement.html).
+    statusIcons: { road: { scale: { x: 0.35, y: 0.35, z: 1 } } },
     geometry: {
       glb: null,
       sourceKey: null,
@@ -592,6 +597,8 @@ export const BUILDING_ASSETS = Object.freeze({
   // Étal rouge
   'Market-Stall-Red': {
     source: 'kenneyCityKit',
+    // The generic road icon is too big for a market stall's mesh (tune with /placement.html).
+    statusIcons: { road: { scale: { x: 0.35, y: 0.35, z: 1 } } },
     geometry: {
       glb: null,
       sourceKey: null,
@@ -943,6 +950,8 @@ export const BUILDING_ASSETS = Object.freeze({
   // the one placeable market (user request 2026-09-08).
   'Market-Stall': {
     source: 'kenneyCityKit',
+    // The generic road icon is too big for a market stall's mesh (tune with /placement.html).
+    statusIcons: { road: { scale: { x: 0.35, y: 0.35, z: 1 } } },
     geometry: {
       glb: null,
       sourceKey: null,

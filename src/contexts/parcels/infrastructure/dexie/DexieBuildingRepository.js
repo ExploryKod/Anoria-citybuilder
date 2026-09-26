@@ -17,6 +17,7 @@ export class DexieBuildingRepository {
       roadCount: house.roads ?? 0,
       x: house.x ?? null,
       y: house.y ?? null,
+      rotationStep: house.placementRotationStep ?? 0,
     });
   }
 
@@ -58,6 +59,14 @@ export class DexieBuildingRepository {
     const row = await db.houses.get(id);
     if (!row) return null;
     return this.#toSnapshot(row);
+  }
+
+  /** Road tiles, straight from the indexed `type` (a handful of rows, whatever the city's size). */
+  async findRoadTiles() {
+    const rows = await db.houses.where('type').startsWith('StonePath-').toArray();
+    return rows
+      .filter((row) => isActiveHamletRow(row) && row.x != null && row.y != null)
+      .map((row) => ({ x: row.x, y: row.y }));
   }
 
   async findAll() {

@@ -59,6 +59,19 @@ class InMemoryBuildingRepository {
     return Promise.all([...this.raw.keys()].map((id) => this.findById(id)));
   }
 
+  // The world's road tiles, as the fixtures describe them: every neighbour reference flagged as a road.
+  async findRoadTiles() {
+    const tiles = new Map();
+    for (const { neighbors } of this.raw.values()) {
+      for (const n of neighbors) {
+        const x = n.x ?? n.tile?.x;
+        const y = n.y ?? n.tile?.y;
+        if (n.isRoad) tiles.set(`${x},${y}`, { x, y });
+      }
+    }
+    return [...tiles.values()];
+  }
+
   async saveRoadAccess(buildingId, roadCount) {
     const entry = this.raw.get(buildingId);
     if (entry) entry.snapshot = { ...entry.snapshot, roadCount };

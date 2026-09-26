@@ -136,7 +136,7 @@ export function describeMapBuilding(building) {
     lines.push('Route non requise');
   } else {
     const roadCount = Number(building.roadCount || 0);
-    lines.push(roadCount > 0 ? `Routes adjacentes : ${roadCount}` : 'Pas de route');
+    lines.push(roadCount > 0 ? `Routes à portée : ${roadCount}` : 'Pas de route');
   }
 
   if (building.sectorName) {

@@ -1,4 +1,4 @@
-import { createEmptyStocks, getResourceStockShape, getAllCategoriesForRole, getResourceRoles, requiresRoad } from '../../shared/building-catalog/resourceRoleQueries.js';
+import { createEmptyStocks, getResourceStockShape, getAllCategoriesForRole, getResourceRoles, isWorkplaceType, requiresRoad } from '../../shared/building-catalog/resourceRoleQueries.js';
 import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
@@ -757,6 +757,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 buildings[x][y].userData.type = nextType;
                 buildings[x][y].userData.id = nextType;
                 buildings[x][y].userData.visualBuildingId = nextVisualId;
+                buildings[x][y].userData.catalogId = nextType;
             }
 
             return { buildingId: nextType, instanceId, synced: true };
@@ -892,15 +893,16 @@ export function createScene(_gameStore, assetManager, deps) {
         for(let x = 0; x < city.size; x++) {
             for(let y = 0; y < city.size; y++) {
                 // Processing city tile
-              let currentBuildingId = buildings[x][y]?.userData?.type || buildings[x][y]?.userData?.id;
+              // A mesh's logical identity (see resolveBuildingMesh.js), NOT its type / id: those are the visual
+              // ones, and a mesh built from a shared kit wears the kit piece's.
+              let currentBuildingId = buildings[x][y]?.userData?.catalogId;
               const tileBuildingId = city.tiles[x][y]?.buildingId;
               const tileInstanceId = city.tiles[x][y]?.instanceId;
               // Mesh may still be grass while city.tiles already holds the placed building
               if ((!currentBuildingId || currentBuildingId === 'grass') && tileBuildingId) {
                   currentBuildingId = tileBuildingId;
               }
-              const meshBuildingType =
-                  buildings[x][y]?.userData?.type || buildings[x][y]?.userData?.id;
+              const meshBuildingType = buildings[x][y]?.userData?.catalogId;
               const effectiveMeshType =
                   meshBuildingType && meshBuildingType !== 'grass' ? meshBuildingType : null;
               const needsMeshPlacement = Boolean(
@@ -1203,8 +1205,12 @@ export function createScene(_gameStore, assetManager, deps) {
                     continue;
                 }
 
+                // What the building IS for the catalog, stamped once on every mesh (see resolveBuildingMesh.js);
+                // its `type` / `id` are the visual ones and can be a kit piece's.
+                const catalogTypeId = buildings[x][y]?.userData?.catalogId;
+
                 // A building that buys and sells a stock keeps its own clock (a market).
-                if (isQuantityDistributor(currentBuildingId)) {
+                if (isQuantityDistributor(catalogTypeId)) {
                     await incrementBuildingField({
                         instanceId: currentInstanceId,
                         field: 'time',
@@ -1218,7 +1224,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 if (buildings[x][y]) {
                     await applyRoleStatusSprites(roleSpriteContext, {
                         mesh: buildings[x][y],
-                        type: currentBuildingId,
+                        type: catalogTypeId,
                         instanceId: currentInstanceId,
                     });
                 }
@@ -1402,7 +1408,8 @@ export function createScene(_gameStore, assetManager, deps) {
                 const mesh = buildings[x]?.[y];
                 if (!mesh?.userData) continue;
 
-                const currentBuildingId = mesh.userData.type || mesh.userData.id;
+                // What the building IS for the catalog (see the same note in scene.update).
+                const currentBuildingId = mesh.userData.catalogId;
                 if (!currentBuildingId) continue;
 
                 const instanceId =
@@ -1416,9 +1423,9 @@ export function createScene(_gameStore, assetManager, deps) {
                 mesh.userData.isUnderstaffed = understaffed.has(instanceId);
                 mesh.userData.applyStaffing?.(!mesh.userData.isUnderstaffed);
 
-                // Every workplace the catalog gives employment to follows the same status rules —
+                // Every workplace (a building the catalog gives staff to hire) follows the same status rules —
                 // no type is named here, only what the catalog says the building is.
-                const isWorkplace = Boolean(getBuildingDefinition(currentBuildingId)?.employment);
+                const isWorkplace = isWorkplaceType(currentBuildingId);
 
                 if (isWorkplace && requiresRoad(currentBuildingId)) {
                     const roadIcon = resolveIconAppearance(

@@ -1,5 +1,5 @@
 import { needsRoadAccess, withRoadNeed } from '../../domain/policies/BuildingTypePolicy.js';
-import { evaluateRoadAccess } from '../../domain/policies/RoadAccessPolicy.js';
+import { evaluateRoadAccessByRange } from '../../domain/policies/RoadAccessPolicy.js';
 import { createRoadAccessChanged } from '../../domain/events/RoadAccessChanged.js';
 
 /**
@@ -20,6 +20,7 @@ export class RecalculateAllRoadAccess {
    */
   async execute() {
     const buildings = await this.buildingRepository.findAll();
+    const roadTiles = await this.buildingRepository.findRoadTiles();
     const results = [];
     let updated = 0;
 
@@ -28,7 +29,7 @@ export class RecalculateAllRoadAccess {
         continue;
       }
 
-      const roadAccess = withRoadNeed(building.type, evaluateRoadAccess(building.neighbors));
+      const roadAccess = withRoadNeed(building.type, evaluateRoadAccessByRange(building, roadTiles));
       const previousRoadCount = building.roadCount;
       const hasChanged = roadAccess.roadCount !== previousRoadCount;
 
