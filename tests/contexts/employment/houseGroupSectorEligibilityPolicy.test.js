@@ -8,6 +8,7 @@ import {
   allPriorityTabs,
   exclusiveSkillsForGroup,
   groupsForSkill,
+  groupsProvidingSkill,
   sharedWorkplaceSkills,
   skillsForTab,
   tabForSkill,
@@ -89,6 +90,32 @@ describe('Employment — HouseGroupSectorEligibilityPolicy (skill/tab derivation
         for (const skillId of skillsForTab(tabId)) {
           expect(tabForSkill(skillId)).toBe(tabId);
         }
+      }
+    });
+  });
+
+  describe('groupsProvidingSkill — which kind of house fills a workplace', () => {
+    test('an exclusive skill names its one group and the house tier that starts providing it', () => {
+      expect(groupsProvidingSkill('stockage-alimentaire')).toEqual([{ group: 'scholars', tier: expect.any(Number) }]);
+      expect(groupsProvidingSkill('fermier')).toEqual([{ group: 'artisans', tier: 2 }]);
+    });
+
+    test('a shared skill lists every group that grants it, from their first tier', () => {
+      const chapel = groupsProvidingSkill('spiritual');
+      expect(chapel.map((entry) => entry.group).sort()).toEqual(['artisans', 'merchants', 'scholars']);
+      expect(chapel.every((entry) => entry.tier === 1)).toBe(true);
+    });
+
+    test('a higher level is only provided by the groups that reach it, and later', () => {
+      const level1 = groupsProvidingSkill('medical', 1);
+      const level2 = groupsProvidingSkill('medical', 2);
+      expect(level2.length).toBeGreaterThan(0);
+      expect(level2[0].tier).toBeGreaterThan(level1[0].tier);
+    });
+
+    test('every skill a workplace needs is provided by at least one group', () => {
+      for (const skillId of allWorkplaceEmploymentSkills()) {
+        expect(groupsProvidingSkill(skillId).length).toBeGreaterThan(0);
       }
     });
   });

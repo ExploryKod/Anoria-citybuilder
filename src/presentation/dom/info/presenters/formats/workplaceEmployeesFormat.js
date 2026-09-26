@@ -4,6 +4,24 @@
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
 import { getSkillDisplay } from '../../../../../shared/population/skillCatalog.js';
+import { getResidentialGroupLabel } from '../../../shell/ResidentialGroupLabels.js';
+
+/**
+ * The label of the staff row, as the catalog says who fills this workplace: the social categories whose houses
+ * provide its required skill, named as their houses are (one edit in the catalog renames it everywhere), with the
+ * house level they start providing it at when it is not the first. When every category can fill it, nobody in
+ * particular is expected: just "Employés". A workplace that needs no skill keeps the plain "Ouvriers".
+ * @param {string} buildingType
+ * @param {object} employment
+ * @returns {string}
+ */
+function staffLabel(buildingType, employment) {
+  const { groups, openToAll } = employment.getStaffingGroups(buildingType);
+  if (openToAll) return 'Employés';
+  if (groups.length === 0) return 'Ouvriers';
+  const categories = groups.map(({ group, tier }) => `${getResidentialGroupLabel(group)}${tier > 1 ? ` (niv. ${tier})` : ''}`);
+  return `Ouvriers · ${categories.join(', ')}`;
+}
 
 /**
  * Factual staffing numbers only — no "lack of personnel"-style complaint
@@ -40,7 +58,7 @@ export function formatWorkplaceEmployeesPanel(buildingData, employment) {
               { label: 'Priorité', value: `${priority}` },
             ]
           : []),
-        { label: 'Ouvriers', value: `${workers}/${workerNeed}` },
+        { label: staffLabel(buildingType, employment), value: `${workers}/${workerNeed}` },
       ],
     }],
   };

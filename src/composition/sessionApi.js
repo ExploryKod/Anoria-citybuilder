@@ -172,6 +172,7 @@ export function createEmploymentSessionApi(employment) {
     updateSkillPrioritySync: (skillId, priority) =>
       employment.updateSkillPrioritySync(skillId, priority),
     getSectorName: (sector) => employment.getSectorName(sector),
+    getStaffingGroups: (buildingType) => employment.getStaffingGroups(buildingType),
     getCityEmploymentSummary: () => employment.getCityEmploymentSummary(),
   });
 }

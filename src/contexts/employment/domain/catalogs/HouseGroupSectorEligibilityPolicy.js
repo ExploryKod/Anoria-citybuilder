@@ -98,6 +98,28 @@ export function groupsForSkill(skillId) {
 }
 
 /**
+ * The social groups whose citizens can hold `skillId` at `level` (or better), and from which house tier
+ * — the same catalog fact staffing itself reads (a tier's `skills` in socialCategoryCatalog.js), so the
+ * answer to "which kind of house fills this workplace" can never disagree with who actually gets hired.
+ *
+ * @param {string} skillId
+ * @param {number} [level]
+ * @returns {ReadonlyArray<{ group: string, tier: number }>} In `allSocialGroups()` order; empty when no group
+ *   grants the skill at that level.
+ */
+export function groupsProvidingSkill(skillId, level = 1) {
+  const providers = [];
+  for (const group of allSocialGroups()) {
+    const tiers = Object.keys(SOCIAL_CATEGORY[group].tiers)
+      .map(Number)
+      .sort((a, b) => a - b);
+    const tier = tiers.find((candidate) => (SOCIAL_CATEGORY[group].tiers[candidate].skills[skillId] ?? 0) >= level);
+    if (tier !== undefined) providers.push(Object.freeze({ group, tier }));
+  }
+  return Object.freeze(providers);
+}
+
+/**
  * Workplace-relevant skills (i.e. required by at least one building — see
  * `allWorkplaceEmploymentSkills()`) granted to this group AND NO OTHER group.
  * A skill granted to 2+ groups belongs to the shared tab instead — see

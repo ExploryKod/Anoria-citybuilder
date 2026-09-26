@@ -8,6 +8,7 @@ import {
 const fakeEmployment = {
   getSkillPriority: () => 2,
   getSectorName: () => 'Services Publics',
+  getStaffingGroups: () => ({ groups: [{ group: 'scholars', tier: 1 }], openToAll: false }),
 };
 
 function vmFor(buildingType, { roads = 1, worker = 0, workerNeed = 2 } = {}) {
@@ -58,7 +59,23 @@ describe('serviceInfoFormat — one generic format, driven entirely by catalog f
   test('staff tab reports staffing numbers only — no "lack of personnel" banner (that\'s a Messages-tab complaint now)', () => {
     const understaffed = formatServiceStaffModel(vmFor('Chapel', { worker: 0, workerNeed: 2 }));
 
-    expect(understaffed.sections[0].rows).toContainEqual({ label: 'Ouvriers', value: '0/2' });
+    // The label names the category the catalog expects, as its house is named in the catalog.
+    expect(understaffed.sections[0].rows).toContainEqual({ label: 'Ouvriers · Savants', value: '0/2' });
     expect(understaffed.sections[0].banners).toBeUndefined();
+  });
+
+  test('a workplace every social category can fill just says "Employés"', () => {
+    const vm = {
+      ...vmFor('Chapel', { worker: 1, workerNeed: 2 }),
+      employment: {
+        ...fakeEmployment,
+        getStaffingGroups: () => ({
+          groups: [{ group: 'artisans', tier: 1 }, { group: 'merchants', tier: 1 }, { group: 'scholars', tier: 1 }],
+          openToAll: true,
+        }),
+      },
+    };
+
+    expect(formatServiceStaffModel(vm).sections[0].rows).toContainEqual({ label: 'Employés', value: '1/2' });
   });
 });
