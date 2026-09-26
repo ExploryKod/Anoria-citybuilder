@@ -76,6 +76,22 @@ export function namesOfBuildings(role, categories) {
 }
 
 /**
+ * The names of the natural resources of one kind (the trees that are "wood"), as the catalog names them.
+ * @param {string} resource A `naturalResource` kind, e.g. 'wood'.
+ * @returns {string[]}
+ */
+export function namesOfNaturalResource(resource) {
+  const names = [
+    ...new Set(
+      Object.values(buildingCatalog)
+        .filter((definition) => definition.naturalResource === resource && definition.displayName)
+        .map((definition) => definition.displayName)
+    ),
+  ];
+  return names.length > 0 ? names : [unresolvedTerm('natural resource name', resource)];
+}
+
+/**
  * The names of the buildings whose placement needs a hub of this type (a market needs the windmill): what
  * goes with it when it is demolished.
  * @param {string} hubType

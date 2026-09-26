@@ -5,13 +5,23 @@
 import { getBuildingDefinition } from '../../../shared/building-catalog/buildingCatalog.js';
 import {
   showErrorToast,
+  showInfoToast,
   showWarningToast,
 } from './ToastNotifier.js';
 import {
   getResourceRoles,
   getResourceStockShape,
 } from '../../../shared/building-catalog/resourceRoleQueries.js';
-import { UNRESOLVED_TERM, buildingName, goodLabel, namesOfBuildings, namesOfDependents, typesHoldingRole, unresolvedTerm } from './CatalogVocabulary.js';
+import {
+  UNRESOLVED_TERM,
+  buildingName,
+  goodLabel,
+  namesOfBuildings,
+  namesOfDependents,
+  namesOfNaturalResource,
+  typesHoldingRole,
+  unresolvedTerm,
+} from './CatalogVocabulary.js';
 
 /**
  * Legacy aliases that aren't a real building type id in `buildingCatalog`
@@ -78,6 +88,49 @@ export function showGenericErrorNotification(buildingType, reason) {
   const displayName = getBuildingDisplayName(buildingType);
   const translatedReason = translateErrorReason(reason, buildingType);
   showErrorToast(`Impossible de construire ${displayName}. ${translatedReason}`);
+}
+
+/** " à moins de N cases", or nothing when the catalog sets no distance. */
+const withinRange = (range) => (Number.isFinite(range) ? ` à moins de ${range} cases` : '');
+
+/**
+ * What a building depends on to be built or to work, from its own catalog entry: another building within reach
+ * (`placementRequires`), a natural resource within reach (a producer's `source`), the buildings it draws its
+ * supplies from (a recipe input's `from`). One general rule for every building that declares any of them.
+ * @param {string} buildingType
+ * @returns {string | null} A sentence, or null when the building depends on nothing.
+ */
+export function describePlacementNeeds(buildingType) {
+  const definition = getBuildingDefinition(buildingType);
+  const needs = [];
+
+  for (const requirement of definition?.placementRequires ?? []) {
+    const names = namesOfBuildings(requirement.role, requirement.categories).join(' ou ');
+    needs.push(`${names}${withinRange(requirement.range)}${requirement.requiresCapacity ? ' (avec de la place libre)' : ''}`);
+  }
+
+  for (const entry of definition?.resourceRoles ?? []) {
+    if (entry.role !== 'producer') continue;
+    if (entry.source) {
+      needs.push(`${namesOfNaturalResource(entry.source.resource).join(', ')}${withinRange(entry.source.range)}`);
+    }
+    for (const input of [...(entry.inputs ?? []), ...(entry.cycle ?? []).flatMap((step) => step.inputs ?? [])]) {
+      if (!input.from) continue;
+      const suppliers = namesOfBuildings(input.from.role, [input.category]).join(' ou ');
+      needs.push(`${suppliers}${withinRange(input.from.range)} pour ${goodLabel(input.category).toLowerCase()}`);
+    }
+  }
+
+  return needs.length > 0 ? `${buildingName(buildingType)} requiert : ${needs.join(' · ')}.` : null;
+}
+
+/**
+ * Said as soon as the player picks a building to place, before any ghost turns red.
+ * @param {string} buildingType
+ */
+export function showPlacementNeedsNotification(buildingType) {
+  const message = describePlacementNeeds(buildingType);
+  if (message) showInfoToast(message, { timeout: 6000 });
 }
 
 /**

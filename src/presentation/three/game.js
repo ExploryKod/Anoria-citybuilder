@@ -79,6 +79,7 @@ import {
   showInsufficientFundsNotification,
   showGenericErrorNotification,
   showHubCascadeNotification,
+  showPlacementNeedsNotification,
   showPopulationDepartureNotification,
 } from '../dom/shell/BuildingNotifications.js';
 import { showErrorToast } from '../dom/shell/ToastNotifier.js';
@@ -1313,10 +1314,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
     setActiveToolId(toolId) {
       cancelTouchPendingPlacement();
+      const toolChanged = toolId !== activeToolId;
       activeToolId = toolId;
       selectedMeshIndex = 0;
       gameUI.activeToolId = toolId;
       placementGhostSession.onToolChanged();
+      // What a building needs (a hub in reach, a natural resource, a supplier) is said when it is picked.
+      if (toolChanged && isActivePlacementTool(toolId)) {
+        showPlacementNeedsNotification(resolvePlacementBuildingId(toolId));
+      }
       if (isEditorTerrainTool(toolId)) {
         void getKenneyNatureTerrainAdapter().ensureTerrainTemplate(toolId);
       } else if (isEditorNatureTool(toolId)) {
