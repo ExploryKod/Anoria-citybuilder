@@ -98,8 +98,9 @@ export const SOCIAL_CATEGORY = Object.freeze({
         ]),
         // 'artisanat' (pottery workshops) — sector 3, this group's own
         // Industries sector (see eligibleSectors above), same tier as the
-        // group's namesake trade.
-        skills: Object.freeze({ fermier: 1, artisanat: 1 }),
+        // group's namesake trade. 'manutention' (the goods warehouse) — sector 4, also in eligibleSectors:
+        // the group of manual workers carries and stacks the goods.
+        skills: Object.freeze({ fermier: 1, artisanat: 1, manutention: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[3],

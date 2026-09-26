@@ -535,7 +535,9 @@ export const BUILDING_ECONOMY = {
   'Warehouse': {
     displayName: 'Entrepôt',
     construction: { price: 80, category: 'industry' },
-    employment: { sector: 4, workerNeed: 2, requiredSkill: 'artisanat' },
+    // Handling goods is manual work: 4 workers with the 'manutention' skill, which the artisans-ouvriers hold
+    // (from their second tier). A skill of its own, so the labour priorities rank storage apart from crafts.
+    employment: { sector: 4, workerNeed: 4, requiredSkill: 'manutention' },
     resourceRoles: [
       {
         role: 'collector',
