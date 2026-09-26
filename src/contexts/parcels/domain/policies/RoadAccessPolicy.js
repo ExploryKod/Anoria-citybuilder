@@ -20,19 +20,14 @@ export function evaluateRoadAccess(neighbors) {
 
 /**
  * The tiles a building covers: its footprint from its origin tile (the minimum corner), swapped on an odd
- * rotation. A type with no declared footprint covers its origin tile only.
+ * rotation. A type with no declared footprint is an error (`resolveFootprint` throws): it is never
+ * guessed to be one tile.
  *
  * @param {{ type: string, x: number, y: number, rotationStep?: number }} building
  * @returns {{ minX: number, minY: number, maxX: number, maxY: number }}
  */
 export function footprintRect(building) {
-  let width = 1;
-  let depth = 1;
-  try {
-    ({ width, depth } = resolveFootprint(building.type));
-  } catch {
-    // no footprint declared: one tile
-  }
+  let { width, depth } = resolveFootprint(building.type);
   if ((building.rotationStep ?? 0) % 2 === 1) [width, depth] = [depth, width];
   return { minX: building.x, minY: building.y, maxX: building.x + width - 1, maxY: building.y + depth - 1 };
 }

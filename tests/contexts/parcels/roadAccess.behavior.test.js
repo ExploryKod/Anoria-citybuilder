@@ -48,6 +48,10 @@ describe('Accès routier par distance de Manhattan depuis l\'empreinte', () => {
     expect(evaluateRoadAccessByRange(house(3, 7), [road(3, 6), road(3, 8), road(2, 7)]).roadCount).toBe(3);
   });
 
+  test('un type sans empreinte déclarée est une erreur, pas une case supposée', () => {
+    expect(() => evaluateRoadAccessByRange({ type: 'Unknown-Building', x: 1, y: 1 }, [])).toThrow(/No footprint declared/);
+  });
+
   test('une case de route ne compte pas elle-même', () => {
     expect(evaluateRoadAccessByRange({ type: 'StonePath-001', x: 1, y: 1 }, [road(1, 1)]).hasAccess).toBe(false);
   });

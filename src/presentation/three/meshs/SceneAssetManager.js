@@ -134,7 +134,11 @@ class SceneAssetManager {
         return mesh;
     }
 
-    setSprite(texture = textures['no-roads'], name) {
+    setSprite(texture, name) {
+        // No default texture: a missing one used to be drawn as the "no road" icon, on the wrong building.
+        if (!texture) {
+            throw new Error(`[SceneAssetManager] no texture for the status sprite "${name}"`);
+        }
         // Use shared sprite materials to avoid texture unit limit
         // Create a key based on texture UUID to identify unique materials
         const textureKey = texture.uuid || 'default';
