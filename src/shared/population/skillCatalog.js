@@ -39,24 +39,10 @@ export const SKILL_CATALOG = Object.freeze({
 });
 
 /**
- * Turns a raw, uncurated skill id into a readable fallback label
- * ('vente-alimentaire' -> 'Vente alimentaire').
  * @param {string} skillId
- * @returns {string}
- */
-function humanizeSkillId(skillId) {
-  return skillId
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-/**
- * @param {string} skillId
- * @returns {{ label: string, emoji: string }} Curated entry, or a
- *   humanized fallback so an uncurated (but real, catalog-granted) skill
- *   is still visible rather than silently dropped.
+ * @returns {{ label: string, emoji: string }} The curated entry, or the "…" marker for a skill the catalog
+ *   does not name — never a label made up from its id.
  */
 export function getSkillDisplay(skillId) {
-  return SKILL_CATALOG[skillId] ?? { label: humanizeSkillId(skillId), emoji: '🔧' };
+  return SKILL_CATALOG[skillId] ?? { label: '…', emoji: '…' };
 }

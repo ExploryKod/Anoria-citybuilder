@@ -281,16 +281,23 @@ export function appendHouseholdSkills(container, skills) {
  * {icon, label, met, valueText, ariaLabel}.
  * @param {HTMLElement} container
  * @param {ReadonlyArray<{ kind: string, icon: string, label: string, met: boolean, valueText: string, ariaLabel: string }>} cards
+ * @param {{ onSelect?: (card: object, element: HTMLElement, grid: HTMLElement) => void }} [options] Makes each card pickable.
  */
-export function appendMetricCards(container, cards) {
+export function appendMetricCards(container, cards, { onSelect } = {}) {
   if (!cards?.length) return null;
 
   const grid = document.createElement('div');
   grid.className = 'building-info-metrics';
 
   for (const card of cards) {
-    const el = document.createElement('div');
+    // A card that can be picked (to open its detail) is a button; a plain one is only a figure.
+    const el = document.createElement(onSelect ? 'button' : 'div');
     el.className = `building-info-metric-card${card.met ? ' building-info-metric-card--met' : ''}`;
+    if (onSelect) {
+      el.type = 'button';
+      el.setAttribute('aria-pressed', 'false');
+      el.addEventListener('click', () => onSelect(card, el, grid));
+    }
     el.title = card.ariaLabel;
     el.setAttribute('aria-label', card.ariaLabel);
     el.innerHTML = `<span class="building-info-metric-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-metric-card__label">${card.label}</span><span class="building-info-metric-card__value">${card.valueText}</span>`;

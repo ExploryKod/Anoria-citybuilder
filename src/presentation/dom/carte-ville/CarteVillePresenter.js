@@ -5,7 +5,7 @@
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { getBuildingDefinition } from '../../../shared/building-catalog/buildingCatalog.js';
 import { isRoadBuildingType } from '../../../composition/constructionCatalog.js';
-import { goodLabel, namesOfBuildings } from '../shell/CatalogVocabulary.js';
+import { buildingName, goodLabel, namesOfBuildings } from '../shell/CatalogVocabulary.js';
 import {
   getAnnualSupplyEntry,
   getAnnualYieldPerProducer,
@@ -73,7 +73,7 @@ function styleClassOf(type) {
 
 /** The catalog's name for a type, the raw id when it has none. */
 function displayNameOf(type) {
-  return getBuildingDefinition(type)?.displayName ?? type;
+  return buildingName(type);
 }
 
 /**

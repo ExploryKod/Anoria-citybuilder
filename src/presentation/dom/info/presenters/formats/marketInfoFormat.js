@@ -13,7 +13,7 @@ import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
 export function formatMarketLayoutHeader(vm) {
   const def = getBuildingDefinition(vm.buildingType);
   return {
-    title: def?.displayName ?? vm.buildingType,
+    title: buildingName(vm.buildingType),
     meta: `📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
     accent: null,
   };

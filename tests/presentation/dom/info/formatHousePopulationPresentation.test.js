@@ -45,13 +45,13 @@ describe('formatHousePopulationPresentation', () => {
     ]);
   });
 
-  test('a skill the catalog grants but SKILL_CATALOG has no curated entry for still displays (humanized fallback)', () => {
+  test('a skill the catalog grants but SKILL_CATALOG has no curated entry for is shown as the "…" marker, not a label made up from its id', () => {
     const composition = { profiles: [], skills: { 'future-skill': 3 } };
 
     const { skills } = formatHousePopulationPresentation(composition, null);
 
     expect(skills).toEqual([
-      expect.objectContaining({ skillKey: 'future-skill', count: 3, label: 'future skill', emoji: '🔧' }),
+      expect.objectContaining({ skillKey: 'future-skill', count: 3, label: '…', emoji: '…' }),
     ]);
   });
 

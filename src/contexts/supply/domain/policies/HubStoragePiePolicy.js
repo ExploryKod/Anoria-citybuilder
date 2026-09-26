@@ -39,8 +39,9 @@ export function buildHubStoragePieSegments({ lines, totalCapacity }) {
     segments.push(
       Object.freeze({
         productId: line.productId,
-        emoji: line.emoji ?? '',
-        label: line.label ?? line.productId,
+        // A good the catalog does not name is shown as the "…" marker, never as its id or an invented icon.
+        emoji: line.emoji ?? '…',
+        label: line.label ?? '…',
         amount,
         maxCap,
         maxPercent: line.maxPercent ?? 100,

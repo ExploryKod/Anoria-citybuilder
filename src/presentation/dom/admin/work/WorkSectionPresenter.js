@@ -1,3 +1,4 @@
+import { unresolvedTerm } from '../../shell/CatalogVocabulary.js';
 import { getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
 import { GROUP_CITIZEN_PRESENTATION } from '../../info/population/CitizenStatusPresentation.js';
 
@@ -16,7 +17,7 @@ const SHARED_TAB_LABEL = 'Commun';
  * @returns {string}
  */
 function groupTabLabel(groupId) {
-    return GROUP_CITIZEN_PRESENTATION[groupId]?.label ?? groupId;
+    return GROUP_CITIZEN_PRESENTATION[groupId]?.label ?? unresolvedTerm('citizen group name', groupId);
 }
 
 export class WorkSectionPresenter {

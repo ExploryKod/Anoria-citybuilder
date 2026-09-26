@@ -1533,6 +1533,10 @@ footer .footer-links a:hover {
     gap: 10px;
 }
 
+.building-info-metrics + .building-info-metrics {
+    margin-top: 10px;
+}
+
 .building-info-metric-card {
     display: flex;
     flex-direction: column;
@@ -1542,6 +1546,21 @@ footer .footer-links a:hover {
     border-radius: var(--border-radius-small);
     background: rgba(120, 144, 156, 0.08);
     text-align: center;
+}
+
+.building-info-metrics-detail {
+    margin-top: 12px;
+}
+
+button.building-info-metric-card {
+    border: 2px solid transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+button.building-info-metric-card[aria-pressed="true"] {
+    border-color: var(--cta);
 }
 
 .building-info-metric-card--met {

@@ -1,7 +1,7 @@
 import { getBuildingInfoBody, setBuildingInfoTitle } from '../../layout/buildingInfoLayout.js';
 import { patchHubStoragePieChart, renderHubStoragePieChart } from './hubStoragePieChart.js';
 import { getResourceRoles, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
-import { buildingName, scheduleLabel } from '../../../shell/CatalogVocabulary.js';
+import { buildingName, goodLabel, scheduleLabel } from '../../../shell/CatalogVocabulary.js';
 import { formatHubStockSummary } from '../../presenters/formats/hubStorageInfoFormat.js';
 
 /**
@@ -191,7 +191,7 @@ export async function renderHubStorageInfoPanel({
     if (action === 'percent-dec') {
       const result = await supply.adjustHubStorageOrderShare(ctx.hubKind, buildingId, productId, -1);
       if (result?.ok === false && result.reason === 'stock_exceeds_new_max') {
-        const label = line?.label ?? productId;
+        const label = line?.label ?? goodLabel(productId);
         const message = `${line?.emoji ?? ''} ${label} : impossible de réduire à ${result.newPercent ?? '?'} % (${result.newMaxCap} unités) — ${result.currentAmount} déjà en stock. Videz d'abord l'espace.`;
         await softRefreshHubPanel(ctx, message);
         return;

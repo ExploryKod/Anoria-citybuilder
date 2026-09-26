@@ -137,7 +137,7 @@ export function initializeFoodTraceabilityTabs() {
 
 /** The name the catalog gives a building type — what the player reads, whatever the origin (market, chapel, windmill…). */
 function buildingLabelOf(type) {
-    return getBuildingDefinition(type)?.displayName ?? type ?? '—';
+    return type ? buildingName(type) : '—';
 }
 
 /**

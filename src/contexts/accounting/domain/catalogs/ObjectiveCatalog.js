@@ -2,7 +2,7 @@ import { getBuildingDefinition } from '../../../../shared/building-catalog/build
 
 /** The building an objective unlocks, named as the catalog names it — the player's word, not the id. */
 const UNLOCKED_BUILDING = 'House-Purple';
-const unlockedBuildingName = getBuildingDefinition(UNLOCKED_BUILDING)?.displayName ?? UNLOCKED_BUILDING;
+const unlockedBuildingName = getBuildingDefinition(UNLOCKED_BUILDING)?.displayName ?? '…';
 
 /** Canonical objective definitions (financial unlock rules). */
 export const OBJECTIVE_CATALOG = Object.freeze({

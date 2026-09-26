@@ -29,14 +29,15 @@ function isQuantityConsumer(entry) {
 /**
  * The code the city map writes for a type: the first two letters of the name
  * the player reads (the catalog's `displayName`, accents dropped, upper case) —
- * never of the id the code uses. A type without a display name falls back to
- * its id. Nothing is declared per building: renaming one renames its code.
+ * never of the id the code uses. A type without a display name gets the "…"
+ * marker, not a code made of its id. Nothing is declared per building: renaming one renames its code.
  * @param {string | null | undefined} buildingType
  * @returns {string}
  */
 export function getMapCode(buildingType) {
   if (!buildingType) return '';
-  const name = getBuildingDefinition(buildingType)?.displayName ?? buildingType;
+  const name = getBuildingDefinition(buildingType)?.displayName;
+  if (!name) return '…';
   return name
     .normalize('NFD')
     .replace(/[^A-Za-z]/g, '')

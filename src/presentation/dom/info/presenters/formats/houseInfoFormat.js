@@ -13,7 +13,7 @@ import {
   residentialGroupForType,
 } from '../../../shell/ResidentialGroupLabels.js';
 import { computeHouseCitizenComposition } from '../../../../../composition/housingCatalog.js';
-import { getResourceCategoryPresentation } from '../../../../../composition/supplyCatalog.js';
+import { buildingName, goodIcon, goodLabel } from '../../../shell/CatalogVocabulary.js';
 import { getQuantityConsumerEntries, getQuantityConsumerEntry } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
 
@@ -22,7 +22,7 @@ import { formatHousePopulationPresentation } from '../../population/formatHouseP
  */
 export function formatHouseLayoutHeader(vm) {
   const group = residentialGroupForType(vm.buildingType);
-  const title = group ? getResidentialGroupTitle(group) : (getBuildingDefinition(vm.buildingType)?.displayName ?? vm.buildingType);
+  const title = group ? getResidentialGroupTitle(group) : buildingName(vm.buildingType);
 
   const maxPop = maxPopulationForLevel(vm.houseLevel, group);
   const dwellingLabel = getHouseDwellingLevelLabel(vm.houseLevel);
@@ -67,39 +67,38 @@ const CONSUMED_LAST_MONTH_CAPTION = 'Consommé le mois dernier :';
 const NO_MEAL_YET = '–';
 
 /**
- * Ressources tab — what the house consumed last month: one tiny card per resource category
- * (icon + units of it eaten), plus one card for the aggregate total, eaten over needed
- * (8/8 = needs met, 4/8 = half of them unmet). The house holds no stock of its own — the hub
- * does — so nothing here reads one; the figures come from the meal's own record
- * (`lastConsumption`, see ConsumeResource.js). Icons/labels come from ResourceCategoryCatalog.js,
- * the category list from the stock shape (see ResourceRolePolicy.getResourceStockShape) — a new
- * resource category needs a catalog entry, never a change here.
+ * Ressources tab — the house's NEEDS, not its goods: one card per need the catalog gives it (its diet, the
+ * goods it wears out...), each reading what was used up last month over what was needed (8/8 = met, 4/8 = half
+ * unmet). A need is met by ANY of its goods, so the need is what is counted; the detail of which good satisfied
+ * it (wheat, carrot… / pots, plates…) is one click away, under the need it belongs to. The house holds no stock
+ * of its own — the hub does — so nothing here reads one; the figures come from each need's own record
+ * (`outcomeField`, see ConsumeResource.js). Names and icons come from the catalog (CatalogVocabulary), the needs
+ * and their goods from the house's own consumer entries — a new need or good is a catalog entry, never a change here.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  */
 export function formatHouseResourcesModel(vm) {
-  // The house's needs, in the order the catalog declares them: the first (its diet) is the model's own
-  // cards, each further one (goods it wears out...) is another row of cards, filed by its own `outcomeField`.
-  const primary = getQuantityConsumerEntry(vm.buildingType);
-  const others = vm.buildingType ? getQuantityConsumerEntries(vm.buildingType).slice(1) : [];
+  const entries = vm.buildingType ? getQuantityConsumerEntries(vm.buildingType) : [getQuantityConsumerEntry()];
   return {
     caption: CONSUMED_LAST_MONTH_CAPTION,
-    cards: needCards(primary, vm.lastConsumption ?? null),
-    extraNeeds: others.map((entry) => ({ cards: needCards(entry, vm.buildingRow?.[entry.outcomeField] ?? null) })),
+    needs: entries.map((entry, index) =>
+      needOf(entry, index === 0 ? (vm.lastConsumption ?? null) : (vm.buildingRow?.[entry.outcomeField] ?? null))
+    ),
   };
 }
 
 /**
- * One need's cards: what was used up of each of its goods, then its total over what was needed.
+ * One need: its own card (used up over needed) and the detail of each of its goods (used up of each).
  * @param {import('../../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleFacts} entry
  * @param {object | null} last The record of its last consumption.
  */
-function needCards(entry, last) {
+function needOf(entry, last) {
   const { categories, totalKey } = entry;
   const whole = (value) => Math.max(0, Math.floor(Number(value) || 0));
 
   const categoryCards = categories.map((category) => {
     const eaten = whole(last?.takenByCategory?.[category]);
-    const { emoji, label } = getResourceCategoryPresentation(category);
+    const emoji = goodIcon(category);
+    const label = goodLabel(category);
     return {
       kind: category,
       icon: emoji,
@@ -110,7 +109,8 @@ function needCards(entry, last) {
     };
   });
 
-  const { emoji, label } = getResourceCategoryPresentation(totalKey);
+  const emoji = goodIcon(totalKey);
+  const label = goodLabel(totalKey);
   const totalCard = last
     ? (() => {
         const eaten = whole(last.taken);
@@ -134,5 +134,5 @@ function needCards(entry, last) {
         ariaLabel: `${label} : pas encore de repas`,
       };
 
-  return [...categoryCards, totalCard];
+  return { kind: totalKey, card: totalCard, details: categoryCards };
 }

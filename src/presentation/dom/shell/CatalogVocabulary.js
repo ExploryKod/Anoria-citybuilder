@@ -117,6 +117,13 @@ export function goodLabel(category) {
     : unresolvedTerm('good name', category);
 }
 
+/** @param {string} category @returns {string} A good's icon, or "…" (with a warning) when the catalog gives none. */
+export function goodIcon(category) {
+  return hasResourceCategoryPresentation(category)
+    ? getResourceCategoryPresentation(category).emoji
+    : unresolvedTerm('good icon', category);
+}
+
 /**
  * @param {string} category
  * @param {number} count

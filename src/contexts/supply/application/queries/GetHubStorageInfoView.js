@@ -48,7 +48,7 @@ export class GetHubStorageInfoView {
     return Object.freeze({
       hubKind,
       buildingType: buildingRow.type,
-      title: `Stockage — ${getBuildingDefinition(buildingRow.type)?.displayName ?? buildingRow.type}`,
+      title: `Stockage — ${getBuildingDefinition(buildingRow.type)?.displayName ?? '…'}`,
       workers: buildingRow.employees?.worker ?? 0,
       workerNeed: buildingRow.employees?.worker_need ?? 0,
       ...storage,

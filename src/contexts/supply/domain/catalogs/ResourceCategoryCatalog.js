@@ -20,6 +20,7 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   dattes: Object.freeze({ emoji: '🌴', label: 'Dattes', unit: BASKET, colors: Object.freeze({ dark: '#795548', pale: '#D7CCC8' }) }),
   wood: Object.freeze({ emoji: '🪵', label: 'Bois', unit: unitOf('bûche', 'bûches'), colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
   food: Object.freeze({ emoji: '🍽️', label: 'Nourriture', unit: BASKET }),
+  goods: Object.freeze({ emoji: '📦', label: 'Biens', unit: unitOf('bien', 'biens') }),
   furniture: Object.freeze({ emoji: '🪑', label: 'Meuble', unit: unitOf('meuble', 'meubles') }),
   plate: Object.freeze({ emoji: '🍽️', label: 'Plat', unit: unitOf('plat', 'plats') }),
   pot: Object.freeze({ emoji: '🍲', label: 'Pot', unit: unitOf('pot', 'pots') }),
@@ -36,11 +37,17 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
 });
 
 /**
+ * What a category with no entry here is shown as: the "…" marker, never the id or an invented icon.
+ * (presentation/dom/shell/CatalogVocabulary.js also warns about it in the console.)
+ */
+const UNDECLARED = Object.freeze({ emoji: '…', label: '…' });
+
+/**
  * @param {string} category
  * @returns {{ emoji: string, label: string, unit?: { one: string, many: string } }}
  */
 export function getResourceCategoryPresentation(category) {
-  return RESOURCE_CATEGORY_PRESENTATION[category] ?? { emoji: '📦', label: category };
+  return RESOURCE_CATEGORY_PRESENTATION[category] ?? UNDECLARED;
 }
 
 /** @param {string} category @returns {boolean} Whether the catalog names this category. */
