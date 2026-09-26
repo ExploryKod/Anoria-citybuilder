@@ -3,6 +3,7 @@
  * from the catalog's entries (a second 'distributor' entry with its own hub link).
  */
 
+import { HubServing } from '../../../src/contexts/supply/application/services/HubServing.js';
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
@@ -69,7 +70,7 @@ describe('Supply — a market with two distributor entries', () => {
   test('a goods pull takes goods from the warehouse and leaves the diet of the stall untouched', async () => {
     await assign().execute({ distributorId: 'stall', distributorType: 'Market-Stall', x: 6, y: 3 });
 
-    const outcome = await new TransferHubToHub(repo).execute({ targetId: 'stall', period: {}, demand: 8, category: 'plate' });
+    const outcome = await new TransferHubToHub(repo, new HubServing(repo)).execute({ targetId: 'stall', period: {}, demand: 8, category: 'plate' });
 
     expect(outcome.transferred).toBe(true);
     expect(outcome.totalUnits).toBe(8);

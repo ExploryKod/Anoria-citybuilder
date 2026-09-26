@@ -4,6 +4,7 @@
  * Factory-Furniture); what is under test is that two hubs coexist and that a recipe draws from one.
  */
 
+import { HubServing } from '../../../src/contexts/supply/application/services/HubServing.js';
 import { describe, test, expect } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
@@ -67,7 +68,7 @@ class InMemoryRepository {
 function cycleOver(repo) {
   const process = new ProcessHubCollection(
     repo,
-    new CollectResourceToHub(repo),
+    new CollectResourceToHub(repo, new HubServing(repo)),
     new SetHubCollectingFlag(repo),
     new MarkSourceCollectedByHub(repo)
   );
@@ -105,7 +106,7 @@ describe('Supply — goods warehouse', () => {
       { id: id.shop, type: 'Factory-Furniture', x: 3, y: 3, stocks: {} },
       { id: id.lonely, type: 'Factory-Furniture', x: 50, y: 50, stocks: {} },
     ]);
-    const produce = new ProduceResource(repo);
+    const produce = new ProduceResource(repo, { hubServing: new HubServing(repo) });
     const day = (monthIndex) => ({ season: 'spring', month: 'january', monthIndex, year: 1, dayInMonth: 1 });
 
     await produce.execute({ buildingId: id.shop, period: day(0) });

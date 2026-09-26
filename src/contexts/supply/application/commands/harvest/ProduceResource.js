@@ -82,10 +82,13 @@ export class ProduceResource {
    * @param {{ removeBuilding?: (params: { instanceId: string }) => Promise<unknown> }} [deps]
    *   `removeBuilding` deletes a used-up natural resource from the game (Parcels owns
    *   building removal, so Supply is handed it rather than reaching into it).
+   *   `hubServing` says how much of a hub's goods this building may draw (see HubServing).
    */
-  constructor(supplyBuildingRepository, { removeBuilding } = {}) {
+  constructor(supplyBuildingRepository, { removeBuilding, hubServing } = {}) {
     this.supplyBuildingRepository = supplyBuildingRepository;
     this.removeBuilding = removeBuilding ?? null;
+    // How a hub serves a recipe drawing on it, among the other clients of the same goods.
+    this.hubServing = hubServing;
   }
 
 
@@ -94,7 +97,7 @@ export class ProduceResource {
    * within range holding the good, as `[{ holderId, category, amount }]`, or null when together they
    * cannot cover `need`. Nothing is taken here — the caller commits once every input is covered.
    */
-  async #planDraw(building, input, need) {
+  async #planDraw(building, input, need, turn) {
     const { role, range = Infinity } = input.from;
     const holders = (await this.supplyBuildingRepository.findByResourceRole(role, input.category))
       .filter(
@@ -114,10 +117,16 @@ export class ProduceResource {
         (a, b) => manhattanDistance(building, a) - manhattanDistance(building, b) || a.id.localeCompare(b.id)
       );
 
+    // Ask the nearest holder: what this recipe wants is remembered there, so a client ranked below it does not
+    // take the stock from under it (and what it gets is added when it is taken).
+    if (holders[0]) {
+      await this.hubServing.recordDemand({ hubId: holders[0].id, category: input.category, client: building.type, turn, wanted: need, served: 0 });
+    }
+
     const draws = [];
     let left = need;
     for (const holder of holders) {
-      const amount = Math.min(getCategoryAmount(holder.stocks, input.category), left);
+      const amount = Math.min(this.hubServing.availableTo(holder, input.category, building.type, turn), left);
       if (amount <= 0) continue;
       draws.push({ holderId: holder.id, category: input.category, amount });
       left -= amount;
@@ -131,13 +140,13 @@ export class ProduceResource {
    * range. All or nothing; nothing is taken here.
    * @returns {Promise<{ missing: boolean, ownInputs: object[], draws: object[] }>}
    */
-  async #planInputs(building, inputs, need) {
+  async #planInputs(building, inputs, need, turn) {
     const ownInputs = inputs.filter((input) => !input.from);
     const draws = [];
     let missing = ownInputs.some((input) => getCategoryAmount(building.stocks, input.category) < need(input));
     for (const input of inputs.filter((candidate) => candidate.from)) {
       if (missing) break;
-      const plan = await this.#planDraw(building, input, need(input));
+      const plan = await this.#planDraw(building, input, need(input), turn);
       if (plan) draws.push(...plan);
       else missing = true;
     }
@@ -145,9 +154,11 @@ export class ProduceResource {
   }
 
   /** Take what #planInputs planned; returns the building's stock without its own inputs. */
-  async #takeInputs(building, plan, need) {
+  async #takeInputs(building, plan, need, turn) {
     for (const draw of plan.draws) {
       const holder = await this.supplyBuildingRepository.findById(draw.holderId);
+      await this.hubServing.take({ hubId: draw.holderId, category: draw.category, client: building.type, amount: draw.amount, turn });
+      await this.hubServing.recordDemand({ hubId: draw.holderId, category: draw.category, client: building.type, turn, wanted: 0, served: draw.amount });
       const shape = stockShapeFor(draw.category);
       await this.supplyBuildingRepository.saveStocks(draw.holderId, {
         ...holder.stocks,
@@ -196,9 +207,9 @@ export class ProduceResource {
       if (open || (step.wait === true && state.opened)) {
         const inputs = step.inputs ?? [];
         const need = (input) => input.amount ?? 0;
-        const plan = operational ? await this.#planInputs({ ...building, stocks: stock }, inputs, need) : null;
+        const plan = operational ? await this.#planInputs({ ...building, stocks: stock }, inputs, need, period?.turn ?? 0) : null;
         if (plan && !plan.missing) {
-          stock = await this.#takeInputs({ ...building, stocks: stock }, plan, need);
+          stock = await this.#takeInputs({ ...building, stocks: stock }, plan, need, period?.turn ?? 0);
           state.value = state.index === 0 ? (step.amount ?? 0) : state.value * (step.factor ?? 1);
           advanced = true;
         }
@@ -340,7 +351,7 @@ export class ProduceResource {
       // soon as it is supplied. The same `multiplier` scales the recipe, so
       // its ratio holds whatever scales the output.
       const inputNeed = (input) => (input.amount ?? 0) * multiplier;
-      const plan = await this.#planInputs(building, entry.inputs ?? [], inputNeed);
+      const plan = await this.#planInputs(building, entry.inputs ?? [], inputNeed, period?.turn ?? 0);
       if (plan.missing) {
         firstFailure ??= 'missing_input';
         continue;
@@ -355,7 +366,7 @@ export class ProduceResource {
       // aggregate returns only that aggregate's fields, and a building that
       // holds a good outside it (its inputs, another chain's output) would
       // otherwise lose it on every production.
-      let nextStock = await this.#takeInputs(building, plan, inputNeed);
+      let nextStock = await this.#takeInputs(building, plan, inputNeed, period?.turn ?? 0);
 
       for (const produced of entry.categories) {
         const shape = stockShapeFor(produced, entry.totalKey);

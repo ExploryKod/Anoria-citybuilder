@@ -2,6 +2,7 @@
  * Behavior tests — Supply: market pulls from its assigned windmill what its houses need
  */
 
+import { HubServing } from '../../../src/contexts/supply/application/services/HubServing.js';
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
@@ -87,7 +88,7 @@ describe('Supply — market buys from assigned windmill', () => {
       ]),
       market(marketId, { wheat: 0, carrot: 0, cabbage: 0, food: 0 }, windmillId),
     ]);
-    command = new TransferHubToHub(repo);
+    command = new TransferHubToHub(repo, new HubServing(repo));
   });
 
   const pull = (demand, targetId = marketId, period = {}) => command.execute({ targetId, period, demand });

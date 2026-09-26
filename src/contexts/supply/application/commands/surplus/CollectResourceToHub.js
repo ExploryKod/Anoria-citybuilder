@@ -29,8 +29,9 @@ export class CollectResourceToHub {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
    */
-  constructor(supplyBuildingRepository) {
+  constructor(supplyBuildingRepository, hubServing = null) {
     this.supplyBuildingRepository = supplyBuildingRepository;
+    this.hubServing = hubServing;
   }
 
   /**
@@ -129,6 +130,24 @@ export class CollectResourceToHub {
       totalKey,
     );
     await this.supplyBuildingRepository.saveStocks(hubId, finalStock);
+
+    // What came in is filed under the producer type that delivered it, so the hub can serve its clients
+    // in the order that producer type asks for.
+    if (this.hubServing) {
+      const sourceTypes = new Map(sourceRefs.map((ref) => [resolveInstanceIdFromNeighborRef(ref), ref.type]));
+      let stockAfter = {};
+      for (const transfer of transfers) {
+        const producerType = sourceTypes.get(transfer.sourceId);
+        stockAfter[transfer.category] = (stockAfter[transfer.category] ?? (hub.stocks[transfer.category] ?? 0)) + transfer.amount;
+        await this.hubServing.deposit({
+          hubId,
+          category: transfer.category,
+          producerType,
+          amount: transfer.amount,
+          stockAfter: stockAfter[transfer.category],
+        });
+      }
+    }
 
     const totalUnits = transfers.reduce((sum, transfer) => sum + transfer.amount, 0);
     return { collected: true, transfers, totalUnits };

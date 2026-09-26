@@ -163,6 +163,9 @@
  *   removed from the game. The same fact gates placement (no ghost beyond the
  *   range) and the "no resource" warning, so the range is declared once here.
  *   Omitted means the entry needs nothing natural (a farm, a workshop).
+ * @property {string[]} [clients] On a 'producer' whose goods go to a hub: the building types it serves first, in
+ *   order (the default the player can change in the Clients tab). Every other building type that buys these goods
+ *   follows, in catalog order — a type is never left out by omission.
  * @property {string} [outcomeField] On a 'quantity' 'consumer' role: the row field its outcome (units wanted, taken,
  *   unfed) is filed under — one per need, so a building using up several things keeps each outcome apart.
  * @property {{ sourceLinkField?: string, range?: number, hubTypes?: string[], linksField?: string, linkTargetIdField?: string, allocationField?: string }} [hubLink]

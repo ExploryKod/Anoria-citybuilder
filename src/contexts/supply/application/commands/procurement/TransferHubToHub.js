@@ -32,8 +32,9 @@ export class TransferHubToHub {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
    */
-  constructor(supplyBuildingRepository) {
+  constructor(supplyBuildingRepository, hubServing) {
     this.supplyBuildingRepository = supplyBuildingRepository;
+    this.hubServing = hubServing;
   }
 
   /**
@@ -117,10 +118,13 @@ export class TransferHubToHub {
       return { transferred: false, reason: 'target_full', transfers: [], totalUnits: 0 };
     }
 
-    const amounts = fairShares(
-      categories.map((category) => getCategoryAmount(sourceStock, category)),
-      Math.min(wanted, targetCapacity)
-    );
+    // What this client may take of each good depends on who delivered it and who else is waiting (see HubServing).
+    const turn = period?.turn ?? 0;
+    const asking = Math.min(wanted, targetCapacity);
+    const available = categories.map((category) => this.hubServing.availableTo(source, category, target.type, turn));
+    const amounts = fairShares(available, asking);
+    // How its ask would split over the goods, unconstrained: what it leaves on the table for those ranked below.
+    const desired = fairShares(categories.map((category) => getCategoryAmount(sourceStock, category)), asking);
 
     const transfers = [];
     categories.forEach((category, index) => {
@@ -130,6 +134,19 @@ export class TransferHubToHub {
       targetStock = addCategoryAmount(targetStock, category, amount, categories, totalKey);
       transfers.push({ sourceId, category, amount });
     });
+
+    for (const [index, category] of categories.entries()) {
+      if (desired[index] <= 0 && !(amounts[index] > 0)) continue;
+      await this.hubServing.take({ hubId: sourceId, category, client: target.type, amount: amounts[index], turn });
+      await this.hubServing.recordDemand({
+        hubId: sourceId,
+        category,
+        client: target.type,
+        turn,
+        wanted: Math.max(desired[index], amounts[index]),
+        served: amounts[index],
+      });
+    }
 
     if (transfers.length === 0) {
       return { transferred: false, reason: 'nothing_to_transfer', transfers: [], totalUnits: 0 };

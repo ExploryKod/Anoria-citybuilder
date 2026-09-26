@@ -4,6 +4,7 @@
  * motivated the replacement: which legs run is config, not per-resource
  * code — the same class distributes with or without a hub-restock leg.
  */
+import { HubServing } from '../../../src/contexts/supply/application/services/HubServing.js';
 import { describe, test, expect } from '@jest/globals';
 import { RunCityResourceCycle } from '../../../src/contexts/supply/application/commands/procurement/RunCityResourceCycle.js';
 import { DistributeResourceToConsumers } from '../../../src/contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
@@ -217,7 +218,7 @@ describe('RunCityResourceCycle', () => {
       house(HOUSE_ID),
     ]);
     const distribute = new DistributeResourceToConsumers(repo);
-    const transferHubToHub = new TransferHubToHub(repo);
+    const transferHubToHub = new TransferHubToHub(repo, new HubServing(repo));
     let hubLinkResolved = null;
     const cycle = new RunCityResourceCycle(repo, distribute, undefined, {
       transferHubToHub,
@@ -258,7 +259,7 @@ describe('RunCityResourceCycle', () => {
       house(HOUSE_ID),
     ]);
     const cycle = new RunCityResourceCycle(repo, new DistributeResourceToConsumers(repo), undefined, {
-      transferHubToHub: new TransferHubToHub(repo),
+      transferHubToHub: new TransferHubToHub(repo, new HubServing(repo)),
     });
 
     await cycle.execute({ categories: CATEGORIES, season: 'summer', month: 'January', timeInfo: { turn: 1 } });

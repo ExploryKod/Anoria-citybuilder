@@ -1,4 +1,7 @@
 import { DexieSupplyBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyBuildingRepository.js';
+import { ListClientPriorityBoards } from '../contexts/supply/application/queries/ListClientPriorityBoards.js';
+import { HubServing } from '../contexts/supply/application/services/HubServing.js';
+import { LocalStorageClientPriorityRepository } from '../contexts/supply/infrastructure/browser/LocalStorageClientPriorityRepository.js';
 import { TransferHubToHub } from '../contexts/supply/application/commands/procurement/TransferHubToHub.js';
 import { DistributeResourceToConsumers } from '../contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
 import { CollectResourceToHub } from '../contexts/supply/application/commands/surplus/CollectResourceToHub.js';
@@ -57,11 +60,13 @@ import {
  * @param {object} [deps]
  * @param {import('../contexts/supply/application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} [deps.supplyBuildingRepository]
  * @param {import('../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js').DexieSupplyTraceabilityRepository} [deps.foodTraceabilityRepository]
+ * @param {{ load: () => object, save: (priorities: object) => void }} [deps.clientPriorityRepository] The player's client priorities.
  * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createSupplyContext({
   supplyBuildingRepository,
   foodTraceabilityRepository,
+  clientPriorityRepository,
   getTimeInfo: getTimeInfoDep,
 } = {}) {
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
@@ -79,8 +84,14 @@ export function createSupplyContext({
     supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
   const foodTraceabilityRepositoryImpl =
     foodTraceabilityRepository ?? new DexieSupplyTraceabilityRepository();
+  // The player's client priorities (saved settings); none saved means the catalog's defaults.
+  const clientPriorityRepositoryImpl = clientPriorityRepository ?? new LocalStorageClientPriorityRepository();
+  const hubServing = new HubServing(supplyBuildingRepositoryImpl, {
+    loadSettings: () => clientPriorityRepositoryImpl.load(),
+  });
   const transferHubToHub = new TransferHubToHub(
-    supplyBuildingRepositoryImpl
+    supplyBuildingRepositoryImpl,
+    hubServing
   );
   const rebalanceHubAllocations = new RebalanceHubAllocations(
     supplyBuildingRepositoryImpl
@@ -100,7 +111,8 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl
   );
   const collectResourceToHub = new CollectResourceToHub(
-    supplyBuildingRepositoryImpl
+    supplyBuildingRepositoryImpl,
+    hubServing
   );
   const updateConsumerDistributorReach = new UpdateConsumerDistributorReach(
     supplyBuildingRepositoryImpl
@@ -122,6 +134,7 @@ export function createSupplyContext({
   );
   // A used-up natural resource (a felled tree) leaves the game like any demolished building.
   const produceResource = new ProduceResource(supplyBuildingRepositoryImpl, {
+    hubServing,
     removeBuilding: (params) => syncRemovedBuilding(params),
   });
   const runProducerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, produceResource);
@@ -194,6 +207,9 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl
   );
   const getHubStorageInfoView = new GetHubStorageInfoView();
+  const listClientPriorityBoardsQuery = new ListClientPriorityBoards(supplyBuildingRepositoryImpl, {
+    loadSettings: () => clientPriorityRepositoryImpl.load(),
+  });
 
   return {
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
@@ -247,6 +263,22 @@ export function createSupplyContext({
     async initializeHubLinks({ hubId }) {
       await supplyBuildingRepositoryImpl.saveHubLinkedDistributors(hubId, []);
       return { initialized: true, hubId };
+    },
+
+    /** The Clients tab: each producer type's clients, in the order it serves them. */
+    async listClientPriorityBoards() {
+      return listClientPriorityBoardsQuery.execute();
+    },
+
+    /** The player's order (and refusals) for one producer type; effective from the next tick. */
+    saveClientPriorities(producerType, { order, disabled }) {
+      clientPriorityRepositoryImpl.save({ ...clientPriorityRepositoryImpl.load(), [producerType]: { order, disabled } });
+    },
+
+    /** Back to the catalog's default for one producer type. */
+    resetClientPriorities(producerType) {
+      const { [producerType]: _dropped, ...rest } = clientPriorityRepositoryImpl.load();
+      clientPriorityRepositoryImpl.save(rest);
     },
 
     async runMonthlyResourceCycle({ season, month, timeInfo }) {

@@ -66,6 +66,8 @@ export class RunMonthlyResourceCycle {
       monthIndex: timeInfo.monthIndex,
       year: timeInfo.year ?? 0,
       dayInMonth: timeInfo.dayInMonth ?? 1,
+      // The tick itself: what a hub remembers of its clients is told per tick.
+      turn: timeInfo.turn ?? timeInfo.days ?? 0,
     };
 
     // No season gate here — each producer's own 'producer' schedule (see
