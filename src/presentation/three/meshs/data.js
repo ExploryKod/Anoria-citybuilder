@@ -29,6 +29,8 @@ export const textures = Object.freeze({
     'isBuying': loadTextures(`/resources/textures/status/isBuying.png`, true),
     // Windmill collecting sprite (reuse isBuying icon)
     'isCollecting': loadTextures(`/resources/textures/status/isBuying.png`, true),
+    // A sale window closed with goods unsold (no room in the hub, none in range…)
+    'failed-sell': loadTextures(`/resources/textures/status/failed-sell.svg`, true),
     // No worker sprite (black) - shown when building has no employees
     'no-work': loadTextures(`/resources/textures/status/no-work.png`, true),
     // No natural resource left in range of a raw-material producer (see the catalog's `source` fact)

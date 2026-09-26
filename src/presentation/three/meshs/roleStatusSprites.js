@@ -73,12 +73,16 @@ function setSprite(ctx, mesh, iconKey, { visible, color, backgroundColor }) {
   );
 }
 
-/** True when goods really changed hands through the building this month (its `lastTransaction`). */
-function transactedThisMonth(view, time) {
-  const at = view?.lastTransaction;
+/** True when a `{ year, monthIndex }` moment recorded on the building is this month. */
+function isThisMonth(at, time) {
   if (!at) return false;
   const now = TimeManager.getTimeInfo(time);
   return at.monthIndex === now.monthIndex && at.year === (now.year ?? 0);
+}
+
+/** True when goods really changed hands through the building this month (its `lastTransaction`). */
+function transactedThisMonth(view, time) {
+  return isThisMonth(view?.lastTransaction, time);
 }
 
 /** Hub: shows for the month in which goods really came in — not merely while its collection window is open. */
@@ -147,8 +151,9 @@ function timeContextOf(time) {
 async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset) {
   const graphics = asset?.cycleGraphics ?? [];
   const saleStatus = asset?.saleStatus ?? 'sold-to-hub';
+  const failedStatus = asset?.failedSaleStatus ?? 'failed-sell';
   const names = graphics.map((graphic) => spriteOf(graphic.status).name);
-  [...names, 'no-food', saleStatus].forEach((name) => {
+  [...names, 'no-food', saleStatus, failedStatus].forEach((name) => {
     ctx.assetManager.removeStatusSprite(mesh, name);
     ctx.assetManager.removeStatusSprite(mesh, `${name}-bg`);
   });
@@ -181,6 +186,16 @@ async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset
       visible: collected ? ctx.productionSpriteVisible(true) : false,
       color: collected ? meta.spriteColor : null,
       backgroundColor: collected ? meta.backgroundColor : null,
+    });
+
+    // Right after its sale window closes with goods unsold (no room, no hub, no worker there…), it says so for a
+    // moment: the problem is on the producer's side of the sale, not in what it made.
+    const failed = isThisMonth(view?.lastFailedSale, ctx.time);
+    const failedMeta = ctx.statusIcons[failedStatus];
+    setSprite(ctx, mesh, failedStatus, {
+      visible: failed ? ctx.productionSpriteVisible(true) : false,
+      color: failed ? failedMeta.spriteColor : null,
+      backgroundColor: failed ? failedMeta.backgroundColor : null,
     });
   }
 }

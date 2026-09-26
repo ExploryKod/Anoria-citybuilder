@@ -57,6 +57,12 @@ export const STATUS_ICON_DEFAULTS = Object.freeze({
     spriteColor: 0x00ff00,
     backgroundColor: 0xffffff,
   },
+  'failed-sell': {
+    position: { x: 0.5, y: 0.5, z: 0 },
+    scale: { x: 0.5, y: 0.5, z: 1 },
+    spriteColor: null,
+    backgroundColor: 0xffe8e8,
+  },
   'no-resource': { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 0.6, y: 0.6, z: 1 }, spriteColor: null, backgroundColor: null },
   'no-work': {
     position: { x: -0.8, y: 0.5, z: -0.2 },

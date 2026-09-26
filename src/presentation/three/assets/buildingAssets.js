@@ -59,7 +59,8 @@
  *    `[{ id, when | step, status }]` — `when` is a schedule on the game's time (seasons, months, ...),
  *    `step` names a step of the building's own production cycle (see buildingEconomy.js `cycle`), `status` is a
  *    key of statusIconAnchors.js. `id` is passed to the mesh's `applyPhase` hook, if it has one.
- *    `saleStatus` (optional) picks the icon shown while a hub has collected its goods (default 'sold-to-hub').
+ *    `saleStatus` (optional) picks the icon shown while a hub has collected its goods (default 'sold-to-hub');
+ *    `failedSaleStatus` (optional) the one shown right after its sale window closes with goods unsold (default 'failed-sell').
  *  - roadSides (roads only): which tile sides (north/east/south/west) the asphalt reaches on the unturned mesh; the
  *    adaptive road drag chooses each tile's piece and turn from it (roadPaintPlanner.js).
  *  - kenneyGlb entries: geometry.glb is the full public URL of a single-tile GLB (road piece,

@@ -17,19 +17,22 @@ export class RunHubSurplusCycle {
    * @param {{ execute: (params: { hubId: string }) => Promise<unknown> }} [rebalanceHubDistributorAllocations]
    *   Any collaborator with this shape — composition wires the generic
    *   RebalanceHubAllocations behind an adapter that supplies the resource's categories.
+   * @param {import('./MarkFailedSales.js').MarkFailedSales} [markFailedSales]
    */
   constructor(
     supplyBuildingRepository,
     markHubCollectingSchedule,
     resetSourcesCollectedFlag,
     processHubCollection,
-    rebalanceHubDistributorAllocations = null
+    rebalanceHubDistributorAllocations = null,
+    markFailedSales = null
   ) {
     this.supplyBuildingRepository = supplyBuildingRepository;
     this.markHubCollectingSchedule = markHubCollectingSchedule;
     this.resetSourcesCollectedFlag = resetSourcesCollectedFlag;
     this.processHubCollection = processHubCollection;
     this.rebalanceHubDistributorAllocations = rebalanceHubDistributorAllocations;
+    this.markFailedSales = markFailedSales;
   }
 
   /**
@@ -43,6 +46,8 @@ export class RunHubSurplusCycle {
    */
   async execute({ month, monthIndex, dayInMonth, year, season = null }) {
     const period = { season, month, monthIndex, year, dayInMonth };
+    // A producer whose sale window has just closed with goods unsold says so (whichever hubs collect this tick).
+    await this.markFailedSales?.execute({ period });
     const hubs = await this.supplyBuildingRepository.findByResourceRole('hub');
     const isCollectionPeriod = hubs.some((hub) =>
       matchesSchedule(getScheduleForRole(hub.type, 'collector'), { month, monthIndex, year })

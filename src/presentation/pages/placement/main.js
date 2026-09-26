@@ -29,6 +29,7 @@ const ICON_TEXTURE_KEYS = {
   harvest: 'harvest',
   'sell-food': 'sell-food',
   'sold-to-hub': 'isCollecting',
+  'failed-sell': 'failed-sell',
   'no-work': 'no-work',
 };
 

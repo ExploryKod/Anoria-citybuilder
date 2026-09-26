@@ -72,6 +72,7 @@ export class DexieSupplyBuildingRepository {
       lastCollection: house.lastCollection ?? null,
       lastTransaction: house.lastTransaction ?? null,
       unmetDemand: house.unmetDemand ?? 0,
+      lastFailedSale: house.lastFailedSale ?? null,
       lastImport: house.lastImport ?? null,
       lastImportDetails: house.lastImportDetails ?? null,
       salesToDistributor: house.salesToDistributor || [],

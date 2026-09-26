@@ -20,6 +20,7 @@ export function createSupplyBuildingView({
   collectedByHub = false,
   lastCollection = null,
   lastTransaction = null,
+  lastFailedSale = null,
   unmetDemand = 0,
   lastImport = null,
   lastImportDetails = null,
@@ -62,6 +63,8 @@ export function createSupplyBuildingView({
     // moved nothing leaves it as it was.
     // Units the houses it serves still wanted after its last pass (0 = every house was served).
     unmetDemand: Number.isFinite(unmetDemand) ? Math.max(0, unmetDemand) : 0,
+    // When its last sale window closed with goods unsold ({ year, monthIndex, units, cause }), else null.
+    lastFailedSale: lastFailedSale ? Object.freeze({ ...lastFailedSale }) : null,
     lastTransaction: lastTransaction ? Object.freeze({ ...lastTransaction }) : null,
     lastImport: lastImport ? Object.freeze({ ...lastImport }) : null,
     lastImportDetails: lastImportDetails

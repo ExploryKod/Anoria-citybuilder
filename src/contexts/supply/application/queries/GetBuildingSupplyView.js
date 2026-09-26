@@ -47,6 +47,8 @@ export class GetBuildingSupplyView {
       cycleStep: currentCycleStep(view),
       // When goods last really moved through it: the activity icons follow this, not a schedule.
       lastTransaction: view.lastTransaction ? { ...view.lastTransaction } : null,
+      // A sale window that closed with goods unsold: the map shows it for a moment.
+      lastFailedSale: view.lastFailedSale ? { ...view.lastFailedSale } : null,
     };
 
     if (kind === 'market') {
