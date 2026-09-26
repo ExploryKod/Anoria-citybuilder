@@ -53,6 +53,7 @@ export class GetBuildingSupplyView {
       return {
         ...base,
         isBuying: operational === true && view.isBuying,
+        unmetDemand: view.unmetDemand,
         noFarmsNearby: view.noSourcesNearby,
         hasHousesNearby: neighborsMatch(view.neighbors, isHouseNeighbor),
         marketTooFar: view.distributorTooFar,

@@ -1,12 +1,7 @@
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { toSupplySeason, toSupplyMonth, matchesSchedule } from '../../../composition/supplyTimeLabels.js';
 import { ASSET_CATALOG } from './resolveBuildingMesh.js';
-import {
-  createEmptyStocks,
-  getSuppliedCategories,
-  getResourceRoles,
-  getResourceStockShape,
-} from '../../../shared/building-catalog/resourceRoleQueries.js';
+import { getResourceRoles } from '../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Activity sprites (what a building is doing) — decided by the ROLE a building holds in the
@@ -104,7 +99,7 @@ async function applyHubSprites(ctx, mesh, instanceId) {
   }
 }
 
-/** Quantity distributor: shows for the month in which it really bought, and when its stock is empty. */
+/** Quantity distributor: shows for the month in which it really bought, and while houses it serves stay unfed. */
 async function applyDistributorSprites(ctx, mesh, instanceId) {
   ['isBuying', 'isBuying-bg', 'no-food', 'no-food-bg'].forEach((name) => ctx.assetManager.removeStatusSprite(mesh, name));
   if (!isStaffedAndConnected(mesh)) return;
@@ -123,12 +118,9 @@ async function applyDistributorSprites(ctx, mesh, instanceId) {
     setSprite(ctx, mesh, 'isBuying', { visible: false });
   }
 
-  const stocks = view?.stocks || createEmptyStocks();
-  // Goods and aggregate come from the catalog (what the citizens eat that a hub stores / its totalKey).
-  const hasStock =
-    (stocks[getResourceStockShape().totalKey] || 0) > 0 ||
-    getSuppliedCategories().some((good) => (stocks[good] || 0) > 0);
-  setSprite(ctx, mesh, 'no-food', { visible: ctx.productionSpriteVisible(!hasStock) });
+  // Not "nothing on the stalls" (a stall hands out all it buys, so it is empty after every tick): a house
+  // it serves still waiting for food after its pass.
+  setSprite(ctx, mesh, 'no-food', { visible: ctx.productionSpriteVisible((view?.unmetDemand ?? 0) > 0) });
 }
 
 /** The game's time in the vocabulary schedules use (see ResourceSchedulePolicy.js). */

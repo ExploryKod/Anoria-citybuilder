@@ -71,6 +71,7 @@ export class DexieSupplyBuildingRepository {
       collectedByHub: house.collectedByHub === true,
       lastCollection: house.lastCollection ?? null,
       lastTransaction: house.lastTransaction ?? null,
+      unmetDemand: house.unmetDemand ?? 0,
       lastImport: house.lastImport ?? null,
       lastImportDetails: house.lastImportDetails ?? null,
       salesToDistributor: house.salesToDistributor || [],

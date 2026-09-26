@@ -3,6 +3,7 @@ import { findBuildingsWithRoleInRange } from '../../../domain/policies/ResourceR
 import {
   requireRangeForRole,
   getHubLinkForRole,
+  getConsumptionModeForRole,
   computeConsumerDeficit,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
@@ -160,6 +161,15 @@ export class RunCityResourceCycle {
           });
         }
       }
+    }
+
+    // A stall that buys just what its houses need and hands it all out leaves an empty stock every
+    // tick, so "empty" says nothing. What says something is a house still waiting once it has done
+    // what it could: that is the shortfall its no-food icon reports.
+    if (getConsumptionModeForRole(distributor.type, 'distributor') !== 'flag') {
+      await this.supplyBuildingRepository.updateBuildingFields(distributor.id, {
+        unmetDemand: await this.#demandOf(consumersInRange),
+      });
     }
 
     return true;
