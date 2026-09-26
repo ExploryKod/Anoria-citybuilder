@@ -17,6 +17,7 @@ import { MarkHubCollectingSchedule } from '../../../src/contexts/supply/applicat
 import { ResetSourcesCollectedFlag } from '../../../src/contexts/supply/application/commands/surplus/ResetSourcesCollectedFlag.js';
 import { ProcessHubCollection } from '../../../src/contexts/supply/application/commands/surplus/ProcessHubCollection.js';
 import { RunHubSurplusCycle } from '../../../src/contexts/supply/application/commands/surplus/RunHubSurplusCycle.js';
+import { EmptyHubGoods } from '../../../src/contexts/supply/application/commands/surplus/EmptyHubGoods.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 import { ProduceResource } from '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js';
 
@@ -168,5 +169,68 @@ describe('Supply — goods warehouse', () => {
     repo.raw.get(id.wh).stocks = { olive: 10, goods: 10 }; // a new harvest is sold
     await run(6, 7);
     expect(repo.raw.get(id.press).stocks.oil).toBe(30);
+  });
+
+  describe('storage orders decide where goods go', () => {
+    const inOddMonth = { month: 'february', monthIndex: 1, dayInMonth: 5, year: 1 };
+    const fetchPots = { pot: { mode: 'fetch', maxPercent: 100 } };
+    const orderFor = (mode) => ({ pot: { mode, maxPercent: 100 } });
+
+    test('a producer sells to the hub ordered to "fetch" its goods, not to the nearer one', async () => {
+      const id = ids('near', 'far', 'pots');
+      const repo = new InMemoryRepository([
+        { id: id.near, type: 'Warehouse', x: 0, y: 0, stocks: {} },
+        { id: id.far, type: 'Warehouse', x: 16, y: 0, stocks: {}, hubStorageOrders: fetchPots },
+        { id: id.pots, type: 'Factory-Pot', x: 5, y: 0, stocks: { pot: 10 } },
+      ]);
+      await cycleOver(repo).execute(inOddMonth);
+      expect(repo.raw.get(id.far).stocks.pot).toBe(10);
+      expect(repo.raw.get(id.near).stocks.pot ?? 0).toBe(0);
+    });
+
+    test('a hub that refuses a good is not sold it: the goods go to the next hub', async () => {
+      const id = ids('near', 'far', 'pots');
+      const repo = new InMemoryRepository([
+        { id: id.near, type: 'Warehouse', x: 0, y: 0, stocks: {}, hubStorageOrders: orderFor('refuse') },
+        { id: id.far, type: 'Warehouse', x: 16, y: 0, stocks: {} },
+        { id: id.pots, type: 'Factory-Pot', x: 5, y: 0, stocks: { pot: 10 } },
+      ]);
+      await cycleOver(repo).execute(inOddMonth);
+      expect(repo.raw.get(id.near).stocks.pot ?? 0).toBe(0);
+      expect(repo.raw.get(id.far).stocks.pot).toBe(10);
+    });
+
+    test('what a nearly full hub cannot take goes to the next hub in the same pass', async () => {
+      const id = ids('near', 'far', 'pots');
+      const repo = new InMemoryRepository([
+        { id: id.near, type: 'Warehouse', x: 0, y: 0, stocks: { goods: 496, wood: 496 } },
+        { id: id.far, type: 'Warehouse', x: 16, y: 0, stocks: {} },
+        { id: id.pots, type: 'Factory-Pot', x: 5, y: 0, stocks: { pot: 10 } },
+      ]);
+      await cycleOver(repo).execute(inOddMonth);
+      expect(repo.raw.get(id.near).stocks.pot).toBe(4);
+      expect(repo.raw.get(id.far).stocks.pot).toBe(6);
+    });
+
+    test('a hub ordered to empty a good gives it away a little each tick, with where it came from, and says when it cannot', async () => {
+      const id = ids('source', 'target');
+      const repo = new InMemoryRepository([
+        { id: id.source, type: 'Warehouse', x: 0, y: 0, stocks: { pot: 50, goods: 50 }, lots: { pot: { 'Factory-Pot': 50 } }, hubStorageOrders: orderFor('empty') },
+        { id: id.target, type: 'Warehouse', x: 4, y: 0, stocks: {} },
+      ]);
+      const empty = new EmptyHubGoods(repo, new HubServing(repo));
+
+      await empty.execute();
+      expect(repo.raw.get(id.source).stocks.pot).toBe(30); // one tick's worth: the catalog's emptyRate
+      expect(repo.raw.get(id.target).stocks.pot).toBe(20);
+      expect(repo.raw.get(id.target).stocks.goods).toBe(20);
+      expect(repo.raw.get(id.target).lots.pot).toEqual({ 'Factory-Pot': 20 });
+      expect(repo.raw.get(id.source).hubEmptying).toEqual({ pot: 'moving' });
+
+      repo.raw.get(id.target).hubStorageOrders = orderFor('refuse'); // nobody can take it any more
+      await empty.execute();
+      expect(repo.raw.get(id.source).stocks.pot).toBe(30); // nothing lost, nothing moved
+      expect(repo.raw.get(id.source).hubEmptying).toEqual({ pot: 'blocked' });
+    });
   });
 });

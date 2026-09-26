@@ -17,6 +17,7 @@ import {
 } from '../../../domain/policies/ResourceRolePolicy.js';
 import { isWithinRange } from '../../../domain/policies/ResourceRangePolicy.js';
 import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getHubProductRemainingInbound, normalizeHubStorageOrders } from '../../../domain/policies/HubStorageOrdersPolicy.js';
 
 /**
  * Command: a hub building collects resource units from a list of source
@@ -78,6 +79,12 @@ export class CollectResourceToHub {
       return { collected: false, reason: 'hub_full', transfers: [], totalUnits: 0 };
     }
 
+    // What the hub's storage orders let it take: a good it refuses (or is emptying) comes in at no unit, and one
+    // held to a ceiling only up to it. Read against the stock as this pass fills it.
+    const hubGoods = getCategoriesForRole(hub.type, 'hub');
+    const orders = normalizeHubStorageOrders(hub.hubStorageOrders, hubGoods);
+    const running = { ...hub.stocks };
+
     const transfers = [];
 
     for (const ref of sourceRefs) {
@@ -104,8 +111,16 @@ export class CollectResourceToHub {
       if (!category) continue;
 
       const available = getCategoryAmount(source.stocks, category);
-      const amount = Math.min(available, capacity);
+      const room = getHubProductRemainingInbound({
+        productId: category,
+        productIds: hubGoods,
+        orders,
+        stocks: running,
+        totalCapacity: hub.maxStock,
+      });
+      const amount = Math.min(available, capacity, room);
       if (amount <= 0) continue;
+      running[category] = (running[category] ?? 0) + amount;
 
       const nextSourceStock = takeCategoryAmount(source.stocks, category, amount, categories, totalKey);
       await this.supplyBuildingRepository.saveStocks(sourceId, nextSourceStock);

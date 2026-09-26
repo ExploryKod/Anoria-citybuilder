@@ -45,6 +45,8 @@ const WAREHOUSE_RANGE = 12;
 const WAREHOUSE_MAX_STOCK = 500;
 /** Markets a warehouse can supply at once. */
 const WAREHOUSE_LINK_CAPACITY = 4;
+/** Units of a good a hub gives to the others per tick when ordered to empty it. */
+const HUB_EMPTY_RATE = 20;
 /** Tiles between a market and the warehouse it draws its goods from. */
 const MARKET_WAREHOUSE_RANGE = 8;
 /** Goods one market stall can hold at once. */
@@ -547,6 +549,7 @@ export const BUILDING_ECONOMY = {
         categories: [...STORED_GOODS],
         totalKey: GOODS_TOTAL_KEY,
         linkCapacity: WAREHOUSE_LINK_CAPACITY,
+        emptyRate: HUB_EMPTY_RATE,
         maxStock: WAREHOUSE_MAX_STOCK,
         hubLink: { linksField: 'linkedDistributors', linkTargetIdField: 'distributorId', allocationField: 'allocatedStocks' },
       },
@@ -573,6 +576,7 @@ export const BUILDING_ECONOMY = {
         categories: [...SUPPLIED_GOODS],
         totalKey: DIET_TOTAL_KEY,
         linkCapacity: 2,
+        emptyRate: HUB_EMPTY_RATE,
         maxStock: HUB_MAX_STOCK,
         hubLink: { linksField: 'linkedDistributors', linkTargetIdField: 'distributorId', allocationField: 'allocatedStocks' },
       },

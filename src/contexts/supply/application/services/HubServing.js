@@ -75,6 +75,35 @@ export class HubServing {
     });
   }
 
+  /**
+   * Goods move from one hub to another: the lots that carry them move too, so that where the goods came from
+   * (and the priorities that go with it) is not lost. Call it BEFORE the stocks are written: the receiving hub's
+   * lots are brought in step with the stock it still holds.
+   * @returns {Promise<Array<{ key: string, amount: number }>>} What moved, per lot.
+   */
+  async moveLots({ fromId, toId, category, amount }) {
+    const from = await this.supplyBuildingRepository.findById(fromId);
+    const to = await this.supplyBuildingRepository.findById(toId);
+    if (!from || !to || !(amount > 0)) return [];
+
+    const fromLots = this.lotsOf(from, category);
+    const moved = [];
+    let left = amount;
+    for (const key of Object.keys(fromLots).sort()) {
+      const take = Math.min(fromLots[key], left);
+      if (take <= 0) continue;
+      moved.push({ key, amount: take });
+      left -= take;
+      if (left <= 0) break;
+    }
+
+    let toLots = this.lotsOf(to, category);
+    for (const { key, amount: units } of moved) toLots = addToLot(toLots, key, units);
+    await this.supplyBuildingRepository.updateBuildingFields(fromId, { lots: { ...(from.lots ?? {}), [category]: takeFromLots(fromLots, moved) } });
+    await this.supplyBuildingRepository.updateBuildingFields(toId, { lots: { ...(to.lots ?? {}), [category]: toLots } });
+    return moved;
+  }
+
   /** Remember what a client wanted of a good and how much it got, for the clients served after it. */
   async recordDemand({ hubId, category, client, turn, wanted, served }) {
     const hub = await this.supplyBuildingRepository.findById(hubId);

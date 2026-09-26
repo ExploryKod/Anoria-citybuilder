@@ -166,6 +166,8 @@
  * @property {string[]} [clients] On a 'producer' whose goods go to a hub: the building types it serves first, in
  *   order (the default the player can change in the Clients tab). Every other building type that buys these goods
  *   follows, in catalog order — a type is never left out by omission.
+ * @property {number} [emptyRate] On a 'hub' role: units of a good it gives to the other hubs per tick when its order
+ *   for that good is "empty" (see EmptyHubGoods.js). Required on any hub that can be ordered to empty.
  * @property {string} [outcomeField] On a 'quantity' 'consumer' role: the row field its outcome (units wanted, taken,
  *   unfed) is filed under — one per need, so a building using up several things keeps each outcome apart.
  * @property {{ sourceLinkField?: string, range?: number, hubTypes?: string[], linksField?: string, linkTargetIdField?: string, allocationField?: string }} [hubLink]

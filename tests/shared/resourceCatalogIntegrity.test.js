@@ -44,6 +44,16 @@ describe('economy catalog — reach', () => {
   });
 });
 
+describe('economy catalog — hubs that can be emptied', () => {
+  test('every hub declares the rate at which it gives a good away when ordered to empty it', () => {
+    const hubs = entriesOf('hub');
+    expect(hubs.length).toBeGreaterThan(0);
+    for (const { type, entry } of hubs) {
+      expect({ type, ok: Number.isFinite(entry.emptyRate) && entry.emptyRate > 0 }).toEqual({ type, ok: true });
+    }
+  });
+});
+
 describe('economy catalog — stock ceilings', () => {
   test('every hub and every stock-holding distributor declares a positive maxStock', () => {
     const holders = [

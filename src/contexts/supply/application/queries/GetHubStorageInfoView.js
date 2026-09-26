@@ -29,6 +29,7 @@ export class GetHubStorageInfoView {
       buildingType: buildingRow.type,
       stocks: hubStocks,
       rawOrders: buildingRow.hubStorageOrders,
+      emptying: buildingRow.hubEmptying,
       totalCapacity,
     });
 

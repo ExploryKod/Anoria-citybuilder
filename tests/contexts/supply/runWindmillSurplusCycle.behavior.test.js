@@ -38,6 +38,8 @@ class InMemorySupplyBuildingRepository {
     return createSupplyBuildingSnapshot({
       id: b.id,
       type: b.type,
+      x: b.x ?? null,
+      y: b.y ?? null,
       roadCount: b.roadCount,
       worker: b.worker,
       workerNeed: b.workerNeed,
@@ -116,6 +118,8 @@ function windmill(id, stocks = { food: 0 }, extras = {}) {
   return {
     id,
     type: 'Windmill-001',
+    x: 0,
+    y: 0,
     roadCount: 1,
     worker: 1,
     workerNeed: 1,
@@ -129,6 +133,8 @@ function farm(id, type, stocks, extras = {}) {
   return {
     id,
     type,
+    x: 1,
+    y: 0,
     roadCount: 1,
     stocks,
     maxStock: 100,

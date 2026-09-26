@@ -1,5 +1,6 @@
 import { DexieSupplyBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyBuildingRepository.js';
 import { ListClientPriorityBoards } from '../contexts/supply/application/queries/ListClientPriorityBoards.js';
+import { EmptyHubGoods } from '../contexts/supply/application/commands/surplus/EmptyHubGoods.js';
 import { MarkFailedSales } from '../contexts/supply/application/commands/surplus/MarkFailedSales.js';
 import { HubServing } from '../contexts/supply/application/services/HubServing.js';
 import { LocalStorageClientPriorityRepository } from '../contexts/supply/infrastructure/browser/LocalStorageClientPriorityRepository.js';
@@ -158,7 +159,8 @@ export function createSupplyContext({
         return rebalanceHubAllocations.execute({ hubId, categories: getCategoriesForRole(hub?.type, 'hub') });
       },
     },
-    new MarkFailedSales(supplyBuildingRepositoryImpl)
+    new MarkFailedSales(supplyBuildingRepositoryImpl),
+    new EmptyHubGoods(supplyBuildingRepositoryImpl, hubServing)
   );
   const traceability = new SupplyTraceability({
     foodTraceabilityRepository: foodTraceabilityRepositoryImpl,

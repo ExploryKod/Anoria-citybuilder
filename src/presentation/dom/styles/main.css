@@ -1876,6 +1876,18 @@ button.building-info-metric-card[aria-pressed="true"] {
     color: #c62828;
 }
 
+.hub-order-mode-btn--empty {
+    background: #fff3e0;
+    border-color: #ffcc80;
+    color: #e65100;
+}
+
+.hub-order-emptying {
+    margin-left: 6px;
+    font-size: 14px;
+    cursor: help;
+}
+
 .hub-order-mode-btn--fetch {
     background: #e3f2fd;
     border-color: #90caf9;

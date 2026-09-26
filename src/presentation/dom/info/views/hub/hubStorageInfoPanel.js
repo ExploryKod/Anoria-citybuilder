@@ -30,6 +30,20 @@ function clearOrderWarnings(ordersPanel) {
 }
 
 /**
+ * What the line says of an order to empty: goods are leaving, nothing can take them, or there is nothing left.
+ * @param {{ mode: string, amount: number, emptying: 'moving' | 'blocked' | null }} line
+ * @returns {{ icon: string, title: string } | null}
+ */
+function emptyingStatus(line) {
+  if (line.mode !== 'empty') return null;
+  if (line.emptying === 'blocked') {
+    return { icon: '⚠️', title: 'Vidage bloqué : aucun autre entrepôt ne peut prendre ce bien (plein, refusé ou hors service).' };
+  }
+  if (line.amount <= 0) return { icon: '✓', title: 'Vidé : plus rien à déplacer.' };
+  return { icon: '🚚', title: 'Vidage en cours : le stock part vers les autres entrepôts.' };
+}
+
+/**
  * @param {HTMLElement} ordersPanel
  * @param {object} view
  * @param {string|null} orderWarning
@@ -62,6 +76,14 @@ function patchOrdersPanelRows(ordersPanel, view, orderWarning) {
     if (modeBtn) {
       modeBtn.textContent = line.modeLabel;
       modeBtn.className = `hub-order-mode-btn hub-order-mode-btn--${line.mode}`;
+    }
+
+    const status = row.querySelector('[data-role="emptying"]');
+    if (status) {
+      const emptying = emptyingStatus(line);
+      status.textContent = emptying?.icon ?? '';
+      status.title = emptying?.title ?? '';
+      status.hidden = !emptying;
     }
 
     const display = row.querySelector('.hub-order-share-display');
@@ -232,8 +254,10 @@ function renderHubOrdersPanelShell(ordersPanel, view) {
   ordersPanel.innerHTML = `
     <h3 class="hub-orders-title">Ordres de stockage</h3>
     <p class="hub-orders-help">
-      Mode : Accepter → Refuser → Amener.
-      <strong>Amener</strong> tire le stock ailleurs.
+      Mode : Accepter → Refuser → Amener → Vider.
+      <strong>Amener</strong> : les producteurs qui vendent ce bien viennent d'abord ici, avant l'entrepôt le plus proche.
+      <strong>Vider</strong> : cet entrepôt donne ce bien aux autres, un peu à chaque jour (d'abord ceux en « Amener », puis
+      les plus proches), et n'en reçoit plus.
       Le <strong>%</strong> est le plafond de remplissage (comme les m² de César III).
       Si plusieurs denrées sont à 100&nbsp;% (ou se chevauchent), la place libre va au
       <strong>premier arrivé</strong>.
@@ -244,7 +268,7 @@ function renderHubOrdersPanelShell(ordersPanel, view) {
           (line) => `
         <div class="hub-order-c3-row${line.amount > line.maxCap ? ' hub-order-c3-row--overflow' : ''}" data-product="${line.productId}">
           <span class="hub-order-c3-icon">${line.emoji}</span>
-          <span class="hub-order-c3-label">${line.label}</span>
+          <span class="hub-order-c3-label">${line.label} <span class="hub-order-emptying" data-role="emptying" hidden></span></span>
           <button type="button" class="hub-order-mode-btn hub-order-mode-btn--${line.mode}" data-action="mode">
             ${line.modeLabel}
           </button>
