@@ -7,7 +7,7 @@ import { buildingCatalog } from '../../src/shared/building-catalog/buildingCatal
 // A placeable building's footprint must be its mesh's real size: otherwise a road can sit under half of it,
 // and "a road touching the building" (its road access) is measured from tiles it does not cover.
 // These already differed when this guard was written — fix them and delete them from the list, never add.
-const KNOWN_MISMATCHES = ['House-2Story', 'Hay-Bale', 'Hay-Cart', 'Hay-Pile', 'Crate-001', 'BookShop-001'];
+const KNOWN_MISMATCHES = ['House-2Story', 'Hay-Bale', 'Hay-Cart', 'Hay-Pile', 'BookShop-001'];
 
 describe('a building\'s footprint matches the kit mesh it wears', () => {
   test('every placeable kit building, but the known ones', () => {

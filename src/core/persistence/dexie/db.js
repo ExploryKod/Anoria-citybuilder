@@ -110,6 +110,12 @@ db.version(8).stores({}).upgrade(async (tx) => {
   await tx.table('houses').where('type').anyOf(RETIRED_PROP_TYPES).delete();
 });
 
+// v9: the village-era crate and wheat silo are retired: a saved row of either would throw on scene render.
+const RETIRED_BUILDING_TYPES = ['Crate-001', 'Cylinder'];
+db.version(9).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').anyOf(RETIRED_BUILDING_TYPES).delete();
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

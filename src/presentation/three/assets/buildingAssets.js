@@ -461,74 +461,7 @@ export const BUILDING_ASSETS = Object.freeze({
       editorGroup: null,
       label: 'Windmill 001',
       tooltip: 'Windmill 001',
-      // 'icon' (not 'png'): a 24px monochrome silhouette icon like the SVGs
-      // around it, not a Kenney-style full-color preview tile — see
-      // ToolPanel.js resolveIcon().
-      icon: { kind: 'icon', value: '/icons/windmill.png' },
-    },
-    tags: ['industry', 'building'],
-  },
-  // Caisse
-  'Crate-001': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-m',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'Crate 001',
-      tooltip: 'Crate 001',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>' },
-    },
-    tags: ['industry', 'building'],
-  },
-  // Silo à blé
-  'Cylinder': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-n',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'Cylinder',
-      tooltip: 'Cylinder',
-      icon: { kind: 'emoji', value: '🛑' },
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-j.png' },
     },
     tags: ['industry', 'building'],
   },
@@ -625,7 +558,7 @@ export const BUILDING_ASSETS = Object.freeze({
       editorGroup: null,
       label: 'Market Stall Red',
       tooltip: 'Market Stall Red',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>' },
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-c.png' },
     },
     tags: ['markets', 'building'],
   },

@@ -75,7 +75,7 @@ function applyPreviewProfile(toolId) {
  */
 export function resolveToolPreviewUrl(toolId) {
   const icon = catalogIcon(toolId);
-  return icon?.kind === 'png' || icon?.kind === 'icon' ? icon.value : null;
+  return icon?.kind === 'png' ? icon.value : null;
 }
 
 export function initBuildToolHoverPreview() {

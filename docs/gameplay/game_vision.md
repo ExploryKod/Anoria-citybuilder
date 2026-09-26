@@ -270,7 +270,7 @@ Le **journal** est la meilleure façon de comprendre pourquoi la ville gagne ou 
 | **Habitations** | Maisons bleue / rouge / violette (+ générique) — bleue et violette grisées au démarrage, voir §4 |
 | **Palais** | Maison à étages |
 | **Agriculture** | Fermes, foin, charrettes… |
-| **Industrie** | Moulin, grange, caisses, silos, chai |
+| **Industrie** | Moulin, entrepôt, bûcheron, ateliers de poterie et de meubles |
 | **Infrastructure** | Puits, fontaine, réverbère, clôture, étang, dalles (Plane), cube, sphères… |
 | **Routes** | Route moderne, chemin de pierre |
 | **Services** | Marchés bleu/rouge, église, chapelle, librairie |

@@ -411,9 +411,6 @@ export const BUILDING_ECONOMY = {
       },
     ],
   },
-  'Crate-001': { displayName: 'Caisse', construction: { price: 2, category: 'industry' } },
-  // Wheat silo (all Cylinder* meshes pool to this one tool)
-  Cylinder: { displayName: 'Silo à blé', construction: { price: 15, category: 'industry' } },
 
   // Markets
   // requiredSkill: 'vente-alimentaire' (2026-09-10) — same skill as

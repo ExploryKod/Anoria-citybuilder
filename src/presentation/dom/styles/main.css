@@ -470,21 +470,6 @@ canvas.pointer-events-disabled {
     pointer-events: none;
 }
 
-.toolbar .toolbar-btn .tool-icon-img,
-.panel-layout .panel-btn .tool-icon-img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    pointer-events: none;
-    /* Silhouette noire → suit la couleur du bouton (blanc sur fond coloré) */
-    filter: brightness(0) invert(1);
-}
-
-.toolbar .toolbar-btn.selected .tool-icon-img,
-.panel-layout .panel-btn.selected .tool-icon-img {
-    filter: brightness(0) invert(1);
-}
-
 .toolbar .toolbar-btn .tool-emoji,
 .panel-layout .panel-btn .tool-emoji {
     font-size: 1.25rem;
