@@ -10,6 +10,32 @@
 /** The key of the unattributed lot. */
 export const UNATTRIBUTED = '';
 
+/** Separates the producer type from the hub type a lot came through, in a lot key. */
+const VIA_SEPARATOR = '|';
+
+/**
+ * A lot key says who made the goods and, when they were moved from another hub, which type of hub they came
+ * through: `<producer type>` or `<producer type>|<hub type>`. A lot of unknown origin that was moved is `|<hub type>`.
+ * @param {string} key
+ * @returns {{ producerType: string, via: string }} Empty strings when unknown / not moved.
+ */
+export function lotOrigin(key) {
+  const [producerType, via = ''] = String(key).split(VIA_SEPARATOR);
+  return { producerType, via };
+}
+
+/**
+ * The key of goods that leave a hub: same producer, now told to have come through that hub's type (once: goods
+ * that were already moved keep the hub they first came through).
+ * @param {string} key
+ * @param {string} hubType
+ * @returns {string}
+ */
+export function lotKeyMovedThrough(key, hubType) {
+  const { producerType, via } = lotOrigin(key);
+  return `${producerType}${VIA_SEPARATOR}${via || hubType}`;
+}
+
 /**
  * Make lots agree with the stock they break down: what the lots miss goes to the unattributed lot, what they
  * overshoot is trimmed (unattributed first, then the other lots in key order).

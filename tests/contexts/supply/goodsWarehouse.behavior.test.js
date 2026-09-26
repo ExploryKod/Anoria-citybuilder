@@ -224,7 +224,8 @@ describe('Supply — goods warehouse', () => {
       expect(repo.raw.get(id.source).stocks.pot).toBe(30); // one tick's worth: the catalog's emptyRate
       expect(repo.raw.get(id.target).stocks.pot).toBe(20);
       expect(repo.raw.get(id.target).stocks.goods).toBe(20);
-      expect(repo.raw.get(id.target).lots.pot).toEqual({ 'Factory-Pot': 20 });
+      // Where it came from is kept, and so is the hub it came through.
+      expect(repo.raw.get(id.target).lots.pot).toEqual({ 'Factory-Pot|Warehouse': 20 });
       expect(repo.raw.get(id.source).hubEmptying).toEqual({ pot: 'moving' });
 
       repo.raw.get(id.target).hubStorageOrders = orderFor('refuse'); // nobody can take it any more

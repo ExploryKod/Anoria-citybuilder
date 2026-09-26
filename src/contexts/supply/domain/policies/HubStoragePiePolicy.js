@@ -1,5 +1,5 @@
 import { getResourceCategoryColors } from '../catalogs/ResourceCategoryCatalog.js';
-import { reconcileLots } from './HubLotsPolicy.js';
+import { reconcileLots, lotOrigin } from './HubLotsPolicy.js';
 
 /**
  * Pie slice colors for a product — declared once, in ResourceCategoryCatalog.
@@ -54,7 +54,8 @@ function buildParts(lots, startAngle, capacity, baseColor) {
   let cursor = startAngle;
   return lots.map(([producerType, lotAmount], index) => {
     const angle = (lotAmount / capacity) * 360;
-    const part = Object.freeze({ producerType, amount: lotAmount, startAngle: cursor, angle, color: toneVariant(baseColor, index) });
+    const { producerType: madeBy, via } = lotOrigin(producerType);
+    const part = Object.freeze({ producerType: madeBy, via, amount: lotAmount, startAngle: cursor, angle, color: toneVariant(baseColor, index) });
     cursor += angle;
     return part;
   });

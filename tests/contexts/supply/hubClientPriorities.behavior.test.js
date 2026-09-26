@@ -110,4 +110,12 @@ describe('Supply — a hub serves its clients by priority', () => {
     expect(resolveClientPriorities('Factory-Oil').order).toEqual(expect.arrayContaining(['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red']));
     expect(resolveClientPriorities('Factory-Oil').order).not.toContain('Factory-Oil');
   });
+
+  test('goods moved through another hub are still served in the order of the producer type that made them', async () => {
+    settings = { 'Factory-Plate': { order: ['Market-Stall-Red', 'Market-Stall'], disabled: ['Market-Stall'] } };
+    repo.rows.get('warehouse').lots = { plate: { 'Factory-Plate|Warehouse': 10 } };
+
+    expect((await pull('second', 10, 6)).transferred).toBe(false); // Market-Stall is not served plates from that producer, moved or not
+    expect((await pull('first', 10, 6)).totalUnits).toBe(10);
+  });
 });

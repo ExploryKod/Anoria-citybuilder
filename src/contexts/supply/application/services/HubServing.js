@@ -1,4 +1,4 @@
-import { reconcileLots, addToLot, takeFromLots } from '../../domain/policies/HubLotsPolicy.js';
+import { reconcileLots, addToLot, takeFromLots, lotOrigin, lotKeyMovedThrough } from '../../domain/policies/HubLotsPolicy.js';
 import { availableToClient, allocateToClient } from '../../domain/policies/HubClientAllocationPolicy.js';
 import { recordClientDemand, othersWanted } from '../../domain/policies/HubClientDemandPolicy.js';
 import { resolveClientPriorities } from '../../../../shared/building-catalog/clientQueries.js';
@@ -23,7 +23,11 @@ export class HubServing {
 
   #priorityOf() {
     const settings = this.loadSettings() ?? {};
-    return (producerType) => resolveClientPriorities(producerType, settings[producerType]);
+    // A lot is served in the order its producer type asks, whether the goods were moved through another hub or not.
+    return (lotKey) => {
+      const { producerType } = lotOrigin(lotKey);
+      return resolveClientPriorities(producerType, settings[producerType]);
+    };
   }
 
   /** A hub's lots of one good, in step with its stock. */
@@ -98,7 +102,8 @@ export class HubServing {
     }
 
     let toLots = this.lotsOf(to, category);
-    for (const { key, amount: units } of moved) toLots = addToLot(toLots, key, units);
+    // They arrive told to come through the hub they left: "olive field — warehouse", not just "olive field".
+    for (const { key, amount: units } of moved) toLots = addToLot(toLots, lotKeyMovedThrough(key, from.type), units);
     await this.supplyBuildingRepository.updateBuildingFields(fromId, { lots: { ...(from.lots ?? {}), [category]: takeFromLots(fromLots, moved) } });
     await this.supplyBuildingRepository.updateBuildingFields(toId, { lots: { ...(to.lots ?? {}), [category]: toLots } });
     return moved;

@@ -7,8 +7,14 @@ import { buildingName } from '../../../shell/CatalogVocabulary.js';
 /** What the hub cannot attribute (goods that arrived before it kept track): said as it is, not named. */
 const UNKNOWN_ORIGIN = 'Origine inconnue';
 
-/** The name of who delivered a part of a good: the producer type as the catalog names it. */
-const originLabel = (producerType) => (producerType === '' ? UNKNOWN_ORIGIN : buildingName(producerType));
+/**
+ * The name of who delivered a part of a good: the producer type as the catalog names it, and — when the goods were
+ * moved from another hub — the hub type they came through ("Champ d'oliviers – Entrepôt").
+ */
+const originLabel = ({ producerType, via }) => {
+  const made = producerType === '' ? UNKNOWN_ORIGIN : buildingName(producerType);
+  return via ? `${made} – ${buildingName(via)}` : made;
+};
 
 /**
  * @param {number} cx
@@ -55,13 +61,13 @@ function labelPoint(cx, cy, r, midDeg) {
  */
 function originLines(seg) {
   const parts = (seg.parts ?? []).filter((part) => part.amount > 0);
-  if (parts.length === 0 || (parts.length === 1 && parts[0].producerType === '')) return '';
+  if (parts.length === 0 || (parts.length === 1 && parts[0].producerType === '' && !parts[0].via)) return '';
   return parts
     .map(
       (part) => `
         <div class="hub-pie-legend-item hub-pie-legend-item--origin" data-product="${seg.productId}">
           <span class="hub-pie-legend-swatch"><span class="hub-pie-legend-swatch-dark" style="background:${part.color}"></span></span>
-          <span class="hub-pie-legend-text">↳ ${originLabel(part.producerType)} — ${part.amount}</span>
+          <span class="hub-pie-legend-text">↳ ${originLabel(part)} — ${part.amount}</span>
         </div>`
     )
     .join('');
