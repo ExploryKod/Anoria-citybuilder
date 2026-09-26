@@ -21,6 +21,11 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   wood: Object.freeze({ emoji: '🪵', label: 'Bois', unit: unitOf('bûche', 'bûches'), colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
   food: Object.freeze({ emoji: '🍽️', label: 'Nourriture', unit: BASKET }),
   heat: Object.freeze({ emoji: '🔥', label: 'Chauffage', unit: unitOf('unité', 'unités') }),
+  // Lighting: olive green for oil, beeswax for candles.
+  olive: Object.freeze({ emoji: '🫒', label: 'Olive', unit: unitOf('olive', 'olives'), colors: Object.freeze({ dark: '#556B2F', pale: '#C5D19A' }) }),
+  oil: Object.freeze({ emoji: '🪔', label: 'Huile', unit: unitOf('jarre', 'jarres'), colors: Object.freeze({ dark: '#B59B2E', pale: '#EBDDA0' }) }),
+  candle: Object.freeze({ emoji: '🕯️', label: 'Bougie', unit: unitOf('bougie', 'bougies'), colors: Object.freeze({ dark: '#D9B84A', pale: '#F6EDC4' }) }),
+  light: Object.freeze({ emoji: '💡', label: 'Éclairage', unit: unitOf('unité', 'unités') }),
   goods: Object.freeze({ emoji: '📦', label: 'Biens', unit: unitOf('bien', 'biens') }),
   // Chart colors follow what the good is made of: walnut for furniture, glazed white-blue for plates,
   // terracotta for pots, ochre clay for amphorae.

@@ -38,11 +38,15 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'Farm-Cabbage': Object.freeze({ width: 1, depth: 1 }),
   'Farm-Carrot': Object.freeze({ width: 1, depth: 1 }),
   'Farm-Wheat': Object.freeze({ width: 1, depth: 1 }),
+  'Farm-Olive': Object.freeze({ width: 1, depth: 1 }),
   // Pottery workshops reassign their geometry to Kenney industrial meshes
   // (see buildingAssets.js) — footprint must match that prefab's real size.
   'Factory-Amphora': Object.freeze({ width: 2, depth: 2 }),
   'Factory-Plate': Object.freeze({ width: 1, depth: 2 }),
   'Factory-Pot': Object.freeze({ width: 2, depth: 2 }),
+  // Lighting workshops wear Kenney industrial building-i (1x2) and building-m (2x2).
+  'Factory-Oil': Object.freeze({ width: 1, depth: 2 }),
+  'Factory-Candle': Object.freeze({ width: 2, depth: 2 }),
   // Lumberjack reassigns its geometry to Kenney industrial building-o (see buildingAssets.js) — 1x2 there.
   // Furniture workshop / Warehouse reassign to Kenney industrial building-f (2x2) / building-a (3x2).
   'Factory-Furniture': Object.freeze({ width: 2, depth: 2 }),

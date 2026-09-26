@@ -7,7 +7,7 @@ import { HubServing } from '../../../src/contexts/supply/application/services/Hu
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
-import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { hasResourceRole, listRoleEntries } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { AssignDistributorToHub } from '../../../src/contexts/supply/application/commands/links/AssignDistributorToHub.js';
 import { RebalanceHubAllocations } from '../../../src/contexts/supply/application/commands/links/RebalanceHubAllocations.js';
 import { CascadeDestroyHubDistributors } from '../../../src/contexts/supply/application/commands/links/CascadeDestroyHubDistributors.js';
@@ -89,9 +89,11 @@ describe('Supply — a market with two distributor entries', () => {
     late.rows.set('warehouse', { id: 'warehouse', type: 'Warehouse', x: 8, y: 3, roadCount: 1, worker: 1, workerNeed: 1, linkedDistributors: [], stocks: { plate: 10, goods: 10 } });
     const { linked } = await new AssignDistributorToHub(late, new RebalanceHubAllocations(late)).linkWaitingDistributors({ hubId: 'warehouse' });
 
-    expect(linked).toBe(2); // its goods entry and its heat entry both find it
-    expect(late.rows.get('stall').goodsHubId).toBe('warehouse');
-    expect(late.rows.get('stall').heatHubId).toBe('warehouse');
+    // Every entry of the stall that may draw on a warehouse finds it, each in its own field.
+    const drawsOnWarehouse = listRoleEntries('Market-Stall', 'distributor').filter((entry) => entry.hubLink?.hubTypes?.includes('Warehouse'));
+    expect(drawsOnWarehouse.length).toBeGreaterThan(1);
+    expect(linked).toBe(drawsOnWarehouse.length);
+    for (const entry of drawsOnWarehouse) expect(late.rows.get('stall')[entry.hubLink.sourceLinkField]).toBe('warehouse');
   });
 
   test('only the hub a market cannot be placed without takes it down: demolishing the other just unlinks it', async () => {

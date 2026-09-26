@@ -104,4 +104,10 @@ describe('Supply — a hub serves its clients by priority', () => {
     expect(repo.rows.get('warehouse').stocks.goods).toBe(6);
     expect(repo.rows.get('warehouse').stocks.heat ?? 0).toBe(0);
   });
+
+  test('the olive grove is bought by the oil press alone; its oil by the markets — all read from the catalog', () => {
+    expect(resolveClientPriorities('Farm-Olive').order).toEqual(['Factory-Oil']);
+    expect(resolveClientPriorities('Factory-Oil').order).toEqual(expect.arrayContaining(['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red']));
+    expect(resolveClientPriorities('Factory-Oil').order).not.toContain('Factory-Oil');
+  });
 });

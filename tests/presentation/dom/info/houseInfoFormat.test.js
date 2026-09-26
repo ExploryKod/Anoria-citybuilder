@@ -3,6 +3,7 @@
  * need one click away.
  */
 import { describe, test, expect } from '@jest/globals';
+import { getQuantityConsumerEntries } from '../../../../src/shared/building-catalog/resourceRoleQueries.js';
 import { formatHouseResourcesModel } from '../../../../src/presentation/dom/info/presenters/formats/houseInfoFormat.js';
 
 const needOf = (model, kind) => model.needs.find((need) => need.kind === kind);
@@ -15,7 +16,8 @@ describe('formatHouseResourcesModel — needs first, goods in detail', () => {
 
   test('a house has one card per need the catalog gives it, the diet first', () => {
     const model = formatHouseResourcesModel({ buildingType: 'House-Red', lastConsumption: null });
-    expect(model.needs.map((need) => need.kind)).toEqual(['food', 'goods', 'heat']);
+    expect(model.needs.map((need) => need.kind)).toEqual(getQuantityConsumerEntries('House-Red').map((entry) => entry.totalKey));
+    expect(model.needs[0].kind).toBe('food');
   });
 
   test('a fully fed house reads 8/8, met', () => {

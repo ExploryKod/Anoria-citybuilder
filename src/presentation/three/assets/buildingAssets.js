@@ -337,6 +337,53 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     tags: ['farms', 'building'],
   },
+  // Champ d'oliviers — assembled like the crop fields, but with the nature kit's small trees planted on the dirt
+  // rows. No seasonal crop icons: those are the food icons of the crop fields.
+  'Farm-Olive': {
+    source: 'kenneyFarmField',
+    geometry: {
+      glb: '/resources/kenney_nature-kit/Models/GLTF format/crops_dirtDoubleRow.glb',
+      sourceKey: null,
+      aliases: [],
+      kit: null,
+      buildingId: null,
+    },
+    transform: {
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.05,
+      scale: 1,
+    },
+    crop: {
+      perTile: 1,
+      stages: {
+        fallow: null,
+        growing: { glb: '/resources/kenney_nature-kit/Models/GLTF format/tree_small.glb', scale: 0.5 },
+        ripe: { glb: '/resources/kenney_nature-kit/Models/GLTF format/tree_small.glb' },
+      },
+      stageBySeason: { Hiver: 'ripe', Printemps: 'growing', 'Été': 'ripe', Automne: 'ripe' },
+      defaultStage: 'ripe',
+      requiresStaff: true,
+      idleStage: 'fallow',
+      previewStage: 'ripe',
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: null,
+      receiveShadow: null,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+      instanceable: true,
+    },
+    button: {
+      group: 'farms',
+      editorGroup: null,
+      label: 'Champ d\'oliviers',
+      tooltip: 'Champ d\'oliviers',
+      icon: { kind: 'emoji', value: '🫒' },
+    },
+    tags: ['farms', 'building'],
+  },
   // Moulin (taille alignée sur houses, override explicite)
   'Windmill-001': {
     source: 'kenneyCityKit',
@@ -1822,6 +1869,69 @@ export const BUILDING_ASSETS = Object.freeze({
       label: 'Atelier de pots',
       tooltip: 'Atelier de pots',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-g.png' },
+    },
+    tags: ['industry', 'building'],
+  },
+  // Huilerie / Chandellerie — kit Kenney Industrial building-i / building-m (economy/footprint keyed to their own ids).
+  'Factory-Oil': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-i',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      group: 'industry',
+      editorGroup: null,
+      label: 'Huilerie',
+      tooltip: 'Huilerie',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-i.png' },
+    },
+    tags: ['industry', 'building'],
+  },
+  'Factory-Candle': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-m',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      group: 'industry',
+      editorGroup: null,
+      label: 'Chandellerie',
+      tooltip: 'Chandellerie',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-m.png' },
     },
     tags: ['industry', 'building'],
   },

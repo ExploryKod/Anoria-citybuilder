@@ -143,4 +143,30 @@ describe('Supply — goods warehouse', () => {
     await cycleOver(repo).execute({ month: 'march', monthIndex: 2, dayInMonth: 5, year: 1 });
     expect(repo.raw.get(id.pots).flags.collectedByHub).toBe(false);
   });
+
+  test('an oil press lives off the olives sold in one go: it presses while they last, then stops until more arrive', async () => {
+    const id = ids('wh', 'press');
+    const repo = new InMemoryRepository([
+      { id: id.wh, type: 'Warehouse', x: 0, y: 0, stocks: { olive: 20, goods: 20 } },
+      { id: id.press, type: 'Factory-Oil', x: 3, y: 3, stocks: {} },
+    ]);
+    const produce = new ProduceResource(repo, { hubServing: new HubServing(repo) });
+    const month = (monthIndex) => ({ season: 'spring', month: 'january', monthIndex, year: 1, dayInMonth: 1 });
+    const run = async (from, to) => {
+      for (let monthIndex = from; monthIndex <= to; monthIndex += 1) {
+        await produce.execute({ buildingId: id.press, period: month(monthIndex) });
+      }
+    };
+
+    await run(0, 3); // two cycles: 10 olives each
+    expect(repo.raw.get(id.press).stocks.oil).toBe(20);
+    expect(repo.raw.get(id.wh).stocks.olive).toBe(0);
+
+    await run(4, 5); // no olives left: nothing is pressed, nothing is made
+    expect(repo.raw.get(id.press).stocks.oil).toBe(20);
+
+    repo.raw.get(id.wh).stocks = { olive: 10, goods: 10 }; // a new harvest is sold
+    await run(6, 7);
+    expect(repo.raw.get(id.press).stocks.oil).toBe(30);
+  });
 });

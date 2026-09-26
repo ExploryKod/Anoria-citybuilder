@@ -32,7 +32,13 @@ const DIET_TOTAL_KEY = 'food';
  * can hold the diet's crops and another these goods, side by side.
  */
 const RETAIL_GOODS = ['furniture', 'plate', 'pot', 'amphora'];
-const STORED_GOODS = ['wood', ...RETAIL_GOODS];
+/** What lights a home. */
+const LIGHT_GOODS = ['oil', 'candle'];
+/** Raw farm goods that are not eaten: the oil press draws them from a warehouse. */
+const RAW_FARM_GOODS = ['olive'];
+const STORED_GOODS = ['wood', ...RETAIL_GOODS, ...LIGHT_GOODS, ...RAW_FARM_GOODS];
+/** An olive field's single annual harvest (olives): enough for two oil presses' year. */
+const OLIVE_ANNUAL_YIELD = 120;
 const GOODS_TOTAL_KEY = 'goods';
 /** Manhattan tiles around a warehouse from which it collects goods, and from which a workshop draws its supplies. */
 const WAREHOUSE_RANGE = 12;
@@ -51,6 +57,10 @@ const HEAT_TOTAL_KEY = 'heat';
 const CITIZEN_MONTHLY_HEAT_NEED = 0.1;
 /** Heat one market stall can hold at once. */
 const MARKET_HEAT_MAX_STOCK = 60;
+/** What a citizen burns to see at night, per month, and what one market stall can hold of it. */
+const LIGHT_TOTAL_KEY = 'light';
+const CITIZEN_MONTHLY_LIGHT_NEED = 0.1;
+const MARKET_LIGHT_MAX_STOCK = 60;
 
 /** When a crop is sold to its hub: the windmill's collection month, declared on the field it collects from. */
 const HARVEST_SALE = { schedule: { unit: 'month', values: ['december'] } };
@@ -172,11 +182,27 @@ const HOUSE_HEAT_CONSUMER = {
   outcomeField: 'lastHeatConsumption',
 };
 
+/**
+ * A fourth need, parallel to the others: what lights the home. Oil or candles serve it, either one — a home is
+ * lit as soon as ANY of them covers the need.
+ */
+const HOUSE_LIGHT_CONSUMER = {
+  role: 'consumer',
+  categories: [...LIGHT_GOODS],
+  totalKey: LIGHT_TOTAL_KEY,
+  amount: CITIZEN_MONTHLY_LIGHT_NEED,
+  stockTarget: { periods: 1 },
+  schedule: { unit: 'always' },
+  periodLock: { field: 'lastLightConsumptionMonth', unit: 'month' },
+  outcomeField: 'lastLightConsumption',
+};
+
 /** Everything a house-like building holds: diet, gathering, and every service it can be covered by. */
 const HOUSE_RESOURCE_ROLES = [
   HOUSE_DIET_CONSUMER,
   HOUSE_GOODS_CONSUMER,
   HOUSE_HEAT_CONSUMER,
+  HOUSE_LIGHT_CONSUMER,
   HOUSE_GATHERING,
   serviceConsumer('faith'),
   serviceConsumer('school'),
@@ -225,6 +251,16 @@ const MARKET_RESOURCE_ROLES = [{
   maxStock: MARKET_HEAT_MAX_STOCK,
   schedule: { unit: 'always' },
   hubLink: { sourceLinkField: 'heatHubId', range: MARKET_WAREHOUSE_RANGE, hubTypes: ['Warehouse'] },
+},
+// What lights the houses, drawn from a warehouse the same way.
+{
+  role: 'distributor',
+  categories: [...LIGHT_GOODS],
+  range: Infinity,
+  totalKey: LIGHT_TOTAL_KEY,
+  maxStock: MARKET_LIGHT_MAX_STOCK,
+  schedule: { unit: 'always' },
+  hubLink: { sourceLinkField: 'lightHubId', range: MARKET_WAREHOUSE_RANGE, hubTypes: ['Warehouse'] },
 }];
 const MARKET_PLACEMENT_REQUIRES = [
   { role: 'hub', categories: [...SUPPLIED_GOODS], range: MARKET_SILO_PLACEMENT_RANGE, requiresCapacity: true },
@@ -357,6 +393,23 @@ export const BUILDING_ECONOMY = {
     }],
   },
 
+  // Olive grove: the first field whose harvest is not eaten. Same shape as the crop fields — one annual harvest,
+  // sold to a hub in the sale window — but what it grows goes to the oil press (Factory-Oil), not to the citizens.
+  'Farm-Olive': {
+    displayName: 'Champ d\'oliviers',
+    requiresRoad: false,
+    construction: { price: 30, category: 'farms' },
+    employment: { sector: 1, workerNeed: 3, requiredSkill: 'fermier' },
+    resourceRoles: [{
+      role: 'producer',
+      categories: ['olive'],
+      schedule: { unit: 'season', values: ['autumn'] },
+      sale: HARVEST_SALE,
+      amount: OLIVE_ANNUAL_YIELD,
+      periodLock: { field: 'lastProductionYear', unit: 'year' },
+    }],
+  },
+
   // Pottery workshops (2026-09-08) — a second independent quantity-good
   // chain, proving `demandMet`/`goodsVariety` (see HouseTierRequirementPolicy.js)
   // and the whole 'producer' role really are food-agnostic. Same pattern as
@@ -399,6 +452,37 @@ export const BUILDING_ECONOMY = {
       categories: ['amphora'],
       // 2 in the first month, x5 in the second: 10 every two months, sold once complete.
       ...twoMonthCycle({ first: 'shaping', second: 'firing', base: 2, factor: 5 }),
+    }],
+  },
+
+  // Lighting workshops: two more producers of the same shape as the pottery workshops — one good each, a
+  // two-month cycle, sold to a warehouse. What they make lights the houses (see HOUSE_LIGHT_CONSUMER).
+  'Factory-Oil': {
+    displayName: 'Huilerie',
+    construction: { price: 50, category: 'industry' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
+    resourceRoles: [{
+      role: 'producer',
+      categories: ['oil'],
+      // A recipe: pressing takes 10 olives from a warehouse in range (and waits for them if they are late);
+      // settling multiplies: 10 oil every two months, sold once complete.
+      ...twoMonthCycle({
+        first: 'pressing',
+        second: 'settling',
+        base: 2,
+        factor: 5,
+        inputs: [{ category: 'olive', amount: 10, from: { role: 'hub', range: WAREHOUSE_RANGE } }],
+      }),
+    }],
+  },
+  'Factory-Candle': {
+    displayName: 'Chandellerie',
+    construction: { price: 60, category: 'industry' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
+    resourceRoles: [{
+      role: 'producer',
+      categories: ['candle'],
+      ...twoMonthCycle({ first: 'melting', second: 'moulding', base: 2, factor: 5 }),
     }],
   },
 
