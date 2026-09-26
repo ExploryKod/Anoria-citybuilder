@@ -82,4 +82,26 @@ describe('Supply — a hub serves its clients by priority', () => {
     expect(outcome.transferred).toBe(false);
     expect(repo.rows.get('warehouse').stocks.plate).toBe(10);
   });
+
+  test('the two lumberjacks serve the same clients in a different order, from the catalog alone', () => {
+    const household = resolveClientPriorities('Lumberjack').order;
+    const industrial = resolveClientPriorities('Lumberjack-Industry').order;
+    expect([...household].sort()).toEqual([...industrial].sort());
+    expect(household[0]).toBe('Market-Stall');
+    expect(industrial[0]).toBe('Factory-Furniture');
+    expect(household).toContain('Factory-Furniture');
+  });
+
+  test('a market draws wood for heat, and the warehouse files it under its own total', async () => {
+    repo.rows.get('warehouse').stocks = { wood: 10, goods: 10 };
+    repo.rows.get('warehouse').lots = { wood: { Lumberjack: 10 } };
+    repo.rows.get('second').heatHubId = 'warehouse';
+
+    const outcome = await new TransferHubToHub(repo, serving()).execute({ targetId: 'second', period: { turn: 1 }, demand: 4, category: 'wood' });
+
+    expect(outcome.totalUnits).toBe(4);
+    expect(repo.rows.get('second').stocks.heat).toBe(4);
+    expect(repo.rows.get('warehouse').stocks.goods).toBe(6);
+    expect(repo.rows.get('warehouse').stocks.heat ?? 0).toBe(0);
+  });
 });

@@ -45,6 +45,12 @@ const MARKET_WAREHOUSE_RANGE = 8;
 const MARKET_GOODS_MAX_STOCK = 120;
 /** Units of goods a citizen uses up per month (a quarter: one unit per four citizens). */
 const CITIZEN_MONTHLY_GOODS_NEED = 0.25;
+/** What a citizen burns to keep warm, per month, and the goods that can supply it (wood today; coal, oil... later). */
+const HEAT_GOODS = ['wood'];
+const HEAT_TOTAL_KEY = 'heat';
+const CITIZEN_MONTHLY_HEAT_NEED = 0.1;
+/** Heat one market stall can hold at once. */
+const MARKET_HEAT_MAX_STOCK = 60;
 
 /** When a crop is sold to its hub: the windmill's collection month, declared on the field it collects from. */
 const HARVEST_SALE = { schedule: { unit: 'month', values: ['december'] } };
@@ -151,10 +157,26 @@ const serviceConsumer = (category) => ({
   periodLock: { unit: 'month' },
 });
 
+/**
+ * A third need, parallel to the others: what a citizen burns to keep warm. Wood serves it today; any other
+ * good added to `HEAT_GOODS` serves it too — a citizen is warm as soon as ANY of them covers the need.
+ */
+const HOUSE_HEAT_CONSUMER = {
+  role: 'consumer',
+  categories: [...HEAT_GOODS],
+  totalKey: HEAT_TOTAL_KEY,
+  amount: CITIZEN_MONTHLY_HEAT_NEED,
+  stockTarget: { periods: 1 },
+  schedule: { unit: 'always' },
+  periodLock: { field: 'lastHeatConsumptionMonth', unit: 'month' },
+  outcomeField: 'lastHeatConsumption',
+};
+
 /** Everything a house-like building holds: diet, gathering, and every service it can be covered by. */
 const HOUSE_RESOURCE_ROLES = [
   HOUSE_DIET_CONSUMER,
   HOUSE_GOODS_CONSUMER,
+  HOUSE_HEAT_CONSUMER,
   HOUSE_GATHERING,
   serviceConsumer('faith'),
   serviceConsumer('school'),
@@ -193,6 +215,16 @@ const MARKET_RESOURCE_ROLES = [{
   maxStock: MARKET_GOODS_MAX_STOCK,
   schedule: { unit: 'always' },
   hubLink: { sourceLinkField: 'goodsHubId', range: MARKET_WAREHOUSE_RANGE, hubTypes: ['Warehouse'] },
+},
+// What keeps the houses warm, drawn from a warehouse like the goods above (its own hub link, ceiling, total).
+{
+  role: 'distributor',
+  categories: [...HEAT_GOODS],
+  range: Infinity,
+  totalKey: HEAT_TOTAL_KEY,
+  maxStock: MARKET_HEAT_MAX_STOCK,
+  schedule: { unit: 'always' },
+  hubLink: { sourceLinkField: 'heatHubId', range: MARKET_WAREHOUSE_RANGE, hubTypes: ['Warehouse'] },
 }];
 const MARKET_PLACEMENT_REQUIRES = [
   { role: 'hub', categories: [...SUPPLIED_GOODS], range: MARKET_SILO_PLACEMENT_RANGE, requiresCapacity: true },

@@ -20,6 +20,7 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   dattes: Object.freeze({ emoji: '🌴', label: 'Dattes', unit: BASKET, colors: Object.freeze({ dark: '#795548', pale: '#D7CCC8' }) }),
   wood: Object.freeze({ emoji: '🪵', label: 'Bois', unit: unitOf('bûche', 'bûches'), colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
   food: Object.freeze({ emoji: '🍽️', label: 'Nourriture', unit: BASKET }),
+  heat: Object.freeze({ emoji: '🔥', label: 'Chauffage', unit: unitOf('unité', 'unités') }),
   goods: Object.freeze({ emoji: '📦', label: 'Biens', unit: unitOf('bien', 'biens') }),
   // Chart colors follow what the good is made of: walnut for furniture, glazed white-blue for plates,
   // terracotta for pots, ochre clay for amphorae.

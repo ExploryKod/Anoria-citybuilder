@@ -76,7 +76,7 @@ describe('Supply — a market with two distributor entries', () => {
     expect(outcome.totalUnits).toBe(8);
     expect(repo.rows.get('stall').stocks.goods).toBe(8);
     expect(repo.rows.get('stall').stocks.food).toBe(5);
-    expect(repo.rows.get('stall').stocks.wood ?? 0).toBe(0); // wood is not something this market distributes
+    expect(repo.rows.get('stall').stocks.wood ?? 0).toBe(0); // the pull was for plates: wood is drawn separately, for heat
     expect(repo.rows.get('warehouse').stocks.goods).toBe(22);
   });
 
@@ -89,8 +89,9 @@ describe('Supply — a market with two distributor entries', () => {
     late.rows.set('warehouse', { id: 'warehouse', type: 'Warehouse', x: 8, y: 3, roadCount: 1, worker: 1, workerNeed: 1, linkedDistributors: [], stocks: { plate: 10, goods: 10 } });
     const { linked } = await new AssignDistributorToHub(late, new RebalanceHubAllocations(late)).linkWaitingDistributors({ hubId: 'warehouse' });
 
-    expect(linked).toBe(1);
+    expect(linked).toBe(2); // its goods entry and its heat entry both find it
     expect(late.rows.get('stall').goodsHubId).toBe('warehouse');
+    expect(late.rows.get('stall').heatHubId).toBe('warehouse');
   });
 
   test('only the hub a market cannot be placed without takes it down: demolishing the other just unlinks it', async () => {

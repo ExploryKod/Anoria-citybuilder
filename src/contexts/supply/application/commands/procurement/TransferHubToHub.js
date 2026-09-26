@@ -105,7 +105,11 @@ export class TransferHubToHub {
     const categories = getCategoriesForRole(target.type, 'distributor', category);
     const totalKey = getTotalKeyForRole(target.type, 'distributor', category);
 
-    let sourceStock = createResourceStock(source.stocks, categories, totalKey);
+    // The source files its goods under ITS OWN aggregate (a hub's `goods`), the target under its own (a market's
+    // `heat`): each side is read and written by its own keys.
+    const sourceCategories = getCategoriesForRole(source.type, 'hub');
+    const sourceTotalKey = getTotalKeyForRole(source.type, 'hub');
+    let sourceStock = createResourceStock(source.stocks, sourceCategories, sourceTotalKey);
     let targetStock = createResourceStock(target.stocks, categories, totalKey);
 
     const wanted = Math.max(0, demand - targetStock[totalKey]);
@@ -130,7 +134,7 @@ export class TransferHubToHub {
     categories.forEach((category, index) => {
       const amount = amounts[index];
       if (amount <= 0) return;
-      sourceStock = takeCategoryAmount(sourceStock, category, amount, categories, totalKey);
+      sourceStock = takeCategoryAmount(sourceStock, category, amount, sourceCategories, sourceTotalKey);
       targetStock = addCategoryAmount(targetStock, category, amount, categories, totalKey);
       transfers.push({ sourceId, category, amount });
     });

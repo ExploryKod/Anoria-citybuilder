@@ -15,7 +15,7 @@ describe('formatHouseResourcesModel — needs first, goods in detail', () => {
 
   test('a house has one card per need the catalog gives it, the diet first', () => {
     const model = formatHouseResourcesModel({ buildingType: 'House-Red', lastConsumption: null });
-    expect(model.needs.map((need) => need.kind)).toEqual(['food', 'goods']);
+    expect(model.needs.map((need) => need.kind)).toEqual(['food', 'goods', 'heat']);
   });
 
   test('a fully fed house reads 8/8, met', () => {

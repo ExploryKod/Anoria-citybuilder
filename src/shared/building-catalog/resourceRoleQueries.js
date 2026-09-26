@@ -365,9 +365,15 @@ export function getMaxStockForBuilding(buildingType) {
  * @returns {string}
  */
 export function getTotalKeyForCategory(category) {
-  for (const definition of Object.values(buildingCatalog)) {
-    for (const entry of definition.resourceRoles ?? []) {
-      if (entry.totalKey && entry.categories.includes(category)) return entry.totalKey;
+  // A good can be filed under one aggregate where it is stored (a hub's `goods`) and another where it is
+  // used up (a house's `heat`): the aggregate of where it is held comes first.
+  const STORING_ROLES = new Set(['producer', 'collector', 'hub']);
+  for (const storing of [true, false]) {
+    for (const definition of Object.values(buildingCatalog)) {
+      for (const entry of definition.resourceRoles ?? []) {
+        if (STORING_ROLES.has(entry.role) !== storing) continue;
+        if (entry.totalKey && entry.categories.includes(category)) return entry.totalKey;
+      }
     }
   }
   return category;

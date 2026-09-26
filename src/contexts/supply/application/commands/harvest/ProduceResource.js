@@ -6,7 +6,7 @@ import {
 } from '../../../domain/value-objects/ResourceStock.js';
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import { isLockedForPeriod, buildLockUpdate } from '../../../domain/policies/PeriodLockPolicy.js';
-import { getResourceRoles } from '../../../domain/policies/ResourceRolePolicy.js';
+import { getResourceRoles, getCategoriesForRole, getTotalKeyForRole } from '../../../domain/policies/ResourceRolePolicy.js';
 import {
   findNaturalSourcesInRange,
   isWithinRange,
@@ -159,10 +159,12 @@ export class ProduceResource {
       const holder = await this.supplyBuildingRepository.findById(draw.holderId);
       await this.hubServing.take({ hubId: draw.holderId, category: draw.category, client: building.type, amount: draw.amount, turn });
       await this.hubServing.recordDemand({ hubId: draw.holderId, category: draw.category, client: building.type, turn, wanted: 0, served: draw.amount });
-      const shape = stockShapeFor(draw.category);
+      // The holder's stock is written under the aggregate ITS role files the good under.
+      const categories = getCategoriesForRole(holder.type, 'hub', draw.category);
+      const totalKey = getTotalKeyForRole(holder.type, 'hub', draw.category);
       await this.supplyBuildingRepository.saveStocks(draw.holderId, {
         ...holder.stocks,
-        ...takeCategoryAmount(holder.stocks, draw.category, draw.amount, shape.categories, shape.totalKey),
+        ...takeCategoryAmount(holder.stocks, draw.category, draw.amount, categories, totalKey),
       });
     }
     let nextStock = building.stocks;
