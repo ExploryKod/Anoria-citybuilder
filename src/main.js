@@ -8,6 +8,11 @@ import './presentation/dom/shell/OrientationToast.js'
 
 const app = document.querySelector('#game-window')
 
+// Dev only: tagged console lines (`[tag] …`) also reach the dev server's terminal (see composition/devDiagnostics.js).
+if (import.meta.env.DEV) {
+  import('./composition/devDiagnostics.js').then(({ installConsoleRelay }) => installConsoleRelay())
+}
+
 initPWA()
 
 /**
