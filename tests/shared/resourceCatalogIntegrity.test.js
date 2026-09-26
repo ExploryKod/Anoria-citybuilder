@@ -136,6 +136,105 @@ describe('no good is named in code', () => {
   });
 });
 
+describe('no catalog id is named in code', () => {
+  const SRC_ROOT = path.resolve('src');
+  /** Files that legitimately spell an id: the catalogs themselves and the generated/asset registries. */
+  const CATALOG_PATHS = [
+    'shared/asset-economy/',
+    'shared/asset-footprint/',
+    'shared/building-catalog/kenney',
+    'presentation/three/assets/',
+    'contexts/supply/domain/catalogs/ResourceCategoryCatalog.js',
+    'shared/building-catalog/assetIdsByCategory.js',
+    // Classifiers of the Kenney kit's own asset names ("rock" there is a mesh family, not a deposit).
+    'shared/editor-catalog/',
+  ];
+  /** A catalog, wherever it lives, may name what it declares. */
+  const isCatalogFile = (relative) => /(^|\/)catalogs\//.test(relative) || /Catalog\.js$/.test(relative);
+  /** Ids too ordinary to grep for: another meaning of the same word is everywhere in the code. */
+  const TOO_GENERIC = new Set(['game', 'grass', 'terrain', 'goods', 'food', 'heat']);
+  const KNOWN_EXCEPTIONS = ['presentation/dom/compta/bilan/BuildingBreakdownEnrichment.js'];
+
+  const stripComments = (content) => content.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  function listJsFiles(dir) {
+    return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) return listJsFiles(full);
+      return entry.name.endsWith('.js') ? [full] : [];
+    });
+  }
+
+  /** What the catalog makes an id of: economic building types, goods, aggregates and deposit kinds. */
+  function catalogIds() {
+    const ids = new Set();
+    for (const [type, definition] of Object.entries(buildingCatalog)) {
+      if (definition.residentialGroup || (definition.resourceRoles ?? []).length > 0) ids.add(type);
+      for (const kind of [definition.naturalResource, ...(definition.deposits ?? []), ...Object.keys(definition.tileDeposits ?? {})]) {
+        if (kind) ids.add(kind);
+      }
+      for (const entry of definition.resourceRoles ?? []) {
+        for (const category of entry.categories) ids.add(category);
+        if (entry.totalKey) ids.add(entry.totalKey);
+      }
+    }
+    return [...ids].filter((id) => !TOO_GENERIC.has(id));
+  }
+
+  test('a building type, a good or a deposit is never a quoted string in source code', () => {
+    const ids = catalogIds();
+    expect(ids.length).toBeGreaterThan(20);
+    const escaped = ids.map((id) => id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const pattern = new RegExp(`(['"\`])(${escaped.join('|')})\\1`, 'g');
+
+    const offenders = [];
+    for (const file of listJsFiles(SRC_ROOT)) {
+      const relative = path.relative(SRC_ROOT, file).split(path.sep).join('/');
+      if (CATALOG_PATHS.some((prefix) => relative.startsWith(prefix)) || isCatalogFile(relative)) continue;
+      if (KNOWN_EXCEPTIONS.includes(relative)) continue;
+      const named = new Set([...stripComments(fs.readFileSync(file, 'utf8')).matchAll(pattern)].map((match) => match[2]));
+      if (named.size > 0) offenders.push(`${relative} → ${[...named].join(', ')}`);
+    }
+    expect(offenders).toEqual([]);
+  });
+});
+
+describe('no road is named in code', () => {
+  const SRC_ROOT = path.resolve('src');
+  const CATALOG_PATHS = [
+    'shared/asset-economy/',
+    'shared/asset-footprint/',
+    'shared/building-catalog/kenney',
+    'presentation/three/assets/',
+    'shared/building-catalog/assetIdsByCategory.js',
+    // A schema migration names the past it migrates: the retired road tile becomes the road tool.
+    'core/persistence/dexie/db.js',
+  ];
+  const stripComments = (content) => content.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  function listJsFiles(dir) {
+    return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) return listJsFiles(full);
+      return entry.name.endsWith('.js') ? [full] : [];
+    });
+  }
+
+  test('the catalog declares its roads, and code asks it (isRoadType) instead of matching a name', () => {
+    const roads = Object.entries(buildingCatalog).filter(([, definition]) => definition.isRoad === true).map(([type]) => type);
+    expect(roads.length).toBeGreaterThan(0);
+
+    // A road id, or the prefix its variants share, quoted in code: the check belongs to roadQueries.js.
+    const prefixes = [...new Set(roads.map((road) => road.split('-')[0]))];
+    const pattern = new RegExp(`['"\`](${[...roads, ...prefixes].join('|')})[-'"\`]`);
+    const offenders = [];
+    for (const file of listJsFiles(SRC_ROOT)) {
+      const relative = path.relative(SRC_ROOT, file).split(path.sep).join('/');
+      if (CATALOG_PATHS.some((prefix) => relative.startsWith(prefix))) continue;
+      if (pattern.test(stripComments(fs.readFileSync(file, 'utf8')))) offenders.push(relative);
+    }
+    expect(offenders).toEqual([]);
+  });
+});
+
 /**
  * Can a city feed itself with these rules? Feeding P inhabitants for a year takes
  * P × (baskets per inhabitant per year ÷ a farm's yield) farms, and each farm needs

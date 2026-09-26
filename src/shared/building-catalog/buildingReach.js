@@ -1,3 +1,4 @@
+import { isRoadType } from './roadQueries.js';
 import { getResourceRoles, getNaturalResourceKind, getRoadRange, requiresRoad } from './resourceRoleQueries.js';
 import { getBuildingDefinition } from './buildingCatalog.js';
 
@@ -17,7 +18,6 @@ import { getBuildingDefinition } from './buildingCatalog.js';
 
 /** @typedef {{ instanceId: string, type: string, x: number, y: number, tiles: Array<{ x: number, y: number }> }} PlacedBuilding */
 
-const ROAD_TYPE_PREFIX = 'StonePath-';
 
 /**
  * The buildings placed on a city grid, one entry per instance (origin = its minimum corner).
@@ -34,7 +34,7 @@ export function listPlacedBuildings(city) {
     for (let y = 0; y < city.size; y += 1) {
       const tile = city.tiles?.[x]?.[y];
       if (!tile?.buildingId || !tile.instanceId) continue;
-      if (tile.buildingId.startsWith(ROAD_TYPE_PREFIX)) {
+      if (isRoadType(tile.buildingId)) {
         roadTiles.push({ x, y });
         continue;
       }

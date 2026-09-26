@@ -6,6 +6,8 @@
 import db from '../core/persistence/dexie/db.js';
 import { hamletIdOf, getActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
 import { getSuppliedCategories } from '../shared/building-catalog/resourceRoleQueries.js';
+import { depositKindsOf, listDepositKinds, listTileDeposits } from '../shared/building-catalog/depositQueries.js';
+import { hasResourceRole } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { createSupplyStock } from '../contexts/supply/domain/value-objects/SupplyStock.js';
 
 /** Goods the citizens eat that a hub stores, shown in the city block — derived from the catalog. */
@@ -14,14 +16,8 @@ export const HUD_CITY_FOOD_PRODUCTS = getSuppliedCategories();
 /** All product keys rendered in the city block. */
 export const HUD_CITY_RESOURCE_PRODUCTS = Object.freeze([...HUD_CITY_FOOD_PRODUCTS]);
 
-/** Map deposits (trees, boulders, clay tiles). */
-export const HUD_NATURE_RESOURCE_PRODUCTS = Object.freeze([
-  'wood',
-  'rock',
-  'clay',
-  'iron',
-  'gold',
-]);
+/** Map deposits (trees, boulders, the clay of the ground…) — every kind the catalog declares. */
+export const HUD_NATURE_RESOURCE_PRODUCTS = Object.freeze(listDepositKinds());
 
 /** @readonly */
 export const HUD_RESOURCE_DESTINATIONS = Object.freeze({
@@ -30,12 +26,13 @@ export const HUD_RESOURCE_DESTINATIONS = Object.freeze({
 });
 
 /**
+ * Whether a row is a hub of the goods the citizens eat (what the city block counts): decided by its role in the
+ * catalog, not by its name.
  * @param {object} row
  * @returns {boolean}
  */
-export function isHudWindmillRow(row) {
-  const type = String(row?.type || '');
-  return type.includes('Windmill') || type.includes('windmill');
+export function isHudCityHubRow(row) {
+  return hasResourceRole(String(row?.type || ''), 'hub', HUD_CITY_FOOD_PRODUCTS);
 }
 
 /**
@@ -76,7 +73,7 @@ export function sumCityStocksFromRows(rows) {
   const totals = Object.fromEntries(HUD_CITY_RESOURCE_PRODUCTS.map((id) => [id, 0]));
 
   for (const row of rows) {
-    if (!isHudWindmillRow(row)) continue;
+    if (!isHudCityHubRow(row)) continue;
     const food = createSupplyStock(row.stocks || {});
     for (const id of HUD_CITY_FOOD_PRODUCTS) {
       totals[id] += stockAmount(food[id]);
@@ -87,8 +84,9 @@ export function sumCityStocksFromRows(rows) {
 }
 
 /**
- * Nature deposits on the map (trees → wood, boulders → rock/iron/gold).
- * Clay is tile-based and added separately via {@link countClayTiles}.
+ * Deposits held by nature buildings: each row counts, for every kind of deposit its type holds (the catalog's
+ * `naturalResource` and `deposits`), what its `stocks` says of it. The ground's own deposits (clay) are counted
+ * separately, from the tiles, by {@link countDepositTiles}.
  *
  * @param {ReadonlyArray<object>} rows
  * @returns {Record<string, number>}
@@ -99,17 +97,9 @@ export function sumNatureStocksFromRows(rows) {
 
   for (const row of rows) {
     if (!isHudNatureRow(row)) continue;
-    const type = String(row.type || '');
     const stocks = row.stocks || {};
-
-    if (type.includes('Tree')) {
-      totals.wood += stockAmount(stocks.wood);
-      continue;
-    }
-    if (type.includes('Boulder')) {
-      totals.rock += stockAmount(stocks.rock);
-      totals.iron += stockAmount(stocks.iron);
-      totals.gold += stockAmount(stocks.gold);
+    for (const kind of depositKindsOf(String(row.type || ''))) {
+      totals[kind] += stockAmount(stocks[kind]);
     }
   }
 
@@ -117,12 +107,13 @@ export function sumNatureStocksFromRows(rows) {
 }
 
 /**
- * Clay is flagged on grass tiles (not a Dexie nature building).
+ * Tiles of the map whose ground carries a kind of deposit (not a Dexie nature building).
  *
  * @param {object | null | undefined} city
+ * @param {string} kind
  * @returns {number}
  */
-export function countClayTiles(city) {
+export function countDepositTiles(city, kind) {
   const tiles = city?.tiles;
   const size = Math.max(0, Math.floor(Number(city?.size) || 0));
   if (!Array.isArray(tiles) || size <= 0) return 0;
@@ -132,7 +123,7 @@ export function countClayTiles(city) {
     const column = tiles[x];
     if (!column) continue;
     for (let y = 0; y < size; y++) {
-      if (column[y]?.hasClay) count += 1;
+      if (column[y]?.deposits?.[kind]) count += 1;
     }
   }
   return count;
@@ -173,8 +164,8 @@ export async function getHudResourceScopeSnapshot(scope = 'active') {
 export async function getHudNatureResourceScopeSnapshot(scope = 'active', options = {}) {
   const rows = (await db.houses.toArray()).filter((row) => rowMatchesScope(row, scope));
   const nature = sumNatureStocksFromRows(rows);
-  // Clay tiles are map-global (not tagged per hamlet) — same count for country & active.
-  nature.clay = countClayTiles(options.city);
+  // The ground's deposits are map-global (not tagged per hamlet) — same count for country & active.
+  for (const { kind } of listTileDeposits()) nature[kind] = countDepositTiles(options.city, kind);
   return {
     nature,
     natureTotal: sumStockValues(nature),

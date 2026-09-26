@@ -1,3 +1,4 @@
+import { listRoadTypes, primaryRoadType } from '../../../shared/building-catalog/roadQueries.js';
 import { getBuildingDefinition } from '../../../shared/building-catalog/buildingCatalog.js';
 import {
   loaderButton,
@@ -97,18 +98,9 @@ const GROUP_CREATORS = {
   residential: () => fillPanelFromToolIds('houses'),
   farms: () => fillPanelFromToolIds('farms'),
   industry: () => fillPanelFromToolIds('industry'),
-  markets: () => fillPanelFromToolIds('markets', { exclude: ['Market-Stall'] }),
-  infrastructure: () =>
-    fillPanelFromToolIds('infrastructure', {
-      exclude: [
-        'StonePath-001',
-        'StonePath-Right-001',
-        'StonePath-Left-001',
-        'StonePath-Cross-001',
-        'StonePath-Tee-001',
-        'StonePath-End-001',
-      ],
-    }),
+  markets: () => fillPanelFromToolIds('markets'),
+  // The road tool and its variants have their own pill (Routes): not listed again here.
+  infrastructure: () => fillPanelFromToolIds('infrastructure', { exclude: listRoadTypes() }),
   public: () => fillPanelFromToolIds('public'),
   nature: () => fillPanelFromToolIds('nature'),
   decoration: () => fillPanelFromToolIds('decoration'),
@@ -243,11 +235,11 @@ function createRoadsButtons() {
   hint.innerHTML = '<kbd>R</kbd> = rotation du chemin';
   panelLayoutInner.appendChild(hint);
 
-  if (ASSET_CATALOG['StonePath-001']?.button) {
-    const catalog = catalogButton('StonePath-001');
+  if (ASSET_CATALOG[primaryRoadType()]?.button) {
+    const catalog = catalogButton(primaryRoadType());
     const btn = makeNewButton(
-      { text: toolLabel('StonePath-001'), tool: 'StonePath-001', group: catalog.group, title: toolLabel('StonePath-001') },
-      resolveIcon('StonePath-001')
+      { text: toolLabel(primaryRoadType()), tool: primaryRoadType(), group: catalog.group, title: toolLabel(primaryRoadType()) },
+      resolveIcon(primaryRoadType())
     );
     if (btn) {
       btn.dataset.stonePathTool = '1';
@@ -267,15 +259,7 @@ function resolveIcon(toolId) {
 }
 
 const CATEGORY_EXCLUDES = {
-  markets: ['Market-Stall'],
-  infrastructure: [
-    'StonePath-001',
-    'StonePath-Right-001',
-    'StonePath-Left-001',
-    'StonePath-Cross-001',
-    'StonePath-Tee-001',
-    'StonePath-End-001',
-  ],
+  infrastructure: listRoadTypes(),
 };
 
 /**

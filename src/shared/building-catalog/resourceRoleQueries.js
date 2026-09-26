@@ -27,6 +27,35 @@ function isQuantityConsumer(entry) {
 }
 
 /**
+ * Whether a type hands out a stock (a market): it holds a 'distributor' entry that moves a quantity, as opposed to
+ * a service that only marks coverage.
+ * @param {string | null | undefined} buildingType
+ * @returns {boolean}
+ */
+export function isQuantityDistributorType(buildingType) {
+  return getResourceRoles(buildingType).some(
+    (entry) => entry.role === 'distributor' && (entry.consumption ?? 'quantity') === 'quantity'
+  );
+}
+
+/**
+ * The stock ceiling the catalog declares on the first building holding a role for some of these goods (the
+ * ceiling of "the hub of what citizens eat", "a market stall"), or undefined when none declares one.
+ * @param {import('./buildingCatalog.js').ResourceRoleKind} role
+ * @param {ReadonlyArray<string>} categories
+ * @returns {number | undefined}
+ */
+export function getMaxStockOfRole(role, categories) {
+  for (const [type, definition] of Object.entries(buildingCatalog)) {
+    const held = (definition.resourceRoles ?? []).some(
+      (entry) => entry.role === role && entry.categories.some((category) => categories.includes(category))
+    );
+    if (held) return getMaxStockForBuilding(type);
+  }
+  return undefined;
+}
+
+/**
  * The code the city map writes for a type: the first two letters of the name
  * the player reads (the catalog's `displayName`, accents dropped, upper case) —
  * never of the id the code uses. A type without a display name gets the "…"

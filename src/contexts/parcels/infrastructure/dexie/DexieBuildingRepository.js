@@ -1,3 +1,4 @@
+import { listRoadTypes } from '../../../../shared/building-catalog/roadQueries.js';
 import db from '../../../../core/persistence/dexie/db.js';
 import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { createBuildingSnapshot } from '../../domain/BuildingSnapshot.js';
@@ -63,7 +64,7 @@ export class DexieBuildingRepository {
 
   /** Road tiles, straight from the indexed `type` (a handful of rows, whatever the city's size). */
   async findRoadTiles() {
-    const rows = await db.houses.where('type').startsWith('StonePath-').toArray();
+    const rows = await db.houses.where('type').anyOf(listRoadTypes()).toArray();
     return rows
       .filter((row) => isActiveHamletRow(row) && row.x != null && row.y != null)
       .map((row) => ({ x: row.x, y: row.y }));

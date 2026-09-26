@@ -432,7 +432,6 @@ export function resetHoveredObject(hoveredObject) {
  const materials = {
         'roads': new THREE.MeshLambertMaterial({ map: textures['roads'], emissive: new THREE.Color(0.333, 0.333, 0.333) }),
         'grass' : new THREE.MeshLambertMaterial({ map: textures['grass'], color: new THREE.Color(0.333, 0.333, 0.333) }),
-        'House-Red' : new THREE.MeshLambertMaterial({ color: new THREE.Color(0.999, 0.777, 0.333)})
     }
 
 export function applyHoverColor(object, color, texture="") {

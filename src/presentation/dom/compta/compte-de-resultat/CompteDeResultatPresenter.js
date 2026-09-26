@@ -2,6 +2,8 @@
  * CompteDeResultatPresenter — rendu HTML du compte de résultat (données déjà chargées).
  */
 
+import { listResidentialTypes } from '../../../../shared/building-identity/index.js';
+import { buildingName } from '../../shell/CatalogVocabulary.js';
 import { financialHealthStatusLabel } from '../../../../contexts/accounting/presentation/index.js';
 
 function productAmount(bundle, label) {
@@ -64,18 +66,11 @@ export function renderFinancialStatementsBundles(bundles, container) {
                       taxBreakdown
                         ? `
                     <div class="statement-subdetail" style="padding-left: 20px; margin: 8px 0;">
+${listResidentialTypes().map((type) => `
                         <div class="statement-line" style="font-size: 0.85em;">
-                            <span class="statement-label">• Maisons bleues</span>
-                            <span class="statement-value">${(taxBreakdown['House-Blue'] || 0).toLocaleString('fr-FR')}€</span>
-                        </div>
-                        <div class="statement-line" style="font-size: 0.85em;">
-                            <span class="statement-label">• Maisons rouges</span>
-                            <span class="statement-value">${(taxBreakdown['House-Red'] || 0).toLocaleString('fr-FR')}€</span>
-                        </div>
-                        <div class="statement-line" style="font-size: 0.85em;">
-                            <span class="statement-label">• Maisons violettes</span>
-                            <span class="statement-value">${(taxBreakdown['House-Purple'] || 0).toLocaleString('fr-FR')}€</span>
-                        </div>
+                            <span class="statement-label">• ${buildingName(type)}</span>
+                            <span class="statement-value">${(taxBreakdown[type] || 0).toLocaleString('fr-FR')}€</span>
+                        </div>`).join('')}
                     </div>
                     `
                         : ''

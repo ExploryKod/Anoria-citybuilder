@@ -310,14 +310,15 @@ class ObjectivesTracker {
      * @param {Object} objective - Objectif complété
      */
     showObjectiveCompletion(objective) {
-        // Déverrouiller House-Purple quand l'objectif est complété
-        if (deps?.getButtonStateManager?.()) {
-            deps?.getButtonStateManager?.().enable('House-Purple');
+        // Déverrouiller le bâtiment que l'objectif débloque (le catalogue des objectifs le dit) quand il est complété
+        const unlockedBuilding = budgetChallengeDefinition.unlockedBuilding;
+        if (unlockedBuilding && deps?.getButtonStateManager?.()) {
+            deps?.getButtonStateManager?.().enable(unlockedBuilding);
             
             // Animation pour attirer l'attention sur le bouton déverrouillé
             setTimeout(() => {
                 // Trouver le bouton dans le panel (si le panel residential est ouvert)
-                const purpleBtn = document.getElementById('House-Purple');
+                const purpleBtn = document.getElementById(unlockedBuilding);
                 if (purpleBtn) {
                     purpleBtn.classList.add('building-unlocked');
                     

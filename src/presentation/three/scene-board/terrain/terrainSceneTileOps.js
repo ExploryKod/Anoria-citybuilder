@@ -1,3 +1,4 @@
+import { ROAD_RUNTIME_MARKER } from '../../../../shared/building-catalog/roadQueries.js';
 import { getSceneTilePortFromObject } from '../SceneTilePort.js';
 
 /**
@@ -21,10 +22,10 @@ export function applyRoadMaterialToTerrainTile(terrainRoot, roadMaterial, placem
 
   port.setSurfaceMaterial(roadMaterial);
   const root = port.root;
-  root.name = 'roads';
-  root.userData.id = 'roads';
-  root.userData.type = 'roads';
-  root.userData.catalogId = 'roads';
+  root.name = ROAD_RUNTIME_MARKER;
+  root.userData.id = ROAD_RUNTIME_MARKER;
+  root.userData.type = ROAD_RUNTIME_MARKER;
+  root.userData.catalogId = ROAD_RUNTIME_MARKER;
   root.userData.isRoad = true;
   root.userData.x = placement.x;
   root.userData.y = placement.y;

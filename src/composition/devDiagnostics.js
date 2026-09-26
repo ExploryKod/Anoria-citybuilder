@@ -1,3 +1,4 @@
+import { isRoadType } from '../shared/building-catalog/roadQueries.js';
 import db from '../core/persistence/dexie/db.js';
 import { isActiveHamletRow } from '../core/persistence/hamlet/hamletSession.js';
 import { evaluateRoadAccessByRange, footprintRect } from '../contexts/parcels/domain/policies/RoadAccessPolicy.js';
@@ -67,7 +68,7 @@ export async function sendDevLog(label, data) {
 async function collectRoadAccess(scene) {
   const rows = (await db.houses.toArray()).filter(isActiveHamletRow);
   const roadTiles = rows
-    .filter((row) => typeof row.type === 'string' && row.type.startsWith('StonePath-') && row.x != null && row.y != null)
+    .filter((row) => isRoadType(row.type) && row.x != null && row.y != null)
     .map((row) => ({ x: row.x, y: row.y }));
 
   const meshes = new Map();
@@ -86,7 +87,7 @@ async function collectRoadAccess(scene) {
   }
 
   const buildings = rows
-    .filter((row) => row.x != null && row.y != null && !row.type?.startsWith('StonePath-'))
+    .filter((row) => row.x != null && row.y != null && !isRoadType(row.type))
     .filter((row) => getBuildingDefinition(row.type)?.construction?.category !== 'nature')
     .map((row) => {
       const building = { type: row.type, x: row.x, y: row.y, rotationStep: row.placementRotationStep ?? 0 };

@@ -1,3 +1,4 @@
+import { ROAD_RUNTIME_MARKER, isRoadRuntimeMarker, isRoadType } from '../../shared/building-catalog/roadQueries.js';
 import { createEmptyStocks, getResourceStockShape, getAllCategoriesForRole, getResourceRoles, isWorkplaceType, requiresRoad } from '../../shared/building-catalog/resourceRoleQueries.js';
 import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
 import * as THREE from 'three';
@@ -538,7 +539,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 
                 // For roads, ensure they are properly positioned above World platform
                 // and force matrix update to ensure visibility
-                if (terrainId === 'roads' && mesh.userData?.isRoad) {
+                if (terrainId === ROAD_RUNTIME_MARKER && mesh.userData?.isRoad) {
                     mesh.updateMatrixWorld(true);
                 }
                 
@@ -909,10 +910,10 @@ export function createScene(_gameStore, assetManager, deps) {
               const needsMeshPlacement = Boolean(
                   tileBuildingId && tileBuildingId !== effectiveMeshType
               );
-              if (!currentBuildingId && terrain[x] && terrain[x][y] && (terrain[x][y].userData?.isRoad || terrain[x][y].name === 'roads')) {
+              if (!currentBuildingId && terrain[x] && terrain[x][y] && (terrain[x][y].userData?.isRoad || terrain[x][y].name === ROAD_RUNTIME_MARKER)) {
                   // Only treat as road if it's also marked in city.tiles (was properly placed)
-                  if (tileBuildingId === 'roads' || tileBuildingId === 'Road') {
-                      currentBuildingId = 'roads';
+                  if (isRoadRuntimeMarker(tileBuildingId)) {
+                      currentBuildingId = ROAD_RUNTIME_MARKER;
                       // Ensure road is in buildings array for neighbor detection
                       if (!buildings[x][y]) {
                           buildings[x][y] = terrain[x][y];
@@ -978,13 +979,11 @@ export function createScene(_gameStore, assetManager, deps) {
                         || currentBuildingId;
                     const ghostIsRoad =
                         Boolean(ghostMesh?.userData?.isRoad)
-                        || ghostType === 'roads'
-                        || ghostType === 'Road'
-                        || (typeof ghostType === 'string' && ghostType.startsWith('StonePath-'))
+                        || isRoadType(ghostType)
                         || (
                             !tileBuildingId
                             && terrain[x]?.[y]
-                            && (terrain[x][y].userData?.isRoad || terrain[x][y].name === 'roads')
+                            && (terrain[x][y].userData?.isRoad || terrain[x][y].name === ROAD_RUNTIME_MARKER)
                         );
                     if (!tileBuildingId && ghostIsRoad) {
                         if (terrain[x] && terrain[x][y]) {
@@ -1034,9 +1033,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     || currentBuildingId;
                 const isRoad =
                     Boolean(buildings[x][y]?.userData?.isRoad)
-                    || meshTypeForRoad === 'roads'
-                    || meshTypeForRoad === 'Road'
-                    || (typeof meshTypeForRoad === 'string' && meshTypeForRoad.startsWith('StonePath-'));
+                    || isRoadType(meshTypeForRoad);
                 const hasNewBuilding = needsMeshPlacement;
                 
                 // city.tiles is SoT for roads: clear terrain material + StonePath mesh when tile empty
@@ -1046,11 +1043,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     const tileBuilding = city.tiles[x][y]?.buildingId;
                     const tileHasRoad =
                         Boolean(tileBuilding)
-                        && (
-                            tileBuilding === 'roads'
-                            || tileBuilding === 'Road'
-                            || tileBuilding.startsWith('StonePath-')
-                        );
+                        && isRoadType(tileBuilding);
                     if (!tileHasRoad) {
                         if (terrain[x] && terrain[x][y]) {
                             const sharedMaterials = assetManager.getSharedTerrainMaterials();
@@ -1160,11 +1153,7 @@ export function createScene(_gameStore, assetManager, deps) {
                         }
                         
                         // Handle geometry-based roads ('roads') and StonePath meshes
-                        if (
-                            currentBuildingId === 'roads'
-                            || currentBuildingId === 'Road'
-                            || currentBuildingId.startsWith('StonePath-')
-                        ) {
+                        if (isRoadType(currentBuildingId)) {
                             try {
                                 await parcels.syncRemovedBuilding({ instanceId: currentInstanceId });
                             } catch (err) {
@@ -2030,7 +2019,6 @@ export function createScene(_gameStore, assetManager, deps) {
 
     let hoveredObject = null
     let hoveredObjectName = null
-    const objectsNames = ['grass', 'roads', 'House-Red', 'House-Purple', 'House-Blue', 'Market-Stall']
     let isLeftPointerDown = false;
     let rightPointerDownPos = null;
     let rightPointerHasMoved = false;

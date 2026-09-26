@@ -10,7 +10,7 @@ import {
   getAnnualSupplyEntry,
   getAnnualYieldPerProducer,
   getMapCode,
-  getMaxStockForBuilding,
+  getMaxStockOfRole,
   getPerCapitaDemand,
   getResourceRoles,
   getResourceStockShape,
@@ -211,8 +211,7 @@ export function renderCityMapGridHtml({ citySize, buildingMap, hasRoadAccessFrom
         const neighbors = building.neighbors || [];
         const neighborCodes = getNeighborCodes(neighbors);
 
-        const isRoad =
-          building.type.includes('roads') || building.type.includes('Road') || isRoadBuildingType(building.type);
+        const isRoad = isRoadBuildingType(building.type);
         const needsRoadAccess = !isRoad && requiresRoad(building.type);
 
         const hasRoad = needsRoadAccess ? hasRoadAccessFromCount(building.roadCount) : true;
@@ -333,8 +332,9 @@ export function buildCityExport({ buildingRows, employmentSummary, populationSum
       daysPerMonth: TimeManager.DAYS_PER_MONTH,
       perCapitaDemand: getPerCapitaDemand(),
       annualYieldPerProducer: getAnnualYieldPerProducer(),
-      hubMaxStock: getMaxStockForBuilding('Windmill-001') ?? null,
-      distributorMaxStock: getMaxStockForBuilding('Market-Stall') ?? null,
+      // The ceiling of the hub of what citizens eat, and of the stall that hands it out: both read from the catalog.
+      hubMaxStock: getMaxStockOfRole('hub', getSuppliedCategories()) ?? null,
+      distributorMaxStock: getMaxStockOfRole('distributor', getSuppliedCategories()) ?? null,
     },
     omittedBuildingFields: EXPORT_OMITTED_FIELDS,
     buildings,

@@ -1,3 +1,4 @@
+import { isRoadType, primaryRoadType } from '../../../shared/building-catalog/roadQueries.js';
 import { resolveVerticalFaceRiverAssetId, isEditorRiverAsset, resolveRiverMountFromRotationStep } from '../../../shared/editor-catalog/editorKenneyAssetBehavior.js';
 
 /** Tools that must never drive a placement ghost (UI / zones / non-mesh). */
@@ -24,8 +25,9 @@ const NON_PLACEABLE_TOOL_IDS = new Set([
  * @returns {string}
  */
 export function resolveGhostVisualAssetId(assetId) {
-  if (assetId === 'roads' || assetId === 'Road') {
-    return 'StonePath-001';
+  // A road, by whichever name (the runtime marker, the legacy alias, a road tool) wears the road tool's mesh.
+  if (isRoadType(assetId)) {
+    return primaryRoadType();
   }
   return assetId;
 }

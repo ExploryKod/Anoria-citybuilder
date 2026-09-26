@@ -244,28 +244,34 @@ export const BUILDING_ECONOMY = {
   // and BuildingMaintenanceBreakdownPolicy.js alias that marker to this
   // entry's facts instead of expecting a 'roads' catalog id.)
   'StonePath-001': {
+    isRoad: true,
     displayName: 'Chemin de pierre',
     construction: { price: 5, category: 'infrastructure' },
     employment: { sector: 5, workerNeed: 0 },
     accounting: { maintenance: 4 },
   },
   'StonePath-Right-001': {
+    isRoad: true,
     displayName: 'Chemin de pierre',
     construction: { price: 5, category: 'infrastructure' },
   },
   'StonePath-Left-001': {
+    isRoad: true,
     displayName: 'Chemin de pierre',
     construction: { price: 5, category: 'infrastructure' },
   },
   'StonePath-Cross-001': {
+    isRoad: true,
     displayName: 'Chemin de pierre',
     construction: { price: 5, category: 'infrastructure' },
   },
   'StonePath-Tee-001': {
+    isRoad: true,
     displayName: 'Chemin de pierre',
     construction: { price: 5, category: 'infrastructure' },
   },
   'StonePath-End-001': {
+    isRoad: true,
     displayName: 'Chemin de pierre',
     construction: { price: 5, category: 'infrastructure' },
   },

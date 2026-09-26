@@ -1,4 +1,6 @@
 import { getSuppliedCategories } from '../../../shared/building-catalog/resourceRoleQueries.js';
+import { listDepositKinds } from '../../../shared/building-catalog/depositQueries.js';
+import { renderHudResourceRows } from './hudResourceRows.js';
 // game.js
 export const displayTime = document.querySelector('.info-panel .display-time');
 export const displaySeason = document.querySelector('.info-panel .hud-season');
@@ -88,7 +90,12 @@ export const popGroupLaborNodes = queryGroupMetricNodes('labor');
 
 // Goods the citizens eat that a hub stores, straight from the catalog — no good is named here.
 const POP_RESOURCE_CITY_PRODUCTS = getSuppliedCategories();
-const POP_RESOURCE_NATURE_PRODUCTS = ['wood', 'rock', 'clay', 'iron', 'gold'];
+// Deposits of the map, straight from the catalog too.
+const POP_RESOURCE_NATURE_PRODUCTS = listDepositKinds();
+
+// The rows are made from those lists before they are looked up: the page markup names no good.
+renderHudResourceRows({ root: popHudRoot, destination: 'city', panelId: 'hud-pop-panel-ressources-ville', products: POP_RESOURCE_CITY_PRODUCTS });
+renderHudResourceRows({ root: popHudRoot, destination: 'nature', panelId: 'hud-pop-panel-ressources-nature', products: POP_RESOURCE_NATURE_PRODUCTS });
 
 /**
  * @param {'city' | 'nature'} destination

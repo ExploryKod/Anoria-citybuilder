@@ -14,6 +14,7 @@
 // `presentation.brightness` (default 1) multiplies the model's colors — e.g. to
 // lighten dark asphalt so walkers stand out; it lives in the catalog, not here.
 
+import { ROAD_RUNTIME_MARKER } from '../../../../shared/building-catalog/roadQueries.js';
 import { createEmptyStocks } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -102,7 +103,7 @@ registerBuildingSourceAdapter('kenneyGlb', {
 
     const group = new THREE.Group();
     group.add(template.clone(true));
-    group.name = isRoad ? 'roads' : buildingId;
+    group.name = isRoad ? ROAD_RUNTIME_MARKER : buildingId;
 
     const baseYaw = THREE.MathUtils.degToRad(catalogEntry.transform?.rotationDeg?.y ?? 0);
     const step = ((rotationStep % 4) + 4) % 4;

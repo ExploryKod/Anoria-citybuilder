@@ -28,6 +28,11 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   plate: Object.freeze({ emoji: '🍽️', label: 'Plat', unit: unitOf('plat', 'plats'), colors: Object.freeze({ dark: '#5C7C99', pale: '#DCE6F0' }) }),
   pot: Object.freeze({ emoji: '🍲', label: 'Pot', unit: unitOf('pot', 'pots'), colors: Object.freeze({ dark: '#BF5B3A', pale: '#E8B9A3' }) }),
   amphora: Object.freeze({ emoji: '🏺', label: 'Amphore', unit: unitOf('amphore', 'amphores'), colors: Object.freeze({ dark: '#C98A2B', pale: '#F0D9A8' }) }),
+  // Deposits of the map.
+  rock: Object.freeze({ emoji: '🪨', label: 'Pierre', unit: unitOf('bloc', 'blocs') }),
+  clay: Object.freeze({ emoji: '🧱', label: 'Argile', unit: unitOf('bloc', 'blocs') }),
+  iron: Object.freeze({ emoji: '⚙️', label: 'Fer', unit: unitOf('lingot', 'lingots') }),
+  gold: Object.freeze({ emoji: '🥇', label: 'Or', unit: unitOf('lingot', 'lingots') }),
   faith: Object.freeze({ emoji: '🙏', label: 'Foi' }),
   school: Object.freeze({ emoji: '🎓', label: 'École' }),
   library: Object.freeze({ emoji: '📖', label: 'Bibliothèque' }),

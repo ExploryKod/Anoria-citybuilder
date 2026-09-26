@@ -14,6 +14,7 @@ export const NATURE_ECONOMY = {
   'Tree-Sapin': { displayName: 'Sapin', naturalResource: 'wood', construction: { price: 3, category: 'nature' } },
   'Tree-Arbuste': { displayName: 'Arbuste', naturalResource: 'wood', construction: { price: 3, category: 'nature' } },
   'Tree-Chene': { displayName: 'Chêne', naturalResource: 'wood', construction: { price: 3, category: 'nature' } },
-  'Boulder-001': { displayName: 'Rocher', construction: { price: 2, category: 'nature' } },
+  // A boulder holds these deposits (each counted in its own `stocks` field, see depositQueries.js).
+  'Boulder-001': { displayName: 'Rocher', deposits: ['rock', 'iron', 'gold'], construction: { price: 2, category: 'nature' } },
 
 };

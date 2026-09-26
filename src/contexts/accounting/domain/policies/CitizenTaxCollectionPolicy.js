@@ -3,7 +3,7 @@ import {
   getCitizenStatusProfile,
 } from '../../../../shared/population/CitizenStatusCatalog.js';
 
-const RESIDENTIAL_HOUSE_MARKERS = ['House-Blue', 'House-Red', 'House-Purple'];
+import { listResidentialTypes, normalizeResidentialTypeLabel } from '../../../../shared/building-identity/index.js';
 
 /**
  * Level 1 (autarky / hunter-gatherer) houses are self-sufficient and pay no
@@ -17,16 +17,17 @@ const RESIDENTIAL_HOUSE_MARKERS = ['House-Blue', 'House-Red', 'House-Purple'];
  * @param {number} taxPerCapita
  */
 export function computeCitizenTaxBreakdown(houses, taxPerCapita) {
+  // One line per house type the catalog declares (keyed by its id), then the totals.
+  const houseTypes = listResidentialTypes();
   const taxBreakdown = {
-    'House-Blue': 0,
-    'House-Red': 0,
-    'House-Purple': 0,
+    ...Object.fromEntries(houseTypes.map((type) => [type, 0])),
     total: 0,
     population: 0,
   };
 
   for (const house of houses) {
-    if (!house.type || !RESIDENTIAL_HOUSE_MARKERS.some((marker) => house.type.includes(marker))) {
+    const houseType = house.type ? normalizeResidentialTypeLabel(house.type) : null;
+    if (!houseType || !houseTypes.includes(houseType)) {
       continue;
     }
 
@@ -44,13 +45,7 @@ export function computeCitizenTaxBreakdown(houses, taxPerCapita) {
 
     const taxPerHouse = Math.round(pop * taxPerCapita);
 
-    if (house.type.includes('House-Blue')) {
-      taxBreakdown['House-Blue'] = Math.round(taxBreakdown['House-Blue'] + taxPerHouse);
-    } else if (house.type.includes('House-Red')) {
-      taxBreakdown['House-Red'] = Math.round(taxBreakdown['House-Red'] + taxPerHouse);
-    } else if (house.type.includes('House-Purple')) {
-      taxBreakdown['House-Purple'] = Math.round(taxBreakdown['House-Purple'] + taxPerHouse);
-    }
+    taxBreakdown[houseType] = Math.round(taxBreakdown[houseType] + taxPerHouse);
 
     taxBreakdown.total = Math.round(taxBreakdown.total + taxPerHouse);
     taxBreakdown.population += pop;

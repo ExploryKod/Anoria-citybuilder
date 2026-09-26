@@ -1,3 +1,8 @@
+import { isRoadType } from '../building-catalog/roadQueries.js';
+import { buildingCatalog, getBuildingDefinition } from '../building-catalog/buildingCatalog.js';
+import { getAnnualSupplyEntry, getResourceRoles, getSuppliedCategories, isQuantityDistributorType } from '../building-catalog/resourceRoleQueries.js';
+import { depositKindsOf } from '../building-catalog/depositQueries.js';
+
 export const BUILDING_KIND_HOUSE = 'house';
 export const BUILDING_KIND_FARM = 'farm';
 export const BUILDING_KIND_MARKET = 'market';
@@ -6,34 +11,38 @@ export const BUILDING_KIND_ROAD = 'road';
 export const BUILDING_KIND_NATURE = 'nature';
 export const BUILDING_KIND_OTHER = 'other';
 
-export const HOUSE_TYPE_BLUE = 'House-Blue';
-export const HOUSE_TYPE_RED = 'House-Red';
-export const HOUSE_TYPE_PURPLE = 'House-Purple';
-
-/** @type {Readonly<Record<string, number>>} */
-export const RESIDENTIAL_TIER_BY_TYPE = Object.freeze({
-  [HOUSE_TYPE_BLUE]: 1,
-  [HOUSE_TYPE_RED]: 2,
-  [HOUSE_TYPE_PURPLE]: 3,
-});
-
-/** @type {Readonly<Record<number, string>>} */
-export const RESIDENTIAL_TYPE_BY_TIER = Object.freeze({
-  1: HOUSE_TYPE_BLUE,
-  2: HOUSE_TYPE_RED,
-  3: HOUSE_TYPE_PURPLE,
-});
+/**
+ * The house types, in catalog order: every type that declares a `residentialGroup`. What a house is, and how the
+ * houses rank against each other (their tier: first declared = 1), is the catalog's — no house id is named here.
+ * @returns {string[]}
+ */
+export function listResidentialTypes() {
+  return Object.keys(buildingCatalog).filter((type) => buildingCatalog[type].residentialGroup);
+}
 
 /**
+ * The catalog id a record's type stands for: the type itself, or — for a legacy instance name that carries its
+ * position ('House-Blue-1-2') — the longest catalog id it starts with.
+ * @param {string} type
+ * @returns {string | null}
+ */
+function catalogIdOf(type) {
+  if (!type) return null;
+  if (buildingCatalog[type]) return type;
+  const prefixes = Object.keys(buildingCatalog).filter((id) => type.startsWith(`${id}-`));
+  return prefixes.sort((a, b) => b.length - a.length)[0] ?? null;
+}
+
+/**
+ * The house type a label stands for (a legacy name that carries a suffix maps to its catalog id); any other
+ * label comes back unchanged.
  * @param {string} type
  * @returns {string}
  */
 export function normalizeResidentialTypeLabel(type) {
   const t = type || '';
-  if (t.includes('House-Purple')) return HOUSE_TYPE_PURPLE;
-  if (t.includes('House-Red')) return HOUSE_TYPE_RED;
-  if (t.includes('House-Blue')) return HOUSE_TYPE_BLUE;
-  return t;
+  const id = catalogIdOf(t);
+  return id && buildingCatalog[id].residentialGroup ? id : t;
 }
 
 /**
@@ -42,22 +51,30 @@ export function normalizeResidentialTypeLabel(type) {
  */
 export function resolveBuildingKind(toolOrTypeId) {
   const t = toolOrTypeId || '';
-  if (t.includes('House')) return BUILDING_KIND_HOUSE;
-  if (t.includes('Farm')) return BUILDING_KIND_FARM;
-  if (t.includes('Market')) return BUILDING_KIND_MARKET;
-  if (t.includes('Windmill') || t.includes('windmill')) return BUILDING_KIND_WINDMILL;
-  if (t === 'roads' || t === 'Road' || t.startsWith('StonePath')) return BUILDING_KIND_ROAD;
-  if (t.includes('Tree') || t.includes('Boulder')) return BUILDING_KIND_NATURE;
+  const id = catalogIdOf(t);
+  const roles = id ? getResourceRoles(id) : [];
+  const suppliedCategories = getSuppliedCategories();
+
+  if (id && buildingCatalog[id].residentialGroup) return BUILDING_KIND_HOUSE;
+  // A farm: it produces a supplied good once a year. A market: it hands out a stock. A windmill: a hub of what
+  // the citizens eat. Each is a role the catalog declares, not a name.
+  if (id && getAnnualSupplyEntry(id)) return BUILDING_KIND_FARM;
+  if (id && isQuantityDistributorType(id)) return BUILDING_KIND_MARKET;
+  if (roles.some((entry) => entry.role === 'hub' && entry.categories.some((c) => suppliedCategories.includes(c)))) return BUILDING_KIND_WINDMILL;
+  if (isRoadType(t)) return BUILDING_KIND_ROAD;
+  if (id && depositKindsOf(id).length > 0) return BUILDING_KIND_NATURE;
   return BUILDING_KIND_OTHER;
 }
 
 /**
+ * The tier a house type starts at: its rank among the catalog's house types (first declared = 1), or null for a
+ * type that is not a house.
  * @param {string} toolOrTypeId
  * @returns {number | null}
  */
 export function initialTierForToolId(toolOrTypeId) {
-  const normalized = normalizeResidentialTypeLabel(toolOrTypeId || '');
-  return RESIDENTIAL_TIER_BY_TYPE[normalized] ?? null;
+  const index = listResidentialTypes().indexOf(normalizeResidentialTypeLabel(toolOrTypeId || ''));
+  return index >= 0 ? index + 1 : null;
 }
 
 /**
@@ -65,8 +82,7 @@ export function initialTierForToolId(toolOrTypeId) {
  * @returns {number | null}
  */
 export function tierForResidentialType(residentialType) {
-  const normalized = normalizeResidentialTypeLabel(residentialType || '');
-  return RESIDENTIAL_TIER_BY_TYPE[normalized] ?? null;
+  return initialTierForToolId(residentialType);
 }
 
 /**
@@ -74,7 +90,7 @@ export function tierForResidentialType(residentialType) {
  * @returns {string | null}
  */
 export function residentialTypeForTier(tier) {
-  return RESIDENTIAL_TYPE_BY_TIER[tier] ?? null;
+  return listResidentialTypes()[tier - 1] ?? null;
 }
 
 /**

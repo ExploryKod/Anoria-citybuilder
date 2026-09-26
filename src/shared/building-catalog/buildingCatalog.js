@@ -203,6 +203,11 @@
  *   stock for markets to pull from).
  * @property {string} [naturalResource] The kind of natural resource this
  *   building IS (a tree is 'wood'). Matched against a producer's `source`.
+ * @property {string[]} [deposits] On a nature building: the kinds of deposit it contains besides what it IS
+ *   (`naturalResource`), each counted in its own `stocks` field. See depositQueries.js.
+ * @property {Record<string, { share: number }>} [tileDeposits] On a terrain: the deposits its ground carries, and the
+ *   share of its tiles that hold each.
+ * @property {boolean} [isRoad] This type is a road (every variant of the road tool declares it): see roadQueries.js.
  * @property {number} [roadRange] How far a road may be for this building to count as connected: tiles of
  *   Manhattan distance from ANY tile of its footprint to a road tile. Omitted means 1 (a road touching it).
  *   Only meaningful when the building needs a road (see `requiresRoad`).

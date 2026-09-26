@@ -1,26 +1,44 @@
+import { isRoadType, primaryRoadType } from '../../../../shared/building-catalog/roadQueries.js';
 import { buildingCatalog } from '../../../../shared/building-catalog/buildingCatalog.js';
+import {
+  BUILDING_KIND_FARM,
+  BUILDING_KIND_HOUSE,
+  BUILDING_KIND_MARKET,
+  BUILDING_KIND_WINDMILL,
+  normalizeResidentialTypeLabel,
+  resolveBuildingKind,
+} from '../../../../shared/building-identity/index.js';
 
 /**
- * Per-building-type maintenance costs derived from `buildingCatalog` where a
- * real building id exists. `Farm` and `Market` are category-level defaults
- * (no single building type owns them), so they stay declared locally.
+ * Maintenance costs. A house costs what its own catalog entry declares (`accounting.maintenance`); `Farm`, `Market`
+ * and the windmill's industry line are category-level defaults (no single building type owns them), so they stay
+ * declared locally.
  *
- * `roads` is aliased to StonePath-001's fact: every placed road (any
- * StonePath rotation variant) gets its runtime type marker set to the
- * string 'roads' for connectivity (see BuildingKind.js), which is the key
- * `classifyMaintenanceBuilding` below actually matches on — 'roads' itself
- * is not a real building id, StonePath-001 is the one true road tool.
+ * `roads` is the road tool's fact: every placed road (whichever variant) is
+ * recognised as a road by roadQueries.js, whatever its runtime marker.
  */
 const DEFAULT_MAINTENANCE_COSTS = Object.freeze({
-  roads: buildingCatalog['StonePath-001'].accounting.maintenance,
-  'House-Blue': buildingCatalog['House-Blue'].accounting.maintenance,
-  'House-Red': buildingCatalog['House-Red'].accounting.maintenance,
-  'House-Purple': buildingCatalog['House-Purple'].accounting.maintenance,
+  roads: buildingCatalog[primaryRoadType()].accounting.maintenance,
   Farm: 2,
   Market: 2,
+  Industry: 2,
 });
 
 export { DEFAULT_MAINTENANCE_COSTS };
+
+/**
+ * What a house of this type costs to maintain, as its catalog entry declares.
+ * @param {string} type
+ * @returns {number}
+ */
+export function houseMaintenanceCost(type) {
+  const houseType = normalizeResidentialTypeLabel(type);
+  const cost = buildingCatalog[houseType]?.accounting?.maintenance;
+  if (!Number.isFinite(cost)) {
+    throw new Error(`[BuildingMaintenanceBreakdownPolicy] house type "${houseType}" declares no accounting.maintenance`);
+  }
+  return cost;
+}
 
 /**
  * @param {string} type
@@ -28,20 +46,17 @@ export { DEFAULT_MAINTENANCE_COSTS };
  * @returns {{ category: 'roads'|'houses'|'farms'|'markets'|null, cost: number }}
  */
 function classifyMaintenanceBuilding(type, maintenanceCosts) {
-  if (type.includes('roads')) {
+  if (isRoadType(type)) {
     return { category: 'roads', cost: maintenanceCosts.roads };
   }
-  if (
-    type === 'House-Blue' ||
-    type === 'House-Red' ||
-    type === 'House-Purple'
-  ) {
-    return { category: 'houses', cost: maintenanceCosts['House-Blue'] };
+  const kind = resolveBuildingKind(type);
+  if (kind === BUILDING_KIND_HOUSE) {
+    return { category: 'houses', cost: houseMaintenanceCost(type) };
   }
-  if (type.includes('Farm')) {
+  if (kind === BUILDING_KIND_FARM) {
     return { category: 'farms', cost: maintenanceCosts.Farm };
   }
-  if (type.includes('Market')) {
+  if (kind === BUILDING_KIND_MARKET) {
     return { category: 'markets', cost: maintenanceCosts.Market };
   }
   return { category: null, cost: 0 };
@@ -112,33 +127,22 @@ export function accumulateBuildingMaintenanceBreakdown(
 
     const type = house.type;
     let cost = 2;
+    const kind = resolveBuildingKind(type);
 
-    if (type.includes('roads')) {
+    if (isRoadType(type)) {
       cost = maintenanceCosts.roads;
       maintenanceBreakdown.roads += cost;
-    } else if (
-      type === 'House-Blue' ||
-      type === 'House-Red' ||
-      type === 'House-Purple' ||
-      type.includes('House')
-    ) {
-      cost = maintenanceCosts['House-Blue'];
+    } else if (kind === BUILDING_KIND_HOUSE) {
+      cost = houseMaintenanceCost(type);
       maintenanceBreakdown.houses += cost;
-    } else if (type.includes('Farm')) {
+    } else if (kind === BUILDING_KIND_FARM) {
       cost = maintenanceCosts.Farm;
       maintenanceBreakdown.farms += cost;
-    } else if (type.includes('Market')) {
+    } else if (kind === BUILDING_KIND_MARKET) {
       cost = maintenanceCosts.Market;
       maintenanceBreakdown.markets += cost;
-    } else if (
-      type.includes('Well') ||
-      type.includes('Fountain') ||
-      type.includes('Streetlight')
-    ) {
-      cost = 2;
-      maintenanceBreakdown.infrastructure += cost;
-    } else if (type.includes('Windmill')) {
-      cost = 2;
+    } else if (kind === BUILDING_KIND_WINDMILL) {
+      cost = maintenanceCosts.Industry;
       maintenanceBreakdown.industry += cost;
     }
 

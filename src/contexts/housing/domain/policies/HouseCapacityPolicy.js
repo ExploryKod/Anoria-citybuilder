@@ -1,5 +1,6 @@
 import { SOCIAL_CATEGORY } from '../../../../shared/population/socialCategoryCatalog.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+import { normalizeResidentialTypeLabel } from '../../../../shared/building-identity/index.js';
 
 /** Max citizen slots per house. */
 export const HOUSE_CITIZEN_CAP = 6;
@@ -33,12 +34,7 @@ export function residentialGroupOfType(type) {
  * @returns {boolean}
  */
 export function isResidentialHouseType(type) {
-  const t = type || '';
-  return (
-    t.includes('House-Blue') ||
-    t.includes('House-Red') ||
-    t.includes('House-Purple')
-  );
+  return Boolean(residentialGroupOfType(normalizeResidentialTypeLabel(type || '')));
 }
 
 /**

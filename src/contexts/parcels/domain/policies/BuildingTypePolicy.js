@@ -1,3 +1,4 @@
+import { isRoadType } from '../../../../shared/building-catalog/roadQueries.js';
 import { requiresRoad } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
@@ -7,7 +8,7 @@ export function needsRoadAccess(buildingType) {
   if (!buildingType || typeof buildingType !== 'string') {
     return false;
   }
-  return !buildingType.includes('roads') && !buildingType.includes('Road');
+  return !isRoadType(buildingType);
 }
 
 /**

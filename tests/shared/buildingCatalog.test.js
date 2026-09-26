@@ -17,12 +17,7 @@ import {
   BUILDING_SECTOR_MAP,
   BUILDING_EMPLOYEE_NEEDS,
 } from '../../src/contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
-import { DEFAULT_MAINTENANCE_COSTS } from '../../src/contexts/accounting/domain/policies/BuildingMaintenanceBreakdownPolicy.js';
-import {
-  HOUSE_TYPE_BLUE,
-  HOUSE_TYPE_RED,
-  HOUSE_TYPE_PURPLE,
-} from '../../src/contexts/housing/domain/HouseTypeCatalog.js';
+import { DEFAULT_MAINTENANCE_COSTS, houseMaintenanceCost } from '../../src/contexts/accounting/domain/policies/BuildingMaintenanceBreakdownPolicy.js';
 import {
   buildPopulationDepartureMessage,
   getBuildingDisplayName,
@@ -111,7 +106,7 @@ describe('BuildingMaintenanceBreakdownPolicy — derived maintenance facts', () 
     expect(DEFAULT_MAINTENANCE_COSTS.roads).toBe(
       buildingCatalog['StonePath-001'].accounting.maintenance
     );
-    expect(DEFAULT_MAINTENANCE_COSTS['House-Blue']).toBe(
+    expect(houseMaintenanceCost('House-Blue')).toBe(
       buildingCatalog['House-Blue'].accounting.maintenance
     );
   });

@@ -1,3 +1,4 @@
+import { isRoadType as isRoadTypeInCatalog } from '../../../../shared/building-catalog/roadQueries.js';
 import { isRoadNeedMet } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
@@ -18,8 +19,7 @@ export function isHouseType(type) {
  * @returns {boolean}
  */
 export function isRoadType(type) {
-  const t = type || '';
-  return t === 'roads' || t.includes('Road');
+  return isRoadTypeInCatalog(type);
 }
 
 /**

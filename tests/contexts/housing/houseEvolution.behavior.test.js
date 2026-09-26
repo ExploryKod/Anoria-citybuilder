@@ -9,10 +9,6 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createHousingBuildingSnapshot } from '../../../src/contexts/housing/domain/HousingBuildingSnapshot.js';
 import {
-  HOUSE_TYPE_BLUE,
-  HOUSE_TYPE_RED,
-} from '../../../src/contexts/housing/domain/HouseTypeCatalog.js';
-import {
   HOUSE_LEVEL_AUTARKY,
   HOUSE_LEVEL_SPECIALIZED,
   resolveHouseLevel,
@@ -58,6 +54,9 @@ function house(id, type, extras = {}) {
     ...extras,
   });
 }
+
+const HOUSE_TYPE_BLUE = 'House-Blue';
+const HOUSE_TYPE_RED = 'House-Red';
 
 describe('Housing — house progression', () => {
   describe('HouseCapacityPolicy.maxPopulationForLevel', () => {
