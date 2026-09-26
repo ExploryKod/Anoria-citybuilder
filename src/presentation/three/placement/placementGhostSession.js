@@ -4,6 +4,7 @@ import { resolveVerticalFaceRiverAssetId, isEditorRiverAsset, resolveRiverMountF
 const NON_PLACEABLE_TOOL_IDS = new Set([
   'bulldoze',
   'select-object',
+  'show-range',
   'grass',
   'terrain',
   'industry', // toolbar category id, not an asset

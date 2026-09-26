@@ -705,7 +705,7 @@ function renderCarousel(categoryId) {
 
 function getDirectToolIcon(toolId) {
   const sourceBtn = document.getElementById(
-    toolId === 'bulldoze' ? 'bulldoze-btn' : toolId === 'select-object' ? 'select-btn' : '',
+    toolId === 'bulldoze' ? 'bulldoze-btn' : toolId === 'select-object' ? 'select-btn' : toolId === 'show-range' ? 'range-btn' : '',
   );
   return sourceBtn?.innerHTML || '';
 }

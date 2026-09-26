@@ -46,6 +46,7 @@ import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
 import { notifyBudgetCleanupIfNeeded } from '../dom/compta/tresorerie/CleanupNotificationPresenter.js';
+import { computeBuildingReach, listPlacedBuildings } from '../../shared/building-catalog/buildingReach.js';
 import {
   BEHAVIOR_MODE,
   resolveBehaviorMode,
@@ -766,6 +767,18 @@ export function createGame(gameStore, assetManager, citySize = null) {
     return false;
   }
 
+  /** Range mode: what the building on this tile reaches, lit on the map until the mode or the click changes. */
+  function showReachOfTile(tile) {
+    const { buildings, roadTiles } = listPlacedBuildings(city);
+    const origin = buildings.find((b) => b.instanceId === tile.instanceId);
+    if (!origin) {
+      // A click on bare ground or on a road: nothing is reached from there.
+      scene.reachOverlay.clear();
+      return;
+    }
+    scene.reachOverlay.show(computeBuildingReach(origin, buildings, roadTiles));
+  }
+
   scene.onEnterSelectMode = () => {
     closeMobileBuildBar();
     closeEditorBuildBar();
@@ -859,6 +872,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
         });
         return;
       }
+    }
+
+    if (behaviorMode === BEHAVIOR_MODE.RANGE) {
+      showReachOfTile(tile);
+      return;
     }
 
     if (behaviorMode === BEHAVIOR_MODE.ERASE) {
@@ -1316,6 +1334,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       cancelTouchPendingPlacement();
       const toolChanged = toolId !== activeToolId;
       activeToolId = toolId;
+      scene.reachOverlay.clear();
       selectedMeshIndex = 0;
       gameUI.activeToolId = toolId;
       placementGhostSession.onToolChanged();

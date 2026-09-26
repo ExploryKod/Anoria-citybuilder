@@ -50,6 +50,7 @@ import {
   getSessionGameUI,
 } from '../../composition/sessionRuntime.js';
 import { createPlacementGhostController } from './placement/placementGhost.js';
+import { createReachOverlay } from './overlays/reachOverlay.js';
 import { pickTileFromRaycast } from './scene-board/tileRaycast.js';
 import { pickEditorTileOnGroundPlane } from './scene-board/editorTileGroundPick.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
@@ -133,6 +134,7 @@ export function createScene(_gameStore, assetManager, deps) {
     } catch (_) {}
 
     const placementGhost = createPlacementGhostController({ scene, assetManager });
+    const reachOverlay = createReachOverlay({ scene });
     
     // Initialize managers
     const lightingManager = new LightingManager(scene);
@@ -2590,6 +2592,7 @@ function onTouchEnd(event) {
         refreshEmploymentPresentation,
         /** Semi-transparent placement preview (StonePath trial). */
         placementGhost,
+        reachOverlay,
         /** Live mesh grid for turn-budget maintenance input. */
         get buildings() { return buildings; },
         setTileGridVisible(visible) {

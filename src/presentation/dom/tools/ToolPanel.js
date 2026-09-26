@@ -296,6 +296,7 @@ export function getToolButtonInfosForCategory(categoryKey) {
     return [
       { text: 'Démolir', tool: 'bulldoze', group: 'tools' },
       { text: 'Sélectionner', tool: 'select-object', group: 'tools' },
+      { text: 'Portée', tool: 'show-range', group: 'tools' },
     ];
   }
 
