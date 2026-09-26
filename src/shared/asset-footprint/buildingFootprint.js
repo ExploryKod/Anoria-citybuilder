@@ -68,7 +68,9 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'House-Red': Object.freeze({ width: 2, depth: 1 }),
   'Market-Stall': Object.freeze({ width: 1, depth: 1 }),
   'Market-Stall-Blue': Object.freeze({ width: 1, depth: 1 }),
-  'Market-Stall-Red': Object.freeze({ width: 1, depth: 1 }),
+  // Market-Stall-Red wears Kenney commercial building-c, whose real bounding box is 1x2 (a 1x1 footprint let a
+  // road sit under the far half of the mesh, and never counted a road beside it as touching the market).
+  'Market-Stall-Red': Object.freeze({ width: 1, depth: 2 }),
   'StonePath-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-Cross-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-Tee-001': Object.freeze({ width: 1, depth: 1 }),
