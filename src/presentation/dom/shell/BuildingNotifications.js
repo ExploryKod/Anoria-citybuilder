@@ -15,6 +15,7 @@ import {
 import {
   UNRESOLVED_TERM,
   buildingName,
+  buildingNameInSentence,
   goodLabel,
   namesOfBuildings,
   namesOfDependents,
@@ -22,6 +23,7 @@ import {
   typesHoldingRole,
   unresolvedTerm,
 } from './CatalogVocabulary.js';
+import { confirmModal } from './ConfirmModal.js';
 
 /**
  * Legacy aliases that aren't a real building type id in `buildingCatalog`
@@ -131,6 +133,22 @@ export function describePlacementNeeds(buildingType) {
 export function showPlacementNeedsNotification(buildingType) {
   const message = describePlacementNeeds(buildingType);
   if (message) showInfoToast(message, { timeout: 6000 });
+}
+
+/**
+ * Asked before the demolition: which buildings go down with the hub. Names come from the catalog.
+ * @param {string} hubType The hub about to be demolished (a catalog id).
+ * @param {Array<{ type: string, x: number, y: number }>} dependents What would be destroyed with it.
+ * @returns {Promise<boolean>} true when the player confirms.
+ */
+export function confirmHubCascadeDemolition(hubType, dependents) {
+  return confirmModal({
+    title: `Démolir ${buildingNameInSentence(hubType)} ?`,
+    message: `${buildingName(hubType)} alimente ${dependents.length} bâtiment(s) qui ne peuvent pas fonctionner sans lui : ils seront détruits avec lui.`,
+    items: dependents.map((building) => `${buildingName(building.type)} (${building.x}, ${building.y})`),
+    confirmLabel: 'Démolir',
+    cancelLabel: 'Annuler',
+  });
 }
 
 /**

@@ -81,6 +81,7 @@ import {
   showInsufficientFundsNotification,
   showGenericErrorNotification,
   showHubCascadeNotification,
+  confirmHubCascadeDemolition,
   showPlacementNeedsNotification,
   showPopulationDepartureNotification,
 } from '../dom/shell/BuildingNotifications.js';
@@ -908,6 +909,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
       const removedInstanceId = selectedObject.userData?.instanceId ?? tile.instanceId ?? null;
       const isHub = supply.hasResourceRole(tile.buildingId, 'hub');
       const hasPlacementRequirements = supply.getPlacementRequirements(tile.buildingId).length > 0;
+
+      // A hub that takes buildings down with it asks first: nothing is touched until the player says yes.
+      if (isHub && removedInstanceId) {
+        const dependents = await supply.previewHubCascade({ hubId: removedInstanceId });
+        if (dependents.length > 0 && !(await confirmHubCascadeDemolition(tile.buildingId, dependents))) {
+          return;
+        }
+      }
 
       let cascadeOutcome = null;
       if ((isHub || hasPlacementRequirements) && removedInstanceId) {
