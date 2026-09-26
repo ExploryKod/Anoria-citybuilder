@@ -23,10 +23,13 @@ import {
  * of STATUS_ICON_DEFAULTS; most are their own texture and name, the exceptions are listed.
  */
 const STATUS_SPRITE = Object.freeze({
+  'no-food': { texture: 'nofood', name: 'no-food' },
   'no-food-farm': { texture: 'nofood', name: 'no-food' },
+  'sold-to-hub': { texture: 'isCollecting', name: 'sold-to-hub' },
 });
 
-function spriteOf(status) {
+/** @param {string} status A key of STATUS_ICON_DEFAULTS. @returns {{ texture: string, name: string }} */
+export function spriteOf(status) {
   return STATUS_SPRITE[status] ?? { texture: status, name: status };
 }
 
@@ -51,9 +54,17 @@ function isQuantityDistributorEntry(entry) {
  * @property {number} time
  */
 
-/** Set a status sprite; `visible` false keeps it created but hidden, as the other layers do. */
-function setSprite(ctx, mesh, iconKey, { texture = iconKey, name = iconKey, visible, color, backgroundColor, meta }) {
-  const base = meta ?? ctx.statusIcons[iconKey];
+/**
+ * Set a status sprite; `visible` false keeps it created but hidden, as the other layers do. Its texture and
+ * name come from `spriteOf`, and a status with no texture is an error: the asset manager would otherwise
+ * draw the "no road" image in its place.
+ */
+function setSprite(ctx, mesh, iconKey, { visible, color, backgroundColor }) {
+  const { texture, name } = spriteOf(iconKey);
+  if (!ctx.textures[texture]) {
+    throw new Error(`[roleStatusSprites] no texture "${texture}" for the status "${iconKey}"`);
+  }
+  const base = ctx.statusIcons[iconKey];
   const icon = ctx.resolveIconAppearance(mesh, name, base.position, base.scale);
   ctx.assetManager.setStatusSprite(
     mesh,
@@ -155,11 +166,8 @@ async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset
   if (!isStaffedAndConnected(mesh)) return;
 
   if (current) {
-    const { texture, name } = spriteOf(current.status);
     const meta = ctx.statusIcons[current.status];
     setSprite(ctx, mesh, current.status, {
-      texture,
-      name,
       visible: ctx.productionSpriteVisible(true),
       color: meta.spriteColor,
       backgroundColor: meta.backgroundColor,
@@ -170,8 +178,6 @@ async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset
     const meta = ctx.statusIcons[saleStatus];
     const collected = view?.soldToHub === true;
     setSprite(ctx, mesh, saleStatus, {
-      texture: 'isCollecting',
-      name: saleStatus,
       visible: collected ? ctx.productionSpriteVisible(true) : false,
       color: collected ? meta.spriteColor : null,
       backgroundColor: collected ? meta.backgroundColor : null,
