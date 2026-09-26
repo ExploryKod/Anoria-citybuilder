@@ -30,6 +30,7 @@ const ICON_TEXTURE_KEYS = {
   'sell-food': 'sell-food',
   'sold-to-hub': 'isCollecting',
   'failed-sell': 'failed-sell',
+  'hub-full': 'hub-full',
   'no-work': 'no-work',
 };
 

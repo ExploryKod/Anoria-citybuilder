@@ -14,6 +14,8 @@ export const PRODUCTION_STATUS_SPRITE_NAMES = Object.freeze([
   'sell-food-bg',
   'sold-to-hub',
   'sold-to-hub-bg',
+  'hub-full',
+  'hub-full-bg',
   'failed-sell',
   'failed-sell-bg',
   'no-food',

@@ -85,12 +85,23 @@ function transactedThisMonth(view, time) {
   return isThisMonth(view?.lastTransaction, time);
 }
 
-/** Hub: shows for the month in which goods really came in — not merely while its collection window is open. */
+/** Hub: shows for the month in which goods really came in — not merely while its collection window is open — and while it is full. */
 async function applyHubSprites(ctx, mesh, instanceId) {
-  ['isCollecting', 'isCollecting-bg'].forEach((name) => ctx.assetManager.removeStatusSprite(mesh, name));
+  ['isCollecting', 'isCollecting-bg', 'hub-full', 'hub-full-bg'].forEach((name) => ctx.assetManager.removeStatusSprite(mesh, name));
   if (!isStaffedAndConnected(mesh)) return;
 
   const view = await ctx.supply.getBuildingSupplyView(instanceId);
+
+  // Full: what it holds has reached the ceiling the catalog gives it, so nothing more can be sold to it.
+  const totalKey = getResourceRoles(view?.type).find((entry) => entry.role === 'hub')?.totalKey;
+  const full = Number.isFinite(view?.maxStock) && totalKey != null && (view.stocks?.[totalKey] ?? 0) >= view.maxStock;
+  const fullMeta = ctx.statusIcons['hub-full'];
+  setSprite(ctx, mesh, 'hub-full', {
+    visible: full ? ctx.productionSpriteVisible(true) : false,
+    color: full ? fullMeta.spriteColor : null,
+    backgroundColor: full ? fullMeta.backgroundColor : null,
+  });
+
   const meta = ctx.statusIcons.isCollecting;
   if (transactedThisMonth(view, ctx.time)) {
     setSprite(ctx, mesh, 'isCollecting', {
