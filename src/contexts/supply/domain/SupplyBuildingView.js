@@ -19,6 +19,7 @@ export function createSupplyBuildingView({
   isCollecting = false,
   collectedByHub = false,
   lastCollection = null,
+  lastTransaction = null,
   lastImport = null,
   lastImportDetails = null,
   salesToDistributor = [],
@@ -56,6 +57,9 @@ export function createSupplyBuildingView({
     isCollecting: isCollecting === true,
     collectedByHub: collectedByHub === true,
     lastCollection: lastCollection ? Object.freeze({ ...lastCollection }) : null,
+    // When goods last REALLY changed hands through this building ({ year, monthIndex }): a pass that
+    // moved nothing leaves it as it was.
+    lastTransaction: lastTransaction ? Object.freeze({ ...lastTransaction }) : null,
     lastImport: lastImport ? Object.freeze({ ...lastImport }) : null,
     lastImportDetails: lastImportDetails
       ? Object.freeze({ ...lastImportDetails })

@@ -45,6 +45,8 @@ export class GetBuildingSupplyView {
       maxStock: view.maxStock,
       // The step of its production cycle a producer is on (its `cycle` in the catalog), for the graphics.
       cycleStep: currentCycleStep(view),
+      // When goods last really moved through it: the activity icons follow this, not a schedule.
+      lastTransaction: view.lastTransaction ? { ...view.lastTransaction } : null,
     };
 
     if (kind === 'market') {

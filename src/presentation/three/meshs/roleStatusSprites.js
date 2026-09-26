@@ -78,14 +78,22 @@ function setSprite(ctx, mesh, iconKey, { visible, color, backgroundColor }) {
   );
 }
 
-/** Hub: shows while it is collecting. */
+/** True when goods really changed hands through the building this month (its `lastTransaction`). */
+function transactedThisMonth(view, time) {
+  const at = view?.lastTransaction;
+  if (!at) return false;
+  const now = TimeManager.getTimeInfo(time);
+  return at.monthIndex === now.monthIndex && at.year === (now.year ?? 0);
+}
+
+/** Hub: shows for the month in which goods really came in — not merely while its collection window is open. */
 async function applyHubSprites(ctx, mesh, instanceId) {
   ['isCollecting', 'isCollecting-bg'].forEach((name) => ctx.assetManager.removeStatusSprite(mesh, name));
   if (!isStaffedAndConnected(mesh)) return;
 
   const view = await ctx.supply.getBuildingSupplyView(instanceId);
   const meta = ctx.statusIcons.isCollecting;
-  if (view?.isCollecting === true) {
+  if (transactedThisMonth(view, ctx.time)) {
     setSprite(ctx, mesh, 'isCollecting', {
       visible: ctx.productionSpriteVisible(true),
       color: meta.spriteColor,
@@ -96,14 +104,14 @@ async function applyHubSprites(ctx, mesh, instanceId) {
   }
 }
 
-/** Quantity distributor: shows while it is buying, and when its stock is empty. */
+/** Quantity distributor: shows for the month in which it really bought, and when its stock is empty. */
 async function applyDistributorSprites(ctx, mesh, instanceId) {
   ['isBuying', 'isBuying-bg', 'no-food', 'no-food-bg'].forEach((name) => ctx.assetManager.removeStatusSprite(mesh, name));
   if (!isStaffedAndConnected(mesh)) return;
 
   const view = await ctx.supply.getBuildingSupplyView(instanceId);
   const meta = ctx.statusIcons.isBuying;
-  if (view?.isBuying === true) {
+  if (transactedThisMonth(view, ctx.time)) {
     // Orange when no source is near enough to buy from, green otherwise.
     const noSource = view?.noFarmsNearby === true;
     setSprite(ctx, mesh, 'isBuying', {

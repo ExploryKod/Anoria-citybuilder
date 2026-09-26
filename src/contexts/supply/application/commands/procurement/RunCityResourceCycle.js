@@ -117,6 +117,13 @@ export class RunCityResourceCycle {
         await this.onHubLinkResolved(distributor.id, Boolean(distributor[distributorHubLink.sourceLinkField]));
       }
 
+      if (hubOutcome.transferred) {
+        // It really bought: its activity icon lights for the rest of this month.
+        await this.supplyBuildingRepository.updateBuildingFields(distributor.id, {
+          lastTransaction: { year: timeInfo?.year ?? 0, monthIndex: timeInfo?.monthIndex ?? null },
+        });
+      }
+
       if (hubOutcome.transferred && this.onHubTransfer) {
         await this.onHubTransfer(distributor.id, hubOutcome.transfers, timeInfo);
       }

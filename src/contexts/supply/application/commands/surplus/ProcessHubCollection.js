@@ -112,6 +112,10 @@ export class ProcessHubCollection {
     const collectionYear = Number.isFinite(year) ? Math.floor(year) : 0;
 
     const lastCollection = { ...emptyCollection(), [totalKey]: outcome.totalUnits };
+    // Goods really came in: the hub's activity icon lights for the rest of this month.
+    await this.supplyBuildingRepository.updateBuildingFields(hubId, {
+      lastTransaction: { year: collectionYear, monthIndex: period?.monthIndex ?? null },
+    });
 
     for (const transfer of outcome.transfers) {
       const category = transfer.category;

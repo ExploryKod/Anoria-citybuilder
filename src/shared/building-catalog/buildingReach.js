@@ -107,10 +107,13 @@ export function computeBuildingReach(origin, buildings, roadTiles) {
   };
 
   let widestFiniteRange = requiresRoad(origin.type) ? getRoadRange(origin.type) : 0;
+  // A role with no limit reaches the whole road network too.
+  let reachesEveryRoad = false;
 
   for (const entry of roles) {
     const range = entry.range ?? Infinity;
     if (Number.isFinite(range)) widestFiniteRange = Math.max(widestFiniteRange, range);
+    else if (entry.role === 'distributor' || entry.role === 'collector') reachesEveryRoad = true;
 
     for (const other of others) {
       const distance = manhattan(origin, other);
@@ -169,7 +172,9 @@ export function computeBuildingReach(origin, buildings, roadTiles) {
     }
   }
 
-  const roads = widestFiniteRange >= 1
+  const roads = reachesEveryRoad
+    ? roadTiles
+    : widestFiniteRange >= 1
     ? roadTiles.filter((road) => {
         const distance = footprintDistance(origin.tiles, road);
         return distance >= 1 && distance <= widestFiniteRange;

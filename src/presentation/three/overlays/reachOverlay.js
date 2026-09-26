@@ -3,14 +3,14 @@ import { WORLD_PLATFORM_Y } from '../../../shared/terrain-catalog/terrainWorldCo
 
 /**
  * The "range" mode's picture: the roads a building reaches lit blue (as in Caesar III), and a
- * translucent volume over the buildings that receive what it gives (green) or give what it takes
+ * translucent volume over the buildings that receive what it gives (violet) or give what it takes
  * (amber). Pure display of a `computeBuildingReach` result — it knows no rule of the game.
  */
 
-const ROAD_COLOR = 0x3d8bff;
-const OUT_COLOR = 0x35d07f;
+const ROAD_COLOR = 0x2ec4ff;
+const OUT_COLOR = 0xa24bff;
 const IN_COLOR = 0xffb020;
-const ROAD_LIFT = 0.12;
+const ROAD_LIFT = 0.2;
 const VOLUME_HEIGHT = 1.0;
 
 /**
@@ -59,7 +59,7 @@ export function createReachOverlay({ scene }) {
       const tiles = reach.buildings.filter((b) => b.direction === direction).flatMap((b) => b.tiles);
       if (!tiles.length) continue;
       const volume = new THREE.BoxGeometry(1, VOLUME_HEIGHT, 1);
-      instanced(volume, color, 0.35, tiles, WORLD_PLATFORM_Y + VOLUME_HEIGHT / 2);
+      instanced(volume, color, 0.5, tiles, WORLD_PLATFORM_Y + VOLUME_HEIGHT / 2);
     }
   }
 

@@ -70,6 +70,7 @@ export class DexieSupplyBuildingRepository {
       isCollecting: house.isCollecting === true,
       collectedByHub: house.collectedByHub === true,
       lastCollection: house.lastCollection ?? null,
+      lastTransaction: house.lastTransaction ?? null,
       lastImport: house.lastImport ?? null,
       lastImportDetails: house.lastImportDetails ?? null,
       salesToDistributor: house.salesToDistributor || [],

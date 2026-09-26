@@ -47,6 +47,7 @@ import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
 import { notifyBudgetCleanupIfNeeded } from '../dom/compta/tresorerie/CleanupNotificationPresenter.js';
 import { computeBuildingReach, listPlacedBuildings } from '../../shared/building-catalog/buildingReach.js';
+import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
 import {
   BEHAVIOR_MODE,
   resolveBehaviorMode,
@@ -501,6 +502,29 @@ export function createGame(gameStore, assetManager, citySize = null) {
     },
   });
 
+  /**
+   * Before placing: what the building under the ghost WOULD reach, lit as in range mode — so the
+   * spot is judged before paying. Recomputed only when the ghost's type, spot or footprint changes.
+   */
+  let lastReachPreviewKey = null;
+  function showReachOfGhost(preview) {
+    if (!preview || isEditorMode() || !getBuildingDefinition(preview.type)?.resourceRoles?.length) {
+      if (lastReachPreviewKey !== null) scene.reachOverlay.clear();
+      lastReachPreviewKey = null;
+      return;
+    }
+    const key = `${preview.type}|${preview.x}|${preview.y}|${preview.width}|${preview.height}`;
+    if (key === lastReachPreviewKey) return;
+    lastReachPreviewKey = key;
+    const { buildings, roadTiles } = listPlacedBuildings(city);
+    const tiles = [];
+    for (let dx = 0; dx < preview.width; dx += 1) {
+      for (let dy = 0; dy < preview.height; dy += 1) tiles.push({ x: preview.x + dx, y: preview.y + dy });
+    }
+    const origin = { instanceId: '__ghost__', type: preview.type, x: preview.x, y: preview.y, tiles };
+    scene.reachOverlay.show(computeBuildingReach(origin, buildings, roadTiles));
+  }
+
   const placementGhostSession = createPlacementGhostSession({
     getGhost: () => scene.placementGhost,
     getCity: () => city,
@@ -509,6 +533,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     assetCatalog: buildingPlacementCatalog,
     isPlaceableTool: (toolId) => isActivePlacementTool(toolId),
     getFocusedObject: () => scene.focusedObject,
+    onReachPreview: (preview) => showReachOfGhost(preview),
     canPlaceBuildingAtTile: (params) => {
       if (isEditorPlacementTool(params.buildingType)) {
         const preview = scene.resolveEditorGhostPlacementPreview?.(
