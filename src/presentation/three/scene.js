@@ -52,6 +52,7 @@ import {
 } from '../../composition/sessionRuntime.js';
 import { createPlacementGhostController } from './placement/placementGhost.js';
 import { createReachOverlay } from './overlays/reachOverlay.js';
+import { createRoadPaintPreview } from './overlays/roadPaintPreview.js';
 import { pickTileFromRaycast } from './scene-board/tileRaycast.js';
 import { pickEditorTileOnGroundPlane } from './scene-board/editorTileGroundPick.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
@@ -136,6 +137,7 @@ export function createScene(_gameStore, assetManager, deps) {
 
     const placementGhost = createPlacementGhostController({ scene, assetManager });
     const reachOverlay = createReachOverlay({ scene });
+    const roadPaintPreview = createRoadPaintPreview({ scene });
     
     // Initialize managers
     const lightingManager = new LightingManager(scene);
@@ -2581,6 +2583,7 @@ function onTouchEnd(event) {
         /** Semi-transparent placement preview (StonePath trial). */
         placementGhost,
         reachOverlay,
+        roadPaintPreview,
         /** Live mesh grid for turn-budget maintenance input. */
         get buildings() { return buildings; },
         setTileGridVisible(visible) {

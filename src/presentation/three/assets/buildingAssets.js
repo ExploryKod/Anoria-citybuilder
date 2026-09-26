@@ -60,6 +60,8 @@
  *    `step` names a step of the building's own production cycle (see buildingEconomy.js `cycle`), `status` is a
  *    key of statusIconAnchors.js. `id` is passed to the mesh's `applyPhase` hook, if it has one.
  *    `saleStatus` (optional) picks the icon shown while a hub has collected its goods (default 'sold-to-hub').
+ *  - roadSides (roads only): which tile sides (north/east/south/west) the asphalt reaches on the unturned mesh; the
+ *    adaptive road drag chooses each tile's piece and turn from it (roadPaintPlanner.js).
  *  - kenneyGlb entries: geometry.glb is the full public URL of a single-tile GLB (road piece,
  *    nature-kit tree/rock); transform.rotationDeg.y is the base yaw (R adds 90° steps on top).
  *  - kenneyCityKit entries: geometry.glb is intentionally null — the actual
@@ -550,6 +552,10 @@ export const BUILDING_ASSETS = Object.freeze({
       icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="16"/><line x1="16" y1="14" x2="16" y2="16"/></svg>' },
     },
     tags: ['infrastructure', 'building', 'road'],
+    // Which sides of its tile the asphalt reaches when the mesh is unturned (north = -y, east = +x, south = +y,
+    // west = -x), read off the GLB. Each R step turns them a quarter counter-clockwise (east → north → west → south);
+    // `transform.rotationDeg.y` turns them further. What the adaptive road drag picks pieces from.
+    roadSides: ['west', 'east'],
     // Ordered catalog ids the S key cycles through while this tool is active
     // (the first one is the default). Each id is a full catalog entry of its
     // own, so the placed tile keeps that id; R still rotates whichever mesh is
@@ -585,6 +591,10 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: null, // not a distinct carousel entry — right-turn variant of StonePath-001, selected via R-key rotation cycling, never placed directly by clicking a button
     tags: ['infrastructure', 'building', 'road'],
+    // Which sides of its tile the asphalt reaches when the mesh is unturned (north = -y, east = +x, south = +y,
+    // west = -x), read off the GLB. Each R step turns them a quarter counter-clockwise (east → north → west → south);
+    // `transform.rotationDeg.y` turns them further. What the adaptive road drag picks pieces from.
+    roadSides: ['west', 'south'],
   },
   // Chemin de pierre (virage gauche, réutilise le mesh StonePath-001)
   'StonePath-Left-001': {
@@ -615,6 +625,10 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: null, // not a distinct carousel entry — left-turn variant of StonePath-001, selected via R-key rotation cycling, never placed directly by clicking a button
     tags: ['infrastructure', 'building', 'road'],
+    // Which sides of its tile the asphalt reaches when the mesh is unturned (north = -y, east = +x, south = +y,
+    // west = -x), read off the GLB. Each R step turns them a quarter counter-clockwise (east → north → west → south);
+    // `transform.rotationDeg.y` turns them further. What the adaptive road drag picks pieces from.
+    roadSides: ['west', 'south'],
   },
   // Croisement (réutilise le mesh StonePath-001)
   'StonePath-Cross-001': {
@@ -645,6 +659,10 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: null, // not a distinct carousel entry — crossroad variant of StonePath-001, selected via R-key rotation cycling, never placed directly by clicking a button
     tags: ['infrastructure', 'building', 'road'],
+    // Which sides of its tile the asphalt reaches when the mesh is unturned (north = -y, east = +x, south = +y,
+    // west = -x), read off the GLB. Each R step turns them a quarter counter-clockwise (east → north → west → south);
+    // `transform.rotationDeg.y` turns them further. What the adaptive road drag picks pieces from.
+    roadSides: ['north', 'east', 'south', 'west'],
   },
   // Chemin de pierre en T (variante sélectionnable par S, jamais un bouton à part)
   'StonePath-Tee-001': {
@@ -674,6 +692,10 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: null, // not a distinct carousel entry — selected via the S key on StonePath-001
     tags: ['infrastructure', 'building', 'road'],
+    // Which sides of its tile the asphalt reaches when the mesh is unturned (north = -y, east = +x, south = +y,
+    // west = -x), read off the GLB. Each R step turns them a quarter counter-clockwise (east → north → west → south);
+    // `transform.rotationDeg.y` turns them further. What the adaptive road drag picks pieces from.
+    roadSides: ['west', 'east', 'south'],
   },
   // Bout de chemin (variante sélectionnable par S, jamais un bouton à part)
   'StonePath-End-001': {
@@ -703,6 +725,10 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: null, // not a distinct carousel entry — selected via the S key on StonePath-001
     tags: ['infrastructure', 'building', 'road'],
+    // Which sides of its tile the asphalt reaches when the mesh is unturned (north = -y, east = +x, south = +y,
+    // west = -x), read off the GLB. Each R step turns them a quarter counter-clockwise (east → north → west → south);
+    // `transform.rotationDeg.y` turns them further. What the adaptive road drag picks pieces from.
+    roadSides: ['east'],
   },
   // Chapelle — RÉASSIGNÉ au kit Kenney Industrial building-l (geometry
   // copied from Kenney-Industrial-building-l below; economy/footprint stay
