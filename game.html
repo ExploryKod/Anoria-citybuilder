@@ -48,6 +48,7 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/report-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/work-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/storage-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/clients-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/archives-section.css" media="print" onload="this.media='all'">
@@ -68,6 +69,7 @@
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/report-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/work-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/storage-section.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/clients-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/archives-section.css">
@@ -2116,6 +2118,21 @@
                     </svg>
                     <span class="sr-only">Unités de Stock</span>
                 </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-clients"
+                    data-section="clients"
+                    title="Clients"
+                    aria-label="Ouvrir la section Clients">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span class="sr-only">Clients</span>
+                </button>
                 
                 <button
                     class="administrator-nav-btn"
@@ -2731,6 +2748,25 @@
                 </div>
             </div>
             
+            <!-- Clients Section: who each producer serves first -->
+            <div class="administrator-section" id="admin-section-clients">
+                <div class="administrator-section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Clients
+                </div>
+                <div class="administrator-section-content">
+                    <div class="clients-board" id="clients-board">
+                        <p class="clients-hint" id="clients-hint"></p>
+                        <div class="clients-list" id="clients-list"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Food Traceability Section -->
             <div class="administrator-section" id="admin-section-food-traceability">
                 <div class="administrator-section-title">

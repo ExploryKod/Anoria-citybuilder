@@ -41,7 +41,7 @@ export class GetHubStorageInfoView {
     const lines = Object.freeze(
       storage.lines.map((line) => {
         const { emoji, label } = getResourceCategoryPresentation(line.productId);
-        return Object.freeze({ ...line, emoji, label, carryOver: carryOver[line.productId] ?? 0 });
+        return Object.freeze({ ...line, emoji, label, carryOver: carryOver[line.productId] ?? 0, lots: buildingRow.lots?.[line.productId] ?? {} });
       })
     );
 

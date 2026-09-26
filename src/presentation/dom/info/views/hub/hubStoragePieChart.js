@@ -2,6 +2,14 @@
  * SVG pie chart for hub storage — real occupation of total capacity.
  */
 
+import { buildingName } from '../../../shell/CatalogVocabulary.js';
+
+/** What the hub cannot attribute (goods that arrived before it kept track): said as it is, not named. */
+const UNKNOWN_ORIGIN = 'Origine inconnue';
+
+/** The name of who delivered a part of a good: the producer type as the catalog names it. */
+const originLabel = (producerType) => (producerType === '' ? UNKNOWN_ORIGIN : buildingName(producerType));
+
 /**
  * @param {number} cx
  * @param {number} cy
@@ -41,6 +49,25 @@ function labelPoint(cx, cy, r, midDeg) {
 }
 
 /**
+ * Under a good, who delivered each part of it, each with the tone it has on the chart. Said whenever the hub
+ * knows more than "unknown".
+ * @param {object} seg
+ */
+function originLines(seg) {
+  const parts = (seg.parts ?? []).filter((part) => part.amount > 0);
+  if (parts.length === 0 || (parts.length === 1 && parts[0].producerType === '')) return '';
+  return parts
+    .map(
+      (part) => `
+        <div class="hub-pie-legend-item hub-pie-legend-item--origin" data-product="${seg.productId}">
+          <span class="hub-pie-legend-swatch"><span class="hub-pie-legend-swatch-dark" style="background:${part.color}"></span></span>
+          <span class="hub-pie-legend-text">↳ ${originLabel(part.producerType)} — ${part.amount}</span>
+        </div>`
+    )
+    .join('');
+}
+
+/**
  * @param {object} view
  * @param {ReadonlyArray<string>} [summaryLines] Short lines under the pie (capacity, autonomy, ...)
  */
@@ -69,9 +96,14 @@ export function renderHubStoragePieChart(view, summaryLines = []) {
       }
 
       if (seg.darkAngle > 0.01) {
-        parts.push(
-          `<path class="hub-pie-wedge hub-pie-wedge--dark" d="${wedgePath(cx, cy, r, cursor, cursor + seg.darkAngle)}" fill="${seg.colors.dark}" data-product="${seg.productId}" />`
-        );
+        // One wedge per producer type that delivered it, in its own tone of the good's colour.
+        const pieces = seg.parts?.length ? seg.parts : [{ startAngle: cursor, angle: seg.darkAngle, color: seg.colors.dark }];
+        for (const piece of pieces) {
+          if (piece.angle <= 0.01) continue;
+          parts.push(
+            `<path class="hub-pie-wedge hub-pie-wedge--dark" d="${wedgePath(cx, cy, r, piece.startAngle, piece.startAngle + piece.angle)}" fill="${piece.color}" data-product="${seg.productId}" />`
+          );
+        }
         cursor += seg.darkAngle;
       }
 
@@ -111,6 +143,7 @@ export function renderHubStoragePieChart(view, summaryLines = []) {
           <span class="hub-pie-legend-emoji">${seg.emoji}</span>
           <span class="hub-pie-legend-text">${seg.label} — ${seg.amount}</span>
         </div>
+        ${originLines(seg)}
       `;
     })
     .join('');

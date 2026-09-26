@@ -13,7 +13,7 @@ import {
   residentialGroupForType,
 } from '../../../shell/ResidentialGroupLabels.js';
 import { computeHouseCitizenComposition } from '../../../../../composition/housingCatalog.js';
-import { buildingName, goodIcon, goodLabel } from '../../../shell/CatalogVocabulary.js';
+import { buildingName, goodIcon, goodLabel, goodUnit } from '../../../shell/CatalogVocabulary.js';
 import { getQuantityConsumerEntries, getQuantityConsumerEntry } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
 
@@ -66,6 +66,9 @@ export function formatHouseSkillsModel(vm) {
 const CONSUMED_LAST_MONTH_CAPTION = 'Consommé le mois dernier :';
 const NO_MEAL_YET = '–';
 
+/** A number as the player reads it (0,25 — never 0.25). */
+const formatNumber = (value) => Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+
 /**
  * Ressources tab — the house's NEEDS, not its goods: one card per need the catalog gives it (its diet, the
  * goods it wears out...), each reading what was used up last month over what was needed (8/8 = met, 4/8 = half
@@ -81,7 +84,7 @@ export function formatHouseResourcesModel(vm) {
   return {
     caption: CONSUMED_LAST_MONTH_CAPTION,
     needs: entries.map((entry, index) =>
-      needOf(entry, index === 0 ? (vm.lastConsumption ?? null) : (vm.buildingRow?.[entry.outcomeField] ?? null))
+      needOf(entry, index === 0 ? (vm.lastConsumption ?? null) : (vm.buildingRow?.[entry.outcomeField] ?? null), vm.buildingPop)
     ),
   };
 }
@@ -90,8 +93,9 @@ export function formatHouseResourcesModel(vm) {
  * One need: its own card (used up over needed) and the detail of each of its goods (used up of each).
  * @param {import('../../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleFacts} entry
  * @param {object | null} last The record of its last consumption.
+ * @param {number} pop Inhabitants now, for the calculation shown before any consumption is recorded.
  */
-function needOf(entry, last) {
+function needOf(entry, last, pop) {
   const { categories, totalKey } = entry;
   const whole = (value) => Math.max(0, Math.floor(Number(value) || 0));
 
@@ -134,5 +138,12 @@ function needOf(entry, last) {
         ariaLabel: `${label} : pas encore de repas`,
       };
 
-  return { kind: totalKey, card: totalCard, details: categoryCards };
+  // How the need is worked out, as the catalog declares it: inhabitants × the rate per inhabitant. With a record,
+  // it is that month's own (its demand, so the inhabitants it implies), not today's population.
+  const rate = Number(entry.amount);
+  const inhabitants = last && rate > 0 ? whole(last.demand / rate) : whole(pop);
+  // (The result is the figure above it: only the working is said here, with the unit the catalog gives the need.)
+  const formula = `Besoin : ${inhabitants} hab. × ${formatNumber(rate)} ${goodUnit(totalKey, rate)}`;
+
+  return { kind: totalKey, card: { ...totalCard, detailText: formula }, details: categoryCards };
 }

@@ -82,6 +82,7 @@ import {
   showGenericErrorNotification,
   showHubCascadeNotification,
   confirmHubCascadeDemolition,
+  showClientPriorityNotification,
   showPlacementNeedsNotification,
   showPopulationDepartureNotification,
 } from '../dom/shell/BuildingNotifications.js';
@@ -1374,7 +1375,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
       placementGhostSession.onToolChanged();
       // What a building needs (a hub in reach, a natural resource, a supplier) is said when it is picked.
       if (toolChanged && isActivePlacementTool(toolId)) {
-        showPlacementNeedsNotification(resolvePlacementBuildingId(toolId));
+        const placingType = resolvePlacementBuildingId(toolId);
+        showPlacementNeedsNotification(placingType);
+        // A producer whose goods have clients says who it serves first, and where the player changes it.
+        void supply.listClientPriorityBoards().then((boards) =>
+          showClientPriorityNotification(placingType, boards.find((board) => board.producerType === placingType))
+        );
       }
       if (isEditorTerrainTool(toolId)) {
         void getKenneyNatureTerrainAdapter().ensureTerrainTemplate(toolId);

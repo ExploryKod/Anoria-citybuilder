@@ -300,7 +300,7 @@ export function appendMetricCards(container, cards, { onSelect } = {}) {
     }
     el.title = card.ariaLabel;
     el.setAttribute('aria-label', card.ariaLabel);
-    el.innerHTML = `<span class="building-info-metric-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-metric-card__label">${card.label}</span><span class="building-info-metric-card__value">${card.valueText}</span>`;
+    el.innerHTML = `<span class="building-info-metric-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-metric-card__label">${card.label}</span><span class="building-info-metric-card__value">${card.valueText}</span>${card.detailText ? `<span class="building-info-metric-card__detail">${card.detailText}</span>` : ''}`;
     grid.appendChild(el);
   }
 

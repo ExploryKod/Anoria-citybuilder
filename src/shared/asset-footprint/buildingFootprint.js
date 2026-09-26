@@ -48,6 +48,7 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'Factory-Furniture': Object.freeze({ width: 2, depth: 2 }),
   'Warehouse': Object.freeze({ width: 3, depth: 2 }),
   'Lumberjack': Object.freeze({ width: 1, depth: 2 }),
+  'Lumberjack-Industry': Object.freeze({ width: 1, depth: 2 }),
   // House-Blue/Purple/Red reassign their geometry to Kenney suburban
   // building-type-b/c/a (see buildingAssets.js) — footprint must match that
   // prefab's real size, not the village-era 1x1 these ids used to be.

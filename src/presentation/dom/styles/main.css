@@ -1585,6 +1585,13 @@ button.building-info-metric-card[aria-pressed="true"] {
     color: #1b1b1b;
 }
 
+.building-info-metric-card__detail {
+    font-size: 10px;
+    line-height: 1.2;
+    color: #78909c;
+    font-variant-numeric: tabular-nums;
+}
+
 .building-info-metric-card--met .building-info-metric-card__value {
     color: var(--success);
 }
@@ -1951,6 +1958,12 @@ button.building-info-metric-card[aria-pressed="true"] {
     align-items: center;
     gap: 8px;
     font-size: 12px;
+}
+
+.hub-pie-legend-item--origin {
+    padding-left: 18px;
+    font-size: 12px;
+    opacity: 0.85;
 }
 
 .hub-pie-legend-item--over {

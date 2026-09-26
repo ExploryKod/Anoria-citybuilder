@@ -63,6 +63,22 @@ const twoMonthCycle = ({ first, second, base, factor, inputs }) => ({
   sale: { schedule: { unit: 'monthIndex', interval: 2, offset: 1 } },
 });
 
+/** A raw-material producer of wood from the trees around it; its name and who it serves first vary. */
+const lumberjack = ({ displayName, clients }) => ({
+  displayName,
+  construction: { price: 45, category: 'industry' },
+  employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
+  resourceRoles: [{
+    role: 'producer',
+    categories: ['wood'],
+    schedule: { unit: 'always' },
+    amount: 10,
+    source: { resource: 'wood', range: 6, consume: 1 },
+    clients,
+    periodLock: { field: 'lastProductionMonth', unit: 'month' },
+  }],
+});
+
 /*
  * The food chain's reference numbers. Every capacity and yield below is derived from these
  * few figures, so the chain reads as one ratio (a farm feeds so many citizens, a hub holds
@@ -353,19 +369,18 @@ export const BUILDING_ECONOMY = {
   // tiles around it hold a natural resource of that kind (trees are 'wood', see
   // natureEconomy.js), each month's production fells `consume` of them, and the
   // same range gates its placement. Retune or reuse it for any natural resource.
-  'Lumberjack': {
+  //
+  // Two entries of the same producer that differ only in name and in whom its wood goes to first (`clients`,
+  // which the player can reorder or stop in the Clients tab): the lumberjack for households, the industrial
+  // one for workshops. Same mesh and footprint (see buildingAssets.js / buildingFootprint.js).
+  'Lumberjack': lumberjack({
     displayName: 'Bûcheron',
-    construction: { price: 45, category: 'industry' },
-    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
-    resourceRoles: [{
-      role: 'producer',
-      categories: ['wood'],
-      schedule: { unit: 'always' },
-      amount: 10,
-      source: { resource: 'wood', range: 6, consume: 1 },
-      periodLock: { field: 'lastProductionMonth', unit: 'month' },
-    }],
-  },
+    clients: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'Factory-Furniture'],
+  }),
+  'Lumberjack-Industry': lumberjack({
+    displayName: 'Bûcheron industriel',
+    clients: ['Factory-Furniture', 'Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red'],
+  }),
 
   // Furniture workshop (2026-09-23): a recipe — it turns wood into furniture. Its `inputs[].from` says
   // where the wood comes from: a hub (warehouse) within range that holds it, nearest first. With no wood

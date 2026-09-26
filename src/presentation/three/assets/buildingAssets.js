@@ -86,6 +86,39 @@ const CROP_CYCLE_GRAPHICS = Object.freeze([
   { id: 'autumn', when: { unit: 'season', values: ['autumn'] }, status: 'sell-food' },
 ]);
 
+/** The lumberjack's mesh, shared by both lumberjacks (they differ only in the economy catalog). */
+const LUMBERJACK_MESH = {
+  source: 'kenneyCityKit',
+  geometry: {
+    glb: null,
+    sourceKey: null,
+    aliases: [],
+    kit: 'industrial',
+    buildingId: 'Kenney-Industrial-building-o',
+  },
+  transform: {
+    rotationDeg: null,
+    positionOffsetY: 0.2,
+    scale: null,
+  },
+  presentation: {
+    mode: 'lit',
+    castShadow: true,
+    receiveShadow: true,
+    renderOrder: null,
+    frustumCulled: true,
+    displayColor: null,
+  },
+  button: {
+    group: 'industry',
+    editorGroup: null,
+    label: 'Bûcheron',
+    tooltip: 'Bûcheron',
+    icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-o.png' },
+  },
+  tags: ['industry', 'building'],
+};
+
 export const BUILDING_ASSETS = Object.freeze({
   // Maison rouge
   'House-Red-Legacy': {
@@ -1572,36 +1605,11 @@ export const BUILDING_ASSETS = Object.freeze({
   // Bûcheron — RÉASSIGNÉ au kit Kenney Industrial building-o (geometry copied
   // from Kenney-Industrial-building-o; economy/footprint keyed to 'Lumberjack').
   // Raw-material producer, see buildingEconomy.js.
-  'Lumberjack': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-o',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: true,
-      receiveShadow: true,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'Bûcheron',
-      tooltip: 'Bûcheron',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-o.png' },
-    },
-    tags: ['industry', 'building'],
+  'Lumberjack': LUMBERJACK_MESH,
+  // Same mesh, another catalog entry (name and clients differ, see buildingEconomy.js).
+  'Lumberjack-Industry': {
+    ...LUMBERJACK_MESH,
+    button: { ...LUMBERJACK_MESH.button, label: 'Bûcheron industriel', tooltip: 'Bûcheron industriel' },
   },
   // Atelier de meubles — RÉASSIGNÉ au kit Kenney Industrial building-f (economy/footprint keyed to 'Factory-Furniture').
   'Factory-Furniture': {

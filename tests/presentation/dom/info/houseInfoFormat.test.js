@@ -72,4 +72,20 @@ describe('formatHouseResourcesModel — needs first, goods in detail', () => {
     expect(needOf(model, 'food').card.valueText).toBe('–');
     expect(needOf(model, 'food').card.met).toBe(false);
   });
+
+  test('each need says how it is worked out: inhabitants × its rate and unit, in the player\'s number format', () => {
+    const model = formatHouseResourcesModel({
+      buildingType: 'House-Red',
+      buildingPop: 12,
+      lastConsumption: { demand: 12, taken: 12, totalUnfed: 0, takenByCategory: { wheat: 12 } },
+      buildingRow: { lastGoodsConsumption: { demand: 3, taken: 3, totalUnfed: 0, takenByCategory: { pot: 3 } } },
+    });
+    expect(needOf(model, 'food').card.detailText).toBe('Besoin : 12 hab. × 1 panier');
+    expect(needOf(model, 'goods').card.detailText).toBe('Besoin : 12 hab. × 0,25 bien');
+  });
+
+  test('before any record, the calculation uses the population now', () => {
+    const model = formatHouseResourcesModel({ buildingType: 'House-Red', buildingPop: 8, lastConsumption: null });
+    expect(needOf(model, 'goods').card.detailText).toBe('Besoin : 8 hab. × 0,25 bien');
+  });
 });

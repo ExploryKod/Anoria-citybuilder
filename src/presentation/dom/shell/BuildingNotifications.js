@@ -136,6 +136,20 @@ export function showPlacementNeedsNotification(buildingType) {
 }
 
 /**
+ * Said when the player picks a producer whose goods have clients: who it serves first, and where to change it.
+ * @param {string} producerType The producer's catalog id.
+ * @param {{ clients: Array<{ type: string, disabled: boolean }> } | undefined} board Its client priorities.
+ */
+export function showClientPriorityNotification(producerType, board) {
+  const served = (board?.clients ?? []).filter((client) => !client.disabled);
+  if (served.length === 0) return;
+  showInfoToast(
+    `${buildingName(producerType)} livre d'abord à : ${served.map((client) => buildingName(client.type)).join(' › ')}. Modifiable dans Admin › Clients.`,
+    { timeout: 7000 }
+  );
+}
+
+/**
  * Asked before the demolition: which buildings go down with the hub. Names come from the catalog.
  * @param {string} hubType The hub about to be demolished (a catalog id).
  * @param {Array<{ type: string, x: number, y: number }>} dependents What would be destroyed with it.
