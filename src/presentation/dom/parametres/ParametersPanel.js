@@ -5,12 +5,14 @@ import { isTouchModeEnabled, setTouchModeEnabled } from '../../../config/touchMo
 import { isCameraDpadEnabled, setCameraDpadEnabled } from '../../../config/cameraDpad.js';
 import { readStoredTileGridVisibility } from '../../three/managers/TileGridOverlay.js';
 import { getLastPwaUpdateAt, installLatestPwaUpdate } from '../../../pwa.js';
+import { DEFAULT_TICK_MS, TICK_MS_MIN, TICK_MS_MAX, clampTickMs } from '../../../shared/gameplay/SimulationDefaults.js';
 
 /** @type {{
  *   pauseGame?: () => void,
  *   playGame?: () => void,
  *   registerAppService?: (name: string, instance: unknown) => void,
  *   getTimeManager?: () => { refreshCache?: () => Promise<void> } | null,
+ *   getGame?: () => { startInterval?: () => void } | null,
  *   getScene?: () => {
  *     setTileGridVisible?: (visible: boolean) => void,
  *     isTileGridVisible?: () => boolean,
@@ -32,6 +34,7 @@ class ParametersPanel {
         this.eventsEnabledToggle = null;
         this.eventProbabilityInput = null;
         this.daysPerMonthInput = null;
+        this.tickSecondsInput = null;
         this.tileGridToggle = null;
         this.touchModeToggle = null;
         this.cameraDpadToggle = null;
@@ -67,6 +70,7 @@ class ParametersPanel {
         this.eventsEnabledToggle = this.panel.querySelector('#events-enabled-toggle');
         this.eventProbabilityInput = this.panel.querySelector('#event-probability-input');
         this.daysPerMonthInput = this.panel.querySelector('#days-per-month-input');
+        this.tickSecondsInput = this.panel.querySelector('#tick-seconds-input');
         this.tileGridToggle = this.panel.querySelector('#tile-grid-toggle');
         this.touchModeToggle = this.panel.querySelector('#touch-mode-toggle');
         this.cameraDpadToggle = this.panel.querySelector('#camera-dpad-toggle');
@@ -151,6 +155,26 @@ class ParametersPanel {
             });
         }
 
+        if (this.tickSecondsInput) {
+            const tickMsMinSeconds = TICK_MS_MIN / 1000;
+            const tickMsMaxSeconds = TICK_MS_MAX / 1000;
+            this.tickSecondsInput.addEventListener('change', (e) => {
+                this.handleTickSecondsChange(parseFloat(e.target.value));
+            });
+            this.tickSecondsInput.addEventListener('input', (e) => {
+                const value = e.target.value;
+                if (value === '' || value === '-') return;
+                const numValue = parseFloat(value);
+                if (!isNaN(numValue)) {
+                    if (numValue < tickMsMinSeconds) {
+                        e.target.value = tickMsMinSeconds;
+                    } else if (numValue > tickMsMaxSeconds) {
+                        e.target.value = tickMsMaxSeconds;
+                    }
+                }
+            });
+        }
+
         if (this.tileGridToggle) {
             this.tileGridToggle.addEventListener('change', (e) => {
                 this.handleTileGridChange(e.target.checked);
@@ -190,6 +214,12 @@ class ParametersPanel {
 
             if (this.daysPerMonthInput) {
                 this.daysPerMonthInput.value = eventsConfig.getDaysPerMonth();
+            }
+
+            if (this.tickSecondsInput) {
+                const rawMs = parseFloat(localStorage.getItem('speed'));
+                const ms = clampTickMs(Number.isFinite(rawMs) ? rawMs : DEFAULT_TICK_MS);
+                this.tickSecondsInput.value = String(Math.round((ms / 1000) * 100) / 100);
             }
 
             if (this.tileGridToggle) {
@@ -305,6 +335,23 @@ class ParametersPanel {
             }
         } catch (error) {
             console.error('[ParametersPanel] Error setting days per month:', error);
+        }
+    }
+
+    /** @param {number} seconds Real-time seconds between two turns (days) — the same 'speed'
+     *  localStorage key the HUD +/- buttons use, but a precise value instead of one of their 13
+     *  presets (see SimulationDefaults.clampTickMs). */
+    handleTickSecondsChange(seconds) {
+        try {
+            if (!Number.isFinite(seconds)) return;
+            const ms = clampTickMs(seconds * 1000);
+            localStorage.setItem('speed', String(ms));
+            if (this.tickSecondsInput) {
+                this.tickSecondsInput.value = String(Math.round((ms / 1000) * 100) / 100);
+            }
+            deps?.getGame?.()?.startInterval?.();
+        } catch (error) {
+            console.error('[ParametersPanel] Error setting seconds per turn:', error);
         }
     }
 
@@ -442,6 +489,7 @@ class ParametersPanel {
  *   playGame?: () => void,
  *   registerAppService?: (name: string, instance: unknown) => void,
  *   getTimeManager?: () => { refreshCache?: () => Promise<void> } | null,
+ *   getGame?: () => { startInterval?: () => void } | null,
  *   getScene?: () => {
  *     setTileGridVisible?: (visible: boolean) => void,
  *     isTileGridVisible?: () => boolean,

@@ -27,6 +27,12 @@ import { isDeathGameOverReached } from './gameplayMortalityState.js';
  * @param {(cleanupResult?: { deleted?: number, deletedTurns?: number[] }) => void | Promise<void>} [params.notifyBudgetCleanup]
  * @param {() => void} [params.onGameOver]
  * @param {() => Promise<void>} [params.presentIncomingNewsEvents] — injected at the edge (presentation owns the modal)
+ * @param {boolean} [params.silent] — batch-advance interim day (see SPEED_LEVELS_DAYS): runs the
+ *   simulation (ECS + economy) exactly as a normal day, but skips scene/HUD/notification
+ *   presentation, which a fast-forward batch defers to its last (non-silent) day. Safe because
+ *   `city.tiles`/mesh sync inside `scene.update` only mirrors state for rendering — the ECS
+ *   contexts (housing, employment, parcels, supply) each read/write their own store, not
+ *   `city.tiles` — see project_game_speed_fast_forward_deferred memory for the audit.
  */
 export async function runGameTick({
   time,
@@ -43,12 +49,15 @@ export async function runGameTick({
   notifyBudgetCleanup,
   onGameOver,
   presentIncomingNewsEvents,
+  silent = false,
 }) {
   if (shouldAbort()) {
     return;
   }
 
-  gameUI.updateTimeDisplay(time);
+  if (!silent) {
+    gameUI.updateTimeDisplay(time);
+  }
   city.update();
 
   await getOrCreateAccountingContext().updateTreasuryTurn(time);
@@ -56,9 +65,11 @@ export async function runGameTick({
     return;
   }
 
-  await scene.update(city, time);
-  if (shouldAbort()) {
-    return;
+  if (!silent) {
+    await scene.update(city, time);
+    if (shouldAbort()) {
+      return;
+    }
   }
 
   try {
@@ -73,9 +84,11 @@ export async function runGameTick({
     return;
   }
 
-  await scene.update(city, time);
-  if (shouldAbort()) {
-    return;
+  if (!silent) {
+    await scene.update(city, time);
+    if (shouldAbort()) {
+      return;
+    }
   }
 
   const { totalPop } = await persistGameplayTurn({ gameStore, housing, time });
@@ -85,13 +98,17 @@ export async function runGameTick({
     time,
     totalPop,
   });
-  await notifyBudgetCleanup?.(budgetResult?.cleanupResult);
+  if (!silent) {
+    await notifyBudgetCleanup?.(budgetResult?.cleanupResult);
+  }
   if (shouldAbort()) {
     return;
   }
 
-  await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
-  await refreshEmploymentPresentation();
+  if (!silent) {
+    await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+    await refreshEmploymentPresentation();
+  }
 
   if (objectivesTracker.enabled) {
     await objectivesTracker.checkObjectives(time);
@@ -101,7 +118,7 @@ export async function runGameTick({
     return;
   }
 
-  if (presentIncomingNewsEvents) {
+  if (!silent && presentIncomingNewsEvents) {
     try {
       await presentIncomingNewsEvents();
     } catch (err) {

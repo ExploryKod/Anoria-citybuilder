@@ -11,11 +11,32 @@ import { listClientTypes, resolveInstanceClientPriorities } from '../../../../sh
  * the breakdown in step.
  */
 export class HubServing {
+  /** @type {Promise<object[]> | null} One fetch shared by every call within a tick — see invalidateCache. */
+  #rowsCache = null;
+
   /**
    * @param {import('../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
    */
   constructor(supplyBuildingRepository) {
     this.supplyBuildingRepository = supplyBuildingRepository;
+  }
+
+  /**
+   * Call once per tick, before any take/availableTo/deposit run (see createSupplyContext.js's
+   * runMonthlyResourceCycle). #priorityOf used to call listAllBuildingRows() — a full building-table
+   * scan — on EVERY single draw a producer makes from a hub, which for a city with many producers
+   * meant dozens of redundant full scans per tick (a real, measured cause of ticks overrunning
+   * their own interval). Now one scan is shared by the whole tick; this clears it so the next tick
+   * sees fresh data instead of an ever-growing stale snapshot.
+   */
+  invalidateCache() {
+    this.#rowsCache = null;
+  }
+
+  /** @returns {Promise<object[]>} */
+  #listAllBuildingRowsCached() {
+    this.#rowsCache ??= this.supplyBuildingRepository.listAllBuildingRows();
+    return this.#rowsCache;
   }
 
   /**
@@ -33,7 +54,7 @@ export class HubServing {
     const producerIds = [...new Set(lotKeys.map((key) => lotOrigin(key).producerId).filter(Boolean))];
     if (producerIds.length === 0) return () => ({ order: [], disabled: [] });
 
-    const rows = await this.supplyBuildingRepository.listAllBuildingRows();
+    const rows = await this.#listAllBuildingRowsCached();
     const byId = new Map(rows.map((row) => [row.id, row]));
     const clientTypes = listClientTypes([category]);
     const profiles = new Map();

@@ -3478,13 +3478,27 @@
                     <div class="parameters-control-group">
                         <label class="parameters-control-label" for="days-per-month-input">
                             <span class="parameters-control-text">Nombre de tours (jours) / mois</span>
-                            <input 
-                                type="number" 
-                                id="days-per-month-input" 
-                                class="parameters-number-input" 
-                                min="1" 
-                                max="30" 
+                            <input
+                                type="number"
+                                id="days-per-month-input"
+                                class="parameters-number-input"
+                                min="1"
+                                max="30"
                                 value="1"
+                            >
+                        </label>
+                    </div>
+                    <div class="parameters-control-group">
+                        <label class="parameters-control-label" for="tick-seconds-input">
+                            <span class="parameters-control-text">Secondes entre chaque tour (jour)</span>
+                            <input
+                                type="number"
+                                id="tick-seconds-input"
+                                class="parameters-number-input"
+                                min="0.08"
+                                max="16"
+                                step="0.05"
+                                value="4"
                             >
                         </label>
                     </div>

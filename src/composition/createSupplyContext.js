@@ -284,6 +284,9 @@ export function createSupplyContext({
     },
 
     async runMonthlyResourceCycle({ season, month, timeInfo }) {
+      // One building-table snapshot for this whole tick (see HubServing.invalidateCache) instead
+      // of a fresh full scan on every single producer's every single draw from a hub.
+      hubServing.invalidateCache();
       return runMonthlyResourceCycle.execute({
         season,
         month,
