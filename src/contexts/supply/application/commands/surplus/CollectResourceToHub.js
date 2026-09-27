@@ -106,8 +106,13 @@ export class CollectResourceToHub {
 
       // Only goods this hub collects: a producer of anything else (household
       // gathering, another chain's output) is simply not this hub's business.
-      const category =
-        getCategoriesForRole(source.type, 'producer').find((candidate) => categories.includes(candidate)) ?? null;
+      // A house merges several 'producer' entries (household gathering, its own
+      // activity recipes) into one resourceRoles array — getCategoriesForRole's
+      // 2-arg form resolves to just the FIRST one, so every entry is read directly.
+      const category = getResourceRoles(source.type)
+        .filter((entry) => entry.role === 'producer')
+        .flatMap((entry) => entry.categories)
+        .find((candidate) => categories.includes(candidate)) ?? null;
       if (!category) continue;
 
       const available = getCategoryAmount(source.stocks, category);

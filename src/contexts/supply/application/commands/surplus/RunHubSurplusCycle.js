@@ -159,7 +159,13 @@ export class RunHubSurplusCycle {
   /** The good a producer sells to these hubs: the first of its own that one of them collects. */
   #collectedCategory(source, hubs) {
     if (!source) return null;
-    return getCategoriesForRole(source.type, 'producer').find((category) =>
+    // A house merges several 'producer' entries (household gathering, its own activity
+    // recipes) into one resourceRoles array — getCategoriesForRole's 2-arg form resolves
+    // to just the FIRST one, so every entry's categories are read directly here instead.
+    const produced = getResourceRoles(source.type)
+      .filter((entry) => entry.role === 'producer')
+      .flatMap((entry) => entry.categories);
+    return produced.find((category) =>
       hubs.some((hub) => getCategoriesForRole(hub.type, 'collector').includes(category))
     ) ?? null;
   }

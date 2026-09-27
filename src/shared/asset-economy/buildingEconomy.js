@@ -636,9 +636,13 @@ export const BUILDING_ECONOMY = {
     resourceRoles: [
       {
         role: 'collector',
+        // Infinity for now (2026-09-27), like ACTIVITY_RANGE: the merchants' pot décoré/wood/book deals
+        // were dying in the merchant house's own stock whenever a TradeWarehouse sat further than
+        // WAREHOUSE_RANGE away — CollectResourceToHub gates collection on this range city-wide, not
+        // just for display. Revisit once trade placement is actually being tuned for distance.
+        range: Infinity,
         categories: [...MERCHANT_ACTIVITY_GOODS],
         totalKey: GOODS_TOTAL_KEY,
-        range: WAREHOUSE_RANGE,
         schedule: { unit: 'always' },
       },
       {
