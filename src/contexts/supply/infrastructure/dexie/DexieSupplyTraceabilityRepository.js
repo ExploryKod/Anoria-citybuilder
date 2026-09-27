@@ -1,7 +1,7 @@
 import db from '../../../../core/persistence/dexie/db.js';
 
 /**
- * Dexie adapter — food supply chain audit log (`foodTraceability` table).
+ * Dexie adapter — resource supply chain audit log (`supplyTraceability` table).
  */
 export class DexieSupplyTraceabilityRepository {
   constructor(database = db) {
@@ -33,7 +33,7 @@ export class DexieSupplyTraceabilityRepository {
     extra = {}
   ) {
     try {
-      await this.db.foodTraceability.add({
+      await this.db.supplyTraceability.add({
         turn,
         month,
         year,
@@ -154,7 +154,7 @@ export class DexieSupplyTraceabilityRepository {
 
   /** @param {number} turn @param {number|null} [month=null] */
   async getTransactionsForMonth(turn, month = null) {
-    let query = this.db.foodTraceability.where('turn').equals(turn);
+    let query = this.db.supplyTraceability.where('turn').equals(turn);
 
     if (month !== null) {
       query = query.and((transaction) => transaction.month === month);
@@ -165,7 +165,7 @@ export class DexieSupplyTraceabilityRepository {
 
   /** @param {number|null} [maxAge=null] age in days */
   async getAllTransactions(maxAge = null) {
-    let transactions = await this.db.foodTraceability.toArray();
+    let transactions = await this.db.supplyTraceability.toArray();
 
     if (maxAge) {
       const cutoffDate = new Date();
@@ -206,14 +206,14 @@ export class DexieSupplyTraceabilityRepository {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - maxAge);
 
-      const oldTransactions = await this.db.foodTraceability
+      const oldTransactions = await this.db.supplyTraceability
         .where('date')
         .below(cutoffDate.toISOString())
         .toArray();
 
       if (oldTransactions.length > 0) {
         const ids = oldTransactions.map((t) => t.id);
-        await this.db.foodTraceability.bulkDelete(ids);
+        await this.db.supplyTraceability.bulkDelete(ids);
       }
     } catch (error) {
       console.error('[DexieSupplyTraceabilityRepository] Error cleaning up:', error);

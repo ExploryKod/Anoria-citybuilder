@@ -23,11 +23,11 @@ const turnOf = (timeInfo) => timeInfo.turn ?? timeInfo.days ?? 0;
 export class SupplyTraceability {
   /**
    * @param {object} deps
-   * @param {import('../dexie/DexieSupplyTraceabilityRepository.js').DexieSupplyTraceabilityRepository} deps.foodTraceabilityRepository
+   * @param {import('../dexie/DexieSupplyTraceabilityRepository.js').DexieSupplyTraceabilityRepository} deps.supplyTraceabilityRepository
    * @param {import('../../application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} deps.supplyBuildingRepository
    */
-  constructor({ foodTraceabilityRepository, supplyBuildingRepository }) {
-    this.traceabilityRepository = foodTraceabilityRepository;
+  constructor({ supplyTraceabilityRepository, supplyBuildingRepository }) {
+    this.traceabilityRepository = supplyTraceabilityRepository;
     this.supplyBuildingRepository = supplyBuildingRepository;
     /** Last logged state of each building, as text — a row is written only when it changes. */
     this.lastLoggedStates = new Map();
@@ -155,8 +155,9 @@ export class SupplyTraceability {
    * @param {object} timeInfo
    * @param {object[]} consumptions
    */
-  async recordHouseConsumptions(timeInfo, consumptions = []) {
+  async recordHouseConsumptions(timeInfo, consumptions = [], needTotalKey = null) {
     if (consumptions.length === 0) return;
+    const totalKey = needTotalKey ?? getResourceStockShape().totalKey;
 
     for (const entry of consumptions) {
       if (!(entry.taken > 0)) continue;
@@ -176,7 +177,7 @@ export class SupplyTraceability {
         timeInfo.monthIndex,
         timeInfo.year || 0,
         houseRef,
-        getResourceStockShape().totalKey,
+        totalKey,
         entry.taken,
         entry.pop
       );
@@ -247,6 +248,39 @@ export class SupplyTraceability {
   }
 
   /**
+   * Records every source→hub transfer for ALL categories (not just food).
+   * Called each tick, alongside recordHarvestSales.
+   * @param {object} timeInfo
+   * @param {Array<{ hubId?: string, collected?: boolean, transfers?: Array<{ sourceId: string, category: string, amount: number }> }>} allHubResults
+   */
+  async recordHubCollections(timeInfo, allHubResults = []) {
+    const turn = turnOf(timeInfo);
+    const month = timeInfo.monthIndex || 0;
+    const year = timeInfo.year || 0;
+
+    for (const hubResult of allHubResults) {
+      if (!hubResult?.transfers?.length) continue;
+      const hubData = await this.supplyBuildingRepository.findRowById(hubResult.hubId);
+      if (!hubData) continue;
+
+      for (const transfer of hubResult.transfers) {
+        const sourceData = await this.supplyBuildingRepository.findRowById(transfer.sourceId);
+        if (!sourceData) continue;
+
+        await this.traceabilityRepository.recordSourceToHub(
+          turn,
+          month,
+          year,
+          { id: transfer.sourceId, x: sourceData.x, y: sourceData.y, type: sourceData.type },
+          { id: hubResult.hubId, x: hubData.x, y: hubData.y, type: hubData.type },
+          transfer.category,
+          transfer.amount
+        );
+      }
+    }
+  }
+
+  /**
    * Logs each harvest a hub bought from a producer, on the turn of the sale —
    * and, for every annual producer no hub bought from on a collection turn,
    * why not. The cause is what a player can act on: no road, nothing
@@ -272,23 +306,8 @@ export class SupplyTraceability {
 
     for (const hubResult of hubResults) {
       if (!hubResult?.transfers?.length) continue;
-      const hubData = await this.supplyBuildingRepository.findRowById(hubResult.hubId);
-      if (!hubData) continue;
-
       for (const transfer of hubResult.transfers) {
-        const sourceData = await this.supplyBuildingRepository.findRowById(transfer.sourceId);
-        if (!sourceData) continue;
         soldIds.add(transfer.sourceId);
-
-        await this.traceabilityRepository.recordSourceToHub(
-          turn,
-          month,
-          year,
-          { id: transfer.sourceId, x: sourceData.x, y: sourceData.y, type: sourceData.type },
-          { id: hubResult.hubId, x: hubData.x, y: hubData.y, type: hubData.type },
-          transfer.category,
-          transfer.amount
-        );
       }
     }
 

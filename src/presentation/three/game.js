@@ -64,7 +64,7 @@ import {
 } from '../dom/shell/nodes.js';
 import { closeBuildingInfoOverlay } from '../dom/info/layout/buildingInfoLayout.js';
 import { activateSelectToolButton, closeModal } from '../dom/tools/ToolPanel.js';
-import { close as closeMobileBuildBar } from '../dom/tools/MobileCompactToolbar.js';
+import { close as closeMobileBuildBar } from '../dom/tools/CompactToolbar.js';
 import { close as closeEditorBuildBar } from '../dom/editor/EditorNatureToolbar.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
 import objectivesTracker, {

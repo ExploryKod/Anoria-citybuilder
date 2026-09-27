@@ -173,9 +173,22 @@
   line-height: 1;
 }
 
-/* A direct category (its pill is the tool) leaves the carousel's place blank: the bar keeps its size */
+/* A direct category (its pill is the tool) hides the carousel and shows the hint instead */
+.mobile-build-bar__direct-hint {
+  display: none;
+  margin: 0;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #6c757d;
+  text-align: center;
+}
+
 .mobile-build-bar--direct .mobile-build-bar__carousel {
   visibility: hidden;
+}
+
+.mobile-build-bar--direct .mobile-build-bar__direct-hint {
+  display: block;
 }
 
 .mobile-build-bar__pill--active {

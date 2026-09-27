@@ -1,5 +1,5 @@
 /**
- * FoodTraceabilityPresenter — HTML sections / stats (données déjà calculées).
+ * SupplyTraceabilityPresenter — HTML sections / stats (données déjà calculées).
  */
 
 import { tryResolveBuildingInstanceIdFromRef } from '../../../../shared/building-identity/index.js';
@@ -153,7 +153,7 @@ export function summarizeChain(transactions, year) {
   };
 }
 
-const noWorkIconHTML = `<img class="food-stat-no-work-icon" src="${NO_WORK_ICON}" alt="Fermes inactives" title="Fermes inactives">`;
+const noWorkIconHTML = `<img class="supply-stat-no-work-icon" src="${NO_WORK_ICON}" alt="Fermes inactives" title="Fermes inactives">`;
 
 /** " et 1 moulin (icon : 0)" — the hubs next to the farms, empty when the game has none. */
 function hubsClauseHTML(count, idle, label) {
@@ -183,42 +183,63 @@ function nonSaleCausesHTML({ farms, hubCapacity, hubLabel }) {
   const items = farms.causes.map(
     ({ id, count }) => `${(NON_SALE_CAUSES[id] ?? NON_SALE_CAUSES.unknown)(hubCapacity, hubLabel)} : ${count}`
   );
-  return `<span class="food-stat-farms causes">Sans vente : ${items.join(' · ')}</span>`;
+  return `<span class="supply-stat-farms causes">Sans vente : ${items.join(' · ')}</span>`;
 }
 
-/** Goods the supply chain carries, and the aggregate they are filed under — both from the catalog. */
+/** Goods the food supply chain carries — used only by the food-chain chart tab. */
 const chainGoods = getSuppliedCategories();
 export const chainTotalKey = getResourceStockShape().totalKey;
 
-/** @param {string} good */
-export const isChainGood = (good) => chainGoods.includes(good);
+/**
+ * Whether a good belongs to a set of active categories.
+ * Defaults to the food chain goods so callers that don't filter stay backward-compatible.
+ * @param {string} good
+ * @param {ReadonlyArray<string>} [categories]
+ */
+export const isChainGood = (good, categories = chainGoods) => categories.includes(good);
 
-/** @returns {Record<string, number>} A zeroed per-good tally. */
-export const emptyGoodsTally = () => Object.fromEntries(chainGoods.map((good) => [good, 0]));
+/**
+ * A zeroed per-good tally over the given categories (defaults to food chain goods).
+ * @param {ReadonlyArray<string>} [categories]
+ * @returns {Record<string, number>}
+ */
+export const emptyGoodsTally = (categories = chainGoods) =>
+  Object.fromEntries(categories.map((good) => [good, 0]));
 
-/** Subtract a per-good tally from a stock, never below zero. */
-export function deductGoods(stocks, tally) {
-  for (const good of chainGoods) {
+/**
+ * Subtract a per-good tally from a stock, never below zero.
+ * @param {Record<string, number>} stocks
+ * @param {Record<string, number>} tally
+ * @param {ReadonlyArray<string>} [categories]
+ */
+export function deductGoods(stocks, tally, categories = chainGoods) {
+  for (const good of categories) {
     stocks[good] = Math.max(0, (stocks[good] || 0) - (tally[good] || 0));
   }
 }
 
-/** Recompute a stock's aggregate from its goods. */
-export function refreshChainTotal(stocks) {
-  stocks[chainTotalKey] = chainGoods.reduce((sum, good) => sum + (stocks[good] || 0), 0);
+/**
+ * Recompute a stock's aggregate from its goods.
+ * @param {Record<string, number>} stocks
+ * @param {ReadonlyArray<string>} [categories]
+ * @param {string} [totalKey]
+ */
+export function refreshChainTotal(stocks, categories = chainGoods, totalKey = chainTotalKey) {
+  stocks[totalKey] = categories.reduce((sum, good) => sum + (stocks[good] || 0), 0);
 }
 
-/** @param {Record<string, number> | null | undefined} stocks */
-export const hasChainGoods = (stocks) => chainGoods.some((good) => (stocks?.[good] || 0) > 0);
+/** @param {Record<string, number> | null | undefined} stocks @param {ReadonlyArray<string>} [categories] */
+export const hasChainGoods = (stocks, categories = chainGoods) =>
+  categories.some((good) => (stocks?.[good] || 0) > 0);
 
 /**
- * One line per good the supply chain carries that is present in the stock —
- * the goods and their labels come from the catalog, never from this file.
+ * One line per good present in the stock — labels from the catalog.
  * @param {Record<string, number> | null | undefined} stocks
+ * @param {ReadonlyArray<string>} [categories] Defaults to all stock-bearing categories.
  * @returns {string}
  */
-function stockLines(stocks) {
-  return getSuppliedCategories()
+function stockLines(stocks, categories = getSuppliedCategories()) {
+  return categories
     .filter((category) => (stocks?.[category] ?? 0) > 0)
     .map((category) => `<div>${goodLabel(category)}: ${stocks[category]}</div>`)
     .join('');
@@ -239,6 +260,7 @@ export function buildingStockKey(building) {
  * @param {Record<string, number>} byFoodType
  * @param {object} farmStocksAfter
  * @param {object} marketStocksAfter
+ * @param {{ categories?: ReadonlyArray<string>, totalKey?: string }} [opts]
  * @returns {string}
  */
 export function createFarmMarketSectionHTML(
@@ -247,7 +269,8 @@ export function createFarmMarketSectionHTML(
   marketStocksBefore,
   byFoodType,
   farmStocksAfter,
-  marketStocksAfter
+  marketStocksAfter,
+  { categories, totalKey = chainTotalKey } = {}
 ) {
   const transactionDetails = Object.entries(byFoodType)
     .map(([foodType, quantity]) => {
@@ -256,80 +279,80 @@ export function createFarmMarketSectionHTML(
     .join('');
 
   return `
-        <div class="food-traceability-transaction-section">
-            <div class="food-traceability-transaction-section-header">
-                <span class="food-traceability-building-type">${pair.fromLabel}</span>
-                <span class="food-traceability-coords-pill farm">${pair.farmCoords || 'N/A'}</span>
-                <span class="food-traceability-arrow">→</span>
-                <span class="food-traceability-building-type">${pair.toLabel}</span>
-                <span class="food-traceability-coords-pill market">${pair.marketCoords || 'N/A'}</span>
+        <div class="supply-traceability-transaction-section">
+            <div class="supply-traceability-transaction-section-header">
+                <span class="supply-traceability-building-type">${pair.fromLabel}</span>
+                <span class="supply-traceability-coords-pill farm">${pair.farmCoords || 'N/A'}</span>
+                <span class="supply-traceability-arrow">→</span>
+                <span class="supply-traceability-building-type">${pair.toLabel}</span>
+                <span class="supply-traceability-coords-pill market">${pair.marketCoords || 'N/A'}</span>
             </div>
-            <div class="food-traceability-transaction-table">
-                <div class="food-traceability-transaction-row">
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Stocks avant transaction</div>
-                        <div class="food-traceability-stocks-column">
-                            <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">${pair.fromLabel}</div>
-                                <div class="food-traceability-stocks-details">
-                                    ${stockLines(farmStocksBefore)}
-                                    <div class="food-traceability-stocks-total">Total: ${farmStocksBefore[chainTotalKey] || 0}</div>
+            <div class="supply-traceability-transaction-table">
+                <div class="supply-traceability-transaction-row">
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Stocks avant transaction</div>
+                        <div class="supply-traceability-stocks-column">
+                            <div class="supply-traceability-stocks-cell">
+                                <div class="supply-traceability-stocks-label">${pair.fromLabel}</div>
+                                <div class="supply-traceability-stocks-details">
+                                    ${stockLines(farmStocksBefore, categories)}
+                                    <div class="supply-traceability-stocks-total">Total: ${farmStocksBefore[totalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Stocks avant transaction</div>
-                        <div class="food-traceability-stocks-column">
-                            <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">${pair.toLabel}</div>
-                                <div class="food-traceability-stocks-details">
-                                    ${stockLines(marketStocksBefore)}
-                                    <div class="food-traceability-stocks-total">Total: ${marketStocksBefore[chainTotalKey] || 0}</div>
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Stocks avant transaction</div>
+                        <div class="supply-traceability-stocks-column">
+                            <div class="supply-traceability-stocks-cell">
+                                <div class="supply-traceability-stocks-label">${pair.toLabel}</div>
+                                <div class="supply-traceability-stocks-details">
+                                    ${stockLines(marketStocksBefore, categories)}
+                                    <div class="supply-traceability-stocks-total">Total: ${marketStocksBefore[totalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="food-traceability-transaction-row">
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Transaction</div>
-                        <div class="food-traceability-transaction-details">
-                            <div class="food-traceability-transaction-type farm-to-market">Vente</div>
-                            <div class="food-traceability-transaction-subtitle">Vente à ${pair.toLabel}</div>
+                <div class="supply-traceability-transaction-row">
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Transaction</div>
+                        <div class="supply-traceability-transaction-details">
+                            <div class="supply-traceability-transaction-type farm-to-market">Vente</div>
+                            <div class="supply-traceability-transaction-subtitle">Vente à ${pair.toLabel}</div>
                             ${transactionDetails}
                         </div>
                     </div>
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Transaction</div>
-                        <div class="food-traceability-transaction-details">
-                            <div class="food-traceability-transaction-type farm-to-market">Achat</div>
-                            <div class="food-traceability-transaction-subtitle">Achat à ${pair.fromLabel}</div>
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Transaction</div>
+                        <div class="supply-traceability-transaction-details">
+                            <div class="supply-traceability-transaction-type farm-to-market">Achat</div>
+                            <div class="supply-traceability-transaction-subtitle">Achat à ${pair.fromLabel}</div>
                             ${transactionDetails}
                         </div>
                     </div>
                 </div>
-                <div class="food-traceability-transaction-row">
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Stocks après transaction (prévision)</div>
-                        <div class="food-traceability-stocks-column">
-                            <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">${pair.fromLabel}</div>
-                                <div class="food-traceability-stocks-details">
-                                    ${stockLines(farmStocksAfter)}
-                                    <div class="food-traceability-stocks-total">Total: ${farmStocksAfter[chainTotalKey] || 0}</div>
+                <div class="supply-traceability-transaction-row">
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Stocks après transaction (prévision)</div>
+                        <div class="supply-traceability-stocks-column">
+                            <div class="supply-traceability-stocks-cell">
+                                <div class="supply-traceability-stocks-label">${pair.fromLabel}</div>
+                                <div class="supply-traceability-stocks-details">
+                                    ${stockLines(farmStocksAfter, categories)}
+                                    <div class="supply-traceability-stocks-total">Total: ${farmStocksAfter[totalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Stocks après transaction (prévision)</div>
-                        <div class="food-traceability-stocks-column">
-                            <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">${pair.toLabel}</div>
-                                <div class="food-traceability-stocks-details">
-                                    ${stockLines(marketStocksAfter)}
-                                    <div class="food-traceability-stocks-total">Total: ${marketStocksAfter[chainTotalKey] || 0}</div>
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Stocks après transaction (prévision)</div>
+                        <div class="supply-traceability-stocks-column">
+                            <div class="supply-traceability-stocks-cell">
+                                <div class="supply-traceability-stocks-label">${pair.toLabel}</div>
+                                <div class="supply-traceability-stocks-details">
+                                    ${stockLines(marketStocksAfter, categories)}
+                                    <div class="supply-traceability-stocks-total">Total: ${marketStocksAfter[totalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
@@ -347,6 +370,7 @@ export function createFarmMarketSectionHTML(
  * @param {Record<string, number>} byFoodType
  * @param {object} marketStocksAfter
  * @param {object} houseStocksAfter
+ * @param {{ categories?: ReadonlyArray<string>, totalKey?: string }} [opts]
  * @returns {string}
  */
 export function createMarketHouseSectionHTML(
@@ -355,7 +379,8 @@ export function createMarketHouseSectionHTML(
   houseStocksBefore,
   byFoodType,
   marketStocksAfter,
-  houseStocksAfter
+  houseStocksAfter,
+  { categories, totalKey = chainTotalKey } = {}
 ) {
   const transactionDetails = Object.entries(byFoodType)
     .map(([foodType, quantity]) => {
@@ -364,80 +389,80 @@ export function createMarketHouseSectionHTML(
     .join('');
 
   return `
-        <div class="food-traceability-transaction-section">
-            <div class="food-traceability-transaction-section-header">
-                <span class="food-traceability-building-type">${pair.fromLabel}</span>
-                <span class="food-traceability-coords-pill market">${pair.marketCoords || 'N/A'}</span>
-                <span class="food-traceability-arrow">→</span>
-                <span class="food-traceability-building-type">${pair.toLabel}</span>
-                <span class="food-traceability-coords-pill house">${pair.houseCoords || 'N/A'}</span>
+        <div class="supply-traceability-transaction-section">
+            <div class="supply-traceability-transaction-section-header">
+                <span class="supply-traceability-building-type">${pair.fromLabel}</span>
+                <span class="supply-traceability-coords-pill market">${pair.marketCoords || 'N/A'}</span>
+                <span class="supply-traceability-arrow">→</span>
+                <span class="supply-traceability-building-type">${pair.toLabel}</span>
+                <span class="supply-traceability-coords-pill house">${pair.houseCoords || 'N/A'}</span>
             </div>
-            <div class="food-traceability-transaction-table">
-                <div class="food-traceability-transaction-row">
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Stocks avant transaction</div>
-                        <div class="food-traceability-stocks-column">
-                            <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">${pair.fromLabel}</div>
-                                <div class="food-traceability-stocks-details">
-                                    ${stockLines(marketStocksBefore)}
-                                    <div class="food-traceability-stocks-total">Total: ${marketStocksBefore[chainTotalKey] || 0}</div>
+            <div class="supply-traceability-transaction-table">
+                <div class="supply-traceability-transaction-row">
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Stocks avant transaction</div>
+                        <div class="supply-traceability-stocks-column">
+                            <div class="supply-traceability-stocks-cell">
+                                <div class="supply-traceability-stocks-label">${pair.fromLabel}</div>
+                                <div class="supply-traceability-stocks-details">
+                                    ${stockLines(marketStocksBefore, categories)}
+                                    <div class="supply-traceability-stocks-total">Total: ${marketStocksBefore[totalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Stocks avant transaction</div>
-                        <div class="food-traceability-stocks-column">
-                            <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">${pair.toLabel}</div>
-                                <div class="food-traceability-stocks-details">
-                                    ${stockLines(houseStocksBefore)}
-                                    <div class="food-traceability-stocks-total">Total: ${houseStocksBefore[chainTotalKey] || 0}</div>
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Stocks avant transaction</div>
+                        <div class="supply-traceability-stocks-column">
+                            <div class="supply-traceability-stocks-cell">
+                                <div class="supply-traceability-stocks-label">${pair.toLabel}</div>
+                                <div class="supply-traceability-stocks-details">
+                                    ${stockLines(houseStocksBefore, categories)}
+                                    <div class="supply-traceability-stocks-total">Total: ${houseStocksBefore[totalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="food-traceability-transaction-row">
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Transaction</div>
-                        <div class="food-traceability-transaction-details">
-                            <div class="food-traceability-transaction-type market-to-house">Vente</div>
-                            <div class="food-traceability-transaction-subtitle">Vente à ${pair.toLabel}</div>
+                <div class="supply-traceability-transaction-row">
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Transaction</div>
+                        <div class="supply-traceability-transaction-details">
+                            <div class="supply-traceability-transaction-type market-to-house">Vente</div>
+                            <div class="supply-traceability-transaction-subtitle">Vente à ${pair.toLabel}</div>
                             ${transactionDetails}
                         </div>
                     </div>
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Transaction</div>
-                        <div class="food-traceability-transaction-details">
-                            <div class="food-traceability-transaction-type market-to-house">Achat</div>
-                            <div class="food-traceability-transaction-subtitle">Achat à ${pair.fromLabel}</div>
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Transaction</div>
+                        <div class="supply-traceability-transaction-details">
+                            <div class="supply-traceability-transaction-type market-to-house">Achat</div>
+                            <div class="supply-traceability-transaction-subtitle">Achat à ${pair.fromLabel}</div>
                             ${transactionDetails}
                         </div>
                     </div>
                 </div>
-                <div class="food-traceability-transaction-row">
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Stocks après transaction (prévision)</div>
-                        <div class="food-traceability-stocks-column">
-                            <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">${pair.fromLabel}</div>
-                                <div class="food-traceability-stocks-details">
-                                    ${stockLines(marketStocksAfter)}
-                                    <div class="food-traceability-stocks-total">Total: ${marketStocksAfter[chainTotalKey] || 0}</div>
+                <div class="supply-traceability-transaction-row">
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Stocks après transaction (prévision)</div>
+                        <div class="supply-traceability-stocks-column">
+                            <div class="supply-traceability-stocks-cell">
+                                <div class="supply-traceability-stocks-label">${pair.fromLabel}</div>
+                                <div class="supply-traceability-stocks-details">
+                                    ${stockLines(marketStocksAfter, categories)}
+                                    <div class="supply-traceability-stocks-total">Total: ${marketStocksAfter[totalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Stocks après transaction (prévision)</div>
-                        <div class="food-traceability-stocks-column">
-                            <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">${pair.toLabel}</div>
-                                <div class="food-traceability-stocks-details">
-                                    ${stockLines(houseStocksAfter)}
-                                    <div class="food-traceability-stocks-total">Total: ${houseStocksAfter[chainTotalKey] || 0}</div>
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Stocks après transaction (prévision)</div>
+                        <div class="supply-traceability-stocks-column">
+                            <div class="supply-traceability-stocks-cell">
+                                <div class="supply-traceability-stocks-label">${pair.toLabel}</div>
+                                <div class="supply-traceability-stocks-details">
+                                    ${stockLines(houseStocksAfter, categories)}
+                                    <div class="supply-traceability-stocks-total">Total: ${houseStocksAfter[totalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
@@ -455,33 +480,33 @@ export function createMarketHouseSectionHTML(
  * @param {string} pillClass
  * @returns {string}
  */
-export function createBuildingStocksHTML(buildingType, coords, stocks, pillClass) {
+export function createBuildingStocksHTML(buildingType, coords, stocks, pillClass, { categories, totalKey = chainTotalKey } = {}) {
   return `
-        <div class="food-traceability-transaction-section">
-            <div class="food-traceability-transaction-section-header">
-                <span class="food-traceability-building-type">${buildingType}</span>
-                <span class="food-traceability-coords-pill ${pillClass}">${coords || 'N/A'}</span>
-                <span class="food-traceability-transaction-subtitle">(Stocks en fin de mois)</span>
+        <div class="supply-traceability-transaction-section">
+            <div class="supply-traceability-transaction-section-header">
+                <span class="supply-traceability-building-type">${buildingType}</span>
+                <span class="supply-traceability-coords-pill ${pillClass}">${coords || 'N/A'}</span>
+                <span class="supply-traceability-transaction-subtitle">(Stocks en fin de mois)</span>
             </div>
-            <div class="food-traceability-transaction-table">
-                <div class="food-traceability-transaction-row">
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">Stocks en fin de mois</div>
-                        <div class="food-traceability-stocks-column">
-                            <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">${buildingType}</div>
-                                <div class="food-traceability-stocks-details">
-                                    ${stockLines(stocks)}
-                                    <div class="food-traceability-stocks-total">Total: ${stocks[chainTotalKey] || 0}</div>
+            <div class="supply-traceability-transaction-table">
+                <div class="supply-traceability-transaction-row">
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">Stocks en fin de mois</div>
+                        <div class="supply-traceability-stocks-column">
+                            <div class="supply-traceability-stocks-cell">
+                                <div class="supply-traceability-stocks-label">${buildingType}</div>
+                                <div class="supply-traceability-stocks-details">
+                                    ${stockLines(stocks, categories)}
+                                    <div class="supply-traceability-stocks-total">Total: ${stocks[totalKey] || 0}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="food-traceability-transaction-cell">
-                        <div class="food-traceability-cell-header">-</div>
-                        <div class="food-traceability-stocks-column">
-                            <div class="food-traceability-stocks-cell">
-                                <div class="food-traceability-stocks-label">-</div>
+                    <div class="supply-traceability-transaction-cell">
+                        <div class="supply-traceability-cell-header">-</div>
+                        <div class="supply-traceability-stocks-column">
+                            <div class="supply-traceability-stocks-cell">
+                                <div class="supply-traceability-stocks-label">-</div>
                             </div>
                         </div>
                     </div>
@@ -521,10 +546,10 @@ function monthFarmRowHTML(monthData, chain, coverage) {
   const figure = month
     ? `${month.farms.present}/${coverage ? coverage.farmsNeeded : '?'} ${noWorkIconHTML} : (${month.farms.idle})${hubsClauseHTML(month.hubs.present, month.hubs.idle, chain.hubLabel)}`
     : '—';
-  return `<div class="food-stat-month-item farms">
-                                        <span class="food-stat-month-icon">🌾</span>
-                                        <span class="food-stat-month-label">Fermes:</span>
-                                        <span class="food-stat-month-value">${figure}</span>
+  return `<div class="supply-stat-month-item farms">
+                                        <span class="supply-stat-month-icon">🌾</span>
+                                        <span class="supply-stat-month-label">Fermes:</span>
+                                        <span class="supply-stat-month-value">${figure}</span>
                                     </div>`;
 }
 
@@ -532,7 +557,7 @@ function monthFarmRowHTML(monthData, chain, coverage) {
  * @param {HTMLElement} container
  * @param {Record<string, { months: Array<object>, chain?: object }>} dataByYear
  */
-export function renderFoodStats(container, dataByYear) {
+export function renderDietStats(container, dataByYear) {
   const monthNames = MONTHS;
 
   const years = Object.keys(dataByYear).sort((a, b) => parseInt(b) - parseInt(a));
@@ -550,43 +575,43 @@ export function renderFoodStats(container, dataByYear) {
       year === years[0] && yearData.chain && yearData.chain.hubs.total > 0 && !yearData.chain.collectionDone;
 
     html += `
-            <div class="food-stats-year-section">
-                <div class="food-stats-year-header">
-                    <h4 class="food-stats-year-title">Année ${year}</h4>
-                    <div class="food-stats-year-summary">
-                        <span class="food-stat-badge ${monthsWithoutFamine === yearData.months.length ? 'fed' : 'unfed'}">✅ ${monthsWithoutFamine}/${yearData.months.length} mois sans famine</span>
-                        ${inProgress ? `<span class="food-stat-farms in-progress">⏳ Année en cours — le bilan des fermes sera calculé une fois la récolte vendue</span>` : `${yearData.chain && yearData.chain.farms.total > 0 ? `<span class="food-stat-farms sold">🌾 Fermes ayant vendu leur récolte : ${farmsSoldHTML(yearData.chain)}</span>` : ''}
+            <div class="supply-stats-year-section">
+                <div class="supply-stats-year-header">
+                    <h4 class="supply-stats-year-title">Année ${year}</h4>
+                    <div class="supply-stats-year-summary">
+                        <span class="supply-stat-badge ${monthsWithoutFamine === yearData.months.length ? 'fed' : 'unfed'}">✅ ${monthsWithoutFamine}/${yearData.months.length} mois sans famine</span>
+                        ${inProgress ? `<span class="supply-stat-farms in-progress">⏳ Année en cours — le bilan des fermes sera calculé une fois la récolte vendue</span>` : `${yearData.chain && yearData.chain.farms.total > 0 ? `<span class="supply-stat-farms sold">🌾 Fermes ayant vendu leur récolte : ${farmsSoldHTML(yearData.chain)}</span>` : ''}
                         ${yearData.chain && yearData.chain.farms.total > 0 ? nonSaleCausesHTML(yearData.chain) : ''}
-                        ${coverage ? `<span class="food-stat-farms coverage">Fermes nécessaires pour nourrir les ${coverage.population} personnes : ${coverage.farmsNeeded}</span><span class="food-stat-farms detail">${coverage.detail}</span>` : ''}`}
+                        ${coverage ? `<span class="supply-stat-farms coverage">Fermes nécessaires pour nourrir les ${coverage.population} personnes : ${coverage.farmsNeeded}</span><span class="supply-stat-farms detail">${coverage.detail}</span>` : ''}`}
                     </div>
                 </div>
-                <div class="food-stats-months">
+                <div class="supply-stats-months">
                     ${yearData.months
                       .map((monthData) => {
                         const totalPop =
                           (monthData.fedPopulation || 0) + (monthData.unfedPopulation || 0);
                         return `
-                            <div class="food-stat-month-card">
-                                <div class="food-stat-month-header">
-                                    <span class="food-stat-month-name">${monthNames[monthData.month] || `Mois ${monthData.month + 1}`}</span>
-                                    <span class="food-stat-month-season">${seasonBadge(monthData.month).emoji} <small>${seasonBadge(monthData.month).label}</small></span>
+                            <div class="supply-stat-month-card">
+                                <div class="supply-stat-month-header">
+                                    <span class="supply-stat-month-name">${monthNames[monthData.month] || `Mois ${monthData.month + 1}`}</span>
+                                    <span class="supply-stat-month-season">${seasonBadge(monthData.month).emoji} <small>${seasonBadge(monthData.month).label}</small></span>
                                 </div>
-                                <div class="food-stat-month-details">
-                                    <div class="food-stat-month-item fed">
-                                        <span class="food-stat-month-icon">✅</span>
-                                        <span class="food-stat-month-label">Nourris:</span>
-                                        <span class="food-stat-month-value">${monthData.fedPopulation || 0}</span>
+                                <div class="supply-stat-month-details">
+                                    <div class="supply-stat-month-item fed">
+                                        <span class="supply-stat-month-icon">✅</span>
+                                        <span class="supply-stat-month-label">Nourris:</span>
+                                        <span class="supply-stat-month-value">${monthData.fedPopulation || 0}</span>
                                     </div>
-                                    <div class="food-stat-month-item unfed">
-                                        <span class="food-stat-month-icon">⚠️</span>
-                                        <span class="food-stat-month-label">Non nourris:</span>
-                                        <span class="food-stat-month-value">${monthData.unfedPopulation || 0}</span>
+                                    <div class="supply-stat-month-item unfed">
+                                        <span class="supply-stat-month-icon">⚠️</span>
+                                        <span class="supply-stat-month-label">Non nourris:</span>
+                                        <span class="supply-stat-month-value">${monthData.unfedPopulation || 0}</span>
                                     </div>
                                     ${monthFarmRowHTML(monthData, yearData.chain, coverage)}
-                                    <div class="food-stat-month-item total">
-                                        <span class="food-stat-month-icon">👥</span>
-                                        <span class="food-stat-month-label">Total:</span>
-                                        <span class="food-stat-month-value">${totalPop}</span>
+                                    <div class="supply-stat-month-item total">
+                                        <span class="supply-stat-month-icon">👥</span>
+                                        <span class="supply-stat-month-label">Total:</span>
+                                        <span class="supply-stat-month-value">${totalPop}</span>
                                     </div>
                                 </div>
                             </div>
@@ -716,7 +741,7 @@ export function summarizeBuildingHistory(transactions, year, monthIndexes) {
  * @param {Array<object>} transactions
  * @param {Array<{ year: number, month: number, fedPopulation: number, unfedPopulation: number }>} monthlyStats
  */
-export function buildFoodTraceabilityExport(transactions, monthlyStats) {
+export function buildSupplyTraceabilityExport(transactions, monthlyStats) {
   const years = [...new Set(monthlyStats.map((month) => month.year))].sort((a, b) => a - b);
   const chronological = [...transactions].sort(
     (a, b) => a.turn - b.turn || new Date(a.date) - new Date(b.date)

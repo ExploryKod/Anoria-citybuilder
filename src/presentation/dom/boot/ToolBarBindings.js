@@ -7,7 +7,7 @@ import { closeModal, toggleModal } from '../tools/ToolPanel.js';
 
 /**
  * Wire tools that still live as DOM stubs / right-rail actions.
- * Category construction opens via MobileCompactToolbar → ToolPanel (no left toolbar modals).
+ * Category construction opens via CompactToolbar → ToolPanel (no left toolbar modals).
  *
  * @param {{
  *   buttonStateManager?: { isEnabled?: (id: string) => boolean } | null,

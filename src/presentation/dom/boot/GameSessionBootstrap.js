@@ -56,7 +56,7 @@ import {
   initLoanPaymentSystem,
 } from '../compta/prets/PretsPanel.js';
 import { initJournalPopup } from '../compta/journal/JournalPanel.js';
-import { initFoodTraceabilityPopup } from '../admin/food-traceability/FoodTraceabilityPanel.js';
+import { initSupplyTraceabilityPopup } from '../admin/supply-traceability/SupplyTraceabilityPanel.js';
 import { initAdminSections } from '../admin/initAdminSections.js';
 import { initNewsEventModal } from '../intelligence/NewsEventModal.js';
 import { bindObjectivesHistoryDeps } from '../onboarding/objectives-history.js';
@@ -240,7 +240,7 @@ export async function bootstrapGameSession(assetManager) {
     bindProcessLoanPayments: (fn) => bindSessionRuntime({ processLoanPayments: fn }),
     registerHandler: registerAppFunction,
   });
-  initFoodTraceabilityPopup({ supply: sessionApi.supply });
+  initSupplyTraceabilityPopup({ supply: sessionApi.supply });
 
   if (sessionApi.intelligence) {
     initNewsEventModal({

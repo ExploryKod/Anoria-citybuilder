@@ -91,10 +91,10 @@
   .health-summary-box,
   .work-summary-box,
   .work-sector-summary,
-  .food-traceability-month-group,
-  .food-traceability-building-section,
-  .food-traceability-entry,
-  .food-traceability-entry-details,
+  .supply-traceability-month-group,
+  .supply-traceability-building-section,
+  .supply-traceability-entry,
+  .supply-traceability-entry-details,
   .food-chart-summary-card,
   .food-chart-card,
   .food-chart-legend-item
@@ -164,7 +164,7 @@
 
 /* Tabs & filters — no underline chrome */
 .administrator-panel :is(
-  .food-traceability-tab,
+  .supply-traceability-tab,
   .factory-tab,
   .commerce-tab-btn
 ) {
@@ -172,11 +172,11 @@
   border-bottom: none;
 }
 
-.administrator-panel .food-traceability-filter-btn {
+.administrator-panel .supply-traceability-filter-btn {
   border: none;
 }
 
-.administrator-panel .food-traceability-filter-btn.active {
+.administrator-panel .supply-traceability-filter-btn.active {
   border: none;
 }
 
@@ -205,39 +205,39 @@
 }
 
 /* Food traceability (embedded in administrator panel) */
-.administrator-panel .food-traceability-content {
+.administrator-panel .supply-traceability-content {
   padding: 0;
 }
 
-.administrator-panel .food-traceability-list {
+.administrator-panel .supply-traceability-list {
   background: transparent;
   border-radius: 0;
 }
 
-.administrator-panel .food-traceability-tab-content {
+.administrator-panel .supply-traceability-tab-content {
   padding-top: 8px;
 }
 
-.administrator-panel .food-traceability-charts-container {
+.administrator-panel .supply-traceability-charts-container {
   box-shadow: none;
   border: none;
 }
 
-.administrator-panel .food-traceability-chart-wrapper {
+.administrator-panel .supply-traceability-chart-wrapper {
   box-shadow: none;
   border: none;
 }
 
-.administrator-panel .food-traceability-chart-header {
+.administrator-panel .supply-traceability-chart-header {
   border-bottom: none;
   padding-bottom: 0;
 }
 
-.administrator-panel .food-traceability-event-row {
+.administrator-panel .supply-traceability-event-row {
   border-bottom: none;
 }
 
-.administrator-panel .food-traceability-event-row:last-child {
+.administrator-panel .supply-traceability-event-row:last-child {
   border-bottom: none;
 }
 

@@ -23,7 +23,7 @@ import { initHudPopRailScope } from '../shell/hudPopRailScope.js';
 import { adoptHudFabDockChildren } from '../shell/hudFabDock.js';
 import { initHudShellMenus } from '../shell/HudShellMenus.js';
 import { initCheatCodePrompt } from '../shell/CheatCodePrompt.js';
-import { initMobileCompactToolbar } from '../tools/MobileCompactToolbar.js';
+import { initCompactToolbar } from '../tools/CompactToolbar.js';
 import { initBuildToolHoverPreview } from '../tools/BuildToolHoverPreview.js';
 import { initEditorNatureToolbar } from '../editor/EditorNatureToolbar.js';
 import { initMobileClickStateFab } from '../tools/MobileClickStateFab.js';
@@ -67,7 +67,7 @@ export async function initAppBoot() {
     buttonStateManager,
     invokeSetActiveTool,
   });
-  initMobileCompactToolbar({
+  initCompactToolbar({
     invokeSetActiveTool,
     buttonStateManager,
   });

@@ -15,7 +15,7 @@ const stores = {
   budget: 'name',
   objectives: 'name',
   journal: '++id, turn, date, type, amount, description',
-  foodTraceability:
+  supplyTraceability:
     '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price',
   productionJournal:
     '++id, turn, month, year, date, factoryId, eventType, resourceType, quantity, price, remainingStocks, logsConsumed, productionTurns',
@@ -131,6 +131,9 @@ db.version(11).stores({}).upgrade(async (tx) => {
 db.version(12).stores({}).upgrade(async (tx) => {
   await tx.table('houses').where('type').equals('House-2Story').delete();
 });
+
+// v13: rename foodTraceability → supplyTraceability (table covers all resource categories, not food only).
+db.version(13).stores({ supplyTraceability: '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price', foodTraceability: null });
 
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;

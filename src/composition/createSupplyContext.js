@@ -62,13 +62,13 @@ import {
  *
  * @param {object} [deps]
  * @param {import('../contexts/supply/application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} [deps.supplyBuildingRepository]
- * @param {import('../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js').DexieSupplyTraceabilityRepository} [deps.foodTraceabilityRepository]
+ * @param {import('../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js').DexieSupplyTraceabilityRepository} [deps.supplyTraceabilityRepository]
  * @param {{ load: () => object, save: (priorities: object) => void }} [deps.clientPriorityRepository] The player's client priorities.
  * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createSupplyContext({
   supplyBuildingRepository,
-  foodTraceabilityRepository,
+  supplyTraceabilityRepository,
   clientPriorityRepository,
   getTimeInfo: getTimeInfoDep,
 } = {}) {
@@ -85,8 +85,8 @@ export function createSupplyContext({
   const distributionCategories = getAllCategoriesForRole('distributor');
   const supplyBuildingRepositoryImpl =
     supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
-  const foodTraceabilityRepositoryImpl =
-    foodTraceabilityRepository ?? new DexieSupplyTraceabilityRepository();
+  const supplyTraceabilityRepositoryImpl =
+    supplyTraceabilityRepository ?? new DexieSupplyTraceabilityRepository();
   // The player's client priorities (saved settings); none saved means the catalog's defaults.
   const clientPriorityRepositoryImpl = clientPriorityRepository ?? new LocalStorageClientPriorityRepository();
   const hubServing = new HubServing(supplyBuildingRepositoryImpl, {
@@ -164,7 +164,7 @@ export function createSupplyContext({
     new EmptyHubGoods(supplyBuildingRepositoryImpl, hubServing)
   );
   const traceability = new SupplyTraceability({
-    foodTraceabilityRepository: foodTraceabilityRepositoryImpl,
+    supplyTraceabilityRepository: supplyTraceabilityRepositoryImpl,
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
   });
   const runCityResourceCycle = new RunCityResourceCycle(
@@ -391,19 +391,19 @@ export function createSupplyContext({
     },
 
     async getAllSupplyTraceabilityTransactions(maxAge = null) {
-      return foodTraceabilityRepositoryImpl.getAllTransactions(maxAge);
+      return supplyTraceabilityRepositoryImpl.getAllTransactions(maxAge);
     },
 
     async getSupplyTraceabilityTransactionsForMonth(turn, month = null) {
-      return foodTraceabilityRepositoryImpl.getTransactionsForMonth(turn, month);
+      return supplyTraceabilityRepositoryImpl.getTransactionsForMonth(turn, month);
     },
 
     async getSupplyTraceabilityTransactionsByMonth(turn) {
-      return foodTraceabilityRepositoryImpl.getTransactionsByMonth(turn);
+      return supplyTraceabilityRepositoryImpl.getTransactionsByMonth(turn);
     },
 
     async cleanupOldSupplyTraceabilityTransactions(maxAge = 60) {
-      return foodTraceabilityRepositoryImpl.cleanupOldTransactions(maxAge);
+      return supplyTraceabilityRepositoryImpl.cleanupOldTransactions(maxAge);
     },
 
     /** A building was placed / demolished — kept in the city's history. */

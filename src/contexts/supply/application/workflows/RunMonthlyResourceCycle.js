@@ -21,7 +21,7 @@ export class RunMonthlyResourceCycle {
    * @param {import('../commands/distribution/UpdateConsumerDistributorReach.js').UpdateConsumerDistributorReach} updateDistributorReach
    * @param {import('../commands/surplus/RunHubSurplusCycle.js').RunHubSurplusCycle} runHubSurplusCycle
    * @param {import('../commands/RunResourceCommandForRole.js').RunResourceCommandForRole} runConsumerCommand
-   * @param {{ recordHouseConsumptions: Function, recordChainStates: Function, recordPopulationStates: Function, recordBuildingStates: Function, recordHarvestSales: Function }} traceability
+   * @param {{ recordHouseConsumptions: Function, recordChainStates: Function, recordPopulationStates: Function, recordBuildingStates: Function, recordHarvestSales: Function, recordHubCollections: Function }} traceability
    * @param {object} config
    * @param {ReadonlyArray<string>} config.categories Every category any
    *   distributor covers — drives the actual distribution/restock leg,
@@ -88,6 +88,7 @@ export class RunMonthlyResourceCycle {
 
     const surplus = await this.runHubSurplusCycle.execute(timeContext);
 
+    await this.traceability.recordHubCollections(timeInfo, surplus.hubs);
     await this.traceability.recordHarvestSales(timeInfo, surplus.hubs);
 
     await this.runCityResourceCycle.execute({
@@ -102,9 +103,8 @@ export class RunMonthlyResourceCycle {
     });
 
     // Every need citizens have is used up the same way, one pass each (the diet, the goods they wear
-    // out...). The traceability follows the first: the primary need.
-    let consumptions = [];
-    for (const [index, need] of listQuantityConsumerNeeds().entries()) {
+    // out...). Each need is traced individually so the panel can show demand vs. taken per need type.
+    for (const need of listQuantityConsumerNeeds()) {
       const { results } = await this.runConsumerCommand.execute({
         role: 'consumer',
         categories: need.categories,
@@ -115,13 +115,12 @@ export class RunMonthlyResourceCycle {
         }),
         successKey: 'consumed',
       });
-      if (index === 0) consumptions = results;
+      await this.traceability.recordHouseConsumptions(
+        timeInfo,
+        results.map((r) => ({ ...r, houseId: r.buildingId })),
+        need.totalKey
+      );
     }
-
-    await this.traceability.recordHouseConsumptions(
-      timeInfo,
-      consumptions.map((r) => ({ ...r, houseId: r.buildingId }))
-    );
 
     // Last, so the state is what the tick ended with — after collection, distribution and
     // the meal — and not what it started from.

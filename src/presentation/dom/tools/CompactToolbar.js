@@ -63,7 +63,7 @@ function setBuildBarDocumentState(open) {
  *   buttonStateManager?: object,
  * }} toolbarDeps
  */
-export function initMobileCompactToolbar(toolbarDeps) {
+export function initCompactToolbar(toolbarDeps) {
   deps = toolbarDeps;
 
   buildBarEl = document.getElementById('mobile-build-bar');
@@ -676,6 +676,9 @@ function renderCarousel(categoryId) {
       extraClass: 'mobile-tool-btn',
       onClick: (e) => {
         getButtonsUnactive();
+        // getButtonsUnactive uses a static NodeList (captured at load time) so dynamically
+        // created carousel buttons are not cleared by it — clear them explicitly here.
+        getCarouselToolButtons().forEach((b) => b.classList.remove('selected'));
         e.currentTarget?.classList?.add('selected');
         deps?.invokeSetActiveTool?.(e);
         const tools = getCarouselToolButtons();

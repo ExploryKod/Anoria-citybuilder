@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/global.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loader-modal.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-controls.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-compact-toolbar.css">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/compact-toolbar.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/build-tool-hover-preview.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/editor-toolbar.css">
     <link rel="stylesheet" href="./src/presentation/dom/styles/placement-rotation-hud.css">
@@ -42,7 +42,7 @@
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/balance-sheet.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/city-map.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/journal.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/food-traceability.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/supply-traceability.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/finances-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="./src/presentation/dom/styles/modals/report-section.css" media="print" onload="this.media='all'">
@@ -63,7 +63,7 @@
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/balance-sheet.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/city-map.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/journal.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/food-traceability.css">
+        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/supply-traceability.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/finances-section.css">
         <link rel="stylesheet" href="./src/presentation/dom/styles/modals/report-section.css">
@@ -1239,6 +1239,7 @@
                     <div class="splide__track">
                         <ul class="splide__list"></ul>
                     </div>
+                    <p class="mobile-build-bar__direct-hint" aria-live="polite">Ajoutez la construction directement — <kbd>S</kbd> pour choisir</p>
                 </div>
             </section>
 
@@ -2082,8 +2083,8 @@
                 
                 <button
                     class="administrator-nav-btn"
-                    id="admin-nav-food-traceability"
-                    data-section="food-traceability"
+                    id="admin-nav-supply-traceability"
+                    data-section="supply-traceability"
                     title="Traçabilité Alimentaire"
                     aria-label="Ouvrir la section Traçabilité Alimentaire">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
@@ -2714,7 +2715,7 @@
             </div>
 
             <!-- Food Traceability Section -->
-            <div class="administrator-section" id="admin-section-food-traceability">
+            <div class="administrator-section" id="admin-section-supply-traceability">
                 <div class="administrator-section-title">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
                         <path d="M2 22 16 8"/>
@@ -2729,24 +2730,26 @@
                     Traçabilité Alimentaire
                 </div>
                 <div class="administrator-section-content">
-                    <div class="food-traceability-content">
+                    <div class="supply-traceability-content">
                         <!-- Tabs -->
-                        <div class="food-traceability-tabs">
-                            <button class="food-traceability-tab active" data-tab="details">📋 Détails</button>
-                            <button class="food-traceability-tab" data-tab="charts">📊 Graphiques</button>
+                        <div class="supply-traceability-tabs">
+                            <button class="supply-traceability-tab active" data-tab="details">📋 Transactions</button>
+                            <button class="supply-traceability-tab" data-tab="charts">📊 Satisfaction</button>
                         </div>
                         
                         <!-- Details Tab -->
-                        <div class="food-traceability-tab-content active" id="food-traceability-details-tab">
-                            <div class="food-traceability-filters">
-                                <button class="food-traceability-filter-btn active" data-period="all">Tout l'historique</button>
-                                <button class="food-traceability-filter-btn" data-period="7">7 derniers jours</button>
-                                <button class="food-traceability-filter-btn" data-period="30">30 derniers jours</button>
-                                <button class="food-traceability-filter-btn" data-period="60">60 derniers jours</button>
+                        <div class="supply-traceability-tab-content active" id="supply-traceability-details-tab">
+                            <div class="supply-traceability-filters">
+                                <button class="supply-traceability-filter-btn active" data-period="all">Tout l'historique</button>
+                                <button class="supply-traceability-filter-btn" data-period="7">7 derniers jours</button>
+                                <button class="supply-traceability-filter-btn" data-period="30">30 derniers jours</button>
+                                <button class="supply-traceability-filter-btn" data-period="60">60 derniers jours</button>
                             </div>
-                            
-                            <div class="food-traceability-refresh-section">
-                                <button class="food-traceability-refresh-btn" id="food-traceability-refresh-btn">
+
+                            <div class="supply-traceability-category-pills" id="supply-traceability-category-pills"></div>
+
+                            <div class="supply-traceability-refresh-section">
+                                <button class="supply-traceability-refresh-btn" id="supply-traceability-refresh-btn">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
                                         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                                         <path d="M21 3v5h-5"/>
@@ -2755,23 +2758,27 @@
                                     </svg>
                                     Actualiser
                                 </button>
+                                <button class="supply-traceability-refresh-btn" id="supply-traceability-export-btn" title="Télécharger toutes les transactions en JSON">
+                                    Exporter en JSON
+                                </button>
                             </div>
-                            
-                            <div class="food-traceability-list" id="food-traceability-list">
-                                <div class="food-traceability-loading">
+
+                            <div class="supply-traceability-list" id="supply-traceability-list">
+                                <div class="supply-traceability-loading">
                                     <div class="loading-spinner"></div>
                                     <p>Chargement de la traçabilité...</p>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Charts Tab -->
-                        <div class="food-traceability-tab-content" id="food-traceability-charts-tab">
-                            <div class="food-charts-controls">
-                                <select id="food-charts-year-select" class="food-charts-select">
+                        <div class="supply-traceability-tab-content" id="supply-traceability-charts-tab">
+                            <div class="supply-traceability-category-pills" id="supply-charts-category-pills"></div>
+                            <div class="supply-charts-controls">
+                                <select id="supply-charts-year-select" class="supply-charts-select">
                                     <option value="all">Toutes les années</option>
                                 </select>
-                                <button class="food-traceability-refresh-btn" id="food-charts-refresh-btn">
+                                <button class="supply-traceability-refresh-btn" id="supply-charts-refresh-btn">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
                                         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                                         <path d="M21 3v5h-5"/>
@@ -2780,12 +2787,12 @@
                                     </svg>
                                     Actualiser
                                 </button>
-                                <button class="food-traceability-refresh-btn" id="food-charts-export-btn" title="Télécharger la traçabilité en JSON">
+                                <button class="supply-traceability-refresh-btn" id="supply-charts-export-btn" title="Télécharger la traçabilité en JSON">
                                     Exporter en JSON
                                 </button>
                             </div>
-                            <div class="food-stats-container" id="food-stats-container">
-                                <div class="food-stats-loading">
+                            <div class="supply-stats-container" id="supply-stats-container">
+                                <div class="supply-stats-loading">
                                     <div class="loading-spinner"></div>
                                     <p>Chargement des statistiques...</p>
                                 </div>
@@ -3109,11 +3116,11 @@
 </div>
 
 <!-- Food Traceability Panel -->
-<div id="food-traceability-panel" class="food-traceability-panel">
-    <div class="food-traceability-wrapper">
-        <div class="food-traceability-header">
+<div id="supply-traceability-panel" class="supply-traceability-panel">
+    <div class="supply-traceability-wrapper">
+        <div class="supply-traceability-header">
             <h3>🌾 Traçabilité Alimentaire</h3>
-            <div class="food-traceability-close-btn" title="Fermer" aria-label="Fermer la traçabilité alimentaire">
+            <div class="supply-traceability-close-btn" title="Fermer" aria-label="Fermer la traçabilité alimentaire">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
                     <path d="M18 6L6 18"/>
                     <path d="M6 6l12 12"/>
@@ -3121,24 +3128,26 @@
             </div>
         </div>
         
-        <div class="food-traceability-content">
+        <div class="supply-traceability-content">
             <!-- Tabs -->
-            <div class="food-traceability-tabs">
-                <button class="food-traceability-tab active" data-tab="details">📋 Détails</button>
-                <button class="food-traceability-tab" data-tab="charts">📊 Graphiques</button>
+            <div class="supply-traceability-tabs">
+                <button class="supply-traceability-tab active" data-tab="details">📋 Transactions</button>
+                <button class="supply-traceability-tab" data-tab="charts">📊 Satisfaction</button>
             </div>
             
             <!-- Details Tab -->
-            <div class="food-traceability-tab-content active" id="food-traceability-details-tab">
-                <div class="food-traceability-filters">
-                    <button class="food-traceability-filter-btn active" data-period="all">Tout l'historique</button>
-                    <button class="food-traceability-filter-btn" data-period="7">7 derniers jours</button>
-                    <button class="food-traceability-filter-btn" data-period="30">30 derniers jours</button>
-                    <button class="food-traceability-filter-btn" data-period="60">60 derniers jours</button>
+            <div class="supply-traceability-tab-content active" id="supply-traceability-details-tab">
+                <div class="supply-traceability-filters">
+                    <button class="supply-traceability-filter-btn active" data-period="all">Tout l'historique</button>
+                    <button class="supply-traceability-filter-btn" data-period="7">7 derniers jours</button>
+                    <button class="supply-traceability-filter-btn" data-period="30">30 derniers jours</button>
+                    <button class="supply-traceability-filter-btn" data-period="60">60 derniers jours</button>
                 </div>
-                
-                <div class="food-traceability-refresh-section">
-                    <button class="food-traceability-refresh-btn" id="food-traceability-refresh-btn">
+
+                <div class="supply-traceability-category-pills" id="supply-traceability-category-pills"></div>
+
+                <div class="supply-traceability-refresh-section">
+                    <button class="supply-traceability-refresh-btn" id="supply-traceability-refresh-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
                             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                             <path d="M21 3v5h-5"/>
@@ -3147,23 +3156,27 @@
                         </svg>
                         Actualiser
                     </button>
+                    <button class="supply-traceability-refresh-btn" id="supply-traceability-export-btn" title="Télécharger toutes les transactions en JSON">
+                        Exporter en JSON
+                    </button>
                 </div>
-                
-                <div class="food-traceability-list" id="food-traceability-list">
-                    <div class="food-traceability-loading">
+
+                <div class="supply-traceability-list" id="supply-traceability-list">
+                    <div class="supply-traceability-loading">
                         <div class="loading-spinner"></div>
                         <p>Chargement de la traçabilité...</p>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Charts Tab -->
-            <div class="food-traceability-tab-content" id="food-traceability-charts-tab">
-                <div class="food-charts-controls">
-                    <select id="food-charts-year-select" class="food-charts-select">
+            <div class="supply-traceability-tab-content" id="supply-traceability-charts-tab">
+                <div class="supply-traceability-category-pills" id="supply-charts-category-pills"></div>
+                <div class="supply-charts-controls">
+                    <select id="supply-charts-year-select" class="supply-charts-select">
                         <option value="all">Toutes les années</option>
                     </select>
-                    <button class="food-traceability-refresh-btn" id="food-charts-refresh-btn">
+                    <button class="supply-traceability-refresh-btn" id="supply-charts-refresh-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
                             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                             <path d="M21 3v5h-5"/>
@@ -3172,12 +3185,12 @@
                         </svg>
                         Actualiser
                     </button>
-                    <button class="food-traceability-refresh-btn" id="food-charts-export-btn" title="Télécharger la traçabilité en JSON">
+                    <button class="supply-traceability-refresh-btn" id="supply-charts-export-btn" title="Télécharger la traçabilité en JSON">
                         Exporter en JSON
                     </button>
                 </div>
-                <div class="food-stats-container" id="food-stats-container">
-                    <div class="food-stats-loading">
+                <div class="supply-stats-container" id="supply-stats-container">
+                    <div class="supply-stats-loading">
                         <div class="loading-spinner"></div>
                         <p>Chargement des statistiques...</p>
                     </div>

@@ -3,7 +3,7 @@ import {
   isOpenState as isMobileBuildBarOpen,
   open as openMobileBuildBar,
   toggle as toggleMobileBuildBar,
-} from '../tools/MobileCompactToolbar.js';
+} from '../tools/CompactToolbar.js';
 import { isCameraDpadEnabled } from '../../../config/cameraDpad.js';
 import { getSessionGame } from '../../../composition/sessionRuntime.js';
 
