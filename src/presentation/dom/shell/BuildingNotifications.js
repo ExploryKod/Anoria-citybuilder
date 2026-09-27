@@ -2,11 +2,28 @@
  * Construction / WebGL toast notifications (via js-toast-notifier).
  */
 
-import { buildingCatalog } from '../../../shared/building-catalog/buildingCatalog.js';
+import { getBuildingDefinition } from '../../../shared/building-catalog/buildingCatalog.js';
 import {
   showErrorToast,
+  showInfoToast,
   showWarningToast,
 } from './ToastNotifier.js';
+import {
+  getResourceRoles,
+  getResourceStockShape,
+} from '../../../shared/building-catalog/resourceRoleQueries.js';
+import {
+  UNRESOLVED_TERM,
+  buildingName,
+  buildingNameInSentence,
+  goodLabel,
+  namesOfBuildings,
+  namesOfDependents,
+  namesOfNaturalResource,
+  typesHoldingRole,
+  unresolvedTerm,
+} from './CatalogVocabulary.js';
+import { confirmModal } from './ConfirmModal.js';
 
 /**
  * Legacy aliases that aren't a real building type id in `buildingCatalog`
@@ -17,44 +34,49 @@ const EXTRA_TRANSLATIONS = {
   Road: 'Route',
 };
 
-/** Derived from `buildingCatalog` (single source of truth for display names). */
-const BUILDING_TRANSLATIONS = {
-  ...Object.fromEntries(
-    Object.entries(buildingCatalog)
-      .filter(([, def]) => def.displayName)
-      .map(([id, def]) => [id, def.displayName])
-  ),
-  ...EXTRA_TRANSLATIONS,
-};
+/**
+ * A building's name is the one the catalog gives it (`displayName`); the few legacy ids that are not in the
+ * catalog are named above. Anything else is shown as "…" and warned about, never guessed from its id.
+ */
+export function getBuildingDisplayName(buildingId) {
+  if (!buildingId) return buildingId;
+  return EXTRA_TRANSLATIONS[buildingId] ?? buildingName(buildingId);
+}
 
-const PLACEMENT_REASON_TRANSLATIONS = {
+const FIXED_PLACEMENT_REASONS = {
   area_not_available: 'Espace non disponible',
   insufficient_funds: 'Fonds insuffisants',
   building_already_exists: 'Un bâtiment existe déjà à cet emplacement',
   database_error: "Erreur lors de l'enregistrement du bâtiment",
   persistence_conflict: 'Conflit de sauvegarde — réessaie dans un instant',
-  no_windmill: "Construisez d'abord un moulin",
-  windmill_too_far: 'Aucun moulin à proximité',
-  windmill_full: 'Les moulins proches ont déjà 2 marchés',
+  natural_resource_missing: 'Aucune ressource naturelle à proximité',
 };
 
-export function getBuildingDisplayName(buildingId) {
-  if (!buildingId) return buildingId;
-  if (BUILDING_TRANSLATIONS[buildingId]) {
-    return BUILDING_TRANSLATIONS[buildingId];
-  }
-  for (const [key, value] of Object.entries(BUILDING_TRANSLATIONS)) {
-    if (buildingId.startsWith(key)) {
-      return value;
+/**
+ * Why a placement is refused. A reason about a neighbouring building (`<role>_missing`, `_too_far`, `_full`)
+ * is put in words from the placed building's own catalog requirement: which buildings, how far, how many.
+ * @param {string} reason
+ * @param {string} buildingType
+ */
+function translateErrorReason(reason, buildingType) {
+  if (FIXED_PLACEMENT_REASONS[reason]) return FIXED_PLACEMENT_REASONS[reason];
+
+  const neighbour = /^([a-z]+)_(missing|too_far|full)$/.exec(reason);
+  const requirement = neighbour && (getBuildingDefinition(buildingType)?.placementRequires ?? []).find((candidate) => candidate.role === neighbour[1]);
+  if (!requirement) return unresolvedTerm('wording for the placement refusal', reason);
+
+  const names = namesOfBuildings(requirement.role, requirement.categories).join(', ');
+  switch (neighbour[2]) {
+    case 'missing':
+      return `Construisez d'abord : ${names}.`;
+    case 'too_far':
+      return Number.isFinite(requirement.range) ? `${names} trop loin (portée : ${requirement.range} cases).` : `${names} introuvable.`;
+    default: {
+      const [hubType] = typesHoldingRole(requirement.role, requirement.categories);
+      const capacity = getResourceRoles(hubType).find((entry) => entry.role === requirement.role)?.linkCapacity;
+      return `${names} à portée : plus de place (${capacity ?? UNRESOLVED_TERM} ${getBuildingDisplayName(buildingType)} au plus).`;
     }
   }
-  return String(buildingId)
-    .replace(/-\d+$/g, '')
-    .replace(/-/g, ' ');
-}
-
-function translateErrorReason(reason) {
-  return PLACEMENT_REASON_TRANSLATIONS[reason] || reason;
 }
 
 export function showInsufficientFundsNotification(buildingType, price) {
@@ -66,22 +88,124 @@ export function showInsufficientFundsNotification(buildingType, price) {
 
 export function showGenericErrorNotification(buildingType, reason) {
   const displayName = getBuildingDisplayName(buildingType);
-  const translatedReason = translateErrorReason(reason);
+  const translatedReason = translateErrorReason(reason, buildingType);
   showErrorToast(`Impossible de construire ${displayName}. ${translatedReason}`);
 }
 
-/**
- * @param {Array<{ x: number, y: number }>} destroyedMarkets
- */
-export function showWindmillCascadeNotification(destroyedMarkets = []) {
-  if (!destroyedMarkets.length) return;
+/** " à moins de N cases", or nothing when the catalog sets no distance. */
+const withinRange = (range) => (Number.isFinite(range) ? ` à moins de ${range} cases` : '');
 
-  const labels = destroyedMarkets
-    .map((market) => `(${market.x}, ${market.y})`)
-    .join(', ');
+/**
+ * What a building depends on to be built or to work, from its own catalog entry: another building within reach
+ * (`placementRequires`), a natural resource within reach (a producer's `source`), the buildings it draws its
+ * supplies from (a recipe input's `from`). One general rule for every building that declares any of them.
+ * @param {string} buildingType
+ * @returns {string | null} A sentence, or null when the building depends on nothing.
+ */
+export function describePlacementNeeds(buildingType) {
+  const definition = getBuildingDefinition(buildingType);
+  const needs = [];
+
+  for (const requirement of definition?.placementRequires ?? []) {
+    const names = namesOfBuildings(requirement.role, requirement.categories).join(' ou ');
+    needs.push(`${names}${withinRange(requirement.range)}${requirement.requiresCapacity ? ' (avec de la place libre)' : ''}`);
+  }
+
+  for (const entry of definition?.resourceRoles ?? []) {
+    if (entry.role !== 'producer') continue;
+    if (entry.source) {
+      needs.push(`${namesOfNaturalResource(entry.source.resource).join(', ')}${withinRange(entry.source.range)}`);
+    }
+    for (const input of [...(entry.inputs ?? []), ...(entry.cycle ?? []).flatMap((step) => step.inputs ?? [])]) {
+      if (!input.from) continue;
+      const suppliers = namesOfBuildings(input.from.role, [input.category]).join(' ou ');
+      needs.push(`${suppliers}${withinRange(input.from.range)} pour ${goodLabel(input.category).toLowerCase()}`);
+    }
+  }
+
+  return needs.length > 0 ? `${buildingName(buildingType)} requiert : ${needs.join(' · ')}.` : null;
+}
+
+/**
+ * Whether a building type wants the on-pick toasts at all (what it needs, who it serves first) — the
+ * catalog's own `placementNotice`, off by default. Optional on purpose: a house now has needs of its own
+ * (its business draws on a warehouse) and clients of its own (who buys what it makes), but hearing about
+ * them every time the player picks a house to place would be noise a house was never meant to raise; an
+ * industry that wants the reminder declares it.
+ * @param {string} buildingType
+ * @returns {boolean}
+ */
+function hasPlacementNotice(buildingType) {
+  return getBuildingDefinition(buildingType)?.placementNotice === true;
+}
+
+/**
+ * Said as soon as the player picks a building to place, before any ghost turns red — only for a building
+ * type that declares `placementNotice` (see hasPlacementNotice above).
+ * @param {string} buildingType
+ */
+export function showPlacementNeedsNotification(buildingType) {
+  if (!hasPlacementNotice(buildingType)) return;
+  const message = describePlacementNeeds(buildingType);
+  if (message) showInfoToast(message, { timeout: 6000 });
+}
+
+/**
+ * Why a recipe cannot even reach one of its inputs (see DescribeActivitySupplyAccess.js), in the player's
+ * words: which building would fix it — a hub to reach, or an industry to supply it — named from the catalog,
+ * never hand-picked here.
+ * @param {{ inputCategory: string, role: string, status: 'no-hub' | 'no-supplier' }} gap
+ * @returns {string}
+ */
+export function describeActivitySupplyGap(gap) {
+  const good = goodLabel(gap.inputCategory).toLowerCase();
+  const names = namesOfBuildings(gap.status === 'no-hub' ? gap.role : 'producer', [gap.inputCategory]);
+  return `${[...new Set(names)].join(' ou ')} nécessaire pour ${good}`;
+}
+
+/**
+ * Said when the player picks a producer whose goods have clients: who it serves first, and where to change it.
+ * @param {string} producerType The producer's catalog id.
+ * @param {{ clients: Array<{ type: string, disabled: boolean }> } | undefined} board Its client priorities.
+ */
+export function showClientPriorityNotification(producerType, board) {
+  if (!hasPlacementNotice(producerType)) return;
+  const served = (board?.clients ?? []).filter((client) => !client.disabled);
+  if (served.length === 0) return;
+  showInfoToast(
+    `${buildingName(producerType)} livre d'abord à : ${served.map((client) => buildingName(client.type)).join(' › ')}. Modifiable dans Admin › Clients.`,
+    { timeout: 7000 }
+  );
+}
+
+/**
+ * Asked before the demolition: which buildings go down with the hub. Names come from the catalog.
+ * @param {string} hubType The hub about to be demolished (a catalog id).
+ * @param {Array<{ type: string, x: number, y: number }>} dependents What would be destroyed with it.
+ * @returns {Promise<boolean>} true when the player confirms.
+ */
+export function confirmHubCascadeDemolition(hubType, dependents) {
+  return confirmModal({
+    title: `Démolir ${buildingNameInSentence(hubType)} ?`,
+    message: `${buildingName(hubType)} alimente ${dependents.length} bâtiment(s) qui ne peuvent pas fonctionner sans lui : ils seront détruits avec lui.`,
+    items: dependents.map((building) => `${buildingName(building.type)} (${building.x}, ${building.y})`),
+    confirmLabel: 'Démolir',
+    cancelLabel: 'Annuler',
+  });
+}
+
+/**
+ * A hub was demolished and took down the buildings that depended on it.
+ * @param {string} hubType The demolished hub's catalog id.
+ * @param {Array<{ x: number, y: number }>} destroyed
+ */
+export function showHubCascadeNotification(hubType, destroyed = []) {
+  if (!destroyed.length) return;
+
+  const labels = destroyed.map((building) => `(${building.x}, ${building.y})`).join(', ');
 
   showWarningToast(
-    `Moulin démoli — ${destroyedMarkets.length} marché(s) détruit(s) : ${labels}`,
+    `${buildingName(hubType)} démoli — ${destroyed.length} ${namesOfDependents(hubType).join('/')} détruit(s) : ${labels}`,
     { timeout: 6000 }
   );
 }
@@ -108,4 +232,31 @@ export function showWebGLResourceWarning(_capabilities, requestedSize, maxSafeSi
   } catch {
     /* ignore */
   }
+}
+
+/** Why a house lost its standing, by the kind of tier requirement that stopped holding. */
+const UNMET_REQUIREMENT_LABELS = {
+  demandMet: () => `manque de ${goodLabel(getResourceStockShape().totalKey).toLowerCase()}`,
+  goodsVariety: () => 'alimentation trop peu variée',
+  roadAccess: () => 'plus de route',
+  population: () => 'population insuffisante',
+  serviceCoverage: (category) => `plus de ${goodLabel(category).toLowerCase()}`,
+};
+
+/**
+ * "12 habitants nous quittent car le standing a changé (nourriture insuffisante)".
+ * @param {{ count: number, unmet?: Array<{ kind: string, category?: string }> }} departure
+ * @returns {string}
+ */
+export function buildPopulationDepartureMessage({ count, unmet = [] }) {
+  const reasons = [
+    ...new Set(unmet.map(({ kind, category }) => UNMET_REQUIREMENT_LABELS[kind]?.(category)).filter(Boolean)),
+  ];
+  const who = count > 1 ? `${count} habitants nous quittent` : '1 habitant nous quitte';
+  return `${who} car le standing a changé${reasons.length > 0 ? ` (${reasons.join(', ')})` : ''}`;
+}
+
+/** @param {{ count: number, unmet?: Array<{ kind: string, category?: string }> }} departure */
+export function showPopulationDepartureNotification(departure) {
+  showWarningToast(buildPopulationDepartureMessage(departure), { timeout: 6000 });
 }

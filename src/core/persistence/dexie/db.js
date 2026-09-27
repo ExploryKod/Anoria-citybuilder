@@ -15,7 +15,7 @@ const stores = {
   budget: 'name',
   objectives: 'name',
   journal: '++id, turn, date, type, amount, description',
-  foodTraceability:
+  supplyTraceability:
     '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price',
   productionJournal:
     '++id, turn, month, year, date, factoryId, eventType, resourceType, quantity, price, remainingStocks, logsConsumed, productionTurns',
@@ -109,6 +109,31 @@ const RETIRED_PROP_TYPES = ['Bench', 'Picnic-Table', 'Potted-Bush', 'Daisy', 'Sh
 db.version(8).stores({}).upgrade(async (tx) => {
   await tx.table('houses').where('type').anyOf(RETIRED_PROP_TYPES).delete();
 });
+
+// v9: the village-era crate and wheat silo are retired: a saved row of either would throw on scene render.
+const RETIRED_BUILDING_TYPES = ['Crate-001', 'Cylinder'];
+db.version(9).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').anyOf(RETIRED_BUILDING_TYPES).delete();
+});
+
+// v10: the hay bale, cart and pile are retired as well (village-era props, nothing to do in this game).
+const RETIRED_HAY_TYPES = ['Hay-Bale', 'Hay-Cart', 'Hay-Pile'];
+db.version(10).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').anyOf(RETIRED_HAY_TYPES).delete();
+});
+
+// v11: the bookshop is retired (the library does its job).
+db.version(11).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').equals('BookShop-001').delete();
+});
+
+// v12: the palace (House-2Story, the last of the elite mechanism) is retired.
+db.version(12).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').equals('House-2Story').delete();
+});
+
+// v13: rename foodTraceability → supplyTraceability (table covers all resource categories, not food only).
+db.version(13).stores({ supplyTraceability: '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price', foodTraceability: null });
 
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;

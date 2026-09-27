@@ -10,9 +10,14 @@ import { resolveInstanceIdFromNeighborRef } from '../../../../../shared/building
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import {
   getCategoriesForRole,
+  getRangeForRole,
+  getResourceRoles,
   getScheduleForRole,
   getTotalKeyForRole,
 } from '../../../domain/policies/ResourceRolePolicy.js';
+import { isWithinRange } from '../../../domain/policies/ResourceRangePolicy.js';
+import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getHubProductRemainingInbound, normalizeHubStorageOrders } from '../../../domain/policies/HubStorageOrdersPolicy.js';
 
 /**
  * Command: a hub building collects resource units from a list of source
@@ -25,8 +30,9 @@ export class CollectResourceToHub {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
    */
-  constructor(supplyBuildingRepository) {
+  constructor(supplyBuildingRepository, hubServing = null) {
     this.supplyBuildingRepository = supplyBuildingRepository;
+    this.hubServing = hubServing;
   }
 
   /**
@@ -54,6 +60,7 @@ export class CollectResourceToHub {
 
     if (
       !isOperational({
+        type: hub.type,
         roadCount: hub.roadCount,
         worker: hub.worker,
         workerNeed: hub.workerNeed,
@@ -64,11 +71,19 @@ export class CollectResourceToHub {
 
     const categories = getCategoriesForRole(hub.type, 'collector');
     const totalKey = getTotalKeyForRole(hub.type, 'collector');
+    // A collector that declares a `range` only collects from sources within it; none means city-wide.
+    const range = getRangeForRole(hub.type, 'collector') ?? Infinity;
 
     let capacity = remainingHubCapacity(hub.stocks[totalKey], hub.maxStock);
     if (capacity <= 0) {
       return { collected: false, reason: 'hub_full', transfers: [], totalUnits: 0 };
     }
+
+    // What the hub's storage orders let it take: a good it refuses (or is emptying) comes in at no unit, and one
+    // held to a ceiling only up to it. Read against the stock as this pass fills it.
+    const hubGoods = getCategoriesForRole(hub.type, 'hub');
+    const orders = normalizeHubStorageOrders(hub.hubStorageOrders, hubGoods);
+    const running = { ...hub.stocks };
 
     const transfers = [];
 
@@ -81,14 +96,31 @@ export class CollectResourceToHub {
       const source = await this.supplyBuildingRepository.findById(sourceId);
       if (!source) continue;
 
-      if (source.roadCount <= 0) continue;
+      if (!isRoadNeedMet(source.type, source.roadCount)) continue;
+      if (range !== Infinity && !isWithinRange(hub, source, range)) continue;
+      // A producer that declares its own `sale` window sells only inside it (its cycle is done by then).
+      const sale = getResourceRoles(source.type).find(
+        (entry) => entry.role === 'producer' && entry.sale && entry.categories.some((c) => categories.includes(c))
+      )?.sale;
+      if (sale && !matchesSchedule(sale.schedule, period)) continue;
 
-      const category = getCategoriesForRole(source.type, 'producer')[0] ?? null;
+      // Only goods this hub collects: a producer of anything else (household
+      // gathering, another chain's output) is simply not this hub's business.
+      const category =
+        getCategoriesForRole(source.type, 'producer').find((candidate) => categories.includes(candidate)) ?? null;
       if (!category) continue;
 
       const available = getCategoryAmount(source.stocks, category);
-      const amount = Math.min(available, capacity);
+      const room = getHubProductRemainingInbound({
+        productId: category,
+        productIds: hubGoods,
+        orders,
+        stocks: running,
+        totalCapacity: hub.maxStock,
+      });
+      const amount = Math.min(available, capacity, room);
       if (amount <= 0) continue;
+      running[category] = (running[category] ?? 0) + amount;
 
       const nextSourceStock = takeCategoryAmount(source.stocks, category, amount, categories, totalKey);
       await this.supplyBuildingRepository.saveStocks(sourceId, nextSourceStock);
@@ -113,6 +145,24 @@ export class CollectResourceToHub {
       totalKey,
     );
     await this.supplyBuildingRepository.saveStocks(hubId, finalStock);
+
+    // What came in is filed under the producer type that delivered it, so the hub can serve its clients
+    // in the order that producer type asks for.
+    if (this.hubServing) {
+      const sourceTypes = new Map(sourceRefs.map((ref) => [resolveInstanceIdFromNeighborRef(ref), ref.type]));
+      let stockAfter = {};
+      for (const transfer of transfers) {
+        const producerType = sourceTypes.get(transfer.sourceId);
+        stockAfter[transfer.category] = (stockAfter[transfer.category] ?? (hub.stocks[transfer.category] ?? 0)) + transfer.amount;
+        await this.hubServing.deposit({
+          hubId,
+          category: transfer.category,
+          producerType,
+          amount: transfer.amount,
+          stockAfter: stockAfter[transfer.category],
+        });
+      }
+    }
 
     const totalUnits = transfers.reduce((sum, transfer) => sum + transfer.amount, 0);
     return { collected: true, transfers, totalUnits };

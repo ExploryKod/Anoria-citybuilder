@@ -1,3 +1,6 @@
+import { ROAD_RUNTIME_MARKER, isRoadRuntimeMarker, isRoadType } from '../../shared/building-catalog/roadQueries.js';
+import { createEmptyStocks, getResourceStockShape, getAllCategoriesForRole, getResourceRoles, isWorkplaceType, requiresRoad } from '../../shared/building-catalog/resourceRoleQueries.js';
+import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
 import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import {createCamera} from './camera.js';
@@ -18,10 +21,9 @@ import {
 import {
     buildingPlacementCatalog,
     buildingsObjects,
-    farms,
-    palaces,
 } from '../../shared/building-catalog/index.js';
-import { commerce, houses } from './assets/buildingCategories.js';
+import { houses } from './assets/buildingCategories.js';
+import { applyRoleStatusSprites, isQuantityDistributor } from './meshs/roleStatusSprites.js';
 import { setupRoadAccessIcons } from '../../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
 import { TimeManager } from '../../shared/time/TimeManager.js';
 import { LightingManager } from './managers/LightingManager.js';
@@ -49,6 +51,8 @@ import {
   getSessionGameUI,
 } from '../../composition/sessionRuntime.js';
 import { createPlacementGhostController } from './placement/placementGhost.js';
+import { createReachOverlay } from './overlays/reachOverlay.js';
+import { createRoadPaintPreview } from './overlays/roadPaintPreview.js';
 import { pickTileFromRaycast } from './scene-board/tileRaycast.js';
 import { pickEditorTileOnGroundPlane } from './scene-board/editorTileGroundPick.js';
 import loaderManager from '../dom/shell/LoaderManager.js';
@@ -132,6 +136,8 @@ export function createScene(_gameStore, assetManager, deps) {
     } catch (_) {}
 
     const placementGhost = createPlacementGhostController({ scene, assetManager });
+    const reachOverlay = createReachOverlay({ scene });
+    const roadPaintPreview = createRoadPaintPreview({ scene });
     
     // Initialize managers
     const lightingManager = new LightingManager(scene);
@@ -307,8 +313,16 @@ export function createScene(_gameStore, assetManager, deps) {
         return infoOverlay && infoOverlay.classList.contains('active');
     }
 
-    function isMobileBuildBarOpen() {
-        return document.documentElement.classList.contains('mobile-build-bar-open');
+    /**
+     * Keys a focused control of the build bar owns (moving through the pills and the tools,
+     * activating one). Everything else — R, S, +, -, Enter on the map… — still drives construction:
+     * the bar being open does not freeze the world.
+     */
+    const BUILD_BAR_OWNED_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', ' ', 'Home', 'End', 'Tab']);
+    function isBuildBarKeyOwnedByBar(event) {
+        return BUILD_BAR_OWNED_KEYS.has(event.key)
+            && event.target instanceof Element
+            && Boolean(event.target.closest('#mobile-build-bar'));
     }
 
     /**
@@ -317,7 +331,6 @@ export function createScene(_gameStore, assetManager, deps) {
      * this guard freezes the game world separately.)
      */
     function isGameWorldInputLocked() {
-        if (isMobileBuildBarOpen()) return true;
         if (isInfoModalOpen()) return true;
         if ((popupManager?.getActivePopups?.() || []).length > 0) return true;
         if (document.getElementById('parameters-panel')?.classList.contains('visible')) return true;
@@ -528,7 +541,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 
                 // For roads, ensure they are properly positioned above World platform
                 // and force matrix update to ensure visibility
-                if (terrainId === 'roads' && mesh.userData?.isRoad) {
+                if (terrainId === ROAD_RUNTIME_MARKER && mesh.userData?.isRoad) {
                     mesh.updateMatrixWorld(true);
                 }
                 
@@ -670,7 +683,7 @@ export function createScene(_gameStore, assetManager, deps) {
         async function syncResidentialHouseMeshFromDb(x, y, meshBuildingId) {
             if (
                 !meshBuildingId ||
-                (!houses.includes(meshBuildingId) && !palaces.includes(meshBuildingId))
+                !houses.includes(meshBuildingId)
             ) {
                 return { buildingId: meshBuildingId, instanceId: null, synced: false };
             }
@@ -748,6 +761,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 buildings[x][y].userData.type = nextType;
                 buildings[x][y].userData.id = nextType;
                 buildings[x][y].userData.visualBuildingId = nextVisualId;
+                buildings[x][y].userData.catalogId = nextType;
             }
 
             return { buildingId: nextType, instanceId, synced: true };
@@ -870,28 +884,38 @@ export function createScene(_gameStore, assetManager, deps) {
 
         // Status icon defaults — shared with /placement.html, see meshs/statusIconAnchors.js
         const statutsIconsMeta = STATUS_ICON_DEFAULTS;
+        const roleSpriteContext = {
+            assetManager,
+            textures,
+            statusIcons: STATUS_ICON_DEFAULTS,
+            resolveIconAppearance,
+            productionSpriteVisible,
+            supply,
+            time,
+        };
 
         for(let x = 0; x < city.size; x++) {
             for(let y = 0; y < city.size; y++) {
                 // Processing city tile
-              let currentBuildingId = buildings[x][y]?.userData?.type || buildings[x][y]?.userData?.id;
+              // A mesh's logical identity (see resolveBuildingMesh.js), NOT its type / id: those are the visual
+              // ones, and a mesh built from a shared kit wears the kit piece's.
+              let currentBuildingId = buildings[x][y]?.userData?.catalogId;
               const tileBuildingId = city.tiles[x][y]?.buildingId;
               const tileInstanceId = city.tiles[x][y]?.instanceId;
               // Mesh may still be grass while city.tiles already holds the placed building
               if ((!currentBuildingId || currentBuildingId === 'grass') && tileBuildingId) {
                   currentBuildingId = tileBuildingId;
               }
-              const meshBuildingType =
-                  buildings[x][y]?.userData?.type || buildings[x][y]?.userData?.id;
+              const meshBuildingType = buildings[x][y]?.userData?.catalogId;
               const effectiveMeshType =
                   meshBuildingType && meshBuildingType !== 'grass' ? meshBuildingType : null;
               const needsMeshPlacement = Boolean(
                   tileBuildingId && tileBuildingId !== effectiveMeshType
               );
-              if (!currentBuildingId && terrain[x] && terrain[x][y] && (terrain[x][y].userData?.isRoad || terrain[x][y].name === 'roads')) {
+              if (!currentBuildingId && terrain[x] && terrain[x][y] && (terrain[x][y].userData?.isRoad || terrain[x][y].name === ROAD_RUNTIME_MARKER)) {
                   // Only treat as road if it's also marked in city.tiles (was properly placed)
-                  if (tileBuildingId === 'roads' || tileBuildingId === 'Road') {
-                      currentBuildingId = 'roads';
+                  if (isRoadRuntimeMarker(tileBuildingId)) {
+                      currentBuildingId = ROAD_RUNTIME_MARKER;
                       // Ensure road is in buildings array for neighbor detection
                       if (!buildings[x][y]) {
                           buildings[x][y] = terrain[x][y];
@@ -957,13 +981,11 @@ export function createScene(_gameStore, assetManager, deps) {
                         || currentBuildingId;
                     const ghostIsRoad =
                         Boolean(ghostMesh?.userData?.isRoad)
-                        || ghostType === 'roads'
-                        || ghostType === 'Road'
-                        || (typeof ghostType === 'string' && ghostType.startsWith('StonePath-'))
+                        || isRoadType(ghostType)
                         || (
                             !tileBuildingId
                             && terrain[x]?.[y]
-                            && (terrain[x][y].userData?.isRoad || terrain[x][y].name === 'roads')
+                            && (terrain[x][y].userData?.isRoad || terrain[x][y].name === ROAD_RUNTIME_MARKER)
                         );
                     if (!tileBuildingId && ghostIsRoad) {
                         if (terrain[x] && terrain[x][y]) {
@@ -991,7 +1013,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 // Never sync residential FROM Dexie onto a cleared tile (bulldoze / orphan)
                 if (
                     tileBuildingId &&
-                    (houses.includes(currentBuildingId) || palaces.includes(currentBuildingId))
+                    houses.includes(currentBuildingId)
                 ) {
                     const residentialSync = await syncResidentialHouseMeshFromDb(
                         x,
@@ -1013,9 +1035,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     || currentBuildingId;
                 const isRoad =
                     Boolean(buildings[x][y]?.userData?.isRoad)
-                    || meshTypeForRoad === 'roads'
-                    || meshTypeForRoad === 'Road'
-                    || (typeof meshTypeForRoad === 'string' && meshTypeForRoad.startsWith('StonePath-'));
+                    || isRoadType(meshTypeForRoad);
                 const hasNewBuilding = needsMeshPlacement;
                 
                 // city.tiles is SoT for roads: clear terrain material + StonePath mesh when tile empty
@@ -1025,11 +1045,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     const tileBuilding = city.tiles[x][y]?.buildingId;
                     const tileHasRoad =
                         Boolean(tileBuilding)
-                        && (
-                            tileBuilding === 'roads'
-                            || tileBuilding === 'Road'
-                            || tileBuilding.startsWith('StonePath-')
-                        );
+                        && isRoadType(tileBuilding);
                     if (!tileHasRoad) {
                         if (terrain[x] && terrain[x][y]) {
                             const sharedMaterials = assetManager.getSharedTerrainMaterials();
@@ -1057,7 +1073,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     if (
                         !buildingExists &&
                         tileBuildingId &&
-                        (houses.includes(currentBuildingId) || palaces.includes(currentBuildingId))
+                        houses.includes(currentBuildingId)
                     ) {
                         const tileHouse = await housing.getResidentialHouseAt({ x, y });
                         if (tileHouse) {
@@ -1139,11 +1155,7 @@ export function createScene(_gameStore, assetManager, deps) {
                         }
                         
                         // Handle geometry-based roads ('roads') and StonePath meshes
-                        if (
-                            currentBuildingId === 'roads'
-                            || currentBuildingId === 'Road'
-                            || currentBuildingId.startsWith('StonePath-')
-                        ) {
+                        if (isRoadType(currentBuildingId)) {
                             try {
                                 await parcels.syncRemovedBuilding({ instanceId: currentInstanceId });
                             } catch (err) {
@@ -1185,310 +1197,38 @@ export function createScene(_gameStore, assetManager, deps) {
                     continue;
                 }
 
-                /* Only for commerce buildings */
-                if(commerce.includes(currentBuildingId)) {
+                // What the building IS for the catalog, stamped once on every mesh (see resolveBuildingMesh.js);
+                // its `type` / `id` are the visual ones and can be a kit piece's.
+                const catalogTypeId = buildings[x][y]?.userData?.catalogId;
+
+                // A building that buys and sells a stock keeps its own clock (a market).
+                if (isQuantityDistributor(catalogTypeId)) {
                     await incrementBuildingField({
                         instanceId: currentInstanceId,
                         field: 'time',
                         increment: 1,
                         condition: false,
                     });
-
-                    // Clean up market supply sprites (no-work → refreshEmploymentPresentation only)
-                    if (buildings[x][y]) {
-                        const marketSpriteNames = ['isBuying', 'isBuying-bg', 'no-food', 'no-food-bg'];
-                        marketSpriteNames.forEach(spriteName => {
-                            assetManager.removeStatusSprite(buildings[x][y], spriteName);
-                        });
-                    }
-
-                    // Accès routier marché (BC Parcels + icône)
-                    const marketRoadScale = {
-                        x: statutsIconsMeta.road.scale.x * 0.714,
-                        y: statutsIconsMeta.road.scale.y * 0.714,
-                        z: statutsIconsMeta.road.scale.z * 0.714
-                    };
-
-                    if (buildings[x][y]) {
-                        const marketRoadIcon = resolveIconAppearance(
-                            buildings[x][y], 'road', statutsIconsMeta.road.position, marketRoadScale
-                        );
-                        await syncRoadAccess({
-                            instanceId: currentInstanceId,
-                            mesh: buildings[x][y],
-                            position: marketRoadIcon.position,
-                            scale: marketRoadIcon.scale,
-                        });
-                    }
-
-                    // Status layers are exclusive, in order: no road → only the no-road icon (no worker
-                    // is possible); no worker → only the no-work icon (refreshEmploymentPresentation);
-                    // otherwise the activity sprites (buying / no-food). Unknown staffing (not yet
-                    // refreshed) counts as unstaffed.
-                    const marketIsStaffed = buildings[x][y]?.userData?.isUnderstaffed === false
-                        && buildings[x][y]?.userData?.hasRoadAccess !== false;
-                    if (buildings[x][y] && marketIsStaffed) {
-                        const marketSupply = await supply.getBuildingSupplyView(currentInstanceId);
-                        const isBuying = marketSupply?.isBuying === true;
-                        const noFarmsNearby = marketSupply?.noFarmsNearby === true;
-
-                        if (isBuying === true) {
-                            const buyingMeta = statutsIconsMeta['isBuying'];
-                            const buyingIcon = resolveIconAppearance(
-                                buildings[x][y], 'isBuying', buyingMeta.position, buyingMeta.scale
-                            );
-
-                            if (!noFarmsNearby) {
-                                assetManager.setStatusSprite(
-                                    buildings[x][y],
-                                    textures['isBuying'],
-                                    'isBuying',
-                                    buyingIcon.scale,
-                                    buyingIcon.position,
-                                    productionSpriteVisible(true),
-                                    buyingMeta.spriteColor,
-                                    buyingMeta.backgroundColor
-                                );
-                            } else {
-                                assetManager.setStatusSprite(
-                                    buildings[x][y],
-                                    textures['isBuying'],
-                                    'isBuying',
-                                    buyingIcon.scale,
-                                    buyingIcon.position,
-                                    productionSpriteVisible(true),
-                                    0xFF6600,
-                                    0xFFCCCC
-                                );
-                            }
-                        } else {
-                            const buyingIcon = resolveIconAppearance(
-                                buildings[x][y],
-                                'isBuying',
-                                statutsIconsMeta['isBuying'].position,
-                                statutsIconsMeta['isBuying'].scale
-                            );
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isBuying'],
-                                'isBuying',
-                                buyingIcon.scale,
-                                buyingIcon.position,
-                                false,
-                                null,
-                                null
-                            );
-                        }
-
-                        const marketSupplyStocks = marketSupply?.stocks
-                            || { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
-                        const hasFoodBaskets = (marketSupplyStocks.wheat || 0) > 0 ||
-                            (marketSupplyStocks.carrot || 0) > 0 ||
-                            (marketSupplyStocks.cabbage || 0) > 0 ||
-                            (marketSupplyStocks.food || 0) > 0;
-
-                        const marketNoFoodIcon = resolveIconAppearance(
-                            buildings[x][y], 'no-food', statutsIconsMeta['no-food'].position, statutsIconsMeta['no-food'].scale
-                        );
-                        assetManager.setStatusSprite(
-                            buildings[x][y],
-                            textures['nofood'],
-                            'no-food',
-                            marketNoFoodIcon.scale,
-                            marketNoFoodIcon.position,
-                            productionSpriteVisible(!hasFoodBaskets)
-                        );
-                    }
-
-                    // Market stocks — Supply BC / ECS (legacy updateMarketStocks removed)
                 }
 
-                // Process windmills: show road access and collecting status sprites
-                if((currentBuildingId.includes('Windmill') || currentBuildingId.includes('windmill')) && buildings[x][y]) {
-                    // Clean up windmill supply sprites (no-work → refreshEmploymentPresentation only)
-                    const windmillSpriteNames = ['isCollecting', 'isCollecting-bg'];
-                    windmillSpriteNames.forEach(spriteName => {
-                        assetManager.removeStatusSprite(buildings[x][y], spriteName);
+                // What each building is doing, by the roles the catalog gives it (hub, distributor, producer).
+                // Road / worker / resource statuses come first, from refreshEmploymentPresentation.
+                if (buildings[x][y]) {
+                    await applyRoleStatusSprites(roleSpriteContext, {
+                        mesh: buildings[x][y],
+                        type: catalogTypeId,
+                        instanceId: currentInstanceId,
                     });
-                    
-                    // Accès routier moulin (BC Parcels + icône)
-                    const windmillRoadScale = {
-                        x: statutsIconsMeta.road.scale.x * 0.714,
-                        y: statutsIconsMeta.road.scale.y * 0.714,
-                        z: statutsIconsMeta.road.scale.z * 0.714
-                    };
-
-                    if (buildings[x][y]) {
-                        const windmillRoadIcon = resolveIconAppearance(
-                            buildings[x][y], 'road', statutsIconsMeta.road.position, windmillRoadScale
-                        );
-                        await syncRoadAccess({
-                            instanceId: currentInstanceId,
-                            mesh: buildings[x][y],
-                            position: windmillRoadIcon.position,
-                            scale: windmillRoadIcon.scale,
-                        });
-                    }
-
-                    // Same layering as markets: no road → only no-road; no worker → only no-work;
-                    // otherwise the collecting sprite.
-                    const windmillIsStaffed = buildings[x][y]?.userData?.isUnderstaffed === false
-                        && buildings[x][y]?.userData?.hasRoadAccess !== false;
-                    if (buildings[x][y] && windmillIsStaffed) {
-                        const windmillSupply = await supply.getBuildingSupplyView(currentInstanceId);
-                        const isCollecting = windmillSupply?.isCollecting === true;
-                        const collectingMeta = statutsIconsMeta.isCollecting;
-                        const collectingIcon = resolveIconAppearance(
-                            buildings[x][y], 'isCollecting', collectingMeta.position, collectingMeta.scale
-                        );
-
-                        if (isCollecting === true) {
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isCollecting'],
-                                'isCollecting',
-                                collectingIcon.scale,
-                                collectingIcon.position,
-                                productionSpriteVisible(true),
-                                collectingMeta.spriteColor,
-                                collectingMeta.backgroundColor
-                            );
-                        } else {
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isCollecting'],
-                                'isCollecting',
-                                collectingIcon.scale,
-                                collectingIcon.position,
-                                false,
-                                null,
-                                null
-                            );
-                        }
-                    }
                 }
 
-                // Process farms: season-specific sprites (harvest stocks → Supply BC)
-                if(farms.includes(currentBuildingId) && buildings[x][y]) {
-                    // First, clean up ALL possible farm sprites to prevent any leftover sprites
-                    const allFarmSpriteNames = ['no-food', 'grow-food', 'harvest', 'sell-food',
-                                                'no-food-bg', 'grow-food-bg', 'harvest-bg', 'sell-food-bg',
-                                                'sold-to-windmill', 'sold-to-windmill-bg'];
-                    allFarmSpriteNames.forEach(spriteName => {
-                        assetManager.removeStatusSprite(buildings[x][y], spriteName);
-                    });
-
-                    const timeInfo = TimeManager.getTimeInfo(time);
-                    const season = timeInfo.season;
-
-                    // Assembled fields (e.g. the Kenney farm field) plant / clear their crop
-                    // for the season through the hook their adapter put on the mesh.
-                    buildings[x][y].userData?.applySeason?.(season);
-
-                    // A farm with no worker produces nothing: the season / harvest / sale
-                    // status layer is hidden, only the no-work icon (refreshEmploymentPresentation)
-                    // shows. Unknown staffing (not yet refreshed) counts as unstaffed.
-                    const farmIsStaffed = buildings[x][y].userData?.isUnderstaffed === false;
-
-                    // Season sprites from Supply/time — employment icons via refreshEmploymentPresentation
-                    let spriteTexture, spriteName, spriteColor, spritePosition, spriteScale, backgroundColor;
-                    
-                    if (season === 'Hiver') {
-                        // Winter: no-food (yellow, no background)
-                        spriteTexture = textures['nofood'];
-                        spriteName = 'no-food';
-                        spritePosition = statutsIconsMeta['no-food-farm'].position;
-                        spriteScale = statutsIconsMeta['no-food-farm'].scale;
-                        spriteColor = statutsIconsMeta['no-food-farm'].spriteColor;
-                        backgroundColor = statutsIconsMeta['no-food-farm'].backgroundColor;
-                    } else {
-                        if (season === 'Printemps') {
-                            // Spring: grow-food with pastel green background
-                            spriteTexture = textures['grow-food'];
-                            spriteName = 'grow-food';
-                            spritePosition = statutsIconsMeta['grow-food'].position;
-                            spriteScale = statutsIconsMeta['grow-food'].scale;
-                            spriteColor = statutsIconsMeta['grow-food'].spriteColor;
-                            backgroundColor = statutsIconsMeta['grow-food'].backgroundColor;
-                        } else if (season === 'Été') {
-                            // Summer: harvest with pastel yellow/orange background
-                            spriteTexture = textures['harvest'];
-                            spriteName = 'harvest';
-                            spritePosition = statutsIconsMeta['harvest'].position;
-                            spriteScale = statutsIconsMeta['harvest'].scale;
-                            spriteColor = statutsIconsMeta['harvest'].spriteColor;
-                            backgroundColor = statutsIconsMeta['harvest'].backgroundColor;
-                        } else if (season === 'Automne') {
-                            // Autumn: sell-food with pastel orange/red background
-                            spriteTexture = textures['sell-food'];
-                            spriteName = 'sell-food';
-                            spritePosition = statutsIconsMeta['sell-food'].position;
-                            spriteScale = statutsIconsMeta['sell-food'].scale;
-                            spriteColor = statutsIconsMeta['sell-food'].spriteColor;
-                            backgroundColor = statutsIconsMeta['sell-food'].backgroundColor;
-                        }
-                    }
-                    
-                    // Show the appropriate sprite for the current season (only one sprite per season)
-                    if(farmIsStaffed && buildings[x][y] && spriteTexture) {
-                        const seasonIcon = resolveIconAppearance(buildings[x][y], spriteName, spritePosition, spriteScale);
-                        assetManager.setStatusSprite(
-                            buildings[x][y],
-                            spriteTexture,
-                            spriteName,
-                            seasonIcon.scale,
-                            seasonIcon.position,
-                            productionSpriteVisible(true),
-                            spriteColor,
-                            backgroundColor
-                        );
-                    }
-
-                    // In December, show additional sprite if farm sold to windmill
-                    // This sprite appears alongside the winter season sprite to indicate windmill collection
-                    if (farmIsStaffed && buildings[x][y] && season === 'Hiver' && timeInfo.monthIndex === 11) {
-                        const farmSupply = await supply.getBuildingSupplyView(currentInstanceId);
-                        const soldToWindmill = farmSupply?.soldToWindmill === true;
-                        const windmillSaleMeta = statutsIconsMeta['sold-to-windmill'];
-                        const windmillSaleIcon = resolveIconAppearance(
-                            buildings[x][y], 'sold-to-windmill', windmillSaleMeta.position, windmillSaleMeta.scale
-                        );
-                        if (soldToWindmill === true) {
-                            // Show windmill collection sprite (green, similar to windmill's isCollecting)
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isCollecting'], // Reuse windmill collecting icon
-                                'sold-to-windmill',
-                                windmillSaleIcon.scale,
-                                windmillSaleIcon.position,
-                                productionSpriteVisible(true),
-                                windmillSaleMeta.spriteColor,
-                                windmillSaleMeta.backgroundColor
-                            );
-                        } else {
-                            // Hide the sprite if not sold to windmill
-                            assetManager.setStatusSprite(
-                                buildings[x][y],
-                                textures['isCollecting'],
-                                'sold-to-windmill',
-                                windmillSaleIcon.scale,
-                                windmillSaleIcon.position,
-                                false,
-                                null,
-                                null
-                            );
-                        }
-                    }
-                }
-
-                //  only update if current building is a house or palace
-                if((houses.includes(currentBuildingId) || palaces.includes(currentBuildingId)) && buildings[x][y]) {
+                //  only update if current building is a house
+                if(houses.includes(currentBuildingId) && buildings[x][y]) {
 
                     // Initialize stocks if not present
                     if(!Object.hasOwn(buildings[x][y], 'userData') || !Object.hasOwn(buildings[x][y].userData, 'stocks')) {
                         buildings[x][y].userData = {
                             ...buildings[x][y].userData,
-                            stocks: {food: 0, carrot: 0, cabbage: 0, wheat: 0}
+                            stocks: createEmptyStocks()
                         };
                     }
 
@@ -1498,7 +1238,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     
                     // Removed old code that wrote userData.stocks to IndexedDB:
                     // This was causing the service's updates to be overwritten
-                    // The service writes: stocks = {wheat: 0, carrot: 1, cabbage: 0, food: 1}
+                    // The service writes the stock row (one field per good + the aggregate)
                     // Then this code was reading empty userData.stocks and overwriting IndexedDB with 0s!
 
                     // Read stocks from Supply BC
@@ -1510,12 +1250,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     
                     // Sync Supply stocks to userData for visual display
                     if (houseFoodStocks && buildings[x][y] && buildings[x][y].userData) {
-                        buildings[x][y].userData.stocks = {
-                            food: houseFoodStocks.food || 0,
-                            wheat: houseFoodStocks.wheat || 0,
-                            carrot: houseFoodStocks.carrot || 0,
-                            cabbage: houseFoodStocks.cabbage || 0
-                        };
+                        buildings[x][y].userData.stocks = { ...createEmptyStocks(), ...houseFoodStocks };
                     }
                     
                     const houseData = await getBuildingById(currentInstanceId);
@@ -1582,7 +1317,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 const tileType = city.tiles[nx]?.[ny]?.buildingId;
                 const instanceId = city.tiles[nx]?.[ny]?.instanceId;
                 if (!instanceId || !tileType) continue;
-                const isResidential = houses.includes(tileType) || palaces.includes(tileType);
+                const isResidential = houses.includes(tileType);
                 if (!isResidential) continue;
                 const meshType = buildings[nx]?.[ny]?.userData?.type || buildings[nx]?.[ny]?.userData?.id;
                 await syncResidentialHouseMeshFromDb(nx, ny, meshType || tileType);
@@ -1649,6 +1384,14 @@ export function createScene(_gameStore, assetManager, deps) {
         }
 
         const understaffed = new Set(understaffedBuildingIds);
+
+        /** @type {Set<string>} */
+        let noResourceBuildingIds = new Set();
+        try {
+            noResourceBuildingIds = new Set(await supply.listNoResourceBuildingIds());
+        } catch (error) {
+            console.warn('[scene.js] Error reading no-resource buildings:', error);
+        }
         const noWorkSpriteColor = 0xFF0000;
         const noWorkBackgroundColor = 0xFFE8E8;
 
@@ -1657,7 +1400,8 @@ export function createScene(_gameStore, assetManager, deps) {
                 const mesh = buildings[x]?.[y];
                 if (!mesh?.userData) continue;
 
-                const currentBuildingId = mesh.userData.type || mesh.userData.id;
+                // What the building IS for the catalog (see the same note in scene.update).
+                const currentBuildingId = mesh.userData.catalogId;
                 if (!currentBuildingId) continue;
 
                 const instanceId =
@@ -1671,20 +1415,62 @@ export function createScene(_gameStore, assetManager, deps) {
                 mesh.userData.isUnderstaffed = understaffed.has(instanceId);
                 mesh.userData.applyStaffing?.(!mesh.userData.isUnderstaffed);
 
-                const isMarket = commerce.includes(currentBuildingId);
-                const isFarm = farms.includes(currentBuildingId);
-                const isWindmill =
-                    currentBuildingId.includes('Windmill') || currentBuildingId.includes('windmill');
+                // Every workplace (a building the catalog gives staff to hire) follows the same status rules —
+                // no type is named here, only what the catalog says the building is.
+                const isWorkplace = isWorkplaceType(currentBuildingId);
 
-                if (!isMarket && !isFarm && !isWindmill) continue;
+                if (isWorkplace && requiresRoad(currentBuildingId)) {
+                    const roadIcon = resolveIconAppearance(
+                        mesh, 'road', STATUS_ICON_DEFAULTS.road.position, STATUS_ICON_DEFAULTS.road.scale
+                    );
+                    await syncRoadAccess({
+                        instanceId,
+                        mesh,
+                        position: roadIcon.position,
+                        scale: roadIcon.scale,
+                    });
+                }
+
+                // Status layers are exclusive, in this order: no road → only no-road; no worker → only
+                // no-work; only a road-connected, staffed building shows that it has no resource left in
+                // range. The sprite is created once and only shown/hidden after, so it never flickers.
+                const hasNoResource = noResourceBuildingIds.has(instanceId)
+                    && mesh.userData.hasRoadAccess !== false
+                    && !understaffed.has(instanceId);
+                const noResourceSprite = mesh.getObjectByName('no-resource');
+                if (hasNoResource) {
+                    if (noResourceSprite) {
+                        noResourceSprite.visible = productionSpriteVisible(true);
+                    } else {
+                        const noResourceIcon = resolveIconAppearance(
+                            mesh, 'no-resource',
+                            STATUS_ICON_DEFAULTS['no-resource'].position,
+                            STATUS_ICON_DEFAULTS['no-resource'].scale
+                        );
+                        assetManager.setStatusSprite(
+                            mesh,
+                            textures['no-resource'],
+                            'no-resource',
+                            noResourceIcon.scale,
+                            noResourceIcon.position,
+                            productionSpriteVisible(true)
+                        );
+                    }
+                } else if (noResourceSprite) {
+                    assetManager.removeStatusSprite(mesh, 'no-resource');
+                }
+
+                if (!isWorkplace) continue;
 
                 // No road → the no-road icon is the only status: no-work only makes sense once
                 // the building is connected (there can be no worker without a road).
                 const hasRoadAccess = mesh.userData.hasRoadAccess !== false;
                 if (understaffed.has(instanceId) && hasRoadAccess) {
-                    const noWorkMeta = (isMarket || isWindmill)
-                        ? STATUS_ICON_DEFAULTS['no-work-market-windmill']
-                        : STATUS_ICON_DEFAULTS['no-work'];
+                    // A producer's icon sits at the corner of its site; a service or hub building is compact.
+                    const isProducer = getResourceRoles(currentBuildingId).some((entry) => entry.role === 'producer');
+                    const noWorkMeta = isProducer
+                        ? STATUS_ICON_DEFAULTS['no-work']
+                        : STATUS_ICON_DEFAULTS['no-work-service'];
                     const noWorkIcon = resolveIconAppearance(mesh, 'no-work', noWorkMeta.position, noWorkMeta.scale);
 
                     assetManager.setStatusSprite(
@@ -2235,7 +2021,6 @@ export function createScene(_gameStore, assetManager, deps) {
 
     let hoveredObject = null
     let hoveredObjectName = null
-    const objectsNames = ['grass', 'roads', 'House-Red', 'House-Purple', 'House-Blue', 'Market-Stall']
     let isLeftPointerDown = false;
     let rightPointerDownPos = null;
     let rightPointerHasMoved = false;
@@ -2263,9 +2048,6 @@ export function createScene(_gameStore, assetManager, deps) {
             return;
         }
         if (isInfoModalOpen()) {
-            return;
-        }
-        if (isMobileBuildBarOpen()) {
             return;
         }
         if (performance.now() < suppressInputUntilMs) {
@@ -2345,10 +2127,6 @@ function onMouseMove(event) {
         return;
     }
     if (isInfoModalOpen()) {
-        resetCameraDragState();
-        return;
-    }
-    if (isMobileBuildBarOpen()) {
         resetCameraDragState();
         return;
     }
@@ -2432,9 +2210,6 @@ function onTouchStart(event) {
     if (isInfoModalOpen()) {
         return;
     }
-    if (isMobileBuildBarOpen()) {
-        return;
-    }
     if (performance.now() < suppressInputUntilMs) {
         return;
     }
@@ -2478,9 +2253,6 @@ function onTouchMove(event) {
         return;
     }
     if (isInfoModalOpen()) {
-        return;
-    }
-    if (isMobileBuildBarOpen()) {
         return;
     }
     if (performance.now() < suppressInputUntilMs) {
@@ -2622,6 +2394,10 @@ function onTouchEnd(event) {
             return;
         }
 
+        if (isBuildBarKeyOwnedByBar(event)) {
+            return;
+        }
+
         if (isGameWorldInputLocked()) {
             return;
         }
@@ -2704,9 +2480,6 @@ function onTouchEnd(event) {
             return;
         }
         if (isInfoModalOpen()) {
-            return;
-        }
-        if (isMobileBuildBarOpen()) {
             return;
         }
         if (performance.now() < suppressInputUntilMs) {
@@ -2809,6 +2582,8 @@ function onTouchEnd(event) {
         refreshEmploymentPresentation,
         /** Semi-transparent placement preview (StonePath trial). */
         placementGhost,
+        reachOverlay,
+        roadPaintPreview,
         /** Live mesh grid for turn-budget maintenance input. */
         get buildings() { return buildings; },
         setTileGridVisible(visible) {

@@ -61,7 +61,6 @@
     --house-red-color:var(--red-300);
     --house-purple-color: #a90aa9;
     --house-blue-color: #191EA6FF;
-    --house-big-color: #ffc107;
 
     /* Taille des textes */
     --pre-title-size: 30px;
@@ -468,21 +467,6 @@ canvas.pointer-events-disabled {
 
 .toolbar .toolbar-btn svg, .panel-layout .panel-btn svg {
     pointer-events: none;
-}
-
-.toolbar .toolbar-btn .tool-icon-img,
-.panel-layout .panel-btn .tool-icon-img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    pointer-events: none;
-    /* Silhouette noire → suit la couleur du bouton (blanc sur fond coloré) */
-    filter: brightness(0) invert(1);
-}
-
-.toolbar .toolbar-btn.selected .tool-icon-img,
-.panel-layout .panel-btn.selected .tool-icon-img {
-    filter: brightness(0) invert(1);
 }
 
 .toolbar .toolbar-btn .tool-emoji,
@@ -898,6 +882,14 @@ canvas.pointer-events-disabled {
     height: 75%;
 }
 
+/* Road tool: same fixed size as the other monochrome icons (.tool-icon-img),
+   not the 75%-of-button relative sizing above, which made it look oversized
+   next to Kenney previews and other icon buttons in the same panel. */
+.panel-layout .panel-btn#StonePath-001 svg {
+    width: 24px;
+    height: 24px;
+}
+
 /* Kenney city-kit — official preview PNG on soft charcoal (no border/shadow) */
 .panel-layout .panel-btn.panel-btn--kenney-preview {
     padding: 6px;
@@ -973,19 +965,6 @@ canvas.pointer-events-disabled {
 .panel-layout .panel-inner #House-Blue.selected {
     box-shadow: none;
     background: var(--house-blue-color);
-    color: #fafafa;
-}
-
-.panel-layout .panel-inner #House-2Story {
-    background-color: #fafafa;
-    color: var(--house-big-color);
-    box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
-}
-
-.panel-layout .panel-inner #House-2Story:hover,
-.panel-layout .panel-inner #House-2Story.selected {
-    box-shadow: none;
-    background: var(--house-big-color);
     color: #fafafa;
 }
 
@@ -1554,6 +1533,10 @@ footer .footer-links a:hover {
     gap: 10px;
 }
 
+.building-info-metrics + .building-info-metrics {
+    margin-top: 10px;
+}
+
 .building-info-metric-card {
     display: flex;
     flex-direction: column;
@@ -1563,6 +1546,39 @@ footer .footer-links a:hover {
     border-radius: var(--border-radius-small);
     background: rgba(120, 144, 156, 0.08);
     text-align: center;
+}
+
+.building-info-metrics-detail {
+    margin-top: 12px;
+}
+
+.building-info-activity-recipe {
+    margin-bottom: 24px;
+}
+
+.building-info-activity-recipe + .building-info-activity-recipe {
+    padding-top: 16px;
+    border-top: 1px solid rgba(120, 144, 156, 0.2);
+}
+
+.building-info-activity-recipe .building-info-metrics {
+    margin-bottom: 16px;
+}
+
+.building-info-gap-warning {
+    color: #e6a817;
+    margin-bottom: 8px;
+}
+
+button.building-info-metric-card {
+    border: 2px solid transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+button.building-info-metric-card[aria-pressed="true"] {
+    border-color: var(--cta);
 }
 
 .building-info-metric-card--met {
@@ -1585,6 +1601,13 @@ footer .footer-links a:hover {
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: #1b1b1b;
+}
+
+.building-info-metric-card__detail {
+    font-size: 10px;
+    line-height: 1.2;
+    color: #78909c;
+    font-variant-numeric: tabular-nums;
 }
 
 .building-info-metric-card--met .building-info-metric-card__value {
@@ -1751,7 +1774,7 @@ footer .footer-links a:hover {
 
 /* Hub storage panel (barn / windmill) */
 .info-building-overlay--hub-barn .info-building-panel,
-.info-building-overlay--hub-windmill .info-building-panel {
+.info-building-overlay--hub .info-building-panel {
     max-height: min(78vh, 780px);
 }
 
@@ -1779,51 +1802,6 @@ footer .footer-links a:hover {
     margin: 8px 0 0;
     font-size: 12px;
     color: #495057;
-}
-
-.hub-stock-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-}
-
-.hub-stock-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 72px;
-    padding: 8px 6px;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    background: #fff;
-    text-align: center;
-}
-
-.hub-stock-item--empty {
-    opacity: 0.55;
-}
-
-.hub-stock-item--refused {
-    border-color: #ffc9c9;
-    background: #fff5f5;
-}
-
-.hub-stock-emoji {
-    font-size: 22px;
-    line-height: 1.1;
-}
-
-.hub-stock-qty {
-    font-weight: 700;
-    font-size: 14px;
-    margin-top: 4px;
-}
-
-.hub-stock-label {
-    font-size: 11px;
-    color: #6c757d;
-    margin-top: 2px;
 }
 
 .hub-info-actions {
@@ -1916,6 +1894,18 @@ footer .footer-links a:hover {
     color: #c62828;
 }
 
+.hub-order-mode-btn--empty {
+    background: #fff3e0;
+    border-color: #ffcc80;
+    color: #e65100;
+}
+
+.hub-order-emptying {
+    margin-left: 6px;
+    font-size: 14px;
+    cursor: help;
+}
+
 .hub-order-mode-btn--fetch {
     background: #e3f2fd;
     border-color: #90caf9;
@@ -1945,11 +1935,6 @@ footer .footer-links a:hover {
     text-align: center;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
-}
-
-.hub-stock-item--fetch {
-    border-color: #90caf9;
-    background: #f3f9ff;
 }
 
 .hub-storage-chart-section {
@@ -2003,6 +1988,12 @@ footer .footer-links a:hover {
     align-items: center;
     gap: 8px;
     font-size: 12px;
+}
+
+.hub-pie-legend-item--origin {
+    padding-left: 18px;
+    font-size: 12px;
+    opacity: 0.85;
 }
 
 .hub-pie-legend-item--over {

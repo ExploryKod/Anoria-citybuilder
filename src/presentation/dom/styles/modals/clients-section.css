@@ -1,0 +1,87 @@
+/* Clients section — who each producer serves first */
+
+.clients-board {
+    background: #fafafa;
+    border-radius: var(--border-radius-small);
+    padding: 20px;
+    text-align: left;
+}
+
+.clients-hint {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: #607d8b;
+}
+
+.clients-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.clients-card {
+    background: white;
+    border-radius: var(--border-radius-small);
+    padding: 16px 20px;
+}
+
+.clients-card__header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.clients-card__header h4 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--primary);
+}
+
+.clients-card__meta {
+    font-size: 12px;
+    color: #78909c;
+    flex: 1;
+}
+
+.clients-card__reset {
+    border: 1px solid rgba(29, 34, 40, 0.15);
+    background: white;
+    border-radius: 4px;
+    padding: 2px 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.clients-table {
+    margin: 12px 0 0;
+}
+
+.clients-row {
+    transition: opacity 0.15s ease;
+}
+
+.clients-row--disabled {
+    opacity: 0.4;
+}
+
+.clients-effect {
+    font-variant-numeric: tabular-nums;
+}
+
+.clients-effect--short {
+    color: #d32f2f;
+    font-weight: 600;
+}
+
+.clients-toggle {
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    cursor: pointer;
+    color: #607d8b;
+}
+
+.clients-toggle:hover {
+    color: #d32f2f;
+}

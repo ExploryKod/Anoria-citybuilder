@@ -1,13 +1,19 @@
 import { getCategoriesForRole } from './ResourceRolePolicy.js';
 
-/** @typedef {'accept'|'refuse'|'fetch'} HubStorageMode */
+/** @typedef {'accept'|'refuse'|'fetch'|'empty'} HubStorageMode */
 
-export const HUB_STORAGE_MODES = Object.freeze(['accept', 'refuse', 'fetch']);
+/**
+ * accept: takes the good; refuse: takes none; fetch: takes it and is the first choice of whoever has some to place
+ * (producers selling, a hub being emptied); empty: gives its stock of that good to the other hubs, a little each
+ * tick, and takes none meanwhile.
+ */
+export const HUB_STORAGE_MODES = Object.freeze(['accept', 'refuse', 'fetch', 'empty']);
 
 export const HUB_STORAGE_MODE_LABELS = Object.freeze({
   accept: 'Accepter',
   refuse: 'Refuser',
   fetch: 'Amener',
+  empty: 'Vider',
 });
 
 /** Step for +/- on max percent (Cesar III-style fill ceiling). */
@@ -213,7 +219,8 @@ export function getHubProductRemainingInbound({
   totalCapacity,
 }) {
   const order = orders[productId] ?? createDefaultHubProductOrder(productIds.length);
-  if (order.mode === 'refuse') return 0;
+  // A hub that refuses a good, or is emptying it, takes none of it.
+  if (order.mode === 'refuse' || order.mode === 'empty') return 0;
 
   const current = Math.max(0, Math.floor(Number(stocks[productId]) || 0));
   const maxForProduct = getHubProductStorageCeiling({ productId, orders, totalCapacity });
@@ -236,7 +243,7 @@ export function canCreditHubProduct({
 }) {
   if (quantity <= 0) return false;
   const order = orders[productId];
-  if (order?.mode === 'refuse') return false;
+  if (order?.mode === 'refuse' || order?.mode === 'empty') return false;
   return (
     getHubProductRemainingInbound({
       productId,
@@ -264,7 +271,7 @@ export function getHubProductExportableAmount(orders, stocks, productId) {
  * @param {Record<string, HubStorageProductOrder>|null|undefined} params.rawOrders
  * @param {number} params.totalCapacity
  */
-export function buildHubStorageLines({ buildingType, stocks, rawOrders, totalCapacity }) {
+export function buildHubStorageLines({ buildingType, stocks, rawOrders, totalCapacity, emptying = null }) {
   const productIds = getCategoriesForRole(buildingType, 'hub');
   const orders = normalizeHubStorageOrders(rawOrders, productIds);
   const currentTotal = productIds.reduce(
@@ -282,6 +289,8 @@ export function buildHubStorageLines({ buildingType, stocks, rawOrders, totalCap
       productId,
       mode: order.mode,
       modeLabel: HUB_STORAGE_MODE_LABELS[order.mode] ?? order.mode,
+      // While emptying: 'moving' (goods are leaving) or 'blocked' (no other hub can take them), else null.
+      emptying: order.mode === 'empty' ? (emptying?.[productId] ?? null) : null,
       maxPercent: order.maxPercent,
       percentLabel: `${order.maxPercent} %`,
       amount,
@@ -308,6 +317,15 @@ export function buildHubStorageLines({ buildingType, stocks, rawOrders, totalCap
     remainingTotal: Math.max(0, totalCapacity - currentTotal),
     lines: Object.freeze(lines),
   });
+}
+
+/**
+ * Products configured to be emptied into the other hubs.
+ *
+ * @param {Record<string, HubStorageProductOrder>} orders
+ */
+export function listHubEmptyProductIds(orders) {
+  return Object.keys(orders).filter((id) => orders[id]?.mode === 'empty');
 }
 
 /**

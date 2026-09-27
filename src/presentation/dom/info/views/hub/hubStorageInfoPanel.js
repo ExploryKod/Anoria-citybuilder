@@ -1,23 +1,8 @@
 import { getBuildingInfoBody, setBuildingInfoTitle } from '../../layout/buildingInfoLayout.js';
 import { patchHubStoragePieChart, renderHubStoragePieChart } from './hubStoragePieChart.js';
-
-/**
- * @param {object} line
- */
-function renderStockGridItem(line) {
-  const capHint = line.maxCap > 0 ? ` / ${line.maxCap}` : '';
-  const refused = line.mode === 'refuse' ? ' hub-stock-item--refused' : '';
-  const fetch = line.mode === 'fetch' ? ' hub-stock-item--fetch' : '';
-  const empty = line.amount <= 0 ? ' hub-stock-item--empty' : '';
-
-  return `
-    <div class="hub-stock-item${refused}${fetch}${empty}" data-product="${line.productId}">
-      <span class="hub-stock-emoji">${line.emoji}</span>
-      <span class="hub-stock-qty">${line.amount}${capHint}</span>
-      <span class="hub-stock-label">${line.label}</span>
-    </div>
-  `;
-}
+import { getResourceRoles, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { buildingName, goodLabel, scheduleLabel } from '../../../shell/CatalogVocabulary.js';
+import { formatHubStockSummary } from '../../presenters/formats/hubStorageInfoFormat.js';
 
 /**
  * @param {HTMLElement} ordersPanel
@@ -42,6 +27,20 @@ function setOrderWarning(ordersPanel, message) {
 /** @param {HTMLElement} ordersPanel */
 function clearOrderWarnings(ordersPanel) {
   ordersPanel.querySelectorAll('.hub-orders-warning').forEach((el) => el.remove());
+}
+
+/**
+ * What the line says of an order to empty: goods are leaving, nothing can take them, or there is nothing left.
+ * @param {{ mode: string, amount: number, emptying: 'moving' | 'blocked' | null }} line
+ * @returns {{ icon: string, title: string } | null}
+ */
+function emptyingStatus(line) {
+  if (line.mode !== 'empty') return null;
+  if (line.emptying === 'blocked') {
+    return { icon: '⚠️', title: 'Vidage bloqué : aucun autre entrepôt ne peut prendre ce bien (plein, refusé ou hors service).' };
+  }
+  if (line.amount <= 0) return { icon: '✓', title: 'Vidé : plus rien à déplacer.' };
+  return { icon: '🚚', title: 'Vidage en cours : le stock part vers les autres entrepôts.' };
 }
 
 /**
@@ -79,6 +78,14 @@ function patchOrdersPanelRows(ordersPanel, view, orderWarning) {
       modeBtn.className = `hub-order-mode-btn hub-order-mode-btn--${line.mode}`;
     }
 
+    const status = row.querySelector('[data-role="emptying"]');
+    if (status) {
+      const emptying = emptyingStatus(line);
+      status.textContent = emptying?.icon ?? '';
+      status.title = emptying?.title ?? '';
+      status.hidden = !emptying;
+    }
+
     const display = row.querySelector('.hub-order-share-display');
     if (display) {
       display.textContent = line.percentLabel;
@@ -102,22 +109,13 @@ async function softRefreshHubPanel(ctx, orderWarning = null) {
   const freshView = supply.getHubStorageInfoView(hubKind, freshRow ?? buildingRow, {
     stocks: freshRow?.stocks,
     maxStock: supplyView?.maxStock,
+    timeContextAhead: ctx.timeContextAhead,
   });
 
   ctx.buildingRow = freshRow ?? buildingRow;
   ctx.view = freshView;
 
-  const capacityEl = body.querySelector('.hub-info-capacity');
-  if (capacityEl) {
-    capacityEl.textContent = `📦 ${freshView.currentTotal} / ${freshView.totalCapacity} unités`;
-  }
-
-  const grid = body.querySelector('.hub-stock-grid');
-  if (grid) {
-    grid.innerHTML = freshView.lines.map(renderStockGridItem).join('');
-  }
-
-  patchHubStoragePieChart(body, freshView);
+  patchHubStoragePieChart(body, freshView, formatHubStockSummary(freshView));
 
   const ordersPanel = body.querySelector('.hub-orders-panel');
   if (ordersPanel && !ordersPanel.classList.contains('hidden')) {
@@ -136,6 +134,7 @@ export async function renderHubStorageInfoPanel({
   supply,
   buildingRow,
   supplyView = null,
+  timeContextAhead = null,
   ordersOpen = false,
 }) {
   const body = getBuildingInfoBody();
@@ -151,19 +150,21 @@ export async function renderHubStorageInfoPanel({
     supply,
     buildingRow,
     supplyView,
+    timeContextAhead,
   };
 
   const workerLine = `${view.workers} / ${view.workerNeed} requis`;
-  const capacityLine = `${view.currentTotal} / ${view.totalCapacity} unités`;
 
   let statusMessage = '';
-  if (view.hubKind === 'windmill' && supplyView) {
-    if ((buildingRow.roads ?? 0) <= 0) {
-      statusMessage = '⚠️ Sans route le moulin ne peut pas stocker.';
+  if (view.hubKind === 'hub' && supplyView) {
+    // When this hub collects is the one its catalog entry declares, in words.
+    const collectsWhen = scheduleLabel(getResourceRoles(buildingRow.type).find((entry) => entry.role === 'collector')?.schedule);
+    if (!isRoadNeedMet(buildingRow.type, buildingRow.roads)) {
+      statusMessage = `⚠️ Sans route, ${buildingName(buildingRow.type)} ne peut pas stocker.`;
     } else if (supplyView.isCollecting) {
-      statusMessage = '🟢 Collecte active (décembre).';
+      statusMessage = `🟢 Collecte active (${collectsWhen}).`;
     } else {
-      statusMessage = '⏸️ En attente — collecte en décembre.';
+      statusMessage = `⏸️ En attente — collecte : ${collectsWhen}.`;
     }
   }
 
@@ -171,15 +172,11 @@ export async function renderHubStorageInfoPanel({
     <div class="hub-info-panel">
       <div class="hub-info-summary">
         <div class="hub-info-workers">👷 ${workerLine}</div>
-        <div class="hub-info-capacity">📦 ${capacityLine}</div>
         ${statusMessage ? `<p class="hub-info-status">${statusMessage}</p>` : ''}
       </div>
-      <div class="hub-stock-grid">
-        ${view.lines.map(renderStockGridItem).join('')}
-      </div>
       <section class="hub-storage-chart-section">
-        <h3 class="hub-storage-chart-title">Répartition de l'entrepôt</h3>
-        ${renderHubStoragePieChart(view)}
+        <h3 class="hub-storage-chart-title">Stock</h3>
+        ${renderHubStoragePieChart(view, formatHubStockSummary(view))}
       </section>
       <div class="hub-info-actions">
         <button type="button" class="hub-orders-toggle-btn">${ordersOpen ? 'Masquer ordres' : 'Ordres'}</button>
@@ -216,7 +213,7 @@ export async function renderHubStorageInfoPanel({
     if (action === 'percent-dec') {
       const result = await supply.adjustHubStorageOrderShare(ctx.hubKind, buildingId, productId, -1);
       if (result?.ok === false && result.reason === 'stock_exceeds_new_max') {
-        const label = line?.label ?? productId;
+        const label = line?.label ?? goodLabel(productId);
         const message = `${line?.emoji ?? ''} ${label} : impossible de réduire à ${result.newPercent ?? '?'} % (${result.newMaxCap} unités) — ${result.currentAmount} déjà en stock. Videz d'abord l'espace.`;
         await softRefreshHubPanel(ctx, message);
         return;
@@ -257,8 +254,10 @@ function renderHubOrdersPanelShell(ordersPanel, view) {
   ordersPanel.innerHTML = `
     <h3 class="hub-orders-title">Ordres de stockage</h3>
     <p class="hub-orders-help">
-      Mode : Accepter → Refuser → Amener.
-      <strong>Amener</strong> tire le stock ailleurs.
+      Mode : Accepter → Refuser → Amener → Vider.
+      <strong>Amener</strong> : les producteurs qui vendent ce bien viennent d'abord ici, avant l'entrepôt le plus proche.
+      <strong>Vider</strong> : cet entrepôt donne ce bien aux autres, un peu à chaque jour (d'abord ceux en « Amener », puis
+      les plus proches), et n'en reçoit plus.
       Le <strong>%</strong> est le plafond de remplissage (comme les m² de César III).
       Si plusieurs denrées sont à 100&nbsp;% (ou se chevauchent), la place libre va au
       <strong>premier arrivé</strong>.
@@ -269,7 +268,7 @@ function renderHubOrdersPanelShell(ordersPanel, view) {
           (line) => `
         <div class="hub-order-c3-row${line.amount > line.maxCap ? ' hub-order-c3-row--overflow' : ''}" data-product="${line.productId}">
           <span class="hub-order-c3-icon">${line.emoji}</span>
-          <span class="hub-order-c3-label">${line.label}</span>
+          <span class="hub-order-c3-label">${line.label} <span class="hub-order-emptying" data-role="emptying" hidden></span></span>
           <button type="button" class="hub-order-mode-btn hub-order-mode-btn--${line.mode}" data-action="mode">
             ${line.modeLabel}
           </button>

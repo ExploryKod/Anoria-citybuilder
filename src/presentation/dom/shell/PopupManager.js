@@ -61,7 +61,7 @@ class PopupManager {
             'administrator-panel',
             'city-map-panel',
             'journal-panel',
-            'food-traceability-panel',
+            'supply-traceability-panel',
             'news-event-modal',
         ]) {
             this.popupConfigs.set(id, { ...blocking });

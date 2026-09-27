@@ -1,3 +1,9 @@
+import { getResourceRoles, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { buildingNameInSentence, goodLabel } from '../../../shell/CatalogVocabulary.js';
+import { getBuildingDefinition } from '../../../../../shared/building-catalog/buildingCatalog.js';
+import { SOCIAL_CATEGORY } from '../../../../../shared/population/socialCategoryCatalog.js';
+import { getSkillDisplay } from '../../../../../shared/population/skillCatalog.js';
+import { getResidentialGroupLabel } from '../../../shell/ResidentialGroupLabels.js';
 /**
  * Messages tab — pure format (VM → display model).
  *
@@ -30,14 +36,49 @@ function unfedComplaint(totalUnfed) {
 }
 
 /**
- * Same road-exemption rule `formatWorkplaceEmployeesPanel` used to apply:
- * farms don't need road access to be staffed.
- * @param {string} buildingType
- * @returns {boolean}
+ * The social groups whose houses can hold a skill at a level, with the first house tier
+ * that grants it — read from the catalog, never a group named here.
+ * @param {string} skill
+ * @param {number} level
+ * @returns {Array<{ group: string, minTier: number }>}
  */
-function isFarmExemptFromRoad(buildingType) {
-  const type = buildingType || '';
-  return type.includes('Farm') || type.includes('farm');
+function groupsGrantingSkill(skill, level) {
+  return Object.entries(SOCIAL_CATEGORY).flatMap(([group, definition]) => {
+    const tier = Object.entries(definition.tiers)
+      .map(([number, details]) => [Number(number), details])
+      .sort(([a], [b]) => a - b)
+      .find(([, details]) => (details.skills?.[skill] ?? 0) >= level);
+    return tier ? [{ group, minTier: tier[0] }] : [];
+  });
+}
+
+/**
+ * Why a workplace stays unstaffed: who holds the skill it asks for, and what that group
+ * has to offer right now. Null when the city's employment was not read.
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @returns {string | null}
+ */
+function shortageCause(vm) {
+  const summary = vm.employmentSummary;
+  const employment = getBuildingDefinition(vm.buildingType)?.employment;
+  const skill = employment?.requiredSkill;
+  if (!summary || !skill) return null;
+
+  const skillLabel = getSkillDisplay(skill).label;
+  const causes = groupsGrantingSkill(skill, employment.requiredSkillLevel ?? 1).map(({ group, minTier }) => {
+    const label = getResidentialGroupLabel(group);
+    const stats = summary.byGroup?.[group];
+    if (!stats || !(stats.workerPool > 0)) {
+      return `aucune maison pour les ${label} : il en faut pour pourvoir ce poste`;
+    }
+    if (stats.unemployed > 0) {
+      return `des ${label} sont sans emploi, mais leurs maisons n'ont pas encore la compétence « ${skillLabel} » (niveau ${minTier} requis)`;
+    }
+    return `tous les ${label} ont déjà un emploi : il faut plus de maisons pour les ${label}`;
+  });
+  return causes.length > 0
+    ? causes.join(' ; ')
+    : `aucun habitant n'a la compétence « ${skillLabel} »`;
 }
 
 /**
@@ -49,7 +90,7 @@ function personnelComplaint(vm) {
   if (!employees) return null;
 
   const roadCount = vm.buildingRow?.roads ?? 0;
-  if (roadCount <= 0 && !isFarmExemptFromRoad(vm.buildingType)) {
+  if (!isRoadNeedMet(vm.buildingType, roadCount)) {
     return "Aucune route ne dessert ce lieu, personne ne peut venir y travailler";
   }
 
@@ -57,11 +98,13 @@ function personnelComplaint(vm) {
   const workers = employees.worker || 0;
   if (workerNeed <= 0) return null;
 
+  const cause = shortageCause(vm);
+  const because = cause ? ` — ${cause}` : '';
   if (workers === 0) {
-    return "Nous manquons de personnel, l'activité est totalement à l'arrêt";
+    return `Nous manquons de personnel, l'activité est totalement à l'arrêt${because}`;
   }
   if (workers < workerNeed) {
-    return "Nous manquons de personnel pour fonctionner à plein régime";
+    return `Nous manquons de personnel pour fonctionner à plein régime${because}`;
   }
   return null;
 }
@@ -80,10 +123,12 @@ function marketSupplyComplaints(vm) {
 
   const complaints = [];
   if (supplyView.noFarmsNearby === true) {
-    complaints.push('Aucune ferme ne nous approvisionne');
+    // What this market sells, from its own catalog entry.
+    const goods = getResourceRoles(vm.buildingType).find((entry) => entry.role === 'distributor')?.categories ?? [];
+    complaints.push(`Aucun approvisionnement : ${goods.map(goodLabel).join(', ')}`);
   }
   if (!supplyView.hasHousesNearby) {
-    complaints.push("Aucune maison n'est à portée de nos étals");
+    complaints.push(`Aucune maison à portée : ${buildingNameInSentence(vm.buildingType)}`);
   }
   return complaints;
 }

@@ -2,6 +2,8 @@
  * Presentation — French labels for house info panel (not domain logic).
  */
 
+import { getResidentialGroupLabel } from '../../shell/ResidentialGroupLabels.js';
+
 /** @type {Readonly<Record<string, { label: string, emoji: string, singular: string, plural: string }>>} */
 export const STATUS_PRESENTATION = Object.freeze({
   'hunter-gatherer': Object.freeze({
@@ -10,34 +12,34 @@ export const STATUS_PRESENTATION = Object.freeze({
     singular: 'chasseur-cueilleur',
     plural: 'chasseurs-cueilleurs',
   }),
-  elite: Object.freeze({
-    label: 'Élites',
-    emoji: '👑',
-    singular: 'élite',
-    plural: 'élites',
-  }),
 });
+
+/**
+ * The citizens of one social category: named after the category the catalog gives its house
+ * (`Artisans-ouvriers` → "citoyens artisans-ouvriers"), so renaming it there renames it here. Only the
+ * emoji is a look of this screen.
+ * @param {string} group
+ * @param {string} emoji
+ */
+const citizensOf = (group, emoji) =>
+  Object.freeze({
+    emoji,
+    get label() {
+      return `Citoyens ${getResidentialGroupLabel(group)}`;
+    },
+    get singular() {
+      return `citoyen (${getResidentialGroupLabel(group).toLowerCase()})`;
+    },
+    get plural() {
+      return `citoyens ${getResidentialGroupLabel(group).toLowerCase()}`;
+    },
+  });
 
 /** @type {Readonly<Record<string, { label: string, emoji: string, singular: string, plural: string }>>} */
 export const GROUP_CITIZEN_PRESENTATION = Object.freeze({
-  'artisans': Object.freeze({
-    label: 'Citoyens artisans',
-    emoji: '🔨',
-    singular: 'citoyen artisan',
-    plural: 'citoyens artisans',
-  }),
-  merchants: Object.freeze({
-    label: 'Citoyens commerçants',
-    emoji: '🛒',
-    singular: 'citoyen commerçant',
-    plural: 'citoyens commerçants',
-  }),
-  scholars: Object.freeze({
-    label: 'Citoyens savants',
-    emoji: '📚',
-    singular: 'citoyen savant',
-    plural: 'citoyens savants',
-  }),
+  artisans: citizensOf('artisans', '🔨'),
+  merchants: citizensOf('merchants', '🛒'),
+  scholars: citizensOf('scholars', '📚'),
 });
 
 // Skill display (label/emoji + preferred order) lives in
@@ -53,5 +55,4 @@ export const DEFAULT_RESIDENTIAL_GROUP = 'artisans';
 export const PROFILE_DISPLAY_ORDER = Object.freeze([
   'hunter-gatherer',
   'worker',
-  'elite',
 ]);

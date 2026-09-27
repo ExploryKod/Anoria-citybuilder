@@ -2,6 +2,20 @@
  * SVG pie chart for hub storage — real occupation of total capacity.
  */
 
+import { buildingName } from '../../../shell/CatalogVocabulary.js';
+
+/** What the hub cannot attribute (goods that arrived before it kept track): said as it is, not named. */
+const UNKNOWN_ORIGIN = 'Origine inconnue';
+
+/**
+ * The name of who delivered a part of a good: the producer type as the catalog names it, and — when the goods were
+ * moved from another hub — the hub type they came through ("Champ d'oliviers – Entrepôt").
+ */
+const originLabel = ({ producerType, via }) => {
+  const made = producerType === '' ? UNKNOWN_ORIGIN : buildingName(producerType);
+  return via ? `${made} – ${buildingName(via)}` : made;
+};
+
 /**
  * @param {number} cx
  * @param {number} cy
@@ -41,9 +55,29 @@ function labelPoint(cx, cy, r, midDeg) {
 }
 
 /**
- * @param {object} view
+ * Under a good, who delivered each part of it, each with the tone it has on the chart. Said whenever the hub
+ * knows more than "unknown".
+ * @param {object} seg
  */
-export function renderHubStoragePieChart(view) {
+function originLines(seg) {
+  const parts = (seg.parts ?? []).filter((part) => part.amount > 0);
+  if (parts.length === 0 || (parts.length === 1 && parts[0].producerType === '' && !parts[0].via)) return '';
+  return parts
+    .map(
+      (part) => `
+        <div class="hub-pie-legend-item hub-pie-legend-item--origin" data-product="${seg.productId}">
+          <span class="hub-pie-legend-swatch"><span class="hub-pie-legend-swatch-dark" style="background:${part.color}"></span></span>
+          <span class="hub-pie-legend-text">↳ ${originLabel(part)} — ${part.amount}</span>
+        </div>`
+    )
+    .join('');
+}
+
+/**
+ * @param {object} view
+ * @param {ReadonlyArray<string>} [summaryLines] Short lines under the pie (capacity, autonomy, ...)
+ */
+export function renderHubStoragePieChart(view, summaryLines = []) {
   const segments = view.pieSegments ?? [];
   if (segments.length === 0) return '';
 
@@ -68,9 +102,14 @@ export function renderHubStoragePieChart(view) {
       }
 
       if (seg.darkAngle > 0.01) {
-        parts.push(
-          `<path class="hub-pie-wedge hub-pie-wedge--dark" d="${wedgePath(cx, cy, r, cursor, cursor + seg.darkAngle)}" fill="${seg.colors.dark}" data-product="${seg.productId}" />`
-        );
+        // One wedge per producer type that delivered it, in its own tone of the good's colour.
+        const pieces = seg.parts?.length ? seg.parts : [{ startAngle: cursor, angle: seg.darkAngle, color: seg.colors.dark }];
+        for (const piece of pieces) {
+          if (piece.angle <= 0.01) continue;
+          parts.push(
+            `<path class="hub-pie-wedge hub-pie-wedge--dark" d="${wedgePath(cx, cy, r, piece.startAngle, piece.startAngle + piece.angle)}" fill="${piece.color}" data-product="${seg.productId}" />`
+          );
+        }
         cursor += seg.darkAngle;
       }
 
@@ -108,8 +147,9 @@ export function renderHubStoragePieChart(view) {
             <span class="hub-pie-legend-swatch-pale" style="background:${seg.colors.pale}"></span>
           </span>
           <span class="hub-pie-legend-emoji">${seg.emoji}</span>
-          <span class="hub-pie-legend-text">${seg.label} — ${seg.amount} / ${seg.maxCap} <span class="hub-pie-legend-pct">(max ${seg.maxPercent} %)</span>${seg.remainingInbound > 0 ? ` · encore possible ${seg.remainingInbound}` : ''}</span>
+          <span class="hub-pie-legend-text">${seg.label} — ${seg.amount}</span>
         </div>
+        ${originLines(seg)}
       `;
     })
     .join('');
@@ -122,11 +162,7 @@ export function renderHubStoragePieChart(view) {
         ${labels}
       </svg>
       <div class="hub-pie-legend">${legend}</div>
-      <p class="hub-pie-caption">
-        Foncé = stock actuel · gris = place libre (<strong>premier arrivé</strong> si plusieurs denrées
-        peuvent la prendre — les plafonds % peuvent se chevaucher).
-        Capacité : <strong class="hub-pie-capacity">${view.currentTotal} / ${view.totalCapacity}</strong>.
-      </p>
+      <p class="hub-pie-caption">${summaryLines.map((line) => `<span class="hub-pie-summary-line">${line}</span>`).join('<br />')}</p>
     </div>
   `;
 }
@@ -136,11 +172,12 @@ export function renderHubStoragePieChart(view) {
  *
  * @param {HTMLElement} root
  * @param {object} view
+ * @param {ReadonlyArray<string>} [summaryLines]
  */
-export function patchHubStoragePieChart(root, view) {
+export function patchHubStoragePieChart(root, view, summaryLines = []) {
   const section = root.querySelector('.hub-storage-chart-section');
   if (!section) return;
   const title = section.querySelector('.hub-storage-chart-title');
-  const titleHtml = title ? title.outerHTML : `<h3 class="hub-storage-chart-title">Répartition de l'entrepôt</h3>`;
-  section.innerHTML = `${titleHtml}${renderHubStoragePieChart(view)}`;
+  const titleHtml = title ? title.outerHTML : `<h3 class="hub-storage-chart-title">Stock</h3>`;
+  section.innerHTML = `${titleHtml}${renderHubStoragePieChart(view, summaryLines)}`;
 }

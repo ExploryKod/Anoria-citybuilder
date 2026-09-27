@@ -28,11 +28,10 @@ describe('ReferenceSalaryPayrollPolicy', () => {
     expect(breakdown.cityExpenseTotal).toBe(600);
   });
 
-  test('excludes élites from active citizen payroll mass', () => {
+  test('citizens are the labor pool left after civil servants and the unemployed', () => {
     const breakdown = computeReferenceSalaryPayrollBreakdown({
-      population: 53,
+      population: 50,
       unemployed: 4,
-      eliteCount: 3,
       referenceSalaryPerMonth: 100,
       unemploymentBenefitRate: 0.5,
       salaryTaxRate: 0.2,

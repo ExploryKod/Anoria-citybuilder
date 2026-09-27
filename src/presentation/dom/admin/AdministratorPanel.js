@@ -4,9 +4,9 @@
  */
 
 import {
-  initializeFoodTraceabilityTabs,
-  loadFoodTraceabilityEntries,
-} from './food-traceability/FoodTraceabilityPanel.js';
+  initializeSupplyTraceabilityTabs,
+  loadSupplyTraceabilityEntries,
+} from './supply-traceability/SupplyTraceabilityPanel.js';
 import { createModalFocusSession, getFocusableElements } from '../shell/modalFocus.js';
 
 /**
@@ -80,11 +80,11 @@ export function initAdministratorPanel(deps = {}) {
       btn.tabIndex = isSelected ? 0 : -1;
     });
 
-    if (sectionId === 'food-traceability') {
-      initializeFoodTraceabilityTabs();
-      const activeFilterBtn = document.querySelector('.food-traceability-filter-btn.active');
+    if (sectionId === 'supply-traceability') {
+      initializeSupplyTraceabilityTabs();
+      const activeFilterBtn = document.querySelector('.supply-traceability-filter-btn.active');
       const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
-      loadFoodTraceabilityEntries(currentPeriod);
+      loadSupplyTraceabilityEntries(currentPeriod);
     }
 
     const selectedTab = navButtons.find((btn) => btn.dataset.section === sectionId);

@@ -1,4 +1,9 @@
 import { DexieSupplyBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyBuildingRepository.js';
+import { ListClientPriorityBoards } from '../contexts/supply/application/queries/ListClientPriorityBoards.js';
+import { EmptyHubGoods } from '../contexts/supply/application/commands/surplus/EmptyHubGoods.js';
+import { MarkFailedSales } from '../contexts/supply/application/commands/surplus/MarkFailedSales.js';
+import { HubServing } from '../contexts/supply/application/services/HubServing.js';
+import { LocalStorageClientPriorityRepository } from '../contexts/supply/infrastructure/browser/LocalStorageClientPriorityRepository.js';
 import { TransferHubToHub } from '../contexts/supply/application/commands/procurement/TransferHubToHub.js';
 import { DistributeResourceToConsumers } from '../contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
 import { CollectResourceToHub } from '../contexts/supply/application/commands/surplus/CollectResourceToHub.js';
@@ -14,7 +19,6 @@ import { SetHubCollectingFlag } from '../contexts/supply/application/commands/su
 import { MarkSourceCollectedByHub } from '../contexts/supply/application/commands/surplus/MarkSourceCollectedByHub.js';
 import { ProduceResource } from '../contexts/supply/application/commands/harvest/ProduceResource.js';
 import { ConsumeResource } from '../contexts/supply/application/commands/consumption/ConsumeResource.js';
-import { ProduceConsumerSubsistence } from '../contexts/supply/application/commands/subsistence/ProduceConsumerSubsistence.js';
 import { RunResourceCommandForRole } from '../contexts/supply/application/commands/RunResourceCommandForRole.js';
 import { ProcessHubCollection } from '../contexts/supply/application/commands/surplus/ProcessHubCollection.js';
 import { RunHubSurplusCycle } from '../contexts/supply/application/commands/surplus/RunHubSurplusCycle.js';
@@ -22,8 +26,13 @@ import { RunCityResourceCycle } from '../contexts/supply/application/commands/pr
 import { RunMonthlyResourceCycle } from '../contexts/supply/application/workflows/RunMonthlyResourceCycle.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
+import { syncRemovedBuilding } from './parcelsOps.js';
+import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
+import { getNaturalSources, getSuppliedCategories } from '../shared/building-catalog/resourceRoleQueries.js';
+import { findNaturalSourcesInRange } from '../contexts/supply/domain/policies/ResourceRangePolicy.js';
 import { SupplyTraceability } from '../contexts/supply/infrastructure/presentation/SupplyTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
+import { DescribeActivitySupplyAccess } from '../contexts/supply/application/queries/DescribeActivitySupplyAccess.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListHubSupplyViews } from '../contexts/supply/application/queries/ListHubSupplyViews.js';
 import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries/ListSupplyStockSnapshots.js';
@@ -39,29 +48,35 @@ import {
   hasResourceRole,
   getPlacementRequirements,
   getAllCategoriesForRole,
+  getMaxStockForBuilding,
 } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 
 /**
- * Composition root — Supply bounded context. The only place allowed to name
- * a resource (food) — every class below (RunMonthlyResourceCycle,
- * RunHubSurplusCycle, ...) is resource-agnostic and only takes the resulting
- * category list as config. Once-per-period locking and hub-link storage
+ * Composition root — Supply bounded context. No good is named anywhere: the
+ * category lists below are derived from the catalog's `resourceRoles`, and
+ * every class (RunMonthlyResourceCycle, RunHubSurplusCycle, ...) is
+ * resource-agnostic and only takes the resulting category list as config. Once-per-period locking and hub-link storage
  * field names are no longer wired here at all — each command self-resolves
  * them from the building's own catalog facts (`periodLock`/`hubLink` — see
  * docs/period-lock-catalog-refactor.md in the supply context).
  *
  * @param {object} [deps]
  * @param {import('../contexts/supply/application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} [deps.supplyBuildingRepository]
- * @param {import('../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js').DexieSupplyTraceabilityRepository} [deps.foodTraceabilityRepository]
+ * @param {import('../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js').DexieSupplyTraceabilityRepository} [deps.supplyTraceabilityRepository]
+ * @param {{ load: () => object, save: (priorities: object) => void }} [deps.clientPriorityRepository] The player's client priorities.
  * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createSupplyContext({
   supplyBuildingRepository,
-  foodTraceabilityRepository,
+  supplyTraceabilityRepository,
+  clientPriorityRepository,
   getTimeInfo: getTimeInfoDep,
 } = {}) {
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
-  const producerCategories = getAllCategoriesForRole('producer');
+  // Goods that travel the production → hub → market chain (what the citizens eat that a hub
+  // stores) — NOT every producible good (household gathering never enters a hub) and not every
+  // hub's goods (a goods warehouse has its own, and no market draws on it).
+  const producerCategories = getSuppliedCategories();
   // Every category any distributor covers — food (has a producer/hub leg)
   // and any hub-less service like Chapel's 'faith' (none) alike. Kept
   // separate from producerCategories: the hub-link plumbing below
@@ -70,18 +85,23 @@ export function createSupplyContext({
   const distributionCategories = getAllCategoriesForRole('distributor');
   const supplyBuildingRepositoryImpl =
     supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
-  const foodTraceabilityRepositoryImpl =
-    foodTraceabilityRepository ?? new DexieSupplyTraceabilityRepository();
+  const supplyTraceabilityRepositoryImpl =
+    supplyTraceabilityRepository ?? new DexieSupplyTraceabilityRepository();
+  // The player's client priorities (saved settings); none saved means the catalog's defaults.
+  const clientPriorityRepositoryImpl = clientPriorityRepository ?? new LocalStorageClientPriorityRepository();
+  const hubServing = new HubServing(supplyBuildingRepositoryImpl, {
+    loadSettings: () => clientPriorityRepositoryImpl.load(),
+  });
   const transferHubToHub = new TransferHubToHub(
-    supplyBuildingRepositoryImpl
+    supplyBuildingRepositoryImpl,
+    hubServing
   );
   const rebalanceHubAllocations = new RebalanceHubAllocations(
     supplyBuildingRepositoryImpl
   );
   const assignDistributorToHub = new AssignDistributorToHub(
     supplyBuildingRepositoryImpl,
-    rebalanceHubAllocations,
-    producerCategories
+    rebalanceHubAllocations
   );
   const detachDistributorFromHub = new DetachDistributorFromHub(
     supplyBuildingRepositoryImpl,
@@ -94,7 +114,8 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl
   );
   const collectResourceToHub = new CollectResourceToHub(
-    supplyBuildingRepositoryImpl
+    supplyBuildingRepositoryImpl,
+    hubServing
   );
   const updateConsumerDistributorReach = new UpdateConsumerDistributorReach(
     supplyBuildingRepositoryImpl
@@ -114,17 +135,14 @@ export function createSupplyContext({
   const markSourceCollectedByHub = new MarkSourceCollectedByHub(
     supplyBuildingRepositoryImpl
   );
-  const produceResource = new ProduceResource(supplyBuildingRepositoryImpl);
+  // A used-up natural resource (a felled tree) leaves the game like any demolished building.
+  const produceResource = new ProduceResource(supplyBuildingRepositoryImpl, {
+    hubServing,
+    removeBuilding: (params) => syncRemovedBuilding(params),
+  });
   const runProducerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, produceResource);
   const consumeResource = new ConsumeResource(supplyBuildingRepositoryImpl);
   const runConsumerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, consumeResource);
-  const produceConsumerSubsistence = new ProduceConsumerSubsistence(
-    supplyBuildingRepositoryImpl
-  );
-  const runSubsistenceCommand = new RunResourceCommandForRole(
-    supplyBuildingRepositoryImpl,
-    produceConsumerSubsistence
-  );
   const processHubCollection = new ProcessHubCollection(
     supplyBuildingRepositoryImpl,
     collectResourceToHub,
@@ -137,12 +155,16 @@ export function createSupplyContext({
     resetSourcesCollectedFlag,
     processHubCollection,
     {
-      execute: ({ hubId }) =>
-        rebalanceHubAllocations.execute({ hubId, categories: producerCategories }),
-    }
+      execute: async ({ hubId }) => {
+        const hub = await supplyBuildingRepositoryImpl.findById(hubId);
+        return rebalanceHubAllocations.execute({ hubId, categories: getCategoriesForRole(hub?.type, 'hub') });
+      },
+    },
+    new MarkFailedSales(supplyBuildingRepositoryImpl),
+    new EmptyHubGoods(supplyBuildingRepositoryImpl, hubServing)
   );
   const traceability = new SupplyTraceability({
-    foodTraceabilityRepository: foodTraceabilityRepositoryImpl,
+    supplyTraceabilityRepository: supplyTraceabilityRepositoryImpl,
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
   });
   const runCityResourceCycle = new RunCityResourceCycle(
@@ -151,6 +173,7 @@ export function createSupplyContext({
     getSharedEventBus(),
     {
       transferHubToHub,
+      linkDistributorEntry: (params) => assignDistributorToHub.linkEntryToAnyHub(params),
       onHubLinkResolved: (distributorId, hasHubLink) =>
         updateDistributorHubLink.execute({ distributorId, hasHubLink }),
       onHubTransfer: (distributorId, transfers, timeInfo) =>
@@ -174,7 +197,6 @@ export function createSupplyContext({
     runHubSurplusCycle,
     runConsumerCommand,
     traceability,
-    runSubsistenceCommand,
     { categories: distributionCategories, reachCategories: producerCategories }
   );
   const getBuildingSupplyViewQuery = new GetBuildingSupplyView(
@@ -190,6 +212,10 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl
   );
   const getHubStorageInfoView = new GetHubStorageInfoView();
+  const listClientPriorityBoardsQuery = new ListClientPriorityBoards(supplyBuildingRepositoryImpl, {
+    loadSettings: () => clientPriorityRepositoryImpl.load(),
+  });
+  const describeActivitySupplyAccessQuery = new DescribeActivitySupplyAccess(supplyBuildingRepositoryImpl);
 
   return {
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
@@ -208,7 +234,6 @@ export function createSupplyContext({
     markSourceCollectedByHub,
     produceResource,
     consumeResource,
-    produceConsumerSubsistence,
     processHubCollection,
     runHubSurplusCycle,
     runCityResourceCycle,
@@ -219,12 +244,22 @@ export function createSupplyContext({
     hasResourceRole,
     getPlacementRequirements,
 
-    async assignDistributorToHub({ distributorId, distributorType, x, y, ownerHubId }) {
-      return assignDistributorToHub.execute({ distributorId, distributorType, x, y, ownerHubId });
+    async assignDistributorToHub({ distributorId, distributorType, x, y }) {
+      return assignDistributorToHub.execute({ distributorId, distributorType, x, y });
+    },
+
+    /** A hub just placed: the distributors still lacking a hub it may serve are linked to it. */
+    async linkWaitingDistributors({ hubId }) {
+      return assignDistributorToHub.linkWaitingDistributors({ hubId });
     },
 
     async detachDistributorFromHub({ distributorId }) {
-      return detachDistributorFromHub.execute({ distributorId, categories: producerCategories });
+      return detachDistributorFromHub.execute({ distributorId });
+    },
+
+    /** What demolishing this hub would take down, for the player to confirm before it happens. */
+    async previewHubCascade({ hubId }) {
+      return cascadeDestroyHubDistributors.findDependents({ hubId });
     },
 
     async cascadeDestroyHubDistributors({ hubId, city, bulldozeBuildingAtTile }) {
@@ -236,17 +271,37 @@ export function createSupplyContext({
       return { initialized: true, hubId };
     },
 
-    async runMonthlyResourceCycle({ season, month, timeInfo, maxDistance = 5 }) {
+    /** The Clients tab: each producer type's clients, in the order it serves them. */
+    async listClientPriorityBoards() {
+      return listClientPriorityBoardsQuery.execute();
+    },
+
+    /** The player's order (and refusals) for one producer type; effective from the next tick. */
+    saveClientPriorities(producerType, { order, disabled }) {
+      clientPriorityRepositoryImpl.save({ ...clientPriorityRepositoryImpl.load(), [producerType]: { order, disabled } });
+    },
+
+    /** Back to the catalog's default for one producer type. */
+    resetClientPriorities(producerType) {
+      const { [producerType]: _dropped, ...rest } = clientPriorityRepositoryImpl.load();
+      clientPriorityRepositoryImpl.save(rest);
+    },
+
+    async runMonthlyResourceCycle({ season, month, timeInfo }) {
       return runMonthlyResourceCycle.execute({
         season,
         month,
         timeInfo,
-        maxDistance,
       });
     },
 
     getHubStorageInfoView(hubKind, buildingRow, options = {}) {
       return getHubStorageInfoView.execute({ hubKind, buildingRow, ...options });
+    },
+
+    /** Structural gaps in a building's own recipe(s) — see DescribeActivitySupplyAccess.js. */
+    async describeActivitySupplyAccess(building) {
+      return describeActivitySupplyAccessQuery.execute(building);
     },
 
     async updateHubStorageOrderMode(hubKind, buildingId, productId) {
@@ -268,7 +323,7 @@ export function createSupplyContext({
       const productIds = getCategoriesForRole(row?.type, 'hub');
       const orders = normalizeHubStorageOrders(row?.hubStorageOrders, productIds);
       const stocks = row?.stocks ?? {};
-      const totalCapacity = row?.maxStock ?? 1000;
+      const totalCapacity = getMaxStockForBuilding(row?.type);
 
       const currentAmount = Math.max(0, Math.floor(Number(stocks[productId]) || 0));
 
@@ -306,6 +361,23 @@ export function createSupplyContext({
       return listSupplyStockSnapshotsQuery.execute();
     },
 
+    /**
+     * Ids of the raw-material producers with no natural resource left in range — the "no
+     * resource" warning. Derived from the map every time it is asked (never stored), by the
+     * same `source` rule ProduceResource works with, so it can neither lag nor flicker.
+     */
+    async listNoResourceBuildingIds() {
+      const rows = await supplyBuildingRepositoryImpl.listAllBuildingRows();
+      const naturals = await supplyBuildingRepositoryImpl.listNaturalResources();
+      return rows
+        .filter((row) =>
+          getNaturalSources(row.type).some(
+            (source) => findNaturalSourcesInRange(row, naturals, source).length < (source.consume ?? 1)
+          )
+        )
+        .map((row) => instanceIdFromHouseRow(row));
+    },
+
     async listNatureResources() {
       return supplyBuildingRepositoryImpl.listNatureItems();
     },
@@ -319,19 +391,39 @@ export function createSupplyContext({
     },
 
     async getAllSupplyTraceabilityTransactions(maxAge = null) {
-      return foodTraceabilityRepositoryImpl.getAllTransactions(maxAge);
+      return supplyTraceabilityRepositoryImpl.getAllTransactions(maxAge);
     },
 
     async getSupplyTraceabilityTransactionsForMonth(turn, month = null) {
-      return foodTraceabilityRepositoryImpl.getTransactionsForMonth(turn, month);
+      return supplyTraceabilityRepositoryImpl.getTransactionsForMonth(turn, month);
     },
 
     async getSupplyTraceabilityTransactionsByMonth(turn) {
-      return foodTraceabilityRepositoryImpl.getTransactionsByMonth(turn);
+      return supplyTraceabilityRepositoryImpl.getTransactionsByMonth(turn);
     },
 
     async cleanupOldSupplyTraceabilityTransactions(maxAge = 60) {
-      return foodTraceabilityRepositoryImpl.cleanupOldTransactions(maxAge);
+      return supplyTraceabilityRepositoryImpl.cleanupOldTransactions(maxAge);
+    },
+
+    /** A building was placed / demolished — kept in the city's history. */
+    async recordBuildingEvent({ timeInfo, event, building }) {
+      return traceability.recordBuildingEvent(timeInfo, event, building);
+    },
+
+    /** The city's employment at the end of a month, kept in its history. */
+    async recordEmploymentSummary(timeInfo, summary) {
+      return traceability.recordEmploymentSummary(timeInfo, summary);
+    },
+
+    /** Houses that went up or down a level this month. */
+    async recordHouseChanges(timeInfo, changes) {
+      return traceability.recordHouseChanges(timeInfo, changes);
+    },
+
+    /** Inhabitants lost to famine this month. */
+    async recordFamineDeaths(timeInfo, deaths) {
+      return traceability.recordFamineDeaths(timeInfo, deaths);
     },
   };
 }

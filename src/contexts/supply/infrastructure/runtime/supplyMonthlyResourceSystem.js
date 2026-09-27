@@ -6,7 +6,6 @@ export function createSupplyMonthlyResourceSystem({
   getTimeInfo,
   toSupplySeason,
   toSupplyMonth,
-  resourceDistributionDistance = 5,
 }) {
   return async function supplyMonthlyResource(_world, context = {}) {
     const time = context.time ?? 0;
@@ -16,7 +15,6 @@ export function createSupplyMonthlyResourceSystem({
       season: toSupplySeason(timeInfo.season),
       month: toSupplyMonth(timeInfo.month),
       timeInfo,
-      maxDistance: resourceDistributionDistance,
     });
   };
 }

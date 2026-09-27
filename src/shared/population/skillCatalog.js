@@ -25,6 +25,8 @@ export const SKILL_CATALOG = Object.freeze({
   spiritual: Object.freeze({ label: 'Spiritualité', emoji: '🙏' }),
   fermier: Object.freeze({ label: 'Fermier', emoji: '🌾' }),
   artisanat: Object.freeze({ label: 'Artisanat', emoji: '🏺' }),
+  manutention: Object.freeze({ label: 'Manutention', emoji: '📦' }),
+  telecoms: Object.freeze({ label: 'Télécommunications', emoji: '📡' }),
   'vente-alimentaire': Object.freeze({ label: 'Vente alimentaire', emoji: '🛒' }),
   'stockage-alimentaire': Object.freeze({ label: 'Stockage alimentaire', emoji: '🌬️' }),
   medical: Object.freeze({ label: 'Médecine', emoji: '⚕️' }),
@@ -33,31 +35,16 @@ export const SKILL_CATALOG = Object.freeze({
   entertainment: Object.freeze({ label: 'Divertissement', emoji: '🎭' }),
   hospitality: Object.freeze({ label: 'Convivialité', emoji: '🍺' }),
   'employment-eligible': Object.freeze({ label: "Éligibilité à l'emploi", emoji: '💼' }),
-  governance: Object.freeze({ label: 'Gouvernance', emoji: '👑' }),
   administration: Object.freeze({ label: 'Administration', emoji: '🏛️' }),
   'elder-wisdom': Object.freeze({ label: 'Sagesse', emoji: '📜' }),
   learning: Object.freeze({ label: 'Apprentissage', emoji: '📚' }),
 });
 
 /**
- * Turns a raw, uncurated skill id into a readable fallback label
- * ('vente-alimentaire' -> 'Vente alimentaire').
  * @param {string} skillId
- * @returns {string}
- */
-function humanizeSkillId(skillId) {
-  return skillId
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-/**
- * @param {string} skillId
- * @returns {{ label: string, emoji: string }} Curated entry, or a
- *   humanized fallback so an uncurated (but real, catalog-granted) skill
- *   is still visible rather than silently dropped.
+ * @returns {{ label: string, emoji: string }} The curated entry, or the "…" marker for a skill the catalog
+ *   does not name — never a label made up from its id.
  */
 export function getSkillDisplay(skillId) {
-  return SKILL_CATALOG[skillId] ?? { label: humanizeSkillId(skillId), emoji: '🔧' };
+  return SKILL_CATALOG[skillId] ?? { label: '…', emoji: '…' };
 }

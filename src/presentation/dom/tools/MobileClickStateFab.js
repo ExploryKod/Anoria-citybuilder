@@ -1,4 +1,6 @@
-/** Portrait FABs for click modes (bulldoze / select) — always visible, not part of construction modal. */
+import { RANGE_TOOL_ID } from '../../../shared/gameplay/behaviorMode.js';
+
+/** Portrait FABs for click modes (bulldoze / select / range) — always visible, not part of construction modal. */
 
 /**
  * @param {string} toolId
@@ -12,6 +14,10 @@ export function syncMobileClickStateFab(toolId) {
 
   const bulldozeBtn = document.getElementById('bulldoze-btn');
   const selectBtn = document.getElementById('select-btn');
+  const rangeBtn = document.getElementById('range-btn');
+  if (rangeBtn) {
+    rangeBtn.classList.toggle('selected', toolId === RANGE_TOOL_ID);
+  }
   if (bulldozeBtn) {
     bulldozeBtn.classList.toggle('selected', toolId === 'bulldoze');
   }

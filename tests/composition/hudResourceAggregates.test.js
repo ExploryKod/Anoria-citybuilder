@@ -7,7 +7,7 @@ import {
   getHudNatureResourceScopeSnapshot,
   sumCityStocksFromRows,
   sumNatureStocksFromRows,
-  countClayTiles,
+  countDepositTiles,
 } from '../../src/composition/hudResourceAggregates.js';
 
 describe('hudResourceAggregates', () => {
@@ -85,11 +85,11 @@ describe('hudResourceAggregates', () => {
     const city = {
       size: 2,
       tiles: [
-        [{ hasClay: true }, { hasClay: false }],
-        [{ hasClay: true }, { hasClay: true }],
+        [{ deposits: { clay: true } }, { deposits: {} }],
+        [{ deposits: { clay: true } }, { deposits: { clay: true } }],
       ],
     };
-    expect(countClayTiles(city)).toBe(3);
+    expect(countDepositTiles(city, 'clay')).toBe(3);
   });
 
   test('nature scope splits tree/boulder stocks by hamlet; clay is map-global', async () => {
@@ -125,7 +125,7 @@ describe('hudResourceAggregates', () => {
 
     const city = {
       size: 1,
-      tiles: [[{ hasClay: true }]],
+      tiles: [[{ deposits: { clay: true } }]],
     };
 
     const country = await getHudNatureResourceScopeSnapshot('country', { city });

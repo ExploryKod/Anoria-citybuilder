@@ -85,7 +85,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
     skills: Object.freeze({
       'subsistence-forager': Object.freeze({
         description: 'Cueillette et chasse autonome',
-        produces: Object.freeze({ fruit: 1, game: 1 }), // per house per month (TOTAL)
       }),
     }),
     
@@ -139,7 +138,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
     skills: Object.freeze({
       'subsistence-forager': Object.freeze({
         description: 'Cueillette et chasse (maintenue)',
-        produces: Object.freeze({ fruit: 1, game: 1 }), // per house per month - KEPT from level 1!
       }),
       'employment-eligible': Object.freeze({
         description: 'Employable dans les secteurs du groupe résidentiel',
@@ -198,7 +196,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
     skills: Object.freeze({
       'subsistence-forager': Object.freeze({
         description: 'Cueillette et chasse',
-        produces: Object.freeze({ fruit: 1, game: 1 }), // per house per month
       }),
       'employment-eligible': Object.freeze({
         description: 'Cherche emploi',
@@ -258,7 +255,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
     skills: Object.freeze({
       'subsistence-forager': Object.freeze({
         description: 'Cueillette et chasse',
-        produces: Object.freeze({ fruit: 1, game: 1 }), // per house per month
       }),
       'administration': Object.freeze({
         description: 'Service public (gouvernance)',
@@ -307,62 +303,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
       receivesIncome: true,
       incomeSource: 'city-paid',
       incomeMultiplier: 1.0,
-    }),
-  }),
-
-  /**
-   * Elite (palace resident beyond citizen cap).
-   * Leadership role, no subsistence production (palace luxury).
-   */
-  elite: Object.freeze({
-    // Skills: NO subsistence (palace provides), governance/leadership only
-    skills: Object.freeze({
-      'governance': Object.freeze({
-        description: 'Direction et gouvernance',
-        providesService: 'leadership',
-        influencesPolicy: true, // Future: policy decisions
-      }),
-    }),
-    
-    // Duties: pays taxes, leadership obligation
-    duties: Object.freeze({
-      taxpayer: true, // Future: higher rate?
-      payrollTax: true,
-      leadership: true, // Must govern
-    }),
-    
-    // Rights: double income
-    rights: Object.freeze({
-      income: Object.freeze({
-        receives: true,
-        source: 'employer-paid', // Or 'palace-revenue'
-        multiplier: 2.0, // Elite income bonus
-      }),
-    }),
-    
-    // Housing metadata (descriptive, NOT enforced by this catalog)
-    housingMetadata: Object.freeze({
-      typicalLevel: 2, // Lives in masure (level 2) - including palace
-      constraint: 'none',
-      description: 'Réside en masure (niveau 2). Dirigeants et élites de la ville.',
-    }),
-    
-    // Legacy projections
-    housing: Object.freeze({
-      contributesToGrowth: false, // additive slot, not growth
-      consumesFood: true,
-    }),
-    employment: Object.freeze({
-      isEmployable: false,
-      eligibleSectors: 'none',
-      countsInLaborPool: false,
-    }),
-    accounting: Object.freeze({
-      paysCitizenTax: true,
-      paysPayrollTax: true,
-      receivesIncome: true,
-      incomeSource: 'employer-paid',
-      incomeMultiplier: 2.0,
     }),
   }),
 
@@ -434,7 +374,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
     skills: Object.freeze({
       'subsistence-forager': Object.freeze({
         description: 'Cueillette et chasse réduites',
-        produces: Object.freeze({ fruit: 0.5, game: 0.5 }), // per house per month (reduced)
       }),
       'elder-wisdom': Object.freeze({
         description: 'Conseil des anciens',
@@ -490,7 +429,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
 
 /**
  * Resolve citizen status from house level (current game state).
- * Palace élites are tracked separately via `elitePopFromHouse`.
  *
  * @param {number} level
  * @returns {keyof typeof CITIZEN_STATUS_PROFILES}

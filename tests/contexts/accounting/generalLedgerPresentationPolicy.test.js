@@ -14,9 +14,10 @@ import {
 } from '../../../src/contexts/accounting/domain/policies/GeneralLedgerPresentationPolicy.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// A real exported journal kept as a fixture: docs/ledgers is the player's export folder, not a test source
 const sampleLedgerPath = path.resolve(
   __dirname,
-  '../../../docs/ledgers/journal-2026-07-30 (1).json'
+  '../../fixtures/ledgers/journal-2026-07-30-sample.json'
 );
 
 describe('GeneralLedgerPresentationPolicy', () => {

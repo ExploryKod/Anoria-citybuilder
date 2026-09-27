@@ -4,6 +4,14 @@
 
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { formatJournalEntryDetails } from './formatJournalEntryDescription.js';
+import { goodLabel, unresolvedTerm } from '../../shell/CatalogVocabulary.js';
+
+/** "Import Blé" / "Export Bois": a trade line is named after the good the catalog names. */
+function tradeLabel(type) {
+  const trade = /^(import|export)_(.+)$/.exec(type);
+  if (!trade) return null;
+  return `${trade[1] === 'import' ? 'Import' : 'Export'} ${goodLabel(trade[2])}`;
+}
 
 /**
  * @param {number} amount
@@ -253,20 +261,6 @@ function createJournalEntryHTML(entry, accounting) {
     maintenance: 'Maintenance mensuelle',
     salary: 'Salaires fonctionnaires',
     unemployment_benefit: 'Salaires chômeurs',
-    import_wood: 'Import Bois',
-    import_furniture: 'Import Meubles',
-    import_figs: 'Import Figues',
-    export_wood: 'Export Bois',
-    export_furniture: 'Export Meubles',
-    export_figs: 'Export Figues',
-    import_wheat: 'Import Blé',
-    import_carrot: 'Import Carotte',
-    import_cabbage: 'Import Chou',
-    import_dattes: 'Import Dattes',
-    export_wheat: 'Export Blé',
-    export_carrot: 'Export Carotte',
-    export_cabbage: 'Export Chou',
-    export_dattes: 'Export Dattes',
     commercial_route: 'Commission Négociants',
     contribution: 'Contribution',
     loan_capital: 'Capital Prêt',
@@ -327,7 +321,7 @@ function createJournalEntryHTML(entry, accounting) {
   return `
         <div class="journal-entry">
             <div class="journal-entry-header">
-                <span class="journal-entry-type ${entry.type}">${typeLabels[entry.type] || entry.type}</span>
+                <span class="journal-entry-type ${entry.type}">${typeLabels[entry.type] ?? tradeLabel(entry.type) ?? unresolvedTerm('journal line label', entry.type)}</span>
                 ${partnerName ? `<span class="journal-entry-partner">🤝 ${partnerName}</span>` : ''}
                 <span class="journal-entry-amount ${typeClass}">
                     ${typeClass === 'positive' ? '+' : '-'}${Math.abs(entry.amount)}€

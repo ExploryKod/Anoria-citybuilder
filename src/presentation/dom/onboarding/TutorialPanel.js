@@ -59,6 +59,11 @@ class TutorialPanel {
         const previousBtn = this.panel.querySelector('.tutorial-previous-btn');
         const nextBtn = this.panel.querySelector('.tutorial-next-btn');
         const closeBtn = this.panel.querySelector('.tutorial-close-btn');
+        const rulesBtn = this.panel.querySelector('.tutorial-rules-btn');
+
+        if (rulesBtn) {
+            rulesBtn.addEventListener('click', () => this.toggleRules());
+        }
 
         if (previousBtn) {
             previousBtn.addEventListener('click', () => this.previousStep());
@@ -142,74 +147,131 @@ class TutorialPanel {
      * Configure les étapes par défaut
      */
     setupDefaultSteps() {
-        this.steps = [
+        this.storySteps = [
             {
-                title: 'Bienvenue à Eraanurbs',
+                title: 'Bienvenue, fondateur !',
                 content: `
-                    <p>Tante Laminoria est décédée et vous lègue son domaine. Vous recevez un lopin de terre sans rien. Mais vous avez décidé d'y construire un hameau prospère !</p>
-                    <p>Cette tante qui vous fit si peur que vous la compariez à Era, femme de Zeus... d'où le nom que vous choisissez en sa mémoire : <strong>Eraanurbs</strong>.</p>
-                    <p>Vous avez demandé <strong>200 euros</strong> à un "ami" peu recommandable... qui vous les a accordés. Il espère peut-être y gagner quelque chose.</p>
-                    <p>Mais pour cette première étape de votre aventure chez feu Tante Laminoria, vous êtes plein d'enthousiasme pour y construire un hameau prospère.</p>
+                    <p>Vous avez pris la route de l'exil, et cette route vous a menés sur la <strong>terre des hameaux</strong>.</p>
+                    <p>Ici, chaque île est si petite qu'elle ne peut porter que <strong>peu d'habitants et de bâtiments</strong>. Personne n'y a le luxe de gaspiller : chacun est passé maître dans l'art de gérer son économie.</p>
                 `
             },
             {
-                title: 'Système Ferme / Marché',
+                title: 'Trois savoir-faire',
                 content: `
-                    <p>Chaque ferme ne peut produire qu'au <strong>printemps</strong> et en <strong>été</strong> et ne peut vendre ses stocks qu'en <strong>automne</strong> si un marché n'est pas loin.</p>
-                    <p>Chaque marché n'achète qu'en <strong>automne</strong> et ne vend qu'aux maisons voisines en <strong>printemps</strong>, <strong>été</strong>, <strong>hiver</strong> tant qu'il possède des stocks.</p>
+                    <p>Des exilés de cultures différentes cohabitent ici, chacun avec son savoir-faire :</p>
+                    <ul>
+                        <li><strong>Les Artisans</strong> qui produisent et transforment ;</li>
+                        <li><strong>Les Commerçants</strong> qui font circuler les biens ;</li>
+                        <li><strong>Les Savants</strong> qui soignent, enseignent et éclairent.</li>
+                    </ul>
+                    <p>Aucun ne peut prospérer seul. Votre rôle sera de les faire vivre ensemble.</p>
                 `
             },
             {
-                title: 'Maisons',
+                title: 'Un trésor inespéré',
                 content: `
-                    <p>Chaque maison achète des stocks au marché et peut accueillir des citoyens uniquement tant qu'elle a des stocks.</p>
-                    <p>À partir de <strong>6 paniers</strong>, la maison devient plus riche.</p>
+                    <p>En chemin, vous avez trouvé un <strong>petit trésor</strong>. Peu d'exilés ont cette chance.</p>
+                    <p>Il suffit pour fonder votre <strong>premier hameau</strong>. Mais attention : ici, chacun se débrouille comme il peut, <strong>sans loi ni maître</strong>. À vous de poser les premières routes, les premières maisons, les premières règles.</p>
                 `
             },
             {
-                title: 'Citoyens',
+                title: 'Refonder une ville',
                 content: `
-                    <p>Chaque citoyen va payer des impôts pour renflouer vos fonds et il y aura autant de citoyens qu'il n'y a de stocks de nourriture dans les maisons.</p>
-                    <p>Les impôts sont collectés uniquement en <strong>novembre</strong> : chaque citoyen paie <strong>100€</strong> à cette période.</p>
-                    <p>Chaque bâtiment doit accéder à une route.</p>
+                    <p>Votre but : convaincre d'autres exilés de vous rejoindre, fonder <strong>plusieurs hameaux</strong> et, ensemble, <strong>refonder une ville</strong> capable d'offrir à ses habitants plus de biens et plus de services, pour retrouver un confort de vie optimal.</p>
+                    <p>La <strong>coopération</strong> rapporte bien plus que l'agressivité.</p>
                 `
             },
             {
-                title: 'Coûts d\'achat',
+                title: 'Gagner le cœur des cités voisines',
                 content: `
-                    <p>Chaque bâtiment a un coût d\'achat initial (immobilisation) :</p>
-                    <p><strong>Routes</strong> : 5€</p>
-                    <p><strong>Maisons</strong> : 10€ (20€ pour les maisons à étage)</p>
-                    <p><strong>Fermes</strong> : 10€ (blé), 20€ (carotte), 30€ (chou)</p>
-                    <p><strong>Marchés</strong> : 10€</p>
-                    <p><strong>Infrastructure</strong> : 5€ (lampadaire), 15€ (puits), 25€ (fontaine)</p>
-                    <p><strong>Industrie</strong> : 40€ (grange), 50€ (moulin)</p>
-                    <p>Ces coûts sont déduits de vos fonds au moment de la construction.</p>
-                `
-            },
-            {
-                title: 'Coûts de maintenance',
-                content: `
-                    <p>Chaque bâtiment que vous construisez coûte <strong>2€ de maintenance</strong> par mois pour son entretien.</p>
-                    <p><strong>Coûts de maintenance :</strong></p>
-                    <p><strong>Maisons</strong> : 2€/mois</p>
-                    <p><strong>Fermes</strong> : 2€/mois</p>
-                    <p><strong>Marchés</strong> : 2€/mois</p>
-                    <p><strong>Routes</strong> : 2€/mois</p>
-                    <p><strong>Infrastructure</strong> (puits, fontaines, lampadaires) : 2€/mois</p>
-                    <p><strong>Industrie</strong> (moulins, granges) : 2€/mois</p>
-                    <p>Ces dépenses sont déduites automatiquement chaque mois de vos fonds. Surveillez bien votre budget pour éviter la faillite !</p>
-                `
-            },
-            {
-                title: 'Objectifs',
-                content: `
-                    <p>Vous avez des objectifs à atteindre si cette fonction est activée.</p>
-                    <p><strong>Conseil :</strong> Commencez par une seule maison, une seule ferme, une seule route le plus vite possible pour éviter de perdre de l'argent dès le départ et essayer d'atteindre l'objectif.</p>
-                    <p>Vous n'êtes pas à l'abri des événements imprévisibles comme les récessions économiques, les tempêtes, la sécheresse, les inondations...</p>
+                    <p>Ménagez vos voisins et gagnez leur estime : les cités alentour vous proposeront des <strong>biens introuvables ici</strong>, qui attireront à leur tour de nouveaux exilés sur vos terres.</p>
+                    <p>Toutes les terres ne se valent pas : selon les cas, elles sont plus ou moins accueillantes et chaque nouveau hameau vous réservera ses <strong>défis</strong>.</p>
+                    <p>Et vous n'êtes pas au bout de vos surprises…</p>
+                    <p><em>Envie de comprendre les mécanismes ? Le bouton « Règles » détaille le fonctionnement du jeu.</em></p>
                 `
             }
         ];
+
+        // Volontairement sans aucun chiffre : coûts, portées, durées et seuils
+        // évoluent avec l'équilibrage. Ne décrire ici que les principes stables.
+        this.rulesSteps = [
+            {
+                title: 'Mécanismes du jeu :',
+                content: `
+                    <p>Un hameau qui prospère, c'est une boucle :</p>
+                    <p><strong>des maisons</strong> abritent des habitants, qui ont des <strong>compétences</strong>, qui font fonctionner des <strong>bâtiments</strong>, qui rendent des <strong>services</strong>, qui permettent aux maisons de <strong>s'améliorer</strong>.</p>
+                    <p>Les pages suivantes détaillent chaque maillon.</p>
+                `
+            },
+            {
+                title: 'Les routes',
+                content: `
+                    <p>Chaque bâtiment doit être <strong>relié à une route</strong>, sinon il ne sert à rien.</p>
+                    <p>Les routes ne sont pas que du décor : ce sont elles qui portent les marchandises et les services. Un bâtiment n'aide que les maisons qu'il peut <strong>rejoindre en suivant les routes</strong>, dans sa zone d'action. Une maison trop loin, ou coupée du réseau, n'est pas servie.</p>
+                `
+            },
+            {
+                title: 'Produire et distribuer',
+                content: `
+                    <p>Les biens suivent un trajet : les <strong>producteurs</strong> (fermes, ateliers…) fabriquent, les <strong>marchés</strong> distribuent, les <strong>maisons</strong> consomment.</p>
+                    <p>Si un maillon manque ou est trop éloigné, la suite de la chaîne reste vide. Une ferme sans marché à proximité ne nourrit personne.</p>
+                    <p>La production et la vente suivent le rythme des <strong>saisons</strong>. Pensez à faire des stocks.</p>
+                `
+            },
+            {
+                title: 'Les services',
+                content: `
+                    <p>Chapelle, médecin, bains, taverne, école, cinéma… chaque service couvre les maisons proches par la route.</p>
+                    <p>Un service est utile <strong>seulement s'il est actif</strong> : il lui faut du personnel (voir « Travailleurs »). Un bâtiment de service vide ne couvre personne.</p>
+                `
+            },
+            {
+                title: 'Faire évoluer une maison',
+                content: `
+                    <p>Une maison commence tout en bas. Pour monter d'un cran, elle doit remplir les conditions du niveau suivant : être reliée à une route, être couverte par certains services, avoir de quoi se nourrir, et parfois disposer de plusieurs sortes de biens.</p>
+                    <p>Les conditions <strong>s'additionnent</strong> : un niveau élevé demande tout ce que demandaient les niveaux précédents, plus de nouveaux services.</p>
+                    <p>Attention : si un service disparaît ou n'atteint plus la maison, elle <strong>redescend</strong>. Une belle maison est un équilibre à entretenir.</p>
+                `
+            },
+            {
+                title: 'Artisans, Commerçants, Savants',
+                content: `
+                    <p>Chaque maison accueille l'un de ces trois groupes.</p>
+                    <p>En progressant, ses habitants apprennent de nouvelles <strong>compétences</strong> : spirituelle, médicale, enseignement, vente… Plus la maison est évoluée, plus ses habitants sont qualifiés.</p>
+                    <p>Une même compétence peut monter en niveau au fil des paliers. Un habitant très qualifié peut aussi tenir un poste plus simple de la même compétence.</p>
+                `
+            },
+            {
+                title: 'Travailleurs',
+                content: `
+                    <p>La plupart des bâtiments ont besoin de <strong>travailleurs</strong>. Chaque poste demande une <strong>compétence précise</strong> : seul un habitant qui la possède peut l'occuper.</p>
+                    <p>Un habitant ne travaille que dans un bâtiment à la fois. Sans personnel qualifié, un bâtiment tourne au ralenti ou s'arrête.</p>
+                    <p><strong>Astuce :</strong> pour qu'un médecin ouvre ses portes, il faut d'abord des maisons assez évoluées pour former des habitants compétents en médecine.</p>
+                `
+            },
+            {
+                title: 'Argent et imprévus',
+                content: `
+                    <p>Construire coûte de l'argent, puis de l'entretien chaque mois. Vos habitants rapportent des impôts : gardez vos <strong>revenus</strong> au-dessus de vos <strong>dépenses</strong>.</p>
+                    <p>Un hameau qui s'étend trop vite sans rentrées s'endette.</p>
+                    <p>Des événements imprévus (tempêtes, sécheresses, récessions…) viendront bousculer vos équilibres. Gardez une réserve.</p>
+                `
+            }
+        ];
+
+        this.mode = 'story';
+        this.steps = this.storySteps;
+    }
+
+    /**
+     * Bascule entre l'histoire et les règles.
+     */
+    toggleRules() {
+        this.mode = this.mode === 'rules' ? 'story' : 'rules';
+        this.steps = this.mode === 'rules' ? this.rulesSteps : this.storySteps;
+        this.currentStep = 0;
+        this.updateDisplay();
+        this.focusPrimaryAction();
     }
 
     /**
@@ -242,6 +304,8 @@ class TutorialPanel {
             this.init();
         }
 
+        this.mode = 'story';
+        this.steps = this.storySteps;
         this.currentStep = 0;
         this.updateDisplay();
         this.lastFocusedElement = document.activeElement instanceof HTMLElement
@@ -376,6 +440,11 @@ class TutorialPanel {
     updateButtons() {
         const previousBtn = this.panel.querySelector('.tutorial-previous-btn');
         const nextBtn = this.panel.querySelector('.tutorial-next-btn');
+        const rulesBtn = this.panel.querySelector('.tutorial-rules-btn');
+
+        if (rulesBtn) {
+            rulesBtn.textContent = this.mode === 'rules' ? 'Histoire' : 'Règles';
+        }
 
         // Bouton précédent
         if (previousBtn) {

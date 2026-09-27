@@ -23,6 +23,7 @@
 //   applySeason(season)     from the season / time update
 //   applyStaffing(staffed)  from the employment read model
 
+import { createEmptyStocks } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { registerBuildingSourceAdapter } from '../buildingSourceAdapterRegistry.js';
@@ -225,7 +226,7 @@ registerBuildingSourceAdapter('kenneyFarmField', {
       footprintDepth,
       neighbors: [],
       pop: 0,
-      stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+      stocks: createEmptyStocks(),
       time: 0,
       roads: 0,
       stage: 0,

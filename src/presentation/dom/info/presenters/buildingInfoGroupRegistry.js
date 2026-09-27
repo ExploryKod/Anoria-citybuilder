@@ -30,6 +30,7 @@ import {
 import {
   formatHouseSkillsModel,
   formatHouseResourcesModel,
+  formatHouseActivityModel,
   formatHouseLayoutHeader,
   formatHouseLayoutOptions,
 } from './formats/houseInfoFormat.js';
@@ -57,7 +58,7 @@ import {
   formatServiceOverviewModel,
   formatServiceStaffModel,
 } from './formats/serviceInfoFormat.js';
-import { renderHouseSkillsView, renderHouseResourcesView } from '../views/houseInfoView.js';
+import { renderHouseSkillsView, renderHouseResourcesView, renderHouseActivityView } from '../views/houseInfoView.js';
 import { renderHubStorageFoyerView } from '../views/hub/hubStorageFoyerView.js';
 import { renderKvPanelView } from '../views/kvPanelView.js';
 
@@ -80,6 +81,11 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         label: '📦 Ressources',
         format: formatHouseResourcesModel,
         render: (container, model) => renderHouseResourcesView(container, model),
+      },
+      {
+        id: BUILDING_INFO_TAB_IDS.activity,
+        format: formatHouseActivityModel,
+        render: (container, model) => renderHouseActivityView(container, model),
       },
       ...COMMON_BUILDING_INFO_TAB_SPECS,
     ],

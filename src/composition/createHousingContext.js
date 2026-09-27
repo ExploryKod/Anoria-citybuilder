@@ -1,5 +1,4 @@
 import { DexieHousingBuildingRepository } from '../contexts/housing/infrastructure/dexie/DexieHousingBuildingRepository.js';
-import { ClearPopulationWithoutRoadAccess } from '../contexts/housing/application/commands/ClearPopulationWithoutRoadAccess.js';
 import { GrowHousePopulation } from '../contexts/housing/application/commands/growth/GrowHousePopulation.js';
 import { GrowAllHousePopulation } from '../contexts/housing/application/commands/growth/GrowAllHousePopulation.js';
 import { EvolveHouseBuilding } from '../contexts/housing/application/commands/evolution/EvolveHouseBuilding.js';
@@ -9,7 +8,6 @@ import { GetFamishedPopulation } from '../contexts/housing/application/queries/G
 import { GetCityFoodSupply } from '../contexts/housing/application/queries/GetCityFoodSupply.js';
 import { GetResidentialHouseAtTile } from '../contexts/housing/application/queries/GetResidentialHouseAtTile.js';
 import { EvaluateHouseFoodAffluence } from '../contexts/housing/application/queries/EvaluateHouseFoodAffluence.js';
-import { PreviewHouseEvolution } from '../contexts/housing/application/queries/PreviewHouseEvolution.js';
 import {
   getCitizenSkillsForHouse,
   houseCitizenHasSkillAtLevel,
@@ -27,9 +25,6 @@ import { computeHouseCitizenComposition } from '../contexts/housing/domain/polic
 export function createHousingContext({ housingBuildingRepository } = {}) {
   const housingBuildingRepositoryImpl =
     housingBuildingRepository ?? new DexieHousingBuildingRepository();
-  const clearPopulationWithoutRoadAccess = new ClearPopulationWithoutRoadAccess(
-    housingBuildingRepositoryImpl
-  );
   const growHousePopulation = new GrowHousePopulation(housingBuildingRepositoryImpl);
   const growAllHousePopulation = new GrowAllHousePopulation(
     housingBuildingRepositoryImpl,
@@ -53,7 +48,6 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     housingBuildingRepositoryImpl
   );
   const evaluateHouseFoodAffluenceQuery = new EvaluateHouseFoodAffluence();
-  const previewHouseEvolutionQuery = new PreviewHouseEvolution();
 
   return {
     housingBuildingRepository: housingBuildingRepositoryImpl,
@@ -66,9 +60,6 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     getFamishedPopulationQuery,
     getCityFoodSupplyQuery,
     evaluateHouseFoodAffluenceQuery,
-    previewHouseEvolutionQuery,
-
-    clearPopulationWithoutRoadAccess,
 
     async growHousePopulation(houseId, monthIndex, options = {}) {
       return growHousePopulation.execute({
@@ -106,21 +97,8 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
       return getCityFoodSupplyQuery.execute();
     },
 
-    async clearPopulationWithoutRoadAccess() {
-      return clearPopulationWithoutRoadAccess.execute();
-    },
-
     evaluateHouseFoodAffluence({ stocks, population = 0 }) {
       return evaluateHouseFoodAffluenceQuery.execute({ stocks, population });
-    },
-
-    previewHouseEvolution({ stocks, population, buildingType, hasRoadAccess }) {
-      return previewHouseEvolutionQuery.execute({
-        stocks,
-        population,
-        buildingType,
-        hasRoadAccess,
-      });
     },
 
     /**

@@ -1,7 +1,7 @@
 import db from '../../../../core/persistence/dexie/db.js';
 
 /**
- * Dexie adapter — food supply chain audit log (`foodTraceability` table).
+ * Dexie adapter — resource supply chain audit log (`supplyTraceability` table).
  */
 export class DexieSupplyTraceabilityRepository {
   constructor(database = db) {
@@ -18,6 +18,7 @@ export class DexieSupplyTraceabilityRepository {
    * @param {string} foodType
    * @param {number} quantity
    * @param {number} [price=1]
+   * @param {Record<string, unknown>} [extra] Extra fields stored on the row (e.g. a `cause`).
    */
   async addTransaction(
     turn,
@@ -28,10 +29,11 @@ export class DexieSupplyTraceabilityRepository {
     to,
     foodType,
     quantity,
-    price = 1
+    price = 1,
+    extra = {}
   ) {
     try {
-      await this.db.foodTraceability.add({
+      await this.db.supplyTraceability.add({
         turn,
         month,
         year,
@@ -47,6 +49,7 @@ export class DexieSupplyTraceabilityRepository {
         quantity,
         price,
         totalPrice: quantity * price,
+        ...extra,
       });
     } catch (error) {
       console.error('[DexieSupplyTraceabilityRepository] Error adding transaction:', error);
@@ -58,7 +61,7 @@ export class DexieSupplyTraceabilityRepository {
       turn,
       month,
       year,
-      'farm_to_market',
+      'source_to_distributor',
       source,
       distributor,
       foodType,
@@ -67,12 +70,64 @@ export class DexieSupplyTraceabilityRepository {
     );
   }
 
+  /**
+   * State of one building of the harvest chain (a farm or a hub) on a monthly
+   * tick: `quantity` is 1 when it can work (road + staff), 0 when it is idle.
+   */
+  async recordChainState(turn, month, year, building, foodType, quantity) {
+    await this.addTransaction(turn, month, year, 'chain_state', building, null, foodType, quantity, 0);
+  }
+
+  /**
+   * Full state of one building (stocks, staff, level…) at the moment it changed:
+   * the log keeps a row only when something differs from the last one, so a state
+   * lasts until the next row.
+   */
+  async recordBuildingState(turn, month, year, building, state) {
+    await this.addTransaction(turn, month, year, 'building_state', building, null, null, 0, 0, { state });
+  }
+
+  /**
+   * The city's employment at a month's end (jobs, unemployed, by social group): the log keeps
+   * a row only when it differs from the last one.
+   */
+  async recordEmploymentSummary(turn, month, year, summary) {
+    await this.addTransaction(turn, month, year, 'employment_summary', null, null, null, 0, 0, { summary });
+  }
+
+  /**
+   * Something that happened to the city (a house went up a level, people died of
+   * famine, a building was placed or demolished): `event` says what, `subject` is
+   * the building concerned (or null), `details` the numbers that explain it.
+   */
+  async recordGameEvent(turn, month, year, event, subject, quantity, details = {}) {
+    await this.addTransaction(turn, month, year, 'game_event', subject, null, null, quantity, 0, { event, details });
+  }
+
+  /** Inhabitants of one house on a monthly tick, so past months show the population they really had. */
+  async recordPopulationState(turn, month, year, house, foodType, population) {
+    await this.addTransaction(turn, month, year, 'population_state', house, null, foodType, population, 0);
+  }
+
+  /**
+   * A producer whose harvest no hub bought on a collection turn, and why
+   * (`cause`: no_road, no_workers, hub_full, hub_idle, unknown).
+   */
+  async recordSaleMissed(turn, month, year, source, foodType, cause) {
+    await this.addTransaction(turn, month, year, 'sale_missed', source, null, foodType, 0, 0, { cause });
+  }
+
+  /** A producer's harvest bought by a hub on that turn — the only proof it really delivered. */
+  async recordSourceToHub(turn, month, year, source, hub, foodType, quantity) {
+    await this.addTransaction(turn, month, year, 'source_to_hub', source, hub, foodType, quantity, 0);
+  }
+
   async recordDistributorToConsumer(turn, month, year, distributor, consumer, foodType, quantity, price = 1) {
     await this.addTransaction(
       turn,
       month,
       year,
-      'market_to_house',
+      'distributor_to_consumer',
       distributor,
       consumer,
       foodType,
@@ -81,7 +136,7 @@ export class DexieSupplyTraceabilityRepository {
     );
   }
 
-  async recordHouseConsumption(turn, month, year, house, foodType, quantity, _citizens) {
+  async recordHouseConsumption(turn, month, year, house, foodType, quantity, citizens) {
     await this.addTransaction(
       turn,
       month,
@@ -91,13 +146,15 @@ export class DexieSupplyTraceabilityRepository {
       null,
       foodType,
       quantity,
-      0
+      0,
+      // Inhabitants who sat at the table: the ones born afterwards did not
+      { pop: Number.isFinite(citizens) ? citizens : null }
     );
   }
 
   /** @param {number} turn @param {number|null} [month=null] */
   async getTransactionsForMonth(turn, month = null) {
-    let query = this.db.foodTraceability.where('turn').equals(turn);
+    let query = this.db.supplyTraceability.where('turn').equals(turn);
 
     if (month !== null) {
       query = query.and((transaction) => transaction.month === month);
@@ -108,7 +165,7 @@ export class DexieSupplyTraceabilityRepository {
 
   /** @param {number|null} [maxAge=null] age in days */
   async getAllTransactions(maxAge = null) {
-    let transactions = await this.db.foodTraceability.toArray();
+    let transactions = await this.db.supplyTraceability.toArray();
 
     if (maxAge) {
       const cutoffDate = new Date();
@@ -149,14 +206,14 @@ export class DexieSupplyTraceabilityRepository {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - maxAge);
 
-      const oldTransactions = await this.db.foodTraceability
+      const oldTransactions = await this.db.supplyTraceability
         .where('date')
         .below(cutoffDate.toISOString())
         .toArray();
 
       if (oldTransactions.length > 0) {
         const ids = oldTransactions.map((t) => t.id);
-        await this.db.foodTraceability.bulkDelete(ids);
+        await this.db.supplyTraceability.bulkDelete(ids);
       }
     } catch (error) {
       console.error('[DexieSupplyTraceabilityRepository] Error cleaning up:', error);

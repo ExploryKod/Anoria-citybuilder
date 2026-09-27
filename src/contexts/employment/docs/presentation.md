@@ -162,7 +162,7 @@ Helpers internes ( aussi exposés sur `window.game` où indiqué ) :
 |---|---|---|
 | Marché | `isBuying`, `no-food` | `supply.getBuildingSupplyView` |
 | Moulin | `isCollecting` | idem |
-| Ferme | `grow-food`, `harvest`, `sell-food`, `no-food` (hiver), `sold-to-windmill` | saison `TimeManager` + Supply view |
+| Ferme | `grow-food`, `harvest`, `sell-food`, `no-food` (hiver), `sold-to-hub` | saison `TimeManager` + Supply view |
 | Usine | — | pas de sprite Supply dédié dans `scene.update` |
 
 `GetBuildingSupplyView` applique `OperationalGatePolicy` sur les flags UI :

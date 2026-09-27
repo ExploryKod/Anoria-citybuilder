@@ -22,7 +22,6 @@ export function computeCivilServantCount(population) {
  * @param {{
  *   population: number,
  *   unemployed: number,
- *   eliteCount?: number,
  *   referenceSalaryPerMonth: number,
  *   unemploymentBenefitRate: number,
  *   salaryTaxRate: number,
@@ -45,15 +44,13 @@ export function computeCivilServantCount(population) {
 export function computeReferenceSalaryPayrollBreakdown({
   population,
   unemployed,
-  eliteCount = 0,
   referenceSalaryPerMonth,
   unemploymentBenefitRate,
   salaryTaxRate,
 }) {
   const ref = referenceSalaryPerMonth;
   const civilServantCount = computeCivilServantCount(population);
-  const elites = Math.max(0, eliteCount ?? 0);
-  const laborPool = Math.max(0, population - civilServantCount - elites);
+  const laborPool = Math.max(0, population - civilServantCount);
   const unemployedCount = Math.max(0, Math.min(unemployed ?? 0, laborPool));
   const citizenCount = Math.max(0, laborPool - unemployedCount);
 

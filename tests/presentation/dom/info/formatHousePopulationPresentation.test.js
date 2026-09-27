@@ -19,13 +19,15 @@ describe('formatHousePopulationPresentation', () => {
     );
 
     expect(profiles).toEqual([
-      expect.objectContaining({ statusKey: 'worker', count: 12, label: 'citoyens artisans' }),
+      expect.objectContaining({ statusKey: 'worker', count: 12, label: 'citoyens artisans-ouvriers' }),
     ]);
     expect(skills).toEqual([
       expect.objectContaining({ skillKey: 'subsistence-forager', count: 12, label: 'chasse-cueillette' }),
       expect.objectContaining({ skillKey: 'spiritual', count: 12, label: 'spiritualité' }),
       expect.objectContaining({ skillKey: 'fermier', count: 12, label: 'fermier' }),
       expect.objectContaining({ skillKey: 'artisanat', count: 12, label: 'artisanat' }),
+      expect.objectContaining({ skillKey: 'manutention', count: 12, label: 'manutention' }),
+      expect.objectContaining({ skillKey: 'telecoms', count: 12, label: 'télécommunications' }),
     ]);
   });
 
@@ -45,13 +47,13 @@ describe('formatHousePopulationPresentation', () => {
     ]);
   });
 
-  test('a skill the catalog grants but SKILL_CATALOG has no curated entry for still displays (humanized fallback)', () => {
+  test('a skill the catalog grants but SKILL_CATALOG has no curated entry for is shown as the "…" marker, not a label made up from its id', () => {
     const composition = { profiles: [], skills: { 'future-skill': 3 } };
 
     const { skills } = formatHousePopulationPresentation(composition, null);
 
     expect(skills).toEqual([
-      expect.objectContaining({ skillKey: 'future-skill', count: 3, label: 'future skill', emoji: '🔧' }),
+      expect.objectContaining({ skillKey: 'future-skill', count: 3, label: '…', emoji: '…' }),
     ]);
   });
 

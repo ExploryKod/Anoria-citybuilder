@@ -7,9 +7,6 @@ import { createEmploymentBuildingSnapshot } from '../../../src/contexts/employme
 import {
   workerPopFromHouse,
   citizenPopFromHouse,
-  elitePopFromHouse,
-  popAfterPalaceEvolution,
-  popAfterPalaceRegression,
   maxTotalPopForHouse,
 } from '../../../src/contexts/employment/domain/policies/LaborPoolPolicy.js';
 import { computeCityEmploymentSummary } from '../../../src/contexts/employment/domain/computeCityEmploymentSummary.js';
@@ -52,25 +49,12 @@ function workplace(id, { workerNeed, sector, roadCount = 1, worker = 0, type = '
 
 describe('Employment — GetCityEmploymentSummary', () => {
   describe('LaborPoolPolicy', () => {
-    test('regular houses: pop = citizens, no élites', () => {
+    test('regular houses: every resident is a citizen and a worker', () => {
       expect(citizenPopFromHouse('House-Blue', 5)).toBe(5);
-      expect(elitePopFromHouse('House-Blue', 5)).toBe(0);
       expect(workerPopFromHouse('House-Blue', 5)).toBe(5);
     });
 
-    test('palace pop=7: 6 citizens + 1 élite (élite excluded from worker pool)', () => {
-      expect(citizenPopFromHouse('House-2Story', 7)).toBe(6);
-      expect(elitePopFromHouse('House-2Story', 7)).toBe(1);
-      expect(workerPopFromHouse('House-2Story', 7)).toBe(6);
-    });
-
-    test('palace evolution adds +1 pop; regression removes élites', () => {
-      expect(popAfterPalaceEvolution(6)).toBe(7);
-      expect(popAfterPalaceRegression('House-2Story', 7)).toBe(6);
-    });
-
-    test('palace max total pop is 7 at this stage', () => {
-      expect(maxTotalPopForHouse('House-2Story')).toBe(7);
+    test('a house holds at most 6 residents', () => {
       expect(maxTotalPopForHouse('House-Blue')).toBe(6);
     });
 
@@ -87,7 +71,6 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(residentialGroupForType('House-Blue')).toBe('merchants');
       expect(residentialGroupForType('House-Red')).toBe('artisans');
       expect(residentialGroupForType('House-Purple')).toBe('scholars');
-      expect(residentialGroupForType('House-2Story')).toBeNull();
       expect(residentialGroupForType('Farm-Wheat')).toBeNull();
     });
 
@@ -104,20 +87,20 @@ describe('Employment — GetCityEmploymentSummary', () => {
   });
 
   describe('computeCityEmploymentSummary', () => {
-    test('worker pool excludes élites; totalPopulation = citizens + élites', () => {
+    test('worker pool counts every resident of a road-served house; totalPopulation = worker pool', () => {
       const summary = computeCityEmploymentSummary([
         house('h1', 5, 1),
-        house('h2', 7, 1, 'House-2Story'),
+        house('h2', 7, 1, 'House-Red'),
         house('h3', 4, 0), // no road
       ]);
 
-      expect(summary.workerPool).toBe(11); // 5 + 6
-      expect(summary.elitePool).toBe(1);
+      expect(summary.workerPool).toBe(12); // 5 + 7 (the house without a road counts for nothing)
+      expect(summary).not.toHaveProperty('elitePool');
       expect(summary.totalPopulation).toBe(12);
       expect(summary.civilServantCount).toBe(1);
-      expect(summary.laborPool).toBe(10);
+      expect(summary.laborPool).toBe(11);
       expect(summary.activeCitizenCount).toBe(0);
-      expect(summary.unemployed).toBe(10);
+      expect(summary.unemployed).toBe(11);
     });
 
     test('lack and understaffed: farms without road count; other workplaces need road', () => {

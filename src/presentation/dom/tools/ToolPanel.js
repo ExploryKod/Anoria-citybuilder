@@ -1,3 +1,5 @@
+import { listRoadTypes, primaryRoadType } from '../../../shared/building-catalog/roadQueries.js';
+import { getBuildingDefinition } from '../../../shared/building-catalog/buildingCatalog.js';
 import {
   loaderButton,
   panelLayout,
@@ -17,6 +19,9 @@ import {
 import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
 import { NATURE_ASSETS } from '../../three/assets/natureAssets.js';
 import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
+import { getDirectToolForCategory } from '../../three/assets/buildingCategories.js';
+
+export { getDirectToolForCategory };
 
 /**
  * Single source of truth for every placeable id's carousel button (icon,
@@ -25,6 +30,15 @@ import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
  * catalog, not a case to silently paper over with a default icon.
  */
 const ASSET_CATALOG = { ...BUILDING_ASSETS, ...NATURE_ASSETS, ...TERRAIN_ASSETS };
+
+/**
+ * What a tool button says: a building is named as the catalog names it; an editor tool that is not a building
+ * has only the label of its mesh-catalog entry.
+ * @param {string} toolId
+ */
+function toolLabel(toolId) {
+  return getBuildingDefinition(toolId)?.displayName ?? catalogButton(toolId).label;
+}
 
 /**
  * @param {string} toolId
@@ -82,21 +96,11 @@ export function bindToolPanelDeps(panelDeps) {
 const GROUP_CREATORS = {
   houses: () => fillPanelFromToolIds('houses'),
   residential: () => fillPanelFromToolIds('houses'),
-  palaces: () => fillPanelFromToolIds('palaces'),
   farms: () => fillPanelFromToolIds('farms'),
   industry: () => fillPanelFromToolIds('industry'),
-  markets: () => fillPanelFromToolIds('markets', { exclude: ['Market-Stall'] }),
-  infrastructure: () =>
-    fillPanelFromToolIds('infrastructure', {
-      exclude: [
-        'StonePath-001',
-        'StonePath-Right-001',
-        'StonePath-Left-001',
-        'StonePath-Cross-001',
-        'StonePath-Tee-001',
-        'StonePath-End-001',
-      ],
-    }),
+  markets: () => fillPanelFromToolIds('markets'),
+  // The road tool and its variants have their own pill (Routes): not listed again here.
+  infrastructure: () => fillPanelFromToolIds('infrastructure', { exclude: listRoadTypes() }),
   public: () => fillPanelFromToolIds('public'),
   nature: () => fillPanelFromToolIds('nature'),
   decoration: () => fillPanelFromToolIds('decoration'),
@@ -178,10 +182,6 @@ export function toggleModal(e) {
     return;
   }
 
-  if (group === 'palaces' && deps?.buttonStateManager && !deps.buttonStateManager.isEnabled('palace-btn')) {
-    return;
-  }
-
   getButtonsUnactive();
   getButtonsDisabled();
   panelLayoutInner.classList.add('loading-objects');
@@ -218,7 +218,7 @@ function fillPanelFromToolIds(category, opts = {}) {
 
   for (const toolId of ids) {
     const catalog = catalogButton(toolId);
-    const buttonInfo = { text: catalog.label, tool: toolId, group: category, title: catalog.tooltip };
+    const buttonInfo = { text: toolLabel(toolId), tool: toolId, group: category, title: toolLabel(toolId) };
     makeNewButton(buttonInfo, resolveIcon(toolId));
   }
 
@@ -235,11 +235,11 @@ function createRoadsButtons() {
   hint.innerHTML = '<kbd>R</kbd> = rotation du chemin';
   panelLayoutInner.appendChild(hint);
 
-  if (ASSET_CATALOG['StonePath-001']?.button) {
-    const catalog = catalogButton('StonePath-001');
+  if (ASSET_CATALOG[primaryRoadType()]?.button) {
+    const catalog = catalogButton(primaryRoadType());
     const btn = makeNewButton(
-      { text: catalog.label, tool: 'StonePath-001', group: catalog.group, title: catalog.tooltip },
-      resolveIcon('StonePath-001')
+      { text: toolLabel(primaryRoadType()), tool: primaryRoadType(), group: catalog.group, title: toolLabel(primaryRoadType()) },
+      resolveIcon(primaryRoadType())
     );
     if (btn) {
       btn.dataset.stonePathTool = '1';
@@ -254,21 +254,12 @@ function resolveIcon(toolId) {
   const icon = catalogButton(toolId).icon;
   if (icon.kind === 'svg') return icon.value;
   if (icon.kind === 'png') return kenneyPreviewIconHtml(icon.value);
-  if (icon.kind === 'icon') return monochromeIconHtml(icon.value);
   if (icon.kind === 'emoji') return icon.value;
   throw new Error(`[ToolPanel] Unknown icon kind "${icon?.kind}" for "${toolId}"`);
 }
 
 const CATEGORY_EXCLUDES = {
-  markets: ['Market-Stall'],
-  infrastructure: [
-    'StonePath-001',
-    'StonePath-Right-001',
-    'StonePath-Left-001',
-    'StonePath-Cross-001',
-    'StonePath-Tee-001',
-    'StonePath-End-001',
-  ],
+  infrastructure: listRoadTypes(),
 };
 
 /**
@@ -289,22 +280,23 @@ export function getToolButtonInfosForCategory(categoryKey) {
     return [
       { text: 'Démolir', tool: 'bulldoze', group: 'tools' },
       { text: 'Sélectionner', tool: 'select-object', group: 'tools' },
+      { text: 'Portée', tool: 'show-range', group: 'tools' },
     ];
   }
 
-  if (categoryKey === 'roads') {
-    const infos = [];
-    if (ASSET_CATALOG['StonePath-001']?.button) {
-      const catalog = catalogButton('StonePath-001');
-      infos.push({
-        text: catalog.label,
-        tool: 'StonePath-001',
+  // A category whose pill IS a tool (the catalog's button.pillCategory) lists just that tool
+  const directTool = getDirectToolForCategory(categoryKey);
+  if (directTool) {
+    const catalog = catalogButton(directTool);
+    return [
+      {
+        text: toolLabel(directTool),
+        tool: directTool,
         group: catalog.group,
-        title: catalog.tooltip,
-        stonePathTool: true,
-      });
-    }
-    return infos;
+        title: toolLabel(directTool),
+        stonePathTool: Boolean(ASSET_CATALOG[directTool]?.selectableMeshes),
+      },
+    ];
   }
 
   const ids = getToolIdsForCategory(categoryKey);
@@ -316,7 +308,7 @@ export function getToolButtonInfosForCategory(categoryKey) {
     if (seen.has(toolId)) continue;
     seen.add(toolId);
     const catalog = catalogButton(toolId);
-    infos.push({ text: catalog.label, tool: toolId, group: categoryKey, title: catalog.tooltip });
+    infos.push({ text: toolLabel(toolId), tool: toolId, group: categoryKey, title: toolLabel(toolId) });
   }
 
   return infos;
@@ -396,7 +388,3 @@ function kenneyPreviewIconHtml(previewUrl) {
   return `<img src="${previewUrl}" alt="" class="tool-kenney-preview" decoding="async" loading="lazy" />`;
 }
 
-/** A 24px monochrome silhouette icon, styled like the inline SVGs around it (see main.css). */
-function monochromeIconHtml(url) {
-  return `<img src="${url}" alt="" class="tool-icon-img" width="24" height="24" decoding="async" />`;
-}

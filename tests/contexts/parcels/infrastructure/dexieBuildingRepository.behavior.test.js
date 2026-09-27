@@ -147,21 +147,12 @@ describe('DexieBuildingRepository — use cases bout-en-bout (UUID)', () => {
     expect(result.instanceId).toBe(houseInstanceId);
   });
 
-  test('voisins route → RecalculateRoadAccess → GetBuildingRoadAccess.hasAccess', async () => {
-    const updateNeighbors = new UpdateNeighborsForBuilding(repository, events);
+  test('une route posée contre la maison → RecalculateRoadAccess → GetBuildingRoadAccess.hasAccess', async () => {
     const recalcRoadAccess = new RecalculateRoadAccessForBuilding(repository, events);
     const getRoadAccess = new GetBuildingRoadAccess(repository);
 
-    await updateNeighbors.execute(houseInstanceId, [
-      {
-        name: 'StonePath-001',
-        id: createBuildingInstanceId(),
-        x: 8,
-        y: 11,
-        zone: 1,
-        isRoad: true,
-      },
-    ]);
+    // The road is a building row like any other: the tile just below the house (a house is 2x2).
+    await seedBuilding(makeHouseRecord({ type: 'StonePath-001', x: 8, y: 12 }));
 
     const recalc = await recalcRoadAccess.execute(houseInstanceId);
     expect(recalc?.roadAccess.hasAccess).toBe(true);

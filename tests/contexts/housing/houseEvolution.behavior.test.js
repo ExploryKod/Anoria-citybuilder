@@ -1,35 +1,24 @@
 /**
  * Behavior tests — Housing: house progression.
  *
- * Blue/Red/Purple houses are permanent social groups (see
+ * Houses are permanent social groups (see
  * `HouseGroupSectorEligibilityPolicy` in Employment); only their `level`
  * (1 = autarky, 2 = group profession) evolves — see `HouseLevelPolicy`.
- * Palace (`House-2Story`) keeps its own frozen color-ladder path via
- * `HouseEvolutionPolicy.resolveHouseEvolution` // TODO(elites).
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createHousingBuildingSnapshot } from '../../../src/contexts/housing/domain/HousingBuildingSnapshot.js';
-import {
-  HOUSE_TYPE_BLUE,
-  HOUSE_TYPE_RED,
-  HOUSE_TYPE_PALACE,
-} from '../../../src/contexts/housing/domain/HouseTypeCatalog.js';
-import {
-  resolveHouseEvolution,
-  popAfterPalaceRegression,
-} from '../../../src/contexts/housing/domain/policies/HouseEvolutionPolicy.js';
 import {
   HOUSE_LEVEL_AUTARKY,
   HOUSE_LEVEL_SPECIALIZED,
   resolveHouseLevel,
 } from '../../../src/contexts/housing/domain/policies/HouseLevelPolicy.js';
 import {
-  HOUSE_LEVEL_1_MAX_POP,
-  HOUSE_LEVEL_2_MAX_POP,
   maxPopulationForLevel,
 } from '../../../src/contexts/housing/domain/policies/HouseCapacityPolicy.js';
+import { SOCIAL_CATEGORY } from '../../../src/shared/population/socialCategoryCatalog.js';
 import { EvolveHouseBuilding } from '../../../src/contexts/housing/application/commands/evolution/EvolveHouseBuilding.js';
+import { EvolveAllHouseBuildings } from '../../../src/contexts/housing/application/commands/evolution/EvolveAllHouseBuildings.js';
 
 class InMemoryHousingEvolutionRepository {
   constructor(buildings = []) {
@@ -50,23 +39,6 @@ class InMemoryHousingEvolutionRepository {
     house.level = targetLevel;
     house.pop = targetPop;
   }
-
-  async applyEvolution({ oldId, targetType, targetPop }) {
-    const house = this.raw.get(oldId);
-    const newId = `${targetType}-${house.x}-${house.y}`;
-    if (newId !== oldId) {
-      this.raw.delete(oldId);
-      this.raw.set(newId, {
-        ...house,
-        id: newId,
-        type: targetType,
-        pop: targetPop,
-      });
-    } else {
-      house.pop = targetPop;
-    }
-    return { newId, previousId: oldId };
-  }
 }
 
 function house(id, type, extras = {}) {
@@ -83,13 +55,29 @@ function house(id, type, extras = {}) {
   });
 }
 
+const HOUSE_TYPE_BLUE = 'House-Blue';
+const HOUSE_TYPE_RED = 'House-Red';
+
 describe('Housing — house progression', () => {
   describe('HouseCapacityPolicy.maxPopulationForLevel', () => {
-    test('level 1 caps at 6, level 2 doubles to 12', () => {
-      expect(maxPopulationForLevel(1)).toBe(HOUSE_LEVEL_1_MAX_POP);
-      expect(maxPopulationForLevel(1)).toBe(6);
-      expect(maxPopulationForLevel(2)).toBe(HOUSE_LEVEL_2_MAX_POP);
-      expect(maxPopulationForLevel(2)).toBe(12);
+    test('each tier reads its ceiling from the social-category catalog', () => {
+      for (const group of ['artisans', 'merchants', 'scholars']) {
+        for (const [level, tier] of Object.entries(SOCIAL_CATEGORY[group].tiers)) {
+          expect(maxPopulationForLevel(Number(level), group)).toBe(tier.maxPopulation);
+        }
+      }
+    });
+
+    test('a deeper tier never holds fewer residents than the one below it', () => {
+      const tiers = SOCIAL_CATEGORY.artisans.tiers;
+      const levels = Object.keys(tiers).map(Number).sort((a, b) => a - b);
+      for (let i = 1; i < levels.length; i++) {
+        expect(tiers[levels[i]].maxPopulation).toBeGreaterThan(tiers[levels[i - 1]].maxPopulation);
+      }
+    });
+
+    test('an unknown group has no declared ceiling', () => {
+      expect(maxPopulationForLevel(1, 'nobody')).toBe(0);
     });
   });
 
@@ -121,6 +109,38 @@ describe('Housing — house progression', () => {
       expect(result.changed).toBe(false);
     });
 
+    test('a demotion says which requirement of the tier no longer holds', () => {
+      // The lowest tier that asks for goods variety; every other requirement of it is met
+      const tiers = SOCIAL_CATEGORY.artisans.tiers;
+      const level = Number(
+        Object.keys(tiers).find((n) => tiers[n].requirements.some((r) => r.kind === 'goodsVariety'))
+      );
+      const periodKey = 5;
+      const servedFlags = Object.fromEntries(
+        Object.values(tiers)
+          .flatMap((tier) => tier.requirements)
+          .filter((r) => r.kind === 'serviceCoverage')
+          .map((r) => [r.category, periodKey])
+      );
+
+      const result = resolveHouseLevel({
+        level,
+        pop: 12,
+        roadCount: 1,
+        residentialGroup: 'artisans',
+        servedFlags,
+        // The house ate, but drew from one good only
+        lastConsumption: { month: periodKey, demand: 12, taken: 12, totalUnfed: 0, categoriesTaken: ['carrot'] },
+        periodKey,
+      });
+
+      expect(result.changed).toBe(true);
+      expect(result.reason).toMatch(/requirements_lost$/);
+      expect(result.unmetRequirements).toEqual([
+        expect.objectContaining({ kind: 'goodsVariety', min: 2, current: 1, target: 2 }),
+      ]);
+    });
+
     test('level 1 stays autarkic without road access', () => {
       const result = resolveHouseLevel({ level: 1, pop: 3, roadCount: 0, residentialGroup: 'artisans' });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
@@ -136,7 +156,7 @@ describe('Housing — house progression', () => {
     test('level 2 regresses to level 1 when road access is lost, population clamped to the level-1 cap', () => {
       const result = resolveHouseLevel({ level: 2, pop: 10, roadCount: 0, residentialGroup: 'artisans' });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
-      expect(result.targetPop).toBe(HOUSE_LEVEL_1_MAX_POP);
+      expect(result.targetPop).toBe(SOCIAL_CATEGORY.artisans.tiers[1].maxPopulation);
       expect(result.changed).toBe(true);
       expect(result.reason).toBe('level2_to_level1_requirements_lost');
     });
@@ -229,19 +249,6 @@ describe('Housing — house progression', () => {
     });
   });
 
-  describe('Palace evolution (frozen legacy path — HouseEvolutionPolicy)', () => {
-    test('palace regresses when palace conditions fail', () => {
-      const result = resolveHouseEvolution({
-        type: HOUSE_TYPE_PALACE,
-        pop: 7,
-        roadCount: 1,
-        stocks: { food: 2, wheat: 2 },
-      });
-      expect(result.targetType).toBe(HOUSE_TYPE_RED);
-      expect(result.targetPop).toBe(popAfterPalaceRegression(HOUSE_TYPE_PALACE, 7));
-    });
-  });
-
   describe('EvolveHouseBuilding command', () => {
     let repo;
     let command;
@@ -282,21 +289,42 @@ describe('Housing — house progression', () => {
       expect(result.targetType).toBe(HOUSE_TYPE_BLUE);
       expect(result.targetLevel).toBe(1);
     });
+  });
 
-    test('Palace houses still use the frozen resolveHouseEvolution path', async () => {
-      repo = new InMemoryHousingEvolutionRepository([
-        house(`${HOUSE_TYPE_PALACE}-2-3`, HOUSE_TYPE_PALACE, {
-          pop: 7,
-          roadCount: 1,
-          stocks: { food: 2, wheat: 2 },
-        }),
-      ]);
-      command = new EvolveHouseBuilding(repo);
+  describe('EvolveAllHouseBuildings — who leaves when standing drops', () => {
+    test('reports the inhabitants brought back to the lower cap, and which requirements no longer held', async () => {
+      const periodKey = 5;
+      const servedFlags = Object.fromEntries(
+        Object.values(SOCIAL_CATEGORY.artisans.tiers)
+          .flatMap((tier) => tier.requirements)
+          .filter((r) => r.kind === 'serviceCoverage')
+          .map((r) => [r.category, periodKey])
+      );
+      const starving = (id, x) => ({
+        ...house(id, 'House-Red', { x }),
+        level: 3,
+        pop: 18,
+        servedFlags,
+        lastConsumption: { month: periodKey, demand: 18, taken: 0, totalUnfed: 18, categoriesTaken: [] },
+      });
+      const repository = new InMemoryHousingEvolutionRepository([starving('a', 1), starving('b', 2)]);
+      const evolveAll = new EvolveAllHouseBuildings(repository, new EvolveHouseBuilding(repository));
 
-      const result = await command.execute({ houseId: `${HOUSE_TYPE_PALACE}-2-3` });
-      expect(result.changed).toBe(true);
-      expect(result.targetType).toBe(HOUSE_TYPE_RED);
-      expect(result.houseId).toBe(`${HOUSE_TYPE_RED}-2-3`);
+      const result = await evolveAll.execute({ periodKey });
+
+      // Two houses go from 18 residents to the level-2 cap: everyone above it leaves
+      const cap = maxPopulationForLevel(2, 'artisans');
+      expect(result.departure).toMatchObject({ count: 2 * (18 - cap), houses: 2 });
+      expect(result.departure.unmet).toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'demandMet' })]));
+    });
+
+    test('no departure when nobody had to leave', async () => {
+      const repository = new InMemoryHousingEvolutionRepository([house('a', 'House-Red', { pop: 3 })]);
+      const evolveAll = new EvolveAllHouseBuildings(repository, new EvolveHouseBuilding(repository));
+
+      const result = await evolveAll.execute({ periodKey: 5 });
+
+      expect(result.departure).toBeNull();
     });
   });
 });

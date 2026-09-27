@@ -1,3 +1,4 @@
+import { unresolvedTerm } from '../../shell/CatalogVocabulary.js';
 import { getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
 import { GROUP_CITIZEN_PRESENTATION } from '../../info/population/CitizenStatusPresentation.js';
 
@@ -16,7 +17,7 @@ const SHARED_TAB_LABEL = 'Commun';
  * @returns {string}
  */
 function groupTabLabel(groupId) {
-    return GROUP_CITIZEN_PRESENTATION[groupId]?.label ?? groupId;
+    return GROUP_CITIZEN_PRESENTATION[groupId]?.label ?? unresolvedTerm('citizen group name', groupId);
 }
 
 export class WorkSectionPresenter {
@@ -145,11 +146,8 @@ export class WorkSectionPresenter {
                             need: 0,
                         };
                         skill.workerNeed = stats.workerNeed || 0;
-                        skill.eliteNeed = 0;
                         skill.workers = stats.workers || 0;
-                        skill.elites = 0;
                         skill.availableWorkers = summary.workerPool;
-                        skill.availableElites = summary.elitePool;
                         skill.initialNeed = skill.workerNeed;
                         skill.have = skill.workers;
                         skill.need = stats.need || 0;
@@ -164,7 +162,6 @@ export class WorkSectionPresenter {
             this.workData.totalAvailable = summary.workerPool;
             this.workData.totalNeed = summary.totalNeed;
             this.workData.totalAvailableWorkers = summary.workerPool;
-            this.workData.totalAvailableElites = summary.elitePool;
             this.workData.payrollEligiblePopulation = summary.totalPopulation;
 
         } catch (error) {
@@ -192,11 +189,8 @@ export class WorkSectionPresenter {
                 initialNeed: 0,
                 have: 0,
                 workerNeed: 0,
-                eliteNeed: 0,
                 workers: 0,
-                elites: 0,
                 availableWorkers: 0,
-                availableElites: 0,
             })),
         }));
 
@@ -283,11 +277,10 @@ export class WorkSectionPresenter {
         return this.workData?.payrollEligiblePopulation ?? 0;
     }
 
-    #buildPayrollPreview(unemployed, eliteCount = 0) {
+    #buildPayrollPreview(unemployed) {
         return this.accounting.computeReferenceSalaryPayrollBreakdown({
             population: this.#payrollEligiblePopulation(),
             unemployed,
-            eliteCount,
             referenceSalaryPerMonth: this.salary,
             unemploymentBenefitRate: this.unemploymentBenefitRate,
             salaryTaxRate: this.salaryTaxRate,
@@ -328,10 +321,7 @@ export class WorkSectionPresenter {
         this.lastKnownPopulation = totalPopulation;
 
         if (annualBillDisplay) {
-            const payroll = this.#buildPayrollPreview(
-              this.workData?.totalUnemployed ?? 0,
-              this.workData?.totalAvailableElites ?? 0
-            );
+            const payroll = this.#buildPayrollPreview(this.workData?.totalUnemployed ?? 0);
             annualBillDisplay.textContent = Math.round(payroll.cityExpenseTotal * 12);
         }
 
@@ -347,10 +337,7 @@ export class WorkSectionPresenter {
             salaryTaxRateDisplay.textContent = Math.round(this.salaryTaxRate * 100);
         }
 
-        const payroll = this.#buildPayrollPreview(
-          this.workData?.totalUnemployed ?? 0,
-          this.workData?.totalAvailableElites ?? 0
-        );
+        const payroll = this.#buildPayrollPreview(this.workData?.totalUnemployed ?? 0);
 
         if (salaryTaxAmountDisplay) {
             salaryTaxAmountDisplay.textContent = payroll.payrollTax;
@@ -371,10 +358,7 @@ export class WorkSectionPresenter {
         }
 
         const unemployed = this.workData?.totalUnemployed ?? 0;
-        const payroll = this.#buildPayrollPreview(
-            unemployed,
-            this.workData?.totalAvailableElites ?? 0
-        );
+        const payroll = this.#buildPayrollPreview(unemployed);
 
         if (unemploymentCountDisplay) {
             unemploymentCountDisplay.textContent = unemployed;

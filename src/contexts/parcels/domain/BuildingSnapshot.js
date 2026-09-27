@@ -18,6 +18,7 @@ export function createBuildingSnapshot({
   roadCount = 0,
   x = null,
   y = null,
+  rotationStep = 0,
 }) {
   if (!id || typeof id !== 'string') {
     throw new Error('BuildingSnapshot: id is required');
@@ -52,5 +53,6 @@ export function createBuildingSnapshot({
     roadCount: Number.isInteger(roadCount) ? roadCount : 0,
     x: tile?.x ?? null,
     y: tile?.y ?? null,
+    rotationStep: Number.isInteger(rotationStep) ? rotationStep : 0,
   });
 }

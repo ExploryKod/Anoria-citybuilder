@@ -1,4 +1,5 @@
 import { createBuildingInstanceId } from '../../../../shared/building-identity/index.js';
+import { createEmptyStocks } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import {
   canPlaceBuildingAtTile,
   isRoadBuildingType,
@@ -143,7 +144,7 @@ export class PlaceBuildingAtTile {
         category: 'construction',
         neighbors: [],
         pop: 0,
-        stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+        stocks: createEmptyStocks(),
         gameTurn,
         time: 0,
         isBuilding: true,

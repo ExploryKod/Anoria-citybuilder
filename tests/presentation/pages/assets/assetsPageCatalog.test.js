@@ -72,8 +72,8 @@ describe('buildAssetsPageCatalog', () => {
     const byId = (id) => items.find((item) => item.id === id);
 
     // Reassigned to Kenney city kits
-    expect(byId('Hay-Bale')?.source).toBe('kenney-city');
-    expect(byId('Hay-Bale')?.usesKenneyId).toMatch(/^Kenney-/);
+    expect(byId('Windmill-001')?.source).toBe('kenney-city');
+    expect(byId('Windmill-001')?.usesKenneyId).toMatch(/^Kenney-/);
     // The wheat field is assembled from a ground GLB + one wheat GLB per growth stage
     expect(byId('Farm-Wheat')?.source).toBe('kenney-farm');
     expect(byId('Farm-Wheat')?.cropGlbFile).toBe('crops_wheatStageA.glb, crops_wheatStageB.glb');

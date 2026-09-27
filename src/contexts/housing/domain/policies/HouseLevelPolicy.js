@@ -1,8 +1,7 @@
 /**
  * House level (tier) policy — Blue/Red/Purple houses only.
  *
- * Replaces the old color-ladder (`HouseEvolutionPolicy.resolveHouseEvolution`)
- * for these three types: the house color (`type`) is a permanent social-group
+ * The house color (`type`) is a permanent social-group
  * marker set once at placement and never changes again. Only `level` evolves
  * per instance, one tier at a time, driven entirely by each social
  * category's declarative `tiers` (see shared/population/socialCategoryCatalog.js):
@@ -11,8 +10,6 @@
  * No tier count or requirement kind is hardcoded here — add a tier, or
  * change what unlocks one, in the catalog only.
  *
- * Palace (`House-2Story`) keeps its own frozen path in `HouseEvolutionPolicy`
- * — see `EvolveHouseBuilding` — untouched by this module. // TODO(elites)
  */
 
 import { maxPopulationForLevel } from './HouseCapacityPolicy.js';
@@ -73,6 +70,8 @@ export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, ser
   let targetLevel = previousLevel;
   let targetPop = previousPop;
   let reason;
+  /** Why a demotion happened: the requirements of the tier that no longer hold. */
+  let unmetRequirements;
 
   if (tiers) {
     const context = { pop: previousPop, roadCount: roadCount ?? 0, servedFlags, lastConsumption, periodKey };
@@ -85,8 +84,11 @@ export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, ser
       const currentTier = tiers[previousLevel];
       if (previousLevel > HOUSE_LEVEL_AUTARKY && currentTier && !meetsTierRequirements(currentTier.requirements, context)) {
         targetLevel = previousLevel - 1;
-        targetPop = Math.min(previousPop, maxPopulationForLevel(targetLevel));
+        targetPop = Math.min(previousPop, maxPopulationForLevel(targetLevel, residentialGroup));
         reason = `level${previousLevel}_to_level${targetLevel}_requirements_lost`;
+        unmetRequirements = describeTierRequirements(currentTier.requirements, context)
+          .filter((item) => !item.met)
+          .map(({ kind, category, min, current, target }) => ({ kind, category, min, current, target }));
       }
     }
   }
@@ -100,6 +102,7 @@ export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, ser
     previousPop,
     changed,
     reason,
+    unmetRequirements,
   };
 }
 

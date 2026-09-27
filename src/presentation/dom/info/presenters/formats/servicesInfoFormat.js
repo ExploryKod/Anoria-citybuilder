@@ -5,6 +5,12 @@
 import { residentialGroupForType } from '../../../shell/ResidentialGroupLabels.js';
 import { describeRelevantServiceCoverage } from '../../../../../composition/housingCatalog.js';
 import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
+import {
+  getCycleRecipeEntries,
+  getSuppliedCategories,
+  requiresRoad,
+} from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { namesOfBuildings } from '../../../shell/CatalogVocabulary.js';
 
 function isResidentialHouse(buildingType) {
   return typeof buildingType === 'string' && buildingType.includes('House');
@@ -15,7 +21,9 @@ function isResidentialHouse(buildingType) {
  */
 export function formatServicesModel(vm) {
   const roadCount = vm.roadAccess?.roadCount ?? 0;
-  const hasRoad = vm.roadAccess?.hasAccess === true || roadCount > 0;
+  // A type the catalog declares `requiresRoad: false` has no road status to lose: always positive.
+  const roadRequired = requiresRoad(vm.buildingType);
+  const hasRoad = !roadRequired || vm.roadAccess?.hasAccess === true || roadCount > 0;
 
   /** @type {ReadonlyArray<{
    *   emoji: string,
@@ -28,23 +36,45 @@ export function formatServicesModel(vm) {
     {
       emoji: '🛣️',
       label: 'Route',
-      value: hasRoad ? String(roadCount) : null,
+      value: !roadRequired ? '✓' : hasRoad ? String(roadCount) : null,
       status: hasRoad ? 'ok' : 'off',
-      ariaLabel: hasRoad
-        ? `${roadCount} route${roadCount > 1 ? 's' : ''} adjacente${roadCount > 1 ? 's' : ''}`
-        : 'Aucune route adjacente',
+      ariaLabel: !roadRequired
+        ? 'Route non requise'
+        : hasRoad
+          ? `${roadCount} route${roadCount > 1 ? 's' : ''} à portée`
+          : 'Aucune route à portée',
     },
   ];
 
   if (isResidentialHouse(vm.buildingType)) {
     const hasMarket = vm.supplyView?.marketTooFar !== true;
+    // What feeds the house, named as the catalog names those buildings.
+    const suppliers = namesOfBuildings('distributor', getSuppliedCategories()).join('/');
     items.push({
       emoji: '🏪',
-      label: 'Marché',
+      label: suppliers,
       value: hasMarket ? '✓' : null,
       status: hasMarket ? 'ok' : 'off',
-      ariaLabel: hasMarket ? 'Marché à portée' : 'Marché hors de portée',
+      ariaLabel: hasMarket ? `${suppliers} à portée` : `${suppliers} hors de portée`,
     });
+
+    // Whether this house's OWN business (its `cycle` recipes, see the Activité tab) can even reach a hub for
+    // its raw material — a house with no business of its own (getCycleRecipeEntries empty) gets no chip at
+    // all, nothing to say. `activitySupplyGaps` only carries 'no-hub' (reachability) and 'no-supplier'
+    // (nothing feeds a reachable hub); only the first one is what "access to the warehouse" means here — the
+    // second is a business problem, not an access one, and is said in the Activité tab instead.
+    if (getCycleRecipeEntries(vm.buildingType).length > 0) {
+      const hasHubAccess = !(vm.activitySupplyGaps ?? []).some((gap) => gap.status === 'no-hub');
+      items.push({
+        emoji: '📦',
+        label: 'Entrepôt (activité)',
+        value: hasHubAccess ? '✓' : null,
+        status: hasHubAccess ? 'ok' : 'off',
+        ariaLabel: hasHubAccess
+          ? 'Entrepôt accessible pour son activité'
+          : "Aucun entrepôt accessible : pas d'activité possible",
+      });
+    }
 
     // One chip per service this house needs to reach ITS NEXT tier (its
     // final tier's own services once maxed) — e.g. a tier-1 house shows

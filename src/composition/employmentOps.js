@@ -21,9 +21,6 @@ export function isEmploymentWorkplaceType(buildingType) {
   if (!buildingType || isHouseType(buildingType) || isRoadType(buildingType)) {
     return false;
   }
-  if (buildingType.startsWith('StonePath-')) {
-    return false;
-  }
   const employees = getDefaultEmployees(buildingType);
   return (employees.worker_need || 0) > 0;
 }

@@ -1,29 +1,289 @@
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
-import { addCategoryAmount } from '../../../domain/value-objects/ResourceStock.js';
+import {
+  addCategoryAmount,
+  getCategoryAmount,
+  takeCategoryAmount,
+} from '../../../domain/value-objects/ResourceStock.js';
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import { isLockedForPeriod, buildLockUpdate } from '../../../domain/policies/PeriodLockPolicy.js';
+import { getResourceRoles, getCategoriesForRole, getTotalKeyForRole } from '../../../domain/policies/ResourceRolePolicy.js';
 import {
-  getAmountForRole,
-  getCategoriesForRole,
-  getScheduleForRole,
-  getTotalKeyForRole,
-  getPeriodLockForRole,
-} from '../../../domain/policies/ResourceRolePolicy.js';
+  findNaturalSourcesInRange,
+  isWithinRange,
+  manhattanDistance,
+} from '../../../domain/policies/ResourceRangePolicy.js';
+import {
+  getCategoriesForTotalKey,
+  getTotalKeyForCategory,
+} from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Command: a building produces resource units into its own stock, gated by
- * its 'producer' role's declarative `schedule` and `periodLock` (see
- * buildingEconomy.js / ResourceSchedulePolicy.js / PeriodLockPolicy.js).
- * Fully resource-agnostic — every fact about WHAT is produced, WHEN, and the
- * once-per-period lock field come from the building's own catalog entry;
- * this command never names a resource or a lock field itself.
+ * each of its 'producer' entries' declarative `schedule` and `periodLock`
+ * (see buildingEconomy.js / ResourceSchedulePolicy.js / PeriodLockPolicy.js).
+ * Fully resource-agnostic — every fact about WHAT is produced, HOW MUCH,
+ * WHEN, and the once-per-period lock comes from the building's own catalog
+ * entries; this command never names a resource or a lock field itself.
+ *
+ * A building can hold several 'producer' entries (a house that gathers, a
+ * workshop with two outputs); each is evaluated independently. Three catalog
+ * facts refine an entry:
+ *   - `scale: 'building' | 'population'` — an entry declaring `scale` belongs
+ *     to inhabitants: it needs at least one, and `'population'` multiplies
+ *     `amount` by their number (`'building'` = flat amount per building).
+ *   - `requiresOperational: false` — lifts the road/staffing gate.
+ *   - `inputs: [{ category, amount }]` — makes the entry a TRANSFORMATION
+ *     rather than a source: it first takes those goods from the building's
+ *     own stock, and produces nothing at all unless every one of them is
+ *     there (a workshop idles without its raw material instead of
+ *     half-producing). Which good, how much, and what it becomes are all
+ *     catalog facts; this command still names none of them. An input with
+ *     `from: { role, range }` is not read from the building's own stock but
+ *     drawn from the nearest working buildings of that role (a warehouse hub)
+ *     within `range` that hold the good, taken only once every input is there.
+ *   - `cycle: [steps]` — the entry is a CHAIN of steps instead of one production. Each step is
+ *     `{ id, when, amount | factor, inputs?, missed?, wait? }`: the first sets a base (`amount`), each
+ *     next one multiplies the running value (`factor`), and the product is credited to the stock only
+ *     when the last step is done. A step is done at the first working tick of its `when` window (an
+ *     unstaffed building or a missing input cannot do it). A missed window multiplies by `missed`
+ *     (0 voids the cycle, 1 ignores the step, in between degrades it); with `wait: true` the step can
+ *     still be done after its window instead. Nothing in it names a good, a season or a building. While a
+ *     step with `inputs` is waiting on one because the building could not get it (staffed and connected, the
+ *     input just is not there), `activityShortfall[category]` on the building row says so — a live state, read
+ *     fresh every tick, not a one-off event: it clears itself the moment the step gets what it needs. The last
+ *     time a step's inputs WERE taken, `activityInputs[category]` keeps what was taken, per good — how much
+ *     was needed is never stored: it is read straight from this same catalog entry when it is shown.
+ *   - `source: { resource, range, consume }` — makes the entry a RAW-MATERIAL
+ *     producer: it works only while enough natural resources of that kind lie
+ *     within `range` tiles, and each production uses `consume` of them up
+ *     (the nearest ones, removed from the game). No natural resource is named
+ *     here. The player's "no resource" warning is not stored: it is derived
+ *     from the same rule (see listNoResourceBuildingIds in createSupplyContext).
+ * An entry with a `totalKey` writes through the full set of categories
+ * filed under that aggregate, so the aggregate stays consistent and the
+ * building's other goods are untouched.
  */
+/**
+ * The categories and aggregate a stock write about `category` must use, so
+ * that the right total stays in sync: the entry's own `totalKey` when it
+ * declares one, otherwise the aggregate the catalog files that good under
+ * (the good itself when it belongs to none, e.g. pottery today). Used for
+ * both sides of a transformation, so an input and an output are read and
+ * written by the same rule.
+ *
+ * @param {string} category
+ * @param {string} [declaredTotalKey]
+ * @returns {{ categories: readonly string[], totalKey: string }}
+ */
+function stockShapeFor(category, declaredTotalKey) {
+  const totalKey = declaredTotalKey ?? getTotalKeyForCategory(category);
+  const filedUnder = getCategoriesForTotalKey(totalKey);
+  return { categories: filedUnder.length > 0 ? filedUnder : [category], totalKey };
+}
+
 export class ProduceResource {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
+   * @param {{ removeBuilding?: (params: { instanceId: string }) => Promise<unknown> }} [deps]
+   *   `removeBuilding` deletes a used-up natural resource from the game (Parcels owns
+   *   building removal, so Supply is handed it rather than reaching into it).
+   *   `hubServing` says how much of a hub's goods this building may draw (see HubServing).
    */
-  constructor(supplyBuildingRepository) {
+  constructor(supplyBuildingRepository, { removeBuilding, hubServing } = {}) {
     this.supplyBuildingRepository = supplyBuildingRepository;
+    this.removeBuilding = removeBuilding ?? null;
+    // How a hub serves a recipe drawing on it, among the other clients of the same goods.
+    this.hubServing = hubServing;
+  }
+
+
+  /**
+   * Where an input declared with `from` would be drawn from: the nearest working buildings of that role
+   * within range holding the good, as `[{ holderId, category, amount }]`, or null when together they
+   * cannot cover `need`. Nothing is taken here — the caller commits once every input is covered.
+   */
+  async #planDraw(building, input, need, turn) {
+    const { role, range = Infinity } = input.from;
+    const holders = (await this.supplyBuildingRepository.findByResourceRole(role, input.category))
+      .filter(
+        (holder) =>
+          holder.id !== building.id &&
+          holder.x != null &&
+          holder.y != null &&
+          isWithinRange(building, holder, range) &&
+          isOperational({
+            type: holder.type,
+            roadCount: holder.roadCount,
+            worker: holder.worker,
+            workerNeed: holder.workerNeed,
+          })
+      )
+      .sort(
+        (a, b) => manhattanDistance(building, a) - manhattanDistance(building, b) || a.id.localeCompare(b.id)
+      );
+
+    // Ask the nearest holder: what this recipe wants is remembered there, so a client ranked below it does not
+    // take the stock from under it (and what it gets is added when it is taken).
+    if (holders[0]) {
+      await this.hubServing.recordDemand({ hubId: holders[0].id, category: input.category, client: building.type, turn, wanted: need, served: 0 });
+    }
+
+    const draws = [];
+    let left = need;
+    for (const holder of holders) {
+      const amount = Math.min(this.hubServing.availableTo(holder, input.category, building.type, turn), left);
+      if (amount <= 0) continue;
+      draws.push({ holderId: holder.id, category: input.category, amount });
+      left -= amount;
+      if (left <= 0) break;
+    }
+    return left <= 0 ? draws : null;
+  }
+
+  /**
+   * Plan a set of recipe inputs: own-stock ones are checked in place, `from` ones drawn from holders in
+   * range. All or nothing; nothing is taken here.
+   * @returns {Promise<{ missing: boolean, ownInputs: object[], draws: object[] }>}
+   */
+  async #planInputs(building, inputs, need, turn) {
+    const ownInputs = inputs.filter((input) => !input.from);
+    const draws = [];
+    let missing = ownInputs.some((input) => getCategoryAmount(building.stocks, input.category) < need(input));
+    for (const input of inputs.filter((candidate) => candidate.from)) {
+      if (missing) break;
+      const plan = await this.#planDraw(building, input, need(input), turn);
+      if (plan) draws.push(...plan);
+      else missing = true;
+    }
+    return { missing, ownInputs, draws };
+  }
+
+  /** Take what #planInputs planned; returns the building's stock without its own inputs. */
+  async #takeInputs(building, plan, need, turn) {
+    for (const draw of plan.draws) {
+      const holder = await this.supplyBuildingRepository.findById(draw.holderId);
+      await this.hubServing.take({ hubId: draw.holderId, category: draw.category, client: building.type, amount: draw.amount, turn });
+      await this.hubServing.recordDemand({ hubId: draw.holderId, category: draw.category, client: building.type, turn, wanted: 0, served: draw.amount });
+      // The holder's stock is written under the aggregate ITS role files the good under.
+      const categories = getCategoriesForRole(holder.type, 'hub', draw.category);
+      const totalKey = getTotalKeyForRole(holder.type, 'hub', draw.category);
+      await this.supplyBuildingRepository.saveStocks(draw.holderId, {
+        ...holder.stocks,
+        ...takeCategoryAmount(holder.stocks, draw.category, draw.amount, categories, totalKey),
+      });
+    }
+    let nextStock = building.stocks;
+    for (const input of plan.ownInputs) {
+      const shape = stockShapeFor(input.category);
+      nextStock = {
+        ...nextStock,
+        ...takeCategoryAmount(nextStock, input.category, need(input), shape.categories, shape.totalKey),
+      };
+    }
+    return nextStock;
+  }
+
+  /**
+   * Advance a `cycle` entry by whatever this tick allows, and credit the finished product.
+   * The state (`cycleState[category]`) is `{ index, value, opened }`: the step awaited, the running
+   * product, and whether that step's window has been seen since the previous step was done.
+   * @returns {Promise<{ building: object, credited: number }>}
+   */
+  async #advanceCycle(building, entry, category, period) {
+    const steps = entry.cycle;
+    const previous = building.cycleState?.[category];
+    let state = { index: previous?.index ?? 0, value: previous?.value ?? 0, opened: previous?.opened === true };
+    let credited = 0;
+    let stock = building.stocks;
+    // Live state, not a monthly event like a failed sale: is this recipe CURRENTLY stuck on its own input
+    // (a shortage on the buyer's side, not the road/staff gate, which already has its own icon).
+    let shortfall = building.activityShortfall?.[category] === true;
+    // What a recipe's own inputs took the last time a step succeeded ({ year, monthIndex, takenByCategory }) —
+    // "besoin" per material is read straight from the catalog step at display time, so only "consommé" is kept.
+    let inputsTaken = building.activityInputs?.[category] ?? null;
+    const operational =
+      entry.requiresOperational === false ||
+      isOperational({
+        type: building.type,
+        roadCount: building.roadCount,
+        worker: building.worker,
+        workerNeed: building.workerNeed,
+      });
+
+    // A step done can open the next one in the same tick (a late step catching up), never more than one lap.
+    for (let guard = 0; guard <= steps.length; guard += 1) {
+      const step = steps[state.index];
+      const open = !step.when || matchesSchedule(step.when, period);
+      if (open) state.opened = true;
+
+      let advanced = false;
+      if (open || (step.wait === true && state.opened)) {
+        const inputs = step.inputs ?? [];
+        const need = (input) => input.amount ?? 0;
+        const plan = operational ? await this.#planInputs({ ...building, stocks: stock }, inputs, need, period?.turn ?? 0) : null;
+        if (plan && !plan.missing) {
+          stock = await this.#takeInputs({ ...building, stocks: stock }, plan, need, period?.turn ?? 0);
+          state.value = state.index === 0 ? (step.amount ?? 0) : state.value * (step.factor ?? 1);
+          advanced = true;
+          if (inputs.length > 0) {
+            shortfall = false;
+            inputsTaken = {
+              year: period?.year ?? 0,
+              monthIndex: period?.monthIndex ?? null,
+              takenByCategory: Object.fromEntries(inputs.map((input) => [input.category, need(input)])),
+            };
+          }
+        } else if (operational && inputs.length > 0) {
+          // Staffed and connected, but what this step needs is not there yet — the recipe waits on it.
+          shortfall = true;
+        }
+      } else if (state.opened && step.wait !== true) {
+        // The window closed with the step undone.
+        const missed = step.missed ?? 0;
+        state.value = state.index === 0 ? (step.amount ?? 0) * missed : state.value * missed;
+        advanced = true;
+      }
+
+      if (!advanced) break;
+      state.index += 1;
+      state.opened = false;
+      if (state.index >= steps.length) {
+        if (state.value > 0) {
+          for (const produced of entry.categories) {
+            const shape = stockShapeFor(produced, entry.totalKey);
+            stock = { ...stock, ...addCategoryAmount(stock, produced, state.value, shape.categories, shape.totalKey) };
+          }
+          credited += state.value;
+        }
+        state = { index: 0, value: 0, opened: false };
+      }
+    }
+
+    const changed =
+      state.index !== (previous?.index ?? 0) ||
+      state.value !== (previous?.value ?? 0) ||
+      state.opened !== (previous?.opened === true);
+    let next = building;
+    if (stock !== building.stocks) {
+      await this.supplyBuildingRepository.saveStocks(building.id, stock);
+      next = { ...next, stocks: stock };
+    }
+    if (changed) {
+      const cycleState = { ...building.cycleState, [category]: state };
+      await this.supplyBuildingRepository.updateBuildingFields(building.id, { cycleState });
+      next = { ...next, cycleState };
+    }
+    if (shortfall !== (building.activityShortfall?.[category] === true)) {
+      const activityShortfall = { ...building.activityShortfall, [category]: shortfall };
+      await this.supplyBuildingRepository.updateBuildingFields(building.id, { activityShortfall });
+      next = { ...next, activityShortfall };
+    }
+    if (inputsTaken !== (building.activityInputs?.[category] ?? null)) {
+      const activityInputs = { ...building.activityInputs, [category]: inputsTaken };
+      await this.supplyBuildingRepository.updateBuildingFields(building.id, { activityInputs });
+      next = { ...next, activityInputs };
+    }
+    return { building: next, credited };
   }
 
   /**
@@ -39,48 +299,140 @@ export class ProduceResource {
    * }>}
    */
   async execute({ buildingId, period }) {
-    const building = await this.supplyBuildingRepository.findById(buildingId);
+    let building = await this.supplyBuildingRepository.findById(buildingId);
     if (!building) {
       return { produced: false, reason: 'building_not_found' };
     }
 
-    const schedule = getScheduleForRole(building.type, 'producer');
-    if (!matchesSchedule(schedule, period)) {
-      return { produced: false, reason: 'not_production_period' };
-    }
-
-    if (
-      !isOperational({
-        roadCount: building.roadCount,
-        worker: building.worker,
-        workerNeed: building.workerNeed,
-      })
-    ) {
-      return { produced: false, reason: 'not_operational' };
-    }
-
-    const periodLock = getPeriodLockForRole(building.type, 'producer');
-    if (isLockedForPeriod(building, periodLock, period)) {
-      return { produced: false, reason: 'already_produced_this_period' };
-    }
-
-    const categories = getCategoriesForRole(building.type, 'producer');
-    const category = categories[0] ?? null;
-    if (!category) {
+    const entries = getResourceRoles(building.type).filter((entry) => entry.role === 'producer');
+    if (entries.length === 0 || !entries[0].categories?.[0]) {
       return { produced: false, reason: 'unknown_resource_category' };
     }
 
-    const amount = getAmountForRole(building.type, 'producer') ?? 0;
-    const totalKey = getTotalKeyForRole(building.type, 'producer');
-    const nextStock = addCategoryAmount(building.stocks, category, amount, categories, totalKey);
-    await this.supplyBuildingRepository.saveStocks(buildingId, nextStock);
-    if (periodLock) {
-      await this.supplyBuildingRepository.updateBuildingFields(
-        buildingId,
-        buildLockUpdate(building, periodLock, period, category)
-      );
+    const credited = {};
+    let firstFailure = null;
+
+    for (const entry of entries) {
+      const category = entry.categories?.[0] ?? null;
+      if (!category) {
+        firstFailure ??= 'unknown_resource_category';
+        continue;
+      }
+
+      // A raw-material producer needs its natural resource in range.
+      let sources = [];
+      const sourceNeed = entry.source ? (entry.source.consume ?? 1) : 0;
+      if (entry.source) {
+        sources = findNaturalSourcesInRange(
+          building,
+          await this.supplyBuildingRepository.listNaturalResources(),
+          entry.source
+        );
+        if (sources.length < sourceNeed) {
+          firstFailure ??= 'no_resource';
+          continue;
+        }
+      }
+
+      if (entry.cycle) {
+        const outcome = await this.#advanceCycle(building, entry, category, period);
+        building = outcome.building;
+        if (outcome.credited > 0) {
+          for (const produced of entry.categories) credited[produced] = (credited[produced] ?? 0) + outcome.credited;
+        } else {
+          firstFailure ??= 'cycle_in_progress';
+        }
+        continue;
+      }
+
+      if (!matchesSchedule(entry.schedule, period)) {
+        firstFailure ??= 'not_production_period';
+        continue;
+      }
+
+      if (
+        entry.requiresOperational !== false &&
+        !isOperational({
+          type: building.type,
+          roadCount: building.roadCount,
+          worker: building.worker,
+          workerNeed: building.workerNeed,
+        })
+      ) {
+        firstFailure ??= 'not_operational';
+        continue;
+      }
+
+      if (isLockedForPeriod(building, entry.periodLock, period, category)) {
+        firstFailure ??= 'already_produced_this_period';
+        continue;
+      }
+
+      let multiplier = 1;
+      if (entry.scale) {
+        const pop = Number.isFinite(building.pop) ? Math.max(0, Math.floor(building.pop)) : 0;
+        if (pop <= 0) {
+          firstFailure ??= 'no_population';
+          continue;
+        }
+        if (entry.scale === 'population') multiplier = pop;
+      }
+      const amount = (entry.amount ?? 0) * multiplier;
+
+      // A transformation: this entry turns goods the building already holds
+      // into its own output. All or nothing — short of any one input it
+      // produces nothing AND stays unlocked for the period, so it runs as
+      // soon as it is supplied. The same `multiplier` scales the recipe, so
+      // its ratio holds whatever scales the output.
+      const inputNeed = (input) => (input.amount ?? 0) * multiplier;
+      const plan = await this.#planInputs(building, entry.inputs ?? [], inputNeed, period?.turn ?? 0);
+      if (plan.missing) {
+        firstFailure ??= 'missing_input';
+        continue;
+      }
+
+      // Raw material: use up the nearest sources.
+      for (const used of sources.slice(0, sourceNeed)) {
+        await this.removeBuilding?.({ instanceId: used.id });
+      }
+
+      // Each write is merged back into the whole row: a write scoped to one
+      // aggregate returns only that aggregate's fields, and a building that
+      // holds a good outside it (its inputs, another chain's output) would
+      // otherwise lose it on every production.
+      let nextStock = await this.#takeInputs(building, plan, inputNeed, period?.turn ?? 0);
+
+      for (const produced of entry.categories) {
+        const shape = stockShapeFor(produced, entry.totalKey);
+        nextStock = {
+          ...nextStock,
+          ...addCategoryAmount(nextStock, produced, amount, shape.categories, shape.totalKey),
+        };
+        credited[produced] = (credited[produced] ?? 0) + amount;
+      }
+
+      await this.supplyBuildingRepository.saveStocks(buildingId, nextStock);
+
+      const lockUpdate = entry.periodLock
+        ? buildLockUpdate(building, entry.periodLock, period, category)
+        : null;
+      if (lockUpdate) {
+        await this.supplyBuildingRepository.updateBuildingFields(buildingId, lockUpdate);
+      }
+
+      building = { ...building, stocks: nextStock, ...(lockUpdate ?? {}) };
     }
 
-    return { produced: true, buildingId, category, amount };
+    const categories = Object.keys(credited);
+    if (categories.length === 0) {
+      return { produced: false, reason: firstFailure ?? 'unknown_resource_category' };
+    }
+
+    return {
+      produced: true,
+      buildingId,
+      category: categories[0],
+      amount: credited[categories[0]],
+    };
   }
 }

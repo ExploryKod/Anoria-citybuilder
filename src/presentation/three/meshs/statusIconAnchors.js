@@ -1,4 +1,5 @@
 import { resolveStatusIconPosition } from './meshUtils.js';
+import { BUILDING_ASSETS } from '../assets/buildingAssets.js';
 
 /**
  * Default status-icon anchor offsets and scales — fractions of the mesh's
@@ -7,11 +8,11 @@ import { resolveStatusIconPosition } from './meshUtils.js';
  * /placement.html tuning tool, so the tool's starting point always matches
  * what the game actually falls back to.
  *
- * A per-building override in STATUS_ICON_ANCHOR_OVERRIDES takes precedence
+ * A per-building `statusIcons` entry in the mesh catalog (buildingAssets.js) takes precedence
  * over these defaults (see resolveIconAppearance below).
  */
 export const STATUS_ICON_DEFAULTS = Object.freeze({
-  road: { position: { x: -1, y: 1, z: 1 }, scale: { x: 1.2, y: 1.2, z: 1 }, spriteColor: null, backgroundColor: null },
+  road: { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 0.6, y: 0.6, z: 1 }, spriteColor: null, backgroundColor: null },
   food: { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 1.0, y: 1.0, z: 1 }, spriteColor: null, backgroundColor: null },
   'no-food': { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 1.0, y: 1.0, z: 1 }, spriteColor: null, backgroundColor: null },
   'no-food-farm': {
@@ -50,19 +51,40 @@ export const STATUS_ICON_DEFAULTS = Object.freeze({
     spriteColor: 0x00ff00,
     backgroundColor: 0xffffff,
   },
-  'sold-to-windmill': {
+  'sold-to-hub': {
     position: { x: 0.5, y: 0.5, z: 0 },
     scale: { x: 0.5, y: 0.5, z: 1 },
     spriteColor: 0x00ff00,
     backgroundColor: 0xffffff,
   },
+  'hub-full': {
+    position: { x: 0.5, y: 0.5, z: 0 },
+    scale: { x: 0.5, y: 0.5, z: 1 },
+    spriteColor: null,
+    backgroundColor: 0xffe8e8,
+  },
+  'failed-sell': {
+    position: { x: 0.5, y: 0.5, z: 0 },
+    scale: { x: 0.5, y: 0.5, z: 1 },
+    spriteColor: null,
+    backgroundColor: 0xffe8e8,
+  },
+  // Opposite corner from failed-sell (a problem buying in, not selling out) — never shown at the same time as
+  // isBuying/isCollecting (hub/distributor roles), so a producer is free to use it.
+  'input-shortage': {
+    position: { x: -0.5, y: 0.5, z: 0 },
+    scale: { x: 0.5, y: 0.5, z: 1 },
+    spriteColor: null,
+    backgroundColor: 0xe8ddff,
+  },
+  'no-resource': { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 0.6, y: 0.6, z: 1 }, spriteColor: null, backgroundColor: null },
   'no-work': {
     position: { x: -0.8, y: 0.5, z: -0.2 },
     scale: { x: 0.5, y: 0.5, z: 0.5 },
     spriteColor: 0xff0000,
     backgroundColor: 0xffe8e8,
   },
-  'no-work-market-windmill': {
+  'no-work-service': {
     position: { x: -0.5, y: 0.5, z: 0 },
     scale: { x: 0.6, y: 0.6, z: 1 },
     spriteColor: 0xff0000,
@@ -71,42 +93,14 @@ export const STATUS_ICON_DEFAULTS = Object.freeze({
 });
 
 /**
- * Manual per-building overrides for status-icon placement: WHERE the icon
- * anchors (position, a fraction of the bounding box — see
- * meshUtils.resolveStatusIconPosition) AND how big it renders (scale, same
- * absolute Three.js sprite-scale convention as STATUS_ICON_DEFAULTS).
- *
- * The generic bounding-box-relative default position math (and the fixed
- * default scale) can't know where a specific hand-modeled asset's roofline
- * actually is, or how big an icon should read against it — that needs eyes
- * on the model. Populate this table using the /placement.html tuning tool:
- * pick a building, drag the icon and resize it until it looks right, copy
- * the resulting `{ position, scale }` here.
- *
- * Sparse by design: a building/icon pair not listed here falls back to the
- * generic default in `resolveIconAppearance`. Either `position` or `scale`
- * may be omitted from an override — the omitted one falls back to the
- * default for that icon.
- *
- * Shape: { [buildingId]: { [iconKey]: { position?: {x,y,z}, scale?: {x,y,z} } } }
- * iconKey matches the sprite name used at the call site (e.g. 'road',
- * 'no-food', 'isBuying', 'isCollecting', 'grow-food', 'no-work', ...).
- */
-export const STATUS_ICON_ANCHOR_OVERRIDES = Object.freeze({
-  // 'Kenney-Suburban-building-type-a': {
-  //   'no-food': { position: { x: -0.3, y: 0.9, z: 0 }, scale: { x: 0.5, y: 0.5, z: 0.5 } },
-  //   'road': { position: { x: -0.6, y: 1.1, z: 0.2 }, scale: { x: 0.6, y: 0.6, z: 0.6 } },
-  // },
-});
-
-/**
  * Resolves both WHERE and HOW BIG a status icon (no-food, no-road,
- * isBuying, ...) should render on `mesh`: a manual per-building override if
- * one exists in STATUS_ICON_ANCHOR_OVERRIDES (position and/or scale),
- * otherwise the generic bounding-box-relative position with the given
- * default scale. Single choke point — every status-sprite call site should
- * go through this, not resolveStatusIconPosition directly, so a future
- * tuning pass has exactly one table to edit for both position and scale.
+ * isBuying, ...) should render on `mesh`: what the building's own mesh-catalog
+ * entry declares (`statusIcons[iconKey]`: position and/or scale — either may be
+ * omitted), otherwise the generic bounding-box-relative position with the given
+ * default scale. The building is the one the game calls it (`userData.catalogId`),
+ * so two buildings that share a kit mesh can still differ. Single choke point —
+ * every status-sprite call site goes through this, and the /placement.html tool
+ * prints the entry to paste into the building's `statusIcons`.
  *
  * @param {import('three').Object3D} mesh
  * @param {string} iconKey
@@ -118,8 +112,7 @@ export const STATUS_ICON_ANCHOR_OVERRIDES = Object.freeze({
  * }}
  */
 export function resolveIconAppearance(mesh, iconKey, fallbackOffset, fallbackScale) {
-  const buildingId = mesh?.userData?.type || mesh?.userData?.id;
-  const override = STATUS_ICON_ANCHOR_OVERRIDES[buildingId]?.[iconKey];
+  const override = BUILDING_ASSETS[mesh?.userData?.catalogId]?.statusIcons?.[iconKey];
   return {
     position: resolveStatusIconPosition(mesh, override?.position ?? fallbackOffset),
     scale: override?.scale ?? fallbackScale,

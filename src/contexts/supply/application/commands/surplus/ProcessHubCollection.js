@@ -3,6 +3,7 @@ import {
   getCategoriesForRole,
   getTotalKeyForRole,
 } from '../../../domain/policies/ResourceRolePolicy.js';
+import { snapshotCarryOver } from '../../../domain/policies/HubCapacityPolicy.js';
 
 /**
  * Command: collect surplus from all sources for one hub. Applies UI flags,
@@ -36,6 +37,7 @@ export class ProcessHubCollection {
    * @param {object[]} params.sourceRefs
    * @param {string} params.month
    * @param {number} params.year
+   * @param {object} [params.period] Full time context (falls back to `{ month }`).
    * @returns {Promise<{
    *   processed: boolean,
    *   collected: boolean,
@@ -45,7 +47,7 @@ export class ProcessHubCollection {
    *   transfers?: object[],
    * }>}
    */
-  async execute({ hubId, sourceRefs = [], month, year }) {
+  async execute({ hubId, sourceRefs = [], month, year, period = null }) {
     const hub = await this.supplyBuildingRepository.findById(hubId);
     if (!hub) {
       return { processed: false, collected: false, reason: 'hub_not_found' };
@@ -60,6 +62,7 @@ export class ProcessHubCollection {
 
     if (
       !isOperational({
+        type: hub.type,
         roadCount: hub.roadCount,
         worker: hub.worker,
         workerNeed: hub.workerNeed,
@@ -85,7 +88,7 @@ export class ProcessHubCollection {
     const outcome = await this.collectResourceToHub.execute({
       hubId,
       sourceRefs,
-      period: { month },
+      period: period ?? { month },
     });
 
     if (!outcome.collected) {
@@ -107,7 +110,12 @@ export class ProcessHubCollection {
     }
 
     const collectionYear = Number.isFinite(year) ? Math.floor(year) : 0;
+
     const lastCollection = { ...emptyCollection(), [totalKey]: outcome.totalUnits };
+    // Goods really came in: the hub's activity icon lights for the rest of this month.
+    await this.supplyBuildingRepository.updateBuildingFields(hubId, {
+      lastTransaction: { year: collectionYear, monthIndex: period?.monthIndex ?? null },
+    });
 
     for (const transfer of outcome.transfers) {
       const category = transfer.category;
@@ -133,6 +141,21 @@ export class ProcessHubCollection {
       hubId,
       lastCollection
     );
+
+    // Tell the hub's old goods from this year's harvest, so the surplus of the years before can be
+    // told as it is drawn down. The snapshot is taken once per year, from what `hub` held before this
+    // collection (a later pass of the same month must not count the harvest already in as carried
+    // over); what comes in is added up over the passes of the year.
+    const previous = hub.carryOver?.year === collectionYear ? hub.carryOver : null;
+    await this.supplyBuildingRepository.updateBuildingFields(hubId, {
+      carryOver: {
+        year: collectionYear,
+        stocks: previous?.stocks ?? snapshotCarryOver(hub.stocks, categories),
+        harvested: Object.fromEntries(
+          categories.map((category) => [category, (previous?.harvested?.[category] ?? 0) + lastCollection[category]])
+        ),
+      },
+    });
 
     return {
       processed: true,

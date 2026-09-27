@@ -149,12 +149,16 @@ export function createSupplySessionApi(supply) {
     getSupplyBuildingRow: (id) => supply.getSupplyBuildingRow(id),
     getAllSupplyTraceabilityTransactions: (maxAge = null) =>
       supply.getAllSupplyTraceabilityTransactions(maxAge),
+    recordBuildingEvent: (params) => supply.recordBuildingEvent(params),
     getHubStorageInfoView: (hubKind, buildingRow, options = {}) =>
       supply.getHubStorageInfoView(hubKind, buildingRow, options),
     updateHubStorageOrderMode: (hubKind, buildingId, productId) =>
       supply.updateHubStorageOrderMode(hubKind, buildingId, productId),
     adjustHubStorageOrderShare: (hubKind, buildingId, productId, delta) =>
       supply.adjustHubStorageOrderShare(hubKind, buildingId, productId, delta),
+    listClientPriorityBoards: () => supply.listClientPriorityBoards(),
+    saveClientPriorities: (producerType, value) => supply.saveClientPriorities(producerType, value),
+    resetClientPriorities: (producerType) => supply.resetClientPriorities(producerType),
     hasResourceRole: (buildingType, role, category) => hasResourceRole(buildingType, role, category),
     getPlacementRequirements: (buildingType) => getPlacementRequirements(buildingType),
   });
@@ -171,6 +175,7 @@ export function createEmploymentSessionApi(employment) {
     updateSkillPrioritySync: (skillId, priority) =>
       employment.updateSkillPrioritySync(skillId, priority),
     getSectorName: (sector) => employment.getSectorName(sector),
+    getStaffingGroups: (buildingType) => employment.getStaffingGroups(buildingType),
     getCityEmploymentSummary: () => employment.getCityEmploymentSummary(),
   });
 }

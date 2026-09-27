@@ -21,7 +21,6 @@ export class ProcessTurnBudget {
    * @param {() => Promise<number>} deps.getCityTotalPopulation
    * @param {() => Promise<{ unemployed: number }>} deps.getCityEmploymentSummary
    * @param {() => { salaryPerMonth: number, salaryTaxRate: number, unemploymentBenefitRate: number }} deps.getSalarySettings
-   * @param {() => Promise<object>} deps.clearPopulationWithoutRoadAccess
    * @param {() => Promise<void>|void} [deps.processLoanPayments]
    * @param {() => Promise<object>} deps.recalculateLoanTotals
    * @param {Function} deps.saveBudgetTurnEnrichment
@@ -116,9 +115,8 @@ export class ProcessTurnBudget {
         const employmentSummary = await this.deps.getCityEmploymentSummary();
         const payrollPopulation = employmentSummary?.totalPopulation ?? 0;
         const unemployed = employmentSummary?.unemployed ?? 0;
-        const eliteCount = employmentSummary?.elitePool ?? 0;
 
-        // Payroll uses Employment's labor-pool population (level-2+ workers + élites),
+        // Payroll uses Employment's labor-pool population (level-2+ workers),
         // not raw housing headcount — level-1 hunter-gatherers have no salary assiette.
         if (payrollPopulation > 0 && salaryPerMonth > 0) {
           const yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
@@ -126,7 +124,6 @@ export class ProcessTurnBudget {
           const payroll = computeReferenceSalaryPayrollBreakdown({
             population: payrollPopulation,
             unemployed,
-            eliteCount,
             referenceSalaryPerMonth: salaryPerMonth,
             unemploymentBenefitRate,
             salaryTaxRate,
@@ -230,11 +227,6 @@ export class ProcessTurnBudget {
           );
           this.lastMaintenanceCivilKey = civilMonthKey;
         }
-      }
-
-      const populationResult = await this.deps.clearPopulationWithoutRoadAccess();
-      if (populationResult.totalPopulationLost > 0) {
-        console.warn(`⚠️ ${populationResult.message}`);
       }
 
       if (this.deps.processLoanPayments) {

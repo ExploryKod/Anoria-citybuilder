@@ -1,8 +1,11 @@
 import * as THREE from 'three';
 import { ASSET_CATALOG, resolveAndCreateBuildingMesh } from '../meshs/resolveBuildingMesh.js';
+import { listResidentialTypes } from '../../../shared/building-identity/index.js';
+import { primaryRoadType } from '../../../shared/building-catalog/roadQueries.js';
+import { commerce } from '../assets/buildingCategories.js';
 import { buildNeighborHamletDecoSpots } from '../../../core/persistence/hamlet/neighborHamletDecoSpots.js';
 
-const HOUSE_TYPES = ['House-Blue', 'House-Red', 'House-Purple'];
+const HOUSE_TYPES = listResidentialTypes();
 const TREE_TYPES = ['Tree-Pine-001', 'Tree-Square-001', 'Tree-Tall-001'];
 
 /**
@@ -78,7 +81,7 @@ export class DecorativeVillageManager {
         const x = hamlet.centerX;
         const z = hamlet.centerZ;
         if (this.#isValidDecoTile(x, z, playableMinX, playableMaxX, playableMinZ, playableMaxZ, worldMinX, worldMaxX, worldMinZ, worldMaxZ)) {
-          decorativeElements.push({ hamletId: hamlet.hamletId, type: 'Market-Stall', x, z });
+          decorativeElements.push({ hamletId: hamlet.hamletId, type: commerce[0], x, z });
         }
       }
 
@@ -92,7 +95,7 @@ export class DecorativeVillageManager {
         const midX = Math.round((x1 + x2) / 2);
         const midZ = Math.round((z1 + z2) / 2);
         if (this.#isValidDecoTile(midX, midZ, playableMinX, playableMaxX, playableMinZ, playableMaxZ, worldMinX, worldMaxX, worldMinZ, worldMaxZ)) {
-          decorativeElements.push({ hamletId: hamlet.hamletId, type: 'StonePath-001', x: midX, z: midZ });
+          decorativeElements.push({ hamletId: hamlet.hamletId, type: primaryRoadType(), x: midX, z: midZ });
         }
       });
     });

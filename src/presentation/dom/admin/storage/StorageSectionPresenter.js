@@ -1,3 +1,6 @@
+import { displayMonthByIndex } from '../../../../composition/supplyTimeLabels.js';
+import { getResourceRoles, getSuppliedCategories } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { buildingName, goodAmount, goodLabel, namesOfBuildings } from '../../shell/CatalogVocabulary.js';
 import {
     instanceIdFromHouseRow,
     displayLabelFromHouseRow,
@@ -79,7 +82,7 @@ export class StorageSectionPresenter {
         if (!windmillsList) return;
         
         if (this.windmills.length === 0) {
-            windmillsList.innerHTML = '<div class="storage-empty">Aucun moulin construit</div>';
+            windmillsList.innerHTML = `<div class="storage-empty">Aucun bâtiment construit : ${namesOfBuildings('hub', getSuppliedCategories()).join(', ')}</div>`;
             return;
         }
         
@@ -101,8 +104,12 @@ export class StorageSectionPresenter {
         card.className = 'storage-windmill-card';
         card.dataset.windmillId = windmillInstanceId(windmill);
         
-        const stocks = windmill.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0, dattes: 0 };
-        const maxStock = windmill.maxStock || 1000;
+        const stocks = windmill.stocks || {};
+        // Goods and ceiling both come from the catalog (hub role of this building type).
+        const hubCategories = getResourceRoles(windmill.type)
+            .filter((entry) => entry.role === 'hub')
+            .flatMap((entry) => entry.categories);
+        const maxStockLabel = Number.isFinite(windmill.maxStock) ? windmill.maxStock : '∞';
         const isActive = windmill.isActive !== false; // Default to true
         const distributionEnabled = windmill.distributionEnabled !== false; // Default to true
         const commercializeEnabled = windmill.commercializeEnabled !== false; // Default to true
@@ -124,14 +131,12 @@ export class StorageSectionPresenter {
         // Helper function to build partner details HTML
         const buildPartnerDetailsHTML = (productId, partners, type) => {
             if (!partners || partners.length === 0) return '';
-            const productNames = { wheat: 'Blé', carrot: 'Carotte', cabbage: 'Chou', dattes: 'Dattes', wood: 'Bois' };
-            const productName = productNames[productId] || productId;
             let html = '';
             partners.forEach(partnerInfo => {
                 html += `
                     <div class="storage-partner-detail">
                         <span class="storage-partner-name">${partnerInfo.partnerName}:</span>
-                        <span class="storage-partner-quantity">${type === 'import' ? '+' : '-'}${partnerInfo.quantity} paniers</span>
+                        <span class="storage-partner-quantity">${type === 'import' ? '+' : '-'}${goodAmount(productId, partnerInfo.quantity)}</span>
                     </div>
                 `;
             });
@@ -141,7 +146,7 @@ export class StorageSectionPresenter {
         card.innerHTML = `
             <div class="storage-windmill-header">
                 <div class="storage-windmill-id">
-                    <strong>Moulin:</strong> ${displayLabelFromHouseRow(windmill)}
+                    <strong>${buildingName(windmill.type)}:</strong> ${displayLabelFromHouseRow(windmill)}
                 </div>
                 <div class="storage-windmill-location">
                     Position: x: ${windmill.x || 0} | y: ${windmill.y || 0}
@@ -150,73 +155,26 @@ export class StorageSectionPresenter {
 
             <div class="storage-windmill-stocks">
                 <h4 class="storage-subtitle">Stocks</h4>
+                ${hubCategories.map((category) => `
                 <div class="storage-stock-item">
-                    <label>Blé:</label>
-                    <span class="storage-stock-value">${stocks.wheat || 0} / ${maxStock}</span>
+                    <label>${goodLabel(category)}:</label>
+                    <span class="storage-stock-value">${stocks[category] || 0} / ${maxStockLabel}</span>
                     <div class="storage-trade-info">
-                        <span class="storage-export-info">Exportés: ${getTotalExports('wheat')}</span>
-                        <span class="storage-import-info">Importés: ${getTotalImports('wheat')}</span>
+                        <span class="storage-export-info">Exportés: ${getTotalExports(category)}</span>
+                        <span class="storage-import-info">Importés: ${getTotalImports(category)}</span>
                     </div>
                     <div class="storage-partner-details">
-                        ${buildPartnerDetailsHTML('wheat', lastExportDetails['wheat'], 'export')}
-                        ${buildPartnerDetailsHTML('wheat', lastImportDetails['wheat'], 'import')}
+                        ${buildPartnerDetailsHTML(category, lastExportDetails[category], 'export')}
+                        ${buildPartnerDetailsHTML(category, lastImportDetails[category], 'import')}
                     </div>
-                </div>
-                <div class="storage-stock-item">
-                    <label>Chou:</label>
-                    <span class="storage-stock-value">${stocks.cabbage || 0} / ${maxStock}</span>
-                    <div class="storage-trade-info">
-                        <span class="storage-export-info">Exportés: ${getTotalExports('cabbage')}</span>
-                        <span class="storage-import-info">Importés: ${getTotalImports('cabbage')}</span>
-                    </div>
-                    <div class="storage-partner-details">
-                        ${buildPartnerDetailsHTML('cabbage', lastExportDetails['cabbage'], 'export')}
-                        ${buildPartnerDetailsHTML('cabbage', lastImportDetails['cabbage'], 'import')}
-                    </div>
-                </div>
-                <div class="storage-stock-item">
-                    <label>Carotte:</label>
-                    <span class="storage-stock-value">${stocks.carrot || 0} / ${maxStock}</span>
-                    <div class="storage-trade-info">
-                        <span class="storage-export-info">Exportés: ${getTotalExports('carrot')}</span>
-                        <span class="storage-import-info">Importés: ${getTotalImports('carrot')}</span>
-                    </div>
-                    <div class="storage-partner-details">
-                        ${buildPartnerDetailsHTML('carrot', lastExportDetails['carrot'], 'export')}
-                        ${buildPartnerDetailsHTML('carrot', lastImportDetails['carrot'], 'import')}
-                    </div>
-                </div>
-                <div class="storage-stock-item">
-                    <label>Dattes:</label>
-                    <span class="storage-stock-value">${stocks.dattes || 0} / ${maxStock}</span>
-                    <div class="storage-trade-info">
-                        <span class="storage-export-info">Exportés: ${getTotalExports('dattes')}</span>
-                        <span class="storage-import-info">Importés: ${getTotalImports('dattes')}</span>
-                    </div>
-                    <div class="storage-partner-details">
-                        ${buildPartnerDetailsHTML('dattes', lastExportDetails['dattes'], 'export')}
-                        ${buildPartnerDetailsHTML('dattes', lastImportDetails['dattes'], 'import')}
-                    </div>
-                </div>
-                <div class="storage-stock-item">
-                    <label>Bois:</label>
-                    <span class="storage-stock-value">${stocks.wood || 0} / ${maxStock}</span>
-                    <div class="storage-trade-info">
-                        <span class="storage-export-info">Exportés: ${getTotalExports('wood')}</span>
-                        <span class="storage-import-info">Importés: ${getTotalImports('wood')}</span>
-                    </div>
-                    <div class="storage-partner-details">
-                        ${buildPartnerDetailsHTML('wood', lastExportDetails['wood'], 'export')}
-                        ${buildPartnerDetailsHTML('wood', lastImportDetails['wood'], 'import')}
-                    </div>
-                </div>
+                </div>`).join('')}
             </div>
 
             <div class="storage-windmill-controls">
                 <div class="storage-control-item">
                     <label class="storage-toggle-label">
                         <input type="checkbox" class="storage-toggle" data-windmill="${windmillInstanceId(windmill)}" data-setting="isActive" ${isActive ? 'checked' : ''}>
-                        <span>Moulin actif</span>
+                        <span>${buildingName(windmill.type)} actif</span>
                     </label>
                 </div>
                 
@@ -237,18 +195,7 @@ export class StorageSectionPresenter {
                 <div class="storage-control-item">
                     <label>Période de distribution:</label>
                     <select class="storage-month-select" data-windmill="${windmillInstanceId(windmill)}" data-setting="distributionMonth">
-                        <option value="0" ${distributionMonth === 0 ? 'selected' : ''}>Janvier</option>
-                        <option value="1" ${distributionMonth === 1 ? 'selected' : ''}>Février</option>
-                        <option value="2" ${distributionMonth === 2 ? 'selected' : ''}>Mars</option>
-                        <option value="3" ${distributionMonth === 3 ? 'selected' : ''}>Avril</option>
-                        <option value="4" ${distributionMonth === 4 ? 'selected' : ''}>Mai</option>
-                        <option value="5" ${distributionMonth === 5 ? 'selected' : ''}>Juin</option>
-                        <option value="6" ${distributionMonth === 6 ? 'selected' : ''}>Juillet</option>
-                        <option value="7" ${distributionMonth === 7 ? 'selected' : ''}>Août</option>
-                        <option value="8" ${distributionMonth === 8 ? 'selected' : ''}>Septembre</option>
-                        <option value="9" ${distributionMonth === 9 ? 'selected' : ''}>Octobre</option>
-                        <option value="10" ${distributionMonth === 10 ? 'selected' : ''}>Novembre</option>
-                        <option value="11" ${distributionMonth === 11 ? 'selected' : ''}>Décembre</option>
+                        ${Array.from({ length: 12 }, (_, month) => `<option value="${month}" ${distributionMonth === month ? 'selected' : ''}>${displayMonthByIndex(month)}</option>`).join('')}
                     </select>
                 </div>
             </div>
@@ -260,15 +207,10 @@ export class StorageSectionPresenter {
                         <label>Ouvriers:</label>
                         <span class="storage-employee-value">${windmill.employees.worker || 0} / ${windmill.employees.worker_need || 0}</span>
                     </div>
-                    <div class="storage-employee-item">
-                        <label>Élites:</label>
-                        <span class="storage-employee-value">${windmill.employees.elite || 0} / ${windmill.employees.elite_need || 0}</span>
-                    </div>
                     <div class="storage-employee-status">
-                        ${(windmill.employees.worker || 0) >= (windmill.employees.worker_need || 0) && 
-                          (windmill.employees.elite || 0) >= (windmill.employees.elite_need || 0) 
-                            ? '<span class="storage-status-success">✅ Le moulin a tout ce qu\'il faut pour fonctionner</span>'
-                            : '<span class="storage-status-warning">⚠️ Le moulin ne peut fonctionner à sa pleine capacité</span>'}
+                        ${(windmill.employees.worker || 0) >= (windmill.employees.worker_need || 0)
+                            ? `<span class="storage-status-success">✅ ${buildingName(windmill.type)} : effectif complet</span>`
+                            : `<span class="storage-status-warning">⚠️ ${buildingName(windmill.type)} : effectif incomplet</span>`}
                     </div>
                 ` : '<div class="storage-employee-status">Aucune donnée d\'employés</div>'}
             </div>

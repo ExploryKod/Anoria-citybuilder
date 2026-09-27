@@ -6,21 +6,22 @@
 
 import { describe, test, expect } from '@jest/globals';
 import { buildingCatalog, getBuildingDefinition } from '../../src/shared/building-catalog/buildingCatalog.js';
+import {
+  getMapCode,
+  isRoadNeedMet,
+  requiresRoad,
+} from '../../src/shared/building-catalog/resourceRoleQueries.js';
 import { buildingPlacementCatalog } from '../../src/shared/asset-placement/buildingPlacementCatalog.js';
 import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../../src/shared/building-catalog/kenneyCityKitRegistry.generated.js';
 import {
   BUILDING_SECTOR_MAP,
   BUILDING_EMPLOYEE_NEEDS,
 } from '../../src/contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
-import { DEFAULT_MAINTENANCE_COSTS } from '../../src/contexts/accounting/domain/policies/BuildingMaintenanceBreakdownPolicy.js';
+import { DEFAULT_MAINTENANCE_COSTS, houseMaintenanceCost } from '../../src/contexts/accounting/domain/policies/BuildingMaintenanceBreakdownPolicy.js';
 import {
-  RESIDENTIAL_HOUSE_PRICES,
-  HOUSE_TYPE_BLUE,
-  HOUSE_TYPE_RED,
-  HOUSE_TYPE_PURPLE,
-  HOUSE_TYPE_PALACE,
-} from '../../src/contexts/housing/domain/HouseTypeCatalog.js';
-import { getBuildingDisplayName } from '../../src/presentation/dom/shell/BuildingNotifications.js';
+  buildPopulationDepartureMessage,
+  getBuildingDisplayName,
+} from '../../src/presentation/dom/shell/BuildingNotifications.js';
 
 describe('buildingCatalog — pure data contract', () => {
   test('is frozen at every level (no behavior can mutate it)', () => {
@@ -81,14 +82,6 @@ describe('buildingPlacementCatalog — derived from buildingCatalog', () => {
   });
 });
 
-describe('HouseTypeCatalog — no more duplicated house prices', () => {
-  test('RESIDENTIAL_HOUSE_PRICES matches buildingPlacementCatalog for every house type', () => {
-    for (const type of [HOUSE_TYPE_BLUE, HOUSE_TYPE_RED, HOUSE_TYPE_PURPLE, HOUSE_TYPE_PALACE]) {
-      expect(RESIDENTIAL_HOUSE_PRICES[type]).toBe(buildingPlacementCatalog[type].price);
-    }
-  });
-});
-
 describe('EmploymentSectorCatalog — derived employment facts', () => {
   test('sector map matches catalog for a sample of types', () => {
     expect(BUILDING_SECTOR_MAP['Farm-Wheat']).toBe(1);
@@ -102,9 +95,9 @@ describe('EmploymentSectorCatalog — derived employment facts', () => {
   });
 
   test('static employee needs match catalog values', () => {
-    expect(BUILDING_EMPLOYEE_NEEDS['Farm-Wheat']).toEqual({ worker_need: 3, elite_need: 0 });
-    expect(BUILDING_EMPLOYEE_NEEDS['Windmill-001']).toEqual({ worker_need: 4, elite_need: 2 });
-    expect(BUILDING_EMPLOYEE_NEEDS['StonePath-001']).toEqual({ worker_need: 0, elite_need: 0 });
+    expect(BUILDING_EMPLOYEE_NEEDS['Farm-Wheat']).toEqual({ worker_need: 3 });
+    expect(BUILDING_EMPLOYEE_NEEDS['Windmill-001']).toEqual({ worker_need: 4 });
+    expect(BUILDING_EMPLOYEE_NEEDS['StonePath-001']).toEqual({ worker_need: 0 });
   });
 });
 
@@ -113,7 +106,7 @@ describe('BuildingMaintenanceBreakdownPolicy — derived maintenance facts', () 
     expect(DEFAULT_MAINTENANCE_COSTS.roads).toBe(
       buildingCatalog['StonePath-001'].accounting.maintenance
     );
-    expect(DEFAULT_MAINTENANCE_COSTS['House-Blue']).toBe(
+    expect(houseMaintenanceCost('House-Blue')).toBe(
       buildingCatalog['House-Blue'].accounting.maintenance
     );
   });
@@ -132,12 +125,66 @@ describe('buildingPlacementCatalog — every buildingCatalog entry with a constr
 
 describe('BuildingNotifications — derived display names', () => {
   test('resolves catalog display names', () => {
-    expect(getBuildingDisplayName('House-Blue')).toBe('Maison bleue');
+    // A house is named after its social category, not its colour
+    expect(getBuildingDisplayName('House-Blue')).toBe('Commerçants');
     expect(getBuildingDisplayName('Farm-Wheat')).toBe('Champ de blé');
   });
 
   test('keeps the legacy "Road" alias not present in the catalog', () => {
     expect(getBuildingDisplayName('Road')).toBe('Route');
     expect(buildingCatalog.Road).toBeUndefined();
+  });
+});
+
+describe('Declared facts the city map and every context read from the catalog', () => {
+  test('the map code is the first two letters of the name the player reads, not of the id', () => {
+    expect(getMapCode('House-Red')).toBe('AR'); // Artisans-ouvriers
+    expect(getMapCode('Farm-Cabbage')).toBe('CH'); // Champ de choux
+    expect(getMapCode('Windmill-001')).toBe('MO'); // Moulin
+    expect(getMapCode('Chapel')).toBe('CH'); // Chapelle
+    expect(getMapCode('Market-Stall')).toBe('ET'); // Étal — accent dropped
+    expect(getMapCode('')).toBe('');
+  });
+
+  test('renaming a type renames its code: every code follows displayName', () => {
+    for (const [id, definition] of Object.entries(buildingCatalog)) {
+      if (!definition.displayName) continue;
+      const expected = definition.displayName.normalize('NFD').replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase();
+      expect(getMapCode(id)).toBe(expected);
+    }
+  });
+
+  test('a type needs a road unless the catalog says otherwise, and the road need reads only that fact', () => {
+    expect(requiresRoad('Farm-Wheat')).toBe(false);
+    expect(requiresRoad('House-Red')).toBe(true);
+    expect(requiresRoad('Type-Nobody-Declared')).toBe(true);
+    expect(isRoadNeedMet('Farm-Wheat', 0)).toBe(true);
+    expect(isRoadNeedMet('House-Red', 0)).toBe(false);
+    expect(isRoadNeedMet('House-Red', 2)).toBe(true);
+  });
+});
+
+describe('The message the player reads when inhabitants leave', () => {
+  test('says how many leave and why the standing changed, in the catalog\'s words', () => {
+    expect(
+      buildPopulationDepartureMessage({ count: 12, unmet: [{ kind: 'demandMet' }] })
+    ).toBe('12 habitants nous quittent car le standing a changé (manque de nourriture)');
+    expect(buildPopulationDepartureMessage({ count: 1, unmet: [] })).toBe(
+      '1 habitant nous quitte car le standing a changé'
+    );
+  });
+
+  test('names a lost service by its catalog label, and lists each reason once', () => {
+    const message = buildPopulationDepartureMessage({
+      count: 6,
+      unmet: [
+        { kind: 'serviceCoverage', category: 'faith' },
+        { kind: 'demandMet' },
+        { kind: 'demandMet' },
+      ],
+    });
+    expect(message).toMatch(/^6 habitants nous quittent car le standing a changé \(/);
+    expect(message.match(/manque de nourriture/g)).toHaveLength(1);
+    expect(message).toMatch(/plus de /);
   });
 });

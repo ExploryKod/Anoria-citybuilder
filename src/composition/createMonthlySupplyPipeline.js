@@ -8,14 +8,12 @@ import { createSupplyMonthlyResourceSystem } from '../contexts/supply/infrastruc
  * @param {import('../shared/time/TimeManager.js').TimeManager} deps.timeManager
  * @param {typeof import('./supplyTimeLabels.js').toSupplySeason} deps.toSupplySeason
  * @param {typeof import('./supplyTimeLabels.js').toSupplyMonth} deps.toSupplyMonth
- * @param {number} [deps.foodDistributionDistance=5]
  */
 export function createMonthlySupplyPipeline({
   supply,
   timeManager,
   toSupplySeason,
   toSupplyMonth,
-  foodDistributionDistance = 5,
 }) {
   if (!supply?.runMonthlyResourceCycle) {
     throw new Error('createMonthlySupplyPipeline: supply context required');
@@ -26,7 +24,6 @@ export function createMonthlySupplyPipeline({
     timeManager,
     toSupplySeason,
     toSupplyMonth,
-    resourceDistributionDistance: foodDistributionDistance,
   });
 
   return {

@@ -4,7 +4,6 @@ import {
   isLaborSource,
 } from './policies/BuildingRolePolicy.js';
 import {
-  elitePopFromHouse,
   workerPopFromHouse,
 } from './policies/LaborPoolPolicy.js';
 import { computePopulationBreakdown } from '../../../shared/population/computePopulationBreakdown.js';
@@ -21,7 +20,6 @@ import { getRequiredSkillForBuilding } from './policies/WorkplaceSkillRequiremen
  * @param {ReadonlyArray<import('./EmploymentBuildingSnapshot.js').EmploymentBuildingSnapshot>} buildings
  * @returns {{
  *   workerPool: number,
- *   elitePool: number,
  *   totalPopulation: number,
  *   civilServantCount: number,
  *   laborPool: number,
@@ -40,7 +38,6 @@ import { getRequiredSkillForBuilding } from './policies/WorkplaceSkillRequiremen
  */
 export function computeCityEmploymentSummary(buildings) {
   let workerPool = 0;
-  let elitePool = 0;
   let totalAssigned = 0;
   let totalNeed = 0;
   let lack = 0;
@@ -54,7 +51,6 @@ export function computeCityEmploymentSummary(buildings) {
   for (const building of buildings) {
     if (isLaborSource(building) && hasRoadAccess(building)) {
       workerPool += workerPopFromHouse(building.type, building.pop, building.level);
-      elitePool += elitePopFromHouse(building.type, building.pop);
     }
 
     if (!isEligibleWorkplace(building)) {
@@ -93,7 +89,6 @@ export function computeCityEmploymentSummary(buildings) {
 
   const population = computePopulationBreakdown({
     workerPool,
-    elitePool,
     totalAssigned,
   });
 
@@ -101,7 +96,6 @@ export function computeCityEmploymentSummary(buildings) {
 
   return Object.freeze({
     workerPool,
-    elitePool,
     totalPopulation: population.totalPopulation,
     civilServantCount: population.civilServantCount,
     laborPool: population.laborPool,

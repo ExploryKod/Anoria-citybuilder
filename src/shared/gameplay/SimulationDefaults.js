@@ -1,4 +1,3 @@
-import { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
 
 /**
  * Discrete speed ladder for the player UI (1 = slowest … N = fastest).
@@ -66,7 +65,7 @@ export function snapTickMs(ms) {
   return speedLevelToMs(msToSpeedLevel(ms));
 }
 
-/** @returns {{ tickMsMin: number, tickMsMax: number, defaultTickMs: number, citySize: number, foodDistributionDistance: number, speedLevelMin: number, speedLevelMax: number, defaultSpeedLevel: number }} */
+/** @returns {{ tickMsMin: number, tickMsMax: number, defaultTickMs: number, citySize: number, speedLevelMin: number, speedLevelMax: number, defaultSpeedLevel: number }} */
 export function getSimulationDefaults() {
   return {
     tickMsMin: TICK_MS_MIN,
@@ -76,6 +75,5 @@ export function getSimulationDefaults() {
     speedLevelMax: SPEED_LEVEL_MAX,
     defaultSpeedLevel: DEFAULT_SPEED_LEVEL,
     citySize: DEFAULT_CITY_SIZE,
-    foodDistributionDistance: DEFAULT_FOOD_DISTRIBUTION_DISTANCE,
   };
 }

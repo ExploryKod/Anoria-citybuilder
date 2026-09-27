@@ -67,7 +67,6 @@ describe('ProcessTurnBudget — payroll tax assiette', () => {
       getCityTotalPopulation: async () => 6,
       getCityEmploymentSummary: async () => ({
         workerPool: 0,
-        elitePool: 0,
         totalPopulation: 0,
         unemployed: 0,
       }),
@@ -126,7 +125,6 @@ describe('ProcessTurnBudget — payroll tax assiette', () => {
       getCityTotalPopulation: async () => 6,
       getCityEmploymentSummary: async () => ({
         workerPool: 6,
-        elitePool: 0,
         totalPopulation: 6,
         unemployed: 0,
       }),

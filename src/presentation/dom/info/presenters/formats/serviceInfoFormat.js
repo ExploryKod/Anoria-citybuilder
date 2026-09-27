@@ -13,6 +13,7 @@
  */
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
+import { buildingName } from '../../../shell/CatalogVocabulary.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
 import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
 
@@ -33,7 +34,7 @@ function resolveServiceRole(buildingType) {
 export function formatServiceLayoutHeader(vm) {
   const def = getBuildingDefinition(vm.buildingType);
   return {
-    title: def?.displayName ?? vm.buildingType,
+    title: buildingName(vm.buildingType),
     meta: `📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
     accent: null,
   };
@@ -61,7 +62,7 @@ export function formatServiceOverviewModel(vm) {
 
   return {
     sections: [{
-      title: `État — ${def?.displayName ?? buildingType}`,
+      title: `État — ${buildingName(buildingType)}`,
       rows: [
         ...(category
           ? [{ label: 'Service rendu', value: getServiceCategoryDisplay(category).label }]

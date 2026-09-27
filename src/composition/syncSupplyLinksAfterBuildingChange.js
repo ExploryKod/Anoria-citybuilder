@@ -1,4 +1,4 @@
-import { hasResourceRole, getPlacementRequirements } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { hasResourceRole, getPlacementRequirements, listRoleEntries } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { refreshSupplyPlacementIndex } from '../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
 
 /**
@@ -32,7 +32,10 @@ export async function syncSupplyLinksAfterBuildingChange({
   let outcome = { handled: false };
 
   const isHub = hasResourceRole(buildingType, 'hub');
-  const hasPlacementRequirements = getPlacementRequirements(buildingType).length > 0;
+  // A distributor is linked to a hub when it must have one to be placed, or when it declares a hub it may draw on.
+  const hasPlacementRequirements =
+    getPlacementRequirements(buildingType).length > 0 ||
+    listRoleEntries(buildingType, 'distributor').some((entry) => entry.hubLink?.sourceLinkField);
 
   if (event === 'bulldozed' && isHub && instanceId && city) {
     outcome = await supply.cascadeDestroyHubDistributors({
@@ -57,6 +60,7 @@ export async function syncSupplyLinksAfterBuildingChange({
 
   if (event === 'placed' && isHub && instanceId) {
     await supply.initializeHubLinks({ hubId: instanceId });
+    await supply.linkWaitingDistributors({ hubId: instanceId });
     outcome = { handled: true, initialized: true };
   }
 

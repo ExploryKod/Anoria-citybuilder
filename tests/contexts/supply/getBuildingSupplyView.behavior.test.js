@@ -5,6 +5,7 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingView } from '../../../src/contexts/supply/domain/SupplyBuildingView.js';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
+import { GetHubStorageInfoView } from '../../../src/contexts/supply/application/queries/GetHubStorageInfoView.js';
 import { GetBuildingSupplyView, classifySupplyKind } from '../../../src/contexts/supply/application/queries/GetBuildingSupplyView.js';
 
 class InMemorySupplyBuildingRepository {
@@ -59,7 +60,7 @@ describe('Supply — GetBuildingSupplyView', () => {
       createSupplyBuildingView({
         id: 'Windmill-001-8-8',
         type: 'Windmill-001',
-        stocks: { wheat: 20, food: 20, wood: 1 },
+        stocks: { wheat: 20, food: 20, iron: 1 },
         maxStock: 1000,
         isCollecting: true,
         lastCollection: { wheat: 20, total: 20 },
@@ -129,10 +130,11 @@ describe('Supply — GetBuildingSupplyView', () => {
 
   test('windmill view exposes collecting state and lastCollection', async () => {
     const dto = await useCase.execute('Windmill-001-8-8');
-    expect(dto.kind).toBe('windmill');
+    expect(dto.kind).toBe('hub');
     expect(dto.isCollecting).toBe(true);
     expect(dto.lastCollection.wheat).toBe(20);
-    expect(dto.stocks.wood).toBe(1);
+    // A good the catalog does not declare is not carried through the view.
+    expect(dto.stocks.iron).toBeUndefined();
     expect(dto.maxStock).toBe(1000);
   });
 
@@ -220,3 +222,44 @@ describe('Supply — GetBuildingSupplyView', () => {
     expect(dto.isBuying).toBeUndefined();
   });
 });
+
+describe('Supply — GetHubStorageInfoView: report and autonomy of a hub', () => {
+  const hubRow = (extra) => ({
+    type: 'Windmill-001',
+    stocks: { wheat: 1450, food: 1450 },
+    employees: { worker: 4, worker_need: 4 },
+    ...extra,
+  });
+  const view = (row, options = {}) => new GetHubStorageInfoView().execute({ hubKind: 'hub', buildingRow: row, ...options });
+
+  test('exposes what is left from before the last harvest', () => {
+    // 10 held before the harvest; the hub holds 1450 now, the harvest (1440) is not carry-over.
+    const dto = view(hubRow({ carryOver: { year: 1, stocks: { wheat: 10 }, harvested: { wheat: 1440 } } }));
+    expect(dto.carryOverTotal).toBe(10);
+    expect(dto.lines.find((line) => line.productId === 'wheat').carryOver).toBe(10);
+  });
+
+  test('a stock with no recorded carry-over reports none — the whole stock is not carry-over', () => {
+    const dto = view(hubRow({ lastCollection: { wheat: 0, food: 0 } }));
+    expect(dto.carryOverTotal).toBe(0);
+  });
+
+  test('exposes how many months the stock lasts at last month\'s pace', () => {
+    const dto = view(hubRow({ lastOutflow: { year: 1, monthIndex: 4, units: 110 } }));
+    expect(dto.autonomyMonths).toBe(13);
+  });
+
+  test('has no autonomy while nothing has left the hub', () => {
+    expect(view(hubRow({})).autonomyMonths).toBeNull();
+  });
+
+  test('says in how many months the hub next collects, from the calendar it is given', () => {
+    const contextAhead = (monthsAhead) => ({ month: ['october', 'november', 'december'][monthsAhead] ?? 'january' });
+    expect(view(hubRow({}), { timeContextAhead: contextAhead }).harvestInMonths).toBe(2);
+  });
+
+  test('has no harvest date when no calendar is given', () => {
+    expect(view(hubRow({})).harvestInMonths).toBeNull();
+  });
+});
+

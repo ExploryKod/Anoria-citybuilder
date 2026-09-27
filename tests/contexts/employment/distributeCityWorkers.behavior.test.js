@@ -8,13 +8,13 @@
  */
 
 import { describe, test, expect, beforeEach } from '@jest/globals';
+import { requiresRoad } from '../../../src/shared/building-catalog/resourceRoleQueries.js';
 import { createEmploymentBuildingSnapshot } from '../../../src/contexts/employment/domain/EmploymentBuildingSnapshot.js';
 import { houseCitizenHasSkillAtLevel } from '../../../src/contexts/housing/domain/policies/GroupSkillPolicy.js';
 import { residentialGroupForType } from '../../../src/contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 import {
   hasRoadAccess,
   isEligibleWorkplace,
-  isFarmType,
   isHouseType,
   isLaborSource,
   isRoadType,
@@ -112,7 +112,9 @@ describe('Employment — DistributeCityWorkers', () => {
       expect(isWorkplace({ type: 'Farm-Wheat', workerNeed: 3 })).toBe(true);
       expect(isWorkplace({ type: 'House-Red', workerNeed: 0 })).toBe(false);
       expect(isWorkplace({ type: 'roads', workerNeed: 0 })).toBe(false);
-      expect(isFarmType('Farm-Wheat')).toBe(true);
+      // The road need is the catalog's call: fields declare `requiresRoad: false`, a market does not
+      expect(requiresRoad('Farm-Wheat')).toBe(false);
+      expect(requiresRoad('Market-Stall')).toBe(true);
       expect(isEligibleWorkplace({ type: 'Farm-Wheat', workerNeed: 3, roadCount: 0 })).toBe(true);
       expect(isEligibleWorkplace({ type: 'Market-Stall', workerNeed: 2, roadCount: 0 })).toBe(false);
       expect(hasRoadAccess({ roadCount: 1 })).toBe(true);

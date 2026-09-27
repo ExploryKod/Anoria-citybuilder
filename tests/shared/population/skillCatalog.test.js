@@ -6,8 +6,8 @@ describe('skillCatalog — single source of truth for skill display', () => {
     expect(getSkillDisplay('spiritual')).toEqual({ label: 'Spiritualité', emoji: '🙏' });
   });
 
-  test('getSkillDisplay falls back to a humanized label for an uncurated skill id', () => {
-    expect(getSkillDisplay('future-skill')).toEqual({ label: 'Future Skill', emoji: '🔧' });
+  test('getSkillDisplay shows the "…" marker for a skill the catalog does not name', () => {
+    expect(getSkillDisplay('future-skill')).toEqual({ label: '…', emoji: '…' });
   });
 
   test('every curated entry has a label and an emoji', () => {

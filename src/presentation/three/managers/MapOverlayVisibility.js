@@ -12,12 +12,20 @@ export const PRODUCTION_STATUS_SPRITE_NAMES = Object.freeze([
   'harvest-bg',
   'sell-food',
   'sell-food-bg',
-  'sold-to-windmill',
-  'sold-to-windmill-bg',
+  'sold-to-hub',
+  'sold-to-hub-bg',
+  'hub-full',
+  'hub-full-bg',
+  'failed-sell',
+  'failed-sell-bg',
+  'input-shortage',
+  'input-shortage-bg',
   'no-food',
   'no-food-bg',
   'no-work',
   'no-work-bg',
+  'no-resource',
+  'no-resource-bg',
 ]);
 
 /**

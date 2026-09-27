@@ -9,7 +9,9 @@
  * (services / neighbors / messages) resolve via buildingInfoSharedTabs.
  */
 
+import { getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
+import { supplyTimeContextAhead } from '../../../../composition/supplyTimeLabels.js';
 import { buildingsObjects } from '../../../../shared/building-catalog/index.js';
 import { infoObjectOverlay } from '../../shell/nodes.js';
 import { createBuildingInfoViewModel } from '../buildingInfoTypes.js';
@@ -53,6 +55,14 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
     } else {
       extra.currentYear = 0;
     }
+    // Structural reason a recipe with a `cycle` cannot even ask for its input — see
+    // DescribeActivitySupplyAccess.js. Empty for a plain source (no recipe), harmless to compute.
+    extra.activitySupplyGaps = await vm.supply.describeActivitySupplyAccess({
+      id: vm.uniqueId,
+      type: vm.buildingType,
+      x: vm.anchorX,
+      y: vm.anchorY,
+    });
   }
 
   if (groupId === BUILDING_INFO_GROUPS.house) {
@@ -65,18 +75,32 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
     extra.periodKey = budget?.turn !== undefined
       ? (TimeManager.getTimeInfo(budget.turn)?.monthIndex ?? null)
       : null;
+    // Same structural check as the farm group — a house's OWN business is a recipe like any workshop's.
+    extra.activitySupplyGaps = await vm.supply.describeActivitySupplyAccess({
+      id: vm.uniqueId,
+      type: vm.buildingType,
+      x: vm.anchorX,
+      y: vm.anchorY,
+    });
   }
 
   if (groupId === BUILDING_INFO_GROUPS.hubStorage) {
-    const hubKind = vm.supplyView?.kind === 'windmill' ? 'windmill' : null;
+    const hubKind = vm.supplyView?.kind === 'hub' ? 'hub' : null;
     if (hubKind) {
       extra.hubKind = hubKind;
-      if (hubKind === 'windmill' && !Object.hasOwn(vm.stocks || {}, 'food')) {
+      if (hubKind === 'hub' && !Object.hasOwn(vm.stocks || {}, getResourceStockShape().totalKey)) {
         extra.hubView = null;
       } else {
+        // The calendar from now, so the hub can say when it next collects.
+        const budget = await vm.accounting.getTreasurySnapshot();
+        const turn = budget?.turn;
+        extra.hubTimeContextAhead = Number.isFinite(turn)
+          ? (monthsAhead) => supplyTimeContextAhead(turn, monthsAhead)
+          : null;
         extra.hubView = vm.supply.getHubStorageInfoView(hubKind, vm.buildingRow, {
           stocks: vm.stocks,
           maxStock: vm.supplyView?.maxStock,
+          timeContextAhead: extra.hubTimeContextAhead,
         });
       }
     }
@@ -162,6 +186,18 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
     // (decorative/nature objects with no economic identity).
     const buildingType = buildingRow?.type ?? selectedObject.userData.id;
 
+    // Only an understaffed workplace needs the city's employment: it tells who could staff it
+    const employees = buildingRow?.employees;
+    const isUnderstaffed = (employees?.worker_need ?? 0) > (employees?.worker ?? 0);
+    let employmentSummary = null;
+    if (isUnderstaffed) {
+      try {
+        employmentSummary = await employment.getCityEmploymentSummary();
+      } catch (error) {
+        console.warn('[BuildingInfo] Could not read the employment summary:', error);
+      }
+    }
+
     let vm = createBuildingInfoViewModel({
       buildingType,
       uniqueId,
@@ -176,6 +212,7 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
       supplyView,
       stocks: supplyView?.stocks ?? null,
       employment,
+      employmentSummary,
       supply,
       accounting,
       construction,

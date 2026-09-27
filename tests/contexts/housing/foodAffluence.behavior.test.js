@@ -1,10 +1,9 @@
 /**
- * Behavior tests — Housing: food affluence and evolution preview queries (H5)
+ * Behavior tests — Housing: food affluence query (H5)
  */
 
 import { describe, test, expect } from '@jest/globals';
 import { EvaluateHouseFoodAffluence } from '../../../src/contexts/housing/application/queries/EvaluateHouseFoodAffluence.js';
-import { PreviewHouseEvolution } from '../../../src/contexts/housing/application/queries/PreviewHouseEvolution.js';
 
 describe('EvaluateHouseFoodAffluence', () => {
   const query = new EvaluateHouseFoodAffluence();
@@ -98,134 +97,5 @@ describe('EvaluateHouseFoodAffluence', () => {
     test('false when food >= population', () => {
       expect(query.execute({ stocks: { wheat: 5 }, population: 5 }).isInsufficient).toBe(false);
     });
-  });
-});
-
-describe('PreviewHouseEvolution', () => {
-  const query = new PreviewHouseEvolution();
-
-  describe('toPurple', () => {
-    test('succeeds when all conditions met', () => {
-      expect(
-        query.execute({
-          stocks: { wheat: 6 },
-          population: 6,
-          buildingType: 'House-Red',
-          hasRoadAccess: true,
-        }).toPurple.canEvolve
-      ).toBe(true);
-    });
-
-    test('rejects non House-Red', () => {
-      const result = query.execute({
-        stocks: { wheat: 6 },
-        population: 6,
-        buildingType: 'House-Blue',
-        hasRoadAccess: true,
-      });
-      expect(result.toPurple.canEvolve).toBe(false);
-      expect(result.toPurple.reason).toBe('not_house_red');
-    });
-
-    test('rejects empty house', () => {
-      expect(
-        query.execute({
-          stocks: { wheat: 6 },
-          population: 0,
-          buildingType: 'House-Red',
-          hasRoadAccess: true,
-        }).toPurple.reason
-      ).toBe('not_inhabited');
-    });
-
-    test('rejects without road', () => {
-      expect(
-        query.execute({
-          stocks: { wheat: 6 },
-          population: 6,
-          buildingType: 'House-Red',
-          hasRoadAccess: false,
-        }).toPurple.reason
-      ).toBe('no_road_access');
-    });
-
-    test('rejects pop <= 5', () => {
-      expect(
-        query.execute({
-          stocks: { wheat: 6 },
-          population: 5,
-          buildingType: 'House-Red',
-          hasRoadAccess: true,
-        }).toPurple.reason
-      ).toBe('population_too_low');
-    });
-
-    test('rejects hunger', () => {
-      expect(
-        query.execute({
-          stocks: { wheat: 3 },
-          population: 6,
-          buildingType: 'House-Red',
-          hasRoadAccess: true,
-        }).toPurple.reason
-      ).toBe('hunger_present');
-    });
-  });
-
-  describe('toPalace', () => {
-    test('succeeds with food goal and two crop types', () => {
-      expect(
-        query.execute({
-          stocks: { food: 15, wheat: 8, carrot: 7 },
-          population: 6,
-          buildingType: 'House-Purple',
-          hasRoadAccess: true,
-        }).toPalace.canEvolve
-      ).toBe(true);
-    });
-
-    test('rejects non House-Purple', () => {
-      expect(
-        query.execute({
-          stocks: { food: 15, wheat: 8, carrot: 7 },
-          population: 6,
-          buildingType: 'House-Red',
-          hasRoadAccess: true,
-        }).toPalace.reason
-      ).toBe('not_house_purple');
-    });
-
-    test('rejects insufficient food goal', () => {
-      expect(
-        query.execute({
-          stocks: { food: 10, wheat: 5, carrot: 5 },
-          population: 6,
-          buildingType: 'House-Purple',
-          hasRoadAccess: true,
-        }).toPalace.reason
-      ).toBe('food_goal_not_met');
-    });
-
-    test('rejects single crop type', () => {
-      expect(
-        query.execute({
-          stocks: { food: 15, wheat: 15 },
-          population: 6,
-          buildingType: 'House-Purple',
-          hasRoadAccess: true,
-        }).toPalace.reason
-      ).toBe('insufficient_food_variety');
-    });
-  });
-
-  test('availableCropTypesCount', () => {
-    expect(
-      query.execute({
-        stocks: { wheat: 1, carrot: 2, cabbage: 0 },
-        population: 6,
-        buildingType: 'House-Purple',
-        hasRoadAccess: true,
-      }).availableCropTypesCount
-    ).toBe(2);
   });
 });

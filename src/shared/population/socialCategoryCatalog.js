@@ -1,4 +1,12 @@
 /**
+ * Population ceiling of a house at each tier — declared ONCE and referenced by
+ * every category's tier (`maxPopulation`), so the numbers live nowhere else.
+ * A category that should differ overrides its own tier's `maxPopulation`.
+ * Read by HouseCapacityPolicy.maxPopulationForLevel.
+ */
+const TIER_MAX_POPULATION = Object.freeze({ 1: 6, 2: 12, 3: 18, 4: 24, 5: 30 });
+
+/**
  * Single source of truth for the 3 social categories (Artisans / Savants /
  * Commerçants — French display labels live in presentation, not here) and
  * the facts tied to a category itself rather than to any one building:
@@ -77,10 +85,12 @@ export const SOCIAL_CATEGORY = Object.freeze({
     eligibleSectors: Object.freeze([1, 3, 4]),
     tiers: Object.freeze({
       1: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[1],
         requirements: Object.freeze([]),
         skills: Object.freeze({ 'subsistence-forager': 1, spiritual: 1 }),
       }),
       2: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[2],
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 1 }),
@@ -88,10 +98,13 @@ export const SOCIAL_CATEGORY = Object.freeze({
         ]),
         // 'artisanat' (pottery workshops) — sector 3, this group's own
         // Industries sector (see eligibleSectors above), same tier as the
-        // group's namesake trade.
-        skills: Object.freeze({ fermier: 1, artisanat: 1 }),
+        // group's namesake trade. 'manutention' (the goods warehouse) — sector 4, also in eligibleSectors:
+        // the group of manual workers carries and stacks the goods. 'telecoms' (the network provider) — sector
+        // 3 too, another industrial trade this group holds.
+        skills: Object.freeze({ fermier: 1, artisanat: 1, manutention: 1, telecoms: 1 }),
       }),
       3: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[3],
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 4 }),
@@ -102,6 +115,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         skills: Object.freeze({}),
       }),
       4: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[4],
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 8 }),
@@ -114,6 +128,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         skills: Object.freeze({}),
       }),
       5: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[5],
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 12 }),
@@ -134,10 +149,12 @@ export const SOCIAL_CATEGORY = Object.freeze({
     eligibleSectors: Object.freeze([2]),
     tiers: Object.freeze({
       1: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[1],
         requirements: Object.freeze([]),
         skills: Object.freeze({ 'subsistence-forager': 1, spiritual: 1 }),
       }),
       2: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[2],
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 1 }),
@@ -146,6 +163,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         skills: Object.freeze({ 'vente-alimentaire': 1 }),
       }),
       3: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[3],
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 4 }),
@@ -156,6 +174,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         skills: Object.freeze({}),
       }),
       4: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[4],
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 8 }),
@@ -168,6 +187,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         skills: Object.freeze({}),
       }),
       5: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[5],
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 12 }),
@@ -188,10 +208,12 @@ export const SOCIAL_CATEGORY = Object.freeze({
     eligibleSectors: Object.freeze([6]),
     tiers: Object.freeze({
       1: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[1],
         requirements: Object.freeze([]),
         skills: Object.freeze({ 'subsistence-forager': 1, spiritual: 1 }),
       }),
       2: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[2],
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 1 }),
@@ -205,6 +227,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         skills: Object.freeze({ 'stockage-alimentaire': 1, medical: 1 }),
       }),
       3: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[3],
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 4 }),
@@ -216,6 +239,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         skills: Object.freeze({ hygiene: 1, hospitality: 1 }),
       }),
       4: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[4],
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 8 }),
@@ -229,6 +253,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         skills: Object.freeze({ education: 1, entertainment: 1 }),
       }),
       5: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[5],
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 12 }),

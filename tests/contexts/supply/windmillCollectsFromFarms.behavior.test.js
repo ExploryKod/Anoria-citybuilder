@@ -123,7 +123,7 @@ describe('Supply — windmill collection', () => {
       expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
     });
 
-    test('skips farms without road access', async () => {
+    test('collects from a farm without road access (the catalog says fields need none)', async () => {
       repo = new InMemorySupplyBuildingRepository([
         windmill(windmillId, { food: 0 }),
         farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }, 0),
@@ -136,9 +136,9 @@ describe('Supply — windmill collection', () => {
         sourceRefs: [{ instanceId: wheatFarmId }],
       });
 
-      expect(outcome.collected).toBe(false);
-      expect(outcome.reason).toBe('nothing_to_collect');
-      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
+      expect(outcome.collected).toBe(true);
+      expect(outcome.totalUnits).toBe(10);
+      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(0);
     });
 
     test('refuses when windmill has no road access', async () => {

@@ -80,7 +80,7 @@ export function resolveSelectedMeshId(toolId, selectionIndex = 0) {
  * producing no mesh — no silent fallback.
  *
  * @param {object} params
- * @param {string} params.buildingId
+ * @param {string} params.buildingId The game's id of the building (stamped on the mesh as `userData.catalogId`).
  * @param {number} params.x
  * @param {number} params.y
  * @param {number} [params.rotationStep]
@@ -104,5 +104,9 @@ export async function resolveAndCreateBuildingMesh({ buildingId, x, y, rotationS
   if (!mesh) {
     throw new Error(`[buildingAssets] No mesh produced for "${visualBuildingId}" (source "${catalogEntry.source}")`);
   }
+  // The ONE place a mesh gets its logical identity, whatever adapter built it: the id the game and the catalog
+  // know it by. `userData.id` / `type` stay the VISUAL id (a pottery workshop wears a kit piece's), so nothing
+  // that needs to know what a building IS may read those — it reads `catalogId`.
+  mesh.userData.catalogId = buildingId;
   return mesh;
 }

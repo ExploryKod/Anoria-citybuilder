@@ -1,3 +1,6 @@
+import { getSuppliedCategories } from '../../../shared/building-catalog/resourceRoleQueries.js';
+import { listDepositKinds } from '../../../shared/building-catalog/depositQueries.js';
+import { renderHudResourceRows } from './hudResourceRows.js';
 // game.js
 export const displayTime = document.querySelector('.info-panel .display-time');
 export const displaySeason = document.querySelector('.info-panel .hud-season');
@@ -21,7 +24,6 @@ export const infoObjectOverlay = document.querySelector('.info-building-overlay'
 export const infoObjectCloseBtn = document.querySelector('.info-building-overlay .panel-close-btn');
 export {
     buildingsObjects,
-    palaces,
     farms,
 } from '../../../shared/building-catalog/index.js';
 export { houses, commerce } from '../../three/assets/buildingCategories.js';
@@ -45,12 +47,6 @@ export const displayPopCitizens = document.querySelector(
 );
 export const displayPopCitizensHamlet = document.querySelector(
     `${popHudRoot} .pop-segment--citizen .pop-segment-value--hamlet`
-);
-export const displayPopElites = document.querySelector(
-    `${popHudRoot} .pop-segment--elite .pop-segment-value.pop-detail-value--country`
-);
-export const displayPopElitesHamlet = document.querySelector(
-    `${popHudRoot} .pop-segment--elite .pop-segment-value--hamlet`
 );
 export const displayPopServants = document.querySelector(
     `${popHudRoot} .pop-segment--servant .pop-segment-value.pop-detail-value--country`
@@ -92,12 +88,14 @@ export const popGroupPopNodes = queryGroupMetricNodes('pop');
 export const popGroupWorkerNodes = queryGroupMetricNodes('workers');
 export const popGroupLaborNodes = queryGroupMetricNodes('labor');
 
-const POP_RESOURCE_CITY_PRODUCTS = [
-    'wheat',
-    'cabbage',
-    'carrot',
-];
-const POP_RESOURCE_NATURE_PRODUCTS = ['wood', 'rock', 'clay', 'iron', 'gold'];
+// Goods the citizens eat that a hub stores, straight from the catalog — no good is named here.
+const POP_RESOURCE_CITY_PRODUCTS = getSuppliedCategories();
+// Deposits of the map, straight from the catalog too.
+const POP_RESOURCE_NATURE_PRODUCTS = listDepositKinds();
+
+// The rows are made from those lists before they are looked up: the page markup names no good.
+renderHudResourceRows({ root: popHudRoot, destination: 'city', panelId: 'hud-pop-panel-ressources-ville', products: POP_RESOURCE_CITY_PRODUCTS });
+renderHudResourceRows({ root: popHudRoot, destination: 'nature', panelId: 'hud-pop-panel-ressources-nature', products: POP_RESOURCE_NATURE_PRODUCTS });
 
 /**
  * @param {'city' | 'nature'} destination
@@ -149,7 +147,6 @@ export const bullDozeButton = document.getElementById('bulldoze-btn');
 export const selectButton = document.getElementById('select-btn');
 export const playerButton = document.getElementById('player-btn');
 export const housesButton = document.getElementById('residential-btn');
-export const palacesButton = document.getElementById('palace-btn');
 export const farmsButton = document.getElementById('farm-btn');
 export const industryButton = document.getElementById('industry-btn');
 export const marketButton = document.getElementById('market-btn');

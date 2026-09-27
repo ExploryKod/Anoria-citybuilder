@@ -24,12 +24,38 @@ describe('servicesInfoFormat — house Services tab chips', () => {
     ]);
   });
 
-  test('a tier-1 house shows Route, Marché, and Chapel (unmet — no faith flag yet)', () => {
+  test('a tier-1 house shows Route, Marché, its own business access, and Chapel (unmet — no faith flag yet)', () => {
     const model = formatServicesModel(houseVm({ servedFlags: null }));
 
-    expect(model.items.map((i) => i.label)).toEqual(['Route', 'Marché', 'Foi']);
+    expect(model.items.map((i) => i.label)).toEqual(['Route', 'Étal rouge', 'Entrepôt (activité)', 'Foi']);
     const chapelChip = model.items.find((i) => i.label === 'Foi');
     expect(chapelChip).toMatchObject({ emoji: '⛪', status: 'off', value: null });
+  });
+
+  test('a house running a business (House-Red) shows whether it can reach a hub for it', () => {
+    const reachable = formatServicesModel(houseVm({ activitySupplyGaps: [] }));
+    expect(reachable.items.find((i) => i.label === 'Entrepôt (activité)')).toMatchObject({ status: 'ok', value: '✓' });
+
+    const blocked = formatServicesModel(
+      houseVm({ activitySupplyGaps: [{ category: 'decoratedPot', inputCategory: 'pot', role: 'hub', status: 'no-hub' }] })
+    );
+    expect(blocked.items.find((i) => i.label === 'Entrepôt (activité)')).toMatchObject({ status: 'off', value: null });
+  });
+
+  test('a gap that is only "nothing supplies the hub" (no-supplier) does not count against warehouse access', () => {
+    const model = formatServicesModel(
+      houseVm({ activitySupplyGaps: [{ category: 'decoratedPot', inputCategory: 'pot', role: 'hub', status: 'no-supplier' }] })
+    );
+    expect(model.items.find((i) => i.label === 'Entrepôt (activité)')).toMatchObject({ status: 'ok', value: '✓' });
+  });
+
+  test('a non-house building never gets the business-access chip, even with gaps', () => {
+    const model = formatServicesModel({
+      buildingType: 'Farm-Wheat',
+      roadAccess: { hasAccess: true, roadCount: 1 },
+      activitySupplyGaps: [{ category: 'x', inputCategory: 'y', role: 'hub', status: 'no-hub' }],
+    });
+    expect(model.items.some((i) => i.label === 'Entrepôt (activité)')).toBe(false);
   });
 
   test('faith served THIS period flips the Chapel chip to met', () => {
@@ -58,7 +84,7 @@ describe('servicesInfoFormat — house Services tab chips', () => {
       houseVm({ houseLevel: 2, servedFlags: { faith: 4 }, periodKey: 4 }),
     );
 
-    expect(model.items.map((i) => i.label)).toEqual(['Route', 'Marché', 'Foi', 'Soins médicaux']);
+    expect(model.items.map((i) => i.label)).toEqual(['Route', 'Étal rouge', 'Entrepôt (activité)', 'Foi', 'Soins médicaux']);
     expect(model.items.find((i) => i.label === 'Foi')).toMatchObject({ status: 'ok' });
     expect(model.items.find((i) => i.label === 'Soins médicaux')).toMatchObject({ status: 'off' });
   });

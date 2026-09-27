@@ -91,11 +91,10 @@ describe('getBuildingSector', () => {
 describe('getDefaultEmployees', () => {
     
     describe('Fermes - Besoins en travailleurs', () => {
-        test('Farm-Wheat nécessite 3 travailleurs, 0 élites', () => {
+        test('Farm-Wheat nécessite 3 travailleurs', () => {
             const employees = getDefaultEmployees('Farm-Wheat');
             
             expect(employees.worker_need).toBe(3);
-            expect(employees.elite_need).toBe(0);
             expect(employees.sector).toBe(1);
         });
 
@@ -103,26 +102,23 @@ describe('getDefaultEmployees', () => {
             const employees = getDefaultEmployees('Farm-Carrot');
             
             expect(employees.worker).toBe(0);
-            expect(employees.elite).toBe(0);
         });
     });
 
-    describe('Marchés - Besoins mixtes', () => {
-        test('Market-Stall nécessite 2 travailleurs et 1 élite', () => {
+    describe('Marchés - Besoins en travailleurs', () => {
+        test('Market-Stall nécessite 2 travailleurs', () => {
             const employees = getDefaultEmployees('Market-Stall');
             
             expect(employees.worker_need).toBe(2);
-            expect(employees.elite_need).toBe(1);
             expect(employees.sector).toBe(2);
         });
     });
 
     describe('Moulins - Besoins importants', () => {
-        test('Windmill-001 nécessite 4 travailleurs et 2 élites', () => {
+        test('Windmill-001 nécessite 4 travailleurs', () => {
             const employees = getDefaultEmployees('Windmill-001');
             
             expect(employees.worker_need).toBe(4);
-            expect(employees.elite_need).toBe(2);
             expect(employees.sector).toBe(4);
         });
     });
@@ -132,9 +128,7 @@ describe('getDefaultEmployees', () => {
             const employees = getDefaultEmployees('House-Blue');
             
             expect(employees.worker_need).toBe(0);
-            expect(employees.elite_need).toBe(0);
             expect(employees.worker).toBe(0);
-            expect(employees.elite).toBe(0);
             expect(employees.sector).toBe(0);
             expect(employees.salary).toBe(0);
         });
@@ -145,9 +139,9 @@ describe('getDefaultEmployees', () => {
             const employees = getDefaultEmployees('Farm-Wheat');
             
             expect(employees).toHaveProperty('worker_need');
-            expect(employees).toHaveProperty('elite_need');
             expect(employees).toHaveProperty('worker');
-            expect(employees).toHaveProperty('elite');
+            expect(employees).not.toHaveProperty('elite');
+            expect(employees).not.toHaveProperty('elite_need');
             expect(employees).toHaveProperty('sector');
             expect(employees).toHaveProperty('salary');
         });
@@ -167,30 +161,25 @@ describe('calculateSalary', () => {
     
     describe('Calcul de base (10€ par employé par défaut)', () => {
         test('0 employés = 0€ de salaire', () => {
-            const employees = { worker: 0, elite: 0 };
+            const employees = { worker: 0 };
             expect(calculateSalary(employees)).toBe(0);
         });
 
         test('1 travailleur = 10€', () => {
-            const employees = { worker: 1, elite: 0 };
+            const employees = { worker: 1 };
             expect(calculateSalary(employees)).toBe(10);
         });
 
-        test('1 élite = 10€', () => {
-            const employees = { worker: 0, elite: 1 };
-            expect(calculateSalary(employees)).toBe(10);
-        });
-
-        test('3 travailleurs + 2 élites = 50€', () => {
-            const employees = { worker: 3, elite: 2 };
-            expect(calculateSalary(employees)).toBe(50);
+        test('3 travailleurs = 30€', () => {
+            const employees = { worker: 3 };
+            expect(calculateSalary(employees)).toBe(30);
         });
     });
 
     describe('Calcul avec salaires personnalisés', () => {
-        test('travailleurs à 15€, élites à 25€', () => {
-            const employees = { worker: 2, elite: 1 };
-            expect(calculateSalary(employees, 15, 25)).toBe(55); // 2*15 + 1*25
+        test('travailleurs à 15€', () => {
+            const employees = { worker: 2 };
+            expect(calculateSalary(employees, 15)).toBe(30); // 2*15
         });
     });
 
@@ -204,7 +193,7 @@ describe('calculateSalary', () => {
         });
 
         test('propriétés manquantes traitées comme 0', () => {
-            const employees = {}; // Pas de worker ni elite
+            const employees = {}; // Pas de worker
             expect(calculateSalary(employees)).toBe(0);
         });
     });
@@ -216,17 +205,16 @@ describe('calculateSalary', () => {
 describe('updateEmployeeSalary', () => {
     
     test('retourne un nouvel objet avec le salaire calculé', () => {
-        const employees = { worker: 2, elite: 1, salary: 0 };
+        const employees = { worker: 3, salary: 0 };
         const updated = updateEmployeeSalary(employees);
         
-        expect(updated.salary).toBe(30); // 2*10 + 1*10
+        expect(updated.salary).toBe(30); // 3*10
         expect(updated).not.toBe(employees); // Nouvel objet (immutabilité)
     });
 
     test('préserve les autres propriétés', () => {
         const employees = { 
             worker: 1, 
-            elite: 0, 
             worker_need: 3, 
             sector: 1 
         };

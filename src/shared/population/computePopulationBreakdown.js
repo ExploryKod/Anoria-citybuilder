@@ -2,17 +2,16 @@ import { computeCivilServantCount } from '../../contexts/accounting/domain/polic
 
 /**
  * Partition de la population ville en ensembles disjoints :
- * total = citoyens actifs + élites + fonctionnaires + chômeurs.
+ * total = citoyens actifs + fonctionnaires + chômeurs.
  *
- * - Fonctionnaires : floor(total / 12), prélevés sur le pool ouvrier (non élite).
+ * - Fonctionnaires : floor(total / 12), prélevés sur le pool ouvrier.
  * - Chômeurs       : surplus du pool ouvrier restant après fonctionnaires, hors emplois.
- * - Citoyens actifs: ouvriers employés (ni chômeur, ni élite, ni fonctionnaire).
+ * - Citoyens actifs: ouvriers employés (ni chômeur, ni fonctionnaire).
  *
- * @param {{ workerPool: number, elitePool: number, totalAssigned: number }} params
+ * @param {{ workerPool: number, totalAssigned: number }} params
  * @returns {{
  *   totalPopulation: number,
  *   workerPool: number,
- *   elitePool: number,
  *   civilServantCount: number,
  *   laborPool: number,
  *   activeCitizenCount: number,
@@ -21,23 +20,21 @@ import { computeCivilServantCount } from '../../contexts/accounting/domain/polic
  *   unemploymentPercentage: number,
  * }}
  */
-export function computePopulationBreakdown({ workerPool, elitePool, totalAssigned }) {
+export function computePopulationBreakdown({ workerPool, totalAssigned }) {
   const workers = Math.max(0, workerPool ?? 0);
-  const elites = Math.max(0, elitePool ?? 0);
   const assigned = Math.max(0, totalAssigned ?? 0);
-  const totalPopulation = workers + elites;
+  const totalPopulation = workers;
   const civilServantCount = computeCivilServantCount(totalPopulation);
   const laborPool = Math.max(0, workers - civilServantCount);
   const unemployed = Math.max(0, laborPool - assigned);
   const activeCitizenCount = Math.max(0, laborPool - unemployed);
-  const activePopulationCount = activeCitizenCount + elites + civilServantCount;
+  const activePopulationCount = activeCitizenCount + civilServantCount;
   const unemploymentPercentage =
     laborPool > 0 ? Math.round((unemployed / laborPool) * 100) : 0;
 
   return {
     totalPopulation,
     workerPool: workers,
-    elitePool: elites,
     civilServantCount,
     laborPool,
     activeCitizenCount,

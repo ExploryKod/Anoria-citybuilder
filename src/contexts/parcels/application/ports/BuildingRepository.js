@@ -13,6 +13,11 @@ export class BuildingRepository {
     throw new Error('BuildingRepository: port not implemented');
   }
 
+  /** @returns {Promise<Array<{ x: number, y: number }>>} every placed road tile of the active hamlet */
+  async findRoadTiles() {
+    throw new Error('BuildingRepository: port not implemented');
+  }
+
   async saveRoadAccess(_instanceId, _roadCount) {
     throw new Error('BuildingRepository: port not implemented');
   }

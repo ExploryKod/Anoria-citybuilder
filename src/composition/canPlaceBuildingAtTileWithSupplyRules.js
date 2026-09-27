@@ -1,6 +1,9 @@
 import { canPlaceBuildingAtTile } from '../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
 import { canPlaceBuildingAt } from '../contexts/supply/domain/policies/PlacementRequirementPolicy.js';
-import { getSupplyPlacementHubs } from '../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
+import {
+  getSupplyPlacementHubs,
+  getSupplyPlacementNaturalResources,
+} from '../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
 
 /**
  * Footprint + supply placement-requirement gate (sync, for ghost preview).
@@ -27,6 +30,7 @@ export function canPlaceBuildingAtTileWithSupplyRules(params) {
     y: params.y,
     buildingType: params.buildingType,
     candidates: getSupplyPlacementHubs(),
+    naturalCandidates: getSupplyPlacementNaturalResources(),
   });
 
   if (!requirementCheck.ok) {

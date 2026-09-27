@@ -1,9 +1,11 @@
+import { isRoadType, primaryRoadType } from '../../../shared/building-catalog/roadQueries.js';
 import { resolveVerticalFaceRiverAssetId, isEditorRiverAsset, resolveRiverMountFromRotationStep } from '../../../shared/editor-catalog/editorKenneyAssetBehavior.js';
 
 /** Tools that must never drive a placement ghost (UI / zones / non-mesh). */
 const NON_PLACEABLE_TOOL_IDS = new Set([
   'bulldoze',
   'select-object',
+  'show-range',
   'grass',
   'terrain',
   'industry', // toolbar category id, not an asset
@@ -23,8 +25,9 @@ const NON_PLACEABLE_TOOL_IDS = new Set([
  * @returns {string}
  */
 export function resolveGhostVisualAssetId(assetId) {
-  if (assetId === 'roads' || assetId === 'Road') {
-    return 'StonePath-001';
+  // A road, by whichever name (the runtime marker, the legacy alias, a road tool) wears the road tool's mesh.
+  if (isRoadType(assetId)) {
+    return primaryRoadType();
   }
   return assetId;
 }
@@ -103,6 +106,8 @@ function isTileInFootprint(x, y, footprint) {
  * @param {(x: number, y: number) => number | null | undefined} [deps.getPlacementAnchorLocalY]
  * @param {(x: number, y: number, rotationStep: number) => object | null | undefined} [deps.getEditorGhostPreview]
  * @param {() => object | null | undefined} [deps.getFocusedObject]
+ * @param {(preview: { type: string, x: number, y: number, width: number, height: number } | null) => void} [deps.onReachPreview]
+ *   Called with the building about to be placed (its type and footprint) whenever the ghost is shown, and with null when it is hidden.
  */
 export function createPlacementGhostSession({
   getGhost,
@@ -115,6 +120,7 @@ export function createPlacementGhostSession({
   getPlacementAnchorLocalY = () => null,
   getEditorGhostPreview = () => null,
   getFocusedObject = () => null,
+  onReachPreview = () => {},
 }) {
   /** @type {object | null} */
   let lastFocused = null;
@@ -124,6 +130,7 @@ export function createPlacementGhostSession({
   function clear() {
     suppressFootprint = null;
     getGhost()?.clear();
+    onReachPreview(null);
   }
 
   /**
@@ -134,6 +141,7 @@ export function createPlacementGhostSession({
   function suppressGhostAtFootprint(x, y, gridSize = 1) {
     suppressFootprint = { x, y, gridSize: Math.max(1, gridSize) };
     getGhost()?.clear();
+    onReachPreview(null);
   }
 
   /**
@@ -155,6 +163,7 @@ export function createPlacementGhostSession({
     const toolId = getActiveToolId();
     if (!isPlaceableTool(toolId)) {
       ghost.clear();
+      onReachPreview(null);
       return;
     }
 
@@ -162,12 +171,15 @@ export function createPlacementGhostSession({
     const y = resolved?.userData?.y;
     if (typeof x !== 'number' || typeof y !== 'number') {
       ghost.clear();
+      onReachPreview(null);
       return;
     }
 
     if (suppressFootprint) {
       if (isTileInFootprint(x, y, suppressFootprint)) {
         ghost.clear();
+        onReachPreview(null);
+      onReachPreview(null);
         return;
       }
       suppressFootprint = null;
@@ -177,6 +189,7 @@ export function createPlacementGhostSession({
     const assetId = getEffectiveAssetId();
     if (!assetId || !city) {
       ghost.clear();
+      onReachPreview(null);
       return;
     }
 
@@ -216,6 +229,13 @@ export function createPlacementGhostSession({
       placementToolId: assetId,
       placementBaseLocalY: editorGhostPreview?.baseLocalY ?? placementBaseLocalY ?? undefined,
       editorGhostPreview,
+    });
+    onReachPreview({
+      type: assetId,
+      x: ghostX,
+      y: ghostY,
+      width: placement.footprintWidth ?? ghostGridSize,
+      height: placement.footprintHeight ?? ghostGridSize,
     });
   }
 

@@ -1,3 +1,4 @@
+import { isRoadType } from '../../../../shared/building-catalog/roadQueries.js';
 import { tryCreateTileCoord } from './TileCoord.js';
 import {
   isBuildingInstanceId,
@@ -94,16 +95,7 @@ export function normalizeNeighborFromRef(raw) {
 
   const tile = tryCreateTileCoord(raw.x, raw.y);
 
-  const isRoad = Boolean(
-    raw.isRoad ||
-    raw.userData?.isRoad ||
-    type === 'roads' ||
-    type === 'Road' ||
-    (type && type.startsWith('StonePath-')) ||
-    raw.name === 'roads' ||
-    raw.name === 'Road' ||
-    (raw.name && raw.name.startsWith('StonePath-'))
-  );
+  const isRoad = Boolean(raw.isRoad || raw.userData?.isRoad || isRoadType(type) || isRoadType(raw.name));
 
   return createNeighbor({
     instanceId: instanceId ?? '',

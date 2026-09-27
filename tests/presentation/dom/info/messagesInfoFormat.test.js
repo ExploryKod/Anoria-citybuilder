@@ -17,7 +17,7 @@ function workplaceVm(buildingType, { roads = 1, worker = 2, workerNeed = 2 } = {
     buildingType,
     buildingRow: {
       roads,
-      employees: { worker, worker_need: workerNeed, elite: 0, elite_need: 0, sector: 6 },
+      employees: { worker, worker_need: workerNeed, sector: 6 },
     },
   });
 }
@@ -72,6 +72,45 @@ describe('formatMessagesModel — personnel complaints (moved off the Staff tab 
   });
 });
 
+describe('formatMessagesModel — why an unstaffed workplace stays empty', () => {
+  /** A farm asks for the "fermier" skill, which the catalog gives to artisan houses from tier 2. */
+  const farmVm = (byGroup) => ({
+    ...workplaceVm('Farm-Wheat', { roads: 0, worker: 0, workerNeed: 3 }),
+    employmentSummary: { byGroup },
+  });
+  const noWorkerAvailable = "Nous manquons de personnel, l'activité est totalement à l'arrêt";
+
+  test('says a group has no house at all when none stands', () => {
+    const [complaint] = formatMessagesModel(farmVm({ artisans: { workerPool: 0, assigned: 0, unemployed: 0 } })).complaints;
+    expect(complaint).toBe(`${noWorkerAvailable} — aucune maison pour les Artisans-ouvriers : il en faut pour pourvoir ce poste`);
+  });
+
+  test('says everyone of the group already works, and more houses are needed', () => {
+    const [complaint] = formatMessagesModel(farmVm({ artisans: { workerPool: 36, assigned: 36, unemployed: 0 } })).complaints;
+    expect(complaint).toBe(
+      `${noWorkerAvailable} — tous les Artisans-ouvriers ont déjà un emploi : il faut plus de maisons pour les Artisans-ouvriers`
+    );
+  });
+
+  test('says unemployed residents lack the skill yet, and at which house tier it comes', () => {
+    const [complaint] = formatMessagesModel(farmVm({ artisans: { workerPool: 36, assigned: 30, unemployed: 6 } })).complaints;
+    expect(complaint).toMatch(/des Artisans-ouvriers sont sans emploi, mais leurs maisons n'ont pas encore la compétence « .+ » \(niveau 2 requis\)$/);
+  });
+
+  test('keeps the plain complaint when the city\'s employment was not read', () => {
+    const model = formatMessagesModel(workplaceVm('Farm-Wheat', { roads: 0, worker: 0, workerNeed: 3 }));
+    expect(model.complaints).toEqual([noWorkerAvailable]);
+  });
+
+  test('a partial staff gets the reason too', () => {
+    const model = formatMessagesModel({
+      ...workplaceVm('Farm-Wheat', { roads: 0, worker: 1, workerNeed: 3 }),
+      employmentSummary: { byGroup: { artisans: { workerPool: 36, assigned: 36, unemployed: 0 } } },
+    });
+    expect(model.complaints[0]).toMatch(/^Nous manquons de personnel pour fonctionner à plein régime — tous les /);
+  });
+});
+
 describe('formatMessagesModel — market supply-chain complaints (moved off the État tab)', () => {
   function marketVm({ noFarmsNearby = false, hasHousesNearby = true, ...staffing } = {}) {
     return {
@@ -91,19 +130,20 @@ describe('formatMessagesModel — market supply-chain complaints (moved off the 
 
   test('complains when no farms feed it', () => {
     const model = formatMessagesModel(marketVm({ noFarmsNearby: true }));
-    expect(model.complaints).toEqual(['Aucune ferme ne nous approvisionne']);
+    // The goods are the ones the market's own catalog entry sells.
+    expect(model.complaints).toEqual(['Aucun approvisionnement : Blé, Carotte, Chou']);
   });
 
   test('complains when no houses are in reach', () => {
     const model = formatMessagesModel(marketVm({ hasHousesNearby: false }));
-    expect(model.complaints).toEqual(["Aucune maison n'est à portée de nos étals"]);
+    expect(model.complaints).toEqual([expect.stringMatching(/^Aucune maison à portée : /)]);
   });
 
   test('stacks with the generic personnel complaint (a market is a workplace too)', () => {
     const model = formatMessagesModel(marketVm({ noFarmsNearby: true, worker: 0, workerNeed: 2 }));
     expect(model.complaints).toEqual([
       "Nous manquons de personnel, l'activité est totalement à l'arrêt",
-      'Aucune ferme ne nous approvisionne',
+      'Aucun approvisionnement : Blé, Carotte, Chou',
     ]);
   });
 });

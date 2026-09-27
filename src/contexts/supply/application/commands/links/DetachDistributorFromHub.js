@@ -1,4 +1,5 @@
 import { removeHubLink } from '../../../domain/policies/HubLinkPolicy.js';
+import { getCategoriesForRole, listRoleEntries } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Command: unlink a demolished distributor from its hub and rebalance
@@ -15,30 +16,32 @@ export class DetachDistributorFromHub {
   }
 
   /**
+   * Unlinks the distributor from EVERY hub it is linked to (one per 'distributor' entry with a `hubLink`).
    * @param {object} params
    * @param {string} params.distributorId
-   * @param {string[]} params.categories
-   * @param {string} [params.hubLinkField] Field on the distributor row holding its hub id.
-   * @returns {Promise<{ detached: boolean, reason?: string, hubId?: string | null }>}
+   * @returns {Promise<{ detached: boolean, reason?: string, hubIds: string[] }>}
    */
-  async execute({ distributorId, categories, hubLinkField = 'supplyHubId' }) {
+  async execute({ distributorId }) {
     if (!distributorId) {
-      return { detached: false, reason: 'distributor_id_required' };
+      return { detached: false, reason: 'distributor_id_required', hubIds: [] };
     }
 
     const distributor = await this.supplyBuildingRepository.findById(distributorId);
-    const hubId = distributor?.[hubLinkField] ?? null;
-    if (!hubId) {
-      return { detached: false, reason: 'no_hub_link', hubId: null };
+    const hubIds = [];
+    for (const entry of listRoleEntries(distributor?.type, 'distributor')) {
+      const field = entry.hubLink?.sourceLinkField;
+      const hubId = field ? distributor?.[field] : null;
+      if (!hubId) continue;
+
+      const hub = await this.supplyBuildingRepository.findById(hubId);
+      if (hub) {
+        const nextLinks = removeHubLink(hub.linkedDistributors ?? [], distributorId);
+        await this.supplyBuildingRepository.saveHubLinkedDistributors(hubId, nextLinks);
+        await this.rebalanceHubAllocations.execute({ hubId, categories: getCategoriesForRole(hub.type, 'hub') });
+      }
+      hubIds.push(hubId);
     }
 
-    const hub = await this.supplyBuildingRepository.findById(hubId);
-    if (hub) {
-      const nextLinks = removeHubLink(hub.linkedDistributors ?? [], distributorId);
-      await this.supplyBuildingRepository.saveHubLinkedDistributors(hubId, nextLinks);
-      await this.rebalanceHubAllocations.execute({ hubId, categories });
-    }
-
-    return { detached: true, hubId };
+    return hubIds.length > 0 ? { detached: true, hubIds } : { detached: false, reason: 'no_hub_link', hubIds };
   }
 }

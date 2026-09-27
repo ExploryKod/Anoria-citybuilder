@@ -1,3 +1,4 @@
+import { isRoadType } from '../../../../shared/building-catalog/roadQueries.js';
 /**
  * Scan voisinage sur la grille Three.js (meshes + city.tiles).
  * Infrastructure Parcels — extrait de js/utils/utils.js (Lot P0).
@@ -32,12 +33,7 @@ export const zoneBordersBuildings = (buildingData, time = 0) => {
             return;
           }
 
-          const isRoadNeighbor = Boolean(
-            mesh.userData?.isRoad
-            || meshType === 'roads'
-            || meshType === 'Road'
-            || (meshType && meshType.startsWith('StonePath-'))
-          );
+          const isRoadNeighbor = Boolean(mesh.userData?.isRoad || isRoadType(meshType));
 
           let neighborData = {
             time,

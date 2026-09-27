@@ -56,7 +56,7 @@ import {
   initLoanPaymentSystem,
 } from '../compta/prets/PretsPanel.js';
 import { initJournalPopup } from '../compta/journal/JournalPanel.js';
-import { initFoodTraceabilityPopup } from '../admin/food-traceability/FoodTraceabilityPanel.js';
+import { initSupplyTraceabilityPopup } from '../admin/supply-traceability/SupplyTraceabilityPanel.js';
 import { initAdminSections } from '../admin/initAdminSections.js';
 import { initNewsEventModal } from '../intelligence/NewsEventModal.js';
 import { bindObjectivesHistoryDeps } from '../onboarding/objectives-history.js';
@@ -171,6 +171,13 @@ export async function bootstrapGameSession(assetManager) {
 
   bindSessionRuntime({ game });
 
+  // Dev only: console commands that hand a diagnostic to the dev server (see composition/devDiagnostics.js).
+  if (import.meta.env.DEV) {
+    import('../../../composition/devDiagnostics.js').then(({ registerDevDiagnostics }) =>
+      registerDevDiagnostics({ getScene: () => game.scene })
+    );
+  }
+
   if (
     multiplayerEnabled &&
     playerPseudo &&
@@ -213,6 +220,8 @@ export async function bootstrapGameSession(assetManager) {
     housing: sessionApi.housing,
     supply: sessionApi.supply,
     parcels: sessionApi.parcels,
+    employment: sessionApi.employment,
+    intelligence: sessionApi.intelligence,
     popupManager,
     gameStore: gameSession,
     getCity: () => game.city ?? null,
@@ -231,7 +240,7 @@ export async function bootstrapGameSession(assetManager) {
     bindProcessLoanPayments: (fn) => bindSessionRuntime({ processLoanPayments: fn }),
     registerHandler: registerAppFunction,
   });
-  initFoodTraceabilityPopup({ supply: sessionApi.supply });
+  initSupplyTraceabilityPopup({ supply: sessionApi.supply });
 
   if (sessionApi.intelligence) {
     initNewsEventModal({

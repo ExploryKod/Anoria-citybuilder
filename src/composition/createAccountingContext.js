@@ -85,10 +85,6 @@ async function getCityEmploymentSummary() {
   return getOrCreateEmploymentContext().getCityEmploymentSummary();
 }
 
-async function clearPopulationWithoutRoadAccess() {
-  return getOrCreateHousingContext().clearPopulationWithoutRoadAccess();
-}
-
 /**
  * Composition root — Accounting bounded context.
  *
@@ -423,8 +419,6 @@ export function createAccountingContext(deps = {}) {
     getCityEmploymentSummary:
       deps.getCityEmploymentSummary ?? (() => getCityEmploymentSummary()),
     getSalarySettings,
-    clearPopulationWithoutRoadAccess:
-      deps.clearPopulationWithoutRoadAccess ?? (() => clearPopulationWithoutRoadAccess()),
     processLoanPayments:
       deps.processLoanPayments ??
       (async () => {

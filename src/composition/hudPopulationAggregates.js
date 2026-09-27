@@ -4,6 +4,7 @@
  */
 
 import db from '../core/persistence/dexie/db.js';
+import { createEmptyStocks } from '../shared/building-catalog/resourceRoleQueries.js';
 import { hamletIdOf, getActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
 import { computeCityFamishedPopulation } from '../contexts/housing/domain/policies/FamishedPopulationPolicy.js';
 import { computeCityEmploymentSummary } from '../contexts/employment/domain/computeCityEmploymentSummary.js';
@@ -101,7 +102,7 @@ function toHousingSnapshot(row) {
     lastPopulationGrowthMonth: row.lastPopulationGrowthMonth ?? null,
     lastFamineDeathMonth: row.lastFamineDeathMonth ?? null,
     lastConsumption: row.lastConsumption ?? null,
-    stocks: row.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 },
+    stocks: row.stocks || createEmptyStocks(),
     price: row.price ?? 0,
     neighbors: row.neighbors || [],
   });

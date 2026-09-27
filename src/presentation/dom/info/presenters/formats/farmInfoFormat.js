@@ -3,13 +3,20 @@
  */
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
+import { getResourceRoles, getResourceStockShape } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { buildingName, goodAmount, goodLabel, namesOfBuildings } from '../../../shell/CatalogVocabulary.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
+import { describeActivitySupplyGap } from '../../../shell/BuildingNotifications.js';
 
 function productLabel(productType) {
-  if (productType === 'wheat') return 'Blé';
-  if (productType === 'carrot') return 'Carotte';
-  if (productType === 'cabbage') return 'Chou';
-  return productType;
+  return goodLabel(productType);
+}
+
+/** Categories a building type produces, straight from the catalog. */
+function producedCategories(buildingType) {
+  return getResourceRoles(buildingType)
+    .filter((entry) => entry.role === 'producer')
+    .flatMap((entry) => entry.categories);
 }
 
 /**
@@ -17,10 +24,8 @@ function productLabel(productType) {
  * @returns {string}
  */
 function farmCropLabel(buildingType) {
-  if (buildingType.includes('Farm-Wheat')) return 'Blé';
-  if (buildingType.includes('Farm-Carrot')) return 'Carotte';
-  if (buildingType.includes('Farm-Cabbage')) return 'Chou';
-  return 'Culture';
+  const [category] = producedCategories(buildingType);
+  return category ? productLabel(category) : 'Culture';
 }
 
 /**
@@ -29,7 +34,7 @@ function farmCropLabel(buildingType) {
 export function formatFarmLayoutHeader(vm) {
   const def = getBuildingDefinition(vm.buildingType);
   return {
-    title: def?.displayName ?? vm.buildingType,
+    title: buildingName(vm.buildingType),
     meta: `📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
     accent: null,
   };
@@ -45,15 +50,23 @@ export function formatFarmLayoutOptions() {
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel}
  */
 export function formatFarmOverviewModel(vm) {
-  return {
-    sections: [{
-      title: 'Culture',
-      rows: [
-        { label: 'Produit', value: farmCropLabel(vm.buildingType) },
-        { label: 'Année en cours', value: String(vm.currentYear ?? 0) },
-      ],
-    }],
-  };
+  const sections = [{
+    title: 'Culture',
+    rows: [
+      { label: 'Produit', value: farmCropLabel(vm.buildingType) },
+      { label: 'Année en cours', value: String(vm.currentYear ?? 0) },
+    ],
+  }];
+
+  const gaps = vm.activitySupplyGaps ?? [];
+  if (gaps.length > 0) {
+    sections.push({
+      title: 'Blocages',
+      rows: gaps.map((gap) => ({ label: '⚠️', value: describeActivitySupplyGap(gap) })),
+    });
+  }
+
+  return { sections };
 }
 
 /**
@@ -63,23 +76,18 @@ export function formatFarmOverviewModel(vm) {
  */
 export function formatFarmStocksModel(vm) {
   const { buildingType, stocks: initialStocks } = vm;
-  const houseStocks = initialStocks ?? { food: 0, wheat: 0, carrot: 0, cabbage: 0 };
+  const houseStocks = initialStocks ?? {};
+  const { totalKey } = getResourceStockShape();
 
   /** @type {import('../../buildingInfoTypes.js').InfoKvRow[]} */
-  const stockRows = [];
-  if (buildingType.includes('Farm-Wheat')) {
-    stockRows.push({ label: 'Blé', value: `${houseStocks.wheat || 0} paniers` });
-  }
-  if (buildingType.includes('Farm-Carrot')) {
-    stockRows.push({ label: 'Carottes', value: `${houseStocks.carrot || 0} paniers` });
-  }
-  if (buildingType.includes('Farm-Cabbage')) {
-    stockRows.push({ label: 'Légumes verts', value: `${houseStocks.cabbage || 0} paniers` });
-  }
-  stockRows.push({ label: 'Total', value: `${houseStocks.food || 0} paniers` });
+  const stockRows = producedCategories(buildingType).map((category) => ({
+    label: productLabel(category),
+    value: goodAmount(category, houseStocks[category] || 0),
+  }));
+  stockRows.push({ label: 'Total', value: goodAmount(totalKey, houseStocks[totalKey] || 0) });
 
   return {
-    sections: [{ title: 'Stocks ferme', rows: stockRows }],
+    sections: [{ title: `Stocks · ${buildingName(buildingType)}`, rows: stockRows }],
   };
 }
 
@@ -89,13 +97,17 @@ export function formatFarmStocksModel(vm) {
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel}
  */
 export function formatFarmTradeModel(vm) {
-  const { supplyView, currentYear = 0 } = vm;
+  const { supplyView, currentYear = 0, buildingType } = vm;
   const salesToMarket = supplyView?.salesToMarket || [];
-  const salesToWindmill = supplyView?.salesToWindmill || [];
+  const salesToHub = supplyView?.salesToHub || [];
   const currentYearMarketSales = salesToMarket.filter((s) => s.year === currentYear);
-  const currentYearWindmillSales = salesToWindmill.filter((s) => s.year === currentYear);
+  const currentYearHubSales = salesToHub.filter((s) => s.year === currentYear);
+  // Who buys this building's goods, named as the catalog names those buildings.
+  const goods = producedCategories(buildingType);
+  const buyers = namesOfBuildings('distributor', goods).join(', ');
+  const collectors = namesOfBuildings('hub', goods).join(', ');
 
-  if (currentYearMarketSales.length === 0 && currentYearWindmillSales.length === 0) {
+  if (currentYearMarketSales.length === 0 && currentYearHubSales.length === 0) {
     return {
       sections: [{
         title: 'Ventes de l\'année',
@@ -108,25 +120,25 @@ export function formatFarmTradeModel(vm) {
   /** @type {import('../../buildingInfoTypes.js').InfoKvRow[]} */
   const saleRows = [];
   if (currentYearMarketSales.length > 0) {
-    saleRows.push({ label: 'Ventes au marché', value: `${currentYearMarketSales.length} vente(s)` });
+    saleRows.push({ label: `Ventes · ${buyers}`, value: `${currentYearMarketSales.length} vente(s)` });
     for (const sale of currentYearMarketSales) {
-      const subtext = `${sale.monthName || `Mois ${sale.month + 1}`} - Tour ${sale.turn}: ${sale.quantity} paniers`;
+      const subtext = `${sale.monthName || `Mois ${sale.month + 1}`} - Tour ${sale.turn}: ${goodAmount(sale.productType, sale.quantity)}`;
       saleRows.push({
         label: `  → ${productLabel(sale.productType)}`,
-        value: `${sale.quantity} paniers`,
+        value: goodAmount(sale.productType, sale.quantity),
         subtext,
       });
     }
   }
-  if (currentYearWindmillSales.length > 0) {
+  if (currentYearHubSales.length > 0) {
     saleRows.push({
-      label: 'Ventes au moulin',
-      value: `${currentYearWindmillSales.length} type(s) de produit`,
+      label: `Ventes · ${collectors}`,
+      value: `${currentYearHubSales.length} type(s) de produit`,
     });
-    for (const sale of currentYearWindmillSales) {
+    for (const sale of currentYearHubSales) {
       saleRows.push({
         label: `  → ${productLabel(sale.productType)}`,
-        value: `${sale.quantity} paniers`,
+        value: goodAmount(sale.productType, sale.quantity),
         subtext: `${sale.count || 1} collecte(s) cette année`,
       });
     }

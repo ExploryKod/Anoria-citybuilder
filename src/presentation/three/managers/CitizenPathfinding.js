@@ -1,3 +1,4 @@
+import { ROAD_RUNTIME_MARKER } from '../../../shared/building-catalog/roadQueries.js';
 import * as THREE from 'three';
 
 /**
@@ -19,8 +20,8 @@ export class CitizenPathfinding {
         const building = this.buildings[x][y];
         const terrainTile = this.terrain[x]?.[y];
         
-        return (building && (building.userData?.isRoad || building.userData?.type === 'roads' || building.name === 'roads')) ||
-               (terrainTile && (terrainTile.userData?.isRoad || terrainTile.name === 'roads'));
+        return (building && (building.userData?.isRoad || building.userData?.type === ROAD_RUNTIME_MARKER || building.name === ROAD_RUNTIME_MARKER)) ||
+               (terrainTile && (terrainTile.userData?.isRoad || terrainTile.name === ROAD_RUNTIME_MARKER));
     }
 
     /**
@@ -31,7 +32,7 @@ export class CitizenPathfinding {
             return false;
         }
         const building = this.buildings[x][y];
-        return building && !building.userData?.isRoad && building.userData?.type !== 'roads' && building.name !== 'roads';
+        return building && !building.userData?.isRoad && building.userData?.type !== ROAD_RUNTIME_MARKER && building.name !== ROAD_RUNTIME_MARKER;
     }
 
     /**

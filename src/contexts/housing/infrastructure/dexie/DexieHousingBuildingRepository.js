@@ -1,15 +1,12 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { createEmptyStocks } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { createHousingBuildingSnapshot } from '../../domain/HousingBuildingSnapshot.js';
 import { isResidentialHouseType } from '../../domain/policies/HouseCapacityPolicy.js';
-import {
-  normalizeResidentialType,
-  priceForResidentialType,
-} from '../../domain/HouseTypeCatalog.js';
+import { normalizeResidentialType } from '../../domain/HouseTypeCatalog.js';
 import {
   canonicalizeHouseRecord,
   instanceIdFromHouseRow,
-  residentialTierPatch,
 } from '../../../../shared/building-identity/index.js';
 import { footprintFromRecord, footprintOccupiesTile } from '../../../../shared/building-identity/Footprint.js';
 
@@ -31,7 +28,7 @@ export class DexieHousingBuildingRepository {
       lastPopulationGrowthMonth: house.lastPopulationGrowthMonth ?? null,
       lastFamineDeathMonth: house.lastFamineDeathMonth ?? null,
       lastConsumption: house.lastConsumption ?? null,
-      stocks: house.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 },
+      stocks: house.stocks || createEmptyStocks(),
       price: house.price ?? 0,
       neighbors: house.neighbors || [],
     });
@@ -101,31 +98,8 @@ export class DexieHousingBuildingRepository {
     await this.#putFields(instanceId, fields);
   }
 
-  async applyEvolution({ oldId, targetType, targetPop }) {
-    const row = await db.houses.get(oldId);
-    if (!row) {
-      throw new Error(`DexieHousingBuildingRepository: house not found ${oldId}`);
-    }
-
-    const instanceId = instanceIdFromHouseRow(row);
-    const price = priceForResidentialType(targetType);
-    const tierPatch = residentialTierPatch({
-      instanceId,
-      targetType,
-    });
-
-    await this.#putFields(instanceId, {
-      ...tierPatch,
-      price,
-      pop: targetPop,
-    });
-
-    return { newId: instanceId, previousId: instanceId };
-  }
-
   /**
-   * Persist a level change (1 <-> 2) for a Blue/Red/Purple house. Unlike
-   * `applyEvolution`, the house `type` (color) never changes here — only
+   * Persist a level change (1 <-> 2) for a Blue/Red/Purple house. The house `type` (color) never changes here — only
    * `level` and `pop` (see `HouseLevelPolicy`).
    *
    * @param {object} params

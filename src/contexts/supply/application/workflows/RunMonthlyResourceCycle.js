@@ -1,7 +1,10 @@
+import { listQuantityConsumerNeeds } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+
 /**
  * Orchestration: full monthly resource supply chain tick — producer harvest,
  * hub surplus collection, hub-to-distributor transfer, distributor reach,
- * subsistence gathering, and consumption. Every step is the generic
+ * and consumption (household gathering is just another 'producer' entry,
+ * run by the producer step). Every step is the generic
  * RunResourceCommandForRole/RunCityResourceCycle/RunHubSurplusCycle/
  * UpdateConsumerDistributorReach mechanism — this class only sequences them.
  * Producer/consumer once-per-period locking and the hub-transfer leg's
@@ -18,8 +21,7 @@ export class RunMonthlyResourceCycle {
    * @param {import('../commands/distribution/UpdateConsumerDistributorReach.js').UpdateConsumerDistributorReach} updateDistributorReach
    * @param {import('../commands/surplus/RunHubSurplusCycle.js').RunHubSurplusCycle} runHubSurplusCycle
    * @param {import('../commands/RunResourceCommandForRole.js').RunResourceCommandForRole} runConsumerCommand
-   * @param {{ recordHouseConsumptions: Function }} traceability
-   * @param {import('../commands/RunResourceCommandForRole.js').RunResourceCommandForRole} [runSubsistenceCommand]
+   * @param {{ recordHouseConsumptions: Function, recordChainStates: Function, recordPopulationStates: Function, recordBuildingStates: Function, recordHarvestSales: Function, recordHubCollections: Function }} traceability
    * @param {object} config
    * @param {ReadonlyArray<string>} config.categories Every category any
    *   distributor covers — drives the actual distribution/restock leg,
@@ -37,7 +39,6 @@ export class RunMonthlyResourceCycle {
     runHubSurplusCycle,
     runConsumerCommand,
     traceability,
-    runSubsistenceCommand,
     config
   ) {
     this.runProducerCommand = runProducerCommand;
@@ -46,7 +47,6 @@ export class RunMonthlyResourceCycle {
     this.runHubSurplusCycle = runHubSurplusCycle;
     this.runConsumerCommand = runConsumerCommand;
     this.traceability = traceability;
-    this.runSubsistenceCommand = runSubsistenceCommand;
     this.config = config;
   }
 
@@ -55,10 +55,21 @@ export class RunMonthlyResourceCycle {
    * @param {string | null} params.season
    * @param {string | null} params.month
    * @param {object} params.timeInfo
-   * @param {number} [params.maxDistance=5]
    * @returns {Promise<void>}
    */
-  async execute({ season, month, timeInfo, maxDistance = 5 }) {
+  async execute({ season, month, timeInfo }) {
+    // ONE time context for every step (producers, hubs, sale windows): a schedule names whichever field
+    // it cares about (season, month, monthIndex, year, dayInMonth), whatever kind of building reads it.
+    const timeContext = {
+      season,
+      month,
+      monthIndex: timeInfo.monthIndex,
+      year: timeInfo.year ?? 0,
+      dayInMonth: timeInfo.dayInMonth ?? 1,
+      // The tick itself: what a hub remembers of its clients is told per tick.
+      turn: timeInfo.turn ?? timeInfo.days ?? 0,
+    };
+
     // No season gate here — each producer's own 'producer' schedule (see
     // buildingEconomy.js) decides whether it's an active period; the
     // once-per-year lock in ProduceResource still prevents double-production
@@ -67,51 +78,52 @@ export class RunMonthlyResourceCycle {
       role: 'producer',
       buildParams: (source) => ({
         buildingId: source.id,
-        period: { season, year: timeInfo.year ?? 0, monthIndex: timeInfo.monthIndex },
+        period: timeContext,
       }),
       successKey: 'produced',
     });
 
-    await this.runHubSurplusCycle.execute({
-      month,
-      monthIndex: timeInfo.monthIndex,
-      dayInMonth: timeInfo.dayInMonth ?? 1,
-      year: timeInfo.year ?? 0,
-    });
+    await this.traceability.recordChainStates(timeInfo);
+    await this.traceability.recordPopulationStates(timeInfo);
+
+    const surplus = await this.runHubSurplusCycle.execute(timeContext);
+
+    await this.traceability.recordHubCollections(timeInfo, surplus.hubs);
+    await this.traceability.recordHarvestSales(timeInfo, surplus.hubs);
 
     await this.runCityResourceCycle.execute({
       categories: this.config.categories,
       season,
       month,
       timeInfo,
-      maxDistance,
     });
 
     await this.updateDistributorReach.execute({
-      maxDistance,
       category: this.config.reachCategories ?? this.config.categories,
     });
 
-    if (this.runSubsistenceCommand) {
-      await this.runSubsistenceCommand.execute({
+    // Every need citizens have is used up the same way, one pass each (the diet, the goods they wear
+    // out...). Each need is traced individually so the panel can show demand vs. taken per need type.
+    for (const need of listQuantityConsumerNeeds()) {
+      const { results } = await this.runConsumerCommand.execute({
         role: 'consumer',
-        buildParams: (house) => ({ houseId: house.id, monthIndex: timeInfo.monthIndex }),
-        successKey: 'produced',
+        categories: need.categories,
+        buildParams: (house) => ({
+          buildingId: house.id,
+          period: { monthIndex: timeInfo.monthIndex },
+          category: need.categories[0],
+        }),
+        successKey: 'consumed',
       });
+      await this.traceability.recordHouseConsumptions(
+        timeInfo,
+        results.map((r) => ({ ...r, houseId: r.buildingId })),
+        need.totalKey
+      );
     }
 
-    const { results: consumptions } = await this.runConsumerCommand.execute({
-      role: 'consumer',
-      buildParams: (house) => ({
-        buildingId: house.id,
-        period: { monthIndex: timeInfo.monthIndex },
-      }),
-      successKey: 'consumed',
-    });
-
-    await this.traceability.recordHouseConsumptions(
-      timeInfo,
-      consumptions.map((r) => ({ ...r, houseId: r.buildingId }))
-    );
+    // Last, so the state is what the tick ended with — after collection, distribution and
+    // the meal — and not what it started from.
+    await this.traceability.recordBuildingStates(timeInfo);
   }
 }

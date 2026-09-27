@@ -17,8 +17,6 @@ import {
     displayPopActiveTotalHamlet,
     displayPopCitizens,
     displayPopCitizensHamlet,
-    displayPopElites,
-    displayPopElitesHamlet,
     displayPopServants,
     displayPopServantsHamlet,
     displayHungerPop,
@@ -284,13 +282,11 @@ class GameUI {
      * `totalPopulation` = tous les habitants des maisons (cabanes incluses).
      * @param {number} totalPopulation
      * @param {number} activeCitizenCount
-     * @param {number} elitePopulation
      * @param {number} [civilServantCount=0]
-     * @param {number} [activePopulationCount] — si omis : actifs + élites + fonctionnaires
+     * @param {number} [activePopulationCount] — si omis : actifs + fonctionnaires
      * @param {{
      *   totalPop?: number,
      *   activeCitizenCount?: number,
-     *   elitePool?: number,
      *   civilServantCount?: number,
      *   activePopulationCount?: number,
      * } | null} [hamletBreakdown]
@@ -298,60 +294,50 @@ class GameUI {
     updatePopulationBreakdown(
         totalPopulation,
         activeCitizenCount,
-        elitePopulation,
         civilServantCount = 0,
         activePopulationCount = null,
         hamletBreakdown = null
     ) {
         const total = Math.max(0, Math.floor(totalPopulation) || 0);
         const activeCitizens = Math.max(0, Math.floor(activeCitizenCount) || 0);
-        const elites = Math.max(0, Math.floor(elitePopulation) || 0);
         const servants = Math.max(0, Math.floor(civilServantCount) || 0);
         const activeTotal = activePopulationCount != null
             ? Math.max(0, Math.floor(activePopulationCount) || 0)
-            : activeCitizens + elites + servants;
+            : activeCitizens + servants;
 
         setHudCount(displayPopTotal, total);
         setHudCount(displayPopActiveTotal, activeTotal);
         setHudCount(displayPopCitizens, activeCitizens);
-        setHudCount(displayPopElites, elites);
         setHudCount(displayPopServants, servants);
 
         if (hamletBreakdown) {
             const hTotal = Math.max(0, Math.floor(hamletBreakdown.totalPop) || 0);
             const hCitizens = Math.max(0, Math.floor(hamletBreakdown.activeCitizenCount) || 0);
-            const hElites = Math.max(0, Math.floor(hamletBreakdown.elitePool) || 0);
             const hServants = Math.max(0, Math.floor(hamletBreakdown.civilServantCount) || 0);
             const hActiveTotal = hamletBreakdown.activePopulationCount != null
                 ? Math.max(0, Math.floor(hamletBreakdown.activePopulationCount) || 0)
-                : hCitizens + hElites + hServants;
+                : hCitizens + hServants;
 
             setHudCount(displayPopTotalHamlet, hTotal);
             setHudCount(displayPopActiveTotalHamlet, hActiveTotal);
             setHudCount(displayPopCitizensHamlet, hCitizens);
-            setHudCount(displayPopElitesHamlet, hElites);
             setHudCount(displayPopServantsHamlet, hServants);
         }
 
         // Fallback if markup is missing (e.g. tests)
         if (displayPop && !displayPopTotal) {
-            displayPop.textContent = `${total} | ${activeTotal} (${activeCitizens}, ${elites}, ${servants})`;
+            displayPop.textContent = `${total} | ${activeTotal} (${activeCitizens}, ${servants})`;
         }
     }
 
     /** @deprecated Use updatePopulationBreakdown */
     updateCitizenPopulation(citizenPopulation) {
-        this.updatePopulationBreakdown(citizenPopulation, citizenPopulation, 0);
+        this.updatePopulationBreakdown(citizenPopulation, citizenPopulation);
     }
 
     /** @deprecated Use updatePopulationBreakdown */
     updatePopulation(population) {
-        this.updatePopulationBreakdown(population, population, 0);
-    }
-
-    /** @deprecated Use updatePopulationBreakdown */
-    updateElitePopulation(elitePopulation) {
-        this.updatePopulationBreakdown(elitePopulation, 0, elitePopulation);
+        this.updatePopulationBreakdown(population, population);
     }
 
     /**

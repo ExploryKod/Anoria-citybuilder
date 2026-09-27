@@ -6,7 +6,7 @@
  * isBuying / isCollecting are gated by OperationalGatePolicy (route + staff).
  */
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
-import { hasResourceRole, getConsumptionModeForRole } from '../../domain/policies/ResourceRolePolicy.js';
+import { hasResourceRole, getConsumptionModeForRole, getResourceRoles, listRoleEntries } from '../../domain/policies/ResourceRolePolicy.js';
 
 export class GetBuildingSupplyView {
   /**
@@ -30,6 +30,7 @@ export class GetBuildingSupplyView {
     const operational =
       snapshot &&
       isOperational({
+        type: snapshot.type,
         roadCount: snapshot.roadCount,
         worker: snapshot.worker,
         workerNeed: snapshot.workerNeed,
@@ -42,12 +43,25 @@ export class GetBuildingSupplyView {
       type: view.type,
       stocks: { ...view.stocks },
       maxStock: view.maxStock,
+      // The step of its production cycle a producer is on (its `cycle` in the catalog), for the graphics.
+      cycleStep: currentCycleStep(view),
+      // When goods last really moved through it: the activity icons follow this, not a schedule.
+      lastTransaction: view.lastTransaction ? { ...view.lastTransaction } : null,
+      // A sale window that closed with goods unsold: the map shows it for a moment.
+      lastFailedSale: view.lastFailedSale ? { ...view.lastFailedSale } : null,
+      // Whether a recipe is currently stuck waiting for its own input — a live state, not a monthly event.
+      activityShortfall: view.activityShortfall ? { ...view.activityShortfall } : null,
     };
 
     if (kind === 'market') {
       return {
         ...base,
+        // Which hub each thing it distributes is drawn from (or none), as the catalog's hub links resolved it.
+        hubLinks: await this.#resolveHubLinks(view.type, snapshot),
+        // Which hub each thing it distributes is drawn from (or none), as the catalog's hub links resolved it.
+        hubLinks: await this.#resolveHubLinks(view.type, snapshot),
         isBuying: operational === true && view.isBuying,
+        unmetDemand: view.unmetDemand,
         noFarmsNearby: view.noSourcesNearby,
         hasHousesNearby: neighborsMatch(view.neighbors, isHouseNeighbor),
         marketTooFar: view.distributorTooFar,
@@ -65,12 +79,12 @@ export class GetBuildingSupplyView {
       return {
         ...base,
         salesToMarket: [...view.salesToDistributor],
-        salesToWindmill: [...view.salesToHub],
-        soldToWindmill: view.collectedByHub,
+        salesToHub: [...view.salesToHub],
+        soldToHub: view.collectedByHub,
       };
     }
 
-    if (kind === 'windmill') {
+    if (kind === 'hub') {
       return {
         ...base,
         isCollecting: operational === true && view.isCollecting,
@@ -84,11 +98,30 @@ export class GetBuildingSupplyView {
 
     return base;
   }
+
+  /**
+   * For each thing a distributor hands out that names a hub link: the goods, and the hub it is
+   * linked to now (its type and id), or none.
+   * @param {string} type
+   * @param {object | null} snapshot The building's own row.
+   * @returns {Promise<Array<{ categories: string[], hubId: string | null, hubType: string | null }>>}
+   */
+  async #resolveHubLinks(type, snapshot) {
+    const links = [];
+    for (const entry of listRoleEntries(type, 'distributor')) {
+      const field = entry.hubLink?.sourceLinkField;
+      if (!field) continue;
+      const hubId = snapshot?.[field] ?? null;
+      const hub = hubId ? await this.supplyBuildingRepository.findById(hubId) : null;
+      links.push({ categories: [...entry.categories], hubId: hub ? hubId : null, hubType: hub?.type ?? null });
+    }
+    return links;
+  }
 }
 
 /**
  * @param {string} type
- * @returns {'market' | 'service' | 'windmill' | 'farm' | 'house' | 'other'}
+ * @returns {'market' | 'service' | 'hub' | 'farm' | 'house' | 'other'}
  *   UI/DTO vocabulary kept as-is for presentation compatibility — derived
  *   from the type's declarative resourceRoles (see ResourceRolePolicy.js),
  *   not a name-string match. A 'distributor' role splits into two kinds by
@@ -103,10 +136,19 @@ export function classifySupplyKind(type) {
   if (hasResourceRole(type, 'distributor')) {
     return getConsumptionModeForRole(type, 'distributor') === 'flag' ? 'service' : 'market';
   }
-  if (hasResourceRole(type, 'hub')) return 'windmill';
-  if (hasResourceRole(type, 'producer')) return 'farm';
+  if (hasResourceRole(type, 'hub')) return 'hub';
+  // A house both consumes and gathers, so consumers are classified before producers.
   if (hasResourceRole(type, 'consumer')) return 'house';
+  if (hasResourceRole(type, 'producer')) return 'farm';
   return 'other';
+}
+
+/** The id of the step a producer's cycle awaits, or null when it has no cycle. */
+function currentCycleStep(view) {
+  const entry = getResourceRoles(view.type).find((candidate) => candidate.role === 'producer' && candidate.cycle);
+  if (!entry) return null;
+  const index = view.cycleState?.[entry.categories[0]]?.index ?? 0;
+  return entry.cycle[index]?.id ?? null;
 }
 
 function neighborsMatch(neighbors, predicate) {

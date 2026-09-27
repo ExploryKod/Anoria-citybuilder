@@ -18,15 +18,6 @@
 - Capacité : **6** citoyens max (`pop` max = 6).
 - Élites : **0**.
 
-### 1.3 Palais (`House-2Story`)
-
-- Jusqu’à **6 citoyens** (ouvriers éligibles).
-- Les **élites s’ajoutent** : à l’évolution Purple → Palais, `pop` passe de **6 à 7** (+1 élite, les 6 citoyens sont conservés).
-- Capacité totale actuelle : **7** (`6 citoyens + 1 élite`).
-- Formules (maison avec route) :
-  - `citoyens` = `pop − max(0, pop − 6)`
-  - `élites` = `max(0, pop − 6)` *(additives, au-delà du cap citoyen)*
-
 ### 1.4 Affichage barre d’état
 
 Deux barres :

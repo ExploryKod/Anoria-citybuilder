@@ -10,10 +10,16 @@ import {
 import { getEmploymentSectorName } from '../contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
 import {
   allPriorityTabs,
+  allSocialGroups,
+  groupsProvidingSkill,
   skillsForTab,
   tabForSkill,
   SHARED_SKILL_TAB_ID,
 } from '../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
+import {
+  getRequiredSkillForBuilding,
+  getRequiredSkillLevelForBuilding,
+} from '../contexts/employment/domain/policies/WorkplaceSkillRequirementPolicy.js';
 
 /**
  * Composition root — Employment bounded context.
@@ -101,6 +107,19 @@ export function createEmploymentContext({ employmentBuildingRepository, citizenP
 
     getSectorName(sector) {
       return getEmploymentSectorName(sector);
+    },
+
+    /**
+     * The social groups that can staff a workplace, and from which house tier, read from the catalog: the
+     * building's required skill (and level) against what each group's tiers grant. `groups` is empty for a
+     * building that needs no skill; `openToAll` says every social group can staff it. Labels are presentation's job.
+     * @param {string} buildingType
+     * @returns {{ groups: Array<{ group: string, tier: number }>, openToAll: boolean }}
+     */
+    getStaffingGroups(buildingType) {
+      const skillId = getRequiredSkillForBuilding(buildingType);
+      const groups = skillId ? [...groupsProvidingSkill(skillId, getRequiredSkillLevelForBuilding(buildingType))] : [];
+      return { groups, openToAll: groups.length > 0 && groups.length === allSocialGroups().length };
     },
 
     /**

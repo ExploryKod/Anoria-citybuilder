@@ -4,6 +4,7 @@
  * motivated the replacement: which legs run is config, not per-resource
  * code — the same class distributes with or without a hub-restock leg.
  */
+import { HubServing } from '../../../src/contexts/supply/application/services/HubServing.js';
 import { describe, test, expect } from '@jest/globals';
 import { RunCityResourceCycle } from '../../../src/contexts/supply/application/commands/procurement/RunCityResourceCycle.js';
 import { DistributeResourceToConsumers } from '../../../src/contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
@@ -27,6 +28,7 @@ function toSnapshot(b) {
     roadCount: b.roadCount,
     worker: b.worker,
     workerNeed: b.workerNeed,
+    pop: b.pop,
     stocks: createResourceStock(b.stocks, CATEGORIES, TOTAL_KEY),
     maxStock: b.maxStock,
     supplyHubId: b.supplyHubId,
@@ -107,6 +109,8 @@ function house(id, overrides = {}) {
     roadCount: 1,
     worker: 0,
     workerNeed: 0,
+    // Inhabitants, so the house has a demand and therefore something to be filled up to.
+    pop: 10,
     stocks: { wheat: 0, food: 0 },
     ...overrides,
   };
@@ -214,7 +218,7 @@ describe('RunCityResourceCycle', () => {
       house(HOUSE_ID),
     ]);
     const distribute = new DistributeResourceToConsumers(repo);
-    const transferHubToHub = new TransferHubToHub(repo);
+    const transferHubToHub = new TransferHubToHub(repo, new HubServing(repo));
     let hubLinkResolved = null;
     const cycle = new RunCityResourceCycle(repo, distribute, undefined, {
       transferHubToHub,
@@ -234,6 +238,40 @@ describe('RunCityResourceCycle', () => {
     expect(hubLinkResolved).toEqual({ marketId: MARKET_ID, hasHubLink: true });
     const houseRow = await repo.findBuildingRow(HOUSE_ID);
     expect(houseRow.stocks.wheat).toBeGreaterThan(0);
+  });
+
+  test('the hub gives only what the houses need, and the market keeps nothing back', async () => {
+    const repo = new FakeSupplyBuildingRepository([
+      {
+        id: WINDMILL_ID,
+        type: 'Windmill-001',
+        x: 5,
+        y: 4,
+        roads: 1,
+        roadCount: 1,
+        worker: 0,
+        workerNeed: 0,
+        maxStock: 1000,
+        stocks: { wheat: 100, food: 100 },
+        linkedDistributors: [{ distributorId: MARKET_ID, allocatedStocks: { wheat: 100 } }],
+      },
+      market({ supplyHubId: WINDMILL_ID, stocks: { wheat: 0, food: 0 } }),
+      house(HOUSE_ID),
+    ]);
+    const cycle = new RunCityResourceCycle(repo, new DistributeResourceToConsumers(repo), undefined, {
+      transferHubToHub: new TransferHubToHub(repo, new HubServing(repo)),
+    });
+
+    await cycle.execute({ categories: CATEGORIES, season: 'summer', month: 'January', timeInfo: { turn: 1 } });
+
+    // A house of 10 asks for one month of 1 unit each: 10. Nothing more leaves the hub.
+    expect((await repo.findBuildingRow(HOUSE_ID)).stocks.wheat).toBe(10);
+    expect((await repo.findBuildingRow(WINDMILL_ID)).stocks.wheat).toBe(90);
+    expect((await repo.findBuildingRow(MARKET_ID)).stocks.wheat).toBe(0);
+
+    // The house has not eaten yet (no meal in this test), so it is still full: the hub is left alone.
+    await cycle.execute({ categories: CATEGORIES, season: 'summer', month: 'February', timeInfo: { turn: 2 } });
+    expect((await repo.findBuildingRow(WINDMILL_ID)).stocks.wheat).toBe(90);
   });
 
   test('a hub-less flag distributor (chapel) marks houses served, no stock leg at all', async () => {
