@@ -14,8 +14,13 @@ import {
 } from '../../../shell/ResidentialGroupLabels.js';
 import { computeHouseCitizenComposition } from '../../../../../composition/housingCatalog.js';
 import { buildingName, goodIcon, goodLabel, goodUnit } from '../../../shell/CatalogVocabulary.js';
-import { getQuantityConsumerEntries, getQuantityConsumerEntry } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import {
+  getQuantityConsumerEntries,
+  getQuantityConsumerEntry,
+  getCycleRecipeEntries,
+} from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
+import { describeActivitySupplyGap } from '../../../shell/BuildingNotifications.js';
 
 /**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
@@ -146,4 +151,119 @@ function needOf(entry, last, pop) {
   const formula = `Besoin : ${inhabitants} hab. × ${formatNumber(rate)} ${goodUnit(totalKey, rate)}`;
 
   return { kind: totalKey, card: { ...totalCard, detailText: formula }, details: categoryCards };
+}
+
+const NO_CYCLE_YET = '–';
+
+/**
+ * Activité tab — the house's OWN business, if its catalog entry gives it one: every 'producer' entry declared
+ * as a `cycle` becomes its own block (a house can run more than one, like House-Red's pots and cakes), each
+ * showing the same three things regardless of what it makes or how many steps it takes:
+ *   - its raw materials, in the same consommé/besoin shape as the Ressources tab's needs (`activityInputs`
+ *     keeps what was taken, the catalog's own `amount` is the need — read fresh, never stored twice);
+ *   - what it has finished (its own stock of the good it makes);
+ *   - its manufacturing steps, one card each (a single-step recipe gets a single card), their progress read
+ *     from `cycleState` and a stuck step called out from `activityShortfall`.
+ * A house type without any such entry gets an empty list — the tab still renders, saying so.
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ */
+export function formatHouseActivityModel(vm) {
+  const entries = vm.buildingType ? getCycleRecipeEntries(vm.buildingType) : [];
+  const gaps = vm.activitySupplyGaps ?? [];
+  return { recipes: entries.map((entry) => activityRecipeOf(entry, vm.buildingRow, gaps)) };
+}
+
+/**
+ * @param {import('../../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleFacts} entry
+ * @param {object | null} buildingRow The raw building row (stocks, cycleState, activityShortfall, activityInputs).
+ */
+function activityRecipeOf(entry, buildingRow, gaps = []) {
+  const category = entry.categories[0];
+  const recipeGaps = gaps.filter((gap) => gap.category === category);
+  const gapMessages = recipeGaps.map((gap) => describeActivitySupplyGap(gap));
+  const shortfall = buildingRow?.activityShortfall?.[category] === true;
+  const lastInputs = buildingRow?.activityInputs?.[category] ?? null;
+  const cycleState = buildingRow?.cycleState?.[category] ?? null;
+
+  const inputs = entry.cycle.flatMap((step) => step.inputs ?? []);
+  const materials = inputs.map((input) => materialCardOf(input, lastInputs));
+
+  const stock = Math.max(0, Math.floor(Number(buildingRow?.stocks?.[category]) || 0));
+  const productLabel = goodLabel(category);
+  const product = {
+    kind: category,
+    icon: goodIcon(category),
+    label: productLabel,
+    met: stock > 0,
+    valueText: String(stock),
+    ariaLabel: `${productLabel} : ${stock} en stock`,
+  };
+
+  const steps = entry.cycle.map((step, index) => stepCardOf(step, index, entry.cycle.length, cycleState, shortfall));
+
+  return { category, label: productLabel, materials, product, steps, gapMessages };
+}
+
+/**
+ * One raw material: what was taken the last cycle it ran, over what the catalog's own step declares — the
+ * same "consommé/besoin" pairing as a personal need's card.
+ */
+function materialCardOf(input, lastInputs) {
+  const label = goodLabel(input.category);
+  const needed = Math.max(0, Math.floor(Number(input.amount) || 0));
+  const taken = lastInputs ? Math.max(0, Math.floor(Number(lastInputs.takenByCategory?.[input.category]) || 0)) : 0;
+  const met = lastInputs != null && taken >= needed;
+  return {
+    kind: input.category,
+    icon: goodIcon(input.category),
+    label,
+    met,
+    valueText: lastInputs ? `${taken}/${needed}` : NO_CYCLE_YET,
+    ariaLabel: lastInputs
+      ? `${label} : ${taken} sur ${needed} consommé le dernier cycle${met ? ', besoin couvert' : ', besoin non couvert'}`
+      : `${label} : pas encore de cycle`,
+  };
+}
+
+/** Structural only ("Étape 1", "Étape 2"...) — the recipe's own step id is an internal catalog word, not one a
+ *  player reads (see CatalogVocabulary); a single-step recipe is named for what it does instead of numbered. */
+function stepLabel(index, total) {
+  return total > 1 ? `Étape ${index + 1}` : 'Fabrication';
+}
+
+/**
+ * A step's progress, read live from `cycleState[category]` (`{ index, value, opened }`, see ProduceResource.js):
+ * a lower index than the step's own means it is done for the cycle under way, the same index means it is the
+ * one running now (or stuck on `activityShortfall`), a higher index means it has not started yet.
+ */
+function stepCardOf(step, index, total, cycleState, shortfall) {
+  const label = stepLabel(index, total);
+  const currentIndex = cycleState?.index ?? 0;
+  const isCurrent = currentIndex === index;
+  const stuck = isCurrent && shortfall && (step.inputs?.length ?? 0) > 0;
+
+  let status;
+  let met;
+  if (currentIndex > index) {
+    status = 'Terminée';
+    met = true;
+  } else if (stuck) {
+    status = 'En attente de matière';
+    met = false;
+  } else if (isCurrent) {
+    status = 'En cours';
+    met = false;
+  } else {
+    status = 'À venir';
+    met = false;
+  }
+
+  return {
+    kind: step.id,
+    icon: stuck ? '⛔' : met ? '✅' : '⏳',
+    label,
+    met,
+    valueText: status,
+    ariaLabel: `${label} : ${status}`,
+  };
 }

@@ -47,7 +47,12 @@ import {
  *     when the last step is done. A step is done at the first working tick of its `when` window (an
  *     unstaffed building or a missing input cannot do it). A missed window multiplies by `missed`
  *     (0 voids the cycle, 1 ignores the step, in between degrades it); with `wait: true` the step can
- *     still be done after its window instead. Nothing in it names a good, a season or a building.
+ *     still be done after its window instead. Nothing in it names a good, a season or a building. While a
+ *     step with `inputs` is waiting on one because the building could not get it (staffed and connected, the
+ *     input just is not there), `activityShortfall[category]` on the building row says so — a live state, read
+ *     fresh every tick, not a one-off event: it clears itself the moment the step gets what it needs. The last
+ *     time a step's inputs WERE taken, `activityInputs[category]` keeps what was taken, per good — how much
+ *     was needed is never stored: it is read straight from this same catalog entry when it is shown.
  *   - `source: { resource, range, consume }` — makes the entry a RAW-MATERIAL
  *     producer: it works only while enough natural resources of that kind lie
  *     within `range` tiles, and each production uses `consume` of them up
@@ -190,6 +195,12 @@ export class ProduceResource {
     let state = { index: previous?.index ?? 0, value: previous?.value ?? 0, opened: previous?.opened === true };
     let credited = 0;
     let stock = building.stocks;
+    // Live state, not a monthly event like a failed sale: is this recipe CURRENTLY stuck on its own input
+    // (a shortage on the buyer's side, not the road/staff gate, which already has its own icon).
+    let shortfall = building.activityShortfall?.[category] === true;
+    // What a recipe's own inputs took the last time a step succeeded ({ year, monthIndex, takenByCategory }) —
+    // "besoin" per material is read straight from the catalog step at display time, so only "consommé" is kept.
+    let inputsTaken = building.activityInputs?.[category] ?? null;
     const operational =
       entry.requiresOperational === false ||
       isOperational({
@@ -214,6 +225,17 @@ export class ProduceResource {
           stock = await this.#takeInputs({ ...building, stocks: stock }, plan, need, period?.turn ?? 0);
           state.value = state.index === 0 ? (step.amount ?? 0) : state.value * (step.factor ?? 1);
           advanced = true;
+          if (inputs.length > 0) {
+            shortfall = false;
+            inputsTaken = {
+              year: period?.year ?? 0,
+              monthIndex: period?.monthIndex ?? null,
+              takenByCategory: Object.fromEntries(inputs.map((input) => [input.category, need(input)])),
+            };
+          }
+        } else if (operational && inputs.length > 0) {
+          // Staffed and connected, but what this step needs is not there yet — the recipe waits on it.
+          shortfall = true;
         }
       } else if (state.opened && step.wait !== true) {
         // The window closed with the step undone.
@@ -250,6 +272,16 @@ export class ProduceResource {
       const cycleState = { ...building.cycleState, [category]: state };
       await this.supplyBuildingRepository.updateBuildingFields(building.id, { cycleState });
       next = { ...next, cycleState };
+    }
+    if (shortfall !== (building.activityShortfall?.[category] === true)) {
+      const activityShortfall = { ...building.activityShortfall, [category]: shortfall };
+      await this.supplyBuildingRepository.updateBuildingFields(building.id, { activityShortfall });
+      next = { ...next, activityShortfall };
+    }
+    if (inputsTaken !== (building.activityInputs?.[category] ?? null)) {
+      const activityInputs = { ...building.activityInputs, [category]: inputsTaken };
+      await this.supplyBuildingRepository.updateBuildingFields(building.id, { activityInputs });
+      next = { ...next, activityInputs };
     }
     return { building: next, credited };
   }

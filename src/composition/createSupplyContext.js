@@ -32,6 +32,7 @@ import { getNaturalSources, getSuppliedCategories } from '../shared/building-cat
 import { findNaturalSourcesInRange } from '../contexts/supply/domain/policies/ResourceRangePolicy.js';
 import { SupplyTraceability } from '../contexts/supply/infrastructure/presentation/SupplyTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
+import { DescribeActivitySupplyAccess } from '../contexts/supply/application/queries/DescribeActivitySupplyAccess.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListHubSupplyViews } from '../contexts/supply/application/queries/ListHubSupplyViews.js';
 import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries/ListSupplyStockSnapshots.js';
@@ -214,6 +215,7 @@ export function createSupplyContext({
   const listClientPriorityBoardsQuery = new ListClientPriorityBoards(supplyBuildingRepositoryImpl, {
     loadSettings: () => clientPriorityRepositoryImpl.load(),
   });
+  const describeActivitySupplyAccessQuery = new DescribeActivitySupplyAccess(supplyBuildingRepositoryImpl);
 
   return {
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
@@ -295,6 +297,11 @@ export function createSupplyContext({
 
     getHubStorageInfoView(hubKind, buildingRow, options = {}) {
       return getHubStorageInfoView.execute({ hubKind, buildingRow, ...options });
+    },
+
+    /** Structural gaps in a building's own recipe(s) — see DescribeActivitySupplyAccess.js. */
+    async describeActivitySupplyAccess(building) {
+      return describeActivitySupplyAccessQuery.execute(building);
     },
 
     async updateHubStorageOrderMode(hubKind, buildingId, productId) {

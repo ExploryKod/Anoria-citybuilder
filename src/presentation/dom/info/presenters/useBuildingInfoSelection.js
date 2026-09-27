@@ -55,6 +55,14 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
     } else {
       extra.currentYear = 0;
     }
+    // Structural reason a recipe with a `cycle` cannot even ask for its input — see
+    // DescribeActivitySupplyAccess.js. Empty for a plain source (no recipe), harmless to compute.
+    extra.activitySupplyGaps = await vm.supply.describeActivitySupplyAccess({
+      id: vm.uniqueId,
+      type: vm.buildingType,
+      x: vm.anchorX,
+      y: vm.anchorY,
+    });
   }
 
   if (groupId === BUILDING_INFO_GROUPS.house) {
@@ -67,6 +75,13 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
     extra.periodKey = budget?.turn !== undefined
       ? (TimeManager.getTimeInfo(budget.turn)?.monthIndex ?? null)
       : null;
+    // Same structural check as the farm group — a house's OWN business is a recipe like any workshop's.
+    extra.activitySupplyGaps = await vm.supply.describeActivitySupplyAccess({
+      id: vm.uniqueId,
+      type: vm.buildingType,
+      x: vm.anchorX,
+      y: vm.anchorY,
+    });
   }
 
   if (groupId === BUILDING_INFO_GROUPS.hubStorage) {

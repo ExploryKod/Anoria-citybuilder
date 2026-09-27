@@ -156,15 +156,20 @@ function timeContextOf(time) {
  *  - the icon of the point of the cycle it is at (the graphic whose `when` matches the time, or whose
  *    `step` is the step its cycle is on), shown only while staffed; the mesh's own `applyPhase` hook hears
  *    the same id;
- *  - the "collected" icon, on any producer that has a sale window, while a hub holds what it sold.
- * Its own sprites are all cleared first, so one point of the cycle never lingers into the next.
+ *  - the "collected" icon, on any producer that has a sale window, while a hub holds what it sold;
+ *  - the "shortage" icon, while its recipe is stuck on an input it could not get.
+ * Only the FIRST producer entry with a sale window gets these two icons — a building with several (a house
+ * running two recipes) shows just one; its other recipes still run, unseen on the mesh, until the info panel
+ * shows each one on its own (a future "Activité" tab). Its own sprites are all cleared first, so one point of
+ * the cycle never lingers into the next.
  */
 async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset) {
   const graphics = asset?.cycleGraphics ?? [];
   const saleStatus = asset?.saleStatus ?? 'sold-to-hub';
   const failedStatus = asset?.failedSaleStatus ?? 'failed-sell';
+  const shortfallStatus = asset?.activityShortfallStatus ?? 'input-shortage';
   const names = graphics.map((graphic) => spriteOf(graphic.status).name);
-  [...names, 'no-food', saleStatus, failedStatus].forEach((name) => {
+  [...names, 'no-food', saleStatus, failedStatus, shortfallStatus].forEach((name) => {
     ctx.assetManager.removeStatusSprite(mesh, name);
     ctx.assetManager.removeStatusSprite(mesh, `${name}-bg`);
   });
@@ -207,6 +212,15 @@ async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset
       visible: failed ? ctx.productionSpriteVisible(true) : false,
       color: failed ? failedMeta.spriteColor : null,
       backgroundColor: failed ? failedMeta.backgroundColor : null,
+    });
+
+    // Right now, its recipe is waiting on an input it could not get (a raw material shortage, not a sale problem).
+    const shortage = view?.activityShortfall?.[saleEntry.categories[0]] === true;
+    const shortfallMeta = ctx.statusIcons[shortfallStatus];
+    setSprite(ctx, mesh, shortfallStatus, {
+      visible: shortage ? ctx.productionSpriteVisible(true) : false,
+      color: shortage ? shortfallMeta.spriteColor : null,
+      backgroundColor: shortage ? shortfallMeta.backgroundColor : null,
     });
   }
 }

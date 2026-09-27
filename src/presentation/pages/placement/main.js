@@ -31,6 +31,7 @@ const ICON_TEXTURE_KEYS = {
   'sold-to-hub': 'isCollecting',
   'failed-sell': 'failed-sell',
   'hub-full': 'hub-full',
+  'input-shortage': 'input-shortage',
   'no-work': 'no-work',
 };
 

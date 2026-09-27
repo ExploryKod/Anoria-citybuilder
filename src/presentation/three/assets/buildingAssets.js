@@ -2046,8 +2046,40 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    button: null, // not a distinct carousel entry — Factory-Network (below) is the placeable id for this mesh
     tags: ['industrial', 'building'],
+  },
+  // Fournisseur d'accès — ASSIGNÉ au kit Kenney Industrial building-i
+  'Factory-Network': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-i',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      group: 'industry',
+      editorGroup: null,
+      label: 'Fournisseur d\'accès',
+      tooltip: 'Fournisseur d\'accès',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-i.png' },
+    },
+    tags: ['industry', 'building'],
   },
   // Industrie — building-j
   'Kenney-Industrial-building-j': {

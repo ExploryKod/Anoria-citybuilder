@@ -75,3 +75,68 @@ export function renderHouseResourcesView(container, model) {
   container.appendChild(detail);
   pick(model.needs[0].kind);
 }
+
+/**
+ * @typedef {object} HouseActivityRecipeViewModel
+ * @property {string} category
+ * @property {string} label
+ * @property {ReadonlyArray<object>} materials
+ * @property {object} product
+ * @property {ReadonlyArray<object>} steps
+ * @property {ReadonlyArray<string>} gapMessages Structural gaps — why an input cannot even be reached or sourced.
+ */
+
+/**
+ * @typedef {object} HouseActivityViewModel
+ * @property {ReadonlyArray<HouseActivityRecipeViewModel>} recipes
+ */
+
+/**
+ * One block per recipe the house's catalog entry declares: its raw materials, what it has finished, and its
+ * steps — a house without any recipe gets a plain note instead of an empty panel.
+ * @param {HTMLElement} container
+ * @param {HouseActivityViewModel} model
+ */
+export function renderHouseActivityView(container, model) {
+  container.innerHTML = '';
+
+  if (!model.recipes.length) {
+    const note = document.createElement('p');
+    note.className = 'building-info-footnote';
+    note.textContent = "Cette catégorie n'a pas d'activité propre.";
+    container.appendChild(note);
+    return;
+  }
+
+  for (const recipe of model.recipes) {
+    const block = document.createElement('div');
+    block.className = 'building-info-activity-recipe';
+
+    const heading = document.createElement('h3');
+    heading.className = 'building-info-section-label';
+    heading.textContent = recipe.label;
+    block.appendChild(heading);
+
+    for (const message of recipe.gapMessages ?? []) {
+      const warning = document.createElement('p');
+      warning.className = 'building-info-footnote building-info-gap-warning';
+      warning.textContent = `⚠️ ${message}`;
+      block.appendChild(warning);
+    }
+
+    appendMetricCardSection(block, 'Matières premières', recipe.materials);
+    appendMetricCardSection(block, 'Produit fini', [recipe.product]);
+    appendMetricCardSection(block, 'Fabrication', recipe.steps);
+
+    container.appendChild(block);
+  }
+}
+
+function appendMetricCardSection(container, title, cards) {
+  if (!cards.length) return;
+  const label = document.createElement('p');
+  label.className = 'building-info-footnote';
+  label.textContent = title;
+  container.appendChild(label);
+  appendMetricCards(container, cards);
+}

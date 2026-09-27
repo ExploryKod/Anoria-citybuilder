@@ -21,6 +21,7 @@ export function createSupplyBuildingView({
   lastCollection = null,
   lastTransaction = null,
   lastFailedSale = null,
+  activityShortfall = null,
   unmetDemand = 0,
   lastImport = null,
   lastImportDetails = null,
@@ -65,6 +66,9 @@ export function createSupplyBuildingView({
     unmetDemand: Number.isFinite(unmetDemand) ? Math.max(0, unmetDemand) : 0,
     // When its last sale window closed with goods unsold ({ year, monthIndex, units, cause }), else null.
     lastFailedSale: lastFailedSale ? Object.freeze({ ...lastFailedSale }) : null,
+    // Per producer category, whether a recipe is CURRENTLY stuck waiting for its own input (see ProduceResource).
+    activityShortfall:
+      activityShortfall && typeof activityShortfall === 'object' ? Object.freeze({ ...activityShortfall }) : null,
     lastTransaction: lastTransaction ? Object.freeze({ ...lastTransaction }) : null,
     lastImport: lastImport ? Object.freeze({ ...lastImport }) : null,
     lastImportDetails: lastImportDetails

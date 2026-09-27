@@ -69,6 +69,14 @@ export const STATUS_ICON_DEFAULTS = Object.freeze({
     spriteColor: null,
     backgroundColor: 0xffe8e8,
   },
+  // Opposite corner from failed-sell (a problem buying in, not selling out) — never shown at the same time as
+  // isBuying/isCollecting (hub/distributor roles), so a producer is free to use it.
+  'input-shortage': {
+    position: { x: -0.5, y: 0.5, z: 0 },
+    scale: { x: 0.5, y: 0.5, z: 1 },
+    spriteColor: null,
+    backgroundColor: 0xe8ddff,
+  },
   'no-resource': { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 0.6, y: 0.6, z: 1 }, spriteColor: null, backgroundColor: null },
   'no-work': {
     position: { x: -0.8, y: 0.5, z: -0.2 },

@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { describePlacementNeeds } from '../../../src/presentation/dom/shell/BuildingNotifications.js';
+import { describePlacementNeeds, describeActivitySupplyGap } from '../../../src/presentation/dom/shell/BuildingNotifications.js';
 
 // What the player is told when picking a building to place, read from that building's own catalog entry.
 describe('describePlacementNeeds', () => {
@@ -21,6 +21,27 @@ describe('describePlacementNeeds', () => {
 
   test('a building that depends on nothing says nothing', () => {
     expect(describePlacementNeeds('Chapel')).toBeNull();
-    expect(describePlacementNeeds('House-Blue')).toBeNull();
+  });
+
+  test('a house running its own business names what it buys for it, same as a workshop', () => {
+    const message = describePlacementNeeds('House-Blue');
+    expect(message).toContain('Commerçants requiert : ');
+    expect(message).toMatch(/Entrepôt.*pour bois/);
+    expect(message).toMatch(/Entrepôt.*pour pot décoré/);
+    expect(message).toMatch(/Entrepôt.*pour livre/);
+  });
+});
+
+describe('describeActivitySupplyGap', () => {
+  test('names the hub to build when none is reachable', () => {
+    expect(describeActivitySupplyGap({ inputCategory: 'pot', role: 'hub', status: 'no-hub' })).toBe(
+      'Entrepôt nécessaire pour pot'
+    );
+  });
+
+  test('names the industry to build when the hub is reachable but nothing supplies it', () => {
+    expect(describeActivitySupplyGap({ inputCategory: 'pot', role: 'hub', status: 'no-supplier' })).toBe(
+      'Atelier de pots nécessaire pour pot'
+    );
   });
 });

@@ -6,6 +6,7 @@ import { getBuildingDefinition } from '../../../../../shared/building-catalog/in
 import { getResourceRoles, getResourceStockShape } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { buildingName, goodAmount, goodLabel, namesOfBuildings } from '../../../shell/CatalogVocabulary.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
+import { describeActivitySupplyGap } from '../../../shell/BuildingNotifications.js';
 
 function productLabel(productType) {
   return goodLabel(productType);
@@ -49,15 +50,23 @@ export function formatFarmLayoutOptions() {
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel}
  */
 export function formatFarmOverviewModel(vm) {
-  return {
-    sections: [{
-      title: 'Culture',
-      rows: [
-        { label: 'Produit', value: farmCropLabel(vm.buildingType) },
-        { label: 'Année en cours', value: String(vm.currentYear ?? 0) },
-      ],
-    }],
-  };
+  const sections = [{
+    title: 'Culture',
+    rows: [
+      { label: 'Produit', value: farmCropLabel(vm.buildingType) },
+      { label: 'Année en cours', value: String(vm.currentYear ?? 0) },
+    ],
+  }];
+
+  const gaps = vm.activitySupplyGaps ?? [];
+  if (gaps.length > 0) {
+    sections.push({
+      title: 'Blocages',
+      rows: gaps.map((gap) => ({ label: '⚠️', value: describeActivitySupplyGap(gap) })),
+    });
+  }
+
+  return { sections };
 }
 
 /**

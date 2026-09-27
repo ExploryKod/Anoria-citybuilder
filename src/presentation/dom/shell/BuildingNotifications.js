@@ -127,12 +127,40 @@ export function describePlacementNeeds(buildingType) {
 }
 
 /**
- * Said as soon as the player picks a building to place, before any ghost turns red.
+ * Whether a building type wants the on-pick toasts at all (what it needs, who it serves first) — the
+ * catalog's own `placementNotice`, off by default. Optional on purpose: a house now has needs of its own
+ * (its business draws on a warehouse) and clients of its own (who buys what it makes), but hearing about
+ * them every time the player picks a house to place would be noise a house was never meant to raise; an
+ * industry that wants the reminder declares it.
+ * @param {string} buildingType
+ * @returns {boolean}
+ */
+function hasPlacementNotice(buildingType) {
+  return getBuildingDefinition(buildingType)?.placementNotice === true;
+}
+
+/**
+ * Said as soon as the player picks a building to place, before any ghost turns red — only for a building
+ * type that declares `placementNotice` (see hasPlacementNotice above).
  * @param {string} buildingType
  */
 export function showPlacementNeedsNotification(buildingType) {
+  if (!hasPlacementNotice(buildingType)) return;
   const message = describePlacementNeeds(buildingType);
   if (message) showInfoToast(message, { timeout: 6000 });
+}
+
+/**
+ * Why a recipe cannot even reach one of its inputs (see DescribeActivitySupplyAccess.js), in the player's
+ * words: which building would fix it — a hub to reach, or an industry to supply it — named from the catalog,
+ * never hand-picked here.
+ * @param {{ inputCategory: string, role: string, status: 'no-hub' | 'no-supplier' }} gap
+ * @returns {string}
+ */
+export function describeActivitySupplyGap(gap) {
+  const good = goodLabel(gap.inputCategory).toLowerCase();
+  const names = namesOfBuildings(gap.status === 'no-hub' ? gap.role : 'producer', [gap.inputCategory]);
+  return `${[...new Set(names)].join(' ou ')} nécessaire pour ${good}`;
 }
 
 /**
@@ -141,6 +169,7 @@ export function showPlacementNeedsNotification(buildingType) {
  * @param {{ clients: Array<{ type: string, disabled: boolean }> } | undefined} board Its client priorities.
  */
 export function showClientPriorityNotification(producerType, board) {
+  if (!hasPlacementNotice(producerType)) return;
   const served = (board?.clients ?? []).filter((client) => !client.disabled);
   if (served.length === 0) return;
   showInfoToast(

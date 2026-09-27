@@ -85,6 +85,8 @@
  * @property {((monthsAhead: number) => object) | null} [hubTimeContextAhead] Calendar from now (Supply time context per month), to date the hub's next harvest
  * @property {Record<string, number> | null} [servedFlags] House group only — see HouseLevelPolicy.describeRelevantServiceCoverage.
  * @property {number | null} [periodKey] House group only — current month index, paired with servedFlags.
+ * @property {ReadonlyArray<{ category: string, inputCategory: string, role: string, status: 'no-hub' | 'no-supplier' }>} [activitySupplyGaps]
+ *   House and farm groups only — see DescribeActivitySupplyAccess.js.
  */
 
 /**

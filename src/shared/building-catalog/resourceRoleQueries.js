@@ -253,6 +253,17 @@ export function getQuantityConsumerEntries(buildingType) {
 }
 
 /**
+ * Every 'producer' entry declared as a `cycle` (a recipe with steps), in declaration order — a house's own
+ * business (decorating pots, baking cakes, writing books, dealing goods) as much as a workshop's. A house's
+ * OTHER producer entry, its own gathering, declares a plain `schedule` instead and is never one of these.
+ * @param {string} buildingType
+ * @returns {import('./buildingCatalog.js').ResourceRoleFacts[]}
+ */
+export function getCycleRecipeEntries(buildingType) {
+  return getResourceRoles(buildingType).filter((entry) => entry.role === 'producer' && Array.isArray(entry.cycle));
+}
+
+/**
  * The distinct 'quantity' consumer entries declared anywhere in the catalog, keyed by their first
  * category (one per thing a citizen uses up) — what a city-wide consumption pass iterates.
  * @returns {ReadonlyArray<import('./buildingCatalog.js').ResourceRoleFacts>}

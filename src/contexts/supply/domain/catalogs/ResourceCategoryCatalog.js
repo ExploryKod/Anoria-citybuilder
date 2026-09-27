@@ -27,6 +27,14 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   candle: Object.freeze({ emoji: '🕯️', label: 'Bougie', unit: unitOf('bougie', 'bougies'), colors: Object.freeze({ dark: '#D9B84A', pale: '#F6EDC4' }) }),
   light: Object.freeze({ emoji: '💡', label: 'Éclairage', unit: unitOf('unité', 'unités') }),
   goods: Object.freeze({ emoji: '📦', label: 'Biens', unit: unitOf('bien', 'biens') }),
+  // Activité — chaque maison a sa propre petite entreprise (voir ARTISAN/SAVANT/MERCHANT_ACTIVITY_ROLES).
+  bandwidth: Object.freeze({ emoji: '📶', label: 'Accès réseau', unit: unitOf('unité', 'unités'), colors: Object.freeze({ dark: '#2E6B8A', pale: '#A8D0E0' }) }),
+  decoratedPot: Object.freeze({ emoji: '🏺', label: 'Pot décoré', unit: unitOf('pot décoré', 'pots décorés'), colors: Object.freeze({ dark: '#C9702B', pale: '#F0C79A' }) }),
+  carrotCake: Object.freeze({ emoji: '🥕', label: 'Carrot cake', unit: unitOf('gâteau', 'gâteaux'), colors: Object.freeze({ dark: '#D98A2E', pale: '#F5D9A8' }) }),
+  book: Object.freeze({ emoji: '📚', label: 'Livre', unit: unitOf('livre', 'livres'), colors: Object.freeze({ dark: '#5B4636', pale: '#C9B79C' }) }),
+  dealWood: Object.freeze({ emoji: '🤝', label: 'Deal de bois', unit: unitOf('deal', 'deals'), colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
+  dealDecoratedPot: Object.freeze({ emoji: '🤝', label: 'Deal de pot décoré', unit: unitOf('deal', 'deals'), colors: Object.freeze({ dark: '#C9702B', pale: '#F0C79A' }) }),
+  dealBook: Object.freeze({ emoji: '🤝', label: 'Deal de livre', unit: unitOf('deal', 'deals'), colors: Object.freeze({ dark: '#5B4636', pale: '#C9B79C' }) }),
   // Chart colors follow what the good is made of: walnut for furniture, glazed white-blue for plates,
   // terracotta for pots, ochre clay for amphorae.
   furniture: Object.freeze({ emoji: '🪑', label: 'Meuble', unit: unitOf('meuble', 'meubles'), colors: Object.freeze({ dark: '#6D4C41', pale: '#BCAAA4' }) }),

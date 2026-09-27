@@ -16,13 +16,14 @@ describe('Housing — GroupSkillPolicy', () => {
     ]);
   });
 
-  test('level 2 artisans gain fermier + artisanat + manutention cumulatively', () => {
+  test('level 2 artisans gain fermier + artisanat + manutention + telecoms cumulatively', () => {
     expect(getCitizenSkillsForHouse({ level: 2, residentialGroup: 'artisans' })).toEqual([
       'subsistence-forager',
       'spiritual',
       'fermier',
       'artisanat',
       'manutention',
+      'telecoms',
     ]);
   });
 

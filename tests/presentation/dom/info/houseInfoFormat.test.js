@@ -4,7 +4,7 @@
  */
 import { describe, test, expect } from '@jest/globals';
 import { getQuantityConsumerEntries } from '../../../../src/shared/building-catalog/resourceRoleQueries.js';
-import { formatHouseResourcesModel } from '../../../../src/presentation/dom/info/presenters/formats/houseInfoFormat.js';
+import { formatHouseResourcesModel, formatHouseActivityModel } from '../../../../src/presentation/dom/info/presenters/formats/houseInfoFormat.js';
 
 const needOf = (model, kind) => model.needs.find((need) => need.kind === kind);
 const goodOf = (model, needKind, kind) => needOf(model, needKind).details.find((card) => card.kind === kind);
@@ -89,5 +89,73 @@ describe('formatHouseResourcesModel — needs first, goods in detail', () => {
   test('before any record, the calculation uses the population now', () => {
     const model = formatHouseResourcesModel({ buildingType: 'House-Red', buildingPop: 8, lastConsumption: null });
     expect(needOf(model, 'goods').card.detailText).toBe('Besoin : 8 hab. × 0,25 bien');
+  });
+});
+
+describe('formatHouseActivityModel — a house\'s own business, one block per recipe', () => {
+  test('a house without a business gets an empty list, not a thrown error', () => {
+    expect(formatHouseActivityModel({}).recipes).toEqual([]);
+  });
+
+  test('House-Red has one block per recipe its catalog declares, in order', () => {
+    const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow: null });
+    expect(model.recipes.map((r) => r.category)).toEqual(['decoratedPot', 'carrotCake']);
+  });
+
+  test('before any cycle ran, the raw material reads "not yet", not zero', () => {
+    const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow: null });
+    const pot = model.recipes[0];
+    expect(pot.materials).toHaveLength(1);
+    expect(pot.materials[0].kind).toBe('pot');
+    expect(pot.materials[0].valueText).toBe('–');
+    expect(pot.materials[0].met).toBe(false);
+    expect(pot.product.valueText).toBe('0');
+  });
+
+  test('after a cycle took its inputs, the material reads consommé/besoin like a personal need', () => {
+    const buildingRow = {
+      activityInputs: { decoratedPot: { year: 1, monthIndex: 1, takenByCategory: { pot: 10 } } },
+      stocks: { decoratedPot: 10 },
+    };
+    const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow });
+    const pot = model.recipes[0];
+    expect(pot.materials[0].valueText).toBe('10/10');
+    expect(pot.materials[0].met).toBe(true);
+    expect(pot.product.valueText).toBe('10');
+    expect(pot.product.met).toBe(true);
+  });
+
+  test('the cake needs three goods at once: each gets its own card', () => {
+    const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow: null });
+    const cake = model.recipes[1];
+    expect(cake.materials.map((m) => m.kind)).toEqual(['wheat', 'carrot', 'oil']);
+  });
+
+  test('a two-step recipe gets two step cards, numbered', () => {
+    const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow: null });
+    const pot = model.recipes[0];
+    expect(pot.steps.map((s) => s.label)).toEqual(['Étape 1', 'Étape 2']);
+  });
+
+  test('a step already done this cycle reads done, the one after it in progress', () => {
+    const buildingRow = { cycleState: { decoratedPot: { index: 1, value: 2, opened: false } } };
+    const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow });
+    const pot = model.recipes[0];
+    expect(pot.steps[0].valueText).toBe('Terminée');
+    expect(pot.steps[0].met).toBe(true);
+    expect(pot.steps[1].valueText).toBe('En cours');
+    expect(pot.steps[1].met).toBe(false);
+  });
+
+  test('a step stuck on a missing input is called out, not just "in progress"', () => {
+    const buildingRow = {
+      activityShortfall: { carrotCake: true },
+      cycleState: { carrotCake: { index: 0, value: 0, opened: true } },
+    };
+    const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow });
+    const cake = model.recipes[1];
+    expect(cake.steps[0].valueText).toBe('En attente de matière');
+    expect(cake.steps[0].met).toBe(false);
+    expect(cake.steps[1].valueText).toBe('À venir');
   });
 });

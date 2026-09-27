@@ -27,6 +27,7 @@ describe('formatHousePopulationPresentation', () => {
       expect.objectContaining({ skillKey: 'fermier', count: 12, label: 'fermier' }),
       expect.objectContaining({ skillKey: 'artisanat', count: 12, label: 'artisanat' }),
       expect.objectContaining({ skillKey: 'manutention', count: 12, label: 'manutention' }),
+      expect.objectContaining({ skillKey: 'telecoms', count: 12, label: 'télécommunications' }),
     ]);
   });
 

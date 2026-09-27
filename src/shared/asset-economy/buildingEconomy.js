@@ -36,7 +36,18 @@ const RETAIL_GOODS = ['furniture', 'plate', 'pot', 'amphora'];
 const LIGHT_GOODS = ['oil', 'candle'];
 /** Raw farm goods that are not eaten: the oil press draws them from a warehouse. */
 const RAW_FARM_GOODS = ['olive'];
-const STORED_GOODS = ['wood', ...RETAIL_GOODS, ...LIGHT_GOODS, ...RAW_FARM_GOODS];
+/**
+ * Activité goods: what a house's own little business buys and makes — never the household's own diet/goods/
+ * heat/light. Each social group runs its own business, buying raw material from a warehouse and selling its
+ * own output back to one, exactly like a workshop; only the merchants' also buys OTHER houses' output.
+ */
+const ARTISAN_ACTIVITY_GOODS = ['decoratedPot', 'carrotCake'];
+const SAVANT_ACTIVITY_GOODS = ['bandwidth', 'book'];
+const MERCHANT_ACTIVITY_GOODS = ['dealWood', 'dealDecoratedPot', 'dealBook'];
+const STORED_GOODS = [
+  'wood', ...RETAIL_GOODS, ...LIGHT_GOODS, ...RAW_FARM_GOODS,
+  ...ARTISAN_ACTIVITY_GOODS, ...SAVANT_ACTIVITY_GOODS, ...MERCHANT_ACTIVITY_GOODS,
+];
 /** An olive field's single annual harvest (olives): enough for two oil presses' year. */
 const OLIVE_ANNUAL_YIELD = 120;
 const GOODS_TOTAL_KEY = 'goods';
@@ -47,6 +58,9 @@ const WAREHOUSE_MAX_STOCK = 500;
 const WAREHOUSE_LINK_CAPACITY = 4;
 /** Units of a good a hub gives to the others per tick when ordered to empty it. */
 const HUB_EMPTY_RATE = 20;
+/** How far a house's own business reaches for its raw material — any warehouse in the city, like the
+ * market's own reach: what matters is what it can get, not how far it walks. */
+const ACTIVITY_RANGE = Infinity;
 /** Tiles between a market and the warehouse it draws its goods from. */
 const MARKET_WAREHOUSE_RANGE = 8;
 /** Goods one market stall can hold at once. */
@@ -84,6 +98,7 @@ const twoMonthCycle = ({ first, second, base, factor, inputs }) => ({
 /** A raw-material producer of wood from the trees around it; its name and who it serves first vary. */
 const lumberjack = ({ displayName, clients }) => ({
   displayName,
+  placementNotice: true,
   construction: { price: 45, category: 'industry' },
   employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
   resourceRoles: [{
@@ -96,6 +111,60 @@ const lumberjack = ({ displayName, clients }) => ({
     periodLock: { field: 'lastProductionMonth', unit: 'month' },
   }],
 });
+
+/**
+ * A house's own little business: a recipe like any workshop's, except its raw material comes from any
+ * warehouse in the city (`ACTIVITY_RANGE`) rather than one nearby — a business does not care how far its
+ * supplier is. Sold to a warehouse just like a workshop's output; who may buy it is `clients` on the good's
+ * own producer entry, a catalog list, not a rule.
+ */
+const activityRecipe = (output, steps, inputs, clients) => ({
+  role: 'producer',
+  categories: [output],
+  ...(clients ? { clients } : {}),
+  ...twoMonthCycle({ ...steps, base: 2, factor: 5, inputs }),
+});
+
+/** One input, drawn from any warehouse in the city. */
+const fromWarehouse = (category, amount) => ({ category, amount, from: { role: 'hub', range: ACTIVITY_RANGE } });
+
+/**
+ * Artisans' business: they buy a plain pot and decorate it, or buy the makings of a cake and bake it — two
+ * independent recipes, each its own producer entry, on House-Red.
+ */
+const ARTISAN_ACTIVITY_ROLES = [
+  activityRecipe('decoratedPot', { first: 'sourcing', second: 'decorating' }, [fromWarehouse('pot', 10)], ['House-Blue']),
+  activityRecipe('carrotCake', { first: 'sourcing', second: 'baking' }, [
+    fromWarehouse('wheat', 4),
+    fromWarehouse('carrot', 4),
+    fromWarehouse('oil', 2),
+  ]),
+];
+
+/**
+ * Savants' business: they buy bandwidth (an ordinary good to the warehouse that holds it — the player just
+ * reads it as "network access") and write books from it. Only the wording says "internet"; the mechanism is
+ * a recipe like any other.
+ */
+const SAVANT_ACTIVITY_ROLES = [
+  activityRecipe('book', { first: 'browsing', second: 'writing' }, [fromWarehouse('bandwidth', 10)], ['House-Blue']),
+];
+
+/**
+ * Merchants' business: buy whatever is sellable — a base good or another house's own output — and turn it
+ * into a "deal", 1 for 1 for now (which good becomes which deal, and at what margin, is for when actual trade
+ * exists — today `factor` just repeats the input, ready to become a real markup later without changing shape).
+ * `clients: ['House-Blue']` on decoratedPot/book (declared with each recipe) is what makes the merchants the
+ * only buyer today — a catalog list, so opening it to another house type later is one edit, not a new rule.
+ */
+const dealRecipe = (sourceGood, dealGood) =>
+  activityRecipe(dealGood, { first: 'sourcing', second: 'dealing' }, [fromWarehouse(sourceGood, 10)]);
+
+const MERCHANT_ACTIVITY_ROLES = [
+  dealRecipe('wood', 'dealWood'),
+  dealRecipe('decoratedPot', 'dealDecoratedPot'),
+  dealRecipe('book', 'dealBook'),
+];
 
 /*
  * The food chain's reference numbers. Every capacity and yield below is derived from these
@@ -330,21 +399,22 @@ export const BUILDING_ECONOMY = {
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'merchants',
-    resourceRoles: HOUSE_RESOURCE_ROLES,
+    // Their own business, on top of the household needs every house shares (see MERCHANT_ACTIVITY_ROLES above).
+    resourceRoles: [...HOUSE_RESOURCE_ROLES, ...MERCHANT_ACTIVITY_ROLES],
   },
   'House-Red': {
     displayName: 'Artisans-ouvriers',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'artisans',
-    resourceRoles: HOUSE_RESOURCE_ROLES,
+    resourceRoles: [...HOUSE_RESOURCE_ROLES, ...ARTISAN_ACTIVITY_ROLES],
   },
   'House-Purple': {
     displayName: 'Savants',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'scholars',
-    resourceRoles: HOUSE_RESOURCE_ROLES
+    resourceRoles: [...HOUSE_RESOURCE_ROLES, ...SAVANT_ACTIVITY_ROLES],
   },
 
   // Farms — fields, no road needed (`requiresRoad: false`): they employ, produce
@@ -364,6 +434,8 @@ export const BUILDING_ECONOMY = {
       sale: HARVEST_SALE,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
+      // Citizens eat first; the cake business (House-Red) only gets what is left over.
+      clients: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'House-Red'],
     }],
   },
   'Farm-Carrot': {
@@ -378,6 +450,7 @@ export const BUILDING_ECONOMY = {
       sale: HARVEST_SALE,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
+      clients: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'House-Red'],
     }],
   },
   'Farm-Cabbage': {
@@ -443,6 +516,8 @@ export const BUILDING_ECONOMY = {
       categories: ['pot'],
       // 2 in the first month, x5 in the second: 10 every two months, sold once complete.
       ...twoMonthCycle({ first: 'shaping', second: 'firing', base: 2, factor: 5 }),
+      // Households' own goods first; the decorating business (House-Red) only gets what is left over.
+      clients: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'House-Red'],
     }],
   },
   'Factory-Amphora': {
@@ -461,6 +536,7 @@ export const BUILDING_ECONOMY = {
   // two-month cycle, sold to a warehouse. What they make lights the houses (see HOUSE_LIGHT_CONSUMER).
   'Factory-Oil': {
     displayName: 'Huilerie',
+    placementNotice: true,
     construction: { price: 50, category: 'industry' },
     employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
     resourceRoles: [{
@@ -475,6 +551,8 @@ export const BUILDING_ECONOMY = {
         factor: 5,
         inputs: [{ category: 'olive', amount: 10, from: { role: 'hub', range: WAREHOUSE_RANGE } }],
       }),
+      // Households' own lighting first; the cake business (House-Red) only gets what is left over.
+      clients: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'House-Red'],
     }],
   },
   'Factory-Candle': {
@@ -499,18 +577,35 @@ export const BUILDING_ECONOMY = {
   // one for workshops. Same mesh and footprint (see buildingAssets.js / buildingFootprint.js).
   'Lumberjack': lumberjack({
     displayName: 'Bûcheron',
-    clients: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'Factory-Furniture'],
+    clients: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'Factory-Furniture', 'House-Blue'],
   }),
   'Lumberjack-Industry': lumberjack({
     displayName: 'Bûcheron industriel',
-    clients: ['Factory-Furniture', 'Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red'],
+    clients: ['Factory-Furniture', 'Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'House-Blue'],
   }),
+
+  // Network provider: what the savants' business runs on (see SAVANT_ACTIVITY_ROLES). Produces from nothing but
+  // labour, exactly like the pottery workshops — the player reads its output as "network access"; the catalog
+  // reads it as an ordinary good sold to a warehouse.
+  'Factory-Network': {
+    displayName: 'Fournisseur d\'accès',
+    placementNotice: true,
+    construction: { price: 55, category: 'industry' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'telecoms' },
+    resourceRoles: [{
+      role: 'producer',
+      categories: ['bandwidth'],
+      // Bandwidth is a stored good: the warehouse collects it automatically. No clients override needed.
+      ...twoMonthCycle({ first: 'installing', second: 'broadcasting', base: 2, factor: 5 }),
+    }],
+  },
 
   // Furniture workshop (2026-09-23): a recipe — it turns wood into furniture. Its `inputs[].from` says
   // where the wood comes from: a hub (warehouse) within range that holds it, nearest first. With no wood
   // there, it idles and runs again as soon as some arrives. Retune the ratio or the range here.
   'Factory-Furniture': {
     displayName: 'Atelier de meubles',
+    placementNotice: true,
     construction: { price: 60, category: 'industry' },
     employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
     resourceRoles: [{
@@ -590,6 +685,7 @@ export const BUILDING_ECONOMY = {
   // Market-Stall-Red below (merchants' tier-2 Commerces skill); every
   // market stall variant shares it regardless of house-color naming.
   'Market-Stall': {
+    placementNotice: true,
     displayName: 'Étal',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, requiredSkill: 'vente-alimentaire' },
@@ -602,6 +698,7 @@ export const BUILDING_ECONOMY = {
     placementRequires: MARKET_PLACEMENT_REQUIRES,
   },
   'Market-Stall-Blue': {
+    placementNotice: true,
     displayName: 'Étal bleu',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, requiredSkill: 'vente-alimentaire' },
@@ -614,6 +711,7 @@ export const BUILDING_ECONOMY = {
     placementRequires: MARKET_PLACEMENT_REQUIRES,
   },
   'Market-Stall-Red': {
+    placementNotice: true,
     displayName: 'Étal rouge',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, requiredSkill: 'vente-alimentaire' },
