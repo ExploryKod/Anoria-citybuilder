@@ -425,6 +425,11 @@ export function createSupplyContext({
     async recordFamineDeaths(timeInfo, deaths) {
       return traceability.recordFamineDeaths(timeInfo, deaths);
     },
+
+    /** A merchant city-trade sale — records a merchant_sale traceability entry. */
+    async recordMerchantSale(params) {
+      return traceability.recordMerchantSale(params);
+    },
   };
 }
 

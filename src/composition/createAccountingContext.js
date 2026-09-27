@@ -790,6 +790,16 @@ export function createAccountingContext(deps = {}) {
       return canAffordFromBudget(budget, amount);
     },
 
+    /** @returns {number} customs rate in [0, 0.5] */
+    getCustomsRate() {
+      return fiscalSettingsRepository.getCustomsRate();
+    },
+
+    /** @param {number} rate @returns {number} clamped rate */
+    setCustomsRate(rate) {
+      return fiscalSettingsRepository.setCustomsRate(rate);
+    },
+
     async cleanupOldBudgetTurnSnapshotsByAge() {
       return cleanupOldBudgetTurnSnapshots.execute();
     },

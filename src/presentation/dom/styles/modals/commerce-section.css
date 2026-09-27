@@ -1,0 +1,184 @@
+/* Commerce Section */
+
+.commerce-board {
+    background: #fafafa;
+    border-radius: var(--border-radius-small);
+    padding: 20px;
+    text-align: left;
+}
+
+.commerce-customs-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+    padding: 12px;
+    background: rgba(251, 129, 34, 0.05);
+    border-radius: var(--border-radius-small);
+    max-width: 360px;
+}
+
+.commerce-customs-label {
+    font-size: 14px;
+    color: var(--primary);
+    white-space: nowrap;
+}
+
+.commerce-customs-slider {
+    flex: 1;
+    min-width: 100px;
+    accent-color: var(--cta, #d97706);
+    cursor: pointer;
+}
+
+.commerce-customs-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    min-width: 42px;
+    text-align: right;
+}
+
+.commerce-customs-hint {
+    font-size: 12px;
+    color: #888;
+    margin: 0 0 16px 0;
+}
+
+/* Relations list */
+
+.commerce-relations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.commerce-empty-state {
+    font-size: 13px;
+    color: #888;
+    margin: 0;
+    padding: 12px;
+    background: #f0f0f0;
+    border-radius: var(--border-radius-small);
+}
+
+.commerce-relation-card {
+    padding: 12px 14px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: var(--border-radius-small);
+    border-left: 4px solid #28a745;
+}
+
+.commerce-relation-card.suspended {
+    border-left-color: #dc3545;
+    opacity: 0.7;
+}
+
+.commerce-relation-card.expired {
+    border-left-color: #aaa;
+    opacity: 0.55;
+}
+
+.commerce-relation-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.commerce-relation-city {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.commerce-relation-status {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: #d4edda;
+    color: #155724;
+    font-weight: 600;
+}
+
+.commerce-relation-status.suspended,
+.commerce-relation-status.expired {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.commerce-relation-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.commerce-relation-row {
+    font-size: 12px;
+    color: #555;
+}
+
+.commerce-relation-row strong {
+    color: var(--primary);
+}
+
+.commerce-satisfaction-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.commerce-satisfaction-track {
+    flex: 1;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+    max-width: 120px;
+}
+
+.commerce-satisfaction-fill {
+    height: 100%;
+    background: #28a745;
+    border-radius: 3px;
+    transition: width 0.3s;
+}
+
+.commerce-satisfaction-fill.low {
+    background: #dc3545;
+}
+
+.commerce-satisfaction-fill.medium {
+    background: #ffc107;
+}
+
+.commerce-satisfaction-label {
+    font-size: 11px;
+    color: #777;
+}
+
+/* Budget impact */
+
+.commerce-budget-impact {
+    margin-top: 16px;
+    padding: 10px 14px;
+    background: rgba(40, 167, 69, 0.08);
+    border-radius: var(--border-radius-small);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.commerce-budget-impact-label {
+    color: var(--primary);
+}
+
+.commerce-budget-impact-value {
+    font-weight: 700;
+    color: #155724;
+}

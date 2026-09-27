@@ -473,6 +473,25 @@ export class SupplyTraceability {
   }
 
   /**
+   * A completed export sale to a partner city by the merchants.
+   * @param {{ turn: number, monthIndex: number, year: number, cityId: string, good: string, dealGood: string, quantity: number, unitPrice: number, grossRevenue: number, netRevenue: number, customsCollected: number, customsRate: number }} params
+   */
+  async recordMerchantSale({ turn, monthIndex, year, cityId, good, dealGood, quantity, unitPrice, grossRevenue, netRevenue, customsCollected, customsRate }) {
+    await this.traceabilityRepository.addTransaction(
+      turn,
+      monthIndex,
+      year,
+      'merchant_sale',
+      null,
+      { id: cityId, x: null, y: null, type: 'city' },
+      dealGood,
+      quantity,
+      unitPrice,
+      { cityId, good, grossRevenue, netRevenue, customsCollected, customsRate }
+    );
+  }
+
+  /**
    * Inhabitants lost to famine this month.
    * @param {object} timeInfo
    * @param {number} deaths

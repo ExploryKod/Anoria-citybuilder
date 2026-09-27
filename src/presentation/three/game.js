@@ -312,6 +312,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     gameplay,
     construction,
     accounting,
+    trade,
     sessionApi,
     runtime,
   } = bootGameContexts();
@@ -602,6 +603,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     housing,
     employment,
     gameplay,
+    trade,
     ecsRuntime: runtime,
     sessionApi,
   });

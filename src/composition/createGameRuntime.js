@@ -7,6 +7,7 @@ import { createHousingEvolutionSystem } from '../contexts/housing/infrastructure
 import { createEmploymentRedistributeSystem } from '../contexts/employment/infrastructure/runtime/employmentRedistributeSystem.js';
 import { createRandomEventsSystem } from '../contexts/gameplay/infrastructure/runtime/randomEventsSystem.js';
 import { createIntelligenceMonthlyNewsSystem } from '../contexts/intelligence/infrastructure/runtime/intelligenceMonthlyNewsSystem.js';
+import { createCityTradeMonthlySystem } from '../contexts/geography/infrastructure/runtime/cityTradeMonthlySystem.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { isLoseMode } from '../config/loseMode.js';
 import { recordDeaths } from './gameplayMortalityState.js';
@@ -24,6 +25,7 @@ import { TimeManager } from '../shared/time/TimeManager.js';
  * @param {ReturnType<import('./createEmploymentContext.js').createEmploymentContext>} deps.employment
  * @param {ReturnType<import('./createGameplayContext.js').createGameplayContext>} deps.gameplay
  * @param {ReturnType<import('./createIntelligenceContext.js').createIntelligenceContext>} deps.intelligence
+ * @param {object} deps.trade
  * @param {(time: number) => object} [deps.getTimeInfo]
  * @param {Function} deps.toSupplySeason
  * @param {Function} deps.toSupplyMonth
@@ -36,6 +38,7 @@ export function createGameRuntime({
   employment,
   gameplay,
   intelligence,
+  trade,
   getTimeInfo: getTimeInfoDep,
   toSupplySeason,
   toSupplyMonth,
@@ -58,6 +61,9 @@ export function createGameRuntime({
   }
   if (!intelligence) {
     throw new Error('createGameRuntime: intelligence context required');
+  }
+  if (!trade) {
+    throw new Error('createGameRuntime: trade context required');
   }
   if (typeof getSkillPriorities !== 'function') {
     throw new Error('createGameRuntime: getSkillPriorities required');
@@ -113,6 +119,10 @@ export function createGameRuntime({
     .register(
       'intelligence.monthlyNews',
       createIntelligenceMonthlyNewsSystem({ intelligence, getTimeInfo })
+    )
+    .register(
+      'commerce.monthlyCityTrade',
+      createCityTradeMonthlySystem({ trade, getTimeInfo })
     );
 
   return {
