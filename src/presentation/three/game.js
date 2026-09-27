@@ -1415,10 +1415,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
       if (toolChanged && isActivePlacementTool(toolId)) {
         const placingType = resolvePlacementBuildingId(toolId);
         showPlacementNeedsNotification(placingType);
-        // A producer whose goods have clients says who it serves first, and where the player changes it.
-        void supply.listClientPriorityBoards().then((boards) =>
-          showClientPriorityNotification(placingType, boards.find((board) => board.producerType === placingType))
-        );
+        // A producer whose goods have clients says where the player sets who it serves first, once placed.
+        showClientPriorityNotification(placingType);
       }
       if (isEditorTerrainTool(toolId)) {
         void getKenneyNatureTerrainAdapter().ensureTerrainTemplate(toolId);

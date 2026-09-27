@@ -12,7 +12,13 @@ export const SPEED_LEVELS_MS = Object.freeze([
   3000, // 6
   2000, // 7
   1000, // 8
-  500, // 9 — max
+  500, // 9
+  350, // 10
+  250, // 11
+  150, // 12
+  80, // 13 — max. GameLoop's in-flight guard skips a tick rather than piling
+  // up lag if a tick's own work outlasts the interval, so this ceiling is safe
+  // to raise further later — it degrades to "as fast as a tick actually runs", never backs up.
 ]);
 
 /** 1-based index into SPEED_LEVELS_MS */

@@ -1,9 +1,8 @@
 import { DexieSupplyBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyBuildingRepository.js';
-import { ListClientPriorityBoards } from '../contexts/supply/application/queries/ListClientPriorityBoards.js';
+import { GetClientPriorityBoardForBuilding } from '../contexts/supply/application/queries/GetClientPriorityBoardForBuilding.js';
 import { EmptyHubGoods } from '../contexts/supply/application/commands/surplus/EmptyHubGoods.js';
 import { MarkFailedSales } from '../contexts/supply/application/commands/surplus/MarkFailedSales.js';
 import { HubServing } from '../contexts/supply/application/services/HubServing.js';
-import { LocalStorageClientPriorityRepository } from '../contexts/supply/infrastructure/browser/LocalStorageClientPriorityRepository.js';
 import { TransferHubToHub } from '../contexts/supply/application/commands/procurement/TransferHubToHub.js';
 import { DistributeResourceToConsumers } from '../contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
 import { CollectResourceToHub } from '../contexts/supply/application/commands/surplus/CollectResourceToHub.js';
@@ -63,13 +62,11 @@ import {
  * @param {object} [deps]
  * @param {import('../contexts/supply/application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} [deps.supplyBuildingRepository]
  * @param {import('../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js').DexieSupplyTraceabilityRepository} [deps.supplyTraceabilityRepository]
- * @param {{ load: () => object, save: (priorities: object) => void }} [deps.clientPriorityRepository] The player's client priorities.
  * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createSupplyContext({
   supplyBuildingRepository,
   supplyTraceabilityRepository,
-  clientPriorityRepository,
   getTimeInfo: getTimeInfoDep,
 } = {}) {
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
@@ -87,11 +84,7 @@ export function createSupplyContext({
     supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
   const supplyTraceabilityRepositoryImpl =
     supplyTraceabilityRepository ?? new DexieSupplyTraceabilityRepository();
-  // The player's client priorities (saved settings); none saved means the catalog's defaults.
-  const clientPriorityRepositoryImpl = clientPriorityRepository ?? new LocalStorageClientPriorityRepository();
-  const hubServing = new HubServing(supplyBuildingRepositoryImpl, {
-    loadSettings: () => clientPriorityRepositoryImpl.load(),
-  });
+  const hubServing = new HubServing(supplyBuildingRepositoryImpl);
   const transferHubToHub = new TransferHubToHub(
     supplyBuildingRepositoryImpl,
     hubServing
@@ -212,9 +205,7 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl
   );
   const getHubStorageInfoView = new GetHubStorageInfoView();
-  const listClientPriorityBoardsQuery = new ListClientPriorityBoards(supplyBuildingRepositoryImpl, {
-    loadSettings: () => clientPriorityRepositoryImpl.load(),
-  });
+  const getClientPriorityBoardForBuildingQuery = new GetClientPriorityBoardForBuilding(supplyBuildingRepositoryImpl);
   const describeActivitySupplyAccessQuery = new DescribeActivitySupplyAccess(supplyBuildingRepositoryImpl);
 
   return {
@@ -271,20 +262,25 @@ export function createSupplyContext({
       return { initialized: true, hubId };
     },
 
-    /** The Clients tab: each producer type's clients, in the order it serves them. */
-    async listClientPriorityBoards() {
-      return listClientPriorityBoardsQuery.execute();
+    /** The Clients tab on one producer building: one board per good it produces, each its own candidate list and order. */
+    async getClientPriorityBoardForBuilding(buildingId) {
+      return getClientPriorityBoardForBuildingQuery.execute(buildingId);
     },
 
-    /** The player's order (and refusals) for one producer type; effective from the next tick. */
-    saveClientPriorities(producerType, { order, disabled }) {
-      clientPriorityRepositoryImpl.save({ ...clientPriorityRepositoryImpl.load(), [producerType]: { order, disabled } });
+    /** This instance's own order (and refusals) among ONE good's candidate clients; effective from the next tick. */
+    async saveClientPriorityForBuilding(buildingId, category, { order, disabled }) {
+      const producer = await supplyBuildingRepositoryImpl.findById(buildingId);
+      await supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, {
+        clientPriorityByGood: { ...(producer?.clientPriorityByGood ?? {}), [category]: { order, disabled } },
+      });
     },
 
-    /** Back to the catalog's default for one producer type. */
-    resetClientPriorities(producerType) {
-      const { [producerType]: _dropped, ...rest } = clientPriorityRepositoryImpl.load();
-      clientPriorityRepositoryImpl.save(rest);
+    /** Back to the default order for this instance, for that one good. */
+    async resetClientPriorityForBuilding(buildingId, category) {
+      const producer = await supplyBuildingRepositoryImpl.findById(buildingId);
+      const clientPriorityByGood = { ...(producer?.clientPriorityByGood ?? {}) };
+      delete clientPriorityByGood[category];
+      await supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, { clientPriorityByGood });
     },
 
     async runMonthlyResourceCycle({ season, month, timeInfo }) {
@@ -429,6 +425,11 @@ export function createSupplyContext({
     /** A merchant city-trade sale — records a merchant_sale traceability entry. */
     async recordMerchantSale(params) {
       return traceability.recordMerchantSale(params);
+    },
+
+    /** All merchant_sale traceability rows for a city partner, newest first. */
+    async getMerchantSalesForCity(cityId) {
+      return traceability.getMerchantSalesForCity(cityId);
     },
   };
 }

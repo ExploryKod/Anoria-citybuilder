@@ -8,6 +8,7 @@ import { createEmploymentRedistributeSystem } from '../contexts/employment/infra
 import { createRandomEventsSystem } from '../contexts/gameplay/infrastructure/runtime/randomEventsSystem.js';
 import { createIntelligenceMonthlyNewsSystem } from '../contexts/intelligence/infrastructure/runtime/intelligenceMonthlyNewsSystem.js';
 import { createCityTradeMonthlySystem } from '../contexts/geography/infrastructure/runtime/cityTradeMonthlySystem.js';
+import { createCityTradeRelationsSystem } from '../contexts/geography/infrastructure/runtime/cityTradeRelationsSystem.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { isLoseMode } from '../config/loseMode.js';
 import { recordDeaths } from './gameplayMortalityState.js';
@@ -119,6 +120,10 @@ export function createGameRuntime({
     .register(
       'intelligence.monthlyNews',
       createIntelligenceMonthlyNewsSystem({ intelligence, getTimeInfo })
+    )
+    .register(
+      'commerce.checkNewRelations',
+      createCityTradeRelationsSystem({ trade, getTimeInfo })
     )
     .register(
       'commerce.monthlyCityTrade',

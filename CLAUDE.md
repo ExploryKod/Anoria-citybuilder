@@ -23,3 +23,8 @@ is the one exception to "no silent fallbacks": it is visible and warned about, n
 
 Still hand-written on purpose: the tutorial and news narrative, generic role nouns ("Fermes"), the placeholder
 report, accounting labels.
+
+## Never commit automatically
+
+Never run `git commit`. Never mention committing or suggest the user commit.
+Just make the changes and stop.

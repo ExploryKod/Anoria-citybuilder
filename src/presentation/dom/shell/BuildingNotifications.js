@@ -3,6 +3,7 @@
  */
 
 import { getBuildingDefinition } from '../../../shared/building-catalog/buildingCatalog.js';
+import { listClientTypes, producedCategories } from '../../../shared/building-catalog/clientQueries.js';
 import {
   showErrorToast,
   showInfoToast,
@@ -164,16 +165,16 @@ export function describeActivitySupplyGap(gap) {
 }
 
 /**
- * Said when the player picks a producer whose goods have clients: who it serves first, and where to change it.
+ * Said when the player picks a producer whose goods have clients: where to set who it serves first, once placed.
+ * The order itself is a per-instance setting (which specific buildings exist to serve is only known once this
+ * one is on the map), so there is nothing to preview here — just where to find it.
  * @param {string} producerType The producer's catalog id.
- * @param {{ clients: Array<{ type: string, disabled: boolean }> } | undefined} board Its client priorities.
  */
-export function showClientPriorityNotification(producerType, board) {
+export function showClientPriorityNotification(producerType) {
   if (!hasPlacementNotice(producerType)) return;
-  const served = (board?.clients ?? []).filter((client) => !client.disabled);
-  if (served.length === 0) return;
+  if (listClientTypes(producedCategories(producerType)).length === 0) return;
   showInfoToast(
-    `${buildingName(producerType)} livre d'abord à : ${served.map((client) => buildingName(client.type)).join(' › ')}. Modifiable dans Admin › Clients.`,
+    `${buildingName(producerType)} : qui il livre en premier se règle depuis son propre panneau, une fois posé.`,
     { timeout: 7000 }
   );
 }

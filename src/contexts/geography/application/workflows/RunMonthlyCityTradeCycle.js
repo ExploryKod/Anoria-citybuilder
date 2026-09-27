@@ -36,33 +36,15 @@ export class RunMonthlyCityTradeCycle {
     if (relations.length === 0) return;
 
     const customsRate = this.getCustomsRate();
+    // Deal goods are only accepted by TradeWarehouse (regular Warehouse excludes them),
+    // so querying all hubs is safe: only TradeWarehouse buildings will hold these goods.
     const hubs = await this.supplyRepo.findByResourceRole('hub');
 
+    // Rhythm check: is this an order month?
     for (const relation of relations) {
       const entry = getTradeCatalogEntry(relation.cityId);
       if (!entry) continue;
 
-      // Contract expiry check
-      if (monthIndex >= relation.contractEndMonth) {
-        const renewed = relation.satisfactionScore >= entry.relation.renewalThreshold;
-        if (renewed) {
-          relation.contractEndMonth = monthIndex + entry.relation.durationMonths;
-          relation.satisfactionScore = Math.min(100, relation.satisfactionScore + 5);
-        } else {
-          relation.status = 'expired';
-          await this.repo.saveRelation(relation);
-          continue;
-        }
-      }
-
-      // Voluntary break before term
-      if (relation.satisfactionScore <= entry.relation.breakThreshold) {
-        relation.status = 'suspended';
-        await this.repo.saveRelation(relation);
-        continue;
-      }
-
-      // Rhythm check: is this an order month?
       const lastOrder = relation.lastOrderMonth ?? (monthIndex - entry.trade.frequencyMonths);
       if (monthIndex - lastOrder < entry.trade.frequencyMonths) continue;
 
@@ -86,14 +68,14 @@ export class RunMonthlyCityTradeCycle {
         await this.#deductFromHubs(hubs, dealGood, qty);
 
         const grossRevenue = qty * baseValue * relation.demandMultiplier;
-        const netRevenue = Math.round(grossRevenue * (1 - customsRate));
         const customsCollected = Math.round(grossRevenue * customsRate);
-        totalRevenue += netRevenue + customsCollected;
+        const netRevenue = Math.round(grossRevenue * (1 - customsRate));
+        totalRevenue += customsCollected;
 
         await this.recordIncome({
           turn,
-          amount: netRevenue + customsCollected,
-          description: `Export ${want.good} → ${relation.cityId} (${qty} unités, douane ${Math.round(customsRate * 100)}%)`,
+          amount: customsCollected,
+          description: `Douane export ${want.good} → ${relation.cityId} (${qty} unités × ${Math.round(customsRate * 100)}%)`,
           productId: want.good,
           partnerId: relation.cityId,
         });

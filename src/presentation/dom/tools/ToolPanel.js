@@ -16,7 +16,7 @@ import {
   attachBuildToolHoverPreview,
   hideBuildToolHoverPreview,
 } from './BuildToolHoverPreview.js';
-import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
+import { BUILDING_ASSETS, BUILDING_THEME_COLORS } from '../../three/assets/buildingAssets.js';
 import { NATURE_ASSETS } from '../../three/assets/natureAssets.js';
 import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
 import { getDirectToolForCategory } from '../../three/assets/buildingCategories.js';
@@ -60,17 +60,41 @@ function catalogButton(toolId) {
 }
 
 /**
- * Every id whose catalog `button.group` matches — the catalog is the ONLY
- * source of category membership for the real gameplay carousel: add/remove/
- * regroup an entry in the three asset catalogs and the panel updates on the
- * next dev-server reload, no other file to touch.
+ * Every id whose catalog `button.group` matches, clustered into thematic sub-groups: entries
+ * sharing a `button.theme` (e.g. every pottery workshop) land in the same inner array, in the
+ * order their theme first appears; an id with no theme is its own cluster of one. Declarative:
+ * add/remove/regroup an entry (or give it a `theme`) in the three asset catalogs and the panel
+ * updates on the next dev-server reload, no other file to touch.
+ *
+ * The carousel renders one cluster per slide — a tight inner gap within it, a larger outer gap
+ * between slides (see CompactToolbar.js's renderCarousel) — so a category with no themed entries
+ * at all (houses) still comes out as one cluster per button, same as before this existed.
+ * @param {string} group
+ * @returns {string[][]}
+ */
+function catalogClustersByGroup(group) {
+  const ids = Object.entries(ASSET_CATALOG)
+    .filter(([, entry]) => entry.button?.group === group)
+    .map(([id]) => id);
+  const order = [];
+  const buckets = new Map();
+  ids.forEach((id, index) => {
+    const key = ASSET_CATALOG[id]?.button?.theme ?? `__solo:${index}`;
+    if (!buckets.has(key)) {
+      buckets.set(key, []);
+      order.push(key);
+    }
+    buckets.get(key).push(id);
+  });
+  return order.map((key) => buckets.get(key));
+}
+
+/**
  * @param {string} group
  * @returns {string[]}
  */
 function catalogIdsByGroup(group) {
-  return Object.entries(ASSET_CATALOG)
-    .filter(([, entry]) => entry.button?.group === group)
-    .map(([id]) => id);
+  return catalogClustersByGroup(group).flat();
 }
 
 /** @type {{
@@ -97,8 +121,8 @@ const GROUP_CREATORS = {
   houses: () => fillPanelFromToolIds('houses'),
   residential: () => fillPanelFromToolIds('houses'),
   farms: () => fillPanelFromToolIds('farms'),
-  industry: () => fillPanelFromToolIds('industry'),
-  markets: () => fillPanelFromToolIds('markets'),
+  factories: () => fillPanelFromToolIds('factories'),
+  warehouses: () => fillPanelFromToolIds('warehouses'),
   // The road tool and its variants have their own pill (Routes): not listed again here.
   infrastructure: () => fillPanelFromToolIds('infrastructure', { exclude: listRoadTypes() }),
   public: () => fillPanelFromToolIds('public'),
@@ -307,11 +331,40 @@ export function getToolButtonInfosForCategory(categoryKey) {
   for (const toolId of ids) {
     if (seen.has(toolId)) continue;
     seen.add(toolId);
-    const catalog = catalogButton(toolId);
     infos.push({ text: toolLabel(toolId), tool: toolId, group: categoryKey, title: toolLabel(toolId) });
   }
 
   return infos;
+}
+
+/**
+ * Same button infos as getToolButtonInfosForCategory, but clustered exactly like
+ * catalogClustersByGroup — each inner array is one thematic sub-group to render together inside a
+ * single carousel slide. See CompactToolbar.js's renderCarousel for the double-flex layout this
+ * feeds (a small gap within a cluster, a larger one between clusters).
+ * @param {string} categoryKey
+ * @returns {Array<Array<{ text: string, tool: string, group: string, title?: string }>>}
+ */
+export function getToolButtonInfoClustersForCategory(categoryKey) {
+  if (categoryKey === 'tools' || getDirectToolForCategory(categoryKey)) {
+    return [getToolButtonInfosForCategory(categoryKey)];
+  }
+
+  const exclude = new Set(CATEGORY_EXCLUDES[categoryKey] || []);
+  const seen = new Set();
+  return catalogClustersByGroup(categoryKey)
+    .map((cluster) => cluster.filter((id) => {
+      if (exclude.has(id) || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    }))
+    .filter((cluster) => cluster.length > 0)
+    .map((cluster) => cluster.map((toolId) => ({
+      text: toolLabel(toolId),
+      tool: toolId,
+      group: categoryKey,
+      title: toolLabel(toolId),
+    })));
 }
 
 export { resolveIcon };
@@ -337,6 +390,15 @@ export function createToolButton(buttonInfo, icon = '', options = {}) {
 
   if (ASSET_CATALOG[buttonInfo.tool]?.button?.icon?.kind === 'png') {
     button.classList.add('panel-btn--kenney-preview');
+  }
+
+  // `[data-theme]` is what compact-toolbar.css keys its color rule on, so it is only ever set
+  // when the catalog actually gives that theme a color (BUILDING_THEME_COLORS) — a themed cluster
+  // with no color entry still gets its group-gap divider (see groupIdsByTheme), just no tinting.
+  const themeColor = BUILDING_THEME_COLORS[ASSET_CATALOG[buttonInfo.tool]?.button?.theme];
+  if (themeColor) {
+    button.dataset.theme = ASSET_CATALOG[buttonInfo.tool].button.theme;
+    button.style.setProperty('--theme-color', themeColor);
   }
 
   const isEmoji = typeof icon === 'string' && icon.length <= 4 && !icon.includes('<');

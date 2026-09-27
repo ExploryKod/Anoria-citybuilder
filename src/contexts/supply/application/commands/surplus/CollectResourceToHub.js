@@ -146,18 +146,16 @@ export class CollectResourceToHub {
     );
     await this.supplyBuildingRepository.saveStocks(hubId, finalStock);
 
-    // What came in is filed under the producer type that delivered it, so the hub can serve its clients
-    // in the order that producer type asks for.
+    // What came in is filed under the producer instance that delivered it, so the hub can serve its
+    // clients in the order that instance's own priority setting asks for.
     if (this.hubServing) {
-      const sourceTypes = new Map(sourceRefs.map((ref) => [resolveInstanceIdFromNeighborRef(ref), ref.type]));
       let stockAfter = {};
       for (const transfer of transfers) {
-        const producerType = sourceTypes.get(transfer.sourceId);
         stockAfter[transfer.category] = (stockAfter[transfer.category] ?? (hub.stocks[transfer.category] ?? 0)) + transfer.amount;
         await this.hubServing.deposit({
           hubId,
           category: transfer.category,
-          producerType,
+          producerId: transfer.sourceId,
           amount: transfer.amount,
           stockAfter: stockAfter[transfer.category],
         });

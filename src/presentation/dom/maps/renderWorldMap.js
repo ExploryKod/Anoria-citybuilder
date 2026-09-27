@@ -4,10 +4,14 @@ import {
   getWorldCityById,
 } from '../../../composition/worldCityCatalog.js';
 
+const RELATION_STATUS_LABEL = { active: 'Commerce actif', suspended: 'Suspendu', expired: 'Expiré' };
+const RELATION_STATUS_CLASS = { active: 'open', suspended: 'closed', expired: 'closed' };
+
 /**
  * @param {string} cityId
+ * @param {object|null} [tradeInfo]
  */
-function renderCityPanel(cityId) {
+function renderCityPanel(cityId, tradeInfo = null) {
   const city = getWorldCityById(cityId);
   if (!city) {
     return `
@@ -17,6 +21,7 @@ function renderCityPanel(cityId) {
   }
 
   const categoryLabel = WORLD_CITY_CATEGORY_LABELS[city.category] ?? '';
+  const tradeBlock = tradeInfo ? renderTradeBlock(tradeInfo) : '';
 
   return `
     <div class="trade-map-panel-inner" data-city-id="${city.id}">
@@ -27,7 +32,49 @@ function renderCityPanel(cityId) {
         ${categoryLabel ? `<span class="trade-map-panel-category">${categoryLabel}</span>` : ''}
       </div>
       ${city.description ? `<p class="trade-map-panel-desc">${city.description}</p>` : ''}
+      ${tradeBlock}
     </div>`;
+}
+
+/**
+ * @param {{ relation: object|null, entry: object|null, sales: object[] }} tradeInfo
+ */
+function renderTradeBlock({ relation, entry, sales }) {
+  if (!entry) return '';
+
+  const status = relation?.status ?? null;
+  const statusLabel = status ? (RELATION_STATUS_LABEL[status] ?? status) : 'Pas de relation';
+  const statusClass = status ? (RELATION_STATUS_CLASS[status] ?? 'closed') : 'closed';
+
+  const wantsLine = entry.wants
+    .map((w) => w.good)
+    .join(', ');
+
+  // Last-month sales summary — quick glance only; the full log lives in the exchange modal.
+  const lastMonthSales = sales.slice(0, entry.wants.length * 2);
+  const salesLines = lastMonthSales.length > 0
+    ? lastMonthSales.map((s) => {
+        const qty = s.quantity ?? 0;
+        const customs = s.customsCollected ?? 0;
+        return `<li>${s.good ?? s.foodType} — ${qty} unités · douane <strong>${customs} €</strong></li>`;
+      }).join('')
+    : '<li>Aucune vente récente</li>';
+
+  return `
+    <div class="trade-map-trade-block">
+      <div class="trade-map-trade-header">
+        <span class="trade-map-panel-route ${statusClass}">${statusLabel}</span>
+      </div>
+      ${status === 'active' ? `
+        <p class="trade-map-trade-wants">Demande : <strong>${wantsLine}</strong></p>
+        <p class="trade-map-trade-satisfaction">Satisfaction : <strong>${relation.satisfactionScore ?? 50}/100</strong></p>
+        <div class="trade-map-trade-recent">
+          <p class="trade-map-trade-recent-label">Dernières ventes :</p>
+          <ul class="trade-map-trade-sales-list">${salesLines}</ul>
+        </div>` : ''}
+      <button type="button" class="trade-map-exchanges-btn" data-action="open-city-exchange">Échanges</button>
+    </div>`
+;
 }
 
 /**
@@ -102,14 +149,15 @@ export function renderWorldHamletPanel(view, hamletId) {
 /**
  * @param {Awaited<ReturnType<import('../../../contexts/geography/application/queries/buildWorldMapView.js').buildWorldMapView>>} view
  * @param {{ cityId?: string | null, hamletId?: string | null }} selection
+ * @param {object|null} [tradeInfo]
  */
-export function renderWorldMapPanel(view, selection = {}) {
+export function renderWorldMapPanel(view, selection = {}, tradeInfo = null) {
   if (selection.hamletId) {
     return renderWorldHamletPanel(view, selection.hamletId);
   }
 
   const cityId = selection.cityId ?? 'anoria';
-  const cityPanel = renderCityPanel(cityId);
+  const cityPanel = renderCityPanel(cityId, tradeInfo);
 
   if (cityId !== 'anoria') {
     return cityPanel;

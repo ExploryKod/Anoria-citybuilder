@@ -1,0 +1,185 @@
+
+20/09
+when I open tool panel = need to already have access to placements commands (for now I need to close it). 
+road connexion to exterior for commerce
+road have pavements : we need more fine capacity to make people not crossing pavements
+
+subsistance forager work on 2 people - rather than that we would try to find a new gameplay. quality food. subsistance always.
+
+I place first : 
+9 savants houses
+2 commerçant houses
+4 artisans houses
+
+And : 
+1 chapel --> ok everyone become a masure next turn. People walk from chapel.
+99% at unemployed (so we pay their salaries ?). Money is -54619 (we will handle money later).
+
+could be good to have next to "masure" a number betw parenthesis for the level too (1, 2, 3 ...)
+I see checked in infobuilding modal the foi 
+market is on the left of foi but is the next service after foi needed so we need to put it on the right (order of services).
+everyone soon become famished (subsistance is not enough)
+---> 174 global pop and 144 are famished. It grow proportionnaly.
+We have only a global famish pool, not by social categories.
+We don't know how many places are left to welcome more people (as in caesar 3 we know)
+
+And :
+5 farms (artisans fill it)
+1 windmill (hub) (savant will fill it) --> windmill mesh is not on its own case, (légére décalage) ---> after farms have been sold, in 3 dec hub display 390 blé/1000
+hub infobuilding modal is too repetitive : 
+- we don't need to repeat that under the camembert (pizza graphic): 
+blé - x/y (max i%) - encore possible y-x etc.
+hub (windmill) display 0/4 worker but work as we are able to stock in it.  Why ? And we have savant that have access to chapel so why do they don't fill worker in hub ? 
+Good to know : we are in dec and no one have food anymore (no subsistance too), normal as market don't exist yet.
+But it may exist a rule that say : no worker that are famished so don't fill... may be it is too severe.
+We have 150 person with no food but 180 people at all so some work. What I am wondering : I chack and no artisan have stocks of food but farm have all worker while hub don't. Every hiuse have a no-food icon (I cannot easily find where there is famished/well fed people as this icon fire if one is fasmished)- a intensity icon where color of the sprite change until its show very intense famished (red very strong from green saying well fed... could be good). We indeed can change svg color. (as farm don't have the same svg color to say : jachère)
+
+And:
+place 1 market  (commerçants will fill it)
+market mesh placed itself next case where mouse want to place it...
+info building show 0/500 panier - all have been quickly distribute to all house. May be it would be better to distribute according to needs by row but also show in market how many needs have not been satisfied (or the surplus).
+
+Each house are well fed now (2 of june). But once I click on a house, info say : no food are in ressources (all at 0) but 2/12  for nourriture (global) : why such incoherent result ?
+It even say : 6 d'entre-nous sont affamé and we see indeed 90 person famished (globally) in the pop detail bar in game window.
+we still have 180 person globally in hamlet.
+now 4/4 in hub and market : worker are everywhere. We have 85% unemployement globally. 60% for artisan, 83% for commerçant and 98% for savant
+hub (windmill) is empty ---> in caesar 3 the hub will indicate the real food stocks we have but in our case we take all too soon and so too soon each market take it and distribute in one turn all and house consume fast too as we don't even see stocks in houses.... so difficult to follow our stocks
+
+situation remain the same until dec where farms sells new harvest.
+In 1 and 2 jan I check windmill : nothing have been stocks despite the sells farms just do.
+in caeasar 3 : we would see in the game a character that come from each farm and go to harvest to charge the goods. (same for all hubs). the visuel character show what happen, we cannot do that we need to open a modal to see which may not be the best for user t poo see what happen in game ... to note for later. We have sprite but hub show no sprite saying "I buy and stock farms good".
+order : accepter tout (default)
+3 jan:
+market have as well no stock visible on click on it
+But some house show 2 blé in it...and we now have 0 famished people. 180 are well fed.
+1 fruit and 1 gibier also.
+stade : masure 12/12 for all houses. I think all house show same values for food.
+
+jun : house change - 150 famished people again. House say : 4/12 nourriture in ressources (stocks are all at 0). I check on one artisan house but I think it is parallel in all.
+services still are : route, marché, foi checked.
+masure
+
+in july i add doctor and bibliothèque
+later house say : we have doctor service check
+but no evolution. We were in famish days (150 people / 180) all stay masure.
+
+but later iun dec on distribution turns (farm well and hub --> market ---> house) -as each time we don't have time too see stoks are filled. 
+we see house evolve in 3 dec 
+logis --> 13/18 hab with all pop fed (0 famished) and 14 blé as stock in one house (seems to be same for all) but not fruit or gibier. 20/12 nourriture so surplus. 
+But why 12 whereas we need for 13 people ?? (house have 13 poeple and can go up to 18 as it is now a logis house).
+
+In fev : savant and artisan house become masure again with 6/13 nourriture. Global number say 123 are famished. pop is 180 people.
+
+avril : 6/13 still in resources but 0 stocks and 150 famished globally.
+
+Note: scope are all infinity for simplicity here.
+
+we note 2 savants people that cannot fill bibliothèque but no where we know if it is because lack of population (not enough savant) or lack of available skills in population (no savant with skills to fill bibliothèque). We may improve that.
+
+----- globally
+
+Each house don't say what service it can fill and how many are working in this type of building : a new tab with that could be good for the user with opacity to say "no building existe in city" so cannot be filled and a number to see if this house fill or not the worker (each house could have a different number) so we now where people from this house really work. We need to have all possibilities at first because it can be used to know which building is filled by this social cat. so we can plan to build houses. 
+
+icone route : trop grosse pour ces kenney mesh
+
+------ Claude plan : 
+
+ I read gamenotes (it has no .txt extension), today's ledger journal-2026-09-20.json, and your five screenshots. I changed nothing. The causes below come from your data and notes, not from
+  reading the code, so each one needs checking before we build on it.
+
+  What the data says
+
+  1. Food is a yearly cycle, and it is the root cause of most of the problems.
+  - Every year the pattern is the same. Dec and Jan have 180 fed and 0 unfed. Feb is partial (81/99 or 90/90). From Mar to Nov it is 30 fed and 150 unfed.
+  - The harvest arrives once a year, and the hub, market and houses drain it in one to two months. That leaves about 9 months of famine.
+  - The constant 30 fed is 15 houses × 2 foragers each, which is the subsistence you described. It is the only steady food source.
+  - Population never passes 180 because 15 houses × 12 is the masure cap. Houses evolve to "logis" in Dec, then drop back to masure in Feb once the famine hits.
+
+  2. The global totals in the traceability panel are meaningless. 10629 / 7885 / 2744 is a sum of monthly snapshots. Each month adds about 180 people again, so it is neither a population nor
+  a distinct count. The per-year totals (e.g. 1089) have the same flaw. The monthly cards are the useful part.
+
+  3. The economy is dominated by unemployment benefit. Over the session:
+
+  ┌──────────────────────┬─────────┐
+  │     Ledger line      │ Amount  │
+  ├──────────────────────┼─────────┤
+  │ Unemployment benefit │ 514,570 │
+  ├──────────────────────┼─────────┤
+  │ Salaries             │ 74,000  │
+  ├──────────────────────┼─────────┤
+  │ Payroll tax          │ 67,437  │
+  ├──────────────────────┼─────────┤
+  │ Citizen tax          │ 17,850  │
+  └──────────────────────┴─────────┘
+
+  The balance goes from +174 around turn 100 to -509,004 at turn 396. About 140 of the 180 residents are unemployed and paid 70% of a salary.
+
+  4. Several numbers on screen contradict each other.
+  - The house panel shows "2/12 nourriture" while every stock is 0.
+  - It shows 12 for a house of 13 people.
+  - Your notes report 174 pop with 144 famished.
+
+  Proposals
+
+  A. Quick fixes (small, safe)
+  1. Remove the global "Vue Globale" block and the per-year totals from the traceability panel. Replace them with a peak / average population per year and the number of months fully fed.
+     Those numbers show the famine cycle directly.
+  2. Add the level next to the house name, e.g. "Masure (1)".
+  3. In the info panel, show one coherent food line (stock / need / days covered) and drop the ambiguous "x/12".
+  4. When a workplace isn't staffed, show why: "no residents of that skill" versus "not enough population".
+  5. Put the services in tier order in the toolbar (faith, then market).
+
+  B. Food flow (the main gameplay fix)
+  1. Run the supply-balance calculator we already planned. It should give farms needed per year and the reserve needed to bridge Dec to Nov. Right now the numbers can't work: 5 farms for 180
+     people leave 9 months uncovered.
+  2. Distribute by need, not all at once. Each market would release only what its houses need per month. The hub would then hold the real stock, as in Caesar 3 (your note on line 46). The
+     market would also show the unmet demand.
+  3. Give houses a real food buffer. At the moment they hold about 1 month, so the yearly harvest cannot be spread over the year.
+  4. Balance farm yield against storage capacity. The silo and market maxStock values (1000 and 500) should cover a year of demand for the population the city is meant to reach. This is
+     catalog-only.
+  5. Replace forager subsistence with the quality-food idea from your notes. Foraging would be a low-quality fallback. Better food (fruit, game, bread) would count for evolution and diet
+     variety.
+
+  C. Evolution stability
+  - Use hysteresis. A house would evolve as soon as the requirements are met, but devolve only after N consecutive months unfed. One bad month currently resets a whole tier, and the Dec/Feb
+    flip-flop shows it.
+  - Show how many places are left before the population cap, as in Caesar 3.
+  
+  D. Labor and money
+  - Look at why 85% are unemployed while the hub shows 0/4 workers yet still works. There is probably a bug in how the hub is staffed, or its "operational" status is wrong.
+  - Change the unemployment benefit early on. Options: none, 20 to 30%, or a rate that only applies above a threshold. Otherwise no scenario can ever balance. You said money comes later, so
+    I'd only flag it for now.
+  - Add a per-house-type tab showing which buildings its residents can staff and how many. Greyed-out entries would mean the building doesn't exist yet in the city. That covers your "global"
+    note and helps players plan where to build.
+
+  E. Later, on the presentation side
+  - A colour intensity on the no-food icon (green to red) per house.
+  - Visible harvest and delivery walkers between farm, hub and market.
+  - Roads with pavements and a road connection to the outside for commerce.
+  - Keep the tool panel open while placing buildings.
+
+  Suggested order
+
+  1. A1 and B1 first: the panel cleanup, plus the calculator so we know the real targets.
+  2. B2/B3/B4 for the food flow, then C.
+  3. D after that, since it depends on the food rebalance.
+
+  Which of these should I start on, and do you want the cleanup (A1) and the calculator (B1) done together?
+
+-----
+
+
+
+
+
+
+----- décors de statut par bâtiment (idée, plus tard)
+
+Chaque bâtiment qui a un état à montrer pourrait avoir un décor collé au mesh qui l'indique visuellement, en plus des
+sprites de statut. Exemple : une meule de foin (Kenney industrial building-i, l'ancienne "Hay-Pile") accolée au moulin
+quand il a des denrées en stock, plus ou moins fournie selon le remplissage.
+C'est une feature complète, pas un one-shot par bâtiment : déclarer dans le catalogue des meshs, par bâtiment, quels
+décors s'affichent à quel état (stock plein/vide, en production, en vacance...), avec position et échelle
+(comme `statusIcons` et `cycleGraphics`), et un mécanisme générique qui les montre / cache selon l'état lu dans Supply.
+Botte de foin, chariot de foin et meule de foin ont été retirés du jeu comme bâtiments à placer (v10 de la base).
+

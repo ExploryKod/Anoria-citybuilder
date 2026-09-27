@@ -1,0 +1,2567 @@
+{
+  "exportDate": "2026-09-26T15:03:02.187Z",
+  "config": {
+    "citySize": 12,
+    "daysPerMonth": 5,
+    "perCapitaDemand": 1,
+    "annualYieldPerProducer": 288,
+    "hubMaxStock": 2880,
+    "distributorMaxStock": 240
+  },
+  "omittedBuildingFields": [
+    "neighbors",
+    "id",
+    "anchorX",
+    "anchorY",
+    "name"
+  ],
+  "buildings": [
+    {
+      "instanceId": "2a3c6fa7-0836-4b15-92d9-96192b02b842",
+      "type": "Chapel",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 10,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 3,
+      "stage": 0,
+      "stageName": "",
+      "price": 60,
+      "cityFunds": -4306,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 4,
+      "y": 0,
+      "gridSize": 3,
+      "footprintWidth": 3,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 2,
+        "worker": 2,
+        "sector": 6,
+        "salary": 20
+      },
+      "hamletId": "eraanurbs",
+      "kind": "other",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          1
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "d674406e-188f-4f2f-88d6-a8453ca39667",
+      "type": "Windmill-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 2380,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 2380,
+        "goods": 0
+      },
+      "gameTurn": 23,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 50,
+      "cityFunds": -10443,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 7,
+      "y": 0,
+      "gridSize": 2,
+      "footprintWidth": 1,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 4,
+        "worker": 4,
+        "sector": 4,
+        "salary": 40
+      },
+      "hamletId": "eraanurbs",
+      "kind": "windmill",
+      "tier": null,
+      "footprintTiles": [
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          1
+        ]
+      ],
+      "markets": [],
+      "isCollecting": false,
+      "linkedDistributors": [
+        {
+          "distributorId": "3b14f2ed-af34-4fd0-b7a0-8f6bc1fcc970",
+          "x": 5,
+          "y": 3,
+          "allocatedStocks": {
+            "fruit": 0,
+            "game": 0,
+            "wheat": 2880,
+            "carrot": 0,
+            "cabbage": 0,
+            "plate": 0,
+            "pot": 0,
+            "amphora": 0,
+            "wood": 0,
+            "furniture": 0
+          }
+        }
+      ],
+      "lastCollection": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "food": 0
+      },
+      "carryOver": {
+        "year": 0,
+        "stocks": {
+          "wheat": 1764,
+          "carrot": 0,
+          "cabbage": 0
+        },
+        "harvested": {
+          "wheat": 1166,
+          "carrot": 0,
+          "cabbage": 0
+        }
+      },
+      "lastOutflow": {
+        "year": 1,
+        "monthIndex": 9,
+        "units": 50
+      },
+      "lastTransaction": {
+        "year": 0,
+        "monthIndex": 11
+      }
+    },
+    {
+      "instanceId": "c08881b3-4c64-4c61-a014-42e007d71b42",
+      "type": "Factory-Pot",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 68,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 55,
+      "cityFunds": -33336,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 8,
+      "y": 0,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 2,
+        "worker": 2,
+        "sector": 3,
+        "salary": 20
+      },
+      "hamletId": "eraanurbs",
+      "kind": "other",
+      "tier": null,
+      "footprintTiles": [
+        [
+          8,
+          0
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          0
+        ],
+        [
+          9,
+          1
+        ]
+      ],
+      "markets": [],
+      "cycleState": {
+        "pot": {
+          "index": 1,
+          "value": 2,
+          "opened": false
+        }
+      },
+      "salesToDistributor": [],
+      "salesToHub": [
+        {
+          "year": 1,
+          "productType": "pot",
+          "quantity": 50,
+          "count": 5,
+          "hubId": "a7a545c3-9019-4de5-9a4d-069a21b6073d",
+          "date": "2026-09-26T15:01:01.631Z"
+        }
+      ],
+      "collectedByHub": false
+    },
+    {
+      "type": "Tree-Chene",
+      "category": "nature",
+      "x": 1,
+      "y": 1,
+      "pop": 0,
+      "stocks": {
+        "wood": 120
+      },
+      "maxStocks": {
+        "wood": 120
+      },
+      "roads": 1,
+      "worldTime": 110,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "9f7f5ce4-b6ea-4122-bfe8-4c1966b62ea3",
+      "hamletId": "eraanurbs",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          1,
+          1
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "type": "Tree-Chene",
+      "category": "nature",
+      "x": 2,
+      "y": 1,
+      "pop": 0,
+      "stocks": {
+        "wood": 120
+      },
+      "maxStocks": {
+        "wood": 120
+      },
+      "roads": 1,
+      "worldTime": 110,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "625196f5-73fd-48b2-8360-c0da59247380",
+      "hamletId": "eraanurbs",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          1
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "instanceId": "b3df08a3-08ae-478a-a6c3-230c815b8984",
+      "type": "StonePath-Tee-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 11,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 400,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 0,
+      "y": 2,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          0,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "09a294c8-024e-4834-8751-fb5fd723cfec",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 1,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 500,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 1,
+      "y": 2,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          1,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "90e8a54d-6077-47bc-b917-d4121e8a9844",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 495,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 2,
+      "y": 2,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "a078efcf-0a54-41d8-afc9-ae588162b9e1",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 490,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 3,
+      "y": 2,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "b3922829-19e0-4f19-9287-3c2b5064dd11",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 450,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 4,
+      "y": 2,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "948db5b7-aee2-408c-9c8f-254ef111256c",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 475,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 5,
+      "y": 2,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          5,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "3f68fb4a-06ad-44ae-96cb-b3357aab1e2f",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 470,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 6,
+      "y": 2,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          6,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "b8e1437b-5b10-495e-bbe9-732540f4da35",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 465,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 7,
+      "y": 2,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          7,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "0738491c-6ffe-498d-b61b-221657a11069",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 460,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 8,
+      "y": 2,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          8,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "49bab655-1db0-4100-9687-83a8cb3e0e09",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 455,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 9,
+      "y": 2,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "de626d00-75f5-41c2-8e30-1b8f91e61dc7",
+      "type": "StonePath-Right-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 5,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 445,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 10,
+      "y": 2,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "a7a545c3-9019-4de5-9a4d-069a21b6073d",
+      "type": "Warehouse",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 180,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 180,
+        "goods": 180
+      },
+      "gameTurn": 66,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 3,
+      "stage": 0,
+      "stageName": "",
+      "price": 80,
+      "cityFunds": -33256,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 0,
+      "y": 3,
+      "gridSize": 3,
+      "footprintWidth": 3,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "other",
+      "tier": null,
+      "footprintTiles": [
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          3
+        ],
+        [
+          2,
+          4
+        ]
+      ],
+      "markets": [],
+      "isCollecting": true,
+      "lastCollection": {
+        "wood": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "goods": 0
+      },
+      "linkedDistributors": [],
+      "carryOver": {
+        "year": 1,
+        "stocks": {
+          "wood": 0,
+          "furniture": 0,
+          "plate": 0,
+          "pot": 130,
+          "amphora": 0
+        },
+        "harvested": {
+          "wood": 0,
+          "furniture": 0,
+          "plate": 0,
+          "pot": 50,
+          "amphora": 0
+        }
+      },
+      "lastTransaction": {
+        "year": 1,
+        "monthIndex": 9
+      }
+    },
+    {
+      "instanceId": "bf7809bf-fc72-4841-9f49-da7242c43a31",
+      "type": "Farm-Wheat",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 562,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 562,
+        "goods": 0
+      },
+      "gameTurn": 20,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "cityFunds": -10393,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 3,
+      "y": 3,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30
+      },
+      "hamletId": "eraanurbs",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          3
+        ]
+      ],
+      "markets": [],
+      "lastProductionYear": 1,
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false
+    },
+    {
+      "instanceId": "49825ac3-86c7-4bd7-8112-271deb40a85e",
+      "type": "Farm-Wheat",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 288,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 288,
+        "goods": 0
+      },
+      "gameTurn": 20,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "cityFunds": -10383,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 4,
+      "y": 3,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30
+      },
+      "hamletId": "eraanurbs",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          3
+        ]
+      ],
+      "markets": [],
+      "lastProductionYear": 1,
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false
+    },
+    {
+      "instanceId": "3b14f2ed-af34-4fd0-b7a0-8f6bc1fcc970",
+      "type": "Market-Stall-Red",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 48,
+      "time": 420,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "cityFunds": -23654,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 5,
+      "y": 3,
+      "gridSize": 2,
+      "footprintWidth": 1,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 2,
+        "worker": 2,
+        "sector": 2,
+        "salary": 20
+      },
+      "hamletId": "eraanurbs",
+      "kind": "market",
+      "tier": null,
+      "footprintTiles": [
+        [
+          5,
+          3
+        ],
+        [
+          5,
+          4
+        ]
+      ],
+      "markets": [],
+      "supplyHubId": "d674406e-188f-4f2f-88d6-a8453ca39667",
+      "distributorTooFar": false,
+      "noSourcesNearby": false,
+      "lastTransaction": {
+        "year": 1,
+        "monthIndex": 9
+      }
+    },
+    {
+      "instanceId": "f1c1e422-6164-439f-81f6-effd79f6d366",
+      "type": "House-Blue",
+      "category": "construction",
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 2,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 2,
+        "goods": 0
+      },
+      "gameTurn": 48,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "cityFunds": -57,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 6,
+      "y": 3,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 2,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "house",
+      "tier": 1,
+      "footprintTiles": [
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          7,
+          4
+        ]
+      ],
+      "markets": [],
+      "distributorTooFar": false,
+      "lastPopulationGrowthMonth": 8,
+      "lastSubsistenceMonth": 10,
+      "lastConsumptionMonth": 10,
+      "lastConsumption": {
+        "month": 10,
+        "demand": 12,
+        "taken": 12,
+        "totalUnfed": 0,
+        "categoriesTaken": [
+          "wheat",
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "wheat": 10,
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "servedFlags": {
+        "faith": 10
+      },
+      "level": 2,
+      "salesToDistributor": [],
+      "salesToHub": []
+    },
+    {
+      "instanceId": "364635de-c834-478b-8372-3fbdf4459fae",
+      "type": "House-Red",
+      "category": "construction",
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 2,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 2,
+        "goods": 0
+      },
+      "gameTurn": 40,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 3,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "cityFunds": 395,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 8,
+      "y": 3,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "house",
+      "tier": 2,
+      "footprintTiles": [
+        [
+          8,
+          3
+        ],
+        [
+          9,
+          3
+        ]
+      ],
+      "markets": [],
+      "distributorTooFar": false,
+      "lastPopulationGrowthMonth": 7,
+      "lastSubsistenceMonth": 10,
+      "lastConsumptionMonth": 10,
+      "lastConsumption": {
+        "month": 10,
+        "demand": 12,
+        "taken": 12,
+        "totalUnfed": 0,
+        "categoriesTaken": [
+          "wheat",
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "wheat": 10,
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "servedFlags": {
+        "faith": 10
+      },
+      "level": 2,
+      "salesToDistributor": [],
+      "salesToHub": []
+    },
+    {
+      "instanceId": "cdf40ac7-fb6f-478f-8ab9-d9898876d907",
+      "type": "StonePath-Tee-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 7,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 440,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 10,
+      "y": 3,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          3
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "cc1f88e8-de9e-4a71-91b6-eb4e4f779a88",
+      "type": "Farm-Wheat",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 576,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 576,
+        "goods": 0
+      },
+      "gameTurn": 21,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "cityFunds": -10403,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 3,
+      "y": 4,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30
+      },
+      "hamletId": "eraanurbs",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          4
+        ]
+      ],
+      "markets": [],
+      "lastProductionYear": 1,
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false
+    },
+    {
+      "instanceId": "b5807991-ac39-4fbe-827f-af1cdd5d772e",
+      "type": "Farm-Wheat",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 288,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 288,
+        "goods": 0
+      },
+      "gameTurn": 21,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "cityFunds": -10413,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 4,
+      "y": 4,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30
+      },
+      "hamletId": "eraanurbs",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          4
+        ]
+      ],
+      "markets": [],
+      "lastProductionYear": 1,
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false
+    },
+    {
+      "instanceId": "4f9e9a46-6038-4424-af47-ea877712c088",
+      "type": "House-Red",
+      "category": "construction",
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 2,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 2,
+        "goods": 0
+      },
+      "gameTurn": 41,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "cityFunds": 379,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 8,
+      "y": 4,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "house",
+      "tier": 2,
+      "footprintTiles": [
+        [
+          8,
+          4
+        ],
+        [
+          9,
+          4
+        ]
+      ],
+      "markets": [],
+      "distributorTooFar": false,
+      "lastPopulationGrowthMonth": 7,
+      "lastSubsistenceMonth": 10,
+      "lastConsumptionMonth": 10,
+      "lastConsumption": {
+        "month": 10,
+        "demand": 12,
+        "taken": 12,
+        "totalUnfed": 0,
+        "categoriesTaken": [
+          "wheat",
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "wheat": 10,
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "servedFlags": {
+        "faith": 10
+      },
+      "level": 2,
+      "salesToDistributor": [],
+      "salesToHub": []
+    },
+    {
+      "instanceId": "cf000ea5-2bbc-4287-9629-39740f82c552",
+      "type": "StonePath-Tee-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 7,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 435,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 10,
+      "y": 4,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          4
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "9e1ffcd8-ad2f-416c-8151-7175f335bcbd",
+      "type": "Farm-Wheat",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 288,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 288,
+        "goods": 0
+      },
+      "gameTurn": 21,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "cityFunds": -10433,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 3,
+      "y": 5,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30
+      },
+      "hamletId": "eraanurbs",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          5
+        ]
+      ],
+      "markets": [],
+      "lastProductionYear": 1,
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false
+    },
+    {
+      "instanceId": "58b9c272-618c-4cba-bd71-1f39d98d89f5",
+      "type": "Farm-Wheat",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 288,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 288,
+        "goods": 0
+      },
+      "gameTurn": 21,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "cityFunds": -10423,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 4,
+      "y": 5,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30
+      },
+      "hamletId": "eraanurbs",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          5
+        ]
+      ],
+      "markets": [],
+      "lastProductionYear": 1,
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false
+    },
+    {
+      "instanceId": "4ed2081d-0626-4e5a-9a2e-07a78f5c45ed",
+      "type": "House-Red",
+      "category": "construction",
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 2,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 2,
+        "goods": 0
+      },
+      "gameTurn": 42,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "cityFunds": 369,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 8,
+      "y": 5,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "house",
+      "tier": 2,
+      "footprintTiles": [
+        [
+          8,
+          5
+        ],
+        [
+          9,
+          5
+        ]
+      ],
+      "markets": [],
+      "distributorTooFar": false,
+      "lastPopulationGrowthMonth": 7,
+      "lastSubsistenceMonth": 10,
+      "lastConsumptionMonth": 10,
+      "lastConsumption": {
+        "month": 10,
+        "demand": 12,
+        "taken": 12,
+        "totalUnfed": 0,
+        "categoriesTaken": [
+          "wheat",
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "wheat": 10,
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "servedFlags": {
+        "faith": 10
+      },
+      "level": 2,
+      "salesToDistributor": [],
+      "salesToHub": []
+    },
+    {
+      "instanceId": "ed5fe549-e4fd-403a-b9cf-303087f6c48f",
+      "type": "StonePath-Tee-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 8,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 420,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 10,
+      "y": 5,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          5
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "type": "Tree-Sapin",
+      "category": "nature",
+      "x": 2,
+      "y": 6,
+      "pop": 0,
+      "stocks": {
+        "wood": 100
+      },
+      "maxStocks": {
+        "wood": 100
+      },
+      "roads": 0,
+      "worldTime": 110,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "7f28aacd-6f0c-456e-8a67-8bf4ff5032ba",
+      "hamletId": "eraanurbs",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          6
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "type": "Tree-Sapin",
+      "category": "nature",
+      "x": 4,
+      "y": 6,
+      "pop": 0,
+      "stocks": {
+        "wood": 100
+      },
+      "maxStocks": {
+        "wood": 100
+      },
+      "roads": 0,
+      "worldTime": 110,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "ea306147-3d66-4c46-ba81-356b790696ea",
+      "hamletId": "eraanurbs",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          6
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "instanceId": "d0d440da-aef3-41cc-9f34-2b3645e034db",
+      "type": "House-Purple",
+      "category": "construction",
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 2,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 2,
+        "goods": 0
+      },
+      "gameTurn": 46,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "cityFunds": -37,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 8,
+      "y": 6,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "house",
+      "tier": 3,
+      "footprintTiles": [
+        [
+          8,
+          6
+        ],
+        [
+          9,
+          6
+        ]
+      ],
+      "markets": [],
+      "distributorTooFar": false,
+      "lastPopulationGrowthMonth": 8,
+      "lastSubsistenceMonth": 10,
+      "lastConsumptionMonth": 10,
+      "lastConsumption": {
+        "month": 10,
+        "demand": 12,
+        "taken": 12,
+        "totalUnfed": 0,
+        "categoriesTaken": [
+          "wheat",
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "wheat": 10,
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "servedFlags": {
+        "faith": 10
+      },
+      "level": 2,
+      "salesToDistributor": [],
+      "salesToHub": []
+    },
+    {
+      "instanceId": "100c43ff-e2c7-47b6-83ef-fea08eb158e8",
+      "type": "StonePath-Tee-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 8,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 415,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 10,
+      "y": 6,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          6
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 1,
+      "y": 7,
+      "pop": 0,
+      "stocks": {
+        "rock": 120,
+        "gold": 35,
+        "iron": 66
+      },
+      "maxStocks": {
+        "rock": 120,
+        "gold": 35,
+        "iron": 66
+      },
+      "roads": 0,
+      "worldTime": 110,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "f02a07b9-edc1-42aa-bd46-8e084e41cd23",
+      "hamletId": "eraanurbs",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          1,
+          7
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "instanceId": "f8eb7f7f-0d90-42b9-acfb-d04d189183a5",
+      "type": "StonePath-Tee-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 8,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 410,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 10,
+      "y": 7,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          7
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "95db515d-12a3-448f-8646-7fd4f77d44c8",
+      "type": "StonePath-Tee-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "furniture": 0,
+        "food": 0,
+        "goods": 0
+      },
+      "gameTurn": 8,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "cityFunds": 405,
+      "maintenance": 0,
+      "worldTime": 110,
+      "x": 10,
+      "y": 8,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "eraanurbs",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          8
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 11,
+      "y": 8,
+      "pop": 0,
+      "stocks": {
+        "rock": 116,
+        "gold": 20,
+        "iron": 32
+      },
+      "maxStocks": {
+        "rock": 116,
+        "gold": 20,
+        "iron": 32
+      },
+      "roads": 1,
+      "worldTime": 110,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "82e9c450-b8d8-42b9-a9f2-a222c1ec044e",
+      "hamletId": "eraanurbs",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          11,
+          8
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 9,
+      "y": 9,
+      "pop": 0,
+      "stocks": {
+        "rock": 82,
+        "gold": 0,
+        "iron": 0
+      },
+      "maxStocks": {
+        "rock": 82,
+        "gold": 0,
+        "iron": 0
+      },
+      "roads": 0,
+      "worldTime": 110,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "6f032286-337c-47af-a3bd-6497063d516c",
+      "hamletId": "eraanurbs",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          9
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 10,
+      "y": 9,
+      "pop": 0,
+      "stocks": {
+        "rock": 91,
+        "gold": 32,
+        "iron": 39
+      },
+      "maxStocks": {
+        "rock": 91,
+        "gold": 32,
+        "iron": 39
+      },
+      "roads": 1,
+      "worldTime": 110,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "fdc0a05d-646b-49c2-814a-33f8111b2519",
+      "hamletId": "eraanurbs",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          9
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "type": "Tree-Arbuste",
+      "category": "nature",
+      "x": 3,
+      "y": 10,
+      "pop": 0,
+      "stocks": {
+        "wood": 80
+      },
+      "maxStocks": {
+        "wood": 80
+      },
+      "roads": 0,
+      "worldTime": 110,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "29913e6c-0a51-4725-9661-073da3e214db",
+      "hamletId": "eraanurbs",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          10
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "type": "Tree-Sapin",
+      "category": "nature",
+      "x": 9,
+      "y": 10,
+      "pop": 0,
+      "stocks": {
+        "wood": 100
+      },
+      "maxStocks": {
+        "wood": 100
+      },
+      "roads": 0,
+      "worldTime": 110,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "893d9db8-03eb-4375-809c-4d00407853af",
+      "hamletId": "eraanurbs",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          10
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "type": "Tree-Sapin",
+      "category": "nature",
+      "x": 9,
+      "y": 11,
+      "pop": 0,
+      "stocks": {
+        "wood": 100
+      },
+      "maxStocks": {
+        "wood": 100
+      },
+      "roads": 0,
+      "worldTime": 110,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "21eb2e02-6895-474f-8d4e-e23c11d36827",
+      "hamletId": "eraanurbs",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          11
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    }
+  ],
+  "employmentSummary": {
+    "workerPool": 60,
+    "totalPopulation": 60,
+    "civilServantCount": 5,
+    "laborPool": 55,
+    "activeCitizenCount": 28,
+    "activePopulationCount": 33,
+    "totalAssigned": 28,
+    "totalNeed": 28,
+    "unemployed": 27,
+    "unemploymentPercentage": 49,
+    "lack": 0,
+    "understaffedBuildingIds": [],
+    "bySector": {
+      "1": {
+        "workerNeed": 18,
+        "workers": 18,
+        "need": 0
+      },
+      "2": {
+        "workerNeed": 2,
+        "workers": 2,
+        "need": 0
+      },
+      "3": {
+        "workerNeed": 2,
+        "workers": 2,
+        "need": 0
+      },
+      "4": {
+        "workerNeed": 4,
+        "workers": 4,
+        "need": 0
+      },
+      "6": {
+        "workerNeed": 2,
+        "workers": 2,
+        "need": 0
+      }
+    },
+    "bySkill": {
+      "spiritual": {
+        "workerNeed": 2,
+        "workers": 2,
+        "need": 0
+      },
+      "vente-alimentaire": {
+        "workerNeed": 2,
+        "workers": 2,
+        "need": 0
+      },
+      "fermier": {
+        "workerNeed": 18,
+        "workers": 18,
+        "need": 0
+      },
+      "artisanat": {
+        "workerNeed": 2,
+        "workers": 2,
+        "need": 0
+      },
+      "stockage-alimentaire": {
+        "workerNeed": 4,
+        "workers": 4,
+        "need": 0
+      }
+    },
+    "byGroup": {
+      "artisans": {
+        "workerPool": 36,
+        "assigned": 24,
+        "unemployed": 12
+      },
+      "merchants": {
+        "workerPool": 12,
+        "assigned": 2,
+        "unemployed": 10
+      },
+      "scholars": {
+        "workerPool": 12,
+        "assigned": 2,
+        "unemployed": 10
+      }
+    }
+  },
+  "populationSummary": {
+    "totalPop": 60,
+    "houseCount": 5
+  },
+  "news": {
+    "incoming": [],
+    "archived": []
+  },
+  "unreadableSections": {}
+}

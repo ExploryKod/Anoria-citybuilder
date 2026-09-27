@@ -46,7 +46,8 @@ const SAVANT_ACTIVITY_GOODS = ['bandwidth', 'book'];
 const MERCHANT_ACTIVITY_GOODS = ['dealWood', 'dealDecoratedPot', 'dealBook'];
 const STORED_GOODS = [
   'wood', ...RETAIL_GOODS, ...LIGHT_GOODS, ...RAW_FARM_GOODS,
-  ...ARTISAN_ACTIVITY_GOODS, ...SAVANT_ACTIVITY_GOODS, ...MERCHANT_ACTIVITY_GOODS,
+  ...ARTISAN_ACTIVITY_GOODS, ...SAVANT_ACTIVITY_GOODS,
+  // MERCHANT_ACTIVITY_GOODS (deal goods) intentionally excluded: they go to TradeWarehouse only.
 ];
 /** An olive field's single annual harvest (olives): enough for two oil presses' year. */
 const OLIVE_ANNUAL_YIELD = 120;
@@ -623,10 +624,33 @@ export const BUILDING_ECONOMY = {
     }],
   },
 
-  // Goods warehouse (2026-09-23): the windmill's counterpart for everything that is not eaten. It
-  // collects the goods (raw or manufactured) of the producers within `range`, all year round, and holds
-  // them for whoever draws on a hub (a workshop's recipe). Same hub mechanism as the windmill; only the
-  // goods it accepts, its capacity, its range and its rhythm differ, and all of them are declared here.
+  // Trade warehouse (2026-09-27): a classic hub — same collector mechanism as the regular warehouse,
+  // just scoped to deal goods only. Merchant houses reach it exactly like they reach any other hub,
+  // through the normal producer→hub routing (now instance-priority aware, see ClientInstancePriority).
+  // Several may be placed; each collects and fills independently (a deliberate capacity limit).
+  'TradeWarehouse': {
+    displayName: 'Entrepôt commercial',
+    construction: { price: 120, category: 'industry' },
+    // Same manutention skill as the regular warehouse — deal goods still need handlers.
+    employment: { sector: 4, workerNeed: 4, requiredSkill: 'manutention' },
+    resourceRoles: [
+      {
+        role: 'collector',
+        categories: [...MERCHANT_ACTIVITY_GOODS],
+        totalKey: GOODS_TOTAL_KEY,
+        range: WAREHOUSE_RANGE,
+        schedule: { unit: 'always' },
+      },
+      {
+        role: 'hub',
+        categories: [...MERCHANT_ACTIVITY_GOODS],
+        totalKey: GOODS_TOTAL_KEY,
+        maxStock: WAREHOUSE_MAX_STOCK,
+        // No hubLink: nothing distributes deal goods onward to markets, so it takes no distributor link.
+      },
+    ],
+  },
+
   'Warehouse': {
     displayName: 'Entrepôt',
     construction: { price: 80, category: 'industry' },

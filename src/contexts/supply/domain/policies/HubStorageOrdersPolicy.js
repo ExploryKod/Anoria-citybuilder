@@ -38,11 +38,14 @@ export const HUB_STORAGE_PERCENT_MAX = 100;
  * }} HubStorageProductOrder
  */
 
+/** Default per-good ceiling: a share, not the whole warehouse, so one good filling first never starves the rest. */
+export const HUB_STORAGE_PERCENT_DEFAULT = 30;
+
 /** @returns {HubStorageProductOrder} */
 export function createDefaultHubProductOrder(_productCount = 1) {
   return {
     mode: 'accept',
-    maxPercent: HUB_STORAGE_PERCENT_MAX,
+    maxPercent: HUB_STORAGE_PERCENT_DEFAULT,
   };
 }
 

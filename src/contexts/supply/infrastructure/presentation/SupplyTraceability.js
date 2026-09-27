@@ -507,4 +507,9 @@ export class SupplyTraceability {
       deaths
     );
   }
+
+  /** All merchant_sale rows for a city partner, newest first. */
+  async getMerchantSalesForCity(cityId) {
+    return this.traceabilityRepository.getMerchantSalesForCity(cityId);
+  }
 }

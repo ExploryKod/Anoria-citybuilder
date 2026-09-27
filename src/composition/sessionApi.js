@@ -156,9 +156,9 @@ export function createSupplySessionApi(supply) {
       supply.updateHubStorageOrderMode(hubKind, buildingId, productId),
     adjustHubStorageOrderShare: (hubKind, buildingId, productId, delta) =>
       supply.adjustHubStorageOrderShare(hubKind, buildingId, productId, delta),
-    listClientPriorityBoards: () => supply.listClientPriorityBoards(),
-    saveClientPriorities: (producerType, value) => supply.saveClientPriorities(producerType, value),
-    resetClientPriorities: (producerType) => supply.resetClientPriorities(producerType),
+    getClientPriorityBoardForBuilding: (buildingId) => supply.getClientPriorityBoardForBuilding(buildingId),
+    saveClientPriorityForBuilding: (buildingId, category, value) => supply.saveClientPriorityForBuilding(buildingId, category, value),
+    resetClientPriorityForBuilding: (buildingId, category) => supply.resetClientPriorityForBuilding(buildingId, category),
     hasResourceRole: (buildingType, role, category) => hasResourceRole(buildingType, role, category),
     getPlacementRequirements: (buildingType) => getPlacementRequirements(buildingType),
   });

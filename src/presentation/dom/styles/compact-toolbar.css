@@ -250,6 +250,17 @@
   justify-content: center;
 }
 
+/* Double flex: the outer .splide__list already spaces slides apart with the larger,
+   between-clusters gap (Splide's own `gap` option — see CompactToolbar.js's initSplide). This is
+   the inner row for one cluster's own buttons (e.g. every pottery workshop together), a tighter
+   gap so they read as one group — see ToolPanel.js's catalogClustersByGroup /
+   getToolButtonInfoClustersForCategory for how a slide's contents are decided. */
+.mobile-build-bar__theme-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .mobile-build-bar__arrows {
   position: static;
 }
@@ -368,6 +379,38 @@
   pointer-events: none;
   display: block;
   filter: none;
+}
+
+/* Thematic group color (défaut / survol / sélectionné) — same mechanic as the house-tier colors,
+   generalized: this file names no theme and owns no color. --theme-color is set inline per button
+   by ToolPanel.js's createToolButton, straight from the catalog's BUILDING_THEME_COLORS
+   (buildingAssets.js) — a theme absent from that dict simply never sets the variable, and this
+   rule block never applies (the button keeps its plain default look).
+   Placed AFTER .panel-btn--kenney-preview on purpose: both have equal specificity, and a themed
+   raster-preview button (every Factory-*) must show its theme color, not the generic dark tile —
+   the later rule in the cascade wins that tie. */
+.mobile-build-bar .mobile-tool-btn[data-theme] {
+  background: #fafafa;
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--theme-color);
+  color: var(--theme-color);
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+@media (hover: hover) {
+  .mobile-build-bar .mobile-tool-btn[data-theme]:hover {
+    background: var(--theme-color);
+    border-color: var(--theme-color);
+    color: #fafafa;
+  }
+}
+
+.mobile-build-bar .mobile-tool-btn[data-theme].selected,
+.mobile-build-bar .mobile-tool-btn[data-theme]:active {
+  background: var(--theme-color);
+  border-color: var(--theme-color);
+  color: #fafafa;
 }
 
 .mobile-build-bar .mobile-tool-btn.selected {

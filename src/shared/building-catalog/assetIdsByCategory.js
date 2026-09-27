@@ -59,6 +59,7 @@ export const ASSET_IDS_BY_CATEGORY = Object.freeze({
     'Factory-Furniture',
     'Factory-Network',
     'Warehouse',
+    'TradeWarehouse',
   ]),
   markets: Object.freeze(['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red']),
   infrastructure: Object.freeze([

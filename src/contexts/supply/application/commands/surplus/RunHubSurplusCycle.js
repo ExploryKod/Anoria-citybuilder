@@ -110,8 +110,16 @@ export class RunHubSurplusCycle {
       const collectingNow = fresh.filter((hub) => collecting.some((candidate) => candidate.id === hub.id));
       const assigned = new Map(collecting.map((hub) => [hub.id, []]));
 
+      // One source or one hub failing must never take the rest of the round down with it — a
+      // throw here used to abort every remaining source/hub for this tick silently.
       for (const ref of pending) {
-        const destination = await this.#bestHubFor(ref, collectingNow, tried.get(ref.id), period);
+        let destination;
+        try {
+          destination = await this.#bestHubFor(ref, collectingNow, tried.get(ref.id), period);
+        } catch (error) {
+          console.error(`[RunHubSurplusCycle] #bestHubFor failed for source ${ref.id} (${ref.type}):`, error);
+          continue;
+        }
         if (!destination) continue;
         assigned.get(destination.id).push(ref);
         tried.set(ref.id, new Set([...(tried.get(ref.id) ?? []), destination.id]));
@@ -121,11 +129,15 @@ export class RunHubSurplusCycle {
       for (const hub of collecting) {
         const group = assigned.get(hub.id);
         if (round > 0 && group.length === 0) continue;
-        const outcome = await this.processHubCollection.execute({ hubId: hub.id, sourceRefs: group, month, year, period });
-        hubResults.push(outcome);
-        visited.push(hub.id);
-        if (outcome.collected && this.rebalanceHubDistributorAllocations) {
-          await this.rebalanceHubDistributorAllocations.execute({ hubId: hub.id });
+        try {
+          const outcome = await this.processHubCollection.execute({ hubId: hub.id, sourceRefs: group, month, year, period });
+          hubResults.push(outcome);
+          visited.push(hub.id);
+          if (outcome.collected && this.rebalanceHubDistributorAllocations) {
+            await this.rebalanceHubDistributorAllocations.execute({ hubId: hub.id });
+          }
+        } catch (error) {
+          console.error(`[RunHubSurplusCycle] Collection failed for hub ${hub.id} (${hub.type}):`, error);
         }
       }
 

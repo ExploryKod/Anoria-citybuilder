@@ -1,4 +1,5 @@
 import { TRADE_CATALOG } from '../../../../contexts/geography/domain/catalogs/TradeCatalog.js';
+import { getResourceBaseValue } from '../../../../contexts/supply/domain/catalogs/ResourceCategoryCatalog.js';
 
 const STATUS_LABEL = { active: 'Actif', suspended: 'Suspendu', expired: 'Expiré' };
 
@@ -67,8 +68,21 @@ export class CommerceSectionPresenter {
     const score = rel.satisfactionScore ?? 50;
     const fillClass = score >= 60 ? '' : score >= 30 ? ' medium' : ' low';
     const goodsWanted = entry?.wants?.map((w) => w.good).join(', ') ?? '—';
-    const mult = rel.demandMultiplier != null ? `×${rel.demandMultiplier.toFixed(2)}` : '—';
+    const mult = rel.demandMultiplier ?? 1;
     const lastOrder = rel.lastOrderMonth != null ? `mois ${rel.lastOrderMonth}` : 'jamais';
+    const customsRate = this.accounting.getCustomsRate();
+
+    const priceRows = (entry?.wants ?? [])
+      .filter((w) => w.merchantGood)
+      .map((w) => {
+        const base = getResourceBaseValue(w.good);
+        if (base == null) return '';
+        const salePrice = +(base * mult).toFixed(2);
+        const customs = +(salePrice * customsRate).toFixed(2);
+        const net = +(salePrice * (1 - customsRate)).toFixed(2);
+        return `<div class="commerce-relation-row">${w.good} : <strong>${salePrice} €/u</strong> → douane <strong>${customs} €</strong> · marchands <strong>${net} €</strong></div>`;
+      })
+      .join('');
 
     return `
       <div class="commerce-relation-card ${status !== 'active' ? status : ''}">
@@ -78,9 +92,8 @@ export class CommerceSectionPresenter {
         </div>
         <div class="commerce-relation-body">
           <div class="commerce-relation-row">Biens demandés : <strong>${goodsWanted}</strong></div>
-          <div class="commerce-relation-row">Multiplicateur de demande : <strong>${mult}</strong></div>
+          ${priceRows}
           <div class="commerce-relation-row">Dernier ordre : <strong>${lastOrder}</strong></div>
-          <div class="commerce-relation-row">Fin de contrat : <strong>mois ${rel.contractEndMonth ?? '—'}</strong></div>
           <div class="commerce-satisfaction-bar">
             <div class="commerce-satisfaction-track">
               <div class="commerce-satisfaction-fill${fillClass}" style="width:${score}%"></div>

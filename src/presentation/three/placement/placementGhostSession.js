@@ -8,7 +8,8 @@ const NON_PLACEABLE_TOOL_IDS = new Set([
   'show-range',
   'grass',
   'terrain',
-  'industry', // toolbar category id, not an asset
+  'factories', // toolbar category id, not an asset
+  'warehouses', // toolbar category id, not an asset
   'bilan',
   'loans',
   'compte-de-resultat',

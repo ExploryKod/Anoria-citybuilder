@@ -1,5 +1,7 @@
 import { DexieCityTradeRepository } from '../contexts/geography/infrastructure/dexie/DexieCityTradeRepository.js';
 import { RunMonthlyCityTradeCycle } from '../contexts/geography/application/workflows/RunMonthlyCityTradeCycle.js';
+import { TRADE_CATALOG, getTradeCatalogEntry } from '../contexts/geography/domain/catalogs/TradeCatalog.js';
+import { canOpenRelation } from '../contexts/geography/application/canOpenRelation.js';
 
 /**
  * Composition root — geography / trade bounded context.
@@ -23,14 +25,14 @@ export function createTradeContext({ supply, accounting }) {
   return {
     cityTradeRepository,
 
-    async openRelation(cityId, { demandMultiplier, startMonth, durationMonths }) {
+    async openRelation(cityId, { demandMultiplier, startMonth }) {
       await cityTradeRepository.saveRelation({
         cityId,
         status: 'active',
         demandMultiplier,
         satisfactionScore: 50,
         contractStartMonth: startMonth,
-        contractEndMonth: startMonth + durationMonths,
+        contractEndMonth: null,
         lastOrderMonth: null,
       });
     },
@@ -45,6 +47,43 @@ export function createTradeContext({ supply, accounting }) {
 
     async runMonthlyCityTradeCycle(timeInfo) {
       return runMonthlyCityTradeCycle.execute(timeInfo);
+    },
+
+    /**
+     * For each catalog city not yet in the DB, open the relation if
+     * canOpenRelation passes. Safe to call every month — skips existing rows.
+     * @param {{ monthIndex: number }} timeInfo
+     */
+    async checkAndOpenNewRelations({ monthIndex }) {
+      for (const entry of TRADE_CATALOG) {
+        const existing = await cityTradeRepository.getRelation(entry.cityId);
+        if (existing) continue;
+        const ok = await canOpenRelation(entry.cityId);
+        if (!ok) continue;
+        const mult = entry.wants[0]?.baseMultiplier ?? 1;
+        await cityTradeRepository.saveRelation({
+          cityId: entry.cityId,
+          status: 'active',
+          demandMultiplier: mult,
+          satisfactionScore: 50,
+          contractStartMonth: monthIndex,
+          contractEndMonth: null,
+          lastOrderMonth: null,
+        });
+      }
+    },
+
+    /**
+     * Trade summary for one city — relation state + all historical sales.
+     * @param {string} cityId
+     * @returns {Promise<{ relation: object|null, entry: object|null, sales: object[] }>}
+     */
+    async getCityTradeInfo(cityId) {
+      const [relation, sales] = await Promise.all([
+        cityTradeRepository.getRelation(cityId),
+        supply.getMerchantSalesForCity(cityId),
+      ]);
+      return { relation: relation ?? null, entry: getTradeCatalogEntry(cityId), sales };
     },
   };
 }

@@ -639,3 +639,59 @@
         max-width: var(--trade-map-stage-max);
     }
 }
+
+/* Commerce trade block in city panel */
+
+.trade-map-trade-block {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.18);
+    border-radius: 6px;
+    border: 1px solid var(--trade-map-border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.trade-map-trade-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trade-map-trade-wants,
+.trade-map-trade-satisfaction {
+    font-size: 13px;
+    color: var(--trade-map-muted);
+    margin: 0;
+}
+
+.trade-map-trade-wants strong,
+.trade-map-trade-satisfaction strong {
+    color: var(--trade-map-text);
+}
+
+.trade-map-trade-recent-label {
+    font-size: 12px;
+    color: var(--trade-map-muted);
+    margin: 0 0 4px;
+}
+
+.trade-map-trade-sales-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.trade-map-trade-sales-list li {
+    font-size: 12px;
+    color: var(--trade-map-muted);
+}
+
+.trade-map-trade-sales-list li strong {
+    color: var(--trade-map-success);
+}
+

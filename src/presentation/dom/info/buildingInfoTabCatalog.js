@@ -12,6 +12,7 @@ export const BUILDING_INFO_TAB_IDS = Object.freeze({
   trade: 'trade',
   staff: 'staff',
   services: 'services',
+  clients: 'clients',
   neighbors: 'neighbors',
   messages: 'messages',
 });
@@ -24,6 +25,7 @@ export const BUILDING_INFO_TAB_LABELS = Object.freeze({
   [BUILDING_INFO_TAB_IDS.trade]: '💰 Ventes',
   [BUILDING_INFO_TAB_IDS.staff]: '👷 Personnel',
   [BUILDING_INFO_TAB_IDS.services]: '🔧 Services',
+  [BUILDING_INFO_TAB_IDS.clients]: '🤝 Clients',
   [BUILDING_INFO_TAB_IDS.neighbors]: '🏘️ Voisins',
   [BUILDING_INFO_TAB_IDS.messages]: '💬 Messages',
 });
@@ -36,6 +38,7 @@ export const BUILDING_INFO_TAB_ORDER = Object.freeze([
   BUILDING_INFO_TAB_IDS.trade,
   BUILDING_INFO_TAB_IDS.staff,
   BUILDING_INFO_TAB_IDS.services,
+  BUILDING_INFO_TAB_IDS.clients,
   BUILDING_INFO_TAB_IDS.neighbors,
   BUILDING_INFO_TAB_IDS.messages,
 ]);

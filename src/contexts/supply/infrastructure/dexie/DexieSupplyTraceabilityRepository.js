@@ -201,6 +201,20 @@ export class DexieSupplyTraceabilityRepository {
     return byMonth;
   }
 
+  /**
+   * All merchant_sale rows for a given city partner, newest first.
+   * @param {string} cityId
+   */
+  async getMerchantSalesForCity(cityId) {
+    // addTransaction spreads `extra` onto the record itself (line ~52 above) — there is no nested
+    // `.extra` object to read back; the recorded fields (cityId, good, grossRevenue, ...) are
+    // top-level, same as turn/month/year/quantity/price.
+    const all = await this.db.supplyTraceability
+      .filter((t) => t.transactionType === 'merchant_sale' && t.cityId === cityId)
+      .toArray();
+    return all.sort((a, b) => b.turn - a.turn || b.month - a.month);
+  }
+
   async cleanupOldTransactions(maxAge = 60) {
     try {
       const cutoffDate = new Date();

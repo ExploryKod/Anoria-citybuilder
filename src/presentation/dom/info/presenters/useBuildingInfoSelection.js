@@ -115,7 +115,14 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
  * @param {import('../buildingInfoTypes.js').BuildingInfoViewModel} vm
  */
 async function renderGroupTabs(groupDef, vm) {
-  const tabs = groupDef.tabs ?? [];
+  const allTabs = groupDef.tabs ?? [];
+  // A tab whose handler opts in with `isVisible` (e.g. Clients: only a producer has clients of its
+  // own) is dropped from the tab strip itself when it says no — not shown selectable with nothing
+  // behind it. Every other, unopted-in tab is unaffected: default true, exactly today's behavior.
+  const tabs = allTabs.filter((tabSpec) => {
+    const handler = resolveBuildingInfoTabHandler(tabSpec);
+    return handler?.isVisible ? handler.isVisible(vm) : true;
+  });
   syncBuildingInfoTabs(tabs);
 
   for (const tabSpec of tabs) {
