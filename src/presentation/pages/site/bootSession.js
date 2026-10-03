@@ -34,11 +34,24 @@ export function getBootMode() {
 export function consumeBootMode() {
   const mode = getBootMode();
   sessionStorage.removeItem(BOOT_MODE_KEY);
+  freshGameIntent = mode !== null && mode !== 'load';
   return mode;
 }
 
 export function hasPendingBootMode() {
   return sessionStorage.getItem(BOOT_MODE_KEY) !== null;
+}
+
+/** @type {boolean} Set when the menu's intent was consumed: the game being booted is a new one. */
+let freshGameIntent = false;
+
+/**
+ * True only for the boot that follows a menu choice of a new game (new, tutorial, mission, editor).
+ * A plain reload or a return from the map keeps the save.
+ * @returns {boolean}
+ */
+export function isFreshGameIntent() {
+  return freshGameIntent;
 }
 
 export function clearBootMode() {

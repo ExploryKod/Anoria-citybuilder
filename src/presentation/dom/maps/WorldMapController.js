@@ -142,7 +142,7 @@ export class WorldMapController {
         if (!hamletId) return;
         const result = await this.mapApi.travelToHamlet(hamletId);
         if (result.success) {
-          window.location.href = '/game';
+          window.location.href = `/game/${hamletId}`;
         }
       }
     };

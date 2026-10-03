@@ -33,6 +33,18 @@ class SceneAssetManager {
         return this.#getSharedTerrainMaterials();
     }
 
+    /**
+     * Everything this pool keeps alive for the whole page: a hamlet's scene must never free these.
+     * Lazily created parts (terrain materials) are read at call time, so call it when disposing.
+     */
+    getSharedResources() {
+        const shared = [this.#geometry, ...this.#sharedSpriteMaterials.values(), ...Object.values(textures)];
+        if (this.#sharedTerrainMaterials) {
+            for (const material of Object.values(this.#sharedTerrainMaterials)) shared.push(material);
+        }
+        return shared;
+    }
+
     changeMeshColor(mesh, color) {
 
         if(!Object.hasOwn(mesh, 'isObject3D')) {

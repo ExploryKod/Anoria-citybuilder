@@ -1,4 +1,7 @@
-import { describe, expect, test } from '@jest/globals';
+import { beforeEach, describe, expect, test } from '@jest/globals';
+import 'fake-indexeddb/auto';
+import db from '../../../../src/core/persistence/dexie/db.js';
+import { H, setupHamlets } from '../../../helpers/hamletIds.js';
 import {
   NEIGHBOR_DECO_HAMLET_IDS,
   buildNeighborHamletDecoSpots,
@@ -7,8 +10,14 @@ import {
 import { PROTO_HAMLETS } from '../../../../src/core/persistence/hamlet/hamletSession.js';
 
 describe('neighborHamletDecoSpots', () => {
+  beforeEach(async () => {
+    await db.delete();
+    await db.open();
+    await setupHamlets();
+  });
+
   test('defines one fixed spot per non-starting proto hamlet', () => {
-    const expectedIds = PROTO_HAMLETS.filter((h) => h.id !== 'eraanurbs').map((h) => h.id);
+    const expectedIds = PROTO_HAMLETS.filter((h) => h.slug !== 'eraanurbs').map((h) => h.slug);
     expect(NEIGHBOR_DECO_HAMLET_IDS).toEqual(expectedIds);
     expect(buildNeighborHamletDecoSpots(16)).toHaveLength(expectedIds.length);
   });
@@ -32,7 +41,7 @@ describe('neighborHamletDecoSpots', () => {
   });
 
   test('isNeighborDecoHamletId excludes the starting hamlet', () => {
-    expect(isNeighborDecoHamletId('eraanurbs')).toBe(false);
-    expect(isNeighborDecoHamletId('clairiere')).toBe(true);
+    expect(isNeighborDecoHamletId(H.eraanurbs)).toBe(false);
+    expect(isNeighborDecoHamletId(H.clairiere)).toBe(true);
   });
 });

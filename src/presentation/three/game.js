@@ -30,11 +30,15 @@ import { refreshSupplyPlacementIndex } from '../../contexts/supply/infrastructur
 import { ensureGameRuntimeBootstrapped } from '../../composition/ensureGameRuntimeBootstrapped.js';
 import { bootGameContexts } from '../../composition/bootGameContexts.js';
 import { bootTreasuryHud } from '../../composition/bootTreasuryHud.js';
+import { awaitBudgetReady } from '../../composition/budgetReadyGate.js';
+import { isFreshGameIntent } from '../pages/site/bootSession.js';
 import { resolveSelectedCitySize } from '../../composition/resolveCitySize.js';
 import { hydrateCityTilesFromRows } from '../../contexts/construction/application/services/HydrateCityTilesFromBuildings.js';
 import {
   ensureHamletCatalog,
   getActiveHamletId,
+  listHamlets,
+  parseGameHamletPath,
   getHamlet,
   markHamletNatureSeeded,
   setActiveHamletId,
@@ -314,7 +318,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
     showPopulationDepartureNotification
   );
   gameUI.updateTimeDisplay(time);
-  bootTreasuryHud({ gameUI });
+  const freshGame = isFreshGameIntent();
+  bootTreasuryHud({
+    gameUI,
+    freshGame,
+    // Returning to a save resumes its day counter; only a new game starts at day 0.
+    onBudget: (budget) => {
+      if (!freshGame) time = Number.isFinite(budget.turn) ? budget.turn : 0;
+    },
+  });
 
   const {
     parcels,
@@ -395,7 +407,19 @@ export function createGame(gameStore, assetManager, citySize = null) {
   let hamletSceneGate = Promise.resolve();
 
   async function loadActiveHamletScene() {
-    await ensureHamletCatalog();
+    if (!getActiveHamletId()) {
+      await ensureHamletCatalog({ requestedId: parseGameHamletPath(window.location.pathname) });
+    }
+    const activeChip = document.getElementById('game-active-hamlet');
+    const activeHamlet = (await listHamlets()).find((h) => h.id === getActiveHamletId());
+    if (activeChip && activeHamlet) {
+      activeChip.textContent = activeHamlet.name;
+      activeChip.title = `Hameau actif : ${activeHamlet.name}`;
+      activeChip.hidden = false;
+    }
+    for (const link of document.querySelectorAll('a[href="/world"]')) {
+      link.href = `/world?hamlet=${getActiveHamletId()}`;
+    }
     const rows = await constructionApi.listAllBuildingRows();
     const mapLayoutId = getMissionMapLayoutId();
     let hydrateEditorLayout = false;
@@ -1458,6 +1482,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   gameLoop = new GameLoop({
     intervalMs: getTickIntervalMs(),
     onTick: async () => {
+      await awaitBudgetReady();
       if (isPause || isOver) {
         return;
       }

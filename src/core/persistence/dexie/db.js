@@ -138,6 +138,14 @@ db.version(13).stores({ supplyTraceability: '++id, turn, month, year, date, tran
 // v14: city trade relations — one row per partner city, keyed by cityId.
 db.version(14).stores({ cityRelations: 'cityId, status, contractEndMonth, lastOrderMonth' });
 
+// v15: hamlets are identified by a UUID allocated at creation (the slug is only the definition).
+// Development data only: the houses, hamlets and active-hamlet row from earlier versions are dropped.
+db.version(15).stores({ hamlets: 'id, slug' }).upgrade(async (tx) => {
+  await tx.table('houses').clear();
+  await tx.table('hamlets').clear();
+  await tx.table('game').where('name').equals('hamlet-session').delete();
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

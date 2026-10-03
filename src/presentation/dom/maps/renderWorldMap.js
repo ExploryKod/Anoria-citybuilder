@@ -119,7 +119,7 @@ export function renderWorldHamletPanel(view, hamletId) {
     statusText = 'Hameau actif';
     statusClass = 'open';
     actionHtml = `
-      <a href="/game" class="site-btn site-btn--primary site-btn--inline world-map-enter-btn" title="Entrer dans le hameau">
+      <a href="/game/${hamlet.id}" class="site-btn site-btn--primary site-btn--inline world-map-enter-btn" title="Entrer dans le hameau">
         Entrer
       </a>`;
   } else if (hamlet.access === HAMLET_ACCESS.unlocked) {
@@ -165,7 +165,7 @@ export function renderWorldMapPanel(view, selection = {}, tradeInfo = null) {
 
   return `
     ${cityPanel}
-    <a href="/game" class="site-btn site-btn--primary site-btn--inline world-map-enter-btn" title="Entrer dans le hameau actif">
+    <a href="/game/${view.activeHamletId}" class="site-btn site-btn--primary site-btn--inline world-map-enter-btn" title="Entrer dans le hameau actif">
       Entrer
     </a>`;
 }

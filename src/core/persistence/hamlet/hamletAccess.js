@@ -4,9 +4,10 @@
 
 import db from '../dexie/db.js';
 import {
-  DEFAULT_HAMLET_ID,
-  PROTO_HAMLETS,
   getActiveHamletId,
+  getDefaultHamletId,
+  hamletSlugOf,
+  listHamlets,
 } from './hamletSession.js';
 
 export const HAMLET_ACCESS = Object.freeze({
@@ -23,7 +24,7 @@ export const HAMLET_ACCESS_CHANGED_EVENT = 'anoria:hamlet-access-changed';
  */
 export async function isHamletUnlocked(hamletId) {
   if (!hamletId) return false;
-  if (hamletId === DEFAULT_HAMLET_ID) return true;
+  if (hamletId === getDefaultHamletId()) return true;
   const row = await db.hamlets.get(hamletId);
   return Boolean(row?.unlocked);
 }
@@ -51,21 +52,13 @@ export async function getHamletAccessState(hamletId) {
  * @returns {Promise<void>}
  */
 export async function unlockHamlet(hamletId) {
-  const proto = PROTO_HAMLETS.find((h) => h.id === hamletId);
-  if (!proto) return;
+  if (!hamletSlugOf(hamletId)) return;
 
   const row = await db.hamlets.get(hamletId);
-  const wasUnlocked = row ? Boolean(row.unlocked) : hamletId === DEFAULT_HAMLET_ID;
+  const wasUnlocked = row ? Boolean(row.unlocked) : hamletId === getDefaultHamletId();
 
-  if (row) {
+  if (row && !row.unlocked) {
     await db.hamlets.put({ ...row, unlocked: true });
-  } else {
-    await db.hamlets.put({
-      id: hamletId,
-      name: proto.name,
-      natureSeeded: false,
-      unlocked: true,
-    });
   }
 
   if (!wasUnlocked) {
@@ -90,9 +83,9 @@ export async function listUnlockedNeighborHamletIds() {
  */
 export async function unlockAllHamlets() {
   let count = 0;
-  for (const proto of PROTO_HAMLETS) {
-    const wasUnlocked = await isHamletUnlocked(proto.id);
-    await unlockHamlet(proto.id);
+  for (const hamlet of await listHamlets()) {
+    const wasUnlocked = await isHamletUnlocked(hamlet.id);
+    await unlockHamlet(hamlet.id);
     if (!wasUnlocked) count += 1;
   }
   dispatchHamletAccessChanged();
@@ -100,24 +93,20 @@ export async function unlockAllHamlets() {
 }
 
 /**
- * @returns {Promise<{ id: string, name: string, access: 'active' | 'unlocked' | 'locked', natureSeeded?: boolean }[]>}
+ * @returns {Promise<{ id: string, slug: string, name: string, access: 'active' | 'unlocked' | 'locked', natureSeeded?: boolean, isActive: boolean }[]>}
  */
 export async function listHamletsWithAccess() {
-  const rows = await db.hamlets.toArray();
   const activeId = getActiveHamletId();
-
+  const hamlets = await listHamlets();
   return Promise.all(
-    PROTO_HAMLETS.map(async (proto) => {
-      const row = rows.find((r) => r.id === proto.id);
-      const access = await getHamletAccessState(proto.id);
-      return {
-        id: proto.id,
-        name: row?.name || proto.name,
-        access,
-        natureSeeded: Boolean(row?.natureSeeded),
-        isActive: proto.id === activeId,
-      };
-    })
+    hamlets.map(async (hamlet) => ({
+      id: hamlet.id,
+      slug: hamlet.slug,
+      name: hamlet.name,
+      access: await getHamletAccessState(hamlet.id),
+      natureSeeded: hamlet.natureSeeded,
+      isActive: hamlet.id === activeId,
+    }))
   );
 }
 

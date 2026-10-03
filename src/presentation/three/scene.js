@@ -87,6 +87,7 @@ import {
 import { applyKenneyVerticalEdgeMountToObject } from '../../shared/editor-catalog/editorVerticalFaceMount.js';
 import { WORLD_PLATFORM_Y } from '../../shared/terrain-catalog/terrainWorldContract.js';
 import { EDITOR_SEA_TERRAIN_ID, isEditorSeaTerrain } from '../../shared/terrain-catalog/editorSeaTerrain.js';
+import { HamletResourceRegistry } from './hamlet/HamletResourceRegistry.js';
 
 /** Terminaux tactiles / petits écrans — GPU plus souvent limité (mémoire, contexte WebGL). */
 function isMobileDevice() {
@@ -131,6 +132,11 @@ export function createScene(_gameStore, assetManager, deps) {
       construction.ensureBuildingEmployeesSchema(id, type);
 
     const scene = new THREE.Scene();
+    // Everything the current hamlet's scene creates is tracked here, so changing hamlet frees it.
+    const hamletRegistry = new HamletResourceRegistry({
+        scene,
+        sharedResources: () => assetManager.getSharedResources(),
+    });
     try {
         scene.fog = usesEditorLikePresentation() ? null : createSceneFog({ editor: false });
     } catch (_) {}
@@ -203,6 +209,8 @@ export function createScene(_gameStore, assetManager, deps) {
     // Le backend (WebGPU ou WebGL2 de secours) n'est prêt qu'après cette
     // promesse : tout rendu avant résolution serait silencieusement ignoré.
     let rendererReady = renderer.init();
+    // Dev only: lets the console read GPU memory (renderer.info) when checking a hamlet switch.
+    if (import.meta.env.DEV) window.__renderer = renderer;
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
     if (runningOnMobile) {
         // Cap le pixel ratio sur mobile pour limiter la pression mémoire GPU
@@ -429,6 +437,8 @@ export function createScene(_gameStore, assetManager, deps) {
         const seedNature = options.seedNature === true;
         editorStackHydrationEnabled = usesEditorLikePresentation() || options.hydrateEditorLayout === true;
 
+        // Free the previous hamlet's GPU resources first: scene.clear() only detaches them.
+        hamletRegistry.disposeAll();
         scene.clear();
         zoneGroups.length = 0;
         zoneGroupsInitialized = false;
@@ -501,7 +511,7 @@ export function createScene(_gameStore, assetManager, deps) {
                         minX: (zoneX - terrainZonePadding) * ZONE_SIZE,
                         minY: (zoneY - terrainZonePadding) * ZONE_SIZE,
                     };
-                    scene.add(zoneGroup);
+                    scene.add(hamletRegistry.track(zoneGroup));
                     zoneGroups.push(zoneGroup);
                 }
             }
@@ -528,6 +538,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 }
                 const mesh = assetManager.createAsset(terrainId, x, y);
                 mesh.name = terrainId;
+                hamletRegistry.track(mesh);
                 
                 // OPTIMIZATION: Add to zone group (zone groups are in scene)
                 // This allows frustum culling to work properly
@@ -749,6 +760,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     ZONE_SIZE,
                     terrainZonePadding
                 );
+                hamletRegistry.track(nextMesh);
                 if (zoneGroups[zoneIndex]) {
                     zoneGroups[zoneIndex].add(nextMesh);
                 } else {
@@ -836,6 +848,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 );
                 const interactiveGroupRef =
                     scene.interactiveGroup || scene.getObjectByName('interactive-objects');
+                hamletRegistry.track(mesh);
                 if (zoneGroups[zoneIndex]) {
                     zoneGroups[zoneIndex].add(mesh);
                 } else if (interactiveGroupRef) {
@@ -1546,6 +1559,7 @@ export function createScene(_gameStore, assetManager, deps) {
             ZONE_SIZE,
             terrainZonePadding
         );
+        hamletRegistry.track(mesh);
         if (zoneGroups[zoneIndex]) {
             zoneGroups[zoneIndex].add(mesh);
             zoneGroups[zoneIndex].visible = true;

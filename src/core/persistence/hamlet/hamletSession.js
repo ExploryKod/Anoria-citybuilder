@@ -1,47 +1,74 @@
 /**
  * Active hamlet session — one 3D scene at a time.
- * Building rows in Dexie are scoped by `hamletId`.
+ * Building rows in Dexie are scoped by `hamletId`, which is the hamlet's UUID.
  *
- * `eraanurbs` remains the persistence id of the starting hamlet (saves / Dexie v3).
- * The on-screen name is a hamlet name, not the game title Eraanurbs.
+ * Every hamlet, the starting one included, has a UUID allocated when its row is created. The
+ * slug (`eraanurbs`, `clairiere`…) only names the hamlet's definition (name, map position): it
+ * is never an identifier in the data or in a URL. The game page is `/game/<uuid>`.
  *
- * Persistence: IndexedDB only (`game` row `hamlet-session`). RAM cache for sync reads.
+ * The active hamlet is the one in the URL: there is no persisted "last hamlet" to disagree with it.
  */
 
 import db from '../dexie/db.js';
 
-export const DEFAULT_HAMLET_ID = 'eraanurbs';
-
-/** Dexie `game` table row key for the active hamlet session. */
-export const HAMLET_SESSION_ROW_KEY = 'hamlet-session';
-
-/** @deprecated One-time migration from pre-Dexie-session storage. */
-const LEGACY_ACTIVE_HAMLET_STORAGE_KEY = 'anoria.activeHamletId';
+/** Slug of the starting hamlet (its definition in PROTO_HAMLETS). */
+export const DEFAULT_HAMLET_SLUG = 'eraanurbs';
 
 export const PROTO_HAMLETS = [
-  { id: 'eraanurbs', name: 'Val d’Era' },
-  { id: 'clairiere', name: 'Clairière' },
-  { id: 'pont-saules', name: 'Pont-aux-Saules' },
-  { id: 'bruyeres', name: 'Les Bruyères' },
-  { id: 'rochehaute', name: 'Rochehaute' },
-  { id: 'prevert', name: 'Prévert' },
-  { id: 'sourceclaire', name: 'Sourceclaire' },
-  { id: 'bois-joli', name: 'Bois-Joli' },
-  { id: 'marais-blanc', name: 'Marais-Blanc' },
-  { id: 'colline-rouge', name: 'Colline-Rouge' },
+  { slug: 'eraanurbs', name: 'Val d’Era' },
+  { slug: 'clairiere', name: 'Clairière' },
+  { slug: 'pont-saules', name: 'Pont-aux-Saules' },
+  { slug: 'bruyeres', name: 'Les Bruyères' },
+  { slug: 'rochehaute', name: 'Rochehaute' },
+  { slug: 'prevert', name: 'Prévert' },
+  { slug: 'sourceclaire', name: 'Sourceclaire' },
+  { slug: 'bois-joli', name: 'Bois-Joli' },
+  { slug: 'marais-blanc', name: 'Marais-Blanc' },
+  { slug: 'colline-rouge', name: 'Colline-Rouge' },
 ];
 
-/** @type {string} */
-let activeHamletId = DEFAULT_HAMLET_ID;
+/** @type {Map<string, { id: string, slug: string, name: string }>} uuid → hamlet, once ensured */
+const knownHamlets = new Map();
+
+/** @type {string | null} */
+let activeHamletId = null;
+
+/**
+ * The UUID of a `/game/<uuid>` path, or null for any other path (including bare `/game`).
+ * @param {string} pathname
+ * @returns {string | null}
+ */
+export function parseGameHamletPath(pathname) {
+  const match = /^\/game\/([0-9a-f-]{36})\/?$/i.exec(pathname ?? '');
+  return match ? match[1].toLowerCase() : null;
+}
 
 export function getActiveHamletId() {
   return activeHamletId;
 }
 
+/** @returns {string | null} The starting hamlet's UUID, once the catalog is ensured. */
+export function getDefaultHamletId() {
+  for (const hamlet of knownHamlets.values()) {
+    if (hamlet.slug === DEFAULT_HAMLET_SLUG) return hamlet.id;
+  }
+  return null;
+}
+
+/** @param {string} hamletId @returns {string | null} The definition slug of a hamlet. */
+export function hamletSlugOf(hamletId) {
+  return knownHamlets.get(hamletId)?.slug ?? null;
+}
+
+/** @param {string} hamletId */
+export function isKnownHamletId(hamletId) {
+  return knownHamlets.has(hamletId);
+}
+
 export function hamletIdOf(row) {
   return typeof row?.hamletId === 'string' && row.hamletId.length > 0
     ? row.hamletId
-    : DEFAULT_HAMLET_ID;
+    : getDefaultHamletId();
 }
 
 export function isActiveHamletRow(row) {
@@ -57,142 +84,78 @@ export function filterActiveHamletRows(rows) {
 }
 
 /**
+ * Switch the active hamlet in memory. Only a known hamlet can become active.
  * @param {string} hamletId
- * @returns {Promise<void>}
  */
-async function persistActiveHamletId(hamletId) {
-  await db.game.put({
-    name: HAMLET_SESSION_ROW_KEY,
-    activeHamletId: hamletId,
-  });
-}
-
-function isKnownHamletId(id) {
-  return typeof id === 'string' && PROTO_HAMLETS.some((h) => h.id === id);
-}
-
-/**
- * @returns {Promise<string | null>}
- */
-async function readPersistedActiveHamletId() {
-  const session = await db.game.get(HAMLET_SESSION_ROW_KEY);
-  return isKnownHamletId(session?.activeHamletId) ? session.activeHamletId : null;
-}
-
-/**
- * @returns {string | null}
- */
-function readLegacyActiveHamletIdFromLocalStorage() {
-  try {
-    const stored = localStorage.getItem(LEGACY_ACTIVE_HAMLET_STORAGE_KEY);
-    if (isKnownHamletId(stored)) {
-      return stored;
-    }
-  } catch {
-    /* ignore */
-  }
-  return null;
-}
-
-function clearLegacyActiveHamletIdFromLocalStorage() {
-  try {
-    localStorage.removeItem(LEGACY_ACTIVE_HAMLET_STORAGE_KEY);
-  } catch {
-    /* ignore */
-  }
-}
-
-/**
- * Load active hamlet from Dexie (migrates legacy localStorage once if needed).
- * @returns {Promise<void>}
- */
-async function restoreActiveHamletIdFromPersistence() {
-  let stored = await readPersistedActiveHamletId();
-  if (!stored) {
-    const legacy = readLegacyActiveHamletIdFromLocalStorage();
-    if (legacy) {
-      stored = legacy;
-      await persistActiveHamletId(legacy);
-      clearLegacyActiveHamletIdFromLocalStorage();
-    }
-  }
-  activeHamletId = stored ?? DEFAULT_HAMLET_ID;
-}
-
 export function setActiveHamletId(hamletId) {
-  if (!hamletId || typeof hamletId !== 'string') return;
-  if (!isKnownHamletId(hamletId)) return;
+  if (!hamletId || !knownHamlets.has(hamletId)) return;
   activeHamletId = hamletId;
-  void persistActiveHamletId(hamletId);
 }
 
 /**
- * Seed the proto hamlets and restore the last active id from IndexedDB.
- * @returns {Promise<void>}
+ * Create the hamlet rows that do not exist yet (one UUID each, allocated once), then pick the active
+ * hamlet: the requested one when it is known and unlocked, otherwise the starting hamlet.
+ * @param {{ requestedId?: string | null }} [options]
+ * @returns {Promise<string>} The active hamlet's UUID.
  */
-export async function ensureHamletCatalog() {
+export async function ensureHamletCatalog({ requestedId = null } = {}) {
+  const rows = await db.hamlets.toArray();
+
   for (const proto of PROTO_HAMLETS) {
-    const existing = await db.hamlets.get(proto.id);
+    const existing = rows.find((row) => row.slug === proto.slug);
     if (!existing) {
-      await db.hamlets.put({
-        id: proto.id,
+      const row = {
+        id: crypto.randomUUID(),
+        slug: proto.slug,
         name: proto.name,
         natureSeeded: false,
-        unlocked: proto.id === DEFAULT_HAMLET_ID,
-      });
-      continue;
-    }
-    const patch = { ...existing, name: proto.name };
-    if (existing.unlocked === undefined) {
-      patch.unlocked = existing.id === DEFAULT_HAMLET_ID;
-    }
-    if (patch.name !== existing.name || patch.unlocked !== existing.unlocked) {
-      await db.hamlets.put(patch);
+        unlocked: proto.slug === DEFAULT_HAMLET_SLUG,
+      };
+      await db.hamlets.put(row);
+      rows.push(row);
+    } else if (existing.name !== proto.name) {
+      existing.name = proto.name;
+      await db.hamlets.put(existing);
     }
   }
 
-  await restoreActiveHamletIdFromPersistence();
-
-  if (activeHamletId !== DEFAULT_HAMLET_ID) {
-    const activeRow = await db.hamlets.get(activeHamletId);
-    if (!activeRow?.unlocked) {
-      activeHamletId = DEFAULT_HAMLET_ID;
-      await persistActiveHamletId(DEFAULT_HAMLET_ID);
+  knownHamlets.clear();
+  for (const row of rows) {
+    if (PROTO_HAMLETS.some((proto) => proto.slug === row.slug)) {
+      knownHamlets.set(row.id, { id: row.id, slug: row.slug, name: row.name });
     }
-  } else if (!(await readPersistedActiveHamletId())) {
-    await persistActiveHamletId(DEFAULT_HAMLET_ID);
   }
+
+  const requested = requestedId ? rows.find((row) => row.id === requestedId) : null;
+  const usable = requested && (requested.unlocked || requested.slug === DEFAULT_HAMLET_SLUG);
+  activeHamletId = usable ? requested.id : getDefaultHamletId();
+  return activeHamletId;
 }
 
 /**
- * @returns {Promise<{ id: string, name: string, natureSeeded?: boolean, unlocked?: boolean }[]>}
+ * @returns {Promise<{ id: string, slug: string, name: string, natureSeeded: boolean, unlocked: boolean }[]>}
  */
 export async function listHamlets() {
   const rows = await db.hamlets.toArray();
-  return PROTO_HAMLETS.map((proto) => {
-    const row = rows.find((r) => r.id === proto.id);
-    return {
-      id: proto.id,
-      name: row?.name || proto.name,
-      natureSeeded: Boolean(row?.natureSeeded),
-      unlocked: row?.unlocked ?? proto.id === DEFAULT_HAMLET_ID,
-    };
-  });
+  return rows
+    .filter((row) => knownHamlets.has(row.id))
+    .map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      natureSeeded: Boolean(row.natureSeeded),
+      unlocked: Boolean(row.unlocked),
+    }));
 }
 
 /**
  * @param {string} hamletId
- * @returns {Promise<{ id: string, name: string, natureSeeded?: boolean } | null>}
+ * @returns {Promise<{ id: string, name: string, natureSeeded: boolean } | null>}
  */
 export async function getHamlet(hamletId) {
   const row = await db.hamlets.get(hamletId);
-  const proto = PROTO_HAMLETS.find((h) => h.id === hamletId);
-  if (!row && !proto) return null;
-  return {
-    id: hamletId,
-    name: row?.name || proto?.name || hamletId,
-    natureSeeded: Boolean(row?.natureSeeded),
-  };
+  if (!row) return null;
+  return { id: row.id, name: row.name, natureSeeded: Boolean(row.natureSeeded) };
 }
 
 /**
@@ -201,14 +164,6 @@ export async function getHamlet(hamletId) {
  */
 export async function markHamletNatureSeeded(hamletId) {
   const row = await db.hamlets.get(hamletId);
-  if (!row) {
-    const proto = PROTO_HAMLETS.find((h) => h.id === hamletId);
-    await db.hamlets.put({
-      id: hamletId,
-      name: proto?.name || hamletId,
-      natureSeeded: true,
-    });
-    return;
-  }
+  if (!row) return;
   await db.hamlets.put({ ...row, natureSeeded: true });
 }
