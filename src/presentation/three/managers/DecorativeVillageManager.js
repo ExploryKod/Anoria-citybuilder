@@ -20,6 +20,13 @@ export class DecorativeVillageManager {
   constructor(scene, assetManager) {
     this.scene = scene;
     this.assetManager = assetManager;
+    this.#village = null;
+  }
+
+  #village;
+
+  dispose() {
+    this.#removeExistingVillage();
   }
 
   /**
@@ -136,12 +143,14 @@ export class DecorativeVillageManager {
     });
 
     this.scene.add(villageGroup);
+    this.#village = villageGroup;
   }
 
   #removeExistingVillage() {
-    const existingVillage = this.scene.getObjectByName('decorative-village');
+    const existingVillage = this.#village;
     if (!existingVillage) return;
 
+    this.#village = null;
     this.scene.remove(existingVillage);
     existingVillage.traverse((child) => {
       if (child.geometry) child.geometry.dispose();

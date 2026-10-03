@@ -447,6 +447,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       && !hamlet?.natureSeeded
       && rows.length === 0;
     await scene.initialize(city, { seedNature, hydrateEditorLayout });
+    if (import.meta.env.DEV) Object.assign(window, { __scene: scene, __city: city });
     if (seedNature) {
       await markHamletNatureSeeded(getActiveHamletId());
     }
