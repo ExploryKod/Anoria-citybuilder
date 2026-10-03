@@ -37,6 +37,7 @@ import { hydrateCityTilesFromRows } from '../../contexts/construction/applicatio
 import {
   ensureHamletCatalog,
   getActiveHamletId,
+  listHamlets,
   parseGameHamletPath,
   getHamlet,
   markHamletNatureSeeded,
@@ -408,6 +409,13 @@ export function createGame(gameStore, assetManager, citySize = null) {
   async function loadActiveHamletScene() {
     if (!getActiveHamletId()) {
       await ensureHamletCatalog({ requestedId: parseGameHamletPath(window.location.pathname) });
+    }
+    const activeChip = document.getElementById('game-active-hamlet');
+    const activeHamlet = (await listHamlets()).find((h) => h.id === getActiveHamletId());
+    if (activeChip && activeHamlet) {
+      activeChip.textContent = activeHamlet.name;
+      activeChip.title = `Hameau actif : ${activeHamlet.name}`;
+      activeChip.hidden = false;
     }
     for (const link of document.querySelectorAll('a[href="/world"]')) {
       link.href = `/world?hamlet=${getActiveHamletId()}`;

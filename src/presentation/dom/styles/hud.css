@@ -83,6 +83,10 @@
   min-width: 0;
 }
 
+.hud-bar__row--exit {
+  gap: 8px;
+}
+
 .hud-bar__row--slot {
   min-height: 0;
 }
@@ -129,6 +133,26 @@
   width: 18px;
   height: 18px;
   stroke: currentColor;
+}
+
+.game-active-hamlet {
+  display: inline-flex;
+  align-items: center;
+  height: var(--hud-chip-height, 40px);
+  min-height: var(--hud-chip-height, 40px);
+  padding: 0 12px;
+  border-radius: var(--border-radius-small);
+  box-sizing: border-box;
+  background: var(--game-chrome-bg, rgba(247, 246, 244, 0.9));
+  box-shadow: var(--game-chrome-shadow);
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.game-active-hamlet[hidden] {
+  display: none;
 }
 
 .game-exit-home-btn:focus-visible {
