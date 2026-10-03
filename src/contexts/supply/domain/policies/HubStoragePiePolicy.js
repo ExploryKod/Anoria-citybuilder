@@ -42,20 +42,24 @@ export function toneVariant(hex, index) {
 }
 
 /**
- * What a good in the hub is made of, by who delivered it: one part per producer type (in key order), each with
- * its own tone of the good's colour, sized in degrees of the good's dark wedge.
- * @param {ReadonlyArray<[string, number]>} lots `[producerType, amount]`
- * @param {number} amount
+ * What a good in the hub is made of, by who delivered it: one part per producer INSTANCE (in lot-key
+ * order), each with its own tone of the good's colour, sized in degrees of the good's dark wedge.
+ * A lot key is a producer instance id (see HubLotsPolicy.js), never a catalog type — the caller
+ * resolves it to one (a type is all `buildingName` needs to say who it was) since this domain policy
+ * has no repository to do that lookup itself.
+ * @param {ReadonlyArray<[string, number]>} lots `[lotKey, amount]`
  * @param {number} startAngle
  * @param {number} capacity
  * @param {string} baseColor
+ * @param {(producerId: string) => string | null} resolveProducerType
  */
-function buildParts(lots, startAngle, capacity, baseColor) {
+function buildParts(lots, startAngle, capacity, baseColor, resolveProducerType) {
   let cursor = startAngle;
-  return lots.map(([producerType, lotAmount], index) => {
+  return lots.map(([lotKey, lotAmount], index) => {
     const angle = (lotAmount / capacity) * 360;
-    const { producerType: madeBy, via } = lotOrigin(producerType);
-    const part = Object.freeze({ producerType: madeBy, via, amount: lotAmount, startAngle: cursor, angle, color: toneVariant(baseColor, index) });
+    const { producerId, via } = lotOrigin(lotKey);
+    const producerType = producerId ? resolveProducerType(producerId) ?? '' : '';
+    const part = Object.freeze({ producerType, via, amount: lotAmount, startAngle: cursor, angle, color: toneVariant(baseColor, index) });
     cursor += angle;
     return part;
   });
@@ -74,8 +78,12 @@ function buildParts(lots, startAngle, capacity, baseColor) {
  * @param {object} params
  * @param {ReadonlyArray<object>} params.lines enriched with emoji/label
  * @param {number} params.totalCapacity
+ * @param {(producerId: string) => string | null} [params.resolveProducerType] Producer instance id →
+ *   catalog type, for the origin breakdown under each good (see buildParts). Omitted shows every
+ *   lot as "Origine inconnue" rather than guessing — the same visible-not-silent rule as everywhere
+ *   else a name is missing (CatalogVocabulary.js's "…").
  */
-export function buildHubStoragePieSegments({ lines, totalCapacity }) {
+export function buildHubStoragePieSegments({ lines, totalCapacity, resolveProducerType = () => null }) {
   const capacity = Math.max(1, Math.floor(Number(totalCapacity) || 0));
   let cursor = 0;
   /** @type {object[]} */
@@ -91,7 +99,7 @@ export function buildHubStoragePieSegments({ lines, totalCapacity }) {
     const colors = getHubStoragePieColors(line.productId);
     // Where this good came from: one part per producer type, told apart by tone.
     const lots = Object.entries(reconcileLots(line.lots, amount)).sort(([a], [b]) => a.localeCompare(b));
-    const parts = buildParts(lots, startAngle, capacity, colors.dark);
+    const parts = buildParts(lots, startAngle, capacity, colors.dark, resolveProducerType);
 
     segments.push(
       Object.freeze({

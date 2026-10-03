@@ -94,6 +94,9 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     computeReferenceSalaryPayrollBreakdown: (params) =>
       computeReferenceSalaryPayrollBreakdown(params),
 
+    getCustomsRate: () => accounting.getCustomsRate(),
+    setCustomsRate: (rate) => accounting.setCustomsRate(rate),
+
     getCommercialRouteFee: () => COMMERCIAL_ROUTE_FEE,
     recordCommercialRouteFee: (...args) => accounting.recordCommercialRouteFee(...args),
     settleContribution: (params) => accounting.settleContribution(params),

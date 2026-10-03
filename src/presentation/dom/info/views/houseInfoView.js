@@ -82,6 +82,7 @@ export function renderHouseResourcesView(container, model) {
  * @property {string} label
  * @property {ReadonlyArray<object>} materials
  * @property {object} product
+ * @property {object} collected When this good was last taken by a hub, and how much.
  * @property {ReadonlyArray<object>} steps
  * @property {ReadonlyArray<string>} gapMessages Structural gaps — why an input cannot even be reached or sourced.
  */
@@ -126,6 +127,7 @@ export function renderHouseActivityView(container, model) {
 
     appendMetricCardSection(block, 'Matières premières', recipe.materials);
     appendMetricCardSection(block, 'Produit fini', [recipe.product]);
+    appendMetricCardSection(block, 'Collecté', [recipe.collected]);
     appendMetricCardSection(block, 'Fabrication', recipe.steps);
 
     container.appendChild(block);

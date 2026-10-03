@@ -86,6 +86,20 @@ export async function renderClientPriorityTab(container, model, selectedCategory
 }
 
 /**
+ * A client is either a building instance (its display name is a catalog fact, `buildingName`) or an
+ * external trade city (its own `label`, already read from WorldCityCatalog at the composition root —
+ * see createSupplyContext.js's `listExternalClientsForCategory`). Never guess one from the other.
+ */
+function clientDisplayName(client) {
+  return client.label ?? buildingName(client.type);
+}
+
+/** A building client sits at a tile; a trade city has no position among this city's own buildings. */
+function clientPositionLabel(client) {
+  return client.label != null ? 'ville lointaine' : `${client.x}, ${client.y}`;
+}
+
+/**
  * @param {ClientPriorityViewModel} model
  * @param {{ category: string, isCustom: boolean, clients: Array<object> }} good
  * @param {(category?: string) => void} rerender
@@ -113,7 +127,10 @@ function renderGoodBoard(model, good, rerender) {
   }
 
   if (good.clients.length === 0) {
-    appendStatusMessage(section, 'Aucun client (marché ou atelier) à proximité pour ce bien.', 'neutral');
+    const message = good.hasEligibleClientTypes
+      ? 'Aucun client (marché ou atelier) à proximité pour ce bien.'
+      : 'Ce bien ne se vend pas à un marché ou un atelier : il part directement vers un entrepôt (voir Activité > Collecté).';
+    appendStatusMessage(section, message, 'neutral');
     return section;
   }
 
@@ -134,7 +151,7 @@ function renderGoodBoard(model, good, rerender) {
     input.max = String(good.clients.length);
     input.step = '1';
     input.value = String(index + 1);
-    input.setAttribute('aria-label', `Priorité ${buildingName(client.type)} (${client.x}, ${client.y})`);
+    input.setAttribute('aria-label', `Priorité ${clientDisplayName(client)} (${clientPositionLabel(client)})`);
     input.addEventListener('change', async () => {
       const wanted = Math.max(1, Math.min(good.clients.length, Math.round(Number(input.value)) || index + 1));
       const order = good.clients.map((c) => c.id).filter((id) => id !== client.id);
@@ -148,10 +165,10 @@ function renderGoodBoard(model, good, rerender) {
     rank.appendChild(input);
 
     const name = document.createElement('td');
-    name.textContent = buildingName(client.type);
+    name.textContent = clientDisplayName(client);
 
     const position = document.createElement('td');
-    position.textContent = `(${client.x}, ${client.y})`;
+    position.textContent = clientPositionLabel(client);
 
     const effect = document.createElement('td');
     effect.className = 'clients-effect';
@@ -164,7 +181,7 @@ function renderGoodBoard(model, good, rerender) {
     button.className = 'clients-toggle';
     button.textContent = client.disabled ? '↺' : '✕';
     button.title = client.disabled ? 'Servir de nouveau' : 'Ne plus servir';
-    button.setAttribute('aria-label', `${button.title} : ${buildingName(client.type)} (${client.x}, ${client.y})`);
+    button.setAttribute('aria-label', `${button.title} : ${clientDisplayName(client)} (${clientPositionLabel(client)})`);
     button.addEventListener('click', async () => {
       const disabled = client.disabled
         ? good.clients.filter((c) => c.disabled && c.id !== client.id).map((c) => c.id)

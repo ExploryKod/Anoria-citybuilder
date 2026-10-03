@@ -6,6 +6,12 @@ import { getResourceBaseValue } from '../../../../contexts/supply/domain/catalog
  * due, consume deal goods from warehouses, credit customs revenue to treasury,
  * and record a merchant_sale traceability entry.
  *
+ * A trade city is a client of the TradeWarehouse hub exactly like a market or workshop is a client
+ * of a goods warehouse: goods are taken through `hubServing` (id `city:<cityId>`), so a merchant
+ * instance's own saved client priority — same board, same engine as any building client — decides
+ * which city gets served first the day more than one wants the same deal good (see
+ * createSupplyContext.js's `listExternalClientsForCategory`, the one place this is wired in).
+ *
  * One instance per game session; injected with ports so the geography context
  * stays decoupled from supply and accounting internals.
  */
@@ -14,24 +20,44 @@ export class RunMonthlyCityTradeCycle {
    * @param {{
    *   cityTradeRepository: import('../../infrastructure/dexie/DexieCityTradeRepository.js').DexieCityTradeRepository,
    *   supplyBuildingRepository: { findByResourceRole: Function, saveStocks: Function },
+   *   hubServing: import('../../../supply/application/services/HubServing.js').HubServing,
+   *   takeHubStock: (hub: object, category: string, amount: number) => object,
    *   recordCommerceExportIncome: (params: { turn: number, amount: number, description: string, productId: string, partnerId: string }) => Promise<unknown>,
    *   recordMerchantSale: (params: object) => Promise<void>,
    *   getCustomsRate: () => number,
    * }} deps
    */
-  constructor({ cityTradeRepository, supplyBuildingRepository, recordCommerceExportIncome, recordMerchantSale, getCustomsRate }) {
+  constructor({ cityTradeRepository, supplyBuildingRepository, hubServing, takeHubStock, recordCommerceExportIncome, recordMerchantSale, getCustomsRate }) {
     this.repo = cityTradeRepository;
     this.supplyRepo = supplyBuildingRepository;
+    this.hubServing = hubServing;
+    // The hub's next stock object after taking `amount` of `category` — keeping the good AND the
+    // hub's shared total in step is a supply-domain fact (ResourceStock.js/ResourceRolePolicy.js);
+    // geography stays decoupled from it by taking it as a capability, like every other supply/
+    // accounting effect here, rather than importing across the bounded context.
+    this.takeHubStock = takeHubStock;
     this.recordIncome = recordCommerceExportIncome;
     this.recordMerchantSale = recordMerchantSale;
     this.getCustomsRate = getCustomsRate;
   }
 
   /**
-   * @param {{ turn: number, monthIndex: number, year: number }} timeInfo
+   * @param {{ turn: number, monthIndex: number, monthNumber: number, year: number }} timeInfo
    */
   async execute(timeInfo) {
-    const { turn, monthIndex, year } = timeInfo;
+    const { monthIndex, monthNumber, year } = timeInfo;
+    // TimeCalendar's timeInfo carries `days`, not `turn` (RunMonthlyResourceCycle reads it the same way);
+    // an undefined turn made recordClientDemand throw AFTER the stock was already taken.
+    const turn = timeInfo.turn ?? timeInfo.days ?? 0;
+    // The rhythm below needs a month count that only ever goes up. `monthIndex` is the calendar
+    // month WITHIN the current year (0-11, wraps every 12) — using it here made a relation whose
+    // `lastOrderMonth` fell late in a year (e.g. 10, November) get stuck forever the moment the
+    // year rolled over: `monthIndex - lastOrder` goes negative and can never reach `frequencyMonths`
+    // again within a 0-11 range, so it never orders again (a real city sat at "Commerce actif" with
+    // a stuck score, `RunMonthlyCityTradeCycle` silently never revisiting it — no error, just no
+    // trade). `monthNumber` (TimeCalendar.js) is the same clock's ever-increasing absolute month
+    // count and does not have this wraparound.
+    const orderMonth = Number.isFinite(monthNumber) ? monthNumber : monthIndex;
     const relations = await this.repo.getActiveRelations();
     if (relations.length === 0) return;
 
@@ -45,11 +71,13 @@ export class RunMonthlyCityTradeCycle {
       const entry = getTradeCatalogEntry(relation.cityId);
       if (!entry) continue;
 
-      const lastOrder = relation.lastOrderMonth ?? (monthIndex - entry.trade.frequencyMonths);
-      if (monthIndex - lastOrder < entry.trade.frequencyMonths) continue;
+      const lastOrder = relation.lastOrderMonth ?? (orderMonth - entry.trade.frequencyMonths);
+      if (orderMonth - lastOrder < entry.trade.frequencyMonths) continue;
 
       let totalRevenue = 0;
       let anySold = false;
+
+      const client = `city:${relation.cityId}`;
 
       for (const want of entry.wants) {
         const dealGood = want.merchantGood;
@@ -58,14 +86,8 @@ export class RunMonthlyCityTradeCycle {
         const baseValue = getResourceBaseValue(want.good);
         if (baseValue == null) continue;
 
-        const available = this.#sumHubStock(hubs, dealGood);
-        if (available <= 0) continue;
-
-        const qty = Math.min(available, entry.trade.quantityPerOrder);
+        const qty = await this.#takeFromHubsForClient(hubs, dealGood, client, entry.trade.quantityPerOrder, turn);
         if (qty <= 0) continue;
-
-        // Deduct from hubs (oldest stock first, proportional across hubs)
-        await this.#deductFromHubs(hubs, dealGood, qty);
 
         const grossRevenue = qty * baseValue * relation.demandMultiplier;
         const customsCollected = Math.round(grossRevenue * customsRate);
@@ -103,29 +125,56 @@ export class RunMonthlyCityTradeCycle {
         relation.satisfactionScore + (anySold ? 2 : -5)
       ));
       relation.demandMultiplier = entry.wants[0]?.baseMultiplier ?? 1;
-      relation.lastOrderMonth = monthIndex;
+      relation.lastOrderMonth = orderMonth;
       await this.repo.saveRelation(relation);
     }
   }
 
-  /** Sum a deal good across all hub stocks. */
-  #sumHubStock(hubs, good) {
-    return hubs.reduce((sum, hub) => sum + Math.max(0, Number(hub.stocks?.[good]) || 0), 0);
-  }
-
-  /** Deduct `qty` units of `good` from hubs, largest stock first. */
-  async #deductFromHubs(hubs, good, qty) {
-    const sorted = [...hubs].sort((a, b) => (b.stocks?.[good] ?? 0) - (a.stocks?.[good] ?? 0));
+  /**
+   * Take up to `qty` units of `good` for `client` (a city, `city:<cityId>`) across every hub that
+   * might hold it, through `hubServing` so a merchant instance's own client-priority setting for
+   * this good — the same one that ranks a market or workshop — is respected: a hub whose lots the
+   * merchant ranked this city above (or below) another client behaves exactly the same way here.
+   *
+   * Two things this must NOT do, both real bugs the first version had:
+   *  - assign onto the hub snapshot's own `.stocks` — `findByResourceRole` returns `Object.freeze`d
+   *    rows (SupplyBuildingSnapshot.js), so `hub.stocks = x` throws ("Cannot assign to read only
+   *    property") the moment a sale is actually possible — which it never was until the collection
+   *    and rhythm bugs above were fixed, so this was latent since the file was written, not new.
+   *    Because it throws AFTER `saveStocks` already persisted the deduction, the goods really did
+   *    leave the hub — no error surfaced to the player, just a sale that never got recorded, forever.
+   *  - replace `.stocks` wholesale — a hub's `goods` field is a shared total across every deal good
+   *    it stores (see buildingEconomy.js's TradeWarehouse); only touching the one category being
+   *    sold, the way the first version did, leaves that total permanently too high, which eventually
+   *    makes `CollectResourceToHub`'s capacity check see the hub as full forever and silently stop
+   *    all further collection — `takeCategoryAmount` (the same helper CollectResourceToHub already
+   *    uses) keeps the category and the total in step instead.
+   * @returns {Promise<number>} Units actually taken (may be less than `qty` if none is available or
+   *   a higher-ranked client is still owed some).
+   */
+  async #takeFromHubsForClient(hubs, good, client, qty, turn) {
     let remaining = qty;
-    for (const hub of sorted) {
+    for (let index = 0; index < hubs.length; index += 1) {
       if (remaining <= 0) break;
-      const available = Math.max(0, Number(hub.stocks?.[good]) || 0);
-      if (available <= 0) continue;
-      const taken = Math.min(available, remaining);
-      const newStock = { ...hub.stocks, [good]: available - taken };
-      await this.supplyRepo.saveStocks(hub.id, newStock);
-      hub.stocks = newStock;
-      remaining -= taken;
+      const hub = hubs[index];
+      const available = await this.hubServing.availableTo(hub, good, client, turn);
+      const want = Math.min(available, remaining);
+      if (want <= 0) continue;
+
+      const takes = await this.hubServing.take({ hubId: hub.id, category: good, client, amount: want, turn });
+      const takenHere = takes.reduce((sum, take) => sum + take.amount, 0);
+      if (takenHere <= 0) continue;
+
+      const nextStock = this.takeHubStock(hub, good, takenHere);
+      await this.supplyRepo.saveStocks(hub.id, nextStock);
+      // Not a mutation of the frozen snapshot: a fresh object replacing this hub's slot, so a
+      // later want/relation in this same pass (or a future second city wanting the same good)
+      // sees the stock this take just left, not the stale figure the tick started with.
+      hubs[index] = { ...hub, stocks: nextStock };
+      await this.hubServing.recordDemand({ hubId: hub.id, category: good, client, turn, wanted: want, served: takenHere });
+
+      remaining -= takenHere;
     }
+    return qty - remaining;
   }
 }

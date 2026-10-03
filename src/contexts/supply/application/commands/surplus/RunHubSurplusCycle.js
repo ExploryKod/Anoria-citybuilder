@@ -156,16 +156,22 @@ export class RunHubSurplusCycle {
     return { ranCollection: true, hubs: hubResults };
   }
 
-  /** The good a producer sells to these hubs: the first of its own that one of them collects. */
+  /**
+   * The good a producer actually has to sell to these hubs: the first of its own, WITH STOCK,
+   * that one of them collects — not just the first declared. A house merges several 'producer'
+   * entries into one resourceRoles array, and more than one can sell to the SAME hub (a merchant's
+   * dealWood/dealDecoratedPot/dealBook all go to TradeWarehouse); picking whichever came first
+   * regardless of stock used to make `#bestHubFor` give up on a source the moment ITS first-declared
+   * good (e.g. dealWood, with no wood chain built) was empty, even with 490 dealDecoratedPot sitting
+   * right there — the source was dropped before CollectResourceToHub ever saw it.
+   */
   #collectedCategory(source, hubs) {
     if (!source) return null;
-    // A house merges several 'producer' entries (household gathering, its own activity
-    // recipes) into one resourceRoles array — getCategoriesForRole's 2-arg form resolves
-    // to just the FIRST one, so every entry's categories are read directly here instead.
     const produced = getResourceRoles(source.type)
       .filter((entry) => entry.role === 'producer')
       .flatMap((entry) => entry.categories);
     return produced.find((category) =>
+      (source.stocks?.[category] ?? 0) > 0 &&
       hubs.some((hub) => getCategoriesForRole(hub.type, 'collector').includes(category))
     ) ?? null;
   }

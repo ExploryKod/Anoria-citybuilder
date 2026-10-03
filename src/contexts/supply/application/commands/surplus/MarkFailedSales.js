@@ -35,12 +35,15 @@ export class MarkFailedSales {
     let failed = 0;
 
     for (const producer of producers) {
-      const entry = getResourceRoles(producer.type).find(
+      const entries = getResourceRoles(producer.type).filter(
         (candidate) => candidate.role === 'producer' && candidate.sale && candidate.categories.some((c) => collected.includes(c))
       );
-      if (!entry) continue;
+      if (entries.length === 0) continue;
 
-      if (matchesSchedule(entry.sale.schedule, period)) {
+      // Every activity-recipe entry on a building shares the same twoMonthCycle sale window
+      // today, so any one of them says whether the window is open — only WHICH good stayed
+      // unsold, below, must look at all of them, not just the first.
+      if (matchesSchedule(entries[0].sale.schedule, period)) {
         if (producer.saleWindowOpen !== true) {
           await this.supplyBuildingRepository.updateBuildingFields(producer.id, { saleWindowOpen: true });
         }
@@ -48,16 +51,22 @@ export class MarkFailedSales {
       }
       if (producer.saleWindowOpen !== true) continue;
 
-      // The window has just closed.
-      const category = entry.categories.find((c) => collected.includes(c));
-      const unsold = producer.stocks?.[category] ?? 0;
+      // The window has just closed. A building can run more than one sale-bearing recipe (a
+      // merchant's dealWood/dealDecoratedPot/dealBook) — each is checked for leftover stock,
+      // not just the first: picking only the first used to silently miss a real unsold surplus
+      // whenever THAT one category happened to be empty (e.g. no wood chain built in this city).
+      const unsoldCategories = [
+        ...new Set(entries.flatMap((entry) => entry.categories.filter((c) => collected.includes(c)))),
+      ].filter((category) => (producer.stocks?.[category] ?? 0) > 0);
+
       const fields = { saleWindowOpen: false };
-      if (unsold > 0) {
+      if (unsoldCategories.length > 0) {
+        const units = unsoldCategories.reduce((sum, category) => sum + (producer.stocks?.[category] ?? 0), 0);
         fields.lastFailedSale = {
           year: period.year ?? 0,
           monthIndex: period.monthIndex ?? null,
-          units: unsold,
-          cause: await this.#cause(producer, category),
+          units,
+          cause: await this.#cause(producer, unsoldCategories[0]),
         };
         failed += 1;
       }

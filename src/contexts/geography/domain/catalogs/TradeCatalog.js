@@ -67,6 +67,7 @@ export const TRADE_CATALOG = Object.freeze([
     wants: Object.freeze([
       { good: 'furniture', merchantGood: null, baseMultiplier: 1.6 },
       { good: 'amphora',   merchantGood: null, baseMultiplier: 1.3 },
+      { good: 'carrotCake', merchantGood: 'dealCarrotCake', baseMultiplier: 1.3 },
     ]),
     relation: Object.freeze({ durationMonths: 24, renewalThreshold: 50, breakThreshold: 10 }),
     trade: Object.freeze({ frequencyMonths: 1, quantityPerOrder: 15 }),

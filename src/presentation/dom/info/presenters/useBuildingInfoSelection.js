@@ -97,7 +97,7 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
         extra.hubTimeContextAhead = Number.isFinite(turn)
           ? (monthsAhead) => supplyTimeContextAhead(turn, monthsAhead)
           : null;
-        extra.hubView = vm.supply.getHubStorageInfoView(hubKind, vm.buildingRow, {
+        extra.hubView = await vm.supply.getHubStorageInfoView(hubKind, vm.buildingRow, {
           stocks: vm.stocks,
           maxStock: vm.supplyView?.maxStock,
           timeContextAhead: extra.hubTimeContextAhead,

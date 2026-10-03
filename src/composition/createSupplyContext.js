@@ -24,6 +24,8 @@ import { RunHubSurplusCycle } from '../contexts/supply/application/commands/surp
 import { RunCityResourceCycle } from '../contexts/supply/application/commands/procurement/RunCityResourceCycle.js';
 import { RunMonthlyResourceCycle } from '../contexts/supply/application/workflows/RunMonthlyResourceCycle.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
+import { TRADE_CATALOG } from '../contexts/geography/domain/catalogs/TradeCatalog.js';
+import { getWorldCityById } from '../contexts/geography/domain/catalogs/WorldCityCatalog.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { syncRemovedBuilding } from './parcelsOps.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
@@ -84,7 +86,24 @@ export function createSupplyContext({
     supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
   const supplyTraceabilityRepositoryImpl =
     supplyTraceabilityRepository ?? new DexieSupplyTraceabilityRepository();
-  const hubServing = new HubServing(supplyBuildingRepositoryImpl);
+  // A merchant's deal goods (dealWood/dealDecoratedPot/dealBook) are bought by an external trade
+  // city (TradeCatalog.js, geography BC), never by a building — a city is a client exactly like a
+  // market or workshop is: same priority board, same HubServing allocation engine, just sourced
+  // from a different bounded context. This composition root is the one place supply is allowed to
+  // reach into geography's catalog to say so (see RunMonthlyCityTradeCycle.js for the reverse: it
+  // already reaches into supply's ResourceCategoryCatalog for baseValue the same way).
+  function listExternalClientsForCategory(category) {
+    return TRADE_CATALOG.filter((entry) => entry.wants.some((want) => want.merchantGood === category)).map(
+      (entry) => ({
+        id: `city:${entry.cityId}`,
+        type: 'TradeCity',
+        label: getWorldCityById(entry.cityId)?.name ?? entry.cityId,
+      })
+    );
+  }
+  const hubServing = new HubServing(supplyBuildingRepositoryImpl, {
+    listExternalClients: listExternalClientsForCategory,
+  });
   const transferHubToHub = new TransferHubToHub(
     supplyBuildingRepositoryImpl,
     hubServing
@@ -205,11 +224,14 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl
   );
   const getHubStorageInfoView = new GetHubStorageInfoView();
-  const getClientPriorityBoardForBuildingQuery = new GetClientPriorityBoardForBuilding(supplyBuildingRepositoryImpl);
+  const getClientPriorityBoardForBuildingQuery = new GetClientPriorityBoardForBuilding(supplyBuildingRepositoryImpl, {
+    listExternalClients: listExternalClientsForCategory,
+  });
   const describeActivitySupplyAccessQuery = new DescribeActivitySupplyAccess(supplyBuildingRepositoryImpl);
 
   return {
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
+    hubServing,
     transferHubToHub,
     assignDistributorToHub,
     detachDistributorFromHub,
@@ -294,8 +316,19 @@ export function createSupplyContext({
       });
     },
 
-    getHubStorageInfoView(hubKind, buildingRow, options = {}) {
-      return getHubStorageInfoView.execute({ hubKind, buildingRow, ...options });
+    // The pie chart's origin breakdown ("who delivered this part of the stock") names a producer
+    // INSTANCE (see HubLotsPolicy.js's lot keys) that buildingName() can't read — it needs that
+    // instance's catalog TYPE. This view has no repository of its own, so the one full-table read it
+    // needs happens once, here, before the otherwise-pure GetHubStorageInfoView.execute() runs.
+    async getHubStorageInfoView(hubKind, buildingRow, options = {}) {
+      const rows = await supplyBuildingRepositoryImpl.listAllBuildingRows();
+      const typeById = new Map(rows.map((row) => [row.id, row.type]));
+      return getHubStorageInfoView.execute({
+        hubKind,
+        buildingRow,
+        ...options,
+        resolveProducerType: (producerId) => typeById.get(producerId) ?? null,
+      });
     },
 
     /** Structural gaps in a building's own recipe(s) — see DescribeActivitySupplyAccess.js. */

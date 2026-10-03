@@ -1,0 +1,45 @@
+{
+  "exportDate": "2026-10-02T20:13:09.171Z",
+  "entries": [
+    {
+      "turn": 2,
+      "date": "2026-10-02T20:13:06.402Z",
+      "type": "balance",
+      "amount": 262,
+      "description": "Solde"
+    },
+    {
+      "id": 125,
+      "turn": 1,
+      "date": "2026-10-02T20:13:04.053Z",
+      "type": "maintenance",
+      "amount": 238,
+      "description": "Maintenance mensuelle - Janvier 1 |BREAKDOWN|[{\"label\":\"Routes\",\"count\":38,\"unitCost\":2,\"total\":152},{\"label\":\"Maisons\",\"count\":11,\"unitCost\":3,\"total\":66},{\"label\":\"Fermes\",\"count\":10,\"unitCost\":1,\"total\":20}]|BREAKDOWN|"
+    },
+    {
+      "turn": 1,
+      "date": "2026-10-02T20:13:02.403Z",
+      "type": "balance",
+      "amount": 500,
+      "description": "Solde"
+    },
+    {
+      "id": 124,
+      "turn": 0,
+      "date": "2026-10-02T20:12:58.635Z",
+      "type": "capital_funds",
+      "amount": 500,
+      "description": "Capital de départ: 500€"
+    }
+  ],
+  "yearlySummary": [
+    {
+      "year": 0,
+      "income": 500,
+      "expenses": 238,
+      "netFlow": 262,
+      "monthCount": 1
+    }
+  ],
+  "yearEndBalances": []
+}

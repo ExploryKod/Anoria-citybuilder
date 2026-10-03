@@ -75,10 +75,10 @@ export async function runGameTick({
   try {
     await runtime.runSimulation({ city, time });
   } catch (err) {
-    console.error('[Game] ECS simulation error:', {
-      error: err?.message || err,
-      time,
-    });
+    // The Error object itself, not just its message — `err.stack` is the one thing that says
+    // WHERE inside the ECS pipeline this threw (which system, which file/line), and a plain
+    // `{error: err.message}` throws that away, leaving only "something failed, no clue where".
+    console.error('[Game] ECS simulation error:', err, { time });
   }
   if (shouldAbort()) {
     return;

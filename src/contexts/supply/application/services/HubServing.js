@@ -16,9 +16,14 @@ export class HubServing {
 
   /**
    * @param {import('../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
+   * @param {{ listExternalClients?: (category: string) => Array<{ id: string, type: string }> }} [deps]
+   *   `listExternalClients` names client candidates that are not a building row at all — an external
+   *   trade city buying a merchant's deal good (see createSupplyContext.js: the composition root is
+   *   the one place supply is allowed to reach into geography's trade catalog for this).
    */
-  constructor(supplyBuildingRepository) {
+  constructor(supplyBuildingRepository, { listExternalClients } = {}) {
     this.supplyBuildingRepository = supplyBuildingRepository;
+    this.listExternalClients = listExternalClients ?? (() => []);
   }
 
   /**
@@ -57,6 +62,7 @@ export class HubServing {
     const rows = await this.#listAllBuildingRowsCached();
     const byId = new Map(rows.map((row) => [row.id, row]));
     const clientTypes = listClientTypes([category]);
+    const externalClients = this.listExternalClients(category);
     const profiles = new Map();
     for (const producerId of producerIds) {
       const producer = byId.get(producerId);
@@ -64,9 +70,10 @@ export class HubServing {
         profiles.set(producerId, { order: [], disabled: [] });
         continue;
       }
-      const candidates = rows
-        .filter((row) => row.id !== producerId && clientTypes.includes(row.type))
-        .map((row) => ({ id: row.id, type: row.type }));
+      const candidates = [
+        ...rows.filter((row) => row.id !== producerId && clientTypes.includes(row.type)).map((row) => ({ id: row.id, type: row.type })),
+        ...externalClients,
+      ];
       profiles.set(
         producerId,
         resolveInstanceClientPriorities({

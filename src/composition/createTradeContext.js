@@ -2,6 +2,8 @@ import { DexieCityTradeRepository } from '../contexts/geography/infrastructure/d
 import { RunMonthlyCityTradeCycle } from '../contexts/geography/application/workflows/RunMonthlyCityTradeCycle.js';
 import { TRADE_CATALOG, getTradeCatalogEntry } from '../contexts/geography/domain/catalogs/TradeCatalog.js';
 import { canOpenRelation } from '../contexts/geography/application/canOpenRelation.js';
+import { getCategoriesForRole, getTotalKeyForRole } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { takeCategoryAmount } from '../contexts/supply/domain/value-objects/ResourceStock.js';
 
 /**
  * Composition root — geography / trade bounded context.
@@ -16,6 +18,13 @@ export function createTradeContext({ supply, accounting }) {
   const runMonthlyCityTradeCycle = new RunMonthlyCityTradeCycle({
     cityTradeRepository,
     supplyBuildingRepository: supply.supplyBuildingRepository,
+    hubServing: supply.hubServing,
+    // A hub's `goods` field is a shared total across every deal good it stores (see
+    // buildingEconomy.js's TradeWarehouse) — keeping the category taken and that total in step is
+    // the same supply-domain rule CollectResourceToHub already follows (ResourceStock.js);
+    // geography gets it as a capability instead of importing across the bounded context.
+    takeHubStock: (hub, category, amount) =>
+      takeCategoryAmount(hub.stocks, category, amount, getCategoriesForRole(hub.type, 'hub'), getTotalKeyForRole(hub.type, 'hub')),
     recordCommerceExportIncome: (params) =>
       accounting.recordCommerceExportIncome(params),
     recordMerchantSale: (params) => supply.recordMerchantSale(params),

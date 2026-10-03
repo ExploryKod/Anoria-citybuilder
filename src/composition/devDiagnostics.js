@@ -18,6 +18,8 @@ const TAG = /^\[([\w:-]+)\]/;
 
 function textOf(value) {
   if (typeof value === 'string') return value;
+  // JSON.stringify turns an Error into "{}" — its message and stack are not enumerable.
+  if (value instanceof Error) return value.stack || String(value);
   try {
     return JSON.stringify(value);
   } catch {

@@ -35,11 +35,12 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   // Activité — chaque maison a sa propre petite entreprise (voir ARTISAN/SAVANT/MERCHANT_ACTIVITY_ROLES).
   bandwidth: Object.freeze({ emoji: '📶', label: 'Accès réseau', unit: unitOf('unité', 'unités'), colors: Object.freeze({ dark: '#2E6B8A', pale: '#A8D0E0' }) }),
   decoratedPot: Object.freeze({ emoji: '🏺', label: 'Pot décoré',  unit: unitOf('pot décoré', 'pots décorés'), baseValue: 8.0,  colors: Object.freeze({ dark: '#C9702B', pale: '#F0C79A' }) }),
-  carrotCake: Object.freeze({ emoji: '🥕', label: 'Carrot cake', unit: unitOf('gâteau', 'gâteaux'), colors: Object.freeze({ dark: '#D98A2E', pale: '#F5D9A8' }) }),
+  carrotCake: Object.freeze({ emoji: '🥕', label: 'Carrot cake', unit: unitOf('gâteau', 'gâteaux'), baseValue: 6.0, colors: Object.freeze({ dark: '#D98A2E', pale: '#F5D9A8' }) }),
   book:   Object.freeze({ emoji: '📚', label: 'Livre', unit: unitOf('livre', 'livres'),     baseValue: 15.0, colors: Object.freeze({ dark: '#5B4636', pale: '#C9B79C' }) }),
   dealWood:        Object.freeze({ emoji: '🤝', label: 'Export bois',       unit: unitOf('vente', 'ventes'), colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
   dealDecoratedPot: Object.freeze({ emoji: '🤝', label: 'Export pot décoré', unit: unitOf('vente', 'ventes'), colors: Object.freeze({ dark: '#C9702B', pale: '#F0C79A' }) }),
   dealBook:        Object.freeze({ emoji: '🤝', label: 'Export livre',       unit: unitOf('vente', 'ventes'), colors: Object.freeze({ dark: '#5B4636', pale: '#C9B79C' }) }),
+  dealCarrotCake:  Object.freeze({ emoji: '🤝', label: 'Export carrot cake', unit: unitOf('vente', 'ventes'), colors: Object.freeze({ dark: '#D98A2E', pale: '#F5D9A8' }) }),
   // Chart colors follow what the good is made of: walnut for furniture, glazed white-blue for plates,
   // terracotta for pots, ochre clay for amphorae.
   furniture: Object.freeze({ emoji: '🪑', label: 'Meuble',  unit: unitOf('meuble', 'meubles'),   baseValue: 20.0, colors: Object.freeze({ dark: '#6D4C41', pale: '#BCAAA4' }) }),

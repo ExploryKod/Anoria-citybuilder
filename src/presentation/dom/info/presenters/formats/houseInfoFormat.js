@@ -199,9 +199,11 @@ function activityRecipeOf(entry, buildingRow, gaps = []) {
     ariaLabel: `${productLabel} : ${stock} en stock`,
   };
 
+  const collected = collectedCardOf(category, productLabel, buildingRow?.activityCollected?.[category]);
+
   const steps = entry.cycle.map((step, index) => stepCardOf(step, index, entry.cycle.length, cycleState, shortfall));
 
-  return { category, label: productLabel, materials, product, steps, gapMessages };
+  return { category, label: productLabel, materials, product, collected, steps, gapMessages };
 }
 
 /**
@@ -222,6 +224,26 @@ function materialCardOf(input, lastInputs) {
     ariaLabel: lastInputs
       ? `${label} : ${taken} sur ${needed} consommé le dernier cycle${met ? ', besoin couvert' : ', besoin non couvert'}`
       : `${label} : pas encore de cycle`,
+  };
+}
+
+/**
+ * "Collecté" — when this good actually left the producer for a hub (an entrepôt, the trade
+ * warehouse...) and how much, from `activityCollected[category]` (see ProcessHubCollection.js).
+ * "Produit fini" alone only says what is sitting here right now — it cannot tell freshly-made
+ * stock from a pile nothing has ever come to take.
+ */
+function collectedCardOf(category, label, lastCollected) {
+  const amount = lastCollected ? Math.max(0, Math.floor(Number(lastCollected.amount) || 0)) : 0;
+  return {
+    kind: `${category}-collected`,
+    icon: goodIcon(category),
+    label: 'Collecté',
+    met: lastCollected != null,
+    valueText: lastCollected ? String(amount) : NO_CYCLE_YET,
+    ariaLabel: lastCollected
+      ? `${label} : ${amount} pris par un entrepôt à la dernière collecte`
+      : `${label} : jamais encore pris par un entrepôt`,
   };
 }
 

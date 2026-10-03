@@ -43,7 +43,7 @@ const RAW_FARM_GOODS = ['olive'];
  */
 const ARTISAN_ACTIVITY_GOODS = ['decoratedPot', 'carrotCake'];
 const SAVANT_ACTIVITY_GOODS = ['bandwidth', 'book'];
-const MERCHANT_ACTIVITY_GOODS = ['dealWood', 'dealDecoratedPot', 'dealBook'];
+const MERCHANT_ACTIVITY_GOODS = ['dealWood', 'dealDecoratedPot', 'dealBook', 'dealCarrotCake'];
 const STORED_GOODS = [
   'wood', ...RETAIL_GOODS, ...LIGHT_GOODS, ...RAW_FARM_GOODS,
   ...ARTISAN_ACTIVITY_GOODS, ...SAVANT_ACTIVITY_GOODS,
@@ -139,7 +139,7 @@ const ARTISAN_ACTIVITY_ROLES = [
     fromWarehouse('wheat', 4),
     fromWarehouse('carrot', 4),
     fromWarehouse('oil', 2),
-  ]),
+  ], ['House-Blue']),
 ];
 
 /**
@@ -165,6 +165,7 @@ const MERCHANT_ACTIVITY_ROLES = [
   dealRecipe('wood', 'dealWood'),
   dealRecipe('decoratedPot', 'dealDecoratedPot'),
   dealRecipe('book', 'dealBook'),
+  dealRecipe('carrotCake', 'dealCarrotCake'),
 ];
 
 /*
