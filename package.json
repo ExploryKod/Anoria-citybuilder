@@ -30,7 +30,9 @@
   "devDependencies": {
     "@gltf-transform/core": "^4.2.1",
     "@gltf-transform/extensions": "^4.2.1",
+    "@playwright/test": "^1.63.0",
     "@types/jest": "^30.0.0",
+    "@types/node": "^26.6.3",
     "baseline-browser-mapping": "^2.11.5",
     "caniuse-lite": "^1.0.30001806",
     "fake-indexeddb": "^6.2.5",
@@ -42,5 +44,5 @@
   "engines": {
     "node": "24.x"
   },
-  "packageManager": "pnpm@11.17.0"
+  "packageManager": "pnpm@12.7.0"
 }
