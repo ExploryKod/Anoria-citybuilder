@@ -22,7 +22,7 @@ describe('buildHamletsMapView', () => {
     const view = await buildHamletsMapView();
 
     expect(view.activeHamletId).toBe(H.eraanurbs);
-    expect(view.totalHamlets).toBe(10);
+    expect(view.totalHamlets).toBe(4);
     expect(view.unlockedCount).toBe(1);
 
     const active = view.hamlets.find((hamlet) => hamlet.id === H.eraanurbs);
@@ -37,7 +37,7 @@ describe('buildHamletsMapView', () => {
   test('includes hex coordinates for every proto hamlet', async () => {
     const view = await buildHamletsMapView();
 
-    expect(view.hamlets).toHaveLength(10);
+    expect(view.hamlets).toHaveLength(4);
     for (const hamlet of view.hamlets) {
       const site = HAMLET_MAP_SITES.find((item) => item.id === hamlet.slug);
       expect(hamlet.map.hex).toEqual({ q: site?.q, r: site?.r });

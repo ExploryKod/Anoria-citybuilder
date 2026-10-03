@@ -2,10 +2,8 @@ import {
   HAMLET_ACCESS,
   listHamletsWithAccess,
 } from '../../../../core/persistence/hamlet/hamletAccess.js';
-import {
-  getActiveHamletId,
-  PROTO_HAMLETS,
-} from '../../../../core/persistence/hamlet/hamletSession.js';
+import { getActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { HAMLET_CATALOG } from '../../../../shared/hamlet-catalog/hamletCatalog.js';
 import { getHamletMapSite } from '../../domain/catalogs/HamletMapCatalog.js';
 
 /**
@@ -49,7 +47,7 @@ export async function buildHamletsMapView() {
 
   return {
     activeHamletId,
-    totalHamlets: PROTO_HAMLETS.length,
+    totalHamlets: HAMLET_CATALOG.length,
     unlockedCount,
     hamlets,
   };

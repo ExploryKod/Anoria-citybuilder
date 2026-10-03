@@ -10,22 +10,10 @@
  */
 
 import db from '../dexie/db.js';
+import { HAMLET_CATALOG } from '../../../shared/hamlet-catalog/hamletCatalog.js';
 
-/** Slug of the starting hamlet (its definition in PROTO_HAMLETS). */
-export const DEFAULT_HAMLET_SLUG = 'eraanurbs';
-
-export const PROTO_HAMLETS = [
-  { slug: 'eraanurbs', name: 'Val d’Era' },
-  { slug: 'clairiere', name: 'Clairière' },
-  { slug: 'pont-saules', name: 'Pont-aux-Saules' },
-  { slug: 'bruyeres', name: 'Les Bruyères' },
-  { slug: 'rochehaute', name: 'Rochehaute' },
-  { slug: 'prevert', name: 'Prévert' },
-  { slug: 'sourceclaire', name: 'Sourceclaire' },
-  { slug: 'bois-joli', name: 'Bois-Joli' },
-  { slug: 'marais-blanc', name: 'Marais-Blanc' },
-  { slug: 'colline-rouge', name: 'Colline-Rouge' },
-];
+/** Slug of the starting hamlet (its definition in HAMLET_CATALOG). */
+export const DEFAULT_HAMLET_SLUG = HAMLET_CATALOG.find((hamlet) => hamlet.starting).slug;
 
 /** @type {Map<string, { id: string, slug: string, name: string }>} uuid → hamlet, once ensured */
 const knownHamlets = new Map();
@@ -101,7 +89,7 @@ export function setActiveHamletId(hamletId) {
 export async function ensureHamletCatalog({ requestedId = null } = {}) {
   const rows = await db.hamlets.toArray();
 
-  for (const proto of PROTO_HAMLETS) {
+  for (const proto of HAMLET_CATALOG) {
     const existing = rows.find((row) => row.slug === proto.slug);
     if (!existing) {
       const row = {
@@ -121,7 +109,7 @@ export async function ensureHamletCatalog({ requestedId = null } = {}) {
 
   knownHamlets.clear();
   for (const row of rows) {
-    if (PROTO_HAMLETS.some((proto) => proto.slug === row.slug)) {
+    if (HAMLET_CATALOG.some((proto) => proto.slug === row.slug)) {
       knownHamlets.set(row.id, { id: row.id, slug: row.slug, name: row.name });
     }
   }
@@ -137,15 +125,25 @@ export async function ensureHamletCatalog({ requestedId = null } = {}) {
  */
 export async function listHamlets() {
   const rows = await db.hamlets.toArray();
+  const catalogIndex = (row) => HAMLET_CATALOG.findIndex((hamlet) => hamlet.slug === row.slug);
   return rows
     .filter((row) => knownHamlets.has(row.id))
+    .sort((a, b) => catalogIndex(a) - catalogIndex(b))
     .map((row) => ({
       id: row.id,
       slug: row.slug,
       name: row.name,
+      color: colorOfSlug(row.slug),
       natureSeeded: Boolean(row.natureSeeded),
       unlocked: Boolean(row.unlocked),
     }));
+}
+
+/** @param {string} slug */
+function colorOfSlug(slug) {
+  const proto = HAMLET_CATALOG.find((hamlet) => hamlet.slug === slug);
+  if (!proto?.color) throw new Error(`[hamletSession] no color declared in HAMLET_CATALOG for "${slug}"`);
+  return proto.color;
 }
 
 /**

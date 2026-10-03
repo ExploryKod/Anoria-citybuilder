@@ -24,6 +24,8 @@ import { adoptHudFabDockChildren } from '../shell/hudFabDock.js';
 import { initHudShellMenus } from '../shell/HudShellMenus.js';
 import { initCheatCodePrompt } from '../shell/CheatCodePrompt.js';
 import { initCompactToolbar } from '../tools/CompactToolbar.js';
+import { initHamletSwitcher } from '../hamlets/hamletSwitcher.js';
+import { initBottomModeRadio } from '../tools/BottomModeRadio.js';
 import { initBuildToolHoverPreview } from '../tools/BuildToolHoverPreview.js';
 import { initEditorNatureToolbar } from '../editor/EditorNatureToolbar.js';
 import { initMobileClickStateFab } from '../tools/MobileClickStateFab.js';
@@ -71,6 +73,8 @@ export async function initAppBoot() {
     invokeSetActiveTool,
     buttonStateManager,
   });
+  initHamletSwitcher({ getGame: getSessionGame });
+  initBottomModeRadio({ getGame: getSessionGame });
   initBuildToolHoverPreview();
   initEditorNatureToolbar({ invokeSetActiveTool });
   initMobileClickStateFab({ invokeSetActiveTool });

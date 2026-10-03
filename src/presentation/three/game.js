@@ -487,6 +487,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       await loadActiveHamletScene();
       await refreshPlacementPresentation();
       await refreshEmploymentPresentationForCity();
+      window.history.replaceState(null, '', `/game/${hamletId}`);
       return true;
     } catch (error) {
       console.error('[Game] travelToHamlet failed:', error);
@@ -1525,6 +1526,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   registerAppService('game', game);
   bindSessionRuntime({ game, city, scene });
+  if (import.meta.env.DEV) window.__game = game;
 
   return game;
 }

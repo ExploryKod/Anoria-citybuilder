@@ -210,7 +210,7 @@ export function createScene(_gameStore, assetManager, deps) {
     // promesse : tout rendu avant résolution serait silencieusement ignoré.
     let rendererReady = renderer.init();
     // Dev only: lets the console read GPU memory (renderer.info) when checking a hamlet switch.
-    if (import.meta.env.DEV) Object.assign(window, { __renderer: renderer, __threeScene: scene });
+    if (import.meta.env.DEV) Object.assign(window, { __renderer: renderer, __threeScene: scene, __reachOverlay: reachOverlay, __roadPaintPreview: roadPaintPreview, __placementGhost: placementGhost });
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
     if (runningOnMobile) {
         // Cap le pixel ratio sur mobile pour limiter la pression mémoire GPU
