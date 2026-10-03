@@ -64,6 +64,8 @@ export default defineConfig({
           const match = cleanRoutes.find((r) => pathname === r.path || pathname === `${r.path}/`);
           if (match) {
             req.url = match.file;
+          } else if (/^\/game\/[0-9a-f-]{36}\/?$/i.test(pathname)) {
+            req.url = '/game.html';
           }
           next();
         });

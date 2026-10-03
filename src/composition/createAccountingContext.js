@@ -507,6 +507,12 @@ export function createAccountingContext(deps = {}) {
       return initializeTreasury.execute(startingFunds);
     },
 
+    /** Keeps the existing treasury and journal; creates them only when the save has none yet. */
+    /** @param {number|null} [startingFunds] */
+    async ensureTreasury(startingFunds = null) {
+      return initializeTreasury.execute(startingFunds, { clearExisting: false });
+    },
+
     /** @param {number|null} [startingFunds] */
     async forceReinitializeTreasury(startingFunds = null) {
       return forceReinitializeTreasury.execute(startingFunds);

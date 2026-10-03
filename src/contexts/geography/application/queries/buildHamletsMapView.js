@@ -15,6 +15,7 @@ import { getHamletMapSite } from '../../domain/catalogs/HamletMapCatalog.js';
  *   unlockedCount: number,
  *   hamlets: Array<{
  *     id: string,
+ *     slug: string,
  *     name: string,
  *     access: 'active' | 'unlocked' | 'locked',
  *     natureSeeded?: boolean,
@@ -28,9 +29,10 @@ export async function buildHamletsMapView() {
   const activeHamletId = getActiveHamletId();
 
   const hamlets = hamletsWithAccess.map((hamlet) => {
-    const site = getHamletMapSite(hamlet.id);
+    const site = getHamletMapSite(hamlet.slug);
     return {
       id: hamlet.id,
+      slug: hamlet.slug,
       name: hamlet.name,
       access: hamlet.access,
       natureSeeded: hamlet.natureSeeded,

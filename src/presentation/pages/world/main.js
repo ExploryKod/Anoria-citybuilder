@@ -2,6 +2,7 @@ import { bootSiteChrome } from '../site/bootSiteChrome.js';
 import { redirectToLandingUnlessWorldEntryAllowed } from '../site/bootSession.js';
 import { bootMapContexts } from '../../../composition/bootMapContexts.js';
 import { WorldMapController } from '../../dom/maps/WorldMapController.js';
+import { initCheatCodePrompt } from '../../dom/shell/CheatCodePrompt.js';
 
 bootSiteChrome({ legalFooter: false });
 
@@ -16,6 +17,10 @@ async function main() {
   }
 
   const { mapApi } = await bootMapContexts();
+  const fromHamlet = new URLSearchParams(window.location.search).get('hamlet');
+  const exitLink = document.querySelector('.map-page-exit-btn');
+  if (exitLink && fromHamlet) exitLink.href = `/game/${fromHamlet}`;
+  initCheatCodePrompt();
   const controller = new WorldMapController(root, { mapApi });
   await controller.init();
 }

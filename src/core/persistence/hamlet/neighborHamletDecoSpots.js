@@ -2,7 +2,7 @@
  * Fixed decorative outskirts spots — one per proto hamlet (except the active grid).
  */
 
-import { DEFAULT_HAMLET_ID } from './hamletSession.js';
+import { DEFAULT_HAMLET_SLUG, hamletSlugOf } from './hamletSession.js';
 
 /**
  * @typedef {{
@@ -116,5 +116,6 @@ export const NEIGHBOR_DECO_HAMLET_IDS = buildNeighborHamletDecoSpots(16).map((sp
  * @returns {boolean}
  */
 export function isNeighborDecoHamletId(hamletId) {
-  return hamletId !== DEFAULT_HAMLET_ID && NEIGHBOR_DECO_HAMLET_IDS.includes(hamletId);
+  const slug = hamletSlugOf(hamletId);
+  return slug !== DEFAULT_HAMLET_SLUG && NEIGHBOR_DECO_HAMLET_IDS.includes(slug);
 }
