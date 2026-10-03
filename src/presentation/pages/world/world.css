@@ -1,5 +1,6 @@
 @import '../site/site.css';
 @import '../../dom/styles/modals/trade-map.css';
+@import '../../dom/styles/modals/city-exchange.css';
 @import '../maps/map-page.css';
 
 .world-phaser-host {

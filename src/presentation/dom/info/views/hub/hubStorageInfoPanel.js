@@ -106,7 +106,7 @@ async function softRefreshHubPanel(ctx, orderWarning = null) {
   if (!body) return null;
 
   const freshRow = await supply.getSupplyBuildingRow(buildingId);
-  const freshView = supply.getHubStorageInfoView(hubKind, freshRow ?? buildingRow, {
+  const freshView = await supply.getHubStorageInfoView(hubKind, freshRow ?? buildingRow, {
     stocks: freshRow?.stocks,
     maxStock: supplyView?.maxStock,
     timeContextAhead: ctx.timeContextAhead,

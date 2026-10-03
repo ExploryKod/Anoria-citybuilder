@@ -8,6 +8,7 @@ export const FISCAL_STORAGE_KEYS = Object.freeze({
   salaryPerMonth: 'work_salary_per_month',
   salaryTaxRate: 'work_salary_tax_rate',
   unemploymentBenefitRate: 'work_unemployment_benefit_rate',
+  customsRate: 'commerce_customs_rate',
 });
 
 export const DEFAULT_FISCAL_SETTINGS = Object.freeze({
@@ -15,6 +16,7 @@ export const DEFAULT_FISCAL_SETTINGS = Object.freeze({
   salaryPerMonth: 100,
   salaryTaxRate: 0.1,
   unemploymentBenefitRate: 0.7,
+  customsRate: 0.15,
 });
 
 export class LocalStorageFiscalSettingsRepository {
@@ -93,12 +95,29 @@ export class LocalStorageFiscalSettingsRepository {
     return next;
   }
 
+  /** @returns {number} customs rate in [0, 0.5] */
+  getCustomsRate() {
+    return this.#readNumber(
+      FISCAL_STORAGE_KEYS.customsRate,
+      DEFAULT_FISCAL_SETTINGS.customsRate,
+      { min: 0, max: 0.5, integer: false }
+    );
+  }
+
+  /** @param {number} rate @returns {number} clamped rate */
+  setCustomsRate(rate) {
+    const value = this.#clamp(rate, 0, 0.5, false);
+    this.#write(FISCAL_STORAGE_KEYS.customsRate, String(value));
+    return value;
+  }
+
   clear() {
     try {
       this.storage?.removeItem(FISCAL_STORAGE_KEYS.citizenTaxPerCapita);
       this.storage?.removeItem(FISCAL_STORAGE_KEYS.salaryPerMonth);
       this.storage?.removeItem(FISCAL_STORAGE_KEYS.salaryTaxRate);
       this.storage?.removeItem(FISCAL_STORAGE_KEYS.unemploymentBenefitRate);
+      this.storage?.removeItem(FISCAL_STORAGE_KEYS.customsRate);
     } catch (error) {
       console.warn('[FiscalSettings] Error clearing:', error);
     }

@@ -125,7 +125,7 @@ export class TransferHubToHub {
     // What this client may take of each good depends on who delivered it and who else is waiting (see HubServing).
     const turn = period?.turn ?? 0;
     const asking = Math.min(wanted, targetCapacity);
-    const available = categories.map((category) => this.hubServing.availableTo(source, category, target.type, turn));
+    const available = await Promise.all(categories.map((category) => this.hubServing.availableTo(source, category, target.id, turn)));
     const amounts = fairShares(available, asking);
     // How its ask would split over the goods, unconstrained: what it leaves on the table for those ranked below.
     const desired = fairShares(categories.map((category) => getCategoryAmount(sourceStock, category)), asking);
@@ -141,11 +141,11 @@ export class TransferHubToHub {
 
     for (const [index, category] of categories.entries()) {
       if (desired[index] <= 0 && !(amounts[index] > 0)) continue;
-      await this.hubServing.take({ hubId: sourceId, category, client: target.type, amount: amounts[index], turn });
+      await this.hubServing.take({ hubId: sourceId, category, client: target.id, amount: amounts[index], turn });
       await this.hubServing.recordDemand({
         hubId: sourceId,
         category,
-        client: target.type,
+        client: target.id,
         turn,
         wanted: Math.max(desired[index], amounts[index]),
         served: amounts[index],

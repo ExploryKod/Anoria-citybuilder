@@ -1,9 +1,8 @@
 import { DexieSupplyBuildingRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyBuildingRepository.js';
-import { ListClientPriorityBoards } from '../contexts/supply/application/queries/ListClientPriorityBoards.js';
+import { GetClientPriorityBoardForBuilding } from '../contexts/supply/application/queries/GetClientPriorityBoardForBuilding.js';
 import { EmptyHubGoods } from '../contexts/supply/application/commands/surplus/EmptyHubGoods.js';
 import { MarkFailedSales } from '../contexts/supply/application/commands/surplus/MarkFailedSales.js';
 import { HubServing } from '../contexts/supply/application/services/HubServing.js';
-import { LocalStorageClientPriorityRepository } from '../contexts/supply/infrastructure/browser/LocalStorageClientPriorityRepository.js';
 import { TransferHubToHub } from '../contexts/supply/application/commands/procurement/TransferHubToHub.js';
 import { DistributeResourceToConsumers } from '../contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
 import { CollectResourceToHub } from '../contexts/supply/application/commands/surplus/CollectResourceToHub.js';
@@ -25,6 +24,8 @@ import { RunHubSurplusCycle } from '../contexts/supply/application/commands/surp
 import { RunCityResourceCycle } from '../contexts/supply/application/commands/procurement/RunCityResourceCycle.js';
 import { RunMonthlyResourceCycle } from '../contexts/supply/application/workflows/RunMonthlyResourceCycle.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
+import { TRADE_CATALOG } from '../contexts/geography/domain/catalogs/TradeCatalog.js';
+import { getWorldCityById } from '../contexts/geography/domain/catalogs/WorldCityCatalog.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { syncRemovedBuilding } from './parcelsOps.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
@@ -63,13 +64,11 @@ import {
  * @param {object} [deps]
  * @param {import('../contexts/supply/application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} [deps.supplyBuildingRepository]
  * @param {import('../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js').DexieSupplyTraceabilityRepository} [deps.supplyTraceabilityRepository]
- * @param {{ load: () => object, save: (priorities: object) => void }} [deps.clientPriorityRepository] The player's client priorities.
  * @param {(turn: number) => object} [deps.getTimeInfo]
  */
 export function createSupplyContext({
   supplyBuildingRepository,
   supplyTraceabilityRepository,
-  clientPriorityRepository,
   getTimeInfo: getTimeInfoDep,
 } = {}) {
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
@@ -87,10 +86,23 @@ export function createSupplyContext({
     supplyBuildingRepository ?? new DexieSupplyBuildingRepository();
   const supplyTraceabilityRepositoryImpl =
     supplyTraceabilityRepository ?? new DexieSupplyTraceabilityRepository();
-  // The player's client priorities (saved settings); none saved means the catalog's defaults.
-  const clientPriorityRepositoryImpl = clientPriorityRepository ?? new LocalStorageClientPriorityRepository();
+  // A merchant's deal goods (dealWood/dealDecoratedPot/dealBook) are bought by an external trade
+  // city (TradeCatalog.js, geography BC), never by a building — a city is a client exactly like a
+  // market or workshop is: same priority board, same HubServing allocation engine, just sourced
+  // from a different bounded context. This composition root is the one place supply is allowed to
+  // reach into geography's catalog to say so (see RunMonthlyCityTradeCycle.js for the reverse: it
+  // already reaches into supply's ResourceCategoryCatalog for baseValue the same way).
+  function listExternalClientsForCategory(category) {
+    return TRADE_CATALOG.filter((entry) => entry.wants.some((want) => want.merchantGood === category)).map(
+      (entry) => ({
+        id: `city:${entry.cityId}`,
+        type: 'TradeCity',
+        label: getWorldCityById(entry.cityId)?.name ?? entry.cityId,
+      })
+    );
+  }
   const hubServing = new HubServing(supplyBuildingRepositoryImpl, {
-    loadSettings: () => clientPriorityRepositoryImpl.load(),
+    listExternalClients: listExternalClientsForCategory,
   });
   const transferHubToHub = new TransferHubToHub(
     supplyBuildingRepositoryImpl,
@@ -212,13 +224,14 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl
   );
   const getHubStorageInfoView = new GetHubStorageInfoView();
-  const listClientPriorityBoardsQuery = new ListClientPriorityBoards(supplyBuildingRepositoryImpl, {
-    loadSettings: () => clientPriorityRepositoryImpl.load(),
+  const getClientPriorityBoardForBuildingQuery = new GetClientPriorityBoardForBuilding(supplyBuildingRepositoryImpl, {
+    listExternalClients: listExternalClientsForCategory,
   });
   const describeActivitySupplyAccessQuery = new DescribeActivitySupplyAccess(supplyBuildingRepositoryImpl);
 
   return {
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
+    hubServing,
     transferHubToHub,
     assignDistributorToHub,
     detachDistributorFromHub,
@@ -271,23 +284,31 @@ export function createSupplyContext({
       return { initialized: true, hubId };
     },
 
-    /** The Clients tab: each producer type's clients, in the order it serves them. */
-    async listClientPriorityBoards() {
-      return listClientPriorityBoardsQuery.execute();
+    /** The Clients tab on one producer building: one board per good it produces, each its own candidate list and order. */
+    async getClientPriorityBoardForBuilding(buildingId) {
+      return getClientPriorityBoardForBuildingQuery.execute(buildingId);
     },
 
-    /** The player's order (and refusals) for one producer type; effective from the next tick. */
-    saveClientPriorities(producerType, { order, disabled }) {
-      clientPriorityRepositoryImpl.save({ ...clientPriorityRepositoryImpl.load(), [producerType]: { order, disabled } });
+    /** This instance's own order (and refusals) among ONE good's candidate clients; effective from the next tick. */
+    async saveClientPriorityForBuilding(buildingId, category, { order, disabled }) {
+      const producer = await supplyBuildingRepositoryImpl.findById(buildingId);
+      await supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, {
+        clientPriorityByGood: { ...(producer?.clientPriorityByGood ?? {}), [category]: { order, disabled } },
+      });
     },
 
-    /** Back to the catalog's default for one producer type. */
-    resetClientPriorities(producerType) {
-      const { [producerType]: _dropped, ...rest } = clientPriorityRepositoryImpl.load();
-      clientPriorityRepositoryImpl.save(rest);
+    /** Back to the default order for this instance, for that one good. */
+    async resetClientPriorityForBuilding(buildingId, category) {
+      const producer = await supplyBuildingRepositoryImpl.findById(buildingId);
+      const clientPriorityByGood = { ...(producer?.clientPriorityByGood ?? {}) };
+      delete clientPriorityByGood[category];
+      await supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, { clientPriorityByGood });
     },
 
     async runMonthlyResourceCycle({ season, month, timeInfo }) {
+      // One building-table snapshot for this whole tick (see HubServing.invalidateCache) instead
+      // of a fresh full scan on every single producer's every single draw from a hub.
+      hubServing.invalidateCache();
       return runMonthlyResourceCycle.execute({
         season,
         month,
@@ -295,8 +316,19 @@ export function createSupplyContext({
       });
     },
 
-    getHubStorageInfoView(hubKind, buildingRow, options = {}) {
-      return getHubStorageInfoView.execute({ hubKind, buildingRow, ...options });
+    // The pie chart's origin breakdown ("who delivered this part of the stock") names a producer
+    // INSTANCE (see HubLotsPolicy.js's lot keys) that buildingName() can't read — it needs that
+    // instance's catalog TYPE. This view has no repository of its own, so the one full-table read it
+    // needs happens once, here, before the otherwise-pure GetHubStorageInfoView.execute() runs.
+    async getHubStorageInfoView(hubKind, buildingRow, options = {}) {
+      const rows = await supplyBuildingRepositoryImpl.listAllBuildingRows();
+      const typeById = new Map(rows.map((row) => [row.id, row.type]));
+      return getHubStorageInfoView.execute({
+        hubKind,
+        buildingRow,
+        ...options,
+        resolveProducerType: (producerId) => typeById.get(producerId) ?? null,
+      });
     },
 
     /** Structural gaps in a building's own recipe(s) — see DescribeActivitySupplyAccess.js. */
@@ -424,6 +456,16 @@ export function createSupplyContext({
     /** Inhabitants lost to famine this month. */
     async recordFamineDeaths(timeInfo, deaths) {
       return traceability.recordFamineDeaths(timeInfo, deaths);
+    },
+
+    /** A merchant city-trade sale — records a merchant_sale traceability entry. */
+    async recordMerchantSale(params) {
+      return traceability.recordMerchantSale(params);
+    },
+
+    /** All merchant_sale traceability rows for a city partner, newest first. */
+    async getMerchantSalesForCity(cityId) {
+      return traceability.getMerchantSalesForCity(cityId);
     },
   };
 }

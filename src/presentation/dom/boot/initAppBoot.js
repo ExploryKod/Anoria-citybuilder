@@ -84,6 +84,7 @@ export async function initAppBoot() {
     playGame,
     registerAppService,
     getTimeManager,
+    getGame: getSessionGame,
     getScene: getSessionScene,
   });
   // After ParametersPanel (it rebinds #parameters-btn).

@@ -94,6 +94,9 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     computeReferenceSalaryPayrollBreakdown: (params) =>
       computeReferenceSalaryPayrollBreakdown(params),
 
+    getCustomsRate: () => accounting.getCustomsRate(),
+    setCustomsRate: (rate) => accounting.setCustomsRate(rate),
+
     getCommercialRouteFee: () => COMMERCIAL_ROUTE_FEE,
     recordCommercialRouteFee: (...args) => accounting.recordCommercialRouteFee(...args),
     settleContribution: (params) => accounting.settleContribution(params),
@@ -156,9 +159,9 @@ export function createSupplySessionApi(supply) {
       supply.updateHubStorageOrderMode(hubKind, buildingId, productId),
     adjustHubStorageOrderShare: (hubKind, buildingId, productId, delta) =>
       supply.adjustHubStorageOrderShare(hubKind, buildingId, productId, delta),
-    listClientPriorityBoards: () => supply.listClientPriorityBoards(),
-    saveClientPriorities: (producerType, value) => supply.saveClientPriorities(producerType, value),
-    resetClientPriorities: (producerType) => supply.resetClientPriorities(producerType),
+    getClientPriorityBoardForBuilding: (buildingId) => supply.getClientPriorityBoardForBuilding(buildingId),
+    saveClientPriorityForBuilding: (buildingId, category, value) => supply.saveClientPriorityForBuilding(buildingId, category, value),
+    resetClientPriorityForBuilding: (buildingId, category) => supply.resetClientPriorityForBuilding(buildingId, category),
     hasResourceRole: (buildingType, role, category) => hasResourceRole(buildingType, role, category),
     getPlacementRequirements: (buildingType) => getPlacementRequirements(buildingType),
   });

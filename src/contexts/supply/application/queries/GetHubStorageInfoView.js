@@ -17,8 +17,11 @@ export class GetHubStorageInfoView {
    * @param {Record<string, number>|null|undefined} [params.stocks]
    * @param {number|null|undefined} [params.maxStock]
    * @param {((monthsAhead: number) => object)|null} [params.timeContextAhead] Calendar from now, to say when the hub next collects
+   * @param {(producerId: string) => string | null} [params.resolveProducerType] Producer instance id →
+   *   catalog type, for the pie chart's origin breakdown (see HubStoragePiePolicy.js) — this view has
+   *   no repository of its own, so the caller resolves it (createSupplyContext.js).
    */
-  execute({ hubKind, buildingRow, stocks = null, maxStock = null, timeContextAhead = null }) {
+  execute({ hubKind, buildingRow, stocks = null, maxStock = null, timeContextAhead = null, resolveProducerType = () => null }) {
     if (!buildingRow) {
       return Object.freeze({ hubKind, lines: Object.freeze([]), pieSegments: Object.freeze([]) });
     }
@@ -64,6 +67,7 @@ export class GetHubStorageInfoView {
       pieSegments: buildHubStoragePieSegments({
         lines,
         totalCapacity,
+        resolveProducerType,
       }),
       linkedMarkets: Object.freeze(
         (buildingRow.linkedDistributors ?? []).map((entry) =>

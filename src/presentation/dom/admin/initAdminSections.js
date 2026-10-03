@@ -7,9 +7,9 @@ import { initFinancesSection } from './finances/initFinancesSection.js';
 import { initHealthSection } from './health/initHealthSection.js';
 import { initWorkSection } from './work/initWorkSection.js';
 import { initStorageSection } from './storage/initStorageSection.js';
-import { initClientsSection } from './clients/initClientsSection.js';
 import { initReportSection } from './report/initReportSection.js';
 import { initArchivesSection } from './archives/initArchivesSection.js';
+import { initCommerceSection } from './commerce/initCommerceSection.js';
 
 /**
  * @param {object} deps
@@ -18,6 +18,7 @@ import { initArchivesSection } from './archives/initArchivesSection.js';
  * @param {object} deps.housing
  * @param {object} deps.supply
  * @param {object} deps.construction
+ * @param {object} [deps.trade]
  * @param {object} [deps.intelligence]
  * @param {object} [deps.popupManager]
  * @param {(name: string, instance: *) => void} [deps.registerAppService]
@@ -31,7 +32,7 @@ export async function initAdminSections(deps) {
   initHealthSection(deps);
   initWorkSection(deps);
   initStorageSection(deps);
-  initClientsSection(deps);
   initReportSection(deps);
   initArchivesSection(deps);
+  if (deps.trade) initCommerceSection(deps);
 }

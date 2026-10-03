@@ -18,9 +18,21 @@ function idsByButtonGroup(group) {
     .map(([id]) => id);
 }
 
+/**
+ * @param {string} tag
+ * @returns {ReadonlyArray<string>}
+ */
+function idsByTag(tag) {
+  return Object.entries(BUILDING_ASSETS)
+    .filter(([, entry]) => entry.tags?.includes(tag))
+    .map(([id]) => id);
+}
+
 export const houses = Object.freeze(idsByButtonGroup('houses'));
 
-export const commerce = Object.freeze(idsByButtonGroup('markets'));
+// By `tags` (semantic — "this is a market"), not `button.group` (which build-bar tab shows it):
+// a market shares its carousel tab with warehouses, but is still a market for whoever asks.
+export const commerce = Object.freeze(idsByTag('markets'));
 
 /**
  * The tool a build-bar category pill IS, when the catalog says so

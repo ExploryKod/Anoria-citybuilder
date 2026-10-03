@@ -1,7 +1,8 @@
 /**
- * A hub's stock, told by where it came from: for each good, how much each producer TYPE delivered. The stock
- * itself stays what it was (per good, and its aggregate); the lots are the breakdown of it, so the hub can
- * serve its clients in the order each producer type asks for.
+ * A hub's stock, told by where it came from: for each good, how much each producer INSTANCE delivered. The
+ * stock itself stays what it was (per good, and its aggregate); the lots are the breakdown of it, so the hub
+ * can serve its clients in the order each producer instance asks for (its own setting, see
+ * GetClientPriorityBoardForBuilding).
  *
  * A stock the lots do not account for (a save from before lots, goods added by a cheat) is the
  * "unattributed" lot: it belongs to nobody in particular and serves every client alike.
@@ -10,18 +11,18 @@
 /** The key of the unattributed lot. */
 export const UNATTRIBUTED = '';
 
-/** Separates the producer type from the hub type a lot came through, in a lot key. */
+/** Separates the producer id from the hub type a lot came through, in a lot key. */
 const VIA_SEPARATOR = '|';
 
 /**
  * A lot key says who made the goods and, when they were moved from another hub, which type of hub they came
- * through: `<producer type>` or `<producer type>|<hub type>`. A lot of unknown origin that was moved is `|<hub type>`.
+ * through: `<producer id>` or `<producer id>|<hub type>`. A lot of unknown origin that was moved is `|<hub type>`.
  * @param {string} key
- * @returns {{ producerType: string, via: string }} Empty strings when unknown / not moved.
+ * @returns {{ producerId: string, via: string }} Empty strings when unknown / not moved.
  */
 export function lotOrigin(key) {
-  const [producerType, via = ''] = String(key).split(VIA_SEPARATOR);
-  return { producerType, via };
+  const [producerId, via = ''] = String(key).split(VIA_SEPARATOR);
+  return { producerId, via };
 }
 
 /**
@@ -32,8 +33,8 @@ export function lotOrigin(key) {
  * @returns {string}
  */
 export function lotKeyMovedThrough(key, hubType) {
-  const { producerType, via } = lotOrigin(key);
-  return `${producerType}${VIA_SEPARATOR}${via || hubType}`;
+  const { producerId, via } = lotOrigin(key);
+  return `${producerId}${VIA_SEPARATOR}${via || hubType}`;
 }
 
 /**

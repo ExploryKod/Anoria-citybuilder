@@ -129,6 +129,17 @@ export class ProcessHubCollection {
         lastCollection[category] += transfer.amount;
       }
 
+      // What the Activité tab shows next to "Produit fini" ("Collecté"): when this good actually
+      // left the producer for a hub, and how much — "Produit fini" alone cannot say whether a
+      // pile of stock is fresh or has been sitting uncollected for a long time.
+      const source = await this.supplyBuildingRepository.findById(transfer.sourceId);
+      await this.supplyBuildingRepository.updateBuildingFields(transfer.sourceId, {
+        activityCollected: {
+          ...(source?.activityCollected ?? {}),
+          [category]: { amount: transfer.amount, turn: period?.turn ?? null },
+        },
+      });
+
       await this.supplyBuildingRepository.recordSourceSaleToHub(transfer.sourceId, {
         year: collectionYear,
         productType: category,

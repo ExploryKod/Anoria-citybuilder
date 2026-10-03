@@ -125,13 +125,13 @@ export class ProduceResource {
     // Ask the nearest holder: what this recipe wants is remembered there, so a client ranked below it does not
     // take the stock from under it (and what it gets is added when it is taken).
     if (holders[0]) {
-      await this.hubServing.recordDemand({ hubId: holders[0].id, category: input.category, client: building.type, turn, wanted: need, served: 0 });
+      await this.hubServing.recordDemand({ hubId: holders[0].id, category: input.category, client: building.id, turn, wanted: need, served: 0 });
     }
 
     const draws = [];
     let left = need;
     for (const holder of holders) {
-      const amount = Math.min(this.hubServing.availableTo(holder, input.category, building.type, turn), left);
+      const amount = Math.min(await this.hubServing.availableTo(holder, input.category, building.id, turn), left);
       if (amount <= 0) continue;
       draws.push({ holderId: holder.id, category: input.category, amount });
       left -= amount;
@@ -162,8 +162,8 @@ export class ProduceResource {
   async #takeInputs(building, plan, need, turn) {
     for (const draw of plan.draws) {
       const holder = await this.supplyBuildingRepository.findById(draw.holderId);
-      await this.hubServing.take({ hubId: draw.holderId, category: draw.category, client: building.type, amount: draw.amount, turn });
-      await this.hubServing.recordDemand({ hubId: draw.holderId, category: draw.category, client: building.type, turn, wanted: 0, served: draw.amount });
+      await this.hubServing.take({ hubId: draw.holderId, category: draw.category, client: building.id, amount: draw.amount, turn });
+      await this.hubServing.recordDemand({ hubId: draw.holderId, category: draw.category, client: building.id, turn, wanted: 0, served: draw.amount });
       // The holder's stock is written under the aggregate ITS role files the good under.
       const categories = getCategoriesForRole(holder.type, 'hub', draw.category);
       const totalKey = getTotalKeyForRole(holder.type, 'hub', draw.category);

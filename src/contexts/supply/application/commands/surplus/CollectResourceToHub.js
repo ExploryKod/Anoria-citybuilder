@@ -106,27 +106,45 @@ export class CollectResourceToHub {
 
       // Only goods this hub collects: a producer of anything else (household
       // gathering, another chain's output) is simply not this hub's business.
-      const category =
-        getCategoriesForRole(source.type, 'producer').find((candidate) => categories.includes(candidate)) ?? null;
-      if (!category) continue;
+      // A house merges several 'producer' entries into one resourceRoles array, and more than one
+      // can sell to the SAME hub (a merchant's dealWood/dealDecoratedPot/dealBook all go to
+      // TradeWarehouse) — every one of the source's categories this hub collects is tried, not
+      // just the first: picking only the first used to skip a source outright whenever that one
+      // category was empty, even with stock sitting in another (dealDecoratedPot piling up forever
+      // because dealWood, tried first, was always 0 — no wood chain built in that city).
+      const sourceCategories = [
+        ...new Set(
+          getResourceRoles(source.type)
+            .filter((entry) => entry.role === 'producer')
+            .flatMap((entry) => entry.categories)
+            .filter((candidate) => categories.includes(candidate))
+        ),
+      ];
+      if (sourceCategories.length === 0) continue;
 
-      const available = getCategoryAmount(source.stocks, category);
-      const room = getHubProductRemainingInbound({
-        productId: category,
-        productIds: hubGoods,
-        orders,
-        stocks: running,
-        totalCapacity: hub.maxStock,
-      });
-      const amount = Math.min(available, capacity, room);
-      if (amount <= 0) continue;
-      running[category] = (running[category] ?? 0) + amount;
-
-      const nextSourceStock = takeCategoryAmount(source.stocks, category, amount, categories, totalKey);
-      await this.supplyBuildingRepository.saveStocks(sourceId, nextSourceStock);
-
-      capacity -= amount;
-      transfers.push({ sourceId, category, amount });
+      let sourceStocks = source.stocks;
+      let tookAny = false;
+      for (const category of sourceCategories) {
+        if (capacity <= 0) break;
+        const available = getCategoryAmount(sourceStocks, category);
+        const room = getHubProductRemainingInbound({
+          productId: category,
+          productIds: hubGoods,
+          orders,
+          stocks: running,
+          totalCapacity: hub.maxStock,
+        });
+        const amount = Math.min(available, capacity, room);
+        if (amount <= 0) continue;
+        running[category] = (running[category] ?? 0) + amount;
+        sourceStocks = takeCategoryAmount(sourceStocks, category, amount, categories, totalKey);
+        capacity -= amount;
+        transfers.push({ sourceId, category, amount });
+        tookAny = true;
+      }
+      if (tookAny) {
+        await this.supplyBuildingRepository.saveStocks(sourceId, sourceStocks);
+      }
     }
 
     if (transfers.length === 0) {
@@ -146,18 +164,16 @@ export class CollectResourceToHub {
     );
     await this.supplyBuildingRepository.saveStocks(hubId, finalStock);
 
-    // What came in is filed under the producer type that delivered it, so the hub can serve its clients
-    // in the order that producer type asks for.
+    // What came in is filed under the producer instance that delivered it, so the hub can serve its
+    // clients in the order that instance's own priority setting asks for.
     if (this.hubServing) {
-      const sourceTypes = new Map(sourceRefs.map((ref) => [resolveInstanceIdFromNeighborRef(ref), ref.type]));
       let stockAfter = {};
       for (const transfer of transfers) {
-        const producerType = sourceTypes.get(transfer.sourceId);
         stockAfter[transfer.category] = (stockAfter[transfer.category] ?? (hub.stocks[transfer.category] ?? 0)) + transfer.amount;
         await this.hubServing.deposit({
           hubId,
           category: transfer.category,
-          producerType,
+          producerId: transfer.sourceId,
           amount: transfer.amount,
           stockAfter: stockAfter[transfer.category],
         });

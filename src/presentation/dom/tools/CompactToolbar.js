@@ -4,6 +4,7 @@ import {
   createToolButton,
   getDirectToolForCategory,
   getToolButtonInfosForCategory,
+  getToolButtonInfoClustersForCategory,
   getButtonsUnactive,
   resolveIcon,
 } from './ToolPanel.js';
@@ -225,7 +226,9 @@ function initSplide() {
     pagination: false,
     arrows: true,
     drag: true,
-    gap: '8px',
+    // Between-cluster gap: each slide is one thematic cluster (see renderCarousel); the tighter,
+    // within-cluster spacing between a cluster's own buttons lives in .mobile-build-bar__theme-group.
+    gap: '20px',
     focus: 0,
     wheel: false,
     speed: 320,
@@ -660,33 +663,43 @@ function renderCarousel(categoryId) {
     return;
   }
   if (carouselEl) carouselEl.style.minHeight = '';
-  let toolInfos = getToolButtonInfosForCategory(categoryId);
+  // Double flex: one slide per thematic cluster (Splide spaces slides apart with the larger,
+  // between-groups gap — see its `gap` option below), and inside a slide, a plain flex row with
+  // the tighter, within-group gap for that cluster's own buttons (compact-toolbar.css). A category
+  // with no themed entries (houses) comes back as one cluster per button, unchanged from before.
+  const clusters = getToolButtonInfoClustersForCategory(categoryId);
 
-  toolInfos.forEach((buttonInfo) => {
+  clusters.forEach((cluster) => {
     const slide = document.createElement('li');
     slide.className = 'splide__slide mobile-build-bar__slide';
 
-    let icon = resolveIcon(buttonInfo.tool);
-    if (categoryId === 'tools') {
-      icon = getDirectToolIcon(buttonInfo.tool) || icon;
-    }
+    const group = document.createElement('div');
+    group.className = 'mobile-build-bar__theme-group';
+    slide.appendChild(group);
 
-    createToolButton(buttonInfo, icon, {
-      container: slide,
-      extraClass: 'mobile-tool-btn',
-      onClick: (e) => {
-        getButtonsUnactive();
-        // getButtonsUnactive uses a static NodeList (captured at load time) so dynamically
-        // created carousel buttons are not cleared by it — clear them explicitly here.
-        getCarouselToolButtons().forEach((b) => b.classList.remove('selected'));
-        e.currentTarget?.classList?.add('selected');
-        deps?.invokeSetActiveTool?.(e);
-        const tools = getCarouselToolButtons();
-        const index = tools.indexOf(/** @type {HTMLButtonElement} */ (e.currentTarget));
-        if (index >= 0) {
-          syncCarouselToolRovingTabIndex(index);
-        }
-      },
+    cluster.forEach((buttonInfo) => {
+      let icon = resolveIcon(buttonInfo.tool);
+      if (categoryId === 'tools') {
+        icon = getDirectToolIcon(buttonInfo.tool) || icon;
+      }
+
+      createToolButton(buttonInfo, icon, {
+        container: group,
+        extraClass: 'mobile-tool-btn',
+        onClick: (e) => {
+          getButtonsUnactive();
+          // getButtonsUnactive uses a static NodeList (captured at load time) so dynamically
+          // created carousel buttons are not cleared by it — clear them explicitly here.
+          getCarouselToolButtons().forEach((b) => b.classList.remove('selected'));
+          e.currentTarget?.classList?.add('selected');
+          deps?.invokeSetActiveTool?.(e);
+          const tools = getCarouselToolButtons();
+          const index = tools.indexOf(/** @type {HTMLButtonElement} */ (e.currentTarget));
+          if (index >= 0) {
+            syncCarouselToolRovingTabIndex(index);
+          }
+        },
+      });
     });
 
     listEl.appendChild(slide);

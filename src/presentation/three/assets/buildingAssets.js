@@ -18,9 +18,13 @@
  * missing entry or `button: null` throws rather than degrading to a default
  * icon — this file is the only place a building's icon/label/category is
  * decided. `button.group` is the REAL in-game gameplay category (one of
- * houses/farms/industry/markets/infrastructure/public — the exact keys
+ * houses/farms/factories/warehouses/infrastructure/public — the exact keys
  * ToolPanel.js's GROUP_CREATORS route on) and is what actually determines
- * which carousel panel an id appears in; `editorGroup` is always `null` here
+ * which carousel panel an id appears in; `button.theme` (optional) clusters
+ * entries within one group into a thematic sub-group (e.g. every pottery
+ * workshop) — same group, visually set apart by a gap (ToolPanel.js's
+ * groupIdsByTheme) and, when the theme has one, a color (BUILDING_THEME_COLORS
+ * above). `editorGroup` is always `null` here
  * because no building-layer asset is placed via the separate map-editor
  * toolbar (see natureAssets.js/terrainAssets.js, where it isn't). icon.kind
  * is one of 'svg' (inline markup), 'png' (Kenney-style full-color preview
@@ -81,6 +85,29 @@
  *    with a shared Lambert material, not cloned GLB meshes.
  */
 
+/**
+ * Color for a `button.theme` cluster's carousel buttons (idle/hover/selected) — the ONLY place a
+ * theme's color is decided. ToolPanel.js's createToolButton reads this and sets it as the
+ * `--theme-color` custom property on the button element itself; compact-toolbar.css never names a
+ * theme, it just consumes that variable. A theme with no entry here still clusters into its own
+ * slide (see ToolPanel.js's catalogClustersByGroup) — it simply keeps the default button look.
+ * @type {Readonly<Record<string, string>>}
+ */
+export const BUILDING_THEME_COLORS = Object.freeze({
+  pottery: '#c1440e',
+  wood: '#8b5a2b',
+  lighting: '#d4a017',
+  network: '#1a8a8a',
+  'food-hub': '#5a7d3a',
+  'goods-hub': '#5c5f66',
+  commerce: '#b23a6b',
+  crops: '#3f8f3f',
+  worship: '#b8860b',
+  education: '#2f5fa8',
+  health: '#c0392b',
+  leisure: '#6a3fa0',
+});
+
 /** What a crop field shows through the year: one icon per season, the field's own look follows the same ids. */
 const CROP_CYCLE_GRAPHICS = Object.freeze([
   { id: 'winter', when: { unit: 'season', values: ['winter'] }, status: 'no-food-farm' },
@@ -113,7 +140,8 @@ const LUMBERJACK_MESH = {
     displayColor: null,
   },
   button: {
-    group: 'industry',
+    group: 'factories',
+    theme: 'wood',
     editorGroup: null,
     label: 'Bûcheron',
     tooltip: 'Bûcheron',
@@ -233,6 +261,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'farms',
+      theme: 'crops',
       editorGroup: null,
       label: 'Farm Wheat',
       tooltip: 'Farm Wheat',
@@ -283,6 +312,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'farms',
+      theme: 'crops',
       editorGroup: null,
       label: 'Farm Carrot',
       tooltip: 'Farm Carrot',
@@ -333,6 +363,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'farms',
+      theme: 'crops',
       editorGroup: null,
       label: 'Farm Cabbage',
       tooltip: 'Farm Cabbage',
@@ -380,6 +411,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'farms',
+      theme: 'crops',
       editorGroup: null,
       label: 'Champ d\'oliviers',
       tooltip: 'Champ d\'oliviers',
@@ -411,7 +443,8 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      group: 'warehouses',
+      theme: 'food-hub',
       editorGroup: null,
       label: 'Windmill 001',
       tooltip: 'Windmill 001',
@@ -508,7 +541,8 @@ export const BUILDING_ASSETS = Object.freeze({
       instanceable: true,
     },
     button: {
-      group: 'markets',
+      group: 'warehouses',
+      theme: 'commerce',
       editorGroup: null,
       label: 'Market Stall Red',
       tooltip: 'Market Stall Red',
@@ -549,7 +583,7 @@ export const BUILDING_ASSETS = Object.freeze({
       pillCategory: 'roads',
       editorGroup: null,
       label: 'Chemin de pierre',
-      tooltip: 'Chemin de pierre — R pour tourner, S pour changer de forme',
+      tooltip: 'Chemin de pierre — forme automatique en glissant ; S/R ne servent que pour une case isolée',
       icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="16"/><line x1="16" y1="14" x2="16" y2="16"/></svg>' },
     },
     tags: ['infrastructure', 'building', 'road'],
@@ -760,6 +794,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'public',
+      theme: 'worship',
       editorGroup: null,
       label: 'Chapel',
       tooltip: 'Chapel',
@@ -963,6 +998,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'public',
+      theme: 'education',
       editorGroup: null,
       label: 'Bibliothèque',
       tooltip: 'Bibliothèque',
@@ -1050,6 +1086,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'public',
+      theme: 'health',
       editorGroup: null,
       label: 'Cabinet médical',
       tooltip: 'Cabinet médical',
@@ -1163,6 +1200,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'public',
+      theme: 'education',
       editorGroup: null,
       label: 'École',
       tooltip: 'École',
@@ -1224,6 +1262,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'public',
+      theme: 'health',
       editorGroup: null,
       label: 'Hôpital',
       tooltip: 'Hôpital',
@@ -1337,6 +1376,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'public',
+      theme: 'leisure',
       editorGroup: null,
       label: 'Cinéma',
       tooltip: 'Cinéma',
@@ -1398,6 +1438,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'public',
+      theme: 'leisure',
       editorGroup: null,
       label: 'Théâtre',
       tooltip: 'Théâtre',
@@ -1668,7 +1709,8 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      group: 'factories',
+      theme: 'pottery',
       editorGroup: null,
       label: 'Atelier de plats',
       tooltip: 'Atelier de plats',
@@ -1709,7 +1751,8 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      group: 'factories',
+      theme: 'wood',
       editorGroup: null,
       label: 'Atelier de meubles',
       tooltip: 'Atelier de meubles',
@@ -1717,6 +1760,41 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     tags: ['industry', 'building'],
   },
+  // Entrepôt commercial — reuses Kenney Industrial building-c (2×2, distinct from the regular
+  // warehouse building-a). Placeholder until a dedicated commercial-warehouse mesh is created.
+  'TradeWarehouse': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-c',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      group: 'warehouses',
+      theme: 'goods-hub',
+      editorGroup: null,
+      label: 'Entrepôt commercial',
+      tooltip: "Stocke les biens d'export des marchands",
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-c.png' },
+    },
+    tags: ['industry', 'building', 'trade'],
+  },
+
   // Entrepôt — RÉASSIGNÉ au kit Kenney Industrial building-a (economy/footprint keyed to 'Warehouse').
   'Warehouse': {
     source: 'kenneyCityKit',
@@ -1741,7 +1819,8 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      group: 'warehouses',
+      theme: 'goods-hub',
       editorGroup: null,
       label: 'Entrepôt',
       tooltip: 'Entrepôt',
@@ -1805,6 +1884,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'public',
+      theme: 'health',
       editorGroup: null,
       label: 'Bains publics',
       tooltip: 'Bains publics',
@@ -1891,7 +1971,8 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      group: 'factories',
+      theme: 'pottery',
       editorGroup: null,
       label: 'Atelier de pots',
       tooltip: 'Atelier de pots',
@@ -1923,7 +2004,8 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      group: 'factories',
+      theme: 'lighting',
       editorGroup: null,
       label: 'Huilerie',
       tooltip: 'Huilerie',
@@ -1954,7 +2036,8 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      group: 'factories',
+      theme: 'lighting',
       editorGroup: null,
       label: 'Chandellerie',
       tooltip: 'Chandellerie',
@@ -2015,7 +2098,8 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      group: 'factories',
+      theme: 'pottery',
       editorGroup: null,
       label: 'Atelier d\'amphores',
       tooltip: 'Atelier d\'amphores',
@@ -2073,7 +2157,8 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      group: 'factories',
+      theme: 'network',
       editorGroup: null,
       label: 'Fournisseur d\'accès',
       tooltip: 'Fournisseur d\'accès',
@@ -2162,6 +2247,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'public',
+      theme: 'leisure',
       editorGroup: null,
       label: 'Taverne',
       tooltip: 'Taverne',

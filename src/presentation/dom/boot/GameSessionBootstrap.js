@@ -17,6 +17,7 @@ import {
   bindSessionRuntime,
   getSessionApi,
   getSessionPopupManager,
+  getSessionService,
 } from '../../../composition/sessionRuntime.js';
 import { waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
 import { createGame } from '../../three/game.js';
@@ -222,6 +223,7 @@ export async function bootstrapGameSession(assetManager) {
     parcels: sessionApi.parcels,
     employment: sessionApi.employment,
     intelligence: sessionApi.intelligence,
+    trade: getSessionService('trade') ?? null,
     popupManager,
     gameStore: gameSession,
     getCity: () => game.city ?? null,

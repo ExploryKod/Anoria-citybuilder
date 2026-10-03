@@ -32,7 +32,18 @@ export class RunResourceCommandForRole {
     const results = [];
 
     for (const building of buildings) {
-      const outcome = await this.command.execute(buildParams(building));
+      // One building's command must never take the rest of the city down with it: an uncaught
+      // throw here used to abort this loop entirely, silently skipping every building queued
+      // after the failing one — and, since this same call is one step of RunMonthlyResourceCycle,
+      // every step after it too (the hub collection that would have moved this tick's output
+      // into a warehouse, in particular). Loud (console.error), but isolated per building.
+      let outcome;
+      try {
+        outcome = await this.command.execute(buildParams(building));
+      } catch (error) {
+        console.error(`[RunResourceCommandForRole] "${role}" command failed for building ${building.id} (${building.type}):`, error);
+        continue;
+      }
       if (outcome[successKey]) {
         results.push(outcome);
       }

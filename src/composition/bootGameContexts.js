@@ -12,6 +12,7 @@ import { getOrCreateConstructionContext } from './createConstructionContext.js';
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
 import { getOrCreateIntelligenceContext } from './createIntelligenceContext.js';
+import { getOrCreateTradeContext } from './createTradeContext.js';
 import { toSupplySeason, toSupplyMonth } from './supplyTimeLabels.js';
 import { createGameRuntime } from './createGameRuntime.js';
 import { assembleSessionApi } from './sessionApi.js';
@@ -43,6 +44,7 @@ export function bootGameContexts() {
   const cityAssets = getOrCreateCityAssetsContext();
   const accounting = getOrCreateAccountingContext({ cityAssets });
   const intelligence = getOrCreateIntelligenceContext();
+  const trade = getOrCreateTradeContext({ supply, accounting });
   const sessionApi = assembleSessionApi({
     construction,
     accounting,
@@ -60,6 +62,7 @@ export function bootGameContexts() {
     employment,
     gameplay,
     intelligence,
+    trade,
     getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
     toSupplySeason,
     toSupplyMonth,
@@ -75,6 +78,7 @@ export function bootGameContexts() {
     construction,
     accounting,
     intelligence,
+    trade,
     sessionApi,
     runtime,
   };

@@ -2,10 +2,11 @@ import { buildingCatalog } from './buildingCatalog.js';
 import { getResourceRoles } from './resourceRoleQueries.js';
 
 /**
- * Who draws a good from a hub, and in which order the player prefers to serve them — read from the catalog
- * alone. A "client" is a building TYPE (never one building at given coordinates): the player decides how many
- * of each he places. No good and no building is named here; adding a building that buys a good in its
- * entries makes it a client of that good.
+ * Who draws a good from a hub. A "client" is a building TYPE here (never one building at given coordinates):
+ * this says which types are eligible at all — the order the player prefers to serve them in is a per-instance
+ * setting on the producer building itself (see ResourceRolePolicy / GetClientPriorityBoardForBuilding), not a
+ * catalog fact. No good and no building is named here; adding a building that buys a good in its entries makes
+ * it a client of that good.
  */
 
 /** The goods a recipe draws from a hub: every input of a producer entry that names a `from`. */
@@ -43,24 +44,43 @@ export function producedCategories(producerType) {
 }
 
 /**
- * The order in which a producer type's goods serve their clients, and which clients it does not serve at all.
- * The catalog gives the default (`clients` on the producer entry, then every other client in catalog order);
- * what the player saved for this type replaces it. A saved type that no longer buys these goods is dropped and
- * a client added since is appended, so an old setting never breaks.
- *
+ * The client TYPES the catalog declares first for a producer type (the `clients` list on its producer
+ * entries) — used only to seed the default ORDER of candidate instances (their type's declared preference),
+ * never to decide who is eligible; `listClientTypes` alone decides that.
  * @param {string} producerType
- * @param {{ order?: string[], disabled?: string[] } | null | undefined} saved The player's setting for this type.
+ * @returns {string[]}
+ */
+export function declaredClientTypes(producerType) {
+  return getResourceRoles(producerType)
+    .filter((entry) => entry.role === 'producer')
+    .flatMap((entry) => entry.clients ?? []);
+}
+
+/**
+ * The order in which a producer INSTANCE serves its candidate client instances, and which of them it does not
+ * serve at all. The default order ranks a candidate's own type by the catalog's declared preference first, then
+ * every other eligible type, then stably by id; what the player saved for this instance (specific building ids)
+ * replaces it. A saved id no longer among the candidates (destroyed, or no longer eligible) is dropped, and a
+ * candidate never saved is appended, so an old setting never breaks and a newly-built candidate is never silently
+ * skipped.
+ *
+ * @param {object} params
+ * @param {string} params.producerType
+ * @param {ReadonlyArray<{ id: string, type: string }>} params.candidates Every client-eligible instance in reach (city-wide).
+ * @param {{ order?: string[], disabled?: string[] } | null | undefined} params.saved The player's setting for this instance.
  * @returns {{ order: string[], disabled: string[] }}
  */
-export function resolveClientPriorities(producerType, saved = null) {
-  const derived = listClientTypes(producedCategories(producerType));
-  const declared = getResourceRoles(producerType)
-    .filter((entry) => entry.role === 'producer')
-    .flatMap((entry) => entry.clients ?? [])
-    .filter((type) => derived.includes(type));
-  const base = [...new Set([...declared, ...derived])];
+export function resolveInstanceClientPriorities({ producerType, candidates, saved = null }) {
+  const declaredRank = new Map(declaredClientTypes(producerType).map((type, index) => [type, index]));
+  const derived = [...candidates]
+    .sort((a, b) => {
+      const rankA = declaredRank.get(a.type) ?? declaredRank.size;
+      const rankB = declaredRank.get(b.type) ?? declaredRank.size;
+      return rankA - rankB || a.type.localeCompare(b.type) || a.id.localeCompare(b.id);
+    })
+    .map((candidate) => candidate.id);
 
-  const savedOrder = (saved?.order ?? []).filter((type) => derived.includes(type));
-  const order = [...new Set([...savedOrder, ...base])];
-  return { order, disabled: (saved?.disabled ?? []).filter((type) => derived.includes(type)) };
+  const savedOrder = (saved?.order ?? []).filter((id) => derived.includes(id));
+  const order = [...new Set([...savedOrder, ...derived])];
+  return { order, disabled: (saved?.disabled ?? []).filter((id) => derived.includes(id)) };
 }

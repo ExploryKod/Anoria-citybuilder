@@ -55,7 +55,12 @@ import {
   resolveBehaviorMode,
   shouldReturnToSelectOnEscape,
 } from '../../shared/gameplay/behaviorMode.js';
-import { DEFAULT_TICK_MS, snapTickMs } from '../../shared/gameplay/SimulationDefaults.js';
+import {
+  DEFAULT_TICK_MS,
+  clampTickMs,
+  msToSpeedLevel,
+  speedLevelToDays,
+} from '../../shared/gameplay/SimulationDefaults.js';
 import { GameLoop } from '../../engine/loop/GameLoop.js';
 import {
   overOverlay,
@@ -288,8 +293,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
   }
 
   function getTickIntervalMs() {
-    const raw = parseInt(localStorage.getItem('speed'), 10);
-    return snapTickMs(Number.isFinite(raw) ? raw : DEFAULT_TICK_MS);
+    // Clamped to the sane range, not snapped to one of the 13 ladder steps: the Settings panel's
+    // "secondes entre chaque tour" field wants a precise value, not the nearest preset.
+    const raw = parseFloat(localStorage.getItem('speed'));
+    return clampTickMs(Number.isFinite(raw) ? raw : DEFAULT_TICK_MS);
+  }
+
+  /** Simulated days to batch-advance on the next tick fire — see SPEED_LEVELS_DAYS. */
+  function getDaysPerTick() {
+    return speedLevelToDays(msToSpeedLevel(getTickIntervalMs()));
   }
 
   localStorage.setItem('speed', String(DEFAULT_TICK_MS));
@@ -312,6 +324,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     gameplay,
     construction,
     accounting,
+    trade,
     sessionApi,
     runtime,
   } = bootGameContexts();
@@ -602,6 +615,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     housing,
     employment,
     gameplay,
+    trade,
     ecsRuntime: runtime,
     sessionApi,
   });
@@ -1316,7 +1330,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     travelToHamlet,
     getActiveHamletId,
 
-    async update(tick) {
+    async update(tick, { silent = false } = {}) {
       await runGameTick({
         time: tick,
         shouldAbort: () => isPause || isOver,
@@ -1334,9 +1348,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
           isOver = true;
         },
         presentIncomingNewsEvents,
+        silent,
       });
-      // Felled trees are gone: the placement gate must not count them anymore.
-      await refreshPlacementPresentation();
+      if (!silent) {
+        // Felled trees are gone: the placement gate must not count them anymore.
+        await refreshPlacementPresentation();
+      }
     },
 
     refreshEmployment: refreshEmploymentPresentationForCity,
@@ -1413,10 +1430,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
       if (toolChanged && isActivePlacementTool(toolId)) {
         const placingType = resolvePlacementBuildingId(toolId);
         showPlacementNeedsNotification(placingType);
-        // A producer whose goods have clients says who it serves first, and where the player changes it.
-        void supply.listClientPriorityBoards().then((boards) =>
-          showClientPriorityNotification(placingType, boards.find((board) => board.producerType === placingType))
-        );
+        // A producer whose goods have clients says where the player sets who it serves first, once placed.
+        showClientPriorityNotification(placingType);
       }
       if (isEditorTerrainTool(toolId)) {
         void getKenneyNatureTerrainAdapter().ensureTerrainTemplate(toolId);
@@ -1446,8 +1461,16 @@ export function createGame(gameStore, assetManager, citySize = null) {
       if (isPause || isOver) {
         return;
       }
-      time += 1;
-      await game.update(time);
+      // Fast-forward (speed levels 10-13): batch several simulated days into this one
+      // tick fire, rendering only the batch's last day — see SPEED_LEVELS_DAYS.
+      const days = getDaysPerTick();
+      for (let day = 0; day < days; day += 1) {
+        time += 1;
+        await game.update(time, { silent: day < days - 1 });
+        if (isPause || isOver) {
+          break;
+        }
+      }
     },
   });
   gameLoop.start();

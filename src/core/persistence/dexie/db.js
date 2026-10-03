@@ -135,6 +135,9 @@ db.version(12).stores({}).upgrade(async (tx) => {
 // v13: rename foodTraceability → supplyTraceability (table covers all resource categories, not food only).
 db.version(13).stores({ supplyTraceability: '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price', foodTraceability: null });
 
+// v14: city trade relations — one row per partner city, keyed by cityId.
+db.version(14).stores({ cityRelations: 'cityId, status, contractEndMonth, lastOrderMonth' });
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

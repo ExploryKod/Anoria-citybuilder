@@ -12,7 +12,31 @@ export const SPEED_LEVELS_MS = Object.freeze([
   3000, // 6
   2000, // 7
   1000, // 8
-  500, // 9 — max
+  500, // 9
+  350, // 10
+  250, // 11
+  150, // 12
+  80, // 13 — max. GameLoop's in-flight guard skips a tick rather than piling
+  // up lag if a tick's own work outlasts the interval, so this ceiling is safe
+  // to raise further later — it degrades to "as fast as a tick actually runs", never backs up.
+]);
+
+/**
+ * Simulated days advanced per GameLoop tick fire, same index as SPEED_LEVELS_MS.
+ * Levels 1-9 present every day (one day per tick, full render). Past that, a single
+ * tick's own render cost (scene.update's mesh sync) already exceeds the requested
+ * interval, so shortening the interval further has no visible effect — see
+ * project_game_speed_fast_forward_deferred memory. Levels 10-13 instead batch several
+ * simulated days per tick fire: interim days run the simulation (ECS + economy) only,
+ * skipping scene/HUD/notification presentation (see runGameTick's `silent` option),
+ * and only the batch's last day renders — Caesar-3-style fast-forward, not a shorter clock.
+ */
+export const SPEED_LEVELS_DAYS = Object.freeze([
+  1, 1, 1, 1, 1, 1, 1, 1, 1, // 1-9
+  2, // 10
+  4, // 11
+  8, // 12
+  16, // 13 — max
 ]);
 
 /** 1-based index into SPEED_LEVELS_MS */
@@ -32,6 +56,15 @@ export const DEFAULT_CITY_SIZE = 12;
 export function speedLevelToMs(level) {
   const clamped = Math.max(SPEED_LEVEL_MIN, Math.min(SPEED_LEVEL_MAX, Math.round(level)));
   return SPEED_LEVELS_MS[clamped - 1];
+}
+
+/**
+ * @param {number} level 1-based speed level
+ * @returns {number} simulated days to batch-advance per tick fire
+ */
+export function speedLevelToDays(level) {
+  const clamped = Math.max(SPEED_LEVEL_MIN, Math.min(SPEED_LEVEL_MAX, Math.round(level)));
+  return SPEED_LEVELS_DAYS[clamped - 1];
 }
 
 /**
@@ -63,6 +96,20 @@ export function msToSpeedLevel(ms) {
  */
 export function snapTickMs(ms) {
   return speedLevelToMs(msToSpeedLevel(ms));
+}
+
+/**
+ * Keeps a ms value within the ladder's overall range WITHOUT forcing it onto one of the discrete
+ * steps — for a direct numeric control (seconds-per-turn in Settings) that wants a precise value,
+ * not just the nearest of 13 presets. The +/- HUD buttons still store an exact ladder step, so
+ * clamping them is a no-op; only a fine-tuned value actually differs from snapTickMs here.
+ * @param {number} ms
+ * @returns {number}
+ */
+export function clampTickMs(ms) {
+  const value = Number(ms);
+  if (!Number.isFinite(value)) return DEFAULT_TICK_MS;
+  return Math.max(TICK_MS_MIN, Math.min(TICK_MS_MAX, value));
 }
 
 /** @returns {{ tickMsMin: number, tickMsMax: number, defaultTickMs: number, citySize: number, speedLevelMin: number, speedLevelMax: number, defaultSpeedLevel: number }} */

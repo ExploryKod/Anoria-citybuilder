@@ -1,33 +1,90 @@
 import { reconcileLots, addToLot, takeFromLots, lotOrigin, lotKeyMovedThrough } from '../../domain/policies/HubLotsPolicy.js';
 import { availableToClient, allocateToClient } from '../../domain/policies/HubClientAllocationPolicy.js';
 import { recordClientDemand, othersWanted } from '../../domain/policies/HubClientDemandPolicy.js';
-import { resolveClientPriorities } from '../../../../shared/building-catalog/clientQueries.js';
+import { listClientTypes, resolveInstanceClientPriorities } from '../../../../shared/building-catalog/clientQueries.js';
 
 /**
- * How a hub serves its clients: what each client type may take of a good given who delivered it (the producer
- * type's priorities) and who else is waiting, and the bookkeeping that keeps that true (lots by provenance,
- * what each client wanted). The stock itself is still written by whoever moves it; this only says how much
- * and from which lots, and keeps the breakdown in step.
+ * How a hub serves its clients: what each client INSTANCE may take of a good given who delivered it (that
+ * producer instance's own priorities — see GetClientPriorityBoardForBuilding, set from its own info panel) and
+ * who else is waiting, and the bookkeeping that keeps that true (lots by provenance, what each client wanted).
+ * The stock itself is still written by whoever moves it; this only says how much and from which lots, and keeps
+ * the breakdown in step.
  */
 export class HubServing {
+  /** @type {Promise<object[]> | null} One fetch shared by every call within a tick — see invalidateCache. */
+  #rowsCache = null;
+
   /**
    * @param {import('../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
-   * @param {object} [options]
-   * @param {() => Record<string, { order?: string[], disabled?: string[] }>} [options.loadSettings] The player's
-   *   saved priorities per producer type; none saved means the catalog's defaults.
+   * @param {{ listExternalClients?: (category: string) => Array<{ id: string, type: string }> }} [deps]
+   *   `listExternalClients` names client candidates that are not a building row at all — an external
+   *   trade city buying a merchant's deal good (see createSupplyContext.js: the composition root is
+   *   the one place supply is allowed to reach into geography's trade catalog for this).
    */
-  constructor(supplyBuildingRepository, { loadSettings = () => ({}) } = {}) {
+  constructor(supplyBuildingRepository, { listExternalClients } = {}) {
     this.supplyBuildingRepository = supplyBuildingRepository;
-    this.loadSettings = loadSettings;
+    this.listExternalClients = listExternalClients ?? (() => []);
   }
 
-  #priorityOf() {
-    const settings = this.loadSettings() ?? {};
-    // A lot is served in the order its producer type asks, whether the goods were moved through another hub or not.
-    return (lotKey) => {
-      const { producerType } = lotOrigin(lotKey);
-      return resolveClientPriorities(producerType, settings[producerType]);
-    };
+  /**
+   * Call once per tick, before any take/availableTo/deposit run (see createSupplyContext.js's
+   * runMonthlyResourceCycle). #priorityOf used to call listAllBuildingRows() — a full building-table
+   * scan — on EVERY single draw a producer makes from a hub, which for a city with many producers
+   * meant dozens of redundant full scans per tick (a real, measured cause of ticks overrunning
+   * their own interval). Now one scan is shared by the whole tick; this clears it so the next tick
+   * sees fresh data instead of an ever-growing stale snapshot.
+   */
+  invalidateCache() {
+    this.#rowsCache = null;
+  }
+
+  /** @returns {Promise<object[]>} */
+  #listAllBuildingRowsCached() {
+    this.#rowsCache ??= this.supplyBuildingRepository.listAllBuildingRows();
+    return this.#rowsCache;
+  }
+
+  /**
+   * The priority profile of every producer instance a set of lot keys names, FOR ONE GOOD — a
+   * producer making several goods ranks each independently (a merchant house's wood clients have
+   * nothing to do with its book clients), so the good being served must scope which of its saved
+   * rankings applies. Resolved fresh (a producer's own setting, and which client instances
+   * currently exist, both change as the game is played) — one building-wide fetch for every lot at
+   * once, not one per lot.
+   * @param {ReadonlyArray<string>} lotKeys
+   * @param {string} category
+   * @returns {Promise<(lotKey: string) => { order: string[], disabled: string[] }>}
+   */
+  async #priorityOf(lotKeys, category) {
+    const producerIds = [...new Set(lotKeys.map((key) => lotOrigin(key).producerId).filter(Boolean))];
+    if (producerIds.length === 0) return () => ({ order: [], disabled: [] });
+
+    const rows = await this.#listAllBuildingRowsCached();
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    const clientTypes = listClientTypes([category]);
+    const externalClients = this.listExternalClients(category);
+    const profiles = new Map();
+    for (const producerId of producerIds) {
+      const producer = byId.get(producerId);
+      if (!producer) {
+        profiles.set(producerId, { order: [], disabled: [] });
+        continue;
+      }
+      const candidates = [
+        ...rows.filter((row) => row.id !== producerId && clientTypes.includes(row.type)).map((row) => ({ id: row.id, type: row.type })),
+        ...externalClients,
+      ];
+      profiles.set(
+        producerId,
+        resolveInstanceClientPriorities({
+          producerType: producer.type,
+          candidates,
+          saved: producer.clientPriorityByGood?.[category] ?? null,
+        })
+      );
+    }
+
+    return (lotKey) => profiles.get(lotOrigin(lotKey).producerId) ?? { order: [], disabled: [] };
   }
 
   /** A hub's lots of one good, in step with its stock. */
@@ -35,11 +92,12 @@ export class HubServing {
     return reconcileLots(hub.lots?.[category], hub.stocks?.[category] ?? 0);
   }
 
-  /** What a client type can take of a good from this hub at most, right now. */
-  availableTo(hub, category, client, turn) {
+  /** What a client instance can take of a good from this hub at most, right now. */
+  async availableTo(hub, category, client, turn) {
+    const lots = this.lotsOf(hub, category);
     return availableToClient({
-      lots: this.lotsOf(hub, category),
-      priorityOf: this.#priorityOf(),
+      lots,
+      priorityOf: await this.#priorityOf(Object.keys(lots), category),
       othersWanted: othersWanted(hub.clientDemand?.[category], client, turn),
       client,
     });
@@ -57,7 +115,7 @@ export class HubServing {
     const lots = this.lotsOf(hub, category);
     const takes = allocateToClient({
       lots,
-      priorityOf: this.#priorityOf(),
+      priorityOf: await this.#priorityOf(Object.keys(lots), category),
       othersWanted: othersWanted(hub.clientDemand?.[category], client, turn),
       client,
       want: amount,
@@ -68,14 +126,14 @@ export class HubServing {
     return takes;
   }
 
-  /** A hub took goods in: the lot of the producer type that delivered grows. */
-  async deposit({ hubId, category, producerType, amount, stockAfter }) {
+  /** A hub took goods in: the lot of the producer instance that delivered grows. */
+  async deposit({ hubId, category, producerId, amount, stockAfter }) {
     const hub = await this.supplyBuildingRepository.findById(hubId);
     if (!hub) return;
     // The lots as they were before this delivery (against the stock as it was), plus what came in.
     const before = reconcileLots(hub.lots?.[category], Math.max(0, stockAfter - amount));
     await this.supplyBuildingRepository.updateBuildingFields(hubId, {
-      lots: { ...(hub.lots ?? {}), [category]: addToLot(before, producerType, amount) },
+      lots: { ...(hub.lots ?? {}), [category]: addToLot(before, producerId, amount) },
     });
   }
 
