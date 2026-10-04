@@ -83,7 +83,7 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     getIncomeStatement: (options) => accounting.getIncomeStatement(options),
     getFinancialStatementsHistory: (options) => accounting.getFinancialStatementsHistory(options),
     getGeneralLedger: (filters) => accounting.getGeneralLedger(filters),
-    getCityLedgerYearComparison: () => accounting.getCityLedgerYearComparison(),
+    getCityLedgerYearComparison: (options) => accounting.getCityLedgerYearComparison(options),
     exportJournalJson: () => accounting.exportJournalJson(),
     exportJournalPdf: () => accounting.exportJournalPdf(),
 
@@ -105,8 +105,6 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     recordLoanInterest: (...args) => accounting.recordLoanInterest(...args),
     recordLoanRepayment: (...args) => accounting.recordLoanRepayment(...args),
     recordInfoLoanInstallment: (params) => accounting.recordInfoLoanInstallmentFromGame(params),
-    advanceLoanInstallmentWithoutPayment: (loanId) =>
-      accounting.advanceLoanInstallmentWithoutPayment(loanId),
 
     createEmptyCityLedgerYearLines: (...args) => createEmptyCityLedgerYearLines(...args),
     computeLoanRate: (...args) => computeLoanRate(...args),

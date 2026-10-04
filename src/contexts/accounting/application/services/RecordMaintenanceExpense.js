@@ -4,11 +4,9 @@
 export class RecordMaintenanceExpense {
   /**
    * @param {import('../commands/journal/RecordLedgerEntry.js').RecordLedgerEntry} recordLedgerEntry
-   * @param {import('../commands/treasury/ApplyTreasuryMovement.js').ApplyTreasuryMovement} applyTreasuryMovement
    */
-  constructor(recordLedgerEntry, applyTreasuryMovement) {
+  constructor(recordLedgerEntry) {
     this.recordLedgerEntry = recordLedgerEntry;
-    this.applyTreasuryMovement = applyTreasuryMovement;
   }
 
   /**
@@ -17,7 +15,7 @@ export class RecordMaintenanceExpense {
    * @param {number} params.amount
    * @param {string} params.description
    * @param {object|null} [params.maintenanceBreakdown]
-   * @returns {Promise<{ recorded: boolean, skipped: boolean, treasuryApplied: boolean, reason?: string }>}
+   * @returns {Promise<{ recorded: boolean, skipped: boolean, reason?: string }>}
    */
   async execute({ turn, amount, description, maintenanceBreakdown = null }) {
     const roundedAmount = Math.round(amount);
@@ -26,7 +24,6 @@ export class RecordMaintenanceExpense {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'zero_amount',
       };
     }
@@ -42,21 +39,13 @@ export class RecordMaintenanceExpense {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: ledgerResult.reason,
       };
     }
 
-    await this.applyTreasuryMovement.execute({
-      category: 'maintenance',
-      amount: roundedAmount,
-      maintenanceBreakdown,
-    });
-
     return {
       recorded: true,
       skipped: false,
-      treasuryApplied: true,
     };
   }
 }

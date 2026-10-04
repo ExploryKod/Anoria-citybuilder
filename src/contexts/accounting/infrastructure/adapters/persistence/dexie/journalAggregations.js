@@ -35,6 +35,23 @@ export function filterAndSortJournalEntries(entries, maxAge = null) {
 }
 
 /**
+ * Entries of one hamlet, or every entry when `hamletId` is null. Applied before any aggregation, so that
+ * classification rules that look at the other entries only ever see the hamlet's own journal.
+ *
+ * @param {Array<object>} entries
+ * @param {string|null} hamletId
+ */
+export function filterJournalEntriesByHamlet(entries, hamletId) {
+  if (hamletId == null) return entries;
+  return entries.filter((entry) => {
+    if (typeof entry.hamletId !== 'string' || entry.hamletId.length === 0) {
+      throw new Error(`[journal] entry ${entry.id ?? entry.type} (turn ${entry.turn}) has no hamletId, cannot be scoped to a hamlet`);
+    }
+    return entry.hamletId === hamletId;
+  });
+}
+
+/**
  * Balance classification (loan_capital NOT in initial income set — legacy behavior).
  *
  * @param {object} entry

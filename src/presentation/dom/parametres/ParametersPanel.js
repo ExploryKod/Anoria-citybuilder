@@ -11,7 +11,6 @@ import { DEFAULT_TICK_MS, TICK_MS_MIN, TICK_MS_MAX, clampTickMs } from '../../..
  *   pauseGame?: () => void,
  *   playGame?: () => void,
  *   registerAppService?: (name: string, instance: unknown) => void,
- *   getTimeManager?: () => { refreshCache?: () => Promise<void> } | null,
  *   getGame?: () => { startInterval?: () => void } | null,
  *   getScene?: () => {
  *     setTileGridVisible?: (visible: boolean) => void,
@@ -137,24 +136,6 @@ class ParametersPanel {
             });
         }
 
-        if (this.daysPerMonthInput) {
-            this.daysPerMonthInput.addEventListener('change', (e) => {
-                this.handleDaysPerMonthChange(parseInt(e.target.value, 10));
-            });
-            this.daysPerMonthInput.addEventListener('input', (e) => {
-                const value = e.target.value;
-                if (value === '' || value === '-') return;
-                const numValue = parseInt(value, 10);
-                if (!isNaN(numValue)) {
-                    if (numValue < 1) {
-                        e.target.value = 1;
-                    } else if (numValue > 30) {
-                        e.target.value = 30;
-                    }
-                }
-            });
-        }
-
         if (this.tickSecondsInput) {
             const tickMsMinSeconds = TICK_MS_MIN / 1000;
             const tickMsMaxSeconds = TICK_MS_MAX / 1000;
@@ -213,7 +194,12 @@ class ParametersPanel {
             }
 
             if (this.daysPerMonthInput) {
-                this.daysPerMonthInput.value = eventsConfig.getDaysPerMonth();
+                // Frozen for the whole game (set before it starts, on the settings page): shown, never editable.
+                const calendar = await eventsConfig.describeCalendar();
+                this.daysPerMonthInput.min = eventsConfig.DAYS_PER_MONTH_MIN;
+                this.daysPerMonthInput.max = eventsConfig.DAYS_PER_MONTH_MAX;
+                this.daysPerMonthInput.value = calendar.daysPerMonth;
+                this.daysPerMonthInput.disabled = true;
             }
 
             if (this.tickSecondsInput) {
@@ -322,19 +308,6 @@ class ParametersPanel {
             eventsConfig.setEventProbability(probability);
         } catch (error) {
             console.error('[ParametersPanel] Error setting event probability:', error);
-        }
-    }
-
-    async handleDaysPerMonthChange(days) {
-        try {
-            eventsConfig.setDaysPerMonth(days);
-
-            const timeManager = deps?.getTimeManager?.();
-            if (timeManager && typeof timeManager.refreshCache === 'function') {
-                await timeManager.refreshCache();
-            }
-        } catch (error) {
-            console.error('[ParametersPanel] Error setting days per month:', error);
         }
     }
 
@@ -488,7 +461,6 @@ class ParametersPanel {
  *   pauseGame?: () => void,
  *   playGame?: () => void,
  *   registerAppService?: (name: string, instance: unknown) => void,
- *   getTimeManager?: () => { refreshCache?: () => Promise<void> } | null,
  *   getGame?: () => { startInterval?: () => void } | null,
  *   getScene?: () => {
  *     setTileGridVisible?: (visible: boolean) => void,

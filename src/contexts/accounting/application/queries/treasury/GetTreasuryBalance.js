@@ -2,13 +2,13 @@
  * Query: current treasury balance (HUD / co-maintained cache).
  */
 export class GetTreasuryBalance {
-  /** @param {import('../../ports/TreasuryRepository.js').TreasuryRepository} treasuryRepository */
-  constructor(treasuryRepository) {
-    this.treasuryRepository = treasuryRepository;
+  /** @param {{ execute: () => Promise<{ funds: number }> }} getTreasurySnapshot */
+  constructor(getTreasurySnapshot) {
+    this.getTreasurySnapshot = getTreasurySnapshot;
   }
 
   /** @returns {Promise<number>} */
   async execute() {
-    return this.treasuryRepository.getTreasuryBalance();
+    return (await this.getTreasurySnapshot.execute()).funds;
   }
 }

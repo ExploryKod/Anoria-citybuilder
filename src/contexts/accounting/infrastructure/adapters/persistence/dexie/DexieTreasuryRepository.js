@@ -1,34 +1,17 @@
 import db from '../../../../../../core/persistence/dexie/db.js';
 import { TreasuryRepository } from '../../../../application/ports/TreasuryRepository.js';
-import { normalizeTreasuryBudgetRow } from './normalizeTreasuryBudgetRow.js';
-import { DEFAULT_INITIAL_FUNDS } from '../../../../domain/catalogs/TreasuryCatalog.js';
 
 export const CURRENT_BUDGET_NAME = 'budget_current';
 
 /**
- * Accounting BC — direct Dexie access to co-maintained treasury (`budget_current`).
+ * Accounting BC — the `budget_current` row. It holds only the turn; the money is in the journal.
+ * Balance, flows and loans are derived from the journal (GetTreasurySnapshot), so this row never stores them.
  */
 export class DexieTreasuryRepository extends TreasuryRepository {
-  /**
-   * @param {object} [deps]
-   * @param {import('dexie').Dexie} [deps.db]
-   * @param {number} [deps.expectedInitialFunds]
-   */
+  /** @param {object} [deps] @param {import('dexie').Dexie} [deps.db] */
   constructor(deps = {}) {
     super();
     this.db = deps.db ?? db;
-    // Falls back to the canonical default (TreasuryCatalog) — callers going
-    // through createAccountingContext always pass the resolved value explicitly.
-    this.expectedInitialFunds = deps.expectedInitialFunds ?? DEFAULT_INITIAL_FUNDS;
-  }
-
-  /** @returns {Promise<number>} */
-  async getTreasuryBalance() {
-    const budget = await this.getRawBudgetRow();
-    if (!budget || typeof budget.funds !== 'number') {
-      return 0;
-    }
-    return Math.round(budget.funds);
   }
 
   /** @returns {Promise<object|null>} */
@@ -43,61 +26,13 @@ export class DexieTreasuryRepository extends TreasuryRepository {
     return budget;
   }
 
-  /** @param {object} budget @returns {Promise<object>} */
-  async saveBudgetRow(budget) {
-    await this.db.budget.put(budget);
-    return budget;
-  }
-
-  /** @param {object} budget @returns {Promise<object>} */
-  async recalculateLoanTotals(budget) {
-    if (!budget.loans || !Array.isArray(budget.loans)) {
-      budget.loans = [];
-      budget.loanDebt = 0;
-      if (budget.totalLoanInterest === undefined) budget.totalLoanInterest = 0;
-      if (budget.totalLoanRepayments === undefined) budget.totalLoanRepayments = 0;
-      if (budget.totalLoanInterestExpenses === undefined) {
-        budget.totalLoanInterestExpenses = 0;
-      }
-      return budget;
-    }
-
-    let totalLoanDebt = 0;
-    budget.loans.forEach((loan) => {
-      totalLoanDebt += loan.amount || 0;
-    });
-    budget.loanDebt = totalLoanDebt;
-
-    if (budget.totalLoanInterest === undefined) budget.totalLoanInterest = 0;
-    if (budget.totalLoanRepayments === undefined) budget.totalLoanRepayments = 0;
-    if (budget.totalLoanInterestExpenses === undefined) {
-      budget.totalLoanInterestExpenses = 0;
-    }
-
-    return budget;
-  }
-
   /**
-   * Load, normalize and persist treasury row if needed.
-   * @returns {Promise<object|null>}
+   * Persist the turn. Every other figure of a treasury snapshot is derived from the journal and never stored.
+   * @param {{ turn: number }} snapshot
+   * @returns {Promise<void>}
    */
-  async getNormalizedBudgetRow() {
-    const budget = await this.getRawBudgetRow();
-    if (!budget) {
-      return null;
-    }
-
-    const { budget: normalized, needsUpdate } = normalizeTreasuryBudgetRow(
-      budget,
-      this.expectedInitialFunds
-    );
-    await this.recalculateLoanTotals(normalized);
-
-    if (needsUpdate) {
-      await this.saveBudgetRow(normalized);
-    }
-
-    return normalized;
+  async saveBudgetRow(snapshot) {
+    await this.db.budget.put({ name: CURRENT_BUDGET_NAME, turn: snapshot.turn });
   }
 
   /** @returns {Promise<void>} */
@@ -106,35 +41,12 @@ export class DexieTreasuryRepository extends TreasuryRepository {
   }
 
   /**
-   * Upsert `budget_current` (put — safe under concurrent init races).
-   *
-   * @param {number} startingFunds
+   * Upsert `budget_current` at turn 0 (put — safe under concurrent init races).
    * @returns {Promise<object>}
    */
-  async createInitialBudgetRow(startingFunds) {
-    const initialBudget = {
-      name: CURRENT_BUDGET_NAME,
-      funds: startingFunds,
-      initialFunds: startingFunds,
-      income: startingFunds,
-      expenses: 0,
-      netFlow: startingFunds,
-      turn: 0,
-      dailyIncome: 0,
-      dailyExpenses: 0,
-      totalTaxes: 0,
-      totalMaintenance: 0,
-      totalSalaries: 0,
-      totalBuildingMaintenance: 0,
-      totalInvestments: 0,
-      totalLoanInterestExpenses: 0,
-      loans: [],
-      loanDebt: 0,
-      totalLoanInterest: 0,
-      totalLoanRepayments: 0,
-    };
-
-    await this.db.budget.put(initialBudget);
-    return initialBudget;
+  async createInitialBudgetRow() {
+    const row = { name: CURRENT_BUDGET_NAME, turn: 0 };
+    await this.db.budget.put(row);
+    return row;
   }
 }

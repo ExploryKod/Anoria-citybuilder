@@ -6,6 +6,23 @@ import {
   formatUnemploymentBenefitJournalDescription,
 } from '../../domain/policies/ReferenceSalaryPayrollPolicy.js';
 
+/** Full fiscal years kept in the journal before the current one; older years are purged whole. */
+export const JOURNAL_KEPT_FULL_YEARS = 5;
+
+/**
+ * The unit rate a maintenance category was priced at, as the breakdown carries it. Throws when absent: the monthly
+ * line must show the rate actually charged, never a guessed one.
+ * @param {{ unitCost?: number | null }} category
+ * @param {string} label
+ * @returns {number}
+ */
+function unitCostOf(category, label) {
+  if (!Number.isFinite(category?.unitCost)) {
+    throw new Error(`[ProcessTurnBudget] maintenance breakdown "${label}" has no unitCost`);
+  }
+  return category.unitCost;
+}
+
 /**
  * Per-turn budget orchestration (taxes, salaries, maintenance, enrichments).
  */
@@ -22,31 +39,23 @@ export class ProcessTurnBudget {
    * @param {() => Promise<{ unemployed: number }>} deps.getCityEmploymentSummary
    * @param {() => { salaryPerMonth: number, salaryTaxRate: number, unemploymentBenefitRate: number }} deps.getSalarySettings
    * @param {() => Promise<void>|void} [deps.processLoanPayments]
-   * @param {() => Promise<object>} deps.recalculateLoanTotals
    * @param {Function} deps.saveBudgetTurnEnrichment
    * @param {() => Promise<object>} deps.cleanupOldBudgetTurnSnapshotsByAge
-   * @param {(maxAge?: number) => Promise<unknown>} deps.cleanupOldJournalEntries
+   * @param {(keepYears: number) => Promise<unknown>} deps.cleanupOldJournalYears
    * @param {() => Promise<unknown>} deps.flushJournalSessionToDexie
    * @param {() => string[]} [deps.listBuildingTypesForMaintenance]
    */
   constructor(deps) {
     this.deps = deps;
-    this.lastMaintenanceCivilKey = null;
-    this.lastSalaryCivilKey = null;
   }
 
   #processBudgetInFlight = false;
 
   reset() {
-    this.lastMaintenanceCivilKey = null;
-    this.lastSalaryCivilKey = null;
     this.#processBudgetInFlight = false;
   }
 
   /** @param {{ year: number, monthIndex: number }} timeInfo */
-  #civilMonthKey(timeInfo) {
-    return `${timeInfo.year}:${timeInfo.monthIndex}`;
-  }
 
   /**
    * @param {object | undefined} buildingCounts
@@ -70,10 +79,10 @@ export class ProcessTurnBudget {
         total: 0,
       },
       maintenanceBreakdown: maintenanceBreakdown ?? {
-        roads: { count: 0, cost: 0 },
-        houses: { count: 0, cost: 0 },
-        farms: { count: 0, cost: 0 },
-        markets: { count: 0, cost: 0 },
+        roads: { count: 0, cost: 0, unitCost: null },
+        houses: { count: 0, cost: 0, unitCost: null },
+        farms: { count: 0, cost: 0, unitCost: null },
+        markets: { count: 0, cost: 0, unitCost: null },
       },
     };
   }
@@ -104,11 +113,10 @@ export class ProcessTurnBudget {
       await this.deps.collectCitizenTaxes(time);
 
       const timeInfo = this.deps.getTimeInfo(time);
-      const civilMonthKey = this.#civilMonthKey(timeInfo);
       const isFirstTurnOfMonth = timeInfo.dayInMonth === 1;
 
-      if (isFirstTurnOfMonth && civilMonthKey !== this.lastSalaryCivilKey) {
-        this.lastSalaryCivilKey = civilMonthKey;
+      // A month's salaries are booked once per hamlet: the journal's business key refuses a second charge.
+      if (isFirstTurnOfMonth) {
 
         const { salaryPerMonth, salaryTaxRate, unemploymentBenefitRate } =
           this.deps.getSalarySettings();
@@ -172,66 +180,62 @@ export class ProcessTurnBudget {
         }
       }
 
-      if (civilMonthKey !== this.lastMaintenanceCivilKey) {
-        const buildingAmount =
-          maintenanceBreakdown.roads.cost +
-          maintenanceBreakdown.houses.cost +
-          maintenanceBreakdown.farms.cost +
-          maintenanceBreakdown.markets.cost;
+      // A month's maintenance is booked once per hamlet: the journal's business key refuses a second charge.
+      const buildingAmount =
+        maintenanceBreakdown.roads.cost +
+        maintenanceBreakdown.houses.cost +
+        maintenanceBreakdown.farms.cost +
+        maintenanceBreakdown.markets.cost;
 
-        if (buildingAmount > 0) {
-          const year = timeInfo.year + 1;
-          const monthName = timeInfo.month || 'Mois';
+      if (buildingAmount > 0) {
+        const year = timeInfo.year;
+        const monthName = timeInfo.month || 'Mois';
 
-          const breakdownItems = [];
-          if (maintenanceBreakdown.roads.count > 0) {
-            breakdownItems.push({
-              label: 'Routes',
-              count: maintenanceBreakdown.roads.count,
-              unitCost: 2,
-              total: maintenanceBreakdown.roads.cost,
-            });
-          }
-          if (maintenanceBreakdown.houses.count > 0) {
-            breakdownItems.push({
-              label: 'Maisons',
-              count: maintenanceBreakdown.houses.count,
-              unitCost: 3,
-              total: maintenanceBreakdown.houses.cost,
-            });
-          }
-          if (maintenanceBreakdown.farms.count > 0) {
-            breakdownItems.push({
-              label: 'Fermes',
-              count: maintenanceBreakdown.farms.count,
-              unitCost: 1,
-              total: maintenanceBreakdown.farms.cost,
-            });
-          }
-          if (maintenanceBreakdown.markets.count > 0) {
-            breakdownItems.push({
-              label: 'Marchés',
-              count: maintenanceBreakdown.markets.count,
-              unitCost: 1,
-              total: maintenanceBreakdown.markets.cost,
-            });
-          }
-
-          const breakdownData = JSON.stringify(breakdownItems);
-          const maintenanceDescription = `Maintenance mensuelle - ${monthName} ${year} |BREAKDOWN|${breakdownData}|BREAKDOWN|`;
-
-          await this.deps.recordBuildingMaintenance(
-            buildingAmount,
-            maintenanceDescription,
-            time
-          );
-          this.lastMaintenanceCivilKey = civilMonthKey;
+        const breakdownItems = [];
+        if (maintenanceBreakdown.roads.count > 0) {
+          breakdownItems.push({
+            label: 'Routes',
+            count: maintenanceBreakdown.roads.count,
+            unitCost: unitCostOf(maintenanceBreakdown.roads, 'roads'),
+            total: maintenanceBreakdown.roads.cost,
+          });
         }
-      }
+        if (maintenanceBreakdown.houses.count > 0) {
+          breakdownItems.push({
+            label: 'Maisons',
+            count: maintenanceBreakdown.houses.count,
+            unitCost: unitCostOf(maintenanceBreakdown.houses, 'houses'),
+            total: maintenanceBreakdown.houses.cost,
+          });
+        }
+        if (maintenanceBreakdown.farms.count > 0) {
+          breakdownItems.push({
+            label: 'Fermes',
+            count: maintenanceBreakdown.farms.count,
+            unitCost: unitCostOf(maintenanceBreakdown.farms, 'farms'),
+            total: maintenanceBreakdown.farms.cost,
+          });
+        }
+        if (maintenanceBreakdown.markets.count > 0) {
+          breakdownItems.push({
+            label: 'Marchés',
+            count: maintenanceBreakdown.markets.count,
+            unitCost: unitCostOf(maintenanceBreakdown.markets, 'markets'),
+            total: maintenanceBreakdown.markets.cost,
+          });
+        }
 
+        const breakdownData = JSON.stringify(breakdownItems);
+        const maintenanceDescription = `Maintenance mensuelle - ${monthName} ${year} |BREAKDOWN|${breakdownData}|BREAKDOWN|`;
+
+        await this.deps.recordBuildingMaintenance(
+          buildingAmount,
+          maintenanceDescription,
+          time
+        );
+      }
       if (this.deps.processLoanPayments) {
         await this.deps.processLoanPayments();
-        await this.deps.recalculateLoanTotals();
       }
 
       if (time % 3 === 0 && time > 0) {
@@ -246,15 +250,15 @@ export class ProcessTurnBudget {
             result.cleanupResult = cleanupResult;
           }
 
-          await this.deps.cleanupOldJournalEntries(60);
+          await this.deps.cleanupOldJournalYears(JOURNAL_KEPT_FULL_YEARS);
         } catch (error) {
-          console.warn('Failed to save budget state:', error);
+          throw new Error(`[ProcessTurnBudget] failed to save the turn ${time} budget state: ${error.message}`, { cause: error });
         }
       }
 
       await this.deps.flushJournalSessionToDexie();
     } catch (error) {
-      console.warn('Budget operations failed:', error);
+      throw new Error(`[ProcessTurnBudget] budget operations failed at turn ${time}: ${error.message}`, { cause: error });
     } finally {
       this.#processBudgetInFlight = false;
     }

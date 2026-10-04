@@ -8,7 +8,7 @@
  */
 export function createCityTradeRelationsSystem({ trade, getTimeInfo }) {
   return async function cityTradeRelations(_world, context = {}) {
-    const timeInfo = getTimeInfo(context.time ?? 0);
+    const timeInfo = getTimeInfo(context.time);
     if (timeInfo.dayInMonth !== 1) return;
     await trade.checkAndOpenNewRelations(timeInfo);
   };

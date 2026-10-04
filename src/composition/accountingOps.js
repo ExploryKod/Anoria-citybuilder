@@ -100,28 +100,9 @@ export async function getActiveLoans() {
   return getOrCreateAccountingContext().getActiveLoans();
 }
 
-/** @param {object} loanData */
-export async function addLoanToPortfolio(loanData) {
-  return getOrCreateAccountingContext().addLoanToPortfolio(loanData);
-}
-
-/** @param {string} loanId @param {number} repaymentAmount */
-export async function applyRepaymentToPortfolio(loanId, repaymentAmount) {
-  return getOrCreateAccountingContext().applyRepaymentToPortfolio(loanId, repaymentAmount);
-}
-
-/** @param {string} loanId */
-export async function advanceLoanInstallmentWithoutPayment(loanId) {
-  return getOrCreateAccountingContext().advanceLoanInstallmentWithoutPayment(loanId);
-}
-
-export async function recalculateLoanTotals() {
-  return getOrCreateAccountingContext().recalculateLoanTotals();
-}
-
 /** @returns {Promise<object>} Admin César 3 livret — N vs N-1 comparison */
-export async function getCityLedgerYearComparison() {
-  return getOrCreateAccountingContext().getCityLedgerYearComparison();
+export async function getCityLedgerYearComparison(options) {
+  return getOrCreateAccountingContext().getCityLedgerYearComparison(options);
 }
 
 export { createEmptyCityLedgerYearLines } from '../contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
@@ -423,8 +404,8 @@ export async function cleanupOldBudgetTurnSnapshotsByAge(options = {}) {
   return getOrCreateAccountingContext().cleanupOldBudgetTurnSnapshotsByAge();
 }
 
-export async function cleanupOldJournalEntries(maxAge = 60) {
-  return getOrCreateAccountingContext().cleanupOldJournalEntries(maxAge);
+export async function cleanupOldJournalYears(keepYears) {
+  return getOrCreateAccountingContext().cleanupOldJournalYears(keepYears);
 }
 
 /** @param {Parameters<ReturnType<typeof createAccountingContext>['processTurnBudget']>[0]} params */

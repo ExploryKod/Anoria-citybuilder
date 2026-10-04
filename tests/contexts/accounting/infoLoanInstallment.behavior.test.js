@@ -24,6 +24,7 @@ import {
   resetConstructionContextForTests,
 } from '../../../src/composition/createConstructionContext.js';
 import { getOrCreateCityAssetsContext } from '../../../src/composition/createCityAssetsContext.js';
+import { getTreasurySnapshot } from '../../../src/composition/accountingOps.js';
 
 function createTestDb() {
   const testDb = new Dexie('testInfoLoanInstallmentDb');
@@ -50,31 +51,18 @@ describe('Accounting — info loan installment (informative journal)', () => {
     testDb = createTestDb();
     await testDb.open();
 
-    await testDb.budget.put({
-      name: 'budget_current',
-      funds: 50,
-      turn: 10,
-      income: 1000,
-      expenses: 0,
-      dailyIncome: 0,
-      totalTaxes: 0,
-      netFlow: 1000,
-      loans: [
-        {
-          id: 'loan_test_1',
-          type: 'bank',
-          amount: 1000,
-          total: 1100,
-          interest: 100,
-          interestRate: 10,
-          duration: 10,
-          remainingTurns: 10,
-        },
-      ],
-    });
+    await testDb.budget.put({ name: 'budget_current', turn: 10 });
 
     journalManager = new JournalManager();
     journalManager.db = testDb;
+
+    // The treasury is the journal: 50 € of capital, plus a 1000 € loan draw that was spent.
+    await journalManager.addJournalEntry(0, 'capital_funds', 50, 'Capital de départ', null, { businessKey: 'capital_funds:0' });
+    await journalManager.addJournalEntry(0, 'loan_capital', 1000, 'Prêt', null, {
+      loanId: 'loan_test_1',
+      loan: { id: 'loan_test_1', type: 'bank', amount: 1000, total: 1100, interest: 100, interestRate: 10, duration: 10, remainingTurns: 10 },
+    });
+    await journalManager.addJournalEntry(0, 'exceptional_expenses', 1000, 'Dépense de test');
 
     budgetManager = new BudgetManager();
     budgetManager.db = testDb;
@@ -133,9 +121,9 @@ describe('Accounting — info loan installment (informative journal)', () => {
     expect(interest.description.startsWith('[Informatif]')).toBe(true);
     expect(isInformativeJournalType('info_loan_interest')).toBe(true);
 
-    const budget = await testDb.budget.get('budget_current');
+    const budget = await getTreasurySnapshot();
     expect(budget.funds).toBe(50);
-    expect(budget.expenses).toBe(0);
+    expect(budget.expenses).toBe(1000);
   });
 
   test('skips duplicate info lines for same loan and turn', async () => {
@@ -161,14 +149,6 @@ describe('Accounting — info loan installment (informative journal)', () => {
     expect(entries.filter((e) => e.type === 'info_loan_interest')).toHaveLength(1);
   });
 
-  test('advanceLoanInstallmentWithoutPayment persists remainingTurns', async () => {
-    await budgetManager.advanceLoanInstallmentWithoutPayment('loan_test_1');
-
-    const budget = await testDb.budget.get('budget_current');
-    expect(budget.loans).toHaveLength(1);
-    expect(budget.loans[0].remainingTurns).toBe(9);
-    expect(budget.loans[0].amount).toBe(1000);
-  });
 
   test('processLoanPayments journals partial info when only interest is affordable', async () => {
     globalThis.window = globalThis.window ?? {};
@@ -179,36 +159,15 @@ describe('Accounting — info loan installment (informative journal)', () => {
     expect(entries.filter((e) => e.type === 'info_loan_repayment')).toHaveLength(1);
     expect(entries.filter((e) => e.type === 'info_loan_interest')).toHaveLength(0);
 
-    const budget = await testDb.budget.get('budget_current');
+    const budget = await getTreasurySnapshot();
     expect(budget.funds).toBe(40);
     expect(budget.loans[0].remainingTurns).toBe(9);
   });
 
   test('processLoanPayments journals full info default when nothing is affordable', async () => {
-    await testDb.budget.put({
-      name: 'budget_current',
-      funds: 0,
-      turn: 10,
-      income: 1000,
-      expenses: 0,
-      dailyIncome: 0,
-      totalTaxes: 0,
-      netFlow: 1000,
-      loans: [
-        {
-          id: 'loan_test_1',
-          type: 'bank',
-          amount: 1000,
-          total: 1100,
-          interest: 100,
-          interestRate: 10,
-          duration: 10,
-          remainingTurns: 10,
-        },
-      ],
-    });
-
     globalThis.window = globalThis.window ?? {};
+    await journalManager.addJournalEntry(0, 'exceptional_expenses', 50, 'Dépense de test');
+
     await processLoanPayments();
 
     const entries = await journalManager.getJournalEntries();
@@ -216,7 +175,7 @@ describe('Accounting — info loan installment (informative journal)', () => {
     expect(entries.filter((e) => e.type === 'info_loan_interest')).toHaveLength(1);
     expect(entries.filter((e) => e.type === 'info_loan_repayment')).toHaveLength(1);
 
-    const budget = await testDb.budget.get('budget_current');
+    const budget = await getTreasurySnapshot();
     expect(budget.funds).toBe(0);
     expect(budget.loans[0].remainingTurns).toBe(9);
   });

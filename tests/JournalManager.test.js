@@ -255,40 +255,31 @@ describe('JournalManager', () => {
     });
 
     describe('flushSessionToDexie', () => {
-        test('persists buffered entries and keeps them readable after flush', async () => {
+        test('a money line is on disk as soon as it is recorded; balance stays in memory', async () => {
             await journalManager.addJournalEntry(1, 'citizen_tax', 100, 'Tax');
             await journalManager.addJournalEntry(1, 'balance', 500, 'Solde', null, {
                 persist: false,
             });
 
-            const beforeFlush = await journalManager.getJournalEntries();
-            expect(beforeFlush).toHaveLength(2);
+            const idbEntries = await testDb.journal.toArray();
+            expect(idbEntries.map((entry) => entry.type)).toEqual(['citizen_tax']);
 
             const result = await journalManager.flushSessionToDexie();
-            expect(result.failed).toBe(false);
-            expect(result.flushed).toBe(1);
-
-            const idbEntries = await testDb.journal.toArray();
-            expect(idbEntries).toHaveLength(1);
-            expect(idbEntries[0].type).toBe('citizen_tax');
+            expect(result.flushed).toBe(0);
 
             const afterFlush = await journalManager.getJournalEntries();
             expect(afterFlush).toHaveLength(2);
         });
 
-        test('leaves pending entries in buffer when flush fails', async () => {
-            await journalManager.addJournalEntry(1, 'maintenance', 20, 'Maint');
-
+        test('a line that cannot be written throws and is not kept in memory', async () => {
             journalManager.db.journal.add = async () => {
                 throw new Error('IndexedDB unavailable');
             };
 
-            const result = await journalManager.flushSessionToDexie();
-            expect(result.failed).toBe(true);
-            expect(result.pending).toBe(1);
+            await expect(journalManager.addJournalEntry(1, 'maintenance', 20, 'Maint')).rejects.toThrow('IndexedDB unavailable');
 
             const entries = await journalManager.getJournalEntries();
-            expect(entries).toHaveLength(1);
+            expect(entries).toHaveLength(0);
         });
     });
 
@@ -343,32 +334,46 @@ describe('JournalManager', () => {
         });
     });
 
-    describe('cleanupOldJournalEntries', () => {
-        test('should delete old entries based on maxAge', async () => {
-            // Create an old entry (61 days old)
-            const oldDate = new Date();
-            oldDate.setDate(oldDate.getDate() - 61);
-            
-            await testDb.journal.add({
-                turn: 1,
-                date: oldDate.toISOString(),
-                type: 'citizen_tax',
-                amount: 1000,
-                description: 'Old entry'
-            });
-            
-            // Create a recent entry
-            await journalManager.addJournalEntry(2, 'citizen_tax', 500, 'Recent entry');
-            await journalManager.flushSessionToDexie();
-            
-            // Cleanup entries older than 60 days
-            const result = await journalManager.cleanupOldJournalEntries(60);
-            
-            expect(result.deleted).toBe(1);
-            
-            const entries = await testDb.journal.toArray();
-            expect(entries).toHaveLength(1);
-            expect(entries[0].description).toBe('Recent entry');
+    describe('cleanupOldJournalYears', () => {
+        const row = (turn, description, year) => ({
+            turn,
+            date: new Date().toISOString(),
+            type: 'citizen_tax',
+            amount: 100,
+            description,
+            year,
+            hamletId: 'h1',
+        });
+
+        test('purges only whole stamped years older than latest - keepYears, never inside a year', async () => {
+            await testDb.journal.bulkAdd([
+                row(10, 'year 1 (last month)', 1),
+                row(20, 'year 4 (last month)', 4),
+                row(30, 'year 5 (first month)', 5),
+                row(40, 'year 10', 10),
+            ]);
+
+            const result = await journalManager.cleanupOldJournalYears(5);
+
+            expect(result).toEqual({ deleted: 2, cutoffYear: 5 });
+            const kept = (await testDb.journal.toArray()).map((e) => e.description).sort();
+            expect(kept).toEqual(['year 10', 'year 5 (first month)']);
+        });
+
+        test('does not depend on the calendar: a changed days-per-month cannot move the cutoff', async () => {
+            await testDb.journal.bulkAdd([row(10, 'year 2', 2), row(20, 'year 9', 9)]);
+            // a calendar that would put every turn in year 100 must change nothing
+            appRegistry.register('timeManager', { getTimeInfo: () => ({ year: 100, monthIndex: 0, month: 'X' }) });
+
+            const result = await journalManager.cleanupOldJournalYears(5);
+
+            expect(result).toEqual({ deleted: 1, cutoffYear: 4 });
+            expect((await testDb.journal.toArray()).map((e) => e.description)).toEqual(['year 9']);
+        });
+
+        test('an entry without fiscal year stamp is an error, not silently kept or dropped', async () => {
+            await testDb.journal.bulkAdd([row(1, 'ok', 3), { ...row(2, 'unstamped'), year: undefined }]);
+            await expect(journalManager.cleanupOldJournalYears(5)).rejects.toThrow('no fiscal year stamp');
         });
     });
 });

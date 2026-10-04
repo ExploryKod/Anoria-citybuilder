@@ -124,6 +124,6 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
     const entries = await journalManager.getJournalEntries();
     const salary = entries.find((e) => e.type === 'salary');
     expect(salary.turn).toBe(turn);
-    expect(salary.businessKey).toBe(`salary:${Math.floor(turn / 12)}:${turn % 12}`);
+    expect(salary.businessKey).toMatch(new RegExp(`^salary:[^:]+:${Math.floor(turn / 12)}:${turn % 12}$`));
   });
 });

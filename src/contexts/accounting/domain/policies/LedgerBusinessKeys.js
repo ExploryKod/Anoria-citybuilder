@@ -125,12 +125,16 @@ const CUMUL_TYPES = new Set([
  * @param {{ year: number, monthIndex: number }} timeInfo
  * @returns {string | null}
  */
-export function buildLedgerBusinessKey(type, timeInfo) {
+export function buildLedgerBusinessKey(type, timeInfo, hamletId) {
   if (!timeInfo || typeof timeInfo.year !== 'number') {
     return null;
   }
   if (MONTHLY_IDEMPOTENT_TYPES.has(type)) {
-    return `${type}:${timeInfo.year}:${timeInfo.monthIndex}`;
+    // A monthly charge is per hamlet: each hamlet pays its own maintenance and salaries for the same month.
+    if (!hamletId) {
+      throw new Error(`[journal] monthly ${type} needs the hamlet it is charged to`);
+    }
+    return `${type}:${hamletId}:${timeInfo.year}:${timeInfo.monthIndex}`;
   }
   if (YEARLY_IDEMPOTENT_TYPES.has(type)) {
     return `${type}:${timeInfo.year}`;
@@ -158,7 +162,7 @@ export function inferBusinessKeyFromRow(row) {
         : null;
 
   if (MONTHLY_IDEMPOTENT_TYPES.has(row.type) && monthIndex != null) {
-    return `${row.type}:${row.year}:${monthIndex}`;
+    return `${row.type}:${row.hamletId}:${row.year}:${monthIndex}`;
   }
   if (YEARLY_IDEMPOTENT_TYPES.has(row.type)) {
     return `${row.type}:${row.year}`;

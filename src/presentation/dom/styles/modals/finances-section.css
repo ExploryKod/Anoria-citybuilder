@@ -7,6 +7,24 @@
     text-align: left;
 }
 
+.finances-hamlet-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.finances-hamlet-filter-label {
+    font-weight: 600;
+}
+
+.finances-hamlet-filter {
+    padding: 6px 10px;
+    border-radius: var(--border-radius-small);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: #fff;
+    font: inherit;
+}
 
 .finances-debt-info {
     margin: 15px 0;

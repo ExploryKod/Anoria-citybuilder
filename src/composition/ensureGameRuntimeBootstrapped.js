@@ -14,10 +14,6 @@ export function ensureGameRuntimeBootstrapped() {
   }
   bootstrapped = true;
 
-  TimeManager.initializeCache().catch((err) => {
-    console.warn('[Game] Could not initialize TimeManager cache:', err);
-  });
-
   registerCoreRuntimeServices();
   registerGetTimeInfo((turn) => TimeManager.getTimeInfo(turn));
 }

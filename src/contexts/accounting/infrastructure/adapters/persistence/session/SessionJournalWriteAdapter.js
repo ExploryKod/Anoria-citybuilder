@@ -34,6 +34,10 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
       {
         businessKey: entry.businessKey ?? null,
         buildingInstanceId: entry.buildingInstanceId ?? null,
+        loanId: entry.loanId ?? null,
+        loan: entry.loan ?? null,
+        taxYear: entry.taxYear ?? null,
+        taxBreakdown: entry.taxBreakdown ?? null,
         persist: options.persist,
       }
     );

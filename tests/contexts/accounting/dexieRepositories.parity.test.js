@@ -111,19 +111,5 @@ describe('Accounting — Dexie persistence adapters (Phase 2a)', () => {
   });
 
   describe('DexieTreasuryRepository', () => {
-    test('reads budget_current.funds', async () => {
-      const { DexieTreasuryRepository } = await import(
-        '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js'
-      );
-
-      await testDb.budget.put({
-        name: 'budget_current',
-        funds: 1234,
-        turn: 5,
-      });
-
-      const repo = new DexieTreasuryRepository({ db: testDb });
-      expect(await repo.getTreasuryBalance()).toBe(1234);
-    });
   });
 });

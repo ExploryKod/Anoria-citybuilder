@@ -820,6 +820,13 @@
     font-weight: 600;
 }
 
+.journal-year-scope {
+    font-size: 0.75em;
+    font-weight: 500;
+    opacity: 0.85;
+    margin-left: 0.5rem;
+}
+
 .journal-year-summary {
     display: flex;
     gap: 1.5rem;

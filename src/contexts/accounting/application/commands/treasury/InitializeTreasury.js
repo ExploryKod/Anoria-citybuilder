@@ -37,7 +37,7 @@ export class InitializeTreasury {
     const funds = resolveStartingFunds(startingFunds, this.defaultInitialFunds);
 
     if (!clearExisting) {
-      const existing = await this.treasuryRepository.getNormalizedBudgetRow();
+      const existing = await this.treasuryRepository.getRawBudgetRow();
       if (existing) {
         return existing;
       }
@@ -45,7 +45,7 @@ export class InitializeTreasury {
       await this.treasuryRepository.clearCurrentBudget();
     }
 
-    const initialBudget = await this.treasuryRepository.createInitialBudgetRow(funds);
+    const initialBudget = await this.treasuryRepository.createInitialBudgetRow();
 
     const existingEntries = await this.journalRepository.getJournalEntries();
     const hasCapitalFunds = existingEntries.some(

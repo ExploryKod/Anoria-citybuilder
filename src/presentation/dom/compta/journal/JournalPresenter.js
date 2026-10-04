@@ -129,9 +129,11 @@ function renderMonthSummary(monthData) {
  *   isInfoPseudoMovementType: (type: string) => boolean,
  *   labelForInfoJournalType: (type: string) => string,
  * }} accounting
+ * @param {Map<string, string>} hamletNames
+ * @param {string} scopeLabel The hamlet shown in each year header, or "Tous les hameaux".
  * @returns {string}
  */
-export function renderJournalList(ledger, accounting, hamletNames) {
+export function renderJournalList(ledger, accounting, hamletNames, scopeLabel) {
   const sortHint = `
         <p class="journal-sort-hint">Plus récent en haut — années et mois triés du plus récent au plus ancien.</p>
     `;
@@ -145,7 +147,7 @@ export function renderJournalList(ledger, accounting, hamletNames) {
         return `
             <div class="journal-year-group">
                 <div class="journal-year-header">
-                    <h3>Année ${yearDisplay}</h3>
+                    <h3>Année ${yearDisplay} <span class="journal-year-scope">${scopeLabel}</span></h3>
                     <div class="journal-year-summary">
                         ${renderYearSummary(yearData)}
                     </div>

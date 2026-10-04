@@ -127,6 +127,11 @@ export class SessionLedgerBuffer {
     return null;
   }
 
+  /** @param {number} sessionId */
+  removeSession(sessionId) {
+    this.#entries = this.#entries.filter((entry) => entry.sessionId !== sessionId);
+  }
+
   /** @param {number} turn */
   findBalanceForTurn(turn) {
     return this.#entries.find(
@@ -164,11 +169,36 @@ export class SessionLedgerBuffer {
     }
   }
 
-  /** @param {string} cutoffISO */
-  removeEntriesBeforeDate(cutoffISO) {
+  /**
+   * The fiscal year stamped on an entry when it was written. Throws when missing: a purge must never guess.
+   * @param {object} entry
+   * @returns {number}
+   */
+  static fiscalYearOf(entry) {
+    if (typeof entry.year !== 'number') {
+      throw new Error(`[journal] entry ${entry.id ?? entry.type} (turn ${entry.turn}) has no fiscal year stamp`);
+    }
+    return entry.year;
+  }
+
+  /** @returns {number|null} The most recent stamped fiscal year in the buffer, null when empty. */
+  latestFiscalYear() {
+    let latest = null;
+    for (const entry of this.#entries) {
+      const year = SessionLedgerBuffer.fiscalYearOf(entry);
+      if (latest === null || year > latest) latest = year;
+    }
+    return latest;
+  }
+
+  /**
+   * Drop every entry whose stamped fiscal year is strictly before `cutoffYear`.
+   * @param {number} cutoffYear
+   */
+  removeEntriesBeforeYear(cutoffYear) {
     const removedSessionIds = [];
     this.#entries = this.#entries.filter((entry) => {
-      if (entry.date < cutoffISO) {
+      if (SessionLedgerBuffer.fiscalYearOf(entry) < cutoffYear) {
         removedSessionIds.push(entry.sessionId);
         return false;
       }

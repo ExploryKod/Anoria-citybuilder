@@ -346,7 +346,6 @@ export async function processLoanPayments() {
           });
         }
 
-        await accounting.advanceLoanInstallmentWithoutPayment(loan.id);
         console.warn(
           `[Loans] Échéance partielle — intérêts payés, capital impayé (${principalPayment}€) pour ${loan.id}`
         );
@@ -360,7 +359,6 @@ export async function processLoanPayments() {
         loanType: loan.type,
       });
 
-      await accounting.advanceLoanInstallmentWithoutPayment(loan.id);
       console.warn(
         `[Loans] Défaut de paiement — échéance journalisée (info) pour ${loan.id}`
       );

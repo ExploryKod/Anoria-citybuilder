@@ -55,8 +55,9 @@ describe('Accounting — journal flush & export (Phase 6.4)', () => {
     const flush = new FlushJournalSession(new DexieJournalSessionPersistenceAdapter(testDb));
     const result = await flush.execute();
 
+    // Money lines are written on record (write-through): nothing is left pending to flush.
     expect(result.failed).toBe(false);
-    expect(result.flushed).toBe(1);
+    expect(result.flushed).toBe(0);
 
     const rows = await testDb.journal.toArray();
     expect(rows).toHaveLength(1);

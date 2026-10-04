@@ -14,11 +14,13 @@ export class LegacyJournalRepository extends JournalRepository {
     return this.journalManager.getJournalEntries(maxAge);
   }
 
-  async getYearlyFinancialSummary() {
+  async getYearlyFinancialSummary({ hamletId = null } = {}) {
+    if (hamletId != null) throw new Error('LegacyJournalRepository: hamlet scoping is not supported');
     return this.journalManager.getYearlyFinancialSummary();
   }
 
-  async getCurrentBalance() {
+  async getCurrentBalance({ hamletId = null } = {}) {
+    if (hamletId != null) throw new Error('LegacyJournalRepository: hamlet scoping is not supported');
     return this.journalManager.getCurrentBalance();
   }
 }

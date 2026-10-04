@@ -3,11 +3,11 @@
  */
 export class GetTreasuryJournalReconciliation {
   /**
-   * @param {import('../../ports/TreasuryRepository.js').TreasuryRepository} treasuryRepository
+   * @param {{ execute: () => Promise<{ funds: number }> }} getTreasurySnapshot
    * @param {import('../../ports/JournalRepository.js').JournalRepository} journalRepository
    */
-  constructor(treasuryRepository, journalRepository) {
-    this.treasuryRepository = treasuryRepository;
+  constructor(getTreasurySnapshot, journalRepository) {
+    this.getTreasurySnapshot = getTreasurySnapshot;
     this.journalRepository = journalRepository;
   }
 
@@ -17,7 +17,7 @@ export class GetTreasuryJournalReconciliation {
    */
   async execute({ tolerance = 0 } = {}) {
     const [treasuryFunds, journalBalance] = await Promise.all([
-      this.treasuryRepository.getTreasuryBalance(),
+      this.getTreasurySnapshot.execute().then((snapshot) => snapshot.funds),
       this.journalRepository.getCurrentBalance(),
     ]);
 

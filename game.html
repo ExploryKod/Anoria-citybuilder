@@ -2170,6 +2170,10 @@
                     </div>
                     <div class="administrator-section-content">
                         <div class="finances-board" id="finances-board">
+                            <div class="finances-hamlet-filter-row">
+                                <label class="finances-hamlet-filter-label" for="finances-hamlet-filter">Budget de :</label>
+                                <select id="finances-hamlet-filter" class="finances-hamlet-filter" aria-label="Choisir le hameau dont afficher le budget"></select>
+                            </div>
 
                             <div class="finances-debt-info" id="finances-debt-info">
                                 <p class="finances-debt-text">
@@ -3505,11 +3509,10 @@
                                 type="number"
                                 id="days-per-month-input"
                                 class="parameters-number-input"
-                                min="1"
-                                max="30"
-                                value="1"
+                                disabled
                             >
                         </label>
+                        <p class="parameters-control-note">Fixé au début de la partie (paramètres de la page d'accueil) : il ne peut plus changer ensuite.</p>
                     </div>
                     <div class="parameters-control-group">
                         <label class="parameters-control-label" for="tick-seconds-input">

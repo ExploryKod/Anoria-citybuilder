@@ -10,7 +10,6 @@ import {
   getFinancialHealth,
   updateTreasuryTurn,
   getActiveLoans,
-  advanceLoanInstallmentWithoutPayment,
   forceReinitializeTreasury,
   resetAccountingContextForTests,
   getOrCreateAccountingContext,
@@ -49,10 +48,6 @@ export class TestBudgetFacade {
     return getTreasurySnapshot();
   }
 
-  async calculateLoanTotals() {
-    return accountingGame.recalculateLoanTotals();
-  }
-
   async addConstructionRefund(amount, description, options = {}) {
     return recordConstructionRefund(amount, description, options);
   }
@@ -71,10 +66,6 @@ export class TestBudgetFacade {
 
   async recordInfoLoanInstallment(params) {
     return accountingGame.recordInfoLoanInstallment(params);
-  }
-
-  async advanceLoanInstallmentWithoutPayment(loanId) {
-    return advanceLoanInstallmentWithoutPayment(loanId);
   }
 
   async getActiveLoans() {
@@ -97,8 +88,8 @@ export class TestBudgetFacade {
     return this.journalManager.getJournalEntriesForTurn(turn);
   }
 
-  async cleanupOldJournalEntries(maxAge = 60) {
-    return this.journalManager.cleanupOldJournalEntries(maxAge);
+  async cleanupOldJournalYears(keepYears) {
+    return this.journalManager.cleanupOldJournalYears(keepYears);
   }
 
   async getMonthlyFinancialSummary() {

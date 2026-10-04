@@ -12,7 +12,7 @@ export class LegacyGameTimePort extends GameTimePort {
 
   getTimeInfo(turn) {
     if (!this.timeManager) {
-      return { year: 0 };
+      throw new Error('LegacyGameTimePort: no timeManager bound, cannot resolve the time of a turn');
     }
     return this.timeManager.getTimeInfo(turn);
   }

@@ -4,6 +4,7 @@ import {
   buildMonthlyFinancialSummary,
   buildYearlyFinancialSummary,
   computeJournalCurrentBalance,
+  filterJournalEntriesByHamlet,
   filterAndSortJournalEntries,
 } from './journalAggregations.js';
 
@@ -31,18 +32,24 @@ export class DexieJournalRepository extends JournalRepository {
     return filterAndSortJournalEntries(entries, maxAge);
   }
 
-  /** @returns {Promise<Array<object>>} */
-  async getYearlyFinancialSummary() {
-    const entries = await this.getJournalEntries();
+  /**
+   * @param {{ hamletId?: string|null }} [options] — only this hamlet's entries; null = every hamlet
+   * @returns {Promise<Array<object>>}
+   */
+  async getYearlyFinancialSummary({ hamletId = null } = {}) {
+    const entries = filterJournalEntriesByHamlet(await this.getJournalEntries(), hamletId);
     const monthlyData = buildMonthlyFinancialSummary(entries, (turn) =>
       this.gameTimePort.getTimeInfo(turn)
     );
     return buildYearlyFinancialSummary(monthlyData);
   }
 
-  /** @returns {Promise<number>} */
-  async getCurrentBalance() {
-    const entries = await this.getJournalEntries();
+  /**
+   * @param {{ hamletId?: string|null }} [options] — only this hamlet's entries; null = every hamlet
+   * @returns {Promise<number>}
+   */
+  async getCurrentBalance({ hamletId = null } = {}) {
+    const entries = filterJournalEntriesByHamlet(await this.getJournalEntries(), hamletId);
     return computeJournalCurrentBalance(entries, (turn) =>
       this.gameTimePort.getTimeInfo(turn)
     );

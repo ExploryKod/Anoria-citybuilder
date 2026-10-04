@@ -232,7 +232,6 @@ registerBuildingSourceAdapter('kenneyFarmField', {
       stage: 0,
       stageName: '',
       price: 0,
-      cityFunds: 0,
       maintenance: 0,
       worldTime: 0,
       baseYaw,

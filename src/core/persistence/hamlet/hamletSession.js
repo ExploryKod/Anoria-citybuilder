@@ -11,6 +11,7 @@
 
 import db from '../dexie/db.js';
 import { HAMLET_CATALOG } from '../../../shared/hamlet-catalog/hamletCatalog.js';
+import { initGameCalendar } from '../../../config/events.js';
 
 /** Slug of the starting hamlet (its definition in HAMLET_CATALOG). */
 export const DEFAULT_HAMLET_SLUG = HAMLET_CATALOG.find((hamlet) => hamlet.starting).slug;
@@ -107,6 +108,9 @@ export function setActiveHamletId(hamletId) {
  * @returns {Promise<string>} The active hamlet's UUID.
  */
 export async function ensureHamletCatalog({ requestedId = null } = {}) {
+  // The game exists from here on: its calendar is loaded, or frozen from the pre-game choice on creation.
+  await initGameCalendar();
+
   const rows = await db.hamlets.toArray();
 
   for (const proto of HAMLET_CATALOG) {

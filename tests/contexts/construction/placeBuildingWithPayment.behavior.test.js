@@ -16,11 +16,15 @@ import { initializeTreasury, resetAccountingContextForTests } from '../../../src
 import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 import { DEFAULT_INITIAL_FUNDS } from '../../../src/contexts/accounting/domain/catalogs/TreasuryCatalog.js';
+import { getTreasurySnapshot } from '../../../src/composition/accountingOps.js';
+import { recordConstructionExpense, recordConstructionRefund } from '../../../src/composition/budgetOps.js';
 
 async function clearTables() {
   await db.open();
   await db.houses.clear();
   await db.budget.clear();
+  // The journal is the treasury: a leftover line from an earlier test would move this test's balance.
+  await db.journal.clear();
 }
 
 async function seedBudget(funds = null) {
@@ -65,7 +69,7 @@ describe('Construction — placement with payment (step 2)', () => {
     const row = await db.houses.get(record.instanceId);
     expect(row?.type).toBe('Farm-Wheat');
 
-    const budget = await db.budget.get('budget_current');
+    const budget = (await getTreasurySnapshot());
     // Real configured default initial funds (TreasuryCatalog) minus construction price
     expect(budget.funds).toBe(DEFAULT_INITIAL_FUNDS - 50);
   });
@@ -162,25 +166,15 @@ describe('Construction — placement with payment (step 2)', () => {
     resetConstructionContextForTests();
     const ctx = createConstructionContext({
       buildingRepository: failingRepo,
-      recordExpense: async (amount) => {
-        const budget = await db.budget.get('budget_current');
-        budget.funds -= amount;
-        await db.budget.put(budget);
-        return { success: true, budget };
-      },
-      recordRefund: async (amount) => {
-        const budget = await db.budget.get('budget_current');
-        budget.funds += amount;
-        await db.budget.put(budget);
-        return { success: true, budget };
-      },
+      recordExpense: (amount, reason, options) => recordConstructionExpense(amount, reason, options),
+      recordRefund: (amount, reason, options) => recordConstructionRefund(amount, reason, options),
     });
 
     const result = await ctx.placeBuildingWithPayment(record);
     expect(result.success).toBe(false);
     expect(result.reason).toBe('database_error');
 
-    const budget = await db.budget.get('budget_current');
+    const budget = (await getTreasurySnapshot());
     // Debit + refund cancel out — funds must return to the real configured default.
     expect(budget.funds).toBe(DEFAULT_INITIAL_FUNDS);
   });

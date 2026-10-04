@@ -66,6 +66,7 @@ export class RecordInfoLoanInstallment {
           `impayés, prêt ${typeLabel} (${loanId})`
         ),
         businessKey: buildInfoMovementBusinessKey(sourceType, loanId, turn),
+        loanId,
       });
 
       if (!ledgerResult.recorded) {
@@ -90,6 +91,7 @@ export class RecordInfoLoanInstallment {
           `impayé, prêt ${typeLabel} (${loanId})`
         ),
         businessKey: buildInfoMovementBusinessKey(sourceType, loanId, turn),
+        loanId,
       });
 
       if (!ledgerResult.recorded) {

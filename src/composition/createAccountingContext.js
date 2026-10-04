@@ -9,7 +9,6 @@ import { GetFinancialHealth } from '../contexts/accounting/application/queries/t
 import { InitializeTreasury } from '../contexts/accounting/application/commands/treasury/InitializeTreasury.js';
 import { ForceReinitializeTreasury } from '../contexts/accounting/application/commands/treasury/ForceReinitializeTreasury.js';
 import { UpdateTreasuryTurn } from '../contexts/accounting/application/commands/treasury/UpdateTreasuryTurn.js';
-import { TreasuryLoanPortfolio } from '../contexts/accounting/application/services/TreasuryLoanPortfolio.js';
 import { GetCityLedgerYearComparison } from '../contexts/accounting/application/queries/city-ledger/GetCityLedgerYearComparison.js';
 import { GetGeneralLedger } from '../contexts/accounting/application/queries/journal/GetGeneralLedger.js';
 import { GetIncomeStatement } from '../contexts/accounting/application/queries/financial-statements/GetIncomeStatement.js';
@@ -28,7 +27,6 @@ import { DexieJournalSessionPersistenceAdapter } from '../contexts/accounting/in
 import { CityAssetsValuationAdapter } from '../contexts/accounting/infrastructure/adapters/shared/CityAssetsValuationAdapter.js';
 import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
 import { RecordLedgerEntry } from '../contexts/accounting/application/commands/journal/RecordLedgerEntry.js';
-import { ApplyTreasuryMovement } from '../contexts/accounting/application/commands/treasury/ApplyTreasuryMovement.js';
 import { RecordMaintenanceExpense } from '../contexts/accounting/application/services/RecordMaintenanceExpense.js';
 import { RecordConstructionExpense } from '../contexts/accounting/application/services/RecordConstructionExpense.js';
 import { RecordSalaryExpense } from '../contexts/accounting/application/services/RecordSalaryExpense.js';
@@ -55,7 +53,6 @@ import { LegacyYearEndBalanceAdapter } from '../contexts/accounting/infrastructu
 import { SessionJournalRepository } from '../contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalRepository.js';
 import { SessionJournalWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalWriteAdapter.js';
 import { DexieTreasuryRepository } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js';
-import { DexieTreasuryWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryWriteAdapter.js';
 import { DexieObjectiveHistoryRepository } from '../contexts/accounting/infrastructure/dexie/DexieObjectiveHistoryRepository.js';
 import { LegacyGameTimePort } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
 import sessionJournalStore from '../contexts/accounting/infrastructure/session/SessionJournalStore.js';
@@ -95,7 +92,6 @@ async function getCityEmploymentSummary() {
  * @param {import('../contexts/accounting/application/ports/JournalRepository.js').JournalRepository} [deps.journalRepository]
  * @param {import('../contexts/accounting/application/ports/TreasuryRepository.js').TreasuryRepository} [deps.treasuryRepository]
  * @param {import('../contexts/accounting/application/ports/JournalWritePort.js').JournalWritePort} [deps.journalWritePort]
- * @param {import('../contexts/accounting/application/ports/TreasuryWritePort.js').TreasuryWritePort} [deps.treasuryWritePort]
  * @param {import('../contexts/accounting/application/ports/GameTimePort.js').GameTimePort} [deps.gameTimePort]
  * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.sessionJournalStore]
  * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.journalManager]
@@ -133,83 +129,59 @@ export function createAccountingContext(deps = {}) {
 
   const treasuryRepository =
     deps.treasuryRepository ??
-    new DexieTreasuryRepository({
-      db: dexieDb,
-      expectedInitialFunds: defaultInitialFunds,
-    });
-
-  const treasuryWritePort =
-    deps.treasuryWritePort ??
-    new DexieTreasuryWriteAdapter(treasuryRepository);
+    new DexieTreasuryRepository({ db: dexieDb });
 
   const recordLedgerEntryCommand = new RecordLedgerEntry(
     journalWritePort,
     gameTimePort
   );
-  const applyTreasuryMovementCommand = new ApplyTreasuryMovement(
-    treasuryWritePort
-  );
   const recordMaintenanceExpense = new RecordMaintenanceExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordConstructionExpense = new RecordConstructionExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordSalaryExpense = new RecordSalaryExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordUnemploymentBenefitExpense = new RecordUnemploymentBenefitExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordPayrollTaxIncome = new RecordPayrollTaxIncome(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordCitizenTaxIncome = new RecordCitizenTaxIncome(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordLoanCapitalIncome = new RecordLoanCapitalIncome(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordLoanInterestExpense = new RecordLoanInterestExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordLoanRepaymentExpense = new RecordLoanRepaymentExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordInfoLoanInstallment = new RecordInfoLoanInstallment(
     recordLedgerEntryCommand
   );
   const recordCommerceImportExpense = new RecordCommerceImportExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordCommerceExportIncome = new RecordCommerceExportIncome(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordCapitalFundsIncome = new RecordCapitalFundsIncome(
     recordLedgerEntryCommand
   );
   const recordExceptionalExpense = new RecordExceptionalExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordCommercialRouteExpense = new RecordCommercialRouteExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordConstructionRefundIncome = new RecordConstructionRefundIncome(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordBalanceSnapshot = new RecordBalanceSnapshot(journalWritePort);
 
@@ -247,11 +219,11 @@ export function createAccountingContext(deps = {}) {
   );
   const getTreasurySnapshotQuery = new GetTreasurySnapshot(
     treasuryRepository,
-    initializeTreasury
+    initializeTreasury,
+    journalRepository
   );
   const recordContributionExpense = new RecordContributionExpense(
     recordLedgerEntryCommand,
-    applyTreasuryMovementCommand,
     getTreasurySnapshotQuery
   );
   const forceReinitializeTreasury = new ForceReinitializeTreasury(
@@ -259,8 +231,9 @@ export function createAccountingContext(deps = {}) {
     journalRepository,
     initializeTreasury,
     {
+      // The memory buffer is the journal the treasury is derived from: clear it with the rows, never one without the other.
       clear: async () => {
-        await dexieDb.journal.clear();
+        await sessionJournalStoreInstance.clearAllEntries();
       },
     }
   );
@@ -269,26 +242,22 @@ export function createAccountingContext(deps = {}) {
     getTreasurySnapshotQuery,
     syncTurnInformativeEntries
   );
-  const treasuryLoanPortfolio = new TreasuryLoanPortfolio(
-    treasuryRepository,
-    getTreasurySnapshotQuery
-  );
   const getFinancialHealthQuery = new GetFinancialHealth(getTreasurySnapshotQuery);
 
   const getTreasuryJournalReconciliationQuery = new GetTreasuryJournalReconciliation(
-    treasuryRepository,
+    getTreasurySnapshotQuery,
     journalRepository
   );
 
-  const getTreasuryBalanceQuery = new GetTreasuryBalance(treasuryRepository);
+  const getTreasuryBalanceQuery = new GetTreasuryBalance(getTreasurySnapshotQuery);
   const getCityLedgerYearComparisonQuery = new GetCityLedgerYearComparison(
     journalRepository,
-    treasuryRepository,
+    getTreasurySnapshotQuery,
     gameTimePort
   );
   const getGeneralLedgerQuery = new GetGeneralLedger(
     journalRepository,
-    treasuryRepository,
+    getTreasurySnapshotQuery,
     gameTimePort
   );
   const cityAssetsValuationPort =
@@ -308,7 +277,6 @@ export function createAccountingContext(deps = {}) {
     gameTimePort,
     cityAssetsValuationPort,
     budgetTurnEnrichmentRepository,
-    treasuryLoanPortfolio,
     getTreasurySnapshotQuery
   );
   const getFinancialStatementsHistory = new GetFinancialStatementsHistory(
@@ -374,9 +342,6 @@ export function createAccountingContext(deps = {}) {
       recordLoanInterestExpense: (params) => recordLoanInterestExpense.execute(params),
       recordLoanRepaymentExpense: (params) => recordLoanRepaymentExpense.execute(params),
       recordInfoLoanInstallment: (params) => recordInfoLoanInstallment.execute(params),
-      addLoanToPortfolio: (loanData) => treasuryLoanPortfolio.addLoanToPortfolio(loanData),
-      applyRepaymentToPortfolio: (loanId, amount) =>
-        treasuryLoanPortfolio.applyRepaymentToPortfolio(loanId, amount),
     },
   });
 
@@ -427,12 +392,11 @@ export function createAccountingContext(deps = {}) {
           await processLoanPayments();
         }
       }),
-    recalculateLoanTotals: () => treasuryLoanPortfolio.recalculateLoanTotals(),
     saveBudgetTurnEnrichment: (turn, additionalData) =>
       saveBudgetTurnEnrichment.execute({ turn, additionalData }),
     cleanupOldBudgetTurnSnapshotsByAge: () => cleanupOldBudgetTurnSnapshots.execute(),
-    cleanupOldJournalEntries: (maxAge) =>
-      sessionJournalStoreInstance.cleanupOldJournalEntries(maxAge),
+    cleanupOldJournalYears: (keepYears) =>
+      sessionJournalStoreInstance.cleanupOldJournalYears(keepYears),
     flushJournalSessionToDexie: () => flushJournalSession.execute(),
     listBuildingTypesForMaintenance:
       deps.listBuildingTypesForMaintenance ?? listSceneBuildingTypesForMaintenance,
@@ -443,10 +407,8 @@ export function createAccountingContext(deps = {}) {
     treasuryRepository,
     fiscalSettingsRepository,
     journalWritePort,
-    treasuryWritePort,
     gameTimePort,
     recordLedgerEntryCommand,
-    applyTreasuryMovementCommand,
     recordMaintenanceExpense,
     recordConstructionExpense,
     recordSalaryExpense,
@@ -474,7 +436,6 @@ export function createAccountingContext(deps = {}) {
     initializeTreasury,
     forceReinitializeTreasury,
     updateTreasuryTurn,
-    treasuryLoanPortfolio,
     getTreasuryJournalReconciliationQuery,
     getCityLedgerYearComparisonQuery,
     getGeneralLedgerQuery,
@@ -524,30 +485,11 @@ export function createAccountingContext(deps = {}) {
     },
 
     async getActiveLoans() {
-      return treasuryLoanPortfolio.getActiveLoans();
+      return (await getTreasurySnapshotQuery.execute()).loans;
     },
 
-    /** @param {object} loanData */
-    async addLoanToPortfolio(loanData) {
-      return treasuryLoanPortfolio.addLoanToPortfolio(loanData);
-    },
-
-    /** @param {string} loanId @param {number} repaymentAmount */
-    async applyRepaymentToPortfolio(loanId, repaymentAmount) {
-      return treasuryLoanPortfolio.applyRepaymentToPortfolio(loanId, repaymentAmount);
-    },
-
-    /** @param {string} loanId */
-    async advanceLoanInstallmentWithoutPayment(loanId) {
-      return treasuryLoanPortfolio.advanceInstallmentWithoutPayment(loanId);
-    },
-
-    async recalculateLoanTotals() {
-      return treasuryLoanPortfolio.recalculateLoanTotals();
-    },
-
-    async getCityLedgerYearComparison() {
-      return getCityLedgerYearComparisonQuery.execute();
+    async getCityLedgerYearComparison(options) {
+      return getCityLedgerYearComparisonQuery.execute(options);
     },
 
     async getGeneralLedger(filters) {
@@ -810,9 +752,9 @@ export function createAccountingContext(deps = {}) {
       return cleanupOldBudgetTurnSnapshots.execute();
     },
 
-    /** @param {number} [maxAge] */
-    async cleanupOldJournalEntries(maxAge = 60) {
-      return sessionJournalStoreInstance.cleanupOldJournalEntries(maxAge);
+    /** @param {number} keepYears */
+    async cleanupOldJournalYears(keepYears) {
+      return sessionJournalStoreInstance.cleanupOldJournalYears(keepYears);
     },
 
     /** @param {Parameters<ProcessTurnBudget['execute']>[0]} params */

@@ -1,3 +1,5 @@
+import { turnsPerYear } from '../../../../shared/time/TimeCalendar.js';
+
 /**
  * @param {number} probabilityPercent 0-100
  * @returns {number}
@@ -11,7 +13,7 @@ export function getMinTurnsBetweenEvents(probabilityPercent) {
  * @returns {number}
  */
 export function getFirstYearEnd(daysPerMonth) {
-  return 12 * daysPerMonth;
+  return turnsPerYear(daysPerMonth);
 }
 
 /**

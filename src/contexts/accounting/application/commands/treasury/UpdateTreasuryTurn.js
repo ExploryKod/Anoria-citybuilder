@@ -1,7 +1,7 @@
 import { GetTreasurySnapshot } from '../../queries/treasury/GetTreasurySnapshot.js';
 
 /**
- * Advance treasury turn counter and reset daily aggregates.
+ * Advance the treasury turn. Daily flows are derived from the turn, so nothing is reset here.
  */
 export class UpdateTreasuryTurn {
   /**
@@ -24,20 +24,13 @@ export class UpdateTreasuryTurn {
     const previousTurn = budget.turn || 0;
 
     budget.turn = turn;
-    budget.dailyIncome = 0;
-    budget.dailyExpenses = 0;
-
     await this.treasuryRepository.saveBudgetRow(budget);
 
-    try {
-      await this.syncTurnInformativeEntries.execute({
-        turn,
-        previousTurn,
-        treasuryFunds: budget.funds,
-      });
-    } catch (error) {
-      console.error('[UpdateTreasuryTurn] Error syncing informative journal entries:', error);
-    }
+    await this.syncTurnInformativeEntries.execute({
+      turn,
+      previousTurn,
+      treasuryFunds: budget.funds,
+    });
 
     return budget;
   }

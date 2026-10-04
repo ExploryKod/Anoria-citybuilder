@@ -178,12 +178,17 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
     `;
 
   try {
+    const hamletId = selectedHamletId();
     const ledger = await accounting.getGeneralLedger({
       periodDays: parsePeriodDays(period),
       types: typeFilter,
-      hamletId: selectedHamletId(),
+      hamletId,
     });
     const hamletNames = new Map((await listHamlets()).map((hamlet) => [hamlet.id, hamlet.name]));
+    const scopeLabel = hamletId === null ? 'Tous les hameaux' : hamletNames.get(hamletId);
+    if (scopeLabel === undefined) {
+      throw new Error(`[JournalPanel] selected hamlet ${hamletId} is not in the hamlet list`);
+    }
 
     if (ledger.years.length === 0) {
       journalList.innerHTML = `
@@ -195,7 +200,7 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
       return;
     }
 
-    journalList.innerHTML = renderJournalList(ledger, accounting, hamletNames);
+    journalList.innerHTML = renderJournalList(ledger, accounting, hamletNames, scopeLabel);
   } catch (error) {
     console.error('Error loading journal entries:', error);
     journalList.innerHTML = `

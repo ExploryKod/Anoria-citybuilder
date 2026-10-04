@@ -107,7 +107,7 @@ describe('Accounting — GetGeneralLedger (Phase 2b)', () => {
     const gameTimePort = new TestGameTimePort();
     query = new GetGeneralLedger(
       new DexieJournalRepository({ db: testDb, gameTimePort }),
-      new FakeTreasuryRepository(500),
+      { execute: async () => ({ funds: await new FakeTreasuryRepository(500).getTreasuryBalance() }) },
       gameTimePort
     );
   });

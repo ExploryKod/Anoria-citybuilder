@@ -158,6 +158,9 @@ db.version(16).stores({
   }
 });
 
+// v17: settings frozen when a game is created (the calendar's days per month: it must never change in a game).
+db.version(17).stores({ gameSettings: 'name' });
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

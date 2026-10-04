@@ -17,7 +17,6 @@ export class WorldMapController {
     this.view = null;
     this.selectedCityId = 'anoria';
     this.selectedHamletId = null;
-    this.clickHandler = null;
     this.messageTimeout = null;
     /** @type {ReturnType<typeof bootstrapWorldMap> | null} */
     this.phaserHandle = null;
@@ -43,7 +42,6 @@ export class WorldMapController {
     this.updateStats();
     await this.updatePanel();
     this.mountPhaser();
-    this.bindEvents();
   }
 
   getSelection() {
@@ -132,24 +130,6 @@ export class WorldMapController {
     });
   }
 
-  bindEvents() {
-    this.unbindEvents();
-    this.clickHandler = async (event) => {
-      const travelBtn = event.target.closest('.world-map-travel-btn');
-      if (travelBtn) {
-        event.preventDefault();
-        const hamletId = travelBtn.dataset.hamletId;
-        if (!hamletId) return;
-        const result = await this.mapApi.travelToHamlet(hamletId);
-        if (result.success) {
-          window.location.href = `/game/${hamletId}`;
-        }
-      }
-    };
-
-    this.root.addEventListener('click', this.clickHandler);
-  }
-
   showMessage(message, type = 'info') {
     let container = document.getElementById('world-map-message');
     if (!container) {
@@ -171,15 +151,8 @@ export class WorldMapController {
     }, 5000);
   }
 
-  unbindEvents() {
-    if (this.clickHandler) {
-      this.root.removeEventListener('click', this.clickHandler);
-      this.clickHandler = null;
-    }
-  }
 
   destroy() {
-    this.unbindEvents();
     this.exchangeModal.close();
     this.phaserHandle?.destroy();
     this.phaserHandle = null;

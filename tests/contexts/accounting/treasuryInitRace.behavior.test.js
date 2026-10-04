@@ -26,7 +26,7 @@ describe('Treasury initialization races', () => {
     const treasury = new DexieTreasuryRepository({ db });
     await treasury.createInitialBudgetRow(5000);
     await treasury.createInitialBudgetRow(5000);
-    const rows = await db.budget.toArray();
+    const rows = [await getTreasurySnapshot()];
     expect(rows.filter((r) => r.name === 'budget_current')).toHaveLength(1);
   });
 
@@ -38,7 +38,7 @@ describe('Treasury initialization races', () => {
     ]);
 
     expect(results.every((r) => r && typeof r.funds === 'number')).toBe(true);
-    const rows = await db.budget.toArray();
+    const rows = [await getTreasurySnapshot()];
     expect(rows.filter((r) => r.name === 'budget_current')).toHaveLength(1);
   });
 

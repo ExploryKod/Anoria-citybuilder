@@ -20,6 +20,7 @@ import {
   getSessionService,
 } from '../../../composition/sessionRuntime.js';
 import { waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
+import { initGameCalendar } from '../../../config/events.js';
 import { createGame } from '../../three/game.js';
 import { DEFAULT_CITY_SIZE } from '../../../shared/gameplay/SimulationDefaults.js';
 import {
@@ -138,6 +139,8 @@ export async function bootstrapGameSession(assetManager) {
   }
 
   await waitForDatabaseReady();
+  // Before any context is built: the game's calendar is loaded here (frozen from the pre-game choice on a new game).
+  await initGameCalendar();
 
   loaderManager.show();
 

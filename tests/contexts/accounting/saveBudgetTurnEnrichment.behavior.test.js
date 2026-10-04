@@ -36,13 +36,6 @@ describe('Accounting — SaveBudgetTurnEnrichment', () => {
 
     const treasuryRepository = new DexieTreasuryRepository({ db: testDb });
     enrichmentRepository = new BudgetTurnEnrichmentRepository(testDb);
-    const getTreasurySnapshot = new GetTreasurySnapshot(treasuryRepository);
-    const getFinancialHealth = new GetFinancialHealth(getTreasurySnapshot);
-    saveBudgetTurnEnrichment = new SaveBudgetTurnEnrichment(
-      enrichmentRepository,
-      getTreasurySnapshot,
-      getFinancialHealth
-    );
 
     const journalManager = new JournalManager();
     journalManager.db = testDb;
@@ -50,12 +43,15 @@ describe('Accounting — SaveBudgetTurnEnrichment', () => {
       sessionJournalStore: journalManager,
       gameTimePort: { getTimeInfo: () => ({ year: 0, monthIndex: 0, month: 'Janvier' }) },
     });
-    const initializeTreasury = new InitializeTreasury(
-      treasuryRepository,
-      journalRepository,
-      { execute: async () => {} }
+    const getTreasurySnapshot = new GetTreasurySnapshot(treasuryRepository, null, journalRepository);
+    const getFinancialHealth = new GetFinancialHealth(getTreasurySnapshot);
+    saveBudgetTurnEnrichment = new SaveBudgetTurnEnrichment(
+      enrichmentRepository,
+      getTreasurySnapshot,
+      getFinancialHealth
     );
-    await initializeTreasury.execute(500);
+    await treasuryRepository.createInitialBudgetRow();
+    await journalManager.addJournalEntry(0, 'capital_funds', 500, 'Capital de départ', null, { businessKey: 'capital_funds:0' });
   });
 
   afterEach(async () => {

@@ -9,7 +9,7 @@ const ENTRIES = [
 function ledgerQuery() {
   return new GetGeneralLedger(
     { getJournalEntries: async () => ENTRIES, getCurrentBalance: async () => 0 },
-    { getTreasuryBalance: async () => 0 },
+    { execute: async () => ({ funds: 0 }) },
     { getTimeInfo: () => ({ year: 2026 }) }
   );
 }

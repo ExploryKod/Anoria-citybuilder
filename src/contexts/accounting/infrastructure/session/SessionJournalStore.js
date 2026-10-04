@@ -11,13 +11,17 @@ import {
 } from '../../presentation/JournalExportViewModel.js';
 import { BrowserJournalPdfExporter } from '../adapters/browser/BrowserJournalPdfExporter.js';
 import { DexieJournalSessionPersistenceAdapter } from '../adapters/persistence/dexie/DexieJournalSessionPersistenceAdapter.js';
-import { sessionLedgerBuffer } from './SessionLedgerBuffer.js';
+import { sessionLedgerBuffer, SessionLedgerBuffer } from './SessionLedgerBuffer.js';
 import { buildLedgerBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
+import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
  * SessionJournalStore — in-memory journal orchestration (Accounting BC infrastructure).
  */
 export class SessionJournalStore {
+    /** Writes are applied one at a time; a reader waits for the writes already queued (see `#settled`). */
+    #writes = Promise.resolve();
+
     /**
      * @param {object} [deps]
      * @param {import('dexie').Dexie} [deps.db]
@@ -202,6 +206,17 @@ export class SessionJournalStore {
      * @param {string} description - Description
      */
     async addJournalEntry(turn, type, amount, description, partnerId = null, options = {}) {
+        const recorded = this.#writes.then(() => this.#appendLine(turn, type, amount, description, partnerId, options));
+        this.#writes = recorded.then(() => {}, () => {});
+        return recorded;
+    }
+
+    /** A reader sees the journal only once every queued write has settled: no line is read half-written. */
+    async #settled() {
+        await this.#writes;
+    }
+
+    async #appendLine(turn, type, amount, description, partnerId, options) {
         try {
             await this.ensureHydrated();
 
@@ -215,7 +230,7 @@ export class SessionJournalStore {
             }
             const businessKey =
                 options.businessKey ??
-                (timeInfo ? buildLedgerBusinessKey(type, timeInfo) : null);
+                (timeInfo ? buildLedgerBusinessKey(type, timeInfo, requireActiveHamletId()) : null);
 
             if (businessKey && this._buffer.hasBusinessKey(businessKey)) {
                 return { recorded: false, skipped: true, reason: 'duplicate_business_key' };
@@ -243,6 +258,22 @@ export class SessionJournalStore {
                 entry.buildingInstanceId = options.buildingInstanceId;
             }
 
+            if (options.loanId) {
+                entry.loanId = options.loanId;
+            }
+
+            if (options.loan) {
+                entry.loan = options.loan;
+            }
+
+            if (options.taxYear != null) {
+                entry.taxYear = options.taxYear;
+            }
+
+            if (options.taxBreakdown) {
+                entry.taxBreakdown = options.taxBreakdown;
+            }
+
             const persist =
                 options.persist ?? type !== 'balance';
 
@@ -258,9 +289,20 @@ export class SessionJournalStore {
                 };
             }
 
+            // Write-through: the entry is on disk before the caller learns it is recorded. The treasury is derived
+            // from the journal, so a line that is only in memory would be lost on reload while its effect is not.
+            if (persist) {
+                try {
+                    await this._getSessionPersistence().flushPendingEntries();
+                } catch (error) {
+                    this._buffer.removeSession(appendResult.record.sessionId);
+                    throw error;
+                }
+            }
+
             return { recorded: true, skipped: false, businessKey };
         } catch (error) {
-            console.error('Error adding journal entry:', error);
+            throw new Error(`[journal] could not record ${type} (turn ${turn}): ${error.message}`, { cause: error });
         }
     }
 
@@ -270,6 +312,7 @@ export class SessionJournalStore {
      * @returns {Promise<Array>} Journal entries
      */
     async getJournalEntries(maxAge = null) {
+        await this.#settled();
         await this.ensureHydrated();
         const entries = this._buffer.getAllPublic();
         return filterAndSortJournalEntries(entries, maxAge);
@@ -286,26 +329,37 @@ export class SessionJournalStore {
     }
 
     /**
-     * Cleanup old journal entries
-     * @param {number} maxAge - Maximum age in days
+     * Purge whole fiscal years: every entry stamped with a year strictly before `latest - keepYears`, where
+     * `latest` is the most recent year stamped in the journal. Never purges inside a year.
+     *
+     * Years are the ones stamped at write time and never recomputed from turns: the length of a year in turns is
+     * `daysPerMonth * 12` and `daysPerMonth` is a setting, so a turn → year conversion with today's value would
+     * re-interpret the whole history. Stamped years and the "latest" reference stay in the same frame.
+     *
+     * @param {number} keepYears - number of full years kept before the latest one
      */
-    async cleanupOldJournalEntries(maxAge = 60) {
+    async cleanupOldJournalYears(keepYears) {
+        if (!Number.isInteger(keepYears) || keepYears < 0) {
+            throw new Error(`[journal] cleanupOldJournalYears needs an integer keepYears >= 0, got ${keepYears}`);
+        }
         await this.ensureHydrated();
 
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - maxAge);
-        const cutoffISO = cutoffDate.toISOString();
+        const latestYear = this._buffer.latestFiscalYear();
+        if (latestYear === null) {
+            return { deleted: 0, cutoffYear: null };
+        }
+        const cutoffYear = latestYear - keepYears;
+        this._buffer.removeEntriesBeforeYear(cutoffYear);
 
-        this._buffer.removeEntriesBeforeDate(cutoffISO);
+        const oldIds = await this.db.journal
+            .filter((entry) => SessionLedgerBuffer.fiscalYearOf(entry) < cutoffYear)
+            .primaryKeys();
 
-        const oldEntries = await this.db.journal.where('date').below(cutoffISO).toArray();
-
-        if (oldEntries.length > 0) {
-            const ids = oldEntries.map(entry => entry.id);
-            await this.db.journal.bulkDelete(ids);
+        if (oldIds.length > 0) {
+            await this.db.journal.bulkDelete(oldIds);
         }
 
-        return { deleted: oldEntries.length };
+        return { deleted: oldIds.length, cutoffYear };
     }
 
     /**

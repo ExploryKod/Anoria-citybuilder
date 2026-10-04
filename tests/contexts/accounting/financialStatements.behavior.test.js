@@ -16,7 +16,6 @@ import { DexieTreasuryRepository } from '../../../src/contexts/accounting/infras
 import { BudgetTurnEnrichmentRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/BudgetTurnEnrichmentRepository.js';
 import { GetTreasurySnapshot } from '../../../src/contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
 import { InitializeTreasury } from '../../../src/contexts/accounting/application/commands/treasury/InitializeTreasury.js';
-import { TreasuryLoanPortfolio } from '../../../src/contexts/accounting/application/services/TreasuryLoanPortfolio.js';
 import { LegacyGameTimePort } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
 import { RecordCapitalFundsIncome } from '../../../src/contexts/accounting/application/services/RecordCapitalFundsIncome.js';
 import { SessionJournalWriteAdapter } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalWriteAdapter.js';
@@ -78,12 +77,11 @@ describe('Accounting — financial statements (journal-primary)', () => {
     );
     const getTreasurySnapshot = new GetTreasurySnapshot(
       treasuryRepository,
-      initializeTreasury
+      initializeTreasury,
+      journalRepository
     );
-    const treasuryLoanPortfolio = new TreasuryLoanPortfolio(
-      treasuryRepository,
-      getTreasurySnapshot
-    );
+    // The loans are the treasury's, derived from the journal: the snapshot is the portfolio.
+    const treasuryLoanPortfolio = { getActiveLoans: async () => (await getTreasurySnapshot.execute()).loans };
     const budgetTurnEnrichmentRepository = new BudgetTurnEnrichmentRepository(testDb);
 
     getFinancialStatementsAtTurn = new GetFinancialStatementsAtTurn(
@@ -110,15 +108,13 @@ describe('Accounting — financial statements (journal-primary)', () => {
 
     const now = new Date().toISOString();
     await testDb.journal.bulkAdd([
-      { turn: 0, date: now, type: 'capital_funds', amount: 500, description: 'Capital de départ' },
-      { turn: 12, date: now, type: 'citizen_tax', amount: 200, description: 'Impôt' },
+      { turn: 12, date: now, type: 'citizen_tax', amount: 200, description: 'Impôt', taxYear: 0, businessKey: 'citizen_tax:0' },
       { turn: 13, date: now, type: 'salary', amount: 100, description: 'Salaires' },
       { turn: 14, date: now, type: 'maintenance', amount: 50, description: 'Maintenance' },
       { turn: 14, date: now, type: 'balance', amount: 550, description: 'Solde trésorerie' },
     ]);
 
-    const current = await treasuryRepository.getNormalizedBudgetRow();
-    await treasuryRepository.saveBudgetRow({ ...current, turn: 14, funds: 550 });
+    await treasuryRepository.saveBudgetRow({ turn: 14 });
   });
 
   afterEach(async () => {

@@ -2,7 +2,7 @@ import { describe, test, expect } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { TimeManager } from '../../../src/shared/time/TimeManager.js';
+import * as TimeCalendar from '../../../src/shared/time/TimeCalendar.js';
 import {
   filterAndSortJournalEntries,
   buildMonthlyFinancialSummary,
@@ -52,7 +52,7 @@ describe('GeneralLedgerPresentationPolicy', () => {
   test('year months are chronological so game start appears first in year block', () => {
     const raw = JSON.parse(fs.readFileSync(sampleLedgerPath, 'utf8'));
     const entries = filterAndSortJournalEntries(raw.entries);
-    const getTimeInfo = (turn) => TimeManager.getTimeInfo(turn, 5);
+    const getTimeInfo = (turn) => TimeCalendar.getTimeInfo(turn, 5);
     const monthly = buildMonthlyFinancialSummary(entries, getTimeInfo);
     const yearly = buildYearlyFinancialSummary(monthly);
     const year0 = yearly.find((year) => year.year === 0);
