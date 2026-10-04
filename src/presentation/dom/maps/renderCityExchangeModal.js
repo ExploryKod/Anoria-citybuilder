@@ -11,6 +11,27 @@ import { TimeManager } from '../../../shared/time/TimeManager.js';
  */
 
 /**
+ * The "Culture" tab: the city's commercial personality, declared in the trade catalog (`culture`).
+ * It tells the player what kind of partner the city is, never the figures behind its satisfaction.
+ * A city with no trade entry shows "…" and a warning, as any term the catalog does not give.
+ * @param {{ cityId: string, culture: string, wants: ReadonlyArray<{ good: string }> } | null} entry
+ * @returns {string}
+ */
+export function renderCityCultureTab(entry) {
+  if (!entry) {
+    console.warn('[vocabulary] culture: this city has no trade catalog entry');
+    return '<p class="city-exchange-empty">…</p>';
+  }
+  if (typeof entry.culture !== 'string' || entry.culture.trim() === '') {
+    throw new Error(`[trade] ${entry.cityId} declares no culture text in TradeCatalog`);
+  }
+  const wanted = entry.wants.map((want) => goodLabel(want.good)).join(', ');
+  return `
+    <p class="city-exchange-culture">${entry.culture}</p>
+    <p class="city-exchange-culture-goods">Recherche : <strong>${wanted}</strong></p>`;
+}
+
+/**
  * One transaction row for the Commerce tab table.
  * @param {object} sale A stored merchant_sale record (extra fields spread onto it — see
  *   DexieSupplyTraceabilityRepository.addTransaction): { turn, good, quantity, price,

@@ -68,7 +68,6 @@ export class CommerceSectionPresenter {
     const score = rel.satisfactionScore ?? 50;
     const fillClass = score >= 60 ? '' : score >= 30 ? ' medium' : ' low';
     const goodsWanted = entry?.wants?.map((w) => w.good).join(', ') ?? '—';
-    const mult = rel.demandMultiplier ?? 1;
     const lastOrder = rel.lastOrderMonth != null ? `mois ${rel.lastOrderMonth}` : 'jamais';
     const customsRate = this.accounting.getCustomsRate();
 
@@ -76,11 +75,10 @@ export class CommerceSectionPresenter {
       .filter((w) => w.merchantGood)
       .map((w) => {
         const base = getResourceBaseValue(w.good);
-        if (base == null) return '';
-        const salePrice = +(base * mult).toFixed(2);
-        const customs = +(salePrice * customsRate).toFixed(2);
-        const net = +(salePrice * (1 - customsRate)).toFixed(2);
-        return `<div class="commerce-relation-row">${w.good} : <strong>${salePrice} €/u</strong> → douane <strong>${customs} €</strong> · marchands <strong>${net} €</strong></div>`;
+        const { spread } = entry.sale;
+        const low = +(base * w.baseMultiplier * (1 - spread)).toFixed(2);
+        const high = +(base * w.baseMultiplier * (1 + spread)).toFixed(2);
+        return `<div class="commerce-relation-row">${w.good} : <strong>${low} à ${high} €/u</strong> · douane ${Math.round(customsRate * 100)} %</div>`;
       })
       .join('');
 

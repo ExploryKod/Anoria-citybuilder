@@ -113,7 +113,7 @@ export class WorldMapController {
     const selection = this.getSelection();
     let tradeInfo = null;
     if (selection.cityId && selection.cityId !== 'anoria') {
-      tradeInfo = await this.mapApi.getCityTradeInfo(selection.cityId).catch(() => null);
+      tradeInfo = await this.mapApi.getCityTradeInfo(selection.cityId);
     }
     this.currentTradeInfo = tradeInfo;
     panel.innerHTML = renderWorldMapPanel(this.view, selection, tradeInfo);
@@ -126,7 +126,11 @@ export class WorldMapController {
     if (!exchangesBtn) return;
     exchangesBtn.addEventListener('click', () => {
       const cityName = panel.querySelector('.trade-map-panel-city')?.textContent ?? '';
-      this.exchangeModal.open({ cityName, sales: this.currentTradeInfo?.sales ?? [] });
+      this.exchangeModal.open({
+        cityName,
+        sales: this.currentTradeInfo?.sales ?? [],
+        entry: this.currentTradeInfo?.entry ?? null,
+      });
     });
   }
 

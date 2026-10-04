@@ -29,16 +29,19 @@ export function createTradeContext({ supply, accounting }) {
       accounting.recordCommerceExportIncome(params),
     recordMerchantSale: (params) => supply.recordMerchantSale(params),
     getCustomsRate: () => accounting.getCustomsRate(),
+    random: () => Math.random(),
+    // Where a sale's range is centred. No game event moves it yet, so every sale is centred on 0 (no
+    // favour, no hurt); events, the relation's state and the merchant's experience plug in here.
+    saleBias: () => 0,
   });
 
   return {
     cityTradeRepository,
 
-    async openRelation(cityId, { demandMultiplier, startMonth }) {
+    async openRelation(cityId, { startMonth }) {
       await cityTradeRepository.saveRelation({
         cityId,
         status: 'active',
-        demandMultiplier,
         satisfactionScore: 50,
         contractStartMonth: startMonth,
         contractEndMonth: null,
@@ -69,11 +72,9 @@ export function createTradeContext({ supply, accounting }) {
         if (existing) continue;
         const ok = await canOpenRelation(entry.cityId);
         if (!ok) continue;
-        const mult = entry.wants[0]?.baseMultiplier ?? 1;
         await cityTradeRepository.saveRelation({
           cityId: entry.cityId,
           status: 'active',
-          demandMultiplier: mult,
           satisfactionScore: 50,
           contractStartMonth: monthIndex,
           contractEndMonth: null,

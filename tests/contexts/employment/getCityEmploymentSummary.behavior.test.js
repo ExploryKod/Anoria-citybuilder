@@ -196,16 +196,19 @@ describe('Employment — GetCityEmploymentSummary', () => {
         workerPool: 5,
         assigned: 3,
         unemployed: 2,
+        poolByLevel: { 2: 5 },
       });
       expect(summary.byGroup.merchants).toEqual({
         workerPool: 3,
         assigned: 1,
         unemployed: 2,
+        poolByLevel: { 2: 3 },
       });
       expect(summary.byGroup.scholars).toEqual({
         workerPool: 0,
         assigned: 0,
         unemployed: 0,
+        poolByLevel: {},
       });
 
       // Global aggregate stays the flat sum, semantics untouched by the breakdown.
@@ -234,6 +237,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
         workerPool: 5,
         assigned: 0,
         unemployed: 5,
+        poolByLevel: { 1: 5 },
       });
       expect(summary.workerPool).toBe(5);
     });

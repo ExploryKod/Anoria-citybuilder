@@ -11,6 +11,11 @@
  *                     on top of the good's own ResourceCategoryCatalog.baseValue
  *   relation        — contract duration and satisfaction thresholds
  *   trade           — order rhythm and quantity per order
+ *   satisfaction    — the factors that move the relation's satisfaction (see TradeSatisfactionPolicy.js);
+ *                     each review sums them into one number 0..100
+ *   sale            — the price range a merchant sells at: `spread` is how far the ratio can move from
+ *                     a want's baseMultiplier (±), `drawWidth` the width of the random draw (0..1 of the spread).
+ *                     Events and the relation move the range's centre through the cycle's saleBias.
  *   openingRequirements — conditions to open the relation (empty = always open);
  *                     add new keys here as canOpenRelation.js implements each check
  *
@@ -19,6 +24,9 @@
  *   wants: ReadonlyArray<{ good: string, merchantGood: string, baseMultiplier: number }>,
  *   relation: { durationMonths: number, renewalThreshold: number, breakThreshold: number },
  *   trade: { frequencyMonths: number, quantityPerOrder: number },
+ *   sale: { spread: number, drawWidth: number },
+ *   culture: string, // what the city's trade is like, for the player: no figures
+ *   satisfaction: ReadonlyArray<{ name: string, [param: string]: number }>,
  *   openingRequirements: {
  *     minMerchants?: number,
  *     minAttractiveness?: number,
@@ -40,6 +48,9 @@ export const TRADE_CATALOG = Object.freeze([
     ]),
     relation: Object.freeze({ durationMonths: 12, renewalThreshold: 60, breakThreshold: 20 }),
     trade: Object.freeze({ frequencyMonths: 1, quantityPerOrder: 30 }),
+    sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    culture: "Négociants patients et méthodiques, nés de la culture de l'olivier. Ils bâtissent leur confiance lentement mais la gardent longtemps : un partenaire qui tient ses engagements finit par devenir indispensable. Ils recherchent surtout l'huile, les pots et le bois.",
+    satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 1, loss: 2 })]),
     openingRequirements: Object.freeze({}),
   },
   {
@@ -50,6 +61,9 @@ export const TRADE_CATALOG = Object.freeze([
     ]),
     relation: Object.freeze({ durationMonths: 6, renewalThreshold: 70, breakThreshold: 30 }),
     trade: Object.freeze({ frequencyMonths: 2, quantityPerOrder: 20 }),
+    sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    culture: "Forestiers et enthousiastes, ils s'enflamment pour les belles pièces. Leur confiance grimpe vite après une bonne livraison, mais un manquement la fait retomber tout aussi vite. Ils collectionnent les livres et les pots décorés.",
+    satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 3, loss: 6 })]),
     openingRequirements: Object.freeze({}),
   },
   {
@@ -60,6 +74,9 @@ export const TRADE_CATALOG = Object.freeze([
     ]),
     relation: Object.freeze({ durationMonths: 6, renewalThreshold: 50, breakThreshold: 15 }),
     trade: Object.freeze({ frequencyMonths: 3, quantityPerOrder: 50 }),
+    sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    culture: "Village isolé et pragmatique. Pas de goût particulier pour la nouveauté : ils achètent le grain et les légumes qui nourrissent leurs foyers. Réguliers mais peu bavards, ils jugent un partenaire à la régularité de ses livraisons.",
+    satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 5 })]),
     openingRequirements: Object.freeze({}),
   },
   {
@@ -71,6 +88,9 @@ export const TRADE_CATALOG = Object.freeze([
     ]),
     relation: Object.freeze({ durationMonths: 24, renewalThreshold: 50, breakThreshold: 10 }),
     trade: Object.freeze({ frequencyMonths: 1, quantityPerOrder: 15 }),
+    sale: Object.freeze({ spread: 0.15, drawWidth: 0.5 }),
+    culture: "Port habitué aux marchandises de luxe et aux commandes fréquentes. Exigeants sur les meubles et les amphores, ils passent commande chaque mois et ne font confiance qu'à la constance.",
+    satisfaction: Object.freeze([Object.freeze({ name: 'sales', gain: 2, loss: 5 })]),
     openingRequirements: Object.freeze({}),
   },
 ]);

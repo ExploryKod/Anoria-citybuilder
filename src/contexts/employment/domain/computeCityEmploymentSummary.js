@@ -33,7 +33,7 @@ import { getRequiredSkillForBuilding } from './policies/WorkplaceSkillRequiremen
  *   understaffedBuildingIds: ReadonlyArray<string>,
  *   bySector: Readonly<Record<number, { workerNeed: number, workers: number, need: number }>>,
  *   bySkill: Readonly<Record<string, { workerNeed: number, workers: number, need: number }>>,
- *   byGroup: Readonly<Record<string, { workerPool: number, assigned: number, unemployed: number }>>,
+ *   byGroup: Readonly<Record<string, { workerPool: number, assigned: number, unemployed: number, poolByLevel: Readonly<Record<number, number>> }>>,
  * }}
  */
 export function computeCityEmploymentSummary(buildings) {
@@ -118,10 +118,11 @@ export function computeCityEmploymentSummary(buildings) {
  * aggregate above — the global formula/semantics stay unchanged.
  *
  * @param {ReadonlyArray<import('./EmploymentBuildingSnapshot.js').EmploymentBuildingSnapshot>} buildings
- * @returns {Readonly<Record<string, { workerPool: number, assigned: number, unemployed: number }>>}
+ * `poolByLevel` splits the group's pool by the level of the house it comes from: a house grants a skill from its tier on.
+ * @returns {Readonly<Record<string, { workerPool: number, assigned: number, unemployed: number, poolByLevel: Readonly<Record<number, number>> }>>}
  */
 function computeEmploymentByGroup(buildings) {
-  /** @type {Record<string, { workerPool: number, assigned: number, unemployed: number }>} */
+  /** @type {Record<string, { workerPool: number, assigned: number, unemployed: number, poolByLevel: Record<number, number> }>} */
   const byGroup = {};
 
   for (const group of allSocialGroups()) {
@@ -129,6 +130,8 @@ function computeEmploymentByGroup(buildings) {
 
     let groupWorkerPool = 0;
     let groupAssigned = 0;
+    /** @type {Record<number, number>} */
+    const poolByLevel = {};
 
     for (const building of buildings) {
       if (
@@ -136,7 +139,9 @@ function computeEmploymentByGroup(buildings) {
         hasRoadAccess(building) &&
         residentialGroupForType(building.type) === group
       ) {
-        groupWorkerPool += workerPopFromHouse(building.type, building.pop, building.level);
+        const workers = workerPopFromHouse(building.type, building.pop, building.level);
+        groupWorkerPool += workers;
+        poolByLevel[building.level] = (poolByLevel[building.level] ?? 0) + workers;
       }
 
       if (isEligibleWorkplace(building) && eligibleSectors.has(building.sector || 0)) {
@@ -148,6 +153,7 @@ function computeEmploymentByGroup(buildings) {
       workerPool: groupWorkerPool,
       assigned: groupAssigned,
       unemployed: Math.max(0, groupWorkerPool - groupAssigned),
+      poolByLevel: Object.freeze(poolByLevel),
     };
   }
 

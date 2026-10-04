@@ -18,7 +18,7 @@ export function createMapSessionApi(deps = {}) {
      * @param {string} cityId
      */
     async getCityTradeInfo(cityId) {
-      if (!trade) return null;
+      if (!trade) throw new Error('[mapSessionApi] getCityTradeInfo needs the trade context: none was given');
       return trade.getCityTradeInfo(cityId);
     },
   });

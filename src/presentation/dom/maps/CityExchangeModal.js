@@ -1,5 +1,5 @@
 import { createModalFocusSession } from '../shell/modalFocus.js';
-import { renderCityCommerceTab } from './renderCityExchangeModal.js';
+import { renderCityCommerceTab, renderCityCultureTab } from './renderCityExchangeModal.js';
 
 /**
  * The "Échanges" modal: a city's full commerce history, opened from the world map's city panel.
@@ -14,21 +14,27 @@ export class CityExchangeModal {
     this.titleEl = document.getElementById('city-exchange-title');
     this.closeBtn = document.getElementById('city-exchange-close-btn');
     this.commercePanel = document.getElementById('city-exchange-panel-commerce');
+    this.culturePanel = document.getElementById('city-exchange-panel-culture');
     /** @type {ReturnType<typeof createModalFocusSession> | null} */
     this.focusSession = null;
 
     this.closeBtn?.addEventListener('click', () => this.close());
+    this.overlay?.querySelectorAll('[role="tab"]').forEach((tab) =>
+      tab.addEventListener('click', () => this.#selectTab(tab.dataset.tab))
+    );
     this.overlay?.querySelector('.city-exchange-backdrop')?.addEventListener('click', () => this.close());
   }
 
   /**
-   * @param {{ cityName: string, sales: ReadonlyArray<object> }} params
+   * @param {{ cityName: string, sales: ReadonlyArray<object>, entry: object | null }} params
    */
-  open({ cityName, sales }) {
+  open({ cityName, sales, entry }) {
     if (!this.overlay) return;
 
     if (this.titleEl) this.titleEl.textContent = `Échanges — ${cityName}`;
     if (this.commercePanel) this.commercePanel.innerHTML = renderCityCommerceTab(sales);
+    if (this.culturePanel) this.culturePanel.innerHTML = renderCityCultureTab(entry);
+    this.#selectTab('commerce');
 
     this.overlay.classList.add('active');
     this.overlay.removeAttribute('inert');
@@ -41,6 +47,17 @@ export class CityExchangeModal {
       initialFocus: '.panel-close-btn',
       ensureDialogAttributes: false,
     });
+  }
+
+  /** @param {string} name 'commerce' | 'culture' — shows that tab and its panel, hides the other. */
+  #selectTab(name) {
+    this.overlay?.querySelectorAll('[role="tab"]').forEach((tab) => {
+      const selected = tab.dataset.tab === name;
+      tab.setAttribute('aria-selected', String(selected));
+      tab.tabIndex = selected ? 0 : -1;
+    });
+    this.commercePanel?.classList.toggle('is-active', name === 'commerce');
+    this.culturePanel?.classList.toggle('is-active', name === 'culture');
   }
 
   close() {
