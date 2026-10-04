@@ -23,7 +23,34 @@ export class CommerceSectionPresenter {
   /** Called once when the section is first activated. */
   async init() {
     this.#bindCustomsSlider();
+    this.#bindRelationsExport();
     await this.refresh();
+  }
+
+  /** The whole relation rows, as stored: status, satisfaction, contract dates, last order. */
+  #bindRelationsExport() {
+    const button = document.getElementById('commerce-relations-export');
+    if (!button) return;
+    button.addEventListener('click', () => {
+      void this.#exportRelationsJson();
+    });
+  }
+
+  async #exportRelationsJson() {
+    const relations = await this.trade.getAllRelations();
+    const payload = {
+      exportDate: new Date().toISOString(),
+      relations: [...relations].sort((a, b) => a.cityId.localeCompare(b.cityId)),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `relations-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   async refresh() {

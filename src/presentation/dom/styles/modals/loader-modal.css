@@ -9,10 +9,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  gap: 14px;
   pointer-events: none;
   opacity: 1;
   visibility: visible;
   transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.game-loader__step {
+  margin: 0;
+  max-width: 80vw;
+  text-align: center;
+  color: #fff;
+  font-size: 15px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
 .game-loader:not(.hidden) {

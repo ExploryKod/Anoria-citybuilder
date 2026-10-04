@@ -1,4 +1,7 @@
-import db from '../../../core/persistence/dexie/db.js';
+import { clearGameTablesForNewGame, waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
+
+/** The game's own database: emptied table by table (cheat codes kept), never deleted. */
+const GAME_DATABASE = 'anoriaDb';
 
 /** Resolves once the database is gone; another open connection makes the deletion wait, it is not skipped. */
 function deleteIndexedDb(name) {
@@ -17,7 +20,10 @@ function resetLocalStorage() {
   localStorage.clear();
 }
 
-/** Full wipe: SW, caches, storage, then back to /game so the hamlets are created again. */
+/**
+ * New game from scratch: service worker, caches and every browser storage are cleared, the game's tables are
+ * emptied (the cheat codes the player activated are the one thing kept), then back to the menu.
+ */
 export async function performReset() {
   try {
     if ('serviceWorker' in navigator) {
@@ -35,18 +41,20 @@ export async function performReset() {
     }
 
     resetLocalStorage();
+    sessionStorage.clear();
 
+    await waitForDatabaseReady();
+    await clearGameTablesForNewGame();
     if ('indexedDB' in window) {
-      db.close();
       const databases = await indexedDB.databases();
       for (const database of databases) {
-        if (database.name) {
+        if (database.name && database.name !== GAME_DATABASE) {
           await deleteIndexedDb(database.name);
         }
       }
     }
 
-    window.location.replace('/game');
+    window.location.replace('/');
   } catch (error) {
     throw new Error(`[reset] the game was not reset: ${error.message}`, { cause: error });
   }

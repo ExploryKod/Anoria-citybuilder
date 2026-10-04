@@ -32,6 +32,7 @@ import { bootGameContexts } from '../../composition/bootGameContexts.js';
 import { bootTreasuryHud } from '../../composition/bootTreasuryHud.js';
 import { awaitBudgetReady } from '../../composition/budgetReadyGate.js';
 import { isFreshGameIntent } from '../pages/site/bootSession.js';
+import { performReset } from '../dom/boot/ResetGameFlow.js';
 import { resolveSelectedCitySize } from '../../composition/resolveCitySize.js';
 import { hydrateCityTilesFromRows } from '../../contexts/construction/application/services/HydrateCityTilesFromBuildings.js';
 import {
@@ -408,6 +409,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   let hamletSceneGate = Promise.resolve();
 
   async function loadActiveHamletScene() {
+    loaderManager.setStep('Chargement du hameau…');
     if (!getActiveHamletId()) {
       await ensureHamletCatalog({ requestedId: parseGameHamletPath(window.location.pathname) });
     }
@@ -422,6 +424,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       link.href = `/world?hamlet=${getActiveHamletId()}`;
     }
     const rows = await constructionApi.listAllBuildingRows();
+    loaderManager.setStep('Lecture des bâtiments…');
     const mapLayoutId = getMissionMapLayoutId();
     let hydrateEditorLayout = false;
 
@@ -447,6 +450,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       && !isCustomMapLayoutActive()
       && !hamlet?.natureSeeded
       && rows.length === 0;
+    loaderManager.setStep('Construction de la scène 3D…');
     await scene.initialize(city, { seedNature, hydrateEditorLayout });
     if (import.meta.env.DEV) Object.assign(window, { __scene: scene, __city: city });
     if (seedNature) {
@@ -1400,31 +1404,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     },
 
     replay() {
-      isOver = false;
-      overOverlay.classList.remove('active');
-      overOverlay.setAttribute('inert', '');
-      overOverlay.setAttribute('aria-hidden', 'true');
-      document.getElementById('play-again-btn')?.setAttribute('tabindex', '-1');
-      resetCumulativeDeaths();
-
-      try {
-        localStorage.removeItem('journal_year_end_balances');
-        localStorage.removeItem('citizen_tax_amount');
-        localStorage.removeItem('work_salary_per_month');
-        localStorage.removeItem('work_salary_tax_rate');
-        localStorage.removeItem('show-performance-stats');
-        localStorage.removeItem('speed');
-        localStorage.removeItem('selectedCitySize');
-        localStorage.removeItem('multiplayer-enabled');
-        localStorage.removeItem('multiplayer-pseudo');
-        localStorage.removeItem('multiplayer-room-name');
-        localStorage.removeItem('activeLoans');
-        console.log('[Game] LocalStorage cleared for replay');
-      } catch (error) {
-        console.warn('[Game] Error clearing localStorage on replay:', error);
-      }
-
-      window.location.href = '/';
+      performReset();
     },
 
     setInfo(key, info) {

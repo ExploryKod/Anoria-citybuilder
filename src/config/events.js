@@ -121,7 +121,7 @@ export function setEventProbability(probability) {
  *  - Réinitialiser la partie efface IndexedDB et localStorage : on repart de `.env`.
  */
 const STORAGE_KEY_DAYS_PER_MONTH = 'days_per_month';
-const CALENDAR_SETTING_NAME = 'calendar';
+export const CALENDAR_SETTING_NAME = 'calendar';
 
 export const DAYS_PER_MONTH_MIN = 1;
 export const DAYS_PER_MONTH_MAX = 30;

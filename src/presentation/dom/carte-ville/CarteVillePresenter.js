@@ -300,8 +300,8 @@ export function renderCityMapErrorHtml(error) {
         `;
 }
 
-/** Row fields left out of the export: bulky and redundant with the coordinates and footprint. */
-const EXPORT_OMITTED_FIELDS = ['neighbors', 'id', 'anchorX', 'anchorY', 'name'];
+/** Row fields left out of the export: redundant with the coordinates and footprint, or a display name. The neighbours stay: they are stored state. */
+const EXPORT_OMITTED_FIELDS = ['id', 'anchorX', 'anchorY', 'name'];
 
 /**
  * The city as one JSON document, readable without the screen: every building

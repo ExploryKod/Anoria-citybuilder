@@ -177,6 +177,24 @@ function clearLegacyLocalStorage() {
   }
 }
 
+/** Tables that outlive a game: the cheat codes the player has activated, not the game's data. */
+const TABLES_KEPT_ACROSS_GAMES = Object.freeze(['cheatCodes']);
+
+/**
+ * A new game starts from nothing: every table of the game is emptied (buildings, hamlets, journal,
+ * traceability, news, trade relations, objectives, clock, calendar), so the next boot creates them afresh.
+ * Called only for a boot that follows a menu choice of a new game — never on a plain reload.
+ * @returns {Promise<void>}
+ */
+export async function clearGameTablesForNewGame() {
+  const tables = db.tables.filter((table) => !TABLES_KEPT_ACROSS_GAMES.includes(table.name));
+  await db.transaction('rw', tables, async () => {
+    for (const table of tables) {
+      await table.clear();
+    }
+  });
+}
+
 /**
  * Open IndexedDB once before any gameplay persistence (avoids races with async db.delete).
  * @returns {Promise<void>}
