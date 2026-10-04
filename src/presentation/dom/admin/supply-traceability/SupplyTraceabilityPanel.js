@@ -4,6 +4,7 @@
  */
 
 import { buildingName, goodLabel } from '../../shell/CatalogVocabulary.js';
+import { listHamlets, requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 import {
     buildingStockKey,
     createFarmMarketSectionHTML,
@@ -18,6 +19,7 @@ import {
     deductGoods,
     refreshChainTotal,
     hasChainGoods,
+    STATE_TRANSACTION_TYPES,
 } from './SupplyTraceabilityPresenter.js';
 import { createEmptyStocks, getResourceStockShape, getSuppliedCategories, listQuantityConsumerNeeds } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
@@ -160,9 +162,58 @@ function buildingLabelOf(type) {
 /**
  * Charge et affiche les entrées de traçabilité alimentaire
  */
+/** The stock matrix and summaries cover the active hamlet: name it in the header. */
+async function showActiveHamletLabel() {
+    const labels = document.querySelectorAll('[data-hamlet-label]');
+    if (labels.length === 0) throw new Error('[traceability] no hamlet label is present in the page');
+    const activeId = requireActiveHamletId();
+    const active = (await listHamlets()).find((hamlet) => hamlet.id === activeId);
+    if (!active) throw new Error(`[traceability] active hamlet ${activeId} is not in the catalogue`);
+    labels.forEach((label) => { label.textContent = active.name; });
+}
+
+/** One line per transaction of every hamlet, each naming the hamlet it took place in. */
+async function renderTransactionLog() {
+    const logs = document.querySelectorAll('[data-transaction-log]');
+    if (logs.length === 0) throw new Error('[traceability] no transaction log is present in the page');
+    const [transactions, hamlets] = await Promise.all([
+        deps.supply.getAllSupplyTraceabilityTransactions(),
+        listHamlets(),
+    ]);
+    const hamletsById = new Map(hamlets.map((hamlet) => [hamlet.id, hamlet]));
+    const rows = [...transactions]
+        .filter((transaction) => !STATE_TRANSACTION_TYPES.has(transaction.transactionType))
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .map((transaction) => {
+            const hamlet = hamletsById.get(transaction.hamletId);
+            if (!hamlet) {
+                throw new Error(`[traceability] transaction ${transaction.id} belongs to an unknown hamlet ${transaction.hamletId}`);
+            }
+            const row = document.createElement('div');
+            row.className = 'supply-traceability-log-row';
+            const cells = [
+                ['supply-traceability-log-hamlet', hamlet.name],
+                ['supply-traceability-log-date', new Date(transaction.date).toLocaleString('fr-FR')],
+                ['supply-traceability-log-good', goodLabel(transaction.foodType) || transaction.foodType || ''],
+                ['supply-traceability-log-quantity', String(transaction.quantity ?? '')],
+                ['supply-traceability-log-route', `${buildingName(transaction.fromType)} → ${buildingName(transaction.toType)}`],
+            ];
+            for (const [className, text] of cells) {
+                const cell = document.createElement('span');
+                cell.className = className;
+                cell.textContent = text;
+                if (className === 'supply-traceability-log-hamlet') cell.style.setProperty('--hamlet-color', hamlet.color);
+                row.append(cell);
+            }
+            return row;
+        });
+    logs.forEach((log) => log.replaceChildren(...rows.map((row) => row.cloneNode(true))));
+}
+
 export async function loadSupplyTraceabilityEntries(period = 'all') {
     const supplyTraceabilityList = document.getElementById('supply-traceability-list');
     if (!supplyTraceabilityList) return;
+    await showActiveHamletLabel();
     
     supplyTraceabilityList.innerHTML = `
         <div class="supply-traceability-loading">
@@ -172,7 +223,18 @@ export async function loadSupplyTraceabilityEntries(period = 'all') {
     `;
     
     try {
-        let transactions = await deps.supply.getAllSupplyTraceabilityTransactions();
+        await renderTransactionLog();
+        const hamletsById = new Map((await listHamlets()).map((hamlet) => [hamlet.id, hamlet]));
+        const withHamletOf = (pair) => {
+            const ids = [...new Set(pair.transactions.map((transaction) => transaction.hamletId))];
+            if (ids.length !== 1) throw new Error(`[traceability] a pair mixes hamlets: ${ids.join(', ')}`);
+            const hamlet = hamletsById.get(ids[0]);
+            if (!hamlet) throw new Error(`[traceability] pair belongs to an unknown hamlet ${ids[0]}`);
+            pair.hamletName = hamlet.name;
+            pair.hamletColor = hamlet.color;
+            return pair;
+        };
+        let transactions = await deps.supply.getAllSupplyTraceabilityTransactions(null, requireActiveHamletId());
 
         // Filter by period
         if (period !== 'all') {
@@ -493,7 +555,7 @@ export async function loadSupplyTraceabilityEntries(period = 'all') {
                 });
                 refreshChainTotal(sourceStocksAfter, activeCategoriesArr, activeTotalKey);
                 refreshChainTotal(hubStocksAfter, activeCategoriesArr, activeTotalKey);
-                sections.push(createFarmMarketSectionHTML(pair, sourceStocksBefore, hubStocksBefore, pair.byFoodType, sourceStocksAfter, hubStocksAfter, { categories: activeCategoriesArr, totalKey: activeTotalKey }));
+                sections.push(createFarmMarketSectionHTML(withHamletOf(pair), sourceStocksBefore, hubStocksBefore, pair.byFoodType, sourceStocksAfter, hubStocksAfter, { categories: activeCategoriesArr, totalKey: activeTotalKey }));
             });
 
             // Hub-Distributor sections (source_to_distributor)
@@ -529,7 +591,7 @@ export async function loadSupplyTraceabilityEntries(period = 'all') {
                 refreshChainTotal(farmStocksAfter, activeCategoriesArr, activeTotalKey);
                 refreshChainTotal(marketStocksAfter, activeCategoriesArr, activeTotalKey);
 
-                sections.push(createFarmMarketSectionHTML(pair, farmStocksBefore, marketStocksBefore, pair.byFoodType, farmStocksAfter, marketStocksAfter, { categories: activeCategoriesArr, totalKey: activeTotalKey }));
+                sections.push(createFarmMarketSectionHTML(withHamletOf(pair), farmStocksBefore, marketStocksBefore, pair.byFoodType, farmStocksAfter, marketStocksAfter, { categories: activeCategoriesArr, totalKey: activeTotalKey }));
             });
             
             // Market-House sections
@@ -565,7 +627,7 @@ export async function loadSupplyTraceabilityEntries(period = 'all') {
                 refreshChainTotal(marketStocksAfter, activeCategoriesArr, activeTotalKey);
                 refreshChainTotal(houseStocksAfter, activeCategoriesArr, activeTotalKey);
 
-                sections.push(createMarketHouseSectionHTML(pair, marketStocksBefore, houseStocksBefore, pair.byFoodType, marketStocksAfter, houseStocksAfter, { categories: activeCategoriesArr, totalKey: activeTotalKey }));
+                sections.push(createMarketHouseSectionHTML(withHamletOf(pair), marketStocksBefore, houseStocksBefore, pair.byFoodType, marketStocksAfter, houseStocksAfter, { categories: activeCategoriesArr, totalKey: activeTotalKey }));
             });
             
             // Also show farms with stocks but no sales (production not yet sold)
@@ -860,7 +922,7 @@ function nextExportStamp() {
  */
 export async function exportTransactionsToJSON() {
     try {
-        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions();
+        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions(null, requireActiveHamletId());
         const blob = new Blob([JSON.stringify(transactions, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -881,7 +943,7 @@ export async function exportTransactionsToJSON() {
  */
 export async function exportSupplyTraceabilityToJSON() {
     try {
-        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions();
+        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions(null, requireActiveHamletId());
         const allHouses = (await deps.supply.listSupplyStockSnapshots()).filter(
             (b) => b.kind === 'house' || (b.type && (b.type.includes('House') || b.type.includes('Maison')))
         );
@@ -1166,7 +1228,7 @@ export async function loadSatisfactionCharts() {
     `;
 
     try {
-        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions();
+        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions(null, requireActiveHamletId());
         satisfactionCache = { transactions };
 
         // Categories that have any transaction in the log

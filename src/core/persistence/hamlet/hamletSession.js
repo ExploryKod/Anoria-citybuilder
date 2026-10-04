@@ -35,6 +35,25 @@ export function getActiveHamletId() {
   return activeHamletId;
 }
 
+/**
+ * Test seam: make a hamlet active in memory, without the database.
+ * @param {string} hamletId
+ */
+export function useHamletForTests(hamletId) {
+  knownHamlets.set(hamletId, { id: hamletId, slug: DEFAULT_HAMLET_SLUG, name: DEFAULT_HAMLET_SLUG });
+  activeHamletId = hamletId;
+}
+
+/**
+ * The active hamlet's UUID, for a write that must be attributed to a hamlet. Throws when none is active:
+ * a row must never be filed under a guessed hamlet.
+ * @returns {string}
+ */
+export function requireActiveHamletId() {
+  if (!activeHamletId) throw new Error('[hamletSession] no active hamlet: ensureHamletCatalog() has not run');
+  return activeHamletId;
+}
+
 /** @returns {string | null} The starting hamlet's UUID, once the catalog is ensured. */
 export function getDefaultHamletId() {
   for (const hamlet of knownHamlets.values()) {
@@ -54,9 +73,10 @@ export function isKnownHamletId(hamletId) {
 }
 
 export function hamletIdOf(row) {
-  return typeof row?.hamletId === 'string' && row.hamletId.length > 0
-    ? row.hamletId
-    : getDefaultHamletId();
+  if (typeof row?.hamletId !== 'string' || row.hamletId.length === 0) {
+    throw new Error('[hamletSession] row has no hamletId; every economy or house row must name its hamlet');
+  }
+  return row.hamletId;
 }
 
 export function isActiveHamletRow(row) {
@@ -114,9 +134,18 @@ export async function ensureHamletCatalog({ requestedId = null } = {}) {
     }
   }
 
-  const requested = requestedId ? rows.find((row) => row.id === requestedId) : null;
-  const usable = requested && (requested.unlocked || requested.slug === DEFAULT_HAMLET_SLUG);
-  activeHamletId = usable ? requested.id : getDefaultHamletId();
+  if (!requestedId) {
+    activeHamletId = getDefaultHamletId();
+    return activeHamletId;
+  }
+  const requested = rows.find((row) => row.id === requestedId);
+  if (!requested) {
+    throw new Error(`[hamletSession] unknown hamlet ${requestedId}`);
+  }
+  if (!requested.unlocked && requested.slug !== DEFAULT_HAMLET_SLUG) {
+    throw new Error(`[hamletSession] hamlet ${requestedId} is locked`);
+  }
+  activeHamletId = requested.id;
   return activeHamletId;
 }
 

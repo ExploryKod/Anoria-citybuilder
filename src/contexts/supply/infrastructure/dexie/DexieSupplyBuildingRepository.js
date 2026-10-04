@@ -123,6 +123,11 @@ export class DexieSupplyBuildingRepository {
     return rows.map((row) => this.#toView(row));
   }
 
+  /** The raw house rows of the active hamlet, for the traceability log of building states. */
+  async listAllBuildingRows() {
+    return this.#activeRows();
+  }
+
   /**
    * A write names only the goods it moved: whatever else the row holds (the market's food while goods
    * move, and the reverse) is kept as it was.

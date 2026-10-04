@@ -651,6 +651,7 @@ export const BUILDING_ECONOMY = {
         categories: [...MERCHANT_ACTIVITY_GOODS],
         totalKey: GOODS_TOTAL_KEY,
         maxStock: WAREHOUSE_MAX_STOCK,
+        emptyRate: HUB_EMPTY_RATE,
         // No hubLink: nothing distributes deal goods onward to markets, so it takes no distributor link.
       },
     ],

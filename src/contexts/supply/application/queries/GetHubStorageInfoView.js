@@ -1,5 +1,5 @@
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
-import { getResourceCategoryPresentation } from '../../domain/catalogs/ResourceCategoryCatalog.js';
+import { getResourceCategoryPresentation } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { buildHubStorageLines } from '../../domain/policies/HubStorageOrdersPolicy.js';
 import { buildHubStoragePieSegments } from '../../domain/policies/HubStoragePiePolicy.js';
 import { getMaxStockForBuilding, getScheduleForRole } from '../../domain/policies/ResourceRolePolicy.js';

@@ -7,6 +7,7 @@
  */
 
 import { inferBusinessKeyFromRow } from '../../domain/policies/LedgerBusinessKeys.js';
+import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 let nextSessionId = 1;
 
@@ -20,6 +21,13 @@ export class SessionLedgerBuffer {
   /** @type {Array<SessionLedgerRecord & object>} */
   #entries = [];
   #hydrated = false;
+  /** @type {() => string} */
+  #getHamletId;
+
+  /** @param {{ getHamletId?: () => string }} [options] */
+  constructor({ getHamletId = requireActiveHamletId } = {}) {
+    this.#getHamletId = getHamletId;
+  }
 
   reset() {
     this.#entries = [];
@@ -87,6 +95,7 @@ export class SessionLedgerBuffer {
   append(entry, { persist = true } = {}) {
     const record = {
       ...entry,
+      hamletId: entry.hamletId ?? this.#getHamletId(),
       sessionId: nextSessionId++,
       persisted: false,
       persist,

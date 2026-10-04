@@ -253,6 +253,14 @@ export function buildingStockKey(building) {
   return tryResolveBuildingInstanceIdFromRef(building) ?? building?.id ?? null;
 }
 
+/** The hamlet a pair took place in: its coordinates only mean something inside that hamlet. */
+function hamletTagHTML(pair) {
+  if (!pair.hamletName) {
+    throw new Error(`[traceability] pair ${pair.fromLabel} → ${pair.toLabel} has no hamlet name`);
+  }
+  return `<span class="supply-traceability-hamlet-tag" style="--hamlet-color: ${pair.hamletColor}">${pair.hamletName}</span>`;
+}
+
 /**
  * @param {object} pair
  * @param {object} farmStocksBefore
@@ -286,6 +294,7 @@ export function createFarmMarketSectionHTML(
                 <span class="supply-traceability-arrow">→</span>
                 <span class="supply-traceability-building-type">${pair.toLabel}</span>
                 <span class="supply-traceability-coords-pill market">${pair.marketCoords || 'N/A'}</span>
+                ${hamletTagHTML(pair)}
             </div>
             <div class="supply-traceability-transaction-table">
                 <div class="supply-traceability-transaction-row">
@@ -396,6 +405,7 @@ export function createMarketHouseSectionHTML(
                 <span class="supply-traceability-arrow">→</span>
                 <span class="supply-traceability-building-type">${pair.toLabel}</span>
                 <span class="supply-traceability-coords-pill house">${pair.houseCoords || 'N/A'}</span>
+                ${hamletTagHTML(pair)}
             </div>
             <div class="supply-traceability-transaction-table">
                 <div class="supply-traceability-transaction-row">
@@ -627,7 +637,8 @@ export function renderDietStats(container, dataByYear) {
 }
 
 /** Per-tick states are folded into the monthly figures; every other row is an event worth keeping. */
-const STATE_TRANSACTION_TYPES = new Set(['chain_state', 'population_state', 'building_state', 'employment_summary']);
+/** Snapshot rows stored in the same table as the transactions: they are not exchanges. */
+export const STATE_TRANSACTION_TYPES = new Set(['chain_state', 'population_state', 'building_state', 'employment_summary']);
 
 /** What a building's stock counts as in the monthly figures, read from the catalog's roles. */
 function stockKindOf(type) {

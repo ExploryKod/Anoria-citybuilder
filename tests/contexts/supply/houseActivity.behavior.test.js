@@ -12,8 +12,20 @@ import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/Re
 import { getMaxStockForBuilding } from '../../../src/shared/building-catalog/resourceRoleQueries.js';
 import { HubServing } from '../../../src/contexts/supply/application/services/HubServing.js';
 import { ProduceResource } from '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js';
-import { resolveClientPriorities } from '../../../src/shared/building-catalog/clientQueries.js';
+import {
+  listClientTypes,
+  producedCategories,
+  resolveInstanceClientPriorities,
+} from '../../../src/shared/building-catalog/clientQueries.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
+
+/** One candidate per client type eligible for this producer: the type-level order the tests check. */
+const resolveClientPriorities = (producerType, saved = null) =>
+  resolveInstanceClientPriorities({
+    producerType,
+    candidates: listClientTypes(producedCategories(producerType)).map((type) => ({ id: type, type })),
+    saved,
+  });
 
 class InMemoryRepository {
   constructor(buildings) {

@@ -58,12 +58,12 @@ describe('hamlet session — identity by UUID', () => {
     expect(getActiveHamletId()).toBe(clairiere.id);
   });
 
-  test('a requested hamlet that is locked or unknown falls back to the starting one', async () => {
+  test('a requested hamlet that is locked or unknown is an explicit error, never a silent fallback', async () => {
     await ensureHamletCatalog();
     const locked = (await listHamlets()).find((h) => h.slug === 'pont-saules');
 
-    expect(await ensureHamletCatalog({ requestedId: locked.id })).toBe(getDefaultHamletId());
-    expect(await ensureHamletCatalog({ requestedId: UUID })).toBe(getDefaultHamletId());
+    await expect(ensureHamletCatalog({ requestedId: locked.id })).rejects.toThrow('is locked');
+    await expect(ensureHamletCatalog({ requestedId: UUID })).rejects.toThrow('unknown hamlet');
   });
 
   test('ensuring again keeps the same UUIDs', async () => {

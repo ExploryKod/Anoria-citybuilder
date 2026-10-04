@@ -1,4 +1,4 @@
-import { getResourceCategoryColors } from '../catalogs/ResourceCategoryCatalog.js';
+import { getResourceCategoryColors } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { reconcileLots, lotOrigin } from './HubLotsPolicy.js';
 
 /**

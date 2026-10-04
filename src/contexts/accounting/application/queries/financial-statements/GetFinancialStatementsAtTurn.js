@@ -34,9 +34,11 @@ export class GetFinancialStatementsAtTurn {
 
   /**
    * @param {number} atTurn
+   * @param {{ hamletId?: string|null }} [options] — when set, only the income statement is restricted to that hamlet;
+   *   the balance sheet stays city-wide (treasury, loans and shares are global).
    * @returns {Promise<import('../../../domain/read-models/FinancialStatementsBundle.js').FinancialStatementsBundle>}
    */
-  async execute(atTurn) {
+  async execute(atTurn, options = {}) {
     const [allEntries, buildingValuation, enrichment, currentSnapshot, activeLoans] =
       await Promise.all([
         this.journalRepository.getJournalEntries(),
@@ -47,17 +49,24 @@ export class GetFinancialStatementsAtTurn {
       ]);
 
     const currentTurn = currentSnapshot.turn ?? 0;
-
-    return financialStatementsBundleFromJournal({
+    const statementArgs = {
       atTurn,
-      allEntries,
       getTimeInfo: (turn) => this.gameTimePort.getTimeInfo(turn),
       buildingValuation,
       enrichment: enrichment
         ? { ...enrichment, currentTurn }
         : { currentTurn, funds: null },
       currentActiveLoans: atTurn >= currentTurn ? activeLoans : [],
-    });
+    };
+
+    const cityBundle = financialStatementsBundleFromJournal({ ...statementArgs, allEntries });
+    if (!options.hamletId) {
+      return cityBundle;
+    }
+
+    const hamletEntries = allEntries.filter((entry) => entry.hamletId === options.hamletId);
+    const hamletBundle = financialStatementsBundleFromJournal({ ...statementArgs, allEntries: hamletEntries });
+    return { ...cityBundle, incomeStatement: hamletBundle.incomeStatement };
   }
 }
 
@@ -77,11 +86,12 @@ export class GetFinancialStatementsHistory {
   }
 
   /**
-   * @param {{ everyNTurns?: number, turns?: number[]|null, filterTurn?: number|null }} [options]
+   * @param {{ everyNTurns?: number, turns?: number[]|null, filterTurn?: number|null, hamletId?: string|null }} [options]
    * @returns {Promise<import('../../../domain/read-models/FinancialStatementsBundle.js').FinancialStatementsBundle[]>}
    */
   async execute(options = {}) {
     const everyNTurns = options.everyNTurns ?? 3;
+    const hamletId = options.hamletId ?? null;
     const [allEntries, currentSnapshot] = await Promise.all([
       this.journalRepository.getJournalEntries(),
       this.getTreasurySnapshot.execute(),
@@ -103,7 +113,7 @@ export class GetFinancialStatementsHistory {
     const bundles = [];
     for (const turn of turns) {
       if (turn <= currentTurn) {
-        bundles.push(await this.getFinancialStatementsAtTurn.execute(turn));
+        bundles.push(await this.getFinancialStatementsAtTurn.execute(turn, { hamletId }));
       }
     }
 

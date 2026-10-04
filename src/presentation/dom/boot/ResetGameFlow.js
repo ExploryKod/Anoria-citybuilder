@@ -1,3 +1,15 @@
+import db from '../../../core/persistence/dexie/db.js';
+
+/** Resolves once the database is gone; another open connection makes the deletion wait, it is not skipped. */
+function deleteIndexedDb(name) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(name);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => console.warn(`[reset] ${name} is still open elsewhere; waiting`);
+  });
+}
+
 function resetLocalStorage() {
   Object.keys(localStorage).forEach((key) => {
     localStorage.removeItem(key);
@@ -5,7 +17,7 @@ function resetLocalStorage() {
   localStorage.clear();
 }
 
-/** Full wipe: SW, caches, storage, then reload. */
+/** Full wipe: SW, caches, storage, then back to /game so the hamlets are created again. */
 export async function performReset() {
   try {
     if ('serviceWorker' in navigator) {
@@ -25,19 +37,17 @@ export async function performReset() {
     resetLocalStorage();
 
     if ('indexedDB' in window) {
-      indexedDB.databases().then((databases) => {
-        databases.forEach((db) => {
-          if (db.name) {
-            indexedDB.deleteDatabase(db.name);
-          }
-        });
-      });
+      db.close();
+      const databases = await indexedDB.databases();
+      for (const database of databases) {
+        if (database.name) {
+          await deleteIndexedDb(database.name);
+        }
+      }
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    window.location.reload(true);
+    window.location.replace('/game');
   } catch (error) {
-    console.error('Error during reset:', error);
-    window.location.reload(true);
+    throw new Error(`[reset] the game was not reset: ${error.message}`, { cause: error });
   }
 }

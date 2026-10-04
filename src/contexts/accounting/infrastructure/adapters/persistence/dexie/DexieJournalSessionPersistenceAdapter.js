@@ -40,6 +40,11 @@ export class DexieJournalSessionPersistenceAdapter extends JournalSessionPersist
     try {
       await this.db.transaction('rw', this.db.journal, async () => {
         for (const entry of pending) {
+          if (entry.hamletId == null) {
+            throw new Error(
+              `[journal] ledger entry ${entry.type} (turn ${entry.turn}, session ${entry.sessionId}) has no hamletId`
+            );
+          }
           const id = await this.db.journal.add(toDexieRow(entry));
           sessionLedgerBuffer.markPersisted([{ sessionId: entry.sessionId, id }]);
         }

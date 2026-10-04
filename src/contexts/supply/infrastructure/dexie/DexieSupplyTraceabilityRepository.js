@@ -1,4 +1,5 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
  * Dexie adapter — resource supply chain audit log (`supplyTraceability` table).
@@ -34,6 +35,7 @@ export class DexieSupplyTraceabilityRepository {
   ) {
     try {
       await this.db.supplyTraceability.add({
+        hamletId: requireActiveHamletId(),
         turn,
         month,
         year,
@@ -163,9 +165,15 @@ export class DexieSupplyTraceabilityRepository {
     return query.sortBy('date');
   }
 
-  /** @param {number|null} [maxAge=null] age in days */
-  async getAllTransactions(maxAge = null) {
+  /**
+   * @param {number|null} [maxAge=null] age in days
+   * @param {string|null} [hamletId=null] only transactions of this hamlet; null = every hamlet
+   */
+  async getAllTransactions(maxAge = null, hamletId = null) {
     let transactions = await this.db.supplyTraceability.toArray();
+    if (hamletId) {
+      transactions = transactions.filter((transaction) => transaction.hamletId === hamletId);
+    }
 
     if (maxAge) {
       const cutoffDate = new Date();

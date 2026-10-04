@@ -6,4 +6,4 @@ export { getResourceStockShape } from '../contexts/supply/domain/policies/Resour
 export {
   getResourceCategoryPresentation,
   hasResourceCategoryPresentation,
-} from '../contexts/supply/domain/catalogs/ResourceCategoryCatalog.js';
+} from '../shared/resource-catalog/ResourceCategoryCatalog.js';

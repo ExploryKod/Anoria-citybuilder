@@ -48,8 +48,8 @@ export async function updateSupplyBuildingFields(buildingId, fields) {
 }
 
 /** All food traceability audit rows (admin panel, commerce consumption badges). */
-export async function getAllSupplyTraceabilityTransactions(maxAge = null) {
-  return getOrCreateSupplyContext().getAllSupplyTraceabilityTransactions(maxAge);
+export async function getAllSupplyTraceabilityTransactions(maxAge = null, hamletId = null) {
+  return getOrCreateSupplyContext().getAllSupplyTraceabilityTransactions(maxAge, hamletId);
 }
 
 /** Food traceability rows for one game turn (optional month filter). */

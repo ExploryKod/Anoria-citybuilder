@@ -1,7 +1,7 @@
 import db from '../../../../core/persistence/dexie/db.js';
 import {
-  getActiveHamletId,
   isActiveHamletRow,
+  requireActiveHamletId,
 } from '../../../../core/persistence/hamlet/hamletSession.js';
 import {
   canonicalizeHouseRecord,
@@ -86,7 +86,7 @@ export class DexieConstructionBuildingRepository {
       record = canonicalizeHouseRecord({
         ...data,
         instanceId,
-        hamletId: data.hamletId || getActiveHamletId(),
+        hamletId: data.hamletId ?? requireActiveHamletId(),
       });
     } catch (err) {
       return { success: false, error: err.message, reason: 'database_error' };

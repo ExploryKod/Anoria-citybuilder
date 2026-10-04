@@ -1,4 +1,11 @@
 import { labelForNewsSource, labelForNewsCategory } from '../../../composition/intelligenceCatalog.js';
+import { listHamlets } from '../../../core/persistence/hamlet/hamletSession.js';
+
+async function hamletNameOf(hamletId) {
+  const hamlet = (await listHamlets()).find((candidate) => candidate.id === hamletId);
+  if (!hamlet) throw new Error(`[news] item belongs to an unknown hamlet ${hamletId}`);
+  return hamlet.name;
+}
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
 
@@ -106,7 +113,11 @@ export function initNewsEventModal(deps) {
 
     if (titleEl) titleEl.textContent = item.title;
     if (metaEl) {
-      metaEl.textContent = `${labelForNewsSource(item.sourceId)} · ${labelForNewsCategory(item.categoryId)} · ${formatTurnLabel(item.turn)}`;
+      const metaLine = `${labelForNewsSource(item.sourceId)} · ${labelForNewsCategory(item.categoryId)} · ${formatTurnLabel(item.turn)}`;
+      metaEl.textContent = metaLine;
+      hamletNameOf(item.hamletId).then((name) => {
+        metaEl.textContent = `${metaLine} · ${name}`;
+      });
     }
     if (bodyEl) {
       bodyEl.textContent = showBody

@@ -24,6 +24,7 @@ describe('SessionLedgerBuffer', () => {
     expect(record.sessionId).toBe(1);
     expect(record.persisted).toBe(false);
     expect(toPublicEntry(record)).toEqual({
+      hamletId: '5f0c8a1e-2b3d-4c5e-8f6a-7b8c9d0e1f2a',
       turn: 1,
       date: '2026-01-01',
       type: 'citizen_tax',
@@ -98,6 +99,7 @@ describe('SessionLedgerBuffer', () => {
     );
 
     expect(toDexieRow(record)).toEqual({
+      hamletId: '5f0c8a1e-2b3d-4c5e-8f6a-7b8c9d0e1f2a',
       turn: 1,
       date: '2026-01-01',
       type: 'citizen_tax',

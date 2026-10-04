@@ -131,7 +131,7 @@ function renderMonthSummary(monthData) {
  * }} accounting
  * @returns {string}
  */
-export function renderJournalList(ledger, accounting) {
+export function renderJournalList(ledger, accounting, hamletNames) {
   const sortHint = `
         <p class="journal-sort-hint">Plus récent en haut — années et mois triés du plus récent au plus ancien.</p>
     `;
@@ -165,7 +165,7 @@ export function renderJournalList(ledger, accounting) {
                                 </div>
                             </div>
                             <div class="journal-month-entries">
-                                ${monthData.entries.map((entry) => createJournalEntryHTML(entry, accounting)).join('')}
+                                ${monthData.entries.map((entry) => createJournalEntryHTML(entry, accounting, hamletNames)).join('')}
                             </div>
                         </div>
                     `;
@@ -187,7 +187,11 @@ export function renderJournalList(ledger, accounting) {
  * }} accounting
  * @returns {string}
  */
-function createJournalEntryHTML(entry, accounting) {
+function createJournalEntryHTML(entry, accounting, hamletNames) {
+  const hamletName = hamletNames.get(entry.hamletId);
+  if (hamletName === undefined) {
+    throw new Error(`[journal] entry ${entry.id} belongs to an unknown hamlet ${entry.hamletId}`);
+  }
   const {
     INFO_JOURNAL_TYPE_LABELS,
     isInfoPseudoMovementType,
@@ -322,6 +326,7 @@ function createJournalEntryHTML(entry, accounting) {
         <div class="journal-entry">
             <div class="journal-entry-header">
                 <span class="journal-entry-type ${entry.type}">${typeLabels[entry.type] ?? tradeLabel(entry.type) ?? unresolvedTerm('journal line label', entry.type)}</span>
+                <span class="journal-entry-hamlet">${hamletName}</span>
                 ${partnerName ? `<span class="journal-entry-partner">🤝 ${partnerName}</span>` : ''}
                 <span class="journal-entry-amount ${typeClass}">
                     ${typeClass === 'positive' ? '+' : '-'}${Math.abs(entry.amount)}€

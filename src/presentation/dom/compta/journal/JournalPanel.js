@@ -5,6 +5,7 @@
 
 import { renderJournalList } from './JournalPresenter.js';
 import { createModalFocusSession } from '../../shell/modalFocus.js';
+import { listHamlets } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
  * @type {{
@@ -45,7 +46,7 @@ export function initJournalPopup(panelDeps) {
   function openJournal() {
     journalPanel.classList.add('active');
     popupManager?.forceOpenPopup('journal-panel');
-    loadJournalEntries('all');
+    populateHamletFilter().then(() => loadJournalEntries('all'));
     journalFocusSession?.release({ restoreFocus: false });
     journalFocusSession = createModalFocusSession({
       panel: journalPanel,
@@ -69,6 +70,13 @@ export function initJournalPopup(panelDeps) {
     if (e.target === journalPanel) {
       closeJournal();
     }
+  });
+
+  document.getElementById('journal-hamlet-filter').addEventListener('change', () => {
+    const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
+    const activePill = document.querySelector('.journal-filter-pill.active');
+    const typeFilter = activePill ? JSON.parse(activePill.dataset.types || '[]') : null;
+    loadJournalEntries(activeFilterBtn ? activeFilterBtn.dataset.period : 'all', typeFilter);
   });
 
   journalRefreshBtn.addEventListener('click', () => {
@@ -122,6 +130,23 @@ export function initJournalPopup(panelDeps) {
   }
 }
 
+/** The hamlet selected in the journal filter, or null for every hamlet. */
+function selectedHamletId() {
+  const value = document.getElementById('journal-hamlet-filter').value;
+  return value === '' ? null : value;
+}
+
+async function populateHamletFilter() {
+  const select = document.getElementById('journal-hamlet-filter');
+  const hamlets = await listHamlets();
+  const previous = select.value;
+  select.replaceChildren(
+    new Option('Tous les hameaux', ''),
+    ...hamlets.map((hamlet) => new Option(hamlet.name, hamlet.id))
+  );
+  select.value = hamlets.some((hamlet) => hamlet.id === previous) ? previous : '';
+}
+
 /** @param {string} period */
 function parsePeriodDays(period) {
   if (period === 'all' || period == null) {
@@ -156,7 +181,9 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
     const ledger = await accounting.getGeneralLedger({
       periodDays: parsePeriodDays(period),
       types: typeFilter,
+      hamletId: selectedHamletId(),
     });
+    const hamletNames = new Map((await listHamlets()).map((hamlet) => [hamlet.id, hamlet.name]));
 
     if (ledger.years.length === 0) {
       journalList.innerHTML = `
@@ -168,7 +195,7 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
       return;
     }
 
-    journalList.innerHTML = renderJournalList(ledger, accounting);
+    journalList.innerHTML = renderJournalList(ledger, accounting, hamletNames);
   } catch (error) {
     console.error('Error loading journal entries:', error);
     journalList.innerHTML = `

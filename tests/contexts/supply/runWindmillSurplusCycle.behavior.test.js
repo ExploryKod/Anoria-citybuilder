@@ -46,6 +46,7 @@ class InMemorySupplyBuildingRepository {
       stocks: createSupplyStock(b.stocks),
       maxStock: b.maxStock,
       carryOver: b.carryOver,
+      hubStorageOrders: b.hubStorageOrders,
     });
   }
 
@@ -283,6 +284,8 @@ describe('Supply — windmill surplus cycle', () => {
     });
 
     test('the next year takes a new snapshot', async () => {
+      const windmillCapacity = repo.raw.get(windmillId).maxStock;
+      repo.raw.get(windmillId).hubStorageOrders = { wheat: { mode: 'accept', maxPercent: 100 } };
       repo.raw.get(windmillId).stocks = { wheat: 226, food: 226 };
       await runCycle.execute(december(1, 2));
 
@@ -295,8 +298,9 @@ describe('Supply — windmill surplus cycle', () => {
       const record = repo.raw.get(windmillId).carryOver;
       expect(record.year).toBe(3);
       expect(record.stocks.wheat).toBe(90);
-      // Last year's harvest is not counted again: only what came in this year
-      expect(record.harvested.wheat).toBe(288);
+      // Last year's harvest is not counted again: only what came in this year, up to the windmill's
+      // capacity (90 were left in it)
+      expect(record.harvested.wheat).toBe(Math.min(288, windmillCapacity - 90));
     });
   });
 });

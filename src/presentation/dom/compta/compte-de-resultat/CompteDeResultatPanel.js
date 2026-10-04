@@ -8,6 +8,7 @@ import {
   renderBudgetSummary,
 } from './CompteDeResultatPresenter.js';
 import { createModalFocusSession } from '../../shell/modalFocus.js';
+import { listHamlets } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
  * @type {{
@@ -104,7 +105,7 @@ export async function updateFilterButtonLabels() {
   if (!deps?.accounting) return;
 
   try {
-    const bundles = await deps.accounting.getFinancialStatementsHistory({ everyNTurns: 3 });
+    const bundles = await deps.accounting.getFinancialStatementsHistory({ everyNTurns: 3, hamletId: selectedHamletId() });
 
     if (bundles.length === 0) {
       return;
@@ -137,11 +138,29 @@ export async function updateFilterButtonLabels() {
   }
 }
 
+/** The hamlet selected in the income statement filter, or null for every hamlet. */
+function selectedHamletId() {
+  const value = document.getElementById('cr-hamlet-filter').value;
+  return value === '' ? null : value;
+}
+
+async function populateHamletFilter() {
+  const select = document.getElementById('cr-hamlet-filter');
+  const hamlets = await listHamlets();
+  const previous = select.value;
+  select.replaceChildren(
+    new Option('Tous les hameaux', ''),
+    ...hamlets.map((hamlet) => new Option(hamlet.name, hamlet.id))
+  );
+  select.value = hamlets.some((hamlet) => hamlet.id === previous) ? previous : '';
+}
+
 export async function loadBudgetStates(period = '3', showLoading = true) {
   if (!deps?.accounting) {
     console.warn('[CompteDeResultatPanel] deps not initialized');
     return;
   }
+  await populateHamletFilter();
 
   const { accounting } = deps;
   const compteDeResultatList = document.getElementById('compte-de-resultat-list');
@@ -163,14 +182,15 @@ export async function loadBudgetStates(period = '3', showLoading = true) {
   try {
     let bundles;
 
+    const hamletId = selectedHamletId();
     if (period === 'all') {
-      bundles = await accounting.getFinancialStatementsHistory({ everyNTurns: null });
+      bundles = await accounting.getFinancialStatementsHistory({ everyNTurns: null, hamletId });
     } else {
       const turnNumber = parseInt(period, 10);
       if (!Number.isNaN(turnNumber)) {
-        bundles = await accounting.getFinancialStatementsHistory({ filterTurn: turnNumber });
+        bundles = await accounting.getFinancialStatementsHistory({ filterTurn: turnNumber, hamletId });
       } else {
-        bundles = await accounting.getFinancialStatementsHistory({ everyNTurns: 3 });
+        bundles = await accounting.getFinancialStatementsHistory({ everyNTurns: 3, hamletId });
       }
     }
 

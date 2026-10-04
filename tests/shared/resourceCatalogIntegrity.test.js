@@ -24,7 +24,7 @@ import {
   getResourceStockShape,
   getMaxStockForBuilding,
 } from '../../src/shared/building-catalog/resourceRoleQueries.js';
-import { RESOURCE_CATEGORY_PRESENTATION } from '../../src/contexts/supply/domain/catalogs/ResourceCategoryCatalog.js';
+import { RESOURCE_CATEGORY_PRESENTATION } from '../../src/shared/resource-catalog/ResourceCategoryCatalog.js';
 
 const entriesOf = (role) =>
   Object.entries(buildingCatalog).flatMap(([type, definition]) =>
@@ -109,7 +109,8 @@ describe('no good is named in code', () => {
     'shared/asset-footprint/',
     'shared/building-catalog/kenney',
     'presentation/three/assets/',
-    'contexts/supply/domain/catalogs/ResourceCategoryCatalog.js',
+    'shared/resource-catalog/',
+    'shared/trade-catalog/',
   ];
   /**
    * Known, documented exceptions — a per-farm-type accounting screen whose rows
@@ -154,7 +155,7 @@ describe('no catalog id is named in code', () => {
     'shared/asset-footprint/',
     'shared/building-catalog/kenney',
     'presentation/three/assets/',
-    'contexts/supply/domain/catalogs/ResourceCategoryCatalog.js',
+    'shared/resource-catalog/ResourceCategoryCatalog.js',
     'shared/building-catalog/assetIdsByCategory.js',
     // Classifiers of the Kenney kit's own asset names ("rock" there is a mesh family, not a deposit).
     'shared/editor-catalog/',

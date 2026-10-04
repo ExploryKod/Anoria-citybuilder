@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="/src/presentation/dom/styles/mobile-controls.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/compact-toolbar.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/hamlet-switcher.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/supply-traceability-log.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/build-tool-hover-preview.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/editor-toolbar.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/placement-rotation-hud.css">
@@ -2552,7 +2553,7 @@
                                         <path d="m14.91 7.79-3.64-3.64a1.4 1.4 0 0 0-3.71 1.47l2.35 2.35"/>
                                     </svg>
                                 </div>
-                                <h3 class="work-header-title">Allocation de la Main-d'œuvre</h3>
+                                <h3 class="work-header-title">Allocation de la Main-d'œuvre <span id="work-hamlet-label" class="work-hamlet-label"></span></h3>
                             </div>
 
                             <div class="work-group-tabs" id="work-group-tabs" role="tablist" aria-label="Groupes sociaux">
@@ -2730,7 +2731,7 @@
                         <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
                         <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
                     </svg>
-                    Traçabilité Alimentaire
+                    Traçabilité Alimentaire <span class="supply-traceability-hamlet" data-hamlet-label></span>
                 </div>
                 <div class="administrator-section-content">
                     <div class="supply-traceability-content">
@@ -2766,7 +2767,8 @@
                                 </button>
                             </div>
 
-                            <div class="supply-traceability-list" id="supply-traceability-list">
+                            <div class="supply-traceability-log" data-transaction-log></div>
+                        <div class="supply-traceability-list" id="supply-traceability-list">
                                 <div class="supply-traceability-loading">
                                     <div class="loading-spinner"></div>
                                     <p>Chargement de la traçabilité...</p>
@@ -3021,6 +3023,7 @@
                 <button class="budget-filter-btn" data-period="6">6 jours</button>
                 <button class="budget-filter-btn" data-period="9">9 jours</button>
                 <button class="budget-filter-btn" data-period="all">Tous</button>
+                <select id="cr-hamlet-filter" class="cr-hamlet-filter" aria-label="Filtrer le compte de résultat par hameau"></select>
             </div>
             
             <!-- Global refresh button -->
@@ -3116,6 +3119,7 @@
                 <button class="journal-filter-btn" data-period="7">7 derniers jours</button>
                 <button class="journal-filter-btn" data-period="30">30 derniers jours</button>
                 <button class="journal-filter-btn" data-period="60">60 derniers jours</button>
+                <select id="journal-hamlet-filter" class="journal-hamlet-filter" aria-label="Filtrer par hameau"></select>
             </div>
             
             <div class="journal-refresh-section">
@@ -3164,7 +3168,7 @@
 <div id="supply-traceability-panel" class="supply-traceability-panel">
     <div class="supply-traceability-wrapper">
         <div class="supply-traceability-header">
-            <h3>🌾 Traçabilité Alimentaire</h3>
+            <h3>🌾 Traçabilité Alimentaire <span class="supply-traceability-hamlet" data-hamlet-label></span></h3>
             <div class="supply-traceability-close-btn" title="Fermer" aria-label="Fermer la traçabilité alimentaire">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
                     <path d="M18 6L6 18"/>
@@ -3206,6 +3210,7 @@
                     </button>
                 </div>
 
+                <div class="supply-traceability-log" data-transaction-log></div>
                 <div class="supply-traceability-list" id="supply-traceability-list">
                     <div class="supply-traceability-loading">
                         <div class="loading-spinner"></div>

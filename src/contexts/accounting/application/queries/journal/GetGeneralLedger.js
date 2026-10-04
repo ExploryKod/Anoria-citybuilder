@@ -5,6 +5,7 @@ import { assembleGeneralLedgerView } from './assembleGeneralLedgerView.js';
  * @typedef {object} GeneralLedgerFilters
  * @property {number|null} [periodDays] — max entry age in days; null = all history
  * @property {string[]|null} [types] — entry type filters (supports trailing `_` prefix)
+ * @property {string|null} [hamletId] — only entries of this hamlet; null = every hamlet
  */
 
 /**
@@ -32,9 +33,11 @@ export class GetGeneralLedger {
   async execute(filters = {}) {
     const periodDays = filters.periodDays ?? null;
     const types = filters.types ?? null;
+    const hamletId = filters.hamletId ?? null;
 
-    const entries = await this.journalRepository.getJournalEntries(periodDays);
-    const currentTurn = entries.length > 0 ? entries[0].turn : 0;
+    const allEntries = await this.journalRepository.getJournalEntries(periodDays);
+    const entries = hamletId ? allEntries.filter((entry) => entry.hamletId === hamletId) : allEntries;
+    const currentTurn = allEntries.length > 0 ? allEntries[0].turn : 0;
     const timeInfo = this.gameTimePort.getTimeInfo(currentTurn);
     const currentYear = timeInfo?.year ?? 0;
 

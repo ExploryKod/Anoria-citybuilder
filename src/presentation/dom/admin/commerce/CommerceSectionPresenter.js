@@ -1,5 +1,5 @@
-import { TRADE_CATALOG } from '../../../../contexts/geography/domain/catalogs/TradeCatalog.js';
-import { getResourceBaseValue } from '../../../../contexts/supply/domain/catalogs/ResourceCategoryCatalog.js';
+import { TRADE_CATALOG } from '../../../../shared/trade-catalog/TradeCatalog.js';
+import { getResourceBaseValue } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 
 const STATUS_LABEL = { active: 'Actif', suspended: 'Suspendu', expired: 'Expiré' };
 

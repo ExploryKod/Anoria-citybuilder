@@ -1,6 +1,6 @@
 import { DexieCityTradeRepository } from '../contexts/geography/infrastructure/dexie/DexieCityTradeRepository.js';
 import { RunMonthlyCityTradeCycle } from '../contexts/geography/application/workflows/RunMonthlyCityTradeCycle.js';
-import { TRADE_CATALOG, getTradeCatalogEntry } from '../contexts/geography/domain/catalogs/TradeCatalog.js';
+import { TRADE_CATALOG, getTradeCatalogEntry } from '../shared/trade-catalog/TradeCatalog.js';
 import { canOpenRelation } from '../contexts/geography/application/canOpenRelation.js';
 import { getCategoriesForRole, getTotalKeyForRole } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { takeCategoryAmount } from '../contexts/supply/domain/value-objects/ResourceStock.js';

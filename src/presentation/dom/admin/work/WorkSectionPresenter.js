@@ -1,6 +1,7 @@
 import { unresolvedTerm } from '../../shell/CatalogVocabulary.js';
 import { getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
 import { GROUP_CITIZEN_PRESENTATION } from '../../info/population/CitizenStatusPresentation.js';
+import { listHamlets, requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
  * Tab-chrome labels — reuses the exact same French group labels the
@@ -42,9 +43,20 @@ export class WorkSectionPresenter {
 
     async init() {
         this.setupEventListeners();
+        await this.showActiveHamletName();
         await this.loadWorkData();
         // No automatic refresh - data is read directly from IndexedDB when panel opens
         // Just like info panel, it shows current state at that moment
+    }
+
+    /** The work figures cover the active hamlet only: name it in the header. */
+    async showActiveHamletName() {
+        const label = document.getElementById('work-hamlet-label');
+        if (!label) return;
+        const activeId = requireActiveHamletId();
+        const active = (await listHamlets()).find((hamlet) => hamlet.id === activeId);
+        if (!active) throw new Error(`[work] active hamlet ${activeId} is not in the catalogue`);
+        label.textContent = active.name;
     }
 
     setupEventListeners() {

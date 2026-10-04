@@ -151,6 +151,7 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
       grouped[key].income.total += entry.amount;
       grouped[key].income.entries.push({
         id: entry.id,
+        hamletId: entry.hamletId,
         businessKey: entry.businessKey,
         partnerId: entry.partnerId,
         buildingInstanceId: entry.buildingInstanceId,
@@ -165,6 +166,7 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
       grouped[key].expenses.total += entry.amount;
       grouped[key].expenses.entries.push({
         id: entry.id,
+        hamletId: entry.hamletId,
         businessKey: entry.businessKey,
         partnerId: entry.partnerId,
         buildingInstanceId: entry.buildingInstanceId,

@@ -5,6 +5,9 @@ export default {
     
     // Setup file to run before tests (mock Vite globals)
     setupFiles: ['./tests/setup.js'],
+
+    // Every test starts with a database holding the hamlets and a starting hamlet active.
+    setupFilesAfterEnv: ['./tests/setupActiveHamlet.js'],
     
     // Transform ESM imports
     transform: {},

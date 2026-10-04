@@ -1,5 +1,5 @@
-import { getTradeCatalogEntry } from '../../domain/catalogs/TradeCatalog.js';
-import { getResourceBaseValue } from '../../../../contexts/supply/domain/catalogs/ResourceCategoryCatalog.js';
+import { getTradeCatalogEntry } from '../../../../shared/trade-catalog/TradeCatalog.js';
+import { getResourceBaseValue } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 
 /**
  * Monthly city-trade cycle — for each active relation whose order rhythm is
