@@ -100,10 +100,6 @@ export class TestBudgetFacade {
     return this.journalManager.getYearlyFinancialSummary();
   }
 
-  async getBudgetSummary() {
-    return accountingGame.getBudgetSummary();
-  }
-
   async updateTurn(turn) {
     return updateTreasuryTurn(turn);
   }
@@ -145,14 +141,6 @@ export class TestBudgetFacade {
 
   async addTaxes(time = 0) {
     return accountingGame.collectCitizenTaxes(time, { db: this.db });
-  }
-
-  async getIncomeBreakdown() {
-    return accountingGame.getIncomeBreakdown();
-  }
-
-  async getExpenseBreakdown() {
-    return accountingGame.getExpenseBreakdown();
   }
 
   async forceReinitialize(startingFunds = null) {

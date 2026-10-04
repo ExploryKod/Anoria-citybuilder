@@ -2519,8 +2519,6 @@ function onTouchEnd(event) {
         }
     }
 
-    // Note: cleanup toast → ui/compta/tresorerie/CleanupNotificationPresenter.js
-
     /**
      * Immediately update a road tile visually without waiting for full scene update
      * This provides instant feedback when placing roads

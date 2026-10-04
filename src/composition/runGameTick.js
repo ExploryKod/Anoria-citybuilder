@@ -24,7 +24,6 @@ import { isDeathGameOverReached } from './gameplayMortalityState.js';
  * @param {{ updateTimeDisplay: Function, showGameOver?: Function }} params.gameUI
  * @param {() => Promise<void>} params.refreshEmploymentPresentation
  * @param {{ enabled?: boolean, checkObjectives: Function }} params.objectivesTracker
- * @param {(cleanupResult?: { deleted?: number, deletedTurns?: number[] }) => void | Promise<void>} [params.notifyBudgetCleanup]
  * @param {() => void} [params.onGameOver]
  * @param {() => Promise<void>} [params.presentIncomingNewsEvents] — injected at the edge (presentation owns the modal)
  * @param {boolean} [params.silent] — batch-advance interim day (see SPEED_LEVELS_DAYS): runs the
@@ -46,7 +45,6 @@ export async function runGameTick({
   gameUI,
   refreshEmploymentPresentation,
   objectivesTracker,
-  notifyBudgetCleanup,
   onGameOver,
   presentIncomingNewsEvents,
   silent = false,
@@ -92,15 +90,12 @@ export async function runGameTick({
   }
 
   const { totalPop } = await persistGameplayTurn({ gameStore, housing, time });
-  const budgetResult = await processGameTurnBudget({
+  await processGameTurnBudget({
     city,
     buildings: scene.buildings,
     time,
     totalPop,
   });
-  if (!silent) {
-    await notifyBudgetCleanup?.(budgetResult?.cleanupResult);
-  }
   if (shouldAbort()) {
     return;
   }

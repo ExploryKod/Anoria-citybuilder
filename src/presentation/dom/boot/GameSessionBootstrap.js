@@ -18,6 +18,7 @@ import {
   getSessionApi,
   getSessionPopupManager,
   getSessionService,
+  updateSessionDisplayedFunds,
 } from '../../../composition/sessionRuntime.js';
 import { waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
 import { initGameCalendar } from '../../../config/events.js';
@@ -41,14 +42,6 @@ import {
   setGameMode,
 } from '../../../shared/gameplay/gameMode.js';
 import { applyEditorModeUi } from '../editor/applyEditorModeUi.js';
-import {
-  initBudgetStatesPopup,
-  refreshBudgetStatesModal,
-} from '../compta/compte-de-resultat/CompteDeResultatPanel.js';
-import {
-  initBilanPopup,
-  updateBudgetDisplay,
-} from '../compta/bilan/BilanPanel.js';
 import {
   initCarteVillePopup,
   generateCarteVille,
@@ -232,14 +225,15 @@ export async function bootstrapGameSession(assetManager) {
     getCity: () => game.city ?? null,
   };
 
-  initBilanPopup(panelDeps);
-  initBudgetStatesPopup(panelDeps);
   initJournalPopup(panelDeps);
   initCarteVillePopup(panelDeps);
   initLoansPopup({
     accounting: sessionApi.accounting,
     popupManager,
-    updateBudgetDisplay,
+    updateTreasuryDisplay: async () => {
+      const { funds } = await sessionApi.accounting.getTreasurySnapshot();
+      updateSessionDisplayedFunds(funds);
+    },
   });
   initLoanPaymentSystem({
     bindProcessLoanPayments: (fn) => bindSessionRuntime({ processLoanPayments: fn }),
@@ -297,7 +291,5 @@ export async function bootstrapGameSession(assetManager) {
     pauseGame();
   }
 
-  registerAppFunction('updateBudgetDisplay', updateBudgetDisplay);
-  registerAppFunction('refreshBudgetStatesModal', refreshBudgetStatesModal);
   registerAppFunction('generateCarteVille', generateCarteVille);
 }

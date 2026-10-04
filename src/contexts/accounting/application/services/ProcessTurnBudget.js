@@ -39,8 +39,6 @@ export class ProcessTurnBudget {
    * @param {() => Promise<{ unemployed: number }>} deps.getCityEmploymentSummary
    * @param {() => { salaryPerMonth: number, salaryTaxRate: number, unemploymentBenefitRate: number }} deps.getSalarySettings
    * @param {() => Promise<void>|void} [deps.processLoanPayments]
-   * @param {Function} deps.saveBudgetTurnEnrichment
-   * @param {() => Promise<object>} deps.cleanupOldBudgetTurnSnapshotsByAge
    * @param {(keepYears: number) => Promise<unknown>} deps.cleanupOldJournalYears
    * @param {() => Promise<unknown>} deps.flushJournalSessionToDexie
    * @param {() => string[]} [deps.listBuildingTypesForMaintenance]
@@ -93,7 +91,7 @@ export class ProcessTurnBudget {
    * @param {number} params.totalPop
    * @param {object} [params.buildingCounts]
    * @param {object} [params.maintenanceBreakdown]
-   * @returns {Promise<{ cleanupResult?: object }>}
+   * @returns {Promise<object>}
    */
   async execute({ time, totalPop, buildingCounts, maintenanceBreakdown }) {
     if (this.#processBudgetInFlight) {
@@ -106,7 +104,6 @@ export class ProcessTurnBudget {
     ));
 
     this.#processBudgetInFlight = true;
-    /** @type {{ cleanupResult?: object }} */
     const result = {};
 
     try {
@@ -240,16 +237,6 @@ export class ProcessTurnBudget {
 
       if (time % 3 === 0 && time > 0) {
         try {
-          await this.deps.saveBudgetTurnEnrichment(time, {
-            population: totalPop,
-            buildingCounts,
-          });
-
-          const cleanupResult = await this.deps.cleanupOldBudgetTurnSnapshotsByAge();
-          if (cleanupResult.deleted > 0) {
-            result.cleanupResult = cleanupResult;
-          }
-
           await this.deps.cleanupOldJournalYears(JOURNAL_KEPT_FULL_YEARS);
         } catch (error) {
           throw new Error(`[ProcessTurnBudget] failed to save the turn ${time} budget state: ${error.message}`, { cause: error });

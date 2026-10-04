@@ -14,9 +14,7 @@ class ModalAnimations {
   initializeModals() {
     // List of modals to animate
     const modalIds = [
-      'bilan-panel',
       'loans-panel',
-      'compte-de-resultat-panel',
       'journal-panel',
       'city-map-panel',
       'administrator-panel'
@@ -35,10 +33,7 @@ class ModalAnimations {
 
     // Find wrapper - supports various naming conventions
     const wrapper = modal.querySelector(`
-      .bilan-panel-wrapper, 
       .loans-panel-wrapper, 
-      .compte-de-resultat-wrapper,
-      .compte-de-resultat-panel-wrapper,
       .journal-wrapper,
       .journal-panel-wrapper,
       .city-map-wrapper,
@@ -48,10 +43,7 @@ class ModalAnimations {
     
     // Find header - supports various naming conventions
     const header = wrapper?.querySelector(`
-      .bilan-panel-header, 
       .loans-panel-header, 
-      .compte-de-resultat-header,
-      .compte-de-resultat-panel-header,
       .journal-header,
       .journal-panel-header,
       .city-map-header,
@@ -61,10 +53,7 @@ class ModalAnimations {
     
     // Find content - supports various naming conventions
     const content = wrapper?.querySelector(`
-      .bilan-panel-content, 
       .loans-panel-content, 
-      .compte-de-resultat-content,
-      .compte-de-resultat-panel-content,
       .journal-content,
       .journal-panel-content,
       .city-map-content,

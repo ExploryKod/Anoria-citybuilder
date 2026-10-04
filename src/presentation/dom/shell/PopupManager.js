@@ -53,11 +53,9 @@ class PopupManager {
 
         for (const id of [
             'pause-overlay',
-            'compte-de-resultat-panel',
             'info-building-overlay',
             'over-overlay',
             'loans-panel',
-            'bilan-panel',
             'administrator-panel',
             'city-map-panel',
             'journal-panel',

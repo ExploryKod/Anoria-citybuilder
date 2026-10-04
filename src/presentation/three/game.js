@@ -49,7 +49,6 @@ import { presentIncomingNewsEvents } from '../dom/intelligence/NewsEventModal.js
 import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
-import { notifyBudgetCleanupIfNeeded } from '../dom/compta/tresorerie/CleanupNotificationPresenter.js';
 import { computeBuildingReach, listPlacedBuildings } from '../../shared/building-catalog/buildingReach.js';
 import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
 import { BUILDING_ASSETS } from './assets/buildingAssets.js';
@@ -1369,7 +1368,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
         gameUI,
         refreshEmploymentPresentation: refreshEmploymentPresentationForCity,
         objectivesTracker,
-        notifyBudgetCleanup: notifyBudgetCleanupIfNeeded,
         onGameOver: () => {
           isOver = true;
         },
@@ -1413,7 +1411,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
         localStorage.removeItem('work_salary_per_month');
         localStorage.removeItem('work_salary_tax_rate');
         localStorage.removeItem('show-performance-stats');
-        localStorage.removeItem('hasSeenCleanupNotification');
         localStorage.removeItem('speed');
         localStorage.removeItem('selectedCitySize');
         localStorage.removeItem('multiplayer-enabled');

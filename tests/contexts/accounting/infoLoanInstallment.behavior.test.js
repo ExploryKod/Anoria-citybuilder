@@ -80,7 +80,7 @@ describe('Accounting — info loan installment (informative journal)', () => {
     bindSessionRuntime({ sessionApi });
     initLoansPopup({
       accounting: sessionApi.accounting,
-      updateBudgetDisplay: async () => {},
+      updateTreasuryDisplay: async () => {},
     });
   });
 

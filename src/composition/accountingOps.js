@@ -115,33 +115,10 @@ export async function getGeneralLedger(filters) {
   return getOrCreateAccountingContext().getGeneralLedger(filters);
 }
 
-/** @param {{ fiscalYear?: number|null }} [options] */
-export async function getIncomeStatement(options) {
-  return getOrCreateAccountingContext().getIncomeStatement(options);
-}
-
-export async function getBalanceSheet() {
-  return getOrCreateAccountingContext().getBalanceSheet();
-}
-
-/** @param {number} atTurn */
-export async function getFinancialStatementsAtTurn(atTurn) {
-  return getOrCreateAccountingContext().getFinancialStatementsAtTurn(atTurn);
-}
-
-/** @param {{ everyNTurns?: number, turns?: number[]|null, filterTurn?: number|null }} [options] */
-export async function getFinancialStatementsHistory(options) {
-  return getOrCreateAccountingContext().getFinancialStatementsHistory(options);
-}
-
 /**
  * @param {number} turn
  * @param {{ population?: number, buildingCounts?: object }} [additionalData]
  */
-export async function saveBudgetTurnEnrichment(turn, additionalData = {}) {
-  return getOrCreateAccountingContext().saveBudgetTurnEnrichment({ turn, additionalData });
-}
-
 export async function flushJournalSessionToDexie() {
   return getOrCreateAccountingContext().flushJournalSessionToDexie();
 }
@@ -285,18 +262,6 @@ export async function recordLedgerEntry(params) {
 
 // --- Game loop façade (legacy signatures; logic lives in BC application/services/game) ---
 
-export async function getBudgetSummary() {
-  return getOrCreateAccountingContext().getBudgetSummary();
-}
-
-export async function getIncomeBreakdown() {
-  return getOrCreateAccountingContext().getIncomeBreakdown();
-}
-
-export async function getExpenseBreakdown() {
-  return getOrCreateAccountingContext().getExpenseBreakdown();
-}
-
 export async function canAfford(amount) {
   return getOrCreateAccountingContext().canAfford(amount);
 }
@@ -395,13 +360,6 @@ export async function recordLoanRepayment(
 /** Game-loop wrapper — returns current budget without forcing a treasury refresh. */
 export async function recordInfoLoanInstallmentForGame(params) {
   return getOrCreateAccountingContext().recordInfoLoanInstallmentFromGame(params);
-}
-
-export async function cleanupOldBudgetTurnSnapshotsByAge(options = {}) {
-  if (options.db) {
-    return createAccountingContext({ db: options.db }).cleanupOldBudgetTurnSnapshotsByAge();
-  }
-  return getOrCreateAccountingContext().cleanupOldBudgetTurnSnapshotsByAge();
 }
 
 export async function cleanupOldJournalYears(keepYears) {
