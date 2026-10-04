@@ -1,10 +1,13 @@
 import db from '../../../../core/persistence/dexie/db.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { getGoodCategories, getServiceCategories } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { getGoodVatCategory, getVatCategories } from '../../../../shared/resource-catalog/VatCategoryCatalog.js';
 import {
   DEFAULT_HAMLET_FISCAL_RATES,
   DEFAULT_SERVICE_SUBSIDY_PERCENT,
+  DEFAULT_VAT_GENERAL_RATE_PERCENT,
   DEFAULT_VAT_RATE_PERCENT,
+  DEFAULT_VAT_UNIFORM,
   HAMLET_FISCAL_RATE_BOUNDS,
   SERVICE_SUBSIDY_BOUNDS,
   VAT_RATE_BOUNDS,
@@ -57,28 +60,66 @@ export class HamletFiscalRateRepository {
     );
   }
 
-  /** @returns {Promise<Record<string, number>>} the active hamlet's VAT rate, in percent, for every good. */
-  async getVatRates() {
+  /**
+   * The active hamlet's VAT: the uniform switch, the general rate and the rate of each VAT category.
+   * @returns {Promise<{ uniform: boolean, generalRatePercent: number, categoryRatesPercent: Record<string, number> }>}
+   */
+  async getVatSettings() {
     const hamletId = requireActiveHamletId();
     const row = await this.db.hamlets.get(hamletId);
     if (!row) throw new Error(`[fiscal] hamlet ${hamletId} has no row`);
+    if (typeof row.vatUniform !== 'boolean') throw new Error(`[fiscal] hamlet ${hamletId} has no VAT uniform switch`);
+    if (!Number.isInteger(row.vatGeneralRatePercent)) throw new Error(`[fiscal] hamlet ${hamletId} has no general VAT rate`);
     if (!row.vatRatePercent) throw new Error(`[fiscal] hamlet ${hamletId} has no VAT rates`);
-    return Object.fromEntries(
-      getGoodCategories().map((good) => {
-        const percent = row.vatRatePercent[good];
-        if (!Number.isInteger(percent)) throw new Error(`[fiscal] hamlet ${hamletId} has no VAT rate for ${good}`);
-        return [good, percent];
+    const categoryRatesPercent = Object.fromEntries(
+      getVatCategories().map((category) => {
+        const percent = row.vatRatePercent[category];
+        if (!Number.isInteger(percent)) throw new Error(`[fiscal] hamlet ${hamletId} has no VAT rate for ${category}`);
+        return [category, percent];
       })
     );
+    return { uniform: row.vatUniform, generalRatePercent: row.vatGeneralRatePercent, categoryRatesPercent };
   }
 
-  /** @param {string} good @param {number} percent @returns {Promise<number>} */
-  async setVatRate(good, percent) {
-    if (!getGoodCategories().includes(good)) throw new Error(`[fiscal] "${good}" is not a good taxed by VAT`);
+  /**
+   * The VAT rate of every good, read through its category: what the settlement taxes each sale at.
+   * @returns {Promise<Record<string, number>>}
+   */
+  async getVatRates() {
+    const { categoryRatesPercent } = await this.getVatSettings();
+    return Object.fromEntries(getGoodCategories().map((good) => [good, categoryRatesPercent[getGoodVatCategory(good)]]));
+  }
+
+  /** @param {boolean} uniform When on, every VAT category takes the general rate. */
+  async setVatUniform(uniform) {
+    if (typeof uniform !== 'boolean') throw new Error(`[fiscal] the VAT uniform switch must be a boolean, got ${uniform}`);
+    const hamletId = requireActiveHamletId();
+    const { generalRatePercent } = await this.getVatSettings();
+    const patch = { vatUniform: uniform };
+    if (uniform) patch.vatRatePercent = uniformVatRates(generalRatePercent);
+    await this.db.hamlets.update(hamletId, patch);
+    return uniform;
+  }
+
+  /** @param {number} percent When the switch is on, every VAT category follows it. @returns {Promise<number>} */
+  async setVatGeneralRate(percent) {
     assertInBounds('vatRate', percent);
     const hamletId = requireActiveHamletId();
-    const current = await this.getVatRates();
-    await this.db.hamlets.update(hamletId, { vatRatePercent: { ...current, [good]: percent } });
+    const { uniform } = await this.getVatSettings();
+    const patch = { vatGeneralRatePercent: percent };
+    if (uniform) patch.vatRatePercent = uniformVatRates(percent);
+    await this.db.hamlets.update(hamletId, patch);
+    return percent;
+  }
+
+  /** @param {string} category @param {number} percent @returns {Promise<number>} */
+  async setVatCategoryRate(category, percent) {
+    if (!getVatCategories().includes(category)) throw new Error(`[fiscal] "${category}" is not a VAT category`);
+    assertInBounds('vatRate', percent);
+    const hamletId = requireActiveHamletId();
+    const { uniform, categoryRatesPercent } = await this.getVatSettings();
+    if (uniform) throw new Error('[fiscal] the VAT is uniform: the general rate sets every category');
+    await this.db.hamlets.update(hamletId, { vatRatePercent: { ...categoryRatesPercent, [category]: percent } });
     return percent;
   }
 
@@ -115,7 +156,9 @@ export class HamletFiscalRateRepository {
       defaults.serviceSubsidy = Object.fromEntries(getServiceCategories().map((service) => [service, DEFAULT_SERVICE_SUBSIDY_PERCENT]));
     }
     if (!row.vatRatePercent) {
-      defaults.vatRatePercent = Object.fromEntries(getGoodCategories().map((good) => [good, DEFAULT_VAT_RATE_PERCENT]));
+      defaults.vatRatePercent = Object.fromEntries(getVatCategories().map((category) => [category, DEFAULT_VAT_RATE_PERCENT]));
+      defaults.vatUniform = DEFAULT_VAT_UNIFORM;
+      defaults.vatGeneralRatePercent = DEFAULT_VAT_GENERAL_RATE_PERCENT;
     }
     if (Object.keys(defaults).length > 0) await this.db.hamlets.update(hamletId, defaults);
   }
@@ -158,4 +201,9 @@ function assertInBounds(field, value) {
   if (value < bounds.min || value > bounds.max) {
     throw new Error(`[fiscal] ${field} must be between ${bounds.min} and ${bounds.max}, got ${value}`);
   }
+}
+
+/** @param {number} percent @returns {Record<string, number>} the same rate for every VAT category. */
+function uniformVatRates(percent) {
+  return Object.fromEntries(getVatCategories().map((category) => [category, percent]));
 }

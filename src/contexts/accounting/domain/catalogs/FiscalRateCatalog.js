@@ -24,6 +24,31 @@ export const HAMLET_FISCAL_RATE_BOUNDS = Object.freeze({
 export const DEFAULT_SERVICE_SUBSIDY_PERCENT = 0;
 export const SERVICE_SUBSIDY_BOUNDS = Object.freeze({ min: 0, max: 100, integer: true });
 
-/** A good's value-added tax, in whole percent of its price excluding tax (HT): 0 = no VAT on that good. */
+/**
+ * A VAT category's rate, in whole percent of the price excluding tax (HT): 0 = no VAT on its goods. The uniform switch
+ * puts every category at the general rate.
+ */
 export const DEFAULT_VAT_RATE_PERCENT = 0;
+export const DEFAULT_VAT_GENERAL_RATE_PERCENT = 0;
+export const DEFAULT_VAT_UNIFORM = false;
 export const VAT_RATE_BOUNDS = Object.freeze({ min: 0, max: 50, integer: true });
+
+/** The city's customs rate, as a fraction of the sale (0.15 = 15 %). */
+export const CUSTOMS_RATE_BOUNDS = Object.freeze({ min: 0, max: 0.5 });
+
+/**
+ * The range of every fiscal slider the admin panels show, in the unit the slider shows (percent for a rate).
+ * The panels take their min and max from here; nothing else declares a range.
+ */
+export function fiscalSliderBounds() {
+  const inPercent = (bounds) => ({ min: Math.round(bounds.min * 100), max: Math.round(bounds.max * 100) });
+  return Object.freeze({
+    citizenTaxPerCapita: HAMLET_FISCAL_RATE_BOUNDS.citizenTaxPerCapita,
+    salaryPerMonth: HAMLET_FISCAL_RATE_BOUNDS.salaryPerMonth,
+    salaryTaxPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.salaryTaxRate),
+    unemploymentBenefitPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.unemploymentBenefitRate),
+    serviceSubsidyPercent: SERVICE_SUBSIDY_BOUNDS,
+    customsPercent: inPercent(CUSTOMS_RATE_BOUNDS),
+    vatPercent: VAT_RATE_BOUNDS,
+  });
+}

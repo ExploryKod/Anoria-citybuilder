@@ -1,9 +1,12 @@
 import {
   DEFAULT_HAMLET_FISCAL_RATES,
   DEFAULT_SERVICE_SUBSIDY_PERCENT,
+  DEFAULT_VAT_GENERAL_RATE_PERCENT,
   DEFAULT_VAT_RATE_PERCENT,
+  DEFAULT_VAT_UNIFORM,
 } from '../../src/contexts/accounting/domain/catalogs/FiscalRateCatalog.js';
-import { getGoodCategories, getServiceCategories } from '../../src/shared/resource-catalog/ResourceCategoryCatalog.js';
+import { getVatCategories } from '../../src/shared/resource-catalog/VatCategoryCatalog.js';
+import { getServiceCategories } from '../../src/shared/resource-catalog/ResourceCategoryCatalog.js';
 
 /** The hamlet every test runs on (made active by tests/setupActiveHamlet.js). */
 export const TEST_HAMLET_ID = '5f0c8a1e-2b3d-4c5e-8f6a-7b8c9d0e1f2a';
@@ -26,6 +29,8 @@ export async function seedTestHamlet(database) {
     unlocked: true,
     ...DEFAULT_HAMLET_FISCAL_RATES,
     serviceSubsidy: Object.fromEntries(getServiceCategories().map((service) => [service, DEFAULT_SERVICE_SUBSIDY_PERCENT])),
-    vatRatePercent: Object.fromEntries(getGoodCategories().map((good) => [good, DEFAULT_VAT_RATE_PERCENT])),
+    vatRatePercent: Object.fromEntries(getVatCategories().map((category) => [category, DEFAULT_VAT_RATE_PERCENT])),
+    vatUniform: DEFAULT_VAT_UNIFORM,
+    vatGeneralRatePercent: DEFAULT_VAT_GENERAL_RATE_PERCENT,
   });
 }

@@ -102,3 +102,34 @@
     color: var(--primary);
     font-variant-numeric: tabular-nums;
 }
+
+/* The Taxes section's sub-tabs: "Impôts" and "TVA". */
+.taxes-subtabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.taxes-subtabs [role="tab"] {
+    padding: 6px 14px;
+    border: 1px solid #d0d0d0;
+    border-radius: var(--border-radius-small);
+    background: #ffffff;
+    color: #424242;
+    font: inherit;
+    cursor: pointer;
+}
+
+.taxes-subtabs [role="tab"][aria-selected="true"] {
+    background: #424242;
+    border-color: #424242;
+    color: #ffffff;
+}
+
+.taxes-board .taxes-uniform {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}

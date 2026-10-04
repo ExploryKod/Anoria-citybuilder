@@ -3,9 +3,6 @@ import { getServiceCategories } from '../../../../shared/resource-catalog/Resour
 import { goodLabel } from '../../shell/CatalogVocabulary.js';
 import { createSliderRow } from '../sliderRow.js';
 
-/** The civil servants' salary, in euros a month: the bounds the hamlet's row accepts (see FiscalRateCatalog). */
-const SALARY_BOUNDS = Object.freeze({ min: 10, max: 500 });
-
 /**
  * The Services tab, for the active hamlet. First the state's two sliders — the civil servants' salary and the
  * unemployment allocation — then one subsidy slider per social service. A service that no building of the hamlet
@@ -16,6 +13,7 @@ export class ServicesSectionPresenter {
   constructor({ accounting, construction }) {
     this.accounting = accounting;
     this.construction = construction;
+    this.bounds = accounting.getFiscalSliderBounds();
   }
 
   async refresh() {
@@ -34,8 +32,8 @@ export class ServicesSectionPresenter {
       createSliderRow({
         label: 'Salaire des fonctionnaires',
         scope: 'Hameau',
-        min: SALARY_BOUNDS.min,
-        max: SALARY_BOUNDS.max,
+        min: this.bounds.salaryPerMonth.min,
+        max: this.bounds.salaryPerMonth.max,
         value: settings.salaryPerMonth,
         unit: '€/mois',
         ariaLabel: 'Salaire des fonctionnaires, en euros par mois',
@@ -44,8 +42,8 @@ export class ServicesSectionPresenter {
       createSliderRow({
         label: 'Allocation chômage',
         scope: 'Hameau',
-        min: 0,
-        max: 100,
+        min: this.bounds.unemploymentBenefitPercent.min,
+        max: this.bounds.unemploymentBenefitPercent.max,
         value: Math.round(settings.unemploymentBenefitRate * 100),
         unit: '%',
         ariaLabel: "Allocation chômage, en pourcentage du salaire de référence",
@@ -59,8 +57,8 @@ export class ServicesSectionPresenter {
           label: goodLabel(service),
           scope: provided.has(service) ? 'Subvention' : 'Aucun bâtiment',
           active: provided.has(service),
-          min: 0,
-          max: 100,
+          min: this.bounds.serviceSubsidyPercent.min,
+          max: this.bounds.serviceSubsidyPercent.max,
           value: subsidies[service],
           unit: '%',
           ariaLabel: `Subvention du service ${goodLabel(service)}, en pourcentage`,

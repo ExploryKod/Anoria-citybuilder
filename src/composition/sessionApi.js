@@ -6,6 +6,7 @@
  */
 
 import { COMMERCIAL_ROUTE_FEE } from '../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
+import { fiscalSliderBounds } from '../contexts/accounting/domain/catalogs/FiscalRateCatalog.js';
 import { createEmptyCityLedgerYearLines } from '../contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
 import {
   computeLoanRate,
@@ -91,8 +92,12 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     ensureCustomsRate: () => accounting.ensureCustomsRate(),
     getServiceSubsidies: () => accounting.getServiceSubsidies(),
     setServiceSubsidy: (service, percent) => accounting.setServiceSubsidy(service, percent),
-    getVatRates: () => accounting.getVatRates(),
-    setVatRate: (good, percent) => accounting.setVatRate(good, percent),
+    getVatSettings: () => accounting.getVatSettings(),
+    /** The range of every fiscal slider (see fiscalSliderBounds). */
+    getFiscalSliderBounds: () => fiscalSliderBounds(),
+    setVatUniform: (uniform) => accounting.setVatUniform(uniform),
+    setVatGeneralRate: (percent) => accounting.setVatGeneralRate(percent),
+    setVatCategoryRate: (category, percent) => accounting.setVatCategoryRate(category, percent),
     getCustomsRate: () => accounting.getCustomsRate(),
     setCustomsRate: (rate) => accounting.setCustomsRate(rate),
 

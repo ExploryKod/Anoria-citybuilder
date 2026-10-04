@@ -2290,14 +2290,18 @@
                     Taxes — <span class="admin-hamlet-label" data-hamlet-label></span>
                 </div>
                 <div class="administrator-section-content">
-                    <div class="taxes-board" id="taxes-board">
+                    <div class="taxes-subtabs" role="tablist" aria-label="Sections des taxes">
+                        <button type="button" role="tab" data-taxes-tab="general" aria-selected="true" tabindex="0">Impôts</button>
+                        <button type="button" role="tab" data-taxes-tab="vat" aria-selected="false" tabindex="-1">TVA</button>
+                    </div>
+                    <div class="taxes-board" id="taxes-board" role="tabpanel" data-taxes-panel="general">
                         <div class="taxes-row">
                             <div class="taxes-row-head">
                                 <span class="taxes-row-label">Impôt par citoyen</span>
                                 <span class="taxes-row-scope">Hameau</span>
                             </div>
                             <div class="commerce-customs-controls">
-                                <input type="range" id="tax-citizen-slider" class="commerce-customs-slider" min="0" max="1000" step="5" aria-label="Impôt par citoyen, en euros" />
+                                <input type="range" id="tax-citizen-slider" class="commerce-customs-slider" step="5" aria-label="Impôt par citoyen, en euros" />
                                 <span class="commerce-customs-value" id="tax-citizen-value">…</span>
                             </div>
                         </div>
@@ -2307,7 +2311,7 @@
                                 <span class="taxes-row-scope">Hameau</span>
                             </div>
                             <div class="commerce-customs-controls">
-                                <input type="range" id="tax-salary-slider" class="commerce-customs-slider" min="0" max="100" step="1" aria-label="Impôt sur le revenu (IR), en pourcentage" />
+                                <input type="range" id="tax-salary-slider" class="commerce-customs-slider" step="1" aria-label="Impôt sur le revenu (IR), en pourcentage" />
                                 <span class="commerce-customs-value" id="tax-salary-value">…</span>
                             </div>
                         </div>
@@ -2317,10 +2321,28 @@
                                 <span class="taxes-row-scope">Ville entière</span>
                             </div>
                             <div class="commerce-customs-controls">
-                                <input type="range" id="tax-customs-slider" class="commerce-customs-slider" min="0" max="50" step="1" aria-label="Taux de douane, en pourcentage" />
+                                <input type="range" id="tax-customs-slider" class="commerce-customs-slider" step="1" aria-label="Taux de douane, en pourcentage" />
                                 <span class="commerce-customs-value" id="tax-customs-value">…</span>
                             </div>
                             <p class="commerce-customs-hint">Seule la part douanière entre dans le trésor ; le reste revient aux marchands.</p>
+                        </div>
+                    </div>
+                    <div class="taxes-board" id="vat-panel" role="tabpanel" data-taxes-panel="vat" hidden>
+                        <div class="taxes-row">
+                            <label class="taxes-uniform">
+                                <input type="checkbox" id="tax-vat-uniform" />
+                                <span>Même taux pour tous les produits</span>
+                            </label>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Taux général</span>
+                                <span class="taxes-row-scope">Toutes les catégories</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="tax-vat-general-slider" class="commerce-customs-slider" step="1" aria-label="Taux général de TVA, en pourcentage du prix HT" />
+                                <span class="commerce-customs-value" id="tax-vat-general-value">…</span>
+                            </div>
                         </div>
                         <div class="services-group">
                             <p class="commerce-customs-hint">La TVA porte sur la dernière vente de chaque bien aux maisons, au prix HT ; elle s'ajoute au prix pour former le TTC.</p>

@@ -639,14 +639,24 @@ export function createAccountingContext(deps = {}) {
       return hamletFiscalRates.setServiceSubsidy(service, percent);
     },
 
-    /** @returns {Promise<Record<string, number>>} the active hamlet's VAT rate per good, in percent. */
-    getVatRates() {
-      return hamletFiscalRates.getVatRates();
+    /** @returns {Promise<{ uniform: boolean, generalRatePercent: number, categoryRatesPercent: Record<string, number> }>} the active hamlet's VAT. */
+    getVatSettings() {
+      return hamletFiscalRates.getVatSettings();
     },
 
-    /** @param {string} good @param {number} percent */
-    setVatRate(good, percent) {
-      return hamletFiscalRates.setVatRate(good, percent);
+    /** @param {boolean} uniform */
+    setVatUniform(uniform) {
+      return hamletFiscalRates.setVatUniform(uniform);
+    },
+
+    /** @param {number} percent */
+    setVatGeneralRate(percent) {
+      return hamletFiscalRates.setVatGeneralRate(percent);
+    },
+
+    /** @param {string} category @param {number} percent */
+    setVatCategoryRate(category, percent) {
+      return hamletFiscalRates.setVatCategoryRate(category, percent);
     },
 
     /** Writes the default customs rate when the city has none yet (boot). */

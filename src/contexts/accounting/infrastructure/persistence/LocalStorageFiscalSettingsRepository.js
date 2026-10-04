@@ -12,7 +12,7 @@ export const DEFAULT_FISCAL_SETTINGS = Object.freeze({
   customsRate: 0.15,
 });
 
-const CUSTOMS_BOUNDS = Object.freeze({ min: 0, max: 0.5 });
+import { CUSTOMS_RATE_BOUNDS as CUSTOMS_BOUNDS } from '../../domain/catalogs/FiscalRateCatalog.js';
 
 export class LocalStorageFiscalSettingsRepository {
   /**
