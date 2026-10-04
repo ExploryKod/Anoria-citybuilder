@@ -99,6 +99,13 @@ export const TRADE_CATALOG = Object.freeze([
  * @param {string} cityId
  * @returns {TradeCatalogEntry | null}
  */
+/**
+ * A partner's satisfaction runs both ways: a city can hold the merchants in its debt (negative) or favour them.
+ * A new relation starts at the middle of the scale.
+ */
+export const SATISFACTION_RANGE = Object.freeze({ min: -100, max: 100 });
+export const SATISFACTION_START = 0;
+
 export function getTradeCatalogEntry(cityId) {
   return TRADE_CATALOG.find((e) => e.cityId === cityId) ?? null;
 }

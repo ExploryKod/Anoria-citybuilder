@@ -35,6 +35,7 @@ export function cityLedgerYearLinesFromJournalSummary(
   const initialFunds = sumByType(incomeEntries, (e) => e.type === 'capital_funds');
   const incomeTax = sumByType(incomeEntries, (e) => e.type === 'citizen_tax');
   const payrollTax = sumByType(incomeEntries, (e) => e.type === 'payroll_tax');
+  const vat = sumByType(incomeEntries, (e) => e.type === 'vat');
   const exports = sumByType(
     incomeEntries,
     (e) => e.type && e.type.startsWith('export_')
@@ -49,6 +50,7 @@ export function cityLedgerYearLinesFromJournalSummary(
     expenseEntries,
     (e) => e.type === 'unemployment_benefit'
   );
+  const serviceSubsidy = sumByType(expenseEntries, (e) => e.type === 'service_subsidy');
   const repairs = sumByType(expenseEntries, (e) => e.type === 'exceptional_expenses');
   const commercialRoutes = sumByType(
     expenseEntries,
@@ -67,12 +69,13 @@ export function cityLedgerYearLinesFromJournalSummary(
   const carryForwardExpense = previousNetFlow < 0 ? -previousNetFlow : 0;
 
   const totalIncome =
-    initialFunds + incomeTax + payrollTax + exports + loanCapital;
+    initialFunds + incomeTax + payrollTax + vat + exports + loanCapital;
   const totalExpenses =
     construction +
     maintenance +
     salary +
     unemploymentBenefit +
+    serviceSubsidy +
     repairs +
     commercialRoutes +
     contributions +
@@ -85,6 +88,7 @@ export function cityLedgerYearLinesFromJournalSummary(
     initialFunds: Math.round(initialFunds),
     incomeTax: Math.round(incomeTax),
     payrollTax: Math.round(payrollTax),
+    vat: Math.round(vat),
     exports: Math.round(exports),
     loanCapital: Math.round(loanCapital),
     carryForwardIncome: Math.round(carryForwardIncome),
@@ -93,6 +97,7 @@ export function cityLedgerYearLinesFromJournalSummary(
     maintenance: Math.round(maintenance),
     salary: Math.round(salary),
     unemploymentBenefit: Math.round(unemploymentBenefit),
+    serviceSubsidy: Math.round(serviceSubsidy),
     repairs: Math.round(repairs),
     commercialRoutes: Math.round(commercialRoutes),
     contributions: Math.round(contributions),

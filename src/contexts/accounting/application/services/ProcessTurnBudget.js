@@ -38,6 +38,8 @@ export class ProcessTurnBudget {
    * @param {() => Promise<number>} deps.getCityTotalPopulation
    * @param {() => Promise<{ unemployed: number }>} deps.getCityEmploymentSummary
    * @param {() => { salaryPerMonth: number, salaryTaxRate: number, unemploymentBenefitRate: number }} deps.getSalarySettings
+   * @param {({ time: number, deliveredTime: number }) => Promise<void>} deps.settleServiceSubsidies
+   * @param {({ time: number, deliveredTime: number }) => Promise<void>} deps.settleVat
    * @param {() => Promise<void>|void} [deps.processLoanPayments]
    * @param {(keepYears: number) => Promise<unknown>} deps.cleanupOldJournalYears
    * @param {() => Promise<unknown>} deps.flushJournalSessionToDexie
@@ -60,7 +62,10 @@ export class ProcessTurnBudget {
    * @param {object | undefined} maintenanceBreakdown
    */
   #resolveMaintenanceInput(buildingCounts, maintenanceBreakdown) {
-    if (buildingCounts != null && maintenanceBreakdown != null) {
+    if (buildingCounts != null || maintenanceBreakdown != null) {
+      if (buildingCounts == null || maintenanceBreakdown == null) {
+        throw new Error('[ProcessTurnBudget] buildingCounts and maintenanceBreakdown must be passed together');
+      }
       return { buildingCounts, maintenanceBreakdown };
     }
 
@@ -68,21 +73,9 @@ export class ProcessTurnBudget {
       return buildTurnBudgetMaintenanceSnapshot(this.deps.listBuildingTypesForMaintenance());
     }
 
-    return {
-      buildingCounts: buildingCounts ?? {
-        houses: 0,
-        farms: 0,
-        markets: 0,
-        roads: 0,
-        total: 0,
-      },
-      maintenanceBreakdown: maintenanceBreakdown ?? {
-        roads: { count: 0, cost: 0, unitCost: null },
-        houses: { count: 0, cost: 0, unitCost: null },
-        farms: { count: 0, cost: 0, unitCost: null },
-        markets: { count: 0, cost: 0, unitCost: null },
-      },
-    };
+    throw new Error(
+      '[ProcessTurnBudget] no maintenance input: pass buildingCounts and maintenanceBreakdown, or the listBuildingTypesForMaintenance dependency'
+    );
   }
 
   /**
@@ -110,22 +103,24 @@ export class ProcessTurnBudget {
       await this.deps.collectCitizenTaxes(time);
 
       const timeInfo = this.deps.getTimeInfo(time);
+      if (!timeInfo.month) throw new Error(`[ProcessTurnBudget] the calendar gave no month name for turn ${time}`);
       const isFirstTurnOfMonth = timeInfo.dayInMonth === 1;
 
       // A month's salaries are booked once per hamlet: the journal's business key refuses a second charge.
       if (isFirstTurnOfMonth) {
 
         const { salaryPerMonth, salaryTaxRate, unemploymentBenefitRate } =
-          this.deps.getSalarySettings();
+          await this.deps.getSalarySettings();
         const employmentSummary = await this.deps.getCityEmploymentSummary();
-        const payrollPopulation = employmentSummary?.totalPopulation ?? 0;
-        const unemployed = employmentSummary?.unemployed ?? 0;
+        if (!employmentSummary) throw new Error('[payroll] the employment summary was not read: no salary can be computed');
+        const payrollPopulation = employmentSummary.totalPopulation;
+        const unemployed = employmentSummary.unemployed;
 
         // Payroll uses Employment's labor-pool population (level-2+ workers),
         // not raw housing headcount — level-1 hunter-gatherers have no salary assiette.
         if (payrollPopulation > 0 && salaryPerMonth > 0) {
           const yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
-          const monthName = timeInfo.month || 'Mois';
+          const monthName = timeInfo.month;
           const payroll = computeReferenceSalaryPayrollBreakdown({
             population: payrollPopulation,
             unemployed,
@@ -177,6 +172,12 @@ export class ProcessTurnBudget {
         }
       }
 
+      // The month that just ended is settled now: its services are all in the log. Turn 0 has no month before it.
+      if (isFirstTurnOfMonth && time > 0) {
+        await this.deps.settleServiceSubsidies({ time, deliveredTime: time - 1 });
+        await this.deps.settleVat({ time, deliveredTime: time - 1 });
+      }
+
       // A month's maintenance is booked once per hamlet: the journal's business key refuses a second charge.
       const buildingAmount =
         maintenanceBreakdown.roads.cost +
@@ -186,7 +187,7 @@ export class ProcessTurnBudget {
 
       if (buildingAmount > 0) {
         const year = timeInfo.year;
-        const monthName = timeInfo.month || 'Mois';
+        const monthName = timeInfo.month;
 
         const breakdownItems = [];
         if (maintenanceBreakdown.roads.count > 0) {

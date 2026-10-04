@@ -3,6 +3,7 @@ import { getOrCreateHousingContext } from './createHousingContext.js';
 import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
 import { getSessionGameTime, getSessionProcessLoanPayments } from './sessionRuntime.js';
 import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
+import { HamletFiscalRateRepository } from '../contexts/accounting/infrastructure/persistence/HamletFiscalRateRepository.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
 import { GetFinancialHealth } from '../contexts/accounting/application/queries/treasury/GetFinancialHealth.js';
@@ -46,11 +47,16 @@ import { CollectCitizenTaxes } from '../contexts/accounting/application/services
 import { RecordBuildingMaintenanceForCity } from '../contexts/accounting/application/services/game/RecordBuildingMaintenanceForCity.js';
 import { GameTreasuryRecording } from '../contexts/accounting/application/services/game/GameTreasuryRecording.js';
 import { ProcessTurnBudget } from '../contexts/accounting/application/services/ProcessTurnBudget.js';
+import { SettleServiceSubsidies } from '../contexts/accounting/application/services/SettleServiceSubsidies.js';
+import { SettleVat } from '../contexts/accounting/application/services/SettleVat.js';
+import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
+import { getResourceBaseValue } from '../shared/resource-catalog/ResourceCategoryCatalog.js';
 import {
   canAffordFromBudget,
 } from '../contexts/accounting/application/queries/treasury/GameTreasuryProjections.js';
 import { listSceneBuildingTypesForMaintenance } from './sceneBuildingInventoryBridge.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
+import { isActiveHamletRow } from '../core/persistence/hamlet/hamletSession.js';
 
 async function getCityTotalPopulation() {
   const { totalPop } = await getOrCreateHousingContext().getCityPopulationSummary();
@@ -88,8 +94,10 @@ export function createAccountingContext(deps = {}) {
   const defaultInitialFunds = deps.defaultInitialFunds ?? readInitialFundsFromImportMeta();
   const objectiveHistoryRepository =
     deps.objectiveHistoryRepository ?? new DexieObjectiveHistoryRepository(dexieDb);
+  // The customs rate is the city's (localStorage); the other rates are each hamlet's (its own row in the database).
   const fiscalSettingsRepository =
     deps.fiscalSettingsRepository ?? new LocalStorageFiscalSettingsRepository();
+  const hamletFiscalRates = deps.hamletFiscalRateRepository ?? new HamletFiscalRateRepository(dexieDb);
 
   const getTimeInfo = deps.getTimeInfo ?? resolveGetTimeInfo();
 
@@ -218,12 +226,13 @@ export function createAccountingContext(deps = {}) {
   const exportJournalJsonQuery = new ExportJournalJson(journalRepository);
   const exportJournalPdfQuery = new ExportJournalPdf(journalRepository);
 
+  // The houses a tax or a charge is computed on are the active hamlet's: its journal books them.
   const houseReadPort = {
-    listHouses: () => dexieDb.houses.toArray(),
+    listHouses: async () => (await dexieDb.houses.toArray()).filter(isActiveHamletRow),
   };
 
   const getCitizenTaxPerCapita =
-    deps.getCitizenTaxPerCapita ?? (() => fiscalSettingsRepository.getCitizenTaxPerCapita());
+    deps.getCitizenTaxPerCapita ?? (() => hamletFiscalRates.getCitizenTaxPerCapita());
 
   const collectCitizenTaxes = new CollectCitizenTaxes({
     getTreasurySnapshot: getTreasurySnapshotQuery,
@@ -259,7 +268,27 @@ export function createAccountingContext(deps = {}) {
 
 
   const getSalarySettings =
-    deps.getSalarySettings ?? (() => fiscalSettingsRepository.getSalarySettings());
+    deps.getSalarySettings ?? (() => hamletFiscalRates.getSalarySettings());
+
+  // The services of a month are read from the transactions log (the supply's), and billed here.
+  const supplyTraceabilityRepository =
+    deps.supplyTraceabilityRepository ?? new DexieSupplyTraceabilityRepository(dexieDb);
+  const settleServiceSubsidies = new SettleServiceSubsidies({
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    sumServiceDeliveries: (year, monthIndex) =>
+      supplyTraceabilityRepository.sumServiceDeliveries(year, monthIndex),
+    getServiceSubsidies: () => hamletFiscalRates.getServiceSubsidies(),
+    getServicePrice: (service) => getResourceBaseValue(service),
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+    recordServiceBilling: (billing) => supplyTraceabilityRepository.recordServiceBilling(billing),
+  });
+  const settleVat = new SettleVat({
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    sumGoodSalesToHouses: (year, monthIndex) =>
+      supplyTraceabilityRepository.sumGoodSalesToHouses(year, monthIndex),
+    getVatRates: () => hamletFiscalRates.getVatRates(),
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
 
   const processTurnBudget = new ProcessTurnBudget({
     collectCitizenTaxes: (time) => collectCitizenTaxes.execute({ time }),
@@ -275,6 +304,8 @@ export function createAccountingContext(deps = {}) {
     getCityEmploymentSummary:
       deps.getCityEmploymentSummary ?? (() => getCityEmploymentSummary()),
     getSalarySettings,
+    settleServiceSubsidies: (params) => settleServiceSubsidies.execute(params),
+    settleVat: (params) => settleVat.execute(params),
     processLoanPayments:
       deps.processLoanPayments ??
       (async () => {
@@ -293,6 +324,7 @@ export function createAccountingContext(deps = {}) {
   return {
     journalRepository,
     fiscalSettingsRepository,
+    hamletFiscalRates,
     journalWritePort,
     gameTimePort,
     recordLedgerEntryCommand,
@@ -570,6 +602,56 @@ export function createAccountingContext(deps = {}) {
     async canAfford(amount) {
       const budget = await getTreasurySnapshotQuery.execute();
       return canAffordFromBudget(budget, amount);
+    },
+
+    /** The active hamlet's citizen tax per inhabitant. */
+    getCitizenTaxPerCapita() {
+      return hamletFiscalRates.getCitizenTaxPerCapita();
+    },
+
+    /** @param {number} amount @returns {Promise<number>} */
+    setCitizenTaxPerCapita(amount) {
+      return hamletFiscalRates.setCitizenTaxPerCapita(amount);
+    },
+
+    /** The active hamlet's civil servant salary and the taxes it bears. */
+    getSalarySettings() {
+      return hamletFiscalRates.getSalarySettings();
+    },
+
+    /** @param {{ salaryPerMonth?: number, salaryTaxRate?: number, unemploymentBenefitRate?: number }} partial */
+    setSalarySettings(partial) {
+      return hamletFiscalRates.setSalarySettings(partial);
+    },
+
+    /** Writes the default rates on a hamlet that has none yet (its creation). @param {string} hamletId */
+    ensureHamletFiscalRates(hamletId) {
+      return hamletFiscalRates.ensureRates(hamletId);
+    },
+
+    /** @returns {Promise<Record<string, number>>} the active hamlet's subsidy per service, in percent. */
+    getServiceSubsidies() {
+      return hamletFiscalRates.getServiceSubsidies();
+    },
+
+    /** @param {string} service @param {number} percent */
+    setServiceSubsidy(service, percent) {
+      return hamletFiscalRates.setServiceSubsidy(service, percent);
+    },
+
+    /** @returns {Promise<Record<string, number>>} the active hamlet's VAT rate per good, in percent. */
+    getVatRates() {
+      return hamletFiscalRates.getVatRates();
+    },
+
+    /** @param {string} good @param {number} percent */
+    setVatRate(good, percent) {
+      return hamletFiscalRates.setVatRate(good, percent);
+    },
+
+    /** Writes the default customs rate when the city has none yet (boot). */
+    ensureCustomsRate() {
+      fiscalSettingsRepository.ensureCustomsRate();
     },
 
     /** @returns {number} customs rate in [0, 0.5] */

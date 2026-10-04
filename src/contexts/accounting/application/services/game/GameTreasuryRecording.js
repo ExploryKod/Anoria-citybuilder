@@ -99,7 +99,7 @@ export class GameTreasuryRecording {
     await this.commands.recordPayrollTaxIncome({
       turn: effectiveTurn,
       amount: taxAmount,
-      description: description || `Impôt sur les salaires (${Math.round(taxRate * 100)}%)`,
+      description: description || `Impôt sur le revenu (IR) (${Math.round(taxRate * 100)}%)`,
     });
 
     return this.getTreasurySnapshot.execute();

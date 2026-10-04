@@ -13,6 +13,7 @@ import {
 } from '../../../src/composition/createAccountingContext.js';
 import appRegistry from '../../../src/composition/AppRegistry.js';
 import { TimeManager } from '../../../src/shared/time/TimeManager.js';
+import { seedTestHamlet } from '../../helpers/testHamlet.js';
 
 function createTestDb() {
   const testDb = new Dexie('testProcessTurnBudgetPayrollDb');
@@ -20,6 +21,8 @@ function createTestDb() {
     budget: 'name',
     journal: '++id, turn, date, type, amount, description',
     houses: 'name',
+    hamlets: 'id',
+    supplyTraceability: '++id, turn, month, year, date, transactionType, foodType',
   });
   return testDb;
 }
@@ -35,6 +38,7 @@ describe('ProcessTurnBudget — payroll tax assiette', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     appRegistry.register('timeManager', {
       getTimeInfo(turn) {

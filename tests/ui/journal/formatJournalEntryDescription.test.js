@@ -16,7 +16,7 @@ describe('formatJournalEntryDescription', () => {
     expect(
       formatJournalEntryDetails({
         type: 'payroll_tax',
-        description: 'Impôt sur les salaires - Juin 0 JC (20%)',
+        description: 'Impôt sur le revenu (IR) - Juin 0 JC (20%)',
       })
     ).toEqual([{ label: 'Taux', value: '20%' }]);
   });
@@ -80,7 +80,7 @@ describe('formatJournalEntryDescription', () => {
     expect(
       formatJournalEntryDescription({
         type: 'payroll_tax',
-        description: 'Impôt sur les salaires - Juin 0 JC (20%)',
+        description: 'Impôt sur le revenu (IR) - Juin 0 JC (20%)',
       })
     ).toBe('Taux: 20%');
   });

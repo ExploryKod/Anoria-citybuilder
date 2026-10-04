@@ -2,6 +2,7 @@
  * Behavior tests — salary/payroll idempotence (J6/J7).
  */
 
+import { seedTestHamlet } from '../../helpers/testHamlet.js';
 import Dexie from 'dexie';
 import { useGameTurnForTests } from '../../../src/composition/sessionRuntime.js';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
@@ -22,6 +23,8 @@ function createTestDb() {
     budget: 'name',
     journal: '++id, turn, date, type, amount, description',
     houses: 'name',
+    hamlets: 'id',
+    supplyTraceability: '++id, turn, month, year, date, transactionType, foodType',
   });
   return testDb;
 }
@@ -37,6 +40,7 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     appRegistry.register('timeManager', {
       getTimeInfo(turn) {

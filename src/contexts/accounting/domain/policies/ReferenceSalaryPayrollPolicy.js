@@ -151,5 +151,5 @@ export function formatPayrollTaxJournalDescription({
     .filter(Boolean)
     .join(' + ');
 
-  return `Impôt sur les salaires - ${monthName} ${yearDisplay} (${ratePercent}%, assiette ${payrollTaxBase}€ : ${assiette})`;
+  return `Impôt sur le revenu (IR) - ${monthName} ${yearDisplay} (${ratePercent}%, assiette ${payrollTaxBase}€ : ${assiette})`;
 }

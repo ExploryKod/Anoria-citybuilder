@@ -653,6 +653,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   hamletSceneGate = loadActiveHamletScene().then(async () => {
     await refreshPlacementPresentation();
+    await refreshEmploymentPresentationForCity();
     loaderManager.hide(500);
     scene.onEnterSelectMode?.();
     if (sessionStorage.getItem('anoria.startTutorial') === '1') {
@@ -1484,7 +1485,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
   gameLoop.start();
 
   scene.start();
-  void refreshEmploymentPresentationForCity();
 
   try {
     const target = document.getElementById('game-window');

@@ -7,7 +7,9 @@
  * Note: fake-indexeddb est initialisé dans tests/setup.js AVANT que db.js ne soit chargé.
  */
 
+import { seedTestHamlet } from './helpers/testHamlet.js';
 import Dexie from 'dexie';
+import { TEST_HAMLET_ID } from './helpers/testHamlet.js';
 import { BudgetManager } from './helpers/testBudgetFacade.js';
 import { JournalManager } from '../src/composition/accountingSessionJournal.js';
 import { resetSessionLedgerBufferForTests } from '../src/composition/accountingSessionJournal.js';
@@ -30,6 +32,7 @@ function createTestDb() {
     const db = new Dexie('testDb');
     db.version(1).stores({
         houses: 'name, [name+price]',
+        hamlets: 'id',
         game: 'name',
         budget: 'name',
         objectives: 'name',
@@ -52,6 +55,7 @@ describe('BudgetManager', () => {
         // Créer une nouvelle base de données pour chaque test
         testDb = createTestDb();
         await testDb.open();
+        await seedTestHamlet(testDb);
         
         // Attendre que la base soit complètement prête
         await new Promise(resolve => setTimeout(resolve, 10));
@@ -409,8 +413,8 @@ describe('BudgetManager', () => {
             // LocalStorageFiscalSettingsRepository). `addTaxes` builds a
             // fresh accounting context per call (see accountingOps.js
             // collectCitizenTaxes), so the rate must be forced at the
-            // localStorage source of truth rather than injected via context deps.
-            localStorage.setItem('citizen_tax_amount', '100');
+            // hamlet's fiscal rate (its row in the database) rather than injected via context deps.
+            await testDb.hamlets.update(TEST_HAMLET_ID, { citizenTaxPerCapita: 100 });
 
             await budgetManager.initialize(200);
             
@@ -422,12 +426,14 @@ describe('BudgetManager', () => {
                 {
                     name: 'House-Blue-0-0',
                     type: 'House-Blue',
+                    hamletId: TEST_HAMLET_ID,
                     pop: 3,
                     level: 2
                 },
                 {
                     name: 'House-Red-1-1',
                     type: 'House-Red',
+                    hamletId: TEST_HAMLET_ID,
                     pop: 4,
                     level: 2
                 }
@@ -498,6 +504,7 @@ describe('BudgetManager', () => {
                 {
                     name: 'House-Blue-0-0',
                     type: 'House-Blue',
+                    hamletId: TEST_HAMLET_ID,
                     pop: 0
                 }
             ]);
@@ -509,8 +516,8 @@ describe('BudgetManager', () => {
             expect(budget.totalTaxes).toBe(0);
         });
 
-        afterEach(() => {
-            localStorage.removeItem('citizen_tax_amount');
+        afterEach(async () => {
+            await testDb.hamlets.update(TEST_HAMLET_ID, { citizenTaxPerCapita: 25 });
         });
     });
 

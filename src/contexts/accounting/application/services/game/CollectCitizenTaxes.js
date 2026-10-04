@@ -44,7 +44,7 @@ export class CollectCitizenTaxes {
     const houses = await this.houseReadPort.listHouses();
     const taxBreakdown = computeCitizenTaxBreakdown(
       houses,
-      this.getCitizenTaxPerCapita()
+      await this.getCitizenTaxPerCapita()
     );
 
     if (taxBreakdown.total <= 0 || taxBreakdown.population <= 0) {

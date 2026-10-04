@@ -29,7 +29,7 @@ export function moneyDirectionOf(entry) {
   if (type === 'year_closing') return 'closing';
   if (isInformativeJournalType(type)) return null;
   if (
-    type === 'capital_funds' || type === 'payroll_tax' || type === 'citizen_tax' ||
+    type === 'capital_funds' || type === 'payroll_tax' || type === 'citizen_tax' || type === 'vat' ||
     type === 'loan_capital' || type === 'construction_refund' || type.startsWith('export_')
   ) {
     return 'credit';
@@ -38,6 +38,7 @@ export function moneyDirectionOf(entry) {
     type === 'maintenance' || type === 'construction' || type === 'salary' ||
     type === 'unemployment_benefit' || type === 'loan_interest' || type === 'loan_repayment' ||
     type === 'exceptional_expenses' || type === 'commercial_route' || type === 'contribution' ||
+    type === 'service_subsidy' ||
     type.startsWith('import_')
   ) {
     return 'debit';

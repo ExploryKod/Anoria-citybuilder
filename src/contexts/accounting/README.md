@@ -373,7 +373,7 @@ Les trois ensembles sont **disjoints** et partitionnent la population totale.
 | Chômeurs (4) | 4 × 100 € × 50 % | 200 € |
 | Citoyens actifs (45) | 45 × 100 € | 4 500 € (informatif) |
 | **Assiette impôt** | 400 + 200 + 4 500 | **5 100 €** |
-| **Impôt sur les salaires** | 5 100 × 20 % | **1 020 €** |
+| **Impôt sur le revenu (IR)** | 5 100 × 20 % | **1 020 €** |
 | **Charges ville** | 400 + 200 | **600 €** |
 
 ### Frontières BC
@@ -405,7 +405,7 @@ Les fichiers `CivilServantSalaryPolicy.js` et `UnemploymentBenefitPolicy.js` con
 | `capital_funds` | Capital de départ | Revenu | `BudgetManager.initialize()` → **`RecordCapitalFundsIncome`** (journal ; `funds` + `income` pré-amorcés) |
 | `citizen_tax` | Impôt citoyen | Revenu | `BudgetManager.addTaxes()` → **`RecordCitizenTaxIncome`** (Phase 3½) |
 | `construction_refund` | Remboursement placement | Contre-investissement | `BudgetManager.addConstructionRefund()` → **`RecordConstructionRefundIncome`** (Phase 4) |
-| `payroll_tax` | Impôt sur les salaires (assiette citoyens) | Revenu | `BudgetManager.addSalaryTax()` → **`RecordPayrollTaxIncome`** (Phase 3½) |
+| `payroll_tax` | Impôt sur le revenu (IR) | Revenu | `BudgetManager.addSalaryTax()` → **`RecordPayrollTaxIncome`** (Phase 3½) |
 | `loan_capital` | Tirage de prêt | Revenu | `BudgetManager.addLoan()` → **`RecordLoanCapitalIncome`** (Phase 3½) |
 | `export_{productId}` | Export commerce | Revenu | `BudgetManager.addExportIncome()` → **`RecordCommerceExportIncome`** (Phase 3½) |
 | `construction` | Dépense construction | Charge | `BudgetManager.addConstructionExpense()` → **`RecordConstructionExpense`** (Phase 3½) |

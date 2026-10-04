@@ -1,6 +1,6 @@
 import { DexieCityTradeRepository } from '../contexts/geography/infrastructure/dexie/DexieCityTradeRepository.js';
 import { RunMonthlyCityTradeCycle } from '../contexts/geography/application/workflows/RunMonthlyCityTradeCycle.js';
-import { TRADE_CATALOG, getTradeCatalogEntry } from '../shared/trade-catalog/TradeCatalog.js';
+import { TRADE_CATALOG, SATISFACTION_START, getTradeCatalogEntry } from '../shared/trade-catalog/TradeCatalog.js';
 import { canOpenRelation } from '../contexts/geography/application/canOpenRelation.js';
 import { getCategoriesForRole, getTotalKeyForRole } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { takeCategoryAmount } from '../contexts/supply/domain/value-objects/ResourceStock.js';
@@ -42,7 +42,7 @@ export function createTradeContext({ supply, accounting }) {
       await cityTradeRepository.saveRelation({
         cityId,
         status: 'active',
-        satisfactionScore: 50,
+        satisfactionScore: SATISFACTION_START,
         contractStartMonth: startMonth,
         contractEndMonth: null,
         lastOrderMonth: null,
@@ -75,7 +75,7 @@ export function createTradeContext({ supply, accounting }) {
         await cityTradeRepository.saveRelation({
           cityId: entry.cityId,
           status: 'active',
-          satisfactionScore: 50,
+          satisfactionScore: SATISFACTION_START,
           contractStartMonth: monthIndex,
           contractEndMonth: null,
           lastOrderMonth: null,

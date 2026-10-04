@@ -23,7 +23,7 @@ import {
 import { clearGameTablesForNewGame, waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
 import { importPrefab } from '../../../core/persistence/prefab/importPrefab.js';
 import { getPrefab, START_PREFAB_ID } from '../../../shared/prefabs/prefabCatalog.js';
-import { ensureHamletCatalog, parseGameHamletPath } from '../../../core/persistence/hamlet/hamletSession.js';
+import { ensureHamletCatalog, listHamlets, parseGameHamletPath } from '../../../core/persistence/hamlet/hamletSession.js';
 import { initGameCalendar } from '../../../config/events.js';
 import { createGame } from '../../three/game.js';
 import { DEFAULT_CITY_SIZE } from '../../../shared/gameplay/SimulationDefaults.js';
@@ -186,7 +186,10 @@ export async function bootstrapGameSession(assetManager) {
   }
 
   const selectionResult = resolveBootSelection(bootMode ?? 'new');
-  let selectedCitySize = selectionResult.size || selectionResult;
+  if (!Number.isInteger(selectionResult.size) || selectionResult.size <= 0) {
+    throw new Error(`[bootstrap] the boot selection "${selectionResult.action}" gives no city size`);
+  }
+  let selectedCitySize = selectionResult.size;
 
   if (selectionResult.mapLayoutId) {
     setMissionMapLayoutId(selectionResult.mapLayoutId);
@@ -251,6 +254,11 @@ export async function bootstrapGameSession(assetManager) {
   const sessionApi = getSessionApi();
   if (!sessionApi) {
     throw new Error('sessionApi is not bound after createGame');
+  }
+  sessionApi.accounting.ensureCustomsRate();
+  // Every hamlet carries its fiscal rates (written once, at creation): a hamlet unlocked later already has them.
+  for (const hamlet of await listHamlets()) {
+    await sessionApi.accounting.ensureHamletFiscalRates(hamlet.id);
   }
 
   const popupManager = getSessionPopupManager();

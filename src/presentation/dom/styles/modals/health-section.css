@@ -42,7 +42,7 @@
 }
 
 .health-section {
-    background: white;
+    background: transparent;
     border-radius: var(--border-radius-small);
     padding: 18px;
 }
@@ -67,8 +67,9 @@
     justify-content: space-between;
     gap: 15px;
     padding: 10px;
-    background: #f9f9f9;
+    background: #fff;
     border-radius: var(--border-radius-small);
+    box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
 }
 
 .health-item-label {
@@ -155,7 +156,6 @@
     padding: 15px;
     background: rgba(156, 41, 57, 0.05);
     border-radius: var(--border-radius-small);
-    border-left: 4px solid var(--danger);
 }
 
 .health-death-rate-label {
@@ -179,7 +179,7 @@
     padding: 12px;
     background: rgba(156, 41, 57, 0.1);
     border-radius: var(--border-radius-small);
-    border: 1px solid var(--danger);
+    border: none;
     margin-top: 10px;
 }
 
@@ -213,6 +213,8 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 8px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
     }
 
     .health-item-value {
@@ -233,10 +235,13 @@
 
     .health-section {
         padding: 15px;
+        background: transparent;
     }
 
     .health-item {
         padding: 8px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
     }
 }
 

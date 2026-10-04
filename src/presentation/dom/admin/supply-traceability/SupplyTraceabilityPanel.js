@@ -3,6 +3,7 @@
  * Rendu HTML : SupplyTraceabilityPresenter.js
  */
 
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 import { buildingName, goodLabel } from '../../shell/CatalogVocabulary.js';
 import { listHamlets, requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 import {
@@ -172,6 +173,14 @@ async function showActiveHamletLabel() {
     labels.forEach((label) => { label.textContent = active.name; });
 }
 
+/** A service's monthly billing, in the route's place: the city's subsidy and the inhabitants' share of the price. */
+function serviceBillingRoute(transaction) {
+    if (!Number.isFinite(transaction.citySubsidy) || !Number.isFinite(transaction.habitantShare)) {
+        throw new Error(`[traceability] service billing ${transaction.id} has no split between the city and the inhabitants`);
+    }
+    return `Ville ${formatEuro(transaction.citySubsidy)} (${transaction.subsidyPercent} %) · habitants ${formatEuro(transaction.habitantShare)}`;
+}
+
 /** One line per transaction of every hamlet, each naming the hamlet it took place in. */
 async function renderTransactionLog() {
     const logs = document.querySelectorAll('[data-transaction-log]');
@@ -196,7 +205,7 @@ async function renderTransactionLog() {
                 ['supply-traceability-log-date', new Date(transaction.date).toLocaleString('fr-FR')],
                 ['supply-traceability-log-good', goodLabel(transaction.foodType) || transaction.foodType || ''],
                 ['supply-traceability-log-quantity', String(transaction.quantity ?? '')],
-                ['supply-traceability-log-route', `${buildingName(transaction.fromType)} → ${buildingName(transaction.toType)}`],
+                ['supply-traceability-log-route', transaction.transactionType === 'service_billing' ? serviceBillingRoute(transaction) : `${buildingName(transaction.fromType)} → ${buildingName(transaction.toType)}`],
             ];
             for (const [className, text] of cells) {
                 const cell = document.createElement('span');

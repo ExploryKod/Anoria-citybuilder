@@ -11,7 +11,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
 import {applyHoverColor, resetHoveredObject, resetObjectColor} from './meshs/meshUtils.js';
 import { resolveIconAppearance, STATUS_ICON_DEFAULTS } from './meshs/statusIconAnchors.js';
-import {  textures  } from './meshs/data.js'
+import { textures, whenTexturesLoaded } from './meshs/data.js'
 import {
     bulldozeSelected,
     delayBox,
@@ -395,7 +395,6 @@ export function createScene(_gameStore, assetManager, deps) {
     let buildings = [];
     /** @type {Map<string, import('three').Object3D>} */
     const editorStackMeshes = new Map();
-    let loadingPromises = [];
     let currentCitySize = 16; // Store current city size for citizen pathfinding
     let currentCity = null; // Store current city object for citizen updates
     let lastSceneUpdateTime = 0;
@@ -461,7 +460,6 @@ export function createScene(_gameStore, assetManager, deps) {
         if (isEditorMode()) {
             resetEditorNatureLayout();
         }
-        loadingPromises = [];
         
         // Store city object and size for citizen pathfinding and World platform scaling
         currentCity = city;
@@ -611,10 +609,7 @@ export function createScene(_gameStore, assetManager, deps) {
             setTimeout(() => gameUI.resetInitialHud?.(), 0);
         }
         
-        // Wait for any remaining promises to complete
-        if (loadingPromises.length > 0) {
-            await Promise.all(loadingPromises);
-        }
+        await whenTexturesLoaded();
 
         await syncEditorStackFromLayout();
         

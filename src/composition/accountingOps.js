@@ -39,17 +39,17 @@ export function getCommercialRouteFee() {
 
 /** @returns {number} */
 export function getCitizenTaxPerCapita() {
-  return getOrCreateAccountingContext().fiscalSettingsRepository.getCitizenTaxPerCapita();
+  return getOrCreateAccountingContext().getCitizenTaxPerCapita();
 }
 
 /** @param {number} amount @returns {number} */
 export function setCitizenTaxPerCapita(amount) {
-  return getOrCreateAccountingContext().fiscalSettingsRepository.setCitizenTaxPerCapita(amount);
+  return getOrCreateAccountingContext().setCitizenTaxPerCapita(amount);
 }
 
 /** @returns {{ salaryPerMonth: number, salaryTaxRate: number }} */
 export function getSalarySettings() {
-  return getOrCreateAccountingContext().fiscalSettingsRepository.getSalarySettings();
+  return getOrCreateAccountingContext().getSalarySettings();
 }
 
 /**
@@ -57,7 +57,7 @@ export function getSalarySettings() {
  * @returns {{ salaryPerMonth: number, salaryTaxRate: number }}
  */
 export function setSalarySettings(partial) {
-  return getOrCreateAccountingContext().fiscalSettingsRepository.setSalarySettings(partial);
+  return getOrCreateAccountingContext().setSalarySettings(partial);
 }
 
 /** Clear persisted fiscal settings (new game / reset). */

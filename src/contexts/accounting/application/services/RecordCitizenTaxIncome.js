@@ -1,5 +1,8 @@
+import { buildLedgerBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
+import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
+
 /**
- * Application service — yearly citizen tax income (journal + treasury).
+ * Application service — yearly citizen tax income (journal + treasury), charged to the active hamlet.
  */
 export class RecordCitizenTaxIncome {
   /**
@@ -42,7 +45,7 @@ export class RecordCitizenTaxIncome {
       type: 'citizen_tax',
       amount: roundedAmount,
       description,
-      businessKey: `citizen_tax:${taxYear}`,
+      businessKey: buildLedgerBusinessKey('citizen_tax', { year: taxYear }, requireActiveHamletId()),
       taxYear,
       taxBreakdown,
     });

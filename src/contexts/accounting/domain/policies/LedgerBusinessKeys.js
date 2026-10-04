@@ -84,6 +84,33 @@ export function buildCommercialRouteBusinessKey(partnerId) {
 }
 
 /**
+ * Idempotence key for one service's subsidy in one hamlet for one month: the city pays it once per month and service.
+ * @param {string} service
+ * @param {{ year: number, monthIndex: number }} timeInfo the month that was delivered
+ * @param {string} hamletId
+ * @returns {string}
+ */
+export function buildServiceSubsidyBusinessKey(service, timeInfo, hamletId) {
+  if (!service || !hamletId || typeof timeInfo?.year !== 'number') {
+    throw new Error('[journal] a service subsidy needs its service, its month and its hamlet');
+  }
+  return `service_subsidy:${hamletId}:${timeInfo.year}:${timeInfo.monthIndex}:${service}`;
+}
+
+/**
+ * Idempotence key for the VAT of one hamlet for one month: the tax on the month's sales is booked once.
+ * @param {{ year: number, monthIndex: number }} timeInfo the month that was sold
+ * @param {string} hamletId
+ * @returns {string}
+ */
+export function buildVatBusinessKey(timeInfo, hamletId) {
+  if (!hamletId || typeof timeInfo?.year !== 'number') {
+    throw new Error('[journal] a VAT needs its month and its hamlet');
+  }
+  return `vat:${hamletId}:${timeInfo.year}:${timeInfo.monthIndex}`;
+}
+
+/**
  * Idempotence key for one contribution payment per news item.
  * @param {string} newsItemId
  * @returns {string | null}
@@ -115,7 +142,11 @@ export function buildLedgerBusinessKey(type, timeInfo, hamletId) {
     return `${type}:${hamletId}:${timeInfo.year}:${timeInfo.monthIndex}`;
   }
   if (YEARLY_IDEMPOTENT_TYPES.has(type)) {
-    return `${type}:${timeInfo.year}`;
+    // A yearly charge is per hamlet too: its base is that hamlet's houses.
+    if (!hamletId) {
+      throw new Error(`[journal] yearly ${type} needs the hamlet it is charged to`);
+    }
+    return `${type}:${hamletId}:${timeInfo.year}`;
   }
   return null;
 }
@@ -143,7 +174,7 @@ export function inferBusinessKeyFromRow(row) {
     return `${row.type}:${row.hamletId}:${row.year}:${monthIndex}`;
   }
   if (YEARLY_IDEMPOTENT_TYPES.has(row.type)) {
-    return `${row.type}:${row.year}`;
+    return `${row.type}:${row.hamletId}:${row.year}`;
   }
   return null;
 }

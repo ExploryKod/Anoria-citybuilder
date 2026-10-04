@@ -10,6 +10,8 @@ import { initStorageSection } from './storage/initStorageSection.js';
 import { initReportSection } from './report/initReportSection.js';
 import { initArchivesSection } from './archives/initArchivesSection.js';
 import { initCommerceSection } from './commerce/initCommerceSection.js';
+import { initTaxesSection } from './taxes/initTaxesSection.js';
+import { initServicesSection } from './services/initServicesSection.js';
 
 /**
  * @param {object} deps
@@ -35,4 +37,6 @@ export async function initAdminSections(deps) {
   initReportSection(deps);
   initArchivesSection(deps);
   if (deps.trade) initCommerceSection(deps);
+  initTaxesSection(deps);
+  initServicesSection(deps);
 }

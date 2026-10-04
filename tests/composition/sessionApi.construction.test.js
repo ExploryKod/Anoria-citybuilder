@@ -116,14 +116,13 @@ describe('sessionApi accounting (Barre 3)', () => {
     resetSessionRuntimeForTests();
   });
 
-  test('assembleSessionApi exposes accounting queries and loan helpers', () => {
+  test('assembleSessionApi exposes accounting queries and loan helpers', async () => {
     const accounting = {
-      fiscalSettingsRepository: {
-        getCitizenTaxPerCapita: () => 42,
-        setCitizenTaxPerCapita: (n) => n,
-        getSalarySettings: () => ({ salaryPerMonth: 10, salaryTaxRate: 0.1 }),
-        setSalarySettings: (p) => p,
-      },
+      getCitizenTaxPerCapita: async () => 42,
+      setCitizenTaxPerCapita: async (n) => n,
+      getSalarySettings: async () => ({ salaryPerMonth: 10, salaryTaxRate: 0.1 }),
+      setSalarySettings: async (p) => p,
+      ensureHamletFiscalRates: async () => {},
       getTreasurySnapshot: async () => ({ funds: 100 }),
       getTreasuryBalance: async () => 100,
       getFinancialHealth: async () => ({ status: 'healthy' }),
@@ -164,7 +163,7 @@ describe('sessionApi accounting (Barre 3)', () => {
 
     expect(Object.isFrozen(sessionApi.accounting)).toBe(true);
     expect(getSessionAccountingApi()).toBe(sessionApi.accounting);
-    expect(requireSessionAccountingApi().getCitizenTaxPerCapita()).toBe(42);
+    await expect(requireSessionAccountingApi().getCitizenTaxPerCapita()).resolves.toBe(42);
     expect(typeof requireSessionAccountingApi().computeLoanRate).toBe('function');
     expect(requireSessionAccountingApi().INFO_JOURNAL_TYPE_LABELS).toBeTruthy();
   });
@@ -172,12 +171,11 @@ describe('sessionApi accounting (Barre 3)', () => {
   test('createAccountingSessionApi maps recordInfoLoanInstallment to FromGame', async () => {
     const calls = [];
     const accounting = {
-      fiscalSettingsRepository: {
-        getCitizenTaxPerCapita: () => 0,
-        setCitizenTaxPerCapita: (n) => n,
-        getSalarySettings: () => ({ salaryPerMonth: 0, salaryTaxRate: 0 }),
-        setSalarySettings: (p) => p,
-      },
+      getCitizenTaxPerCapita: async () => 0,
+      setCitizenTaxPerCapita: async (n) => n,
+      getSalarySettings: async () => ({ salaryPerMonth: 0, salaryTaxRate: 0 }),
+      setSalarySettings: async (p) => p,
+      ensureHamletFiscalRates: async () => {},
       getTreasurySnapshot: async () => ({}),
       getTreasuryBalance: async () => 0,
       getFinancialHealth: async () => ({}),

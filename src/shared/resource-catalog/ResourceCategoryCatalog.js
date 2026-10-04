@@ -54,16 +54,16 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   clay: Object.freeze({ emoji: '🧱', label: 'Argile', unit: unitOf('bloc', 'blocs') }),
   iron: Object.freeze({ emoji: '⚙️', label: 'Fer', unit: unitOf('lingot', 'lingots') }),
   gold: Object.freeze({ emoji: '🥇', label: 'Or', unit: unitOf('lingot', 'lingots') }),
-  // Services travel the same chain as goods, but carry no price yet: baseValue 0 is their declared value.
-  faith: Object.freeze({ emoji: '🙏', label: 'Foi', baseValue: 0 }),
-  school: Object.freeze({ emoji: '🎓', label: 'École', baseValue: 0 }),
-  library: Object.freeze({ emoji: '📖', label: 'Bibliothèque', baseValue: 0 }),
-  doctor: Object.freeze({ emoji: '🩺', label: 'Cabinet médical', baseValue: 0 }),
-  hospital: Object.freeze({ emoji: '🏥', label: 'Hôpital', baseValue: 0 }),
-  publicBath: Object.freeze({ emoji: '🛁', label: 'Bains publics', baseValue: 0 }),
-  theatre: Object.freeze({ emoji: '🎭', label: 'Théâtre', baseValue: 0 }),
-  cinema: Object.freeze({ emoji: '🎬', label: 'Cinéma', baseValue: 0 }),
-  pub: Object.freeze({ emoji: '🍺', label: 'Taverne', baseValue: 0 }),
+  // Services travel the same chain as goods: each delivered unit is priced here, and the city subsidises its share.
+  faith: Object.freeze({ kind: 'service', emoji: '🙏', label: 'Foi', baseValue: 0.5 }),
+  school: Object.freeze({ kind: 'service', emoji: '🎓', label: 'École', baseValue: 1.5 }),
+  library: Object.freeze({ kind: 'service', emoji: '📖', label: 'Bibliothèque', baseValue: 1 }),
+  doctor: Object.freeze({ kind: 'service', emoji: '🩺', label: 'Cabinet médical', baseValue: 2 }),
+  hospital: Object.freeze({ kind: 'service', emoji: '🏥', label: 'Hôpital', baseValue: 3 }),
+  publicBath: Object.freeze({ kind: 'service', emoji: '🛁', label: 'Bains publics', baseValue: 0.8 }),
+  theatre: Object.freeze({ kind: 'service', emoji: '🎭', label: 'Théâtre', baseValue: 1.5 }),
+  cinema: Object.freeze({ kind: 'service', emoji: '🎬', label: 'Cinéma', baseValue: 1.2 }),
+  pub: Object.freeze({ kind: 'service', emoji: '🍺', label: 'Taverne', baseValue: 0.6 }),
 });
 
 /**
@@ -78,6 +78,22 @@ const UNDECLARED = Object.freeze({ emoji: '…', label: '…' });
  */
 export function getResourceCategoryPresentation(category) {
   return RESOURCE_CATEGORY_PRESENTATION[category] ?? UNDECLARED;
+}
+
+/** Every category the catalog declares a service: its buildings give a social service to the houses. */
+export function getServiceCategories() {
+  return Object.keys(RESOURCE_CATEGORY_PRESENTATION).filter((category) => RESOURCE_CATEGORY_PRESENTATION[category].kind === 'service');
+}
+
+/**
+ * The goods: the categories that are neither a service nor an export deal (a deal stands for a good sold to another city).
+ * @returns {string[]}
+ */
+export function getGoodCategories() {
+  return Object.keys(RESOURCE_CATEGORY_PRESENTATION).filter((category) => {
+    const entry = RESOURCE_CATEGORY_PRESENTATION[category];
+    return entry.kind !== 'service' && entry.standsFor === undefined;
+  });
 }
 
 /** @param {string} category @returns {boolean} Whether the catalog names this category. */

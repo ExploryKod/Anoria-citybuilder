@@ -11,7 +11,8 @@ const MONTH_NAMES =
 
 /** Remove type label prefix already shown in the entry badge. */
 const DESCRIPTION_PREFIX_BY_TYPE = {
-  payroll_tax: /^Impôt sur les salaires(?:\s*\(assiette citoyens\))?\s*-\s*/i,
+  payroll_tax: /^Impôt sur le revenu \(IR\)\s*-\s*/i,
+  vat: /^TVA ventes\s*-\s*/i,
   salary: /^Salaires fonctionnaires\s*-\s*/i,
   unemployment_benefit: /^Salaires chômeurs\s*-\s*/i,
   maintenance: /^Maintenance mensuelle\s*-\s*/i,

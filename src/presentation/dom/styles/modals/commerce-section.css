@@ -14,7 +14,7 @@
     flex-wrap: wrap;
     margin-bottom: 6px;
     padding: 12px;
-    background: rgba(251, 129, 34, 0.05);
+    background: transparent;
     border-radius: var(--border-radius-small);
     max-width: 360px;
 }
@@ -55,21 +55,39 @@
     margin: 16px 0;
 }
 
+/* Secondary action: a pill, like the tabs of the other sections. */
+.commerce-relations-export {
+    align-self: flex-start;
+    margin-bottom: 16px;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(29, 34, 40, 0.06);
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.commerce-relations-export:hover {
+    background: rgba(29, 34, 40, 0.12);
+}
+
 .commerce-empty-state {
     font-size: 13px;
     color: #888;
     margin: 0;
     padding: 12px;
-    background: #f0f0f0;
     border-radius: var(--border-radius-small);
 }
 
 .commerce-relation-card {
     padding: 12px 14px;
     background: #fff;
-    border: 1px solid #e0e0e0;
+    border: none;
     border-radius: var(--border-radius-small);
-    border-left: 4px solid #28a745;
+    box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
 }
 
 .commerce-relation-card.suspended {
@@ -133,6 +151,7 @@
 }
 
 .commerce-satisfaction-track {
+    position: relative;
     flex: 1;
     height: 6px;
     background: #e0e0e0;
@@ -142,18 +161,31 @@
 }
 
 .commerce-satisfaction-fill {
-    height: 100%;
-    background: #28a745;
+    position: absolute;
+    top: 0;
+    bottom: 0;
     border-radius: 3px;
     transition: width 0.3s;
 }
 
-.commerce-satisfaction-fill.low {
+.commerce-satisfaction-fill.positive {
+    background: #28a745;
+}
+
+.commerce-satisfaction-fill.negative {
     background: #dc3545;
 }
 
-.commerce-satisfaction-fill.medium {
-    background: #ffc107;
+/* The zero line: the bar grows from the middle, left for a debt, right for a favour. */
+.commerce-satisfaction-track::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--primary);
+    opacity: 0.35;
 }
 
 .commerce-satisfaction-label {
@@ -166,7 +198,6 @@
 .commerce-budget-impact {
     margin-top: 16px;
     padding: 10px 14px;
-    background: rgba(40, 167, 69, 0.08);
     border-radius: var(--border-radius-small);
     display: flex;
     align-items: center;

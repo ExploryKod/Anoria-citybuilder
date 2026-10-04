@@ -2,7 +2,9 @@
  * Behavior tests — Accounting Phase 3½: RecordLedgerEntry (maintenance slice)
  */
 
+import { seedTestHamlet } from '../../helpers/testHamlet.js';
 import Dexie from 'dexie';
+import { TEST_HAMLET_ID } from '../../helpers/testHamlet.js';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { JournalManager } from '../../../src/composition/accountingSessionJournal.js';
 import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
@@ -21,6 +23,7 @@ function createTestDb() {
     budget: 'name',
     journal: '++id, turn, date, type, amount, description',
     houses: 'name',
+    hamlets: 'id',
   });
   return testDb;
 }
@@ -50,6 +53,7 @@ describe('Accounting — RecordLedgerEntry (maintenance slice)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',
@@ -168,6 +172,7 @@ describe('Accounting — RecordLedgerEntry (construction slice)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',
@@ -295,6 +300,7 @@ describe('Accounting — RecordLedgerEntry (salary / payroll_tax slice)', () => 
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',
@@ -379,7 +385,7 @@ describe('Accounting — RecordLedgerEntry (salary / payroll_tax slice)', () => 
     const result = await accounting.recordPayrollTaxIncome({
       turn: 30,
       amount: 560,
-      description: 'Impôt sur les salaires - Juin 0 JC (20%)',
+      description: 'Impôt sur le revenu (IR) - Juin 0 JC (20%)',
     });
 
     expect(result).toEqual({
@@ -400,13 +406,13 @@ describe('Accounting — RecordLedgerEntry (salary / payroll_tax slice)', () => 
     await accounting.recordPayrollTaxIncome({
       turn: 30,
       amount: 560,
-      description: 'Impôt sur les salaires - Juin 1',
+      description: 'Impôt sur le revenu (IR) - Juin 1',
     });
 
     const second = await accounting.recordPayrollTaxIncome({
       turn: 31,
       amount: 999,
-      description: 'Impôt sur les salaires - Juin duplicate',
+      description: 'Impôt sur le revenu (IR) - Juin duplicate',
     });
 
     expect(second.reason).toBe('duplicate_business_key');
@@ -450,7 +456,7 @@ describe('Accounting — RecordLedgerEntry (salary / payroll_tax slice)', () => 
     const budget = await budgetManager.addSalaryTax(
       2800,
       0.2,
-      'Impôt sur les salaires - Juin 0 JC (20%)'
+      'Impôt sur le revenu (IR) - Juin 0 JC (20%)'
     );
 
     expect(budget.funds).toBe(1560);
@@ -495,6 +501,7 @@ describe('Accounting — RecordLedgerEntry (citizen_tax slice)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',
@@ -552,7 +559,7 @@ describe('Accounting — RecordLedgerEntry (citizen_tax slice)', () => {
 
     const entries = await journalManager.getJournalEntries();
     expect(entries.filter((entry) => entry.type === 'citizen_tax')).toHaveLength(1);
-    expect(entries[0].businessKey).toBe('citizen_tax:0');
+    expect(entries[0].businessKey).toMatch(/^citizen_tax:.+:0$/);
 
     const budget = (await getTreasurySnapshot());
     expect(budget.funds).toBe(900);
@@ -599,16 +606,16 @@ describe('Accounting — RecordLedgerEntry (citizen_tax slice)', () => {
 
     // Force a fixed 100€/capita rate so this test's hardcoded expectation
     // (7 habitants × 100€ = 700€) stays meaningful, independent of the real
-    // default (25€, see LocalStorageFiscalSettingsRepository). `addTaxes`
+    // default (25€, see FiscalRateCatalog). `addTaxes`
     // builds a fresh accounting context per call (see accountingOps.js
-    // collectCitizenTaxes), so the rate must be forced at the localStorage
+    // collectCitizenTaxes), so the rate must be set on the hamlet's row
     // source of truth rather than injected via context deps.
-    localStorage.setItem('citizen_tax_amount', '100');
+    await testDb.hamlets.update(TEST_HAMLET_ID, { citizenTaxPerCapita: 100 });
 
     // level: 2 — level 1 (autarkic) houses are tax-exempt, see CitizenTaxCollectionPolicy.
     await testDb.houses.bulkPut([
-      { name: 'House-Blue-0-0', type: 'House-Blue', pop: 3, level: 2 },
-      { name: 'House-Red-1-1', type: 'House-Red', pop: 4, level: 2 },
+      { name: 'House-Blue-0-0', type: 'House-Blue', hamletId: TEST_HAMLET_ID, pop: 3, level: 2 },
+      { name: 'House-Red-1-1', type: 'House-Red', hamletId: TEST_HAMLET_ID, pop: 4, level: 2 },
     ]);
 
     try {
@@ -621,7 +628,7 @@ describe('Accounting — RecordLedgerEntry (citizen_tax slice)', () => {
       const entries = await journalManager.getJournalEntries();
       expect(entries.filter((entry) => entry.type === 'citizen_tax')).toHaveLength(1);
     } finally {
-      localStorage.removeItem('citizen_tax_amount');
+      await testDb.hamlets.update(TEST_HAMLET_ID, { citizenTaxPerCapita: 25 });
     }
   });
 });
@@ -638,6 +645,7 @@ describe('Accounting — RecordLedgerEntry (loans slice)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',
@@ -877,6 +885,7 @@ describe('Accounting — RecordLedgerEntry (commerce slice)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',
@@ -1036,6 +1045,7 @@ describe('Accounting — RecordLedgerEntry (misc operational slice)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',

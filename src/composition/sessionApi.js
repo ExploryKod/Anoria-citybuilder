@@ -70,8 +70,6 @@ export function createConstructionSessionApi(construction) {
  * @param {{ getCityBuildingValuation: Function }} [cityAssets]
  */
 export function createAccountingSessionApi(accounting, cityAssets = null) {
-  const fiscal = accounting.fiscalSettingsRepository;
-
   return Object.freeze({
     getTreasuryBalance: () => accounting.getTreasuryBalance(),
     getTreasurySnapshot: () => accounting.getTreasurySnapshot(),
@@ -82,13 +80,19 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     exportJournalJson: () => accounting.exportJournalJson(),
     exportJournalPdf: () => accounting.exportJournalPdf(),
 
-    getCitizenTaxPerCapita: () => fiscal.getCitizenTaxPerCapita(),
-    setCitizenTaxPerCapita: (amount) => fiscal.setCitizenTaxPerCapita(amount),
-    getSalarySettings: () => fiscal.getSalarySettings(),
-    setSalarySettings: (partial) => fiscal.setSalarySettings(partial),
+    getCitizenTaxPerCapita: () => accounting.getCitizenTaxPerCapita(),
+    setCitizenTaxPerCapita: (amount) => accounting.setCitizenTaxPerCapita(amount),
+    getSalarySettings: () => accounting.getSalarySettings(),
+    setSalarySettings: (partial) => accounting.setSalarySettings(partial),
+    ensureHamletFiscalRates: (hamletId) => accounting.ensureHamletFiscalRates(hamletId),
     computeReferenceSalaryPayrollBreakdown: (params) =>
       computeReferenceSalaryPayrollBreakdown(params),
 
+    ensureCustomsRate: () => accounting.ensureCustomsRate(),
+    getServiceSubsidies: () => accounting.getServiceSubsidies(),
+    setServiceSubsidy: (service, percent) => accounting.setServiceSubsidy(service, percent),
+    getVatRates: () => accounting.getVatRates(),
+    setVatRate: (good, percent) => accounting.setVatRate(good, percent),
     getCustomsRate: () => accounting.getCustomsRate(),
     setCustomsRate: (rate) => accounting.setCustomsRate(rate),
 

@@ -1,5 +1,6 @@
 import db from '../../../../core/persistence/dexie/db.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { getGoodCategories, getServiceCategories } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 
 /**
  * Dexie adapter — resource supply chain audit log (`supplyTraceability` table).
@@ -56,6 +57,60 @@ export class DexieSupplyTraceabilityRepository {
     } catch (error) {
       console.error('[DexieSupplyTraceabilityRepository] Error adding transaction:', error);
     }
+  }
+
+  /**
+   * The units of each service the active hamlet delivered in one month: a service rides the distributor→consumer
+   * chain, so each delivered basket is one of its rows. Every service is in the result, at 0 when none was delivered.
+   * @param {number} year
+   * @param {number} monthIndex
+   * @returns {Promise<Record<string, number>>}
+   */
+  async sumServiceDeliveries(year, monthIndex) {
+    const hamletId = requireActiveHamletId();
+    const services = getServiceCategories();
+    const units = Object.fromEntries(services.map((service) => [service, 0]));
+    const rows = await this.db.supplyTraceability
+      .where('transactionType')
+      .equals('distributor_to_consumer')
+      .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex && services.includes(row.foodType))
+      .toArray();
+    for (const row of rows) units[row.foodType] += row.quantity;
+    return units;
+  }
+
+  /**
+   * The HT sales of each good to the houses in one month: the last transaction of a good's cycle, priced at the
+   * catalog's price. Every good is in the result, at 0 when none was sold.
+   * @param {number} year
+   * @param {number} monthIndex
+   * @returns {Promise<Record<string, number>>}
+   */
+  async sumGoodSalesToHouses(year, monthIndex) {
+    const hamletId = requireActiveHamletId();
+    const goods = getGoodCategories();
+    const salesHT = Object.fromEntries(goods.map((good) => [good, 0]));
+    const rows = await this.db.supplyTraceability
+      .where('transactionType')
+      .equals('distributor_to_consumer')
+      .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex && goods.includes(row.foodType))
+      .toArray();
+    for (const row of rows) salesHT[row.foodType] += row.quantity * row.price;
+    return salesHT;
+  }
+
+  /**
+   * One service's billing for a month: what was delivered, at what price, how much the city subsidised and what the
+   * inhabitants paid. Written once per month and service by the settlement; the inhabitants' share is read here.
+   * @param {{ turn: number, year: number, monthIndex: number, service: string, units: number, unitPrice: number, subsidyPercent: number, gross: number, citySubsidy: number, habitantShare: number }} billing
+   */
+  async recordServiceBilling({ turn, year, monthIndex, service, units, unitPrice, subsidyPercent, gross, citySubsidy, habitantShare }) {
+    await this.addTransaction(turn, monthIndex, year, 'service_billing', null, null, service, units, unitPrice, {
+      subsidyPercent,
+      gross,
+      citySubsidy,
+      habitantShare,
+    });
   }
 
   async recordSourceToDistributor(turn, month, year, source, distributor, foodType, quantity, price) {

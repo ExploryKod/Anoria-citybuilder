@@ -1,4 +1,5 @@
 import { TRADE_CATALOG } from '../../../../shared/trade-catalog/TradeCatalog.js';
+import { satisfactionOf, formatSatisfaction } from '../../../../shared/trade-catalog/satisfaction.js';
 import { getResourceBaseValue } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 
 const STATUS_LABEL = { active: 'Actif', suspended: 'Suspendu', expired: 'Expiré' };
@@ -22,7 +23,6 @@ export class CommerceSectionPresenter {
 
   /** Called once when the section is first activated. */
   async init() {
-    this.#bindCustomsSlider();
     this.#bindRelationsExport();
     await this.refresh();
   }
@@ -57,22 +57,6 @@ export class CommerceSectionPresenter {
     await Promise.all([this.#renderRelations(), this.#renderBudgetImpact()]);
   }
 
-  #bindCustomsSlider() {
-    const slider = document.getElementById('commerce-customs-slider');
-    const valueEl = document.getElementById('commerce-customs-value');
-    if (!slider || !valueEl) return;
-
-    const current = Math.round(this.accounting.getCustomsRate() * 100);
-    slider.value = String(current);
-    valueEl.textContent = `${current} %`;
-
-    slider.addEventListener('input', () => {
-      const pct = Number(slider.value);
-      valueEl.textContent = `${pct} %`;
-      this.accounting.setCustomsRate(pct / 100);
-    });
-  }
-
   async #renderRelations() {
     const container = document.getElementById('commerce-relations-list');
     if (!container) return;
@@ -92,8 +76,12 @@ export class CommerceSectionPresenter {
     const cityLabel = rel.cityId.charAt(0).toUpperCase() + rel.cityId.slice(1);
     const status = rel.status ?? 'active';
     const statusLabel = STATUS_LABEL[status] ?? status;
-    const score = rel.satisfactionScore ?? 50;
-    const fillClass = score >= 60 ? '' : score >= 30 ? ' medium' : ' low';
+    const score = satisfactionOf(rel);
+    const signed = formatSatisfaction(score);
+    const half = Math.abs(score) / 2;
+    const fillStyle = score >= 0
+      ? `left:50%;width:${half}%`
+      : `left:${50 - half}%;width:${half}%`;
     const goodsWanted = entry?.wants?.map((w) => w.good).join(', ') ?? '—';
     const lastOrder = rel.lastOrderMonth != null ? `mois ${rel.lastOrderMonth}` : 'jamais';
     const customsRate = this.accounting.getCustomsRate();
@@ -121,9 +109,9 @@ export class CommerceSectionPresenter {
           <div class="commerce-relation-row">Dernier ordre : <strong>${lastOrder}</strong></div>
           <div class="commerce-satisfaction-bar">
             <div class="commerce-satisfaction-track">
-              <div class="commerce-satisfaction-fill${fillClass}" style="width:${score}%"></div>
+              <div class="commerce-satisfaction-fill ${score >= 0 ? 'positive' : 'negative'}" style="${fillStyle}"></div>
             </div>
-            <span class="commerce-satisfaction-label">Satisfaction ${score}/100</span>
+            <span class="commerce-satisfaction-label">Satisfaction ${signed} (−100 à +100)</span>
           </div>
         </div>
       </div>`;

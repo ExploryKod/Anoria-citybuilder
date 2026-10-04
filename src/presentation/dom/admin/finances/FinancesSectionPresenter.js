@@ -1,5 +1,6 @@
-import { renderCityLedger, renderCityLedgerMessage } from '../../compta/livret/CityLedgerPresenter.js';
 import { listHamlets } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { renderCityLedger, renderCityLedgerMessage } from '../../compta/livret/CityLedgerPresenter.js';
+
 
 const ALL_HAMLETS_VALUE = 'all';
 
@@ -9,7 +10,6 @@ export class FinancesSectionPresenter {
    */
   constructor(deps) {
     this.accounting = deps.accounting;
-    this.citizenTaxAmount = this.accounting?.getCitizenTaxPerCapita?.() ?? 0;
     this.financialData = null;
   }
 
@@ -41,43 +41,10 @@ export class FinancesSectionPresenter {
   }
 
   init() {
-    this.setupEventListeners();
     this.loadFinancialData();
   }
 
-  setupEventListeners() {
-    const taxDecreaseBtn = document.getElementById('tax-decrease-btn');
-    const taxIncreaseBtn = document.getElementById('tax-increase-btn');
-
-    const handleTaxDecrease = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.adjustCitizenTaxAmount(-10);
-    };
-
-    const handleTaxIncrease = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.adjustCitizenTaxAmount(10);
-    };
-
-    if (taxDecreaseBtn) {
-      taxDecreaseBtn.removeEventListener('click', this._handleTaxDecrease);
-      this._handleTaxDecrease = handleTaxDecrease;
-      taxDecreaseBtn.addEventListener('click', this._handleTaxDecrease);
-    }
-
-    if (taxIncreaseBtn) {
-      taxIncreaseBtn.removeEventListener('click', this._handleTaxIncrease);
-      this._handleTaxIncrease = handleTaxIncrease;
-      taxIncreaseBtn.addEventListener('click', this._handleTaxIncrease);
-    }
-
-    this.updateTaxDisplay();
-  }
-
   async loadFinancialData() {
-    this.setupEventListeners();
     // Loads can overlap (a turn while the hamlet changes): only the latest one may render.
     const load = (this._latestLoad = (this._latestLoad ?? 0) + 1);
     this.showLoading();
@@ -116,28 +83,6 @@ export class FinancesSectionPresenter {
     return this.accounting.createEmptyCityLedgerYearLines(year);
   }
 
-  adjustCitizenTaxAmount(delta) {
-    const newAmount = Math.max(0, Math.min(1000, this.citizenTaxAmount + delta));
-
-    if (newAmount !== this.citizenTaxAmount) {
-      this.citizenTaxAmount = this.accounting.setCitizenTaxPerCapita(newAmount);
-      this.updateTaxDisplay();
-    }
-  }
-
-  updateTaxDisplay() {
-    const taxRateDisplay = document.getElementById('tax-rate-display');
-    const taxEstimate = document.getElementById('tax-estimate');
-
-    if (taxRateDisplay) {
-      taxRateDisplay.textContent = this.citizenTaxAmount;
-    }
-
-    if (taxEstimate) {
-      taxEstimate.textContent = `${this.citizenTaxAmount}€ par citoyen`;
-    }
-  }
-
   render() {
     if (!this.financialData) {
       this.renderStaticData();
@@ -145,7 +90,6 @@ export class FinancesSectionPresenter {
     }
 
     renderCityLedger(this.financialData);
-    this.updateTaxDisplay();
   }
 
   renderStaticData() {

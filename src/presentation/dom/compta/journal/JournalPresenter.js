@@ -225,6 +225,7 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
   } else if (
     entry.type === 'citizen_tax' ||
     entry.type === 'payroll_tax' ||
+    entry.type === 'vat' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital'
   ) {
@@ -248,7 +249,8 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
 
   const typeLabels = {
     citizen_tax: 'Impôt Citoyen',
-    payroll_tax: 'Impôt sur les salaires (assiette citoyens)',
+    payroll_tax: 'Impôt sur le revenu (IR)',
+    vat: 'TVA ventes',
     capital_funds: 'Capital de départ',
     construction: 'Construction',
     construction_refund: 'Remboursement construction',
@@ -256,6 +258,7 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     maintenance: 'Maintenance mensuelle',
     salary: 'Salaires fonctionnaires',
     unemployment_benefit: 'Salaires chômeurs',
+    service_subsidy: 'Subventions des services',
     commercial_route: 'Commission Négociants',
     contribution: 'Contribution',
     loan_capital: 'Capital Prêt',

@@ -51,6 +51,7 @@
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/archives-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/commerce-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/administrator-panel-flat.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/taxes-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/multiplayer.css" media="print" onload="this.media='all'">
     <noscript>
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/loans-panel.css">
@@ -69,6 +70,7 @@
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/commerce-section.css">
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/news-event-modal.css">
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/administrator-panel-flat.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/taxes-section.css">
         <link rel="stylesheet" href="/src/presentation/dom/styles/multiplayer.css">
     </noscript>
 
@@ -1647,6 +1649,32 @@
 
                 <button
                     class="administrator-nav-btn"
+                    id="admin-nav-taxes"
+                    data-section="taxes"
+                    title="Taxes"
+                    aria-label="Ouvrir la section Taxes">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-percent">
+                        <line x1="19" x2="5" y1="5" y2="19"/>
+                        <circle cx="6.5" cy="6.5" r="2.5"/>
+                        <circle cx="17.5" cy="17.5" r="2.5"/>
+                    </svg>
+                    <span class="sr-only">Taxes</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-services"
+                    data-section="services"
+                    title="Services"
+                    aria-label="Ouvrir la section Services">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                    </svg>
+                    <span class="sr-only">Services</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
                     id="admin-nav-archives"
                     data-section="archives"
                     title="Archives"
@@ -1703,28 +1731,6 @@
                                 </p>
                             </div>
 
-                            <div class="finances-tax-controls">
-                                <div class="finances-tax-controls-row">
-                                    <span class="finances-tax-label">Impôt par citoyen :</span>
-                                    <div class="finances-tax-buttons">
-                                        <button type="button" class="finances-tax-btn" id="tax-decrease-btn" aria-label="Diminuer l'impôt par citoyen">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                <path d="M5 12h14"/>
-                                            </svg>
-                                        </button>
-                                        <span class="finances-tax-rate" id="tax-rate-display">25</span>
-                                        <button type="button" class="finances-tax-btn" id="tax-increase-btn" aria-label="Augmenter l'impôt par citoyen">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                <path d="M5 12h14"/>
-                                                <path d="M12 5v14"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="finances-tax-estimate-wrapper">
-                                    <span class="finances-tax-estimate" id="tax-estimate">€ par citoyen</span>
-                                </div>
-                            </div>
                             <div class="finances-tax-registration" id="tax-registration">
                                 100% de la population est enregistrée pour les impôts
                             </div>
@@ -1782,9 +1788,15 @@
                                                 <path d="M16 10h1v4"></path>
                                             </svg>
                                         </td>
-                                        <td class="label-col finances-row-label">Impôt sur les salaires (assiette citoyens)</td>
+                                        <td class="label-col finances-row-label">Impôt sur le revenu (IR)</td>
                                         <td class="last-year-col finances-value-positive" data-field="payrollTaxLastYear" id="payroll-tax-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="payrollTaxThisYear" id="payroll-tax-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">TVA ventes</td>
+                                        <td class="last-year-col finances-value-positive" data-field="vatLastYear" id="vat-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="vatThisYear" id="vat-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -1872,6 +1884,12 @@
                                         <td class="label-col finances-row-label">Salaires chômeurs</td>
                                         <td class="last-year-col finances-value-negative" data-field="unemploymentBenefitLastYear" id="unemployment-benefit-last-year">0</td>
                                         <td class="this-year-col finances-value-negative" data-field="unemploymentBenefitThisYear" id="unemployment-benefit-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Subventions des services</td>
+                                        <td class="last-year-col finances-value-negative" data-field="serviceSubsidyLastYear" id="service-subsidy-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="serviceSubsidyThisYear" id="service-subsidy-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -2111,102 +2129,6 @@
                                 </div>
                             </div>
 
-                            <div class="work-controls">
-                                <div class="work-control-group">
-                                    <div class="work-control-label">Salaires des fonctionnaires</div>
-                                    <div class="work-control-input-wrapper">
-                                        <div class="work-control-buttons">
-                                            <button type="button" class="work-control-btn" id="salary-decrease-btn" aria-label="Diminuer le salaire">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                    <path d="M5 12h14"/>
-                                                </svg>
-                                            </button>
-                                            <span class="work-control-value" id="salary-display">100</span>
-                                            <button type="button" class="work-control-btn" id="salary-increase-btn" aria-label="Augmenter le salaire">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                    <path d="M5 12h14"/>
-                                                    <path d="M12 5v14"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <span class="work-control-info">
-                                            Salaire de référence (base de calcul interne) : <span class="work-control-info-value" id="salary-month-display">100</span> €/mois
-                                        </span>
-                                    </div>
-                                    <div class="work-control-info">
-                                        Salaire de référence annuel : <span class="work-control-info-value" id="salary-year-display">1200</span> €/an
-                                    </div>
-                                    <div class="work-control-info">
-                                        Fonctionnaires (<span class="work-control-info-value" id="civil-servant-count-display">0</span>, 1 pour 12 habitants) : charge mensuelle incluse ci-dessous
-                                    </div>
-                                    <div class="work-control-info">
-                                        Masse salariale citoyens actifs — hors fonctionnaires et chômeurs (informatif) : <span class="work-control-info-value" id="citizen-payroll-display">0</span> €/mois
-                                    </div>
-                                    <div class="work-control-info">
-                                        Charge mensuelle ville (fonctionnaires + chômeurs, population <span class="work-control-info-value" id="salary-population-display">0</span>) : voir détail ci-dessous
-                                    </div>
-                                    <div class="work-control-info">
-                                        Charge annuelle estimée — salaires ville : <span class="work-control-info-value" id="salary-annual-bill">0</span> €
-                                    </div>
-                                </div>
-
-                                <div class="work-control-group">
-                                    <div class="work-control-label">Impôt sur les salaires</div>
-                                    <div class="work-control-row">
-                                        <div class="work-control-buttons">
-                                            <button type="button" class="work-control-btn" id="salary-tax-decrease-btn" aria-label="Diminuer le taux d'imposition sur les salaires">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                    <path d="M5 12h14"></path>
-                                                </svg>
-                                            </button>
-                                            <span class="work-control-info">
-                                                Taux d'imposition : <span class="work-control-info-value" id="salary-tax-rate-display">10</span>%
-                                            </span>
-                                            <button type="button" class="work-control-btn" id="salary-tax-increase-btn" aria-label="Augmenter le taux d'imposition sur les salaires">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                    <path d="M5 12h14"></path>
-                                                    <path d="M12 5v14"></path>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <div class="work-control-info">
-                                            Assiette mensuelle estimée : <span class="work-control-info-value" id="payroll-tax-base-display">0</span> €
-                                        </div>
-                                        <div class="work-control-info">
-                                            Impôt mensuel estimé : <span class="work-control-info-value" id="salary-tax-amount-display">0</span> €/mois
-                                        </div>
-                                        <div class="work-control-info">
-                                            Impôt annuel estimé : <span class="work-control-info-value" id="salary-tax-annual-display">0</span> €/an
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="work-control-group">
-                                    <div class="work-control-label">Taux d'allocation chômage</div>
-                                    <div class="work-control-input-wrapper">
-                                        <div class="work-control-buttons">
-                                            <button type="button" class="work-control-btn" id="unemployment-decrease-btn" aria-label="Diminuer le taux d'allocation">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                    <path d="M5 12h14"/>
-                                                </svg>
-                                            </button>
-                                            <span class="work-control-value" id="unemployment-rate-display">70%</span>
-                                            <button type="button" class="work-control-btn" id="unemployment-increase-btn" aria-label="Augmenter le taux d'allocation">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                    <path d="M5 12h14"/>
-                                                    <path d="M12 5v14"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <span class="work-control-info">
-                                            Pourcentage du salaire de référence versé aux chômeurs
-                                        </span>
-                                    </div>
-                                    <div class="work-control-info">
-                                        Charge mensuelle estimée — salaires chômeurs (<span class="work-control-info-value" id="unemployment-count-display">0</span> chômeurs) : <span class="work-control-info-value" id="unemployment-benefit-display">0</span> €
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -2348,20 +2270,6 @@
                 </div>
                 <div class="administrator-section-content">
                     <div class="commerce-board" id="commerce-board">
-                        <!-- Customs rate control -->
-                        <div class="commerce-customs-controls">
-                            <span class="commerce-customs-label">Taux de douane :</span>
-                            <input
-                                type="range"
-                                id="commerce-customs-slider"
-                                class="commerce-customs-slider"
-                                min="0" max="50" step="1"
-                                aria-label="Taux de douane en pourcentage"
-                            />
-                            <span class="commerce-customs-value" id="commerce-customs-value">15 %</span>
-                        </div>
-                        <p class="commerce-customs-hint">Seule la part douanière entre dans le trésor ; le reste revient aux marchands.</p>
-
                         <!-- Relations list -->
                         <button type="button" class="commerce-relations-export" id="commerce-relations-export">Exporter les relations (JSON)</button>
                         <div class="commerce-relations-list" id="commerce-relations-list">
@@ -2372,6 +2280,66 @@
                         <div class="commerce-budget-impact" id="commerce-budget-impact">
                             <span class="commerce-budget-impact-label">Recettes douanières ce mois :</span>
                             <span class="commerce-budget-impact-value" id="commerce-export-this-month">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-taxes">
+                <div class="administrator-section-title">
+                    Taxes — <span class="admin-hamlet-label" data-hamlet-label></span>
+                </div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board" id="taxes-board">
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Impôt par citoyen</span>
+                                <span class="taxes-row-scope">Hameau</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="tax-citizen-slider" class="commerce-customs-slider" min="0" max="1000" step="5" aria-label="Impôt par citoyen, en euros" />
+                                <span class="commerce-customs-value" id="tax-citizen-value">…</span>
+                            </div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Impôt sur le revenu (IR)</span>
+                                <span class="taxes-row-scope">Hameau</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="tax-salary-slider" class="commerce-customs-slider" min="0" max="100" step="1" aria-label="Impôt sur le revenu (IR), en pourcentage" />
+                                <span class="commerce-customs-value" id="tax-salary-value">…</span>
+                            </div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Douane</span>
+                                <span class="taxes-row-scope">Ville entière</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="tax-customs-slider" class="commerce-customs-slider" min="0" max="50" step="1" aria-label="Taux de douane, en pourcentage" />
+                                <span class="commerce-customs-value" id="tax-customs-value">…</span>
+                            </div>
+                            <p class="commerce-customs-hint">Seule la part douanière entre dans le trésor ; le reste revient aux marchands.</p>
+                        </div>
+                        <div class="services-group">
+                            <p class="commerce-customs-hint">La TVA porte sur la dernière vente de chaque bien aux maisons, au prix HT ; elle s'ajoute au prix pour former le TTC.</p>
+                            <div id="vat-board"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-services">
+                <div class="administrator-section-title">
+                    Services — <span class="admin-hamlet-label" data-hamlet-label></span>
+                </div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board">
+                        <div id="state-board"></div>
+                        <div class="services-group">
+                            <p class="commerce-customs-hint">La subvention couvre ce pourcentage du prix de chaque prestation du service ; les habitants paient le reste.</p>
+                            <div class="services-board" id="services-board"></div>
                         </div>
                     </div>
                 </div>
@@ -2538,7 +2506,7 @@
                 <div class="journal-filter-pills">
                     <div class="journal-filter-pills-section">
                         <span class="journal-filter-pills-label">Revenus:</span>
-                        <button class="journal-filter-pill" data-filter="taxes" data-types='["citizen_tax","payroll_tax"]'>
+                        <button class="journal-filter-pill" data-filter="taxes" data-types='["citizen_tax","payroll_tax","vat"]'>
                             <span class="pill-color" style="background: #cfe2ff; color: #084298;"></span>
                             <span class="pill-label">Impôts et taxes</span>
                         </button>

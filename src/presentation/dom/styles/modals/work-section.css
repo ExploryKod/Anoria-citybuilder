@@ -42,38 +42,39 @@
 .work-group-tabs {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 8px;
     margin-bottom: 16px;
 }
 
 .work-tab-btn {
     border: none;
-    border-radius: var(--border-radius-small);
-    padding: 8px 16px;
-    background: #fafafa;
-    color: var(--cta);
+    border-radius: 999px;
+    padding: 6px 14px;
+    background: rgba(29, 34, 40, 0.06);
+    color: var(--primary);
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .work-tab-btn:hover {
-    background-color: var(--cta);
-    color: white;
+    background-color: rgba(29, 34, 40, 0.12);
 }
 
 .work-tab-btn.active {
-    background-color: var(--lightgreen);
+    background-color: var(--cta);
     color: white;
+    font-weight: 600;
 }
 
 .work-table {
     width: 100%;
     border-collapse: collapse;
-    margin: 20px 0;
+    margin: 16px 0;
     background: white;
     border-radius: var(--border-radius-small);
+    box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
     /* Removed overflow: hidden to allow tooltips to display above table */
 }
 
@@ -83,16 +84,14 @@
 }
 
 .work-table thead {
-    background: var(--cta);
-    color: white;
+    color: #5b6470;
 }
 
 .work-table th {
-    padding: 12px;
+    padding: 16px 16px 8px;
     text-align: left;
-    font-weight: 600;
-    font-size: 14px;
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    font-weight: 500;
+    font-size: 13px;
 }
 
 .work-table th:last-child {
@@ -115,16 +114,12 @@
     text-align: left;
 }
 
-.work-table tbody tr {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
-
 .work-table tbody tr:last-child {
     border-bottom: none;
 }
 
 .work-table td {
-    padding: 10px 12px;
+    padding: 12px 16px;
     font-size: 14px;
     color: var(--primary);
     text-align: left;
@@ -277,18 +272,20 @@
 
 .work-summary {
     display: flex;
-    gap: 30px;
-    margin: 20px 0;
-    padding: 15px;
-    background: rgba(251, 129, 34, 0.05);
-    border-radius: var(--border-radius-small);
-    border-left: 4px solid var(--cta);
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 16px 0;
 }
 
 .work-summary-item {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
+    min-width: 180px;
+    padding: 16px 20px;
+    background: white;
+    border-radius: var(--border-radius-small);
+    box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
     text-align: left;
 }
 

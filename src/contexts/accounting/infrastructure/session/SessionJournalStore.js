@@ -342,9 +342,9 @@ export class SessionJournalStore {
             stats.byType[entry.type]++;
 
             // Calculate totals
-            // Revenus: citizen_tax, payroll_tax, capital_funds, loan_capital, export_*
+            // Revenus: citizen_tax, payroll_tax, vat, capital_funds, loan_capital, export_*
             // Dépenses: tout le reste (construction, maintenance, salary, import_*, etc.)
-            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || entry.type.startsWith('export_')) {
+            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'vat' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || entry.type.startsWith('export_')) {
                 stats.totalIncome += entry.amount;
             } else {
                 stats.totalExpenses += entry.amount;

@@ -2,8 +2,22 @@ import * as THREE from "three";
 
 const loader = new THREE.TextureLoader();
 
+/** One promise per texture file: resolved when its image is decoded, rejected when the file cannot be read. */
+const pendingTextures = [];
+
 export function loadTextures(path, flipY = false) {
-    const texture = loader.load(path)
+    let resolveLoaded;
+    let rejectLoaded;
+    pendingTextures.push(new Promise((resolve, reject) => {
+        resolveLoaded = resolve;
+        rejectLoaded = reject;
+    }));
+    const texture = loader.load(
+        path,
+        () => resolveLoaded(),
+        undefined,
+        (error) => rejectLoaded(new Error(`[texture] ${path} could not be loaded`, { cause: error }))
+    );
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(1,1);
@@ -40,5 +54,10 @@ export const textures = Object.freeze({
     // No natural resource left in range of a raw-material producer (see the catalog's `source` fact)
     'no-resource': loadTextures(`/resources/textures/status/no-resource.svg`, true)
 })
+
+/** Resolves once every texture of the game has loaded: the scene must not show before its sprites exist. */
+export function whenTexturesLoaded() {
+    return Promise.all(pendingTextures);
+}
 
 // Economy catalog (buildingPlacementCatalog, type lists) → src/shared/building-catalog/

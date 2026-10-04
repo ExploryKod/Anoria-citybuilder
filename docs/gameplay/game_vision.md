@@ -220,7 +220,7 @@ Secteurs et groupe éligible :
 | **Maintenance** | Routes 4 €, maisons 6 €, fermes/marchés 2 €, infra 2 €… |
 | **Salaires fonctionnaires** | 1 fonctionnaire / 12 habitants × 100 € |
 | **Indemnités chômage** | Chômeurs × 100 € × **70 %** |
-| **Impôt sur les salaires** | **10 %** de l’assiette (salaires + indemnités + masse citoyenne) — **recette** |
+| **Impôt sur le revenu (IR)** | **10 %** de l’assiette (salaires + indemnités + masse citoyenne) — **recette** |
 
 ### Recettes
 
