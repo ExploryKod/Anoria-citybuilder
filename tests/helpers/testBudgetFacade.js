@@ -8,7 +8,6 @@ import {
   initializeTreasury,
   getTreasurySnapshot,
   getFinancialHealth,
-  updateTreasuryTurn,
   getActiveLoans,
   forceReinitializeTreasury,
   resetAccountingContextForTests,
@@ -98,10 +97,6 @@ export class TestBudgetFacade {
 
   async getYearlyFinancialSummary() {
     return this.journalManager.getYearlyFinancialSummary();
-  }
-
-  async updateTurn(turn) {
-    return updateTreasuryTurn(turn);
   }
 
   async addImportExpense(amount, description, productId = 'unknown', partnerId = null) {

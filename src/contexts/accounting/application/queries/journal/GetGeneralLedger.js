@@ -1,3 +1,4 @@
+import { expandYearClosings } from '../../../domain/policies/YearClosingPolicy.js';
 import { createGeneralLedgerView } from '../../../domain/read-models/GeneralLedgerView.js';
 import { assembleGeneralLedgerView } from './assembleGeneralLedgerView.js';
 
@@ -36,7 +37,10 @@ export class GetGeneralLedger {
     const hamletId = filters.hamletId ?? null;
 
     const allEntries = await this.journalRepository.getJournalEntries(periodDays);
-    const entries = hamletId ? allEntries.filter((entry) => entry.hamletId === hamletId) : allEntries;
+    // A closed year is listed as its per-type totals (its sub-totals), not as one net line.
+    const entries = expandYearClosings(
+      hamletId ? allEntries.filter((entry) => entry.hamletId === hamletId) : allEntries
+    );
     const currentTurn = allEntries.length > 0 ? allEntries[0].turn : 0;
     const timeInfo = this.gameTimePort.getTimeInfo(currentTurn);
     const currentYear = timeInfo?.year ?? 0;

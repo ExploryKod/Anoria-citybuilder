@@ -65,14 +65,15 @@ export function clearFiscalSettings() {
   return getOrCreateAccountingContext().fiscalSettingsRepository.clear();
 }
 
-/** @returns {Promise<number>} Treasury balance (budget_current.funds) */
+/** @returns {Promise<number>} Treasury balance, derived from the journal */
 export async function getTreasuryBalance() {
   return getOrCreateAccountingContext().getTreasuryBalance();
 }
 
-/** @returns {Promise<object>} Full treasury row (budget_current) */
-export async function getTreasurySnapshot() {
-  return getOrCreateAccountingContext().getTreasurySnapshot();
+/** @returns {Promise<object>} Treasury snapshot (balance, turn, flows, loans), derived from the journal */
+/** @param {{ hamletId?: string|null }} [options] the hamlet's treasury, or the city's when null */
+export async function getTreasurySnapshot(options) {
+  return getOrCreateAccountingContext().getTreasurySnapshot(options);
 }
 
 /** @returns {Promise<{ status: string, message: string, budget: object, netFlow: number }>} */
@@ -88,11 +89,6 @@ export async function initializeTreasury(startingFunds = null) {
 /** @param {number|null} [startingFunds] */
 export async function forceReinitializeTreasury(startingFunds = null) {
   return getOrCreateAccountingContext().forceReinitializeTreasury(startingFunds);
-}
-
-/** @param {number} turn */
-export async function updateTreasuryTurn(turn) {
-  return getOrCreateAccountingContext().updateTreasuryTurn(turn);
 }
 
 /** @returns {Promise<Array>} */
@@ -115,10 +111,6 @@ export async function getGeneralLedger(filters) {
   return getOrCreateAccountingContext().getGeneralLedger(filters);
 }
 
-/**
- * @param {number} turn
- * @param {{ population?: number, buildingCounts?: object }} [additionalData]
- */
 export async function flushJournalSessionToDexie() {
   return getOrCreateAccountingContext().flushJournalSessionToDexie();
 }
@@ -129,18 +121,6 @@ export async function exportJournalJson() {
 
 export async function exportJournalPdf() {
   return getOrCreateAccountingContext().exportJournalPdf();
-}
-
-/** @returns {Promise<{ treasuryFunds: number, journalBalance: number, delta: number, aligned: boolean }>} */
-export async function getTreasuryJournalReconciliation(options) {
-  return getOrCreateAccountingContext().getTreasuryJournalReconciliation(options);
-}
-
-/**
- * @param {Parameters<ReturnType<typeof createAccountingContext>['syncTurnInformativeEntries']>[0]} params
- */
-export async function syncTurnInformativeEntries(params) {
-  return getOrCreateAccountingContext().syncTurnInformativeEntries(params);
 }
 
 /**

@@ -52,7 +52,7 @@ export class SessionLedgerBuffer {
         ...(businessKey ? { businessKey } : {}),
         sessionId: nextSessionId++,
         persisted: true,
-        persist: row.type !== 'balance',
+        persist: true,
       });
     }
     this.#hydrated = true;
@@ -115,30 +115,6 @@ export class SessionLedgerBuffer {
     }
   }
 
-  /** @param {number} turn @param {number} balance */
-  updateBalanceForTurn(turn, balance) {
-    const index = this.#entries.findIndex(
-      (entry) => entry.turn === turn && entry.type === 'balance'
-    );
-    if (index >= 0) {
-      this.#entries[index] = { ...this.#entries[index], amount: balance };
-      return this.#entries[index];
-    }
-    return null;
-  }
-
-  /** @param {number} sessionId */
-  removeSession(sessionId) {
-    this.#entries = this.#entries.filter((entry) => entry.sessionId !== sessionId);
-  }
-
-  /** @param {number} turn */
-  findBalanceForTurn(turn) {
-    return this.#entries.find(
-      (entry) => entry.turn === turn && entry.type === 'balance'
-    );
-  }
-
   /** @returns {Array<object>} Public entries (no session metadata). */
   getAllPublic() {
     return this.#entries.map(toPublicEntry);
@@ -192,19 +168,32 @@ export class SessionLedgerBuffer {
   }
 
   /**
-   * Drop every entry whose stamped fiscal year is strictly before `cutoffYear`.
+   * The records of the years strictly before `cutoffYear` that `isFolded` accepts, with their session metadata.
    * @param {number} cutoffYear
+   * @param {(entry: object) => boolean} isFolded
+   * @returns {Array<SessionLedgerRecord & object>}
    */
-  removeEntriesBeforeYear(cutoffYear) {
-    const removedSessionIds = [];
-    this.#entries = this.#entries.filter((entry) => {
-      if (SessionLedgerBuffer.fiscalYearOf(entry) < cutoffYear) {
-        removedSessionIds.push(entry.sessionId);
-        return false;
-      }
-      return true;
-    });
-    return removedSessionIds;
+  recordsFoldedBeforeYear(cutoffYear, isFolded) {
+    return this.#entries.filter(
+      (entry) => SessionLedgerBuffer.fiscalYearOf(entry) < cutoffYear && isFolded(entry)
+    );
+  }
+
+  /** @param {Set<number>} sessionIds */
+  removeSessionIds(sessionIds) {
+    this.#entries = this.#entries.filter((entry) => !sessionIds.has(entry.sessionId));
+  }
+
+  /**
+   * Add a line that is already on disk (its id is known).
+   * @param {object} entry
+   * @param {number} id
+   * @returns {SessionLedgerRecord & object}
+   */
+  appendPersisted(entry, id) {
+    const record = { ...entry, id, sessionId: nextSessionId++, persisted: true, persist: true };
+    this.#entries.push(record);
+    return record;
   }
 
   /** @returns {number} */

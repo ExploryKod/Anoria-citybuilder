@@ -267,7 +267,7 @@
 }
 
 .finances-table .finances-value-netflow {
-    color: #17a2b8;
+    /* the colour comes from the sign (positive / negative), not from the row */
     font-weight: 700;
 }
 

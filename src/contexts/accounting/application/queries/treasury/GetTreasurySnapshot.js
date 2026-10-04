@@ -6,34 +6,42 @@ import { deriveTreasuryFigures, deriveLoanPortfolio, deriveCitizenTaxState, mone
  */
 export class GetTreasurySnapshot {
   /**
-   * @param {import('../../../infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js').DexieTreasuryRepository} treasuryRepository
-   * @param {import('../commands/treasury/InitializeTreasury.js').InitializeTreasury} initializeTreasury
+   * @param {{ execute: () => Promise<object> }} initializeTreasury
    * @param {{ getJournalEntries: () => Promise<Array<object>> }} journalRepository
+   * @param {{ currentTurn: () => number }} gameTimePort the running game's clock: the only source of the turn
    */
-  constructor(treasuryRepository, initializeTreasury, journalRepository) {
-    this.treasuryRepository = treasuryRepository;
+  constructor(initializeTreasury, journalRepository, gameTimePort) {
     this.initializeTreasury = initializeTreasury;
     this.journalRepository = journalRepository;
+    this.gameTimePort = gameTimePort;
   }
 
-  /** @returns {Promise<object>} */
-  async execute() {
-    let row = await this.treasuryRepository.getRawBudgetRow();
-
-    if (!row) {
-      // Ensure-only: never clear (avoids ConstraintError races with ForceReinitialize / concurrent snapshots)
-      row = await this.initializeTreasury.execute(null, { clearExisting: false });
+  /**
+   * @param {{ hamletId?: string|null, untilYear?: number|null }} [options]
+   *   hamletId: the hamlet's own treasury, or the whole city's when null.
+   *   untilYear: the treasury as it stood at the end of that fiscal year (its lines and every earlier one), or now when null.
+   * @returns {Promise<object>}
+   */
+  async execute({ hamletId = null, untilYear = null } = {}) {
+    let entries = await this.journalRepository.getJournalEntries();
+    if (entries.length === 0) {
+      // A brand-new game has no journal yet: its treasury starts from the capital line. Once any line exists, the
+      // journal is the treasury and nothing is recreated: a purged capital is folded into a closing, not missing.
+      await this.initializeTreasury.execute(null);
+      entries = await this.journalRepository.getJournalEntries();
     }
 
-    const entries = await this.journalRepository.getJournalEntries();
-    const lines = treasuryLinesInOrder(entries);
-    const currentTurn = row.turn ?? 0;
+    const inScope = (entry) =>
+      (hamletId == null || hamletOf(entry) === hamletId) &&
+      (untilYear == null || yearOf(entry) <= untilYear);
+    const scoped = entries.filter(inScope);
+    const lines = treasuryLinesInOrder(scoped);
+    const currentTurn = this.gameTimePort.currentTurn();
     const figures = deriveTreasuryFigures(lines, { currentTurn });
     const portfolio = deriveLoanPortfolio(lines);
     const citizenTax = deriveCitizenTaxState(lines);
 
     return {
-      name: row.name,
       turn: currentTurn,
       taxBreakdown: citizenTax.taxBreakdown,
       lastTaxYear: citizenTax.lastTaxYear,
@@ -59,4 +67,20 @@ function treasuryLinesInOrder(entries) {
     }
   }
   return lines.sort((a, b) => a.id - b.id);
+}
+
+/** @param {object} entry @returns {string} the hamlet a line belongs to; a line without one is an error. */
+function hamletOf(entry) {
+  if (typeof entry.hamletId !== 'string' || entry.hamletId.length === 0) {
+    throw new Error(`[treasury] journal line ${entry.type} (turn ${entry.turn}) has no hamletId`);
+  }
+  return entry.hamletId;
+}
+
+/** @param {object} entry @returns {number} the fiscal year a line was stamped with; a line without one is an error. */
+function yearOf(entry) {
+  if (typeof entry.year !== 'number') {
+    throw new Error(`[treasury] journal line ${entry.type} (turn ${entry.turn}) has no fiscal year stamp`);
+  }
+  return entry.year;
 }

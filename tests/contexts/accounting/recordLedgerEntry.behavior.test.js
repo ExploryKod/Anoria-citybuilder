@@ -13,6 +13,7 @@ import {
 } from '../../../src/composition/createAccountingContext.js';
 import { LegacyGameTimePort } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
 import { getTreasurySnapshot } from '../../../src/composition/accountingOps.js';
+import { getSessionGameTime } from '../../../src/composition/sessionRuntime.js';
 
 function createTestDb() {
   const testDb = new Dexie('testRecordLedgerEntryDb');
@@ -27,6 +28,7 @@ function createTestDb() {
 class FixedGameTimePort extends LegacyGameTimePort {
   constructor() {
     super({
+      currentTurn: () => getSessionGameTime(),
       getTimeInfo: () => ({
         year: 0,
         monthIndex: 5,
@@ -1018,7 +1020,7 @@ describe('Accounting — RecordLedgerEntry (commerce slice)', () => {
     expect(budget.totalExports.wheat).toBe(15);
 
     const entries = await journalManager.getJournalEntries();
-    expect(entries[0].type).toBe('export_wheat');
+    expect(entries.some((entry) => entry.type === 'export_wheat')).toBe(true);
   });
 });
 

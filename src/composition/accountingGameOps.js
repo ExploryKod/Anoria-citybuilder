@@ -8,7 +8,6 @@ export {
   getTreasuryBalance,
   getFinancialHealth,
   getActiveLoans,
-  updateTreasuryTurn,
   initializeTreasury,
   forceReinitializeTreasury,
   flushJournalSessionToDexie,

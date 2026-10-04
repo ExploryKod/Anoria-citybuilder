@@ -6,12 +6,11 @@ import 'fake-indexeddb/auto';
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import db from '../../../src/core/persistence/dexie/db.js';
 import { resetAccountingContextForTests } from '../../../src/composition/createAccountingContext.js';
-import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
+import sessionJournalStore, { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 import {
   forceReinitializeTreasury,
   getTreasurySnapshot,
 } from '../../../src/composition/accountingOps.js';
-import { DexieTreasuryRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js';
 
 describe('Treasury initialization races', () => {
   beforeEach(async () => {
@@ -22,14 +21,6 @@ describe('Treasury initialization races', () => {
     await db.journal.clear();
   });
 
-  test('createInitialBudgetRow is idempotent via put', async () => {
-    const treasury = new DexieTreasuryRepository({ db });
-    await treasury.createInitialBudgetRow(5000);
-    await treasury.createInitialBudgetRow(5000);
-    const rows = [await getTreasurySnapshot()];
-    expect(rows.filter((r) => r.name === 'budget_current')).toHaveLength(1);
-  });
-
   test('concurrent getTreasurySnapshot with empty budget does not throw', async () => {
     const results = await Promise.all([
       getTreasurySnapshot(),
@@ -38,8 +29,8 @@ describe('Treasury initialization races', () => {
     ]);
 
     expect(results.every((r) => r && typeof r.funds === 'number')).toBe(true);
-    const rows = [await getTreasurySnapshot()];
-    expect(rows.filter((r) => r.name === 'budget_current')).toHaveLength(1);
+    const capitals = (await sessionJournalStore.getJournalEntries()).filter((entry) => entry.type === 'capital_funds');
+    expect(capitals).toHaveLength(1);
   });
 
   test('forceReinitialize then concurrent snapshots stay stable', async () => {

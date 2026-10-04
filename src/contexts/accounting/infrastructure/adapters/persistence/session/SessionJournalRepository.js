@@ -3,7 +3,6 @@ import { JournalRepository } from '../../../../application/ports/JournalReposito
 import {
   buildMonthlyFinancialSummary,
   buildYearlyFinancialSummary,
-  computeJournalCurrentBalance,
   filterJournalEntriesByHamlet,
 } from '../dexie/journalAggregations.js';
 
@@ -40,16 +39,5 @@ export class SessionJournalRepository extends JournalRepository {
       this.gameTimePort.getTimeInfo(turn)
     );
     return buildYearlyFinancialSummary(monthlyData);
-  }
-
-  /**
-   * @param {{ hamletId?: string|null }} [options] — only this hamlet's entries; null = every hamlet
-   * @returns {Promise<number>}
-   */
-  async getCurrentBalance({ hamletId = null } = {}) {
-    const entries = filterJournalEntriesByHamlet(await this.getJournalEntries(), hamletId);
-    return computeJournalCurrentBalance(entries, (turn) =>
-      this.gameTimePort.getTimeInfo(turn)
-    );
   }
 }

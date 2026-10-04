@@ -53,7 +53,7 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   // Furniture workshop / Warehouse reassign to Kenney industrial building-f (2x2) / building-a (3x2).
   'Factory-Furniture': Object.freeze({ width: 2, depth: 2 }),
   'Warehouse': Object.freeze({ width: 3, depth: 2 }),
-  'TradeWarehouse': Object.freeze({ width: 2, depth: 2 }),
+  'TradeWarehouse': Object.freeze({ width: 2, depth: 3 }),
   'Lumberjack': Object.freeze({ width: 1, depth: 2 }),
   'Lumberjack-Industry': Object.freeze({ width: 1, depth: 2 }),
   // House-Blue/Purple/Red reassign their geometry to Kenney suburban

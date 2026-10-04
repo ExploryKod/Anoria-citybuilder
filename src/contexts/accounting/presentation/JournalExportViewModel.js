@@ -22,7 +22,6 @@ export function journalEntryTypeLabel(entry) {
     export_wood: 'Export Bois',
     loan_interest: 'Intérêts',
     loan_repayment: 'Remboursement',
-    carry_forward: 'Report',
   };
 
   return typeLabels[entry.type] || entry.type;
@@ -32,9 +31,8 @@ export function journalEntryTypeLabel(entry) {
  * @param {object} params
  * @param {Array<object>} params.entries
  * @param {Array<object>} params.yearlySummary
- * @param {Array<object>} params.yearEndBalances
  */
-export function buildJournalExportPayload({ entries, yearlySummary, yearEndBalances }) {
+export function buildJournalExportPayload({ entries, yearlySummary }) {
   return {
     exportDate: new Date().toISOString(),
     // Every stored field, unchanged (year/month stamp, hamletId, businessKey, partnerId, buildingInstanceId…):
@@ -47,7 +45,6 @@ export function buildJournalExportPayload({ entries, yearlySummary, yearEndBalan
       netFlow: year.netFlow,
       monthCount: year.monthCount,
     })),
-    yearEndBalances,
   };
 }
 

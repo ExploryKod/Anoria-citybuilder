@@ -10,8 +10,6 @@
  * @property {CityLedgerYearLines} twoYearsAgo
  * @property {number} debt
  * @property {FinancialStatusMessage} message
- * @property {{ treasuryFunds: number, journalBalance: number, delta: number }|null} balanceDivergence — set when the
- *   treasury and the journal disagree on the city balance (whole-city view only)
  */
 
 /**

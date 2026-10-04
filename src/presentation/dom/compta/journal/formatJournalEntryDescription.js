@@ -27,13 +27,6 @@ const DESCRIPTION_PREFIX_BY_TYPE = {
   loan_default_repayment: /^Capital prêt\s+\w+\s+impayé\s*\(/i,
   commercial_route: /^Commission\s*-\s*/i,
   exceptional_expenses: /^Réparation\s*-\s*/i,
-  carry_forward: /^Report à nouveau de l'année\s+/i,
-  cumul_maintenance: /^Cumul Maintenance\s*-\s*/i,
-  cumul_construction: /^Cumul Construction\s*-\s*/i,
-  cumul_salary: /^Cumul salaires fonctionnaires\s*-\s*/i,
-  cumul_exceptional_expenses: /^Cumul Réparations\s*-\s*/i,
-  cumul_loan_interest: /^Cumul Intérêts Prêt\s*-\s*/i,
-  cumul_loan_repayment: /^Cumul Remboursement Prêt\s*-\s*/i,
 };
 
 const PERIOD_LABEL_PATTERN = new RegExp(
@@ -83,10 +76,6 @@ export function formatJournalEntryDetails(entry) {
     return [];
   }
 
-  if (entry.type === 'balance' && /^Solde$/i.test(raw)) {
-    return [];
-  }
-
   if (entry.type === 'payroll_tax') {
     const rate = raw.match(/\((\d+)%[,)]/);
     const assietteTotal = raw.match(/assiette\s+(\d+)€/i);
@@ -126,8 +115,7 @@ export function formatJournalEntryDetails(entry) {
   if (
     entry.type === 'maintenance' ||
     entry.type?.startsWith('import_') ||
-    entry.type?.startsWith('export_') ||
-    entry.type?.startsWith('cumul_')
+    entry.type?.startsWith('export_')
   ) {
     return [];
   }
@@ -135,11 +123,6 @@ export function formatJournalEntryDetails(entry) {
   if (entry.type === 'construction') {
     const building = raw.replace(/^Building:\s*/i, '').trim();
     return building ? [{ label: 'Bâtiment', value: building }] : [];
-  }
-
-  if (entry.type === 'carry_forward') {
-    const balance = raw.replace(/^Report à nouveau de l'année\s+/i, '').trim();
-    return balance ? [{ label: 'Solde antérieur', value: balance }] : [];
   }
 
   if (entry.type === 'capital_funds') {

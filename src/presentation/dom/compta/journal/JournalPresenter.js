@@ -217,19 +217,11 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
   let isIncome = false;
 
   if (
-    entry.type === 'cumul_maintenance' ||
-    entry.type === 'cumul_construction' ||
-    entry.type === 'cumul_salary' ||
-    entry.type === 'cumul_exceptional_expenses' ||
-    entry.type === 'cumul_loan_interest' ||
-    entry.type === 'cumul_loan_repayment' ||
     isInfoPseudoMovementType(entry.type) ||
     entry.type === 'loan_default_interest' ||
     entry.type === 'loan_default_repayment'
   ) {
     isIncome = false;
-  } else if (entry.type === 'balance') {
-    isIncome = entry.amount >= 0;
   } else if (
     entry.type === 'citizen_tax' ||
     entry.type === 'payroll_tax' ||
@@ -250,8 +242,6 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     entry.type === 'commercial_route'
   ) {
     isIncome = false;
-  } else if (entry.type === 'carry_forward') {
-    isIncome = entry.isCarryForwardIncome !== undefined ? entry.isCarryForwardIncome : true;
   }
 
   const typeClass = isIncome ? 'positive' : 'negative';
@@ -260,7 +250,6 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     citizen_tax: 'Impôt Citoyen',
     payroll_tax: 'Impôt sur les salaires (assiette citoyens)',
     capital_funds: 'Capital de départ',
-    carry_forward: 'Report à nouveau',
     construction: 'Construction',
     construction_refund: 'Remboursement construction',
     exceptional_expenses: 'Réparation',
@@ -275,13 +264,6 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     ...INFO_JOURNAL_TYPE_LABELS,
     loan_default_interest: labelForInfoJournalType('info_loan_interest'),
     loan_default_repayment: labelForInfoJournalType('info_loan_repayment'),
-    cumul_maintenance: 'Cumul Maintenance',
-    cumul_construction: 'Cumul Construction',
-    cumul_salary: 'Cumul salaires fonctionnaires',
-    cumul_exceptional_expenses: 'Cumul Réparations',
-    cumul_loan_interest: 'Cumul Intérêts Prêt',
-    cumul_loan_repayment: 'Cumul Remboursement Prêt',
-    balance: 'Solde',
   };
 
   const breakdownMatch = entry.description?.match(/\|BREAKDOWN\|(.*?)\|BREAKDOWN\|/);

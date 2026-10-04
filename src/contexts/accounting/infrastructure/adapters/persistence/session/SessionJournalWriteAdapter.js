@@ -48,9 +48,4 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
 
     return { recorded: true, skipped: false };
   }
-
-  /** @inheritdoc */
-  async upsertBalanceSnapshot(turn, amount) {
-    await this.sessionJournalStore.addBalanceEntry(turn, amount);
-  }
 }

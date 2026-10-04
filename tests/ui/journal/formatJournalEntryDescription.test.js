@@ -48,15 +48,6 @@ describe('formatJournalEntryDescription', () => {
     ).toEqual([{ label: 'Population', value: '24 hab.' }]);
   });
 
-  test('hides balance-only description under badge', () => {
-    expect(
-      formatJournalEntryDetails({
-        type: 'balance',
-        description: 'Solde',
-      })
-    ).toEqual([]);
-  });
-
   test('strips import product name when breakdown carries detail', () => {
     expect(
       formatJournalEntryDetails({

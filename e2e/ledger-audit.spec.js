@@ -29,6 +29,8 @@ async function processMonth(page, time, buildingTypes = STARTER_BUILDINGS) {
   }, { time, buildingTypes });
 }
 
+const sum = (values) => Object.values(values).reduce((total, value) => total + value, 0);
+
 async function snapshot(page) {
   return page.evaluate(async () => {
     const { default: db } = await import('/src/core/persistence/dexie/db.js');
@@ -41,7 +43,14 @@ async function snapshot(page) {
     return {
       funds: budget.funds,
       journal,
-      reconciliation: await accounting.getTreasuryJournalReconciliation(),
+      hamletFunds: await (async () => {
+        const session = await import('/src/core/persistence/hamlet/hamletSession.js');
+        const balances = {};
+        for (const hamlet of await session.listHamlets()) {
+          balances[hamlet.id] = (await accounting.getTreasurySnapshot({ hamletId: hamlet.id })).funds;
+        }
+        return balances;
+      })(),
       roadRate: buildingCatalog[primaryRoadType()].accounting.maintenance,
       exported: JSON.parse(await accounting.exportJournalJson()),
     };
@@ -103,7 +112,7 @@ test('monthly charges: labels show the stamped year, lines are priced at the cat
     }
   }
 
-  expect(snap.reconciliation.aligned, `treasury ${snap.reconciliation.treasuryFunds} vs journal ${snap.reconciliation.journalBalance}`).toBe(true);
+  expect(sum(snap.hamletFunds), `the hamlets add up to the city balance ${snap.funds}`).toBe(snap.funds);
   expect(journalErrors, 'no journal error was logged and swallowed').toEqual([]);
 });
 
@@ -122,7 +131,7 @@ test('a second hamlet charged in the same month is booked to that hamlet', async
   expect(monthOfFive.map((row) => row.hamletId).sort(), 'both hamlets pay their maintenance for the same month').toEqual([active, other].sort());
 });
 
-test('a hamlet trip keeps the treasury and the journal aligned', async ({ page }) => {
+test('a hamlet trip keeps the city balance equal to the sum of the hamlets', async ({ page }) => {
   test.setTimeout(300000);
   await openTutorialGame(page);
   const { ids, active } = await hamletIdsOf(page);
@@ -136,22 +145,20 @@ test('a hamlet trip keeps the treasury and the journal aligned', async ({ page }
     await processMonth(page, time + 5);
     time += 10;
     const snap = await snapshot(page);
-    checks.push({ target, aligned: snap.reconciliation.aligned, delta: snap.reconciliation.delta });
+    checks.push({ target, funds: snap.funds, hamlets: sum(snap.hamletFunds) });
   }
-  expect(checks.filter((check) => !check.aligned), `treasury vs journal after each trip: ${JSON.stringify(checks)}`).toEqual([]);
+  expect(checks.filter((check) => check.funds !== check.hamlets), `city vs hamlets after each trip: ${JSON.stringify(checks)}`).toEqual([]);
 });
 
-test('a reload right after a payment keeps the treasury and the journal aligned', async ({ page }) => {
+test('a reload right after a payment keeps the same balance', async ({ page }) => {
   test.setTimeout(300000);
   await openTutorialGame(page);
   await processMonth(page, 5);
 
   const placed = await page.evaluate(async () => {
     const { placeBuildingAtTile } = await import('/src/composition/constructionOps.js');
-    const { default: db } = await import('/src/core/persistence/dexie/db.js');
     const game = window.__game;
-    const budget = await db.budget.get('budget_current');
-    return placeBuildingAtTile({ city: game.city, x: 7, y: 6, buildingType: 'House-Blue', gameTurn: budget.turn });
+    return placeBuildingAtTile({ city: game.city, x: 7, y: 6, buildingType: 'House-Blue', gameTurn: game.time });
   });
   expect(placed.success, `house placed: ${placed.reason ?? ''}`).toBe(true);
 
@@ -160,16 +167,14 @@ test('a reload right after a payment keeps the treasury and the journal aligned'
     const accounting = await import('/src/composition/accountingOps.js');
     return {
       funds: (await accounting.getTreasurySnapshot()).funds,
-      reconciliation: await accounting.getTreasuryJournalReconciliation(),
     };
   });
   expect(before.funds, 'the placement was paid from the treasury').toBeLessThan(500);
-  expect(before.reconciliation.aligned, `aligned before the reload: ${JSON.stringify(before.reconciliation)}`).toBe(true);
 
   await page.reload();
   await page.waitForFunction(() => window.__game, null, { timeout: 120000 });
   await page.evaluate(() => window.__game.pause());
 
   const after = await snapshot(page);
-  expect(after.reconciliation.aligned, `after reload: treasury ${after.reconciliation.treasuryFunds} vs journal ${after.reconciliation.journalBalance}`).toBe(true);
+  expect(after.funds, 'the balance after the reload is the balance before it').toBe(before.funds);
 });

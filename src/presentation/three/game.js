@@ -124,6 +124,7 @@ import { canPlaceBuildingAtTileWithSupplyRules } from '../../composition/canPlac
 import { isRoadBuildingType } from '../../composition/constructionCatalog.js';
 import { createPlacementRotationHud } from './placement/placementRotationHud.js';
 import { getSelectableMeshIds, resolveSelectedMeshId } from './meshs/resolveBuildingMesh.js';
+import { readGameClock, writeGameClock } from '../../core/persistence/game-clock/gameClock.js';
 
 /**
  * @param {object | null | undefined} object
@@ -322,8 +323,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
     gameUI,
     freshGame,
     // Returning to a save resumes its day counter; only a new game starts at day 0.
-    onBudget: (budget) => {
-      if (!freshGame) time = Number.isFinite(budget.turn) ? budget.turn : 0;
+    restoreClock: async () => {
+      time = freshGame ? 0 : await readGameClock();
+      if (freshGame) await writeGameClock(0);
     },
   });
 
@@ -1490,7 +1492,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
       const days = getDaysPerTick();
       for (let day = 0; day < days; day += 1) {
         time += 1;
+        await writeGameClock(time);
         await game.update(time, { silent: day < days - 1 });
+        getSharedEventBus().publish({ type: 'game.turnAdvanced', turn: time });
         if (isPause || isOver) {
           break;
         }

@@ -8,14 +8,12 @@ import { FlushJournalSession } from '../../../src/contexts/accounting/applicatio
 import { ExportJournalJson } from '../../../src/contexts/accounting/application/queries/journal/ExportJournalJson.js';
 import { DexieJournalSessionPersistenceAdapter } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/DexieJournalSessionPersistenceAdapter.js';
 import { SessionJournalRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalRepository.js';
-import { LegacyYearEndBalanceAdapter } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyYearEndBalanceAdapter.js';
 import { LegacyGameTimePort } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
 import { TimeManager } from '../../../src/shared/time/TimeManager.js';
 import { JournalManager } from '../../../src/composition/accountingSessionJournal.js';
 import {
   buildJournalExportPayload,
 } from '../../../src/contexts/accounting/presentation/JournalExportViewModel.js';
-import { filterJournalEntriesForPdfExport } from '../../../src/contexts/accounting/domain/policies/JournalExportFilterPolicy.js';
 import { resetSessionLedgerBufferForTests } from '../../../src/composition/accountingSessionJournal.js';
 
 function createTestDb() {
@@ -72,38 +70,23 @@ describe('Accounting — journal flush & export (Phase 6.4)', () => {
       journalManager,
       gameTimePort,
     });
-    const exportJson = new ExportJournalJson(
-      journalRepository,
-      new LegacyYearEndBalanceAdapter()
-    );
+    const exportJson = new ExportJournalJson(journalRepository);
 
     const jsonString = await exportJson.execute();
     const parsed = JSON.parse(jsonString);
 
     expect(parsed.entries.length).toBeGreaterThanOrEqual(1);
     expect(parsed.yearlySummary).toBeTruthy();
-    expect(Array.isArray(parsed.yearEndBalances)).toBe(true);
   });
 
   test('buildJournalExportPayload maps entry fields', () => {
     const payload = buildJournalExportPayload({
       entries: [{ id: 1, turn: 0, date: '2026-01-01', type: 'citizen_tax', amount: 5, description: 'x' }],
       yearlySummary: [{ year: 0, income: { total: 5 }, expenses: { total: 0 }, netFlow: 5, monthCount: 1 }],
-      yearEndBalances: [],
     });
 
     expect(payload.entries[0].type).toBe('citizen_tax');
     expect(payload.yearlySummary[0].income).toBe(5);
   });
 
-  test('filterJournalEntriesForPdfExport excludes informative cumul rows', () => {
-    const filtered = filterJournalEntriesForPdfExport([
-      { type: 'citizen_tax' },
-      { type: 'cumul_maintenance' },
-      { type: 'balance' },
-    ]);
-
-    expect(filtered).toHaveLength(1);
-    expect(filtered[0].type).toBe('citizen_tax');
-  });
 });

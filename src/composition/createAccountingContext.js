@@ -1,14 +1,13 @@
 import { getOrCreateGameSessionContext } from './createGameSessionContext.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
 import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
-import { getSessionProcessLoanPayments } from './sessionRuntime.js';
+import { getSessionGameTime, getSessionProcessLoanPayments } from './sessionRuntime.js';
 import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
 import { GetFinancialHealth } from '../contexts/accounting/application/queries/treasury/GetFinancialHealth.js';
 import { InitializeTreasury } from '../contexts/accounting/application/commands/treasury/InitializeTreasury.js';
 import { ForceReinitializeTreasury } from '../contexts/accounting/application/commands/treasury/ForceReinitializeTreasury.js';
-import { UpdateTreasuryTurn } from '../contexts/accounting/application/commands/treasury/UpdateTreasuryTurn.js';
 import { GetCityLedgerYearComparison } from '../contexts/accounting/application/queries/city-ledger/GetCityLedgerYearComparison.js';
 import { GetGeneralLedger } from '../contexts/accounting/application/queries/journal/GetGeneralLedger.js';
 import { FlushJournalSession } from '../contexts/accounting/application/commands/journal/FlushJournalSession.js';
@@ -35,15 +34,8 @@ import { RecordExceptionalExpense } from '../contexts/accounting/application/ser
 import { RecordCommercialRouteExpense } from '../contexts/accounting/application/services/RecordCommercialRouteExpense.js';
 import { RecordContributionExpense } from '../contexts/accounting/application/services/RecordContributionExpense.js';
 import { RecordConstructionRefundIncome } from '../contexts/accounting/application/services/RecordConstructionRefundIncome.js';
-import { RecordBalanceSnapshot } from '../contexts/accounting/application/services/RecordBalanceSnapshot.js';
-import { RecordCarryForwardEntry } from '../contexts/accounting/application/services/RecordCarryForwardEntry.js';
-import { RecordYearCumulEntries } from '../contexts/accounting/application/services/RecordYearCumulEntries.js';
-import { SyncTurnInformativeEntries } from '../contexts/accounting/application/services/SyncTurnInformativeEntries.js';
-import { GetTreasuryJournalReconciliation } from '../contexts/accounting/application/queries/reconciliation/GetTreasuryJournalReconciliation.js';
-import { LegacyYearEndBalanceAdapter } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyYearEndBalanceAdapter.js';
 import { SessionJournalRepository } from '../contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalRepository.js';
 import { SessionJournalWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalWriteAdapter.js';
-import { DexieTreasuryRepository } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js';
 import { DexieObjectiveHistoryRepository } from '../contexts/accounting/infrastructure/dexie/DexieObjectiveHistoryRepository.js';
 import { LegacyGameTimePort } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
 import sessionJournalStore from '../contexts/accounting/infrastructure/session/SessionJournalStore.js';
@@ -77,7 +69,6 @@ async function getCityEmploymentSummary() {
  *
  * @param {object} [deps]
  * @param {import('../contexts/accounting/application/ports/JournalRepository.js').JournalRepository} [deps.journalRepository]
- * @param {import('../contexts/accounting/application/ports/TreasuryRepository.js').TreasuryRepository} [deps.treasuryRepository]
  * @param {import('../contexts/accounting/application/ports/JournalWritePort.js').JournalWritePort} [deps.journalWritePort]
  * @param {import('../contexts/accounting/application/ports/GameTimePort.js').GameTimePort} [deps.gameTimePort]
  * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.sessionJournalStore]
@@ -104,7 +95,10 @@ export function createAccountingContext(deps = {}) {
 
   const gameTimePort =
     deps.gameTimePort ??
-    new LegacyGameTimePort({ getTimeInfo });
+    new LegacyGameTimePort({
+      getTimeInfo,
+      currentTurn: deps.currentTurn ?? getSessionGameTime,
+    });
 
   if (!sessionJournalStoreInstance.gameTimePort) {
     sessionJournalStoreInstance.setGameTimePort(gameTimePort);
@@ -114,9 +108,6 @@ export function createAccountingContext(deps = {}) {
     deps.journalWritePort ??
     new SessionJournalWriteAdapter(sessionJournalStoreInstance);
 
-  const treasuryRepository =
-    deps.treasuryRepository ??
-    new DexieTreasuryRepository({ db: dexieDb });
 
   const recordLedgerEntryCommand = new RecordLedgerEntry(
     journalWritePort,
@@ -170,7 +161,6 @@ export function createAccountingContext(deps = {}) {
   const recordConstructionRefundIncome = new RecordConstructionRefundIncome(
     recordLedgerEntryCommand
   );
-  const recordBalanceSnapshot = new RecordBalanceSnapshot(journalWritePort);
 
   const journalRepository =
     deps.journalRepository ??
@@ -179,62 +169,31 @@ export function createAccountingContext(deps = {}) {
       gameTimePort,
     });
 
-  const yearEndBalancePort = deps.yearEndBalancePort ?? new LegacyYearEndBalanceAdapter();
-  const recordCarryForwardEntry = new RecordCarryForwardEntry(
-    recordLedgerEntryCommand,
-    gameTimePort,
-    journalRepository,
-    yearEndBalancePort
-  );
-  const recordYearCumulEntries = new RecordYearCumulEntries(
-    recordLedgerEntryCommand,
-    gameTimePort,
-    journalRepository
-  );
-  const syncTurnInformativeEntries = new SyncTurnInformativeEntries(
-    recordBalanceSnapshot,
-    recordYearCumulEntries,
-    recordCarryForwardEntry,
-    gameTimePort
-  );
 
   const initializeTreasury = new InitializeTreasury(
-    treasuryRepository,
-    journalRepository,
     recordCapitalFundsIncome,
     defaultInitialFunds
   );
   const getTreasurySnapshotQuery = new GetTreasurySnapshot(
-    treasuryRepository,
     initializeTreasury,
-    journalRepository
+    journalRepository,
+    gameTimePort
   );
   const recordContributionExpense = new RecordContributionExpense(
     recordLedgerEntryCommand,
     getTreasurySnapshotQuery
   );
   const forceReinitializeTreasury = new ForceReinitializeTreasury(
-    treasuryRepository,
-    journalRepository,
     initializeTreasury,
     {
       // The memory buffer is the journal the treasury is derived from: clear it with the rows, never one without the other.
       clear: async () => {
         await sessionJournalStoreInstance.clearAllEntries();
       },
-    }
-  );
-  const updateTreasuryTurn = new UpdateTreasuryTurn(
-    treasuryRepository,
-    getTreasurySnapshotQuery,
-    syncTurnInformativeEntries
+    },
+    defaultInitialFunds
   );
   const getFinancialHealthQuery = new GetFinancialHealth(getTreasurySnapshotQuery);
-
-  const getTreasuryJournalReconciliationQuery = new GetTreasuryJournalReconciliation(
-    getTreasurySnapshotQuery,
-    journalRepository
-  );
 
   const getTreasuryBalanceQuery = new GetTreasuryBalance(getTreasurySnapshotQuery);
   const getCityLedgerYearComparisonQuery = new GetCityLedgerYearComparison(
@@ -256,10 +215,7 @@ export function createAccountingContext(deps = {}) {
     deps.journalSessionPersistencePort ??
     new DexieJournalSessionPersistenceAdapter(dexieDb);
   const flushJournalSession = new FlushJournalSession(journalSessionPersistencePort);
-  const exportJournalJsonQuery = new ExportJournalJson(
-    journalRepository,
-    yearEndBalancePort
-  );
+  const exportJournalJsonQuery = new ExportJournalJson(journalRepository);
   const exportJournalPdfQuery = new ExportJournalPdf(journalRepository);
 
   const houseReadPort = {
@@ -336,7 +292,6 @@ export function createAccountingContext(deps = {}) {
 
   return {
     journalRepository,
-    treasuryRepository,
     fiscalSettingsRepository,
     journalWritePort,
     gameTimePort,
@@ -358,17 +313,11 @@ export function createAccountingContext(deps = {}) {
     recordCommercialRouteExpense,
     recordContributionExpense,
     recordConstructionRefundIncome,
-    recordBalanceSnapshot,
-    recordCarryForwardEntry,
-    recordYearCumulEntries,
-    syncTurnInformativeEntries,
     getTreasuryBalanceQuery,
     getTreasurySnapshotQuery,
     getFinancialHealthQuery,
     initializeTreasury,
     forceReinitializeTreasury,
-    updateTreasuryTurn,
-    getTreasuryJournalReconciliationQuery,
     getCityLedgerYearComparisonQuery,
     getGeneralLedgerQuery,
     flushJournalSession,
@@ -381,8 +330,9 @@ export function createAccountingContext(deps = {}) {
       return getTreasuryBalanceQuery.execute();
     },
 
-    async getTreasurySnapshot() {
-      return getTreasurySnapshotQuery.execute();
+    /** @param {{ hamletId?: string|null }} [options] */
+    async getTreasurySnapshot(options) {
+      return getTreasurySnapshotQuery.execute(options);
     },
 
     async getFinancialHealth() {
@@ -397,7 +347,7 @@ export function createAccountingContext(deps = {}) {
     /** Keeps the existing treasury and journal; creates them only when the save has none yet. */
     /** @param {number|null} [startingFunds] */
     async ensureTreasury(startingFunds = null) {
-      return initializeTreasury.execute(startingFunds, { clearExisting: false });
+      return initializeTreasury.execute(startingFunds);
     },
 
     /** @param {number|null} [startingFunds] */
@@ -405,10 +355,6 @@ export function createAccountingContext(deps = {}) {
       return forceReinitializeTreasury.execute(startingFunds);
     },
 
-    /** @param {number} turn */
-    async updateTreasuryTurn(turn) {
-      return updateTreasuryTurn.execute(turn);
-    },
 
     async getActiveLoans() {
       return (await getTreasurySnapshotQuery.execute()).loans;
@@ -447,19 +393,8 @@ export function createAccountingContext(deps = {}) {
       return exportJournalPdfQuery.execute();
     },
 
-    async getTreasuryJournalReconciliation(options) {
-      return getTreasuryJournalReconciliationQuery.execute(options);
-    },
 
-    /** @param {Parameters<RecordBalanceSnapshot['execute']>[0]} params */
-    async recordBalanceSnapshot(params) {
-      return recordBalanceSnapshot.execute(params);
-    },
 
-    /** @param {Parameters<SyncTurnInformativeEntries['execute']>[0]} params */
-    async syncTurnInformativeEntries(params) {
-      return syncTurnInformativeEntries.execute(params);
-    },
 
     /** @param {Parameters<RecordMaintenanceExpense['execute']>[0]} params */
     async recordMaintenanceExpense(params) {

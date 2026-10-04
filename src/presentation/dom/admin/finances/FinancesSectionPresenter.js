@@ -23,10 +23,15 @@ export class FinancesSectionPresenter {
     const select = document.getElementById('finances-hamlet-filter');
     const hamlets = await listHamlets();
     const previous = select.value;
-    select.replaceChildren(
-      new Option('Tous les hameaux', ALL_HAMLETS_VALUE),
-      ...hamlets.map((hamlet) => new Option(hamlet.name, hamlet.id))
-    );
+    // Rebuilt only when the hamlets change: the board refreshes every turn, and a rebuilt list would close the menu.
+    const expected = [ALL_HAMLETS_VALUE, ...hamlets.map((hamlet) => hamlet.id)];
+    const current = [...select.options].map((option) => option.value);
+    if (current.length !== expected.length || current.some((value, index) => value !== expected[index])) {
+      select.replaceChildren(
+        new Option('Tous les hameaux', ALL_HAMLETS_VALUE),
+        ...hamlets.map((hamlet) => new Option(hamlet.name, hamlet.id))
+      );
+    }
     select.value = hamlets.some((hamlet) => hamlet.id === previous) ? previous : ALL_HAMLETS_VALUE;
 
     if (!this._hamletFilterBound) {
@@ -73,15 +78,19 @@ export class FinancesSectionPresenter {
 
   async loadFinancialData() {
     this.setupEventListeners();
+    // Loads can overlap (a turn while the hamlet changes): only the latest one may render.
+    const load = (this._latestLoad = (this._latestLoad ?? 0) + 1);
+    this.showLoading();
 
     await this.populateHamletFilter();
 
     try {
-      this.financialData = await this.accounting.getCityLedgerYearComparison({
+      const financialData = await this.accounting.getCityLedgerYearComparison({
         hamletId: this.selectedHamletId(),
       });
+      if (load !== this._latestLoad) return;
+      this.financialData = financialData;
       this.render();
-      this.reportBalanceDivergence();
     } catch (error) {
       console.error('[FinancesSection] Error loading financial data:', error);
       this.showError(`Budget indisponible : ${error.message}`);
@@ -89,20 +98,19 @@ export class FinancesSectionPresenter {
     }
   }
 
+  /** Until the journal is read, no figure is shown: each one reads "…", never a stale or a zero value. */
+  showLoading() {
+    for (const cell of document.querySelectorAll('#finances-board [data-field]')) {
+      cell.textContent = '…';
+    }
+    renderCityLedgerMessage({ text: 'Chargement du budget…', type: 'info' });
+  }
+
   /** Loud, visible error in the budget panel itself (the table is left untouched, never blanked to zeros). */
   showError(text) {
     renderCityLedgerMessage({ text, type: 'danger' });
   }
 
-  reportBalanceDivergence() {
-    const divergence = this.financialData.balanceDivergence;
-    if (!divergence) return;
-    const text =
-      `Incohérence : la trésorerie (${divergence.treasuryFunds} €) et le journal des écritures ` +
-      `(${divergence.journalBalance} €) divergent de ${divergence.delta} €. Le journal fait foi.`;
-    console.error(`[FinancesSection] ${text}`);
-    this.showError(text);
-  }
 
   getEmptyYearData(year) {
     return this.accounting.createEmptyCityLedgerYearLines(year);

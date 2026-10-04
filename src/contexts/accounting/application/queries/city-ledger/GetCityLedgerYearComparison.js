@@ -1,14 +1,8 @@
 import { createCityLedgerComparison } from '../../../domain/read-models/CityLedgerComparison.js';
 import { createEmptyCityLedgerYearLines } from '../../../domain/value-objects/CityLedgerYearLines.js';
 import { cityLedgerYearLinesFromJournalSummary } from '../../../domain/policies/CityLedgerLineMappingPolicy.js';
-import {
-  cityLedgerBalanceForYear,
-  financialStatusMessageForCityLedger,
-} from '../../../domain/policies/CityLedgerFinancialStatusPolicy.js';
+import { financialStatusMessageForCityLedger } from '../../../domain/policies/CityLedgerFinancialStatusPolicy.js';
 import { enrichCityLedgerYearLinesWithNetColumns } from '../../../domain/policies/CityLedgerNetColumnsPolicy.js';
-
-/** Rounding slack (currency units) between the treasury and the journal balance. */
-const BALANCE_DIVERGENCE_TOLERANCE = 1;
 
 /**
  * Query: César 3 admin livret — fiscal year comparison (N vs N-1).
@@ -26,77 +20,60 @@ export class GetCityLedgerYearComparison {
   }
 
   /**
-   * @param {{ hamletId?: string|null }} [options] — null = the whole city (every hamlet, treasury as balance);
-   *   a hamlet id = that hamlet's journal entries only, balance included (the treasury is city-wide).
+   * @param {{ hamletId?: string|null }} [options] — null = the whole city; a hamlet id = that hamlet's lines only.
+   *   The balance is the treasury snapshot of the same scope: one derivation of the journal, for every figure.
    * @returns {Promise<import('../../../domain/read-models/CityLedgerComparison.js').CityLedgerComparison>}
    */
   async execute({ hamletId = null } = {}) {
-    // The fiscal year is the game's: it comes from the latest entry of the whole journal, never from one hamlet's.
-    const entries = await this.journalRepository.getJournalEntries();
-    const currentTurn = entries.length > 0 ? entries[0].turn : 0;
-    const timeInfo = this.gameTimePort.getTimeInfo(currentTurn);
-    const currentYear = timeInfo?.year ?? 0;
+    // The current turn is the game's clock (the snapshot's turn), never the date of the last journal line.
+    const treasuryNow = await this.getTreasurySnapshot.execute({ hamletId });
+    const currentYear = this.gameTimePort.getTimeInfo(treasuryNow.turn).year;
 
     const yearlyData = await this.journalRepository.getYearlyFinancialSummary({ hamletId });
 
-    // Two channels give a balance: the treasury (city-wide) and the journal (source of truth, scopable by hamlet).
-    // A hamlet can only use the journal. For the whole city the treasury is shown, and any gap with the journal
-    // is reported to the caller (never hidden): the two must tell the same story.
-    let treasuryBalance;
-    let balanceDivergence = null;
-    if (hamletId != null) {
-      treasuryBalance = await this.journalRepository.getCurrentBalance({ hamletId });
-    } else {
-      treasuryBalance = (await this.getTreasurySnapshot.execute()).funds;
-      const journalBalance = Math.round(await this.journalRepository.getCurrentBalance());
-      const delta = Math.round(treasuryBalance) - journalBalance;
-      if (Math.abs(delta) > BALANCE_DIVERGENCE_TOLERANCE) {
-        balanceDivergence = { treasuryFunds: Math.round(treasuryBalance), journalBalance, delta };
-      }
-    }
+    // Two figures per year, kept apart: the treasury (cash at the end of the year, now for the current one) and the
+    // year's net flow (its result). The result is what the net columns carry from one year to the next.
+    const cashNow = treasuryNow.funds;
+    const treasuryAtEndOf = async (year) =>
+      (await this.getTreasurySnapshot.execute({ hamletId, untilYear: year })).funds;
 
     const journalYear = (year) =>
       yearlyData.find((y) => y.year === year) ??
       createEmptyCityLedgerYearLines(year);
+    // A year without any line has no flow: its net is zero, the same as an empty summary.
+    const netOf = (year) => yearlyData.find((y) => y.year === year)?.netFlow ?? 0;
 
     const thisYearSummary = journalYear(currentYear);
     const lastYearSummary = journalYear(currentYear - 1);
     const twoYearsAgoSummary = journalYear(currentYear - 2);
 
-    const lastYearBalance = cityLedgerBalanceForYear(
-      lastYearSummary,
-      treasuryBalance,
-      false
-    );
-    const twoYearsAgoBalance = cityLedgerBalanceForYear(
-      twoYearsAgoSummary,
-      treasuryBalance,
-      false
-    );
-
     const twoYearsAgo = enrichCityLedgerYearLinesWithNetColumns(
-      cityLedgerYearLinesFromJournalSummary(twoYearsAgoSummary, twoYearsAgoBalance),
+      cityLedgerYearLinesFromJournalSummary(
+        twoYearsAgoSummary,
+        await treasuryAtEndOf(currentYear - 2),
+        netOf(currentYear - 3)
+      ),
       0
     );
     const lastYear = enrichCityLedgerYearLinesWithNetColumns(
-      cityLedgerYearLinesFromJournalSummary(lastYearSummary, lastYearBalance),
-      twoYearsAgoBalance
+      cityLedgerYearLinesFromJournalSummary(
+        lastYearSummary,
+        await treasuryAtEndOf(currentYear - 1),
+        netOf(currentYear - 2)
+      ),
+      netOf(currentYear - 2)
     );
     const thisYear = enrichCityLedgerYearLinesWithNetColumns(
-      cityLedgerYearLinesFromJournalSummary(
-        thisYearSummary,
-        cityLedgerBalanceForYear(thisYearSummary, treasuryBalance, true)
-      ),
-      lastYearBalance
+      cityLedgerYearLinesFromJournalSummary(thisYearSummary, cashNow, netOf(currentYear - 1)),
+      netOf(currentYear - 1)
     );
 
     return createCityLedgerComparison({
       thisYear,
       lastYear,
       twoYearsAgo,
-      debt: treasuryBalance < 0 ? Math.abs(treasuryBalance) : 0,
+      debt: cashNow < 0 ? Math.abs(cashNow) : 0,
       message: financialStatusMessageForCityLedger(thisYear, lastYear),
-      balanceDivergence,
     });
   }
 }

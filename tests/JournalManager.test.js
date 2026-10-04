@@ -255,20 +255,14 @@ describe('JournalManager', () => {
     });
 
     describe('flushSessionToDexie', () => {
-        test('a money line is on disk as soon as it is recorded; balance stays in memory', async () => {
+        test('a money line is on disk as soon as it is recorded', async () => {
             await journalManager.addJournalEntry(1, 'citizen_tax', 100, 'Tax');
-            await journalManager.addJournalEntry(1, 'balance', 500, 'Solde', null, {
-                persist: false,
-            });
 
             const idbEntries = await testDb.journal.toArray();
             expect(idbEntries.map((entry) => entry.type)).toEqual(['citizen_tax']);
 
             const result = await journalManager.flushSessionToDexie();
             expect(result.flushed).toBe(0);
-
-            const afterFlush = await journalManager.getJournalEntries();
-            expect(afterFlush).toHaveLength(2);
         });
 
         test('a line that cannot be written throws and is not kept in memory', async () => {
@@ -283,23 +277,6 @@ describe('JournalManager', () => {
         });
     });
 
-    describe('addBalanceEntry', () => {
-        test('stores balance in session only without IndexedDB write', async () => {
-            await journalManager.addBalanceEntry(4, 750);
-            await journalManager.addBalanceEntry(4, 800);
-
-            const result = await journalManager.flushSessionToDexie();
-            expect(result.flushed).toBe(0);
-
-            const entries = await journalManager.getJournalEntriesForTurn(4);
-            expect(entries).toHaveLength(1);
-            expect(entries[0].type).toBe('balance');
-            expect(entries[0].amount).toBe(800);
-
-            const idbEntries = await testDb.journal.toArray();
-            expect(idbEntries).toHaveLength(0);
-        });
-    });
 
     describe('businessKey idempotence', () => {
         beforeEach(() => {
@@ -345,7 +322,7 @@ describe('JournalManager', () => {
             hamletId: 'h1',
         });
 
-        test('purges only whole stamped years older than latest - keepYears, never inside a year', async () => {
+        test('closes only whole stamped years older than latest - keepYears, never inside a year', async () => {
             await testDb.journal.bulkAdd([
                 row(10, 'year 1 (last month)', 1),
                 row(20, 'year 4 (last month)', 4),
@@ -355,9 +332,10 @@ describe('JournalManager', () => {
 
             const result = await journalManager.cleanupOldJournalYears(5);
 
-            expect(result).toEqual({ deleted: 2, cutoffYear: 5 });
-            const kept = (await testDb.journal.toArray()).map((e) => e.description).sort();
-            expect(kept).toEqual(['year 10', 'year 5 (first month)']);
+            expect(result).toEqual({ closed: 2, deleted: 2, cutoffYear: 5 });
+            const kept = await testDb.journal.toArray();
+            expect(kept.filter((e) => e.type !== 'year_closing').map((e) => e.description).sort()).toEqual(['year 10', 'year 5 (first month)']);
+            expect(kept.filter((e) => e.type === 'year_closing').map((e) => e.closing.year).sort()).toEqual([1, 4]);
         });
 
         test('does not depend on the calendar: a changed days-per-month cannot move the cutoff', async () => {
@@ -367,8 +345,10 @@ describe('JournalManager', () => {
 
             const result = await journalManager.cleanupOldJournalYears(5);
 
-            expect(result).toEqual({ deleted: 1, cutoffYear: 4 });
-            expect((await testDb.journal.toArray()).map((e) => e.description)).toEqual(['year 9']);
+            expect(result).toEqual({ closed: 1, deleted: 1, cutoffYear: 4 });
+            const kept = await testDb.journal.toArray();
+            expect(kept.filter((e) => e.type !== 'year_closing').map((e) => e.description)).toEqual(['year 9']);
+            expect(kept.filter((e) => e.type === 'year_closing').map((e) => e.closing.year)).toEqual([2]);
         });
 
         test('an entry without fiscal year stamp is an error, not silently kept or dropped', async () => {

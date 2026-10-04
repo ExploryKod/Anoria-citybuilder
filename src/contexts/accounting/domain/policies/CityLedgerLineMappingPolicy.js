@@ -9,11 +9,14 @@ import {
  *
  * @param {object|null|undefined} journalYearSummary
  * @param {number} balanceForYear
+ * @param {number} previousNetFlow the year before's net flow: it is carried into this year (a gain on the income
+ *   side, a loss on the expense side). It is not added to the totals: the year's totals are its own flows.
  * @returns {import('../value-objects/CityLedgerYearLines.js').CityLedgerYearLines}
  */
 export function cityLedgerYearLinesFromJournalSummary(
   journalYearSummary,
-  balanceForYear
+  balanceForYear,
+  previousNetFlow
 ) {
   if (
     !journalYearSummary ||
@@ -37,10 +40,7 @@ export function cityLedgerYearLinesFromJournalSummary(
     (e) => e.type && e.type.startsWith('export_')
   );
   const loanCapital = sumByType(incomeEntries, (e) => e.type === 'loan_capital');
-  const carryForwardIncome = sumByType(
-    incomeEntries,
-    (e) => e.type === 'carry_forward'
-  );
+  const carryForwardIncome = previousNetFlow >= 0 ? previousNetFlow : 0;
 
   const construction = sumByType(expenseEntries, (e) => e.type === 'construction');
   const maintenance = sumByType(expenseEntries, (e) => e.type === 'maintenance');
@@ -64,10 +64,7 @@ export function cityLedgerYearLinesFromJournalSummary(
     expenseEntries,
     (e) => e.type === 'loan_repayment'
   );
-  const carryForwardExpense = sumByType(
-    expenseEntries,
-    (e) => e.type === 'carry_forward'
-  );
+  const carryForwardExpense = previousNetFlow < 0 ? -previousNetFlow : 0;
 
   const totalIncome =
     initialFunds + incomeTax + payrollTax + exports + loanCapital;

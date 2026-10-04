@@ -62,7 +62,7 @@ export class RecordLedgerEntry {
     const resolvedBusinessKey =
       businessKey ?? buildLedgerBusinessKey(type, timeInfo, requireActiveHamletId());
 
-    const shouldPersist = persist ?? type !== 'balance';
+    const shouldPersist = persist ?? true;
 
     const appendResult = await this.journalWritePort.appendEntry(
       {

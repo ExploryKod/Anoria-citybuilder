@@ -9,26 +9,19 @@ import {
 export class ExportJournalJson {
   /**
    * @param {import('../../ports/JournalRepository.js').JournalRepository} journalRepository
-   * @param {import('../../ports/YearEndBalancePort.js').YearEndBalancePort} yearEndBalancePort
    */
-  constructor(journalRepository, yearEndBalancePort) {
+  constructor(journalRepository) {
     this.journalRepository = journalRepository;
-    this.yearEndBalancePort = yearEndBalancePort;
   }
 
   /** @returns {Promise<string>} */
   async execute() {
-    const [entries, yearlySummary, yearEndBalances] = await Promise.all([
+    const [entries, yearlySummary] = await Promise.all([
       this.journalRepository.getJournalEntries(),
       this.journalRepository.getYearlyFinancialSummary(),
-      this.yearEndBalancePort.listAllYearEndBalances(),
     ]);
 
-    const payload = buildJournalExportPayload({
-      entries,
-      yearlySummary,
-      yearEndBalances,
-    });
+    const payload = buildJournalExportPayload({ entries, yearlySummary });
 
     return serializeJournalExportPayload(payload);
   }

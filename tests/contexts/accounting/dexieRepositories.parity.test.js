@@ -98,18 +98,6 @@ describe('Accounting — Dexie persistence adapters (Phase 2a)', () => {
       expect(sessionYearly).toEqual(legacyYearly);
     });
 
-    test('getCurrentBalance matches JournalManager', async () => {
-      await journalManager.addJournalEntry(0, 'capital_funds', 200, 'Capital');
-      await journalManager.addJournalEntry(1, 'citizen_tax', 100, 'Taxes');
-      await journalManager.addJournalEntry(2, 'maintenance', 30, 'Maint');
-
-      const legacyBalance = await journalManager.getCurrentBalance();
-      const sessionBalance = await sessionJournalRepository.getCurrentBalance();
-
-      expect(sessionBalance).toBe(legacyBalance);
-    });
   });
 
-  describe('DexieTreasuryRepository', () => {
-  });
 });

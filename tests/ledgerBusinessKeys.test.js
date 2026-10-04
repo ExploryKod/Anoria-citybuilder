@@ -6,8 +6,6 @@ import {
   buildLoanCapitalBusinessKey,
   buildCapitalFundsBusinessKey,
   buildCommercialRouteBusinessKey,
-  buildCarryForwardBusinessKey,
-  buildCumulBusinessKey,
 } from '../src/contexts/accounting/domain/policies/LedgerBusinessKeys.js';
 import { describe, test, expect } from '@jest/globals';
 
@@ -66,11 +64,6 @@ describe('ledgerBusinessKeys', () => {
 
   test('buildCapitalFundsBusinessKey is fixed for turn 0', () => {
     expect(buildCapitalFundsBusinessKey()).toBe('capital_funds:0');
-  });
-
-  test('buildCarryForwardBusinessKey and buildCumulBusinessKey are yearly', () => {
-    expect(buildCarryForwardBusinessKey(2)).toBe('carry_forward:2');
-    expect(buildCumulBusinessKey('cumul_salary', 1)).toBe('cumul_salary:1');
   });
 
   test('inferBusinessKeyFromRow from month/year fields', () => {

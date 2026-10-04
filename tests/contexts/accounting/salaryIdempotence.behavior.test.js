@@ -3,6 +3,7 @@
  */
 
 import Dexie from 'dexie';
+import { useGameTurnForTests } from '../../../src/composition/sessionRuntime.js';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
 import { JournalManager } from '../../../src/composition/accountingSessionJournal.js';
@@ -88,7 +89,9 @@ describe('Accounting — salary idempotence (J6/J7)', () => {
 
   test('concurrent processBudget calls record salary once per civil month', async () => {
     const turn = 36;
-    await budgetManager.updateTurn(turn);
+    // The year before has to be in the journal: the carry forward of turn 36 reads year 2.
+    await journalManager.addJournalEntry(25, 'exceptional_expenses', 1, 'Année 2');
+    useGameTurnForTests(turn);
 
     await Promise.all([
       processTurnBudget({

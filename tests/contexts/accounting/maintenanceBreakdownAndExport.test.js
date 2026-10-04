@@ -37,7 +37,6 @@ describe('journal export — every stored field is kept', () => {
     const payload = buildJournalExportPayload({
       entries: [stored],
       yearlySummary: [],
-      yearEndBalances: [],
     });
     expect(payload.entries[0]).toEqual(stored);
   });

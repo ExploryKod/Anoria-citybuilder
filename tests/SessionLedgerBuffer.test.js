@@ -79,19 +79,6 @@ describe('SessionLedgerBuffer', () => {
     expect(buffer.getAllPublic()[0].id).toBe(99);
   });
 
-  test('updateBalanceForTurn mutates session balance without persisting', () => {
-    buffer.markHydratedEmpty();
-    buffer.append(
-      { turn: 3, date: '2026-01-03', type: 'balance', amount: 100, description: 'Solde' },
-      { persist: false }
-    );
-
-    buffer.updateBalanceForTurn(3, 250);
-
-    expect(buffer.findBalanceForTurn(3).amount).toBe(250);
-    expect(buffer.getPendingPersist()).toHaveLength(0);
-  });
-
   test('toDexieRow strips session metadata', () => {
     const record = buffer.append(
       { turn: 1, date: '2026-01-01', type: 'citizen_tax', amount: 10, description: 'T' },

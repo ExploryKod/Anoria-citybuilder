@@ -6,7 +6,6 @@ import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { GetGeneralLedger } from '../../../src/contexts/accounting/application/queries/journal/GetGeneralLedger.js';
 import { DexieJournalRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/DexieJournalRepository.js';
-import { DexieTreasuryRepository } from '../../../src/contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js';
 import { LegacyGameTimePort } from '../../../src/contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
 import {
   ledgerEntryMatchesTypeFilter,

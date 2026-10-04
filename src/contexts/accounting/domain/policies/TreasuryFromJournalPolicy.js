@@ -22,10 +22,11 @@ function productOf(type, prefix) {
 
 /**
  * @param {object} entry
- * @returns {'credit' | 'debit' | null} null for a line that moves no money.
+ * @returns {'credit' | 'debit' | 'closing' | null} null for a line that moves no money; 'closing' is a year's net.
  */
 export function moneyDirectionOf(entry) {
   const { type } = entry;
+  if (type === 'year_closing') return 'closing';
   if (isInformativeJournalType(type)) return null;
   if (
     type === 'capital_funds' || type === 'payroll_tax' || type === 'citizen_tax' ||
@@ -80,6 +81,11 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
   for (const entry of entries) {
     const direction = moneyDirectionOf(entry);
     if (!direction) continue;
+    if (direction === 'closing') {
+      // A closed year: only its net reaches the funds. Its sub-totals are views, not flows of the treasury.
+      figures.funds += entry.closing.net;
+      continue;
+    }
     const amount = entry.amount;
     const today = entry.turn === currentTurn;
     const { type, description = '' } = entry;

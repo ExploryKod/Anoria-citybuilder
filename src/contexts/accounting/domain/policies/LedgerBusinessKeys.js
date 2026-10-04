@@ -95,30 +95,8 @@ export function buildContributionBusinessKey(newsItemId) {
   return `contribution:news:${newsItemId}`;
 }
 
-/** @param {number} year */
-export function buildCarryForwardBusinessKey(year) {
-  if (typeof year !== 'number' || Number.isNaN(year)) {
-    return null;
-  }
-  return `carry_forward:${year}`;
-}
 
-/** @param {string} cumulType @param {number} year */
-export function buildCumulBusinessKey(cumulType, year) {
-  if (!cumulType || typeof year !== 'number' || Number.isNaN(year)) {
-    return null;
-  }
-  return `${cumulType}:${year}`;
-}
 
-const CUMUL_TYPES = new Set([
-  'cumul_maintenance',
-  'cumul_construction',
-  'cumul_salary',
-  'cumul_exceptional_expenses',
-  'cumul_loan_interest',
-  'cumul_loan_repayment',
-]);
 
 /**
  * @param {string} type
@@ -166,12 +144,6 @@ export function inferBusinessKeyFromRow(row) {
   }
   if (YEARLY_IDEMPOTENT_TYPES.has(row.type)) {
     return `${row.type}:${row.year}`;
-  }
-  if (row.type === 'carry_forward') {
-    return buildCarryForwardBusinessKey(row.year);
-  }
-  if (CUMUL_TYPES.has(row.type)) {
-    return buildCumulBusinessKey(row.type, row.year);
   }
   return null;
 }

@@ -20,7 +20,4 @@ export class JournalWritePort {
    * @param {number} _turn
    * @param {number} _amount
    */
-  async upsertBalanceSnapshot(_turn, _amount) {
-    throw new Error('JournalWritePort: port not implemented');
-  }
 }

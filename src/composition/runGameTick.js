@@ -58,7 +58,6 @@ export async function runGameTick({
   }
   city.update();
 
-  await getOrCreateAccountingContext().updateTreasuryTurn(time);
   if (shouldAbort()) {
     return;
   }

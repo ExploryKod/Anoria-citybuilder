@@ -5,7 +5,6 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { cityLedgerYearLinesFromJournalSummary } from '../../../src/contexts/accounting/domain/policies/CityLedgerLineMappingPolicy.js';
 import {
-  cityLedgerBalanceForYear,
   financialStatusMessageForCityLedger,
 } from '../../../src/contexts/accounting/domain/policies/CityLedgerFinancialStatusPolicy.js';
 import { createEmptyCityLedgerYearLines } from '../../../src/contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
@@ -29,9 +28,6 @@ class FakeJournalRepository {
     return this.yearlyData;
   }
 
-  async getCurrentBalance() {
-    return this.currentBalance;
-  }
 }
 
 class FakeTreasuryRepository {
@@ -123,13 +119,6 @@ describe('Accounting — city ledger (Phase 1)', () => {
   });
 
   describe('CityLedgerFinancialStatusPolicy', () => {
-    test('treasury balance for current year, netFlow for past years', () => {
-      const past = yearSummary(0, [{ type: 'citizen_tax', amount: 100 }], [], 60);
-
-      expect(cityLedgerBalanceForYear(past, 350, false)).toBe(60);
-      expect(cityLedgerBalanceForYear(past, 350, true)).toBe(350);
-    });
-
     test('financial status message from year line balances', () => {
       const thisYear = { ...createEmptyCityLedgerYearLines(1), balance: 100 };
       const lastYear = { ...createEmptyCityLedgerYearLines(0), balance: 50 };
@@ -197,18 +186,26 @@ describe('Accounting — city ledger (Phase 1)', () => {
             ),
           ];
         },
-        getCurrentBalance: async ({ hamletId = null } = {}) =>
-          (hamletId ? all.filter((e) => e.hamletId === hamletId) : all).reduce(
+      };
+    }
+
+    /** The treasury snapshot over the same lines: the balance of the scope it is asked for. */
+    function snapshotOfLines(all) {
+      return {
+        execute: async ({ hamletId = null } = {}) => ({
+          funds: (hamletId ? all.filter((e) => e.hamletId === hamletId) : all).reduce(
             (s, e) => s + (e.type === 'citizen_tax' ? e.amount : -e.amount),
             0
           ),
+        }),
       };
     }
 
     test('each hamlet shows only its own journal lines and balance; hamlets add up to the whole city', async () => {
+      const journal = journalOfTwoHamlets();
       const query = new GetCityLedgerYearComparison(
-        journalOfTwoHamlets(),
-        snapshotOf(new FakeTreasuryRepository(100)),
+        journal,
+        snapshotOfLines(await journal.getJournalEntries()),
         new FakeGameTimePort(0)
       );
 
@@ -227,29 +224,6 @@ describe('Accounting — city ledger (Phase 1)', () => {
         expect(h1.thisYear[field] + h2.thisYear[field]).toBe(city.thisYear[field]);
       }
       expect(h1.thisYear.balance + h2.thisYear.balance).toBe(city.thisYear.balance);
-    });
-  });
-
-  describe('GetCityLedgerYearComparison — single source of truth', () => {
-    test('reports a divergence between treasury and journal instead of hiding it', async () => {
-      const query = new GetCityLedgerYearComparison(
-        new FakeJournalRepository({ entries: [{ turn: 1 }], currentBalance: 480 }),
-        snapshotOf(new FakeTreasuryRepository(500)),
-        new FakeGameTimePort(0)
-      );
-      const result = await query.execute();
-      expect(result.balanceDivergence).toEqual({ treasuryFunds: 500, journalBalance: 480, delta: 20 });
-    });
-
-    test('no divergence when both agree; a failing treasury throws', async () => {
-      const journal = new FakeJournalRepository({ entries: [{ turn: 1 }], currentBalance: 500 });
-      const ok = new GetCityLedgerYearComparison(journal, snapshotOf(new FakeTreasuryRepository(500)), new FakeGameTimePort(0));
-      expect((await ok.execute()).balanceDivergence).toBeNull();
-
-      const broken = { getTreasuryBalance: async () => { throw new Error('treasury down'); } };
-      await expect(
-        new GetCityLedgerYearComparison(journal, snapshotOf(broken), new FakeGameTimePort(0)).execute()
-      ).rejects.toThrow('treasury down');
     });
   });
 
