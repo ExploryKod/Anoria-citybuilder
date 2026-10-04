@@ -24,7 +24,7 @@ import { RunHubSurplusCycle } from '../contexts/supply/application/commands/surp
 import { RunCityResourceCycle } from '../contexts/supply/application/commands/procurement/RunCityResourceCycle.js';
 import { RunMonthlyResourceCycle } from '../contexts/supply/application/workflows/RunMonthlyResourceCycle.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
-import { TRADE_CATALOG } from '../contexts/geography/domain/catalogs/TradeCatalog.js';
+import { TRADE_CATALOG } from '../shared/trade-catalog/TradeCatalog.js';
 import { getWorldCityById } from '../contexts/geography/domain/catalogs/WorldCityCatalog.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { syncRemovedBuilding } from './parcelsOps.js';
@@ -422,8 +422,8 @@ export function createSupplyContext({
       return supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, fields);
     },
 
-    async getAllSupplyTraceabilityTransactions(maxAge = null) {
-      return supplyTraceabilityRepositoryImpl.getAllTransactions(maxAge);
+    async getAllSupplyTraceabilityTransactions(maxAge = null, hamletId = null) {
+      return supplyTraceabilityRepositoryImpl.getAllTransactions(maxAge, hamletId);
     },
 
     async getSupplyTraceabilityTransactionsForMonth(turn, month = null) {

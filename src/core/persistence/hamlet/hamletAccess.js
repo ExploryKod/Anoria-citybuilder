@@ -55,9 +55,10 @@ export async function unlockHamlet(hamletId) {
   if (!hamletSlugOf(hamletId)) return;
 
   const row = await db.hamlets.get(hamletId);
-  const wasUnlocked = row ? Boolean(row.unlocked) : hamletId === getDefaultHamletId();
+  if (!row) throw new Error(`[hamletAccess] no hamlet row for ${hamletId}`);
+  const wasUnlocked = Boolean(row.unlocked);
 
-  if (row && !row.unlocked) {
+  if (!row.unlocked) {
     await db.hamlets.put({ ...row, unlocked: true });
   }
 

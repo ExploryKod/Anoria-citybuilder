@@ -94,6 +94,7 @@ function baseRuntimeDeps(overrides = {}) {
     employment: fakeEmployment(),
     gameplay: fakeGameplay(),
     intelligence: fakeIntelligence(),
+    trade: { checkAndOpenNewRelations: async () => {}, runMonthlyCityTradeCycle: async () => {} },
     getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
     toSupplySeason: () => 'summer',
     toSupplyMonth: () => 'july',
@@ -116,6 +117,8 @@ describe('createGameRuntime', () => {
       'history.employmentSummary',
       'gameplay.randomEvents',
       'intelligence.monthlyNews',
+      'commerce.checkNewRelations',
+      'commerce.monthlyCityTrade',
     ]);
     expect(runtime.world).toBeDefined();
   });

@@ -16,7 +16,7 @@ export const STATUS_PRESENTATION = Object.freeze({
 
 /**
  * The citizens of one social category: named after the category the catalog gives its house
- * (`Artisans-ouvriers` → "citoyens artisans-ouvriers"), so renaming it there renames it here. Only the
+ * (`Artisans` → "citoyens artisans"), so renaming it there renames it here. Only the
  * emoji is a look of this screen.
  * @param {string} group
  * @param {string} emoji

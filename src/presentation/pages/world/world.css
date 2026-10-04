@@ -48,25 +48,3 @@
   border-left-color: #28a745;
 }
 
-.world-map-enter-btn,
-.world-map-travel-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: auto;
-  max-width: min(100%, 9.5rem);
-  margin-top: 10px;
-  padding: 5px 10px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  line-height: 1.2;
-  border-width: 1px;
-  border-radius: var(--border-radius-small);
-  box-shadow: none;
-  white-space: nowrap;
-}
-
-.world-map-enter-btn.site-btn--primary:hover:not(:disabled),
-.world-map-travel-btn.site-btn--primary:hover:not(:disabled) {
-  box-shadow: none;
-}

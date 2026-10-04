@@ -1,26 +1,15 @@
 import { getOrCreateGameSessionContext } from './createGameSessionContext.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
 import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
-import { getSessionProcessLoanPayments } from './sessionRuntime.js';
+import { getSessionGameTime, getSessionProcessLoanPayments } from './sessionRuntime.js';
 import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 import { GetTreasuryBalance } from '../contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
 import { GetTreasurySnapshot } from '../contexts/accounting/application/queries/treasury/GetTreasurySnapshot.js';
 import { GetFinancialHealth } from '../contexts/accounting/application/queries/treasury/GetFinancialHealth.js';
 import { InitializeTreasury } from '../contexts/accounting/application/commands/treasury/InitializeTreasury.js';
 import { ForceReinitializeTreasury } from '../contexts/accounting/application/commands/treasury/ForceReinitializeTreasury.js';
-import { UpdateTreasuryTurn } from '../contexts/accounting/application/commands/treasury/UpdateTreasuryTurn.js';
-import { TreasuryLoanPortfolio } from '../contexts/accounting/application/services/TreasuryLoanPortfolio.js';
 import { GetCityLedgerYearComparison } from '../contexts/accounting/application/queries/city-ledger/GetCityLedgerYearComparison.js';
 import { GetGeneralLedger } from '../contexts/accounting/application/queries/journal/GetGeneralLedger.js';
-import { GetIncomeStatement } from '../contexts/accounting/application/queries/financial-statements/GetIncomeStatement.js';
-import { GetBalanceSheet } from '../contexts/accounting/application/queries/financial-statements/GetBalanceSheet.js';
-import {
-  GetFinancialStatementsAtTurn,
-  GetFinancialStatementsHistory,
-  GetIncomeStatementForFiscalYear,
-} from '../contexts/accounting/application/queries/financial-statements/GetFinancialStatementsAtTurn.js';
-import { BudgetTurnEnrichmentRepository } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/BudgetTurnEnrichmentRepository.js';
-import { SaveBudgetTurnEnrichment } from '../contexts/accounting/application/commands/budget-turn-enrichment/SaveBudgetTurnEnrichment.js';
 import { FlushJournalSession } from '../contexts/accounting/application/commands/journal/FlushJournalSession.js';
 import { ExportJournalJson } from '../contexts/accounting/application/queries/journal/ExportJournalJson.js';
 import { ExportJournalPdf } from '../contexts/accounting/application/queries/journal/ExportJournalPdf.js';
@@ -28,7 +17,6 @@ import { DexieJournalSessionPersistenceAdapter } from '../contexts/accounting/in
 import { CityAssetsValuationAdapter } from '../contexts/accounting/infrastructure/adapters/shared/CityAssetsValuationAdapter.js';
 import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
 import { RecordLedgerEntry } from '../contexts/accounting/application/commands/journal/RecordLedgerEntry.js';
-import { ApplyTreasuryMovement } from '../contexts/accounting/application/commands/treasury/ApplyTreasuryMovement.js';
 import { RecordMaintenanceExpense } from '../contexts/accounting/application/services/RecordMaintenanceExpense.js';
 import { RecordConstructionExpense } from '../contexts/accounting/application/services/RecordConstructionExpense.js';
 import { RecordSalaryExpense } from '../contexts/accounting/application/services/RecordSalaryExpense.js';
@@ -46,16 +34,8 @@ import { RecordExceptionalExpense } from '../contexts/accounting/application/ser
 import { RecordCommercialRouteExpense } from '../contexts/accounting/application/services/RecordCommercialRouteExpense.js';
 import { RecordContributionExpense } from '../contexts/accounting/application/services/RecordContributionExpense.js';
 import { RecordConstructionRefundIncome } from '../contexts/accounting/application/services/RecordConstructionRefundIncome.js';
-import { RecordBalanceSnapshot } from '../contexts/accounting/application/services/RecordBalanceSnapshot.js';
-import { RecordCarryForwardEntry } from '../contexts/accounting/application/services/RecordCarryForwardEntry.js';
-import { RecordYearCumulEntries } from '../contexts/accounting/application/services/RecordYearCumulEntries.js';
-import { SyncTurnInformativeEntries } from '../contexts/accounting/application/services/SyncTurnInformativeEntries.js';
-import { GetTreasuryJournalReconciliation } from '../contexts/accounting/application/queries/reconciliation/GetTreasuryJournalReconciliation.js';
-import { LegacyYearEndBalanceAdapter } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyYearEndBalanceAdapter.js';
 import { SessionJournalRepository } from '../contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalRepository.js';
 import { SessionJournalWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/session/SessionJournalWriteAdapter.js';
-import { DexieTreasuryRepository } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js';
-import { DexieTreasuryWriteAdapter } from '../contexts/accounting/infrastructure/adapters/persistence/dexie/DexieTreasuryWriteAdapter.js';
 import { DexieObjectiveHistoryRepository } from '../contexts/accounting/infrastructure/dexie/DexieObjectiveHistoryRepository.js';
 import { LegacyGameTimePort } from '../contexts/accounting/infrastructure/adapters/legacy/LegacyGameTimePort.js';
 import sessionJournalStore from '../contexts/accounting/infrastructure/session/SessionJournalStore.js';
@@ -65,12 +45,8 @@ import {
 import { CollectCitizenTaxes } from '../contexts/accounting/application/services/game/CollectCitizenTaxes.js';
 import { RecordBuildingMaintenanceForCity } from '../contexts/accounting/application/services/game/RecordBuildingMaintenanceForCity.js';
 import { GameTreasuryRecording } from '../contexts/accounting/application/services/game/GameTreasuryRecording.js';
-import { CleanupOldBudgetTurnSnapshots } from '../contexts/accounting/application/commands/budget-turn-enrichment/CleanupOldBudgetTurnSnapshots.js';
 import { ProcessTurnBudget } from '../contexts/accounting/application/services/ProcessTurnBudget.js';
 import {
-  buildBudgetSummary,
-  buildIncomeBreakdown,
-  buildExpenseBreakdown,
   canAffordFromBudget,
 } from '../contexts/accounting/application/queries/treasury/GameTreasuryProjections.js';
 import { listSceneBuildingTypesForMaintenance } from './sceneBuildingInventoryBridge.js';
@@ -93,9 +69,7 @@ async function getCityEmploymentSummary() {
  *
  * @param {object} [deps]
  * @param {import('../contexts/accounting/application/ports/JournalRepository.js').JournalRepository} [deps.journalRepository]
- * @param {import('../contexts/accounting/application/ports/TreasuryRepository.js').TreasuryRepository} [deps.treasuryRepository]
  * @param {import('../contexts/accounting/application/ports/JournalWritePort.js').JournalWritePort} [deps.journalWritePort]
- * @param {import('../contexts/accounting/application/ports/TreasuryWritePort.js').TreasuryWritePort} [deps.treasuryWritePort]
  * @param {import('../contexts/accounting/application/ports/GameTimePort.js').GameTimePort} [deps.gameTimePort]
  * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.sessionJournalStore]
  * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.journalManager]
@@ -121,7 +95,10 @@ export function createAccountingContext(deps = {}) {
 
   const gameTimePort =
     deps.gameTimePort ??
-    new LegacyGameTimePort({ getTimeInfo });
+    new LegacyGameTimePort({
+      getTimeInfo,
+      currentTurn: deps.currentTurn ?? getSessionGameTime,
+    });
 
   if (!sessionJournalStoreInstance.gameTimePort) {
     sessionJournalStoreInstance.setGameTimePort(gameTimePort);
@@ -131,87 +108,59 @@ export function createAccountingContext(deps = {}) {
     deps.journalWritePort ??
     new SessionJournalWriteAdapter(sessionJournalStoreInstance);
 
-  const treasuryRepository =
-    deps.treasuryRepository ??
-    new DexieTreasuryRepository({
-      db: dexieDb,
-      expectedInitialFunds: defaultInitialFunds,
-    });
-
-  const treasuryWritePort =
-    deps.treasuryWritePort ??
-    new DexieTreasuryWriteAdapter(treasuryRepository);
 
   const recordLedgerEntryCommand = new RecordLedgerEntry(
     journalWritePort,
     gameTimePort
   );
-  const applyTreasuryMovementCommand = new ApplyTreasuryMovement(
-    treasuryWritePort
-  );
   const recordMaintenanceExpense = new RecordMaintenanceExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordConstructionExpense = new RecordConstructionExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordSalaryExpense = new RecordSalaryExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordUnemploymentBenefitExpense = new RecordUnemploymentBenefitExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordPayrollTaxIncome = new RecordPayrollTaxIncome(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordCitizenTaxIncome = new RecordCitizenTaxIncome(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordLoanCapitalIncome = new RecordLoanCapitalIncome(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordLoanInterestExpense = new RecordLoanInterestExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordLoanRepaymentExpense = new RecordLoanRepaymentExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordInfoLoanInstallment = new RecordInfoLoanInstallment(
     recordLedgerEntryCommand
   );
   const recordCommerceImportExpense = new RecordCommerceImportExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordCommerceExportIncome = new RecordCommerceExportIncome(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordCapitalFundsIncome = new RecordCapitalFundsIncome(
     recordLedgerEntryCommand
   );
   const recordExceptionalExpense = new RecordExceptionalExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordCommercialRouteExpense = new RecordCommercialRouteExpense(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
   const recordConstructionRefundIncome = new RecordConstructionRefundIncome(
-    recordLedgerEntryCommand,
-    applyTreasuryMovementCommand
+    recordLedgerEntryCommand
   );
-  const recordBalanceSnapshot = new RecordBalanceSnapshot(journalWritePort);
 
   const journalRepository =
     deps.journalRepository ??
@@ -220,75 +169,41 @@ export function createAccountingContext(deps = {}) {
       gameTimePort,
     });
 
-  const yearEndBalancePort = deps.yearEndBalancePort ?? new LegacyYearEndBalanceAdapter();
-  const recordCarryForwardEntry = new RecordCarryForwardEntry(
-    recordLedgerEntryCommand,
-    gameTimePort,
-    journalRepository,
-    yearEndBalancePort
-  );
-  const recordYearCumulEntries = new RecordYearCumulEntries(
-    recordLedgerEntryCommand,
-    gameTimePort,
-    journalRepository
-  );
-  const syncTurnInformativeEntries = new SyncTurnInformativeEntries(
-    recordBalanceSnapshot,
-    recordYearCumulEntries,
-    recordCarryForwardEntry,
-    gameTimePort
-  );
 
   const initializeTreasury = new InitializeTreasury(
-    treasuryRepository,
-    journalRepository,
     recordCapitalFundsIncome,
     defaultInitialFunds
   );
   const getTreasurySnapshotQuery = new GetTreasurySnapshot(
-    treasuryRepository,
-    initializeTreasury
+    initializeTreasury,
+    journalRepository,
+    gameTimePort
   );
   const recordContributionExpense = new RecordContributionExpense(
     recordLedgerEntryCommand,
-    applyTreasuryMovementCommand,
     getTreasurySnapshotQuery
   );
   const forceReinitializeTreasury = new ForceReinitializeTreasury(
-    treasuryRepository,
-    journalRepository,
     initializeTreasury,
     {
+      // The memory buffer is the journal the treasury is derived from: clear it with the rows, never one without the other.
       clear: async () => {
-        await dexieDb.journal.clear();
+        await sessionJournalStoreInstance.clearAllEntries();
       },
-    }
-  );
-  const updateTreasuryTurn = new UpdateTreasuryTurn(
-    treasuryRepository,
-    getTreasurySnapshotQuery,
-    syncTurnInformativeEntries
-  );
-  const treasuryLoanPortfolio = new TreasuryLoanPortfolio(
-    treasuryRepository,
-    getTreasurySnapshotQuery
+    },
+    defaultInitialFunds
   );
   const getFinancialHealthQuery = new GetFinancialHealth(getTreasurySnapshotQuery);
 
-  const getTreasuryJournalReconciliationQuery = new GetTreasuryJournalReconciliation(
-    treasuryRepository,
-    journalRepository
-  );
-
-  const getTreasuryBalanceQuery = new GetTreasuryBalance(treasuryRepository);
+  const getTreasuryBalanceQuery = new GetTreasuryBalance(getTreasurySnapshotQuery);
   const getCityLedgerYearComparisonQuery = new GetCityLedgerYearComparison(
     journalRepository,
-    treasuryRepository,
+    getTreasurySnapshotQuery,
     gameTimePort
   );
   const getGeneralLedgerQuery = new GetGeneralLedger(
     journalRepository,
-    treasuryRepository,
+    getTreasurySnapshotQuery,
     gameTimePort
   );
   const cityAssetsValuationPort =
@@ -296,46 +211,11 @@ export function createAccountingContext(deps = {}) {
     ?? new CityAssetsValuationAdapter(
       deps.cityAssets ?? getOrCreateCityAssetsContext()
     );
-  const budgetTurnEnrichmentRepository =
-    deps.budgetTurnEnrichmentRepository ??
-    new BudgetTurnEnrichmentRepository(dexieDb);
-
-  const getIncomeStatementForFiscalYear = new GetIncomeStatementForFiscalYear(
-    journalRepository
-  );
-  const getFinancialStatementsAtTurn = new GetFinancialStatementsAtTurn(
-    journalRepository,
-    gameTimePort,
-    cityAssetsValuationPort,
-    budgetTurnEnrichmentRepository,
-    treasuryLoanPortfolio,
-    getTreasurySnapshotQuery
-  );
-  const getFinancialStatementsHistory = new GetFinancialStatementsHistory(
-    getFinancialStatementsAtTurn,
-    journalRepository,
-    getTreasurySnapshotQuery
-  );
-  const getIncomeStatementQuery = new GetIncomeStatement(
-    getIncomeStatementForFiscalYear
-  );
-  const getBalanceSheetQuery = new GetBalanceSheet(
-    getFinancialStatementsAtTurn,
-    getTreasurySnapshotQuery
-  );
-  const saveBudgetTurnEnrichment = new SaveBudgetTurnEnrichment(
-    budgetTurnEnrichmentRepository,
-    getTreasurySnapshotQuery,
-    getFinancialHealthQuery
-  );
   const journalSessionPersistencePort =
     deps.journalSessionPersistencePort ??
     new DexieJournalSessionPersistenceAdapter(dexieDb);
   const flushJournalSession = new FlushJournalSession(journalSessionPersistencePort);
-  const exportJournalJsonQuery = new ExportJournalJson(
-    journalRepository,
-    yearEndBalancePort
-  );
+  const exportJournalJsonQuery = new ExportJournalJson(journalRepository);
   const exportJournalPdfQuery = new ExportJournalPdf(journalRepository);
 
   const houseReadPort = {
@@ -374,33 +254,9 @@ export function createAccountingContext(deps = {}) {
       recordLoanInterestExpense: (params) => recordLoanInterestExpense.execute(params),
       recordLoanRepaymentExpense: (params) => recordLoanRepaymentExpense.execute(params),
       recordInfoLoanInstallment: (params) => recordInfoLoanInstallment.execute(params),
-      addLoanToPortfolio: (loanData) => treasuryLoanPortfolio.addLoanToPortfolio(loanData),
-      applyRepaymentToPortfolio: (loanId, amount) =>
-        treasuryLoanPortfolio.applyRepaymentToPortfolio(loanId, amount),
     },
   });
 
-  const cleanupOldBudgetTurnSnapshots = new CleanupOldBudgetTurnSnapshots({
-    budgetCleanupPort: {
-      listBudgetTurnRows: async () => {
-        const allBudgets = await dexieDb.budget.toArray();
-        return allBudgets
-          .filter((row) => row.name.startsWith('budget_turn_'))
-          .sort((a, b) => b.turn - a.turn);
-      },
-      deleteBudgetRow: (name) => dexieDb.budget.delete(name),
-    },
-    getCurrentTurn: async () => {
-      try {
-        const gameSession = getOrCreateGameSessionContext();
-        const turnData = await gameSession.getLatestGameItemByField('turn');
-        return turnData || 0;
-      } catch (error) {
-        console.warn('Could not get current turn:', error);
-        return 0;
-      }
-    },
-  });
 
   const getSalarySettings =
     deps.getSalarySettings ?? (() => fiscalSettingsRepository.getSalarySettings());
@@ -427,12 +283,8 @@ export function createAccountingContext(deps = {}) {
           await processLoanPayments();
         }
       }),
-    recalculateLoanTotals: () => treasuryLoanPortfolio.recalculateLoanTotals(),
-    saveBudgetTurnEnrichment: (turn, additionalData) =>
-      saveBudgetTurnEnrichment.execute({ turn, additionalData }),
-    cleanupOldBudgetTurnSnapshotsByAge: () => cleanupOldBudgetTurnSnapshots.execute(),
-    cleanupOldJournalEntries: (maxAge) =>
-      sessionJournalStoreInstance.cleanupOldJournalEntries(maxAge),
+    cleanupOldJournalYears: (keepYears) =>
+      sessionJournalStoreInstance.cleanupOldJournalYears(keepYears),
     flushJournalSessionToDexie: () => flushJournalSession.execute(),
     listBuildingTypesForMaintenance:
       deps.listBuildingTypesForMaintenance ?? listSceneBuildingTypesForMaintenance,
@@ -440,13 +292,10 @@ export function createAccountingContext(deps = {}) {
 
   return {
     journalRepository,
-    treasuryRepository,
     fiscalSettingsRepository,
     journalWritePort,
-    treasuryWritePort,
     gameTimePort,
     recordLedgerEntryCommand,
-    applyTreasuryMovementCommand,
     recordMaintenanceExpense,
     recordConstructionExpense,
     recordSalaryExpense,
@@ -464,26 +313,13 @@ export function createAccountingContext(deps = {}) {
     recordCommercialRouteExpense,
     recordContributionExpense,
     recordConstructionRefundIncome,
-    recordBalanceSnapshot,
-    recordCarryForwardEntry,
-    recordYearCumulEntries,
-    syncTurnInformativeEntries,
     getTreasuryBalanceQuery,
     getTreasurySnapshotQuery,
     getFinancialHealthQuery,
     initializeTreasury,
     forceReinitializeTreasury,
-    updateTreasuryTurn,
-    treasuryLoanPortfolio,
-    getTreasuryJournalReconciliationQuery,
     getCityLedgerYearComparisonQuery,
     getGeneralLedgerQuery,
-    getIncomeStatementQuery,
-    getBalanceSheetQuery,
-    getFinancialStatementsAtTurn,
-    getFinancialStatementsHistory,
-    budgetTurnEnrichmentRepository,
-    saveBudgetTurnEnrichment,
     flushJournalSession,
     exportJournalJsonQuery,
     exportJournalPdfQuery,
@@ -494,8 +330,9 @@ export function createAccountingContext(deps = {}) {
       return getTreasuryBalanceQuery.execute();
     },
 
-    async getTreasurySnapshot() {
-      return getTreasurySnapshotQuery.execute();
+    /** @param {{ hamletId?: string|null }} [options] */
+    async getTreasurySnapshot(options) {
+      return getTreasurySnapshotQuery.execute(options);
     },
 
     async getFinancialHealth() {
@@ -510,7 +347,7 @@ export function createAccountingContext(deps = {}) {
     /** Keeps the existing treasury and journal; creates them only when the save has none yet. */
     /** @param {number|null} [startingFunds] */
     async ensureTreasury(startingFunds = null) {
-      return initializeTreasury.execute(startingFunds, { clearExisting: false });
+      return initializeTreasury.execute(startingFunds);
     },
 
     /** @param {number|null} [startingFunds] */
@@ -518,36 +355,13 @@ export function createAccountingContext(deps = {}) {
       return forceReinitializeTreasury.execute(startingFunds);
     },
 
-    /** @param {number} turn */
-    async updateTreasuryTurn(turn) {
-      return updateTreasuryTurn.execute(turn);
-    },
 
     async getActiveLoans() {
-      return treasuryLoanPortfolio.getActiveLoans();
+      return (await getTreasurySnapshotQuery.execute()).loans;
     },
 
-    /** @param {object} loanData */
-    async addLoanToPortfolio(loanData) {
-      return treasuryLoanPortfolio.addLoanToPortfolio(loanData);
-    },
-
-    /** @param {string} loanId @param {number} repaymentAmount */
-    async applyRepaymentToPortfolio(loanId, repaymentAmount) {
-      return treasuryLoanPortfolio.applyRepaymentToPortfolio(loanId, repaymentAmount);
-    },
-
-    /** @param {string} loanId */
-    async advanceLoanInstallmentWithoutPayment(loanId) {
-      return treasuryLoanPortfolio.advanceInstallmentWithoutPayment(loanId);
-    },
-
-    async recalculateLoanTotals() {
-      return treasuryLoanPortfolio.recalculateLoanTotals();
-    },
-
-    async getCityLedgerYearComparison() {
-      return getCityLedgerYearComparisonQuery.execute();
+    async getCityLedgerYearComparison(options) {
+      return getCityLedgerYearComparisonQuery.execute(options);
     },
 
     async getGeneralLedger(filters) {
@@ -555,32 +369,17 @@ export function createAccountingContext(deps = {}) {
     },
 
     /** @param {{ fiscalYear?: number|null }} [options] */
-    async getIncomeStatement(options) {
-      return getIncomeStatementQuery.execute(options);
-    },
 
-    async getBalanceSheet() {
-      return getBalanceSheetQuery.execute();
-    },
 
     /** @param {number} atTurn */
-    async getFinancialStatementsAtTurn(atTurn) {
-      return getFinancialStatementsAtTurn.execute(atTurn);
-    },
 
     /** @param {{ everyNTurns?: number, turns?: number[]|null, filterTurn?: number|null }} [options] */
-    async getFinancialStatementsHistory(options) {
-      return getFinancialStatementsHistory.execute(options);
-    },
 
     /**
      * @param {object} params
      * @param {number} params.turn
      * @param {{ population?: number, buildingCounts?: object }} [params.additionalData]
      */
-    async saveBudgetTurnEnrichment(params) {
-      return saveBudgetTurnEnrichment.execute(params);
-    },
 
     async flushJournalSessionToDexie() {
       return flushJournalSession.execute();
@@ -594,19 +393,8 @@ export function createAccountingContext(deps = {}) {
       return exportJournalPdfQuery.execute();
     },
 
-    async getTreasuryJournalReconciliation(options) {
-      return getTreasuryJournalReconciliationQuery.execute(options);
-    },
 
-    /** @param {Parameters<RecordBalanceSnapshot['execute']>[0]} params */
-    async recordBalanceSnapshot(params) {
-      return recordBalanceSnapshot.execute(params);
-    },
 
-    /** @param {Parameters<SyncTurnInformativeEntries['execute']>[0]} params */
-    async syncTurnInformativeEntries(params) {
-      return syncTurnInformativeEntries.execute(params);
-    },
 
     /** @param {Parameters<RecordMaintenanceExpense['execute']>[0]} params */
     async recordMaintenanceExpense(params) {
@@ -776,20 +564,8 @@ export function createAccountingContext(deps = {}) {
       return gameTreasuryRecording.recordInfoLoanInstallment(params);
     },
 
-    async getBudgetSummary() {
-      const budget = await getTreasurySnapshotQuery.execute();
-      return buildBudgetSummary(budget);
-    },
 
-    async getIncomeBreakdown() {
-      const budget = await getTreasurySnapshotQuery.execute();
-      return buildIncomeBreakdown(budget);
-    },
 
-    async getExpenseBreakdown() {
-      const budget = await getTreasurySnapshotQuery.execute();
-      return buildExpenseBreakdown(budget);
-    },
 
     async canAfford(amount) {
       const budget = await getTreasurySnapshotQuery.execute();
@@ -806,13 +582,10 @@ export function createAccountingContext(deps = {}) {
       return fiscalSettingsRepository.setCustomsRate(rate);
     },
 
-    async cleanupOldBudgetTurnSnapshotsByAge() {
-      return cleanupOldBudgetTurnSnapshots.execute();
-    },
 
-    /** @param {number} [maxAge] */
-    async cleanupOldJournalEntries(maxAge = 60) {
-      return sessionJournalStoreInstance.cleanupOldJournalEntries(maxAge);
+    /** @param {number} keepYears */
+    async cleanupOldJournalYears(keepYears) {
+      return sessionJournalStoreInstance.cleanupOldJournalYears(keepYears);
     },
 
     /** @param {Parameters<ProcessTurnBudget['execute']>[0]} params */

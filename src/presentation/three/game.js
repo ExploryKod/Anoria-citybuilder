@@ -32,6 +32,7 @@ import { bootGameContexts } from '../../composition/bootGameContexts.js';
 import { bootTreasuryHud } from '../../composition/bootTreasuryHud.js';
 import { awaitBudgetReady } from '../../composition/budgetReadyGate.js';
 import { isFreshGameIntent } from '../pages/site/bootSession.js';
+import { performReset } from '../dom/boot/ResetGameFlow.js';
 import { resolveSelectedCitySize } from '../../composition/resolveCitySize.js';
 import { hydrateCityTilesFromRows } from '../../contexts/construction/application/services/HydrateCityTilesFromBuildings.js';
 import {
@@ -49,7 +50,6 @@ import { presentIncomingNewsEvents } from '../dom/intelligence/NewsEventModal.js
 import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
-import { notifyBudgetCleanupIfNeeded } from '../dom/compta/tresorerie/CleanupNotificationPresenter.js';
 import { computeBuildingReach, listPlacedBuildings } from '../../shared/building-catalog/buildingReach.js';
 import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
 import { BUILDING_ASSETS } from './assets/buildingAssets.js';
@@ -125,6 +125,7 @@ import { canPlaceBuildingAtTileWithSupplyRules } from '../../composition/canPlac
 import { isRoadBuildingType } from '../../composition/constructionCatalog.js';
 import { createPlacementRotationHud } from './placement/placementRotationHud.js';
 import { getSelectableMeshIds, resolveSelectedMeshId } from './meshs/resolveBuildingMesh.js';
+import { readGameClock, writeGameClock } from '../../core/persistence/game-clock/gameClock.js';
 
 /**
  * @param {object | null | undefined} object
@@ -323,8 +324,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
     gameUI,
     freshGame,
     // Returning to a save resumes its day counter; only a new game starts at day 0.
-    onBudget: (budget) => {
-      if (!freshGame) time = Number.isFinite(budget.turn) ? budget.turn : 0;
+    restoreClock: async () => {
+      time = freshGame ? 0 : await readGameClock();
+      if (freshGame) await writeGameClock(0);
     },
   });
 
@@ -407,6 +409,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   let hamletSceneGate = Promise.resolve();
 
   async function loadActiveHamletScene() {
+    loaderManager.setStep('Chargement du hameau…');
     if (!getActiveHamletId()) {
       await ensureHamletCatalog({ requestedId: parseGameHamletPath(window.location.pathname) });
     }
@@ -421,6 +424,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       link.href = `/world?hamlet=${getActiveHamletId()}`;
     }
     const rows = await constructionApi.listAllBuildingRows();
+    loaderManager.setStep('Lecture des bâtiments…');
     const mapLayoutId = getMissionMapLayoutId();
     let hydrateEditorLayout = false;
 
@@ -446,7 +450,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
       && !isCustomMapLayoutActive()
       && !hamlet?.natureSeeded
       && rows.length === 0;
+    loaderManager.setStep('Construction de la scène 3D…');
     await scene.initialize(city, { seedNature, hydrateEditorLayout });
+    if (import.meta.env.DEV) Object.assign(window, { __scene: scene, __city: city });
     if (seedNature) {
       await markHamletNatureSeeded(getActiveHamletId());
     }
@@ -486,6 +492,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       await loadActiveHamletScene();
       await refreshPlacementPresentation();
       await refreshEmploymentPresentationForCity();
+      window.history.replaceState(null, '', `/game/${hamletId}`);
       return true;
     } catch (error) {
       console.error('[Game] travelToHamlet failed:', error);
@@ -1367,7 +1374,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
         gameUI,
         refreshEmploymentPresentation: refreshEmploymentPresentationForCity,
         objectivesTracker,
-        notifyBudgetCleanup: notifyBudgetCleanupIfNeeded,
         onGameOver: () => {
           isOver = true;
         },
@@ -1398,32 +1404,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     },
 
     replay() {
-      isOver = false;
-      overOverlay.classList.remove('active');
-      overOverlay.setAttribute('inert', '');
-      overOverlay.setAttribute('aria-hidden', 'true');
-      document.getElementById('play-again-btn')?.setAttribute('tabindex', '-1');
-      resetCumulativeDeaths();
-
-      try {
-        localStorage.removeItem('journal_year_end_balances');
-        localStorage.removeItem('citizen_tax_amount');
-        localStorage.removeItem('work_salary_per_month');
-        localStorage.removeItem('work_salary_tax_rate');
-        localStorage.removeItem('show-performance-stats');
-        localStorage.removeItem('hasSeenCleanupNotification');
-        localStorage.removeItem('speed');
-        localStorage.removeItem('selectedCitySize');
-        localStorage.removeItem('multiplayer-enabled');
-        localStorage.removeItem('multiplayer-pseudo');
-        localStorage.removeItem('multiplayer-room-name');
-        localStorage.removeItem('activeLoans');
-        console.log('[Game] LocalStorage cleared for replay');
-      } catch (error) {
-        console.warn('[Game] Error clearing localStorage on replay:', error);
-      }
-
-      window.location.href = '/';
+      performReset();
     },
 
     setInfo(key, info) {
@@ -1491,7 +1472,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
       const days = getDaysPerTick();
       for (let day = 0; day < days; day += 1) {
         time += 1;
+        await writeGameClock(time);
         await game.update(time, { silent: day < days - 1 });
+        getSharedEventBus().publish({ type: 'game.turnAdvanced', turn: time });
         if (isPause || isOver) {
           break;
         }
@@ -1524,6 +1507,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   registerAppService('game', game);
   bindSessionRuntime({ game, city, scene });
+  if (import.meta.env.DEV) window.__game = game;
 
   return game;
 }

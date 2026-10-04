@@ -16,7 +16,6 @@ import {
   recordConstructionRefund,
 } from './constructionTreasuryBridge.js';
 import { awaitBudgetReady } from './budgetReadyGate.js';
-import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import { getOrCreateParcelsContext } from './createParcelsContext.js';
 import {
   registerSceneBuildingTypeListing,
@@ -35,7 +34,6 @@ import {
  * @param {Record<string, { price?: number, gridSize?: number }>} [deps.assetCatalog]
  * @param {(buildingType: string) => object} [deps.getDefaultEmployees]
  * @param {() => Promise<unknown>} [deps.awaitBudgetReady]
- * @param {() => Promise<{ funds?: number }>} [deps.getTreasurySnapshot]
  */
 export function createConstructionContext({
   buildingRepository,
@@ -46,7 +44,6 @@ export function createConstructionContext({
   assetCatalog,
   getDefaultEmployees: getDefaultEmployeesDep,
   awaitBudgetReady: awaitBudgetReadyDep,
-  getTreasurySnapshot: getTreasurySnapshotDep,
 } = {}) {
   const repository = buildingRepository ?? new DexieConstructionBuildingRepository();
   const sceneInventory = sceneBuildingInventory ?? new SceneBuildingInventoryAdapter();
@@ -64,9 +61,6 @@ export function createConstructionContext({
     reclaimStaleBuildingRecords: (params) => reclaimStaleBuildingRecords.execute(params),
     getDefaultEmployees: getDefaultEmployeesDep ?? getDefaultEmployees,
     awaitBudgetReady: awaitBudgetReadyDep ?? awaitBudgetReady,
-    getTreasurySnapshot:
-      getTreasurySnapshotDep
-      ?? (() => getOrCreateAccountingContext().getTreasurySnapshot()),
     assetCatalog: catalog,
     getAssetPrice: (buildingId, prices) => prices?.[buildingId]?.price,
     validatePlacement: canPlaceBuildingAtTileWithSupplyRules,

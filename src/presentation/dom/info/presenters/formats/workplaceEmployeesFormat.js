@@ -31,9 +31,10 @@ function staffLabel(buildingType, employment) {
  *
  * @param {object | null | undefined} buildingData
  * @param {object} employment
+ * @param {string | null} staffingLine why the post is filled or empty (see staffingReasonFormat.js)
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
-export function formatWorkplaceEmployeesPanel(buildingData, employment) {
+export function formatWorkplaceEmployeesPanel(buildingData, employment, staffingLine) {
   if (!buildingData?.employees) return null;
 
   const buildingType = buildingData.type || '';
@@ -59,6 +60,7 @@ export function formatWorkplaceEmployeesPanel(buildingData, employment) {
             ]
           : []),
         { label: staffLabel(buildingType, employment), value: `${workers}/${workerNeed}` },
+        ...(staffingLine ? [{ label: 'Pourvoi', value: staffingLine }] : []),
       ],
     }],
   };

@@ -1,4 +1,5 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
  * Dexie adapter — resource supply chain audit log (`supplyTraceability` table).
@@ -17,7 +18,7 @@ export class DexieSupplyTraceabilityRepository {
    * @param {object|null} to
    * @param {string} foodType
    * @param {number} quantity
-   * @param {number} [price=1]
+   * @param {number} price value of one unit (the catalog's baseValue for an exchange, 0 for a non-exchange row)
    * @param {Record<string, unknown>} [extra] Extra fields stored on the row (e.g. a `cause`).
    */
   async addTransaction(
@@ -29,11 +30,12 @@ export class DexieSupplyTraceabilityRepository {
     to,
     foodType,
     quantity,
-    price = 1,
+    price,
     extra = {}
   ) {
     try {
       await this.db.supplyTraceability.add({
+        hamletId: requireActiveHamletId(),
         turn,
         month,
         year,
@@ -56,7 +58,7 @@ export class DexieSupplyTraceabilityRepository {
     }
   }
 
-  async recordSourceToDistributor(turn, month, year, source, distributor, foodType, quantity, price = 1) {
+  async recordSourceToDistributor(turn, month, year, source, distributor, foodType, quantity, price) {
     await this.addTransaction(
       turn,
       month,
@@ -118,11 +120,11 @@ export class DexieSupplyTraceabilityRepository {
   }
 
   /** A producer's harvest bought by a hub on that turn — the only proof it really delivered. */
-  async recordSourceToHub(turn, month, year, source, hub, foodType, quantity) {
-    await this.addTransaction(turn, month, year, 'source_to_hub', source, hub, foodType, quantity, 0);
+  async recordSourceToHub(turn, month, year, source, hub, foodType, quantity, price) {
+    await this.addTransaction(turn, month, year, 'source_to_hub', source, hub, foodType, quantity, price);
   }
 
-  async recordDistributorToConsumer(turn, month, year, distributor, consumer, foodType, quantity, price = 1) {
+  async recordDistributorToConsumer(turn, month, year, distributor, consumer, foodType, quantity, price) {
     await this.addTransaction(
       turn,
       month,
@@ -163,9 +165,15 @@ export class DexieSupplyTraceabilityRepository {
     return query.sortBy('date');
   }
 
-  /** @param {number|null} [maxAge=null] age in days */
-  async getAllTransactions(maxAge = null) {
+  /**
+   * @param {number|null} [maxAge=null] age in days
+   * @param {string|null} [hamletId=null] only transactions of this hamlet; null = every hamlet
+   */
+  async getAllTransactions(maxAge = null, hamletId = null) {
     let transactions = await this.db.supplyTraceability.toArray();
+    if (hamletId) {
+      transactions = transactions.filter((transaction) => transaction.hamletId === hamletId);
+    }
 
     if (maxAge) {
       const cutoffDate = new Date();

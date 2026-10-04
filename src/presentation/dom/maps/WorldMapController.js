@@ -17,7 +17,6 @@ export class WorldMapController {
     this.view = null;
     this.selectedCityId = 'anoria';
     this.selectedHamletId = null;
-    this.clickHandler = null;
     this.messageTimeout = null;
     /** @type {ReturnType<typeof bootstrapWorldMap> | null} */
     this.phaserHandle = null;
@@ -43,7 +42,6 @@ export class WorldMapController {
     this.updateStats();
     await this.updatePanel();
     this.mountPhaser();
-    this.bindEvents();
   }
 
   getSelection() {
@@ -115,7 +113,7 @@ export class WorldMapController {
     const selection = this.getSelection();
     let tradeInfo = null;
     if (selection.cityId && selection.cityId !== 'anoria') {
-      tradeInfo = await this.mapApi.getCityTradeInfo(selection.cityId).catch(() => null);
+      tradeInfo = await this.mapApi.getCityTradeInfo(selection.cityId);
     }
     this.currentTradeInfo = tradeInfo;
     panel.innerHTML = renderWorldMapPanel(this.view, selection, tradeInfo);
@@ -128,26 +126,12 @@ export class WorldMapController {
     if (!exchangesBtn) return;
     exchangesBtn.addEventListener('click', () => {
       const cityName = panel.querySelector('.trade-map-panel-city')?.textContent ?? '';
-      this.exchangeModal.open({ cityName, sales: this.currentTradeInfo?.sales ?? [] });
+      this.exchangeModal.open({
+        cityName,
+        sales: this.currentTradeInfo?.sales ?? [],
+        entry: this.currentTradeInfo?.entry ?? null,
+      });
     });
-  }
-
-  bindEvents() {
-    this.unbindEvents();
-    this.clickHandler = async (event) => {
-      const travelBtn = event.target.closest('.world-map-travel-btn');
-      if (travelBtn) {
-        event.preventDefault();
-        const hamletId = travelBtn.dataset.hamletId;
-        if (!hamletId) return;
-        const result = await this.mapApi.travelToHamlet(hamletId);
-        if (result.success) {
-          window.location.href = `/game/${hamletId}`;
-        }
-      }
-    };
-
-    this.root.addEventListener('click', this.clickHandler);
   }
 
   showMessage(message, type = 'info') {
@@ -171,15 +155,8 @@ export class WorldMapController {
     }, 5000);
   }
 
-  unbindEvents() {
-    if (this.clickHandler) {
-      this.root.removeEventListener('click', this.clickHandler);
-      this.clickHandler = null;
-    }
-  }
 
   destroy() {
-    this.unbindEvents();
     this.exchangeModal.close();
     this.phaserHandle?.destroy();
     this.phaserHandle = null;

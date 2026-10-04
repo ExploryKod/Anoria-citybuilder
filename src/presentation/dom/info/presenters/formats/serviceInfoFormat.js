@@ -15,6 +15,7 @@
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
 import { buildingName } from '../../../shell/CatalogVocabulary.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
+import { staffingStatusLine } from './staffingReasonFormat.js';
 import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
 
 /**
@@ -81,5 +82,5 @@ export function formatServiceOverviewModel(vm) {
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
 export function formatServiceStaffModel(vm) {
-  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment);
+  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment, staffingStatusLine(vm));
 }

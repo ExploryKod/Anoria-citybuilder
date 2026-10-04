@@ -1,11 +1,4 @@
 import { buildWorldMapView } from '../contexts/geography/application/queries/buildWorldMapView.js';
-import {
-  canTravelToHamlet,
-} from '../core/persistence/hamlet/hamletAccess.js';
-import {
-  getActiveHamletId,
-  setActiveHamletId,
-} from '../core/persistence/hamlet/hamletSession.js';
 
 /**
  * @param {object} [deps]
@@ -25,21 +18,8 @@ export function createMapSessionApi(deps = {}) {
      * @param {string} cityId
      */
     async getCityTradeInfo(cityId) {
-      if (!trade) return null;
+      if (!trade) throw new Error('[mapSessionApi] getCityTradeInfo needs the trade context: none was given');
       return trade.getCityTradeInfo(cityId);
-    },
-
-    async travelToHamlet(hamletId) {
-      if (hamletId === getActiveHamletId()) {
-        return { success: true, alreadyActive: true };
-      }
-
-      if (!(await canTravelToHamlet(hamletId))) {
-        return { success: false, reason: 'locked' };
-      }
-
-      setActiveHamletId(hamletId);
-      return { success: true, alreadyActive: false };
     },
   });
 }

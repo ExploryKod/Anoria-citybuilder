@@ -3,6 +3,7 @@
  */
 
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
+import { staffingStatusLine } from './staffingReasonFormat.js';
 import { buildingName } from '../../../shell/CatalogVocabulary.js';
 
 export function formatHubStorageLayoutHeader() {
@@ -29,7 +30,7 @@ export function formatHubStorageStaffModel(vm) {
   const { hubKind, buildingRow, employment } = vm;
   if (!hubKind) return null;
 
-  return formatWorkplaceEmployeesPanel(buildingRow, employment);
+  return formatWorkplaceEmployeesPanel(buildingRow, employment, staffingStatusLine(vm));
 }
 
 /** @deprecated Prefer formatHubStorageStaffModel */

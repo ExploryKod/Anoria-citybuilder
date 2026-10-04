@@ -17,7 +17,9 @@ function updateField(fieldId, value, type = 'balance') {
 
   const numValue = Math.round(value || 0);
   const absValue = Math.abs(numValue);
-  element.textContent = absValue.toLocaleString('fr-FR');
+  // A signed figure shows its sign, so a red figure reads as a loss even without its colour.
+  const signed = type === 'balance' || type === 'netflow';
+  element.textContent = `${signed && numValue < 0 ? '−' : ''}${absValue.toLocaleString('fr-FR')}`;
 
   if (type === 'balance') {
     const isNegative = numValue < 0;

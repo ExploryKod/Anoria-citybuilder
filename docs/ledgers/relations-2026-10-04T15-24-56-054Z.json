@@ -1,0 +1,37 @@
+{
+  "exportDate": "2026-10-04T15:24:56.051Z",
+  "relations": [
+    {
+      "cityId": "briga",
+      "status": "active",
+      "satisfactionScore": 10,
+      "contractStartMonth": 1,
+      "contractEndMonth": null,
+      "lastOrderMonth": 23
+    },
+    {
+      "cityId": "maris",
+      "status": "active",
+      "satisfactionScore": 0,
+      "contractStartMonth": 1,
+      "contractEndMonth": null,
+      "lastOrderMonth": 23
+    },
+    {
+      "cityId": "olivea",
+      "status": "active",
+      "satisfactionScore": 6,
+      "contractStartMonth": 1,
+      "contractEndMonth": null,
+      "lastOrderMonth": 23
+    },
+    {
+      "cityId": "silvania",
+      "status": "active",
+      "satisfactionScore": 0,
+      "contractStartMonth": 1,
+      "contractEndMonth": null,
+      "lastOrderMonth": 22
+    }
+  ]
+}

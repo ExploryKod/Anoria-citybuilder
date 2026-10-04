@@ -8,6 +8,7 @@ import {
 } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+import { getResourceBaseValue } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 
 /**
  * The game turn a time context stands for: the time info the game builds carries the
@@ -68,7 +69,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        1
+        getResourceBaseValue(transfer.category)
       );
     }
   }
@@ -106,7 +107,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        1
+        getResourceBaseValue(transfer.category)
       );
     }
   }
@@ -146,7 +147,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        1
+        getResourceBaseValue(transfer.category)
       );
     }
   }
@@ -274,7 +275,8 @@ export class SupplyTraceability {
           { id: transfer.sourceId, x: sourceData.x, y: sourceData.y, type: sourceData.type },
           { id: hubResult.hubId, x: hubData.x, y: hubData.y, type: hubData.type },
           transfer.category,
-          transfer.amount
+          transfer.amount,
+          getResourceBaseValue(transfer.category)
         );
       }
     }
@@ -474,9 +476,9 @@ export class SupplyTraceability {
 
   /**
    * A completed export sale to a partner city by the merchants.
-   * @param {{ turn: number, monthIndex: number, year: number, cityId: string, good: string, dealGood: string, quantity: number, unitPrice: number, grossRevenue: number, netRevenue: number, customsCollected: number, customsRate: number }} params
+   * @param {{ turn: number, monthIndex: number, year: number, cityId: string, good: string, dealGood: string, quantity: number, unitPrice: number, saleRatio: number, grossRevenue: number, netRevenue: number, customsCollected: number, customsRate: number }} params
    */
-  async recordMerchantSale({ turn, monthIndex, year, cityId, good, dealGood, quantity, unitPrice, grossRevenue, netRevenue, customsCollected, customsRate }) {
+  async recordMerchantSale({ turn, monthIndex, year, cityId, good, dealGood, quantity, unitPrice, saleRatio, grossRevenue, netRevenue, customsCollected, customsRate }) {
     await this.traceabilityRepository.addTransaction(
       turn,
       monthIndex,
@@ -487,7 +489,7 @@ export class SupplyTraceability {
       dealGood,
       quantity,
       unitPrice,
-      { cityId, good, grossRevenue, netRevenue, customsCollected, customsRate }
+      { cityId, good, saleRatio, grossRevenue, netRevenue, customsCollected, customsRate }
     );
   }
 

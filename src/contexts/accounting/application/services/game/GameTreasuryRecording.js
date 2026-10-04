@@ -131,7 +131,6 @@ export class GameTreasuryRecording {
         budget,
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'zero_amount',
       };
     }
@@ -147,7 +146,6 @@ export class GameTreasuryRecording {
       budget: result.recorded ? await this.getTreasurySnapshot.execute() : budget,
       recorded: result.recorded,
       skipped: result.skipped,
-      treasuryApplied: result.treasuryApplied,
       reason: result.reason,
     };
   }
@@ -208,20 +206,13 @@ export class GameTreasuryRecording {
       return budget;
     }
 
-    const result = await this.commands.recordLoanCapitalIncome({
+    await this.commands.recordLoanCapitalIncome({
       turn: budget.turn,
       amount: roundedAmount,
       description,
       loanId: loanData?.id ?? null,
+      loan: loanData,
     });
-
-    if (!result.recorded) {
-      return this.getTreasurySnapshot.execute();
-    }
-
-    if (loanData) {
-      return this.commands.addLoanToPortfolio(loanData);
-    }
 
     return this.getTreasurySnapshot.execute();
   }
@@ -252,20 +243,12 @@ export class GameTreasuryRecording {
       return budget;
     }
 
-    const result = await this.commands.recordLoanRepaymentExpense({
+    await this.commands.recordLoanRepaymentExpense({
       turn: budget.turn,
       amount: roundedAmount,
       description,
       loanId,
     });
-
-    if (!result.recorded) {
-      return this.getTreasurySnapshot.execute();
-    }
-
-    if (loanId) {
-      return this.commands.applyRepaymentToPortfolio(loanId, amount);
-    }
 
     return this.getTreasurySnapshot.execute();
   }

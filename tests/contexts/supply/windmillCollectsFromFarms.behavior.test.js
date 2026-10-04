@@ -160,7 +160,7 @@ describe('Supply — windmill collection', () => {
 
     test('respects windmill capacity', async () => {
       repo = new InMemorySupplyBuildingRepository([
-        windmill(windmillId, { wheat: 0, food: 0 }, { maxStock: 4 }),
+        windmill(windmillId, { wheat: 0, food: 0 }, { maxStock: 4, hubStorageOrders: { wheat: { mode: 'accept', maxPercent: 100 } } }),
         farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
         farm(carrotFarmId, 'Farm-Carrot', { carrot: 5, food: 5 }),
       ]);

@@ -1,5 +1,6 @@
-import { getTradeCatalogEntry } from '../../domain/catalogs/TradeCatalog.js';
-import { getResourceBaseValue } from '../../../../contexts/supply/domain/catalogs/ResourceCategoryCatalog.js';
+import { getTradeCatalogEntry } from '../../../../shared/trade-catalog/TradeCatalog.js';
+import { getResourceBaseValue } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { reviewSatisfaction } from '../../domain/policies/TradeSatisfactionPolicy.js';
 
 /**
  * Monthly city-trade cycle — for each active relation whose order rhythm is
@@ -25,9 +26,11 @@ export class RunMonthlyCityTradeCycle {
    *   recordCommerceExportIncome: (params: { turn: number, amount: number, description: string, productId: string, partnerId: string }) => Promise<unknown>,
    *   recordMerchantSale: (params: object) => Promise<void>,
    *   getCustomsRate: () => number,
+   *   random: () => number, // a draw in [0, 1): the sale's position in its range
+   *   saleBias: (sale: { cityId: string, good: string, relation: object }) => number, // [-1, 1]: where the range is centred
    * }} deps
    */
-  constructor({ cityTradeRepository, supplyBuildingRepository, hubServing, takeHubStock, recordCommerceExportIncome, recordMerchantSale, getCustomsRate }) {
+  constructor({ cityTradeRepository, supplyBuildingRepository, hubServing, takeHubStock, recordCommerceExportIncome, recordMerchantSale, getCustomsRate, random, saleBias }) {
     this.repo = cityTradeRepository;
     this.supplyRepo = supplyBuildingRepository;
     this.hubServing = hubServing;
@@ -39,6 +42,24 @@ export class RunMonthlyCityTradeCycle {
     this.recordIncome = recordCommerceExportIncome;
     this.recordMerchantSale = recordMerchantSale;
     this.getCustomsRate = getCustomsRate;
+    this.random = random;
+    this.saleBias = saleBias;
+  }
+
+  /**
+   * The ratio a sale is made at, on the want's baseMultiplier. The draw picks a point in a range
+   * centred on `saleBias` (events, the relation, the merchant's experience move it: +1 favours the
+   * merchant, -1 hurts) and `drawWidth` wide; the ratio moves at most `spread` either side of the centre.
+   * A bias or a draw that is not a number throws: no stand-in ratio.
+   */
+  #drawSaleRatio(entry, want, relation) {
+    const bias = this.saleBias({ cityId: relation.cityId, good: want.good, relation });
+    if (!Number.isFinite(bias)) throw new Error(`[trade] saleBias returned ${bias} for ${want.good}, expected a number`);
+    const draw = this.random();
+    if (!(draw >= 0 && draw < 1)) throw new Error(`[trade] random() returned ${draw}, expected a number in [0, 1)`);
+    const centre = Math.max(-1, Math.min(1, bias));
+    const position = Math.max(-1, Math.min(1, centre + (2 * draw - 1) * entry.sale.drawWidth));
+    return want.baseMultiplier * (1 + entry.sale.spread * position);
   }
 
   /**
@@ -84,12 +105,13 @@ export class RunMonthlyCityTradeCycle {
         if (!dealGood) continue;
 
         const baseValue = getResourceBaseValue(want.good);
-        if (baseValue == null) continue;
 
         const qty = await this.#takeFromHubsForClient(hubs, dealGood, client, entry.trade.quantityPerOrder, turn);
         if (qty <= 0) continue;
 
-        const grossRevenue = qty * baseValue * relation.demandMultiplier;
+        const saleRatio = this.#drawSaleRatio(entry, want, relation);
+        const unitPrice = baseValue * saleRatio;
+        const grossRevenue = qty * unitPrice;
         const customsCollected = Math.round(grossRevenue * customsRate);
         const netRevenue = Math.round(grossRevenue * (1 - customsRate));
         totalRevenue += customsCollected;
@@ -110,7 +132,8 @@ export class RunMonthlyCityTradeCycle {
           good: want.good,
           dealGood,
           quantity: qty,
-          unitPrice: baseValue * relation.demandMultiplier,
+          unitPrice,
+          saleRatio,
           grossRevenue,
           netRevenue,
           customsCollected,
@@ -121,10 +144,7 @@ export class RunMonthlyCityTradeCycle {
       }
 
       // Satisfaction: +2 if sold something, -5 if order month but nothing available
-      relation.satisfactionScore = Math.max(0, Math.min(100,
-        relation.satisfactionScore + (anySold ? 2 : -5)
-      ));
-      relation.demandMultiplier = entry.wants[0]?.baseMultiplier ?? 1;
+      relation.satisfactionScore = reviewSatisfaction(relation.satisfactionScore, entry.satisfaction, { sold: anySold });
       relation.lastOrderMonth = orderMonth;
       await this.repo.saveRelation(relation);
     }

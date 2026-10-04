@@ -14,6 +14,7 @@ describe('buildingInfoGroupRegistry tabs', () => {
       BUILDING_INFO_TAB_IDS.stocks,
       BUILDING_INFO_TAB_IDS.activity,
       BUILDING_INFO_TAB_IDS.services,
+      BUILDING_INFO_TAB_IDS.clients,
       BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
     ]);
@@ -24,6 +25,7 @@ describe('buildingInfoGroupRegistry tabs', () => {
       BUILDING_INFO_TAB_IDS.foyer,
       BUILDING_INFO_TAB_IDS.staff,
       BUILDING_INFO_TAB_IDS.services,
+      BUILDING_INFO_TAB_IDS.clients,
       BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
     ]);
@@ -36,6 +38,7 @@ describe('buildingInfoGroupRegistry tabs', () => {
       BUILDING_INFO_TAB_IDS.trade,
       BUILDING_INFO_TAB_IDS.staff,
       BUILDING_INFO_TAB_IDS.services,
+      BUILDING_INFO_TAB_IDS.clients,
       BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
     ]);
@@ -49,6 +52,7 @@ describe('buildingInfoGroupRegistry tabs', () => {
       BUILDING_INFO_TAB_IDS.foyer,
       BUILDING_INFO_TAB_IDS.staff,
       BUILDING_INFO_TAB_IDS.services,
+      BUILDING_INFO_TAB_IDS.clients,
       BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
     ]);

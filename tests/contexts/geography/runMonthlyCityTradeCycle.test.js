@@ -50,6 +50,8 @@ describe('RunMonthlyCityTradeCycle — order rhythm survives a year rollover', (
       recordCommerceExportIncome: async () => {},
       recordMerchantSale: async () => {},
       getCustomsRate: () => 0.1,
+      random: () => 0.5,
+      saleBias: () => 0,
     });
     return { cycle, relation, savedRelations };
   }
@@ -166,6 +168,8 @@ describe('RunMonthlyCityTradeCycle — sells through HubServing (city is a real 
       recordCommerceExportIncome: async () => {},
       recordMerchantSale: async (sale) => recordedSales.push(sale),
       getCustomsRate: () => 0.1,
+      random: () => 0.5,
+      saleBias: () => 0,
     });
 
     await cycle.execute({ turn: 0, monthIndex: 0, monthNumber: 0, year: 0 });
@@ -208,6 +212,8 @@ describe('RunMonthlyCityTradeCycle — real calendar timeInfo (no turn field)', 
       recordCommerceExportIncome: async () => {},
       recordMerchantSale: async (s) => sales.push(s),
       getCustomsRate: () => 0.1,
+      random: () => 0.5,
+      saleBias: () => 0,
     });
 
     const timeInfo = TimeManager.getTimeInfo(4, 5);

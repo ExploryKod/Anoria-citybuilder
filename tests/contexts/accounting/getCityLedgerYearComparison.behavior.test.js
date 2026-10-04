@@ -5,7 +5,6 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { cityLedgerYearLinesFromJournalSummary } from '../../../src/contexts/accounting/domain/policies/CityLedgerLineMappingPolicy.js';
 import {
-  cityLedgerBalanceForYear,
   financialStatusMessageForCityLedger,
 } from '../../../src/contexts/accounting/domain/policies/CityLedgerFinancialStatusPolicy.js';
 import { createEmptyCityLedgerYearLines } from '../../../src/contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
@@ -29,9 +28,6 @@ class FakeJournalRepository {
     return this.yearlyData;
   }
 
-  async getCurrentBalance() {
-    return this.currentBalance;
-  }
 }
 
 class FakeTreasuryRepository {
@@ -42,6 +38,11 @@ class FakeTreasuryRepository {
   async getTreasuryBalance() {
     return this.funds;
   }
+}
+
+/** The readers take the derived treasury snapshot; a fake treasury is exposed through it. */
+function snapshotOf(treasury) {
+  return { execute: async () => ({ funds: await treasury.getTreasuryBalance() }) };
 }
 
 class FakeGameTimePort {
@@ -118,13 +119,6 @@ describe('Accounting — city ledger (Phase 1)', () => {
   });
 
   describe('CityLedgerFinancialStatusPolicy', () => {
-    test('treasury balance for current year, netFlow for past years', () => {
-      const past = yearSummary(0, [{ type: 'citizen_tax', amount: 100 }], [], 60);
-
-      expect(cityLedgerBalanceForYear(past, 350, false)).toBe(60);
-      expect(cityLedgerBalanceForYear(past, 350, true)).toBe(350);
-    });
-
     test('financial status message from year line balances', () => {
       const thisYear = { ...createEmptyCityLedgerYearLines(1), balance: 100 };
       const lastYear = { ...createEmptyCityLedgerYearLines(0), balance: 50 };
@@ -146,7 +140,7 @@ describe('Accounting — city ledger (Phase 1)', () => {
       const treasury = new FakeTreasuryRepository(500);
       const time = new FakeGameTimePort(2);
 
-      const query = new GetCityLedgerYearComparison(journal, treasury, time);
+      const query = new GetCityLedgerYearComparison(journal, snapshotOf(treasury), time);
       const result = await query.execute();
 
       expect(result.thisYear.balance).toBe(500);
@@ -158,7 +152,7 @@ describe('Accounting — city ledger (Phase 1)', () => {
       const journal = new FakeJournalRepository({ entries: [{ turn: 1 }] });
       const query = new GetCityLedgerYearComparison(
         journal,
-        new FakeTreasuryRepository(-50),
+        snapshotOf(new FakeTreasuryRepository(-50)),
         new FakeGameTimePort(0)
       );
       const result = await query.execute();
@@ -167,28 +161,76 @@ describe('Accounting — city ledger (Phase 1)', () => {
     });
   });
 
-  describe('GetTreasuryBalance', () => {
-    test('returns funds from treasury port', async () => {
-      const query = new GetTreasuryBalance(new FakeTreasuryRepository(1234));
-      expect(await query.execute()).toBe(1234);
+  describe('GetCityLedgerYearComparison — hamlet scope', () => {
+    const entry = (hamletId, type, amount) => ({ hamletId, type, amount, turn: 1 });
+
+    function journalOfTwoHamlets() {
+      const all = [
+        entry('h1', 'citizen_tax', 100),
+        entry('h1', 'construction', 30),
+        entry('h2', 'citizen_tax', 40),
+        entry('h2', 'maintenance', 10),
+      ];
+      return {
+        getJournalEntries: async () => all,
+        getYearlyFinancialSummary: async ({ hamletId = null } = {}) => {
+          const mine = hamletId ? all.filter((e) => e.hamletId === hamletId) : all;
+          const income = mine.filter((e) => e.type === 'citizen_tax');
+          const expenses = mine.filter((e) => e.type !== 'citizen_tax');
+          return [
+            yearSummary(
+              0,
+              income,
+              expenses,
+              income.reduce((s, e) => s + e.amount, 0) - expenses.reduce((s, e) => s + e.amount, 0)
+            ),
+          ];
+        },
+      };
+    }
+
+    /** The treasury snapshot over the same lines: the balance of the scope it is asked for. */
+    function snapshotOfLines(all) {
+      return {
+        execute: async ({ hamletId = null } = {}) => ({
+          funds: (hamletId ? all.filter((e) => e.hamletId === hamletId) : all).reduce(
+            (s, e) => s + (e.type === 'citizen_tax' ? e.amount : -e.amount),
+            0
+          ),
+        }),
+      };
+    }
+
+    test('each hamlet shows only its own journal lines and balance; hamlets add up to the whole city', async () => {
+      const journal = journalOfTwoHamlets();
+      const query = new GetCityLedgerYearComparison(
+        journal,
+        snapshotOfLines(await journal.getJournalEntries()),
+        new FakeGameTimePort(0)
+      );
+
+      const h1 = await query.execute({ hamletId: 'h1' });
+      const h2 = await query.execute({ hamletId: 'h2' });
+      const city = await query.execute();
+
+      expect(h1.thisYear.incomeTax).toBe(100);
+      expect(h1.thisYear.construction).toBe(30);
+      expect(h1.thisYear.balance).toBe(70);
+      expect(h2.thisYear.incomeTax).toBe(40);
+      expect(h2.thisYear.maintenance).toBe(10);
+      expect(h2.thisYear.balance).toBe(30);
+
+      for (const field of ['incomeTax', 'construction', 'maintenance', 'totalIncome', 'totalExpenses', 'netFlow']) {
+        expect(h1.thisYear[field] + h2.thisYear[field]).toBe(city.thisYear[field]);
+      }
+      expect(h1.thisYear.balance + h2.thisYear.balance).toBe(city.thisYear.balance);
     });
   });
 
-  describe('createAccountingContext with fakes', () => {
-    test('wires injected ports for tests', async () => {
-      const ctx = createAccountingContext({
-        journalRepository: new FakeJournalRepository({
-          entries: [{ turn: 1 }],
-          yearlyData: [yearSummary(0, [{ type: 'capital_funds', amount: 200 }], [])],
-        }),
-        treasuryRepository: new FakeTreasuryRepository(200),
-        gameTimePort: new FakeGameTimePort(0),
-      });
-
-      expect(await ctx.getTreasuryBalance()).toBe(200);
-      const comparison = await ctx.getCityLedgerYearComparison();
-      expect(comparison.thisYear.initialFunds).toBe(200);
-      expect(comparison.thisYear.balance).toBe(200);
+  describe('GetTreasuryBalance', () => {
+    test('returns funds from treasury port', async () => {
+      const query = new GetTreasuryBalance(snapshotOf(new FakeTreasuryRepository(1234)));
+      expect(await query.execute()).toBe(1234);
     });
   });
 });

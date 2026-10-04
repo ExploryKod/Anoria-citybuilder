@@ -6,6 +6,7 @@ import { getBuildingDefinition } from '../../../../../shared/building-catalog/in
 import { getResourceRoles, getResourceStockShape } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { buildingName, goodAmount, goodLabel, namesOfBuildings } from '../../../shell/CatalogVocabulary.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
+import { staffingStatusLine } from './staffingReasonFormat.js';
 import { describeActivitySupplyGap } from '../../../shell/BuildingNotifications.js';
 
 function productLabel(productType) {
@@ -155,7 +156,7 @@ export function formatFarmTradeModel(vm) {
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
 export function formatFarmStaffModel(vm) {
-  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment);
+  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment, staffingStatusLine(vm));
 }
 
 /** @deprecated Prefer thematic tab formatters */

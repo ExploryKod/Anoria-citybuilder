@@ -174,8 +174,6 @@
 }
 
 /* Réactiver les scrollbars pour les popups */
-.bilan-panel,
-.compte-de-resultat-panel,
 .loans-panel {
     scrollbar-width: thin;
 }
@@ -2242,8 +2240,6 @@ button.building-info-metric-card[aria-pressed="true"] {
     /* HUD layout overrides live in hud.css */
 
     /* Ajuster les modales pour mobile */
-    .bilan-panel,
-    .compte-de-resultat-panel,
     .loans-panel,
     .journal-panel,
     .tutorial-panel,

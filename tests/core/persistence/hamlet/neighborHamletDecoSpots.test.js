@@ -7,7 +7,7 @@ import {
   buildNeighborHamletDecoSpots,
   isNeighborDecoHamletId,
 } from '../../../../src/core/persistence/hamlet/neighborHamletDecoSpots.js';
-import { PROTO_HAMLETS } from '../../../../src/core/persistence/hamlet/hamletSession.js';
+import { HAMLET_CATALOG } from '../../../../src/shared/hamlet-catalog/hamletCatalog.js';
 
 describe('neighborHamletDecoSpots', () => {
   beforeEach(async () => {
@@ -17,7 +17,7 @@ describe('neighborHamletDecoSpots', () => {
   });
 
   test('defines one fixed spot per non-starting proto hamlet', () => {
-    const expectedIds = PROTO_HAMLETS.filter((h) => h.slug !== 'eraanurbs').map((h) => h.slug);
+    const expectedIds = HAMLET_CATALOG.filter((h) => h.slug !== 'eraanurbs').map((h) => h.slug);
     expect(NEIGHBOR_DECO_HAMLET_IDS).toEqual(expectedIds);
     expect(buildNeighborHamletDecoSpots(16)).toHaveLength(expectedIds.length);
   });

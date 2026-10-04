@@ -5,7 +5,7 @@ const MISSION_ID_KEY = 'anoria.missionId';
 const PROFILE_NAME_KEY = 'anoria.profileName';
 const LANDING_PATH = '/';
 
-/** @typedef {'new' | 'tutorial' | 'load' | 'mission' | 'editor'} BootMode */
+/** @typedef {'new' | 'tutorial' | 'load' | 'mission' | 'editor' | 'prefab'} BootMode */
 
 /** @param {BootMode} mode */
 export function setBootMode(mode) {
@@ -18,7 +18,7 @@ export function setBootMode(mode) {
  */
 export function getBootMode() {
   const raw = sessionStorage.getItem(BOOT_MODE_KEY);
-  if (raw === 'tutorial' || raw === 'load' || raw === 'mission' || raw === 'editor' || raw === 'new') {
+  if (raw === 'tutorial' || raw === 'load' || raw === 'mission' || raw === 'editor' || raw === 'prefab' || raw === 'new') {
     return raw;
   }
   if (raw !== null) {
@@ -34,7 +34,9 @@ export function getBootMode() {
 export function consumeBootMode() {
   const mode = getBootMode();
   sessionStorage.removeItem(BOOT_MODE_KEY);
-  freshGameIntent = mode !== null && mode !== 'load';
+  // A prefab starts a new game too (its database is emptied), but it keeps its own clock, calendar and journal:
+  // the treasury is not reset, so it is not a fresh game for the readers.
+  freshGameIntent = mode !== null && mode !== 'load' && mode !== 'prefab';
   return mode;
 }
 

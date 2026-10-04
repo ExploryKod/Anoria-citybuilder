@@ -17,7 +17,7 @@ export class RecordCapitalFundsIncome {
    * @param {number} params.turn
    * @param {number} params.amount
    * @param {string} params.description
-   * @returns {Promise<{ recorded: boolean, skipped: boolean, treasuryApplied: boolean, reason?: string }>}
+   * @returns {Promise<{ recorded: boolean, skipped: boolean, reason?: string }>}
    */
   async execute({ turn, amount, description }) {
     const roundedAmount = Math.round(amount);
@@ -26,7 +26,6 @@ export class RecordCapitalFundsIncome {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'zero_amount',
       };
     }
@@ -43,7 +42,6 @@ export class RecordCapitalFundsIncome {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: ledgerResult.reason,
       };
     }
@@ -51,7 +49,6 @@ export class RecordCapitalFundsIncome {
     return {
       recorded: true,
       skipped: false,
-      treasuryApplied: false,
     };
   }
 }

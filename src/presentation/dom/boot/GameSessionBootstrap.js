@@ -18,14 +18,20 @@ import {
   getSessionApi,
   getSessionPopupManager,
   getSessionService,
+  updateSessionDisplayedFunds,
 } from '../../../composition/sessionRuntime.js';
-import { waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
+import { clearGameTablesForNewGame, waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
+import { importPrefab } from '../../../core/persistence/prefab/importPrefab.js';
+import { getPrefab, START_PREFAB_ID } from '../../../shared/prefabs/prefabCatalog.js';
+import { ensureHamletCatalog, parseGameHamletPath } from '../../../core/persistence/hamlet/hamletSession.js';
+import { initGameCalendar } from '../../../config/events.js';
 import { createGame } from '../../three/game.js';
 import { DEFAULT_CITY_SIZE } from '../../../shared/gameplay/SimulationDefaults.js';
 import {
   clearMissionId,
   clearProfileName,
   consumeBootMode,
+  isFreshGameIntent,
   getMissionId,
   getProfileName,
   redirectToLandingUnlessEntryAllowed,
@@ -40,14 +46,6 @@ import {
   setGameMode,
 } from '../../../shared/gameplay/gameMode.js';
 import { applyEditorModeUi } from '../editor/applyEditorModeUi.js';
-import {
-  initBudgetStatesPopup,
-  refreshBudgetStatesModal,
-} from '../compta/compte-de-resultat/CompteDeResultatPanel.js';
-import {
-  initBilanPopup,
-  updateBudgetDisplay,
-} from '../compta/bilan/BilanPanel.js';
 import {
   initCarteVillePopup,
   generateCarteVille,
@@ -108,6 +106,17 @@ function resolveBootSelection(bootMode) {
     };
   }
 
+  if (bootMode === 'prefab') {
+    clearMissionMapLayout();
+    return {
+      size: getPrefab(START_PREFAB_ID).citySize,
+      multiplayer: false,
+      pseudo: null,
+      roomId: null,
+      action: 'prefab',
+    };
+  }
+
   if (bootMode === 'editor') {
     clearMissionMapLayout();
     return {
@@ -137,14 +146,43 @@ export async function bootstrapGameSession(assetManager) {
     return;
   }
 
+  // Shown until the game is ready: the database reset, the hamlets and the scene all happen under it.
+  loaderManager.show('Préparation de la partie…');
   await waitForDatabaseReady();
-
-  loaderManager.show();
 
   // Map mode: session is runtime SoT. Write only on explicit menu entry (consumeBootMode).
   const bootMode = consumeBootMode();
+  // Any menu choice but a reload of a saved game starts from an empty database.
+  const startsFromScratch = bootMode !== null && bootMode !== 'load';
   if (bootMode !== null) {
     setGameMode(gameModeFromBootMode(bootMode));
+  }
+  // A menu choice of a new game (new, tutorial, mission, editor, prefab) starts from an empty database.
+  if (startsFromScratch) {
+    loaderManager.setStep('Remise à zéro de la partie…');
+    await clearGameTablesForNewGame();
+  }
+  if (bootMode === 'prefab') {
+    loaderManager.setStep('Chargement de la sauvegarde…');
+    await importPrefab(getPrefab(START_PREFAB_ID));
+  }
+
+  // Before any context is built: the game's calendar is loaded here (frozen from the pre-game choice on a new game).
+  loaderManager.setStep('Chargement du calendrier…');
+  await initGameCalendar();
+  // The hamlets exist before any reader runs (the treasury and the panels file their rows under the active hamlet).
+  // A new game starts at the starting hamlet; a reload keeps the hamlet its URL names.
+  const isNewGame = isFreshGameIntent();
+  loaderManager.setStep('Création des hameaux…');
+  const activeHamletId = await ensureHamletCatalog({
+    requestedId: isNewGame ? null : parseGameHamletPath(window.location.pathname),
+  });
+  // The address names the active hamlet before the game exists: the game never starts on a bare /game.
+  if (parseGameHamletPath(window.location.pathname) !== activeHamletId) {
+    window.history.replaceState(null, '', `/game/${activeHamletId}`);
+  }
+  if (parseGameHamletPath(window.location.pathname) !== activeHamletId) {
+    throw new Error(`[bootstrap] the address does not name the active hamlet ${activeHamletId}: the game does not start`);
   }
 
   const selectionResult = resolveBootSelection(bootMode ?? 'new');
@@ -167,6 +205,7 @@ export async function bootstrapGameSession(assetManager) {
   const multiplayerEnabled = selectionResult.multiplayer || false;
   const playerPseudo = selectionResult.pseudo || null;
 
+  loaderManager.setStep('Mise en place de la ville…');
   const gameSession = getOrCreateGameSessionContext();
   const game = createGame(gameSession, assetManager, selectedCitySize);
 
@@ -229,14 +268,15 @@ export async function bootstrapGameSession(assetManager) {
     getCity: () => game.city ?? null,
   };
 
-  initBilanPopup(panelDeps);
-  initBudgetStatesPopup(panelDeps);
   initJournalPopup(panelDeps);
   initCarteVillePopup(panelDeps);
   initLoansPopup({
     accounting: sessionApi.accounting,
     popupManager,
-    updateBudgetDisplay,
+    updateTreasuryDisplay: async () => {
+      const { funds } = await sessionApi.accounting.getTreasurySnapshot();
+      updateSessionDisplayedFunds(funds);
+    },
   });
   initLoanPaymentSystem({
     bindProcessLoanPayments: (fn) => bindSessionRuntime({ processLoanPayments: fn }),
@@ -294,7 +334,5 @@ export async function bootstrapGameSession(assetManager) {
     pauseGame();
   }
 
-  registerAppFunction('updateBudgetDisplay', updateBudgetDisplay);
-  registerAppFunction('refreshBudgetStatesModal', refreshBudgetStatesModal);
   registerAppFunction('generateCarteVille', generateCarteVille);
 }

@@ -1,6 +1,7 @@
 import db from '../../src/core/persistence/dexie/db.js';
 import { canonicalizeHouseRecord } from '../../src/shared/building-identity/index.js';
 import { makeHouseRecord } from '../fixtures/buildingRecord.js';
+import { inTestHamlet } from './testHamlet.js';
 
 export async function clearBuildingsTable() {
   await db.open();
@@ -28,7 +29,7 @@ export async function seedBuilding(data) {
       };
     }
 
-    await db.houses.add(canonicalizeHouseRecord(record));
+    await db.houses.add(canonicalizeHouseRecord(inTestHamlet(record)));
     return { success: true, instanceId };
   } catch (err) {
     if (err.name === 'ConstraintError' || err.message?.includes('Key already exists')) {

@@ -4,6 +4,7 @@
  */
 
 
+import { expandYearClosings } from '../../../../domain/policies/YearClosingPolicy.js';
 import {
   isInformativeJournalType,
   isJournalEntryIncomeForMonthlySummary,
@@ -35,81 +36,22 @@ export function filterAndSortJournalEntries(entries, maxAge = null) {
 }
 
 /**
- * Balance classification (loan_capital NOT in initial income set — legacy behavior).
+ * Entries of one hamlet, or every entry when `hamletId` is null. Applied before any aggregation, so that
+ * classification rules that look at the other entries only ever see the hamlet's own journal.
  *
- * @param {object} entry
- * @param {Array<object>} allEntries
- * @param {(turn: number) => { year: number, monthIndex?: number }|null} getTimeInfo
+ * @param {Array<object>} entries
+ * @param {string|null} hamletId
  */
-export function isJournalEntryIncomeForBalance(entry, allEntries, getTimeInfo) {
-  let isIncome =
-    entry.type === 'citizen_tax' ||
-    entry.type === 'payroll_tax' ||
-    entry.type === 'capital_funds';
-
-  if (entry.type.startsWith('import_')) {
-    isIncome = false;
-  }
-
-  if (entry.type.startsWith('export_')) {
-    isIncome = true;
-  }
-
-  if (entry.type === 'loan_capital' || entry.type === 'construction_refund') {
-    isIncome = true;
-  }
-
-  if (entry.type === 'carry_forward') {
-    const signMatch = entry.description?.match(/\(([+-])\)/);
-    if (signMatch) {
-      isIncome = signMatch[1] === '+';
-    } else {
-      const timeInfo = getTimeInfo(entry.turn);
-      if (!timeInfo) {
-        isIncome = true;
-      } else {
-        const previousYear = timeInfo.year - 1;
-        if (previousYear >= 0) {
-          let prevYearIncome = 0;
-          let prevYearExpenses = 0;
-
-          allEntries.forEach((e) => {
-            if (e.type === 'carry_forward') return;
-
-            const eTimeInfo = getTimeInfo(e.turn);
-            if (!eTimeInfo) return;
-
-            if (eTimeInfo.year === previousYear) {
-              let isEIncome =
-                e.type === 'citizen_tax' ||
-                e.type === 'payroll_tax' ||
-                e.type === 'capital_funds' ||
-                e.type === 'loan_capital';
-              if (e.type.startsWith('import_')) {
-                isEIncome = false;
-              }
-              if (e.type.startsWith('export_')) {
-                isEIncome = true;
-              }
-              if (isEIncome) {
-                prevYearIncome += e.amount;
-              } else {
-                prevYearExpenses += e.amount;
-              }
-            }
-          });
-
-          const prevYearNetFlow = prevYearIncome - prevYearExpenses;
-          isIncome = prevYearNetFlow >= 0;
-        } else {
-          isIncome = true;
-        }
-      }
+export function filterJournalEntriesByHamlet(entries, hamletId) {
+  if (hamletId == null) return entries;
+  return entries.filter((entry) => {
+    if (typeof entry.hamletId !== 'string' || entry.hamletId.length === 0) {
+      throw new Error(`[journal] entry ${entry.id ?? entry.type} (turn ${entry.turn}) has no hamletId, cannot be scoped to a hamlet`);
     }
-  }
-
-  return isIncome;
+    return entry.hamletId === hamletId;
+  });
 }
+
 
 /**
  * @param {Array<object>} entries
@@ -117,6 +59,8 @@ export function isJournalEntryIncomeForBalance(entry, allEntries, getTimeInfo) {
  */
 export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
   const grouped = {};
+  // A closed year is shown from its per-type totals, so its sub-totals and its months stay as they were.
+  entries = expandYearClosings(entries);
 
   entries.forEach((entry) => {
     const timeInfo = getTimeInfo(entry.turn);
@@ -151,6 +95,7 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
       grouped[key].income.total += entry.amount;
       grouped[key].income.entries.push({
         id: entry.id,
+        hamletId: entry.hamletId,
         businessKey: entry.businessKey,
         partnerId: entry.partnerId,
         buildingInstanceId: entry.buildingInstanceId,
@@ -159,12 +104,12 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
         description: entry.description,
         date: entry.date,
         turn: entry.turn,
-        isCarryForwardIncome: entry.type === 'carry_forward' ? true : undefined,
       });
     } else {
       grouped[key].expenses.total += entry.amount;
       grouped[key].expenses.entries.push({
         id: entry.id,
+        hamletId: entry.hamletId,
         businessKey: entry.businessKey,
         partnerId: entry.partnerId,
         buildingInstanceId: entry.buildingInstanceId,
@@ -173,7 +118,6 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
         description: entry.description,
         date: entry.date,
         turn: entry.turn,
-        isCarryForwardIncome: entry.type === 'carry_forward' ? false : undefined,
       });
     }
 
@@ -223,26 +167,3 @@ export function buildYearlyFinancialSummary(monthlyData) {
   return Object.values(grouped).sort((a, b) => b.year - a.year);
 }
 
-/**
- * @param {Array<object>} entries
- * @param {(turn: number) => { year: number, monthIndex?: number }|null} getTimeInfo
- */
-export function computeJournalCurrentBalance(entries, getTimeInfo) {
-  let balance = 0;
-
-  entries.forEach((entry) => {
-    if (isInformativeJournalType(entry.type)) {
-      return;
-    }
-
-    const isIncome = isJournalEntryIncomeForBalance(entry, entries, getTimeInfo);
-
-    if (isIncome) {
-      balance += entry.amount;
-    } else {
-      balance -= entry.amount;
-    }
-  });
-
-  return balance;
-}

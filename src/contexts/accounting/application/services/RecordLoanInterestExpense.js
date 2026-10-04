@@ -7,11 +7,9 @@ import { buildLoanInstallmentBusinessKey } from '../../domain/policies/LedgerBus
 export class RecordLoanInterestExpense {
   /**
    * @param {import('../commands/journal/RecordLedgerEntry.js').RecordLedgerEntry} recordLedgerEntry
-   * @param {import('../commands/treasury/ApplyTreasuryMovement.js').ApplyTreasuryMovement} applyTreasuryMovement
    */
-  constructor(recordLedgerEntry, applyTreasuryMovement) {
+  constructor(recordLedgerEntry) {
     this.recordLedgerEntry = recordLedgerEntry;
-    this.applyTreasuryMovement = applyTreasuryMovement;
   }
 
   /**
@@ -20,7 +18,7 @@ export class RecordLoanInterestExpense {
    * @param {number} params.amount
    * @param {string} params.description
    * @param {string|null} [params.loanId]
-   * @returns {Promise<{ recorded: boolean, skipped: boolean, treasuryApplied: boolean, reason?: string }>}
+   * @returns {Promise<{ recorded: boolean, skipped: boolean, reason?: string }>}
    */
   async execute({ turn, amount, description, loanId = null }) {
     const roundedAmount = Math.round(amount);
@@ -29,7 +27,6 @@ export class RecordLoanInterestExpense {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'zero_amount',
       };
     }
@@ -40,26 +37,20 @@ export class RecordLoanInterestExpense {
       amount: roundedAmount,
       description,
       businessKey: buildLoanInstallmentBusinessKey('loan_interest', loanId, turn),
+      loanId,
     });
 
     if (!ledgerResult.recorded) {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: ledgerResult.reason,
       };
     }
 
-    await this.applyTreasuryMovement.execute({
-      category: 'loan_interest',
-      amount: roundedAmount,
-    });
-
     return {
       recorded: true,
       skipped: false,
-      treasuryApplied: true,
     };
   }
 }

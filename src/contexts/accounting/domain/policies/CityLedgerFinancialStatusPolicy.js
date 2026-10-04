@@ -28,28 +28,3 @@ export function financialStatusMessageForCityLedger(thisYear, lastYear) {
   });
 }
 
-/**
- * Domain policy — which balance applies to a fiscal year in the city-ledger.
- *
- * @param {object|null|undefined} journalYearSummary
- * @param {number} treasuryBalance — used only for the current fiscal year
- * @param {boolean} isCurrentYear
- */
-export function cityLedgerBalanceForYear(
-  journalYearSummary,
-  treasuryBalance,
-  isCurrentYear
-) {
-  if (isCurrentYear) {
-    return treasuryBalance;
-  }
-  if (
-    journalYearSummary &&
-    journalYearSummary.netFlow !== undefined &&
-    journalYearSummary.income &&
-    journalYearSummary.expenses
-  ) {
-    return journalYearSummary.netFlow;
-  }
-  return 0;
-}

@@ -27,6 +27,8 @@
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/loader-modal.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/mobile-controls.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/compact-toolbar.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/hamlet-switcher.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/supply-traceability-log.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/build-tool-hover-preview.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/editor-toolbar.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/placement-rotation-hud.css">
@@ -34,12 +36,7 @@
     <!-- OPTIMIZATION: Load non-critical modal CSS asynchronously using media="print" trick -->
     <!-- These modals are not visible on initial load, so they can load non-blocking -->
     <!-- This saves ~140ms of render blocking time -->
-    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/compte-de-resultat-panel.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/bilan-panel.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/loans-panel.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/bilan-panel-content.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/compte-de-resultat-panel-content.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/balance-sheet.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/city-map.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/journal.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/supply-traceability.css" media="print" onload="this.media='all'">
@@ -56,12 +53,7 @@
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/administrator-panel-flat.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/multiplayer.css" media="print" onload="this.media='all'">
     <noscript>
-        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/compte-de-resultat-panel.css">
-        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/bilan-panel.css">
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/loans-panel.css">
-        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/bilan-panel-content.css">
-        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/compte-de-resultat-panel-content.css">
-        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/balance-sheet.css">
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/city-map.css">
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/journal.css">
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/supply-traceability.css">
@@ -98,6 +90,7 @@
             <div class="game-loader__track">
                 <span class="game-loader__spinner" aria-hidden="true"></span>
             </div>
+            <p class="game-loader__step" id="game-loader-step"></p>
             <span class="sr-only">Chargement</span>
         </div>
 
@@ -398,6 +391,22 @@
                   </span>
                   <span class="sr-only">Carte du monde</span>
                 </a>
+              </div>
+              <div class="legend-btns hamlet-switcher-link">
+                <button
+                  type="button"
+                  id="hamlet-switcher-btn"
+                  class="toolbar-toggle-btn hamlet-switcher-link__btn"
+                  title="Changer de hameau"
+                  aria-label="Ouvrir la liste des hameaux"
+                  aria-haspopup="dialog"
+                  aria-expanded="false"
+                >
+                  <span class="toolbar-toggle-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22a1 1 0 0 1-1-1v-4a1 1 0 0 1 .445-.832l3-2a1 1 0 0 1 1.11 0l3 2A1 1 0 0 1 22 17v4a1 1 0 0 1-1 1z"/><path d="M18 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 .601.2"/><path d="M18 22v-3"/><circle cx="10" cy="10" r="3"/></svg>
+                  </span>
+                  <span class="sr-only">Changer de hameau</span>
+                </button>
               </div>
 
               <div class="legend-btns toolbar-mobile-toggle-btn">
@@ -1051,15 +1060,6 @@
                 </button>
             </header>
             <div class="gestion-rail__buttons" role="group" aria-label="Outils de gestion">
-                <button type="button" id="bilan-btn" data-toolid="bilan" class="gestion-rail__btn" title="Bilan comptable" aria-label="Ouvrir le bilan comptable">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-                        <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-                        <path d="M7 21h10"/><path d="M12 3v18"/>
-                        <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
-                    </svg>
-                    <span>Bilan</span>
-                </button>
                 <button type="button" id="loans-btn" data-toolid="loans" class="gestion-rail__btn" title="Prêts bancaires" aria-label="Ouvrir les prêts bancaires">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
@@ -1068,13 +1068,6 @@
                         <circle cx="16" cy="9" r="2.9"/><circle cx="6" cy="5" r="3"/>
                     </svg>
                     <span>Prêts</span>
-                </button>
-                <button type="button" id="compte-de-resultat-btn" data-toolid="compte-de-resultat" class="gestion-rail__btn" title="Compte de Résultat" aria-label="Ouvrir le compte de résultat">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M3 3v18h18"/>
-                        <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
-                    </svg>
-                    <span>Résultat</span>
                 </button>
                 <button type="button" id="journal-btn" data-toolid="journal" class="gestion-rail__btn" title="Journal" aria-label="Ouvrir le journal">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1389,459 +1382,6 @@
 </div>
 
     <!-- Budget Panel -->
-    <div id="bilan-panel" class="bilan-panel" role="dialog" aria-modal="true" aria-label="Bilan comptable" aria-hidden="true" tabindex="-1">
-        <div class="bilan-panel-wrapper">
-            <div class="bilan-panel-header">
-                <div class="bilan-health-indicator" id="bilan-health-indicator">
-                    <span class="health-status">Finance saine</span>
-                </div>
-                <div class="bilan-panel-title-container">
-                    <h2>💰 Bilan Comptable</h2>
-                </div>
-                <button type="button" class="bilan-panel-close-btn" title="Fermer" aria-label="Fermer le bilan comptable">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="m15 9-6 6"/>
-                        <path d="m9 9 6 6"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="bilan-panel-content">
-                <!-- Bilan Comptable -->
-                <div class="balance-sheet">
-                    <div class="balance-sheet-header">
-                        <div class="balance-sheet-header-content">
-                            <div class="balance-sheet-date" id="balance-sheet-date">Tour 0 (état du passif et de l'actif au 0e tour)</div>
-                            
-                            <!-- Filtres de visualisation -->
-                            <div class="balance-sheet-filters">
-                                <button class="balance-filter-btn" data-filter="all">
-                                    <span class="filter-text">Tout</span>
-                                </button>
-                                <button class="balance-filter-btn active" data-filter="actif">
-                                    <span class="filter-text">Actif</span>
-                                </button>
-                                <button class="balance-filter-btn" data-filter="passif">
-                                    <span class="filter-text">Passif</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- ACTIF -->
-                    <div class="balance-sheet-section balance-sheet-actif" data-section="actif">
-                        <h4 class="balance-sheet-title">ACTIF</h4>
-                        
-                        <!-- Actif Immobilisé -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">ACTIF IMMOBILISÉ</h5>
-                            
-                            <!-- Immobilisations Incorporelles -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💻 Immobilisations incorporelles</div>
-                                <div class="balance-sheet-value" id="intangible-assets-value">0€</div>
-                            </div>
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Frais d'établissement</div>
-                                    <div class="balance-sheet-value" id="establishment-costs">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Frais de recherche et développement</div>
-                                    <div class="balance-sheet-value" id="rd-costs">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Concessions, brevets, licences</div>
-                                    <div class="balance-sheet-value" id="patents-licenses">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Fonds commercial</div>
-                                    <div class="balance-sheet-value" id="goodwill">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Logiciels, droits</div>
-                                    <div class="balance-sheet-value" id="software-rights">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Autres</div>
-                                    <div class="balance-sheet-value" id="other-intangible">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Immobilisations incorporelles en cours</div>
-                                    <div class="balance-sheet-value" id="intangible-in-progress">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Avances et acomptes</div>
-                                    <div class="balance-sheet-value" id="intangible-advances">0€</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Immobilisations Corporelles Brutes -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">🏗️ Immobilisations corporelles brutes</div>
-                                <div class="balance-sheet-value" id="total-buildings-gross-value">0€</div>
-                            </div>
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Terrains</div>
-                                    <div class="balance-sheet-value" id="land-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Constructions</div>
-                                    <div class="balance-sheet-value" id="constructions-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Installations techniques, matériels</div>
-                                    <div class="balance-sheet-value" id="technical-equipment">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Autres</div>
-                                    <div class="balance-sheet-value" id="other-tangible">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Immobilisations corporelles en cours</div>
-                                    <div class="balance-sheet-value" id="tangible-in-progress">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Avances et acomptes</div>
-                                    <div class="balance-sheet-value" id="tangible-advances">0€</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Amortissements -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📉 Amortissements</div>
-                                <div class="balance-sheet-value" id="total-depreciation-value">0€</div>
-                            </div>
-                            
-                            <!-- Immobilisations Corporelles Nettes -->
-                            <div class="balance-sheet-item balance-sheet-net">
-                                <div class="balance-sheet-label">🏗️ Immobilisations corporelles nettes</div>
-                                <div class="balance-sheet-value" id="total-buildings-net-value">0€</div>
-                            </div>
-                            
-                            <!-- Détail des Immobilisations Corporelles -->
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">🏠 Logements</div>
-                                    <div class="balance-sheet-value" id="total-houses-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Maisons populaires (rouge)</div>
-                                    <div class="balance-sheet-value" id="red-houses-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Maisons moyennes (bleu)</div>
-                                    <div class="balance-sheet-value" id="blue-houses-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Maisons aisées (violet)</div>
-                                    <div class="balance-sheet-value" id="purple-houses-value">0€</div>
-                                </div>
-                            </div>
-                            
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">🌾 Exploitations agricoles</div>
-                                    <div class="balance-sheet-value" id="total-farms-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Champs de choux</div>
-                                    <div class="balance-sheet-value" id="cabbage-fields-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Champs de blé</div>
-                                    <div class="balance-sheet-value" id="wheat-fields-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Champs de carottes</div>
-                                    <div class="balance-sheet-value" id="carrot-fields-value">0€</div>
-                                </div>
-                            </div>
-                            
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">🏪 Commerces</div>
-                                    <div class="balance-sheet-value" id="total-markets-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Marchés de nourriture</div>
-                                    <div class="balance-sheet-value" id="food-markets-value">0€</div>
-                                </div>
-                            </div>
-                            
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">🛣️ Infrastructures</div>
-                                    <div class="balance-sheet-value" id="total-roads-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Réseau routier</div>
-                                    <div class="balance-sheet-value" id="roads-value">0€</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Immobilisations Financières -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📈 Immobilisations financières</div>
-                                <div class="balance-sheet-value" id="financial-assets-value">0€</div>
-                            </div>
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Participations</div>
-                                    <div class="balance-sheet-value" id="equity-interests">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Créances rattachées à des participations</div>
-                                    <div class="balance-sheet-value" id="participation-receivables">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Titres immobilisés de l'activité de portefeuille</div>
-                                    <div class="balance-sheet-value" id="portfolio-securities">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Autres titres immobilisés</div>
-                                    <div class="balance-sheet-value" id="other-securities">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Prêts</div>
-                                    <div class="balance-sheet-value" id="loans-granted">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Autres</div>
-                                    <div class="balance-sheet-value" id="other-financial">0€</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Actif Circulant -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">ACTIF CIRCULANT</h5>
-                            
-                            <!-- Stocks et en-cours -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📦 Stocks et en-cours</div>
-                                <div class="balance-sheet-value" id="stocks-work-in-progress">0€</div>
-                            </div>
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Matières premières et autres approvisionnements</div>
-                                    <div class="balance-sheet-value" id="raw-materials">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">En cours de production [biens et services]</div>
-                                    <div class="balance-sheet-value" id="work-in-progress">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Produits intermédiaires et finis</div>
-                                    <div class="balance-sheet-value" id="finished-products">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Marchandises</div>
-                                    <div class="balance-sheet-value" id="merchandise">0€</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Avances et acomptes versés sur commandes -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💰 Avances et acomptes versés sur commandes</div>
-                                <div class="balance-sheet-value" id="advances-on-orders">0€</div>
-                            </div>
-                            
-                            <!-- Créances -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📋 Créances</div>
-                                <div class="balance-sheet-value" id="total-receivables">0€</div>
-                            </div>
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Créances clients et comptes rattachés</div>
-                                    <div class="balance-sheet-value" id="client-receivables">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Autres</div>
-                                    <div class="balance-sheet-value" id="other-receivables">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Capital souscrit - appelé, non versé</div>
-                                    <div class="balance-sheet-value" id="called-unpaid-capital">0€</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Valeurs mobilières de placement -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📈 Valeurs mobilières de placement</div>
-                                <div class="balance-sheet-value" id="marketable-securities">0€</div>
-                            </div>
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Actions propres</div>
-                                    <div class="balance-sheet-value" id="own-shares">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Autres titres</div>
-                                    <div class="balance-sheet-value" id="other-securities">0€</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Instruments de trésorerie -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💳 Instruments de trésorerie</div>
-                                <div class="balance-sheet-value" id="treasury-instruments">0€</div>
-                            </div>
-                            
-                            <!-- Disponibilités -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💰 Disponibilités</div>
-                                <div class="balance-sheet-value" id="cash-value">0€</div>
-                            </div>
-                            
-                            <!-- Charges constatées d'avance -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📅 Charges constatées d'avance</div>
-                                <div class="balance-sheet-value" id="prepaid-expenses">0€</div>
-                            </div>
-                            
-                            <!-- Total Actif Circulant -->
-                            <div class="balance-sheet-item balance-sheet-subtotal">
-                                <div class="balance-sheet-label">TOTAL ACTIF CIRCULANT</div>
-                                <div class="balance-sheet-value" id="total-current-assets">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Charges à répartir sur plusieurs exercices -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">CHARGES À RÉPARTIR SUR PLUSIEURS EXERCICES</h5>
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">Charges à répartir</div>
-                                <div class="balance-sheet-value" id="deferred-charges">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Primes de remboursement des emprunts -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">PRIMES DE REMBOURSEMENT DES EMPRUNTS</h5>
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">🏦 Primes de remboursement</div>
-                                <div class="balance-sheet-value" id="loan-redemption-premiums">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Écarts de conversion Actif -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">ÉCARTS DE CONVERSION ACTIF</h5>
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💱 Écarts de conversion</div>
-                                <div class="balance-sheet-value" id="conversion-differences">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Total Actif -->
-                        <div class="balance-sheet-total balance-sheet-total-actif" data-section="totaux">
-                            <div class="balance-sheet-label">TOTAL ACTIF</div>
-                            <div class="balance-sheet-value" id="total-assets">0€</div>
-                        </div>
-                    </div>
-                    
-                    <!-- PASSIF -->
-                    <div class="balance-sheet-section balance-sheet-passif" data-section="passif">
-                        <h4 class="balance-sheet-title">PASSIF</h4>
-                        
-                        <!-- Capitaux Propres -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">CAPITAUX PROPRES</h5>
-                            
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">🏛️ Capital social</div>
-                                <div class="balance-sheet-value" id="share-capital">0€</div>
-                            </div>
-                            
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📈 Réserves légales</div>
-                                <div class="balance-sheet-value" id="legal-reserves">0€</div>
-                            </div>
-                            
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">Report à nouveau</div>
-                                <div class="balance-sheet-value" id="carried-forward">0€</div>
-                            </div>
-                            
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💰 Résultat de l'exercice</div>
-                                <div class="balance-sheet-value" id="net-result">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Provisions pour Risques et Charges -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">PROVISIONS POUR RISQUES ET CHARGES</h5>
-                            
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">⚠️ Provisions pour risques</div>
-                                <div class="balance-sheet-value" id="risk-provisions">0€</div>
-                            </div>
-                            
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">🔧 Provisions pour charges</div>
-                                <div class="balance-sheet-value" id="charge-provisions">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Dettes -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">DETTES</h5>
-                            
-                            <!-- Dettes Financières -->
-                            <div class="balance-sheet-subitem">
-                                <div class="balance-sheet-label">🏦 Dettes financières</div>
-                                <div class="balance-sheet-value" id="financial-debts-total">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">Emprunts bancaires</div>
-                                <div class="balance-sheet-value" id="bank-loans-debt">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">Emprunts commerciaux</div>
-                                <div class="balance-sheet-value" id="commercial-loans-debt">0€</div>
-                            </div>
-                            
-                            <!-- Dettes d'Exploitation -->
-                            <div class="balance-sheet-subitem">
-                                <div class="balance-sheet-label">🏪 Dettes d'exploitation</div>
-                                <div class="balance-sheet-value" id="operating-debts-total">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">Dettes fournisseurs</div>
-                                <div class="balance-sheet-value" id="supplier-debts">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">Dettes fiscales et sociales</div>
-                                <div class="balance-sheet-value" id="social-fiscal-debts">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">Charges à payer</div>
-                                <div class="balance-sheet-value" id="accrued-expenses">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">  - Intérêts des dettes</div>
-                                <div class="balance-sheet-value" id="loan-interest-expenses">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">  - Maintenance bâtiments</div>
-                                <div class="balance-sheet-value" id="building-maintenance-expenses">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Total Passif -->
-                        <div class="balance-sheet-total balance-sheet-total-passif" data-section="totaux">
-                            <div class="balance-sheet-label">TOTAL PASSIF</div>
-                            <div class="balance-sheet-value" id="total-liabilities">0€</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Loans Panel -->
     <div id="loans-panel" class="loans-panel" role="dialog" aria-modal="true" aria-label="Prêts bancaires" aria-hidden="true" tabindex="-1">
@@ -2152,6 +1692,10 @@
                     </div>
                     <div class="administrator-section-content">
                         <div class="finances-board" id="finances-board">
+                            <div class="finances-hamlet-filter-row">
+                                <label class="finances-hamlet-filter-label" for="finances-hamlet-filter">Budget de :</label>
+                                <select id="finances-hamlet-filter" class="finances-hamlet-filter" aria-label="Choisir le hameau dont afficher le budget"></select>
+                            </div>
 
                             <div class="finances-debt-info" id="finances-debt-info">
                                 <p class="finances-debt-text">
@@ -2441,7 +1985,7 @@
                                     </tr>
 
                                     <!-- Flux net -->
-                                    <tr class="finances-row-netflow">
+                                    <tr class="finances-row-netflow" title="Le résultat de l'année : ce qu'elle a rapporté, moins ce qu'elle a coûté. Il ne dit pas combien d'argent reste dans les caisses.">
                                         <td class="indicator-col">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right-left">
                                                 <path d="m16 3 4 4-4 4"/>
@@ -2451,8 +1995,8 @@
                                             </svg>
                                         </td>
                                         <td class="label-col finances-row-label">
-                                            Flux net
-                                            <span class="finances-explanation">Revenus nets - Dépenses nettes</span>
+                                            Résultat de l'année
+                                            <span class="finances-explanation">Flux net : revenus nets − dépenses nettes</span>
                                         </td>
                                         <td class="last-year-col finances-value-netflow" data-field="netFlowLastYear" id="net-flow-last-year">-</td>
                                         <td class="this-year-col finances-value-netflow" data-field="netFlowThisYear" id="net-flow-this-year">0</td>
@@ -2464,11 +2008,11 @@
                                     </tr>
 
                                     <!-- Balance -->
-                                    <tr class="finances-row-balance">
+                                    <tr class="finances-row-balance" title="L'argent disponible dans les caisses de la ville. Pour une année passée : le montant au 31 décembre. Pour l'année en cours : le montant aujourd'hui. Ce n'est pas le résultat de l'année.">
                                         <td class="indicator-col"></td>
                                         <td class="label-col finances-row-label">
-                                            Balance
-                                            <span class="finances-explanation">Solde total actuel de la ville</span>
+                                            Trésorerie
+                                            <span class="finances-explanation">Argent disponible : au 31 décembre pour une année passée, aujourd'hui pour l'année en cours</span>
                                         </td>
                                         <td class="last-year-col finances-value-positive" data-field="balanceLastYear" id="balance-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="balanceThisYear" id="balance-this-year">0</td>
@@ -2535,7 +2079,7 @@
                                         <path d="m14.91 7.79-3.64-3.64a1.4 1.4 0 0 0-3.71 1.47l2.35 2.35"/>
                                     </svg>
                                 </div>
-                                <h3 class="work-header-title">Allocation de la Main-d'œuvre</h3>
+                                <h3 class="work-header-title">Allocation de la Main-d'œuvre <span id="work-hamlet-label" class="work-hamlet-label"></span></h3>
                             </div>
 
                             <div class="work-group-tabs" id="work-group-tabs" role="tablist" aria-label="Groupes sociaux">
@@ -2713,7 +2257,7 @@
                         <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
                         <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
                     </svg>
-                    Traçabilité Alimentaire
+                    Traçabilité Alimentaire <span class="supply-traceability-hamlet" data-hamlet-label></span>
                 </div>
                 <div class="administrator-section-content">
                     <div class="supply-traceability-content">
@@ -2749,7 +2293,8 @@
                                 </button>
                             </div>
 
-                            <div class="supply-traceability-list" id="supply-traceability-list">
+                            <div class="supply-traceability-log" data-transaction-log></div>
+                        <div class="supply-traceability-list" id="supply-traceability-list">
                                 <div class="supply-traceability-loading">
                                     <div class="loading-spinner"></div>
                                     <p>Chargement de la traçabilité...</p>
@@ -2818,6 +2363,7 @@
                         <p class="commerce-customs-hint">Seule la part douanière entre dans le trésor ; le reste revient aux marchands.</p>
 
                         <!-- Relations list -->
+                        <button type="button" class="commerce-relations-export" id="commerce-relations-export">Exporter les relations (JSON)</button>
                         <div class="commerce-relations-list" id="commerce-relations-list">
                             <p class="commerce-empty-state">Aucune relation commerciale active.</p>
                         </div>
@@ -2982,61 +2528,6 @@
     </div>
 
     <!-- Budget States Popup -->
-<div id="compte-de-resultat-panel" class="compte-de-resultat-panel" role="dialog" aria-modal="true" aria-label="Compte de résultat" aria-hidden="true" tabindex="-1">
-    <div class="compte-de-resultat-wrapper">
-        <div class="compte-de-resultat-header">
-            <div class="compte-de-resultat-title-container">
-                <h3>Compte de Résultat</h3>
-            </div>
-            <button type="button" class="compte-de-resultat-close-btn" title="Fermer" aria-label="Fermer le compte de résultat">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="m15 9-6 6"/>
-                    <path d="m9 9 6 6"/>
-                </svg>
-            </button>
-        </div>
-        
-        <div class="compte-de-resultat-content">
-            <!-- Filter buttons for different periods -->
-            <div class="compte-de-resultat-filters">
-                <button class="budget-filter-btn active" data-period="3">3 jours</button>
-                <button class="budget-filter-btn" data-period="6">6 jours</button>
-                <button class="budget-filter-btn" data-period="9">9 jours</button>
-                <button class="budget-filter-btn" data-period="all">Tous</button>
-            </div>
-            
-            <!-- Global refresh button -->
-            <div class="compte-de-resultat-refresh-section">
-                <button type="button" class="budget-global-refresh-btn" title="Actualiser les données" aria-label="Actualiser les données">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
-                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                        <path d="M21 3v5h-5"/>
-                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                        <path d="M3 21v-5h5"/>
-                    </svg>
-                    Actualiser
-                </button>
-            </div>
-            
-            <!-- Budget states list -->
-            <div class="compte-de-resultat-list" id="compte-de-resultat-list">
-                <div class="budget-state-loading">
-                    <div class="loading-spinner"></div>
-                    <p>Chargement des états de budget...</p>
-                </div>
-            </div>
-            
-            <!-- Summary section -->
-            <div class="compte-de-resultat-summary" id="compte-de-resultat-summary">
-                <h4>Résumé de la période</h4>
-                <div class="summary-content" id="summary-content">
-                    <p>Aucune donnée disponible</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Journal des Écritures Panel -->
 <div id="journal-panel" class="journal-panel" role="dialog" aria-modal="true" aria-label="Journal comptable" aria-hidden="true" tabindex="-1">
@@ -3099,6 +2590,7 @@
                 <button class="journal-filter-btn" data-period="7">7 derniers jours</button>
                 <button class="journal-filter-btn" data-period="30">30 derniers jours</button>
                 <button class="journal-filter-btn" data-period="60">60 derniers jours</button>
+                <select id="journal-hamlet-filter" class="journal-hamlet-filter" aria-label="Filtrer par hameau"></select>
             </div>
             
             <div class="journal-refresh-section">
@@ -3147,7 +2639,7 @@
 <div id="supply-traceability-panel" class="supply-traceability-panel">
     <div class="supply-traceability-wrapper">
         <div class="supply-traceability-header">
-            <h3>🌾 Traçabilité Alimentaire</h3>
+            <h3>🌾 Traçabilité Alimentaire <span class="supply-traceability-hamlet" data-hamlet-label></span></h3>
             <div class="supply-traceability-close-btn" title="Fermer" aria-label="Fermer la traçabilité alimentaire">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
                     <path d="M18 6L6 18"/>
@@ -3189,6 +2681,7 @@
                     </button>
                 </div>
 
+                <div class="supply-traceability-log" data-transaction-log></div>
                 <div class="supply-traceability-list" id="supply-traceability-list">
                     <div class="supply-traceability-loading">
                         <div class="loading-spinner"></div>
@@ -3483,11 +2976,10 @@
                                 type="number"
                                 id="days-per-month-input"
                                 class="parameters-number-input"
-                                min="1"
-                                max="30"
-                                value="1"
+                                disabled
                             >
                         </label>
+                        <p class="parameters-control-note">Fixé au début de la partie (paramètres de la page d'accueil) : il ne peut plus changer ensuite.</p>
                     </div>
                     <div class="parameters-control-group">
                         <label class="parameters-control-label" for="tick-seconds-input">

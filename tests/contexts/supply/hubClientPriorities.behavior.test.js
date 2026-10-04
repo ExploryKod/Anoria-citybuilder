@@ -8,7 +8,19 @@ import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domai
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { HubServing } from '../../../src/contexts/supply/application/services/HubServing.js';
 import { TransferHubToHub } from '../../../src/contexts/supply/application/commands/procurement/TransferHubToHub.js';
-import { resolveClientPriorities } from '../../../src/shared/building-catalog/clientQueries.js';
+import {
+  listClientTypes,
+  producedCategories,
+  resolveInstanceClientPriorities,
+} from '../../../src/shared/building-catalog/clientQueries.js';
+
+/** One candidate per client type eligible for this producer: the type-level order the tests check. */
+const resolveClientPriorities = (producerType, saved = null) =>
+  resolveInstanceClientPriorities({
+    producerType,
+    candidates: listClientTypes(producedCategories(producerType)).map((type) => ({ id: type, type })),
+    saved,
+  });
 
 class InMemoryRepository {
   constructor(rows) {
@@ -28,14 +40,16 @@ class InMemoryRepository {
   async updateBuildingFields(id, fields) {
     Object.assign(this.rows.get(id), fields);
   }
+
+  async listAllBuildingRows() {
+    return [...this.rows.values()];
+  }
 }
 
 describe('Supply — a hub serves its clients by priority', () => {
   let repo;
-  let settings;
 
   beforeEach(() => {
-    settings = {};
     repo = new InMemoryRepository([
       {
         id: 'warehouse', type: 'Warehouse', x: 8, y: 3,
@@ -43,12 +57,16 @@ describe('Supply — a hub serves its clients by priority', () => {
         lots: { plate: { 'Factory-Plate': 10 } },
         linkedDistributors: [{ distributorId: 'first', x: 6, y: 3, allocatedStocks: {} }, { distributorId: 'second', x: 7, y: 3, allocatedStocks: {} }],
       },
+      { id: 'Factory-Plate', type: 'Factory-Plate', x: 2, y: 3, stocks: {}, lots: {}, linkedDistributors: [] },
       { id: 'first', type: 'Market-Stall-Red', x: 6, y: 3, stocks: {}, goodsHubId: 'warehouse' },
       { id: 'second', type: 'Market-Stall', x: 7, y: 3, stocks: {}, goodsHubId: 'warehouse' },
     ]);
   });
 
-  const serving = () => new HubServing(repo, { loadSettings: () => settings });
+  const setPriorities = (saved) => {
+    repo.rows.get('Factory-Plate').clientPriorityByGood = { plate: saved };
+  };
+  const serving = () => new HubServing(repo);
   const pull = (targetId, demand, turn) =>
     new TransferHubToHub(repo, serving()).execute({ targetId, period: { turn }, demand, category: 'plate' });
 
@@ -58,8 +76,8 @@ describe('Supply — a hub serves its clients by priority', () => {
   });
 
   test('a client ranked first keeps what it needs; the next one only gets the rest', async () => {
-    settings = { 'Factory-Plate': { order: ['Market-Stall-Red', 'Market-Stall'], disabled: [] } };
-    await serving().recordDemand({ hubId: 'warehouse', category: 'plate', client: 'Market-Stall-Red', turn: 6, wanted: 8, served: 0 });
+    setPriorities({ order: ['first', 'second'], disabled: [] });
+    await serving().recordDemand({ hubId: 'warehouse', category: 'plate', client: 'first', turn: 6, wanted: 8, served: 0 });
 
     const outcome = await pull('second', 10, 6);
 
@@ -68,14 +86,14 @@ describe('Supply — a hub serves its clients by priority', () => {
   });
 
   test('ranked first itself, the same client takes it all', async () => {
-    settings = { 'Factory-Plate': { order: ['Market-Stall', 'Market-Stall-Red'], disabled: [] } };
-    await serving().recordDemand({ hubId: 'warehouse', category: 'plate', client: 'Market-Stall-Red', turn: 6, wanted: 8, served: 0 });
+    setPriorities({ order: ['second', 'first'], disabled: [] });
+    await serving().recordDemand({ hubId: 'warehouse', category: 'plate', client: 'first', turn: 6, wanted: 8, served: 0 });
 
     expect((await pull('second', 10, 6)).totalUnits).toBe(10);
   });
 
   test('a client the producer type does not serve gets nothing, however much is in stock', async () => {
-    settings = { 'Factory-Plate': { order: ['Market-Stall-Red', 'Market-Stall'], disabled: ['Market-Stall'] } };
+    setPriorities({ order: ['first', 'second'], disabled: ['second'] });
 
     const outcome = await pull('second', 10, 6);
 
@@ -112,7 +130,7 @@ describe('Supply — a hub serves its clients by priority', () => {
   });
 
   test('goods moved through another hub are still served in the order of the producer type that made them', async () => {
-    settings = { 'Factory-Plate': { order: ['Market-Stall-Red', 'Market-Stall'], disabled: ['Market-Stall'] } };
+    setPriorities({ order: ['first', 'second'], disabled: ['second'] });
     repo.rows.get('warehouse').lots = { plate: { 'Factory-Plate|Warehouse': 10 } };
 
     expect((await pull('second', 10, 6)).transferred).toBe(false); // Market-Stall is not served plates from that producer, moved or not

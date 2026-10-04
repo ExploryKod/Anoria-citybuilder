@@ -405,7 +405,7 @@ export const BUILDING_ECONOMY = {
     resourceRoles: [...HOUSE_RESOURCE_ROLES, ...MERCHANT_ACTIVITY_ROLES],
   },
   'House-Red': {
-    displayName: 'Artisans-ouvriers',
+    displayName: 'Artisans',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'artisans',
@@ -651,6 +651,7 @@ export const BUILDING_ECONOMY = {
         categories: [...MERCHANT_ACTIVITY_GOODS],
         totalKey: GOODS_TOTAL_KEY,
         maxStock: WAREHOUSE_MAX_STOCK,
+        emptyRate: HUB_EMPTY_RATE,
         // No hubLink: nothing distributes deal goods onward to markets, so it takes no distributor link.
       },
     ],
@@ -659,7 +660,7 @@ export const BUILDING_ECONOMY = {
   'Warehouse': {
     displayName: 'Entrepôt',
     construction: { price: 80, category: 'industry' },
-    // Handling goods is manual work: 4 workers with the 'manutention' skill, which the artisans-ouvriers hold
+    // Handling goods is manual work: 4 workers with the 'manutention' skill, which the artisans hold
     // (from their second tier). A skill of its own, so the labour priorities rank storage apart from crafts.
     employment: { sector: 4, workerNeed: 4, requiredSkill: 'manutention' },
     resourceRoles: [

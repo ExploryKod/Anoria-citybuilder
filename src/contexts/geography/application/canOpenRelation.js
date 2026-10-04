@@ -1,4 +1,4 @@
-import { getTradeCatalogEntry } from '../domain/catalogs/TradeCatalog.js';
+import { getTradeCatalogEntry } from '../../../shared/trade-catalog/TradeCatalog.js';
 
 /**
  * Whether a trade relation with `cityId` can be opened right now.

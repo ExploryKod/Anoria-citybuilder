@@ -1,5 +1,5 @@
-import { TRADE_CATALOG } from '../../../../contexts/geography/domain/catalogs/TradeCatalog.js';
-import { getResourceBaseValue } from '../../../../contexts/supply/domain/catalogs/ResourceCategoryCatalog.js';
+import { TRADE_CATALOG } from '../../../../shared/trade-catalog/TradeCatalog.js';
+import { getResourceBaseValue } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 
 const STATUS_LABEL = { active: 'Actif', suspended: 'Suspendu', expired: 'Expiré' };
 
@@ -23,7 +23,34 @@ export class CommerceSectionPresenter {
   /** Called once when the section is first activated. */
   async init() {
     this.#bindCustomsSlider();
+    this.#bindRelationsExport();
     await this.refresh();
+  }
+
+  /** The whole relation rows, as stored: status, satisfaction, contract dates, last order. */
+  #bindRelationsExport() {
+    const button = document.getElementById('commerce-relations-export');
+    if (!button) return;
+    button.addEventListener('click', () => {
+      void this.#exportRelationsJson();
+    });
+  }
+
+  async #exportRelationsJson() {
+    const relations = await this.trade.getAllRelations();
+    const payload = {
+      exportDate: new Date().toISOString(),
+      relations: [...relations].sort((a, b) => a.cityId.localeCompare(b.cityId)),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `relations-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   async refresh() {
@@ -68,7 +95,6 @@ export class CommerceSectionPresenter {
     const score = rel.satisfactionScore ?? 50;
     const fillClass = score >= 60 ? '' : score >= 30 ? ' medium' : ' low';
     const goodsWanted = entry?.wants?.map((w) => w.good).join(', ') ?? '—';
-    const mult = rel.demandMultiplier ?? 1;
     const lastOrder = rel.lastOrderMonth != null ? `mois ${rel.lastOrderMonth}` : 'jamais';
     const customsRate = this.accounting.getCustomsRate();
 
@@ -76,11 +102,10 @@ export class CommerceSectionPresenter {
       .filter((w) => w.merchantGood)
       .map((w) => {
         const base = getResourceBaseValue(w.good);
-        if (base == null) return '';
-        const salePrice = +(base * mult).toFixed(2);
-        const customs = +(salePrice * customsRate).toFixed(2);
-        const net = +(salePrice * (1 - customsRate)).toFixed(2);
-        return `<div class="commerce-relation-row">${w.good} : <strong>${salePrice} €/u</strong> → douane <strong>${customs} €</strong> · marchands <strong>${net} €</strong></div>`;
+        const { spread } = entry.sale;
+        const low = +(base * w.baseMultiplier * (1 - spread)).toFixed(2);
+        const high = +(base * w.baseMultiplier * (1 + spread)).toFixed(2);
+        return `<div class="commerce-relation-row">${w.good} : <strong>${low} à ${high} €/u</strong> · douane ${Math.round(customsRate * 100)} %</div>`;
       })
       .join('');
 

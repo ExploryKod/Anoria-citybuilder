@@ -1,5 +1,4 @@
 import {
-  filterJournalEntriesForPdfExport,
   isJournalIncomeType,
 } from '../../../domain/policies/JournalExportFilterPolicy.js';
 import { journalEntryTypeLabel } from '../../../presentation/JournalExportViewModel.js';
@@ -101,7 +100,7 @@ export class BrowserJournalPdfExporter {
     yPosition += 10;
 
     doc.setFontSize(8);
-    const entriesToExport = filterJournalEntriesForPdfExport(entries);
+    const entriesToExport = entries;
     const maxEntries = Math.min(entriesToExport.length, 100);
 
     for (let i = 0; i < maxEntries; i += 1) {

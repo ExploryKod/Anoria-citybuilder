@@ -8,9 +8,7 @@ import {
   initializeTreasury,
   getTreasurySnapshot,
   getFinancialHealth,
-  updateTreasuryTurn,
   getActiveLoans,
-  advanceLoanInstallmentWithoutPayment,
   forceReinitializeTreasury,
   resetAccountingContextForTests,
   getOrCreateAccountingContext,
@@ -49,10 +47,6 @@ export class TestBudgetFacade {
     return getTreasurySnapshot();
   }
 
-  async calculateLoanTotals() {
-    return accountingGame.recalculateLoanTotals();
-  }
-
   async addConstructionRefund(amount, description, options = {}) {
     return recordConstructionRefund(amount, description, options);
   }
@@ -71,10 +65,6 @@ export class TestBudgetFacade {
 
   async recordInfoLoanInstallment(params) {
     return accountingGame.recordInfoLoanInstallment(params);
-  }
-
-  async advanceLoanInstallmentWithoutPayment(loanId) {
-    return advanceLoanInstallmentWithoutPayment(loanId);
   }
 
   async getActiveLoans() {
@@ -97,8 +87,8 @@ export class TestBudgetFacade {
     return this.journalManager.getJournalEntriesForTurn(turn);
   }
 
-  async cleanupOldJournalEntries(maxAge = 60) {
-    return this.journalManager.cleanupOldJournalEntries(maxAge);
+  async cleanupOldJournalYears(keepYears) {
+    return this.journalManager.cleanupOldJournalYears(keepYears);
   }
 
   async getMonthlyFinancialSummary() {
@@ -107,14 +97,6 @@ export class TestBudgetFacade {
 
   async getYearlyFinancialSummary() {
     return this.journalManager.getYearlyFinancialSummary();
-  }
-
-  async getBudgetSummary() {
-    return accountingGame.getBudgetSummary();
-  }
-
-  async updateTurn(turn) {
-    return updateTreasuryTurn(turn);
   }
 
   async addImportExpense(amount, description, productId = 'unknown', partnerId = null) {
@@ -154,14 +136,6 @@ export class TestBudgetFacade {
 
   async addTaxes(time = 0) {
     return accountingGame.collectCitizenTaxes(time, { db: this.db });
-  }
-
-  async getIncomeBreakdown() {
-    return accountingGame.getIncomeBreakdown();
-  }
-
-  async getExpenseBreakdown() {
-    return accountingGame.getExpenseBreakdown();
   }
 
   async forceReinitialize(startingFunds = null) {

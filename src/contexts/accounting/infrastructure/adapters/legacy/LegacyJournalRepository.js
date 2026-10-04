@@ -14,11 +14,8 @@ export class LegacyJournalRepository extends JournalRepository {
     return this.journalManager.getJournalEntries(maxAge);
   }
 
-  async getYearlyFinancialSummary() {
+  async getYearlyFinancialSummary({ hamletId = null } = {}) {
+    if (hamletId != null) throw new Error('LegacyJournalRepository: hamlet scoping is not supported');
     return this.journalManager.getYearlyFinancialSummary();
-  }
-
-  async getCurrentBalance() {
-    return this.journalManager.getCurrentBalance();
   }
 }

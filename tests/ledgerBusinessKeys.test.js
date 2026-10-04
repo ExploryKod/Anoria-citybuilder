@@ -6,21 +6,23 @@ import {
   buildLoanCapitalBusinessKey,
   buildCapitalFundsBusinessKey,
   buildCommercialRouteBusinessKey,
-  buildCarryForwardBusinessKey,
-  buildCumulBusinessKey,
 } from '../src/contexts/accounting/domain/policies/LedgerBusinessKeys.js';
 import { describe, test, expect } from '@jest/globals';
 
 describe('ledgerBusinessKeys', () => {
   test('buildLedgerBusinessKey for monthly types', () => {
-    expect(buildLedgerBusinessKey('salary', { year: 1, monthIndex: 2 })).toBe(
-      'salary:1:2'
+    expect(buildLedgerBusinessKey('salary', { year: 1, monthIndex: 2 }, 'h1')).toBe(
+      'salary:h1:1:2'
     );
-    expect(buildLedgerBusinessKey('payroll_tax', { year: 0, monthIndex: 11 })).toBe(
-      'payroll_tax:0:11'
+    expect(buildLedgerBusinessKey('payroll_tax', { year: 0, monthIndex: 11 }, 'h1')).toBe(
+      'payroll_tax:h1:0:11'
     );
-    expect(buildLedgerBusinessKey('maintenance', { year: 3, monthIndex: 0 })).toBe(
-      'maintenance:3:0'
+    expect(buildLedgerBusinessKey('maintenance', { year: 3, monthIndex: 0 }, 'h2')).toBe(
+      'maintenance:h2:3:0'
+    );
+    // Two hamlets pay for the same month: two keys, not one.
+    expect(buildLedgerBusinessKey('maintenance', { year: 3, monthIndex: 0 }, 'h1')).not.toBe(
+      buildLedgerBusinessKey('maintenance', { year: 3, monthIndex: 0 }, 'h2')
     );
   });
 
@@ -64,20 +66,16 @@ describe('ledgerBusinessKeys', () => {
     expect(buildCapitalFundsBusinessKey()).toBe('capital_funds:0');
   });
 
-  test('buildCarryForwardBusinessKey and buildCumulBusinessKey are yearly', () => {
-    expect(buildCarryForwardBusinessKey(2)).toBe('carry_forward:2');
-    expect(buildCumulBusinessKey('cumul_salary', 1)).toBe('cumul_salary:1');
-  });
-
   test('inferBusinessKeyFromRow from month/year fields', () => {
     expect(
       inferBusinessKeyFromRow({
         type: 'salary',
+        hamletId: 'h1',
         year: 1,
         month: 3,
         turn: 15,
       })
-    ).toBe('salary:1:2');
+    ).toBe('salary:h1:1:2');
   });
 
   test('inferBusinessKeyFromRow prefers stored businessKey', () => {

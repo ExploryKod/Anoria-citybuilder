@@ -7,6 +7,7 @@
  */
 
 import { inferBusinessKeyFromRow } from '../../domain/policies/LedgerBusinessKeys.js';
+import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 let nextSessionId = 1;
 
@@ -20,6 +21,13 @@ export class SessionLedgerBuffer {
   /** @type {Array<SessionLedgerRecord & object>} */
   #entries = [];
   #hydrated = false;
+  /** @type {() => string} */
+  #getHamletId;
+
+  /** @param {{ getHamletId?: () => string }} [options] */
+  constructor({ getHamletId = requireActiveHamletId } = {}) {
+    this.#getHamletId = getHamletId;
+  }
 
   reset() {
     this.#entries = [];
@@ -44,7 +52,7 @@ export class SessionLedgerBuffer {
         ...(businessKey ? { businessKey } : {}),
         sessionId: nextSessionId++,
         persisted: true,
-        persist: row.type !== 'balance',
+        persist: true,
       });
     }
     this.#hydrated = true;
@@ -87,6 +95,7 @@ export class SessionLedgerBuffer {
   append(entry, { persist = true } = {}) {
     const record = {
       ...entry,
+      hamletId: entry.hamletId ?? this.#getHamletId(),
       sessionId: nextSessionId++,
       persisted: false,
       persist,
@@ -104,25 +113,6 @@ export class SessionLedgerBuffer {
     if (index >= 0) {
       this.#entries[index] = { ...this.#entries[index], ...patch };
     }
-  }
-
-  /** @param {number} turn @param {number} balance */
-  updateBalanceForTurn(turn, balance) {
-    const index = this.#entries.findIndex(
-      (entry) => entry.turn === turn && entry.type === 'balance'
-    );
-    if (index >= 0) {
-      this.#entries[index] = { ...this.#entries[index], amount: balance };
-      return this.#entries[index];
-    }
-    return null;
-  }
-
-  /** @param {number} turn */
-  findBalanceForTurn(turn) {
-    return this.#entries.find(
-      (entry) => entry.turn === turn && entry.type === 'balance'
-    );
   }
 
   /** @returns {Array<object>} Public entries (no session metadata). */
@@ -155,17 +145,55 @@ export class SessionLedgerBuffer {
     }
   }
 
-  /** @param {string} cutoffISO */
-  removeEntriesBeforeDate(cutoffISO) {
-    const removedSessionIds = [];
-    this.#entries = this.#entries.filter((entry) => {
-      if (entry.date < cutoffISO) {
-        removedSessionIds.push(entry.sessionId);
-        return false;
-      }
-      return true;
-    });
-    return removedSessionIds;
+  /**
+   * The fiscal year stamped on an entry when it was written. Throws when missing: a purge must never guess.
+   * @param {object} entry
+   * @returns {number}
+   */
+  static fiscalYearOf(entry) {
+    if (typeof entry.year !== 'number') {
+      throw new Error(`[journal] entry ${entry.id ?? entry.type} (turn ${entry.turn}) has no fiscal year stamp`);
+    }
+    return entry.year;
+  }
+
+  /** @returns {number|null} The most recent stamped fiscal year in the buffer, null when empty. */
+  latestFiscalYear() {
+    let latest = null;
+    for (const entry of this.#entries) {
+      const year = SessionLedgerBuffer.fiscalYearOf(entry);
+      if (latest === null || year > latest) latest = year;
+    }
+    return latest;
+  }
+
+  /**
+   * The records of the years strictly before `cutoffYear` that `isFolded` accepts, with their session metadata.
+   * @param {number} cutoffYear
+   * @param {(entry: object) => boolean} isFolded
+   * @returns {Array<SessionLedgerRecord & object>}
+   */
+  recordsFoldedBeforeYear(cutoffYear, isFolded) {
+    return this.#entries.filter(
+      (entry) => SessionLedgerBuffer.fiscalYearOf(entry) < cutoffYear && isFolded(entry)
+    );
+  }
+
+  /** @param {Set<number>} sessionIds */
+  removeSessionIds(sessionIds) {
+    this.#entries = this.#entries.filter((entry) => !sessionIds.has(entry.sessionId));
+  }
+
+  /**
+   * Add a line that is already on disk (its id is known).
+   * @param {object} entry
+   * @param {number} id
+   * @returns {SessionLedgerRecord & object}
+   */
+  appendPersisted(entry, id) {
+    const record = { ...entry, id, sessionId: nextSessionId++, persisted: true, persist: true };
+    this.#entries.push(record);
+    return record;
   }
 
   /** @returns {number} */

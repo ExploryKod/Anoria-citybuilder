@@ -210,7 +210,7 @@ export function createScene(_gameStore, assetManager, deps) {
     // promesse : tout rendu avant résolution serait silencieusement ignoré.
     let rendererReady = renderer.init();
     // Dev only: lets the console read GPU memory (renderer.info) when checking a hamlet switch.
-    if (import.meta.env.DEV) window.__renderer = renderer;
+    if (import.meta.env.DEV) Object.assign(window, { __renderer: renderer, __threeScene: scene, __reachOverlay: reachOverlay, __roadPaintPreview: roadPaintPreview, __placementGhost: placementGhost });
     renderer.setSize(gameWindow.offsetWidth, gameWindow.offsetHeight);
     if (runningOnMobile) {
         // Cap le pixel ratio sur mobile pour limiter la pression mémoire GPU
@@ -439,6 +439,14 @@ export function createScene(_gameStore, assetManager, deps) {
 
         // Free the previous hamlet's GPU resources first: scene.clear() only detaches them.
         hamletRegistry.disposeAll();
+        // Shadow maps are GPU render targets; setUpLights only frees the ones still in the scene.
+        scene.traverse((object) => {
+            if (object.isLight) object.shadow?.dispose();
+        });
+        placementGhost.clear();
+        reachOverlay.clear();
+        roadPaintPreview.clear();
+        decorativeVillageManager.dispose();
         scene.clear();
         zoneGroups.length = 0;
         zoneGroupsInitialized = false;
@@ -2510,8 +2518,6 @@ function onTouchEnd(event) {
             camera.onWheel(event);
         }
     }
-
-    // Note: cleanup toast → ui/compta/tresorerie/CleanupNotificationPresenter.js
 
     /**
      * Immediately update a road tile visually without waiting for full scene update

@@ -19,6 +19,7 @@ import { DEFAULT_INITIAL_FUNDS } from '../src/contexts/accounting/domain/catalog
 import { composeLegacyConfigMirror } from '../src/composition/gameConfig.js';
 import appRegistry from '../src/composition/AppRegistry.js';
 import { TimeManager } from '../src/shared/time/TimeManager.js';
+import { getTreasurySnapshot } from '../src/composition/accountingOps.js';
 
 const config = composeLegacyConfigMirror();
 
@@ -131,7 +132,7 @@ describe('BudgetManager', () => {
             await budgetManager.initialize(500);
             
             // Lire directement depuis la base pour éviter la logique de synchronisation avec config
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(500);
@@ -139,43 +140,7 @@ describe('BudgetManager', () => {
             expect(budget.income).toBe(500);
         });
 
-        test('ne downgrade pas la trésorerie au-delà du capital initial (config mismatch)', async () => {
-            await budgetManager.initialize(5000);
 
-            // Simule une ligne obsolète (session/config précédente avec un
-            // capital plus élevé) : initialFunds ne correspond plus au
-            // défaut courant, mais funds (trésorerie réelle) doit être préservé.
-            const budgetData = await testDb.budget.toArray();
-            budgetData[0].initialFunds = 5000;
-            budgetData[0].income = 0;
-            budgetData[0].funds = 5000;
-            await testDb.budget.put(budgetData[0]);
-
-            const budget = await budgetManager.getCurrentBudget();
-
-            // normalizeTreasuryBudgetRow recale initialFunds sur le défaut
-            // courant (DEFAULT_INITIAL_FUNDS) sans jamais toucher à funds.
-            expect(budget.funds).toBe(5000);
-            expect(budget.initialFunds).toBe(DEFAULT_INITIAL_FUNDS);
-        });
-
-        test('réinitialise le budget (efface les données existantes)', async () => {
-            resetAccountingContextForTests();
-            getOrCreateAccountingContext({
-                journalManager: budgetManager.journalManager,
-                budgetManager,
-            });
-
-            await budgetManager.initialize(300);
-            await budgetManager.addTaxes(100, 'Test taxes');
-
-            await budgetManager.initialize(200);
-
-            const budget = await budgetManager.getCurrentBudget();
-
-            expect(budget.funds).toBe(200);
-            expect(budget.income).toBe(200);
-        });
     });
 
     // ========================================================================
@@ -196,7 +161,7 @@ describe('BudgetManager', () => {
             await budgetManager.addConstructionExpense(30, 'Building: House');
             await budgetManager.addConstructionRefund(30, 'Refund for failed House');
 
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
 
             expect(budget.funds).toBe(200);
@@ -209,7 +174,7 @@ describe('BudgetManager', () => {
             await budgetManager.addConstructionRefund(10, 'Refund for failed House');
             await budgetManager.addConstructionRefund(20, 'Refund for duplicate House');
 
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
 
             expect(budget.funds).toBe(200);
@@ -232,7 +197,7 @@ describe('BudgetManager', () => {
             await budgetManager.addConstructionExpense(30, 'Building: House');
             
             // Lire directement depuis la base
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(170); // 200 - 30
@@ -244,7 +209,7 @@ describe('BudgetManager', () => {
             await budgetManager.addConstructionExpense(250, 'Grosse dépense');
             
             // Lire directement depuis la base
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(-50); // 200 - 250 (debt allowed)
@@ -263,7 +228,7 @@ describe('BudgetManager', () => {
             await budgetManager.addImportExpense(5, 'Import blé (1 panier × 5€)', 'wheat');
             
             // Lire directement depuis la base
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(195); // 200 - 5
@@ -292,7 +257,7 @@ describe('BudgetManager', () => {
             await budgetManager.addImportExpense(5, 'Import blé 1', 'wheat');
             await budgetManager.addImportExpense(5, 'Import blé 2', 'wheat');
             
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(190); // 200 - 5 - 5
@@ -307,7 +272,7 @@ describe('BudgetManager', () => {
             await budgetManager.addImportExpense(17, 'Import chou', 'cabbage');
             await budgetManager.addImportExpense(20, 'Import bois', 'wood');
             
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(143); // 200 - 5 - 15 - 17 - 20
@@ -322,7 +287,7 @@ describe('BudgetManager', () => {
             await budgetManager.initialize(200);
             await budgetManager.addImportExpense(5.7, 'Import avec décimales', 'wheat');
             
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(194); // 200 - 6 (arrondi)
@@ -333,7 +298,7 @@ describe('BudgetManager', () => {
             await budgetManager.initialize(200);
             await budgetManager.addImportExpense(250, 'Gros import', 'wheat');
             
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(-50); // 200 - 250 (debt allowed)
@@ -351,7 +316,7 @@ describe('BudgetManager', () => {
             await budgetManager.initialize(200);
             await budgetManager.addExportIncome(15, 'Export blé (1 panier × 15€)', 'wheat');
             
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(215); // 200 + 15
@@ -382,7 +347,7 @@ describe('BudgetManager', () => {
             await budgetManager.addExportIncome(20, 'Export chou', 'cabbage');
             await budgetManager.addExportIncome(25, 'Export bois', 'wood');
             
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(278); // 200 + 15 + 18 + 20 + 25
@@ -398,7 +363,7 @@ describe('BudgetManager', () => {
             await budgetManager.addExportIncome(15, 'Export blé 1', 'wheat');
             await budgetManager.addExportIncome(15, 'Export blé 2', 'wheat');
             
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(230); // 200 + 15 + 15
@@ -411,7 +376,7 @@ describe('BudgetManager', () => {
             await budgetManager.addExportIncome(15, 'Export blé', 'wheat');
             await budgetManager.addExportIncome(18, 'Export carotte', 'carrot');
             
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(233); // 200 + 15 + 18
@@ -424,7 +389,7 @@ describe('BudgetManager', () => {
             await budgetManager.initialize(200);
             await budgetManager.addExportIncome(15.7, 'Export avec décimales', 'wheat');
             
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             expect(budget.funds).toBe(216); // 200 + 16 (arrondi)
@@ -491,7 +456,7 @@ describe('BudgetManager', () => {
             await budgetManager.addTaxes(time);
             
             // Lire directement depuis la base
-            const budgetData = await testDb.budget.toArray();
+            const budgetData = [await getTreasurySnapshot()];
             const budget = budgetData[0];
             
             // 3 habitants + 4 habitants = 7 habitants × 100€ = 700€

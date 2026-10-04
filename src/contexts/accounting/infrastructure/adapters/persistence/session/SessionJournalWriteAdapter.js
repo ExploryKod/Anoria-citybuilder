@@ -34,6 +34,10 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
       {
         businessKey: entry.businessKey ?? null,
         buildingInstanceId: entry.buildingInstanceId ?? null,
+        loanId: entry.loanId ?? null,
+        loan: entry.loan ?? null,
+        taxYear: entry.taxYear ?? null,
+        taxBreakdown: entry.taxBreakdown ?? null,
         persist: options.persist,
       }
     );
@@ -43,10 +47,5 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
     }
 
     return { recorded: true, skipped: false };
-  }
-
-  /** @inheritdoc */
-  async upsertBalanceSnapshot(turn, amount) {
-    await this.sessionJournalStore.addBalanceEntry(turn, amount);
   }
 }

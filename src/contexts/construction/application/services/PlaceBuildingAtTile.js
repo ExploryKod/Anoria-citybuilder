@@ -17,7 +17,6 @@ export class PlaceBuildingAtTile {
    * @param {(params: { city: object, x: number, y: number, gridSize?: number }) => Promise<string[]>} deps.reclaimStaleBuildingRecords
    * @param {(buildingType: string) => object} deps.getDefaultEmployees
    * @param {() => Promise<unknown>} deps.awaitBudgetReady
-   * @param {() => Promise<{ funds?: number }>} deps.getTreasurySnapshot
    * @param {Record<string, { price?: number, gridSize?: number }>} deps.assetCatalog
    * @param {(buildingId: string, catalog: object) => number | null | undefined} deps.getAssetPrice
    * @param {(params: { city: object, x: number, y: number, buildingType: string, assetCatalog: object }) => { ok: boolean, reason?: string }} [deps.validatePlacement]
@@ -27,7 +26,6 @@ export class PlaceBuildingAtTile {
     reclaimStaleBuildingRecords,
     getDefaultEmployees,
     awaitBudgetReady,
-    getTreasurySnapshot,
     assetCatalog,
     getAssetPrice,
     validatePlacement = null,
@@ -36,7 +34,6 @@ export class PlaceBuildingAtTile {
     this.reclaimStaleBuildingRecords = reclaimStaleBuildingRecords;
     this.getDefaultEmployees = getDefaultEmployees;
     this.awaitBudgetReady = awaitBudgetReady;
-    this.getTreasurySnapshot = getTreasurySnapshot;
     this.assetCatalog = assetCatalog;
     this.getAssetPrice = getAssetPrice;
     this.validatePlacement = validatePlacement;
@@ -135,8 +132,6 @@ export class PlaceBuildingAtTile {
 
       const price = this.getAssetPrice(buildingType, this.assetCatalog) || 0;
       const instanceId = createBuildingInstanceId();
-      const budgetData = await this.getTreasurySnapshot().catch(() => ({ funds: 0 }));
-      const funds = budgetData.funds || 0;
 
       const dbHouseData = {
         instanceId,
@@ -152,7 +147,6 @@ export class PlaceBuildingAtTile {
         stage: 0,
         stageName: '',
         price,
-        cityFunds: funds,
         maintenance: 0,
         worldTime: 0,
         x,

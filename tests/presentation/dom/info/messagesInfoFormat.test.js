@@ -82,19 +82,29 @@ describe('formatMessagesModel — why an unstaffed workplace stays empty', () =>
 
   test('says a group has no house at all when none stands', () => {
     const [complaint] = formatMessagesModel(farmVm({ artisans: { workerPool: 0, assigned: 0, unemployed: 0 } })).complaints;
-    expect(complaint).toBe(`${noWorkerAvailable} — aucune maison pour les Artisans-ouvriers : il en faut pour pourvoir ce poste`);
+    expect(complaint).toBe(`${noWorkerAvailable} — aucune maison pour les Artisans : il en faut pour pourvoir ce poste`);
   });
 
   test('says everyone of the group already works, and more houses are needed', () => {
-    const [complaint] = formatMessagesModel(farmVm({ artisans: { workerPool: 36, assigned: 36, unemployed: 0 } })).complaints;
+    const [complaint] = formatMessagesModel(farmVm({ artisans: { workerPool: 36, assigned: 36, unemployed: 0, poolByLevel: { 2: 36 } } })).complaints;
     expect(complaint).toBe(
-      `${noWorkerAvailable} — tous les Artisans-ouvriers ont déjà un emploi : il faut plus de maisons pour les Artisans-ouvriers`
+      `${noWorkerAvailable} — tous les Artisans qualifiés ont déjà un emploi : il faut plus de maisons pour les Artisans`
     );
   });
 
-  test('says unemployed residents lack the skill yet, and at which house tier it comes', () => {
-    const [complaint] = formatMessagesModel(farmVm({ artisans: { workerPool: 36, assigned: 30, unemployed: 6 } })).complaints;
-    expect(complaint).toMatch(/des Artisans-ouvriers sont sans emploi, mais leurs maisons n'ont pas encore la compétence « .+ » \(niveau 2 requis\)$/);
+  test('says the houses are still below the tier that grants the skill, even with nobody unemployed', () => {
+    const [complaint] = formatMessagesModel(farmVm({ artisans: { workerPool: 36, assigned: 36, unemployed: 0, poolByLevel: { 1: 36 } } })).complaints;
+    expect(complaint).toMatch(/les maisons des Artisans n'ont pas encore le niveau 2 : aucune n'a la compétence « .+ »$/);
+  });
+
+  test('does not mention idle residents when none of the group has the skill', () => {
+    const [complaint] = formatMessagesModel(farmVm({ artisans: { workerPool: 36, assigned: 30, unemployed: 6, poolByLevel: { 1: 36 } } })).complaints;
+    expect(complaint).toMatch(/les maisons des Artisans n'ont pas encore le niveau 2 : aucune n'a la compétence « .+ »$/);
+  });
+
+  test('says skilled residents are idle even though the post is not filled', () => {
+    const [complaint] = formatMessagesModel(farmVm({ artisans: { workerPool: 36, assigned: 30, unemployed: 6, poolByLevel: { 2: 36 } } })).complaints;
+    expect(complaint).toMatch(/malgré tout, 6 Artisans ayant la compétence « .+ » sont sans emploi$/);
   });
 
   test('keeps the plain complaint when the city\'s employment was not read', () => {
@@ -105,7 +115,7 @@ describe('formatMessagesModel — why an unstaffed workplace stays empty', () =>
   test('a partial staff gets the reason too', () => {
     const model = formatMessagesModel({
       ...workplaceVm('Farm-Wheat', { roads: 0, worker: 1, workerNeed: 3 }),
-      employmentSummary: { byGroup: { artisans: { workerPool: 36, assigned: 36, unemployed: 0 } } },
+      employmentSummary: { byGroup: { artisans: { workerPool: 36, assigned: 36, unemployed: 0, poolByLevel: { 2: 36 } } } },
     });
     expect(model.complaints[0]).toMatch(/^Nous manquons de personnel pour fonctionner à plein régime — tous les /);
   });

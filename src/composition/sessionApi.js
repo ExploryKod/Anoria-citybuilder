@@ -77,13 +77,8 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     getTreasurySnapshot: () => accounting.getTreasurySnapshot(),
     getFinancialHealth: () => accounting.getFinancialHealth(),
     getActiveLoans: () => accounting.getActiveLoans(),
-    getIncomeBreakdown: () => accounting.getIncomeBreakdown(),
-    getExpenseBreakdown: () => accounting.getExpenseBreakdown(),
-    getBalanceSheet: () => accounting.getBalanceSheet(),
-    getIncomeStatement: (options) => accounting.getIncomeStatement(options),
-    getFinancialStatementsHistory: (options) => accounting.getFinancialStatementsHistory(options),
     getGeneralLedger: (filters) => accounting.getGeneralLedger(filters),
-    getCityLedgerYearComparison: () => accounting.getCityLedgerYearComparison(),
+    getCityLedgerYearComparison: (options) => accounting.getCityLedgerYearComparison(options),
     exportJournalJson: () => accounting.exportJournalJson(),
     exportJournalPdf: () => accounting.exportJournalPdf(),
 
@@ -105,8 +100,6 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     recordLoanInterest: (...args) => accounting.recordLoanInterest(...args),
     recordLoanRepayment: (...args) => accounting.recordLoanRepayment(...args),
     recordInfoLoanInstallment: (params) => accounting.recordInfoLoanInstallmentFromGame(params),
-    advanceLoanInstallmentWithoutPayment: (loanId) =>
-      accounting.advanceLoanInstallmentWithoutPayment(loanId),
 
     createEmptyCityLedgerYearLines: (...args) => createEmptyCityLedgerYearLines(...args),
     computeLoanRate: (...args) => computeLoanRate(...args),
@@ -150,8 +143,8 @@ export function createSupplySessionApi(supply) {
     },
     updateSupplyBuildingFields: (id, fields) => supply.updateSupplyBuildingFields(id, fields),
     getSupplyBuildingRow: (id) => supply.getSupplyBuildingRow(id),
-    getAllSupplyTraceabilityTransactions: (maxAge = null) =>
-      supply.getAllSupplyTraceabilityTransactions(maxAge),
+    getAllSupplyTraceabilityTransactions: (maxAge = null, hamletId = null) =>
+      supply.getAllSupplyTraceabilityTransactions(maxAge, hamletId),
     recordBuildingEvent: (params) => supply.recordBuildingEvent(params),
     getHubStorageInfoView: (hubKind, buildingRow, options = {}) =>
       supply.getHubStorageInfoView(hubKind, buildingRow, options),

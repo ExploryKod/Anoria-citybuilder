@@ -10,7 +10,7 @@ import { TimeManager } from '../../../../shared/time/TimeManager.js';
  */
 export function createCityTradeMonthlySystem({ trade, getTimeInfo }) {
   return async function cityTradeMonthly(_world, context = {}) {
-    const timeInfo = getTimeInfo(context.time ?? 0);
+    const timeInfo = getTimeInfo(context.time);
     if (timeInfo.dayInMonth !== TimeManager.DAYS_PER_MONTH) return;
     await trade.runMonthlyCityTradeCycle(timeInfo);
   };

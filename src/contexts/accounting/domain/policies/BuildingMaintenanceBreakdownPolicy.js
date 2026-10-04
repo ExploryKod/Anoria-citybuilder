@@ -81,10 +81,10 @@ export function buildTurnBudgetMaintenanceSnapshot(
   };
 
   const maintenanceBreakdown = {
-    roads: { count: 0, cost: 0 },
-    houses: { count: 0, cost: 0 },
-    farms: { count: 0, cost: 0 },
-    markets: { count: 0, cost: 0 },
+    roads: { count: 0, cost: 0, unitCost: maintenanceCosts.roads },
+    houses: { count: 0, cost: 0, unitCost: null },
+    farms: { count: 0, cost: 0, unitCost: maintenanceCosts.Farm },
+    markets: { count: 0, cost: 0, unitCost: maintenanceCosts.Market },
   };
 
   for (const type of buildingTypes) {
@@ -97,6 +97,16 @@ export function buildTurnBudgetMaintenanceSnapshot(
     buildingCounts.total++;
     maintenanceBreakdown[category].count++;
     maintenanceBreakdown[category].cost += cost;
+    if (category === 'houses') {
+      // Houses are priced per type: the monthly line shows one unit rate, so every house must share it.
+      const houses = maintenanceBreakdown.houses;
+      if (houses.unitCost === null) houses.unitCost = cost;
+      else if (houses.unitCost !== cost) {
+        throw new Error(
+          `[BuildingMaintenanceBreakdownPolicy] houses have different maintenance rates (${houses.unitCost} and ${cost}); the monthly breakdown cannot show one unit cost`
+        );
+      }
+    }
   }
 
   return { buildingCounts, maintenanceBreakdown };

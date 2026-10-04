@@ -16,7 +16,7 @@ import { createModalFocusSession } from '../../shell/modalFocus.js';
  * @type {{
  *   accounting: object,
  *   popupManager?: object | null,
- *   updateBudgetDisplay?: () => Promise<void> | void,
+ *   updateTreasuryDisplay: () => Promise<void>,
  * } | null}
  */
 let deps = null;
@@ -28,7 +28,7 @@ let loansFocusSession = null;
  * @param {{
  *   accounting: object,
  *   popupManager?: object | null,
- *   updateBudgetDisplay?: () => Promise<void> | void,
+ *   updateTreasuryDisplay: () => Promise<void>,
  * }} panelDeps
  */
 export function initLoansPopup(panelDeps) {
@@ -225,7 +225,7 @@ function updateLoanSummary() {
 
 export async function contractLoan() {
   if (!deps?.accounting) return;
-  const { accounting, updateBudgetDisplay } = deps;
+  const { accounting, updateTreasuryDisplay } = deps;
 
   const loanAmountInput = document.getElementById('loan-amount-input');
   const loanDurationInput = document.getElementById('loan-duration-input');
@@ -266,7 +266,7 @@ export async function contractLoan() {
 
     await accounting.recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);
 
-    await updateBudgetDisplay?.();
+    await updateTreasuryDisplay();
 
     alert(
       `Prêt ${loanType} de ${amount}€ contracté ! Total à rembourser : ${total}€ sur ${duration} tours.`
@@ -300,7 +300,7 @@ export async function loadActiveLoans() {
  */
 export async function processLoanPayments() {
   if (!deps?.accounting) return;
-  const { accounting, updateBudgetDisplay } = deps;
+  const { accounting, updateTreasuryDisplay } = deps;
 
   try {
     const activeLoans = await accounting.getActiveLoans();
@@ -346,7 +346,6 @@ export async function processLoanPayments() {
           });
         }
 
-        await accounting.advanceLoanInstallmentWithoutPayment(loan.id);
         console.warn(
           `[Loans] Échéance partielle — intérêts payés, capital impayé (${principalPayment}€) pour ${loan.id}`
         );
@@ -360,13 +359,12 @@ export async function processLoanPayments() {
         loanType: loan.type,
       });
 
-      await accounting.advanceLoanInstallmentWithoutPayment(loan.id);
       console.warn(
         `[Loans] Défaut de paiement — échéance journalisée (info) pour ${loan.id}`
       );
     }
 
-    await updateBudgetDisplay?.();
+    await updateTreasuryDisplay();
   } catch (error) {
     console.error('Error processing loan payments:', error);
   }

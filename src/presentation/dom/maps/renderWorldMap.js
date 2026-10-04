@@ -98,6 +98,9 @@ export function renderWorldMapShell(view, selection = {}) {
     </div>`;
 }
 
+/** Shown where a hamlet could be entered: the map is read-only, the carousel in the game switches hamlet. */
+const CHANGE_HAMLET_IN_GAME_NOTE = '<p class="trade-map-panel-active-note">Pour changer de hameau, utilisez le carrousel dans le jeu.</p>';
+
 /**
  * @param {Awaited<ReturnType<import('../../../contexts/geography/application/queries/buildWorldMapView.js').buildWorldMapView>>} view
  * @param {string | null} hamletId
@@ -115,20 +118,15 @@ export function renderWorldHamletPanel(view, hamletId) {
   let statusClass = 'closed';
   let actionHtml = '<p class="trade-map-panel-active-note">Ce hameau n’est pas encore accessible.</p>';
 
+  // The map only shows; changing hamlet happens in the game, with the hamlet carousel (no page load).
   if (hamlet.access === HAMLET_ACCESS.active) {
     statusText = 'Hameau actif';
     statusClass = 'open';
-    actionHtml = `
-      <a href="/game/${hamlet.id}" class="site-btn site-btn--primary site-btn--inline world-map-enter-btn" title="Entrer dans le hameau">
-        Entrer
-      </a>`;
+    actionHtml = CHANGE_HAMLET_IN_GAME_NOTE;
   } else if (hamlet.access === HAMLET_ACCESS.unlocked) {
     statusText = 'Accessible';
     statusClass = 'open';
-    actionHtml = `
-      <button type="button" class="site-btn site-btn--primary site-btn--inline world-map-travel-btn" data-hamlet-id="${hamlet.id}" title="Voyager vers ce hameau">
-        Voyager
-      </button>`;
+    actionHtml = CHANGE_HAMLET_IN_GAME_NOTE;
   }
 
   return `
@@ -163,11 +161,7 @@ export function renderWorldMapPanel(view, selection = {}, tradeInfo = null) {
     return cityPanel;
   }
 
-  return `
-    ${cityPanel}
-    <a href="/game/${view.activeHamletId}" class="site-btn site-btn--primary site-btn--inline world-map-enter-btn" title="Entrer dans le hameau actif">
-      Entrer
-    </a>`;
+  return cityPanel;
 }
 
 /**

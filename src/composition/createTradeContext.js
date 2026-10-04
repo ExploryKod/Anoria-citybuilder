@@ -1,6 +1,6 @@
 import { DexieCityTradeRepository } from '../contexts/geography/infrastructure/dexie/DexieCityTradeRepository.js';
 import { RunMonthlyCityTradeCycle } from '../contexts/geography/application/workflows/RunMonthlyCityTradeCycle.js';
-import { TRADE_CATALOG, getTradeCatalogEntry } from '../contexts/geography/domain/catalogs/TradeCatalog.js';
+import { TRADE_CATALOG, getTradeCatalogEntry } from '../shared/trade-catalog/TradeCatalog.js';
 import { canOpenRelation } from '../contexts/geography/application/canOpenRelation.js';
 import { getCategoriesForRole, getTotalKeyForRole } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { takeCategoryAmount } from '../contexts/supply/domain/value-objects/ResourceStock.js';
@@ -29,16 +29,19 @@ export function createTradeContext({ supply, accounting }) {
       accounting.recordCommerceExportIncome(params),
     recordMerchantSale: (params) => supply.recordMerchantSale(params),
     getCustomsRate: () => accounting.getCustomsRate(),
+    random: () => Math.random(),
+    // Where a sale's range is centred. No game event moves it yet, so every sale is centred on 0 (no
+    // favour, no hurt); events, the relation's state and the merchant's experience plug in here.
+    saleBias: () => 0,
   });
 
   return {
     cityTradeRepository,
 
-    async openRelation(cityId, { demandMultiplier, startMonth }) {
+    async openRelation(cityId, { startMonth }) {
       await cityTradeRepository.saveRelation({
         cityId,
         status: 'active',
-        demandMultiplier,
         satisfactionScore: 50,
         contractStartMonth: startMonth,
         contractEndMonth: null,
@@ -69,11 +72,9 @@ export function createTradeContext({ supply, accounting }) {
         if (existing) continue;
         const ok = await canOpenRelation(entry.cityId);
         if (!ok) continue;
-        const mult = entry.wants[0]?.baseMultiplier ?? 1;
         await cityTradeRepository.saveRelation({
           cityId: entry.cityId,
           status: 'active',
-          demandMultiplier: mult,
           satisfactionScore: 50,
           contractStartMonth: monthIndex,
           contractEndMonth: null,

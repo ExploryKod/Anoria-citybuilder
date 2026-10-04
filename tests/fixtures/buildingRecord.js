@@ -1,3 +1,4 @@
+import { TEST_HAMLET_ID } from '../helpers/testHamlet.js';
 import {
   createBuildingInstanceId,
   canonicalizeHouseRecord,
@@ -15,6 +16,7 @@ import {
  */
 export function makeHouseRecord({ type, x, y, instanceId, extra = {} }) {
   return canonicalizeHouseRecord({
+    hamletId: TEST_HAMLET_ID,
     instanceId: instanceId ?? createBuildingInstanceId(),
     type,
     x,

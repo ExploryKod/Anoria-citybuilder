@@ -58,3 +58,27 @@ server/*/**
 /public/citizenCool/citizenCoolScene.gltf
 # Assets sources retirés de public/ (non servis)
 assets-src/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Fichiers de configuration de l'environnement (montés par le bac à sable)
+/.claude/agents
+/.claude/commands
+/.claude/launch.json
+/.claude/loop.md
+/.claude/output-styles
+/.claude/routines
+/.claude/scheduled_tasks.json
+/.claude/settings.json
+/.claude/skills
+/.claude/workflows
+/.gitconfig
+/.gitmodules
+/.mcp.json
+/.ripgreprc
+/.vscode

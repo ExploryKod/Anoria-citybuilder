@@ -4,7 +4,6 @@ import db from '../../../../core/persistence/dexie/db.js';
  * @typedef {{
  *   cityId: string,
  *   status: 'active' | 'suspended' | 'expired',
- *   demandMultiplier: number,
  *   satisfactionScore: number,
  *   contractStartMonth: number,
  *   contractEndMonth: number,

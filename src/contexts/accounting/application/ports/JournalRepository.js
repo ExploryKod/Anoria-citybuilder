@@ -7,13 +7,11 @@ export class JournalRepository {
     throw new Error('JournalRepository: port not implemented');
   }
 
-  /** @returns {Promise<Array<object>>} */
-  async getYearlyFinancialSummary() {
-    throw new Error('JournalRepository: port not implemented');
-  }
-
-  /** @returns {Promise<number>} */
-  async getCurrentBalance() {
+  /**
+   * @param {{ hamletId?: string|null }} [_options] — only this hamlet's entries; null = every hamlet
+   * @returns {Promise<Array<object>>}
+   */
+  async getYearlyFinancialSummary(_options = {}) {
     throw new Error('JournalRepository: port not implemented');
   }
 }

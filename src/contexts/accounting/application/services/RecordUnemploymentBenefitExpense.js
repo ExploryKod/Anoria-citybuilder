@@ -4,11 +4,9 @@
 export class RecordUnemploymentBenefitExpense {
   /**
    * @param {import('../commands/journal/RecordLedgerEntry.js').RecordLedgerEntry} recordLedgerEntry
-   * @param {import('../commands/treasury/ApplyTreasuryMovement.js').ApplyTreasuryMovement} applyTreasuryMovement
    */
-  constructor(recordLedgerEntry, applyTreasuryMovement) {
+  constructor(recordLedgerEntry) {
     this.recordLedgerEntry = recordLedgerEntry;
-    this.applyTreasuryMovement = applyTreasuryMovement;
   }
 
   /**
@@ -16,7 +14,7 @@ export class RecordUnemploymentBenefitExpense {
    * @param {number} params.turn
    * @param {number} params.amount
    * @param {string} params.description
-   * @returns {Promise<{ recorded: boolean, skipped: boolean, treasuryApplied: boolean, reason?: string }>}
+   * @returns {Promise<{ recorded: boolean, skipped: boolean, reason?: string }>}
    */
   async execute({ turn, amount, description }) {
     const roundedAmount = Math.round(amount);
@@ -25,7 +23,6 @@ export class RecordUnemploymentBenefitExpense {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'zero_amount',
       };
     }
@@ -41,20 +38,13 @@ export class RecordUnemploymentBenefitExpense {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: ledgerResult.reason,
       };
     }
 
-    await this.applyTreasuryMovement.execute({
-      category: 'unemployment_benefit',
-      amount: roundedAmount,
-    });
-
     return {
       recorded: true,
       skipped: false,
-      treasuryApplied: true,
     };
   }
 }

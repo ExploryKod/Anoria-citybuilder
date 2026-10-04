@@ -1,4 +1,5 @@
 import { buildLedgerBusinessKey } from '../../../domain/policies/LedgerIdempotencePolicy.js';
+import { requireActiveHamletId } from '../../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
  * @typedef {object} RecordLedgerEntryResult
@@ -41,6 +42,10 @@ export class RecordLedgerEntry {
     businessKey = null,
     partnerId = null,
     buildingInstanceId = null,
+    loanId = null,
+    loan = null,
+    taxYear = null,
+    taxBreakdown = null,
     persist,
   }) {
     if (typeof turn !== 'number' || Number.isNaN(turn)) {
@@ -55,9 +60,9 @@ export class RecordLedgerEntry {
 
     const timeInfo = this.gameTimePort.getTimeInfo(turn);
     const resolvedBusinessKey =
-      businessKey ?? buildLedgerBusinessKey(type, timeInfo);
+      businessKey ?? buildLedgerBusinessKey(type, timeInfo, requireActiveHamletId());
 
-    const shouldPersist = persist ?? type !== 'balance';
+    const shouldPersist = persist ?? true;
 
     const appendResult = await this.journalWritePort.appendEntry(
       {
@@ -68,6 +73,10 @@ export class RecordLedgerEntry {
         partnerId,
         businessKey: resolvedBusinessKey,
         buildingInstanceId,
+        loanId,
+        loan,
+        taxYear,
+        taxBreakdown,
         month:
           timeInfo?.monthIndex != null ? timeInfo.monthIndex + 1 : null,
         year: timeInfo?.year ?? null,

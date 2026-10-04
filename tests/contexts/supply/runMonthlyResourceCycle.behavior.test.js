@@ -12,8 +12,8 @@ import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 import { clearBuildingsTable, seedBuilding, getBuildingRow } from '../../helpers/buildingDb.js';
 import { getMaxStockForBuilding } from '../../../src/shared/building-catalog/resourceRoleQueries.js';
 import { updateBuildingFields } from '../../../src/composition/constructionOps.js';
-import { computeMonthlyFoodStats } from '../../../src/presentation/dom/admin/food-traceability/FoodTraceabilityPanel.js';
-import { buildFoodTraceabilityExport } from '../../../src/presentation/dom/admin/food-traceability/FoodTraceabilityPresenter.js';
+import { computeMonthlyDietStats } from '../../../src/presentation/dom/admin/supply-traceability/SupplyTraceabilityPanel.js';
+import { buildSupplyTraceabilityExport, chainTotalKey } from '../../../src/presentation/dom/admin/supply-traceability/SupplyTraceabilityPresenter.js';
 
 describe('Supply — RunMonthlyResourceCycle', () => {
   let supply;
@@ -333,10 +333,10 @@ describe('Supply — RunMonthlyResourceCycle', () => {
 
     test('inhabitants born after the meal are not counted as unfed', () => {
       const at = { turn: 1, date: '2026-01-01', year: 0, month: 3 };
-      const { dataByYearMonth } = computeMonthlyFoodStats(
+      const { dataByYearMonth } = computeMonthlyDietStats(
         [
           { ...at, transactionType: 'population_state', fromId: 'h1', quantity: 13 },
-          { ...at, transactionType: 'house_consumption', fromId: 'h1', quantity: 12, pop: 12 },
+          { ...at, transactionType: 'house_consumption', foodType: chainTotalKey, fromId: 'h1', quantity: 12, pop: 12 },
         ],
         []
       );
@@ -371,7 +371,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       );
       expect(rows.map((t) => t.turn).sort((a, b) => a - b)).toEqual([10, 20]);
 
-      const [year] = buildFoodTraceabilityExport(rows, months).years;
+      const [year] = buildSupplyTraceabilityExport(rows, months).years;
       expect(year.months.map((m) => m.unemployment.unemployed)).toEqual([10, 4]);
       expect(year.months[1].unemployment.byGroup.artisans.unemployed).toBe(4);
     });
@@ -386,7 +386,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
         { ...at, month: 4, transactionType: 'game_event', event: 'building_demolished', ...farm('gone') },
         { ...at, month: 11, transactionType: 'source_to_hub', quantity: 78, toId: 'mill', ...farm('kept') },
       ];
-      const [year] = buildFoodTraceabilityExport(rows, [
+      const [year] = buildSupplyTraceabilityExport(rows, [
         { year: 0, month: 3, fedPopulation: 1, unfedPopulation: 0 },
         { year: 0, month: 11, fedPopulation: 1, unfedPopulation: 0 },
       ]).years;
@@ -456,7 +456,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
           (t) => [houseId, farmId].includes(t.fromId)
         );
       const monthly = [{ year: 0, month: 0, fedPopulation: 12, unfedPopulation: 0 }];
-      const [year] = buildFoodTraceabilityExport(await mine(), monthly).years;
+      const [year] = buildSupplyTraceabilityExport(await mine(), monthly).years;
 
       const january = year.months[0].buildings;
       expect(january.employment).toEqual({ workers: 3, workerNeed: 3, understaffedBuildings: 0 });
@@ -470,7 +470,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
         event: 'demolished',
         building: { id: farmId, type: 'Farm-Wheat', x: 3, y: 1 },
       });
-      const after = buildFoodTraceabilityExport(await mine(), monthly);
+      const after = buildSupplyTraceabilityExport(await mine(), monthly);
       expect(after.years[0].endOfYearBuildings.map((b) => b.id)).toEqual([houseId]);
       expect(after.events.some((e) => e.event === 'building_demolished')).toBe(true);
     });
