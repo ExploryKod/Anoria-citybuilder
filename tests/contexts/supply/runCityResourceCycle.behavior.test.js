@@ -13,6 +13,7 @@ import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domai
 import { createResourceStock } from '../../../src/contexts/supply/domain/value-objects/ResourceStock.js';
 import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
+import { unlimitedConsumerMoney } from '../../helpers/unlimitedConsumerMoney.js';
 
 // Market-Stall/Windmill-001/House-Blue are real catalog types — schedule,
 // categories, totalKey, and hub-link field names all come from
@@ -139,7 +140,7 @@ describe('RunCityResourceCycle', () => {
       market({ stocks: { wheat: 10, food: 10 } }),
       house(HOUSE_ID),
     ]);
-    const distribute = new DistributeResourceToConsumers(repo);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
     const events = [];
     const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
 
@@ -171,7 +172,7 @@ describe('RunCityResourceCycle', () => {
       house(HOUSE_ID),
       house(HOUSE2_ID),
     ]);
-    const distribute = new DistributeResourceToConsumers(repo);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
     const events = [];
     const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
 
@@ -217,7 +218,7 @@ describe('RunCityResourceCycle', () => {
       market({ supplyHubId: WINDMILL_ID, stocks: { wheat: 0, food: 0 } }),
       house(HOUSE_ID),
     ]);
-    const distribute = new DistributeResourceToConsumers(repo);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
     const transferHubToHub = new TransferHubToHub(repo, new HubServing(repo));
     let hubLinkResolved = null;
     const cycle = new RunCityResourceCycle(repo, distribute, undefined, {
@@ -258,7 +259,7 @@ describe('RunCityResourceCycle', () => {
       market({ supplyHubId: WINDMILL_ID, stocks: { wheat: 0, food: 0 } }),
       house(HOUSE_ID),
     ]);
-    const cycle = new RunCityResourceCycle(repo, new DistributeResourceToConsumers(repo), undefined, {
+    const cycle = new RunCityResourceCycle(repo, new DistributeResourceToConsumers(repo, unlimitedConsumerMoney), undefined, {
       transferHubToHub: new TransferHubToHub(repo, new HubServing(repo)),
     });
 
@@ -276,7 +277,7 @@ describe('RunCityResourceCycle', () => {
 
   test('a hub-less flag distributor (chapel) marks houses served, no stock leg at all', async () => {
     const repo = new FakeSupplyBuildingRepository([chapel(), house(HOUSE_ID)]);
-    const distribute = new DistributeResourceToConsumers(repo);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
     const events = [];
     const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
 
@@ -312,7 +313,7 @@ describe('RunCityResourceCycle', () => {
 
   test('the served flag tracks the REAL current month across cycles, not a stuck value', async () => {
     const repo = new FakeSupplyBuildingRepository([chapel(), house(HOUSE_ID)]);
-    const distribute = new DistributeResourceToConsumers(repo);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
     const cycle = new RunCityResourceCycle(repo, distribute);
 
     await cycle.execute({

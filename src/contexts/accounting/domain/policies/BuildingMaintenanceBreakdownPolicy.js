@@ -63,101 +63,10 @@ function classifyMaintenanceBuilding(type, maintenanceCosts) {
 }
 
 /**
- * Snapshot for ProcessTurnBudget — counts + per-category cost breakdown.
- *
- * @param {string[]} buildingTypes
- * @param {typeof DEFAULT_MAINTENANCE_COSTS} [maintenanceCosts]
+ * What one building costs to maintain in a month, as the maintenance costs declare it (0 for a building not maintained).
+ * @param {string} type
+ * @returns {number}
  */
-export function buildTurnBudgetMaintenanceSnapshot(
-  buildingTypes,
-  maintenanceCosts = DEFAULT_MAINTENANCE_COSTS
-) {
-  const buildingCounts = {
-    houses: 0,
-    farms: 0,
-    markets: 0,
-    roads: 0,
-    total: 0,
-  };
-
-  const maintenanceBreakdown = {
-    roads: { count: 0, cost: 0, unitCost: maintenanceCosts.roads },
-    houses: { count: 0, cost: 0, unitCost: null },
-    farms: { count: 0, cost: 0, unitCost: maintenanceCosts.Farm },
-    markets: { count: 0, cost: 0, unitCost: maintenanceCosts.Market },
-  };
-
-  for (const type of buildingTypes) {
-    if (!type) continue;
-
-    const { category, cost } = classifyMaintenanceBuilding(type, maintenanceCosts);
-    if (!category) continue;
-
-    buildingCounts[category]++;
-    buildingCounts.total++;
-    maintenanceBreakdown[category].count++;
-    maintenanceBreakdown[category].cost += cost;
-    if (category === 'houses') {
-      // Houses are priced per type: the monthly line shows one unit rate, so every house must share it.
-      const houses = maintenanceBreakdown.houses;
-      if (houses.unitCost === null) houses.unitCost = cost;
-      else if (houses.unitCost !== cost) {
-        throw new Error(
-          `[BuildingMaintenanceBreakdownPolicy] houses have different maintenance rates (${houses.unitCost} and ${cost}); the monthly breakdown cannot show one unit cost`
-        );
-      }
-    }
-  }
-
-  return { buildingCounts, maintenanceBreakdown };
-}
-
-/**
- * @param {Array<{ type?: string }>} houses
- * @param {typeof DEFAULT_MAINTENANCE_COSTS} [maintenanceCosts]
- */
-export function accumulateBuildingMaintenanceBreakdown(
-  houses,
-  maintenanceCosts = DEFAULT_MAINTENANCE_COSTS
-) {
-  const maintenanceBreakdown = {
-    houses: 0,
-    farms: 0,
-    markets: 0,
-    roads: 0,
-    infrastructure: 0,
-    industry: 0,
-    total: 0,
-  };
-
-  for (const house of houses) {
-    if (!house.type) {
-      continue;
-    }
-
-    const type = house.type;
-    let cost = 2;
-    const kind = resolveBuildingKind(type);
-
-    if (isRoadType(type)) {
-      cost = maintenanceCosts.roads;
-      maintenanceBreakdown.roads += cost;
-    } else if (kind === BUILDING_KIND_HOUSE) {
-      cost = houseMaintenanceCost(type);
-      maintenanceBreakdown.houses += cost;
-    } else if (kind === BUILDING_KIND_FARM) {
-      cost = maintenanceCosts.Farm;
-      maintenanceBreakdown.farms += cost;
-    } else if (kind === BUILDING_KIND_MARKET) {
-      cost = maintenanceCosts.Market;
-      maintenanceBreakdown.markets += cost;
-    } else if (kind === BUILDING_KIND_WINDMILL) {
-      cost = maintenanceCosts.Industry;
-      maintenanceBreakdown.industry += cost;
-    }
-
-    maintenanceBreakdown.total += cost;
-  }
-
-  return maintenanceBreakdown;
+export function buildingMaintenanceCost(type) {
+  return classifyMaintenanceBuilding(type, DEFAULT_MAINTENANCE_COSTS).cost;
 }

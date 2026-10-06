@@ -14,24 +14,14 @@ export { isInformativeJournalType, isJournalEntryIncomeForMonthlySummary };
 
 /**
  * @param {Array<object>} entries
- * @param {number|null} maxAge days
  */
-export function filterAndSortJournalEntries(entries, maxAge = null) {
-  let filtered = entries;
-
-  if (maxAge) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - maxAge);
-    filtered = filtered.filter(
-      (entry) => new Date(entry.date) >= cutoffDate
-    );
-  }
-
-  return filtered.sort((a, b) => {
+export function filterAndSortJournalEntries(entries) {
+  return entries.sort((a, b) => {
     if (a.turn !== b.turn) {
       return b.turn - a.turn;
     }
-    return new Date(b.date) - new Date(a.date);
+    // Within a turn, the most recent insertion first: the wall-clock date can tie within a millisecond.
+    return b.id - a.id;
   });
 }
 
@@ -99,10 +89,11 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
         businessKey: entry.businessKey,
         partnerId: entry.partnerId,
         buildingInstanceId: entry.buildingInstanceId,
+        accountBuildingId: entry.accountBuildingId ?? null,
+        counterpartyBuildingId: entry.counterpartyBuildingId ?? null,
         type: entry.type,
         amount: entry.amount,
         description: entry.description,
-        date: entry.date,
         turn: entry.turn,
       });
     } else {
@@ -113,10 +104,11 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
         businessKey: entry.businessKey,
         partnerId: entry.partnerId,
         buildingInstanceId: entry.buildingInstanceId,
+        accountBuildingId: entry.accountBuildingId ?? null,
+        counterpartyBuildingId: entry.counterpartyBuildingId ?? null,
         type: entry.type,
         amount: entry.amount,
         description: entry.description,
-        date: entry.date,
         turn: entry.turn,
       });
     }

@@ -1,10 +1,4 @@
-/** Strip embedded breakdown JSON from legacy descriptions. */
-export function stripBreakdownMarkup(description) {
-  if (!description) {
-    return '';
-  }
-  return description.replace(/\|BREAKDOWN\|.*?\|BREAKDOWN\|/, '').trim();
-}
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 
 const MONTH_NAMES =
   'Janvier|Février|Mars|Avril|Mai|Juin|Juillet|Août|Septembre|Octobre|Novembre|Décembre';
@@ -72,7 +66,7 @@ function splitPeriodLabel(text) {
  * @returns {JournalEntryDetail[]} Labeled detail rows (month/year omitted — shown in section headers).
  */
 export function formatJournalEntryDetails(entry) {
-  const raw = stripBreakdownMarkup(entry.description || '');
+  const raw = (entry.description || '').trim();
   if (!raw) {
     return [];
   }
@@ -86,7 +80,7 @@ export function formatJournalEntryDetails(entry) {
       details.push({ label: 'Taux', value: `${rate[1]}%` });
     }
     if (assietteTotal) {
-      details.push({ label: 'Assiette', value: `${assietteTotal[1]}€` });
+      details.push({ label: 'Assiette', value: formatEuro(assietteTotal[1]) });
     }
     if (assietteDetail) {
       details.push({ label: 'Détail assiette', value: assietteDetail[1] });

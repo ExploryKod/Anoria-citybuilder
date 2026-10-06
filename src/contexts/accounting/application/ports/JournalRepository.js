@@ -3,7 +3,7 @@
  */
 export class JournalRepository {
   /** @returns {Promise<Array<object>>} */
-  async getJournalEntries(_maxAge = null) {
+  async getJournalEntries() {
     throw new Error('JournalRepository: port not implemented');
   }
 

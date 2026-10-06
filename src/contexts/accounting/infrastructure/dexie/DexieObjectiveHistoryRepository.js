@@ -16,7 +16,6 @@ export class DexieObjectiveHistoryRepository {
       failureTurn: failureData.turn,
       failureReason: failureData.reason,
       failureDetails: failureData.details || {},
-      recordedAt: new Date().toISOString(),
     };
 
     try {
@@ -57,7 +56,6 @@ export class DexieObjectiveHistoryRepository {
       objectiveId: successData.objectiveId,
       successTurn: successData.turn,
       successDetails: successData.details || {},
-      recordedAt: new Date().toISOString(),
     };
 
     try {

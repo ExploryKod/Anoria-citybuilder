@@ -41,4 +41,27 @@ describe('year closing — a purge keeps the treasury, the sub-totals and the op
     expect(yearOneAfter.expenses.total).toBe(yearOneBefore.expenses.total);
     expect(yearOneAfter.netFlow).toBe(yearOneBefore.netFlow);
   });
+
+  test('a purge moves neither the city\'s balance nor a company\'s: each account is closed apart', async () => {
+    resetSessionLedgerBufferForTests();
+    resetAccountingContextForTests();
+    const accounting = getOrCreateAccountingContext({});
+
+    await sessionJournalStore.addJournalEntry(0, 'capital_funds', 500, 'Capital', null, { businessKey: 'capital_funds:0' });
+    for (let year = 0; year < 8; year += 1) {
+      await sessionJournalStore.addJournalEntry(year * 12 + 3, 'payroll_tax', 100, 'impôt');
+      await sessionJournalStore.addJournalEntry(year * 12 + 4, 'producer_revenue', 80, 'ventes', null, { accountBuildingId: 'farm' });
+      await sessionJournalStore.addJournalEntry(year * 12 + 5, 'corporate_tax', 12, 'IS', null, { accountBuildingId: 'farm' });
+    }
+    useGameTurnForTests(8 * 12);
+
+    const cityBefore = (await getTreasurySnapshot()).funds;
+    const farmBefore = await accounting.getBuildingAccountBalance('farm');
+
+    const result = await sessionJournalStore.cleanupOldJournalYears(5);
+    expect(result.closed).toBeGreaterThan(0);
+
+    expect((await getTreasurySnapshot()).funds).toBe(cityBefore);
+    expect(await accounting.getBuildingAccountBalance('farm')).toBe(farmBefore);
+  });
 });

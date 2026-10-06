@@ -10,6 +10,7 @@ import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domai
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { DistributeResourceToConsumers } from '../../../src/contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
+import { unlimitedConsumerMoney } from '../../helpers/unlimitedConsumerMoney.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -69,7 +70,7 @@ describe('Supply — chapel faith coverage (flag consumption)', () => {
     house1Id = createBuildingInstanceId();
     house2Id = createBuildingInstanceId();
     repo = new InMemorySupplyBuildingRepository([chapel(chapelId), house(house1Id), house(house2Id)]);
-    useCase = new DistributeResourceToConsumers(repo);
+    useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
   });
 
   test('marks reached houses served this month, no stock moves at all', async () => {
@@ -133,7 +134,7 @@ describe('Supply — chapel faith coverage (flag consumption)', () => {
 
   test('skips a house without road access', async () => {
     repo = new InMemorySupplyBuildingRepository([chapel(chapelId), house(house1Id, { roadCount: 0 })]);
-    useCase = new DistributeResourceToConsumers(repo);
+    useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
 
     const outcome = await useCase.execute({
       sourceId: chapelId,

@@ -31,6 +31,9 @@ export class RecordLedgerEntry {
    * @param {string|null} [params.businessKey]
    * @param {string|null} [params.partnerId]
    * @param {string|null} [params.buildingInstanceId]
+   * @param {string|null} [params.accountBuildingId] the company whose own account the line moves; null for the city's
+   * @param {string|null} [params.accountKind] which of a house's two accounts (particulier or entreprise); null for a company's
+   * @param {string|null} [params.counterpartyBuildingId] the other company of a trade line (its trace); null when none
    * @param {boolean} [params.persist]
    * @returns {Promise<RecordLedgerEntryResult>}
    */
@@ -42,6 +45,9 @@ export class RecordLedgerEntry {
     businessKey = null,
     partnerId = null,
     buildingInstanceId = null,
+    accountBuildingId = null,
+    accountKind = null,
+    counterpartyBuildingId = null,
     loanId = null,
     loan = null,
     taxYear = null,
@@ -73,6 +79,9 @@ export class RecordLedgerEntry {
         partnerId,
         businessKey: resolvedBusinessKey,
         buildingInstanceId,
+        accountBuildingId,
+        accountKind,
+        counterpartyBuildingId,
         loanId,
         loan,
         taxYear,

@@ -5,7 +5,7 @@ import {
   DEFAULT_VAT_RATE_PERCENT,
   DEFAULT_VAT_UNIFORM,
 } from '../../src/contexts/accounting/domain/catalogs/FiscalRateCatalog.js';
-import { getVatCategories } from '../../src/shared/resource-catalog/VatCategoryCatalog.js';
+import { getVatCategories, getVatItems } from '../../src/shared/resource-catalog/VatCategoryCatalog.js';
 import { getServiceCategories } from '../../src/shared/resource-catalog/ResourceCategoryCatalog.js';
 
 /** The hamlet every test runs on (made active by tests/setupActiveHamlet.js). */
@@ -32,5 +32,6 @@ export async function seedTestHamlet(database) {
     vatRatePercent: Object.fromEntries(getVatCategories().map((category) => [category, DEFAULT_VAT_RATE_PERCENT])),
     vatUniform: DEFAULT_VAT_UNIFORM,
     vatGeneralRatePercent: DEFAULT_VAT_GENERAL_RATE_PERCENT,
+    vatExempt: Object.fromEntries(getVatItems().map((item) => [item, false])),
   });
 }

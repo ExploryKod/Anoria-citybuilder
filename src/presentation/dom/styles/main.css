@@ -1743,6 +1743,227 @@ button.building-info-metric-card[aria-pressed="true"] {
     color: #78909c;
 }
 
+/* Flash keywords under an unmet need: why it was not met, and how many units (see houseInfoFormat.js). */
+.building-info-metric-card__keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.building-info-metric-card__keyword {
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.building-info-metric-card__keyword--shortage {
+    background: #fdecea;
+    color: #b71c1c;
+}
+
+.building-info-metric-card__keyword--unpaid {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+/* A house's monthly budget, read from its personal account (see budgetBlock in buildingFinanceInfoView.js). */
+.building-finance-budget {
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+.building-finance-budget-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #eceff1;
+    color: #424242;
+}
+
+.building-finance-budget-row span:last-child {
+    font-weight: 600;
+    color: #111;
+}
+
+.building-finance-budget-row.building-finance-row--subtotal {
+    font-weight: 700;
+    border-top: 1px solid #90a4ae;
+}
+
+.building-finance-budget-row.building-finance-row--total {
+    font-weight: 800;
+    border-top: 2px solid #ff9800;
+}
+
+.building-finance-budget-row span.is-negative {
+    color: #c62828;
+}
+
+/* Products and receipts are green, payments and charges red: the sign alone is not enough to read a statement. */
+.building-finance-flow--income,
+.building-finance-flow--income th,
+.building-finance-flow--income td {
+    background: #e8f5e9;
+}
+
+.building-finance-flow--charge,
+.building-finance-flow--charge th,
+.building-finance-flow--charge td {
+    background: #fdecea;
+}
+
+.building-finance-table th.building-finance-flow--income,
+.building-finance-budget-row.building-finance-flow--income {
+    color: #1b5e20;
+}
+
+.building-finance-table th.building-finance-flow--charge,
+.building-finance-budget-row.building-finance-flow--charge {
+    color: #8e2424;
+}
+
+/* Habitants tab: one line per citizen, in a list that scrolls. */
+.house-residents-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+    font-size: 14px;
+}
+
+.house-residents-item {
+    padding: 6px 8px;
+    border-bottom: 1px solid #eceff1;
+    color: #424242;
+}
+
+.house-residents-name {
+    font-weight: 700;
+    color: #111;
+}
+
+.house-residents-item--civil_servant .house-residents-place {
+    color: #1565c0;
+}
+
+.house-residents-item--unemployed .house-residents-place {
+    color: #8e2424;
+}
+
+/* Finances tab: one analytical statement per account (see buildingFinanceInfoView.js); a house has two accounts. */
+.building-finance-accounts {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.building-finance-account-tab {
+    padding: 6px 12px;
+    border: 1px solid #ff9800;
+    background: #fff;
+    color: #e65100;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.building-finance-account-tab.active {
+    background: #ff9800;
+    color: #fff;
+}
+
+.building-finance-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+.building-finance-table th,
+.building-finance-table td {
+    padding: 8px;
+    border-bottom: 1px solid #eceff1;
+}
+
+.building-finance-table thead th {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #78909c;
+    text-align: right;
+}
+
+.building-finance-table thead th:first-child,
+.building-finance-table tbody th {
+    text-align: left;
+}
+
+.building-finance-table tbody th {
+    font-weight: 600;
+    color: #424242;
+}
+
+.building-finance-table td {
+    text-align: right;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #111;
+}
+
+.building-finance-table td.is-negative {
+    color: #c62828;
+}
+
+.building-finance-row--subtotal th,
+.building-finance-row--subtotal td {
+    font-weight: 700;
+    border-top: 1px solid #90a4ae;
+}
+
+.building-finance-row--total th,
+.building-finance-row--total td {
+    font-weight: 800;
+    border-top: 2px solid #ff9800;
+}
+
+.building-finance-row--rate th,
+.building-finance-row--rate td {
+    font-size: 12px;
+    font-style: italic;
+    font-weight: 500;
+    color: #78909c;
+}
+
+.building-finance-cash {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 8px;
+    font-size: 14px;
+    color: #424242;
+    font-weight: 600;
+}
+
+.building-finance-cash strong {
+    color: #111;
+    font-weight: 700;
+}
+
+.building-finance-note {
+    margin: 8px 8px 0;
+    font-size: 12px;
+    font-style: italic;
+    color: #78909c;
+}
+
 .building-info-messages-empty {
     margin: 0;
     font-size: 14px;

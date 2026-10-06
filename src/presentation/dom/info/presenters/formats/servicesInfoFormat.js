@@ -90,14 +90,18 @@ export function formatServicesModel(vm) {
       servedFlags: vm.servedFlags,
       periodKey: vm.periodKey,
     });
+    // A service the house could not pay for this month is cut off, not absent: the chip says which it is.
+    const cutOff = vm.buildingRow?.serviceCutOff;
     for (const requirement of coverage) {
       const { label, emoji } = getServiceCategoryDisplay(requirement.category);
+      const insolvable = !requirement.met && cutOff?.monthIndex === vm.periodKey && cutOff.categories.includes(requirement.category);
+      const reason = insolvable ? 'insolvable' : 'inexistant';
       items.push({
         emoji,
         label,
-        value: requirement.met ? '✓' : null,
+        value: requirement.met ? '✓' : reason,
         status: requirement.met ? 'ok' : 'off',
-        ariaLabel: requirement.met ? `${label} à portée` : `${label} hors de portée ou non desservi`,
+        ariaLabel: requirement.met ? `${label} à portée` : `${label} non servi : ${reason}`,
       });
     }
   }

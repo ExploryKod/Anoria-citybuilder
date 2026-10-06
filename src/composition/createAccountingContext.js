@@ -1,6 +1,4 @@
 import { getOrCreateGameSessionContext } from './createGameSessionContext.js';
-import { getOrCreateHousingContext } from './createHousingContext.js';
-import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
 import { getSessionGameTime, getSessionProcessLoanPayments } from './sessionRuntime.js';
 import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 import { HamletFiscalRateRepository } from '../contexts/accounting/infrastructure/persistence/HamletFiscalRateRepository.js';
@@ -44,28 +42,25 @@ import {
   readInitialFundsFromImportMeta,
 } from '../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
 import { CollectCitizenTaxes } from '../contexts/accounting/application/services/game/CollectCitizenTaxes.js';
-import { RecordBuildingMaintenanceForCity } from '../contexts/accounting/application/services/game/RecordBuildingMaintenanceForCity.js';
 import { GameTreasuryRecording } from '../contexts/accounting/application/services/game/GameTreasuryRecording.js';
 import { ProcessTurnBudget } from '../contexts/accounting/application/services/ProcessTurnBudget.js';
-import { SettleServiceSubsidies } from '../contexts/accounting/application/services/SettleServiceSubsidies.js';
-import { SettleVat } from '../contexts/accounting/application/services/SettleVat.js';
+import { RecordConsumerPurchases } from '../contexts/accounting/application/services/RecordConsumerPurchases.js';
+import { GetProducerRevenues } from '../contexts/accounting/application/queries/GetProducerRevenues.js';
+import { buildingAccountTrace } from '../contexts/accounting/domain/policies/BuildingAccountTracePolicy.js';
+import { buildingFinanceFigures, householdBudgetOf, householdLastMonthOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
+import { residentsOfHouse } from '../contexts/accounting/domain/policies/HouseResidentsPolicy.js';
+import { MONTHS_PER_YEAR } from '../shared/time/TimeCalendar.js';
+import { isLucrativeBuilding } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
+import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../shared/building-identity/index.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
 import { getResourceBaseValue } from '../shared/resource-catalog/ResourceCategoryCatalog.js';
 import {
   canAffordFromBudget,
 } from '../contexts/accounting/application/queries/treasury/GameTreasuryProjections.js';
-import { listSceneBuildingTypesForMaintenance } from './sceneBuildingInventoryBridge.js';
-import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { isActiveHamletRow } from '../core/persistence/hamlet/hamletSession.js';
-
-async function getCityTotalPopulation() {
-  const { totalPop } = await getOrCreateHousingContext().getCityPopulationSummary();
-  return totalPop;
-}
-
-async function getCityEmploymentSummary() {
-  return getOrCreateEmploymentContext().getCityEmploymentSummary();
-}
+import { buildingMaintenanceCost } from '../contexts/accounting/domain/policies/BuildingMaintenanceBreakdownPolicy.js';
+import { SettleProducerCharges } from '../contexts/accounting/application/services/SettleProducerCharges.js';
+import { resolveGetTimeInfo } from './gameTimeBridge.js';
 
 /**
  * Composition root — Accounting bounded context.
@@ -81,7 +76,6 @@ async function getCityEmploymentSummary() {
  * @param {import('../contexts/accounting/infrastructure/session/SessionJournalStore.js').SessionJournalStore} [deps.journalManager]
  * @param {import('dexie').Dexie} [deps.db]
  * @param {import('../contexts/accounting/infrastructure/dexie/DexieObjectiveHistoryRepository.js').DexieObjectiveHistoryRepository} [deps.objectiveHistoryRepository]
- * @param {() => string[]} [deps.listBuildingTypesForMaintenance]
  * @param {(turn: number) => object} [deps.getTimeInfo]
  * @param {import('../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js').LocalStorageFiscalSettingsRepository} [deps.fiscalSettingsRepository]
  * @param {() => number} [deps.getCitizenTaxPerCapita]
@@ -242,12 +236,6 @@ export function createAccountingContext(deps = {}) {
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
   });
 
-  const recordBuildingMaintenanceForCity = new RecordBuildingMaintenanceForCity({
-    getTreasurySnapshot: getTreasurySnapshotQuery,
-    recordMaintenanceExpense,
-    houseReadPort,
-  });
-
   const gameTreasuryRecording = new GameTreasuryRecording({
     getTreasurySnapshot: getTreasurySnapshotQuery,
     commands: {
@@ -270,42 +258,86 @@ export function createAccountingContext(deps = {}) {
   const getSalarySettings =
     deps.getSalarySettings ?? (() => hamletFiscalRates.getSalarySettings());
 
-  // The services of a month are read from the transactions log (the supply's), and billed here.
+  // The services of a month are read from the transactions log (the supply's), and settled here.
   const supplyTraceabilityRepository =
     deps.supplyTraceabilityRepository ?? new DexieSupplyTraceabilityRepository(dexieDb);
-  const settleServiceSubsidies = new SettleServiceSubsidies({
+  const getProducerRevenues = new GetProducerRevenues({
+    getJournalEntries: () => journalRepository.getJournalEntries(),
+    getBuildingTypes: async () =>
+      new Map((await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => [row.id, row.type])),
+  });
+  // A company's charges are read from its goods and service flows and its upkeep, once per delivered month.
+  const settleProducerCharges = new SettleProducerCharges({
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
-    sumServiceDeliveries: (year, monthIndex) =>
-      supplyTraceabilityRepository.sumServiceDeliveries(year, monthIndex),
+    listBuildings: async () =>
+      (await dexieDb.houses.toArray())
+        .filter(isActiveHamletRow)
+        .map((row) => ({ id: row.id, type: row.type, workerSources: row.employees?.workerSources ?? {} })),
+    sumGoodsFlowsByPair: (year, monthIndex) =>
+      supplyTraceabilityRepository.sumGoodsFlowsByPair(year, monthIndex),
+    sumServiceFlows: (year, monthIndex) => supplyTraceabilityRepository.sumServiceFlows(year, monthIndex),
+    fundsOf: async (houseId) =>
+      (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: 'particulier' })).funds,
+    getVatRates: () => hamletFiscalRates.getVatRates(),
+    listHouses: async () =>
+      (await dexieDb.houses.toArray())
+        .filter(isActiveHamletRow)
+        .filter((row) => resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE)
+        .map((row) => {
+          if (!Number.isInteger(row.pop) || row.pop < 0) throw new Error(`[households] house ${row.id} has no residents count`);
+          return { id: row.id, pop: row.pop };
+        }),
+    /**
+     * The citizens of a household: each resident with his workplace, or his status (see HouseResidentsPolicy).
+     * @param {string} houseId
+     */
+    async getHouseResidents(houseId) {
+      const rows = (await dexieDb.houses.toArray()).filter(isActiveHamletRow);
+      const house = rows.find((row) => row.id === houseId);
+      if (!house) throw new Error(`[residents] household ${houseId} is not in the hamlet`);
+      if (!Number.isInteger(house.pop)) throw new Error(`[residents] household ${houseId} has no residents count`);
+      const workplaces = rows
+        .filter((row) => (row.employees?.workerSources?.[houseId] ?? 0) > 0)
+        .map((row) => ({ workplaceId: row.id, workplaceType: row.type, workers: row.employees.workerSources[houseId] }));
+      const residents = residentsOfHouse({ houseId, pop: house.pop, workplaces: workplaces.map(({ workplaceId, workers }) => ({ workplaceId, workers })) });
+      const typeOf = new Map(workplaces.map((entry) => [entry.workplaceId, entry.workplaceType]));
+      return residents.map((resident) => ({ ...resident, workplaceType: resident.workplaceId ? typeOf.get(resident.workplaceId) : null }));
+    },
+    getPublicPay: async () => {
+      const settings = await hamletFiscalRates.getSalarySettings();
+      return { salaryPerMonth: settings.salaryPerMonth, unemploymentBenefitRate: settings.unemploymentBenefitRate };
+    },
+    getSalaryTax: async () => {
+      const settings = await hamletFiscalRates.getSalarySettings();
+      return { rate: settings.salaryTaxRate, threshold: settings.salaryTaxThreshold };
+    },
+    sumHouseSales: async (year, monthIndex) => {
+      // A house's purchase of goods is a sale of the company, the counterparty being the house (see RecordConsumerPurchases).
+      const entries = await journalRepository.getJournalEntries();
+      const kinds = new Map((await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => [row.id, row.type]));
+      return entries
+        .filter((entry) =>
+          entry.type === 'producer_revenue' && entry.year === year && entry.month === monthIndex + 1 &&
+          entry.accountBuildingId && entry.counterpartyBuildingId &&
+          resolveBuildingKind(kinds.get(entry.counterpartyBuildingId)) === BUILDING_KIND_HOUSE)
+        .map((entry) => ({ sellerId: entry.accountBuildingId, amountHT: entry.amount }));
+    },
+    recordServiceCutOff: (cutOff) => supplyTraceabilityRepository.recordServiceCutOff(cutOff),
     getServiceSubsidies: () => hamletFiscalRates.getServiceSubsidies(),
     getServicePrice: (service) => getResourceBaseValue(service),
+    buildingMaintenanceCost,
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
-    recordServiceBilling: (billing) => supplyTraceabilityRepository.recordServiceBilling(billing),
+    recordEconomyMovement: (movement) => supplyTraceabilityRepository.recordEconomyMovement(movement),
   });
-  const settleVat = new SettleVat({
-    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
-    sumGoodSalesToHouses: (year, monthIndex) =>
-      supplyTraceabilityRepository.sumGoodSalesToHouses(year, monthIndex),
+  const recordConsumerPurchases = new RecordConsumerPurchases({
     getVatRates: () => hamletFiscalRates.getVatRates(),
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
 
   const processTurnBudget = new ProcessTurnBudget({
     collectCitizenTaxes: (time) => collectCitizenTaxes.execute({ time }),
-    recordSalaries: (...args) => gameTreasuryRecording.recordSalaries(...args),
-    recordPayrollTax: (...args) => gameTreasuryRecording.recordPayrollTax(...args),
-    recordUnemploymentBenefits: (...args) =>
-      gameTreasuryRecording.recordUnemploymentBenefits(...args),
-    recordBuildingMaintenance: (amount, description, turn) =>
-      recordBuildingMaintenanceForCity.execute({ amount, description, turn }),
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
-    getCityTotalPopulation:
-      deps.getCityTotalPopulation ?? (() => getCityTotalPopulation()),
-    getCityEmploymentSummary:
-      deps.getCityEmploymentSummary ?? (() => getCityEmploymentSummary()),
-    getSalarySettings,
-    settleServiceSubsidies: (params) => settleServiceSubsidies.execute(params),
-    settleVat: (params) => settleVat.execute(params),
+    settleProducerCharges: (params) => settleProducerCharges.execute(params),
     processLoanPayments:
       deps.processLoanPayments ??
       (async () => {
@@ -317,8 +349,6 @@ export function createAccountingContext(deps = {}) {
     cleanupOldJournalYears: (keepYears) =>
       sessionJournalStoreInstance.cleanupOldJournalYears(keepYears),
     flushJournalSessionToDexie: () => flushJournalSession.execute(),
-    listBuildingTypesForMaintenance:
-      deps.listBuildingTypesForMaintenance ?? listSceneBuildingTypesForMaintenance,
   });
 
   return {
@@ -536,11 +566,6 @@ export function createAccountingContext(deps = {}) {
       return collectCitizenTaxes.execute(params);
     },
 
-    /** @param {Parameters<RecordBuildingMaintenanceForCity['execute']>[0]} params */
-    async recordBuildingMaintenanceForCity(params) {
-      return recordBuildingMaintenanceForCity.execute(params);
-    },
-
     /** @param {Parameters<GameTreasuryRecording['recordSalaries']>} args */
     async recordSalaries(...args) {
       return gameTreasuryRecording.recordSalaries(...args);
@@ -629,6 +654,91 @@ export function createAccountingContext(deps = {}) {
       return hamletFiscalRates.ensureRates(hamletId);
     },
 
+    /**
+     * Whether a building type has a journal account of its own: a house, or a company (a producer, a hub or a seller of goods).
+     * @param {string} buildingType
+     * @returns {boolean}
+     */
+    hasBuildingAccount(buildingType) {
+      return resolveBuildingKind(buildingType) === BUILDING_KIND_HOUSE || isLucrativeBuilding(buildingType);
+    },
+
+    /**
+     * The Finance tab of a building: its analytical account for the last month and for the year, and its cash.
+     * A month's charges are settled at the start of the month that follows it, so the lines stamped with the current
+     * month are the last month's activity. The year column is the year's settled lines so far.
+     * @param {string} buildingId
+     * @param {string | null} accountKind a house's account (particulier or entreprise); null for a company's account
+     * @returns {Promise<{ lastMonth: object, year: object, cash: number }>}
+     */
+    async getBuildingFinance(buildingId, accountKind) {
+      const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
+      const entries = await journalRepository.getJournalEntries();
+      const snapshot = await getTreasurySnapshotQuery.execute({ accountBuildingId: buildingId, accountKind });
+      // The month before the current one: a house's goods are dated by their delivery, its salary and services by the settlement.
+      const previous = now.monthIndex === 0
+        ? { year: now.year - 1, month: MONTHS_PER_YEAR }
+        : { year: now.year, month: now.monthIndex };
+      const settled = { year: now.year, month: now.monthIndex + 1 };
+      return {
+        lastMonth: accountKind === 'particulier'
+          ? { ...buildingFinanceFigures(entries, buildingId, { ...settled, accountKind }), ...householdLastMonthOf(entries, buildingId, { settled, bought: previous }) }
+          : buildingFinanceFigures(entries, buildingId, { ...settled, accountKind }),
+        year: buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind }),
+        cash: snapshot.funds,
+        // A house's personal account has its monthly budget, and the savings it had at the start of the year (what its
+        // balance was before the year's lines: the year's result is what it added since); a company's account has neither.
+        budget: accountKind === 'particulier'
+          ? householdBudgetOf(entries, buildingId, { year: now.year, month: now.monthIndex + 1, balance: snapshot.funds })
+          : null,
+        openingSavings: accountKind === 'particulier'
+          ? snapshot.funds - buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind }).householdResult
+          : null,
+      };
+    },
+
+    /**
+     * The trace of a company's account: its movements and the companies it traded with (see buildingAccountTrace).
+     * @param {string} buildingId
+     */
+    async getBuildingAccountTrace(buildingId) {
+      return buildingAccountTrace(await journalRepository.getJournalEntries(), buildingId);
+    },
+
+    /**
+     * A company's own account: what it has kept of its sales after purchases, wages, upkeep and corporate tax.
+     * @param {string} buildingId
+     * @returns {Promise<number>}
+     */
+    /**
+     * Whether a house is cut off from a service for a month: its bill for the month before was not paid.
+     * @param {{ houseId: string, service: string, year: number, monthIndex: number }} params
+     */
+    isServiceCutOff(params) {
+      return supplyTraceabilityRepository.hasServiceCutOff(params);
+    },
+
+    /**
+     * The goods a delivery sold to houses, paid per unit: the houses' purchases, the sellers' revenue and the VAT.
+     * @param {{ turn: number, timeInfo: object, distributorId: string, distributorType: string, purchases: Array<object> }} params
+     */
+    recordConsumerPurchases(params) {
+      return recordConsumerPurchases.execute(params);
+    },
+
+    async getBuildingAccountBalance(buildingId, accountKind = null) {
+      const snapshot = await getTreasurySnapshotQuery.execute({ accountBuildingId: buildingId, accountKind });
+      return snapshot.funds;
+    },
+
+    /**
+     * The HT revenue of each producer of the active hamlet in one month, largest first (see GetProducerRevenues).
+     * @param {number} year @param {number} monthIndex
+     */
+    getProducerRevenues(year, monthIndex) {
+      return getProducerRevenues.execute(year, monthIndex);
+    },
+
     /** @returns {Promise<Record<string, number>>} the active hamlet's subsidy per service, in percent. */
     getServiceSubsidies() {
       return hamletFiscalRates.getServiceSubsidies();
@@ -652,6 +762,11 @@ export function createAccountingContext(deps = {}) {
     /** @param {number} percent */
     setVatGeneralRate(percent) {
       return hamletFiscalRates.setVatGeneralRate(percent);
+    },
+
+    /** @param {string} item a good or a service @param {boolean} exempt */
+    setVatExempt(item, exempt) {
+      return hamletFiscalRates.setVatExempt(item, exempt);
     },
 
     /** @param {string} category @param {number} percent */

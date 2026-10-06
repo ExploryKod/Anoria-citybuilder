@@ -2,6 +2,7 @@ import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
 import { NATURE_ASSETS } from '../../three/assets/natureAssets.js';
 import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
 import { buildingPlacementCatalog } from '../../../shared/building-catalog/index.js';
+import { formatEuro } from '../../../contexts/accounting/presentation/formatMoney.js';
 
 /**
  * Same catalog ToolPanel.js resolves carousel icons from — a tool's large
@@ -138,7 +139,7 @@ function showBuildToolHoverPreview(toolId, previewUrl) {
       priceEl.textContent = '';
     } else {
       priceEl.hidden = false;
-      priceEl.textContent = `${price.toLocaleString('fr-FR')}€`;
+      priceEl.textContent = formatEuro(price);
     }
   }
 

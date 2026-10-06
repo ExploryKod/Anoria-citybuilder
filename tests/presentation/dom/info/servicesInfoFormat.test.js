@@ -29,7 +29,7 @@ describe('servicesInfoFormat — house Services tab chips', () => {
 
     expect(model.items.map((i) => i.label)).toEqual(['Route', 'Étal rouge', 'Entrepôt (activité)', 'Foi']);
     const chapelChip = model.items.find((i) => i.label === 'Foi');
-    expect(chapelChip).toMatchObject({ emoji: '⛪', status: 'off', value: null });
+    expect(chapelChip).toMatchObject({ emoji: '⛪', status: 'off', value: 'inexistant' });
   });
 
   test('a house running a business (House-Red) shows whether it can reach a hub for it', () => {
@@ -76,7 +76,7 @@ describe('servicesInfoFormat — house Services tab chips', () => {
     const model = formatServicesModel(houseVm({ servedFlags: { faith: 2 }, periodKey: 4 }));
 
     const chapelChip = model.items.find((i) => i.label === 'Foi');
-    expect(chapelChip).toMatchObject({ status: 'off', value: null });
+    expect(chapelChip).toMatchObject({ status: 'off', value: 'inexistant' });
   });
 
   test('a tier-2 house shows Chapel (met) AND Doctor (the next thing it needs)', () => {

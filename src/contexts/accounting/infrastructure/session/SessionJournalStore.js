@@ -13,6 +13,7 @@ import { DexieJournalSessionPersistenceAdapter } from '../adapters/persistence/d
 import { sessionLedgerBuffer, SessionLedgerBuffer, toPublicEntry } from './SessionLedgerBuffer.js';
 import { buildLedgerBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 import { buildYearClosingLine, isFoldedIntoClosing } from '../../domain/policies/YearClosingPolicy.js';
+import { accountKeyOf } from '../../domain/policies/AccountKeyPolicy.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
@@ -139,7 +140,6 @@ export class SessionJournalStore {
 
             const entry = {
                 turn: turn,
-                date: new Date().toISOString(),
                 type: type,
                 amount: amount,
                 description: description,
@@ -157,6 +157,18 @@ export class SessionJournalStore {
 
             if (options.buildingInstanceId) {
                 entry.buildingInstanceId = options.buildingInstanceId;
+            }
+
+            if (options.accountBuildingId) {
+                entry.accountBuildingId = options.accountBuildingId;
+            }
+
+            if (options.accountKind) {
+                entry.accountKind = options.accountKind;
+            }
+
+            if (options.counterpartyBuildingId) {
+                entry.counterpartyBuildingId = options.counterpartyBuildingId;
             }
 
             if (options.loanId) {
@@ -208,13 +220,12 @@ export class SessionJournalStore {
 
     /**
      * Get journal entries
-     * @param {number} maxAge - Maximum age in days (optional)
      * @returns {Promise<Array>} Journal entries
      */
-    async getJournalEntries(maxAge = null) {
+    async getJournalEntries() {
         return this.#queued(async () => {
             await this.ensureHydrated();
-            return filterAndSortJournalEntries(this._buffer.getAllPublic(), maxAge);
+            return filterAndSortJournalEntries(this._buffer.getAllPublic());
         });
     }
 
@@ -246,7 +257,7 @@ export class SessionJournalStore {
     }
 
     /**
-     * Each full year before the cutoff is closed per hamlet: its folded lines are replaced by one `year_closing` line
+     * Each full year before the cutoff is closed per hamlet and per account: its folded lines are replaced by one `year_closing` line
      * that keeps the year's net and its totals per type. Loan lines stay. One transaction per purge: the lines are never
      * half-replaced.
      */
@@ -261,20 +272,20 @@ export class SessionJournalStore {
 
         const groups = new Map();
         for (const record of folded) {
-            const key = `${record.hamletId}:${SessionLedgerBuffer.fiscalYearOf(record)}`;
+            const key = `${record.hamletId}:${SessionLedgerBuffer.fiscalYearOf(record)}:${accountKeyOf(record) ?? 'city'}`;
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key).push(record);
         }
 
-        const date = new Date().toISOString();
         const closings = [...groups.values()].map((lines) => {
             const first = lines[0];
             return buildYearClosingLine({
               year: SessionLedgerBuffer.fiscalYearOf(first),
               hamletId: first.hamletId,
+              accountBuildingId: first.accountBuildingId ?? null,
+              accountKind: first.accountKind ?? null,
               lines: lines.map(toPublicEntry),
               getTimeInfo: (turn) => this._getTimeInfo(turn),
-              date,
             });
         });
 
@@ -344,19 +355,17 @@ export class SessionJournalStore {
             // Calculate totals
             // Revenus: citizen_tax, payroll_tax, vat, capital_funds, loan_capital, export_*
             // Dépenses: tout le reste (construction, maintenance, salary, import_*, etc.)
-            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'vat' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || entry.type.startsWith('export_')) {
+            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'vat' || entry.type === 'producer_revenue' || entry.type === 'corporate_tax_revenue' || entry.type === 'service_sales' || entry.type === 'service_subsidy_received' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || entry.type.startsWith('export_')) {
                 stats.totalIncome += entry.amount;
             } else {
                 stats.totalExpenses += entry.amount;
             }
         });
 
-        // Find earliest and latest entries
-        const sortedByDate = [...entries].sort((a, b) => 
-            new Date(a.date) - new Date(b.date)
-        );
-        stats.earliestEntry = sortedByDate[0];
-        stats.latestEntry = sortedByDate[sortedByDate.length - 1];
+        // Find earliest and latest entries: by turn, then insertion order (the sort is stable).
+        const sortedByTurn = [...entries].sort((a, b) => a.turn - b.turn);
+        stats.earliestEntry = sortedByTurn[0];
+        stats.latestEntry = sortedByTurn[sortedByTurn.length - 1];
 
         return stats;
     }

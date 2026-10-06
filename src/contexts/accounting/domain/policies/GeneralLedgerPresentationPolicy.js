@@ -30,7 +30,7 @@ export function filterLedgerEntriesByTypes(entries, types) {
 }
 
 /**
- * Chronological order within a month (game turn, then persisted id).
+ * Chronological order within a month (game turn, then persisted id, then insertion order).
  *
  * @param {object} a
  * @param {object} b
@@ -48,7 +48,8 @@ export function compareJournalEntriesInMonth(a, b) {
     return idA - idB;
   }
 
-  return new Date(a.date).getTime() - new Date(b.date).getTime();
+  // Neither is persisted yet: the insertion order (a stable sort) decides.
+  return 0;
 }
 
 /**

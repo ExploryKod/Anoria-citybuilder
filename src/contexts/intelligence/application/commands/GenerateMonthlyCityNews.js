@@ -47,7 +47,6 @@ export class GenerateMonthlyCityNews {
       rng: this.rng,
     });
 
-    const nowIso = new Date().toISOString();
     /** @type {import('../../domain/NewsItem.js').NewsItem[]} */
     const created = [];
 
@@ -55,7 +54,6 @@ export class GenerateMonthlyCityNews {
       const item = createNewsItem({
         id: createNewsItemId(),
         turn: safeTurn,
-        announcedAtIso: nowIso,
         sourceId: draft.sourceId,
         categoryId: draft.categoryId,
         title: draft.title,

@@ -11,6 +11,7 @@ import {
   renderActiveLoansErrorHtml,
 } from './PretsPresenter.js';
 import { createModalFocusSession } from '../../shell/modalFocus.js';
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 
 /**
  * @type {{
@@ -216,10 +217,10 @@ function updateLoanSummary() {
     const interest = accounting.computeLoanInterestAmount(amount, interestRate);
     const total = amount + interest;
 
-    updateLoansElement('loan-principal-display', `${amount}€`);
+    updateLoansElement('loan-principal-display', formatEuro(amount));
     updateLoansElement('loan-rate-display', `${interestRate}%`);
-    updateLoansElement('loan-interest-display', `${interest}€`);
-    updateLoansElement('loan-total-display', `${total}€`);
+    updateLoansElement('loan-interest-display', formatEuro(interest));
+    updateLoansElement('loan-total-display', formatEuro(total));
   });
 }
 
@@ -261,7 +262,6 @@ export async function contractLoan() {
       interestRate,
       duration,
       remainingTurns: duration,
-      contractedAt: new Date().toISOString(),
     };
 
     await accounting.recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);

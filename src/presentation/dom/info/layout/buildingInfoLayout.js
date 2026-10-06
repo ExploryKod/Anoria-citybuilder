@@ -301,6 +301,17 @@ export function appendMetricCards(container, cards, { onSelect } = {}) {
     el.title = card.ariaLabel;
     el.setAttribute('aria-label', card.ariaLabel);
     el.innerHTML = `<span class="building-info-metric-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-metric-card__label">${card.label}</span><span class="building-info-metric-card__value">${card.valueText}</span>${card.detailText ? `<span class="building-info-metric-card__detail">${card.detailText}</span>` : ''}`;
+    if (card.keywords?.length) {
+      const keywords = document.createElement('span');
+      keywords.className = 'building-info-metric-card__keywords';
+      for (const keyword of card.keywords) {
+        const chip = document.createElement('span');
+        chip.className = `building-info-metric-card__keyword building-info-metric-card__keyword--${keyword.kind}`;
+        chip.textContent = `${keyword.label} : ${keyword.units}`;
+        keywords.appendChild(chip);
+      }
+      el.appendChild(keywords);
+    }
     grid.appendChild(el);
   }
 

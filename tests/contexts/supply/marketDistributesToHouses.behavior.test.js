@@ -8,6 +8,7 @@ import { createSupplyStock } from '../../../src/contexts/supply/domain/value-obj
 import { DistributeResourceToConsumers } from '../../../src/contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
 import { fairShares } from '../../../src/contexts/supply/application/services/RoundRobinDistribution.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
+import { unlimitedConsumerMoney } from '../../helpers/unlimitedConsumerMoney.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -22,6 +23,11 @@ class InMemorySupplyBuildingRepository {
   async saveStocks(id, stocks) {
     const b = this.raw.get(id);
     if (b) b.stocks = { ...createSupplyStock(stocks) };
+  }
+
+  async updateBuildingFields(id, fields) {
+    const b = this.raw.get(id);
+    if (b) Object.assign(b, fields);
   }
 
   async saveSupplyFlags() {}
@@ -67,7 +73,7 @@ describe('Supply — market distribution to houses', () => {
       house(house1Id),
       house(house2Id),
     ]);
-    useCase = new DistributeResourceToConsumers(repo);
+    useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
   });
 
   test('distributes round-robin outside autumn', async () => {
@@ -104,7 +110,7 @@ describe('Supply — market distribution to houses', () => {
       market(marketId, { wheat: 2, food: 2 }),
       house(house1Id, {}, 0),
     ]);
-    useCase = new DistributeResourceToConsumers(repo);
+    useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
 
     const outcome = await useCase.execute({
       sourceId: marketId,
@@ -167,7 +173,7 @@ describe('Supply — a market only fills what each house still needs', () => {
 
   async function distribute(buildings, marketId, houseIds) {
     const repo = new InMemorySupplyBuildingRepository(buildings);
-    const outcome = await new DistributeResourceToConsumers(repo).execute({
+    const outcome = await new DistributeResourceToConsumers(repo, unlimitedConsumerMoney).execute({
       sourceId: marketId,
       period: { season: 'winter' },
       consumerRefs: houseIds.map((instanceId) => ({ instanceId })),

@@ -62,6 +62,12 @@ class InMemoryEmploymentBuildingRepository {
     this.raw.set(buildingId, { ...b, worker: workerCount });
   }
 
+  async saveWorkerSources(buildingId, sources) {
+    const b = this.raw.get(buildingId);
+    if (!b) return;
+    this.raw.set(buildingId, { ...b, workerSources: sources });
+  }
+
   get(id) {
     return this.raw.get(id);
   }

@@ -5,6 +5,7 @@
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { formatJournalEntryDetails } from './formatJournalEntryDescription.js';
 import { goodLabel, unresolvedTerm } from '../../shell/CatalogVocabulary.js';
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 
 /** "Import Blé" / "Export Bois": a trade line is named after the good the catalog names. */
 function tradeLabel(type) {
@@ -18,7 +19,7 @@ function tradeLabel(type) {
  * @returns {string}
  */
 function formatSignedEuro(amount) {
-  return `${amount >= 0 ? '+' : ''}${amount}€`;
+  return `${amount >= 0 ? '+' : ''}${formatEuro(amount)}`;
 }
 
 /**
@@ -27,7 +28,7 @@ function formatSignedEuro(amount) {
  * @returns {string}
  */
 function formatPrefixedEuro(sign, amount) {
-  return `${sign}${amount}€`;
+  return `${sign}${formatEuro(amount)}`;
 }
 
 /**
@@ -199,20 +200,8 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     isInfoPseudoMovementType,
     labelForInfoJournalType,
   } = accounting;
-  const date = new Date(entry.date);
-  const formattedDate = date.toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  let yearDisplay = '';
-  if (entry.turn !== undefined) {
-    const timeInfo = TimeManager.getTimeInfo(entry.turn);
-    yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
-  }
+  // The date the player reads is the game's: a turn is a day, so the entry is dated by its turn in the calendar.
+  const gameDate = TimeManager.formatGameDate(entry.turn);
 
   let isIncome = false;
 
@@ -226,6 +215,11 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     entry.type === 'citizen_tax' ||
     entry.type === 'payroll_tax' ||
     entry.type === 'vat' ||
+    entry.type === 'producer_revenue' ||
+    entry.type === 'corporate_tax_revenue' ||
+    entry.type === 'service_sales' ||
+    entry.type === 'service_subsidy_received' ||
+    entry.type === 'household_wage' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital'
   ) {
@@ -251,6 +245,14 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     citizen_tax: 'Impôt Citoyen',
     payroll_tax: 'Impôt sur le revenu (IR)',
     vat: 'TVA ventes',
+    producer_revenue: 'Ventes HT',
+    producer_purchase: 'Achats HT',
+    producer_wage: 'Salaires des ouvriers',
+    household_wage: 'Salaire perçu',
+    corporate_tax: 'Impôt sur les sociétés',
+    corporate_tax_revenue: 'Impôt sur les sociétés perçu',
+    subsidy_companies: 'Subvention entretien entreprise',
+    subsidy_housing: 'Subvention entretien habitation',
     capital_funds: 'Capital de départ',
     construction: 'Construction',
     construction_refund: 'Remboursement construction',
@@ -259,6 +261,13 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     salary: 'Salaires fonctionnaires',
     unemployment_benefit: 'Salaires chômeurs',
     service_subsidy: 'Subventions des services',
+    service_sales: 'Ventes de services',
+    consumer_purchase: 'Achats des maisons',
+    income_tax: 'Impôt sur le revenu retenu',
+    public_wage: 'Salaire de fonctionnaire perçu',
+    household_benefit: 'Allocation chômage perçue',
+    service_purchase: 'Achats de services',
+    service_subsidy_received: 'Subvention reçue',
     commercial_route: 'Commission Négociants',
     contribution: 'Contribution',
     loan_capital: 'Capital Prêt',
@@ -268,23 +277,6 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     loan_default_interest: labelForInfoJournalType('info_loan_interest'),
     loan_default_repayment: labelForInfoJournalType('info_loan_repayment'),
   };
-
-  const breakdownMatch = entry.description?.match(/\|BREAKDOWN\|(.*?)\|BREAKDOWN\|/);
-  let breakdownItems = null;
-
-  const supportsBreakdown =
-    entry.type === 'maintenance' ||
-    entry.type === 'commercial_route' ||
-    entry.type.startsWith('import_') ||
-    entry.type.startsWith('export_');
-
-  if (breakdownMatch && supportsBreakdown) {
-    try {
-      breakdownItems = JSON.parse(breakdownMatch[1]);
-    } catch (e) {
-      console.warn('Failed to parse breakdown:', e);
-    }
-  }
 
   const entryDetails = formatJournalEntryDetails(entry);
 
@@ -338,34 +330,11 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
                 `
                     : ''
                 }
-                ${
-                  breakdownItems
-                    ? `
-                <ul class="journal-maintenance-breakdown">
-                    ${breakdownItems
-                      .map(
-                        (item) => `
-                        <li class="journal-breakdown-item">
-                            <span class="breakdown-label">${item.label}:</span>
-                            <span class="breakdown-count">${item.quantity || item.count}</span>
-                            <span class="breakdown-multiply">×</span>
-                            <span class="breakdown-unit-cost">${item.unitCost}€</span>
-                            <span class="breakdown-equals">=</span>
-                            <span class="breakdown-total">${item.total}€</span>
-                        </li>
-                    `
-                      )
-                      .join('')}
-                </ul>
-                `
-                    : ''
-                }
                 <div class="journal-entry-meta">
                     ${entry.id != null ? `<span class="journal-entry-id">N° ${entry.id}</span>` : ''}
                     ${entry.buildingInstanceId ? `<span class="journal-entry-asset-id" title="${entry.buildingInstanceId}">Id bâtiment: ${entry.buildingInstanceId}</span>` : ''}
-                    ${yearDisplay ? `<span class="journal-entry-year">Année: ${yearDisplay}</span>` : ''}
                     ${entry.turn !== undefined ? `<span class="journal-entry-turn-number">Tour: ${entry.turn}</span>` : ''}
-                    <span class="journal-entry-date">${formattedDate}</span>
+                    <span class="journal-entry-date">${gameDate}</span>
                 </div>
             </div>
         </div>

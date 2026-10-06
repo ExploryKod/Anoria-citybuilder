@@ -8,7 +8,7 @@ import {
 } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
-import { getResourceBaseValue } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { unitPriceOf } from '../../../../shared/resource-catalog/ValueChainCatalog.js';
 
 /**
  * The game turn a time context stands for: the time info the game builds carries the
@@ -69,7 +69,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        getResourceBaseValue(transfer.category)
+        unitPriceOf(hubData.type, transfer.category)
       );
     }
   }
@@ -107,7 +107,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        getResourceBaseValue(transfer.category)
+        unitPriceOf(sourceData.type, transfer.category)
       );
     }
   }
@@ -147,7 +147,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        getResourceBaseValue(transfer.category)
+        unitPriceOf(distributorData.type, transfer.category)
       );
     }
   }
@@ -276,7 +276,7 @@ export class SupplyTraceability {
           { id: hubResult.hubId, x: hubData.x, y: hubData.y, type: hubData.type },
           transfer.category,
           transfer.amount,
-          getResourceBaseValue(transfer.category)
+          unitPriceOf(sourceData.type, transfer.category)
         );
       }
     }

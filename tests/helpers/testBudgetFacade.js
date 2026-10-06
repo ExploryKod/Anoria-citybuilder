@@ -79,8 +79,8 @@ export class TestBudgetFacade {
     return this.journalManager.addJournalEntry(turn, type, amount, description);
   }
 
-  async getJournalEntries(maxAge = null) {
-    return this.journalManager.getJournalEntries(maxAge);
+  async getJournalEntries() {
+    return this.journalManager.getJournalEntries();
   }
 
   async getJournalEntriesForTurn(turn) {
@@ -113,10 +113,6 @@ export class TestBudgetFacade {
 
   async addCommercialRouteFee(amount, description, partnerId) {
     return accountingGame.recordCommercialRouteFee(amount, description, partnerId);
-  }
-
-  async addBuildingMaintenance(amount, description = 'Maintenance bâtiments', turn = null) {
-    return accountingGame.recordBuildingMaintenance(amount, description, turn, { db: this.db });
   }
 
   async addSalaries(salaryPerMonth, population, description = null, turn = null) {

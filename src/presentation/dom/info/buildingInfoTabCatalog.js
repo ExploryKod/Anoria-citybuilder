@@ -15,6 +15,8 @@ export const BUILDING_INFO_TAB_IDS = Object.freeze({
   clients: 'clients',
   neighbors: 'neighbors',
   messages: 'messages',
+  finance: 'finance',
+  residents: 'residents',
 });
 
 /** Default labels — groups may override per tab. */
@@ -28,6 +30,8 @@ export const BUILDING_INFO_TAB_LABELS = Object.freeze({
   [BUILDING_INFO_TAB_IDS.clients]: '🤝 Clients',
   [BUILDING_INFO_TAB_IDS.neighbors]: '🏘️ Voisins',
   [BUILDING_INFO_TAB_IDS.messages]: '💬 Messages',
+  [BUILDING_INFO_TAB_IDS.finance]: '💰 Finances',
+  [BUILDING_INFO_TAB_IDS.residents]: '👥 Habitants',
 });
 
 /** All known tab ids (stable order for DOM sync). */
@@ -41,6 +45,8 @@ export const BUILDING_INFO_TAB_ORDER = Object.freeze([
   BUILDING_INFO_TAB_IDS.clients,
   BUILDING_INFO_TAB_IDS.neighbors,
   BUILDING_INFO_TAB_IDS.messages,
+  BUILDING_INFO_TAB_IDS.finance,
+  BUILDING_INFO_TAB_IDS.residents,
 ]);
 
 /**

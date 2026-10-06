@@ -138,26 +138,6 @@ describe('Accounting — RecordLedgerEntry (maintenance slice)', () => {
     expect(budget.funds).toBe(989);
     expect(budget.totalBuildingMaintenance).toBe(11);
   });
-
-  test('BudgetManager.addBuildingMaintenance delegates to accounting BC', async () => {
-    resetAccountingContextForTests();
-    getOrCreateAccountingContext({
-      db: testDb,
-      journalManager,
-      budgetManager,
-      gameTimePort: new FixedGameTimePort(),
-    });
-
-    const budget = await budgetManager.addBuildingMaintenance(
-      11,
-      'Maintenance mensuelle - Juin 1'
-    );
-
-    expect(budget.funds).toBe(989);
-
-    const entries = await journalManager.getJournalEntries();
-    expect(entries.filter((entry) => entry.type === 'maintenance')).toHaveLength(1);
-  });
 });
 
 describe('Accounting — RecordLedgerEntry (construction slice)', () => {
@@ -926,7 +906,7 @@ describe('Accounting — RecordLedgerEntry (commerce slice)', () => {
     const result = await accounting.recordCommerceImportExpense({
       turn: 3,
       amount: 15,
-      description: 'Import wheat |BREAKDOWN|[{"label":"Savana"}]|BREAKDOWN|',
+      description: 'Import wheat',
       productId: 'wheat',
       partnerId: 'city_savana',
     });

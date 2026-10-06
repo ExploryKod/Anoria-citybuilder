@@ -40,7 +40,6 @@ export class DexieSupplyTraceabilityRepository {
         turn,
         month,
         year,
-        date: new Date().toISOString(),
         transactionType,
         fromId: from?.id || null,
         fromCoords: from ? `${from.x},${from.y}` : null,
@@ -60,57 +59,118 @@ export class DexieSupplyTraceabilityRepository {
   }
 
   /**
-   * The units of each service the active hamlet delivered in one month: a service rides the distributor→consumer
-   * chain, so each delivered basket is one of its rows. Every service is in the result, at 0 when none was delivered.
+   * One private money movement of the economy (a company's wage, upkeep, subsidy or corporate tax), written once: a row
+   * with the same business key is already in the register, so it is not written again. Throws on a failed write: a missing
+   * movement in the register is a defect, not a skipped line.
+   * The building the movement concerns is the holder (`fromId`); the counterparty, when there is one, is `toId`.
+   * @param {{ turn: number, monthIndex: number, year: number, kind: string, amount: number, buildingId: string, counterpartyId: string | null, businessKey: string }} movement
+   */
+  /**
+   * A house's bill for a service was not paid: the house is cut off from that service for the month. Only the fact is kept
+   * here; the money is in the journal.
+   * @param {{ turn: number, year: number, monthIndex: number, houseId: string, service: string }} cutOff
+   */
+  async recordServiceCutOff({ turn, year, monthIndex, houseId, service }) {
+    await this.addTransaction(turn, monthIndex, year, 'service_cutoff', null, { id: houseId, x: null, y: null, type: null }, service, 1, 0);
+  }
+
+  /**
+   * @param {{ year: number, monthIndex: number, houseId: string, service: string }} params
+   * @returns {Promise<boolean>} whether the house is cut off from the service that month
+   */
+  async hasServiceCutOff({ year, monthIndex, houseId, service }) {
+    const hamletId = requireActiveHamletId();
+    const count = await this.db.supplyTraceability
+      .where('transactionType')
+      .equals('service_cutoff')
+      .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex && row.toId === houseId && row.foodType === service)
+      .count();
+    return count > 0;
+  }
+
+  async recordEconomyMovement({ turn, monthIndex, year, kind, amount, buildingId, counterpartyId, businessKey }) {
+    const hamletId = requireActiveHamletId();
+    const existing = await this.db.supplyTraceability
+      .where('transactionType')
+      .equals(kind)
+      .filter((row) => row.hamletId === hamletId && row.businessKey === businessKey)
+      .first();
+    if (existing) return;
+    await this.db.supplyTraceability.add({
+      hamletId,
+      turn,
+      month: monthIndex,
+      year,
+      transactionType: kind,
+      fromId: buildingId,
+      fromCoords: null,
+      fromType: null,
+      toId: counterpartyId,
+      toCoords: null,
+      toType: null,
+      foodType: null,
+      quantity: 1,
+      price: amount,
+      totalPrice: amount,
+      businessKey,
+    });
+  }
+
+  /**
+   * The services each company sold to each house in one month: a service rides the distributor→consumer chain, so each
+   * delivery is one row, from the company that distributes it to the house that receives it. Grouped per (company, house,
+   * service); only the pairs that were delivered are in the result.
    * @param {number} year
    * @param {number} monthIndex
-   * @returns {Promise<Record<string, number>>}
+   * @returns {Promise<Array<{ buildingId: string, houseId: string, service: string, units: number }>>}
    */
-  async sumServiceDeliveries(year, monthIndex) {
+  async sumServiceFlows(year, monthIndex) {
     const hamletId = requireActiveHamletId();
     const services = getServiceCategories();
-    const units = Object.fromEntries(services.map((service) => [service, 0]));
     const rows = await this.db.supplyTraceability
       .where('transactionType')
       .equals('distributor_to_consumer')
       .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex && services.includes(row.foodType))
       .toArray();
-    for (const row of rows) units[row.foodType] += row.quantity;
-    return units;
+    const byFlow = new Map();
+    for (const row of rows) {
+      if (!row.fromId) throw new Error(`[traceability] service delivery ${row.id} names no company`);
+      if (!row.toId) throw new Error(`[traceability] service delivery ${row.id} names no house`);
+      const key = `${row.fromId}>${row.toId}>${row.foodType}`;
+      const flow = byFlow.get(key) ?? { buildingId: row.fromId, houseId: row.toId, service: row.foodType, units: 0 };
+      flow.units += row.quantity;
+      byFlow.set(key, flow);
+    }
+    return [...byFlow.values()];
   }
 
   /**
-   * The HT sales of each good to the houses in one month: the last transaction of a good's cycle, priced at the
-   * catalog's price. Every good is in the result, at 0 when none was sold.
+   * The goods flows of one month, pair by pair, at the catalog's price (HT): each seller's sales to a buyer of the chain
+   * (`buyerId`), or to the houses (`buyerId` null). Services are not goods: they are not in it.
    * @param {number} year
    * @param {number} monthIndex
-   * @returns {Promise<Record<string, number>>}
+   * @returns {Promise<Array<{ sellerId: string, buyerId: string | null, amountHT: number }>>}
    */
-  async sumGoodSalesToHouses(year, monthIndex) {
+  async sumGoodsFlowsByPair(year, monthIndex) {
     const hamletId = requireActiveHamletId();
     const goods = getGoodCategories();
-    const salesHT = Object.fromEntries(goods.map((good) => [good, 0]));
+    // The goods a distributor sells to the houses are not here: each delivery is paid when it is made (RecordConsumerPurchases).
     const rows = await this.db.supplyTraceability
       .where('transactionType')
-      .equals('distributor_to_consumer')
+      .anyOf(['source_to_hub', 'source_to_distributor'])
       .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex && goods.includes(row.foodType))
       .toArray();
-    for (const row of rows) salesHT[row.foodType] += row.quantity * row.price;
-    return salesHT;
-  }
-
-  /**
-   * One service's billing for a month: what was delivered, at what price, how much the city subsidised and what the
-   * inhabitants paid. Written once per month and service by the settlement; the inhabitants' share is read here.
-   * @param {{ turn: number, year: number, monthIndex: number, service: string, units: number, unitPrice: number, subsidyPercent: number, gross: number, citySubsidy: number, habitantShare: number }} billing
-   */
-  async recordServiceBilling({ turn, year, monthIndex, service, units, unitPrice, subsidyPercent, gross, citySubsidy, habitantShare }) {
-    await this.addTransaction(turn, monthIndex, year, 'service_billing', null, null, service, units, unitPrice, {
-      subsidyPercent,
-      gross,
-      citySubsidy,
-      habitantShare,
-    });
+    const pairs = new Map();
+    for (const row of rows) {
+      if (!row.fromId) throw new Error(`[traceability] goods transfer ${row.id} names no seller`);
+      if (!row.toId) throw new Error(`[traceability] goods transfer ${row.id} names no buyer`);
+      const buyerId = row.toId;
+      const key = `${row.fromId}>${buyerId}`;
+      const pair = pairs.get(key) ?? { sellerId: row.fromId, buyerId, amountHT: 0 };
+      pair.amountHT += row.quantity * row.price;
+      pairs.set(key, pair);
+    }
+    return [...pairs.values()].map((pair) => ({ ...pair, amountHT: Math.round(pair.amountHT * 100) / 100 }));
   }
 
   async recordSourceToDistributor(turn, month, year, source, distributor, foodType, quantity, price) {
@@ -217,27 +277,19 @@ export class DexieSupplyTraceabilityRepository {
       query = query.and((transaction) => transaction.month === month);
     }
 
-    return query.sortBy('date');
+    return query.sortBy('id');
   }
 
   /**
-   * @param {number|null} [maxAge=null] age in days
    * @param {string|null} [hamletId=null] only transactions of this hamlet; null = every hamlet
    */
-  async getAllTransactions(maxAge = null, hamletId = null) {
+  async getAllTransactions(hamletId = null) {
     let transactions = await this.db.supplyTraceability.toArray();
     if (hamletId) {
       transactions = transactions.filter((transaction) => transaction.hamletId === hamletId);
     }
 
-    if (maxAge) {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - maxAge);
-      transactions = transactions.filter(
-        (transaction) => new Date(transaction.date) >= cutoffDate
-      );
-    }
-
+    // Dated by the turn; the insertion order (id) breaks the ties within a month.
     return transactions.sort((a, b) => {
       if (a.turn !== b.turn) {
         return b.turn - a.turn;
@@ -245,7 +297,7 @@ export class DexieSupplyTraceabilityRepository {
       if (a.month !== b.month) {
         return a.month - b.month;
       }
-      return new Date(a.date) - new Date(b.date);
+      return a.id - b.id;
     });
   }
 
@@ -276,24 +328,5 @@ export class DexieSupplyTraceabilityRepository {
       .filter((t) => t.transactionType === 'merchant_sale' && t.cityId === cityId)
       .toArray();
     return all.sort((a, b) => b.turn - a.turn || b.month - a.month);
-  }
-
-  async cleanupOldTransactions(maxAge = 60) {
-    try {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - maxAge);
-
-      const oldTransactions = await this.db.supplyTraceability
-        .where('date')
-        .below(cutoffDate.toISOString())
-        .toArray();
-
-      if (oldTransactions.length > 0) {
-        const ids = oldTransactions.map((t) => t.id);
-        await this.db.supplyTraceability.bulkDelete(ids);
-      }
-    } catch (error) {
-      console.error('[DexieSupplyTraceabilityRepository] Error cleaning up:', error);
-    }
   }
 }

@@ -26,8 +26,11 @@ export function cityLedgerYearLinesFromJournalSummary(
     return createEmptyCityLedgerYearLines(journalYearSummary?.year ?? 0);
   }
 
-  const incomeEntries = journalYearSummary.income.entries || [];
-  const expenseEntries = journalYearSummary.expenses.entries || [];
+  // The city's ledger holds the city's own account: a company's sales, purchases and profit are its own (see
+  // ProducerChargePolicy), so they are not in it.
+  const cityOnly = (entry) => (entry.accountBuildingId ?? null) === null;
+  const incomeEntries = (journalYearSummary.income.entries || []).filter(cityOnly);
+  const expenseEntries = (journalYearSummary.expenses.entries || []).filter(cityOnly);
 
   const sumByType = (entries, predicate) =>
     entries.filter(predicate).reduce((sum, entry) => sum + entry.amount, 0);
@@ -61,6 +64,9 @@ export function cityLedgerYearLinesFromJournalSummary(
     expenseEntries,
     (e) => e.type && e.type.startsWith('import_')
   );
+  const corporateTaxRevenue = sumByType(incomeEntries, (e) => e.type === 'corporate_tax_revenue');
+  const companySubsidy = sumByType(expenseEntries, (e) => e.type === 'subsidy_companies');
+  const housingSubsidy = sumByType(expenseEntries, (e) => e.type === 'subsidy_housing');
   const loanInterest = sumByType(expenseEntries, (e) => e.type === 'loan_interest');
   const loanRepayment = sumByType(
     expenseEntries,
@@ -69,13 +75,15 @@ export function cityLedgerYearLinesFromJournalSummary(
   const carryForwardExpense = previousNetFlow < 0 ? -previousNetFlow : 0;
 
   const totalIncome =
-    initialFunds + incomeTax + payrollTax + vat + exports + loanCapital;
+    initialFunds + incomeTax + payrollTax + vat + corporateTaxRevenue + exports + loanCapital;
   const totalExpenses =
     construction +
     maintenance +
     salary +
     unemploymentBenefit +
     serviceSubsidy +
+    companySubsidy +
+    housingSubsidy +
     repairs +
     commercialRoutes +
     contributions +
@@ -98,6 +106,9 @@ export function cityLedgerYearLinesFromJournalSummary(
     salary: Math.round(salary),
     unemploymentBenefit: Math.round(unemploymentBenefit),
     serviceSubsidy: Math.round(serviceSubsidy),
+    corporateTaxRevenue: Math.round(corporateTaxRevenue),
+    companySubsidy: Math.round(companySubsidy),
+    housingSubsidy: Math.round(housingSubsidy),
     repairs: Math.round(repairs),
     commercialRoutes: Math.round(commercialRoutes),
     contributions: Math.round(contributions),

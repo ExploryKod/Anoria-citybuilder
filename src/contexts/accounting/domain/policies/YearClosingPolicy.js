@@ -7,6 +7,7 @@
  * Loan lines are kept as they are: a loan whose schedule runs past the purge still needs its contract and installments.
  */
 import { moneyDirectionOf } from './TreasuryFromJournalPolicy.js';
+import { accountKeyOf } from './AccountKeyPolicy.js';
 
 export const YEAR_CLOSING_TYPE = 'year_closing';
 
@@ -29,15 +30,19 @@ export function isFoldedIntoClosing(entry) {
 }
 
 /**
+ * One closing per hamlet, year and account: the city's lines (no account) and each building's own lines are closed apart,
+ * so a purge moves no balance, neither the city's nor a building's.
  * @param {object} params
  * @param {number} params.year the closed year
  * @param {string} params.hamletId
- * @param {Array<object>} params.lines the year's lines of this hamlet that are folded into the closing (with ids)
+ * @param {string | null} params.accountBuildingId the account the lines belong to, null for the city
+ * @param {string | null} params.accountKind the house's account (particulier or entreprise), null for a company or the city
+ * @param {Array<object>} params.lines the year's lines of this hamlet and account that are folded into the closing (with ids)
  * @param {(turn: number) => { monthIndex: number }} params.getTimeInfo
- * @param {string} params.date ISO date of the closing
  * @returns {object} the closing line, ready to be written
  */
-export function buildYearClosingLine({ year, hamletId, lines, getTimeInfo, date }) {
+export function buildYearClosingLine({ year, hamletId, accountBuildingId, accountKind, lines, getTimeInfo }) {
+  if (accountBuildingId === undefined) throw new Error('[journal] a year closing needs its account (null for the city)');
   if (lines.length === 0) {
     throw new Error(`[journal] year ${year} has no line to close for hamlet ${hamletId}`);
   }
@@ -62,13 +67,14 @@ export function buildYearClosingLine({ year, hamletId, lines, getTimeInfo, date 
   return {
     type: YEAR_CLOSING_TYPE,
     turn: lastTurn,
-    date,
     year,
     month: null,
     hamletId,
+    accountBuildingId,
+    accountKind,
     amount: Math.abs(net),
     description: `Clôture de l'année ${year} (${lines.length} lignes)`,
-    businessKey: `${YEAR_CLOSING_TYPE}:${hamletId}:${year}`,
+    businessKey: `${YEAR_CLOSING_TYPE}:${hamletId}:${year}:${accountKeyOf({ accountBuildingId, accountKind }) ?? 'city'}`,
     closing: {
       year,
       net,
@@ -97,13 +103,14 @@ export function expandYearClosings(entries) {
     for (const [type, total] of Object.entries(closing.byType)) {
       expanded.push({
         turn: entry.turn,
-        date: entry.date,
         type,
         amount: total,
         description: `Total de l'année ${closing.year} (année close)`,
         year: closing.year,
         month: null,
         hamletId: entry.hamletId,
+        accountBuildingId: entry.accountBuildingId ?? null,
+        accountKind: entry.accountKind ?? null,
         closed: true,
       });
     }

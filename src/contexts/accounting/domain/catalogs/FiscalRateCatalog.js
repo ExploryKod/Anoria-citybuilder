@@ -9,6 +9,7 @@ export const DEFAULT_HAMLET_FISCAL_RATES = Object.freeze({
   citizenTaxPerCapita: 25,
   salaryPerMonth: 100,
   salaryTaxRate: 0.1,
+  salaryTaxThreshold: 0,
   unemploymentBenefitRate: 0.7,
 });
 
@@ -17,6 +18,7 @@ export const HAMLET_FISCAL_RATE_BOUNDS = Object.freeze({
   citizenTaxPerCapita: Object.freeze({ min: 0, max: 1000, integer: true }),
   salaryPerMonth: Object.freeze({ min: 10, max: 500, integer: true }),
   salaryTaxRate: Object.freeze({ min: 0, max: 1, integer: false }),
+  salaryTaxThreshold: Object.freeze({ min: 0, max: 500, integer: true }),
   unemploymentBenefitRate: Object.freeze({ min: 0, max: 1, integer: false }),
 });
 
@@ -45,6 +47,7 @@ export function fiscalSliderBounds() {
   return Object.freeze({
     citizenTaxPerCapita: HAMLET_FISCAL_RATE_BOUNDS.citizenTaxPerCapita,
     salaryPerMonth: HAMLET_FISCAL_RATE_BOUNDS.salaryPerMonth,
+    salaryTaxThreshold: HAMLET_FISCAL_RATE_BOUNDS.salaryTaxThreshold,
     salaryTaxPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.salaryTaxRate),
     unemploymentBenefitPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.unemploymentBenefitRate),
     serviceSubsidyPercent: SERVICE_SUBSIDY_BOUNDS,

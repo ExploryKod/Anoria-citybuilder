@@ -269,18 +269,6 @@ export async function recordPayrollTax(salaryAmount, taxRate, description = null
   );
 }
 
-export async function recordBuildingMaintenance(
-  amount,
-  description = 'Maintenance bâtiments',
-  turn = null
-) {
-  return getOrCreateAccountingContext().recordBuildingMaintenanceForCity({
-    amount,
-    description,
-    turn,
-  });
-}
-
 export async function recordExceptionalRepairExpense(amount, description) {
   return getOrCreateAccountingContext().recordExceptionalRepairExpense(amount, description);
 }

@@ -8,6 +8,7 @@ async function hamletNameOf(hamletId) {
 }
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
+import { formatEuro } from '../../../contexts/accounting/presentation/formatMoney.js';
 
 /** @type {null | (() => Promise<void>)} */
 let presentIncomingHandler = null;
@@ -129,7 +130,7 @@ export function initNewsEventModal(deps) {
       paywallEl.hidden = !needsPay;
     }
     if (payBtn) {
-      payBtn.textContent = `Payer ${price} €`;
+      payBtn.textContent = `Payer ${formatEuro(price)}`;
       payBtn.hidden = !needsPay;
     }
     if (skipBtn) {

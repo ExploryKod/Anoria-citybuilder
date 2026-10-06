@@ -14,6 +14,7 @@ import { getMaxStockForBuilding } from '../../../src/shared/building-catalog/res
 import { updateBuildingFields } from '../../../src/composition/constructionOps.js';
 import { computeMonthlyDietStats } from '../../../src/presentation/dom/admin/supply-traceability/SupplyTraceabilityPanel.js';
 import { buildSupplyTraceabilityExport, chainTotalKey } from '../../../src/presentation/dom/admin/supply-traceability/SupplyTraceabilityPresenter.js';
+import { unlimitedConsumerMoney } from '../../helpers/unlimitedConsumerMoney.js';
 
 describe('Supply — RunMonthlyResourceCycle', () => {
   let supply;
@@ -22,7 +23,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
   beforeEach(async () => {
     resetSupplyContextForTests();
     await clearBuildingsTable();
-    supply = createSupplyContext();
+    supply = createSupplyContext({ consumerMoney: unlimitedConsumerMoney });
     marketId = createBuildingInstanceId();
   });
 

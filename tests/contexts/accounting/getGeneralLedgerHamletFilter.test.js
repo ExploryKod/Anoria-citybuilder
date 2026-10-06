@@ -10,7 +10,7 @@ function ledgerQuery() {
   return new GetGeneralLedger(
     { getJournalEntries: async () => ENTRIES, getCurrentBalance: async () => 0 },
     { execute: async () => ({ funds: 0 }) },
-    { getTimeInfo: () => ({ year: 2026 }) }
+    { getTimeInfo: () => ({ year: 2026 }), currentTurn: () => 3 }
   );
 }
 

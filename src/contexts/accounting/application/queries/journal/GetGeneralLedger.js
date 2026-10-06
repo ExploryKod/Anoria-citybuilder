@@ -7,6 +7,8 @@ import { assembleGeneralLedgerView } from './assembleGeneralLedgerView.js';
  * @property {number|null} [periodDays] — max entry age in days; null = all history
  * @property {string[]|null} [types] — entry type filters (supports trailing `_` prefix)
  * @property {string|null} [hamletId] — only entries of this hamlet; null = every hamlet
+ * @property {'city'|'private'|null} [accountScope] — 'city': the city's lines (no account), 'private': the lines of a building's
+ *   account; null = both. One journal, two views: the city's books and the private flows.
  */
 
 /**
@@ -35,15 +37,20 @@ export class GetGeneralLedger {
     const periodDays = filters.periodDays ?? null;
     const types = filters.types ?? null;
     const hamletId = filters.hamletId ?? null;
+    const accountScope = filters.accountScope ?? null;
 
-    const allEntries = await this.journalRepository.getJournalEntries(periodDays);
+    // A turn is a day: a period of N days is the entries of the last N turns, counted from the running game's turn.
+    const now = this.gameTimePort.currentTurn();
+    const allEntries = await this.journalRepository.getJournalEntries();
+    const inPeriod = periodDays === null ? allEntries : allEntries.filter((entry) => entry.turn > now - periodDays);
     // A closed year is listed as its per-type totals (its sub-totals), not as one net line.
-    const entries = expandYearClosings(
-      hamletId ? allEntries.filter((entry) => entry.hamletId === hamletId) : allEntries
+    const scopedEntries = expandYearClosings(
+      hamletId ? inPeriod.filter((entry) => entry.hamletId === hamletId) : inPeriod
     );
-    const currentTurn = allEntries.length > 0 ? allEntries[0].turn : 0;
-    const timeInfo = this.gameTimePort.getTimeInfo(currentTurn);
-    const currentYear = timeInfo?.year ?? 0;
+    const entries = accountScope === null
+      ? scopedEntries
+      : scopedEntries.filter((entry) => ((entry.accountBuildingId ?? null) === null) === (accountScope === 'city'));
+    const currentYear = this.gameTimePort.getTimeInfo(now).year;
 
     const currentTreasuryBalance = (await this.getTreasurySnapshot.execute()).funds;
 

@@ -25,8 +25,8 @@ export class SessionJournalRepository extends JournalRepository {
   }
 
   /** @returns {Promise<Array<object>>} */
-  async getJournalEntries(maxAge = null) {
-    return this.sessionJournalStore.getJournalEntries(maxAge);
+  async getJournalEntries() {
+    return this.sessionJournalStore.getJournalEntries();
   }
 
   /**

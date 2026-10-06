@@ -7,6 +7,9 @@
  * @property {number} incomeTax
  * @property {number} payrollTax
  * @property {number} vat
+ * @property {number} corporateTaxRevenue
+ * @property {number} companySubsidy
+ * @property {number} housingSubsidy
  * @property {number} exports
  * @property {number} loanCapital
  * @property {number} carryForwardIncome
@@ -47,6 +50,9 @@ export function createEmptyCityLedgerYearLines(year = 0) {
     salary: 0,
     unemploymentBenefit: 0,
     serviceSubsidy: 0,
+    corporateTaxRevenue: 0,
+    companySubsidy: 0,
+    housingSubsidy: 0,
     repairs: 0,
     commercialRoutes: 0,
     contributions: 0,

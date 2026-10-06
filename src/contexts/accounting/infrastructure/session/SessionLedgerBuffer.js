@@ -124,7 +124,6 @@ export class SessionLedgerBuffer {
   getForTurn(turn) {
     return this.#entries
       .filter((entry) => entry.turn === turn)
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
       .map(toPublicEntry);
   }
 

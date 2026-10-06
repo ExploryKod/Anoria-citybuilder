@@ -103,7 +103,11 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* The Taxes section's sub-tabs: "Impôts" and "TVA". */
+/* The Taxes section's sub-tabs: "Impôts" and "TVA". A panel's own display:flex must not undo its `hidden`. */
+.taxes-board[hidden] {
+    display: none;
+}
+
 .taxes-subtabs {
     display: flex;
     gap: 6px;
@@ -131,5 +135,35 @@
     align-items: center;
     gap: 8px;
     font-size: 14px;
+    cursor: pointer;
+}
+
+/* A VAT category: its rate, then the exemption box of each item it holds. */
+.taxes-board .vat-category {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.taxes-board .vat-items-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #616161;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.taxes-board .vat-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    padding-left: 4px;
+    font-size: 13px;
+}
+
+.taxes-board .vat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     cursor: pointer;
 }

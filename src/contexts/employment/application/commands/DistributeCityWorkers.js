@@ -96,8 +96,10 @@ export class DistributeCityWorkers {
         0,
       );
 
+    // Draws `amountNeeded` workers from the qualifying houses, in order, and returns how many came from each house.
     const spendFromQualifyingSources = (skillKey, level, amountNeeded) => {
       let remaining = amountNeeded;
+      const drawn = {};
       for (const building of qualifyingSources(skillKey, level)) {
         if (remaining <= 0) break;
         const available = remainingPopById.get(building.id) ?? 0;
@@ -105,8 +107,11 @@ export class DistributeCityWorkers {
         if (take <= 0) continue;
         remainingPopById.set(building.id, available - take);
         remaining -= take;
+        drawn[building.id] = take;
       }
+      return drawn;
     };
+    const sourcesById = new Map(workplaces.map((w) => [w.id, {}]));
 
     // Total headcount, once, independent of the per-skill loop below: a
     // house counts once here even if it holds several workplace skills at
@@ -144,17 +149,22 @@ export class DistributeCityWorkers {
 
         for (const { buildingId, workers } of assignments) {
           workerCountById.set(buildingId, (workerCountById.get(buildingId) ?? 0) + workers);
+          // Each workplace draws its own workers from the houses in the same order the pool is spent.
+          const drawn = spendFromQualifyingSources(skillKey, level, workers);
+          const sources = sourcesById.get(buildingId) ?? {};
+          for (const [houseId, count] of Object.entries(drawn)) {
+            sources[houseId] = (sources[houseId] ?? 0) + count;
+          }
+          sourcesById.set(buildingId, sources);
         }
         allAssignments.push(...assignments);
-
-        const totalSpent = assignments.reduce((sum, { workers }) => sum + workers, 0);
-        spendFromQualifyingSources(skillKey, level, totalSpent);
       }
     }
 
     for (const [buildingId, workers] of workerCountById) {
       if (workers > 0) {
         await this.employmentBuildingRepository.saveWorkers(buildingId, workers);
+        await this.employmentBuildingRepository.saveWorkerSources(buildingId, sourcesById.get(buildingId) ?? {});
       }
     }
 

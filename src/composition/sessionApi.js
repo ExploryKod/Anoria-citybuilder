@@ -93,11 +93,18 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     getServiceSubsidies: () => accounting.getServiceSubsidies(),
     setServiceSubsidy: (service, percent) => accounting.setServiceSubsidy(service, percent),
     getVatSettings: () => accounting.getVatSettings(),
+    getProducerRevenues: (year, monthIndex) => accounting.getProducerRevenues(year, monthIndex),
+    getBuildingAccountBalance: (buildingId, accountKind) => accounting.getBuildingAccountBalance(buildingId, accountKind),
+    getBuildingAccountTrace: (buildingId) => accounting.getBuildingAccountTrace(buildingId),
+    getBuildingFinance: (buildingId, accountKind) => accounting.getBuildingFinance(buildingId, accountKind),
+    getHouseResidents: (houseId) => accounting.getHouseResidents(houseId),
+    hasBuildingAccount: (buildingType) => accounting.hasBuildingAccount(buildingType),
     /** The range of every fiscal slider (see fiscalSliderBounds). */
     getFiscalSliderBounds: () => fiscalSliderBounds(),
     setVatUniform: (uniform) => accounting.setVatUniform(uniform),
     setVatGeneralRate: (percent) => accounting.setVatGeneralRate(percent),
     setVatCategoryRate: (category, percent) => accounting.setVatCategoryRate(category, percent),
+    setVatExempt: (item, exempt) => accounting.setVatExempt(item, exempt),
     getCustomsRate: () => accounting.getCustomsRate(),
     setCustomsRate: (rate) => accounting.setCustomsRate(rate),
 
@@ -152,8 +159,8 @@ export function createSupplySessionApi(supply) {
     },
     updateSupplyBuildingFields: (id, fields) => supply.updateSupplyBuildingFields(id, fields),
     getSupplyBuildingRow: (id) => supply.getSupplyBuildingRow(id),
-    getAllSupplyTraceabilityTransactions: (maxAge = null, hamletId = null) =>
-      supply.getAllSupplyTraceabilityTransactions(maxAge, hamletId),
+    getAllSupplyTraceabilityTransactions: (hamletId = null) =>
+      supply.getAllSupplyTraceabilityTransactions(hamletId),
     recordBuildingEvent: (params) => supply.recordBuildingEvent(params),
     getHubStorageInfoView: (hubKind, buildingRow, options = {}) =>
       supply.getHubStorageInfoView(hubKind, buildingRow, options),

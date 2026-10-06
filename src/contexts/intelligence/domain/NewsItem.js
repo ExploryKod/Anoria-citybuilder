@@ -4,7 +4,6 @@
  * @typedef {object} NewsItem
  * @property {string} id
  * @property {number} turn
- * @property {string} [announcedAtIso]
  * @property {string} sourceId
  * @property {string} categoryId
  * @property {string} title
@@ -26,7 +25,6 @@ export function createNewsItem(raw) {
   return {
     id: raw.id,
     turn: Number(raw.turn) || 0,
-    announcedAtIso: raw.announcedAtIso ?? null,
     sourceId: raw.sourceId,
     categoryId: raw.categoryId,
     title: raw.title,

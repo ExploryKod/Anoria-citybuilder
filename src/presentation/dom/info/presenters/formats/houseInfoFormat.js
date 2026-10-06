@@ -89,9 +89,33 @@ export function formatHouseResourcesModel(vm) {
   return {
     caption: CONSUMED_LAST_MONTH_CAPTION,
     needs: entries.map((entry, index) =>
-      needOf(entry, index === 0 ? (vm.lastConsumption ?? null) : (vm.buildingRow?.[entry.outcomeField] ?? null), vm.buildingPop)
+      needOf(
+        entry,
+        index === 0 ? (vm.lastConsumption ?? null) : (vm.buildingRow?.[entry.outcomeField] ?? null),
+        vm.buildingPop,
+        vm.buildingRow?.supplyShortfall ?? null,
+      )
     ),
   };
+}
+
+/**
+ * Why a need was not met, in two flash keywords with the units concerned: the source ran out (shortage) or the house could
+ * not pay for them (unpaid). The month is the one the consumption record reports; a month not kept shows no keyword.
+ * @param {{ current?: object, previous?: object } | null | undefined} shortfall
+ * @param {string} totalKey
+ * @param {number | null | undefined} month the month of the consumption record
+ * @returns {Array<{ kind: 'shortage' | 'unpaid', label: string, units: number }>}
+ */
+function unmetKeywords(shortfall, totalKey, month) {
+  if (!shortfall || month == null) return [];
+  const record = [shortfall.current, shortfall.previous].find((candidate) => candidate && candidate.monthIndex === month);
+  const figures = record?.byNeed?.[totalKey];
+  if (!figures) return [];
+  const keywords = [];
+  if (figures.shortage > 0) keywords.push({ kind: 'shortage', label: 'Pénurie', units: figures.shortage });
+  if (figures.unpaid > 0) keywords.push({ kind: 'unpaid', label: 'Non payé', units: figures.unpaid });
+  return keywords;
 }
 
 /**
@@ -99,8 +123,9 @@ export function formatHouseResourcesModel(vm) {
  * @param {import('../../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleFacts} entry
  * @param {object | null} last The record of its last consumption.
  * @param {number} pop Inhabitants now, for the calculation shown before any consumption is recorded.
+ * @param {object | null} shortfall The house's shortfall of the month (why a need was not met).
  */
-function needOf(entry, last, pop) {
+function needOf(entry, last, pop, shortfall) {
   const { categories, totalKey } = entry;
   const whole = (value) => Math.max(0, Math.floor(Number(value) || 0));
 
@@ -132,6 +157,7 @@ function needOf(entry, last, pop) {
           met,
           valueText: `${eaten}/${need}`,
           ariaLabel: `${label} : ${eaten} sur ${need} nécessaires le mois dernier${met ? ', besoin couvert' : ', besoin non couvert'}`,
+          keywords: met ? [] : unmetKeywords(shortfall, totalKey, last.month),
         };
       })()
     : {

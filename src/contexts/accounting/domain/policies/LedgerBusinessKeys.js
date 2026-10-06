@@ -84,17 +84,53 @@ export function buildCommercialRouteBusinessKey(partnerId) {
 }
 
 /**
- * Idempotence key for one service's subsidy in one hamlet for one month: the city pays it once per month and service.
+ * One service line of a month: a house's share (service_purchase) or a company's sale (service_sales), per service and
+ * per pair of company and house. The line names its holder and its counterparty, so the pair is keyed once.
+ * @param {string} kind
+ * @param {string} holderId
+ * @param {string} counterpartyId
  * @param {string} service
+ * @param {{ year: number, monthIndex: number }} timeInfo
+ * @param {string} hamletId
+ * @returns {string}
+ */
+export function buildServiceLineBusinessKey(kind, holderId, counterpartyId, service, timeInfo, hamletId) {
+  if (!kind || !counterpartyId || !service || !hamletId || typeof timeInfo?.year !== 'number') {
+    throw new Error('[journal] a service line needs its kind, both parties, its service, its month and its hamlet');
+  }
+  return `${kind}:${hamletId}:${timeInfo.year}:${timeInfo.monthIndex}:${service}:${holderId ?? 'city'}:${counterpartyId}`;
+}
+
+/**
+ * Idempotence key for one monthly line of one building (its sales, purchases, charges, upkeep or subsidy): once per month.
+ * @param {string} kind a producer line kind (see ProducerChargePolicy)
+ * @param {string} buildingId
  * @param {{ year: number, monthIndex: number }} timeInfo the month that was delivered
  * @param {string} hamletId
  * @returns {string}
  */
-export function buildServiceSubsidyBusinessKey(service, timeInfo, hamletId) {
-  if (!service || !hamletId || typeof timeInfo?.year !== 'number') {
-    throw new Error('[journal] a service subsidy needs its service, its month and its hamlet');
+export function buildProducerLineBusinessKey(kind, buildingId, timeInfo, hamletId) {
+  if (!kind || !buildingId || !hamletId || typeof timeInfo?.year !== 'number') {
+    throw new Error('[journal] a producer line needs its kind, its building, its month and its hamlet');
   }
-  return `service_subsidy:${hamletId}:${timeInfo.year}:${timeInfo.monthIndex}:${service}`;
+  return `${kind}:${hamletId}:${buildingId}:${timeInfo.year}:${timeInfo.monthIndex}`;
+}
+
+/**
+ * Idempotence key for one trade line of one pair of the chain for one month: the seller's sale (`producer_revenue`) and the
+ * buyer's purchase (`producer_purchase`) are each written once per month and per counterparty.
+ * @param {string} kind
+ * @param {string} holderId the company whose account the line moves
+ * @param {string | null} counterpartyId the other company, or null for the houses
+ * @param {{ year: number, monthIndex: number }} timeInfo
+ * @param {string} hamletId
+ * @returns {string}
+ */
+export function buildTradeLineBusinessKey(kind, holderId, counterpartyId, timeInfo, hamletId) {
+  if (!kind || !holderId || !hamletId || typeof timeInfo?.year !== 'number') {
+    throw new Error('[journal] a trade line needs its kind, its company, its month and its hamlet');
+  }
+  return `${kind}:${hamletId}:${holderId}:${counterpartyId ?? 'houses'}:${timeInfo.year}:${timeInfo.monthIndex}`;
 }
 
 /**

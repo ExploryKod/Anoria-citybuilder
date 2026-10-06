@@ -38,13 +38,13 @@ describe('RealtimeBudgetViewModel', () => {
       population: 42,
     });
 
-    expect(viewModel.funds.text).toBe('1\u202f200€');
-    expect(viewModel.income).toBe('400€');
-    expect(viewModel.expenses).toBe('250€');
-    expect(viewModel.netFlow.text).toBe('150€');
+    expect(viewModel.funds.text).toBe('1\u202f200,00€');
+    expect(viewModel.income).toBe('400,00€');
+    expect(viewModel.expenses).toBe('250,00€');
+    expect(viewModel.netFlow.text).toBe('150,00€');
     expect(viewModel.turn).toBe(7);
-    expect(viewModel.taxes).toBe('300€');
-    expect(viewModel.loanInterest).toBe('12€');
+    expect(viewModel.taxes).toBe('300,00€');
+    expect(viewModel.loanInterest).toBe('12,00€');
     expect(viewModel.health.statusText).toBe('Sain');
   });
 

@@ -1,7 +1,7 @@
 import db from '../../../../core/persistence/dexie/db.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
-import { getGoodCategories, getServiceCategories } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
-import { getGoodVatCategory, getVatCategories } from '../../../../shared/resource-catalog/VatCategoryCatalog.js';
+import { getServiceCategories } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { getVatCategories, getVatCategoryOf, getVatItems } from '../../../../shared/resource-catalog/VatCategoryCatalog.js';
 import {
   DEFAULT_HAMLET_FISCAL_RATES,
   DEFAULT_SERVICE_SUBSIDY_PERCENT,
@@ -35,14 +35,15 @@ export class HamletFiscalRateRepository {
     return amount;
   }
 
-  /** @returns {Promise<{ salaryPerMonth: number, salaryTaxRate: number, unemploymentBenefitRate: number }>} */
+  /** @returns {Promise<{ salaryPerMonth: number, salaryTaxRate: number, salaryTaxThreshold: number, unemploymentBenefitRate: number }>} */
   async getSalarySettings() {
-    const [salaryPerMonth, salaryTaxRate, unemploymentBenefitRate] = await Promise.all([
+    const [salaryPerMonth, salaryTaxRate, salaryTaxThreshold, unemploymentBenefitRate] = await Promise.all([
       this.#read('salaryPerMonth'),
       this.#read('salaryTaxRate'),
+      this.#read('salaryTaxThreshold'),
       this.#read('unemploymentBenefitRate'),
     ]);
-    return { salaryPerMonth, salaryTaxRate, unemploymentBenefitRate };
+    return { salaryPerMonth, salaryTaxRate, salaryTaxThreshold, unemploymentBenefitRate };
   }
 
   /** @returns {Promise<Record<string, number>>} the active hamlet's subsidy, in percent, for every service. */
@@ -61,8 +62,9 @@ export class HamletFiscalRateRepository {
   }
 
   /**
-   * The active hamlet's VAT: the uniform switch, the general rate and the rate of each VAT category.
-   * @returns {Promise<{ uniform: boolean, generalRatePercent: number, categoryRatesPercent: Record<string, number> }>}
+   * The active hamlet's VAT: the uniform switch, the general rate, the rate of each VAT category, and the items exempt
+   * from VAT (a good or a service, by its catalog id).
+   * @returns {Promise<{ uniform: boolean, generalRatePercent: number, categoryRatesPercent: Record<string, number>, exempt: Record<string, boolean> }>}
    */
   async getVatSettings() {
     const hamletId = requireActiveHamletId();
@@ -71,6 +73,13 @@ export class HamletFiscalRateRepository {
     if (typeof row.vatUniform !== 'boolean') throw new Error(`[fiscal] hamlet ${hamletId} has no VAT uniform switch`);
     if (!Number.isInteger(row.vatGeneralRatePercent)) throw new Error(`[fiscal] hamlet ${hamletId} has no general VAT rate`);
     if (!row.vatRatePercent) throw new Error(`[fiscal] hamlet ${hamletId} has no VAT rates`);
+    if (!row.vatExempt) throw new Error(`[fiscal] hamlet ${hamletId} has no VAT exemptions`);
+    const exempt = Object.fromEntries(
+      getVatItems().map((item) => {
+        if (typeof row.vatExempt[item] !== 'boolean') throw new Error(`[fiscal] hamlet ${hamletId} has no VAT exemption flag for ${item}`);
+        return [item, row.vatExempt[item]];
+      })
+    );
     const categoryRatesPercent = Object.fromEntries(
       getVatCategories().map((category) => {
         const percent = row.vatRatePercent[category];
@@ -78,16 +87,29 @@ export class HamletFiscalRateRepository {
         return [category, percent];
       })
     );
-    return { uniform: row.vatUniform, generalRatePercent: row.vatGeneralRatePercent, categoryRatesPercent };
+    return { uniform: row.vatUniform, generalRatePercent: row.vatGeneralRatePercent, categoryRatesPercent, exempt };
   }
 
   /**
-   * The VAT rate of every good, read through its category: what the settlement taxes each sale at.
+   * The VAT rate of every taxed item (a good or a service): its category's rate, or 0 when it is exempt. This is what the
+   * settlement taxes each sale at.
    * @returns {Promise<Record<string, number>>}
    */
   async getVatRates() {
-    const { categoryRatesPercent } = await this.getVatSettings();
-    return Object.fromEntries(getGoodCategories().map((good) => [good, categoryRatesPercent[getGoodVatCategory(good)]]));
+    const { categoryRatesPercent, exempt } = await this.getVatSettings();
+    return Object.fromEntries(
+      getVatItems().map((item) => [item, exempt[item] ? 0 : categoryRatesPercent[getVatCategoryOf(item)]])
+    );
+  }
+
+  /** @param {string} item a good or a service @param {boolean} exempt */
+  async setVatExempt(item, exempt) {
+    if (!getVatItems().includes(item)) throw new Error(`[fiscal] "${item}" is not an item the VAT taxes`);
+    if (typeof exempt !== 'boolean') throw new Error(`[fiscal] the VAT exemption of ${item} must be a boolean, got ${exempt}`);
+    const hamletId = requireActiveHamletId();
+    const current = await this.getVatSettings();
+    await this.db.hamlets.update(hamletId, { vatExempt: { ...current.exempt, [item]: exempt } });
+    return exempt;
   }
 
   /** @param {boolean} uniform When on, every VAT category takes the general rate. */
@@ -134,8 +156,8 @@ export class HamletFiscalRateRepository {
   }
 
   /**
-   * @param {{ salaryPerMonth?: number, salaryTaxRate?: number, unemploymentBenefitRate?: number }} partial
-   * @returns {Promise<{ salaryPerMonth: number, salaryTaxRate: number, unemploymentBenefitRate: number }>}
+   * @param {{ salaryPerMonth?: number, salaryTaxRate?: number, salaryTaxThreshold?: number, unemploymentBenefitRate?: number }} partial
+   * @returns {Promise<{ salaryPerMonth: number, salaryTaxRate: number, salaryTaxThreshold: number, unemploymentBenefitRate: number }>}
    */
   async setSalarySettings(partial = {}) {
     await this.#write(partial);
@@ -159,6 +181,7 @@ export class HamletFiscalRateRepository {
       defaults.vatRatePercent = Object.fromEntries(getVatCategories().map((category) => [category, DEFAULT_VAT_RATE_PERCENT]));
       defaults.vatUniform = DEFAULT_VAT_UNIFORM;
       defaults.vatGeneralRatePercent = DEFAULT_VAT_GENERAL_RATE_PERCENT;
+      defaults.vatExempt = Object.fromEntries(getVatItems().map((item) => [item, false]));
     }
     if (Object.keys(defaults).length > 0) await this.db.hamlets.update(hamletId, defaults);
   }

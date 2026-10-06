@@ -19,6 +19,12 @@ let deps = null;
 let journalFocusSession = null;
 
 /**
+ * The tab of the journal: 'city' is the city's books (the Hameau), 'private' the flows of the buildings' accounts.
+ * @type {'city' | 'private'}
+ */
+let accountScope = 'city';
+
+/**
  * @param {{
  *   accounting: object,
  *   popupManager?: object | null,
@@ -77,6 +83,21 @@ export function initJournalPopup(panelDeps) {
     const activePill = document.querySelector('.journal-filter-pill.active');
     const typeFilter = activePill ? JSON.parse(activePill.dataset.types || '[]') : null;
     loadJournalEntries(activeFilterBtn ? activeFilterBtn.dataset.period : 'all', typeFilter);
+  });
+
+  document.querySelectorAll('.journal-scope-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      accountScope = tab.dataset.scope === 'private' ? 'private' : 'city';
+      document.querySelectorAll('.journal-scope-tab').forEach((other) => {
+        const active = other === tab;
+        other.classList.toggle('active', active);
+        other.setAttribute('aria-selected', String(active));
+      });
+      const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
+      const activePill = document.querySelector('.journal-filter-pill.active');
+      const typeFilter = activePill ? JSON.parse(activePill.dataset.types || '[]') : null;
+      loadJournalEntries(activeFilterBtn ? activeFilterBtn.dataset.period : 'all', typeFilter);
+    });
   });
 
   journalRefreshBtn.addEventListener('click', () => {
@@ -183,6 +204,7 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
       periodDays: parsePeriodDays(period),
       types: typeFilter,
       hamletId,
+      accountScope,
     });
     const hamletNames = new Map((await listHamlets()).map((hamlet) => [hamlet.id, hamlet.name]));
     const scopeLabel = hamletId === null ? 'Tous les hameaux' : hamletNames.get(hamletId);

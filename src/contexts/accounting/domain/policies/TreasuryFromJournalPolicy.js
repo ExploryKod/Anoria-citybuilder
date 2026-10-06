@@ -29,8 +29,8 @@ export function moneyDirectionOf(entry) {
   if (type === 'year_closing') return 'closing';
   if (isInformativeJournalType(type)) return null;
   if (
-    type === 'capital_funds' || type === 'payroll_tax' || type === 'citizen_tax' || type === 'vat' ||
-    type === 'loan_capital' || type === 'construction_refund' || type.startsWith('export_')
+    type === 'capital_funds' || type === 'payroll_tax' || type === 'citizen_tax' || type === 'vat' || type === 'public_wage' || type === 'household_benefit' ||
+    type === 'producer_revenue' || type === 'corporate_tax_revenue' || type === 'service_sales' || type === 'service_subsidy_received' || type === 'household_wage' || type === 'loan_capital' || type === 'construction_refund' || type.startsWith('export_')
   ) {
     return 'credit';
   }
@@ -39,6 +39,8 @@ export function moneyDirectionOf(entry) {
     type === 'unemployment_benefit' || type === 'loan_interest' || type === 'loan_repayment' ||
     type === 'exceptional_expenses' || type === 'commercial_route' || type === 'contribution' ||
     type === 'service_subsidy' ||
+    type === 'producer_purchase' || type === 'service_purchase' || type === 'consumer_purchase' || type === 'income_tax' || type === 'corporate_tax' || type === 'producer_wage' ||
+    type === 'subsidy_companies' || type === 'subsidy_housing' ||
     type.startsWith('import_')
   ) {
     return 'debit';

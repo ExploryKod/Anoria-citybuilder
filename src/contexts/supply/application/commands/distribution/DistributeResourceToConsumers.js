@@ -18,6 +18,7 @@ import {
   computeConsumerDeficit,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 import { getCategoriesForTotalKey, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { unitPriceOf } from '../../../../../shared/resource-catalog/ValueChainCatalog.js';
 
 /**
  * Command: a source building distributes resource units to consumers in
@@ -40,9 +41,15 @@ import { getCategoriesForTotalKey, isRoadNeedMet } from '../../../../../shared/b
 export class DistributeResourceToConsumers {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
+   * @param {{ fundsOf: (consumerId: string) => Promise<number> }} consumerMoney what each consumer can spend now, from its
+   *   personal account: a consumer buys only what it can pay
    */
-  constructor(supplyBuildingRepository) {
+  constructor(supplyBuildingRepository, consumerMoney) {
+    if (!consumerMoney || typeof consumerMoney.fundsOf !== 'function') {
+      throw new Error('[supply] the distribution needs the consumers\' money (fundsOf)');
+    }
     this.supplyBuildingRepository = supplyBuildingRepository;
+    this.consumerMoney = consumerMoney;
   }
 
   /**
@@ -106,11 +113,8 @@ export class DistributeResourceToConsumers {
       (sum, category) => sum + getCategoryAmount(sourceStock, category),
       0,
     );
-    if (availableTotal <= 0) {
-      return { distributed: false, reason: 'source_empty', transfers: [], totalUnits: 0 };
-    }
-
-    const { transfers, sourceStock: nextSourceStock } = await distributeRoundRobin({
+    // An empty source still reports every consumer's shortage: the round-robin hands out nothing and says what is missing.
+    const { transfers, sourceStock: nextSourceStock, unmet } = await distributeRoundRobin({
       categories,
       sourceStock,
       consumerIds,
@@ -124,16 +128,59 @@ export class DistributeResourceToConsumers {
       addCategory: (stock, category, amount) =>
         addCategoryAmount(stock, category, amount, stockCategories, totalKey),
       getAmount: getCategoryAmount,
+      money: {
+        fundsOf: (consumerId) => this.consumerMoney.fundsOf(consumerId),
+        priceOf: (category) => unitPriceOf(source.type, category),
+      },
     });
 
+    await this.#recordShortfalls({ unmet, totalKey, period });
+
     if (transfers.length === 0) {
-      return { distributed: false, reason: 'nothing_distributed', transfers: [], totalUnits: 0 };
+      return {
+        distributed: false,
+        reason: availableTotal <= 0 ? 'source_empty' : 'nothing_distributed',
+        transfers: [],
+        totalUnits: 0,
+      };
     }
 
     await this.supplyBuildingRepository.saveStocks(sourceId, nextSourceStock);
 
     const totalUnits = transfers.reduce((sum, transfer) => sum + transfer.amount, 0);
     return { distributed: true, transfers, totalUnits };
+  }
+
+  /**
+   * What each consumer is still missing, for the month, and why: unpaid (its personal account could not pay) or shortage
+   * (the source ran out). A day is counted once: each pass replaces the day's figure, the last pass being the final state.
+   * The month's figures are kept on the consumer, the completed month being the one the consumption records report.
+   * @param {{ unmet: Array<{ consumerId: string, unpaidUnits: number, shortageUnits: number }>, totalKey: string, period: { year: number, monthIndex: number, turn: number } }} params
+   */
+  async #recordShortfalls({ unmet, totalKey, period }) {
+    for (const entry of unmet) {
+      const consumer = await this.supplyBuildingRepository.findById(entry.consumerId);
+      if (!consumer) throw new Error(`[supply] consumer ${entry.consumerId} of a shortfall is not in the city`);
+      const stored = consumer.supplyShortfall ?? null;
+      const sameMonth = Boolean(stored?.current) && stored.current.year === period.year && stored.current.monthIndex === period.monthIndex;
+      const current = sameMonth ? stored.current : { year: period.year, monthIndex: period.monthIndex, byNeed: {} };
+      const previous = sameMonth ? stored.previous ?? null : stored?.current ?? null;
+      const before = current.byNeed[totalKey] ?? { unpaid: 0, shortage: 0, turn: null, dayUnpaid: 0, dayShortage: 0 };
+      const sameDay = before.turn === period.turn;
+      const byNeed = {
+        ...current.byNeed,
+        [totalKey]: {
+          unpaid: before.unpaid - (sameDay ? before.dayUnpaid : 0) + entry.unpaidUnits,
+          shortage: before.shortage - (sameDay ? before.dayShortage : 0) + entry.shortageUnits,
+          turn: period.turn,
+          dayUnpaid: entry.unpaidUnits,
+          dayShortage: entry.shortageUnits,
+        },
+      };
+      await this.supplyBuildingRepository.updateBuildingFields(entry.consumerId, {
+        supplyShortfall: { current: { ...current, byNeed }, previous },
+      });
+    }
   }
 
   /**
@@ -165,9 +212,26 @@ export class DistributeResourceToConsumers {
       const periodLock = getPeriodLockForRole(consumer.type, 'consumer', category, 'flag');
       if (!periodLock || isLockedForPeriod(consumer, periodLock, period, category)) continue;
 
+      // A house whose bill for this service was not paid is not served this month: the reason is kept on the house.
+      const cutOff = await this.consumerMoney.isServiceCutOff({
+        houseId: consumerId,
+        service: category,
+        year: period.year,
+        monthIndex: period.monthIndex,
+      });
+      if (cutOff) {
+        const sameMonth = consumer.serviceCutOff?.year === period.year && consumer.serviceCutOff?.monthIndex === period.monthIndex;
+        const categories = sameMonth ? [...new Set([...consumer.serviceCutOff.categories, category])] : [category];
+        await this.supplyBuildingRepository.updateBuildingFields(consumerId, {
+          serviceCutOff: { year: period.year, monthIndex: period.monthIndex, categories },
+        });
+        continue;
+      }
+
+      // Served: any cut-off kept from an earlier month is over.
       await this.supplyBuildingRepository.updateBuildingFields(
         consumerId,
-        buildLockUpdate(consumer, periodLock, period, category)
+        buildLockUpdate(consumer, periodLock, period, category, consumer.serviceCutOff ? { serviceCutOff: null } : {})
       );
       transfers.push({ consumerId, category, amount: 1 });
     }

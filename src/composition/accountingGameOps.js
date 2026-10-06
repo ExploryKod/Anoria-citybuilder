@@ -16,7 +16,6 @@ export {
   recordSalaries,
   recordUnemploymentBenefits,
   recordPayrollTax,
-  recordBuildingMaintenance,
   recordExceptionalRepairExpense,
   recordCommercialRouteFee,
   recordImportExpense,

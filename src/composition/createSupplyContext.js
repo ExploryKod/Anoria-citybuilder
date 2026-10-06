@@ -44,6 +44,7 @@ import {
   tryAdjustHubStoragePercent,
 } from '../contexts/supply/domain/policies/HubStorageOrdersPolicy.js';
 import { getCategoriesForRole } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { unitPriceOf } from '../shared/resource-catalog/ValueChainCatalog.js';
 import { getSharedEventBus } from './sharedEventBus.js';
 import {
   hasResourceRole,
@@ -70,7 +71,9 @@ export function createSupplyContext({
   supplyBuildingRepository,
   supplyTraceabilityRepository,
   getTimeInfo: getTimeInfoDep,
+  consumerMoney,
 } = {}) {
+  if (!consumerMoney) throw new Error('[supply] createSupplyContext needs consumerMoney: the consumers\' accounts (fundsOf, recordPurchases)');
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
   // Goods that travel the production → hub → market chain (what the citizens eat that a hub
   // stores) — NOT every producible good (household gathering never enters a hub) and not every
@@ -123,7 +126,8 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl
   );
   const distributeResourceToConsumers = new DistributeResourceToConsumers(
-    supplyBuildingRepositoryImpl
+    supplyBuildingRepositoryImpl,
+    consumerMoney
   );
   const collectResourceToHub = new CollectResourceToHub(
     supplyBuildingRepositoryImpl,
@@ -194,12 +198,35 @@ export function createSupplyContext({
           distributorId,
           transfers.map((t) => ({ hubId: t.sourceId, category: t.category, amount: t.amount }))
         ),
-      onDistribute: (distributorId, transfers, timeInfo) =>
-        traceability.recordDistributorToConsumerTransfers(
+      onDistribute: async (distributorId, transfers, timeInfo) => {
+        await traceability.recordDistributorToConsumerTransfers(
           timeInfo,
           distributorId,
           transfers.map((t) => ({ houseId: t.consumerId, category: t.category, amount: t.amount }))
-        ),
+        );
+        // Each unit is paid when it is delivered: one purchase per house and good, at the chain's final price.
+        const distributor = await supplyBuildingRepositoryImpl.findById(distributorId);
+        if (!distributor) throw new Error(`[supply] distributor ${distributorId} of a delivery is not in the city`);
+        const purchases = new Map();
+        for (const transfer of transfers) {
+          const key = `${transfer.consumerId}>${transfer.category}`;
+          const line = purchases.get(key) ?? {
+            houseId: transfer.consumerId,
+            category: transfer.category,
+            units: 0,
+            unitPrice: unitPriceOf(distributor.type, transfer.category),
+          };
+          line.units += transfer.amount;
+          purchases.set(key, line);
+        }
+        await consumerMoney.recordPurchases({
+          turn: timeInfo?.turn ?? timeInfo?.days ?? 0,
+          timeInfo,
+          distributorId,
+          distributorType: distributor.type,
+          purchases: [...purchases.values()],
+        });
+      },
     }
   );
   const runMonthlyResourceCycle = new RunMonthlyResourceCycle(
@@ -422,8 +449,8 @@ export function createSupplyContext({
       return supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, fields);
     },
 
-    async getAllSupplyTraceabilityTransactions(maxAge = null, hamletId = null) {
-      return supplyTraceabilityRepositoryImpl.getAllTransactions(maxAge, hamletId);
+    async getAllSupplyTraceabilityTransactions(hamletId = null) {
+      return supplyTraceabilityRepositoryImpl.getAllTransactions(hamletId);
     },
 
     async getSupplyTraceabilityTransactionsForMonth(turn, month = null) {
@@ -432,10 +459,6 @@ export function createSupplyContext({
 
     async getSupplyTraceabilityTransactionsByMonth(turn) {
       return supplyTraceabilityRepositoryImpl.getTransactionsByMonth(turn);
-    },
-
-    async cleanupOldSupplyTraceabilityTransactions(maxAge = 60) {
-      return supplyTraceabilityRepositoryImpl.cleanupOldTransactions(maxAge);
     },
 
     /** A building was placed / demolished — kept in the city's history. */
@@ -473,9 +496,10 @@ export function createSupplyContext({
 /** @type {ReturnType<typeof createSupplyContext> | null} */
 let sharedSupply = null;
 
-export function getOrCreateSupplyContext() {
+/** @param {{ consumerMoney: object }} deps the consumers' accounts, from the accounting context (see consumerMoneyPort.js) */
+export function getOrCreateSupplyContext(deps) {
   if (!sharedSupply) {
-    sharedSupply = createSupplyContext();
+    sharedSupply = createSupplyContext(deps);
   }
   return sharedSupply;
 }

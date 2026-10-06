@@ -5,7 +5,8 @@
 import 'fake-indexeddb/auto';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import db from '../../src/core/persistence/dexie/db.js';
-import { resetSupplyContextForTests } from '../../src/composition/createSupplyContext.js';
+import { getOrCreateSupplyContext, resetSupplyContextForTests } from '../../src/composition/createSupplyContext.js';
+import { unlimitedConsumerMoney } from '../helpers/unlimitedConsumerMoney.js';
 import {
   listHubSupplyViews,
   listCommercializableWindmills,
@@ -22,6 +23,7 @@ async function clearHousesTable() {
 describe('ACL Supply UI queries', () => {
   beforeEach(async () => {
     resetSupplyContextForTests();
+    getOrCreateSupplyContext({ consumerMoney: unlimitedConsumerMoney });
     await clearHousesTable();
   });
 

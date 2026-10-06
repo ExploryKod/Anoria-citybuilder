@@ -74,7 +74,7 @@ export function summarizeChain(transactions, year) {
 
   // Oldest turn first, so the last row of a month is really the last tick of it.
   const chronological = [...transactions].sort(
-    (a, b) => a.turn - b.turn || new Date(a.date) - new Date(b.date)
+    (a, b) => a.turn - b.turn || a.id - b.id
   );
   for (const t of chronological) {
     // A demolition counts whenever it happened before the farm's year ended
@@ -638,7 +638,7 @@ export function renderDietStats(container, dataByYear) {
 
 /** Per-tick states are folded into the monthly figures; every other row is an event worth keeping. */
 /** Snapshot rows stored in the same table as the transactions: they are not exchanges. */
-export const STATE_TRANSACTION_TYPES = new Set(['chain_state', 'population_state', 'building_state', 'employment_summary']);
+export const STATE_TRANSACTION_TYPES = new Set(['chain_state', 'population_state', 'building_state', 'employment_summary', 'service_cutoff']);
 
 /** What a building's stock counts as in the monthly figures, read from the catalog's roles. */
 function stockKindOf(type) {
@@ -685,7 +685,7 @@ function aggregateBuildingStates(current) {
 export function summarizeEmploymentHistory(transactions, year, monthIndexes) {
   const rows = [...transactions]
     .filter((t) => t.transactionType === 'employment_summary')
-    .sort((a, b) => a.turn - b.turn || new Date(a.date) - new Date(b.date));
+    .sort((a, b) => a.turn - b.turn || a.id - b.id);
 
   const byMonth = {};
   let current = null;
@@ -718,7 +718,7 @@ export function summarizeBuildingHistory(transactions, year, monthIndexes) {
         t.transactionType === 'building_state' ||
         (t.transactionType === 'game_event' && t.event === 'building_demolished')
     )
-    .sort((a, b) => a.turn - b.turn || new Date(a.date) - new Date(b.date));
+    .sort((a, b) => a.turn - b.turn || a.id - b.id);
   if (!rows.some((t) => t.transactionType === 'building_state')) return null;
 
   const current = new Map();
@@ -755,7 +755,7 @@ export function summarizeBuildingHistory(transactions, year, monthIndexes) {
 export function buildSupplyTraceabilityExport(transactions, monthlyStats) {
   const years = [...new Set(monthlyStats.map((month) => month.year))].sort((a, b) => a - b);
   const chronological = [...transactions].sort(
-    (a, b) => a.turn - b.turn || new Date(a.date) - new Date(b.date)
+    (a, b) => a.turn - b.turn || a.id - b.id
   );
 
   return {

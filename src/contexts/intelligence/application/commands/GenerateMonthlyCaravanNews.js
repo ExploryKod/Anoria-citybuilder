@@ -38,7 +38,6 @@ export class GenerateMonthlyCaravanNews {
     }
 
     const drafts = planCaravanNewsDrafts({ turn: safeTurn, rng: this.rng });
-    const nowIso = new Date().toISOString();
     /** @type {import('../../domain/NewsItem.js').NewsItem[]} */
     const created = [];
 
@@ -46,7 +45,6 @@ export class GenerateMonthlyCaravanNews {
       const item = createNewsItem({
         id: createNewsItemId(),
         turn: safeTurn,
-        announcedAtIso: nowIso,
         sourceId: draft.sourceId,
         categoryId: draft.categoryId,
         title: draft.title,

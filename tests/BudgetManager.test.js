@@ -598,27 +598,6 @@ describe('BudgetManager', () => {
             expect(entry2).toBeDefined();
             expect(entry3).toBeDefined();
         });
-
-        test('filtre les entrées par âge maximum (en jours)', async () => {
-            const oldDate = new Date();
-            oldDate.setDate(oldDate.getDate() - 10);
-
-            await testDb.journal.add({
-                turn: 0,
-                date: oldDate.toISOString(),
-                type: 'citizen_tax',
-                amount: 10,
-                description: 'Ancienne entrée'
-            });
-
-            resetSessionLedgerBufferForTests();
-
-            const entries = await budgetManager.getJournalEntries(7);
-            
-            // L'entrée ancienne ne devrait pas être incluse
-            const oldEntries = entries.filter(e => e.description === 'Ancienne entrée');
-            expect(oldEntries).toHaveLength(0);
-        });
     });
 });
 

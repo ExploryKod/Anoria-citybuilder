@@ -1,4 +1,5 @@
-import { getVatCategories, getVatCategoryLabel } from '../../../../shared/resource-catalog/VatCategoryCatalog.js';
+import { getVatCategories, getVatCategoryLabel, getVatItemsOf } from '../../../../shared/resource-catalog/VatCategoryCatalog.js';
+import { goodLabel } from '../../shell/CatalogVocabulary.js';
 import { createSliderRow } from '../sliderRow.js';
 
 /**
@@ -23,6 +24,7 @@ export class TaxesSectionPresenter {
     ]);
     this.#show('tax-citizen', citizenTax, '€');
     this.#show('tax-salary', Math.round(salary.salaryTaxRate * 100), '%');
+    this.#show('tax-threshold', salary.salaryTaxThreshold, '€');
     this.#show('tax-customs', Math.round(customsRate * 100), '%');
     this.#showVat(vat);
   }
@@ -36,11 +38,15 @@ export class TaxesSectionPresenter {
     this.#bindSlider('tax-salary', '%', async (value) => {
       await this.accounting.setSalarySettings({ salaryTaxRate: value / 100 });
     });
+    this.#bindSlider('tax-threshold', '€', async (value) => {
+      await this.accounting.setSalarySettings({ salaryTaxThreshold: value });
+    });
     this.#bindSlider('tax-customs', '%', async (value) => {
       await this.accounting.setCustomsRate(value / 100);
     });
 
     this.#fit('tax-citizen', this.bounds.citizenTaxPerCapita);
+    this.#fit('tax-threshold', this.bounds.salaryTaxThreshold);
     this.#fit('tax-salary', this.bounds.salaryTaxPercent);
     this.#fit('tax-customs', this.bounds.customsPercent);
     this.#fit('tax-vat-general', this.bounds.vatPercent);
@@ -55,30 +61,60 @@ export class TaxesSectionPresenter {
     });
   }
 
-  /** @param {{ uniform: boolean, generalRatePercent: number, categoryRatesPercent: Record<string, number> }} vat */
-  #showVat({ uniform, generalRatePercent, categoryRatesPercent }) {
+  /** @param {{ uniform: boolean, generalRatePercent: number, categoryRatesPercent: Record<string, number>, exempt: Record<string, boolean> }} vat */
+  #showVat({ uniform, generalRatePercent, categoryRatesPercent, exempt }) {
     this.#checkbox('tax-vat-uniform').checked = uniform;
     this.#show('tax-vat-general', generalRatePercent, '%');
     const board = document.getElementById('vat-board');
     if (!board) throw new Error('[taxes] #vat-board is missing from the page');
     board.replaceChildren(
-      ...getVatCategories().map((category) => {
-        const label = getVatCategoryLabel(category);
-        const row = createSliderRow({
-          label,
-          scope: uniform ? 'Taux général' : 'Catégorie',
-          min: this.bounds.vatPercent.min,
-          max: this.bounds.vatPercent.max,
-          value: categoryRatesPercent[category],
-          unit: '%',
-          ariaLabel: `TVA sur ${label}, en pourcentage du prix HT`,
-          dataset: { vatCategory: category },
-          store: (value) => this.accounting.setVatCategoryRate(category, value),
-        });
-        row.querySelector('input').disabled = uniform;
-        return row;
-      })
+      ...getVatCategories().map((category) => this.#vatCategoryBlock(category, { uniform, rate: categoryRatesPercent[category], exempt }))
     );
+  }
+
+  /**
+   * One VAT category: its rate slider, then a box per item of the category that exempts it from VAT.
+   * @param {string} category
+   * @param {{ uniform: boolean, rate: number, exempt: Record<string, boolean> }} state
+   */
+  #vatCategoryBlock(category, { uniform, rate, exempt }) {
+    const label = getVatCategoryLabel(category);
+    const block = document.createElement('div');
+    block.className = 'vat-category';
+    const slider = createSliderRow({
+      label,
+      scope: uniform ? 'Taux général' : 'Catégorie',
+      min: this.bounds.vatPercent.min,
+      max: this.bounds.vatPercent.max,
+      value: rate,
+      unit: '%',
+      ariaLabel: `TVA sur ${label}, en pourcentage du prix HT`,
+      dataset: { vatCategory: category },
+      store: (value) => this.accounting.setVatCategoryRate(category, value),
+    });
+    slider.querySelector('input').disabled = uniform;
+
+    const exemptionsTitle = document.createElement('span');
+    exemptionsTitle.className = 'vat-items-title';
+    exemptionsTitle.textContent = 'Exonérations';
+    const items = document.createElement('div');
+    items.className = 'vat-items';
+    for (const item of getVatItemsOf(category)) {
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.checked = exempt[item];
+      box.addEventListener('change', () => {
+        void this.accounting.setVatExempt(item, box.checked);
+      });
+      const text = document.createElement('span');
+      text.textContent = goodLabel(item);
+      const option = document.createElement('label');
+      option.className = 'vat-item';
+      option.append(box, text);
+      items.append(option);
+    }
+    block.append(slider, exemptionsTitle, items);
+    return block;
   }
 
   #bindSubTabs() {

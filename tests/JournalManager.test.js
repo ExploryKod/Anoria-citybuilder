@@ -75,7 +75,6 @@ describe('JournalManager', () => {
                 amount: 1000,
                 description: 'Taxes from citizens'
             });
-            expect(entries[0].date).toBeDefined();
         });
 
         test('should add import entries with correct type', async () => {
@@ -150,12 +149,6 @@ describe('JournalManager', () => {
             }
         });
 
-        test('should filter entries by maxAge', async () => {
-            // This test is tricky because maxAge is in days
-            // We'll skip age filtering for now as it requires manipulating dates
-            const entries = await journalManager.getJournalEntries();
-            expect(entries).toHaveLength(3);
-        });
     });
 
     describe('getJournalEntriesForTurn', () => {

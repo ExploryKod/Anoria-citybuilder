@@ -1,4 +1,5 @@
 import { deriveTreasuryFigures, deriveLoanPortfolio, deriveCitizenTaxState, moneyDirectionOf } from '../../../domain/policies/TreasuryFromJournalPolicy.js';
+import { accountKeyOf } from '../../../domain/policies/AccountKeyPolicy.js';
 
 /**
  * The treasury as the journal says it is. The row keeps only what is not money (turn, tax breakdown, tax year); every
@@ -17,12 +18,14 @@ export class GetTreasurySnapshot {
   }
 
   /**
-   * @param {{ hamletId?: string|null, untilYear?: number|null }} [options]
+   * @param {{ hamletId?: string|null, untilYear?: number|null, accountBuildingId?: string|null }} [options]
    *   hamletId: the hamlet's own treasury, or the whole city's when null.
    *   untilYear: the treasury as it stood at the end of that fiscal year (its lines and every earlier one), or now when null.
+   *   accountBuildingId: a company's own account (its net profit stays there); null for the city's treasury, which holds
+   *   no company line. accountKind: which of a house's two accounts (particulier or entreprise); null for a company's.
    * @returns {Promise<object>}
    */
-  async execute({ hamletId = null, untilYear = null } = {}) {
+  async execute({ hamletId = null, untilYear = null, accountBuildingId = null, accountKind = null } = {}) {
     let entries = await this.journalRepository.getJournalEntries();
     if (entries.length === 0) {
       // A brand-new game has no journal yet: its treasury starts from the capital line. Once any line exists, the
@@ -31,9 +34,11 @@ export class GetTreasurySnapshot {
       entries = await this.journalRepository.getJournalEntries();
     }
 
+    const accountKey = accountKeyOf({ accountBuildingId, accountKind });
     const inScope = (entry) =>
       (hamletId == null || hamletOf(entry) === hamletId) &&
-      (untilYear == null || yearOf(entry) <= untilYear);
+      (untilYear == null || yearOf(entry) <= untilYear) &&
+      accountKeyOf(entry) === accountKey;
     const scoped = entries.filter(inScope);
     const lines = treasuryLinesInOrder(scoped);
     const currentTurn = this.gameTimePort.currentTurn();

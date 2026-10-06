@@ -5,6 +5,7 @@
 import { TimeManager } from '../shared/time/TimeManager.js';
 import { getOrCreateParcelsContext } from './createParcelsContext.js';
 import { getOrCreateSupplyContext } from './createSupplyContext.js';
+import { createConsumerMoneyPort } from './consumerMoneyPort.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
 import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
 import { getOrCreateGameplayContext } from './createGameplayContext.js';
@@ -33,7 +34,6 @@ import { assembleSessionApi } from './sessionApi.js';
  */
 export function bootGameContexts() {
   const parcels = getOrCreateParcelsContext();
-  const supply = getOrCreateSupplyContext();
   const housing = getOrCreateHousingContext();
   const employment = getOrCreateEmploymentContext({
     citizenProvidesSkillAtLevel: (house, skillKey, requiredLevel) =>
@@ -43,6 +43,8 @@ export function bootGameContexts() {
   const construction = getOrCreateConstructionContext();
   const cityAssets = getOrCreateCityAssetsContext();
   const accounting = getOrCreateAccountingContext({ cityAssets });
+  // The supply needs the consumers' money (their personal accounts), so the accounting exists first.
+  const supply = getOrCreateSupplyContext({ consumerMoney: createConsumerMoneyPort(accounting) });
   const intelligence = getOrCreateIntelligenceContext();
   const trade = getOrCreateTradeContext({ supply, accounting });
   const sessionApi = assembleSessionApi({

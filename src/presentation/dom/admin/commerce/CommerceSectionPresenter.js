@@ -1,6 +1,7 @@
 import { TRADE_CATALOG } from '../../../../shared/trade-catalog/TradeCatalog.js';
 import { satisfactionOf, formatSatisfaction } from '../../../../shared/trade-catalog/satisfaction.js';
 import { getResourceBaseValue } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 
 const STATUS_LABEL = { active: 'Actif', suspended: 'Suspendu', expired: 'Expiré' };
 
@@ -132,7 +133,7 @@ export class CommerceSectionPresenter {
       const total = entries
         .filter((e) => e?.type?.startsWith('export_'))
         .reduce((sum, e) => sum + (e.amount ?? 0), 0);
-      el.textContent = total > 0 ? `+${total.toLocaleString('fr-FR')} €` : '—';
+      el.textContent = total > 0 ? `+${formatEuro(total)}` : '—';
     } catch {
       el.textContent = '—';
     }

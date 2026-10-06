@@ -77,7 +77,7 @@ export class DexieEmploymentBuildingRepository {
       const buildingId = instanceIdFromHouseRow(house);
       try {
         await this.#putFields(buildingId, {
-          employees: { ...employees, worker: 0 },
+          employees: { ...employees, worker: 0, workerSources: {} },
         });
       } catch (err) {
         console.warn('[DexieEmploymentBuildingRepository] Failed to reset workers:', {
@@ -107,5 +107,20 @@ export class DexieEmploymentBuildingRepository {
         error: err?.message || err,
       });
     }
+  }
+
+  /**
+   * The houses the workers of a workplace come from: `{ houseId: workers }`, the trace of who is paid by whom.
+   * @param {string} buildingId
+   * @param {Record<string, number>} sources
+   */
+  async saveWorkerSources(buildingId, sources) {
+    if (!buildingId) return;
+    const row = await db.houses.get(buildingId);
+    if (!row) return;
+    const employees = row.employees || { worker: 0, worker_need: 0 };
+    await this.#putFields(buildingId, {
+      employees: { ...employees, workerSources: sources },
+    });
   }
 }

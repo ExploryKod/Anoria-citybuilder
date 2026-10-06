@@ -26,9 +26,9 @@ export class DexieJournalRepository extends JournalRepository {
   }
 
   /** @returns {Promise<Array<object>>} */
-  async getJournalEntries(maxAge = null) {
+  async getJournalEntries() {
     const entries = await this.db.journal.toArray();
-    return filterAndSortJournalEntries(entries, maxAge);
+    return filterAndSortJournalEntries(entries);
   }
 
   /**

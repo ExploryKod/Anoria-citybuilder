@@ -1,12 +1,11 @@
 import { describe, test, expect } from '@jest/globals';
-import { getGoodCategories } from '../../../src/shared/resource-catalog/ResourceCategoryCatalog.js';
-import { getGoodVatCategory, getVatCategories } from '../../../src/shared/resource-catalog/VatCategoryCatalog.js';
+import { getVatCategories, getVatCategoryOf, getVatItems } from '../../../src/shared/resource-catalog/VatCategoryCatalog.js';
 
-describe('VAT categories — every good that houses buy belongs to one category', () => {
-  test('each good names a declared VAT category', () => {
+describe('VAT categories — every good and service the VAT taxes belongs to one category', () => {
+  test('each taxed item names a declared VAT category', () => {
     const categories = getVatCategories();
-    for (const good of getGoodCategories()) {
-      expect(categories).toContain(getGoodVatCategory(good));
+    for (const item of getVatItems()) {
+      expect(categories).toContain(getVatCategoryOf(item));
     }
   });
 });

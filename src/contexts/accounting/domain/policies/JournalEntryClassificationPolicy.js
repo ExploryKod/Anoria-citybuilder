@@ -27,6 +27,10 @@ export function isJournalEntryIncomeForMonthlySummary(entry, allEntries, getTime
     entry.type === 'citizen_tax' ||
     entry.type === 'payroll_tax' ||
     entry.type === 'vat' ||
+    entry.type === 'producer_revenue' ||
+    entry.type === 'corporate_tax_revenue' ||
+    entry.type === 'service_sales' ||
+    entry.type === 'service_subsidy_received' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital';
 

@@ -161,6 +161,17 @@ db.version(16).stores({
 // v17: settings frozen when a game is created (the calendar's days per month: it must never change in a game).
 db.version(17).stores({ gameSettings: 'name' });
 
+// v18: the traceability rows are dated by their turn (no wall-clock date), and indexed on the fields they are written with
+// (fromId, toId: the buildings; fromInstanceId, toInstanceId and the date were never written).
+db.version(18).stores({
+  supplyTraceability: '++id, hamletId, turn, month, year, transactionType, fromId, toId, foodType',
+});
+
+// v19: journal lines are dated by their turn too: the wall-clock date is no longer written, so it is no longer indexed.
+db.version(19).stores({
+  journal: '++id, hamletId, turn, type, amount, description',
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

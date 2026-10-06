@@ -2,16 +2,9 @@ import { describe, test, expect } from '@jest/globals';
 import {
   formatJournalEntryDescription,
   formatJournalEntryDetails,
-  stripBreakdownMarkup,
 } from '../../../src/presentation/dom/compta/journal/formatJournalEntryDescription.js';
 
 describe('formatJournalEntryDescription', () => {
-  test('stripBreakdownMarkup removes embedded JSON', () => {
-    expect(
-      stripBreakdownMarkup('Import wheat |BREAKDOWN|[{"label":"A"}]|BREAKDOWN|')
-    ).toBe('Import wheat');
-  });
-
   test('payroll_tax shows labeled rate without month repetition', () => {
     expect(
       formatJournalEntryDetails({
@@ -46,15 +39,6 @@ describe('formatJournalEntryDescription', () => {
         description: 'Impôt Citoyen (24 hab.) - Novembre',
       })
     ).toEqual([{ label: 'Population', value: '24 hab.' }]);
-  });
-
-  test('strips import product name when breakdown carries detail', () => {
-    expect(
-      formatJournalEntryDetails({
-        type: 'import_wheat',
-        description: 'Import wheat |BREAKDOWN|[{"label":"Savana"}]|BREAKDOWN|',
-      })
-    ).toEqual([]);
   });
 
   test('construction shows labeled building name', () => {

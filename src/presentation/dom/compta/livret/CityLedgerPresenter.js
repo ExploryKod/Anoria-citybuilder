@@ -88,6 +88,7 @@ export function renderCityLedgerTable(comparison) {
     { key: 'incomeTax', thisYear: 'incomeTaxThisYear', lastYear: 'incomeTaxLastYear' },
     { key: 'payrollTax', thisYear: 'payrollTaxThisYear', lastYear: 'payrollTaxLastYear' },
     { key: 'vat', thisYear: 'vatThisYear', lastYear: 'vatLastYear' },
+    { key: 'corporateTaxRevenue', thisYear: 'corporateTaxRevenueThisYear', lastYear: 'corporateTaxRevenueLastYear' },
     { key: 'exports', thisYear: 'exportsThisYear', lastYear: 'exportsLastYear' },
     { key: 'loanCapital', thisYear: 'loanCapitalThisYear', lastYear: 'loanCapitalLastYear' },
   ];
@@ -102,6 +103,8 @@ export function renderCityLedgerTable(comparison) {
       lastYear: 'unemploymentBenefitLastYear',
     },
     { key: 'serviceSubsidy', thisYear: 'serviceSubsidyThisYear', lastYear: 'serviceSubsidyLastYear' },
+    { key: 'companySubsidy', thisYear: 'companySubsidyThisYear', lastYear: 'companySubsidyLastYear' },
+    { key: 'housingSubsidy', thisYear: 'housingSubsidyThisYear', lastYear: 'housingSubsidyLastYear' },
     { key: 'repairs', thisYear: 'repairsThisYear', lastYear: 'repairsLastYear' },
     { key: 'imports', thisYear: 'importsThisYear', lastYear: 'importsLastYear' },
     { key: 'loanInterest', thisYear: 'loanInterestThisYear', lastYear: 'loanInterestLastYear' },
