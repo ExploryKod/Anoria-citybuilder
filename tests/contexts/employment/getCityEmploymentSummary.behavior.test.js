@@ -36,7 +36,7 @@ function house(id, pop, roadCount = 1, type = 'House-Blue') {
   });
 }
 
-function workplace(id, { workerNeed, sector, roadCount = 1, worker = 0, type = 'Farm-Wheat' }) {
+function workplace(id, { workerNeed, sector, roadCount = 1, worker = 0, type = 'Farm-Wheat', workerSources = {} }) {
   return createEmploymentBuildingSnapshot({
     id,
     type,
@@ -44,6 +44,7 @@ function workplace(id, { workerNeed, sector, roadCount = 1, worker = 0, type = '
     worker,
     sector,
     roadCount,
+    workerSources,
   });
 }
 
@@ -87,20 +88,35 @@ describe('Employment — GetCityEmploymentSummary', () => {
   });
 
   describe('computeCityEmploymentSummary', () => {
-    test('worker pool counts every resident of a road-served house; totalPopulation = worker pool', () => {
+    test('worker pool excludes a house without a road, but the house still counts as population and unemployed', () => {
       const summary = computeCityEmploymentSummary([
         house('h1', 5, 1),
         house('h2', 7, 1, 'House-Red'),
-        house('h3', 4, 0), // no road
+        house('h3', 4, 0), // no road: absent from workerPool (job-matching), present in totalPopulation/unemployed
       ]);
 
-      expect(summary.workerPool).toBe(12); // 5 + 7 (the house without a road counts for nothing)
+      expect(summary.workerPool).toBe(12); // 5 + 7 — h3 is unreachable by a workplace
       expect(summary).not.toHaveProperty('elitePool');
-      expect(summary.totalPopulation).toBe(12);
-      expect(summary.civilServantCount).toBe(1);
-      expect(summary.laborPool).toBe(11);
+      expect(summary.totalPopulation).toBe(16); // 5 + 7 + 4 — a foyer is a foyer, road or not
+      expect(summary.civilServantCount).toBe(0); // floor(5/12) + floor(7/12) + floor(4/12), per house — none reaches 12
+      expect(summary.laborPool).toBe(16);
       expect(summary.activeCitizenCount).toBe(0);
-      expect(summary.unemployed).toBe(11);
+      expect(summary.unemployed).toBe(16); // includes h3's 4 residents, unreachable by a job but still unemployed
+      expect(summary.workerPool).toBeLessThan(summary.totalPopulation);
+    });
+
+    test('several foyers each under 12 are not seated a civil servant the city-wide floor would have given them', () => {
+      // Three foyers of 5 sum to 15 (city-wide floor(15/12) = 1), but each foyer's own floor(5/12) = 0: the single
+      // source is the sum of the foyers' own counts, never a floor applied to their total.
+      const summary = computeCityEmploymentSummary([
+        house('h1', 5, 1),
+        house('h2', 5, 1),
+        house('h3', 5, 1),
+      ]);
+
+      expect(summary.totalPopulation).toBe(15);
+      expect(summary.civilServantCount).toBe(0);
+      expect(summary.unemployed).toBe(15);
     });
 
     test('lack and understaffed: farms without road count; other workplaces need road', () => {
@@ -129,15 +145,15 @@ describe('Employment — GetCityEmploymentSummary', () => {
     test('new farm without road absorbs unemployed workers', () => {
       const summary = computeCityEmploymentSummary([
         house('h1', 4, 1),
-        workplace('farm-a', { workerNeed: 3, sector: 1, worker: 3, roadCount: 0 }),
+        workplace('farm-a', { workerNeed: 3, sector: 1, worker: 3, roadCount: 0, workerSources: { h1: 3 } }),
       ]);
       expect(summary.unemployed).toBe(1);
       expect(summary.lack).toBe(0);
 
       const afterFarm = computeCityEmploymentSummary([
         house('h1', 4, 1),
-        workplace('farm-a', { workerNeed: 3, sector: 1, worker: 3, roadCount: 0 }),
-        workplace('farm-b', { workerNeed: 3, sector: 1, worker: 1, roadCount: 0 }),
+        workplace('farm-a', { workerNeed: 3, sector: 1, worker: 3, roadCount: 0, workerSources: { h1: 3 } }),
+        workplace('farm-b', { workerNeed: 3, sector: 1, worker: 1, roadCount: 0, workerSources: { h1: 1 } }),
       ]);
       expect(afterFarm.unemployed).toBe(0);
       expect(afterFarm.lack).toBe(2);
@@ -146,8 +162,8 @@ describe('Employment — GetCityEmploymentSummary', () => {
     test('unemployed = pool minus assigned on eligible workplaces', () => {
       const summary = computeCityEmploymentSummary([
         house('h1', 10, 1),
-        workplace('farm', { workerNeed: 3, sector: 1, worker: 2 }),
-        workplace('market', { workerNeed: 2, sector: 2, worker: 2, type: 'Market-Stall' }),
+        workplace('farm', { workerNeed: 3, sector: 1, worker: 2, workerSources: { h1: 2 } }),
+        workplace('market', { workerNeed: 2, sector: 2, worker: 2, type: 'Market-Stall', workerSources: { h1: 2 } }),
       ]);
 
       expect(summary.totalAssigned).toBe(4);
@@ -250,7 +266,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
     beforeEach(() => {
       repo = new InMemoryEmploymentBuildingRepository([
         house('House-Blue-1-1', 8, 1),
-        workplace('Farm-Wheat-2-2', { workerNeed: 3, sector: 1, worker: 1 }),
+        workplace('Farm-Wheat-2-2', { workerNeed: 3, sector: 1, worker: 1, workerSources: { 'House-Blue-1-1': 1 } }),
       ]);
       query = new GetCityEmploymentSummary(repo);
     });

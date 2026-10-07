@@ -1768,41 +1768,6 @@ button.building-info-metric-card[aria-pressed="true"] {
     color: #e65100;
 }
 
-/* A house's monthly budget, read from its personal account (see budgetBlock in buildingFinanceInfoView.js). */
-.building-finance-budget {
-    margin-bottom: 8px;
-    font-size: 14px;
-    font-variant-numeric: tabular-nums;
-}
-
-.building-finance-budget-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 6px 8px;
-    border-bottom: 1px solid #eceff1;
-    color: #424242;
-}
-
-.building-finance-budget-row span:last-child {
-    font-weight: 600;
-    color: #111;
-}
-
-.building-finance-budget-row.building-finance-row--subtotal {
-    font-weight: 700;
-    border-top: 1px solid #90a4ae;
-}
-
-.building-finance-budget-row.building-finance-row--total {
-    font-weight: 800;
-    border-top: 2px solid #ff9800;
-}
-
-.building-finance-budget-row span.is-negative {
-    color: #c62828;
-}
-
 /* Products and receipts are green, payments and charges red: the sign alone is not enough to read a statement. */
 .building-finance-flow--income,
 .building-finance-flow--income th,
@@ -1816,13 +1781,11 @@ button.building-info-metric-card[aria-pressed="true"] {
     background: #fdecea;
 }
 
-.building-finance-table th.building-finance-flow--income,
-.building-finance-budget-row.building-finance-flow--income {
+.building-finance-table th.building-finance-flow--income {
     color: #1b5e20;
 }
 
-.building-finance-table th.building-finance-flow--charge,
-.building-finance-budget-row.building-finance-flow--charge {
+.building-finance-table th.building-finance-flow--charge {
     color: #8e2424;
 }
 
@@ -1939,6 +1902,29 @@ button.building-info-metric-card[aria-pressed="true"] {
     font-style: italic;
     font-weight: 500;
     color: #78909c;
+}
+
+.building-finance-row--section th {
+    padding-top: 14px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #546e7a;
+    border-bottom: 1px solid #cfd8dc;
+}
+
+.building-finance-row--section:first-child th {
+    padding-top: 8px;
+}
+
+.building-finance-row--indicator th,
+.building-finance-row--indicator td {
+    font-size: 12px;
+    font-style: italic;
+    font-weight: 500;
+    color: #78909c;
+    border-top: 1px dashed #cfd8dc;
 }
 
 .building-finance-cash {

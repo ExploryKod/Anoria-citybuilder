@@ -10,35 +10,57 @@ import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../../../../shared/bui
  * pays) and its business account (what it sells, as goods or as deals), each shown in its own sub-tab.
  */
 
-const signed = (amount) => (amount === 0 ? 0 : -amount);
 const rate = (part, base) => (base > 0 ? `${Math.round((part / base) * 100)} %` : '—');
 
 /**
- * @typedef {{ label: string, kind: 'line' | 'subtotal' | 'total', amount: (f: object) => number }
+ * A compte de résultat: produits grouped together, then charges grouped together — never alternated — each with
+ * its own subtotal, a margin indicator where one is meaningful, then the net result. Charges show their natural
+ * (positive) amount: the section they sit under already says they are subtracted, so there is no sign to flip.
+ * @typedef {{ label: string, kind: 'section' }
+ *   | { label: string, kind: 'line' | 'subtotal' | 'total' | 'indicator', flow?: 'income' | 'charge', amount: (f: object) => number }
  *   | { label: string, kind: 'rate', rate: (f: object) => string }} StatementRow
  */
 
 /** @type {ReadonlyArray<StatementRow>} */
 const COMPANY_ROWS = [
+  { label: 'Produits', kind: 'section' },
   { label: 'Ventes HT', kind: 'line', flow: 'income', amount: (f) => f.revenueHT },
-  { label: 'Achats de marchandises HT', kind: 'line', flow: 'charge', amount: (f) => signed(f.purchasesHT) },
-  { label: 'Marge brute', kind: 'subtotal', amount: (f) => f.grossMargin },
-  { label: 'Taux de marge brute', kind: 'rate', rate: (f) => rate(f.grossMargin, f.revenueHT) },
   { label: 'Subvention reçue', kind: 'line', flow: 'income', amount: (f) => f.subsidiesReceived },
-  { label: 'Salaires des ouvriers', kind: 'line', flow: 'charge', amount: (f) => signed(f.wages) },
-  { label: 'Entretien du bâtiment', kind: 'line', flow: 'charge', amount: (f) => signed(f.upkeep) },
-  { label: "Résultat d'exploitation", kind: 'subtotal', amount: (f) => f.operatingResult },
-  { label: 'Impôt sur les sociétés', kind: 'line', flow: 'charge', amount: (f) => signed(f.corporateTax) },
+  { label: 'Total produits', kind: 'subtotal', amount: (f) => f.revenueHT + f.subsidiesReceived },
+
+  { label: 'Charges', kind: 'section' },
+  { label: 'Achats de marchandises HT', kind: 'line', flow: 'charge', amount: (f) => f.purchasesHT },
+  { label: 'Salaires des ouvriers', kind: 'line', flow: 'charge', amount: (f) => f.wages },
+  { label: 'Entretien du bâtiment', kind: 'line', flow: 'charge', amount: (f) => f.upkeep },
+  { label: 'Impôt sur les sociétés', kind: 'line', flow: 'charge', amount: (f) => f.corporateTax },
+  { label: 'Total charges', kind: 'subtotal', amount: (f) => f.purchasesHT + f.wages + f.upkeep + f.corporateTax },
+
+  { label: 'Marge brute (ventes − achats)', kind: 'indicator', amount: (f) => f.grossMargin },
+  { label: 'Taux de marge brute', kind: 'rate', rate: (f) => rate(f.grossMargin, f.revenueHT) },
+
   { label: 'Résultat net', kind: 'total', amount: (f) => f.netResult },
 ];
 
 /** The personal account of a house: what it earns and what it pays for its own needs. */
 /** @type {ReadonlyArray<StatementRow>} */
 const PERSONAL_ROWS = [
+  { label: 'Produits', kind: 'section' },
   { label: 'Salaires perçus', kind: 'line', flow: 'income', amount: (f) => f.wagesReceived },
-  { label: 'Services payés', kind: 'line', flow: 'charge', amount: (f) => signed(f.servicesPaid) },
-  { label: 'Biens achetés', kind: 'line', flow: 'charge', amount: (f) => signed(f.goodsBought) },
+  { label: 'Salaire de fonctionnaire perçu', kind: 'line', flow: 'income', amount: (f) => f.publicWageReceived },
+  { label: 'Allocation chômage perçue', kind: 'line', flow: 'income', amount: (f) => f.benefitReceived },
+  { label: 'Total produits', kind: 'subtotal', amount: (f) => f.wagesReceived + f.publicWageReceived + f.benefitReceived },
+
+  { label: 'Charges', kind: 'section' },
+  { label: 'Services payés', kind: 'line', flow: 'charge', amount: (f) => f.servicesPaid },
+  { label: 'Biens achetés', kind: 'line', flow: 'charge', amount: (f) => f.goodsBought },
+  { label: 'Impôt sur le revenu', kind: 'line', flow: 'charge', amount: (f) => f.incomeTax },
+  { label: 'Total charges', kind: 'subtotal', amount: (f) => f.servicesPaid + f.goodsBought + f.incomeTax },
+
   { label: 'Résultat net', kind: 'total', amount: (f) => f.householdResult },
+
+  { label: 'Report à nouveau', kind: 'section' },
+  { label: 'Ouverture', kind: 'line', amount: (f) => f.openingBalance },
+  { label: 'Clôture', kind: 'total', amount: (f) => f.closingBalance },
 ];
 
 /** The sub-tabs of a house: its personal account first, then its business account (read as a company's). */
@@ -105,12 +127,37 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
   }
   if (!stillCurrent()) return;
   container.replaceChildren(
-    ...(finance.budget ? [budgetBlock(finance.budget)] : []),
-    statementTable(rows, finance),
-    ...(finance.openingSavings !== null ? [reconciliationBlock(finance)] : []),
+    statementTable(rows, withCarryForward(finance)),
     cashLine(finance.cash),
     el('p', 'building-finance-note', "Les ventes et les charges d'un mois sont réglées le premier jour du mois suivant : « Mois dernier » est donc l'activité du mois précédent."),
   );
+}
+
+/**
+ * A house's personal account carries its savings (or its debt) forward: what it had before a period's result is its
+ * opening report à nouveau, what it has after is its closing one — the same figure a "Report à nouveau" row shows in
+ * a real compte de résultat. For the month column this is read from the budget's carried savings (the balance
+ * before the still-open current month's own lines); for the year column it is the balance at the 1st of January.
+ * A company's account has no such carry-forward (`finance.budget`/`openingSavings` are null): its figures pass
+ * through unchanged, and `PERSONAL_ROWS`-only rows referencing `openingBalance`/`closingBalance` are simply absent
+ * from `COMPANY_ROWS`, so nothing reads the missing fields.
+ * @param {{ lastMonth: object, year: object, budget: object | null, openingSavings: number | null, cash: number }} finance
+ */
+function withCarryForward(finance) {
+  if (!finance.budget) return finance;
+  return {
+    ...finance,
+    lastMonth: {
+      ...finance.lastMonth,
+      openingBalance: finance.budget.carried - finance.lastMonth.householdResult,
+      closingBalance: finance.budget.carried,
+    },
+    year: {
+      ...finance.year,
+      openingBalance: finance.openingSavings,
+      closingBalance: finance.cash,
+    },
+  };
 }
 
 /**
@@ -131,6 +178,14 @@ function statementTable(rows, finance) {
   const body = document.createElement('tbody');
   for (const row of rows) {
     const tr = el('tr', `building-finance-row building-finance-row--${row.kind}${row.flow ? ` building-finance-flow--${row.flow}` : ''}`);
+    if (row.kind === 'section') {
+      const th = el('th', null, row.label);
+      th.scope = 'colgroup';
+      th.colSpan = 3;
+      tr.append(th);
+      body.append(tr);
+      continue;
+    }
     const th = el('th', null, row.label);
     th.scope = 'row';
     tr.append(th);
@@ -147,63 +202,6 @@ function statementTable(rows, finance) {
 
   table.append(head, body);
   return table;
-}
-
-/**
- * What a house keeps is savings while it is positive, and a debt once it is negative: the word follows the sign.
- * @param {number} amount the balance
- * @param {string} rest what follows the word (e.g. "reportée")
- */
-function savingsLabel(amount, rest) {
-  return `${amount < 0 ? 'Dette' : 'Épargne'} ${rest}`;
-}
-
-/**
- * A house's month, as it buys: the savings brought forward, the salary of the month before and its services (both settled
- * on the first day), what it has bought since, and what it keeps at the end. Read from the journal, never stored.
- * @param {{ carried: number, wages: number, services: number, purchases: number, budget: number, saved: number }} budget
- */
-function budgetBlock(budget) {
-  const block = el('div', 'building-finance-budget');
-  block.setAttribute('role', 'group');
-  block.setAttribute('aria-label', 'Budget du mois');
-  const lines = [
-    [savingsLabel(budget.carried, 'reportée'), budget.carried, null],
-    ['Salaire du mois dernier', budget.wages, 'building-finance-flow--income'],
-    ['Services du mois dernier', signed(budget.services), 'building-finance-flow--charge'],
-    ["Budget d'achat du mois", budget.budget, 'building-finance-row--subtotal'],
-    ['Achats ce mois', signed(budget.purchases), 'building-finance-flow--charge'],
-    [savingsLabel(budget.saved, 'à reporter'), budget.saved, 'building-finance-row--total'],
-  ];
-  for (const [label, amount, kind] of lines) {
-    const row = el('div', `building-finance-budget-row${kind ? ` ${kind}` : ''}`);
-    const value = el('span', amount < 0 ? 'is-negative' : null, formatEuro(amount));
-    row.append(el('span', null, label), value);
-    block.append(row);
-  }
-  return block;
-}
-
-/**
- * A house's savings add up: the savings it had at the start of the year, plus the year's result, is the cash it holds now.
- * Said here so the player never reads the year's result as the cash.
- * @param {{ openingSavings: number, year: { householdResult: number }, cash: number }} finance
- */
-function reconciliationBlock(finance) {
-  const block = el('div', 'building-finance-budget');
-  block.setAttribute('role', 'group');
-  block.setAttribute('aria-label', "Épargne de l'année");
-  const lines = [
-    [savingsLabel(finance.openingSavings, 'au 1er janvier'), finance.openingSavings, null],
-    ["+ Résultat net de l'année", finance.year.householdResult, null],
-    ['= Trésorerie à ce jour', finance.cash, 'building-finance-row--total'],
-  ];
-  for (const [label, amount, kind] of lines) {
-    const row = el('div', `building-finance-budget-row${kind ? ` ${kind}` : ''}`);
-    row.append(el('span', null, label), el('span', amount < 0 ? 'is-negative' : null, formatEuro(amount)));
-    block.append(row);
-  }
-  return block;
 }
 
 /** The cash in the till: the balance of the account, which is not the year's result. */

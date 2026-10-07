@@ -1,4 +1,5 @@
 import { buildingName } from '../../shell/CatalogVocabulary.js';
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 
 const STATUS_LABELS = Object.freeze({ civil_servant: 'Fonctionnaire (la mairie)', unemployed: 'Chômeur' });
 
@@ -35,7 +36,10 @@ export async function renderHouseResidentsTab(container, model) {
     const place = document.createElement('span');
     place.className = 'house-residents-place';
     place.textContent = resident.status === 'worker' ? `Travaille à ${buildingName(resident.workplaceType)}` : STATUS_LABELS[resident.status];
-    item.append(name, ' — ', place);
+    const pay = document.createElement('span');
+    pay.className = 'house-residents-pay';
+    pay.textContent = resident.settled ? formatEuro(resident.amount) : 'Pas encore réglé';
+    item.append(name, ' — ', place, ' — ', pay);
     list.append(item);
   }
   container.append(list);

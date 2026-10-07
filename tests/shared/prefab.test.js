@@ -7,6 +7,8 @@ import { describe, test, expect } from '@jest/globals';
 import { PREFABS } from '../../src/shared/prefabs/prefabCatalog.js';
 import { canonicalizeHouseRecord } from '../../src/shared/building-identity/index.js';
 import { deriveTreasuryFigures } from '../../src/contexts/accounting/domain/policies/TreasuryFromJournalPolicy.js';
+import { createEmploymentBuildingSnapshot } from '../../src/contexts/employment/domain/EmploymentBuildingSnapshot.js';
+import { computeCityEmploymentSummary } from '../../src/contexts/employment/domain/computeCityEmploymentSummary.js';
 
 const prefab = PREFABS['anoria-tour-116'];
 
@@ -20,8 +22,29 @@ describe('prefab anoria-tour-116 — its state is the saved one', () => {
     }
   });
 
-  test('its journal derives the balance of the export (−52 148 €)', () => {
+  test('its journal starts clean, at the same capital a new game starts with (no inherited deficit)', () => {
     const figures = deriveTreasuryFigures(prefab.journal, { currentTurn: prefab.turn });
-    expect(figures.funds).toBe(-52148);
+    expect(figures.funds).toBe(500);
+  });
+
+  test('its merchant and scholar housing is sized to the jobs actually built: no chronic mass unemployment', () => {
+    const snapshots = prefab.city.buildings.map((building) => {
+      const employees = building.employees || {};
+      return createEmploymentBuildingSnapshot({
+        id: building.instanceId,
+        type: building.type || '',
+        roadCount: building.roads ?? 0,
+        pop: building.pop ?? 0,
+        level: building.level ?? 1,
+        worker: employees.worker ?? 0,
+        workerNeed: employees.worker_need ?? 0,
+        sector: employees.sector ?? 0,
+        workerSources: employees.workerSources ?? {},
+      });
+    });
+    const summary = computeCityEmploymentSummary(snapshots);
+    expect(summary.totalPopulation).toBe(41);
+    expect(summary.unemployed).toBeLessThanOrEqual(1);
+    expect(summary.lack).toBe(0);
   });
 });

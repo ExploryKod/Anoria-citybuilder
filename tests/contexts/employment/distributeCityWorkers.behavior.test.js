@@ -277,6 +277,24 @@ describe('Employment — DistributeCityWorkers', () => {
     });
   });
 
+  describe('DistributeCityWorkers — civil servants are reserved from the hiring pool', () => {
+    test('a 12-pop house leaves one resident unhired, even with enough job slots for all twelve', async () => {
+      // One civil servant per twelve residents (see computeHouseholdEmploymentStatus): hiring must never claim
+      // more of a house's residents than HouseResidentsPolicy/HouseholdPublicPayPolicy can account for, or the
+      // household's own accounting throws "workers and civil servants do not fit residents".
+      const repo = new InMemoryEmploymentBuildingRepository([
+        house('House-Red-1-1', 12, 1, 'House-Red'),
+        workplace('Farm-Wheat-a', { workerNeed: 20, sector: 1 }),
+      ]);
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+
+      const result = await useCase.execute({});
+
+      expect(result.availableWorkers).toBe(11);
+      expect(repo.get('Farm-Wheat-a').worker).toBe(11);
+    });
+  });
+
   describe('DistributeCityWorkers — cold-start deadlock regression', () => {
     test('a single tier-1 house can staff Chapel from turn one, with no other building placed', async () => {
       const repo = new InMemoryEmploymentBuildingRepository([

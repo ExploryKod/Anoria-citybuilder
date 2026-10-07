@@ -4,6 +4,7 @@ import {
   isLaborSource,
 } from '../../domain/policies/BuildingRolePolicy.js';
 import { workerPopFromHouse } from '../../domain/policies/LaborPoolPolicy.js';
+import { computeCivilServantCount } from '../../../accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
 import {
   allocateWorkers,
   orderSkillsByPriority,
@@ -80,11 +81,15 @@ export class DistributeCityWorkers {
       (b) => isEligibleWorkplace(b),
     );
 
+    // The city takes its civil servants first (one per twelve residents, per house — see
+    // computeHouseholdEmploymentStatus): a house's hireable pool is what is left once they are set aside, so
+    // hiring can never again claim more residents than a house has (the rule HouseResidentsPolicy already enforces
+    // on the money side).
+    const hireablePopOf = (building) =>
+      Math.max(0, workerPopFromHouse(building.type, building.pop, building.level) - computeCivilServantCount(building.pop));
+
     const remainingPopById = new Map(
-      laborSources.map((building) => [
-        building.id,
-        workerPopFromHouse(building.type, building.pop, building.level),
-      ]),
+      laborSources.map((building) => [building.id, hireablePopOf(building)]),
     );
 
     const qualifyingSources = (skillKey, level) =>
@@ -117,10 +122,7 @@ export class DistributeCityWorkers {
     // house counts once here even if it holds several workplace skills at
     // once (see class docstring) — summing per-skill pool sizes instead
     // would double-count that same house once per skill it qualifies for.
-    const totalAvailableWorkers = laborSources.reduce(
-      (sum, building) => sum + workerPopFromHouse(building.type, building.pop, building.level),
-      0,
-    );
+    const totalAvailableWorkers = laborSources.reduce((sum, building) => sum + hireablePopOf(building), 0);
 
     const workerCountById = new Map(workplaces.map((w) => [w.id, 0]));
     const allAssignments = [];

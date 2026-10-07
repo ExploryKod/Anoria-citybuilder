@@ -36,6 +36,7 @@ import {
     overOverlayMessage,
     bulldozeSelected
 } from './nodes.js';
+import { formatEuroAmount } from '../../../contexts/accounting/presentation/formatMoney.js';
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { SEASON_KEYS } from '../../../shared/time/TimeCalendar.js';
 import { msToSpeedLevel, SPEED_LEVEL_MAX } from '../../../shared/gameplay/SimulationDefaults.js';
@@ -428,7 +429,7 @@ class GameUI {
      */
     updateFunds(funds) {
         if (displayFunds) {
-            displayFunds.textContent = funds?.toString() || '0';
+            displayFunds.textContent = formatEuroAmount(funds ?? 0);
         }
     }
 
@@ -436,7 +437,7 @@ class GameUI {
     resetInitialHud() {
         this.updatePopulationBreakdown(0, 0, 0, 0);
         if (displayFunds) {
-            displayFunds.textContent = '0';
+            displayFunds.textContent = formatEuroAmount(0);
         }
         const debtBox = document.querySelector('.debt-box');
         if (debtBox) {

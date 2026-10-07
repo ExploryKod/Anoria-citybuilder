@@ -18,9 +18,6 @@ import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
 import { RecordLedgerEntry } from '../contexts/accounting/application/commands/journal/RecordLedgerEntry.js';
 import { RecordMaintenanceExpense } from '../contexts/accounting/application/services/RecordMaintenanceExpense.js';
 import { RecordConstructionExpense } from '../contexts/accounting/application/services/RecordConstructionExpense.js';
-import { RecordSalaryExpense } from '../contexts/accounting/application/services/RecordSalaryExpense.js';
-import { RecordUnemploymentBenefitExpense } from '../contexts/accounting/application/services/RecordUnemploymentBenefitExpense.js';
-import { RecordPayrollTaxIncome } from '../contexts/accounting/application/services/RecordPayrollTaxIncome.js';
 import { RecordCitizenTaxIncome } from '../contexts/accounting/application/services/RecordCitizenTaxIncome.js';
 import { RecordLoanCapitalIncome } from '../contexts/accounting/application/services/RecordLoanCapitalIncome.js';
 import { RecordLoanInterestExpense } from '../contexts/accounting/application/services/RecordLoanInterestExpense.js';
@@ -49,6 +46,8 @@ import { GetProducerRevenues } from '../contexts/accounting/application/queries/
 import { buildingAccountTrace } from '../contexts/accounting/domain/policies/BuildingAccountTracePolicy.js';
 import { buildingFinanceFigures, householdBudgetOf, householdLastMonthOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 import { residentsOfHouse } from '../contexts/accounting/domain/policies/HouseResidentsPolicy.js';
+import { residentPayBreakdownOf } from '../contexts/accounting/domain/policies/HouseResidentsPayPolicy.js';
+import { householdPublicPayOf } from '../contexts/accounting/domain/policies/HouseholdPublicPayPolicy.js';
 import { MONTHS_PER_YEAR } from '../shared/time/TimeCalendar.js';
 import { isLucrativeBuilding } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../shared/building-identity/index.js';
@@ -119,15 +118,6 @@ export function createAccountingContext(deps = {}) {
     recordLedgerEntryCommand
   );
   const recordConstructionExpense = new RecordConstructionExpense(
-    recordLedgerEntryCommand
-  );
-  const recordSalaryExpense = new RecordSalaryExpense(
-    recordLedgerEntryCommand
-  );
-  const recordUnemploymentBenefitExpense = new RecordUnemploymentBenefitExpense(
-    recordLedgerEntryCommand
-  );
-  const recordPayrollTaxIncome = new RecordPayrollTaxIncome(
     recordLedgerEntryCommand
   );
   const recordCitizenTaxIncome = new RecordCitizenTaxIncome(
@@ -239,10 +229,6 @@ export function createAccountingContext(deps = {}) {
   const gameTreasuryRecording = new GameTreasuryRecording({
     getTreasurySnapshot: getTreasurySnapshotQuery,
     commands: {
-      recordSalaryExpense: (params) => recordSalaryExpense.execute(params),
-      recordUnemploymentBenefitExpense: (params) =>
-        recordUnemploymentBenefitExpense.execute(params),
-      recordPayrollTaxIncome: (params) => recordPayrollTaxIncome.execute(params),
       recordExceptionalExpense: (params) => recordExceptionalExpense.execute(params),
       recordCommercialRouteExpense: (params) => recordCommercialRouteExpense.execute(params),
       recordCommerceImportExpense: (params) => recordCommerceImportExpense.execute(params),
@@ -287,22 +273,6 @@ export function createAccountingContext(deps = {}) {
           if (!Number.isInteger(row.pop) || row.pop < 0) throw new Error(`[households] house ${row.id} has no residents count`);
           return { id: row.id, pop: row.pop };
         }),
-    /**
-     * The citizens of a household: each resident with his workplace, or his status (see HouseResidentsPolicy).
-     * @param {string} houseId
-     */
-    async getHouseResidents(houseId) {
-      const rows = (await dexieDb.houses.toArray()).filter(isActiveHamletRow);
-      const house = rows.find((row) => row.id === houseId);
-      if (!house) throw new Error(`[residents] household ${houseId} is not in the hamlet`);
-      if (!Number.isInteger(house.pop)) throw new Error(`[residents] household ${houseId} has no residents count`);
-      const workplaces = rows
-        .filter((row) => (row.employees?.workerSources?.[houseId] ?? 0) > 0)
-        .map((row) => ({ workplaceId: row.id, workplaceType: row.type, workers: row.employees.workerSources[houseId] }));
-      const residents = residentsOfHouse({ houseId, pop: house.pop, workplaces: workplaces.map(({ workplaceId, workers }) => ({ workplaceId, workers })) });
-      const typeOf = new Map(workplaces.map((entry) => [entry.workplaceId, entry.workplaceType]));
-      return residents.map((resident) => ({ ...resident, workplaceType: resident.workplaceId ? typeOf.get(resident.workplaceId) : null }));
-    },
     getPublicPay: async () => {
       const settings = await hamletFiscalRates.getSalarySettings();
       return { salaryPerMonth: settings.salaryPerMonth, unemploymentBenefitRate: settings.unemploymentBenefitRate };
@@ -360,9 +330,6 @@ export function createAccountingContext(deps = {}) {
     recordLedgerEntryCommand,
     recordMaintenanceExpense,
     recordConstructionExpense,
-    recordSalaryExpense,
-    recordUnemploymentBenefitExpense,
-    recordPayrollTaxIncome,
     recordCitizenTaxIncome,
     recordLoanCapitalIncome,
     recordLoanInterestExpense,
@@ -468,21 +435,6 @@ export function createAccountingContext(deps = {}) {
       return recordConstructionExpense.execute(params);
     },
 
-    /** @param {Parameters<RecordSalaryExpense['execute']>[0]} params */
-    async recordSalaryExpense(params) {
-      return recordSalaryExpense.execute(params);
-    },
-
-    /** @param {Parameters<RecordUnemploymentBenefitExpense['execute']>[0]} params */
-    async recordUnemploymentBenefitExpense(params) {
-      return recordUnemploymentBenefitExpense.execute(params);
-    },
-
-    /** @param {Parameters<RecordPayrollTaxIncome['execute']>[0]} params */
-    async recordPayrollTaxIncome(params) {
-      return recordPayrollTaxIncome.execute(params);
-    },
-
     /** @param {Parameters<RecordCitizenTaxIncome['execute']>[0]} params */
     async recordCitizenTaxIncome(params) {
       return recordCitizenTaxIncome.execute(params);
@@ -564,21 +516,6 @@ export function createAccountingContext(deps = {}) {
     /** @param {{ time?: number }} [params] */
     async collectCitizenTaxes(params = {}) {
       return collectCitizenTaxes.execute(params);
-    },
-
-    /** @param {Parameters<GameTreasuryRecording['recordSalaries']>} args */
-    async recordSalaries(...args) {
-      return gameTreasuryRecording.recordSalaries(...args);
-    },
-
-    /** @param {Parameters<GameTreasuryRecording['recordUnemploymentBenefits']>} args */
-    async recordUnemploymentBenefits(...args) {
-      return gameTreasuryRecording.recordUnemploymentBenefits(...args);
-    },
-
-    /** @param {Parameters<GameTreasuryRecording['recordPayrollTax']>} args */
-    async recordPayrollTax(...args) {
-      return gameTreasuryRecording.recordPayrollTax(...args);
     },
 
     /** @param {Parameters<GameTreasuryRecording['recordExceptionalRepairExpense']>} args */
@@ -703,6 +640,48 @@ export function createAccountingContext(deps = {}) {
      */
     async getBuildingAccountTrace(buildingId) {
       return buildingAccountTrace(await journalRepository.getJournalEntries(), buildingId);
+    },
+
+    /**
+     * The citizens of a household: each resident with his workplace or his status (see HouseResidentsPolicy), and his
+     * share of the pay already booked for the settled month (see HouseResidentsPayPolicy) — a split of the journal's
+     * figure, never a new one; a group not yet settled this month shows no amount, not a guessed zero.
+     * @param {string} houseId
+     */
+    async getHouseResidents(houseId) {
+      const rows = (await dexieDb.houses.toArray()).filter(isActiveHamletRow);
+      const house = rows.find((row) => row.id === houseId);
+      if (!house) throw new Error(`[residents] household ${houseId} is not in the hamlet`);
+      if (!Number.isInteger(house.pop)) throw new Error(`[residents] household ${houseId} has no residents count`);
+      const workplaces = rows
+        .filter((row) => (row.employees?.workerSources?.[houseId] ?? 0) > 0)
+        .map((row) => ({ workplaceId: row.id, workplaceType: row.type, workers: row.employees.workerSources[houseId] }));
+      const residents = residentsOfHouse({ houseId, pop: house.pop, workplaces: workplaces.map(({ workplaceId, workers }) => ({ workplaceId, workers })) });
+      const typeOf = new Map(workplaces.map((entry) => [entry.workplaceId, entry.workplaceType]));
+
+      const workers = workplaces.reduce((sum, entry) => sum + entry.workers, 0);
+      const settings = await hamletFiscalRates.getSalarySettings();
+      const expectedPay = householdPublicPayOf({
+        pop: house.pop,
+        workers,
+        referenceSalaryPerMonth: settings.salaryPerMonth,
+        unemploymentBenefitRate: settings.unemploymentBenefitRate,
+      });
+      const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
+      const entries = await journalRepository.getJournalEntries();
+      const breakdown = residentPayBreakdownOf(
+        residents,
+        entries,
+        { houseId, year: now.year, month: now.monthIndex + 1 },
+        { predictedPublicPay: expectedPay.publicPay, predictedBenefit: expectedPay.benefit },
+      );
+      const payOf = new Map(breakdown.map((entry) => [entry.id, entry]));
+
+      return residents.map((resident) => ({
+        ...resident,
+        workplaceType: resident.workplaceId ? typeOf.get(resident.workplaceId) : null,
+        ...payOf.get(resident.id),
+      }));
     },
 
     /**

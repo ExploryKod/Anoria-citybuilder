@@ -8,9 +8,14 @@ const euroFormat = new Intl.NumberFormat('fr-FR', {
   roundingMode: 'halfExpand',
 });
 
+/** The number alone, without the € sign — for a display that already shows its own currency icon. @param {number} amount */
+export function formatEuroAmount(amount) {
+  return euroFormat.format(amount ?? 0);
+}
+
 /** @param {number} amount */
 export function formatEuro(amount) {
-  return `${euroFormat.format(amount ?? 0)}€`;
+  return `${formatEuroAmount(amount)}€`;
 }
 
 /** @param {number|string} amount */

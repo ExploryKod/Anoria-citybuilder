@@ -62,16 +62,39 @@ describe('household budget — a house buys with its savings, last month\'s sala
     expect(budget).toEqual({ carried: 100, wages: 60, services: 10, purchases: 25, budget: 150, saved: 125 });
   });
 
+  test('a civil servant\'s salary, a benefit and the income tax withheld are known lines too, not a crash', () => {
+    const entries = [
+      { type: 'public_wage', amount: 100, year: 2026, month: 3, accountBuildingId: 'house-1', accountKind: 'particulier' },
+      { type: 'household_benefit', amount: 70, year: 2026, month: 3, accountBuildingId: 'house-1', accountKind: 'particulier' },
+      { type: 'income_tax', amount: 12, year: 2026, month: 3, accountBuildingId: 'house-1', accountKind: 'particulier' },
+    ];
+
+    const budget = householdBudgetOf(entries, 'house-1', { year: 2026, month: 3, balance: 158 });
+
+    expect(budget).toEqual({ carried: 0, wages: 170, services: 12, purchases: 0, budget: 158, saved: 158 });
+  });
+
   test('a house\'s last month reads its salary and services from the settlement and its goods from the month they were bought', () => {
     const entries = [
       { type: 'household_wage', amount: 60, year: 2026, month: 4, accountBuildingId: 'house-1', accountKind: 'particulier' },
+      { type: 'public_wage', amount: 100, year: 2026, month: 4, accountBuildingId: 'house-1', accountKind: 'particulier' },
+      { type: 'household_benefit', amount: 70, year: 2026, month: 4, accountBuildingId: 'house-1', accountKind: 'particulier' },
       { type: 'service_purchase', amount: 5, year: 2026, month: 4, accountBuildingId: 'house-1', accountKind: 'particulier' },
+      { type: 'income_tax', amount: 12, year: 2026, month: 4, accountBuildingId: 'house-1', accountKind: 'particulier' },
       { type: 'consumer_purchase', amount: 20, year: 2026, month: 3, accountBuildingId: 'house-1', accountKind: 'particulier' },
       { type: 'consumer_purchase', amount: 9, year: 2026, month: 4, accountBuildingId: 'house-1', accountKind: 'particulier' },
     ];
 
     const last = householdLastMonthOf(entries, 'house-1', { settled: { year: 2026, month: 4 }, bought: { year: 2026, month: 3 } });
 
-    expect(last).toEqual({ wagesReceived: 60, servicesPaid: 5, goodsBought: 20, householdResult: 35 });
+    expect(last).toEqual({
+      wagesReceived: 60,
+      publicWageReceived: 100,
+      benefitReceived: 70,
+      servicesPaid: 5,
+      incomeTax: 12,
+      goodsBought: 20,
+      householdResult: 193,
+    });
   });
 });

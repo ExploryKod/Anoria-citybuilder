@@ -125,6 +125,7 @@ function toEmploymentSnapshot(row) {
     worker: employees.worker ?? 0,
     workerNeed: employees.worker_need ?? 0,
     sector: employees.sector ?? 0,
+    workerSources: employees.workerSources ?? {},
   });
 }
 

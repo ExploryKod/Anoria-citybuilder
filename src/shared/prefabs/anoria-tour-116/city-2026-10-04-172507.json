@@ -1327,10 +1327,13 @@
       "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
-        "worker_need": 4,
-        "worker": 4,
+        "worker_need": 3,
+        "worker": 3,
         "sector": 4,
-        "salary": 40
+        "salary": 40,
+        "workerSources": {
+          "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b": 3
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "windmill",
@@ -1741,7 +1744,11 @@
         "worker_need": 2,
         "worker": 2,
         "sector": 2,
-        "salary": 20
+        "salary": 20,
+        "workerSources": {
+          "cf03427f-7b10-474f-a84d-9090dc930e3e": 1,
+          "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14": 1
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "market",
@@ -2283,10 +2290,13 @@
       "footprintHeight": 1,
       "placementRotationStep": 0,
       "employees": {
-        "worker_need": 3,
-        "worker": 3,
+        "worker_need": 2,
+        "worker": 2,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b": 2
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "farm",
@@ -2481,10 +2491,13 @@
       "footprintHeight": 1,
       "placementRotationStep": 0,
       "employees": {
-        "worker_need": 3,
-        "worker": 3,
+        "worker_need": 2,
+        "worker": 2,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b": 2
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "farm",
@@ -2667,7 +2680,10 @@
         "worker_need": 3,
         "worker": 3,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b": 3
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "farm",
@@ -2862,7 +2878,11 @@
         "worker_need": 3,
         "worker": 3,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b": 1,
+          "d189b194-fa20-4087-a172-eee11d4962d0": 2
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -3076,7 +3096,10 @@
         "worker_need": 3,
         "worker": 3,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "d189b194-fa20-4087-a172-eee11d4962d0": 3
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -3263,7 +3286,10 @@
         "worker_need": 2,
         "worker": 2,
         "sector": 3,
-        "salary": 20
+        "salary": 20,
+        "workerSources": {
+          "d189b194-fa20-4087-a172-eee11d4962d0": 2
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -4028,7 +4054,7 @@
           "isRoad": true
         }
       ],
-      "pop": 12,
+      "pop": 1,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
@@ -6147,7 +6173,10 @@
         "worker_need": 2,
         "worker": 2,
         "sector": 3,
-        "salary": 20
+        "salary": 20,
+        "workerSources": {
+          "d189b194-fa20-4087-a172-eee11d4962d0": 2
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -6285,7 +6314,7 @@
           "isRoad": false
         }
       ],
-      "pop": 12,
+      "pop": 1,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
@@ -6569,7 +6598,11 @@
         "worker_need": 3,
         "worker": 3,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "d189b194-fa20-4087-a172-eee11d4962d0": 2,
+          "24e26db3-b178-4f93-bcd7-55c72fcf3ad1": 1
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "farm",
@@ -7268,7 +7301,10 @@
         "worker_need": 3,
         "worker": 3,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "24e26db3-b178-4f93-bcd7-55c72fcf3ad1": 3
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "farm",
@@ -7904,7 +7940,7 @@
           "isRoad": true
         }
       ],
-      "pop": 12,
+      "pop": 1,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
@@ -8107,7 +8143,7 @@
           "isRoad": true
         }
       ],
-      "pop": 12,
+      "pop": 1,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
@@ -8357,7 +8393,10 @@
         "worker_need": 3,
         "worker": 3,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "24e26db3-b178-4f93-bcd7-55c72fcf3ad1": 3
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "farm",
@@ -8813,7 +8852,11 @@
         "worker_need": 2,
         "worker": 2,
         "sector": 6,
-        "salary": 20
+        "salary": 20,
+        "workerSources": {
+          "ac5f9ab6-d318-464d-ac42-29ba94edd892": 1,
+          "c0e59748-0467-4384-9518-9abc1fe2d4f8": 1
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -10006,7 +10049,7 @@
           "isRoad": true
         }
       ],
-      "pop": 12,
+      "pop": 1,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
@@ -10274,7 +10317,10 @@
         "worker_need": 2,
         "worker": 2,
         "sector": 3,
-        "salary": 20
+        "salary": 20,
+        "workerSources": {
+          "24e26db3-b178-4f93-bcd7-55c72fcf3ad1": 2
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -10433,7 +10479,10 @@
         "worker_need": 2,
         "worker": 2,
         "sector": 3,
-        "salary": 20
+        "salary": 20,
+        "workerSources": {
+          "24e26db3-b178-4f93-bcd7-55c72fcf3ad1": 2
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",

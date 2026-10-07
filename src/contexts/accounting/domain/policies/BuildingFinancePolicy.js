@@ -34,7 +34,9 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
   const grossMargin = revenue - of('producer_purchase');
   const operatingResult = grossMargin + of('service_subsidy_received') - of('producer_wage') - of('maintenance');
   const netResult = operatingResult - of('corporate_tax');
-  const householdResult = of('household_wage') - of('service_purchase') - of('consumer_purchase');
+  const householdIncome = of('household_wage') + of('public_wage') + of('household_benefit');
+  const householdCharges = of('service_purchase') + of('consumer_purchase') + of('income_tax');
+  const householdResult = householdIncome - householdCharges;
 
   return {
     revenueHT: fromCentimes(revenue),
@@ -47,8 +49,11 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
     corporateTax: fromCentimes(of('corporate_tax')),
     netResult: fromCentimes(netResult),
     wagesReceived: fromCentimes(of('household_wage')),
+    publicWageReceived: fromCentimes(of('public_wage')),
+    benefitReceived: fromCentimes(of('household_benefit')),
     servicesPaid: fromCentimes(of('service_purchase')),
     goodsBought: fromCentimes(of('consumer_purchase')),
+    incomeTax: fromCentimes(of('income_tax')),
     householdResult: fromCentimes(householdResult),
   };
 }
@@ -57,7 +62,9 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
  * The monthly budget of a house's personal account, read from the month's own lines. A house buys during the month with
  * what it has: its carried savings, the salary of the month before (settled on the first day) and the services of that
  * month (settled the same day), less what it has already bought. Nothing is stored: the carried savings are what the
- * balance was before the month's lines, so the budget is derived from the balance and the lines.
+ * balance was before the month's lines, so the budget is derived from the balance and the lines. `wages` also holds a
+ * civil servant's salary and the unemployment benefit (all settled income); `services` also holds the income tax
+ * withheld (a settled charge, like a service bill) — the personal account does not separate them further.
  *
  * @param {Array<{ type: string, amount: number, year: number, month: number, accountBuildingId: string | null, accountKind?: string | null }>} entries
  * @param {string} houseId
@@ -74,8 +81,8 @@ export function householdBudgetOf(entries, houseId, { year, month, balance }) {
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey || entry.year !== year || entry.month !== month) continue;
     const amount = toCentimes(entry.amount);
-    if (entry.type === 'household_wage') wages += amount;
-    else if (entry.type === 'service_purchase') services += amount;
+    if (entry.type === 'household_wage' || entry.type === 'public_wage' || entry.type === 'household_benefit') wages += amount;
+    else if (entry.type === 'service_purchase' || entry.type === 'income_tax') services += amount;
     else if (entry.type === 'consumer_purchase') purchases += amount;
     else throw new Error(`[budget] a personal account holds a "${entry.type}" line, which the household budget does not know`);
   }
@@ -99,17 +106,25 @@ export function householdBudgetOf(entries, houseId, { year, month, balance }) {
  * @param {Array<object>} entries the journal lines
  * @param {string} houseId
  * @param {{ settled: { year: number, month: number }, bought: { year: number, month: number } }} months
- * @returns {{ wagesReceived: number, servicesPaid: number, goodsBought: number, householdResult: number }}
+ * @returns {{ wagesReceived: number, publicWageReceived: number, benefitReceived: number, servicesPaid: number, incomeTax: number, goodsBought: number, householdResult: number }}
  */
 export function householdLastMonthOf(entries, houseId, { settled, bought }) {
   const settledFigures = buildingFinanceFigures(entries, houseId, { ...settled, accountKind: 'particulier' });
   const boughtFigures = buildingFinanceFigures(entries, houseId, { ...bought, accountKind: 'particulier' });
   return {
     wagesReceived: settledFigures.wagesReceived,
+    publicWageReceived: settledFigures.publicWageReceived,
+    benefitReceived: settledFigures.benefitReceived,
     servicesPaid: settledFigures.servicesPaid,
+    incomeTax: settledFigures.incomeTax,
     goodsBought: boughtFigures.goodsBought,
     householdResult: fromCentimes(
-      toCentimes(settledFigures.wagesReceived) - toCentimes(settledFigures.servicesPaid) - toCentimes(boughtFigures.goodsBought),
+      toCentimes(settledFigures.wagesReceived)
+        + toCentimes(settledFigures.publicWageReceived)
+        + toCentimes(settledFigures.benefitReceived)
+        - toCentimes(settledFigures.servicesPaid)
+        - toCentimes(settledFigures.incomeTax)
+        - toCentimes(boughtFigures.goodsBought),
     ),
   };
 }

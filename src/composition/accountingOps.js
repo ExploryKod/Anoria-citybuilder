@@ -138,20 +138,6 @@ export async function recordConstructionExpense(params) {
 }
 
 /**
- * @param {Parameters<ReturnType<typeof createAccountingContext>['recordSalaryExpense']>[0]} params
- */
-export async function recordSalaryExpense(params) {
-  return getOrCreateAccountingContext().recordSalaryExpense(params);
-}
-
-/**
- * @param {Parameters<ReturnType<typeof createAccountingContext>['recordPayrollTaxIncome']>[0]} params
- */
-export async function recordPayrollTaxIncome(params) {
-  return getOrCreateAccountingContext().recordPayrollTaxIncome(params);
-}
-
-/**
  * @param {Parameters<ReturnType<typeof createAccountingContext>['recordCitizenTaxIncome']>[0]} params
  */
 export async function recordCitizenTaxIncome(params) {
@@ -250,23 +236,6 @@ export async function canAfford(amount) {
 export async function collectCitizenTaxes(time = 0, options = {}) {
   const ctx = options.db ? createAccountingContext({ db: options.db }) : getOrCreateAccountingContext();
   return ctx.collectCitizenTaxes({ time });
-}
-
-export async function recordSalaries(amount, description = null, turn = null) {
-  return getOrCreateAccountingContext().recordSalaries(amount, description, turn);
-}
-
-export async function recordUnemploymentBenefits(amount, description = null, turn = null) {
-  return getOrCreateAccountingContext().recordUnemploymentBenefits(amount, description, turn);
-}
-
-export async function recordPayrollTax(salaryAmount, taxRate, description = null, turn = null) {
-  return getOrCreateAccountingContext().recordPayrollTax(
-    salaryAmount,
-    taxRate,
-    description,
-    turn
-  );
 }
 
 export async function recordExceptionalRepairExpense(amount, description) {

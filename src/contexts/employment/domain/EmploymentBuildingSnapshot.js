@@ -12,6 +12,7 @@ export function createEmploymentBuildingSnapshot({
   worker = 0,
   workerNeed = 0,
   sector = 0,
+  workerSources = {},
 } = {}) {
   if (!id || typeof id !== 'string') {
     throw new Error('EmploymentBuildingSnapshot: id is required');
@@ -34,5 +35,8 @@ export function createEmploymentBuildingSnapshot({
     worker: Number.isFinite(worker) ? Math.max(0, Math.floor(worker)) : 0,
     workerNeed: Number.isFinite(workerNeed) ? Math.max(0, Math.floor(workerNeed)) : 0,
     sector: Number.isFinite(sector) ? Math.floor(sector) : 0,
+    // The houses this building's workers come from (`{ houseId: count }`) — a house reads it to know how many of its
+    // own residents are working anywhere, the single rule behind both its civil-servant count and the city's.
+    workerSources: workerSources && typeof workerSources === 'object' ? workerSources : {},
   });
 }

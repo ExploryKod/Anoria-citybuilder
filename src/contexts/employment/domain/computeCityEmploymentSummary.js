@@ -6,7 +6,7 @@ import {
 import {
   workerPopFromHouse,
 } from './policies/LaborPoolPolicy.js';
-import { computePopulationBreakdown } from '../../../shared/population/computePopulationBreakdown.js';
+import { computeHouseholdEmploymentStatus } from '../../../shared/population/computePopulationBreakdown.js';
 import {
   allSocialGroups,
   eligibleSectorsForGroup,
@@ -48,6 +48,16 @@ export function computeCityEmploymentSummary(buildings) {
   /** @type {Record<string, { workerNeed: number, workers: number, need: number }>} */
   const bySkill = {};
 
+  // Every house's workers, wherever they work — the one tally the city's civil-servant/unemployed count shares
+  // with a household's own (HouseholdPublicPayPolicy, HouseResidentsPolicy): never a second, independent count.
+  /** @type {Map<string, number>} */
+  const workersByHouseId = new Map();
+  for (const building of buildings) {
+    for (const [houseId, count] of Object.entries(building.workerSources ?? {})) {
+      workersByHouseId.set(houseId, (workersByHouseId.get(houseId) ?? 0) + count);
+    }
+  }
+
   for (const building of buildings) {
     if (isLaborSource(building) && hasRoadAccess(building)) {
       workerPool += workerPopFromHouse(building.type, building.pop, building.level);
@@ -87,24 +97,40 @@ export function computeCityEmploymentSummary(buildings) {
     }
   }
 
-  const population = computePopulationBreakdown({
-    workerPool,
-    totalAssigned,
-  });
+  // The city's civil servants and unemployed are the sum of each house's own count — never a city-wide floor
+  // (which would always seat fewer civil servants than the houses do), and never filtered by road access: a
+  // disconnected house's residents still count (they're just unreachable by a workplace, see workerPool above).
+  let totalPopulation = 0;
+  let civilServantCount = 0;
+  let unemployed = 0;
+  for (const building of buildings) {
+    if (!isLaborSource(building)) continue;
+    const { civilServants, unemployed: unemployedHere } = computeHouseholdEmploymentStatus({
+      pop: building.pop,
+      workers: workersByHouseId.get(building.id) ?? 0,
+    });
+    totalPopulation += building.pop;
+    civilServantCount += civilServants;
+    unemployed += unemployedHere;
+  }
+  const laborPool = Math.max(0, totalPopulation - civilServantCount);
+  const activeCitizenCount = Math.max(0, laborPool - unemployed);
+  const activePopulationCount = activeCitizenCount + civilServantCount;
+  const unemploymentPercentage = laborPool > 0 ? Math.round((unemployed / laborPool) * 100) : 0;
 
   const byGroup = computeEmploymentByGroup(buildings);
 
   return Object.freeze({
     workerPool,
-    totalPopulation: population.totalPopulation,
-    civilServantCount: population.civilServantCount,
-    laborPool: population.laborPool,
-    activeCitizenCount: population.activeCitizenCount,
-    activePopulationCount: population.activePopulationCount,
+    totalPopulation,
+    civilServantCount,
+    laborPool,
+    activeCitizenCount,
+    activePopulationCount,
     totalAssigned,
     totalNeed,
-    unemployed: population.unemployed,
-    unemploymentPercentage: population.unemploymentPercentage,
+    unemployed,
+    unemploymentPercentage,
     lack,
     understaffedBuildingIds: Object.freeze([...understaffedBuildingIds]),
     bySector: Object.freeze(bySector),

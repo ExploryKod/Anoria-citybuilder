@@ -63,7 +63,10 @@ calcul se résout par itération (`#planMonth`), l'ensemble des factures payées
 - Fiches : `buildingFinanceInfoView.js` (compte d'exploitation, budget du mois, réconciliation, couleurs produits/charges),
   `houseResidentsInfoView.js` (liste des habitants), `buildingInfoGroupRegistry.js` (onglets par groupe).
 - Habitants : `HouseResidentsPolicy.js` (un enregistrement par habitant, dérivé des compteurs),
-  `CitizenNameCatalog.js` (prénoms), `HouseholdPublicPayPolicy.js` (fonctionnaires et chômeurs par foyer).
+  `CitizenNameCatalog.js` (prénoms), `HouseholdPublicPayPolicy.js` (fonctionnaires et chômeurs par foyer),
+  `HouseResidentsPayPolicy.js` (part de chaque habitant, relue du journal, jamais recalculée).
+- Emploi/population : `computeCityEmploymentSummary.js`, `computePopulationBreakdown.js`
+  (`computeHouseholdEmploymentStatus`, la règle par foyer partagée avec la compta).
 - Distribution des biens : `RoundRobinDistribution.js` (plafond par solde, achat partiel, motifs), `DistributeResourceToConsumers.js`
   (`#recordShortfalls`, coupure des services).
 - Classement des producteurs : `GetProducerRevenues.js` (lit le journal, HT, ventes aux maisons).
@@ -71,26 +74,31 @@ calcul se résout par itération (`#planMonth`), l'ensemble des factures payées
 
 ## 5. État des tests
 
-- **Dernière exécution complète verte** : 221 suites, 1429 tests. Elle précède les changements suivants, qui **ne sont pas
-  relancés en entier** : seuil de l'IR, IR par foyer, paiement des fonctionnaires et des allocations, liste des habitants,
-  suppression du flux de population.
-- Ciblés et verts après ces changements : `incomeTax`, `economyRegister`, `householdPublicPay`, `houseResidents`,
-  `buildingInfoGroupTabs`, les suites `tests/contexts/accounting` (132 tests).
-- **Pas encore joué** : aucun des changements récents n'a été vérifié dans `pnpm dev`.
+- **Dernière exécution complète verte** : 221 suites, 1422 tests (après les tâches 1 à 3 de la section 6 ci-dessous).
+- **Pas encore joué** : les tâches 1 à 3 n'ont pas été vérifiées dans `pnpm dev` (seulement par les tests).
 
-**À faire en premier demain** : `pnpm run test`, puis une partie neuve (ou un préfab) pour regarder un mois complet.
+**À faire en premier** : une partie neuve (ou un préfab) pour regarder un mois complet, en particulier l'onglet
+Habitants (tâche 1) et le compteur de chômeurs du HUD comparé aux foyers (tâche 2).
 
 ## 6. Reste à faire (ordre proposé)
 
-1. **Payer chaque habitant** : le salaire d'un travailleur vient de son lieu de travail (au prorata de sa part de la masse
-   salariale de l'entreprise, déjà calculée) ; le fonctionnaire reçoit le salaire de référence ; le chômeur, l'allocation.
-   Les sommes par foyer ne doivent pas bouger : c'est une répartition, pas un nouveau calcul.
-2. **Une seule source pour les chômeurs** : le compteur de la fiche population (HUD, `computePopulationBreakdown`,
-   `getCityEmploymentSummary`) et le total des foyers peuvent différer d'une unité. Le compteur doit venir des foyers.
-3. **Nettoyage du modèle de référence** : `RecordSalaryExpense.js`, `RecordUnemploymentBenefitExpense.js`,
-   `RecordPayrollTaxIncome.js` et leurs méthodes dans `GameTreasuryRecording` ne servent plus au tour. Les wrappers
-   « deprecated » de `CivilServantSalaryPolicy.js` et `UnemploymentBenefitPolicy.js`, ainsi que `buildVatBusinessKey`
-   (`LedgerBusinessKeys.js`), sont sans usage.
+1. ~~**Payer chaque habitant**~~ — fait. `HouseResidentsPayPolicy.residentPayBreakdownOf` relit les lignes déjà
+   inscrites du mois (`household_wage` par lieu de travail, `public_wage`, `household_benefit`) et les répartit par
+   habitant (dernier absorbe le centime) ; rien n'est recalculé ni réécrit au journal. Câblé dans
+   `createAccountingContext.js` (`getHouseResidents`, qui n'était d'ailleurs pas exposé sur le contexte retourné —
+   corrigé au passage) et affiché dans `houseResidentsInfoView.js` (« Pas encore réglé » si le mois n'est pas encore
+   passé en règlement). Test : `tests/contexts/accounting/houseResidentsPayPolicy.test.js`.
+2. ~~**Une seule source pour les chômeurs**~~ — fait. `computeCityEmploymentSummary` additionne maintenant le
+   fonctionnaire/chômeur de chaque foyer (`computeHouseholdEmploymentStatus`, nouvelle fonction dans
+   `computePopulationBreakdown.js`), au lieu d'un floor sur le total ville ; une maison sans accès routier compte
+   quand même (décision : le foyer est la seule source, l'accès routier ne concerne que l'appariement à un emploi).
+   `EmploymentBuildingSnapshot` porte désormais `workerSources` ; les deux points de construction du snapshot
+   (`DexieEmploymentBuildingRepository`, `hudPopulationAggregates.js`) le renseignent. Tests étendus dans
+   `tests/contexts/employment/getCityEmploymentSummary.behavior.test.js`.
+3. ~~**Nettoyage du modèle de référence**~~ — fait. `RecordSalaryExpense.js`, `RecordUnemploymentBenefitExpense.js`,
+   `RecordPayrollTaxIncome.js`, `CivilServantSalaryPolicy.js`, `UnemploymentBenefitPolicy.js`, `buildVatBusinessKey`
+   et les méthodes mortes de `GameTreasuryRecording` sont supprimés, avec leur câblage dans `createAccountingContext.js`
+   /`accountingOps.js`/`accountingGameOps.js` et leurs tests.
 4. **Entreprises des maisons** : aucune vente encore (les « deals » ne sont pas modélisés). Le sous-onglet Entreprise est vide.
 5. **Performance** : le solde de chaque maison est lu sur tout le journal à chaque passe de distribution. Prévoir un cache
    par tour si une grande ville ralentit.

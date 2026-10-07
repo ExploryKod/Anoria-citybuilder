@@ -134,19 +134,6 @@ export function buildTradeLineBusinessKey(kind, holderId, counterpartyId, timeIn
 }
 
 /**
- * Idempotence key for the VAT of one hamlet for one month: the tax on the month's sales is booked once.
- * @param {{ year: number, monthIndex: number }} timeInfo the month that was sold
- * @param {string} hamletId
- * @returns {string}
- */
-export function buildVatBusinessKey(timeInfo, hamletId) {
-  if (!hamletId || typeof timeInfo?.year !== 'number') {
-    throw new Error('[journal] a VAT needs its month and its hamlet');
-  }
-  return `vat:${hamletId}:${timeInfo.year}:${timeInfo.monthIndex}`;
-}
-
-/**
  * Idempotence key for one contribution payment per news item.
  * @param {string} newsItemId
  * @returns {string | null}
