@@ -475,16 +475,19 @@ export class SupplyTraceability {
   }
 
   /**
-   * A completed export sale to a partner city by the merchants.
-   * @param {{ turn: number, monthIndex: number, year: number, cityId: string, good: string, dealGood: string, quantity: number, unitPrice: number, saleRatio: number, grossRevenue: number, netRevenue: number, customsCollected: number, customsRate: number }} params
+   * A completed export sale to a partner city, by the hub whose stock supplied it. `netRevenue` is this
+   * hub's own share (after customs, already split across hubs when more than one filled the order) — it is
+   * what `sumGoodsFlowsByPair` reads to credit the hub exactly like any other seller in the chain.
+   * @param {{ turn: number, monthIndex: number, year: number, cityId: string, hubId: string, hubX: number, hubY: number, hubType: string, good: string, dealGood: string, quantity: number, unitPrice: number, saleRatio: number, grossRevenue: number, netRevenue: number, customsCollected: number, customsRate: number }} params
    */
-  async recordMerchantSale({ turn, monthIndex, year, cityId, good, dealGood, quantity, unitPrice, saleRatio, grossRevenue, netRevenue, customsCollected, customsRate }) {
+  async recordMerchantSale({ turn, monthIndex, year, cityId, hubId, hubX, hubY, hubType, good, dealGood, quantity, unitPrice, saleRatio, grossRevenue, netRevenue, customsCollected, customsRate }) {
+    if (!hubId) throw new Error('[traceability] a merchant sale names no hub');
     await this.traceabilityRepository.addTransaction(
       turn,
       monthIndex,
       year,
       'merchant_sale',
-      null,
+      { id: hubId, x: hubX, y: hubY, type: hubType },
       { id: cityId, x: null, y: null, type: 'city' },
       dealGood,
       quantity,

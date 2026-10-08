@@ -5,7 +5,9 @@ import { reviewSatisfaction } from '../../domain/policies/TradeSatisfactionPolic
 /**
  * Monthly city-trade cycle — for each active relation whose order rhythm is
  * due, consume deal goods from warehouses, credit customs revenue to treasury,
- * and record a merchant_sale traceability entry.
+ * and record a merchant_sale traceability entry for the hub(s) that supplied the
+ * order (its net revenue, after customs — the hub's own sale, the same way any
+ * other seller in the chain is credited; see sumGoodsFlowsByPair/tradeLines).
  *
  * A trade city is a client of the TradeWarehouse hub exactly like a market or workshop is a client
  * of a goods warehouse: goods are taken through `hubServing` (id `city:<cityId>`), so a merchant
@@ -106,7 +108,7 @@ export class RunMonthlyCityTradeCycle {
 
         const baseValue = getResourceBaseValue(want.good);
 
-        const qty = await this.#takeFromHubsForClient(hubs, dealGood, client, entry.trade.quantityPerOrder, turn);
+        const { taken: qty, byHub } = await this.#takeFromHubsForClient(hubs, dealGood, client, entry.trade.quantityPerOrder, turn);
         if (qty <= 0) continue;
 
         const saleRatio = this.#drawSaleRatio(entry, want, relation);
@@ -124,21 +126,36 @@ export class RunMonthlyCityTradeCycle {
           partnerId: relation.cityId,
         });
 
-        await this.recordMerchantSale({
-          turn,
-          monthIndex,
-          year,
-          cityId: relation.cityId,
-          good: want.good,
-          dealGood,
-          quantity: qty,
-          unitPrice,
-          saleRatio,
-          grossRevenue,
-          netRevenue,
-          customsCollected,
-          customsRate,
-        });
+        // The net revenue is the hub's own sale, credited like any other seller in the chain (tradeLines/
+        // sumGoodsFlowsByPair): split across the hub(s) that actually held the stock, in proportion to what
+        // each gave up. Rounded shares can undershoot netRevenue by a few cents; the last hub absorbs the rest
+        // so the sum always equals netRevenue exactly (nothing left over, nothing invented).
+        let allocated = 0;
+        for (const [hubIndex, { hub, amount }] of byHub.entries()) {
+          const isLast = hubIndex === byHub.length - 1;
+          const share = isLast ? netRevenue - allocated : Math.round((netRevenue * amount) / qty);
+          allocated += share;
+
+          await this.recordMerchantSale({
+            turn,
+            monthIndex,
+            year,
+            cityId: relation.cityId,
+            hubId: hub.id,
+            hubX: hub.x,
+            hubY: hub.y,
+            hubType: hub.type,
+            good: want.good,
+            dealGood,
+            quantity: amount,
+            unitPrice,
+            saleRatio,
+            grossRevenue: grossRevenue * (amount / qty),
+            netRevenue: share,
+            customsCollected: customsCollected * (amount / qty),
+            customsRate,
+          });
+        }
 
         anySold = true;
       }
@@ -169,11 +186,14 @@ export class RunMonthlyCityTradeCycle {
    *    makes `CollectResourceToHub`'s capacity check see the hub as full forever and silently stop
    *    all further collection — `takeCategoryAmount` (the same helper CollectResourceToHub already
    *    uses) keeps the category and the total in step instead.
-   * @returns {Promise<number>} Units actually taken (may be less than `qty` if none is available or
-   *   a higher-ranked client is still owed some).
+   * @returns {Promise<{ taken: number, byHub: Array<{ hub: object, amount: number }> }>} Units actually taken
+   *   (may be less than `qty` if none is available or a higher-ranked client is still owed some), and which
+   *   hub(s) they came from — an export sale is credited to the hub(s) that actually held the stock, in the
+   *   same proportion, exactly like any other seller in the chain (see RunMonthlyCityTradeCycle's header).
    */
   async #takeFromHubsForClient(hubs, good, client, qty, turn) {
     let remaining = qty;
+    const byHub = [];
     for (let index = 0; index < hubs.length; index += 1) {
       if (remaining <= 0) break;
       const hub = hubs[index];
@@ -193,8 +213,9 @@ export class RunMonthlyCityTradeCycle {
       hubs[index] = { ...hub, stocks: nextStock };
       await this.hubServing.recordDemand({ hubId: hub.id, category: good, client, turn, wanted: want, served: takenHere });
 
+      byHub.push({ hub, amount: takenHere });
       remaining -= takenHere;
     }
-    return qty - remaining;
+    return { taken: qty - remaining, byHub };
   }
 }

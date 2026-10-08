@@ -11,7 +11,7 @@ import { getResourceBaseValue } from '../../../src/shared/resource-catalog/Resou
 import { takeCategoryAmount } from '../../../src/contexts/supply/domain/value-objects/ResourceStock.js';
 import { getCategoriesForRole, getTotalKeyForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 
-/** Sells `silvania`'s book (baseMultiplier 1.5, the first want) at the given draw and bias; returns its unit price. */
+/** Sells `silvania`'s book (its first want) at the given draw and bias; returns its unit price. */
 async function unitPriceSold({ draw, bias }) {
   const sales = [];
   const relation = { cityId: 'silvania', status: 'active', demandMultiplier: 1, satisfactionScore: 50, lastOrderMonth: null };
@@ -47,7 +47,7 @@ async function unitPriceSold({ draw, bias }) {
 describe('trade sale price — drawn in the catalog range, moved by events', () => {
   const entry = getTradeCatalogEntry('silvania');
   const bookBase = getResourceBaseValue('book');
-  const centre = bookBase * 1.5;
+  const centre = bookBase * entry.wants.find((want) => want.good === 'book').baseMultiplier;
 
   test('an unbiased draw stays within baseMultiplier ± spread', async () => {
     const low = await unitPriceSold({ draw: 0, bias: 0 });

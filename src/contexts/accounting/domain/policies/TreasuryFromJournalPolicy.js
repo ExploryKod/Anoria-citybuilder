@@ -30,7 +30,15 @@ export function moneyDirectionOf(entry) {
   if (isInformativeJournalType(type)) return null;
   if (
     type === 'capital_funds' || type === 'payroll_tax' || type === 'citizen_tax' || type === 'vat' || type === 'public_wage' || type === 'household_benefit' ||
-    type === 'producer_revenue' || type === 'corporate_tax_revenue' || type === 'service_sales' || type === 'service_subsidy_received' || type === 'household_wage' || type === 'loan_capital' || type === 'construction_refund' || type.startsWith('export_')
+    type === 'producer_revenue' || type === 'corporate_tax_revenue' || type === 'service_sales' || type === 'service_subsidy_received' || type === 'household_wage' || type === 'loan_capital' || type === 'construction_refund' || type.startsWith('export_') ||
+    // The lender's own mirror of a loan (see RecordLoanCapitalIncome.js etc.): interest and principal arriving at
+    // its account, distinct types from the city's own loan_interest/loan_repayment so deriveLoanPortfolio (which
+    // scans every entry, unfiltered by account) never double-counts one loan's installment from both sides.
+    type === 'loan_interest_received' || type === 'loan_repayment_received' ||
+    // A house taking its savings back, or the interest the bank credited it — both arrive at the house's account.
+    type === 'withdrawal' || type === 'household_deposit_interest' ||
+    // The bank's own mirror of a deposit arriving.
+    type === 'deposit_received'
   ) {
     return 'credit';
   }
@@ -41,6 +49,12 @@ export function moneyDirectionOf(entry) {
     type === 'service_subsidy' ||
     type === 'producer_purchase' || type === 'service_purchase' || type === 'consumer_purchase' || type === 'income_tax' || type === 'corporate_tax' || type === 'producer_wage' ||
     type === 'subsidy_companies' || type === 'subsidy_housing' ||
+    // The lender's own capital leaving its account when a loan is drawn — the city's mirror of this is 'loan_capital' (credit, its own account).
+    type === 'loan_capital_lent' ||
+    // A house moving money into the bank — the bank's own mirror of the same event is 'deposit_received' (credit, its account).
+    type === 'deposit' ||
+    // The bank's own mirror of a withdrawal/interest payment leaving its account.
+    type === 'withdrawal_paid' || type === 'deposit_interest_paid' ||
     type.startsWith('import_')
   ) {
     return 'debit';

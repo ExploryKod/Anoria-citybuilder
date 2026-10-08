@@ -41,5 +41,14 @@ export function resolveBuildingInfoGroup({ buildingRow, supplyView }) {
   if (supplyView?.kind === 'service') {
     return BUILDING_INFO_GROUPS.service;
   }
+  // A workplace with no resourceRole at all (today only the Bank — it holds and lends money, not goods: see
+  // buildingEconomy.js's 'Bank' entry) is classifySupplyKind's 'other', which has no stock/production/service
+  // category to show either — but it still has workers, so it belongs with the other staffed buildings
+  // (service's panel already renders an empty "État" section gracefully when there is no category/range to
+  // report), not with `generic`, which has no Personnel tab at all and labels its one KV row "Habitants" — a
+  // house's word for a building with no residents.
+  if (buildingRow?.employees?.worker_need > 0) {
+    return BUILDING_INFO_GROUPS.service;
+  }
   return BUILDING_INFO_GROUPS.generic;
 }

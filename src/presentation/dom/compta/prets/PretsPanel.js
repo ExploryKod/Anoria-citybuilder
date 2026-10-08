@@ -244,6 +244,19 @@ export async function contractLoan() {
   }
 
   try {
+    // No bank, no real lender: a loan is now a bank's own money, not a city-level abstraction (see
+    // RecordLoanCapitalIncome.js). The bank must also actually hold the amount it is about to lend out.
+    const lenderBuildingId = await accounting.findBankBuildingId();
+    if (!lenderBuildingId) {
+      alert('Aucune banque construite : impossible de contracter un prêt.');
+      return;
+    }
+    const lenderFunds = (await accounting.getTreasurySnapshot({ accountBuildingId: lenderBuildingId })).funds;
+    if (lenderFunds < amount) {
+      alert(`La banque n'a pas les fonds pour ce prêt (${formatEuro(lenderFunds)} disponibles).`);
+      return;
+    }
+
     const financialHealth = await accounting.getFinancialHealth();
     const interestRate = accounting.computeLoanRate({
       loanType,
@@ -262,9 +275,10 @@ export async function contractLoan() {
       interestRate,
       duration,
       remainingTurns: duration,
+      lenderBuildingId,
     };
 
-    await accounting.recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);
+    await accounting.recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan, lenderBuildingId);
 
     await updateTreasuryDisplay();
 
@@ -319,13 +333,15 @@ export async function processLoanPayments() {
         await accounting.recordLoanInterest(
           interestPayment,
           `Intérêts prêt ${loan.type} (${loan.id})`,
-          loan.id
+          loan.id,
+          loan.lenderBuildingId
         );
 
         await accounting.recordLoanRepayment(
           principalPayment,
           `Remboursement prêt ${loan.type} (${loan.id})`,
-          loan.id
+          loan.id,
+          loan.lenderBuildingId
         );
         continue;
       }
@@ -334,7 +350,8 @@ export async function processLoanPayments() {
         await accounting.recordLoanInterest(
           interestPayment,
           `Intérêts prêt ${loan.type} (${loan.id})`,
-          loan.id
+          loan.id,
+          loan.lenderBuildingId
         );
 
         if (principalPayment > 0) {

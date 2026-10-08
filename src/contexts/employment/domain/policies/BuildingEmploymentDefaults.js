@@ -11,9 +11,11 @@ export function getDefaultEmployees(buildingType) {
   const sector = getBuildingEmploymentSector(buildingType);
   const needs = BUILDING_EMPLOYEE_NEEDS[buildingType] || { worker_need: 0 };
   const salary = (needs.worker_need || 0) * 10;
-  const type = buildingType ? buildingType.toLowerCase() : '';
 
-  if (sector === 0 || type.includes('house')) {
+  // A house never declares `employment` in the catalog (see buildingEconomy.js), so its sector is already 0
+  // here — no name guess needed (a past `type.includes('house')` check wrongly zeroed Warehouse/TradeWarehouse
+  // too, since "warehouse" ends in "house").
+  if (sector === 0) {
     return {
       worker_need: 0,
       worker: 0,

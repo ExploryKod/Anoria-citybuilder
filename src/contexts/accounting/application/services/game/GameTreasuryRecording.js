@@ -105,7 +105,7 @@ export class GameTreasuryRecording {
     return this.getTreasurySnapshot.execute();
   }
 
-  async recordLoanCapital(amount, description = 'Loan', loanData = null) {
+  async recordLoanCapital(amount, description = 'Loan', loanData = null, lenderBuildingId = null) {
     const budget = await this.getTreasurySnapshot.execute();
     const roundedAmount = Math.round(amount);
 
@@ -119,12 +119,13 @@ export class GameTreasuryRecording {
       description,
       loanId: loanData?.id ?? null,
       loan: loanData,
+      lenderBuildingId,
     });
 
     return this.getTreasurySnapshot.execute();
   }
 
-  async recordLoanInterest(amount, description = 'Loan Interest', loanId = null) {
+  async recordLoanInterest(amount, description = 'Loan Interest', loanId = null, lenderBuildingId = null) {
     const budget = await this.getTreasurySnapshot.execute();
     const roundedAmount = Math.round(amount);
 
@@ -137,12 +138,13 @@ export class GameTreasuryRecording {
       amount: roundedAmount,
       description,
       loanId,
+      lenderBuildingId,
     });
 
     return this.getTreasurySnapshot.execute();
   }
 
-  async recordLoanRepayment(amount, description = 'Loan Repayment', loanId = null) {
+  async recordLoanRepayment(amount, description = 'Loan Repayment', loanId = null, lenderBuildingId = null) {
     const budget = await this.getTreasurySnapshot.execute();
     const roundedAmount = Math.round(amount);
 
@@ -155,6 +157,7 @@ export class GameTreasuryRecording {
       amount: roundedAmount,
       description,
       loanId,
+      lenderBuildingId,
     });
 
     return this.getTreasurySnapshot.execute();

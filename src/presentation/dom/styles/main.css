@@ -1950,6 +1950,39 @@ button.building-info-metric-card[aria-pressed="true"] {
     color: #78909c;
 }
 
+.building-finance-deposit-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 6px 8px;
+}
+
+.building-finance-deposit-amount {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 8px;
+    border: 1px solid #cfd8dc;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.building-finance-deposit-btn {
+    padding: 6px 12px;
+    border: 1px solid #ff9800;
+    background: #fff;
+    color: #e65100;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.building-finance-deposit-btn:hover {
+    background: #ff9800;
+    color: #fff;
+}
+
 .building-info-messages-empty {
     margin: 0;
     font-size: 14px;

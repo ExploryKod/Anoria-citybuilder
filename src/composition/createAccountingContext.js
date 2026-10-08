@@ -59,6 +59,12 @@ import {
 import { isActiveHamletRow } from '../core/persistence/hamlet/hamletSession.js';
 import { buildingMaintenanceCost } from '../contexts/accounting/domain/policies/BuildingMaintenanceBreakdownPolicy.js';
 import { SettleProducerCharges } from '../contexts/accounting/application/services/SettleProducerCharges.js';
+import { RecordHouseholdDeposit } from '../contexts/accounting/application/services/RecordHouseholdDeposit.js';
+import { RecordHouseholdWithdrawal } from '../contexts/accounting/application/services/RecordHouseholdWithdrawal.js';
+import { SettleBankDepositInterest } from '../contexts/accounting/application/services/SettleBankDepositInterest.js';
+import { depositBalanceOf, depositBalancesByBank } from '../contexts/accounting/domain/policies/DepositBalancePolicy.js';
+import { DEPOSIT_INTEREST_RATE } from '../contexts/accounting/domain/catalogs/BankCatalog.js';
+import { getBuildingDefinition } from '../shared/building-catalog/buildingCatalog.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 
 /**
@@ -80,6 +86,27 @@ import { resolveGetTimeInfo } from './gameTimeBridge.js';
  * @param {() => number} [deps.getCitizenTaxPerCapita]
  * @param {() => { salaryPerMonth: number, salaryTaxRate: number }} [deps.getSalarySettings]
  */
+
+/**
+ * One journal type's lines of one month, grouped by the account that holds them — the shape
+ * SettleProducerCharges reads its journal-sourced income/expense sources in (bank interest earned, bank
+ * interest paid), since neither has a supply-chain trace to read instead.
+ * @param {Array<object>} entries
+ * @param {string} type
+ * @param {number} year
+ * @param {number} monthIndex
+ * @returns {Array<{ buildingId: string, amountHT: number }>}
+ */
+function sumJournalAmountByBuilding(entries, type, year, monthIndex) {
+  const byBuilding = new Map();
+  for (const entry of entries) {
+    if (entry.type !== type || entry.year !== year || entry.month !== monthIndex + 1) continue;
+    if (!entry.accountBuildingId) throw new Error(`[bank] a "${type}" line (turn ${entry.turn}) names no account`);
+    byBuilding.set(entry.accountBuildingId, (byBuilding.get(entry.accountBuildingId) ?? 0) + entry.amount);
+  }
+  return [...byBuilding.entries()].map(([buildingId, amountHT]) => ({ buildingId, amountHT }));
+}
+
 export function createAccountingContext(deps = {}) {
   const sessionJournalStoreInstance =
     deps.sessionJournalStore ?? deps.journalManager ?? sessionJournalStore;
@@ -292,6 +319,13 @@ export function createAccountingContext(deps = {}) {
           resolveBuildingKind(kinds.get(entry.counterpartyBuildingId)) === BUILDING_KIND_HOUSE)
         .map((entry) => ({ sellerId: entry.accountBuildingId, amountHT: entry.amount }));
     },
+    // A loan or a deposit leaves no supply-chain trace (neither is a good or a service): both the bank's interest
+    // income and its own interest expense are read straight from the journal, grouped by account — see
+    // RecordLoanInterestExpense.js / SettleBankDepositInterest.js, which actually write these lines.
+    sumBankInterestByBuilding: async (year, monthIndex) =>
+      sumJournalAmountByBuilding(await journalRepository.getJournalEntries(), 'loan_interest_received', year, monthIndex),
+    sumOtherExpensesByBuilding: async (year, monthIndex) =>
+      sumJournalAmountByBuilding(await journalRepository.getJournalEntries(), 'deposit_interest_paid', year, monthIndex),
     recordServiceCutOff: (cutOff) => supplyTraceabilityRepository.recordServiceCutOff(cutOff),
     getServiceSubsidies: () => hamletFiscalRates.getServiceSubsidies(),
     getServicePrice: (service) => getResourceBaseValue(service),
@@ -304,10 +338,42 @@ export function createAccountingContext(deps = {}) {
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
 
+  /**
+   * The active hamlet's bank — the real lender/depositary behind a loan or a deposit (see
+   * RecordLoanCapitalIncome.js, RecordHouseholdDeposit.js). Several banks could exist in theory; this picks the
+   * first one built, same simplicity as any other single-hub lookup in the game today. Null when none is built
+   * yet — every caller refuses the action rather than inventing a bank.
+   * @returns {Promise<string | null>}
+   */
+  const findBankBuildingId = async () => {
+    const row = (await dexieDb.houses.toArray()).find((candidate) => isActiveHamletRow(candidate) && candidate.type === 'Bank');
+    return row?.id ?? null;
+  };
+
+  const recordHouseholdDeposit = new RecordHouseholdDeposit({
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+    fundsOf: async (houseId) =>
+      (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: 'particulier' })).funds,
+  });
+  const recordHouseholdWithdrawal = new RecordHouseholdWithdrawal({
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+    depositBalanceOf: async (houseId, bankId) => depositBalanceOf(await journalRepository.getJournalEntries(), houseId, bankId),
+    fundsOf: async (bankId) => (await getTreasurySnapshotQuery.execute({ accountBuildingId: bankId })).funds,
+  });
+  const settleBankDepositInterest = new SettleBankDepositInterest({
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    listBuildings: async () => (await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => ({ id: row.id, type: row.type })),
+    listDepositBalances: async () => depositBalancesByBank(await journalRepository.getJournalEntries()),
+    getDepositInterestRate: () => DEPOSIT_INTEREST_RATE,
+    getBuildingDisplayName: (buildingType) => getBuildingDefinition(buildingType)?.displayName,
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
+
   const processTurnBudget = new ProcessTurnBudget({
     collectCitizenTaxes: (time) => collectCitizenTaxes.execute({ time }),
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
     settleProducerCharges: (params) => settleProducerCharges.execute(params),
+    settleBankDepositInterest: (params) => settleBankDepositInterest.execute(params),
     processLoanPayments:
       deps.processLoanPayments ??
       (async () => {
@@ -601,12 +667,15 @@ export function createAccountingContext(deps = {}) {
     },
 
     /**
-     * The Finance tab of a building: its analytical account for the last month and for the year, and its cash.
-     * A month's charges are settled at the start of the month that follows it, so the lines stamped with the current
-     * month are the last month's activity. The year column is the year's settled lines so far.
+     * The Finance tab of a building: its analytical account for the last month, the current month so far and the
+     * year, and its cash. A month's salary/services/tax are settled at the start of the month that follows it, so
+     * the lines stamped with the current month are already there from day one — only a house's goods move through
+     * the month as they are delivered. "Mois dernier" reads those goods from the month before (the delivered month
+     * the settlement reports on); "Cumul du mois" reads the same settled lines but the goods actually bought since
+     * — the two agree on everything except goods, by construction.
      * @param {string} buildingId
      * @param {string | null} accountKind a house's account (particulier or entreprise); null for a company's account
-     * @returns {Promise<{ lastMonth: object, year: object, cash: number }>}
+     * @returns {Promise<{ lastMonth: object, monthToDate: object, year: object, cash: number }>}
      */
     async getBuildingFinance(buildingId, accountKind) {
       const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
@@ -617,10 +686,12 @@ export function createAccountingContext(deps = {}) {
         ? { year: now.year - 1, month: MONTHS_PER_YEAR }
         : { year: now.year, month: now.monthIndex };
       const settled = { year: now.year, month: now.monthIndex + 1 };
+      const monthToDate = buildingFinanceFigures(entries, buildingId, { ...settled, accountKind });
       return {
         lastMonth: accountKind === 'particulier'
-          ? { ...buildingFinanceFigures(entries, buildingId, { ...settled, accountKind }), ...householdLastMonthOf(entries, buildingId, { settled, bought: previous }) }
-          : buildingFinanceFigures(entries, buildingId, { ...settled, accountKind }),
+          ? { ...monthToDate, ...householdLastMonthOf(entries, buildingId, { settled, bought: previous }) }
+          : monthToDate,
+        monthToDate,
         year: buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind }),
         cash: snapshot.funds,
         // A house's personal account has its monthly budget, and the savings it had at the start of the year (what its
@@ -640,6 +711,30 @@ export function createAccountingContext(deps = {}) {
      */
     async getBuildingAccountTrace(buildingId) {
       return buildingAccountTrace(await journalRepository.getJournalEntries(), buildingId);
+    },
+
+    findBankBuildingId,
+
+    /**
+     * What a house has sitting at the bank — never stored, derived from its deposit/withdrawal/interest lines
+     * the same way any other balance is (see DepositBalancePolicy.js). Null bank (no Bank built yet) reads as 0.
+     * @param {string} houseId
+     * @returns {Promise<number>}
+     */
+    async getHouseholdDepositBalance(houseId) {
+      const bankId = await findBankBuildingId();
+      if (!bankId) return 0;
+      return depositBalanceOf(await journalRepository.getJournalEntries(), houseId, bankId);
+    },
+
+    /** @param {{ turn: number, houseId: string, bankId: string, amount: number, description: string }} params */
+    async recordHouseholdDeposit(params) {
+      return recordHouseholdDeposit.execute(params);
+    },
+
+    /** @param {{ turn: number, houseId: string, bankId: string, amount: number, description: string }} params */
+    async recordHouseholdWithdrawal(params) {
+      return recordHouseholdWithdrawal.execute(params);
     },
 
     /**

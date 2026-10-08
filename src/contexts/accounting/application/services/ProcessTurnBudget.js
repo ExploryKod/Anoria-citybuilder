@@ -10,6 +10,9 @@ export class ProcessTurnBudget {
    * @param {(time: number) => Promise<object>} deps.collectCitizenTaxes
    * @param {(time: number) => object} deps.getTimeInfo
    * @param {({ time: number, deliveredTime: number }) => Promise<void>} deps.settleProducerCharges
+   * @param {({ time: number, deliveredTime: number }) => Promise<void>} [deps.settleBankDepositInterest] a bank's
+   *   monthly interest to its depositors — run right before settleProducerCharges, same day, same month, so the
+   *   expense it books already exists in the journal when the bank's own taxable profit is computed
    * @param {() => Promise<void>|void} [deps.processLoanPayments]
    * @param {(keepYears: number) => Promise<unknown>} deps.cleanupOldJournalYears
    * @param {() => Promise<unknown>} deps.flushJournalSessionToDexie
@@ -46,6 +49,11 @@ export class ProcessTurnBudget {
       const isFirstTurnOfMonth = timeInfo.dayInMonth === 1;
 
       if (isFirstTurnOfMonth && time > 0) {
+        // The bank's own interest expense must exist in the journal before settleProducerCharges reads it (its
+        // otherExpensesHT) to compute the bank's taxable profit for the same month — see SettleBankDepositInterest.js.
+        if (this.deps.settleBankDepositInterest) {
+          await this.deps.settleBankDepositInterest({ time, deliveredTime: time - 1 });
+        }
         await this.deps.settleProducerCharges({ time, deliveredTime: time - 1 });
       }
 

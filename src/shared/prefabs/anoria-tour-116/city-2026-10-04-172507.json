@@ -3580,10 +3580,10 @@
       "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
-        "worker_need": 0,
+        "worker_need": 4,
         "worker": 0,
-        "sector": 0,
-        "salary": 0
+        "sector": 4,
+        "salary": 40
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -5833,10 +5833,10 @@
       "footprintHeight": 3,
       "placementRotationStep": 0,
       "employees": {
-        "worker_need": 0,
+        "worker_need": 4,
         "worker": 0,
-        "sector": 0,
-        "salary": 0
+        "sector": 4,
+        "salary": 40
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",

@@ -634,6 +634,7 @@ export const BUILDING_ECONOMY = {
     construction: { price: 120, category: 'industry' },
     // Same manutention skill as the regular warehouse — deal goods still need handlers.
     employment: { sector: 4, workerNeed: 4, requiredSkill: 'manutention' },
+    accounting: { maintenance: 5 },
     resourceRoles: [
       {
         role: 'collector',
@@ -663,6 +664,7 @@ export const BUILDING_ECONOMY = {
     // Handling goods is manual work: 4 workers with the 'manutention' skill, which the artisans hold
     // (from their second tier). A skill of its own, so the labour priorities rank storage apart from crafts.
     employment: { sector: 4, workerNeed: 4, requiredSkill: 'manutention' },
+    accounting: { maintenance: 4 },
     resourceRoles: [
       {
         role: 'collector',
@@ -688,6 +690,7 @@ export const BUILDING_ECONOMY = {
     displayName: 'Moulin',
     construction: { price: 50, category: 'industry' },
     employment: { sector: 4, workerNeed: 4, requiredSkill: 'stockage-alimentaire' },
+    accounting: { maintenance: 4 },
     // No `range` on 'collector': today it collects city-wide (matches
     // RunHubSurplusCycle passing every source, unfiltered by distance).
     // A future resource can cap this with a range; food doesn't today.
@@ -752,6 +755,20 @@ export const BUILDING_ECONOMY = {
     // not service reach) and is deliberately left untouched.
     resourceRoles: MARKET_RESOURCE_ROLES,
     placementRequires: MARKET_PLACEMENT_REQUIRES,
+  },
+
+  // Bank (2026-10-08): a merchants' workplace that produces and stores nothing — it holds and lends money,
+  // not goods, so it declares no `resourceRoles` at all (confirmed safe: nothing else in the catalog reads
+  // `resourceRoles` to decide whether a type can be built, employed or placed; it only drives the
+  // collection/distribution cycle, which a bank has no part in). Its workers hold the 'finance' skill
+  // (merchants' tier 2, alongside 'vente-alimentaire' — see socialCategoryCatalog.js), and
+  // ProducerChargePolicy.js's isLucrativeBuilding/WAGE_RATE_BY_ROLE learn to treat a 'finance' requiredSkill
+  // as lucrative the same way a resourceRole does, since this building has none to read.
+  'Bank': {
+    displayName: 'Banque',
+    construction: { price: 150, category: 'markets' },
+    employment: { sector: 2, workerNeed: 3, requiredSkill: 'finance' },
+    accounting: { maintenance: 6 },
   },
 
   // Public (Chapel only — Church-002 mesh discarded as broken duplicate)

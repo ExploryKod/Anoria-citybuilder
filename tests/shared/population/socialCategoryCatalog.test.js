@@ -56,7 +56,7 @@ describe('SOCIAL_CATEGORY — single source for the 3 social categories', () => 
       eligibleSectors: [2],
       tiers: {
         1: { requirements: [], skills: { 'subsistence-forager': 1, spiritual: 1 } },
-        2: { requirements: CUMULATIVE_REQUIREMENTS(1), skills: { 'vente-alimentaire': 1 } },
+        2: { requirements: CUMULATIVE_REQUIREMENTS(1), skills: { 'vente-alimentaire': 1, finance: 1 } },
         3: { requirements: CUMULATIVE_REQUIREMENTS(4), skills: {} },
         4: { requirements: CUMULATIVE_REQUIREMENTS(8), skills: {} },
         5: { requirements: CUMULATIVE_REQUIREMENTS(12), skills: {} },

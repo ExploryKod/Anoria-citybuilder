@@ -160,7 +160,9 @@ export const SOCIAL_CATEGORY = Object.freeze({
           Object.freeze({ kind: 'population', min: 1 }),
           Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
         ]),
-        skills: Object.freeze({ 'vente-alimentaire': 1 }),
+        // 'finance' (the bank) lands here too, same tier as 'vente-alimentaire' (the market): both are the
+        // group's own Commerces sector, no separate trust requirement of their own.
+        skills: Object.freeze({ 'vente-alimentaire': 1, finance: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[3],

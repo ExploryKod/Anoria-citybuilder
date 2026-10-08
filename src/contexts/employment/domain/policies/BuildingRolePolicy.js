@@ -1,17 +1,21 @@
 import { isRoadType as isRoadTypeInCatalog } from '../../../../shared/building-catalog/roadQueries.js';
 import { isRoadNeedMet } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../../../../shared/building-identity/index.js';
 
 /**
  * Classify buildings for employment roles.
  */
 
 /**
+ * A house is what the catalog declares `residentialGroup` on (see BuildingKind.js), never a name guess: a
+ * building whose type merely contains "house" as a substring (TradeWarehouse, Warehouse — "ware**house**")
+ * is not one, and used to be misread as one here, which zeroed its catalog worker need (see
+ * BuildingEmploymentDefaults.js) and excluded it from `isWorkplace` below.
  * @param {string} type
  * @returns {boolean}
  */
 export function isHouseType(type) {
-  const t = type || '';
-  return t.includes('House') || t.includes('house');
+  return resolveBuildingKind(type) === BUILDING_KIND_HOUSE;
 }
 
 /**

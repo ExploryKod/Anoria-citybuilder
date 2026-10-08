@@ -17,6 +17,12 @@ describe('resolveBuildingInfoGroup', () => {
     ).toBe(BUILDING_INFO_GROUPS.market);
   });
 
+  test('a workplace with no resourceRole at all (the bank: it holds money, not goods) still routes to service, not generic', () => {
+    expect(
+      resolveBuildingInfoGroup({ buildingRow: { employees: { worker_need: 3, worker: 0 } }, supplyView: { kind: 'other' } }),
+    ).toBe(BUILDING_INFO_GROUPS.service);
+  });
+
   test('house/farm/windmill/nature/generic routing is unaffected', () => {
     expect(resolveBuildingInfoGroup({ buildingRow: {}, supplyView: { kind: 'house' } })).toBe(
       BUILDING_INFO_GROUPS.house,

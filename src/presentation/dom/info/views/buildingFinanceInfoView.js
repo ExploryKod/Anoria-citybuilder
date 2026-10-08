@@ -32,8 +32,9 @@ const COMPANY_ROWS = [
   { label: 'Achats de marchandises HT', kind: 'line', flow: 'charge', amount: (f) => f.purchasesHT },
   { label: 'Salaires des ouvriers', kind: 'line', flow: 'charge', amount: (f) => f.wages },
   { label: 'Entretien du bâtiment', kind: 'line', flow: 'charge', amount: (f) => f.upkeep },
+  { label: 'Autres charges', kind: 'line', flow: 'charge', amount: (f) => f.otherExpenses },
   { label: 'Impôt sur les sociétés', kind: 'line', flow: 'charge', amount: (f) => f.corporateTax },
-  { label: 'Total charges', kind: 'subtotal', amount: (f) => f.purchasesHT + f.wages + f.upkeep + f.corporateTax },
+  { label: 'Total charges', kind: 'subtotal', amount: (f) => f.purchasesHT + f.wages + f.upkeep + f.otherExpenses + f.corporateTax },
 
   { label: 'Marge brute (ventes − achats)', kind: 'indicator', amount: (f) => f.grossMargin },
   { label: 'Taux de marge brute', kind: 'rate', rate: (f) => rate(f.grossMargin, f.revenueHT) },
@@ -71,7 +72,7 @@ const HOUSE_ACCOUNTS = Object.freeze([
 
 /**
  * @param {HTMLElement} container
- * @param {{ accounting: { getBuildingFinance: (buildingId: string, accountKind: string | null) => Promise<{ lastMonth: object, year: object, cash: number }> }, buildingId: string, buildingType: string } | null} model
+ * @param {{ accounting: { getBuildingFinance: (buildingId: string, accountKind: string | null) => Promise<{ lastMonth: object, monthToDate: object, year: object, cash: number }> }, buildingId: string, buildingType: string } | null} model
  */
 export async function renderBuildingFinanceTab(container, model) {
   container.replaceChildren();
@@ -110,25 +111,35 @@ export async function renderBuildingFinanceTab(container, model) {
 /**
  * One account's statement: its table, its cash and the note on settlement.
  * @param {HTMLElement} container
- * @param {{ accounting: { getBuildingFinance: (buildingId: string, accountKind: string | null) => Promise<{ lastMonth: object, year: object, cash: number }> }, buildingId: string }} model
+ * @param {{ accounting: { getBuildingFinance: (buildingId: string, accountKind: string | null) => Promise<{ lastMonth: object, monthToDate: object, year: object, cash: number }> }, buildingId: string }} model
  * @param {string | null} accountKind
  * @param {ReadonlyArray<StatementRow>} rows
  * @param {() => boolean} [stillCurrent] false once the user has moved to another sub-tab
  */
 async function renderAccount(container, model, accountKind, rows, stillCurrent = () => true) {
   container.replaceChildren(el('p', 'building-finance-note', '…'));
+  const isPersonal = accountKind === 'particulier';
   let finance;
+  let bankId = null;
+  let depositBalance = 0;
   try {
     finance = await model.accounting.getBuildingFinance(model.buildingId, accountKind);
+    if (isPersonal) {
+      bankId = await model.accounting.findBankBuildingId();
+      if (bankId) depositBalance = await model.accounting.getHouseholdDepositBalance(model.buildingId);
+    }
   } catch (error) {
     console.error('[BuildingFinanceTab] getBuildingFinance failed:', error);
     if (stillCurrent()) container.replaceChildren(el('p', 'building-finance-note', 'Les finances de ce bâtiment ne sont pas disponibles.'));
     return;
   }
   if (!stillCurrent()) return;
+  const rerender = () => renderAccount(container, model, accountKind, rows, stillCurrent);
   container.replaceChildren(
     statementTable(rows, withCarryForward(finance)),
-    cashLine(finance.cash),
+    cashLine(isPersonal ? 'Épargne privée' : 'Trésorerie du compte à ce jour', finance.cash),
+    ...(isPersonal ? [depositBalanceLine(depositBalance)] : []),
+    ...(isPersonal && bankId ? depositControls(model, bankId, rerender) : []),
     el('p', 'building-finance-note', "Les ventes et les charges d'un mois sont réglées le premier jour du mois suivant : « Mois dernier » est donc l'activité du mois précédent."),
   );
 }
@@ -136,12 +147,13 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
 /**
  * A house's personal account carries its savings (or its debt) forward: what it had before a period's result is its
  * opening report à nouveau, what it has after is its closing one — the same figure a "Report à nouveau" row shows in
- * a real compte de résultat. For the month column this is read from the budget's carried savings (the balance
- * before the still-open current month's own lines); for the year column it is the balance at the 1st of January.
+ * a real compte de résultat. "Mois dernier" opens on the balance before the current (still open) month's own lines
+ * and closes there — "Cumul du mois" opens on that same balance and closes on the account's balance right now (it
+ * is the one column still moving); the year opens on the balance at the 1st of January and closes on today's cash.
  * A company's account has no such carry-forward (`finance.budget`/`openingSavings` are null): its figures pass
  * through unchanged, and `PERSONAL_ROWS`-only rows referencing `openingBalance`/`closingBalance` are simply absent
  * from `COMPANY_ROWS`, so nothing reads the missing fields.
- * @param {{ lastMonth: object, year: object, budget: object | null, openingSavings: number | null, cash: number }} finance
+ * @param {{ lastMonth: object, monthToDate: object, year: object, budget: object | null, openingSavings: number | null, cash: number }} finance
  */
 function withCarryForward(finance) {
   if (!finance.budget) return finance;
@@ -151,6 +163,11 @@ function withCarryForward(finance) {
       ...finance.lastMonth,
       openingBalance: finance.budget.carried - finance.lastMonth.householdResult,
       closingBalance: finance.budget.carried,
+    },
+    monthToDate: {
+      ...finance.monthToDate,
+      openingBalance: finance.budget.carried,
+      closingBalance: finance.cash,
     },
     year: {
       ...finance.year,
@@ -162,13 +179,13 @@ function withCarryForward(finance) {
 
 /**
  * @param {ReadonlyArray<StatementRow>} rows
- * @param {{ lastMonth: object, year: object }} finance
+ * @param {{ lastMonth: object, monthToDate: object, year: object }} finance
  */
 function statementTable(rows, finance) {
   const table = el('table', 'building-finance-table');
   const head = document.createElement('thead');
   const headRow = document.createElement('tr');
-  for (const label of ['', 'Mois dernier', "Cumul de l'année"]) {
+  for (const label of ['', 'Mois dernier', 'Cumul du mois', "Cumul de l'année"]) {
     const th = el('th', null, label);
     th.scope = 'col';
     headRow.append(th);
@@ -181,7 +198,7 @@ function statementTable(rows, finance) {
     if (row.kind === 'section') {
       const th = el('th', null, row.label);
       th.scope = 'colgroup';
-      th.colSpan = 3;
+      th.colSpan = 4;
       tr.append(th);
       body.append(tr);
       continue;
@@ -189,7 +206,7 @@ function statementTable(rows, finance) {
     const th = el('th', null, row.label);
     th.scope = 'row';
     tr.append(th);
-    for (const figures of [finance.lastMonth, finance.year]) {
+    for (const figures of [finance.lastMonth, finance.monthToDate, finance.year]) {
       if (row.kind === 'rate') {
         tr.append(el('td', null, row.rate(figures)));
         continue;
@@ -205,10 +222,77 @@ function statementTable(rows, finance) {
 }
 
 /** The cash in the till: the balance of the account, which is not the year's result. */
-function cashLine(cash) {
+function cashLine(label, cash) {
   const line = el('div', 'building-finance-cash');
-  line.append(el('span', null, 'Trésorerie du compte à ce jour'), el('strong', null, formatEuro(cash)));
+  line.append(el('span', null, label), el('strong', null, formatEuro(cash)));
   return line;
+}
+
+/**
+ * What a house has at the bank — shown only on its personal account, next to its own cash, so "épargne" never
+ * means one figure or the other without saying which (see DepositBalancePolicy.js: never stored, always derived).
+ * @param {number} balance
+ */
+function depositBalanceLine(balance) {
+  const line = el('div', 'building-finance-cash');
+  line.append(el('span', null, 'Épargne en banque'), el('strong', null, formatEuro(balance)));
+  return line;
+}
+
+/**
+ * The deposit/withdraw mini-form of a house's personal account — only rendered when a bank actually exists (see
+ * accounting.findBankBuildingId): no control for an action nothing can fulfil yet.
+ * @param {{ accounting: object, buildingId: string }} model
+ * @param {string} bankId
+ * @param {() => void} onChanged re-renders the tab after a deposit/withdrawal (the balances it shows just moved)
+ */
+function depositControls(model, bankId, onChanged) {
+  const row = el('div', 'building-finance-deposit-controls');
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.min = '1';
+  input.step = '1';
+  input.className = 'building-finance-deposit-amount';
+  input.placeholder = 'Montant';
+  const status = el('p', 'building-finance-note');
+
+  const act = (action, description, failureReason) => async () => {
+    const amount = Math.round(Number(input.value));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      status.textContent = 'Indiquez un montant.';
+      return;
+    }
+    const { turn } = await model.accounting.getTreasurySnapshot();
+    const result = await action({ turn, houseId: model.buildingId, bankId, amount, description });
+    if (!result.recorded) {
+      status.textContent = failureReason(result.reason);
+      return;
+    }
+    input.value = '';
+    status.textContent = '';
+    onChanged();
+  };
+
+  const depositBtn = el('button', 'building-finance-deposit-btn', 'Déposer');
+  depositBtn.type = 'button';
+  depositBtn.addEventListener('click', act(
+    (params) => model.accounting.recordHouseholdDeposit(params),
+    'Dépôt à la banque',
+    (reason) => (reason === 'insufficient_funds' ? "Vous n'avez pas cette somme." : 'Le dépôt a échoué.'),
+  ));
+
+  const withdrawBtn = el('button', 'building-finance-deposit-btn', 'Retirer');
+  withdrawBtn.type = 'button';
+  withdrawBtn.addEventListener('click', act(
+    (params) => model.accounting.recordHouseholdWithdrawal(params),
+    'Retrait de la banque',
+    (reason) => (reason === 'insufficient_deposit' ? "Vous n'avez pas autant d'épargne à la banque."
+      : reason === 'bank_insufficient_funds' ? "La banque n'a pas les fonds pour ce retrait."
+        : 'Le retrait a échoué.'),
+  ));
+
+  row.append(input, depositBtn, withdrawBtn);
+  return [row, status];
 }
 
 /**

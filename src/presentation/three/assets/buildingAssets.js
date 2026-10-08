@@ -1469,8 +1469,44 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    button: null, // not a distinct carousel entry — Bank (below) is the placeable id for this mesh
     tags: ['commercial', 'building'],
+  },
+  // Banque — reassigned to Kenney Commercial building-skyscraper-a (geometry copied from
+  // Kenney-Commercial-building-skyscraper-a above; economy/footprint stay keyed to 'Bank'). A tower, not a
+  // shop front — the 5 skyscraper prefabs were all unused, so this one marks the bank apart from the
+  // low-rise shop shapes the other commerce buildings already wear.
+  'Bank': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-skyscraper-a',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      group: 'warehouses',
+      theme: 'commerce',
+      editorGroup: null,
+      label: 'Banque',
+      tooltip: "Prête à la ville et reçoit l'épargne des habitants",
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-a.png' },
+    },
+    tags: ['markets', 'building'],
   },
   // Commerce — building-skyscraper-b
   'Kenney-Commercial-building-skyscraper-b': {

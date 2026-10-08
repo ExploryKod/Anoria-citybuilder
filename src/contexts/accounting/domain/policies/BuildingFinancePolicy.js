@@ -17,7 +17,7 @@ const fromCentimes = (centimes) => centimes / 100;
  * @param {Array<{ type: string, amount: number, year: number, month: number, accountBuildingId: string | null, accountKind?: string | null }>} entries the journal lines
  * @param {string} buildingId
  * @param {{ year: number, month?: number, accountKind?: string | null }} period a month (1 to 12) of a year, or the whole year when month is not given; accountKind picks a house's account
- * @returns {{ revenueHT: number, purchasesHT: number, grossMargin: number, subsidiesReceived: number, wages: number, upkeep: number, operatingResult: number, corporateTax: number, netResult: number, wagesReceived: number, servicesPaid: number, goodsBought: number, householdResult: number }}
+ * @returns {{ revenueHT: number, purchasesHT: number, grossMargin: number, subsidiesReceived: number, wages: number, upkeep: number, otherExpenses: number, operatingResult: number, corporateTax: number, netResult: number, wagesReceived: number, servicesPaid: number, goodsBought: number, householdResult: number }}
  */
 export function buildingFinanceFigures(entries, buildingId, { year, month = null, accountKind = null }) {
   if (!buildingId) throw new Error('[finance] a building account needs its building');
@@ -30,9 +30,15 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
   }
   const of = (type) => byType.get(type) ?? 0;
 
-  const revenue = of('producer_revenue') + of('service_sales');
+  // 'loan_interest_received' is the bank's own revenue (see RecordLoanInterestExpense.js); the matching
+  // 'loan_capital_lent'/'loan_repayment_received' are its principal moving, not income or expense, so they are
+  // deliberately absent here — same reasoning as a loan's principal never appearing in a P&L, real or in-game.
+  const revenue = of('producer_revenue') + of('service_sales') + of('loan_interest_received');
   const grossMargin = revenue - of('producer_purchase');
-  const operatingResult = grossMargin + of('service_subsidy_received') - of('producer_wage') - of('maintenance');
+  // 'deposit_interest_paid' is a bank's own real expense (see SettleBankDepositInterest.js) — a generic slot,
+  // not a bank-specific one, for whatever other settlement books its own line outside goods/services/wages.
+  const otherExpenses = of('deposit_interest_paid');
+  const operatingResult = grossMargin + of('service_subsidy_received') - of('producer_wage') - of('maintenance') - otherExpenses;
   const netResult = operatingResult - of('corporate_tax');
   const householdIncome = of('household_wage') + of('public_wage') + of('household_benefit');
   const householdCharges = of('service_purchase') + of('consumer_purchase') + of('income_tax');
@@ -45,6 +51,7 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
     subsidiesReceived: fromCentimes(of('service_subsidy_received')),
     wages: fromCentimes(of('producer_wage')),
     upkeep: fromCentimes(of('maintenance')),
+    otherExpenses: fromCentimes(otherExpenses),
     operatingResult: fromCentimes(operatingResult),
     corporateTax: fromCentimes(of('corporate_tax')),
     netResult: fromCentimes(netResult),
@@ -78,16 +85,23 @@ export function householdBudgetOf(entries, houseId, { year, month, balance }) {
   let wages = 0;
   let services = 0;
   let purchases = 0;
+  // Deposits/withdrawals/their interest move the balance exactly like a purchase/a wage does, but are not
+  // themselves "goods bought" or "wages received" (see buildingFinanceInfoView.js's separate épargne-en-banque
+  // row) — tracked apart so `carried` still reconstructs the opening balance correctly without mislabelling them.
+  let depositedOut = 0;
+  let returnedIn = 0;
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey || entry.year !== year || entry.month !== month) continue;
     const amount = toCentimes(entry.amount);
     if (entry.type === 'household_wage' || entry.type === 'public_wage' || entry.type === 'household_benefit') wages += amount;
     else if (entry.type === 'service_purchase' || entry.type === 'income_tax') services += amount;
     else if (entry.type === 'consumer_purchase') purchases += amount;
+    else if (entry.type === 'deposit') depositedOut += amount;
+    else if (entry.type === 'withdrawal' || entry.type === 'household_deposit_interest') returnedIn += amount;
     else throw new Error(`[budget] a personal account holds a "${entry.type}" line, which the household budget does not know`);
   }
   const saved = toCentimes(balance);
-  const carried = saved - wages + services + purchases;
+  const carried = saved - wages + services + purchases - returnedIn + depositedOut;
   return {
     carried: fromCentimes(carried),
     wages: fromCentimes(wages),

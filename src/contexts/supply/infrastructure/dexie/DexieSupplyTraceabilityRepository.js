@@ -147,6 +147,12 @@ export class DexieSupplyTraceabilityRepository {
   /**
    * The goods flows of one month, pair by pair, at the catalog's price (HT): each seller's sales to a buyer of the chain
    * (`buyerId`), or to the houses (`buyerId` null). Services are not goods: they are not in it.
+   *
+   * An export sale (`merchant_sale`) is the hub's own sale too, credited the same way, with `buyerId` null — the city
+   * partner is not a building of the chain, so there is no `producer_purchase` counterpart (`tradeLines` already leaves
+   * that line out when `buyerId` is null). Its amount is the row's `netRevenue` (after customs, already split across
+   * the hubs that supplied the order), not `quantity * price`: that product is the gross, and the hub never holds the
+   * customs part — the city does, credited separately by `recordCommerceExportIncome`.
    * @param {number} year
    * @param {number} monthIndex
    * @returns {Promise<Array<{ sellerId: string, buyerId: string | null, amountHT: number }>>}
@@ -157,17 +163,23 @@ export class DexieSupplyTraceabilityRepository {
     // The goods a distributor sells to the houses are not here: each delivery is paid when it is made (RecordConsumerPurchases).
     const rows = await this.db.supplyTraceability
       .where('transactionType')
-      .anyOf(['source_to_hub', 'source_to_distributor'])
-      .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex && goods.includes(row.foodType))
+      .anyOf(['source_to_hub', 'source_to_distributor', 'merchant_sale'])
+      .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex && (row.transactionType === 'merchant_sale' || goods.includes(row.foodType)))
       .toArray();
     const pairs = new Map();
     for (const row of rows) {
       if (!row.fromId) throw new Error(`[traceability] goods transfer ${row.id} names no seller`);
-      if (!row.toId) throw new Error(`[traceability] goods transfer ${row.id} names no buyer`);
-      const buyerId = row.toId;
+      const isExport = row.transactionType === 'merchant_sale';
+      if (!isExport && !row.toId) throw new Error(`[traceability] goods transfer ${row.id} names no buyer`);
+      const buyerId = isExport ? null : row.toId;
       const key = `${row.fromId}>${buyerId}`;
       const pair = pairs.get(key) ?? { sellerId: row.fromId, buyerId, amountHT: 0 };
-      pair.amountHT += row.quantity * row.price;
+      if (isExport) {
+        if (!Number.isFinite(row.netRevenue)) throw new Error(`[traceability] export sale ${row.id} has no net revenue`);
+        pair.amountHT += row.netRevenue;
+      } else {
+        pair.amountHT += row.quantity * row.price;
+      }
       pairs.set(key, pair);
     }
     return [...pairs.values()].map((pair) => ({ ...pair, amountHT: Math.round(pair.amountHT * 100) / 100 }));

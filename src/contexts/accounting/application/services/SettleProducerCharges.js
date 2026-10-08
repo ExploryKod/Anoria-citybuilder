@@ -78,6 +78,14 @@ export class SettleProducerCharges {
    * @param {(service: string) => number} deps.getServicePrice the price (HT) of one unit, before the subsidy and the VAT
    * @param {() => Promise<Record<string, number>>} deps.getVatRates the hamlet's VAT rate per service, in percent
    * @param {(year: number, monthIndex: number) => Promise<Array<{ sellerId: string, amountHT: number }>>} deps.sumHouseSales the goods a company sold to the houses in the month, from the journal (HT)
+   * @param {(year: number, monthIndex: number) => Promise<Array<{ buildingId: string, amountHT: number }>>} deps.sumBankInterestByBuilding the interest a bank earned on its loans in the month, read straight from the
+   *   journal's `loan_interest_received` lines (no supply-chain trace exists for a loan) — this is what lets a
+   *   bank fund its own wages/upkeep/corporate tax from what it actually earns, the same way goods and service
+   *   sales do for every other lucrative building
+   * @param {(year: number, monthIndex: number) => Promise<Array<{ buildingId: string, amountHT: number }>>} deps.sumOtherExpensesByBuilding real expenses already paid this month by some other settlement, outside
+   *   goods/services/wages — today only a bank's `deposit_interest_paid` (see SettleBankDepositInterest.js,
+   *   which must run before this settlement in the same turn so the line already exists to be read) — folded
+   *   into `buildingChargeLines`'s `otherExpensesHT` so it actually reduces taxable profit, not just cash
    * @param {() => Promise<{ rate: number, threshold: number }>} deps.getSalaryTax the income tax: its rate on a wage (a fraction), and the monthly threshold under which a wage pays nothing
    * @param {() => Promise<Array<{ id: string, pop: number }>>} deps.listHouses the hamlet's households and their residents
    * @param {() => Promise<{ salaryPerMonth: number, unemploymentBenefitRate: number }>} deps.getPublicPay the reference salary and the benefit rate (a fraction)
@@ -133,6 +141,8 @@ export class SettleProducerCharges {
     }
 
     const houseSales = await this.deps.sumHouseSales(timeInfo.year, timeInfo.monthIndex);
+    const bankInterest = await this.deps.sumBankInterestByBuilding(timeInfo.year, timeInfo.monthIndex);
+    const otherExpenses = await this.deps.sumOtherExpensesByBuilding(timeInfo.year, timeInfo.monthIndex);
     const taxRate = await this.deps.getSalaryTax();
 
     // The city's pay to the households: the civil servants' salary and the unemployed's benefit, from the residents of each.
@@ -203,7 +213,7 @@ export class SettleProducerCharges {
       }
     }
 
-    const { payable, wagesByBuilding } = this.#planMonth({ bills, pairs, houseSales, buildings, fundsByHouse, taxRate, publicByHouse, benefitByHouse });
+    const { payable, wagesByBuilding } = this.#planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, publicByHouse, benefitByHouse });
 
     for (const pair of pairs) {
       for (const line of tradeLines(pair)) {
@@ -277,6 +287,7 @@ export class SettleProducerCharges {
         });
       }
 
+      const otherExpensesHT = sumWhere(otherExpenses, (expense) => expense.buildingId === building.id);
       const lines = buildingChargeLines({
         id: building.id,
         type: building.type,
@@ -285,6 +296,7 @@ export class SettleProducerCharges {
         purchasesHT,
         wagesHT,
         maintenanceCost: this.deps.buildingMaintenanceCost(building.type),
+        otherExpensesHT,
       });
       for (const line of lines) {
         await this.#record(line, {
@@ -328,7 +340,7 @@ export class SettleProducerCharges {
    * on the wages a house receives: the paid set can only shrink, so it is found by repeating until it stops changing.
    * @returns {{ payable: boolean[], wagesByBuilding: Map<string, { salesHT: number, wagesHT: number }> }}
    */
-  #planMonth({ bills, pairs, houseSales, buildings, fundsByHouse, taxRate, publicByHouse, benefitByHouse }) {
+  #planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, publicByHouse, benefitByHouse }) {
     let payable = bills.map(() => true);
     for (let round = 0; round <= bills.length + 1; round += 1) {
       const grossByHouse = new Map(publicByHouse);
@@ -339,7 +351,10 @@ export class SettleProducerCharges {
           0,
         );
         const goodsToHousesHT = sumWhere(houseSales, (sale) => sale.sellerId === building.id);
-        const salesHT = centimes(sumWhere(pairs, (pair) => pair.sellerId === building.id) + goodsToHousesHT + servicesHT);
+        // The bank's own fourth source: interest earned on its loans, read from the journal, not the three
+        // supply-chain-derived sources above (a loan leaves no traceability row — see sumBankInterestByBuilding).
+        const bankInterestHT = sumWhere(bankInterest, (interest) => interest.buildingId === building.id);
+        const salesHT = centimes(sumWhere(pairs, (pair) => pair.sellerId === building.id) + goodsToHousesHT + servicesHT + bankInterestHT);
         const sources = building.workerSources ?? {};
         const workers = Object.values(sources).reduce((sum, count) => sum + count, 0);
         const wagesHT = wagesPaidOf({ type: building.type, salesHT, workers });

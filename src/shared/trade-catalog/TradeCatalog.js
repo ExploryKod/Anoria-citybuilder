@@ -8,7 +8,13 @@
  * Each entry declares:
  *   cityId          — matches a WorldCityCatalog id
  *   wants           — goods this city will buy, each with a baseMultiplier applied
- *                     on top of the good's own ResourceCategoryCatalog.baseValue
+ *                     on top of the good's own ResourceCategoryCatalog.baseValue. For a want with a
+ *                     `merchantGood` (the hub actually sells it, see RunMonthlyCityTradeCycle.js), the hub paid
+ *                     the merchant house baseValue × 1.2 for it (ValueChainCatalog's producer margin) and keeps
+ *                     90% of what it sells it for (its own 10% wage rate, WAGE_RATE_BY_ROLE.hub) after customs
+ *                     (15% by default, FiscalRateCatalog's bound is [0, 0.5]): baseMultiplier must clear
+ *                     1.2 / ((1 − customsRate) × 0.9) — about 1.57 at the default rate — or the hub sells every
+ *                     unit at a loss, on average, before it even pays its own upkeep.
  *   relation        — contract duration and satisfaction thresholds
  *   trade           — order rhythm and quantity per order
  *   satisfaction    — the factors that move the relation's satisfaction (see TradeSatisfactionPolicy.js);
@@ -42,7 +48,7 @@ export const TRADE_CATALOG = Object.freeze([
   {
     cityId: 'olivea',
     wants: Object.freeze([
-      { good: 'wood', merchantGood: 'dealWood', baseMultiplier: 1.2 },
+      { good: 'wood', merchantGood: 'dealWood', baseMultiplier: 1.65 },
       { good: 'pot',  merchantGood: null,        baseMultiplier: 1.3 },
       { good: 'oil',  merchantGood: null,        baseMultiplier: 1.4 },
     ]),
@@ -56,8 +62,8 @@ export const TRADE_CATALOG = Object.freeze([
   {
     cityId: 'silvania',
     wants: Object.freeze([
-      { good: 'book',         merchantGood: 'dealBook',         baseMultiplier: 1.5 },
-      { good: 'decoratedPot', merchantGood: 'dealDecoratedPot', baseMultiplier: 1.4 },
+      { good: 'book',         merchantGood: 'dealBook',         baseMultiplier: 1.8 },
+      { good: 'decoratedPot', merchantGood: 'dealDecoratedPot', baseMultiplier: 1.75 },
     ]),
     relation: Object.freeze({ durationMonths: 6, renewalThreshold: 70, breakThreshold: 30 }),
     trade: Object.freeze({ frequencyMonths: 2, quantityPerOrder: 20 }),
@@ -84,7 +90,7 @@ export const TRADE_CATALOG = Object.freeze([
     wants: Object.freeze([
       { good: 'furniture', merchantGood: null, baseMultiplier: 1.6 },
       { good: 'amphora',   merchantGood: null, baseMultiplier: 1.3 },
-      { good: 'carrotCake', merchantGood: 'dealCarrotCake', baseMultiplier: 1.3 },
+      { good: 'carrotCake', merchantGood: 'dealCarrotCake', baseMultiplier: 1.7 },
     ]),
     relation: Object.freeze({ durationMonths: 24, renewalThreshold: 50, breakThreshold: 10 }),
     trade: Object.freeze({ frequencyMonths: 1, quantityPerOrder: 15 }),

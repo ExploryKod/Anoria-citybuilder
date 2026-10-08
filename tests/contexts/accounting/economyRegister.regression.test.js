@@ -19,6 +19,8 @@ function settle(pairs, buildings) {
     fundsOf: async () => 0,
     getVatRates: async () => ({}),
     sumHouseSales: async () => [],
+    sumBankInterestByBuilding: async () => [],
+    sumOtherExpensesByBuilding: async () => [],
     listHouses: async () => [],
     getPublicPay: async () => ({ salaryPerMonth: 100, unemploymentBenefitRate: 0.7 }),
     getSalaryTax: async () => ({ rate: 0.1, threshold: 0 }),

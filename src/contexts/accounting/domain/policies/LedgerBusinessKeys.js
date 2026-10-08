@@ -63,6 +63,48 @@ export function buildLoanCapitalBusinessKey(loanId) {
   return `loan_capital:${loanId}`;
 }
 
+const LOAN_LENDER_TYPES = new Set(['loan_capital_lent', 'loan_interest_received', 'loan_repayment_received']);
+
+/**
+ * Idempotence key for the lender's own mirror of a loan movement — a different key from the city's own
+ * (buildLoanCapitalBusinessKey/buildLoanInstallmentBusinessKey) so the two accounts' lines of the same event are
+ * two distinct, independently-deduped rows, never one refusing the other as a duplicate.
+ * @param {'loan_capital_lent' | 'loan_interest_received' | 'loan_repayment_received'} type
+ * @param {string} loanId
+ * @param {number} [turn] required for the per-turn installment types, not for the once-only capital draw
+ * @returns {string | null}
+ */
+export function buildLoanLenderBusinessKey(type, loanId, turn) {
+  if (!LOAN_LENDER_TYPES.has(type) || !loanId) {
+    return null;
+  }
+  if (type === 'loan_capital_lent') {
+    return `${type}:${loanId}`;
+  }
+  if (typeof turn !== 'number' || Number.isNaN(turn)) {
+    return null;
+  }
+  return `${type}:${loanId}:${turn}`;
+}
+
+/**
+ * Idempotence key for one house's deposit interest at one bank, per civil month — the household side and the
+ * bank's own mirror share the same pair and month, so each gets its own key (the `side` suffix) rather than one
+ * refusing the other as a duplicate.
+ * @param {'household_deposit_interest' | 'deposit_interest_paid'} type
+ * @param {string} houseId
+ * @param {string} bankId
+ * @param {number} year
+ * @param {number} monthIndex
+ * @returns {string | null}
+ */
+export function buildDepositInterestBusinessKey(type, houseId, bankId, year, monthIndex) {
+  if (!houseId || !bankId || typeof year !== 'number' || typeof monthIndex !== 'number') {
+    return null;
+  }
+  return `${type}:${houseId}:${bankId}:${year}:${monthIndex}`;
+}
+
 /**
  * Idempotence key for initial capital journal line (turn 0).
  * @returns {string}

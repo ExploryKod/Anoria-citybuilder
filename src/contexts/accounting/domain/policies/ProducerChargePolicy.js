@@ -1,5 +1,6 @@
 import { PERSONAL_ACCOUNT } from './AccountKeyPolicy.js';
 import { getResourceRoles } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { resolveBuildingKind, BUILDING_KIND_HOUSE } from '../../../../shared/building-identity/index.js';
 import {
   COMPANY_MAINTENANCE_SUBSIDY_PERCENT,
@@ -8,28 +9,38 @@ import {
   WAGE_RATE_BY_ROLE,
 } from '../catalogs/ProducerChargeCatalog.js';
 
+/** A building with no resourceRole of its own that is still lucrative: today, only the bank (it holds and lends
+ * money, not goods — see buildingEconomy.js's 'Bank' entry). Read off its own `employment.requiredSkill`, the
+ * one catalog fact a resourceRole-less building still declares. */
+function financeSkillOf(type) {
+  return getBuildingDefinition(type)?.employment?.requiredSkill === 'finance';
+}
+
 /**
- * A lucrative building is a private company: it produces, is a hub, or sells goods or services to the houses. A house is
- * never lucrative, whatever it produces: its upkeep is the city's. A service is a company like the others, its sales are
- * the houses' share of the price (see serviceSaleLines).
+ * A lucrative building is a private company: it produces, is a hub, sells goods or services to the houses, or holds
+ * and lends money (the bank). A house is never lucrative, whatever it produces: its upkeep is the city's. A service
+ * is a company like the others, its sales are the houses' share of the price (see serviceSaleLines).
  * @param {string} type
  * @returns {boolean}
  */
 export function isLucrativeBuilding(type) {
   if (resolveBuildingKind(type) === BUILDING_KIND_HOUSE) return false;
-  return getResourceRoles(type).some((entry) => entry.role === 'producer' || entry.role === 'hub' || entry.role === 'distributor');
+  if (getResourceRoles(type).some((entry) => entry.role === 'producer' || entry.role === 'hub' || entry.role === 'distributor')) return true;
+  return financeSkillOf(type);
 }
 
 /**
- * The workers' wage rate of a lucrative building type: the first role, in WAGE_RATE_BY_ROLE's order, the type holds.
+ * The workers' wage rate of a lucrative building type: the first role, in WAGE_RATE_BY_ROLE's order, the type holds
+ * — or its own `finance` rate for the bank, which holds no resourceRole at all.
  * @param {string} type
  * @returns {number}
  */
 export function wageRateOfBuilding(type) {
   const roles = getResourceRoles(type).map((entry) => entry.role);
   const role = ['producer', 'hub', 'distributor'].find((candidate) => roles.includes(candidate));
-  if (!role) throw new Error(`[producer] "${type}" is lucrative but holds no producer, hub or goods seller role: it has no wage rate`);
-  return WAGE_RATE_BY_ROLE[role];
+  if (role) return WAGE_RATE_BY_ROLE[role];
+  if (financeSkillOf(type)) return WAGE_RATE_BY_ROLE.finance;
+  throw new Error(`[producer] "${type}" is lucrative but holds no producer, hub, goods-seller role or finance skill: it has no wage rate`);
 }
 
 /**
@@ -125,13 +136,15 @@ export function wageSplitLines({ workplaceId, wagesHT, sources }) {
 
 /**
  * The building lines of one month: a lucrative building pays its wages (`wagesHT`, paid to its workers' houses by the
- * settlement), its upkeep less the company subsidy, and its corporate tax on the profit that is left (sales + subsidies
- * received − purchases − wages − its own upkeep). A non-lucrative building has no account: its upkeep is the city's, as the housing subsidy.
- * A line of zero is not written.
- * @param {{ id: string, type: string, salesHT: number, subsidiesHT: number, purchasesHT: number, wagesHT: number, maintenanceCost: number }} building
+ * settlement), its upkeep less the company subsidy, its other real expenses already paid this month by some other
+ * settlement (`otherExpensesHT` — today only a bank's deposit interest, see SettleBankDepositInterest.js; a generic
+ * slot, not a bank-specific one, for whatever earns its own line outside the goods/service/wage pipeline later), and
+ * its corporate tax on what profit is left. A non-lucrative building has no account: its upkeep is the city's, as the
+ * housing subsidy. A line of zero is not written.
+ * @param {{ id: string, type: string, salesHT: number, subsidiesHT: number, purchasesHT: number, wagesHT: number, maintenanceCost: number, otherExpensesHT?: number }} building
  * @returns {ChargeLine[]}
  */
-export function buildingChargeLines({ id, type, salesHT, subsidiesHT, purchasesHT, wagesHT, maintenanceCost }) {
+export function buildingChargeLines({ id, type, salesHT, subsidiesHT, purchasesHT, wagesHT, maintenanceCost, otherExpensesHT = 0 }) {
   const lucrative = isLucrativeBuilding(type);
   const lines = [];
   const add = (kind, amount, holder) => {
@@ -144,7 +157,7 @@ export function buildingChargeLines({ id, type, salesHT, subsidiesHT, purchasesH
   const ownUpkeep = centimes(maintenanceCost - subsidy);
 
   if (lucrative) {
-    const profit = centimes(salesHT + subsidiesHT - purchasesHT - wagesHT - ownUpkeep);
+    const profit = centimes(salesHT + subsidiesHT - purchasesHT - wagesHT - ownUpkeep - otherExpensesHT);
     const tax = profit > 0 ? centimes(profit * CORPORATE_TAX_RATE) : 0;
     add('maintenance', ownUpkeep, id);
     add('subsidy_companies', subsidy, null);

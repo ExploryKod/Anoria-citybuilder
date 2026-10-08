@@ -45,6 +45,16 @@ Write few tests, and only for what must not break: the core rules (calendar, jou
 year and rate labels) and a bug that was just fixed (a regression test). Never write a test that checks a
 feature was removed, nor one per UI wording or per small change. A test is not a rule: the rule lives here.
 
+## A catalog or default change that moves a building's stored fields updates the prefab too
+
+`src/shared/prefabs/anoria-tour-116/` is a real city exported at a turn, bundled as the game's starter prefab.
+When a change to the catalog or to a building's default fields (`employment.workerNeed`, a default `employees`
+shape, a stat derived from the catalog, ...) means an existing building's *stored* data no longer matches what
+the game would now compute for it, check whether the prefab's `city-*.json` holds that building type and fix its
+JSON directly (not a runtime migration — see "No saved games to migrate" below): otherwise the starter city keeps
+shipping the old, wrong values forever, exactly like a bug that was fixed in code but not in the save that
+exposed it.
+
 ## No saved games to migrate
 
 There are no saved games to keep. Never write a migration, a compatibility path, or a fallback for data written by an
