@@ -99,6 +99,10 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     getBuildingFinance: (buildingId, accountKind) => accounting.getBuildingFinance(buildingId, accountKind),
     getHouseResidents: (houseId) => accounting.getHouseResidents(houseId),
     hasBuildingAccount: (buildingType) => accounting.hasBuildingAccount(buildingType),
+    findBankBuildingId: () => accounting.findBankBuildingId(),
+    getHouseholdDepositBalance: (houseId) => accounting.getHouseholdDepositBalance(houseId),
+    recordHouseholdDeposit: (params) => accounting.recordHouseholdDeposit(params),
+    recordHouseholdWithdrawal: (params) => accounting.recordHouseholdWithdrawal(params),
     /** The range of every fiscal slider (see fiscalSliderBounds). */
     getFiscalSliderBounds: () => fiscalSliderBounds(),
     setVatUniform: (uniform) => accounting.setVatUniform(uniform),
