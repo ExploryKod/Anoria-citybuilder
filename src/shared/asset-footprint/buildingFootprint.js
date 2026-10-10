@@ -58,12 +58,12 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'Bank': Object.freeze({ width: 2, depth: 2 }),
   'Lumberjack': Object.freeze({ width: 1, depth: 2 }),
   'Lumberjack-Industry': Object.freeze({ width: 1, depth: 2 }),
-  // House-Blue/Purple/Red reassign their geometry to Kenney suburban
-  // building-type-b/c/a (see buildingAssets.js) — footprint must match that
-  // prefab's real size, not the village-era 1x1 these ids used to be.
+  // A house reserves one uniform 2x2 plot — the widest of the house models — whatever model it wears at its
+  // level: the plot is the house's land (it is what road access and collision read), and its model sits in the
+  // middle of it, so evolving never reaches past the plot.
   'House-Blue': Object.freeze({ width: 2, depth: 2 }),
-  'House-Purple': Object.freeze({ width: 2, depth: 1 }),
-  'House-Red': Object.freeze({ width: 2, depth: 1 }),
+  'House-Purple': Object.freeze({ width: 2, depth: 2 }),
+  'House-Red': Object.freeze({ width: 2, depth: 2 }),
   'Market-Stall': Object.freeze({ width: 1, depth: 1 }),
   'Market-Stall-Blue': Object.freeze({ width: 1, depth: 1 }),
   // Market-Stall-Red wears Kenney commercial building-c, whose real bounding box is 1x2 (a 1x1 footprint let a

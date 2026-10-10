@@ -88,3 +88,56 @@ export const ASSET_IDS_BY_CATEGORY = Object.freeze({
     'Boulder-001',
   ]),
 });
+
+/**
+ * The Kenney suburban models, grouped by the kind of house they show — how the /assets page lays out the
+ * houses, and the pool a house's evolution levels will draw its look from. An id of
+ * `KENNEY_CITY_KIT_TOOLS_BY_CATEGORY.houses` that is in no group is shown under an explicit "unclassified"
+ * section on that page, never silently put in one of these.
+ * @type {ReadonlyArray<Readonly<{ id: string, label: string, assetIds: ReadonlyArray<string> }>>}
+ */
+export const HOUSE_MODEL_GROUPS = Object.freeze([
+  Object.freeze({
+    id: 'small-white',
+    label: 'Petite maison blanche',
+    assetIds: Object.freeze(['Kenney-Suburban-building-type-k', 'Kenney-Suburban-building-type-r', 'Kenney-Suburban-building-type-s']),
+  }),
+  Object.freeze({
+    id: 'small-black',
+    label: 'Petite maison noire',
+    assetIds: Object.freeze(['Kenney-Suburban-building-type-q', 'Kenney-Suburban-building-type-p', 'Kenney-Suburban-building-type-l']),
+  }),
+  Object.freeze({
+    id: 'intermediate',
+    label: 'Maison intermédiaire (avec ou sans étage)',
+    assetIds: Object.freeze([
+      'Kenney-Suburban-building-type-a',
+      'Kenney-Suburban-building-type-g',
+      'Kenney-Suburban-building-type-i',
+      'Kenney-Suburban-building-type-m',
+      'Kenney-Suburban-building-type-c',
+    ]),
+  }),
+  Object.freeze({
+    id: 'rich',
+    label: 'Maison de riches (deux étages)',
+    assetIds: Object.freeze([
+      'Kenney-Suburban-building-type-e',
+      'Kenney-Suburban-building-type-d',
+      'Kenney-Suburban-building-type-o',
+      'Kenney-Suburban-building-type-n',
+      'Kenney-Suburban-building-type-t',
+      'Kenney-Suburban-building-type-f',
+    ]),
+  }),
+  Object.freeze({
+    id: 'solar',
+    label: 'Maison à panneaux solaires',
+    assetIds: Object.freeze([
+      'Kenney-Suburban-building-type-u',
+      'Kenney-Suburban-building-type-b',
+      'Kenney-Suburban-building-type-h',
+      'Kenney-Suburban-building-type-j',
+    ]),
+  }),
+]);

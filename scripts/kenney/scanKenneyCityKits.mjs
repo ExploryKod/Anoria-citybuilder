@@ -67,6 +67,43 @@ function measureFootprintFromObj(objPath) {
 }
 
 /**
+ * The model's real size on the ground (tiles), from the position accessors of its GLB — walking node
+ * translations and scales — so it needs no OBJ export.
+ * @param {string} glbPath
+ * @returns {{ width: number, depth: number }}
+ */
+function measureMeshSizeFromGlb(glbPath) {
+  const buf = readFileSync(glbPath);
+  const json = JSON.parse(buf.subarray(20, 20 + buf.readUInt32LE(12)).toString('utf8'));
+  const min = [Infinity, Infinity, Infinity];
+  const max = [-Infinity, -Infinity, -Infinity];
+  const walk = (nodeIndex, offset, scale) => {
+    const node = json.nodes[nodeIndex];
+    const translation = node.translation ?? [0, 0, 0];
+    const nodeScale = node.scale ?? [1, 1, 1];
+    const at = offset.map((o, i) => o + scale[i] * translation[i]);
+    const by = scale.map((sc, i) => sc * nodeScale[i]);
+    if (node.mesh != null) {
+      for (const primitive of json.meshes[node.mesh].primitives) {
+        const accessor = json.accessors[primitive.attributes.POSITION];
+        for (let i = 0; i < 3; i += 1) {
+          const a = at[i] + by[i] * accessor.min[i];
+          const b = at[i] + by[i] * accessor.max[i];
+          min[i] = Math.min(min[i], a, b);
+          max[i] = Math.max(max[i], a, b);
+        }
+      }
+    }
+    (node.children ?? []).forEach((child) => walk(child, at, by));
+  };
+  json.scenes[json.scene ?? 0].nodes.forEach((n) => walk(n, [0, 0, 0], [1, 1, 1]));
+  return {
+    width: Math.round((max[0] - min[0]) * 100) / 100,
+    depth: Math.round((max[2] - min[2]) * 100) / 100,
+  };
+}
+
+/**
  * @param {number} tiles
  * @param {number} basePrice
  * @param {number} pricePerExtraTile
@@ -123,6 +160,8 @@ for (const kit of KITS) {
   for (const buildingId of buildingIds) {
     const objPath = join(objDir, `${buildingId}.obj`);
     let footprint;
+    const glbPath = join(glbDir, `${buildingId}.glb`);
+    const meshSize = existsSync(glbPath) ? measureMeshSizeFromGlb(glbPath) : null;
     if (existsSync(objPath)) {
       footprint = measureFootprintFromObj(objPath);
     } else {
@@ -171,6 +210,8 @@ for (const kit of KITS) {
       previewUrl: `/resources/${kit.resourceDir}/Previews/${buildingId}.png`,
       prefabKey,
       kitId: kit.id,
+      // The model's own measured size in tiles (null when its OBJ is missing) — the grid above is this rounded up.
+      meshSize,
     };
   }
 
@@ -207,6 +248,7 @@ export const KENNEY_CITY_KIT_PREFAB_BY_BUILDING_ID = Object.freeze(${JSON.string
  *   previewUrl: string,
  *   prefabKey: string,
  *   kitId: string,
+ *   meshSize: { width: number, depth: number } | null,
  * }>>} */
 export const KENNEY_CITY_KIT_TOOL_META = Object.freeze(${JSON.stringify(toolMeta, null, 2)});
 

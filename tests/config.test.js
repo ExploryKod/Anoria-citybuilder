@@ -47,7 +47,7 @@ describe('config.simulation', () => {
     });
 
     test('définit la taille de la ville', () => {
-        expect(config.simulation.citySize).toBe(12);
+        expect(config.simulation.citySize).toBe(16);
     });
 
     test('ne porte plus de distance de distribution : la portée vit dans le catalogue économique', () => {

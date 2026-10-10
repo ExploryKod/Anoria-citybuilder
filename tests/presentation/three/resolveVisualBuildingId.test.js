@@ -28,7 +28,7 @@ describe('resolveVisualBuildingId', () => {
     expect(resolveVisualBuildingId('Chapel', 2)).toBe('Chapel');
   });
 
-  test('every declared levelVariant keeps the same footprint as its base id — a mismatch shifts the mesh at evolution time (placement centering is footprint-size-driven)', () => {
+  test('every declared levelVariant model fits in the plot of its base id — evolving never reaches past the land the house reserved', () => {
     const mismatches = [];
     for (const [baseId, entry] of Object.entries(ASSET_CATALOG)) {
       if (!entry.levelVariants) continue;
@@ -36,10 +36,10 @@ describe('resolveVisualBuildingId', () => {
       for (const [level, variantId] of Object.entries(entry.levelVariants)) {
         const variantFootprint = resolveFootprint(variantId);
         if (
-          variantFootprint.width !== baseFootprint.width ||
-          variantFootprint.depth !== baseFootprint.depth
+          variantFootprint.width > baseFootprint.width ||
+          variantFootprint.depth > baseFootprint.depth
         ) {
-          mismatches.push(`${baseId} level ${level} -> ${variantId}: ${JSON.stringify(variantFootprint)} vs base ${JSON.stringify(baseFootprint)}`);
+          mismatches.push(`${baseId} level ${level} -> ${variantId}: ${JSON.stringify(variantFootprint)} exceeds the plot ${JSON.stringify(baseFootprint)}`);
         }
       }
     }

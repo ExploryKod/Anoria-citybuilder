@@ -1,7 +1,7 @@
 {
   "exportDate": "2026-10-04T15:25:07.604Z",
   "config": {
-    "citySize": 12,
+    "citySize": 16,
     "daysPerMonth": 5,
     "perCapitaDemand": 1,
     "annualYieldPerProducer": 288,
@@ -3582,7 +3582,7 @@
       "employees": {
         "worker_need": 4,
         "worker": 0,
-        "sector": 4,
+        "sector": 2,
         "salary": 40
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
@@ -4085,17 +4085,17 @@
       "gameTurn": 25,
       "time": 0,
       "isBuilding": true,
-      "roads": 3,
+      "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
       "worldTime": 116,
-      "x": 4,
-      "y": 4,
+      "x": 12,
+      "y": 5,
       "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 1,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 0,
@@ -4108,12 +4108,20 @@
       "tier": 3,
       "footprintTiles": [
         [
-          4,
-          4
+          12,
+          5
         ],
         [
-          5,
-          4
+          12,
+          6
+        ],
+        [
+          13,
+          5
+        ],
+        [
+          13,
+          6
         ]
       ],
       "markets": [],
@@ -5835,7 +5843,7 @@
       "employees": {
         "worker_need": 4,
         "worker": 0,
-        "sector": 4,
+        "sector": 2,
         "salary": 40
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
@@ -6784,7 +6792,7 @@
       "gameTurn": 20,
       "time": 0,
       "isBuilding": true,
-      "roads": 3,
+      "roads": 4,
       "stage": 0,
       "stageName": "",
       "price": 10,
@@ -6794,7 +6802,7 @@
       "y": 6,
       "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 1,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 0,
@@ -6811,8 +6819,16 @@
           6
         ],
         [
+          9,
+          7
+        ],
+        [
           10,
           6
+        ],
+        [
+          10,
+          7
         ]
       ],
       "markets": [],
@@ -7518,17 +7534,17 @@
       "gameTurn": 19,
       "time": 0,
       "isBuilding": true,
-      "roads": 1,
+      "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
       "worldTime": 116,
-      "x": 9,
-      "y": 7,
+      "x": 12,
+      "y": 1,
       "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 1,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 0,
@@ -7541,12 +7557,20 @@
       "tier": 2,
       "footprintTiles": [
         [
-          9,
-          7
+          12,
+          1
         ],
         [
-          10,
-          7
+          12,
+          2
+        ],
+        [
+          13,
+          1
+        ],
+        [
+          13,
+          2
         ]
       ],
       "markets": [],
@@ -7971,17 +7995,17 @@
       "gameTurn": 24,
       "time": 0,
       "isBuilding": true,
-      "roads": 3,
+      "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
       "worldTime": 116,
-      "x": 4,
-      "y": 8,
+      "x": 12,
+      "y": 7,
       "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 1,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 0,
@@ -7994,11 +8018,19 @@
       "tier": 3,
       "footprintTiles": [
         [
-          4,
+          12,
+          7
+        ],
+        [
+          12,
           8
         ],
         [
-          5,
+          13,
+          7
+        ],
+        [
+          13,
           8
         ]
       ],
@@ -8174,17 +8206,17 @@
       "gameTurn": 24,
       "time": 0,
       "isBuilding": true,
-      "roads": 2,
+      "roads": 1,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
       "worldTime": 116,
-      "x": 6,
-      "y": 8,
+      "x": 11,
+      "y": 10,
       "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 1,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 0,
@@ -8197,12 +8229,20 @@
       "tier": 3,
       "footprintTiles": [
         [
-          6,
-          8
+          11,
+          10
         ],
         [
-          7,
-          8
+          11,
+          11
+        ],
+        [
+          12,
+          10
+        ],
+        [
+          12,
+          11
         ]
       ],
       "markets": [],
@@ -8561,17 +8601,17 @@
       "gameTurn": 19,
       "time": 0,
       "isBuilding": true,
-      "roads": 3,
+      "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
       "worldTime": 116,
-      "x": 9,
-      "y": 8,
+      "x": 12,
+      "y": 3,
       "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 1,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 0,
@@ -8584,12 +8624,20 @@
       "tier": 2,
       "footprintTiles": [
         [
-          9,
-          8
+          12,
+          3
         ],
         [
-          10,
-          8
+          12,
+          4
+        ],
+        [
+          13,
+          3
+        ],
+        [
+          13,
+          4
         ]
       ],
       "markets": [],

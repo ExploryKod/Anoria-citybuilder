@@ -39,8 +39,9 @@ function getGhostAdapter(assetId) {
  * Visual only — no city / Dexie / placement rules.
  */
 
-const GHOST_VALID = new THREE.Color(0x2ecc71);
-const GHOST_INVALID = new THREE.Color(0xe74c3c);
+// Blue / red on the yellow plot: green would vanish into the grass, orange next to red.
+const GHOST_VALID = new THREE.Color(0x2f7bff);
+const GHOST_INVALID = new THREE.Color(0xe0262f);
 const GHOST_ANCHORED = new THREE.Color(0x7c3aed);
 
 /**
@@ -55,13 +56,34 @@ function createGhostMaterial(valid, mode = 'hover') {
   return new THREE.MeshBasicMaterial({
     color,
     transparent: true,
-    opacity: anchored ? 0.52 : valid ? 0.55 : 0.65,
+    opacity: anchored ? 0.6 : valid ? 0.7 : 0.75,
     depthWrite: false,
     fog: false,
     toneMapped: false,
     polygonOffset: true,
     polygonOffsetFactor: -1,
     polygonOffsetUnits: -1,
+  });
+}
+
+const PLOT_HIGHLIGHT_COLOR = new THREE.Color(0xffd426);
+
+/**
+ * The border of the ground a building reserves, drawn around its ghost. Yellow whatever the placement state (the ghost
+ * itself says valid or not): it stands out from the grass and from both the blue and the red ghost.
+ * @returns {THREE.MeshBasicMaterial}
+ */
+function createPlotHighlightMaterial() {
+  return new THREE.MeshBasicMaterial({
+    color: PLOT_HIGHLIGHT_COLOR,
+    transparent: true,
+    opacity: 0.95,
+    depthWrite: false,
+    fog: false,
+    toneMapped: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
   });
 }
 
@@ -114,6 +136,11 @@ export function applyGhostAppearance(root, { valid = true, mode = 'hover', style
       isPlacementGhost: true,
       nonInteractive: true,
     };
+
+    if (obj.userData.isPlotHighlight) {
+      obj.material = createPlotHighlightMaterial();
+      return;
+    }
 
     if (style === 'preview') {
       obj.material = Array.isArray(obj.material)
@@ -460,8 +487,11 @@ export function createPlacementGhostController({ scene, assetManager }) {
       const rotationStepForCreate = adapter.rotationRequiresRespawn ? (options.rotationStep ?? 0) : 0;
       const result = adapter.createMesh(x, y, {
         catalogEntry: ASSET_CATALOG[assetId],
+        buildingId: assetId,
+        plotBuildingId: assetId,
         rotationStep: rotationStepForCreate,
         assetManager,
+        showPlot: true,
       });
       if (result && typeof result.then === 'function') {
         result.then(finishAsyncSpawn).catch((error) => {

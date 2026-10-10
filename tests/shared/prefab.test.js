@@ -53,7 +53,7 @@ describe('prefab anoria-tour-116 — its state is the saved one', () => {
     // their names — "ware**house**" — as a house and zero their need) are now correctly counted. A blanket
     // `lack: 8` would not say which caste is short — the game has three (artisans/merchants/scholars), each
     // holding its own skills — so this pins it to the actual skill both buildings require: `manutention`,
-    // which only artisans (House-Red, from their tier 2 on) hold. No other skill is short.
+    // which only merchants (from their tier 2 on) hold. No other skill is short.
     expect(summary.lack).toBe(8);
     expect(summary.bySkill.manutention).toEqual({ workerNeed: 8, workers: 0, need: 8 });
     for (const [skillId, stats] of Object.entries(summary.bySkill)) {

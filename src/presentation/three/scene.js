@@ -1284,7 +1284,9 @@ export function createScene(_gameStore, assetManager, deps) {
                     // Show "no-food" icon when !hasFood (sprite shown when condition is true)
                     // hasFood is computed above from IndexedDB stocks (source of truth)
                     if(buildings[x][y]) {
-                        const showNoFoodIcon = !hasFood; // Show icon when NO food
+                        // A house with no road gets no food by definition: its only status is no-road (see the
+                        // residential road sync after the neighbor pass, which settles hasRoadAccess for this frame).
+                        const showNoFoodIcon = !hasFood && buildings[x][y].userData.hasRoadAccess !== false;
                         const houseNoFoodIcon = resolveIconAppearance(
                             buildings[x][y], 'no-food', statutsIconsMeta.food.position, statutsIconsMeta.food.scale
                         );
@@ -1346,6 +1348,10 @@ export function createScene(_gameStore, assetManager, deps) {
                     position: residentialRoadIcon.position,
                     scale: residentialRoadIcon.scale,
                 });
+                // No road → the no-road icon is the only status: no-food only means something once connected.
+                if (mesh.userData.hasRoadAccess === false) {
+                    assetManager.removeStatusSprite(mesh, 'no-food');
+                }
             }
         }
 

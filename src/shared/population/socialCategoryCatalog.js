@@ -98,10 +98,9 @@ export const SOCIAL_CATEGORY = Object.freeze({
         ]),
         // 'artisanat' (pottery workshops) — sector 3, this group's own
         // Industries sector (see eligibleSectors above), same tier as the
-        // group's namesake trade. 'manutention' (the goods warehouse) — sector 4, also in eligibleSectors:
-        // the group of manual workers carries and stacks the goods. 'telecoms' (the network provider) — sector
-        // 3 too, another industrial trade this group holds.
-        skills: Object.freeze({ fermier: 1, artisanat: 1, manutention: 1, telecoms: 1 }),
+        // group's namesake trade. 'telecoms' (the network provider) — sector 3 too, another industrial trade
+        // this group holds.
+        skills: Object.freeze({ fermier: 1, artisanat: 1, telecoms: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[3],
@@ -160,9 +159,10 @@ export const SOCIAL_CATEGORY = Object.freeze({
           Object.freeze({ kind: 'population', min: 1 }),
           Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
         ]),
-        // 'finance' (the bank) lands here too, same tier as 'vente-alimentaire' (the market): both are the
-        // group's own Commerces sector, no separate trust requirement of their own.
-        skills: Object.freeze({ 'vente-alimentaire': 1, finance: 1 }),
+        // 'finance' (the bank) and 'manutention' (the warehouses) land here too, same tier as
+        // 'vente-alimentaire' (the market): all are the group's own Commerces sector, no separate trust
+        // requirement of their own.
+        skills: Object.freeze({ 'vente-alimentaire': 1, finance: 1, manutention: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[3],

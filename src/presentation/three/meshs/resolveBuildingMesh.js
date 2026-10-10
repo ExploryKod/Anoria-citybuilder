@@ -100,7 +100,7 @@ export async function resolveAndCreateBuildingMesh({ buildingId, x, y, rotationS
     throw new Error(`[buildingAssets] No adapter registered for source "${catalogEntry.source}" (id "${visualBuildingId}")`);
   }
 
-  const mesh = await adapter.createMesh(x, y, { catalogEntry, buildingId: visualBuildingId, rotationStep, assetManager });
+  const mesh = await adapter.createMesh(x, y, { catalogEntry, buildingId: visualBuildingId, plotBuildingId: buildingId, rotationStep, assetManager });
   if (!mesh) {
     throw new Error(`[buildingAssets] No mesh produced for "${visualBuildingId}" (source "${catalogEntry.source}")`);
   }

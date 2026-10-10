@@ -45,10 +45,12 @@ registerBuildingSourceAdapter('kenneyCityKit', {
   // Not `async` — returns the adapter's own promise directly. Wrapping it in
   // an async function would add an extra microtask tick before callers see
   // it resolve, which the ghost-hover / rapid-move path can't afford.
-  createMesh(x, y, { catalogEntry, rotationStep }) {
+  createMesh(x, y, { catalogEntry, plotBuildingId, rotationStep, showPlot }) {
     return getKenneyCityKitMeshAdapter().createBuilding(x, y, {
       buildingId: catalogEntry.geometry.buildingId,
+      plotBuildingId,
       rotationStep,
+      showPlot,
     });
   },
   repositionGhost,

@@ -6,6 +6,7 @@ import { buildingCatalog } from '../../src/shared/building-catalog/buildingCatal
 
 // A placeable building's footprint must be its mesh's real size: otherwise a road can sit under half of it,
 // and "a road touching the building" (its road access) is measured from tiles it does not cover.
+// A house is the exception: it reserves a plot at least as large as its model (the model sits in the middle).
 describe('a building\'s footprint matches the kit mesh it wears', () => {
   test('every placeable kit building', () => {
     const wrong = [];
@@ -13,7 +14,11 @@ describe('a building\'s footprint matches the kit mesh it wears', () => {
       if (asset.source !== 'kenneyCityKit' || !asset.button) continue;
       const real = KENNEY_BUILDING_CATALOG_ENTRIES[asset.geometry.buildingId].construction;
       const declared = resolveFootprint(id);
-      if (real.footprintWidth !== declared.width || real.footprintDepth !== declared.depth) {
+      const isHouse = Boolean(buildingCatalog[id]?.residentialGroup);
+      const wrongSize = isHouse
+        ? real.footprintWidth > declared.width || real.footprintDepth > declared.depth
+        : real.footprintWidth !== declared.width || real.footprintDepth !== declared.depth;
+      if (wrongSize) {
         wrong.push(`${id}: mesh ${real.footprintWidth}x${real.footprintDepth}, catalog ${declared.width}x${declared.depth}`);
       }
     }

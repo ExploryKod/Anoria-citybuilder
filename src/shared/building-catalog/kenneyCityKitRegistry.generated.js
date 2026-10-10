@@ -678,6 +678,7 @@ export const KENNEY_CITY_KIT_PREFAB_BY_BUILDING_ID = Object.freeze({
  *   previewUrl: string,
  *   prefabKey: string,
  *   kitId: string,
+ *   meshSize: { width: number, depth: number } | null,
  * }>>} */
 export const KENNEY_CITY_KIT_TOOL_META = Object.freeze({
   "Kenney-Commercial-building-a": {
@@ -685,420 +686,660 @@ export const KENNEY_CITY_KIT_TOOL_META = Object.freeze({
     "tooltip": "Kenney commercial — building-a (1×1, 10€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-a.png",
     "prefabKey": "commercial:building-a",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 0.88,
+      "depth": 0.94
+    }
   },
   "Kenney-Commercial-building-b": {
     "shortLabel": "b",
     "tooltip": "Kenney commercial — building-b (1×1, 10€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-b.png",
     "prefabKey": "commercial:building-b",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 0.97,
+      "depth": 0.94
+    }
   },
   "Kenney-Commercial-building-c": {
     "shortLabel": "c",
     "tooltip": "Kenney commercial — building-c (1×2, 16€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-c.png",
     "prefabKey": "commercial:building-c",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 0.88,
+      "depth": 1.09
+    }
   },
   "Kenney-Commercial-building-d": {
     "shortLabel": "d",
     "tooltip": "Kenney commercial — building-d (1×1, 10€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-d.png",
     "prefabKey": "commercial:building-d",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 0.84,
+      "depth": 0.9
+    }
   },
   "Kenney-Commercial-building-e": {
     "shortLabel": "e",
     "tooltip": "Kenney commercial — building-e (2×1, 16€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-e.png",
     "prefabKey": "commercial:building-e",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 1.64,
+      "depth": 1.01
+    }
   },
   "Kenney-Commercial-building-f": {
     "shortLabel": "f",
     "tooltip": "Kenney commercial — building-f (1×1, 10€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-f.png",
     "prefabKey": "commercial:building-f",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 0.84,
+      "depth": 1.03
+    }
   },
   "Kenney-Commercial-building-g": {
     "shortLabel": "g",
     "tooltip": "Kenney commercial — building-g (1×1, 10€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-g.png",
     "prefabKey": "commercial:building-g",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 0.97,
+      "depth": 0.92
+    }
   },
   "Kenney-Commercial-building-h": {
     "shortLabel": "h",
     "tooltip": "Kenney commercial — building-h (1×1, 10€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-h.png",
     "prefabKey": "commercial:building-h",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 0.88,
+      "depth": 1.01
+    }
   },
   "Kenney-Commercial-building-i": {
     "shortLabel": "i",
     "tooltip": "Kenney commercial — building-i (2×2, 28€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-i.png",
     "prefabKey": "commercial:building-i",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 1.24,
+      "depth": 1.3
+    }
   },
   "Kenney-Commercial-building-j": {
     "shortLabel": "j",
     "tooltip": "Kenney commercial — building-j (3×2, 40€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-j.png",
     "prefabKey": "commercial:building-j",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 2.08,
+      "depth": 1.34
+    }
   },
   "Kenney-Commercial-building-k": {
     "shortLabel": "k",
     "tooltip": "Kenney commercial — building-k (3×1, 22€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-k.png",
     "prefabKey": "commercial:building-k",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 2.08,
+      "depth": 0.94
+    }
   },
   "Kenney-Commercial-building-l": {
     "shortLabel": "l",
     "tooltip": "Kenney commercial — building-l (2×2, 28€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-l.png",
     "prefabKey": "commercial:building-l",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 1.37,
+      "depth": 1.4
+    }
   },
   "Kenney-Commercial-building-m": {
     "shortLabel": "m",
     "tooltip": "Kenney commercial — building-m (2×2, 28€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-m.png",
     "prefabKey": "commercial:building-m",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 1.24,
+      "depth": 1.24
+    }
   },
   "Kenney-Commercial-building-n": {
     "shortLabel": "n",
     "tooltip": "Kenney commercial — building-n (3×2, 40€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-n.png",
     "prefabKey": "commercial:building-n",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 2.32,
+      "depth": 1.82
+    }
   },
   "Kenney-Commercial-building-skyscraper-a": {
     "shortLabel": "skyscraper-a",
     "tooltip": "Kenney commercial — building-skyscraper-a (2×2, 28€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-a.png",
     "prefabKey": "commercial:building-skyscraper-a",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 1.36,
+      "depth": 1.36
+    }
   },
   "Kenney-Commercial-building-skyscraper-b": {
     "shortLabel": "skyscraper-b",
     "tooltip": "Kenney commercial — building-skyscraper-b (2×2, 28€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-b.png",
     "prefabKey": "commercial:building-skyscraper-b",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 1.36,
+      "depth": 1.36
+    }
   },
   "Kenney-Commercial-building-skyscraper-c": {
     "shortLabel": "skyscraper-c",
     "tooltip": "Kenney commercial — building-skyscraper-c (2×2, 28€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-c.png",
     "prefabKey": "commercial:building-skyscraper-c",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 1.28,
+      "depth": 1.39
+    }
   },
   "Kenney-Commercial-building-skyscraper-d": {
     "shortLabel": "skyscraper-d",
     "tooltip": "Kenney commercial — building-skyscraper-d (2×2, 28€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-d.png",
     "prefabKey": "commercial:building-skyscraper-d",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 1.28,
+      "depth": 1.39
+    }
   },
   "Kenney-Commercial-building-skyscraper-e": {
     "shortLabel": "skyscraper-e",
     "tooltip": "Kenney commercial — building-skyscraper-e (2×2, 28€)",
     "previewUrl": "/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-e.png",
     "prefabKey": "commercial:building-skyscraper-e",
-    "kitId": "commercial"
+    "kitId": "commercial",
+    "meshSize": {
+      "width": 1.29,
+      "depth": 1.24
+    }
   },
   "Kenney-Industrial-building-a": {
     "shortLabel": "a",
     "tooltip": "Kenney industrial — building-a (3×2, 75€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-a.png",
     "prefabKey": "industrial:building-a",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 2.08,
+      "depth": 1.24
+    }
   },
   "Kenney-Industrial-building-b": {
     "shortLabel": "b",
     "tooltip": "Kenney industrial — building-b (3×2, 75€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-b.png",
     "prefabKey": "industrial:building-b",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 2.08,
+      "depth": 1.26
+    }
   },
   "Kenney-Industrial-building-c": {
     "shortLabel": "c",
     "tooltip": "Kenney industrial — building-c (2×3, 75€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-c.png",
     "prefabKey": "industrial:building-c",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 1.88,
+      "depth": 2.11
+    }
   },
   "Kenney-Industrial-building-d": {
     "shortLabel": "d",
     "tooltip": "Kenney industrial — building-d (1×2, 35€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-d.png",
     "prefabKey": "industrial:building-d",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 0.88,
+      "depth": 1.42
+    }
   },
   "Kenney-Industrial-building-e": {
     "shortLabel": "e",
     "tooltip": "Kenney industrial — building-e (2×2, 55€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-e.png",
     "prefabKey": "industrial:building-e",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 1.68,
+      "depth": 1.29
+    }
   },
   "Kenney-Industrial-building-f": {
     "shortLabel": "f",
     "tooltip": "Kenney industrial — building-f (2×2, 55€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-f.png",
     "prefabKey": "industrial:building-f",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 1.79,
+      "depth": 1.28
+    }
   },
   "Kenney-Industrial-building-g": {
     "shortLabel": "g",
     "tooltip": "Kenney industrial — building-g (2×2, 55€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-g.png",
     "prefabKey": "industrial:building-g",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 1.68,
+      "depth": 1.28
+    }
   },
   "Kenney-Industrial-building-h": {
     "shortLabel": "h",
     "tooltip": "Kenney industrial — building-h (2×2, 55€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-h.png",
     "prefabKey": "industrial:building-h",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 1.32,
+      "depth": 1.31
+    }
   },
   "Kenney-Industrial-building-i": {
     "shortLabel": "i",
     "tooltip": "Kenney industrial — building-i (1×2, 35€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-i.png",
     "prefabKey": "industrial:building-i",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 1.03,
+      "depth": 1.3
+    }
   },
   "Kenney-Industrial-building-j": {
     "shortLabel": "j",
     "tooltip": "Kenney industrial — building-j (1×2, 35€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-j.png",
     "prefabKey": "industrial:building-j",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 1.03,
+      "depth": 1.3
+    }
   },
   "Kenney-Industrial-building-k": {
     "shortLabel": "k",
     "tooltip": "Kenney industrial — building-k (2×1, 35€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-k.png",
     "prefabKey": "industrial:building-k",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 1.3,
+      "depth": 0.91
+    }
   },
   "Kenney-Industrial-building-l": {
     "shortLabel": "l",
     "tooltip": "Kenney industrial — building-l (3×2, 75€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-l.png",
     "prefabKey": "industrial:building-l",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 2.08,
+      "depth": 1.87
+    }
   },
   "Kenney-Industrial-building-m": {
     "shortLabel": "m",
     "tooltip": "Kenney industrial — building-m (2×2, 55€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-m.png",
     "prefabKey": "industrial:building-m",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 1.32,
+      "depth": 1.7
+    }
   },
   "Kenney-Industrial-building-n": {
     "shortLabel": "n",
     "tooltip": "Kenney industrial — building-n (1×2, 35€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-n.png",
     "prefabKey": "industrial:building-n",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 0.98,
+      "depth": 1.42
+    }
   },
   "Kenney-Industrial-building-o": {
     "shortLabel": "o",
     "tooltip": "Kenney industrial — building-o (1×2, 35€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-o.png",
     "prefabKey": "industrial:building-o",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 0.88,
+      "depth": 1.24
+    }
   },
   "Kenney-Industrial-building-p": {
     "shortLabel": "p",
     "tooltip": "Kenney industrial — building-p (2×1, 35€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-p.png",
     "prefabKey": "industrial:building-p",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 1.68,
+      "depth": 0.99
+    }
   },
   "Kenney-Industrial-building-q": {
     "shortLabel": "q",
     "tooltip": "Kenney industrial — building-q (3×2, 75€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-q.png",
     "prefabKey": "industrial:building-q",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 2.14,
+      "depth": 1.77
+    }
   },
   "Kenney-Industrial-building-r": {
     "shortLabel": "r",
     "tooltip": "Kenney industrial — building-r (3×2, 75€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-r.png",
     "prefabKey": "industrial:building-r",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 2.48,
+      "depth": 1.27
+    }
   },
   "Kenney-Industrial-building-s": {
     "shortLabel": "s",
     "tooltip": "Kenney industrial — building-s (3×1, 45€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-s.png",
     "prefabKey": "industrial:building-s",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 2.12,
+      "depth": 0.92
+    }
   },
   "Kenney-Industrial-building-t": {
     "shortLabel": "t",
     "tooltip": "Kenney industrial — building-t (2×2, 55€)",
     "previewUrl": "/resources/kenney_city-kit-industrial_1.0/Previews/building-t.png",
     "prefabKey": "industrial:building-t",
-    "kitId": "industrial"
+    "kitId": "industrial",
+    "meshSize": {
+      "width": 1.72,
+      "depth": 1.39
+    }
   },
   "Kenney-Suburban-building-type-a": {
     "shortLabel": "type-a",
     "tooltip": "Kenney suburban — building-type-a (2×1, 18€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-a.png",
     "prefabKey": "suburban:building-type-a",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.3,
+      "depth": 1.03
+    }
   },
   "Kenney-Suburban-building-type-b": {
     "shortLabel": "type-b",
     "tooltip": "Kenney suburban — building-type-b (2×2, 34€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-b.png",
     "prefabKey": "suburban:building-type-b",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.83,
+      "depth": 1.14
+    }
   },
   "Kenney-Suburban-building-type-c": {
     "shortLabel": "type-c",
     "tooltip": "Kenney suburban — building-type-c (2×1, 18€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-c.png",
     "prefabKey": "suburban:building-type-c",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.29,
+      "depth": 1.03
+    }
   },
   "Kenney-Suburban-building-type-d": {
     "shortLabel": "type-d",
     "tooltip": "Kenney suburban — building-type-d (2×1, 18€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-d.png",
     "prefabKey": "suburban:building-type-d",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.76,
+      "depth": 1.03
+    }
   },
   "Kenney-Suburban-building-type-e": {
     "shortLabel": "type-e",
     "tooltip": "Kenney suburban — building-type-e (2×1, 18€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-e.png",
     "prefabKey": "suburban:building-type-e",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.3,
+      "depth": 1.03
+    }
   },
   "Kenney-Suburban-building-type-f": {
     "shortLabel": "type-f",
     "tooltip": "Kenney suburban — building-type-f (2×2, 34€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-f.png",
     "prefabKey": "suburban:building-type-f",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.43,
+      "depth": 1.41
+    }
   },
   "Kenney-Suburban-building-type-g": {
     "shortLabel": "type-g",
     "tooltip": "Kenney suburban — building-type-g (2×2, 34€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-g.png",
     "prefabKey": "suburban:building-type-g",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.45,
+      "depth": 1.18
+    }
   },
   "Kenney-Suburban-building-type-h": {
     "shortLabel": "type-h",
     "tooltip": "Kenney suburban — building-type-h (2×1, 18€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-h.png",
     "prefabKey": "suburban:building-type-h",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.3,
+      "depth": 0.92
+    }
   },
   "Kenney-Suburban-building-type-i": {
     "shortLabel": "type-i",
     "tooltip": "Kenney suburban — building-type-i (2×1, 18€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-i.png",
     "prefabKey": "suburban:building-type-i",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.29,
+      "depth": 1.03
+    }
   },
   "Kenney-Suburban-building-type-j": {
     "shortLabel": "type-j",
     "tooltip": "Kenney suburban — building-type-j (2×1, 18€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-j.png",
     "prefabKey": "suburban:building-type-j",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.37,
+      "depth": 0.92
+    }
   },
   "Kenney-Suburban-building-type-k": {
     "shortLabel": "type-k",
     "tooltip": "Kenney suburban — building-type-k (1×1, 10€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-k.png",
     "prefabKey": "suburban:building-type-k",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 0.92,
+      "depth": 1.02
+    }
   },
   "Kenney-Suburban-building-type-l": {
     "shortLabel": "type-l",
     "tooltip": "Kenney suburban — building-type-l (1×1, 10€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-l.png",
     "prefabKey": "suburban:building-type-l",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.03,
+      "depth": 1.02
+    }
   },
   "Kenney-Suburban-building-type-m": {
     "shortLabel": "type-m",
     "tooltip": "Kenney suburban — building-type-m (2×2, 34€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-m.png",
     "prefabKey": "suburban:building-type-m",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.43,
+      "depth": 1.43
+    }
   },
   "Kenney-Suburban-building-type-n": {
     "shortLabel": "type-n",
     "tooltip": "Kenney suburban — building-type-n (2×2, 34€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-n.png",
     "prefabKey": "suburban:building-type-n",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.78,
+      "depth": 1.38
+    }
   },
   "Kenney-Suburban-building-type-o": {
     "shortLabel": "type-o",
     "tooltip": "Kenney suburban — building-type-o (2×1, 18€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-o.png",
     "prefabKey": "suburban:building-type-o",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.27,
+      "depth": 1.03
+    }
   },
   "Kenney-Suburban-building-type-p": {
     "shortLabel": "type-p",
     "tooltip": "Kenney suburban — building-type-p (2×1, 18€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-p.png",
     "prefabKey": "suburban:building-type-p",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.24,
+      "depth": 0.99
+    }
   },
   "Kenney-Suburban-building-type-q": {
     "shortLabel": "type-q",
     "tooltip": "Kenney suburban — building-type-q (2×1, 18€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-q.png",
     "prefabKey": "suburban:building-type-q",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.24,
+      "depth": 0.89
+    }
   },
   "Kenney-Suburban-building-type-r": {
     "shortLabel": "type-r",
     "tooltip": "Kenney suburban — building-type-r (1×1, 10€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-r.png",
     "prefabKey": "suburban:building-type-r",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.03,
+      "depth": 1.02
+    }
   },
   "Kenney-Suburban-building-type-s": {
     "shortLabel": "type-s",
     "tooltip": "Kenney suburban — building-type-s (2×2, 34€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-s.png",
     "prefabKey": "suburban:building-type-s",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.41,
+      "depth": 1.09
+    }
   },
   "Kenney-Suburban-building-type-t": {
     "shortLabel": "type-t",
     "tooltip": "Kenney suburban — building-type-t (2×2, 34€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-t.png",
     "prefabKey": "suburban:building-type-t",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.31,
+      "depth": 1.41
+    }
   },
   "Kenney-Suburban-building-type-u": {
     "shortLabel": "type-u",
     "tooltip": "Kenney suburban — building-type-u (2×2, 34€)",
     "previewUrl": "/resources/kenney_city-kit-suburban_20/Previews/building-type-u.png",
     "prefabKey": "suburban:building-type-u",
-    "kitId": "suburban"
+    "kitId": "suburban",
+    "meshSize": {
+      "width": 1.43,
+      "depth": 1.09
+    }
   }
 });
 

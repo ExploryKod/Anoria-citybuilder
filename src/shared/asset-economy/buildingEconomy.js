@@ -652,8 +652,8 @@ export const BUILDING_ECONOMY = {
   'TradeWarehouse': {
     displayName: 'Entrepôt commercial',
     construction: { price: 120, category: 'industry' },
-    // Same manutention skill as the regular warehouse — deal goods still need handlers.
-    employment: { sector: 4, workerNeed: 4, requiredSkill: 'manutention' },
+    // Same sector and manutention skill as the regular warehouse — deal goods still need handlers.
+    employment: { sector: 2, workerNeed: 4, requiredSkill: 'manutention' },
     accounting: { maintenance: 5 },
     resourceRoles: [
       {
@@ -681,9 +681,10 @@ export const BUILDING_ECONOMY = {
   'Warehouse': {
     displayName: 'Entrepôt',
     construction: { price: 80, category: 'industry' },
-    // Handling goods is manual work: 4 workers with the 'manutention' skill, which the artisans hold
-    // (from their second tier). A skill of its own, so the labour priorities rank storage apart from crafts.
-    employment: { sector: 4, workerNeed: 4, requiredSkill: 'manutention' },
+    // Handling goods is trade work, run by the merchants like the market: 4 workers with the 'manutention'
+    // skill, which the merchants hold (from their second tier). A skill of its own, so the labour priorities
+    // rank storage apart from selling.
+    employment: { sector: 2, workerNeed: 4, requiredSkill: 'manutention' },
     accounting: { maintenance: 4 },
     resourceRoles: [
       {

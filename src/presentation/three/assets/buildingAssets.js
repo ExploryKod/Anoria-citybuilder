@@ -2585,7 +2585,7 @@ export const BUILDING_ASSETS = Object.freeze({
       group: 'houses',
       editorGroup: null,
       label: 'type-a',
-      tooltip: 'Maison d\' artisants (2×1, 18€)',
+      tooltip: 'Maison d\' artisants (2×2, 18€)',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-a.png' },
     },
     tags: ['suburban', 'building'],
@@ -2593,10 +2593,8 @@ export const BUILDING_ASSETS = Object.freeze({
     // socialCategoryCatalog.js for the gameplay tiers this mirrors. Each
     // entry reuses an existing, otherwise-unused Kenney suburban geometry —
     // see resolveBuildingMesh.js's resolveVisualBuildingId.
-    // All 3 variants are 2×1 like the base (type-a) — a mismatched footprint
-    // (e.g. type-f is 2×2) shifts the mesh's centering at evolution time,
-    // since footprint size drives the placement offset. Keep any future
-    // level variant assignment footprint-matched to its base house.
+    // Every house reserves the same 2×2 plot (see buildingFootprint.js) and its model is centred in it, so any
+    // model can serve any level whatever its own size.
     levelVariants: {
       2: 'Kenney-Suburban-building-type-d',
       3: 'Kenney-Suburban-building-type-e',
@@ -2663,8 +2661,7 @@ export const BUILDING_ASSETS = Object.freeze({
       icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-b.png' },
     },
     tags: ['suburban', 'building'],
-    // Visible tier evolution for merchants — all 3 variants are 2×2 like the
-    // base (type-b); see the footprint-matching note on House-Red above.
+    // Visible tier evolution for merchants; the models sit in the house's 2×2 plot (see House-Red above).
     levelVariants: {
       2: 'Kenney-Suburban-building-type-f',
       3: 'Kenney-Suburban-building-type-g',
@@ -2727,12 +2724,11 @@ export const BUILDING_ASSETS = Object.freeze({
       group: 'houses',
       editorGroup: null,
       label: 'type-c',
-      tooltip: 'Maison de Savant (2×1, 18€)',
+      tooltip: 'Maison de Savant (2×2, 18€)',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-c.png' },
     },
     tags: ['suburban', 'building'],
-    // Visible tier evolution for scholars — all 3 variants are 2×1 like the
-    // base (type-c); see the footprint-matching note on House-Red above.
+    // Visible tier evolution for scholars; the models sit in the house's 2×2 plot (see House-Red above).
     levelVariants: {
       2: 'Kenney-Suburban-building-type-h',
       3: 'Kenney-Suburban-building-type-i',
