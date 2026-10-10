@@ -38,8 +38,7 @@
 | Service vendu à une maison | maison (`service_purchase`, TTC) | entreprise (`service_sales`, HT) + ville (`vat`) | règlement, 1er du mois | `SettleProducerCharges.js`, `ProducerChargePolicy.serviceSaleLines` |
 | Subvention de service | ville (`service_subsidy`) | entreprise (`service_subsidy_received`) | règlement | idem |
 | Salaire d'entreprise | entreprise (`producer_wage`) | maison (`household_wage`, brut) | règlement | `wageSplitLines`, `SettleProducerCharges.js` |
-| Salaire de fonctionnaire | ville (`salary`) | maison (`public_wage`, brut) | règlement | `householdPublicPayOf`, `SettleProducerCharges.js` |
-| Allocation chômage | ville (`unemployment_benefit`) | maison (`household_benefit`) | règlement | idem |
+| Allocation chômage | ville (`unemployment_benefit`) | maison (`household_benefit`) | règlement | `householdPublicPayOf`, `SettleProducerCharges.js` |
 | IR sur le total du foyer | maison (`income_tax`, particulier) | ville (`payroll_tax`) | règlement | `withholdIncomeTax`, fin de `execute` |
 | Impôt citoyen | chaque maison imposable (`citizen_tax_paid`, particulier) | ville (`citizen_tax`, somme forfaitaire) | Novembre, 1×/an | `computeCitizenTaxByHouse`, `CollectCitizenTaxes.js` |
 | Impôt sur les sociétés | entreprise (`corporate_tax`) | ville (`corporate_tax_revenue`) | règlement | `buildingChargeLines` |
@@ -66,8 +65,8 @@ calcul se résout par itération (`#planMonth`), l'ensemble des factures payées
 - Fiches : `buildingFinanceInfoView.js` (compte d'exploitation, budget du mois, réconciliation, couleurs produits/charges),
   `houseResidentsInfoView.js` (liste des habitants), `buildingInfoGroupRegistry.js` (onglets par groupe).
 - Habitants : `HouseResidentsPolicy.js` (un enregistrement par habitant, dérivé des compteurs),
-  `CitizenNameCatalog.js` (prénoms), `HouseholdPublicPayPolicy.js` (fonctionnaires et chômeurs par foyer),
-  `HouseResidentsPayPolicy.js` (part de chaque habitant, relue du journal, jamais recalculée).
+  `CitizenNameCatalog.js` (prénoms), `HouseholdPublicPayPolicy.js` (chômeurs par foyer — les fonctionnaires sont
+  supprimés, voir §6.11), `HouseResidentsPayPolicy.js` (part de chaque habitant, relue du journal, jamais recalculée).
 - Emploi/population : `computeCityEmploymentSummary.js`, `computePopulationBreakdown.js`
   (`computeHouseholdEmploymentStatus`, la règle par foyer partagée avec la compta).
 - Distribution des biens : `RoundRobinDistribution.js` (plafond par solde, achat partiel, motifs), `DistributeResourceToConsumers.js`
@@ -77,7 +76,7 @@ calcul se résout par itération (`#planMonth`), l'ensemble des factures payées
 
 ## 5. État des tests
 
-- **Dernière exécution complète verte** : 228 suites, 1450 tests (après la tâche 4 ci-dessous).
+- **Dernière exécution complète verte** : 229 suites, 1458 tests (après la tâche 12 ci-dessous).
 - **Pas encore joué** : les tâches 1 à 4 n'ont pas été vérifiées dans `pnpm dev` (seulement par les tests).
 
 **À faire en premier** : une partie neuve (ou un préfab) pour regarder un mois complet, en particulier l'onglet
@@ -140,6 +139,31 @@ Habitants (tâche 1) et le compteur de chômeurs du HUD comparé aux foyers (tâ
     effectivement prendre en charge), au lieu d'un flag binaire indépendant du personnel. C'est un changement de
     mécanique de jeu (capacité, répartition des bénéficiaires non servis), pas un simple refactor technique — à
     explorer plus tard, pas commencé.
+11. ~~**Analyse : budget ville équilibré ?**~~ — fait (2026-10-10). Lecture du journal exporté réel
+    (`docs/ledgers/journal-2026-10-09-211547.json`, 3960 lignes/4 ans) : `unemployment_benefit` = 83 % de toute
+    dépense jamais enregistrée, et `vat` = 0,00 € sur l'ensemble de la période. Cause confirmée dans le code :
+    `DEFAULT_VAT_RATE_PERCENT`/`DEFAULT_VAT_GENERAL_RATE_PERCENT` valent 0 par défaut pour tout nouveau hameau
+    (`FiscalRateCatalog.js`) — le plus gros levier de recette ne génère rien tant que le joueur ne le découvre pas
+    et ne le relève pas lui-même. Deuxième cause : l'impôt citoyen seul (pop × ~2,08 €/mois) ne couvre qu'un quart
+    du salaire des fonctionnaires seul (pop × 8,33 €/mois) — la ville ne peut pas s'équilibrer sur la fiscalité
+    passive, il lui faut une économie active (IR, IS, TVA). Troisième cause : le chômage n'est pas plafonné et
+    grandit avec la population sans lien avec les emplois réellement construits. Pistes notées au joueur : défaut
+    TVA non nul, ou alerte « TVA à 0 % » visible ; revoir `unemploymentBenefitRate` (70 %) ou l'afficher clairement
+    comme coût ; revoir `citizenTaxPerCapita` face à `salaryPerMonth`.
+12. ~~**Fonctionnaires supprimés**~~ — fait (2026-10-10, « suppress it for now »). Un habitant est désormais soit
+    un travailleur, soit un chômeur — plus de part fixe (pop/12) réservée hors de tout vrai poste. Formules
+    simplifiées (`HouseholdPublicPayPolicy.js`, `HouseResidentsPolicy.js`, `computePopulationBreakdown.js`,
+    `computeCityEmploymentSummary.js`) ; `DistributeCityWorkers.js` ne réserve plus ce quota avant l'embauche
+    (`hireablePopOf`), donc tout le pool d'un foyer est embauchable. `ReferenceSalaryPayrollPolicy.js` (prévisualisation
+    admin jamais câblée à l'UI, 2 fonctions formatage mortes) supprimé en bloc. Les lignes `salary`/`public_wage`
+    déjà écrites dans une partie en cours restent lisibles (le journal n'est jamais réécrit — voir « No saved games
+    to migrate ») ; plus aucune nouvelle ligne de ce type ne sera produite. Conséquence observée sur le préfab
+    `anoria-tour-116` : son chômage mesuré passe de ≤1 à 4 (les ex-fonctionnaires sans poste réel deviennent
+    chômeurs) — moins cher pour la ville par personne (70 % du salaire de référence contre 100 %), mais une raison
+    de plus de garder des postes disponibles en face de la population. Tests :
+    `tests/contexts/accounting/householdPublicPay.regression.test.js`,
+    `tests/contexts/accounting/houseResidents.regression.test.js`,
+    `tests/contexts/employment/distributeCityWorkers.behavior.test.js`.
 
 ## 7. Questions ouvertes pour demain
 

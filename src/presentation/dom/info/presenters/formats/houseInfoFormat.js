@@ -15,12 +15,15 @@ import {
 import { computeHouseCitizenComposition } from '../../../../../composition/housingCatalog.js';
 import { buildingName, goodIcon, goodLabel, goodUnit } from '../../../shell/CatalogVocabulary.js';
 import {
-  getQuantityConsumerEntries,
+  getConsumerEntries,
   getQuantityConsumerEntry,
   getCycleRecipeEntries,
+  getTotalKeyForCategory,
 } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getServiceCategories } from '../../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
 import { describeActivitySupplyGap } from '../../../shell/BuildingNotifications.js';
+import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
 
 /**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
@@ -76,26 +79,92 @@ const formatNumber = (value) => Number(value).toLocaleString('fr-FR', { maximumF
 
 /**
  * Ressources tab — the house's NEEDS, not its goods: one card per need the catalog gives it (its diet, the
- * goods it wears out...), each reading what was used up last month over what was needed (8/8 = met, 4/8 = half
- * unmet). A need is met by ANY of its goods, so the need is what is counted; the detail of which good satisfied
- * it (wheat, carrot… / pots, plates…) is one click away, under the need it belongs to. The house holds no stock
- * of its own — the hub does — so nothing here reads one; the figures come from each need's own record
- * (`outcomeField`, see ConsumeResource.js). Names and icons come from the catalog (CatalogVocabulary), the needs
- * and their goods from the house's own consumer entries — a new need or good is a catalog entry, never a change here.
+ * goods it wears out, and now its services too — see below), each reading what was used up last month over
+ * what was needed (8/8 = met, 4/8 = half unmet). A need is met by ANY of its goods, so the need is what is
+ * counted; the detail of which good satisfied it (wheat, carrot… / pots, plates…) is one click away, under
+ * the need it belongs to. The house holds no stock of its own — the hub does — so nothing here reads one;
+ * the figures come from each need's own record (`outcomeField`, see ConsumeResource.js). Names and icons
+ * come from the catalog (CatalogVocabulary), the needs and their goods from the house's own consumer
+ * entries — a new need or good is a catalog entry, never a change here.
+ *
+ * Services (2026-10-10) sit under their own "Services" need rather than one card each: a service — flag
+ * (doctor, school, ...) or quantity (Chapel's faith) alike — is still a consumer entry and still a fact
+ * the house consumed or did not, so it belongs here exactly like the diet does. Which categories are
+ * "services" is read from the SAME catalog fact the Services tab's evolution requirements and the accounting
+ * side already use (ResourceCategoryCatalog's `kind: 'service'`), never a second list.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  */
 export function formatHouseResourcesModel(vm) {
-  const entries = vm.buildingType ? getQuantityConsumerEntries(vm.buildingType) : [getQuantityConsumerEntry()];
-  return {
-    caption: CONSUMED_LAST_MONTH_CAPTION,
-    needs: entries.map((entry, index) =>
+  const entries = vm.buildingType ? getConsumerEntries(vm.buildingType) : [getQuantityConsumerEntry()];
+  const serviceCategories = new Set(getServiceCategories());
+  const isService = (entry) => entry.categories.some((category) => serviceCategories.has(category));
+
+  const basicNeeds = entries
+    .filter((entry) => !isService(entry))
+    .map((entry, index) =>
       needOf(
         entry,
         index === 0 ? (vm.lastConsumption ?? null) : (vm.buildingRow?.[entry.outcomeField] ?? null),
         vm.buildingPop,
         vm.buildingRow?.supplyShortfall ?? null,
       )
-    ),
+    );
+  const serviceEntries = entries.filter(isService);
+
+  return {
+    caption: CONSUMED_LAST_MONTH_CAPTION,
+    needs: serviceEntries.length > 0 ? [...basicNeeds, servicesNeedOf(serviceEntries, vm)] : basicNeeds,
+  };
+}
+
+/**
+ * The "Services" need: one sub-card per service the house's catalog gives it, picked together under one
+ * aggregate ("6/8 servis") exactly like the diet's own goods sit under "Nourriture". A quantity-mode
+ * service (Chapel's faith) reuses `needOf` — it IS an ordinary quantity consumer entry, nothing special
+ * about it; a flag-mode one (doctor, school, ...) reads `servedFlags`, the same "served this period" fact
+ * the evolution requirements read too (see servicesInfoFormat.js) — this card asks "was I served", that
+ * one asks "does it count toward my next tier", so the same fact legitimately appears in both places.
+ * @param {ReadonlyArray<import('../../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleFacts>} serviceEntries
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ */
+function servicesNeedOf(serviceEntries, vm) {
+  const details = serviceEntries.map((entry) => {
+    if ((entry.consumption ?? 'quantity') === 'quantity') {
+      return needOf(entry, vm[entry.outcomeField] ?? null, vm.buildingPop, null).card;
+    }
+    return flagServiceCard(entry.categories[0], vm);
+  });
+  const metCount = details.filter((detail) => detail.met).length;
+  const met = details.length > 0 && metCount === details.length;
+  return {
+    kind: 'services',
+    card: {
+      kind: 'services',
+      icon: '🤝',
+      label: 'Services',
+      met,
+      valueText: `${metCount}/${details.length}`,
+      ariaLabel: `Services : ${metCount} sur ${details.length} servis ce mois-ci`,
+    },
+    details,
+  };
+}
+
+/** A flag-mode service's own sub-card: served this period (`servedFlags[category] === periodKey`) or not —
+ * cut off (could not pay) or simply not reached, same distinction the evolution requirements chip makes. */
+function flagServiceCard(category, vm) {
+  const { label, emoji } = getServiceCategoryDisplay(category);
+  const met = vm.periodKey != null && vm.servedFlags?.[category] === vm.periodKey;
+  const cutOff = vm.buildingRow?.serviceCutOff;
+  const insolvable = !met && vm.periodKey != null && cutOff?.monthIndex === vm.periodKey && cutOff?.categories?.includes(category);
+  const reason = insolvable ? 'insolvable' : 'inexistant';
+  return {
+    kind: category,
+    icon: emoji,
+    label,
+    met,
+    valueText: met ? '✓' : reason,
+    ariaLabel: met ? `${label} servi ce mois-ci` : `${label} non servi : ${reason}`,
   };
 }
 
@@ -126,7 +195,11 @@ function unmetKeywords(shortfall, totalKey, month) {
  * @param {object | null} shortfall The house's shortfall of the month (why a need was not met).
  */
 function needOf(entry, last, pop, shortfall) {
-  const { categories, totalKey } = entry;
+  const { categories } = entry;
+  // A single-category entry legally omits `totalKey` (it's its own total — see buildingCatalog.js's doc
+  // and ResourceRolePolicy.getTotalKeyForRole); resolve it the same way instead of assuming it is always
+  // explicit, or a quantity-mode need with one good (e.g. Chapel's faith) renders as "…"/"…".
+  const totalKey = entry.totalKey ?? getTotalKeyForCategory(categories[0]);
   const whole = (value) => Math.max(0, Math.floor(Number(value) || 0));
 
   const categoryCards = categories.map((category) => {
@@ -184,12 +257,13 @@ const NO_CYCLE_YET = '–';
 /**
  * Activité tab — the house's OWN business, if its catalog entry gives it one: every 'producer' entry declared
  * as a `cycle` becomes its own block (a house can run more than one, like House-Red's pots and cakes), each
- * showing the same three things regardless of what it makes or how many steps it takes:
- *   - its raw materials, in the same consommé/besoin shape as the Ressources tab's needs (`activityInputs`
- *     keeps what was taken, the catalog's own `amount` is the need — read fresh, never stored twice);
- *   - what it has finished (its own stock of the good it makes);
+ * a SINGLE row of card groups, close together within a group and apart between groups (2026-10-10):
+ *   - its raw materials, ONE card even when the recipe has several (the bottleneck ingredient — see
+ *     materialCardOf below) — a good-by-good breakdown was redundant with the step cards' own "waiting for
+ *     material" wording;
  *   - its manufacturing steps, one card each (a single-step recipe gets a single card), their progress read
- *     from `cycleState` and a stuck step called out from `activityShortfall`.
+ *     from `cycleState` and a stuck step called out from `activityShortfall`;
+ *   - what it has finished (its own stock of the good it makes), and what a hub last took of it.
  * A house type without any such entry gets an empty list — the tab still renders, saying so.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  */
@@ -212,7 +286,7 @@ function activityRecipeOf(entry, buildingRow, gaps = []) {
   const cycleState = buildingRow?.cycleState?.[category] ?? null;
 
   const inputs = entry.cycle.flatMap((step) => step.inputs ?? []);
-  const materials = inputs.map((input) => materialCardOf(input, lastInputs));
+  const material = materialCardOf(inputs, lastInputs);
 
   const stock = Math.max(0, Math.floor(Number(buildingRow?.stocks?.[category]) || 0));
   const productLabel = goodLabel(category);
@@ -229,27 +303,40 @@ function activityRecipeOf(entry, buildingRow, gaps = []) {
 
   const steps = entry.cycle.map((step, index) => stepCardOf(step, index, entry.cycle.length, cycleState, shortfall));
 
-  return { category, label: productLabel, materials, product, collected, steps, gapMessages };
+  return { category, label: productLabel, material, product, collected, steps, gapMessages };
 }
 
 /**
- * One raw material: what was taken the last cycle it ran, over what the catalog's own step declares — the
- * same "consommé/besoin" pairing as a personal need's card.
+ * The raw materials, as ONE card: the bottleneck ingredient (the smallest "taken" of the last cycle), so a
+ * recipe with several inputs (carrot cake's wheat/carrot/oil) still reads as a single figure — 0 when any
+ * one of them has not moved at all, the same "waiting for material" state the step cards already name in
+ * words, just conveyed here by the number alone. `met` only once every input reached its own need.
+ * @param {ReadonlyArray<{ category: string, amount: number }>} inputs
+ * @param {object | null} lastInputs
  */
-function materialCardOf(input, lastInputs) {
-  const label = goodLabel(input.category);
-  const needed = Math.max(0, Math.floor(Number(input.amount) || 0));
-  const taken = lastInputs ? Math.max(0, Math.floor(Number(lastInputs.takenByCategory?.[input.category]) || 0)) : 0;
-  const met = lastInputs != null && taken >= needed;
+function materialCardOf(inputs, lastInputs) {
+  const label = 'Matières premières';
+  const icon = '🧺';
+  if (inputs.length === 0 || !lastInputs) {
+    return { kind: 'materials', icon, label, met: false, valueText: NO_CYCLE_YET, ariaLabel: `${label} : pas encore de cycle` };
+  }
+  const whole = (value) => Math.max(0, Math.floor(Number(value) || 0));
+  let minTaken = Infinity;
+  let met = true;
+  for (const input of inputs) {
+    const taken = whole(lastInputs.takenByCategory?.[input.category]);
+    if (taken < minTaken) minTaken = taken;
+    if (taken < whole(input.amount)) met = false;
+  }
   return {
-    kind: input.category,
-    icon: goodIcon(input.category),
+    kind: 'materials',
+    icon,
     label,
     met,
-    valueText: lastInputs ? `${taken}/${needed}` : NO_CYCLE_YET,
-    ariaLabel: lastInputs
-      ? `${label} : ${taken} sur ${needed} consommé le dernier cycle${met ? ', besoin couvert' : ', besoin non couvert'}`
-      : `${label} : pas encore de cycle`,
+    valueText: String(minTaken),
+    ariaLabel: met
+      ? `${label} : besoin couvert le dernier cycle`
+      : `${label} : besoin non couvert le dernier cycle`,
   };
 }
 

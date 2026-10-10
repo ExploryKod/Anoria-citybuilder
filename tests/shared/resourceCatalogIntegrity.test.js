@@ -14,7 +14,6 @@ import path from 'path';
 import { describe, test, expect } from '@jest/globals';
 import { buildingCatalog } from '../../src/shared/building-catalog/buildingCatalog.js';
 import { SOCIAL_CATEGORY } from '../../src/shared/population/socialCategoryCatalog.js';
-import { CITIZENS_PER_CIVIL_SERVANT } from '../../src/contexts/accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
 import { MONTHS } from '../../src/shared/time/TimeCalendar.js';
 import {
   getAllCategoriesForRole,
@@ -281,7 +280,9 @@ describe('economy catalog — the food loop can be closed', () => {
 
   test('the farmers needed per inhabitant fit in the labor pool of the farm-capable groups', () => {
     const basketsPerInhabitantPerYear = getPerCapitaDemand() * MONTHS.length;
-    const workersPerInhabitant = 1 - 1 / CITIZENS_PER_CIVIL_SERVANT;
+    // The whole worker pool is hireable — civil servants were removed (2026-10-10, "suppress it for now"):
+    // nothing is set aside before hiring (see DistributeCityWorkers.js's hireablePopOf).
+    const workersPerInhabitant = 1;
 
     for (const { type, farmersPerBasket } of farms) {
       const farmersPerInhabitant = basketsPerInhabitantPerYear * farmersPerBasket;

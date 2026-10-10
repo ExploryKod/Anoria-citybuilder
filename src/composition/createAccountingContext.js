@@ -774,7 +774,7 @@ export function createAccountingContext(deps = {}) {
         residents,
         entries,
         { houseId, year: now.year, month: now.monthIndex + 1 },
-        { predictedPublicPay: expectedPay.publicPay, predictedBenefit: expectedPay.benefit },
+        { predictedBenefit: expectedPay.benefit },
       );
       const payOf = new Map(breakdown.map((entry) => [entry.id, entry]));
 

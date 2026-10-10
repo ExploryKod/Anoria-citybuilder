@@ -109,6 +109,13 @@ function renderGoodBoard(model, good, rerender) {
   const section = document.createElement('div');
   section.className = 'clients-good-board';
 
+  // Nothing here applies to a good that never reaches a hub (see buildingCatalog.js's `deliversTo`):
+  // there is no client PRIORITY to set, since it never goes to a market or workshop in the first place.
+  if (good.deliversDirectlyToHouses) {
+    appendStatusMessage(section, 'Ce bien part directement vers les habitants : pas de client à gérer ici.', 'neutral');
+    return section;
+  }
+
   const hint = document.createElement('p');
   hint.className = 'clients-hint';
   hint.textContent = 'Ce bâtiment sert ses clients dans cet ordre : 1 = servi en premier. La croix arrête de servir un client.';

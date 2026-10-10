@@ -14,12 +14,20 @@ import { describe, expect, test } from '@jest/globals';
 import { SOCIAL_CATEGORY } from '../../../src/shared/population/socialCategoryCatalog.js';
 import { buildingCatalog } from '../../../src/shared/building-catalog/buildingCatalog.js';
 
-/** Earliest tier (any group) whose requirements read this service category. */
+/**
+ * Earliest tier (any group) whose requirements read this service category — 'serviceCoverage' (flag mode)
+ * or 'serviceDemandMet' (a service turned into an ordinary resource, e.g. Chapel's faith since 2026-10-10):
+ * the deadlock this guards against is about STAFFING the distributor, which both mechanisms share.
+ */
 function earliestTierRequiring(category) {
   let earliest = Infinity;
   for (const group of Object.values(SOCIAL_CATEGORY)) {
     for (const [tier, def] of Object.entries(group.tiers)) {
-      if (def.requirements.some((r) => r.kind === 'serviceCoverage' && r.category === category)) {
+      if (
+        def.requirements.some(
+          (r) => (r.kind === 'serviceCoverage' || r.kind === 'serviceDemandMet') && r.category === category
+        )
+      ) {
         earliest = Math.min(earliest, Number(tier));
       }
     }
@@ -40,7 +48,9 @@ function earliestTierGranting(skill, level) {
 
 describe('service staffing readiness (no tier-gate deadlock)', () => {
   const gatedServices = Object.entries(buildingCatalog).flatMap(([id, def]) => {
-    const role = def.resourceRoles?.find((r) => r.role === 'distributor' && r.consumption === 'flag');
+    // Any distributor, flag or quantity: the staffing deadlock this guards against doesn't care which
+    // mechanism moves the good, only that a human has to be on duty for either to run at all.
+    const role = def.resourceRoles?.find((r) => r.role === 'distributor');
     if (!role || !def.employment?.requiredSkill) return [];
     return role.categories
       .filter((category) => Number.isFinite(earliestTierRequiring(category)))

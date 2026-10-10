@@ -55,7 +55,7 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   iron: Object.freeze({ emoji: '⚙️', label: 'Fer', unit: unitOf('lingot', 'lingots') }),
   gold: Object.freeze({ emoji: '🥇', label: 'Or', unit: unitOf('lingot', 'lingots') }),
   // Services travel the same chain as goods: each delivered unit is priced here, and the city subsidises its share.
-  faith: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '🙏', label: 'Foi', baseValue: 0.5 }),
+  faith: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '🙏', label: 'Foi', unit: unitOf('cérémonie', 'cérémonies'), baseValue: 0.5 }),
   school: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '🎓', label: 'École', baseValue: 1.5 }),
   library: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '📖', label: 'Bibliothèque', baseValue: 1 }),
   doctor: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '🩺', label: 'Cabinet médical', baseValue: 2 }),

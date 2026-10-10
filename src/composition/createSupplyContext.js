@@ -45,6 +45,7 @@ import {
 } from '../contexts/supply/domain/policies/HubStorageOrdersPolicy.js';
 import { getCategoriesForRole } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { unitPriceOf } from '../shared/resource-catalog/ValueChainCatalog.js';
+import { getServiceCategories } from '../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { getSharedEventBus } from './sharedEventBus.js';
 import {
   hasResourceRole,
@@ -204,11 +205,18 @@ export function createSupplyContext({
           distributorId,
           transfers.map((t) => ({ houseId: t.consumerId, category: t.category, amount: t.amount }))
         );
-        // Each unit is paid when it is delivered: one purchase per house and good, at the chain's final price.
+        // Each unit of a GOOD is paid when it is delivered: one purchase per house and good, at the chain's
+        // final price (TTC, extracted here). A service is not a good: it is a prestation, priced HT with the
+        // VAT added on top, and settled once a month in arrears (subsidy, insolvency) by SettleProducerCharges
+        // from sumServiceFlows — never here, or it would be billed twice (this instant TTC-shaped line, then
+        // the arrears service_purchase line for the same delivery).
+        const serviceCategories = getServiceCategories();
+        const goodsTransfers = transfers.filter((t) => !serviceCategories.includes(t.category));
+        if (goodsTransfers.length === 0) return;
         const distributor = await supplyBuildingRepositoryImpl.findById(distributorId);
         if (!distributor) throw new Error(`[supply] distributor ${distributorId} of a delivery is not in the city`);
         const purchases = new Map();
-        for (const transfer of transfers) {
+        for (const transfer of goodsTransfers) {
           const key = `${transfer.consumerId}>${transfer.category}`;
           const line = purchases.get(key) ?? {
             houseId: transfer.consumerId,

@@ -261,6 +261,9 @@ describe('Supply — RunMonthlyResourceCycle', () => {
     });
 
     test('a service rides the supply chain, and is logged as leaving the building that distributes it', async () => {
+      // Faith left flag mode (2026-10-10): the chapel now produces and distributes it exactly like a
+      // market sells food — round-robin, one unit per pass — so, like the wheat delivery above, this is
+      // several rows summing to the house's real need (1/resident/month), not one row of a flat amount.
       const houseId = createBuildingInstanceId();
       const chapelId = createBuildingInstanceId();
       await seedBuilding(row(houseId, 'House-Red', 1, { pop: 12 }));
@@ -271,11 +274,14 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       const faith = (await supply.getAllSupplyTraceabilityTransactions()).filter(
         (t) => t.toId === houseId && t.foodType === 'faith'
       );
-      expect(faith).toHaveLength(1);
+      expect(faith.length).toBeGreaterThan(0);
+      expect(faith.reduce((sum, t) => sum + t.quantity, 0)).toBe(12);
       // From the chapel — and not typed as a market delivery
-      expect(faith[0].fromId).toBe(chapelId);
-      expect(faith[0].fromType).toBe('Chapel');
-      expect(faith[0].transactionType).toBe('distributor_to_consumer');
+      for (const transfer of faith) {
+        expect(transfer.fromId).toBe(chapelId);
+        expect(transfer.fromType).toBe('Chapel');
+        expect(transfer.transactionType).toBe('distributor_to_consumer');
+      }
     });
   });
 

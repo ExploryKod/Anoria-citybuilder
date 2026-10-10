@@ -94,7 +94,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 1 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
+          Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
         ]),
         // 'artisanat' (pottery workshops) — sector 3, this group's own
         // Industries sector (see eligibleSectors above), same tier as the
@@ -108,7 +108,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 4 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
+          Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
           Object.freeze({ kind: 'demandMet' }),
           Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
         ]),
@@ -119,7 +119,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 8 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
+          Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
           Object.freeze({ kind: 'demandMet' }),
           Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
           Object.freeze({ kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 }),
@@ -132,7 +132,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 12 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
+          Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
           Object.freeze({ kind: 'demandMet' }),
           Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
           Object.freeze({ kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 }),
@@ -158,7 +158,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 1 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
+          Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
         ]),
         // 'finance' (the bank) lands here too, same tier as 'vente-alimentaire' (the market): both are the
         // group's own Commerces sector, no separate trust requirement of their own.
@@ -169,7 +169,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 4 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
+          Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
           Object.freeze({ kind: 'demandMet' }),
           Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
         ]),
@@ -180,7 +180,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 8 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
+          Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
           Object.freeze({ kind: 'demandMet' }),
           Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
           Object.freeze({ kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 }),
@@ -193,7 +193,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 12 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
+          Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
           Object.freeze({ kind: 'demandMet' }),
           Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
           Object.freeze({ kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 }),
@@ -219,7 +219,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 1 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
+          Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
         ]),
         // 'medical' 1 lands here (not at tier 3) so Doctor can already be
         // staffed BY the time some house first reaches tier 3 and starts
@@ -233,7 +233,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 4 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
+          Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
           Object.freeze({ kind: 'demandMet' }),
           Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
         ]),
@@ -245,7 +245,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 8 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
+          Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
           Object.freeze({ kind: 'demandMet' }),
           Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
           Object.freeze({ kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 }),
@@ -259,7 +259,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
         requirements: Object.freeze([
           Object.freeze({ kind: 'roadAccess' }),
           Object.freeze({ kind: 'population', min: 12 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
+          Object.freeze({ kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' }),
           Object.freeze({ kind: 'demandMet' }),
           Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
           Object.freeze({ kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 }),

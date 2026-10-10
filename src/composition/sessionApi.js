@@ -22,7 +22,6 @@ import {
   OBJECTIVE_CATALOG,
   isObjectiveRequirementMet,
 } from '../contexts/accounting/domain/catalogs/ObjectiveCatalog.js';
-import { computeReferenceSalaryPayrollBreakdown } from '../contexts/accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
 import { hasRoadAccessFromCount } from '../contexts/parcels/domain/value-objects/RoadAccess.js';
 import {
   getBuildingsNamesInZone,
@@ -86,8 +85,6 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     getSalarySettings: () => accounting.getSalarySettings(),
     setSalarySettings: (partial) => accounting.setSalarySettings(partial),
     ensureHamletFiscalRates: (hamletId) => accounting.ensureHamletFiscalRates(hamletId),
-    computeReferenceSalaryPayrollBreakdown: (params) =>
-      computeReferenceSalaryPayrollBreakdown(params),
 
     ensureCustomsRate: () => accounting.ensureCustomsRate(),
     getServiceSubsidies: () => accounting.getServiceSubsidies(),

@@ -275,6 +275,40 @@ export function appendHouseholdSkills(container, skills) {
 }
 
 /**
+ * One metric card's DOM element — the card shape any icon+value fact uses (a resource's have/need, a tier
+ * requirement's current/target, an activity's material/step/product...): {icon, label, met, valueText,
+ * ariaLabel, detailText?, keywords?}. Shared by `appendMetricCards` (one even grid) and
+ * `appendMetricCardGroups` (several tight clusters in one row) so both read the exact same markup.
+ * @param {{ icon: string, label: string, met: boolean, valueText: string, ariaLabel: string, detailText?: string, keywords?: Array<{ kind: string, label: string, units: number }> }} card
+ * @param {{ onSelect?: (card: object, element: HTMLElement, scope: HTMLElement) => void, scope?: HTMLElement }} [options]
+ */
+function createMetricCardElement(card, { onSelect, scope } = {}) {
+  // A card that can be picked (to open its detail) is a button; a plain one is only a figure.
+  const el = document.createElement(onSelect ? 'button' : 'div');
+  el.className = `building-info-metric-card${card.met ? ' building-info-metric-card--met' : ''}`;
+  if (onSelect) {
+    el.type = 'button';
+    el.setAttribute('aria-pressed', 'false');
+    el.addEventListener('click', () => onSelect(card, el, scope));
+  }
+  el.title = card.ariaLabel;
+  el.setAttribute('aria-label', card.ariaLabel);
+  el.innerHTML = `<span class="building-info-metric-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-metric-card__label">${card.label}</span><span class="building-info-metric-card__value">${card.valueText}</span>${card.detailText ? `<span class="building-info-metric-card__detail">${card.detailText}</span>` : ''}`;
+  if (card.keywords?.length) {
+    const keywords = document.createElement('span');
+    keywords.className = 'building-info-metric-card__keywords';
+    for (const keyword of card.keywords) {
+      const chip = document.createElement('span');
+      chip.className = `building-info-metric-card__keyword building-info-metric-card__keyword--${keyword.kind}`;
+      chip.textContent = `${keyword.label} : ${keyword.units}`;
+      keywords.appendChild(chip);
+    }
+    el.appendChild(keywords);
+  }
+  return el;
+}
+
+/**
  * Generic metric-card grid — one card shape for any icon+value fact (a
  * resource's have/need, a tier requirement's current/target, ...). Adding a
  * new one never touches this function: it only reads
@@ -290,33 +324,40 @@ export function appendMetricCards(container, cards, { onSelect } = {}) {
   grid.className = 'building-info-metrics';
 
   for (const card of cards) {
-    // A card that can be picked (to open its detail) is a button; a plain one is only a figure.
-    const el = document.createElement(onSelect ? 'button' : 'div');
-    el.className = `building-info-metric-card${card.met ? ' building-info-metric-card--met' : ''}`;
-    if (onSelect) {
-      el.type = 'button';
-      el.setAttribute('aria-pressed', 'false');
-      el.addEventListener('click', () => onSelect(card, el, grid));
-    }
-    el.title = card.ariaLabel;
-    el.setAttribute('aria-label', card.ariaLabel);
-    el.innerHTML = `<span class="building-info-metric-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-metric-card__label">${card.label}</span><span class="building-info-metric-card__value">${card.valueText}</span>${card.detailText ? `<span class="building-info-metric-card__detail">${card.detailText}</span>` : ''}`;
-    if (card.keywords?.length) {
-      const keywords = document.createElement('span');
-      keywords.className = 'building-info-metric-card__keywords';
-      for (const keyword of card.keywords) {
-        const chip = document.createElement('span');
-        chip.className = `building-info-metric-card__keyword building-info-metric-card__keyword--${keyword.kind}`;
-        chip.textContent = `${keyword.label} : ${keyword.units}`;
-        keywords.appendChild(chip);
-      }
-      el.appendChild(keywords);
-    }
-    grid.appendChild(el);
+    grid.appendChild(createMetricCardElement(card, { onSelect, scope: grid }));
   }
 
   container.appendChild(grid);
   return grid;
+}
+
+/**
+ * One row, several tight clusters — an activity's raw material, its steps, its finished product, what was
+ * collected: each a small group of cards close together, with normal spacing BETWEEN groups so the player
+ * reads the phases apart at a glance, unlike `appendMetricCards`' one even grid. Each entry in `groups` is
+ * itself a plain card array (1 card is still its own, single-card group); an empty or missing group is
+ * skipped, never an empty cluster.
+ * @param {HTMLElement} container
+ * @param {ReadonlyArray<ReadonlyArray<{ icon: string, label: string, met: boolean, valueText: string, ariaLabel: string }>>} groups
+ */
+export function appendMetricCardGroups(container, groups) {
+  const nonEmpty = (groups ?? []).filter((group) => group?.length);
+  if (nonEmpty.length === 0) return null;
+
+  const row = document.createElement('div');
+  row.className = 'building-info-activity-row';
+
+  for (const group of nonEmpty) {
+    const cluster = document.createElement('div');
+    cluster.className = 'building-info-activity-group';
+    for (const card of group) {
+      cluster.appendChild(createMetricCardElement(card));
+    }
+    row.appendChild(cluster);
+  }
+
+  container.appendChild(row);
+  return row;
 }
 
 /**

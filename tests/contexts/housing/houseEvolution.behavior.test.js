@@ -88,7 +88,7 @@ describe('Housing — house progression', () => {
         pop: 3,
         roadCount: 1,
         residentialGroup: 'artisans',
-        servedFlags: { faith: 5 },
+        lastFaithConsumption: { month: 5, totalUnfed: 0 },
         periodKey: 5,
       });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_SPECIALIZED);
@@ -102,7 +102,6 @@ describe('Housing — house progression', () => {
         pop: 3,
         roadCount: 1,
         residentialGroup: 'artisans',
-        servedFlags: {},
         periodKey: 5,
       });
       expect(result.targetLevel).toBe(HOUSE_LEVEL_AUTARKY);
@@ -129,6 +128,7 @@ describe('Housing — house progression', () => {
         roadCount: 1,
         residentialGroup: 'artisans',
         servedFlags,
+        lastFaithConsumption: { month: periodKey, totalUnfed: 0 },
         // The house ate, but drew from one good only
         lastConsumption: { month: periodKey, demand: 12, taken: 12, totalUnfed: 0, categoriesTaken: ['carrot'] },
         periodKey,
@@ -167,7 +167,7 @@ describe('Housing — house progression', () => {
         pop: 2,
         roadCount: 1,
         residentialGroup: 'artisans',
-        servedFlags: { faith: 5 },
+        lastFaithConsumption: { month: 5, totalUnfed: 0 },
         periodKey: 5,
       });
       expect(result.changed).toBe(false);
@@ -180,7 +180,6 @@ describe('Housing — house progression', () => {
         pop: 2,
         roadCount: 1,
         residentialGroup: 'artisans',
-        servedFlags: {},
         periodKey: 5,
       });
       expect(result.changed).toBe(true);
@@ -194,7 +193,8 @@ describe('Housing — house progression', () => {
         pop: 4,
         roadCount: 1,
         residentialGroup: 'artisans',
-        servedFlags: { faith: 5, doctor: 5 },
+        servedFlags: { doctor: 5 },
+        lastFaithConsumption: { month: 5, totalUnfed: 0 },
         lastConsumption: { month: 5, totalUnfed: 0 },
         periodKey: 5,
       });
@@ -209,7 +209,7 @@ describe('Housing — house progression', () => {
         pop: 4,
         roadCount: 1,
         residentialGroup: 'artisans',
-        servedFlags: { faith: 5 },
+        lastFaithConsumption: { month: 5, totalUnfed: 0 },
         periodKey: 5,
       });
       expect(result.changed).toBe(false);
@@ -222,7 +222,6 @@ describe('Housing — house progression', () => {
         pop: 3,
         roadCount: 1,
         residentialGroup: 'scholars',
-        servedFlags: {},
         periodKey: 5,
       });
       expect(result.changed).toBe(false);
@@ -235,7 +234,7 @@ describe('Housing — house progression', () => {
         pop: 3,
         roadCount: 1,
         residentialGroup: 'scholars',
-        servedFlags: { faith: 5 },
+        lastFaithConsumption: { month: 5, totalUnfed: 0 },
         periodKey: 5,
       });
       expect(result.changed).toBe(true);
@@ -259,7 +258,7 @@ describe('Housing — house progression', () => {
           pop: 2,
           level: 1,
           roadCount: 1,
-          servedFlags: { faith: 5 },
+          lastFaithConsumption: { month: 5, totalUnfed: 0 },
         }),
       ]);
       command = new EvolveHouseBuilding(repo);
@@ -305,6 +304,7 @@ describe('Housing — house progression', () => {
         level: 3,
         pop: 18,
         servedFlags,
+        lastFaithConsumption: { month: periodKey, totalUnfed: 0 },
         lastConsumption: { month: periodKey, demand: 18, taken: 0, totalUnfed: 18, categoriesTaken: [] },
       });
       const repository = new InMemoryHousingEvolutionRepository([starving('a', 1), starving('b', 2)]);

@@ -69,6 +69,28 @@ const REQUIREMENT_DESCRIPTORS = Object.freeze({
       context.periodKey - servedAt < coveragePeriods;
     return { current: met ? 1 : 0, target: 1, met };
   },
+  // A service turned into an ordinary quantity-consumed resource (e.g. Chapel's faith, since 2026-10-10 —
+  // see buildingEconomy.js's FAITH_CONSUMER) is covered when its own demand was fully met THIS period, same
+  // freshness rule as `demandMet` below, but reading `context[requirement.outcomeField]` instead of the
+  // hardcoded `lastConsumption` — a house can hold more than one such service at once, each under its own
+  // field name (`lastFaithConsumption`, ...), unlike the single diet `demandMet` covers. `outcomeField` is
+  // deliberately REQUIRED with no default, same discipline as `serviceCoverage`'s `coveragePeriods`: a tier
+  // that declares this without it is a catalog mistake, not a "guess the field" case.
+  serviceDemandMet: (requirement, context) => {
+    const { outcomeField, category } = requirement;
+    if (!outcomeField) {
+      console.error(
+        `[HouseTierRequirementPolicy] serviceDemandMet requirement for category "${category}" is missing "outcomeField" in socialCategoryCatalog.js — treating as unmet.`,
+      );
+      return { current: 0, target: 1, met: false };
+    }
+    const outcome = context[outcomeField];
+    const met =
+      Number.isFinite(context.periodKey) &&
+      outcome?.month === context.periodKey &&
+      outcome?.totalUnfed === 0;
+    return { current: met ? 1 : 0, target: 1, met };
+  },
   // A house's demand for its quantity-consumed good was fully met THIS
   // period — see ConsumeResource.js's `lastConsumption`
   // (`{ month, totalUnfed, ... }`). Deliberately named for "a good" in

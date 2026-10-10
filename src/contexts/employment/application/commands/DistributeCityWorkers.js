@@ -4,7 +4,6 @@ import {
   isLaborSource,
 } from '../../domain/policies/BuildingRolePolicy.js';
 import { workerPopFromHouse } from '../../domain/policies/LaborPoolPolicy.js';
-import { computeCivilServantCount } from '../../../accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
 import {
   allocateWorkers,
   orderSkillsByPriority,
@@ -81,12 +80,9 @@ export class DistributeCityWorkers {
       (b) => isEligibleWorkplace(b),
     );
 
-    // The city takes its civil servants first (one per twelve residents, per house — see
-    // computeHouseholdEmploymentStatus): a house's hireable pool is what is left once they are set aside, so
-    // hiring can never again claim more residents than a house has (the rule HouseResidentsPolicy already enforces
-    // on the money side).
-    const hireablePopOf = (building) =>
-      Math.max(0, workerPopFromHouse(building.type, building.pop, building.level) - computeCivilServantCount(building.pop));
+    // A house's whole worker pool is hireable — civil servants were removed (2026-10-10, "suppress it for
+    // now"): nothing is set aside before hiring anymore (see computeHouseholdEmploymentStatus).
+    const hireablePopOf = (building) => workerPopFromHouse(building.type, building.pop, building.level);
 
     const remainingPopById = new Map(
       laborSources.map((building) => [building.id, hireablePopOf(building)]),

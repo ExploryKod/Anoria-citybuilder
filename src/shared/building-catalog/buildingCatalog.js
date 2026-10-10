@@ -166,6 +166,14 @@
  * @property {string[]} [clients] On a 'producer' whose goods go to a hub: the building types it serves first, in
  *   order (the default the player can change in the Clients tab). Every other building type that buys these goods
  *   follows, in catalog order — a type is never left out by omission.
+ * @property {'hub' | 'house'} [deliversTo] On a 'producer': where its output structurally ends up.
+ *   Omitted (default) means 'hub' — collected by a 'hub'-role building elsewhere, the chain every
+ *   producer used until 2026-10-10. 'house' means it never reaches a hub at all: the SAME building's own
+ *   'distributor' role (no hubLink — see below) hands it straight to houses instead (e.g. Chapel's own
+ *   'faith', produced and distributed by Chapel alone). Declared explicitly rather than inferred from
+ *   "does any hub role happen to exist for this category" so a later gameplay change (a different
+ *   building playing hub, a producer switching destination) is a catalog edit, never new code — read by
+ *   GetClientPriorityBoardForBuilding.js (Clients-tab message) and marketInfoFormat.js (État-tab label).
  * @property {number} [emptyRate] On a 'hub' role: units of a good it gives to the other hubs per tick when its order
  *   for that good is "empty" (see EmptyHubGoods.js). Required on any hub that can be ordered to empty.
  * @property {string} [outcomeField] On a 'quantity' 'consumer' role: the row field its outcome (units wanted, taken,

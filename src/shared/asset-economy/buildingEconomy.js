@@ -231,7 +231,27 @@ const HOUSE_GATHERING = {
   periodLock: { field: 'lastSubsistenceMonth', unit: 'month' },
 };
 
-/** One coverage-flag consumer per service category (see socialCategoryCatalog.js for which tier needs which). */
+/**
+ * Faith as a real need, not a coverage flag: 1 cérémonie per inhabitant per month, same shape as the diet
+ * or the goods (ConsumeResource drains it, Chapel's own producer role refills it) — the pilot for turning a
+ * service into an ordinary resource (2026-10-10). Its capacity (`FAITH_CEREMONIES_PER_MONTH` below) is a flat
+ * placeholder, not a tuned number: it is not yet derived from Chapel's staffing (a separate, undecided idea —
+ * see docs/ECONOMIE_REPRISE.md §6.10), so one understaffed or short-handed chapel can leave part of the city
+ * uncovered where the old flag mode never could.
+ */
+/** Placeholder monthly capacity of ONE chapel, regardless of its staffing — see the comment above. */
+const FAITH_CEREMONIES_PER_MONTH = 120;
+const FAITH_CONSUMER = {
+  role: 'consumer',
+  categories: ['faith'],
+  amount: 1,
+  stockTarget: { periods: 1 },
+  schedule: { unit: 'always' },
+  periodLock: { field: 'lastFaithMonth', unit: 'month' },
+  outcomeField: 'lastFaithConsumption',
+};
+
+/** One coverage-flag consumer per (still-flag) service category (see socialCategoryCatalog.js for which tier needs which). */
 const serviceConsumer = (category) => ({
   role: 'consumer',
   categories: [category],
@@ -277,7 +297,7 @@ const HOUSE_RESOURCE_ROLES = [
   HOUSE_HEAT_CONSUMER,
   HOUSE_LIGHT_CONSUMER,
   HOUSE_GATHERING,
-  serviceConsumer('faith'),
+  FAITH_CONSUMER,
   serviceConsumer('school'),
   serviceConsumer('library'),
   serviceConsumer('doctor'),
@@ -784,19 +804,39 @@ export const BUILDING_ECONOMY = {
     // No hub leg — distributes straight from itself each cycle, same
     // pattern RunCityResourceCycle's own docstring anticipates for a
     // service like this (compare Market-Stall's hubLink above: none here).
-    resourceRoles: [{
-      role: 'distributor',
-      categories: ['faith'],
-      // Unlimited — faith reaches every road-connected house on the map,
-      // not just ones within a fixed tile radius (2026-09-11: was `range: 5`).
-      // `Infinity` is honest about "every tile present in the game" without
-      // hardcoding any particular map's dimensions — ResourceRangePolicy's
-      // `isWithinRange` is a plain `<=` comparison, so this flows through
-      // with no special-casing anywhere it's read.
-      range: Infinity,
-      schedule: { unit: 'always' },
-      consumption: 'flag',
-    }],
+    //
+    // Pilot (2026-10-10): 'faith' left flag mode — a chapel now PRODUCES cérémonies (from labour alone, like
+    // the network provider's bandwidth) and DISTRIBUTES them exactly like a market sells food, into each
+    // house's own FAITH_CONSUMER need (1/resident/month, drained by ConsumeResource). FAITH_CEREMONIES_PER_MONTH
+    // is a flat placeholder standing in for "staffing-derived capacity" (not built yet — see
+    // docs/ECONOMIE_REPRISE.md §6.10): unlike the old flag mode, which always reached every house in range for
+    // free, this chapel can now run short and leave part of the city's demand unmet.
+    resourceRoles: [
+      {
+        role: 'producer',
+        categories: ['faith'],
+        schedule: { unit: 'always' },
+        amount: FAITH_CEREMONIES_PER_MONTH,
+        periodLock: { field: 'lastFaithProductionMonth', unit: 'month' },
+        // Never reaches a hub — Chapel's own 'distributor' role below hands it straight to houses.
+        deliversTo: 'house',
+      },
+      {
+        role: 'distributor',
+        categories: ['faith'],
+        // Unlimited — faith reaches every road-connected house on the map,
+        // not just ones within a fixed tile radius (2026-09-11: was `range: 5`).
+        // `Infinity` is honest about "every tile present in the game" without
+        // hardcoding any particular map's dimensions — ResourceRangePolicy's
+        // `isWithinRange` is a plain `<=` comparison, so this flows through
+        // with no special-casing anywhere it's read.
+        range: Infinity,
+        schedule: { unit: 'always' },
+        // Same figure as the producer's own monthly output: this stock buffers one month of production
+        // between the two roles, nothing more (ConsumeResource drains it from the house side, not here).
+        maxStock: FAITH_CEREMONIES_PER_MONTH,
+      },
+    ],
   },
   // Legacy save alias — same building as Chapel, kept for old saves
   'Church-002': { displayName: 'Chapelle', construction: { price: 60, category: 'public' } },

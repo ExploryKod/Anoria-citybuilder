@@ -5,7 +5,7 @@ const CUMULATIVE_REQUIREMENTS = (min) => {
   const base = [
     { kind: 'roadAccess' },
     { kind: 'population', min },
-    { kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 },
+    { kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' },
   ];
   if (min < 4) return base;
   const withDoctor = [

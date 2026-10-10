@@ -253,6 +253,18 @@ export function getQuantityConsumerEntries(buildingType) {
 }
 
 /**
+ * Every 'consumer' entry a building type declares, flag or quantity mode alike — what it consumes, full
+ * stop, unlike getQuantityConsumerEntries which only ever saw the quantity half (a service's coverage flag
+ * was invisible to it). The Ressources tab reads this to show every need as a fact — a number where the
+ * mechanism is a depleting stock, a reached/not-reached flag where it is not (see houseInfoFormat.js).
+ * @param {string} buildingType
+ * @returns {import('./buildingCatalog.js').ResourceRoleFacts[]}
+ */
+export function getConsumerEntries(buildingType) {
+  return getResourceRoles(buildingType).filter((entry) => entry.role === 'consumer');
+}
+
+/**
  * Every 'producer' entry declared as a `cycle` (a recipe with steps), in declaration order — a house's own
  * business (decorating pots, baking cakes, writing books, dealing goods) as much as a workshop's. A house's
  * OTHER producer entry, its own gathering, declares a plain `schedule` instead and is never one of these.

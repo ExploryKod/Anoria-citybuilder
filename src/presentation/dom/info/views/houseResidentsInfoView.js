@@ -1,7 +1,7 @@
 import { buildingName } from '../../shell/CatalogVocabulary.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 
-const STATUS_LABELS = Object.freeze({ civil_servant: 'Fonctionnaire (la mairie)', unemployed: 'Chômeur' });
+const STATUS_LABELS = Object.freeze({ unemployed: 'Chômeur' });
 
 /**
  * The Habitants tab of a house: one line per citizen, in a list that scrolls. The line says who he is and where he works,

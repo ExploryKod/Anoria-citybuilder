@@ -5,6 +5,7 @@
 import {
   appendHouseholdSkills,
   appendLocationFootnote,
+  appendMetricCardGroups,
   appendMetricCards,
 } from '../layout/buildingInfoLayout.js';
 
@@ -80,7 +81,7 @@ export function renderHouseResourcesView(container, model) {
  * @typedef {object} HouseActivityRecipeViewModel
  * @property {string} category
  * @property {string} label
- * @property {ReadonlyArray<object>} materials
+ * @property {object} material One card, even for a multi-input recipe — see houseInfoFormat.js's materialCardOf.
  * @property {object} product
  * @property {object} collected When this good was last taken by a hub, and how much.
  * @property {ReadonlyArray<object>} steps
@@ -93,8 +94,10 @@ export function renderHouseResourcesView(container, model) {
  */
 
 /**
- * One block per recipe the house's catalog entry declares: its raw materials, what it has finished, and its
- * steps — a house without any recipe gets a plain note instead of an empty panel.
+ * One block per recipe the house's catalog entry declares, each a SINGLE row of card groups — material,
+ * steps, product, collected — close together within a group and apart between groups, so the phases read
+ * apart without four separate labeled sections (2026-10-10). A house without any recipe gets a plain note
+ * instead of an empty panel.
  * @param {HTMLElement} container
  * @param {HouseActivityViewModel} model
  */
@@ -125,20 +128,13 @@ export function renderHouseActivityView(container, model) {
       block.appendChild(warning);
     }
 
-    appendMetricCardSection(block, 'Matières premières', recipe.materials);
-    appendMetricCardSection(block, 'Produit fini', [recipe.product]);
-    appendMetricCardSection(block, 'Collecté', [recipe.collected]);
-    appendMetricCardSection(block, 'Fabrication', recipe.steps);
+    appendMetricCardGroups(block, [
+      [recipe.material],
+      recipe.steps,
+      [recipe.product],
+      [recipe.collected],
+    ]);
 
     container.appendChild(block);
   }
-}
-
-function appendMetricCardSection(container, title, cards) {
-  if (!cards.length) return;
-  const label = document.createElement('p');
-  label.className = 'building-info-footnote';
-  label.textContent = title;
-  container.appendChild(label);
-  appendMetricCards(container, cards);
 }

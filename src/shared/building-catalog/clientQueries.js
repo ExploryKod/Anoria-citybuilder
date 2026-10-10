@@ -44,6 +44,21 @@ export function producedCategories(producerType) {
 }
 
 /**
+ * Whether a producer type's output for this category never reaches a hub at all — it declares
+ * `deliversTo: 'house'` (see buildingCatalog.js), meaning its OWN 'distributor' role hands it straight to
+ * houses (e.g. Chapel's faith). Structurally different from "no eligible client type exists today": that
+ * good still goes to a hub, just none happens to draw from it; this one never touches a hub, by design.
+ * @param {string} producerType
+ * @param {string} category
+ * @returns {boolean}
+ */
+export function deliversDirectlyToHouses(producerType, category) {
+  return getResourceRoles(producerType).some(
+    (entry) => entry.role === 'producer' && entry.categories.includes(category) && entry.deliversTo === 'house'
+  );
+}
+
+/**
  * The client TYPES the catalog declares first for a producer type (the `clients` list on its producer
  * entries) — used only to seed the default ORDER of candidate instances (their type's declared preference),
  * never to decide who is eligible; `listClientTypes` alone decides that.

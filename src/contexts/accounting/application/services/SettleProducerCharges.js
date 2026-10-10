@@ -49,8 +49,6 @@ const LINE_LABELS = Object.freeze({
   vat: 'TVA sur les services',
   income_tax: 'Impôt sur le revenu retenu',
   payroll_tax: 'Impôt sur le revenu perçu',
-  salary: 'Salaires des fonctionnaires',
-  public_wage: 'Salaire de fonctionnaire perçu',
   unemployment_benefit: 'Allocation chômage versée',
   household_benefit: 'Allocation chômage perçue',
 });
@@ -145,7 +143,9 @@ export class SettleProducerCharges {
     const otherExpenses = await this.deps.sumOtherExpensesByBuilding(timeInfo.year, timeInfo.monthIndex);
     const taxRate = await this.deps.getSalaryTax();
 
-    // The city's pay to the households: the civil servants' salary and the unemployed's benefit, from the residents of each.
+    // The city's pay to the households: the unemployed's benefit, from the residents of each. Civil servants
+    // were removed (2026-10-10, "suppress it for now") — a resident is either a worker or unemployed, the
+    // city no longer directly employs a fixed share of the population.
     const publicPay = await this.deps.getPublicPay();
     const households = await this.deps.listHouses();
     // A house that sells its own output (an artisan's, a savant's, a merchant's little business — see
@@ -153,9 +153,8 @@ export class SettleProducerCharges {
     // account (BUSINESS_ACCOUNT), not the bare company-style key a lucrative building's holder gets.
     const houseIds = new Set(households.map((household) => household.id));
     const workersIn = (houseId) => buildings.reduce((sum, building) => sum + (building.workerSources?.[houseId] ?? 0), 0);
-    const publicByHouse = new Map();
     const benefitByHouse = new Map();
-    const publicCountByHouse = new Map();
+    const unemployedCountByHouse = new Map();
     for (const household of households) {
       const pay = householdPublicPayOf({
         pop: household.pop,
@@ -163,36 +162,14 @@ export class SettleProducerCharges {
         referenceSalaryPerMonth: publicPay.salaryPerMonth,
         unemploymentBenefitRate: publicPay.unemploymentBenefitRate,
       });
-      publicCountByHouse.set(household.id, pay);
-      if (pay.publicPay > 0) publicByHouse.set(household.id, pay.publicPay);
+      unemployedCountByHouse.set(household.id, pay.unemployed);
       if (pay.benefit > 0) benefitByHouse.set(household.id, pay.benefit);
     }
 
     for (const household of households) {
-      const { civilServants, unemployed, publicPay: salary, benefit } = publicCountByHouse.get(household.id);
+      const benefit = benefitByHouse.get(household.id) ?? 0;
+      const unemployed = unemployedCountByHouse.get(household.id);
       const name = nameOf(household.id);
-      if (salary > 0) {
-        await this.#record(
-          { kind: 'salary', amount: salary, holder: null, counterparty: household.id, accountKind: null },
-          {
-            time,
-            key: buildProducerLineBusinessKey('salary', household.id, timeInfo, hamletId),
-            description: `${LINE_LABELS.salary} : ${civilServants} fonct. pour ${name} - ${monthLabel}`,
-            buildingInstanceId: household.id,
-            timeInfo,
-          },
-        );
-        await this.#record(
-          { kind: 'public_wage', amount: salary, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT },
-          {
-            time,
-            key: buildProducerLineBusinessKey('public_wage', household.id, timeInfo, hamletId),
-            description: `${LINE_LABELS.public_wage} - ${monthLabel}`,
-            buildingInstanceId: household.id,
-            timeInfo,
-          },
-        );
-      }
       if (benefit > 0) {
         await this.#record(
           { kind: 'unemployment_benefit', amount: benefit, holder: null, counterparty: household.id, accountKind: null },
@@ -217,7 +194,7 @@ export class SettleProducerCharges {
       }
     }
 
-    const { payable, wagesByBuilding } = this.#planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, publicByHouse, benefitByHouse });
+    const { payable, wagesByBuilding } = this.#planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse });
 
     for (const pair of pairs) {
       for (const line of tradeLines(pair)) {
@@ -261,7 +238,7 @@ export class SettleProducerCharges {
 
     // The income tax is per household (foyer): its wages of the month, from every workplace, and its unemployment
     // benefit, are taxed once together, above the threshold.
-    const grossByHouse = new Map(publicByHouse);
+    const grossByHouse = new Map();
     for (const [houseId, benefit] of benefitByHouse) {
       grossByHouse.set(houseId, centimes((grossByHouse.get(houseId) ?? 0) + benefit));
     }
@@ -349,10 +326,10 @@ export class SettleProducerCharges {
    * on the wages a house receives: the paid set can only shrink, so it is found by repeating until it stops changing.
    * @returns {{ payable: boolean[], wagesByBuilding: Map<string, { salesHT: number, wagesHT: number }> }}
    */
-  #planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, publicByHouse, benefitByHouse }) {
+  #planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse }) {
     let payable = bills.map(() => true);
     for (let round = 0; round <= bills.length + 1; round += 1) {
-      const grossByHouse = new Map(publicByHouse);
+      const grossByHouse = new Map();
       for (const [houseId, benefit] of benefitByHouse) {
         grossByHouse.set(houseId, centimes((grossByHouse.get(houseId) ?? 0) + benefit));
       }

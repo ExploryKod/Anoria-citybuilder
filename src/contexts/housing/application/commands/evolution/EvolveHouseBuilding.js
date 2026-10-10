@@ -54,6 +54,7 @@ export class EvolveHouseBuilding {
       residentialGroup: residentialGroupForHouseType(house.type),
       servedFlags: house.servedFlags,
       lastConsumption: house.lastConsumption,
+      lastFaithConsumption: house.lastFaithConsumption,
       periodKey,
     });
 

@@ -1,5 +1,6 @@
 import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
+import { buildingFinanceFigures } from '../../../src/contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 
 // Regression: a house's own little business (an artisan's, a savant's, a merchant's — buildingEconomy.js's
 // activityRecipe) sells and buys through the same pairs a company does (sumGoodsFlowsByPair → tradeLines).
@@ -15,6 +16,7 @@ function settle(pairs) {
     listBuildings: async () => [
       { id: HOUSE, type: 'House-Red', workerSources: {} },
       { id: 'warehouse-1', type: 'Warehouse', workerSources: {} },
+      { id: 'warehouse-2', type: 'Warehouse', workerSources: {} },
       { id: 'farm-1', type: 'Farm-Wheat', workerSources: {} },
       { id: 'market-1', type: 'Market-Stall', workerSources: {} },
     ],
@@ -33,7 +35,9 @@ function settle(pairs) {
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
     recordLedgerEntry: async (line) => {
-      journal.push(line);
+      // The real RecordLedgerEntry command stamps year/month from its own getTimeInfo(turn); this fake
+      // does it directly, matching the fixed deliveredTime (year 1, monthIndex 0) settle() uses below.
+      journal.push({ ...line, year: 1, month: 1 });
       return { recorded: true };
     },
     recordEconomyMovement: async () => {},
@@ -65,5 +69,24 @@ describe('a house that runs its own business is booked on its business account, 
     expect(sale.accountKind).toBeNull();
     const purchase = journal.find((line) => line.type === 'producer_purchase' && line.accountBuildingId === 'market-1');
     expect(purchase.accountKind).toBeNull();
+  });
+
+  // A house can run more than one activity at once (House-Red: decoratedPot AND carrotCake —
+  // ARTISAN_ACTIVITY_ROLES in buildingEconomy.js). The Entreprise tab must not reflect only one of them:
+  // accountKind tagging is keyed on the HOLDER alone, never on which good/counterparty produced the line,
+  // so BuildingFinancePolicy's blanket sum over the account already spans every activity by construction —
+  // this proves it end to end, not just by reading the aggregation code.
+  test('a house selling two different activities to two different counterparties: the entreprise account sums both', async () => {
+    const journal = await settle([
+      { sellerId: HOUSE, buyerId: 'warehouse-1', amountHT: 80 }, // e.g. decoratedPot
+      { sellerId: HOUSE, buyerId: 'warehouse-2', amountHT: 50 }, // e.g. carrotCake
+    ]);
+
+    const sales = journal.filter((line) => line.type === 'producer_revenue' && line.accountBuildingId === HOUSE);
+    expect(sales).toHaveLength(2);
+    expect(sales.every((line) => line.accountKind === 'entreprise')).toBe(true);
+
+    const figures = buildingFinanceFigures(journal, HOUSE, { year: 1, accountKind: 'entreprise' });
+    expect(figures.revenueHT).toBe(130);
   });
 });

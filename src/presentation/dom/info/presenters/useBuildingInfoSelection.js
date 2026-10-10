@@ -71,6 +71,9 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
     // HouseLevelPolicy.describeRelevantServiceCoverage, the Services tab's
     // Chapel/Doctor/... chips.
     extra.servedFlags = vm.buildingRow?.servedFlags ?? null;
+    // Chapel's faith left flag mode (2026-10-10): its coverage now reads like any `demandMet`
+    // requirement — see HouseTierRequirementPolicy.js's `serviceDemandMet`.
+    extra.lastFaithConsumption = vm.buildingRow?.lastFaithConsumption ?? null;
     const budget = await vm.accounting.getTreasurySnapshot();
     extra.periodKey = budget?.turn !== undefined
       ? (TimeManager.getTimeInfo(budget.turn)?.monthIndex ?? null)

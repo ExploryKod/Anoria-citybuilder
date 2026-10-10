@@ -4,9 +4,10 @@ import { goodLabel } from '../../shell/CatalogVocabulary.js';
 import { createSliderRow } from '../sliderRow.js';
 
 /**
- * The Services tab, for the active hamlet. First the state's two sliders — the civil servants' salary and the
- * unemployment allocation — then one subsidy slider per social service. A service that no building of the hamlet
- * provides yet is greyed out and disabled: a subsidy needs a service to pay for.
+ * The Services tab, for the active hamlet. First the state's two sliders — the reference salary (the base the
+ * unemployment allocation is a share of — civil servants themselves were removed, 2026-10-10, "suppress it for
+ * now") and the unemployment allocation — then one subsidy slider per social service. A service that no building
+ * of the hamlet provides yet is greyed out and disabled: a subsidy needs a service to pay for.
  */
 export class ServicesSectionPresenter {
   /** @param {{ accounting: object, construction: object }} deps */
@@ -30,13 +31,13 @@ export class ServicesSectionPresenter {
 
     stateBoard.replaceChildren(
       createSliderRow({
-        label: 'Salaire des fonctionnaires',
+        label: 'Salaire de référence',
         scope: 'Hameau',
         min: this.bounds.salaryPerMonth.min,
         max: this.bounds.salaryPerMonth.max,
         value: settings.salaryPerMonth,
         unit: '€/mois',
-        ariaLabel: 'Salaire des fonctionnaires, en euros par mois',
+        ariaLabel: "Salaire de référence, en euros par mois — la base de l'allocation chômage",
         store: (value) => this.accounting.setSalarySettings({ salaryPerMonth: value }),
       }),
       createSliderRow({

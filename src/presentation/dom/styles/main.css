@@ -1559,8 +1559,20 @@ footer .footer-links a:hover {
     border-top: 1px solid rgba(120, 144, 156, 0.2);
 }
 
-.building-info-activity-recipe .building-info-metrics {
-    margin-bottom: 16px;
+.building-info-activity-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 12px;
+}
+
+/* One phase of the recipe (material, a step, the product, what was collected): its own cards sit close
+   together; it's the gap on .building-info-activity-row, between groups, that reads as "a different phase". */
+.building-info-activity-group {
+    display: flex;
+    gap: 6px;
 }
 
 .building-info-gap-warning {
@@ -1661,6 +1673,10 @@ button.building-info-metric-card[aria-pressed="true"] {
     justify-content: center;
     flex-wrap: wrap;
     gap: 28px 40px;
+}
+
+.building-info-services-row + .building-info-stock-group-label {
+    margin-top: 20px;
 }
 
 .building-info-service-item {

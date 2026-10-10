@@ -180,13 +180,16 @@ describe('Supply — GetBuildingSupplyView', () => {
     test('a quantity distributor (sells a depleting stock) classifies as market', () => {
       expect(classifySupplyKind('Market-Stall')).toBe('market');
       expect(classifySupplyKind('Market-Stall-Red')).toBe('market');
+      // Chapel left flag mode (2026-10-10): it now produces and distributes faith exactly like a market
+      // sells food, a depleting stock behind it — this is the intended consequence of that mode switch,
+      // not a case the "flag → service" rule below is meant to catch.
+      expect(classifySupplyKind('Chapel')).toBe('market');
     });
 
     test('a flag distributor (marks houses "served", no stock) classifies as service, not market', () => {
-      // The bug this pins: Chapel and every other flag-mode public service
-      // building used to fall into 'market' (any 'distributor' role, no
-      // consumption-mode check) and rendered Market-Stall's copy/tabs.
-      expect(classifySupplyKind('Chapel')).toBe('service');
+      // The bug this pins: these flag-mode public service buildings used to
+      // fall into 'market' (any 'distributor' role, no consumption-mode
+      // check) and rendered Market-Stall's copy/tabs.
       expect(classifySupplyKind('School')).toBe('service');
       expect(classifySupplyKind('Library')).toBe('service');
       expect(classifySupplyKind('Doctor')).toBe('service');
@@ -198,7 +201,7 @@ describe('Supply — GetBuildingSupplyView', () => {
     });
   });
 
-  test('Chapel view classifies as service (not market) via the real repository path', async () => {
+  test('Chapel view classifies as market (produces and distributes faith, no hub) via the real repository path', async () => {
     const repo = new InMemorySupplyBuildingRepository(
       [
         createSupplyBuildingView({
@@ -218,8 +221,9 @@ describe('Supply — GetBuildingSupplyView', () => {
       },
     );
     const dto = await new GetBuildingSupplyView(repo).execute('Chapel-1-1');
-    expect(dto.kind).toBe('service');
-    expect(dto.isBuying).toBeUndefined();
+    expect(dto.kind).toBe('market');
+    // No hubLink declared (self-produces — see buildingEconomy.js's comment on Chapel): never "buying".
+    expect(dto.isBuying).toBe(false);
   });
 });
 

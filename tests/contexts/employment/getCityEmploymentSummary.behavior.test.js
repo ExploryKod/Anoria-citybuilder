@@ -98,25 +98,9 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(summary.workerPool).toBe(12); // 5 + 7 — h3 is unreachable by a workplace
       expect(summary).not.toHaveProperty('elitePool');
       expect(summary.totalPopulation).toBe(16); // 5 + 7 + 4 — a foyer is a foyer, road or not
-      expect(summary.civilServantCount).toBe(0); // floor(5/12) + floor(7/12) + floor(4/12), per house — none reaches 12
-      expect(summary.laborPool).toBe(16);
       expect(summary.activeCitizenCount).toBe(0);
       expect(summary.unemployed).toBe(16); // includes h3's 4 residents, unreachable by a job but still unemployed
       expect(summary.workerPool).toBeLessThan(summary.totalPopulation);
-    });
-
-    test('several foyers each under 12 are not seated a civil servant the city-wide floor would have given them', () => {
-      // Three foyers of 5 sum to 15 (city-wide floor(15/12) = 1), but each foyer's own floor(5/12) = 0: the single
-      // source is the sum of the foyers' own counts, never a floor applied to their total.
-      const summary = computeCityEmploymentSummary([
-        house('h1', 5, 1),
-        house('h2', 5, 1),
-        house('h3', 5, 1),
-      ]);
-
-      expect(summary.totalPopulation).toBe(15);
-      expect(summary.civilServantCount).toBe(0);
-      expect(summary.unemployed).toBe(15);
     });
 
     test('lack and understaffed: farms without road count; other workplaces need road', () => {

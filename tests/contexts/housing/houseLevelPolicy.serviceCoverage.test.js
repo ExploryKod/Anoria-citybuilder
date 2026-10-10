@@ -1,7 +1,9 @@
 /**
- * Behavior tests — Housing: HouseLevelPolicy's service-coverage helpers
- * (2026-09-11) — back the house info panel's Services tab "Chapel/Doctor/...
- * reached or not" chips, the same way road/market reach already show.
+ * Behavior tests — Housing: HouseLevelPolicy's evolution-requirement helpers (2026-09-11, widened
+ * 2026-10-10) — back the house info panel's Services tab "Besoins pour l'évolution" section: EVERY
+ * requirement the tier ladder declares (population, food, a named service's coverage or demand), each a
+ * plain met/unmet fact, except `roadAccess` (Route already has its own, building-type-agnostic chip —
+ * see servicesInfoFormat.js).
  */
 import { describe, test, expect } from '@jest/globals';
 import {
@@ -10,74 +12,103 @@ import {
 } from '../../../src/contexts/housing/domain/policies/HouseLevelPolicy.js';
 
 describe('HouseLevelPolicy — relevantServiceCoverageRequirements', () => {
-  test('a tier-1 house shows only the next tier\'s services (Chapel/faith)', () => {
+  test('a tier-1 house shows what unlocks tier 2: population and Chapel/faith, road excluded', () => {
     const requirements = relevantServiceCoverageRequirements({ level: 1, residentialGroup: 'artisans' });
-    expect(requirements).toEqual([{ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }]);
+    expect(requirements).toEqual([
+      { kind: 'population', min: 1 },
+      { kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' },
+    ]);
   });
 
-  test('a tier-2 house shows what unlocks tier 3 (faith is already behind it, doctor is next)', () => {
+  test('a tier-2 house shows what unlocks tier 3 (faith is already behind it, food and doctor are next)', () => {
     const requirements = relevantServiceCoverageRequirements({ level: 2, residentialGroup: 'artisans' });
     expect(requirements).toEqual([
-      { kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 },
+      { kind: 'population', min: 4 },
+      { kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption' },
+      { kind: 'demandMet' },
       { kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 },
     ]);
   });
 
-  test('a maxed-out house (tier 5) shows its own final tier\'s full service list', () => {
+  test('a maxed-out house (tier 5) shows its own final tier\'s full requirement list, road excluded', () => {
     const requirements = relevantServiceCoverageRequirements({ level: 5, residentialGroup: 'artisans' });
-    expect(requirements.map((r) => r.category)).toEqual([
-      'faith', 'doctor', 'publicBath', 'pub', 'school', 'cinema',
+    expect(requirements.map((r) => r.kind)).toEqual([
+      'population', 'serviceDemandMet', 'demandMet', 'serviceCoverage', 'serviceCoverage',
+      'serviceCoverage', 'serviceCoverage', 'serviceCoverage', 'goodsVariety',
     ]);
+    expect(requirements.some((r) => r.kind === 'roadAccess')).toBe(false);
   });
 
-  test('no residential group has no service requirements to show', () => {
+  test('no residential group has no requirements to show', () => {
     expect(relevantServiceCoverageRequirements({ level: 2, residentialGroup: null })).toEqual([]);
   });
 });
 
 describe('HouseLevelPolicy — describeRelevantServiceCoverage', () => {
-  test('marks a service met when servedFlags matches the CURRENT period', () => {
+  // Faith left flag mode (2026-10-10): it is now a 'serviceDemandMet' requirement, read off
+  // `lastFaithConsumption` exactly like any other quantity-consumed need (ConsumeResource's outcome) — no
+  // coverage-window slack, met only for the CURRENT period and only once fully served (`totalUnfed: 0`).
+  test('marks population and faith met when both hold THIS period', () => {
     const described = describeRelevantServiceCoverage({
       level: 1,
       residentialGroup: 'merchants',
-      servedFlags: { faith: 4 },
+      pop: 1,
+      lastFaithConsumption: { month: 4, totalUnfed: 0 },
       periodKey: 4,
     });
     expect(described).toEqual([
-      { kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2, current: 1, target: 1, met: true },
+      { kind: 'population', min: 1, current: 1, target: 1, met: true },
+      { kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption', current: 1, target: 1, met: true },
     ]);
   });
 
-  test('still met within the coverage window (faith\'s coveragePeriods: 2) even one period stale', () => {
+  test('faith reads as not met once the outcome is stale (a different period)', () => {
     const described = describeRelevantServiceCoverage({
       level: 1,
       residentialGroup: 'merchants',
-      servedFlags: { faith: 3 },
+      pop: 1,
+      lastFaithConsumption: { month: 3, totalUnfed: 0 },
       periodKey: 4,
     });
-    expect(described[0].met).toBe(true);
+    expect(described.find((r) => r.kind === 'serviceDemandMet').met).toBe(false);
   });
 
-  test('reads as not met once the gap reaches coveragePeriods — a true interruption of service', () => {
+  test('faith reads as not met when the chapel ran short this period (totalUnfed > 0)', () => {
     const described = describeRelevantServiceCoverage({
       level: 1,
       residentialGroup: 'merchants',
-      servedFlags: { faith: 2 },
+      pop: 1,
+      lastFaithConsumption: { month: 4, totalUnfed: 1 },
       periodKey: 4,
     });
-    expect(described[0].met).toBe(false);
+    expect(described.find((r) => r.kind === 'serviceDemandMet').met).toBe(false);
   });
 
-  test('a tier-2 house sees BOTH an already-met service and an unmet one side by side', () => {
+  test('a tier-2 house sees an already-met service, an unmet food requirement, and an unmet doctor side by side', () => {
     const described = describeRelevantServiceCoverage({
       level: 2,
       residentialGroup: 'scholars',
-      servedFlags: { faith: 9 },
+      pop: 4,
+      lastFaithConsumption: { month: 9, totalUnfed: 0 },
       periodKey: 9,
     });
     expect(described).toEqual([
-      { kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2, current: 1, target: 1, met: true },
+      { kind: 'population', min: 4, current: 4, target: 4, met: true },
+      { kind: 'serviceDemandMet', category: 'faith', outcomeField: 'lastFaithConsumption', current: 1, target: 1, met: true },
+      { kind: 'demandMet', current: 0, target: 1, met: false },
       { kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2, current: 0, target: 1, met: false },
     ]);
+  });
+
+  test('food (demandMet) reads met once fully served this period', () => {
+    const described = describeRelevantServiceCoverage({
+      level: 2,
+      residentialGroup: 'scholars',
+      pop: 4,
+      lastConsumption: { month: 9, totalUnfed: 0 },
+      lastFaithConsumption: { month: 9, totalUnfed: 0 },
+      periodKey: 9,
+    });
+    expect(described.find((r) => r.kind === 'demandMet')).toMatchObject({ met: true, current: 1, target: 1 });
   });
 });

@@ -277,11 +277,11 @@ describe('Employment — DistributeCityWorkers', () => {
     });
   });
 
-  describe('DistributeCityWorkers — civil servants are reserved from the hiring pool', () => {
-    test('a 12-pop house leaves one resident unhired, even with enough job slots for all twelve', async () => {
-      // One civil servant per twelve residents (see computeHouseholdEmploymentStatus): hiring must never claim
-      // more of a house's residents than HouseResidentsPolicy/HouseholdPublicPayPolicy can account for, or the
-      // household's own accounting throws "workers and civil servants do not fit residents".
+  describe('DistributeCityWorkers — the whole house pool is hireable', () => {
+    test('a 12-pop house can staff all twelve, with enough job slots for all of them', async () => {
+      // Civil servants were removed (2026-10-10, "suppress it for now"): nothing is set aside before hiring
+      // anymore — a house's whole worker pool is hireable (see HouseResidentsPolicy/HouseholdPublicPayPolicy,
+      // which now split residents into workers and unemployed only).
       const repo = new InMemoryEmploymentBuildingRepository([
         house('House-Red-1-1', 12, 1, 'House-Red'),
         workplace('Farm-Wheat-a', { workerNeed: 20, sector: 1 }),
@@ -290,8 +290,8 @@ describe('Employment — DistributeCityWorkers', () => {
 
       const result = await useCase.execute({});
 
-      expect(result.availableWorkers).toBe(11);
-      expect(repo.get('Farm-Wheat-a').worker).toBe(11);
+      expect(result.availableWorkers).toBe(12);
+      expect(repo.get('Farm-Wheat-a').worker).toBe(12);
     });
   });
 

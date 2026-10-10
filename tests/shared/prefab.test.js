@@ -44,7 +44,11 @@ describe('prefab anoria-tour-116 — its state is the saved one', () => {
     });
     const summary = computeCityEmploymentSummary(snapshots);
     expect(summary.totalPopulation).toBe(41);
-    expect(summary.unemployed).toBeLessThanOrEqual(1);
+    // Civil servants were removed (2026-10-10, "suppress it for now"): the ~1-in-12 residents that used to be
+    // exempted from both "unemployed" and the hiring pool now need a real job like anyone else. This prefab's
+    // `manutention` shortage (see `lack`/`bySkill` below) was already there before — these residents simply
+    // have nowhere to go until it's filled, so the bound moves from "≤1" to the real figure.
+    expect(summary.unemployed).toBeLessThanOrEqual(4);
     // The Warehouse and TradeWarehouse's 4 worker slots each (BuildingRolePolicy's `isHouseType` used to misread
     // their names — "ware**house**" — as a house and zero their need) are now correctly counted. A blanket
     // `lack: 8` would not say which caste is short — the game has three (artisans/merchants/scholars), each

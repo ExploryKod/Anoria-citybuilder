@@ -1,50 +1,38 @@
 import { describe, test, expect } from '@jest/globals';
 import { computePopulationBreakdown } from '../../../src/shared/population/computePopulationBreakdown.js';
 
+// Civil servants were removed (2026-10-10, "suppress it for now"): a resident is either a worker or
+// unemployed — the pool is no longer reduced by a fixed civil-servant share first.
 describe('computePopulationBreakdown', () => {
-  test('partitions total into active citizens, fonctionnaires and unemployed', () => {
+  test('partitions total into active citizens and unemployed', () => {
     const breakdown = computePopulationBreakdown({
       workerPool: 50,
       totalAssigned: 42,
     });
 
     expect(breakdown.totalPopulation).toBe(50);
-    expect(breakdown.civilServantCount).toBe(4);
-    expect(breakdown.laborPool).toBe(46);
-    expect(breakdown.unemployed).toBe(4);
+    expect(breakdown.unemployed).toBe(8);
     expect(breakdown.activeCitizenCount).toBe(42);
-    expect(breakdown.activePopulationCount).toBe(46);
-    expect(breakdown.unemploymentPercentage).toBe(9);
-    expect(breakdown.totalPopulation - breakdown.unemployed).toBe(breakdown.activePopulationCount);
+    expect(breakdown.unemploymentPercentage).toBe(16);
   });
 
-  test('at 12 inhabitants reserves one civil servant from the worker pool', () => {
-    const allUnemployed = computePopulationBreakdown({
-      workerPool: 12,
-      totalAssigned: 0,
-    });
-
-    expect(allUnemployed.civilServantCount).toBe(1);
-    expect(allUnemployed.unemployed).toBe(11);
-    expect(allUnemployed.activeCitizenCount).toBe(0);
-
-    const allActive = computePopulationBreakdown({
-      workerPool: 12,
-      totalAssigned: 11,
-    });
-
-    expect(allActive.unemployed).toBe(0);
-    expect(allActive.activeCitizenCount).toBe(11);
-  });
-
-  test('allows up to twelve unemployed once population reaches thirteen', () => {
+  test('nobody assigned means everybody unemployed', () => {
     const breakdown = computePopulationBreakdown({
-      workerPool: 13,
+      workerPool: 12,
       totalAssigned: 0,
     });
 
-    expect(breakdown.civilServantCount).toBe(1);
     expect(breakdown.unemployed).toBe(12);
     expect(breakdown.activeCitizenCount).toBe(0);
+  });
+
+  test('fully assigned means nobody unemployed', () => {
+    const breakdown = computePopulationBreakdown({
+      workerPool: 12,
+      totalAssigned: 12,
+    });
+
+    expect(breakdown.unemployed).toBe(0);
+    expect(breakdown.activeCitizenCount).toBe(12);
   });
 });
