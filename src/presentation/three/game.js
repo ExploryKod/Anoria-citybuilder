@@ -53,7 +53,8 @@ import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.
 import { computeBuildingReach, listPlacedBuildings } from '../../shared/building-catalog/buildingReach.js';
 import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
 import { BUILDING_ASSETS } from './assets/buildingAssets.js';
-import { planRoadPaint, roadPathBetween, roadPiecesFrom, turnedSides } from './placement/roadPaintPlanner.js';
+import { planRoadPaint, plotsAlongPath, roadPathBetween, roadPiecesFrom, turnedSides } from './placement/roadPaintPlanner.js';
+import { resolveFootprint } from '../../shared/asset-footprint/resolveFootprint.js';
 import {
   BEHAVIOR_MODE,
   resolveBehaviorMode,
@@ -181,6 +182,18 @@ export function createGame(gameStore, assetManager, citySize = null) {
     busy: false,
   };
   const roadPieces = roadPiecesFrom(BUILDING_ASSETS);
+
+  /**
+   * The same press-and-drag for a house: from where the player pressed to the cursor, as many plots as fit along
+   * the L, shown before they are placed and placed on release (a plain click places the one plot).
+   */
+  let housePaint = {
+    active: false,
+    anchor: null,
+    axis: null,
+    path: [],
+    busy: false,
+  };
 
   /** Touch/tablet: anchor ghost + rotation HUD before confirming placement. */
   let touchPendingPlacement = null;
@@ -874,6 +887,145 @@ export function createGame(gameStore, assetManager, citySize = null) {
     showRoadDragPreview();
   }
 
+  /** A tool whose building takes a plot of the player's land (a house): it can be dragged out like a road. */
+  function isPlotDragTool(toolId) {
+    return Boolean(getBuildingDefinition(resolvePlacementBuildingId(toolId))?.residentialGroup);
+  }
+
+  /**
+   * What the house drag would place: the plots along the path, cut at the first one that cannot take the house
+   * (a drag does not jump an obstacle). `valid` is what would be placed, `blocked` the rest; both as plots.
+   */
+  function planHouseDrag() {
+    const buildingType = resolvePlacementBuildingId();
+    const rotationStep = getPlacementRotationStep();
+    let { width, depth } = resolveFootprint(buildingType);
+    if (rotationStep % 2 === 1) [width, depth] = [depth, width];
+
+    const valid = [];
+    const blocked = [];
+    for (const plot of plotsAlongPath({ path: housePaint.path, width, depth })) {
+      const inCity = plot.x >= 0 && plot.y >= 0 && plot.x + width <= city.size && plot.y + depth <= city.size;
+      const fits = blocked.length === 0 && inCity && canPlaceBuildingAtTileWithSupplyRules({
+        city,
+        x: plot.x,
+        y: plot.y,
+        buildingType,
+        assetCatalog: buildingPlacementCatalog,
+        rotationStep,
+      }).ok;
+      (fits ? valid : blocked).push(plot);
+    }
+    return { valid, blocked, buildingType, rotationStep, width, depth };
+  }
+
+  function showHouseDragPreview() {
+    const { valid, blocked, width, depth } = planHouseDrag();
+    const tilesOf = (plots) => plots.flatMap((plot) => {
+      const tiles = [];
+      for (let dx = 0; dx < width; dx += 1) {
+        for (let dy = 0; dy < depth; dy += 1) tiles.push({ x: plot.x + dx, y: plot.y + dy });
+      }
+      return tiles;
+    });
+    scene.roadPaintPreview.show({ valid: tilesOf(valid), blocked: tilesOf(blocked) });
+  }
+
+  function cancelHousePaint() {
+    housePaint.active = false;
+    housePaint.anchor = null;
+    housePaint.axis = null;
+    housePaint.path = [];
+    scene.roadPaintPreview.clear();
+  }
+
+  /** The cursor moved: the houses are replanned from where the player pressed. */
+  function dragHousesToward(x, y) {
+    if (!housePaint.active || !isPlotDragTool(activeToolId)) {
+      return;
+    }
+    const { cells, axis } = roadPathBetween(housePaint.anchor, { x, y }, housePaint.axis);
+    housePaint.path = cells;
+    housePaint.axis = axis;
+    showHouseDragPreview();
+  }
+
+  /** The button is released: place the houses that were previewed, then bring the city up to date once. */
+  async function commitHousePaint() {
+    if (!housePaint.active || housePaint.busy) {
+      return;
+    }
+    housePaint.busy = true;
+    try {
+      const { valid, blocked, buildingType, rotationStep } = planHouseDrag();
+      cancelHousePaint();
+
+      // Not one plot could take the house (where the drag began, something is in the way): say so.
+      if (valid.length === 0 && blocked.length > 0) {
+        showGenericErrorNotification(activeToolId, 'area_not_available');
+        return;
+      }
+
+      const placed = [];
+      for (const plot of valid) {
+        const result = await constructionApi.placeBuildingAtTile({
+          city,
+          x: plot.x,
+          y: plot.y,
+          buildingType,
+          gameTurn: time,
+          placementRotationStep: rotationStep,
+        });
+        if (!result.success) {
+          if (result.reason === 'insufficient_funds') {
+            showInsufficientFundsNotification(buildingType, result.price || 0);
+          } else if (result.reason && result.reason !== 'in_progress') {
+            showGenericErrorNotification(buildingType, result.reason);
+          }
+          break;
+        }
+        placed.push({ plot, instanceId: result.instanceId });
+        await recordBuildingHistory('placed', { id: result.instanceId, type: buildingType, x: plot.x, y: plot.y });
+        const multiplayerManager = getMultiplayerManager();
+        if (multiplayerManager?.isMultiplayer) {
+          try {
+            await multiplayerManager.placeBuilding(buildingType, plot.x, plot.y);
+          } catch (error) {
+            console.warn('[Multiplayer] Erreur envoi bâtiment:', error);
+          }
+        }
+      }
+
+      if (placed.length === 0) {
+        return;
+      }
+      playPlaceBuildingSound();
+      await scene.update(city, time);
+      await runSimulationPass(time);
+      await syncEmploymentAfterBuildingChange(scene, city, buildingType);
+      for (const { plot, instanceId } of placed) {
+        await syncSupplyLinksAfterBuildingChange({
+          supply,
+          construction: constructionApi,
+          city,
+          event: 'placed',
+          buildingType,
+          instanceId,
+          x: plot.x,
+          y: plot.y,
+        });
+      }
+      await refreshPlacementPresentation();
+      await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+      placementGhostSession.sync(scene.focusedObject);
+      if (game?.play) {
+        game.play();
+      }
+    } finally {
+      housePaint.busy = false;
+    }
+  }
+
   function isModalBlockingEscapeToSelect() {
     if (infoObjectOverlay.classList.contains('active')) return true;
     if ((popupManager?.getActivePopups?.() || []).length > 0) return true;
@@ -1143,6 +1295,16 @@ export function createGame(gameStore, assetManager, citySize = null) {
         return;
       }
 
+      // Desktop: a house is dragged out like a road — the press anchors, dragging plans the plots, letting go places them.
+      if (isPlotDragTool(activeToolId)) {
+        housePaint.active = true;
+        housePaint.anchor = { x: placeX, y: placeY };
+        housePaint.axis = null;
+        housePaint.path = [{ x: placeX, y: placeY }];
+        showHouseDragPreview();
+        return;
+      }
+
       const placed = await finalizeBuildingPlacement(
         placeX,
         placeY,
@@ -1159,7 +1321,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
   };
 
   scene.onRoadPaintMove = async (focusedObject) => {
-    if (!roadPaint.active || !isRoadBuildingType(activeToolId)) {
+    const dragsHouses = housePaint.active && isPlotDragTool(activeToolId);
+    const dragsRoad = roadPaint.active && isRoadBuildingType(activeToolId);
+    if (!dragsHouses && !dragsRoad) {
       return;
     }
     const x = focusedObject?.userData?.x;
@@ -1167,12 +1331,17 @@ export function createGame(gameStore, assetManager, citySize = null) {
     if (typeof x !== 'number' || typeof y !== 'number') {
       return;
     }
-    dragRoadToward(x, y);
+    if (dragsHouses) {
+      dragHousesToward(x, y);
+    } else {
+      dragRoadToward(x, y);
+    }
     placementGhostSession.sync(focusedObject);
   };
 
   scene.onRoadPaintEnd = async () => {
     await commitRoadPaint();
+    await commitHousePaint();
   };
 
   scene.onPlacementHover = (focusedObject) => {
@@ -1305,6 +1474,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
     scene.onMouseUp?.(event);
     if (roadPaint.active) {
       void commitRoadPaint();
+    }
+    if (housePaint.active) {
+      void commitHousePaint();
     }
   });
 
@@ -1446,6 +1618,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
       if (!isRoadBuildingType(toolId) && roadPaint.active) {
         cancelRoadPaint();
+      }
+      if (housePaint.active && !isPlotDragTool(toolId)) {
+        cancelHousePaint();
       }
     },
 

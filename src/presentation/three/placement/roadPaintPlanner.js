@@ -102,6 +102,29 @@ export function roadPathBetween(start, end, previousAxis = null) {
   return { cells, axis };
 }
 
+/**
+ * The drag of a building that takes a plot (a house): along the path the player drew, the origin of each plot
+ * that does not overlap the one before — as many as fit end to end, none adapted to its neighbours. The first
+ * plot is where the player pressed.
+ *
+ * @param {object} params
+ * @param {Array<{ x: number, y: number }>} params.path The L, in order (see `roadPathBetween`).
+ * @param {number} params.width Plot width in tiles, rotation already applied.
+ * @param {number} params.depth Plot depth in tiles, rotation already applied.
+ * @returns {Array<{ x: number, y: number }>}
+ */
+export function plotsAlongPath({ path, width, depth }) {
+  /** @type {Array<{ x: number, y: number }>} */
+  const plots = [];
+  for (const cell of path) {
+    const overlaps = plots.some(
+      (plot) => cell.x < plot.x + width && cell.x + width > plot.x && cell.y < plot.y + depth && cell.y + depth > plot.y,
+    );
+    if (!overlaps) plots.push({ x: cell.x, y: cell.y });
+  }
+  return plots;
+}
+
 /** The side of `from` that faces the adjacent `to`. */
 function sideToward(from, to) {
   return Object.entries(SIDE_STEP).find(([, step]) => from.x + step.dx === to.x && from.y + step.dy === to.y)?.[0] ?? null;
