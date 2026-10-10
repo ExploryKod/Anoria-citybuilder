@@ -25,6 +25,41 @@ export function computeCitizenTaxBreakdown(houses, taxPerCapita) {
     population: 0,
   };
 
+  for (const { houseType, amount, pop } of taxedHouses(houses, taxPerCapita)) {
+    taxBreakdown[houseType] = Math.round(taxBreakdown[houseType] + amount);
+    taxBreakdown.total = Math.round(taxBreakdown.total + amount);
+    taxBreakdown.population += pop;
+  }
+
+  return taxBreakdown;
+}
+
+/**
+ * The same tax, per house: what each taxed house owes this year, so it can be charged to that house's own account
+ * (see RecordCitizenTaxIncome.js) — a house's citizen tax must be visible on its own Finances tab, not only folded
+ * into the city's lump sum.
+ * @param {Array<{ id?: string, type?: string, pop?: number, level?: number }>} houses
+ * @param {number} taxPerCapita
+ * @returns {Array<{ houseId: string, pop: number, amount: number }>}
+ */
+export function computeCitizenTaxByHouse(houses, taxPerCapita) {
+  const byHouse = [];
+  for (const { house, pop, amount } of taxedHouses(houses, taxPerCapita)) {
+    if (amount <= 0) continue;
+    if (!house.id) throw new Error('[citizen-tax] a taxed house has no id: its tax cannot be attributed to an account');
+    byHouse.push({ houseId: house.id, pop, amount });
+  }
+  return byHouse;
+}
+
+/**
+ * The houses that owe the citizen tax this year, each with its own amount — the eligibility rule shared by both
+ * views above (per type, per house).
+ * @param {Array<{ id?: string, type?: string, pop?: number, level?: number }>} houses
+ * @param {number} taxPerCapita
+ */
+function* taxedHouses(houses, taxPerCapita) {
+  const houseTypes = listResidentialTypes();
   for (const house of houses) {
     const houseType = house.type ? normalizeResidentialTypeLabel(house.type) : null;
     if (!houseType || !houseTypes.includes(houseType)) {
@@ -43,13 +78,6 @@ export function computeCitizenTaxBreakdown(houses, taxPerCapita) {
       continue;
     }
 
-    const taxPerHouse = Math.round(pop * taxPerCapita);
-
-    taxBreakdown[houseType] = Math.round(taxBreakdown[houseType] + taxPerHouse);
-
-    taxBreakdown.total = Math.round(taxBreakdown.total + taxPerHouse);
-    taxBreakdown.population += pop;
+    yield { house, houseType, pop, amount: Math.round(pop * taxPerCapita) };
   }
-
-  return taxBreakdown;
 }

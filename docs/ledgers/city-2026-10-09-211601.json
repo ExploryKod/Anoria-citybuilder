@@ -1,0 +1,8322 @@
+{
+  "exportDate": "2026-10-09T19:16:01.451Z",
+  "config": {
+    "citySize": 12,
+    "daysPerMonth": 5,
+    "perCapitaDemand": 1,
+    "annualYieldPerProducer": 288,
+    "hubMaxStock": 2880,
+    "distributorMaxStock": 240
+  },
+  "omittedBuildingFields": [
+    "id",
+    "anchorX",
+    "anchorY",
+    "name"
+  ],
+  "buildings": [
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 0,
+      "y": 0,
+      "neighbors": [
+        {
+          "instanceId": "fa88ef19-51b2-4496-9ed7-e69bff93de01",
+          "type": "House-Purple",
+          "x": 0,
+          "y": 2,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6571855e-86b8-4f65-b510-ebe893e36cfb",
+          "type": "Tree-Chene",
+          "x": 1,
+          "y": 0,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "b7fcac94-5387-4765-851d-a623ba07f2e4",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9d826186-9958-4e25-8cb8-3d1ed0fc050b",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 1,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 2,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "rock": 115,
+        "gold": 46,
+        "iron": 53
+      },
+      "maxStocks": {
+        "rock": 115,
+        "gold": 46,
+        "iron": 53
+      },
+      "roads": 0,
+      "worldTime": 198,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "681b0346-ff46-4c51-942d-643b9d2b7e13",
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          0,
+          0
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "type": "Tree-Chene",
+      "category": "nature",
+      "x": 1,
+      "y": 0,
+      "neighbors": [
+        {
+          "instanceId": "681b0346-ff46-4c51-942d-643b9d2b7e13",
+          "type": "Boulder-001",
+          "x": 0,
+          "y": 0,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "fa88ef19-51b2-4496-9ed7-e69bff93de01",
+          "type": "House-Purple",
+          "x": 0,
+          "y": 2,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "b7fcac94-5387-4765-851d-a623ba07f2e4",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9d826186-9958-4e25-8cb8-3d1ed0fc050b",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 1,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 2,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "79d8360e-0532-4a0a-ba13-f8d24daff1fc",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wood": 120
+      },
+      "maxStocks": {
+        "wood": 120
+      },
+      "roads": 1,
+      "worldTime": 198,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "6571855e-86b8-4f65-b510-ebe893e36cfb",
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          1,
+          0
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "instanceId": "b7fcac94-5387-4765-851d-a623ba07f2e4",
+      "type": "StonePath-Tee-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "681b0346-ff46-4c51-942d-643b9d2b7e13",
+          "type": "Boulder-001",
+          "x": 0,
+          "y": 0,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "fa88ef19-51b2-4496-9ed7-e69bff93de01",
+          "type": "House-Purple",
+          "x": 0,
+          "y": 2,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6571855e-86b8-4f65-b510-ebe893e36cfb",
+          "type": "Tree-Chene",
+          "x": 1,
+          "y": 0,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "9d826186-9958-4e25-8cb8-3d1ed0fc050b",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 1,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 2,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "79d8360e-0532-4a0a-ba13-f8d24daff1fc",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "aaf6ba17-2d9e-4a23-89c4-cadb40ca2c5e",
+          "type": "Kenney-Industrial-building-l",
+          "x": 3,
+          "y": 1,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "12eb96e8-26ac-4a79-88bf-429c6f7295c8",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 4,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 2,
+      "y": 0,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          0
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "79d8360e-0532-4a0a-ba13-f8d24daff1fc",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "6571855e-86b8-4f65-b510-ebe893e36cfb",
+          "type": "Tree-Chene",
+          "x": 1,
+          "y": 0,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "b7fcac94-5387-4765-851d-a623ba07f2e4",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9d826186-9958-4e25-8cb8-3d1ed0fc050b",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 1,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 2,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "12eb96e8-26ac-4a79-88bf-429c6f7295c8",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "69296d98-08c3-4756-9c7a-736df0ab4e87",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 3,
+      "y": 0,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          0
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "12eb96e8-26ac-4a79-88bf-429c6f7295c8",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "b7fcac94-5387-4765-851d-a623ba07f2e4",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9d826186-9958-4e25-8cb8-3d1ed0fc050b",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 1,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 2,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "79d8360e-0532-4a0a-ba13-f8d24daff1fc",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "69296d98-08c3-4756-9c7a-736df0ab4e87",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "46244680-afd6-4c26-9adb-a840779c06df",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 4,
+      "y": 0,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          0
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "69296d98-08c3-4756-9c7a-736df0ab4e87",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "79d8360e-0532-4a0a-ba13-f8d24daff1fc",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "12eb96e8-26ac-4a79-88bf-429c6f7295c8",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "46244680-afd6-4c26-9adb-a840779c06df",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "42bb113a-aa93-4d65-b46a-9abb91a34d4c",
+          "type": "Kenney-Industrial-building-a",
+          "x": 6,
+          "y": 1,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "3b71f97e-1638-477b-b475-ecc5e7117e66",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 5,
+      "y": 0,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          5,
+          0
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "46244680-afd6-4c26-9adb-a840779c06df",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "aaf6ba17-2d9e-4a23-89c4-cadb40ca2c5e",
+          "type": "Kenney-Industrial-building-l",
+          "x": 3,
+          "y": 1,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "12eb96e8-26ac-4a79-88bf-429c6f7295c8",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "69296d98-08c3-4756-9c7a-736df0ab4e87",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "3b71f97e-1638-477b-b475-ecc5e7117e66",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "acf71e4f-b21a-4637-b1cb-162047afb27a",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 6,
+      "y": 0,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          6,
+          0
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "3b71f97e-1638-477b-b475-ecc5e7117e66",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "69296d98-08c3-4756-9c7a-736df0ab4e87",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "46244680-afd6-4c26-9adb-a840779c06df",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "acf71e4f-b21a-4637-b1cb-162047afb27a",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "3fcd3402-323e-445d-93eb-c24bff4e5c7c",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 7,
+      "y": 0,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          7,
+          0
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "acf71e4f-b21a-4637-b1cb-162047afb27a",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "46244680-afd6-4c26-9adb-a840779c06df",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "3b71f97e-1638-477b-b475-ecc5e7117e66",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "3fcd3402-323e-445d-93eb-c24bff4e5c7c",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ed24f184-230e-4f80-9dc5-5553a907b44a",
+          "type": "StonePath-001",
+          "x": 10,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 8,
+      "y": 0,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          8,
+          0
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "3fcd3402-323e-445d-93eb-c24bff4e5c7c",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "42bb113a-aa93-4d65-b46a-9abb91a34d4c",
+          "type": "Kenney-Industrial-building-a",
+          "x": 6,
+          "y": 1,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "3b71f97e-1638-477b-b475-ecc5e7117e66",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "acf71e4f-b21a-4637-b1cb-162047afb27a",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ed24f184-230e-4f80-9dc5-5553a907b44a",
+          "type": "StonePath-001",
+          "x": 10,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "6ca6154a-4d70-4649-9cd9-5141c14bfaa4",
+          "type": "StonePath-001",
+          "x": 11,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 9,
+      "y": 0,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          0
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "ed24f184-230e-4f80-9dc5-5553a907b44a",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "acf71e4f-b21a-4637-b1cb-162047afb27a",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "3fcd3402-323e-445d-93eb-c24bff4e5c7c",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "6ca6154a-4d70-4649-9cd9-5141c14bfaa4",
+          "type": "StonePath-001",
+          "x": 11,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 10,
+      "y": 0,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          0
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "6ca6154a-4d70-4649-9cd9-5141c14bfaa4",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "3fcd3402-323e-445d-93eb-c24bff4e5c7c",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ed24f184-230e-4f80-9dc5-5553a907b44a",
+          "type": "StonePath-001",
+          "x": 10,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 2,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 11,
+      "y": 0,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          11,
+          0
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "9d826186-9958-4e25-8cb8-3d1ed0fc050b",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "681b0346-ff46-4c51-942d-643b9d2b7e13",
+          "type": "Boulder-001",
+          "x": 0,
+          "y": 0,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "70800839-36dc-4f5e-835a-40ce18b6acf1",
+          "type": "House-Purple",
+          "x": 0,
+          "y": 3,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6571855e-86b8-4f65-b510-ebe893e36cfb",
+          "type": "Tree-Chene",
+          "x": 1,
+          "y": 0,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "b7fcac94-5387-4765-851d-a623ba07f2e4",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 2,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "36ac6b83-7c73-4024-a42a-5c18f106bb35",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 3,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "79d8360e-0532-4a0a-ba13-f8d24daff1fc",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "aaf6ba17-2d9e-4a23-89c4-cadb40ca2c5e",
+          "type": "Kenney-Industrial-building-l",
+          "x": 3,
+          "y": 1,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "12eb96e8-26ac-4a79-88bf-429c6f7295c8",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 4,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 2,
+      "y": 1,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          1
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "aaf6ba17-2d9e-4a23-89c4-cadb40ca2c5e",
+      "type": "Chapel",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "6571855e-86b8-4f65-b510-ebe893e36cfb",
+          "type": "Tree-Chene",
+          "x": 1,
+          "y": 0,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "b7fcac94-5387-4765-851d-a623ba07f2e4",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9d826186-9958-4e25-8cb8-3d1ed0fc050b",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 1,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 2,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "36ac6b83-7c73-4024-a42a-5c18f106bb35",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 3,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "79d8360e-0532-4a0a-ba13-f8d24daff1fc",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "aaf6ba17-2d9e-4a23-89c4-cadb40ca2c5e",
+          "type": "Kenney-Industrial-building-l",
+          "x": 3,
+          "y": 1,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "12eb96e8-26ac-4a79-88bf-429c6f7295c8",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "69296d98-08c3-4756-9c7a-736df0ab4e87",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 15,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 5,
+      "stage": 0,
+      "stageName": "",
+      "price": 60,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 3,
+      "y": 1,
+      "gridSize": 3,
+      "footprintWidth": 3,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 2,
+        "worker": 2,
+        "sector": 6,
+        "salary": 20,
+        "workerSources": {
+          "70800839-36dc-4f5e-835a-40ce18b6acf1": 2
+        }
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "other",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          1
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          4,
+          2
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          5,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "42bb113a-aa93-4d65-b46a-9abb91a34d4c",
+      "type": "Warehouse",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "aaf6ba17-2d9e-4a23-89c4-cadb40ca2c5e",
+          "type": "Kenney-Industrial-building-l",
+          "x": 3,
+          "y": 1,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "12eb96e8-26ac-4a79-88bf-429c6f7295c8",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "69296d98-08c3-4756-9c7a-736df0ab4e87",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "46244680-afd6-4c26-9adb-a840779c06df",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "42bb113a-aa93-4d65-b46a-9abb91a34d4c",
+          "type": "Kenney-Industrial-building-a",
+          "x": 6,
+          "y": 1,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "3b71f97e-1638-477b-b475-ecc5e7117e66",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "acf71e4f-b21a-4637-b1cb-162047afb27a",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 22,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 3,
+      "stage": 0,
+      "stageName": "",
+      "price": 80,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 6,
+      "y": 1,
+      "gridSize": 3,
+      "footprintWidth": 3,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 4,
+        "worker": 4,
+        "sector": 4,
+        "salary": 40,
+        "workerSources": {
+          "8b061855-fe48-4e38-8b15-bd45e373fbd9": 4
+        }
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "other",
+      "tier": null,
+      "footprintTiles": [
+        [
+          6,
+          1
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          7,
+          2
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          8,
+          2
+        ]
+      ],
+      "markets": [],
+      "isCollecting": true,
+      "linkedDistributors": [],
+      "clientDemand": {
+        "pot": {
+          "2665c010-a80a-415f-8570-ce905223431d": {
+            "turn": 196,
+            "wanted": 10,
+            "served": 10,
+            "streak": 7
+          },
+          "7b54cd09-142a-4b0e-98a2-0ea7522b7597": {
+            "turn": 198,
+            "wanted": 10,
+            "served": 0,
+            "streak": 92
+          },
+          "8b061855-fe48-4e38-8b15-bd45e373fbd9": {
+            "turn": 198,
+            "wanted": 10,
+            "served": 0,
+            "streak": 92
+          },
+          "9a5a8dee-e8f7-45a1-ad31-c4fc9898cdf3": {
+            "turn": 198,
+            "wanted": 10,
+            "served": 0,
+            "streak": 92
+          }
+        },
+        "bandwidth": {
+          "70800839-36dc-4f5e-835a-40ce18b6acf1": {
+            "turn": 196,
+            "wanted": 10,
+            "served": 10,
+            "streak": 7
+          },
+          "fa88ef19-51b2-4496-9ed7-e69bff93de01": {
+            "turn": 198,
+            "wanted": 10,
+            "served": 0,
+            "streak": 92
+          }
+        },
+        "wood": {
+          "7ac67f13-073e-4d0e-a8c8-60ccd2cfefa7": {
+            "turn": 198,
+            "wanted": 10,
+            "served": 0,
+            "streak": 92
+          },
+          "7d4b44a8-8daa-4621-ac94-369b1ee9bb1a": {
+            "turn": 198,
+            "wanted": 10,
+            "served": 0,
+            "streak": 92
+          }
+        },
+        "decoratedPot": {
+          "7ac67f13-073e-4d0e-a8c8-60ccd2cfefa7": {
+            "turn": 198,
+            "wanted": 10,
+            "served": 0,
+            "streak": 92
+          },
+          "7d4b44a8-8daa-4621-ac94-369b1ee9bb1a": {
+            "turn": 198,
+            "wanted": 10,
+            "served": 0,
+            "streak": 92
+          }
+        },
+        "book": {
+          "7ac67f13-073e-4d0e-a8c8-60ccd2cfefa7": {
+            "turn": 197,
+            "wanted": 10,
+            "served": 10,
+            "streak": 8
+          },
+          "7d4b44a8-8daa-4621-ac94-369b1ee9bb1a": {
+            "turn": 198,
+            "wanted": 10,
+            "served": 0,
+            "streak": 92
+          }
+        },
+        "carrotCake": {
+          "7ac67f13-073e-4d0e-a8c8-60ccd2cfefa7": {
+            "turn": 198,
+            "wanted": 10,
+            "served": 0,
+            "streak": 92
+          },
+          "7d4b44a8-8daa-4621-ac94-369b1ee9bb1a": {
+            "turn": 198,
+            "wanted": 10,
+            "served": 0,
+            "streak": 92
+          }
+        }
+      },
+      "lots": {
+        "pot": {},
+        "bandwidth": {},
+        "book": {}
+      },
+      "lastTransaction": {
+        "year": 3,
+        "monthIndex": 3
+      },
+      "lastCollection": {
+        "wood": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "oil": 0,
+        "candle": 0,
+        "olive": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "bandwidth": 0,
+        "book": 0,
+        "goods": 0
+      },
+      "carryOver": {
+        "year": 3,
+        "stocks": {
+          "wood": 0,
+          "furniture": 0,
+          "plate": 0,
+          "pot": 0,
+          "amphora": 0,
+          "oil": 0,
+          "candle": 0,
+          "olive": 0,
+          "decoratedPot": 0,
+          "carrotCake": 0,
+          "bandwidth": 0,
+          "book": 0
+        },
+        "harvested": {
+          "wood": 0,
+          "furniture": 0,
+          "plate": 0,
+          "pot": 20,
+          "amphora": 0,
+          "oil": 0,
+          "candle": 0,
+          "olive": 0,
+          "decoratedPot": 0,
+          "carrotCake": 0,
+          "bandwidth": 20,
+          "book": 20
+        }
+      }
+    },
+    {
+      "instanceId": "8d395c72-c166-40a0-8093-810334baea10",
+      "type": "Factory-Pot",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "42bb113a-aa93-4d65-b46a-9abb91a34d4c",
+          "type": "Kenney-Industrial-building-a",
+          "x": 6,
+          "y": 1,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "3b71f97e-1638-477b-b475-ecc5e7117e66",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "acf71e4f-b21a-4637-b1cb-162047afb27a",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "3fcd3402-323e-445d-93eb-c24bff4e5c7c",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ed24f184-230e-4f80-9dc5-5553a907b44a",
+          "type": "StonePath-001",
+          "x": 10,
+          "y": 0,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "6ca6154a-4d70-4649-9cd9-5141c14bfaa4",
+          "type": "StonePath-001",
+          "x": 11,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 31,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 55,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 9,
+      "y": 1,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 2,
+        "worker": 2,
+        "sector": 3,
+        "salary": 20,
+        "workerSources": {
+          "7b54cd09-142a-4b0e-98a2-0ea7522b7597": 2
+        }
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "other",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          1
+        ],
+        [
+          9,
+          2
+        ],
+        [
+          10,
+          1
+        ],
+        [
+          10,
+          2
+        ]
+      ],
+      "markets": [],
+      "cycleState": {
+        "pot": {
+          "index": 0,
+          "value": 0,
+          "opened": false
+        }
+      },
+      "saleWindowOpen": true,
+      "salesToDistributor": [],
+      "salesToHub": [
+        {
+          "year": 3,
+          "productType": "pot",
+          "quantity": 20,
+          "count": 2,
+          "hubId": "42bb113a-aa93-4d65-b46a-9abb91a34d4c"
+        }
+      ],
+      "collectedByHub": true,
+      "activityCollected": {
+        "pot": {
+          "amount": 10,
+          "turn": null
+        }
+      }
+    },
+    {
+      "instanceId": "fa88ef19-51b2-4496-9ed7-e69bff93de01",
+      "type": "House-Purple",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "681b0346-ff46-4c51-942d-643b9d2b7e13",
+          "type": "Boulder-001",
+          "x": 0,
+          "y": 0,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "70800839-36dc-4f5e-835a-40ce18b6acf1",
+          "type": "House-Purple",
+          "x": 0,
+          "y": 3,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6571855e-86b8-4f65-b510-ebe893e36cfb",
+          "type": "Tree-Chene",
+          "x": 1,
+          "y": 0,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "b7fcac94-5387-4765-851d-a623ba07f2e4",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9d826186-9958-4e25-8cb8-3d1ed0fc050b",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 1,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 2,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "36ac6b83-7c73-4024-a42a-5c18f106bb35",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 3,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "d2d1a9d0-1b6f-450c-b89f-0ba3d59f721d",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 4,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 9,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 0,
+      "y": 2,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "house",
+      "tier": 3,
+      "footprintTiles": [
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "markets": [],
+      "saleWindowOpen": true,
+      "distributorTooFar": true,
+      "lastPopulationGrowthMonth": 0,
+      "lastSubsistenceMonth": 3,
+      "cycleState": {
+        "book": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        }
+      },
+      "activityShortfall": {
+        "book": true
+      },
+      "lastConsumptionMonth": 3,
+      "lastConsumption": {
+        "month": 3,
+        "demand": 12,
+        "taken": 2,
+        "totalUnfed": 10,
+        "categoriesTaken": [
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "lastGoodsConsumptionMonth": 3,
+      "lastGoodsConsumption": {
+        "month": 3,
+        "demand": 3,
+        "taken": 0,
+        "totalUnfed": 3,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 3,
+      "lastHeatConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 3,
+      "lastLightConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "servedFlags": {
+        "faith": 3
+      },
+      "level": 2,
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false
+    },
+    {
+      "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "681b0346-ff46-4c51-942d-643b9d2b7e13",
+          "type": "Boulder-001",
+          "x": 0,
+          "y": 0,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6571855e-86b8-4f65-b510-ebe893e36cfb",
+          "type": "Tree-Chene",
+          "x": 1,
+          "y": 0,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "b7fcac94-5387-4765-851d-a623ba07f2e4",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9d826186-9958-4e25-8cb8-3d1ed0fc050b",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 1,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "36ac6b83-7c73-4024-a42a-5c18f106bb35",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 3,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "d2d1a9d0-1b6f-450c-b89f-0ba3d59f721d",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 4,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "79d8360e-0532-4a0a-ba13-f8d24daff1fc",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "aaf6ba17-2d9e-4a23-89c4-cadb40ca2c5e",
+          "type": "Kenney-Industrial-building-l",
+          "x": 3,
+          "y": 1,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "c19d63e9-76e4-428c-9696-5c261ae6b1ce",
+          "type": "Boulder-001",
+          "x": 3,
+          "y": 4,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "12eb96e8-26ac-4a79-88bf-429c6f7295c8",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 0,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 4,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 2,
+      "y": 2,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          2
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "70800839-36dc-4f5e-835a-40ce18b6acf1",
+      "type": "House-Purple",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "fa88ef19-51b2-4496-9ed7-e69bff93de01",
+          "type": "House-Purple",
+          "x": 0,
+          "y": 2,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "9d826186-9958-4e25-8cb8-3d1ed0fc050b",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 1,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 2,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "36ac6b83-7c73-4024-a42a-5c18f106bb35",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 3,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "d2d1a9d0-1b6f-450c-b89f-0ba3d59f721d",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 4,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "bc30aca0-ec22-47e3-b59c-d742fed05bdc",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 5,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 9,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 0,
+      "y": 3,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "house",
+      "tier": 3,
+      "footprintTiles": [
+        [
+          0,
+          3
+        ],
+        [
+          1,
+          3
+        ]
+      ],
+      "markets": [],
+      "saleWindowOpen": true,
+      "distributorTooFar": true,
+      "lastPopulationGrowthMonth": 0,
+      "lastSubsistenceMonth": 3,
+      "lastConsumptionMonth": 3,
+      "lastConsumption": {
+        "month": 3,
+        "demand": 12,
+        "taken": 2,
+        "totalUnfed": 10,
+        "categoriesTaken": [
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "lastGoodsConsumptionMonth": 3,
+      "lastGoodsConsumption": {
+        "month": 3,
+        "demand": 3,
+        "taken": 0,
+        "totalUnfed": 3,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 3,
+      "lastHeatConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 3,
+      "lastLightConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "cycleState": {
+        "book": {
+          "index": 0,
+          "value": 0,
+          "opened": false
+        }
+      },
+      "activityShortfall": {
+        "book": false
+      },
+      "servedFlags": {
+        "faith": 3
+      },
+      "level": 2,
+      "salesToDistributor": [],
+      "salesToHub": [
+        {
+          "year": 3,
+          "productType": "book",
+          "quantity": 20,
+          "count": 2,
+          "hubId": "42bb113a-aa93-4d65-b46a-9abb91a34d4c"
+        }
+      ],
+      "collectedByHub": true,
+      "activityInputs": {
+        "book": {
+          "year": 3,
+          "monthIndex": 3,
+          "takenByCategory": {
+            "bandwidth": 10
+          }
+        }
+      },
+      "activityCollected": {
+        "book": {
+          "amount": 10,
+          "turn": null
+        }
+      }
+    },
+    {
+      "instanceId": "36ac6b83-7c73-4024-a42a-5c18f106bb35",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "9d826186-9958-4e25-8cb8-3d1ed0fc050b",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 1,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 2,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "d2d1a9d0-1b6f-450c-b89f-0ba3d59f721d",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 4,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "bc30aca0-ec22-47e3-b59c-d742fed05bdc",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 5,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "aaf6ba17-2d9e-4a23-89c4-cadb40ca2c5e",
+          "type": "Kenney-Industrial-building-l",
+          "x": 3,
+          "y": 1,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "c19d63e9-76e4-428c-9696-5c261ae6b1ce",
+          "type": "Boulder-001",
+          "x": 3,
+          "y": 4,
+          "zone": 1,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 4,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 2,
+      "y": 3,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          3
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "d2d1a9d0-1b6f-450c-b89f-0ba3d59f721d",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "fa88ef19-51b2-4496-9ed7-e69bff93de01",
+          "type": "House-Purple",
+          "x": 0,
+          "y": 2,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 2,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "36ac6b83-7c73-4024-a42a-5c18f106bb35",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 3,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "bc30aca0-ec22-47e3-b59c-d742fed05bdc",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 5,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "77be8905-b185-4bca-a35a-3989a79fd1f5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 6,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "c19d63e9-76e4-428c-9696-5c261ae6b1ce",
+          "type": "Boulder-001",
+          "x": 3,
+          "y": 4,
+          "zone": 1,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 4,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 2,
+      "y": 4,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          4
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 3,
+      "y": 4,
+      "neighbors": [
+        {
+          "instanceId": "70a5e373-bf25-4630-a7b5-21a57b4a6933",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 2,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "36ac6b83-7c73-4024-a42a-5c18f106bb35",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 3,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "d2d1a9d0-1b6f-450c-b89f-0ba3d59f721d",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 4,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "bc30aca0-ec22-47e3-b59c-d742fed05bdc",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 5,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "77be8905-b185-4bca-a35a-3989a79fd1f5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 6,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9892c005-802a-49e4-89a6-e45abae6bb6f",
+          "type": "Tree-Sapin",
+          "x": 5,
+          "y": 5,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "rock": 51,
+        "gold": 44,
+        "iron": 43
+      },
+      "maxStocks": {
+        "rock": 51,
+        "gold": 44,
+        "iron": 43
+      },
+      "roads": 1,
+      "worldTime": 198,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "c19d63e9-76e4-428c-9696-5c261ae6b1ce",
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          4
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "type": "Tree-Chene",
+      "category": "nature",
+      "x": 7,
+      "y": 4,
+      "neighbors": [
+        {
+          "instanceId": "9892c005-802a-49e4-89a6-e45abae6bb6f",
+          "type": "Tree-Sapin",
+          "x": 5,
+          "y": 5,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d7bc5c2c-fb50-42cc-9d55-3f8dde8e1190",
+          "type": "Boulder-001",
+          "x": 9,
+          "y": 4,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "987dfcda-47e7-4574-9ff7-82262404fd38",
+          "type": "Boulder-001",
+          "x": 9,
+          "y": 5,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wood": 120
+      },
+      "maxStocks": {
+        "wood": 120
+      },
+      "roads": 0,
+      "worldTime": 198,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "ce971823-a3da-4155-8054-c0cd0f5c1a7a",
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          7,
+          4
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 9,
+      "y": 4,
+      "neighbors": [
+        {
+          "instanceId": "ce971823-a3da-4155-8054-c0cd0f5c1a7a",
+          "type": "Tree-Chene",
+          "x": 7,
+          "y": 4,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "987dfcda-47e7-4574-9ff7-82262404fd38",
+          "type": "Boulder-001",
+          "x": 9,
+          "y": 5,
+          "zone": 1,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "rock": 141,
+        "gold": 49,
+        "iron": 45
+      },
+      "maxStocks": {
+        "rock": 141,
+        "gold": 49,
+        "iron": 45
+      },
+      "roads": 0,
+      "worldTime": 198,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "d7bc5c2c-fb50-42cc-9d55-3f8dde8e1190",
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          4
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "instanceId": "7d4b44a8-8daa-4621-ac94-369b1ee9bb1a",
+      "type": "House-Blue",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "70800839-36dc-4f5e-835a-40ce18b6acf1",
+          "type": "House-Purple",
+          "x": 0,
+          "y": 3,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "36ac6b83-7c73-4024-a42a-5c18f106bb35",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 3,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "d2d1a9d0-1b6f-450c-b89f-0ba3d59f721d",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 4,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "bc30aca0-ec22-47e3-b59c-d742fed05bdc",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 5,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "77be8905-b185-4bca-a35a-3989a79fd1f5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 6,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 7,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 8,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 0,
+      "y": 5,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "house",
+      "tier": 1,
+      "footprintTiles": [
+        [
+          0,
+          5
+        ],
+        [
+          0,
+          6
+        ],
+        [
+          1,
+          5
+        ],
+        [
+          1,
+          6
+        ]
+      ],
+      "markets": [],
+      "saleWindowOpen": true,
+      "distributorTooFar": true,
+      "lastPopulationGrowthMonth": 0,
+      "lastSubsistenceMonth": 3,
+      "lastConsumptionMonth": 3,
+      "lastConsumption": {
+        "month": 3,
+        "demand": 12,
+        "taken": 2,
+        "totalUnfed": 10,
+        "categoriesTaken": [
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "lastGoodsConsumptionMonth": 3,
+      "lastGoodsConsumption": {
+        "month": 3,
+        "demand": 3,
+        "taken": 0,
+        "totalUnfed": 3,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 3,
+      "lastHeatConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 3,
+      "lastLightConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "cycleState": {
+        "dealWood": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        },
+        "dealDecoratedPot": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        },
+        "dealBook": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        },
+        "dealCarrotCake": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        }
+      },
+      "activityShortfall": {
+        "dealWood": true,
+        "dealDecoratedPot": true,
+        "dealBook": true,
+        "dealCarrotCake": true
+      },
+      "servedFlags": {
+        "faith": 3
+      },
+      "level": 2,
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false
+    },
+    {
+      "instanceId": "bc30aca0-ec22-47e3-b59c-d742fed05bdc",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "70800839-36dc-4f5e-835a-40ce18b6acf1",
+          "type": "House-Purple",
+          "x": 0,
+          "y": 3,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "36ac6b83-7c73-4024-a42a-5c18f106bb35",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 3,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "d2d1a9d0-1b6f-450c-b89f-0ba3d59f721d",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 4,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "77be8905-b185-4bca-a35a-3989a79fd1f5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 6,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 7,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "c19d63e9-76e4-428c-9696-5c261ae6b1ce",
+          "type": "Boulder-001",
+          "x": 3,
+          "y": 4,
+          "zone": 1,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 4,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 2,
+      "y": 5,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          5
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "type": "Tree-Sapin",
+      "category": "nature",
+      "x": 5,
+      "y": 5,
+      "neighbors": [
+        {
+          "instanceId": "c19d63e9-76e4-428c-9696-5c261ae6b1ce",
+          "type": "Boulder-001",
+          "x": 3,
+          "y": 4,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "b66be93a-5001-40a8-88ad-8b39bb19c16f",
+          "type": "Kenney-Industrial-building-i",
+          "x": 3,
+          "y": 6,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "ce971823-a3da-4155-8054-c0cd0f5c1a7a",
+          "type": "Tree-Chene",
+          "x": 7,
+          "y": 4,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wood": 100
+      },
+      "maxStocks": {
+        "wood": 100
+      },
+      "roads": 0,
+      "worldTime": 198,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "9892c005-802a-49e4-89a6-e45abae6bb6f",
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          5,
+          5
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 9,
+      "y": 5,
+      "neighbors": [
+        {
+          "instanceId": "ce971823-a3da-4155-8054-c0cd0f5c1a7a",
+          "type": "Tree-Chene",
+          "x": 7,
+          "y": 4,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "b907004c-10eb-42a6-82aa-7e8e1424f1e8",
+          "type": "Tree-Chene",
+          "x": 8,
+          "y": 7,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d7bc5c2c-fb50-42cc-9d55-3f8dde8e1190",
+          "type": "Boulder-001",
+          "x": 9,
+          "y": 4,
+          "zone": 1,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "rock": 130,
+        "gold": 28,
+        "iron": 51
+      },
+      "maxStocks": {
+        "rock": 130,
+        "gold": 28,
+        "iron": 51
+      },
+      "roads": 0,
+      "worldTime": 198,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "987dfcda-47e7-4574-9ff7-82262404fd38",
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          5
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "instanceId": "77be8905-b185-4bca-a35a-3989a79fd1f5",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "d2d1a9d0-1b6f-450c-b89f-0ba3d59f721d",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 4,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "bc30aca0-ec22-47e3-b59c-d742fed05bdc",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 5,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 7,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "c19d63e9-76e4-428c-9696-5c261ae6b1ce",
+          "type": "Boulder-001",
+          "x": 3,
+          "y": 4,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "b66be93a-5001-40a8-88ad-8b39bb19c16f",
+          "type": "Kenney-Industrial-building-i",
+          "x": 3,
+          "y": 6,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "9f455a1a-5443-4f97-9cba-6ea1273268da",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 4,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 2,
+      "y": 6,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          6
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "b66be93a-5001-40a8-88ad-8b39bb19c16f",
+      "type": "Factory-Network",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "d2d1a9d0-1b6f-450c-b89f-0ba3d59f721d",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 4,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "bc30aca0-ec22-47e3-b59c-d742fed05bdc",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 5,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "77be8905-b185-4bca-a35a-3989a79fd1f5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 6,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 7,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "c19d63e9-76e4-428c-9696-5c261ae6b1ce",
+          "type": "Boulder-001",
+          "x": 3,
+          "y": 4,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "9f455a1a-5443-4f97-9cba-6ea1273268da",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "9892c005-802a-49e4-89a6-e45abae6bb6f",
+          "type": "Tree-Sapin",
+          "x": 5,
+          "y": 5,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 28,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 55,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 3,
+      "y": 6,
+      "gridSize": 2,
+      "footprintWidth": 1,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 2,
+        "worker": 2,
+        "sector": 3,
+        "salary": 20,
+        "workerSources": {
+          "7b54cd09-142a-4b0e-98a2-0ea7522b7597": 2
+        }
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "other",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          6
+        ],
+        [
+          3,
+          7
+        ]
+      ],
+      "markets": [],
+      "saleWindowOpen": true,
+      "cycleState": {
+        "bandwidth": {
+          "index": 0,
+          "value": 0,
+          "opened": false
+        }
+      },
+      "salesToDistributor": [],
+      "salesToHub": [
+        {
+          "year": 3,
+          "productType": "bandwidth",
+          "quantity": 20,
+          "count": 2,
+          "hubId": "42bb113a-aa93-4d65-b46a-9abb91a34d4c"
+        }
+      ],
+      "collectedByHub": true,
+      "activityCollected": {
+        "bandwidth": {
+          "amount": 10,
+          "turn": null
+        }
+      }
+    },
+    {
+      "instanceId": "7ac67f13-073e-4d0e-a8c8-60ccd2cfefa7",
+      "type": "House-Blue",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "2665c010-a80a-415f-8570-ce905223431d",
+          "type": "House-Red",
+          "x": 0,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "bc30aca0-ec22-47e3-b59c-d742fed05bdc",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 5,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "77be8905-b185-4bca-a35a-3989a79fd1f5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 6,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 7,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 160,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 160,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 8,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 0,
+      "y": 7,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "house",
+      "tier": 1,
+      "footprintTiles": [
+        [
+          0,
+          7
+        ],
+        [
+          0,
+          8
+        ],
+        [
+          1,
+          7
+        ],
+        [
+          1,
+          8
+        ]
+      ],
+      "markets": [],
+      "saleWindowOpen": true,
+      "distributorTooFar": true,
+      "lastPopulationGrowthMonth": 0,
+      "lastSubsistenceMonth": 3,
+      "lastConsumptionMonth": 3,
+      "lastConsumption": {
+        "month": 3,
+        "demand": 12,
+        "taken": 2,
+        "totalUnfed": 10,
+        "categoriesTaken": [
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "lastGoodsConsumptionMonth": 3,
+      "lastGoodsConsumption": {
+        "month": 3,
+        "demand": 3,
+        "taken": 0,
+        "totalUnfed": 3,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 3,
+      "lastHeatConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 3,
+      "lastLightConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "cycleState": {
+        "dealWood": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        },
+        "dealDecoratedPot": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        },
+        "dealBook": {
+          "index": 0,
+          "value": 0,
+          "opened": false
+        },
+        "dealCarrotCake": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        }
+      },
+      "activityShortfall": {
+        "dealWood": true,
+        "dealDecoratedPot": true,
+        "dealBook": false,
+        "dealCarrotCake": true
+      },
+      "servedFlags": {
+        "faith": 3
+      },
+      "level": 2,
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false,
+      "activityInputs": {
+        "dealBook": {
+          "year": 3,
+          "monthIndex": 3,
+          "takenByCategory": {
+            "book": 10
+          }
+        }
+      },
+      "lastFailedSale": {
+        "year": 3,
+        "monthIndex": 2,
+        "units": 150,
+        "cause": "no_hub"
+      }
+    },
+    {
+      "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "2665c010-a80a-415f-8570-ce905223431d",
+          "type": "House-Red",
+          "x": 0,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "bc30aca0-ec22-47e3-b59c-d742fed05bdc",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 5,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "77be8905-b185-4bca-a35a-3989a79fd1f5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 6,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "b66be93a-5001-40a8-88ad-8b39bb19c16f",
+          "type": "Kenney-Industrial-building-i",
+          "x": 3,
+          "y": 6,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "9f455a1a-5443-4f97-9cba-6ea1273268da",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 8,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 4,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 2,
+      "y": 7,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          7
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "type": "Tree-Chene",
+      "category": "nature",
+      "x": 8,
+      "y": 7,
+      "neighbors": [
+        {
+          "instanceId": "27943eb4-01cb-4a1b-86b4-f8a8fa16b440",
+          "type": "Tree-Arbuste",
+          "x": 6,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "9a5a8dee-e8f7-45a1-ad31-c4fc9898cdf3",
+          "type": "House-Red",
+          "x": 7,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "987dfcda-47e7-4574-9ff7-82262404fd38",
+          "type": "Boulder-001",
+          "x": 9,
+          "y": 5,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "ec60aeb0-f549-484e-8f60-096fbc8b4f87",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 8,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "380370e5-9ba2-40b5-bce6-4c207f3b77fa",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wood": 120
+      },
+      "maxStocks": {
+        "wood": 120
+      },
+      "roads": 0,
+      "worldTime": 198,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "b907004c-10eb-42a6-82aa-7e8e1424f1e8",
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          8,
+          7
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "8b061855-fe48-4e38-8b15-bd45e373fbd9",
+          "type": "House-Red",
+          "x": 0,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "77be8905-b185-4bca-a35a-3989a79fd1f5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 6,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 7,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9f455a1a-5443-4f97-9cba-6ea1273268da",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 8,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 4,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 2,
+      "y": 8,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          8
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "9f455a1a-5443-4f97-9cba-6ea1273268da",
+      "type": "Farm-Carrot",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "77be8905-b185-4bca-a35a-3989a79fd1f5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 6,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 7,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 8,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 864,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 864,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 13,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 20,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 3,
+      "y": 8,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30,
+        "workerSources": {
+          "7b54cd09-142a-4b0e-98a2-0ea7522b7597": 3
+        }
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          8
+        ]
+      ],
+      "markets": [],
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false,
+      "lastProductionYear": 2,
+      "saleWindowOpen": false,
+      "lastFailedSale": {
+        "year": 3,
+        "monthIndex": 0,
+        "units": 864,
+        "cause": "no_hub"
+      }
+    },
+    {
+      "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+      "type": "Farm-Carrot",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "77be8905-b185-4bca-a35a-3989a79fd1f5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 6,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 7,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9f455a1a-5443-4f97-9cba-6ea1273268da",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 8,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "27943eb4-01cb-4a1b-86b4-f8a8fa16b440",
+          "type": "Tree-Arbuste",
+          "x": 6,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 864,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 864,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 12,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 20,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 4,
+      "y": 8,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30,
+        "workerSources": {
+          "2665c010-a80a-415f-8570-ce905223431d": 3
+        }
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          8
+        ]
+      ],
+      "markets": [],
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false,
+      "lastProductionYear": 2,
+      "saleWindowOpen": false,
+      "lastFailedSale": {
+        "year": 3,
+        "monthIndex": 0,
+        "units": 864,
+        "cause": "no_hub"
+      }
+    },
+    {
+      "instanceId": "ec60aeb0-f549-484e-8f60-096fbc8b4f87",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "7b54cd09-142a-4b0e-98a2-0ea7522b7597",
+          "type": "House-Red",
+          "x": 7,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "b907004c-10eb-42a6-82aa-7e8e1424f1e8",
+          "type": "Tree-Chene",
+          "x": 8,
+          "y": 7,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "380370e5-9ba2-40b5-bce6-4c207f3b77fa",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 9,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e1bdd19d-36e3-41f6-88ea-629ae8456cfb",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "a1fd8193-1e3f-46bb-bc08-423c6a03d08d",
+          "type": "Tree-Sapin",
+          "x": 11,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "5b90ac39-6d6b-48cc-b1d5-cbd89eef463f",
+          "type": "Tree-Chene",
+          "x": 11,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 40,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 9,
+      "y": 8,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          8
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "type": "Tree-Sapin",
+      "category": "nature",
+      "x": 11,
+      "y": 8,
+      "neighbors": [
+        {
+          "instanceId": "ec60aeb0-f549-484e-8f60-096fbc8b4f87",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "380370e5-9ba2-40b5-bce6-4c207f3b77fa",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e1bdd19d-36e3-41f6-88ea-629ae8456cfb",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "5b90ac39-6d6b-48cc-b1d5-cbd89eef463f",
+          "type": "Tree-Chene",
+          "x": 11,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wood": 100
+      },
+      "maxStocks": {
+        "wood": 100
+      },
+      "roads": 0,
+      "worldTime": 198,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "a1fd8193-1e3f-46bb-bc08-423c6a03d08d",
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          11,
+          8
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "instanceId": "2665c010-a80a-415f-8570-ce905223431d",
+      "type": "House-Red",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "8b061855-fe48-4e38-8b15-bd45e373fbd9",
+          "type": "House-Red",
+          "x": 0,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 7,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "92ffdf1e-170f-4701-9781-deeced63b930",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 160,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 160,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 7,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 0,
+      "y": 9,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "house",
+      "tier": 2,
+      "footprintTiles": [
+        [
+          0,
+          9
+        ],
+        [
+          1,
+          9
+        ]
+      ],
+      "markets": [],
+      "saleWindowOpen": true,
+      "distributorTooFar": true,
+      "lastPopulationGrowthMonth": 0,
+      "lastSubsistenceMonth": 3,
+      "lastConsumptionMonth": 3,
+      "lastConsumption": {
+        "month": 3,
+        "demand": 12,
+        "taken": 2,
+        "totalUnfed": 10,
+        "categoriesTaken": [
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "lastGoodsConsumptionMonth": 3,
+      "lastGoodsConsumption": {
+        "month": 3,
+        "demand": 3,
+        "taken": 0,
+        "totalUnfed": 3,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 3,
+      "lastHeatConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 3,
+      "lastLightConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "cycleState": {
+        "decoratedPot": {
+          "index": 0,
+          "value": 0,
+          "opened": false
+        },
+        "carrotCake": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        }
+      },
+      "activityShortfall": {
+        "decoratedPot": false,
+        "carrotCake": true
+      },
+      "servedFlags": {
+        "faith": 3
+      },
+      "level": 2,
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false,
+      "activityInputs": {
+        "decoratedPot": {
+          "year": 3,
+          "monthIndex": 3,
+          "takenByCategory": {
+            "pot": 10
+          }
+        }
+      },
+      "lastFailedSale": {
+        "year": 3,
+        "monthIndex": 2,
+        "units": 150,
+        "cause": "no_hub"
+      }
+    },
+    {
+      "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 7,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "92ffdf1e-170f-4701-9781-deeced63b930",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9f455a1a-5443-4f97-9cba-6ea1273268da",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 8,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "67d85953-c77c-461f-8124-5f7af170b5f3",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d642f699-8bdf-4991-80db-c19b424453dc",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 4,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 2,
+      "y": 9,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          9
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+      "type": "Farm-Carrot",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 7,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "92ffdf1e-170f-4701-9781-deeced63b930",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9f455a1a-5443-4f97-9cba-6ea1273268da",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 8,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "67d85953-c77c-461f-8124-5f7af170b5f3",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 8,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d642f699-8bdf-4991-80db-c19b424453dc",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "8e988bfc-29a7-44e5-bfd5-f3cd92004732",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 864,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 864,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 13,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 20,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 3,
+      "y": 9,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30,
+        "workerSources": {
+          "2665c010-a80a-415f-8570-ce905223431d": 2,
+          "7b54cd09-142a-4b0e-98a2-0ea7522b7597": 1
+        }
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          9
+        ]
+      ],
+      "markets": [],
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false,
+      "lastProductionYear": 2,
+      "saleWindowOpen": false,
+      "lastFailedSale": {
+        "year": 3,
+        "monthIndex": 0,
+        "units": 864,
+        "cause": "no_hub"
+      }
+    },
+    {
+      "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+      "type": "Farm-Carrot",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "ebf06fb1-3639-4698-b087-dd4a6bf95ca8",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 7,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "92ffdf1e-170f-4701-9781-deeced63b930",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9f455a1a-5443-4f97-9cba-6ea1273268da",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 8,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "67d85953-c77c-461f-8124-5f7af170b5f3",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 8,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d642f699-8bdf-4991-80db-c19b424453dc",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "8e988bfc-29a7-44e5-bfd5-f3cd92004732",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "27943eb4-01cb-4a1b-86b4-f8a8fa16b440",
+          "type": "Tree-Arbuste",
+          "x": 6,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "550b83c2-d730-4a74-8f94-81cc2cd2f4d6",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 864,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 864,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 12,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 20,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 4,
+      "y": 9,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30,
+        "workerSources": {
+          "2665c010-a80a-415f-8570-ce905223431d": 3
+        }
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          9
+        ]
+      ],
+      "markets": [],
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false,
+      "lastProductionYear": 2,
+      "saleWindowOpen": false,
+      "lastFailedSale": {
+        "year": 3,
+        "monthIndex": 0,
+        "units": 864,
+        "cause": "no_hub"
+      }
+    },
+    {
+      "type": "Tree-Arbuste",
+      "category": "nature",
+      "x": 6,
+      "y": 9,
+      "neighbors": [
+        {
+          "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d642f699-8bdf-4991-80db-c19b424453dc",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "8e988bfc-29a7-44e5-bfd5-f3cd92004732",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "550b83c2-d730-4a74-8f94-81cc2cd2f4d6",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "746ff9b9-0376-4300-9fc7-ab88b7b85789",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "b907004c-10eb-42a6-82aa-7e8e1424f1e8",
+          "type": "Tree-Chene",
+          "x": 8,
+          "y": 7,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "c1a9082f-e81b-4683-b7a9-d4bac2ccfeb0",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wood": 80
+      },
+      "maxStocks": {
+        "wood": 80
+      },
+      "roads": 0,
+      "worldTime": 198,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "27943eb4-01cb-4a1b-86b4-f8a8fa16b440",
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          6,
+          9
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "instanceId": "9a5a8dee-e8f7-45a1-ad31-c4fc9898cdf3",
+      "type": "House-Red",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "8e988bfc-29a7-44e5-bfd5-f3cd92004732",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "27943eb4-01cb-4a1b-86b4-f8a8fa16b440",
+          "type": "Tree-Arbuste",
+          "x": 6,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "550b83c2-d730-4a74-8f94-81cc2cd2f4d6",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "7b54cd09-142a-4b0e-98a2-0ea7522b7597",
+          "type": "House-Red",
+          "x": 7,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "746ff9b9-0376-4300-9fc7-ab88b7b85789",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "b907004c-10eb-42a6-82aa-7e8e1424f1e8",
+          "type": "Tree-Chene",
+          "x": 8,
+          "y": 7,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "c1a9082f-e81b-4683-b7a9-d4bac2ccfeb0",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ec60aeb0-f549-484e-8f60-096fbc8b4f87",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "380370e5-9ba2-40b5-bce6-4c207f3b77fa",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e1bdd19d-36e3-41f6-88ea-629ae8456cfb",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "6f9b4864-fdd0-4cad-a552-3178212ff0f3",
+          "type": "StonePath-Tee-001",
+          "x": 9,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 36,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 7,
+      "y": 9,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "house",
+      "tier": 2,
+      "footprintTiles": [
+        [
+          7,
+          9
+        ],
+        [
+          8,
+          9
+        ]
+      ],
+      "markets": [],
+      "saleWindowOpen": true,
+      "distributorTooFar": true,
+      "lastPopulationGrowthMonth": 6,
+      "lastSubsistenceMonth": 3,
+      "lastConsumptionMonth": 3,
+      "lastConsumption": {
+        "month": 3,
+        "demand": 12,
+        "taken": 2,
+        "totalUnfed": 10,
+        "categoriesTaken": [
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "lastGoodsConsumptionMonth": 3,
+      "lastGoodsConsumption": {
+        "month": 3,
+        "demand": 3,
+        "taken": 0,
+        "totalUnfed": 3,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 3,
+      "lastHeatConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 3,
+      "lastLightConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "cycleState": {
+        "decoratedPot": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        },
+        "carrotCake": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        }
+      },
+      "activityShortfall": {
+        "decoratedPot": true,
+        "carrotCake": true
+      },
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false,
+      "servedFlags": {
+        "faith": 3
+      },
+      "level": 2
+    },
+    {
+      "instanceId": "380370e5-9ba2-40b5-bce6-4c207f3b77fa",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "746ff9b9-0376-4300-9fc7-ab88b7b85789",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "b907004c-10eb-42a6-82aa-7e8e1424f1e8",
+          "type": "Tree-Chene",
+          "x": 8,
+          "y": 7,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "c1a9082f-e81b-4683-b7a9-d4bac2ccfeb0",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ec60aeb0-f549-484e-8f60-096fbc8b4f87",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 8,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e1bdd19d-36e3-41f6-88ea-629ae8456cfb",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 10,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "6f9b4864-fdd0-4cad-a552-3178212ff0f3",
+          "type": "StonePath-Tee-001",
+          "x": 9,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "a1fd8193-1e3f-46bb-bc08-423c6a03d08d",
+          "type": "Tree-Sapin",
+          "x": 11,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "5b90ac39-6d6b-48cc-b1d5-cbd89eef463f",
+          "type": "Tree-Chene",
+          "x": 11,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 40,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 9,
+      "y": 9,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          9
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "8b061855-fe48-4e38-8b15-bd45e373fbd9",
+      "type": "House-Red",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "2665c010-a80a-415f-8570-ce905223431d",
+          "type": "House-Red",
+          "x": 0,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "92ffdf1e-170f-4701-9781-deeced63b930",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 6,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 0,
+      "y": 10,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "house",
+      "tier": 2,
+      "footprintTiles": [
+        [
+          0,
+          10
+        ],
+        [
+          1,
+          10
+        ]
+      ],
+      "markets": [],
+      "saleWindowOpen": true,
+      "distributorTooFar": true,
+      "lastPopulationGrowthMonth": 0,
+      "lastSubsistenceMonth": 3,
+      "lastConsumptionMonth": 3,
+      "lastConsumption": {
+        "month": 3,
+        "demand": 12,
+        "taken": 2,
+        "totalUnfed": 10,
+        "categoriesTaken": [
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "lastGoodsConsumptionMonth": 3,
+      "lastGoodsConsumption": {
+        "month": 3,
+        "demand": 3,
+        "taken": 0,
+        "totalUnfed": 3,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 3,
+      "lastHeatConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 3,
+      "lastLightConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "cycleState": {
+        "decoratedPot": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        },
+        "carrotCake": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        }
+      },
+      "activityShortfall": {
+        "decoratedPot": true,
+        "carrotCake": true
+      },
+      "servedFlags": {
+        "faith": 3
+      },
+      "level": 2,
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false
+    },
+    {
+      "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "92ffdf1e-170f-4701-9781-deeced63b930",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9f455a1a-5443-4f97-9cba-6ea1273268da",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "67d85953-c77c-461f-8124-5f7af170b5f3",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d642f699-8bdf-4991-80db-c19b424453dc",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 4,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 2,
+      "y": 10,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          10
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+      "type": "Farm-Carrot",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "92ffdf1e-170f-4701-9781-deeced63b930",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9f455a1a-5443-4f97-9cba-6ea1273268da",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "67d85953-c77c-461f-8124-5f7af170b5f3",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d642f699-8bdf-4991-80db-c19b424453dc",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "8e988bfc-29a7-44e5-bfd5-f3cd92004732",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 864,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 864,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 13,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 20,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 3,
+      "y": 10,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30,
+        "workerSources": {
+          "7b54cd09-142a-4b0e-98a2-0ea7522b7597": 3
+        }
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          10
+        ]
+      ],
+      "markets": [],
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false,
+      "lastProductionYear": 2,
+      "saleWindowOpen": false,
+      "lastFailedSale": {
+        "year": 3,
+        "monthIndex": 0,
+        "units": 864,
+        "cause": "no_hub"
+      }
+    },
+    {
+      "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+      "type": "Farm-Carrot",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "574a9948-3f27-4b05-b4f4-74bae5b81d60",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "92ffdf1e-170f-4701-9781-deeced63b930",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9f455a1a-5443-4f97-9cba-6ea1273268da",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "67d85953-c77c-461f-8124-5f7af170b5f3",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "78572a93-d5c7-48ee-95e9-9c09266fc974",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d642f699-8bdf-4991-80db-c19b424453dc",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "8e988bfc-29a7-44e5-bfd5-f3cd92004732",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "27943eb4-01cb-4a1b-86b4-f8a8fa16b440",
+          "type": "Tree-Arbuste",
+          "x": 6,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "550b83c2-d730-4a74-8f94-81cc2cd2f4d6",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 864,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 864,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 12,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 20,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 4,
+      "y": 10,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30,
+        "workerSources": {
+          "2665c010-a80a-415f-8570-ce905223431d": 3
+        }
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          10
+        ]
+      ],
+      "markets": [],
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false,
+      "lastProductionYear": 2,
+      "saleWindowOpen": false,
+      "lastFailedSale": {
+        "year": 3,
+        "monthIndex": 0,
+        "units": 864,
+        "cause": "no_hub"
+      }
+    },
+    {
+      "instanceId": "7b54cd09-142a-4b0e-98a2-0ea7522b7597",
+      "type": "House-Red",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "8e988bfc-29a7-44e5-bfd5-f3cd92004732",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "27943eb4-01cb-4a1b-86b4-f8a8fa16b440",
+          "type": "Tree-Arbuste",
+          "x": 6,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "550b83c2-d730-4a74-8f94-81cc2cd2f4d6",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9a5a8dee-e8f7-45a1-ad31-c4fc9898cdf3",
+          "type": "House-Red",
+          "x": 7,
+          "y": 9,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "746ff9b9-0376-4300-9fc7-ab88b7b85789",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "c1a9082f-e81b-4683-b7a9-d4bac2ccfeb0",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ec60aeb0-f549-484e-8f60-096fbc8b4f87",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "380370e5-9ba2-40b5-bce6-4c207f3b77fa",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e1bdd19d-36e3-41f6-88ea-629ae8456cfb",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "6f9b4864-fdd0-4cad-a552-3178212ff0f3",
+          "type": "StonePath-Tee-001",
+          "x": 9,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 12,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 36,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 3,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 7,
+      "y": 10,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "house",
+      "tier": 2,
+      "footprintTiles": [
+        [
+          7,
+          10
+        ],
+        [
+          8,
+          10
+        ]
+      ],
+      "markets": [],
+      "saleWindowOpen": true,
+      "distributorTooFar": true,
+      "lastPopulationGrowthMonth": 6,
+      "lastSubsistenceMonth": 3,
+      "lastConsumptionMonth": 3,
+      "lastConsumption": {
+        "month": 3,
+        "demand": 12,
+        "taken": 2,
+        "totalUnfed": 10,
+        "categoriesTaken": [
+          "fruit",
+          "game"
+        ],
+        "takenByCategory": {
+          "fruit": 1,
+          "game": 1
+        }
+      },
+      "lastGoodsConsumptionMonth": 3,
+      "lastGoodsConsumption": {
+        "month": 3,
+        "demand": 3,
+        "taken": 0,
+        "totalUnfed": 3,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 3,
+      "lastHeatConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 3,
+      "lastLightConsumption": {
+        "month": 3,
+        "demand": 1.2000000000000002,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "servedFlags": {
+        "faith": 3
+      },
+      "level": 2,
+      "cycleState": {
+        "decoratedPot": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        },
+        "carrotCake": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        }
+      },
+      "activityShortfall": {
+        "decoratedPot": true,
+        "carrotCake": true
+      },
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false
+    },
+    {
+      "instanceId": "e1bdd19d-36e3-41f6-88ea-629ae8456cfb",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "746ff9b9-0376-4300-9fc7-ab88b7b85789",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "c1a9082f-e81b-4683-b7a9-d4bac2ccfeb0",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "ec60aeb0-f549-484e-8f60-096fbc8b4f87",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "380370e5-9ba2-40b5-bce6-4c207f3b77fa",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 9,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "6f9b4864-fdd0-4cad-a552-3178212ff0f3",
+          "type": "StonePath-Tee-001",
+          "x": 9,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "a1fd8193-1e3f-46bb-bc08-423c6a03d08d",
+          "type": "Tree-Sapin",
+          "x": 11,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "5b90ac39-6d6b-48cc-b1d5-cbd89eef463f",
+          "type": "Tree-Chene",
+          "x": 11,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 40,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 9,
+      "y": 10,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          10
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "type": "Tree-Chene",
+      "category": "nature",
+      "x": 11,
+      "y": 10,
+      "neighbors": [
+        {
+          "instanceId": "ec60aeb0-f549-484e-8f60-096fbc8b4f87",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 8,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "380370e5-9ba2-40b5-bce6-4c207f3b77fa",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e1bdd19d-36e3-41f6-88ea-629ae8456cfb",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "6f9b4864-fdd0-4cad-a552-3178212ff0f3",
+          "type": "StonePath-Tee-001",
+          "x": 9,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "a1fd8193-1e3f-46bb-bc08-423c6a03d08d",
+          "type": "Tree-Sapin",
+          "x": 11,
+          "y": 8,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wood": 120
+      },
+      "maxStocks": {
+        "wood": 120
+      },
+      "roads": 0,
+      "worldTime": 198,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "5b90ac39-6d6b-48cc-b1d5-cbd89eef463f",
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          11,
+          10
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "markets": []
+    },
+    {
+      "instanceId": "92ffdf1e-170f-4701-9781-deeced63b930",
+      "type": "StonePath-Tee-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "2665c010-a80a-415f-8570-ce905223431d",
+          "type": "House-Red",
+          "x": 0,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "67d85953-c77c-461f-8124-5f7af170b5f3",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d642f699-8bdf-4991-80db-c19b424453dc",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 39,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 2,
+      "y": 11,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 1,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          11
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "67d85953-c77c-461f-8124-5f7af170b5f3",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "92ffdf1e-170f-4701-9781-deeced63b930",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d642f699-8bdf-4991-80db-c19b424453dc",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "8e988bfc-29a7-44e5-bfd5-f3cd92004732",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 37,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 3,
+      "y": 11,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          11
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "d642f699-8bdf-4991-80db-c19b424453dc",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "e153aca2-4ab7-4e42-87fb-0a604b983696",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "56b7c1c3-08e9-428e-a8fd-08077b0860a5",
+          "type": "StonePath-001",
+          "x": 2,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "92ffdf1e-170f-4701-9781-deeced63b930",
+          "type": "StonePath-Tee-001",
+          "x": 2,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "67d85953-c77c-461f-8124-5f7af170b5f3",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "8e988bfc-29a7-44e5-bfd5-f3cd92004732",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "27943eb4-01cb-4a1b-86b4-f8a8fa16b440",
+          "type": "Tree-Arbuste",
+          "x": 6,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "550b83c2-d730-4a74-8f94-81cc2cd2f4d6",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 39,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 4,
+      "y": 11,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          11
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "8e988bfc-29a7-44e5-bfd5-f3cd92004732",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "879895eb-1a79-41fc-ae6b-143946e544e0",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "a59f01be-29e3-4281-a017-191bb15dba72",
+          "type": "Farm-Carrot",
+          "x": 3,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "67d85953-c77c-461f-8124-5f7af170b5f3",
+          "type": "StonePath-001",
+          "x": 3,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d642f699-8bdf-4991-80db-c19b424453dc",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "27943eb4-01cb-4a1b-86b4-f8a8fa16b440",
+          "type": "Tree-Arbuste",
+          "x": 6,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "550b83c2-d730-4a74-8f94-81cc2cd2f4d6",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "746ff9b9-0376-4300-9fc7-ab88b7b85789",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 39,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 5,
+      "y": 11,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          5,
+          11
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "550b83c2-d730-4a74-8f94-81cc2cd2f4d6",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "0c2ef76e-e44e-4220-824d-4a16a7c3981e",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "6de70049-ae2f-42ef-be14-90dcd5905ac5",
+          "type": "Farm-Carrot",
+          "x": 4,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "d642f699-8bdf-4991-80db-c19b424453dc",
+          "type": "StonePath-001",
+          "x": 4,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "8e988bfc-29a7-44e5-bfd5-f3cd92004732",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "27943eb4-01cb-4a1b-86b4-f8a8fa16b440",
+          "type": "Tree-Arbuste",
+          "x": 6,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "9a5a8dee-e8f7-45a1-ad31-c4fc9898cdf3",
+          "type": "House-Red",
+          "x": 7,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "746ff9b9-0376-4300-9fc7-ab88b7b85789",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "c1a9082f-e81b-4683-b7a9-d4bac2ccfeb0",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 39,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 6,
+      "y": 11,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          6,
+          11
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "746ff9b9-0376-4300-9fc7-ab88b7b85789",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "8e988bfc-29a7-44e5-bfd5-f3cd92004732",
+          "type": "StonePath-001",
+          "x": 5,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "27943eb4-01cb-4a1b-86b4-f8a8fa16b440",
+          "type": "Tree-Arbuste",
+          "x": 6,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "550b83c2-d730-4a74-8f94-81cc2cd2f4d6",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9a5a8dee-e8f7-45a1-ad31-c4fc9898cdf3",
+          "type": "House-Red",
+          "x": 7,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "7b54cd09-142a-4b0e-98a2-0ea7522b7597",
+          "type": "House-Red",
+          "x": 7,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "c1a9082f-e81b-4683-b7a9-d4bac2ccfeb0",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "380370e5-9ba2-40b5-bce6-4c207f3b77fa",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e1bdd19d-36e3-41f6-88ea-629ae8456cfb",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 10,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "6f9b4864-fdd0-4cad-a552-3178212ff0f3",
+          "type": "StonePath-Tee-001",
+          "x": 9,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 39,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 7,
+      "y": 11,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          7,
+          11
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "c1a9082f-e81b-4683-b7a9-d4bac2ccfeb0",
+      "type": "StonePath-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "27943eb4-01cb-4a1b-86b4-f8a8fa16b440",
+          "type": "Tree-Arbuste",
+          "x": 6,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "550b83c2-d730-4a74-8f94-81cc2cd2f4d6",
+          "type": "StonePath-001",
+          "x": 6,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "9a5a8dee-e8f7-45a1-ad31-c4fc9898cdf3",
+          "type": "House-Red",
+          "x": 7,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "7b54cd09-142a-4b0e-98a2-0ea7522b7597",
+          "type": "House-Red",
+          "x": 7,
+          "y": 10,
+          "zone": 1,
+          "isRoad": false
+        },
+        {
+          "instanceId": "746ff9b9-0376-4300-9fc7-ab88b7b85789",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "380370e5-9ba2-40b5-bce6-4c207f3b77fa",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e1bdd19d-36e3-41f6-88ea-629ae8456cfb",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 10,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "6f9b4864-fdd0-4cad-a552-3178212ff0f3",
+          "type": "StonePath-Tee-001",
+          "x": 9,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 39,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 8,
+      "y": 11,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          8,
+          11
+        ]
+      ],
+      "markets": []
+    },
+    {
+      "instanceId": "6f9b4864-fdd0-4cad-a552-3178212ff0f3",
+      "type": "StonePath-Tee-001",
+      "category": "construction",
+      "neighbors": [
+        {
+          "instanceId": "9a5a8dee-e8f7-45a1-ad31-c4fc9898cdf3",
+          "type": "House-Red",
+          "x": 7,
+          "y": 9,
+          "zone": 2,
+          "isRoad": false
+        },
+        {
+          "instanceId": "746ff9b9-0376-4300-9fc7-ab88b7b85789",
+          "type": "StonePath-001",
+          "x": 7,
+          "y": 11,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "c1a9082f-e81b-4683-b7a9-d4bac2ccfeb0",
+          "type": "StonePath-001",
+          "x": 8,
+          "y": 11,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "380370e5-9ba2-40b5-bce6-4c207f3b77fa",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 9,
+          "zone": 2,
+          "isRoad": true
+        },
+        {
+          "instanceId": "e1bdd19d-36e3-41f6-88ea-629ae8456cfb",
+          "type": "StonePath-001",
+          "x": 9,
+          "y": 10,
+          "zone": 1,
+          "isRoad": true
+        },
+        {
+          "instanceId": "5b90ac39-6d6b-48cc-b1d5-cbd89eef463f",
+          "type": "Tree-Chene",
+          "x": 11,
+          "y": 10,
+          "zone": 2,
+          "isRoad": false
+        }
+      ],
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "fruit": 0,
+        "game": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 40,
+      "time": 0,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "worldTime": 198,
+      "x": 9,
+      "y": 11,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 2,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "56f3c61e-9e72-471e-beb0-0ba1acdacb6a",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          11
+        ]
+      ],
+      "markets": []
+    }
+  ],
+  "employmentSummary": {
+    "workerPool": 96,
+    "totalPopulation": 96,
+    "civilServantCount": 8,
+    "laborPool": 88,
+    "activeCitizenCount": 28,
+    "activePopulationCount": 36,
+    "totalAssigned": 28,
+    "totalNeed": 28,
+    "unemployed": 60,
+    "unemploymentPercentage": 68,
+    "lack": 0,
+    "understaffedBuildingIds": [],
+    "bySector": {
+      "1": {
+        "workerNeed": 18,
+        "workers": 18,
+        "need": 0
+      },
+      "3": {
+        "workerNeed": 4,
+        "workers": 4,
+        "need": 0
+      },
+      "4": {
+        "workerNeed": 4,
+        "workers": 4,
+        "need": 0
+      },
+      "6": {
+        "workerNeed": 2,
+        "workers": 2,
+        "need": 0
+      }
+    },
+    "bySkill": {
+      "fermier": {
+        "workerNeed": 18,
+        "workers": 18,
+        "need": 0
+      },
+      "manutention": {
+        "workerNeed": 4,
+        "workers": 4,
+        "need": 0
+      },
+      "artisanat": {
+        "workerNeed": 2,
+        "workers": 2,
+        "need": 0
+      },
+      "spiritual": {
+        "workerNeed": 2,
+        "workers": 2,
+        "need": 0
+      },
+      "telecoms": {
+        "workerNeed": 2,
+        "workers": 2,
+        "need": 0
+      }
+    },
+    "byGroup": {
+      "artisans": {
+        "workerPool": 48,
+        "assigned": 26,
+        "unemployed": 22,
+        "poolByLevel": {
+          "2": 48
+        }
+      },
+      "merchants": {
+        "workerPool": 24,
+        "assigned": 0,
+        "unemployed": 24,
+        "poolByLevel": {
+          "2": 24
+        }
+      },
+      "scholars": {
+        "workerPool": 24,
+        "assigned": 2,
+        "unemployed": 22,
+        "poolByLevel": {
+          "2": 24
+        }
+      }
+    }
+  },
+  "populationSummary": {
+    "totalPop": 96,
+    "houseCount": 8
+  },
+  "news": {
+    "incoming": [],
+    "archived": []
+  },
+  "unreadableSections": {}
+}

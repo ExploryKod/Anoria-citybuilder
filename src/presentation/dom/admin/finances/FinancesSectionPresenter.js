@@ -1,5 +1,9 @@
 import { listHamlets } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { renderCityLedger, renderCityLedgerMessage } from '../../compta/livret/CityLedgerPresenter.js';
+import { getSessionGameTime } from '../../../../composition/sessionRuntime.js';
+import { TimeManager } from '../../../../shared/time/TimeManager.js';
+import { buildingName } from '../../shell/CatalogVocabulary.js';
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 
 
 const ALL_HAMLETS_VALUE = 'all';
@@ -63,6 +67,54 @@ export class FinancesSectionPresenter {
       this.showError(`Budget indisponible : ${error.message}`);
       throw error;
     }
+
+    await this.loadProducerRanking();
+  }
+
+  /**
+   * The last fully settled month's producer ranking: goods sold to houses (dated by delivery) and services sold to
+   * houses (dated by their settlement, the 1st of this same month, for the month before). See the panel's own note
+   * for why a service's sale lags a good's by one extra month under the same label.
+   */
+  async loadProducerRanking() {
+    const period = this.#lastSettledMonth();
+    const periodLabel = document.getElementById('producer-ranking-period');
+    const body = document.getElementById('producer-ranking-body');
+    if (!body) return;
+
+    if (!period) {
+      // The very first month of the game: no month has closed yet, so there is nothing to rank.
+      if (periodLabel) periodLabel.textContent = '';
+      body.replaceChildren(emptyRankingRow('Pas encore de mois révolu.'));
+      return;
+    }
+
+    if (periodLabel) periodLabel.textContent = `${TimeManager.MONTHS[period.monthIndex]} ${period.year}`;
+    body.replaceChildren(emptyRankingRow('…'));
+
+    try {
+      const rankings = await this.accounting.getProducerRevenues(period.year, period.monthIndex);
+      if (rankings.length === 0) {
+        body.replaceChildren(emptyRankingRow('Aucune vente aux maisons ce mois-là.'));
+      } else {
+        body.replaceChildren(...rankings.map((entry, index) => rankingRow(index + 1, entry)));
+      }
+    } catch (error) {
+      console.error('[FinancesSection] Error loading the producer ranking:', error);
+      body.replaceChildren(emptyRankingRow(`Classement indisponible : ${error.message}`));
+    }
+  }
+
+  /**
+   * The month before the current one — the current month's own lines are still open (see loadProducerRanking).
+   * Null in the game's very first month (year 0, January): there is no earlier month to show.
+   */
+  #lastSettledMonth() {
+    const now = TimeManager.getTimeInfo(getSessionGameTime());
+    if (now.year === 0 && now.monthIndex === 0) return null;
+    return now.monthIndex === 0
+      ? { year: now.year - 1, monthIndex: TimeManager.MONTHS.length - 1 }
+      : { year: now.year, monthIndex: now.monthIndex - 1 };
   }
 
   /** Until the journal is read, no figure is shown: each one reads "…", never a stale or a zero value. */
@@ -107,4 +159,31 @@ export class FinancesSectionPresenter {
     this.financialData = staticData;
     this.render();
   }
+}
+
+/** @param {number} rank @param {{ buildingType: string, revenueHT: number }} entry */
+function rankingRow(rank, entry) {
+  const row = document.createElement('tr');
+  const rankCell = document.createElement('td');
+  rankCell.className = 'producer-ranking-rank-col';
+  rankCell.textContent = String(rank);
+  const nameCell = document.createElement('td');
+  nameCell.className = 'producer-ranking-name-col';
+  nameCell.textContent = buildingName(entry.buildingType);
+  const revenueCell = document.createElement('td');
+  revenueCell.className = 'producer-ranking-revenue-col';
+  revenueCell.textContent = formatEuro(entry.revenueHT);
+  row.append(rankCell, nameCell, revenueCell);
+  return row;
+}
+
+/** @param {string} text */
+function emptyRankingRow(text) {
+  const row = document.createElement('tr');
+  const cell = document.createElement('td');
+  cell.colSpan = 3;
+  cell.className = 'producer-ranking-empty';
+  cell.textContent = text;
+  row.append(cell);
+  return row;
 }

@@ -393,8 +393,8 @@ describe('Accounting — RecordLedgerEntry (citizen_tax slice)', () => {
 
     // level: 2 — level 1 (autarkic) houses are tax-exempt, see CitizenTaxCollectionPolicy.
     await testDb.houses.bulkPut([
-      { name: 'House-Blue-0-0', type: 'House-Blue', hamletId: TEST_HAMLET_ID, pop: 3, level: 2 },
-      { name: 'House-Red-1-1', type: 'House-Red', hamletId: TEST_HAMLET_ID, pop: 4, level: 2 },
+      { id: 'house-blue-0-0', name: 'House-Blue-0-0', type: 'House-Blue', hamletId: TEST_HAMLET_ID, pop: 3, level: 2 },
+      { id: 'house-red-1-1', name: 'House-Red-1-1', type: 'House-Red', hamletId: TEST_HAMLET_ID, pop: 4, level: 2 },
     ]);
 
     try {

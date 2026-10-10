@@ -8,7 +8,7 @@ import {
   wagesPaidOf,
   withholdIncomeTax,
 } from '../../domain/policies/ProducerChargePolicy.js';
-import { PERSONAL_ACCOUNT } from '../../domain/policies/AccountKeyPolicy.js';
+import { BUSINESS_ACCOUNT, PERSONAL_ACCOUNT } from '../../domain/policies/AccountKeyPolicy.js';
 import { serviceSubsidyShare } from '../../domain/policies/ServiceSubsidyPolicy.js';
 import { addVatTo } from '../../domain/policies/VatIncludedPolicy.js';
 import { payableServiceBills } from '../../domain/policies/ServiceSolvencyPolicy.js';
@@ -86,7 +86,7 @@ export class SettleProducerCharges {
    *   goods/services/wages — today only a bank's `deposit_interest_paid` (see SettleBankDepositInterest.js,
    *   which must run before this settlement in the same turn so the line already exists to be read) — folded
    *   into `buildingChargeLines`'s `otherExpensesHT` so it actually reduces taxable profit, not just cash
-   * @param {() => Promise<{ rate: number, threshold: number }>} deps.getSalaryTax the income tax: its rate on a wage (a fraction), and the monthly threshold under which a wage pays nothing
+   * @param {() => Promise<{ threshold1: number, rate1: number, threshold2: number, rate2: number }>} deps.getSalaryTax the progressive income tax bands: see withholdIncomeTax
    * @param {() => Promise<Array<{ id: string, pop: number }>>} deps.listHouses the hamlet's households and their residents
    * @param {() => Promise<{ salaryPerMonth: number, unemploymentBenefitRate: number }>} deps.getPublicPay the reference salary and the benefit rate (a fraction)
    * @param {(houseId: string) => Promise<number>} deps.fundsOf what a house has in its personal account before this settlement
@@ -148,6 +148,10 @@ export class SettleProducerCharges {
     // The city's pay to the households: the civil servants' salary and the unemployed's benefit, from the residents of each.
     const publicPay = await this.deps.getPublicPay();
     const households = await this.deps.listHouses();
+    // A house that sells its own output (an artisan's, a savant's, a merchant's little business — see
+    // buildingEconomy.js's activityRecipe) is still a house, never a company: the money moves on its business
+    // account (BUSINESS_ACCOUNT), not the bare company-style key a lucrative building's holder gets.
+    const houseIds = new Set(households.map((household) => household.id));
     const workersIn = (houseId) => buildings.reduce((sum, building) => sum + (building.workerSources?.[houseId] ?? 0), 0);
     const publicByHouse = new Map();
     const benefitByHouse = new Map();
@@ -217,7 +221,8 @@ export class SettleProducerCharges {
 
     for (const pair of pairs) {
       for (const line of tradeLines(pair)) {
-        await this.#record(line, {
+        const accountKind = houseIds.has(line.holder) ? BUSINESS_ACCOUNT : null;
+        await this.#record({ ...line, accountKind }, {
           time,
           key: buildTradeLineBusinessKey(line.kind, line.holder, line.counterparty, timeInfo, hamletId),
           description: `${LINE_LABELS[line.kind]} ${nameOf(line.holder)}${line.counterparty ? ` avec ${nameOf(line.counterparty)}` : ''} - ${monthLabel}`,
@@ -254,8 +259,12 @@ export class SettleProducerCharges {
       subsidiesHT.set(bill.buildingId, centimes((subsidiesHT.get(bill.buildingId) ?? 0) + bill.citySubsidy));
     }
 
-    // The income tax is per household (foyer): its wages of the month, from every workplace, are taxed once, above the threshold.
+    // The income tax is per household (foyer): its wages of the month, from every workplace, and its unemployment
+    // benefit, are taxed once together, above the threshold.
     const grossByHouse = new Map(publicByHouse);
+    for (const [houseId, benefit] of benefitByHouse) {
+      grossByHouse.set(houseId, centimes((grossByHouse.get(houseId) ?? 0) + benefit));
+    }
     for (const building of buildings) {
       const { salesHT, wagesHT } = wagesByBuilding.get(building.id);
       const purchasesHT = sumWhere(pairs, (pair) => pair.buyerId === building.id);
@@ -344,6 +353,9 @@ export class SettleProducerCharges {
     let payable = bills.map(() => true);
     for (let round = 0; round <= bills.length + 1; round += 1) {
       const grossByHouse = new Map(publicByHouse);
+      for (const [houseId, benefit] of benefitByHouse) {
+        grossByHouse.set(houseId, centimes((grossByHouse.get(houseId) ?? 0) + benefit));
+      }
       const wagesByBuilding = new Map();
       for (const building of buildings) {
         const servicesHT = bills.reduce(
@@ -364,14 +376,11 @@ export class SettleProducerCharges {
           grossByHouse.set(line.holder, centimes((grossByHouse.get(line.holder) ?? 0) + line.amount));
         }
       }
-      // The house's budget is its month's wages, from every workplace, after the income tax on that total.
-      // The benefit is not taxed: a household's budget is its net wages plus its benefit.
+      // The house's budget is its month's wages and benefit, from every workplace, after the income tax on that total:
+      // the benefit is taxed exactly like a wage, folded into the same gross before the same brackets apply.
       const wageCreditByHouse = new Map(
         [...grossByHouse].map(([houseId, gross]) => [houseId, withholdIncomeTax({ gross, ...taxRate }).net]),
       );
-      for (const [houseId, benefit] of benefitByHouse) {
-        wageCreditByHouse.set(houseId, centimes((wageCreditByHouse.get(houseId) ?? 0) + benefit));
-      }
       const next = payableServiceBills(bills, (houseId) =>
         fundsByHouse.get(houseId) + (wageCreditByHouse.get(houseId) ?? 0),
       );

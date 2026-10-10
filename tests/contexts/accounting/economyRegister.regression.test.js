@@ -23,7 +23,7 @@ function settle(pairs, buildings) {
     sumOtherExpensesByBuilding: async () => [],
     listHouses: async () => [],
     getPublicPay: async () => ({ salaryPerMonth: 100, unemploymentBenefitRate: 0.7 }),
-    getSalaryTax: async () => ({ rate: 0.1, threshold: 0 }),
+    getSalaryTax: async () => ({ threshold1: 0, rate1: 0.1, threshold2: 0, rate2: 0.1 }),
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 10,
     recordLedgerEntry: async (line) => {

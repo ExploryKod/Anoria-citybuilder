@@ -318,6 +318,86 @@
     line-height: 1.6;
 }
 
+.producer-ranking {
+    margin-top: 20px;
+}
+
+.producer-ranking-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.producer-ranking-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.producer-ranking-period {
+    font-size: 13px;
+    font-weight: 500;
+    color: #5b6470;
+}
+
+.producer-ranking-note {
+    margin: 6px 0 12px;
+    font-size: 12px;
+    font-style: italic;
+    color: #888;
+    line-height: 1.4;
+}
+
+.producer-ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: var(--border-radius-small);
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
+}
+
+.producer-ranking-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    color: #5b6470;
+}
+
+.producer-ranking-table td {
+    padding: 8px 12px;
+    font-size: 14px;
+    color: var(--primary);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.producer-ranking-table .producer-ranking-rank-col {
+    width: 40px;
+    text-align: center;
+    font-weight: 600;
+    color: #5b6470;
+}
+
+.producer-ranking-table .producer-ranking-revenue-col {
+    width: 160px;
+    text-align: right;
+    font-weight: 600;
+}
+
+.producer-ranking-table th.producer-ranking-revenue-col {
+    text-align: right;
+}
+
+.producer-ranking-table .producer-ranking-empty {
+    text-align: center;
+    color: #888;
+    font-style: italic;
+    padding: 16px;
+}
+
 /* Mobile Responsive */
 @media screen and (max-width: 1024px) {
     .finances-board {

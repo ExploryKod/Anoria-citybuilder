@@ -171,17 +171,24 @@ export function buildingChargeLines({ id, type, salesHT, subsidiesHT, purchasesH
 }
 
 /**
- * The income tax (IR) withheld on a house's wage. Only the part of the wage above the monthly threshold is taxed, at the
- * rate: a wage under the threshold pays nothing. The tax is rounded to the centime, so the gross is exactly the net plus
- * the tax.
- * @param {{ gross: number, rate: number, threshold: number }} params rate as a fraction (0.1 is 10 %), threshold in euros a month
+ * The income tax (IR) withheld on a house's wage, progressive over three bands: nothing below `threshold1`, `rate1` on
+ * the part between `threshold1` and `threshold2`, `rate2` on the part above `threshold2` — each band taxes only its own
+ * slice, never the whole wage at its band's rate. The tax is rounded to the centime, so the gross is exactly the net
+ * plus the tax.
+ * @param {{ gross: number, threshold1: number, rate1: number, threshold2: number, rate2: number }} params rates as a
+ *   fraction (0.1 is 10 %), thresholds in euros a month
  * @returns {{ gross: number, incomeTax: number, net: number }}
  */
-export function withholdIncomeTax({ gross, rate, threshold }) {
-  if (!Number.isFinite(rate) || rate < 0 || rate > 1) throw new Error(`[tax] the income tax rate must be a fraction, got ${rate}`);
-  if (!Number.isFinite(threshold) || threshold < 0) throw new Error(`[tax] the income tax threshold must be an amount, got ${threshold}`);
+export function withholdIncomeTax({ gross, threshold1, rate1, threshold2, rate2 }) {
+  if (!Number.isFinite(threshold1) || threshold1 < 0) throw new Error(`[tax] the income tax threshold1 must be an amount, got ${threshold1}`);
+  if (!Number.isFinite(threshold2) || threshold2 < threshold1) {
+    throw new Error(`[tax] the income tax threshold2 must be an amount at or above threshold1 (${threshold1}), got ${threshold2}`);
+  }
+  if (!Number.isFinite(rate1) || rate1 < 0 || rate1 > 1) throw new Error(`[tax] the income tax rate1 must be a fraction, got ${rate1}`);
+  if (!Number.isFinite(rate2) || rate2 < 0 || rate2 > 1) throw new Error(`[tax] the income tax rate2 must be a fraction, got ${rate2}`);
   const grossC = centimes(gross);
-  const taxable = Math.max(0, grossC - threshold);
-  const incomeTax = centimes(taxable * rate);
+  const band1 = Math.max(0, Math.min(grossC, threshold2) - threshold1);
+  const band2 = Math.max(0, grossC - threshold2);
+  const incomeTax = centimes(band1 * rate1 + band2 * rate2);
   return { gross: grossC, incomeTax, net: centimes(grossC - incomeTax) };
 }

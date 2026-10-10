@@ -55,7 +55,8 @@ const PERSONAL_ROWS = [
   { label: 'Services payés', kind: 'line', flow: 'charge', amount: (f) => f.servicesPaid },
   { label: 'Biens achetés', kind: 'line', flow: 'charge', amount: (f) => f.goodsBought },
   { label: 'Impôt sur le revenu', kind: 'line', flow: 'charge', amount: (f) => f.incomeTax },
-  { label: 'Total charges', kind: 'subtotal', amount: (f) => f.servicesPaid + f.goodsBought + f.incomeTax },
+  { label: 'Impôt citoyen', kind: 'line', flow: 'charge', amount: (f) => f.citizenTax },
+  { label: 'Total charges', kind: 'subtotal', amount: (f) => f.servicesPaid + f.goodsBought + f.incomeTax + f.citizenTax },
 
   { label: 'Résultat net', kind: 'total', amount: (f) => f.householdResult },
 

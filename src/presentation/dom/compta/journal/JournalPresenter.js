@@ -264,6 +264,7 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     service_sales: 'Ventes de services',
     consumer_purchase: 'Achats des maisons',
     income_tax: 'Impôt sur le revenu retenu',
+    citizen_tax_paid: 'Impôt Citoyen retenu',
     public_wage: 'Salaire de fonctionnaire perçu',
     household_benefit: 'Allocation chômage perçue',
     service_purchase: 'Achats de services',

@@ -84,7 +84,7 @@ import { resolveGetTimeInfo } from './gameTimeBridge.js';
  * @param {(turn: number) => object} [deps.getTimeInfo]
  * @param {import('../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js').LocalStorageFiscalSettingsRepository} [deps.fiscalSettingsRepository]
  * @param {() => number} [deps.getCitizenTaxPerCapita]
- * @param {() => { salaryPerMonth: number, salaryTaxRate: number }} [deps.getSalarySettings]
+ * @param {() => { salaryPerMonth: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number }} [deps.getSalarySettings]
  */
 
 /**
@@ -248,6 +248,7 @@ export function createAccountingContext(deps = {}) {
   const collectCitizenTaxes = new CollectCitizenTaxes({
     getTreasurySnapshot: getTreasurySnapshotQuery,
     recordCitizenTaxIncome,
+    recordLedgerEntry: recordLedgerEntryCommand,
     houseReadPort,
     getCitizenTaxPerCapita,
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
@@ -306,7 +307,12 @@ export function createAccountingContext(deps = {}) {
     },
     getSalaryTax: async () => {
       const settings = await hamletFiscalRates.getSalarySettings();
-      return { rate: settings.salaryTaxRate, threshold: settings.salaryTaxThreshold };
+      return {
+        threshold1: settings.salaryTaxThreshold1,
+        rate1: settings.salaryTaxRate1,
+        threshold2: settings.salaryTaxThreshold2,
+        rate2: settings.salaryTaxRate2,
+      };
     },
     sumHouseSales: async (year, monthIndex) => {
       // A house's purchase of goods is a sale of the company, the counterparty being the house (see RecordConsumerPurchases).
@@ -647,7 +653,7 @@ export function createAccountingContext(deps = {}) {
       return hamletFiscalRates.getSalarySettings();
     },
 
-    /** @param {{ salaryPerMonth?: number, salaryTaxRate?: number, unemploymentBenefitRate?: number }} partial */
+    /** @param {{ salaryPerMonth?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number, unemploymentBenefitRate?: number }} partial */
     setSalarySettings(partial) {
       return hamletFiscalRates.setSalarySettings(partial);
     },

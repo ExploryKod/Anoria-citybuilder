@@ -424,6 +424,7 @@ describe('BudgetManager', () => {
             // CitizenTaxCollectionPolicy).
             await testDb.houses.bulkPut([
                 {
+                    id: 'house-blue-0-0',
                     name: 'House-Blue-0-0',
                     type: 'House-Blue',
                     hamletId: TEST_HAMLET_ID,
@@ -431,6 +432,7 @@ describe('BudgetManager', () => {
                     level: 2
                 },
                 {
+                    id: 'house-red-1-1',
                     name: 'House-Red-1-1',
                     type: 'House-Red',
                     hamletId: TEST_HAMLET_ID,

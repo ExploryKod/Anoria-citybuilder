@@ -47,7 +47,7 @@ export function moneyDirectionOf(entry) {
     type === 'unemployment_benefit' || type === 'loan_interest' || type === 'loan_repayment' ||
     type === 'exceptional_expenses' || type === 'commercial_route' || type === 'contribution' ||
     type === 'service_subsidy' ||
-    type === 'producer_purchase' || type === 'service_purchase' || type === 'consumer_purchase' || type === 'income_tax' || type === 'corporate_tax' || type === 'producer_wage' ||
+    type === 'producer_purchase' || type === 'service_purchase' || type === 'consumer_purchase' || type === 'income_tax' || type === 'citizen_tax_paid' || type === 'corporate_tax' || type === 'producer_wage' ||
     type === 'subsidy_companies' || type === 'subsidy_housing' ||
     // The lender's own capital leaving its account when a loan is drawn — the city's mirror of this is 'loan_capital' (credit, its own account).
     type === 'loan_capital_lent' ||

@@ -138,6 +138,36 @@
     cursor: pointer;
 }
 
+/* The income tax card: one title, two tranche groups (a threshold and its rate), a gap between groups. */
+.taxes-board .ir-brackets {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.taxes-board .ir-bracket-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.taxes-board .ir-bracket-line {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.taxes-board .ir-bracket-line-label {
+    flex: 0 0 180px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.taxes-board .ir-bracket-line .commerce-customs-controls {
+    flex: 1;
+}
+
 /* A VAT category: its rate, then the exemption box of each item it holds. */
 .taxes-board .vat-category {
     display: flex;

@@ -2063,6 +2063,28 @@
                                     Analyse financière : La ville fonctionne avec un déficit cette année. Il est recommandé d'augmenter les revenus ou de réduire les dépenses.
                                 </p>
                             </div>
+
+                            <div class="producer-ranking" id="producer-ranking">
+                                <div class="producer-ranking-header">
+                                    <h3 class="producer-ranking-title">Classement des producteurs</h3>
+                                    <span class="producer-ranking-period" id="producer-ranking-period">…</span>
+                                </div>
+                                <p class="producer-ranking-note">
+                                    Les biens sont datés du jour de leur livraison ; les services sont datés du jour de leur
+                                    règlement, le 1er du mois suivant leur consommation. Pour le mois affiché, les ventes de
+                                    services sont donc celles réglées ce mois-là — l'activité du mois précédent.
+                                </p>
+                                <table class="producer-ranking-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="producer-ranking-rank-col">#</th>
+                                            <th class="producer-ranking-name-col">Producteur</th>
+                                            <th class="producer-ranking-revenue-col">Ventes aux maisons (HT)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="producer-ranking-body"></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2327,22 +2349,42 @@
                         </div>
                         <div class="taxes-row">
                             <div class="taxes-row-head">
-                                <span class="taxes-row-label">Impôt sur le revenu (IR)</span>
+                                <span class="taxes-row-label">Impôt sur le revenu</span>
                                 <span class="taxes-row-scope">Hameau</span>
                             </div>
-                            <div class="commerce-customs-controls">
-                                <input type="range" id="tax-salary-slider" class="commerce-customs-slider" step="1" aria-label="Impôt sur le revenu (IR), en pourcentage" />
-                                <span class="commerce-customs-value" id="tax-salary-value">…</span>
-                            </div>
-                        </div>
-                        <div class="taxes-row">
-                            <div class="taxes-row-head">
-                                <span class="taxes-row-label">Seuil d'exonération de l'IR</span>
-                                <span class="taxes-row-scope">Hameau · par mois</span>
-                            </div>
-                            <div class="commerce-customs-controls">
-                                <input type="range" id="tax-threshold-slider" class="commerce-customs-slider" step="5" aria-label="Seuil d'exonération de l'IR, en euros par mois" />
-                                <span class="commerce-customs-value" id="tax-threshold-value">…</span>
+                            <div class="ir-brackets">
+                                <div class="ir-bracket-group">
+                                    <div class="ir-bracket-line">
+                                        <span class="ir-bracket-line-label">Seuil d'exonération</span>
+                                        <div class="commerce-customs-controls">
+                                            <input type="range" id="tax-threshold-1-slider" class="commerce-customs-slider" step="5" aria-label="Seuil d'exonération de l'IR, en euros par mois" />
+                                            <span class="commerce-customs-value" id="tax-threshold-1-value">…</span>
+                                        </div>
+                                    </div>
+                                    <div class="ir-bracket-line">
+                                        <span class="ir-bracket-line-label">Taux IR (1ère tranche)</span>
+                                        <div class="commerce-customs-controls">
+                                            <input type="range" id="tax-salary-1-slider" class="commerce-customs-slider" step="1" aria-label="Impôt sur le revenu (IR), 1ère tranche, en pourcentage" />
+                                            <span class="commerce-customs-value" id="tax-salary-1-value">…</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ir-bracket-group">
+                                    <div class="ir-bracket-line">
+                                        <span class="ir-bracket-line-label">Seuil 2ᵉ tranche</span>
+                                        <div class="commerce-customs-controls">
+                                            <input type="range" id="tax-threshold-2-slider" class="commerce-customs-slider" step="5" aria-label="Seuil de la 2ᵉ tranche de l'IR, en euros par mois" />
+                                            <span class="commerce-customs-value" id="tax-threshold-2-value">…</span>
+                                        </div>
+                                    </div>
+                                    <div class="ir-bracket-line">
+                                        <span class="ir-bracket-line-label">Taux IR (2e tranche)</span>
+                                        <div class="commerce-customs-controls">
+                                            <input type="range" id="tax-salary-2-slider" class="commerce-customs-slider" step="1" aria-label="Impôt sur le revenu (IR), 2ᵉ tranche, en pourcentage" />
+                                            <span class="commerce-customs-value" id="tax-salary-2-value">…</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="taxes-row">

@@ -42,6 +42,6 @@ describe('HamletFiscalRateRepository', () => {
   test('a value out of its bounds is refused, not clamped', async () => {
     await repo.ensureRates(TEST_HAMLET_ID);
     await expect(repo.setCitizenTaxPerCapita(9999)).rejects.toThrow(/between 0 and 1000/);
-    await expect(repo.setSalarySettings({ salaryTaxRate: 2 })).rejects.toThrow(/between 0 and 1/);
+    await expect(repo.setSalarySettings({ salaryTaxRate1: 2 })).rejects.toThrow(/between 0 and 1/);
   });
 });

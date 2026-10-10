@@ -47,14 +47,14 @@ export function setCitizenTaxPerCapita(amount) {
   return getOrCreateAccountingContext().setCitizenTaxPerCapita(amount);
 }
 
-/** @returns {{ salaryPerMonth: number, salaryTaxRate: number }} */
+/** @returns {{ salaryPerMonth: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number }} */
 export function getSalarySettings() {
   return getOrCreateAccountingContext().getSalarySettings();
 }
 
 /**
- * @param {{ salaryPerMonth?: number, salaryTaxRate?: number }} partial
- * @returns {{ salaryPerMonth: number, salaryTaxRate: number }}
+ * @param {{ salaryPerMonth?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number }} partial
+ * @returns {{ salaryPerMonth: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number }}
  */
 export function setSalarySettings(partial) {
   return getOrCreateAccountingContext().setSalarySettings(partial);

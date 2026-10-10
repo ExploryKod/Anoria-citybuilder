@@ -22,9 +22,11 @@
   L'épargne se lit au compte ; un solde négatif s'appelle une **dette**.
 - **Insolvabilité** : une facture de service que la maison ne peut pas payer la coupe de ses autres services pour le mois.
   Elle est affichée « insolvable » ; un service absent affiche « inexistant ».
-- **IR** : seuil d'exonération (€/mois, par défaut 0) puis **taux** (10 % par défaut) sur la part du total mensuel du foyer
-  **au-dessus du seuil**. Pas de tranches encore : elles viendront comme données du catalogue fiscal.
-- **Allocation chômage** : non imposée (choix provisoire).
+- **IR** : progressif, fixé à trois tranches (`FiscalRateCatalog.js`) : exonéré sous `salaryTaxThreshold1`, `salaryTaxRate1`
+  sur la part entre les deux seuils, `salaryTaxRate2` sur la part au-dessus de `salaryTaxThreshold2` — chaque tranche ne
+  taxe que sa propre part (`withholdIncomeTax`, `ProducerChargePolicy.js`). Réglable par hameau dans le panneau admin.
+- **Allocation chômage** : imposée comme un salaire — fondue dans le même total mensuel du foyer avant l'IR, mêmes
+  tranches, pas de seuil ni de taux distinct.
 - **Fonctionnaires** : employés directement par la mairie, sans bâtiment. Ils reçoivent le salaire de référence sur leur
   compte particulier, et ce salaire est imposé à l'IR.
 
@@ -39,6 +41,7 @@
 | Salaire de fonctionnaire | ville (`salary`) | maison (`public_wage`, brut) | règlement | `householdPublicPayOf`, `SettleProducerCharges.js` |
 | Allocation chômage | ville (`unemployment_benefit`) | maison (`household_benefit`) | règlement | idem |
 | IR sur le total du foyer | maison (`income_tax`, particulier) | ville (`payroll_tax`) | règlement | `withholdIncomeTax`, fin de `execute` |
+| Impôt citoyen | chaque maison imposable (`citizen_tax_paid`, particulier) | ville (`citizen_tax`, somme forfaitaire) | Novembre, 1×/an | `computeCitizenTaxByHouse`, `CollectCitizenTaxes.js` |
 | Impôt sur les sociétés | entreprise (`corporate_tax`) | ville (`corporate_tax_revenue`) | règlement | `buildingChargeLines` |
 | Entretien | entreprise ou ville | ville | règlement | `buildingChargeLines` |
 | Achats entre entreprises | acheteur (`producer_purchase`) | vendeur (`producer_revenue`) | règlement | `tradeLines` |
@@ -52,8 +55,8 @@ calcul se résout par itération (`#planMonth`), l'ensemble des factures payées
 ## 3. Où sont les réglages (panneau admin, « Impôts » et « Services »)
 
 - **Par hameau** (`HamletFiscalRateRepository`, bornes dans `FiscalRateCatalog.js`) : salaire de référence
-  (`salaryPerMonth`), taux de l'IR (`salaryTaxRate`), seuil de l'IR (`salaryTaxThreshold`), taux de l'allocation
-  (`unemploymentBenefitRate`), TVA par catégorie, subvention par service.
+  (`salaryPerMonth`), les trois tranches de l'IR (`salaryTaxThreshold1`, `salaryTaxRate1`, `salaryTaxThreshold2`,
+  `salaryTaxRate2`), taux de l'allocation (`unemploymentBenefitRate`), TVA par catégorie, subvention par service.
 - **Ville** : impôt par citoyen, droits de douane.
 
 ## 4. Ce qui est en place, par fichier clé
@@ -74,8 +77,8 @@ calcul se résout par itération (`#planMonth`), l'ensemble des factures payées
 
 ## 5. État des tests
 
-- **Dernière exécution complète verte** : 221 suites, 1422 tests (après les tâches 1 à 3 de la section 6 ci-dessous).
-- **Pas encore joué** : les tâches 1 à 3 n'ont pas été vérifiées dans `pnpm dev` (seulement par les tests).
+- **Dernière exécution complète verte** : 228 suites, 1450 tests (après la tâche 4 ci-dessous).
+- **Pas encore joué** : les tâches 1 à 4 n'ont pas été vérifiées dans `pnpm dev` (seulement par les tests).
 
 **À faire en premier** : une partie neuve (ou un préfab) pour regarder un mois complet, en particulier l'onglet
 Habitants (tâche 1) et le compteur de chômeurs du HUD comparé aux foyers (tâche 2).
@@ -99,14 +102,44 @@ Habitants (tâche 1) et le compteur de chômeurs du HUD comparé aux foyers (tâ
    `RecordPayrollTaxIncome.js`, `CivilServantSalaryPolicy.js`, `UnemploymentBenefitPolicy.js`, `buildVatBusinessKey`
    et les méthodes mortes de `GameTreasuryRecording` sont supprimés, avec leur câblage dans `createAccountingContext.js`
    /`accountingOps.js`/`accountingGameOps.js` et leurs tests.
-4. **Entreprises des maisons** : aucune vente encore (les « deals » ne sont pas modélisés). Le sous-onglet Entreprise est vide.
+4. ~~**Entreprises des maisons**~~ — à moitié vrai, corrigé en partie (2026-10-10). La production existait déjà
+   (`activityRecipe`/`ARTISAN_ACTIVITY_ROLES`/`SAVANT_ACTIVITY_ROLES`/`MERCHANT_ACTIVITY_ROLES`,
+   `buildingEconomy.js`) : une maison vend bien à un entrepôt via `sumGoodsFlowsByPair` → `tradeLines`. Mais
+   `tradeLines` ne posait jamais `accountKind` : l'argent d'une maison-vendeuse tombait sur la clé nue `houseId`,
+   une troisième clé jamais lue par personne — ni « Particulier » ni « Entreprise » (`buildingFinanceInfoView.js`,
+   qui filtre `accountKind` exactement) ne la montraient. Corrigé dans `SettleProducerCharges.js` : chaque ligne de
+   `tradeLines` reçoit maintenant `accountKind: 'entreprise'` quand son `holder` est une maison (`houseIds`, tiré de
+   `listHouses()`), sinon `null` comme avant pour une entreprise. Test :
+   `tests/contexts/accounting/houseBusinessAccount.regression.test.js`. Reste non fait : aucune maison n'a encore
+   `employment.workerNeed` pour sa propre activité (elle ne salarie personne), et le sous-onglet Entreprise n'a pas
+   été vérifié dans `pnpm dev`.
 5. **Performance** : le solde de chaque maison est lu sur tout le journal à chaque passe de distribution. Prévoir un cache
    par tour si une grande ville ralentit.
 6. **Round-robin** : la part d'une maison qui ne peut pas payer n'est pas redistribuée dans la même passe.
-7. **Date des services** : un service est daté du jour de son règlement (1er du mois suivant), pas du jour de livraison.
-   Le classement des producteurs suit cette date. À expliquer au joueur (texte à écrire).
-8. **Chômage imposé ?** Décision provisoire : non. À confirmer.
-9. **Tranches de l'IR** : à ajouter comme données du catalogue fiscal, sur le modèle du seuil.
+7. ~~**Date des services**~~ — panneau construit (2026-10-09). Le classement des producteurs (`GetProducerRevenues.js`,
+   jusque-là câblé mais jamais affiché) est maintenant affiché dans le panneau admin, section Finances
+   (`FinancesSectionPresenter.js`, `game.html` bloc `#producer-ranking`) : le mois affiché est le dernier mois
+   révolu, avec une note explicite au joueur sur le décalage — un bien est daté du jour de sa livraison, un service
+   du jour de son règlement (1er du mois suivant sa consommation), donc les ventes de services affichées sont
+   celles de l'activité du mois précédent. Le décalage lui-même n'est pas corrigé, seulement expliqué. Test :
+   `tests/contexts/accounting/getProducerRevenues.test.js`.
+8. ~~**Chômage imposé ?**~~ — fait (2026-10-09). L'allocation est pliée dans `grossByHouse` avant le calcul de l'IR
+   (`SettleProducerCharges.execute` et `#planMonth`), aux côtés du salaire et de la paie des fonctionnaires : même
+   assiette, mêmes tranches. Test : `tests/contexts/accounting/incomeTaxOnBenefit.regression.test.js`.
+9. ~~**Tranches de l'IR**~~ — fait. Trois tranches fixes (`salaryTaxThreshold1/2`, `salaryTaxRate1/2`) dans
+   `FiscalRateCatalog.js`, calcul progressif dans `withholdIncomeTax` (`ProducerChargePolicy.js`), curseurs dans le
+   panneau admin « Impôts » (`TaxesSectionPresenter.js`). Test : `tests/contexts/accounting/incomeTax.regression.test.js`.
+10. **Idée (non décidée, 2026-10-09) — la main d'œuvre d'un service ne limite rien.** Un bâtiment de service
+    (`consumption: 'flag'`, `buildingEconomy.js`) a un `employment.workerNeed` fixe (École: 3, Médecin: 2, Hôpital: 4,
+    ...) et `range: Infinity` : qu'il soit à 1/3 ou 3/3 employés, il "flague" quand même toutes les maisons à portée
+    comme desservies ce mois-ci (`DistributeResourceToConsumers.js#distributeFlag`, aucun stock, aucun plafond).
+    Le staffing n'affecte que le salaire versé et les stats d'emploi, jamais la couverture réelle.
+    Piste : faire dériver une capacité du nombre d'employés réellement en poste (ex. capacité = employés × un
+    forfait d'heures/bénéficiaires par employé), et ne "flaguer" que jusqu'à cette capacité par période — la
+    couverture d'un service deviendrait alors une vraie quantité (nombre de bénéficiaires que le personnel peut
+    effectivement prendre en charge), au lieu d'un flag binaire indépendant du personnel. C'est un changement de
+    mécanique de jeu (capacité, répartition des bénéficiaires non servis), pas un simple refactor technique — à
+    explorer plus tard, pas commencé.
 
 ## 7. Questions ouvertes pour demain
 

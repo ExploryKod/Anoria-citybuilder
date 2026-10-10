@@ -88,6 +88,21 @@ export function buildLoanLenderBusinessKey(type, loanId, turn) {
 }
 
 /**
+ * Idempotence key for one house's own citizen tax payment (`citizen_tax_paid`, its personal account's debit mirror
+ * of the city's lump `citizen_tax` credit), per civil year.
+ * @param {string} houseId
+ * @param {number} year
+ * @param {string} hamletId
+ * @returns {string | null}
+ */
+export function buildCitizenTaxPaymentBusinessKey(houseId, year, hamletId) {
+  if (!houseId || !hamletId || typeof year !== 'number') {
+    return null;
+  }
+  return `citizen_tax_paid:${hamletId}:${houseId}:${year}`;
+}
+
+/**
  * Idempotence key for one house's deposit interest at one bank, per civil month — the household side and the
  * bank's own mirror share the same pair and month, so each gets its own key (the `side` suffix) rather than one
  * refusing the other as a duplicate.

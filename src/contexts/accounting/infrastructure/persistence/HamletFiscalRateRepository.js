@@ -35,15 +35,18 @@ export class HamletFiscalRateRepository {
     return amount;
   }
 
-  /** @returns {Promise<{ salaryPerMonth: number, salaryTaxRate: number, salaryTaxThreshold: number, unemploymentBenefitRate: number }>} */
+  /** @returns {Promise<{ salaryPerMonth: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number }>} */
   async getSalarySettings() {
-    const [salaryPerMonth, salaryTaxRate, salaryTaxThreshold, unemploymentBenefitRate] = await Promise.all([
-      this.#read('salaryPerMonth'),
-      this.#read('salaryTaxRate'),
-      this.#read('salaryTaxThreshold'),
-      this.#read('unemploymentBenefitRate'),
-    ]);
-    return { salaryPerMonth, salaryTaxRate, salaryTaxThreshold, unemploymentBenefitRate };
+    const [salaryPerMonth, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate] =
+      await Promise.all([
+        this.#read('salaryPerMonth'),
+        this.#read('salaryTaxThreshold1'),
+        this.#read('salaryTaxRate1'),
+        this.#read('salaryTaxThreshold2'),
+        this.#read('salaryTaxRate2'),
+        this.#read('unemploymentBenefitRate'),
+      ]);
+    return { salaryPerMonth, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate };
   }
 
   /** @returns {Promise<Record<string, number>>} the active hamlet's subsidy, in percent, for every service. */
@@ -156,8 +159,8 @@ export class HamletFiscalRateRepository {
   }
 
   /**
-   * @param {{ salaryPerMonth?: number, salaryTaxRate?: number, salaryTaxThreshold?: number, unemploymentBenefitRate?: number }} partial
-   * @returns {Promise<{ salaryPerMonth: number, salaryTaxRate: number, salaryTaxThreshold: number, unemploymentBenefitRate: number }>}
+   * @param {{ salaryPerMonth?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number, unemploymentBenefitRate?: number }} partial
+   * @returns {Promise<{ salaryPerMonth: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number }>}
    */
   async setSalarySettings(partial = {}) {
     await this.#write(partial);

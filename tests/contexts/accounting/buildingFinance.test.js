@@ -93,6 +93,7 @@ describe('household budget — a house buys with its savings, last month\'s sala
       benefitReceived: 70,
       servicesPaid: 5,
       incomeTax: 12,
+      citizenTax: 0,
       goodsBought: 20,
       householdResult: 193,
     });

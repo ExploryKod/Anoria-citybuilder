@@ -17,7 +17,7 @@ const fromCentimes = (centimes) => centimes / 100;
  * @param {Array<{ type: string, amount: number, year: number, month: number, accountBuildingId: string | null, accountKind?: string | null }>} entries the journal lines
  * @param {string} buildingId
  * @param {{ year: number, month?: number, accountKind?: string | null }} period a month (1 to 12) of a year, or the whole year when month is not given; accountKind picks a house's account
- * @returns {{ revenueHT: number, purchasesHT: number, grossMargin: number, subsidiesReceived: number, wages: number, upkeep: number, otherExpenses: number, operatingResult: number, corporateTax: number, netResult: number, wagesReceived: number, servicesPaid: number, goodsBought: number, householdResult: number }}
+ * @returns {{ revenueHT: number, purchasesHT: number, grossMargin: number, subsidiesReceived: number, wages: number, upkeep: number, otherExpenses: number, operatingResult: number, corporateTax: number, netResult: number, wagesReceived: number, servicesPaid: number, goodsBought: number, incomeTax: number, citizenTax: number, householdResult: number }}
  */
 export function buildingFinanceFigures(entries, buildingId, { year, month = null, accountKind = null }) {
   if (!buildingId) throw new Error('[finance] a building account needs its building');
@@ -41,7 +41,7 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
   const operatingResult = grossMargin + of('service_subsidy_received') - of('producer_wage') - of('maintenance') - otherExpenses;
   const netResult = operatingResult - of('corporate_tax');
   const householdIncome = of('household_wage') + of('public_wage') + of('household_benefit');
-  const householdCharges = of('service_purchase') + of('consumer_purchase') + of('income_tax');
+  const householdCharges = of('service_purchase') + of('consumer_purchase') + of('income_tax') + of('citizen_tax_paid');
   const householdResult = householdIncome - householdCharges;
 
   return {
@@ -61,6 +61,7 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
     servicesPaid: fromCentimes(of('service_purchase')),
     goodsBought: fromCentimes(of('consumer_purchase')),
     incomeTax: fromCentimes(of('income_tax')),
+    citizenTax: fromCentimes(of('citizen_tax_paid')),
     householdResult: fromCentimes(householdResult),
   };
 }
@@ -70,8 +71,8 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
  * what it has: its carried savings, the salary of the month before (settled on the first day) and the services of that
  * month (settled the same day), less what it has already bought. Nothing is stored: the carried savings are what the
  * balance was before the month's lines, so the budget is derived from the balance and the lines. `wages` also holds a
- * civil servant's salary and the unemployment benefit (all settled income); `services` also holds the income tax
- * withheld (a settled charge, like a service bill) — the personal account does not separate them further.
+ * civil servant's salary and the unemployment benefit (all settled income); `services` also holds the income tax and
+ * the citizen tax withheld (settled charges, like a service bill) — the personal account does not separate them further.
  *
  * @param {Array<{ type: string, amount: number, year: number, month: number, accountBuildingId: string | null, accountKind?: string | null }>} entries
  * @param {string} houseId
@@ -94,7 +95,7 @@ export function householdBudgetOf(entries, houseId, { year, month, balance }) {
     if (accountKeyOf(entry) !== accountKey || entry.year !== year || entry.month !== month) continue;
     const amount = toCentimes(entry.amount);
     if (entry.type === 'household_wage' || entry.type === 'public_wage' || entry.type === 'household_benefit') wages += amount;
-    else if (entry.type === 'service_purchase' || entry.type === 'income_tax') services += amount;
+    else if (entry.type === 'service_purchase' || entry.type === 'income_tax' || entry.type === 'citizen_tax_paid') services += amount;
     else if (entry.type === 'consumer_purchase') purchases += amount;
     else if (entry.type === 'deposit') depositedOut += amount;
     else if (entry.type === 'withdrawal' || entry.type === 'household_deposit_interest') returnedIn += amount;
@@ -120,7 +121,7 @@ export function householdBudgetOf(entries, houseId, { year, month, balance }) {
  * @param {Array<object>} entries the journal lines
  * @param {string} houseId
  * @param {{ settled: { year: number, month: number }, bought: { year: number, month: number } }} months
- * @returns {{ wagesReceived: number, publicWageReceived: number, benefitReceived: number, servicesPaid: number, incomeTax: number, goodsBought: number, householdResult: number }}
+ * @returns {{ wagesReceived: number, publicWageReceived: number, benefitReceived: number, servicesPaid: number, incomeTax: number, citizenTax: number, goodsBought: number, householdResult: number }}
  */
 export function householdLastMonthOf(entries, houseId, { settled, bought }) {
   const settledFigures = buildingFinanceFigures(entries, houseId, { ...settled, accountKind: 'particulier' });
@@ -131,6 +132,7 @@ export function householdLastMonthOf(entries, houseId, { settled, bought }) {
     benefitReceived: settledFigures.benefitReceived,
     servicesPaid: settledFigures.servicesPaid,
     incomeTax: settledFigures.incomeTax,
+    citizenTax: settledFigures.citizenTax,
     goodsBought: boughtFigures.goodsBought,
     householdResult: fromCentimes(
       toCentimes(settledFigures.wagesReceived)
@@ -138,6 +140,7 @@ export function householdLastMonthOf(entries, houseId, { settled, bought }) {
         + toCentimes(settledFigures.benefitReceived)
         - toCentimes(settledFigures.servicesPaid)
         - toCentimes(settledFigures.incomeTax)
+        - toCentimes(settledFigures.citizenTax)
         - toCentimes(boughtFigures.goodsBought),
     ),
   };
