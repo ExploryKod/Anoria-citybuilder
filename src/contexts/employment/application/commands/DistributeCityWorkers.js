@@ -166,6 +166,19 @@ export class DistributeCityWorkers {
       }
     }
 
-    return { availableWorkers: totalAvailableWorkers, assignments: allAssignments };
+    // The labour market this pass left, one reading per (skill, level) the workplaces ask for: the jobs they need, the ones filled, the
+    // vacancies, and the qualified citizens still without a job. The wages are settled on it (accounting's AdjustWageRates).
+    const labourMarket = [];
+    for (const skillKey of orderedSkillKeys) {
+      const skillWorkplaces = workplaces.filter((workplace) => getRequiredSkillForBuilding(workplace.type) === skillKey);
+      for (const level of new Set(skillWorkplaces.map((w) => getRequiredSkillLevelForBuilding(w.type)))) {
+        const atLevel = skillWorkplaces.filter((w) => getRequiredSkillLevelForBuilding(w.type) === level);
+        const jobs = atLevel.reduce((sum, w) => sum + w.workerNeed, 0);
+        const filled = atLevel.reduce((sum, w) => sum + (workerCountById.get(w.id) ?? 0), 0);
+        labourMarket.push({ skill: skillKey, level, jobs, filled, vacancies: Math.max(0, jobs - filled), idle: headcountAtLevel(skillKey, level) });
+      }
+    }
+
+    return { availableWorkers: totalAvailableWorkers, assignments: allAssignments, labourMarket };
   }
 }

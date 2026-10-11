@@ -1,5 +1,6 @@
 /**
- * The rates a hamlet sets for its own budget: the citizen tax, the civil servants' salary and the taxes on it.
+ * The rates a hamlet sets for its own budget: the citizen tax, the minimum wage (the floor of every wage, and what the
+ * unemployment benefit is a share of) and the taxes on wages. The wages themselves are not set here: the labour market settles them.
  * Declared here once: the defaults are written on a hamlet when it is created, the bounds are what the admin
  * panel accepts. Customs are not here: they are one rate for the whole city (see the trade relations).
  */
@@ -7,27 +8,35 @@
 /**
  * The income tax (IR) is progressive, fixed at three bands: exempt below `salaryTaxThreshold1`, `salaryTaxRate1` on the
  * part between the two thresholds, `salaryTaxRate2` on the part above `salaryTaxThreshold2` (see withholdIncomeTax).
- * @type {Readonly<{ citizenTaxPerCapita: number, salaryPerMonth: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number }>}
+ * @type {Readonly<{ citizenTaxPerCapita: number, minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>}
  */
 export const DEFAULT_HAMLET_FISCAL_RATES = Object.freeze({
   citizenTaxPerCapita: 25,
-  salaryPerMonth: 100,
-  salaryTaxThreshold1: 50,
+  // The economy's own scale: a citizen's needs cost about 5.8 a month, a first wage is 8 (see LabourMarketCatalog.js). The brackets are per
+  // household (foyer): a household with three workers earns about 24.
+  minimumWage: 6,
+  salaryTaxThreshold1: 10,
   salaryTaxRate1: 0.1,
-  salaryTaxThreshold2: 150,
+  salaryTaxThreshold2: 30,
   salaryTaxRate2: 0.2,
   unemploymentBenefitRate: 0.7,
+  // The social contributions, a share of the gross wage: the employer's (a charge of the company, 645) and the employee's (withheld from the
+  // wage). Both go to the city's social security, which pays the unemployment benefit.
+  employerContributionRate: 0.25,
+  employeeContributionRate: 0.1,
 });
 
 /** @type {Readonly<Record<keyof typeof DEFAULT_HAMLET_FISCAL_RATES, { min: number, max: number, integer: boolean }>>} */
 export const HAMLET_FISCAL_RATE_BOUNDS = Object.freeze({
   citizenTaxPerCapita: Object.freeze({ min: 0, max: 1000, integer: true }),
-  salaryPerMonth: Object.freeze({ min: 10, max: 500, integer: true }),
+  minimumWage: Object.freeze({ min: 1, max: 60, integer: true }),
   salaryTaxThreshold1: Object.freeze({ min: 0, max: 500, integer: true }),
   salaryTaxRate1: Object.freeze({ min: 0, max: 1, integer: false }),
   salaryTaxThreshold2: Object.freeze({ min: 0, max: 1000, integer: true }),
   salaryTaxRate2: Object.freeze({ min: 0, max: 1, integer: false }),
   unemploymentBenefitRate: Object.freeze({ min: 0, max: 1, integer: false }),
+  employerContributionRate: Object.freeze({ min: 0, max: 0.6, integer: false }),
+  employeeContributionRate: Object.freeze({ min: 0, max: 0.4, integer: false }),
 });
 
 /** A service's subsidy, in whole percent of its price: 0 = the inhabitants pay all of it. */
@@ -79,12 +88,14 @@ export function fiscalSliderBounds() {
   const inPercent = (bounds) => ({ min: Math.round(bounds.min * 100), max: Math.round(bounds.max * 100) });
   return Object.freeze({
     citizenTaxPerCapita: HAMLET_FISCAL_RATE_BOUNDS.citizenTaxPerCapita,
-    salaryPerMonth: HAMLET_FISCAL_RATE_BOUNDS.salaryPerMonth,
+    minimumWage: HAMLET_FISCAL_RATE_BOUNDS.minimumWage,
     salaryTaxThreshold1: HAMLET_FISCAL_RATE_BOUNDS.salaryTaxThreshold1,
     salaryTaxPercent1: inPercent(HAMLET_FISCAL_RATE_BOUNDS.salaryTaxRate1),
     salaryTaxThreshold2: HAMLET_FISCAL_RATE_BOUNDS.salaryTaxThreshold2,
     salaryTaxPercent2: inPercent(HAMLET_FISCAL_RATE_BOUNDS.salaryTaxRate2),
     unemploymentBenefitPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.unemploymentBenefitRate),
+    employerContributionPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.employerContributionRate),
+    employeeContributionPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.employeeContributionRate),
     serviceSubsidyPercent: SERVICE_SUBSIDY_BOUNDS,
     customsPercent: inPercent(CUSTOMS_RATE_BOUNDS),
     vatPercent: VAT_RATE_BOUNDS,

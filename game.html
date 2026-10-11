@@ -1672,6 +1672,22 @@
 
                 <button
                     class="administrator-nav-btn"
+                    id="admin-nav-wages"
+                    data-section="wages"
+                    title="Salaires"
+                    aria-label="Ouvrir la section Salaires">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hand-coins">
+                        <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
+                        <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
+                        <path d="m2 16 6 6"/>
+                        <circle cx="16" cy="9" r="2.9"/>
+                        <circle cx="6" cy="5" r="3"/>
+                    </svg>
+                    <span class="sr-only">Salaires</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
                     id="admin-nav-services"
                     data-section="services"
                     title="Services"
@@ -1834,6 +1850,17 @@
                                         <td class="label-col finances-row-label">Douanes à l'importation</td>
                                         <td class="last-year-col finances-value-positive" data-field="customsImportLastYear" id="customs-import-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="customsImportThisYear" id="customs-import-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake">
+                                                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                                                <path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"/>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">Cotisations sociales</td>
+                                        <td class="last-year-col finances-value-positive" data-field="socialContributionsLastYear" id="social-contributions-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="socialContributionsThisYear" id="social-contributions-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -2454,13 +2481,24 @@
                 </div>
             </div>
 
+            <div class="administrator-section" id="admin-section-wages">
+                <div class="administrator-section-title">Salaires</div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board">
+                        <p class="commerce-customs-hint">Le marché du travail fixe un salaire par métier et par niveau : il monte là où des emplois restent vacants, il baisse là où des citoyens qualifiés restent sans emploi. La ville ne fixe que le plancher (le salaire minimum), l'allocation chômage (une part de ce plancher) et les cotisations sociales : celles de l'entreprise s'ajoutent au salaire brut, celles du salarié en sont retenues, et toutes financent l'allocation chômage.</p>
+                        <div id="wages-levers"></div>
+                        <div id="wages-social"></div>
+                        <div id="wages-board"></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="administrator-section" id="admin-section-services">
                 <div class="administrator-section-title">
                     Services — <span class="admin-hamlet-label" data-hamlet-label></span>
                 </div>
                 <div class="administrator-section-content">
                     <div class="taxes-board">
-                        <div id="state-board"></div>
                         <div class="services-group">
                             <p class="commerce-customs-hint">La subvention couvre ce pourcentage du prix de chaque prestation du service ; les habitants paient le reste. La base imposable à la TVA est le prix HT total : la subvention directement liée au prix d'une prestation y est incluse, elle ne la réduit pas.</p>
                             <div class="services-board" id="services-board"></div>
@@ -2630,7 +2668,7 @@
                 <div class="journal-filter-pills">
                     <div class="journal-filter-pills-section">
                         <span class="journal-filter-pills-label">Revenus:</span>
-                        <button class="journal-filter-pill" data-filter="taxes" data-types='["citizen_tax","payroll_tax","vat","corporate_tax_revenue"]'>
+                        <button class="journal-filter-pill" data-filter="taxes" data-types='["citizen_tax","payroll_tax","vat","corporate_tax_revenue","social_contribution"]'>
                             <span class="pill-color" style="background: var(--pcg4-bg); color: var(--pcg4-fg);"></span>
                             <span class="pill-label">Impôts et taxes</span>
                         </button>
@@ -2646,7 +2684,7 @@
                             <span class="pill-color" style="background: var(--pcg70-bg); color: var(--pcg70-fg);"></span>
                             <span class="pill-label">Ventes</span>
                         </button>
-                        <button class="journal-filter-pill" data-filter="household_income" data-types='["household_wage","public_wage","household_benefit"]'>
+                        <button class="journal-filter-pill" data-filter="household_income" data-types='["household_wage","public_wage","household_benefit","household_participation","household_dividend"]'>
                             <span class="pill-color" style="background: var(--pcg7h-bg); color: var(--pcg7h-fg);"></span>
                             <span class="pill-label">Revenus des ménages</span>
                         </button>
@@ -2657,7 +2695,7 @@
                     </div>
                     <div class="journal-filter-pills-section">
                         <span class="journal-filter-pills-label">Dépenses:</span>
-                        <button class="journal-filter-pill" data-filter="taxes_paid" data-types='["income_tax","citizen_tax_paid","corporate_tax"]'>
+                        <button class="journal-filter-pill" data-filter="taxes_paid" data-types='["income_tax","citizen_tax_paid","corporate_tax","employee_contribution"]'>
                             <span class="pill-color" style="background: var(--pcg4-paid-bg); color: var(--pcg4-paid-fg);"></span>
                             <span class="pill-label">Impôts payés</span>
                         </button>
@@ -2688,6 +2726,14 @@
                         <button class="journal-filter-pill" data-filter="unemployment_benefit" data-types='["unemployment_benefit"]'>
                             <span class="pill-color" style="background: var(--pcg64-bg); color: var(--pcg64-fg);"></span>
                             <span class="pill-label">Salaires chômeurs</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="employer_contribution" data-types='["employer_contribution"]'>
+                            <span class="pill-color" style="background: var(--pcg64-bg); color: var(--pcg64-fg);"></span>
+                            <span class="pill-label">Cotisations patronales</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="cooperative_sharing" data-types='["cooperative_participation","cooperative_dividend"]'>
+                            <span class="pill-color" style="background: var(--pcg65-bg); color: var(--pcg65-fg);"></span>
+                            <span class="pill-label">Participation et dividendes</span>
                         </button>
                         <button class="journal-filter-pill" data-filter="exceptional_expenses" data-types='["exceptional_expenses"]'>
                             <span class="pill-color" style="background: var(--pcg6x-bg); color: var(--pcg6x-fg);"></span>

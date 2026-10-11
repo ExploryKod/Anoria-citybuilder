@@ -25,20 +25,23 @@ describe('trade lines — a sale and its purchase name each other, on each compa
 });
 
 describe('wages — each worker is paid the same, and the house it comes from receives it', () => {
-  test('the payroll follows the staffing, not the sales: nothing without workers, the wage of the skill level for each worker with them', () => {
-    expect(payrollOf({ type: 'Market-Stall-Red', workers: 0, referenceSalaryPerMonth: 100 })).toBe(0);
-    expect(payrollOf({ type: 'Market-Stall-Red', workers: 3, referenceSalaryPerMonth: 100 })).toBe(300);
+  // The labour market's wage of a (skill, level): here a stand-in that pays 10 a level, so the test reads which pair a workplace asks for.
+  const wageRateOf = (skill, level) => 10 * level;
+
+  test('the payroll follows the staffing, not the sales: nothing without workers, the market wage of the skill and level for each worker with them', () => {
+    expect(payrollOf({ type: 'Market-Stall-Red', workers: 0, wageRateOf })).toBe(0);
+    expect(payrollOf({ type: 'Market-Stall-Red', workers: 3, wageRateOf })).toBe(30);
   });
 
-  test('a higher skill level is paid more, by the grid of the catalog', () => {
+  test('a workplace asks the market for the skill and the level its catalog entry requires', () => {
     // The hospital's workers need the medical skill at level 2.
-    expect(payrollOf({ type: 'Hospital', workers: 2, referenceSalaryPerMonth: 100 })).toBe(280);
+    expect(payrollOf({ type: 'Hospital', workers: 2, wageRateOf })).toBe(40);
   });
 
-  test('every skill level a workplace requires has a line in the wage grid', () => {
+  test('every lucrative workplace has a skill the labour market can give a wage to', () => {
     for (const [type, definition] of Object.entries(buildingCatalog)) {
       if (!definition.employment?.requiredSkill || !isLucrativeBuilding(type)) continue;
-      expect({ type, wage: wagePerWorkerOf({ type, referenceSalaryPerMonth: 100 }) }).toEqual({ type, wage: expect.any(Number) });
+      expect({ type, wage: wagePerWorkerOf({ type, wageRateOf }) }).toEqual({ type, wage: expect.any(Number) });
     }
   });
 

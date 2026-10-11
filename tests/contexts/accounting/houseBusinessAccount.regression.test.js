@@ -30,7 +30,9 @@ function settle(pairs) {
     sumBankInterestByBuilding: async () => [],
     sumOtherExpensesByBuilding: async () => [],
     listHouses: async () => [{ id: HOUSE, pop: 4 }],
-    getPublicPay: async () => ({ salaryPerMonth: 0, unemploymentBenefitRate: 0 }),
+    getPublicPay: async () => ({ minimumWage: 0, unemploymentBenefitRate: 0, employerContributionRate: 0, employeeContributionRate: 0 }),
+    getWageRateOf: async () => () => 100,
+    businessFundsOf: async () => 0,
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0, threshold2: 0, rate2: 0 }),
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
@@ -87,6 +89,8 @@ describe('a house that runs its own business is booked on its business account, 
     expect(sales.every((line) => line.accountKind === 'entreprise')).toBe(true);
 
     const figures = buildingFinanceFigures(journal, HOUSE, { year: 1, accountKind: 'entreprise', salesNature: 'production' });
-    expect(figures.statement.results.net).toBe(130);
+    // Both activities are in the sales; the corporate tax of the cooperative (25 % of the surplus, nothing was paid out of an empty cash) comes off them.
+    expect(figures.statement.sections.find((section) => section.id === 'operatingIncome').total).toBe(130);
+    expect(figures.statement.results.net).toBe(97.5);
   });
 });

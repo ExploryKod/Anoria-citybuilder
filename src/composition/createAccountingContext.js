@@ -47,6 +47,10 @@ import { RecordConsumerPurchases } from '../contexts/accounting/application/serv
 import { GetProducerRevenues } from '../contexts/accounting/application/queries/GetProducerRevenues.js';
 import { buildingAccountTrace } from '../contexts/accounting/domain/policies/BuildingAccountTracePolicy.js';
 import { accountKeyOf } from '../contexts/accounting/domain/policies/AccountKeyPolicy.js';
+import { AdjustWageRates } from '../contexts/accounting/application/services/AdjustWageRates.js';
+import { DexieWageRateRepository, wageKey } from '../contexts/accounting/infrastructure/persistence/DexieWageRateRepository.js';
+import { readLabourMarket, startWageOf } from '../contexts/accounting/domain/policies/WageRatePolicy.js';
+import { wagePerWorkerOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
 import { buildingFinanceFigures, cashMovementsOf, householdBudgetOf, householdLastMonthOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 import { residentsOfHouse } from '../contexts/accounting/domain/policies/HouseResidentsPolicy.js';
@@ -88,7 +92,11 @@ import { resolveGetTimeInfo } from './gameTimeBridge.js';
  * @param {(turn: number) => object} [deps.getTimeInfo]
  * @param {import('../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js').LocalStorageFiscalSettingsRepository} [deps.fiscalSettingsRepository]
  * @param {() => number} [deps.getCitizenTaxPerCapita]
- * @param {() => { salaryPerMonth: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number }} [deps.getSalarySettings]
+ * @param {() => { minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number }} [deps.getSalarySettings]
+ * @param {(building: { id: string, type: string }, category: string, period: { year: number, monthIndex: number }) => Promise<number>} [deps.getSellingPrice]
+ *   the supply's price of a good or a service a building sold in a month (its price book), what a service is billed at
+ * @param {() => { rows: Array<{ skill: string, level: number, jobs: number, filled: number, vacancies: number, idle: number }> } | null} [deps.getLabourMarket]
+ *   the labour market of the last worker distribution (employment's), read each month to move the wages
  */
 
 /**
@@ -284,6 +292,17 @@ export function createAccountingContext(deps = {}) {
     getBuildingTypes: async () =>
       new Map((await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => [row.id, row.type])),
   });
+  // The wage the labour market gives each (skill, level), never under the city's minimum wage (see WageRatePolicy.js).
+  const wageRateRepository = new DexieWageRateRepository();
+  const marketWageRateOf = async () => {
+    const [latest, settings] = await Promise.all([wageRateRepository.latestRows(), hamletFiscalRates.getSalarySettings()]);
+    return (skill, level) => Math.max(settings.minimumWage, latest.get(wageKey(skill, level))?.amount ?? startWageOf(level));
+  };
+  const adjustWageRates = new AdjustWageRates({
+    wageRateRepository,
+    getMinimumWage: async () => (await hamletFiscalRates.getSalarySettings()).minimumWage,
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+  });
   // A company's charges are read from its goods and service flows and its upkeep, once per delivered month.
   const settleProducerCharges = new SettleProducerCharges({
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
@@ -296,6 +315,8 @@ export function createAccountingContext(deps = {}) {
     sumServiceFlows: (year, monthIndex) => supplyTraceabilityRepository.sumServiceFlows(year, monthIndex),
     fundsOf: async (houseId) =>
       (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: 'particulier' })).funds,
+    businessFundsOf: async (houseId) =>
+      (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: 'entreprise' })).funds,
     getVatRates: () => hamletFiscalRates.getVatRates(),
     listHouses: async () =>
       (await dexieDb.houses.toArray())
@@ -307,8 +328,14 @@ export function createAccountingContext(deps = {}) {
         }),
     getPublicPay: async () => {
       const settings = await hamletFiscalRates.getSalarySettings();
-      return { salaryPerMonth: settings.salaryPerMonth, unemploymentBenefitRate: settings.unemploymentBenefitRate };
+      return {
+        minimumWage: settings.minimumWage,
+        unemploymentBenefitRate: settings.unemploymentBenefitRate,
+        employerContributionRate: settings.employerContributionRate,
+        employeeContributionRate: settings.employeeContributionRate,
+      };
     },
+    getWageRateOf: () => marketWageRateOf(),
     getSalaryTax: async () => {
       const settings = await hamletFiscalRates.getSalarySettings();
       return {
@@ -338,7 +365,10 @@ export function createAccountingContext(deps = {}) {
       sumJournalAmountByBuilding(await journalRepository.getJournalEntries(), 'deposit_interest_paid', year, monthIndex),
     recordServiceCutOff: (cutOff) => supplyTraceabilityRepository.recordServiceCutOff(cutOff),
     getServiceSubsidies: () => hamletFiscalRates.getServiceSubsidies(),
-    getServicePrice: (service) => getResourceBaseValue(service),
+    getServicePrice: ({ service, building, period }) => {
+      if (typeof deps.getSellingPrice !== 'function') throw new Error('[accounting] the selling prices were not wired (deps.getSellingPrice): a service could not be priced');
+      return deps.getSellingPrice(building, service, period);
+    },
     buildingMaintenanceCost,
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
     recordEconomyMovement: (movement) => supplyTraceabilityRepository.recordEconomyMovement(movement),
@@ -384,6 +414,10 @@ export function createAccountingContext(deps = {}) {
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
     settleProducerCharges: (params) => settleProducerCharges.execute(params),
     settleBankDepositInterest: (params) => settleBankDepositInterest.execute(params),
+    adjustWageRates: ({ time }) => {
+      if (typeof deps.getLabourMarket !== 'function') throw new Error('[accounting] the labour market was not wired (deps.getLabourMarket): the wages could not be settled');
+      return adjustWageRates.execute({ time, market: deps.getLabourMarket() });
+    },
     processLoanPayments:
       deps.processLoanPayments ??
       (async () => {
@@ -658,7 +692,7 @@ export function createAccountingContext(deps = {}) {
       return hamletFiscalRates.getSalarySettings();
     },
 
-    /** @param {{ salaryPerMonth?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number, unemploymentBenefitRate?: number }} partial */
+    /** @param {{ minimumWage?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number, unemploymentBenefitRate?: number }} partial */
     setSalarySettings(partial) {
       return hamletFiscalRates.setSalarySettings(partial);
     },
@@ -701,7 +735,13 @@ export function createAccountingContext(deps = {}) {
         ? { year: now.year - 1, month: MONTHS_PER_YEAR }
         : { year: now.year, month: now.monthIndex };
       const settled = { year: now.year, month: now.monthIndex + 1 };
-      const monthToDate = buildingFinanceFigures(entries, buildingId, { ...settled, accountKind, salesNature });
+      // The lines of the settlement month are the activity of the month before it: the units sold are read for that month, so the cost of a
+      // unit sets the charges against the units they were incurred for.
+      const activity = now.monthIndex === 0 ? { year: now.year - 1, monthIndex: MONTHS_PER_YEAR - 1 } : { year: now.year, monthIndex: now.monthIndex - 1 };
+      const unitsSold = accountKind === 'particulier'
+        ? null
+        : (await supplyTraceabilityRepository.sumUnitsSoldBySeller(activity.year, activity.monthIndex)).get(buildingId) ?? 0;
+      const monthToDate = buildingFinanceFigures(entries, buildingId, { ...settled, accountKind, salesNature, unitsSold });
       return {
         lastMonth: accountKind === 'particulier'
           ? { ...monthToDate, ...householdLastMonthOf(entries, buildingId, { settled, bought: previous }) }
@@ -720,6 +760,71 @@ export function createAccountingContext(deps = {}) {
           ? snapshot.funds - buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind, salesNature }).householdResult
           : null,
       };
+    },
+
+    /**
+     * What the labour market pays each (skill, level), for the wages panel and the staff tabs: the wage in force (never under the minimum
+     * wage), the wage before its last move and the reading that caused it.
+     * @param {Array<{ skill: string, level: number, jobs: number, filled: number, vacancies: number, idle: number }>} marketRows the labour market read by employment
+     * @returns {Promise<{ minimumWage: number, unemploymentBenefitRate: number, wages: Array<{ skill: string, level: number, amount: number, previous: number | null, signal: 'shortage' | 'slack' | 'balanced', atMinimum: boolean, jobs: number, filled: number, vacancies: number, idle: number }> }>}
+     */
+    async getWageBoard(marketRows) {
+      const settings = await hamletFiscalRates.getSalarySettings();
+      const wages = [];
+      for (const row of marketRows) {
+        const history = await wageRateRepository.history(row.skill, row.level);
+        const last = history.at(-1) ?? null;
+        const amount = Math.max(settings.minimumWage, last ? last.amount : startWageOf(row.level));
+        const previous = history.length >= 2 ? history.at(-2).amount : last ? startWageOf(row.level) : null;
+        wages.push({
+          ...row,
+          amount,
+          previous,
+          signal: readLabourMarket(row).signal,
+          atMinimum: amount === settings.minimumWage,
+        });
+      }
+      return { minimumWage: settings.minimumWage, unemploymentBenefitRate: settings.unemploymentBenefitRate, wages };
+    },
+
+    /**
+     * The city's social security over the last settled month (the lines the settlement of this month wrote, for the month before): what it
+     * received in contributions, what it paid in unemployment benefit, and the difference. It has no cash of its own: a deficit is the treasury's.
+     * It is read from the journal's city lines; nothing is stored.
+     * @returns {Promise<{ contributions: number, benefits: number, balance: number }>}
+     */
+    async getSocialSecurityBoard() {
+      const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
+      const entries = await journalRepository.getJournalEntries();
+      const month = entries.filter((entry) => (entry.accountBuildingId ?? null) === null && entry.year === now.year && entry.month === now.monthIndex + 1);
+      const sum = (type) => Math.round(month.filter((entry) => entry.type === type).reduce((total, entry) => total + entry.amount * 100, 0)) / 100;
+      const contributions = sum('social_contribution');
+      const benefits = sum('unemployment_benefit');
+      return { contributions, benefits, balance: Math.round((contributions - benefits) * 100) / 100 };
+    },
+
+    /**
+     * What a producer's month costs apart from its inputs, as it stands now: the labour market's wage for a skill and level (never under the
+     * minimum wage) and a building type's upkeep. The supply builds a producer's sale price on them (see PriceBook).
+     * @returns {Promise<{ wageRateOf: (skill: string, level: number) => number, maintenanceCostOf: (buildingType: string) => number, employerContributionRate: number }>}
+     */
+    async getProducerCosting() {
+      const settings = await hamletFiscalRates.getSalarySettings();
+      return {
+        wageRateOf: await marketWageRateOf(),
+        maintenanceCostOf: buildingMaintenanceCost,
+        employerContributionRate: settings.employerContributionRate,
+      };
+    },
+
+    /**
+     * The monthly gross wage of one worker of a building type, as the labour market stands: what its Personnel tab shows.
+     * @param {string} buildingType
+     * @returns {Promise<number | null>} null for a building that pays no wage (a house, a road)
+     */
+    async getWagePerWorkerOf(buildingType) {
+      if (!isLucrativeBuilding(buildingType)) return null;
+      return wagePerWorkerOf({ type: buildingType, wageRateOf: await marketWageRateOf() });
     },
 
     /**
@@ -816,7 +921,7 @@ export function createAccountingContext(deps = {}) {
       const expectedPay = householdPublicPayOf({
         pop: house.pop,
         workers,
-        referenceSalaryPerMonth: settings.salaryPerMonth,
+        minimumWage: settings.minimumWage,
         unemploymentBenefitRate: settings.unemploymentBenefitRate,
       });
       const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());

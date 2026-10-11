@@ -241,6 +241,13 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
       construction,
     });
 
+    // What the labour market pays one worker of this building a month (null for a building that pays no wage): its Personnel tab says it.
+    vm = {
+      ...vm,
+      wagePerWorker: buildingRow ? await accounting.getWagePerWorkerOf(buildingType) : null,
+      employerContributionRate: (await accounting.getSalarySettings()).employerContributionRate,
+    };
+
     const groupId = resolveBuildingInfoGroup({ buildingRow, supplyView });
     vm = await enrichBuildingInfoViewModel(groupId, vm);
 

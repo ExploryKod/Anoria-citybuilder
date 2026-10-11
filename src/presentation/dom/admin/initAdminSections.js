@@ -14,6 +14,7 @@ import { initTaxesSection } from './taxes/initTaxesSection.js';
 import { initCustomsSection } from './customs/initCustomsSection.js';
 import { initServicesSection } from './services/initServicesSection.js';
 import { initPricesSection } from './prices/initPricesSection.js';
+import { initWagesSection } from './wages/initWagesSection.js';
 
 /**
  * @param {object} deps
@@ -42,5 +43,6 @@ export async function initAdminSections(deps) {
   initTaxesSection(deps);
   initCustomsSection(deps);
   if (deps.trade) initPricesSection(deps);
+  if (deps.employment) initWagesSection(deps);
   initServicesSection(deps);
 }

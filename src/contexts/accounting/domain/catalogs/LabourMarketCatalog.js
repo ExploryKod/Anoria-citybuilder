@@ -1,0 +1,20 @@
+/**
+ * The labour market: what a first wage is and how fast the market moves it. Declared once, here.
+ *
+ * Each pair (skill, level) has its own wage, settled by the market from the month's shortage or slack (see WageRatePolicy.js): it
+ * starts at the value below and moves a few percent a month, never under the city's minimum wage. The wage a building pays its workers is
+ * the rate of the skill and level its workplace requires.
+ *
+ * - `START_WAGE_BY_SKILL_LEVEL`: a monthly gross wage before the market has moved it. First values, to tune with a play-through, set on the
+ *   economy's own scale: a citizen's needs cost about 5.8 a month at today's prices (food 1.1, goods 3.6, heat and light 0.5, water and energy
+ *   0.6), and what a worker produces is worth 6 to 15 a month at the producers' price (a farm about 8, a lumberjack 6, a pottery 9 to 15), so a first
+ *   wage is a little above a citizen's needs and under what a worker produces.
+ * - `WAGE_ADJUSTMENT.maxMonthlyStep`: the most a wage moves in one month (a fraction), so it cannot jump.
+ * - `WAGE_ADJUSTMENT.pressureGain`: how much of the market's pressure (the share of jobs unfilled, or of qualified citizens idle) turns into a
+ *   move; a full shortage with a gain of 0.5 asks for +50 %, which the step caps.
+ */
+
+/** @type {Readonly<Record<number, number>>} skill level → monthly gross wage */
+export const START_WAGE_BY_SKILL_LEVEL = Object.freeze({ 1: 8, 2: 11, 3: 15 });
+
+export const WAGE_ADJUSTMENT = Object.freeze({ maxMonthlyStep: 0.05, pressureGain: 0.5 });

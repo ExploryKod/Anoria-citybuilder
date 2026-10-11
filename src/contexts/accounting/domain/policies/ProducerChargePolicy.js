@@ -6,7 +6,6 @@ import {
   COMPANY_MAINTENANCE_SUBSIDY_PERCENT,
   CORPORATE_TAX_RATE,
   HOUSING_MAINTENANCE_SUBSIDY_PERCENT,
-  WAGE_FACTOR_BY_SKILL_LEVEL,
 } from '../catalogs/ProducerChargeCatalog.js';
 
 /** A building with no resourceRole of its own that is still lucrative: today, only the bank (it holds and lends
@@ -30,20 +29,17 @@ export function isLucrativeBuilding(type) {
 }
 
 /**
- * The gross wage of one worker of a building for one month: the city's reference salary times the factor of the skill level its workplace
- * requires (`employment.requiredSkillLevel`, 1 when it declares none), from the wage grid of the catalog. A skill level the grid does not
- * declare throws.
- * @param {{ type: string, referenceSalaryPerMonth: number }} params
+ * The gross wage of one worker of a building for one month: the wage the labour market gives the skill and the level its workplace requires
+ * (`employment.requiredSkill`, `requiredSkillLevel`, 1 when it declares none). The market's rate is read through `wageRateOf`.
+ * @param {{ type: string, wageRateOf: (skill: string, level: number) => number }} params
  * @returns {number}
  */
-export function wagePerWorkerOf({ type, referenceSalaryPerMonth }) {
+export function wagePerWorkerOf({ type, wageRateOf }) {
   const employment = getBuildingDefinition(type)?.employment;
-  if (!employment?.requiredSkill) throw new Error(`[producer] "${type}" has workers but its catalog entry declares no required skill: its wage has no grid line`);
-  const level = employment.requiredSkillLevel ?? 1;
-  const factor = WAGE_FACTOR_BY_SKILL_LEVEL[level];
-  if (factor === undefined) throw new Error(`[producer] the wage grid declares no factor for skill level ${level} ("${type}")`);
-  if (!(referenceSalaryPerMonth > 0)) throw new Error(`[producer] the reference salary must be positive to pay "${type}"'s workers, got ${referenceSalaryPerMonth}`);
-  return centimes(referenceSalaryPerMonth * factor);
+  if (!employment?.requiredSkill) throw new Error(`[producer] "${type}" has workers but its catalog entry declares no required skill: its wage has no labour market`);
+  const wage = wageRateOf(employment.requiredSkill, employment.requiredSkillLevel ?? 1);
+  if (!(wage > 0)) throw new Error(`[producer] the wage of "${type}"'s workers must be positive, got ${wage}`);
+  return centimes(wage);
 }
 
 /**
@@ -76,12 +72,12 @@ export function tradeLines({ sellerId, buyerId, amountHT }) {
  * The payroll of a lucrative building for one month: its staffed workers times the wage of its skill level. It follows the staffing, not the
  * sales: a worker is paid whether the building sells or not, so an idle but staffed building shows a loss. A building without workers pays
  * none; a building that is not lucrative pays none (its workers are not paid by a company).
- * @param {{ type: string, workers: number, referenceSalaryPerMonth: number }} workplace
+ * @param {{ type: string, workers: number, wageRateOf: (skill: string, level: number) => number }} workplace
  * @returns {number}
  */
-export function payrollOf({ type, workers, referenceSalaryPerMonth }) {
+export function payrollOf({ type, workers, wageRateOf }) {
   if (!isLucrativeBuilding(type) || workers <= 0) return 0;
-  return centimes(workers * wagePerWorkerOf({ type, referenceSalaryPerMonth }));
+  return centimes(workers * wagePerWorkerOf({ type, wageRateOf }));
 }
 
 /**
@@ -139,16 +135,47 @@ export function wageSplitLines({ workplaceId, wagesHT, sources }) {
 }
 
 /**
+ * The employer's social contribution on a month's payroll: a charge of the company (645) and the same amount received by the city's social
+ * security, which pays the unemployment benefit.
+ * @param {{ workplaceId: string, wagesHT: number, rate: number }} payroll
+ * @returns {ChargeLine[]}
+ */
+export function employerContributionLines({ workplaceId, wagesHT, rate }) {
+  const amount = centimes(wagesHT * rate);
+  if (amount <= 0) return [];
+  return [
+    { kind: 'employer_contribution', amount, holder: workplaceId, counterparty: null },
+    { kind: 'social_contribution', amount, holder: null, counterparty: workplaceId },
+  ];
+}
+
+/**
+ * The employee's social contribution, withheld from the wages a household received in a month: it leaves the household's personal account and
+ * reaches the city's social security.
+ * @param {{ houseId: string, wagesReceived: number, rate: number }} receipt
+ * @returns {ChargeLine[]}
+ */
+export function employeeContributionLines({ houseId, wagesReceived, rate }) {
+  const amount = centimes(wagesReceived * rate);
+  if (amount <= 0) return [];
+  return [
+    { kind: 'employee_contribution', amount, holder: houseId, counterparty: null, accountKind: PERSONAL_ACCOUNT },
+    { kind: 'social_contribution', amount, holder: null, counterparty: houseId },
+  ];
+}
+
+/**
  * The building lines of one month: a lucrative building pays its wages (`wagesHT`, paid to its workers' houses by the
  * settlement), its upkeep less the company subsidy, its other real expenses already paid this month by some other
  * settlement (`otherExpensesHT` — today only a bank's deposit interest, see SettleBankDepositInterest.js; a generic
  * slot, not a bank-specific one, for whatever earns its own line outside the goods/service/wage pipeline later), and
  * its corporate tax on what profit is left. A non-lucrative building has no account: its upkeep is the city's, as the
  * housing subsidy. A line of zero is not written.
- * @param {{ id: string, type: string, salesHT: number, subsidiesHT: number, purchasesHT: number, wagesHT: number, maintenanceCost: number, otherExpensesHT?: number }} building
+ * @param {{ id: string, type: string, salesHT: number, subsidiesHT: number, purchasesHT: number, wagesHT: number, maintenanceCost: number, otherExpensesHT?: number, socialChargesHT?: number }} building
+ *   `socialChargesHT`: the employer's social contributions on the month's wages, a deductible charge like the wages
  * @returns {ChargeLine[]}
  */
-export function buildingChargeLines({ id, type, salesHT, subsidiesHT, purchasesHT, wagesHT, maintenanceCost, otherExpensesHT = 0 }) {
+export function buildingChargeLines({ id, type, salesHT, subsidiesHT, purchasesHT, wagesHT, maintenanceCost, otherExpensesHT = 0, socialChargesHT = 0 }) {
   const lucrative = isLucrativeBuilding(type);
   const lines = [];
   const add = (kind, amount, holder) => {
@@ -161,7 +188,7 @@ export function buildingChargeLines({ id, type, salesHT, subsidiesHT, purchasesH
   const ownUpkeep = centimes(maintenanceCost - subsidy);
 
   if (lucrative) {
-    const profit = centimes(salesHT + subsidiesHT - purchasesHT - wagesHT - ownUpkeep - otherExpensesHT);
+    const profit = centimes(salesHT + subsidiesHT - purchasesHT - wagesHT - socialChargesHT - ownUpkeep - otherExpensesHT);
     const tax = profit > 0 ? centimes(profit * CORPORATE_TAX_RATE) : 0;
     // The company books its whole upkeep and, apart, the share the city pays it back: its statement shows what the building really
     // costs and what the city carries. Its cash is the same as paying only the net upkeep.

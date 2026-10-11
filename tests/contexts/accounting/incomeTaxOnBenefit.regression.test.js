@@ -5,7 +5,7 @@ import { SettleProducerCharges } from '../../../src/contexts/accounting/applicat
 // household, under the same brackets, no separate threshold or rate for it (decided 2026-10-09).
 const HOUSE = 'House-Blue';
 
-function settle({ pop, salaryPerMonth, unemploymentBenefitRate, taxRate }) {
+function settle({ pop, minimumWage, unemploymentBenefitRate, taxRate }) {
   const journal = [];
   const service = new SettleProducerCharges({
     getTimeInfo: () => ({ year: 1, monthIndex: 0, month: 'Janvier' }),
@@ -20,7 +20,8 @@ function settle({ pop, salaryPerMonth, unemploymentBenefitRate, taxRate }) {
     sumBankInterestByBuilding: async () => [],
     sumOtherExpensesByBuilding: async () => [],
     listHouses: async () => [{ id: 'house', pop }],
-    getPublicPay: async () => ({ salaryPerMonth, unemploymentBenefitRate }),
+    getPublicPay: async () => ({ minimumWage, unemploymentBenefitRate, employerContributionRate: 0, employeeContributionRate: 0 }),
+    getWageRateOf: async () => () => 100,
     getSalaryTax: async () => taxRate,
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
@@ -38,7 +39,7 @@ describe('income tax on the unemployment benefit — taxed together with wages, 
     // pop 3, no workplace: all 3 are unemployed. benefit = 3 * 100 * 0.7 = 210.
     const journal = await settle({
       pop: 3,
-      salaryPerMonth: 100,
+      minimumWage: 100,
       unemploymentBenefitRate: 0.7,
       taxRate: { threshold1: 0, rate1: 0.1, threshold2: 0, rate2: 0.1 }, // flat 10%, same shape as other regression tests
     });
@@ -59,7 +60,7 @@ describe('income tax on the unemployment benefit — taxed together with wages, 
   test('below the exemption threshold, the benefit alone pays no income tax', async () => {
     const journal = await settle({
       pop: 3,
-      salaryPerMonth: 100,
+      minimumWage: 100,
       unemploymentBenefitRate: 0.7,
       taxRate: { threshold1: 1000, rate1: 0.1, threshold2: 2000, rate2: 0.2 }, // 210 < threshold1
     });

@@ -46,6 +46,8 @@ const BY_TYPE = Object.freeze({
   income_tax: entry('4421', 'Prélèvements à la source (impôt sur le revenu)', 'tax-paid'),
   citizen_tax_paid: entry('447', 'Autres impôts, taxes et versements assimilés', 'tax-paid'),
   corporate_tax: entry('695', 'Impôts sur les bénéfices', 'tax-paid'),
+  social_contribution: entry('431', 'Sécurité sociale — cotisations perçues', 'tax-received'),
+  employee_contribution: entry('431', 'Sécurité sociale — cotisations salariales', 'tax-paid', true),
   // Classe 4 — ce que les ménages perçoivent (hors PCG: un ménage n'est pas une entité)
   household_wage: entry('421', 'Personnel - Rémunérations dues', 'household', true),
   public_wage: entry('421', 'Personnel - Rémunérations dues', 'household', true),
@@ -66,6 +68,12 @@ const BY_TYPE = Object.freeze({
   contribution: entry('6281', 'Concours divers (cotisations)', 'external', false, 'Contribution pour révéler une dépêche'),
   salary: entry('6411', 'Salaires, appointements', 'personnel'),
   producer_wage: entry('6411', 'Salaires, appointements', 'personnel', false, 'Salaires des ouvriers du bâtiment'),
+  employer_contribution: entry('645', 'Charges de sécurité sociale et de prévoyance', 'personnel', false, 'Cotisations patronales'),
+  cooperative_participation: entry('691', 'Participation des salariés aux résultats', 'personnel', false, 'Part des résidents dans le surplus de la coopérative'),
+  // The interest on the parts sociales is a share of the result paid out after the tax, not a charge: class 4, outside the compte de résultat.
+  cooperative_dividend: entry('457', 'Associés — dividendes à payer', 'financial', false, 'Intérêts aux parts sociales'),
+  household_participation: entry('421', 'Personnel — participation aux résultats', 'household', true),
+  household_dividend: entry('457', 'Associés — dividendes reçus', 'household', true),
   unemployment_benefit: entry('648', 'Autres charges de personnel', 'personnel', false, 'Allocation chômage'),
   loan_interest: entry('6611', 'Intérêts des emprunts et dettes', 'financial'),
   deposit_interest_paid: entry('6615', 'Intérêts des comptes courants et des dépôts créditeurs', 'financial'),
@@ -168,9 +176,14 @@ const RAW_INCOME_STATEMENT = Object.freeze([
     id: 'exceptionalCharges', label: 'Charges exceptionnelles', direction: 'charge',
     lines: Object.freeze([Object.freeze({ id: 'exceptionalChargesLine', label: 'Charges exceptionnelles', accounts: Object.freeze(['67']) })]),
   }),
+  // A cooperative's workers share of the surplus: a charge before the tax on profits (the model of the plan comptable puts it just above it).
+  Object.freeze({
+    id: 'workersParticipation', label: 'Participation des salariés aux résultats', direction: 'charge',
+    lines: Object.freeze([Object.freeze({ id: 'workersParticipationLine', label: 'Participation des salariés aux résultats', accounts: Object.freeze(['691']) })]),
+  }),
   Object.freeze({
     id: 'profitTax', label: 'Impôts sur les bénéfices', direction: 'charge',
-    lines: Object.freeze([Object.freeze({ id: 'profitTaxLine', label: 'Impôts sur les bénéfices', accounts: Object.freeze(['69']) })]),
+    lines: Object.freeze([Object.freeze({ id: 'profitTaxLine', label: 'Impôts sur les bénéfices', accounts: Object.freeze(['695', '698']) })]),
   }),
 ]);
 
@@ -180,7 +193,7 @@ const LINE_TONES = Object.freeze({
   merchandisePurchases: 'purchase', materialPurchases: 'purchase', externalCharges: 'external', taxes: 'tax-paid',
   wages: 'personnel', socialCharges: 'personnel', otherCharges: 'subsidy-given',
   financialIncomeLine: 'sales', financialChargesLine: 'financial', exceptionalIncomeLine: 'sales', exceptionalChargesLine: 'external',
-  profitTaxLine: 'tax-paid',
+  workersParticipationLine: 'personnel', profitTaxLine: 'tax-paid',
 });
 
 /** The statement with each line wearing its tone: a line with none throws, so a new line cannot slip in uncoloured. */

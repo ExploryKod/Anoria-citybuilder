@@ -128,7 +128,10 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl
   );
   // Every seller's price is built on what its stock cost (see PriceBook): the traceability logs the transfers at it, the houses pay it.
-  const priceBook = new PriceBook({ sumInflowCosts: (range) => supplyTraceabilityRepositoryImpl.sumInflowCosts(range) });
+  const priceBook = new PriceBook({
+    sumInflowCosts: (range) => supplyTraceabilityRepositoryImpl.sumInflowCosts(range),
+    loadProducerCosting: () => consumerMoney.producerCosting(),
+  });
   const distributeResourceToConsumers = new DistributeResourceToConsumers(
     supplyBuildingRepositoryImpl,
     consumerMoney,
@@ -238,7 +241,7 @@ export function createSupplyContext({
             houseId: transfer.consumerId,
             category: transfer.category,
             units: 0,
-            unitPrice: priceBook.sellingPrice(distributor, transfer.category),
+            unitPrice: priceBook.sellingPrice(distributor, transfer.category, timeInfo),
           };
           line.units += transfer.amount;
           purchases.set(key, line);
@@ -517,31 +520,32 @@ export function createSupplyContext({
     },
 
     /**
-     * The unit price a warehouse sells a good at this month: its average cost marked up by its margin (see PriceBook).
-     * @param {{ id: string, type: string }} hub
-     * @param {string} good
+     * The unit price (HT) a building sells a good or a service at in a month: a producer at its cost plus its margin, a warehouse and a market at
+     * the average cost of their deliveries plus theirs (see PriceBook).
+     * @param {{ id: string, type: string }} building
+     * @param {string} category
      * @param {{ year?: number, monthIndex?: number }} period
      * @returns {Promise<number>}
      */
-    async hubSellingPrice(hub, good, period) {
+    async sellingPriceOf(building, category, period) {
       await priceBook.ensure(period);
-      return priceBook.sellingPrice(hub, good);
+      return priceBook.sellingPrice(building, category, period);
     },
 
     /**
-     * What every warehouse and every market of the hamlet sells each of its goods at this month (HT), for the price panel.
+     * What every producer, warehouse and market of the hamlet sells each of its goods at this month (HT), for the price panel.
      * @param {{ year?: number, monthIndex?: number }} period
-     * @returns {Promise<Array<{ stage: 'hub' | 'distributor', buildingId: string, category: string, price: number }>>}
+     * @returns {Promise<Array<{ stage: 'producer' | 'hub' | 'distributor', buildingId: string, category: string, price: number }>>}
      */
     async listSellingPrices(period) {
       await priceBook.ensure(period);
       const services = getServiceCategories();
       const prices = [];
-      for (const [role, stage] of [['hub', 'hub'], ['distributor', 'distributor']]) {
+      for (const role of ['producer', 'hub', 'distributor']) {
         for (const building of await supplyBuildingRepositoryImpl.findByResourceRole(role)) {
           for (const category of getCategoriesForRole(building.type, role)) {
             if (services.includes(category)) continue;
-            prices.push({ stage, buildingId: building.id, category, price: priceBook.sellingPrice(building, category) });
+            prices.push({ stage: role, buildingId: building.id, category, price: priceBook.sellingPrice(building, category, period) });
           }
         }
       }

@@ -22,6 +22,8 @@ function vmFor(buildingType, { roads = 1, worker = 0, workerNeed = 2 } = {}) {
       employees: { worker, worker_need: workerNeed, sector: 6 },
     },
     employment: fakeEmployment,
+    wagePerWorker: 24,
+    employerContributionRate: 0.25,
   };
 }
 
@@ -62,6 +64,22 @@ describe('serviceInfoFormat — one generic format, driven entirely by catalog f
     // The label names the category the catalog expects, as its house is named in the catalog.
     expect(understaffed.sections[0].rows).toContainEqual({ label: 'Ouvriers · Savants', value: '0/2' });
     expect(understaffed.sections[0].banners).toBeUndefined();
+  });
+
+  test('staff tab tells the wage the labour market pays and, with workers, the monthly bill that is due even without a sale', () => {
+    const staffed = formatServiceStaffModel(vmFor('FireStation', { worker: 2, workerNeed: 2 }));
+
+    const labels = staffed.sections[0].rows.map((row) => row.label);
+    expect(labels).toContain('Salaire (marché du travail)');
+    const cost = staffed.sections[0].rows.find((row) => row.label === 'Coût des salariés').value;
+    expect(cost).toMatch(/48/); // 2 workers at 24
+    expect(cost).toMatch(/12/); // and the employer's 25 % on it
+  });
+
+  test('a view-model with no wagePerWorker throws instead of leaving the wage out', () => {
+    const { wagePerWorker, ...withoutWage } = vmFor('FireStation', { worker: 1 });
+
+    expect(() => formatServiceStaffModel(withoutWage)).toThrow(/wagePerWorker/);
   });
 
   test('a workplace every social category can fill just says "Employés"', () => {

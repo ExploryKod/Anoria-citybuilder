@@ -132,7 +132,7 @@ export class DistributeResourceToConsumers {
       getAmount: getCategoryAmount,
       money: {
         fundsOf: (consumerId) => this.consumerMoney.fundsOf(consumerId),
-        priceOf: (category) => this.priceBook.sellingPrice(source, category),
+        priceOf: (category) => this.priceBook.sellingPrice(source, category, period),
       },
     });
 

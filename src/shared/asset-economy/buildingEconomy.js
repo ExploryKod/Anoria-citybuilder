@@ -54,8 +54,11 @@ const STORED_GOODS = [
   ...ARTISAN_ACTIVITY_GOODS, ...SAVANT_ACTIVITY_GOODS,
   // MERCHANT_ACTIVITY_GOODS (deal goods) intentionally excluded: they go to TradeWarehouse only.
 ];
-/** An olive field's single annual harvest (olives): enough for two oil presses' year. */
-const OLIVE_ANNUAL_YIELD = 120;
+/**
+ * An olive field's single annual harvest (olives): the harvest of any other farm (a worker of an olive field produces as much as one of a wheat
+ * field, so its olives do not cost five times a wheat's once the wages are in the price), enough for about five oil presses' year (60 each).
+ */
+const OLIVE_ANNUAL_YIELD = 288;
 const GOODS_TOTAL_KEY = 'goods';
 /** Manhattan tiles around a warehouse from which it collects goods, and from which a workshop draws its supplies. */
 const WAREHOUSE_RANGE = 12;

@@ -86,7 +86,8 @@ export function incomeStatementOf(entries, buildingId, { year, month = null, acc
   const financial = total('financialIncome') - total('financialCharges');
   const current = operating + financial;
   const exceptional = total('exceptionalIncome') - total('exceptionalCharges');
-  const net = current + exceptional - total('profitTax');
+  // The cooperative's workers share comes off before the tax on profits, which comes off last.
+  const net = current + exceptional - total('workersParticipation') - total('profitTax');
   const sumAccounts = (accounts) => accounts.reduce((sum, account) => sum + (byAccount.get(account) ?? 0), 0);
   const goodsSold = byAccount.get('707') ?? 0;
 
@@ -158,12 +159,19 @@ export function cashMovementsOf(entries, buildingId, { accountKind = null } = {}
  *   financial and other income: `otherNonSalesIncome`);
  * - seuil de rentabilité: the sales at which the result is nil = fixed charges ÷ the rate of margin on variable charges.
  *
+ * With the units the building sold in the month (`unitsSold`, read from the supply log, null when not read) the cost of production of a unit:
+ * the operating charges (purchases, external charges, wages, taxes...) over the units, against the average price they were sold at. It is where
+ * a wage shows in the cost of a unit.
+ *
  * @param {ReturnType<typeof incomeStatementOf>} statement
- * @returns {{ turnover: number, valueAdded: number, valueAddedRate: number | null, ebe: number, operatingResult: number, netResult: number,
+ * @param {{ unitsSold: number | null }} reading
+ * The cost of the workforce (the wages and the employer's contributions) and its share of the value added: what the payroll takes of what the building adds.
+ * @returns {{ unitsSold: number | null, averagePrice: number | null, costPerUnit: number | null, resultPerUnit: number | null, labourCost: number, labourShare: number | null, turnover: number, valueAdded: number, valueAddedRate: number | null, ebe: number, operatingResult: number, netResult: number,
  *   caf: number, cafRate: number | null, variableCharges: number, fixedCharges: number, subsidies: number, otherNonSalesIncome: number, variableMarginRate: number | null,
  *   breakEven: number | null, safetyMargin: number | null, safetyIndex: number | null }}
  */
-export function ratiosOf(statement) {
+export function ratiosOf(statement, { unitsSold }) {
+  if (unitsSold === undefined) throw new Error('[finance] the ratios must be told the units sold (a number, or null when they were not read)');
   const line = (id) => statement.sections.flatMap((section) => section.lines).find((candidate) => candidate.id === id);
   const sectionTotal = (id) => toCentimes(statement.sections.find((section) => section.id === id).total);
   const lineCentimes = (id) => toCentimes(line(id).amount);
@@ -177,6 +185,7 @@ export function ratiosOf(statement) {
   const turnover = lineCentimes('goodsSold') + lineCentimes('productionSold');
   const purchasesAndExternal = lineCentimes('merchandisePurchases') + lineCentimes('materialPurchases') + lineCentimes('externalCharges');
   const valueAdded = turnover - purchasesAndExternal;
+  const labourCost = lineCentimes('wages') + lineCentimes('socialCharges');
   const ebe = valueAdded + lineCentimes('subsidies') - lineCentimes('taxes') - lineCentimes('wages') - lineCentimes('socialCharges');
   const operatingResult = toCentimes(statement.results.operating);
   const netResult = toCentimes(statement.results.net);
@@ -187,10 +196,19 @@ export function ratiosOf(statement) {
   const variableMarginRate = ratio(turnover - variableCharges, turnover);
   const breakEven = variableMarginRate !== null && variableMarginRate > 0 ? Math.round(fixedCharges / variableMarginRate) : null;
 
+  const operatingCharges = sectionTotal('operatingCharges');
+  const hasUnits = unitsSold !== null && unitsSold > 0;
+
   return {
+    unitsSold: hasUnits ? unitsSold : null,
+    averagePrice: hasUnits ? fromCentimes(Math.round(turnover / unitsSold)) : null,
+    costPerUnit: hasUnits ? fromCentimes(Math.round(operatingCharges / unitsSold)) : null,
+    resultPerUnit: hasUnits ? fromCentimes(Math.round((turnover - operatingCharges) / unitsSold)) : null,
     turnover: fromCentimes(turnover),
     valueAdded: fromCentimes(valueAdded),
     valueAddedRate: ratio(valueAdded, turnover),
+    labourCost: fromCentimes(labourCost),
+    labourShare: ratio(labourCost, valueAdded),
     ebe: fromCentimes(ebe),
     operatingResult: fromCentimes(operatingResult),
     netResult: fromCentimes(netResult),
@@ -210,11 +228,12 @@ export function ratiosOf(statement) {
 /**
  * @param {Array<{ type: string, amount: number, year: number, month: number, accountBuildingId: string | null, accountKind?: string | null }>} entries the journal lines
  * @param {string} buildingId
- * @param {{ year: number, month?: number, accountKind?: string | null, salesNature?: 'merchandise' | 'production' | 'services' | null }} period a month (1 to 12) of a year, or the whole year when month is not given;
- *   accountKind picks a house's account; `salesNature` is required for every account but a house's personal one
+ * @param {{ year: number, month?: number, accountKind?: string | null, salesNature?: 'merchandise' | 'production' | 'services' | null, unitsSold?: number | null }} period a month (1 to 12) of a year, or the whole year when month is not given;
+ *   accountKind picks a house's account; `salesNature` is required for every account but a house's personal one; `unitsSold` the units the building
+ *   sold that month (null when not read: the cost of a unit then shows nothing)
  * @returns {{ statement: ReturnType<typeof incomeStatementOf> | null, wagesReceived: number, publicWageReceived: number, benefitReceived: number, servicesPaid: number, goodsBought: number, incomeTax: number, citizenTax: number, householdResult: number }}
  */
-export function buildingFinanceFigures(entries, buildingId, { year, month = null, accountKind = null, salesNature }) {
+export function buildingFinanceFigures(entries, buildingId, { year, month = null, accountKind = null, salesNature, unitsSold = null }) {
   if (!buildingId) throw new Error('[finance] a building account needs its building');
   const accountKey = accountKeyOf({ accountBuildingId: buildingId, accountKind });
   const byType = new Map();
@@ -225,22 +244,34 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
   }
   const of = (type) => byType.get(type) ?? 0;
 
-  const householdIncome = of('household_wage') + of('public_wage') + of('household_benefit');
-  const householdCharges = of('service_purchase') + of('consumer_purchase') + of('income_tax') + of('citizen_tax_paid');
+  const householdIncome = of('household_wage') + of('public_wage') + of('household_benefit') + of('household_participation') + of('household_dividend');
+  const householdCharges = of('service_purchase') + of('consumer_purchase') + of('income_tax') + of('citizen_tax_paid') + of('employee_contribution');
   const householdResult = householdIncome - householdCharges;
 
   const statement = accountKind === 'particulier' ? null : incomeStatementOf(entries, buildingId, { year, month, accountKind, salesNature });
   return {
     // A personal account is a household budget, not a compte de résultat.
     statement,
-    ratios: statement && ratiosOf(statement),
+    ratios: statement && ratiosOf(statement, { unitsSold }),
+    // What a cooperative did with its result: the interest paid to its associates after the tax, and what stays in the business as reserves.
+    // The participation is already a charge of the statement (691). Read from the same lines, nothing is stored.
+    // Only an account that shared something is a cooperative's: another company has no allocation to show.
+    allocation: statement && {
+      dividends: fromCentimes(of('cooperative_dividend')),
+      retained: of('cooperative_dividend') !== 0 || of('cooperative_participation') !== 0
+        ? fromCentimes(toCentimes(statement.results.net) - of('cooperative_dividend'))
+        : 0,
+    },
     wagesReceived: fromCentimes(of('household_wage')),
     publicWageReceived: fromCentimes(of('public_wage')),
     benefitReceived: fromCentimes(of('household_benefit')),
+    participationReceived: fromCentimes(of('household_participation')),
+    dividendReceived: fromCentimes(of('household_dividend')),
     servicesPaid: fromCentimes(of('service_purchase')),
     goodsBought: fromCentimes(of('consumer_purchase')),
     incomeTax: fromCentimes(of('income_tax')),
     citizenTax: fromCentimes(of('citizen_tax_paid')),
+    employeeContributionPaid: fromCentimes(of('employee_contribution')),
     householdResult: fromCentimes(householdResult),
   };
 }
@@ -273,8 +304,8 @@ export function householdBudgetOf(entries, houseId, { year, month, balance }) {
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey || entry.year !== year || entry.month !== month) continue;
     const amount = toCentimes(entry.amount);
-    if (entry.type === 'household_wage' || entry.type === 'public_wage' || entry.type === 'household_benefit') wages += amount;
-    else if (entry.type === 'service_purchase' || entry.type === 'income_tax' || entry.type === 'citizen_tax_paid') services += amount;
+    if (['household_wage', 'public_wage', 'household_benefit', 'household_participation', 'household_dividend'].includes(entry.type)) wages += amount;
+    else if (['service_purchase', 'income_tax', 'citizen_tax_paid', 'employee_contribution'].includes(entry.type)) services += amount;
     else if (entry.type === 'consumer_purchase') purchases += amount;
     else if (entry.type === 'deposit') depositedOut += amount;
     else if (entry.type === 'withdrawal' || entry.type === 'household_deposit_interest') returnedIn += amount;
@@ -309,17 +340,23 @@ export function householdLastMonthOf(entries, houseId, { settled, bought }) {
     wagesReceived: settledFigures.wagesReceived,
     publicWageReceived: settledFigures.publicWageReceived,
     benefitReceived: settledFigures.benefitReceived,
+    participationReceived: settledFigures.participationReceived,
+    dividendReceived: settledFigures.dividendReceived,
     servicesPaid: settledFigures.servicesPaid,
     incomeTax: settledFigures.incomeTax,
     citizenTax: settledFigures.citizenTax,
+    employeeContributionPaid: settledFigures.employeeContributionPaid,
     goodsBought: boughtFigures.goodsBought,
     householdResult: fromCentimes(
       toCentimes(settledFigures.wagesReceived)
         + toCentimes(settledFigures.publicWageReceived)
         + toCentimes(settledFigures.benefitReceived)
+        + toCentimes(settledFigures.participationReceived)
+        + toCentimes(settledFigures.dividendReceived)
         - toCentimes(settledFigures.servicesPaid)
         - toCentimes(settledFigures.incomeTax)
         - toCentimes(settledFigures.citizenTax)
+        - toCentimes(settledFigures.employeeContributionPaid)
         - toCentimes(boughtFigures.goodsBought),
     ),
   };

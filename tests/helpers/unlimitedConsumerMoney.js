@@ -6,4 +6,6 @@ export const unlimitedConsumerMoney = Object.freeze({
   fundsOf: async () => Infinity,
   recordPurchases: async () => {},
   isServiceCutOff: async () => false,
+  // A wage of 8 and no upkeep: what a producer's month costs, for the supply tests that are not about prices.
+  producerCosting: async () => ({ wageRateOf: () => 8, maintenanceCostOf: () => 0, employerContributionRate: 0 }),
 });

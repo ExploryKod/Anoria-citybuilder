@@ -12,6 +12,7 @@
  * @property {number} housingSubsidy
  * @property {number} exports
  * @property {number} customsImport
+ * @property {number} socialContributions
  * @property {number} loanCapital
  * @property {number} carryForwardIncome
  * @property {number} totalIncome
@@ -44,6 +45,7 @@ export function createEmptyCityLedgerYearLines(year = 0) {
     vat: 0,
     exports: 0,
     customsImport: 0,
+    socialContributions: 0,
     loanCapital: 0,
     carryForwardIncome: 0,
     totalIncome: 0,

@@ -218,6 +218,9 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     entry.type === 'service_sales' ||
     entry.type === 'service_subsidy_received' ||
     entry.type === 'subsidy_companies_received' ||
+    entry.type === 'social_contribution' ||
+    entry.type === 'household_participation' ||
+    entry.type === 'household_dividend' ||
     entry.type === 'household_wage' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital'
@@ -269,6 +272,13 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     service_purchase: 'Achats de services',
     service_subsidy_received: 'Subvention reçue',
     subsidy_companies_received: 'Subvention entretien reçue',
+    employer_contribution: 'Cotisations patronales',
+    employee_contribution: 'Cotisations salariales',
+    social_contribution: 'Cotisations sociales perçues',
+    cooperative_participation: 'Participation aux résultats versée',
+    cooperative_dividend: 'Dividendes versés',
+    household_participation: 'Participation aux résultats perçue',
+    household_dividend: 'Dividendes perçus',
     commercial_route: 'Commission Négociants',
     contribution: 'Contribution',
     loan_capital: 'Capital Prêt',

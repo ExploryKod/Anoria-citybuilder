@@ -83,6 +83,9 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     getCitizenTaxPerCapita: () => accounting.getCitizenTaxPerCapita(),
     setCitizenTaxPerCapita: (amount) => accounting.setCitizenTaxPerCapita(amount),
     getSalarySettings: () => accounting.getSalarySettings(),
+    getWageBoard: (marketRows) => accounting.getWageBoard(marketRows),
+    getSocialSecurityBoard: () => accounting.getSocialSecurityBoard(),
+    getWagePerWorkerOf: (buildingType) => accounting.getWagePerWorkerOf(buildingType),
     setSalarySettings: (partial) => accounting.setSalarySettings(partial),
     ensureHamletFiscalRates: (hamletId) => accounting.ensureHamletFiscalRates(hamletId),
 
@@ -192,6 +195,7 @@ export function createEmploymentSessionApi(employment) {
     getSectorName: (sector) => employment.getSectorName(sector),
     getStaffingGroups: (buildingType) => employment.getStaffingGroups(buildingType),
     getCityEmploymentSummary: () => employment.getCityEmploymentSummary(),
+    getLabourMarket: () => employment.getLabourMarket(),
   });
 }
 

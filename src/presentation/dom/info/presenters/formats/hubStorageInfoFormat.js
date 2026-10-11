@@ -30,7 +30,7 @@ export function formatHubStorageStaffModel(vm) {
   const { hubKind, buildingRow, employment } = vm;
   if (!hubKind) return null;
 
-  return formatWorkplaceEmployeesPanel(buildingRow, employment, staffingStatusLine(vm));
+  return formatWorkplaceEmployeesPanel(buildingRow, employment, staffingStatusLine(vm), vm.wagePerWorker, vm.employerContributionRate);
 }
 
 /** @deprecated Prefer formatHubStorageStaffModel */

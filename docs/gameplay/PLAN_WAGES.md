@@ -23,20 +23,69 @@ paid whatever the sales, that classification becomes true instead of a conventio
 
 ## Status (2026-10-11)
 
-**Step 1 built, not yet played in the app.** `payrollOf` (ProducerChargePolicy.js) = staffed workers × `wagePerWorkerOf`; the grid is
-`WAGE_FACTOR_BY_SKILL_LEVEL` (ProducerChargeCatalog.js: level 1 ×1, level 2 ×1.4, level 3 ×1.9). **Deviation from the plan:** the wage is the factor
-times the city's **reference salary** (`salaryPerMonth`, 100 by default, the one the unemployment benefit and the income tax brackets are set on),
-not a euro figure per skill: one lever moves every wage and the benefit with it (it is the minimum-wage lever of step 6 already). Per-skill
-factors (a scholar paid more than an artisan) are not declared yet, only per level. `WAGE_RATE_BY_ROLE` and the sales basis are gone; the monthly
-settlement computes the payroll from `workerSources` at the settlement, and the circular "wages ↔ sales ↔ bills" loop of the settlement now settles in
-one pass. Houses' own businesses still pay no wage (the SCOP step).
+**Step 1 built, and the wages are now settled by the labour market (decided 2026-10-11), not played yet in the app.**
+- **Payroll from staffing** (`payrollOf`, ProducerChargePolicy.js): staffed workers × the market wage of the skill and level their workplace requires.
+  It is due whether or not the building sells. The circular "wages ↔ sales ↔ bills" loop of the settlement is gone (one pass).
+- **A wage per (skill, level), settled by the market** (`WageRatePolicy.js`, `LabourMarketCatalog.js`): each month the worker distribution leaves,
+  for each (skill, level) the workplaces ask for, the jobs, the ones filled, the vacancies and the qualified citizens left idle
+  (`DistributeCityWorkers` → `employment.getLabourMarket()`). A shortage raises the wage, slack lowers it, `pressure × 0.5` capped at **5 % a month**,
+  never under the minimum wage. The starting wages are 24 / 34 / 46 for levels 1 / 2 / 3.
+- **Order in the monthly settlement:** the month is paid at the wages in force, then the market moves them for the month that opens
+  (`ProcessTurnBudget` → `AdjustWageRates`). A move is a row of the append-only `wageRates` log (Dexie v21) with the reading that caused it. A wage not yet
+  moved is at its starting wage; no reading yet (no distribution has run) moves nothing.
+- **The city's levers:** the **minimum wage** (renamed from the "reference salary", `minimumWage`, default **20**, bounds 5–200) is the floor of every
+  wage; the **unemployment benefit** is a share of it (70 % by default). The income tax brackets were rescaled to the economy (30 / 90).
+- **The player is told:** a "Salaires" section of the administrator panel (the two levers, and per skill and level: the wage, its last move, the jobs,
+  the ones filled, the idle, and the market's reading); the wage and the monthly payroll in each workplace's Personnel tab; the journal line of a payroll
+  carries "n ouvriers à x €".
+- **Not done:** the ceiling of what firms can afford (it needs the labour in the price, step 3), employer-specific wages, wages in a house's own business
+  (the SCOP step), per-skill starting wages (only per level).
+- **An older game still loads:** every session start writes the default of each fiscal rate a hamlet lacks (`ensureRates`), so an older hamlet
+  gets the minimum wage and the contribution rates; its other rates (brackets, benefit) keep the values it had.
 
-**Calibration, still to do with a play-through.** The fiscal defaults (reference salary 100, benefit 70, brackets 50 / 150, citizen tax 25) assume a
-wage near 100 a month. The economy's own scale is lower: a citizen's needs cost about 19 a month at today's prices (goods 17, water and
-energy 1), and the whole city's final spending is about 19 × its population. A payroll of ~100 per worker therefore puts every company in
-deficit by several times its sales, and the households richer than their needs. It is the expected consequence of "deficit only, no effect"; making
-the figures plausible means choosing between a lower reference salary (and rescaling the benefit, the brackets and the citizen tax with it) and higher
-prices or productivity (the labour in the price, step 3).
+**Step 3, labour in the price: first half built (2026-10-12), the feedback on prices NOT built, on purpose.**
+- **Built:** the cost of a unit is read, not yet charged. The Ratios pill of a company's account has a "Coût de revient d'une unité" block: the units sold
+  the month of the activity (`sumUnitsSoldBySeller`, from the supply log), the average sale price, the operating charges over the units (wages and
+  purchases included), and the result per unit. It is where a wage shows in a unit.
+- **Correction (2026-10-12).** The first version of this plan set the wages on a scale of 24 and said a citizen's needs cost about 19 a month. That figure
+  was wrong: it counted every good of a shared need (food is one unit a citizen, shared between wheat, carrot and cabbage, and the same for the other
+  groups). A citizen's needs cost **about 5.8 a month** (food 1.1, goods 3.6, heat and light 0.5, water and energy 0.6), and what a worker produces is
+  worth **6 to 15 a month** at the producers' price. So the catalog's productivity is not the problem; the wage scale was 3 times too high. The starting
+  wages are now **8 / 11 / 15** (levels 1 / 2 / 3), the minimum wage **6**, the benefit 70 % of it, the income tax brackets 10 / 30 per household.
+- **The unit cost at a wage of 8** (workers × wage + upkeep + inputs, over the units a month; the price is the producer's today, base value × 1.2):
+
+  | Producer | Cost of a unit | Price today | Cost ÷ price |
+  |---|---|---|---|
+  | Farm of wheat / carrot / cabbage | 1.08 | 0.96 / 0.72 / 0.60 | 1.1 / 1.5 / 1.8 |
+  | Olive field (120 a year) | 2.40 | 0.48 | 5.0 |
+  | Plate / pot / amphora workshop | 3.20 | 6.0 / 3.6 / 4.8 | 0.5 / 0.9 / 0.7 |
+  | Oil press / candle workshop | 3.8 / 4.4 | 2.4 / 1.8 | 1.6 / 2.4 |
+  | Furniture workshop | 4.6 | 24 | 0.2 |
+  | Lumberjack / industrial lumberjack | 1.6 / 2.2 | 1.2 | 1.3 / 1.8 |
+  | Water tank | 0.04 | 0.125 | 0.3 |
+  | Coal / petrol / nuclear plant (a MWh) | 0.30 | 0.10 | 3.0 |
+
+  Most sectors are within a factor of two of their price: the catalog was built on a scale close to a wage of 8. The outliers are the olive field (a low
+  yield), the candle workshop, the energy (priced at 0.1 a MWh against a cost of 0.3) and, the other way, the furniture workshop and the water tank.
+- **Feedback on prices: built (2026-10-12, not played yet).** A producer's price is its **standard cost plus its margin (20 %)** (`standardUnitCostOf`,
+  `PriceBook`): its month at full staffing (workers × the labour market's wage for the skill and level, its upkeep, the inputs it draws at the price its
+  warehouse sells them at) over the units it makes in the month (a harvest spread over the year, a quantity a month, a cycle's output over its interval). So a wage, the
+  minimum wage, a customs duty on the fuel, reach the producer's price, then the warehouse's and the market's (their margin on what they paid). The energy
+  and the water that a plant or a tank makes are priced the same way and billed at that price (a service no producer makes, a school's lessons, keeps its
+  base value). A house's own business (no workforce yet) keeps the reference chain. It is a standard cost: it does not move with how busy the building
+  is, only with the wage, the upkeep and the price of its inputs.
+- **The one catalog fix:** the olive field's yield went from 120 to 288 a year (the harvest of any other farm: its olives cost five times a wheat otherwise).
+  The other outliers (candle, furniture, energy) are left as they are: the price now follows the cost.
+- **What it does to the prices** (computed on the catalog with the starting wages, no import): the shelf prices move as
+  wheat / carrot / cabbage 1.44 / 1.08 / 0.90 → 1.95 each; plate / pot / amphora 9.0 / 5.4 / 7.2 → 5.8 each; furniture 36 → 9.9; wood 1.8 → 2.9; oil / candle
+  3.6 / 2.7 → 8.4 / 7.9; energy 0.10 → 0.36 a MWh; water 0.125 → 0.05 a m³. A citizen's monthly basket goes from 5.8 to about 5.3: the households can pay.
+  Furniture and the goods lose most of their price, the staples, the light and the energy rise: a worker is paid the same in every sector, so a good
+  that takes many workers per unit costs more.
+- **Consequence for trade:** the world prices of the trade cities stay on the base values (`reference × the city's multiplier`), so the domestic prices
+  now differ from them: furniture costs 9.9 here and a city pays 20 × 1.6: exporting it is very profitable, importing coal is dearer than burning
+  domestic labour. The comparative advantage is real now and may need a tuning of the cities' multipliers.
+
+**Calibration, still to do with a play-through.** The 5 % step, the starting wages and the minimum wage are first values on the corrected scale.
 
 ## 2. The target model
 
@@ -63,6 +112,20 @@ and a loss. The ratios and the break-even tell the player why. (Later: the bankr
 `PLAN_IMPORTS_PRICES_CAPITAL.md`, phase 5.)
 
 ## 3. Steps
+
+**Status (2026-10-12): all the steps below are built and covered by tests; none is played yet.** What differs from the text:
+- **Step 2:** the social security has no cash account of its own. Contributions (employer 25 %, employee 10 %, levers of the "Salaires" section) are
+  city lines (`social_contribution`, PCG 431) and the unemployment benefit stays a city expense: the "Sécurité sociale" card of the section and the new
+  "Cotisations sociales" row of the city ledger show contributions against benefits; a deficit is the treasury's, shown as such. The employer's share
+  is a charge of the company (645, deductible, in its price); the employee's is withheld from the household's personal account and the income tax is on the wage after it.
+- **Step 5:** a house's cooperative has **no payroll**: its residents are also the labour pool of every other workplace, so paying them a wage for the
+  same work would double count them (or leave no unemployed to draw a benefit). They are paid out of the surplus instead, as the SCOP rules say
+  (section 4): the participation (40 %, charge 691), the tax on what is left (25 %), the interest on the parts (15 %, after the tax, 457) and the rest in
+  reserves; only the cash the business holds can leave it. A house's personal account shows the participation and the dividends apart from its wages.
+- **Step 4:** the ratios gained "Coût du personnel" and "Part des salaires dans la valeur ajoutée"; the company statement lists the wages and the
+  contributions under their lines (small grey rows).
+- **Step 6 (minimum wage):** built early, it is the floor of the labour market (see the status above).
+- Open for a later play-through: the shares and the rates (first values), and whether the cooperative should staff its own work (see above).
 
 1. **Wage grid and payroll from staffing.**
    - Declare the grid; remove `WAGE_RATE_BY_ROLE` and `wagesPaidOf`'s sales basis; compute a building's payroll from its staffed workers and

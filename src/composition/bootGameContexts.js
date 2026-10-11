@@ -42,7 +42,12 @@ export function bootGameContexts() {
   const gameplay = getOrCreateGameplayContext();
   const construction = getOrCreateConstructionContext();
   const cityAssets = getOrCreateCityAssetsContext();
-  const accounting = getOrCreateAccountingContext({ cityAssets });
+  const accounting = getOrCreateAccountingContext({
+    cityAssets,
+    getLabourMarket: () => employment.getLabourMarket(),
+    // A service is billed at the price its seller sold it at (the supply's price book, built after the accounting: read at call time).
+    getSellingPrice: (building, category, period) => supply.sellingPriceOf(building, category, period),
+  });
   // The supply needs the consumers' money (their personal accounts), so the accounting exists first.
   const supply = getOrCreateSupplyContext({ consumerMoney: createConsumerMoneyPort(accounting) });
   // A house reaches level 3 only if its own business can reach a warehouse: no 'no-hub' gap in any of its recipes.

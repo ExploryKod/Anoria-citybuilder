@@ -181,7 +181,7 @@ export class DexieSupplyTraceabilityRepository {
    * What the warehouses and the markets of the active hamlet received over a range of months, per receiver and good: the quantity and what
    * it cost (the sellers' prices at the time). It is what a stock's average cost is read from (see PriceBook).
    * @param {{ fromKey: number, toKey: number }} range months as `year × 12 + monthIndex`, both ends included
-   * @returns {Promise<Array<{ buyerId: string, category: string, quantity: number, amount: number }>>}
+   * @returns {Promise<Array<{ buyerId: string, category: string, stage: 'hub' | 'distributor', quantity: number, amount: number }>>}
    */
   async sumInflowCosts({ fromKey, toKey }) {
     const hamletId = requireActiveHamletId();
@@ -198,12 +198,41 @@ export class DexieSupplyTraceabilityRepository {
     for (const row of rows) {
       if (!row.toId) throw new Error(`[traceability] goods transfer ${row.id} names no buyer`);
       const key = `${row.toId}|${row.foodType}`;
-      const sum = sums.get(key) ?? { buyerId: row.toId, category: row.foodType, quantity: 0, amount: 0 };
+      const sum = sums.get(key) ?? {
+        buyerId: row.toId,
+        category: row.foodType,
+        stage: row.transactionType === 'source_to_hub' ? 'hub' : 'distributor',
+        quantity: 0,
+        amount: 0,
+      };
       sum.quantity += row.quantity;
       sum.amount += row.quantity * row.price;
       sums.set(key, sum);
     }
     return [...sums.values()];
+  }
+
+  /**
+   * The units each building sold in a month, goods and services alike: what a producer or a hub sold to another stage (source_to_hub,
+   * source_to_distributor, hub_to_building), what a market delivered to the houses (distributor_to_consumer). It is the quantity a unit cost
+   * (the month's charges over the units sold) is read against.
+   * @param {number} year
+   * @param {number} monthIndex
+   * @returns {Promise<Map<string, number>>} seller id → units
+   */
+  async sumUnitsSoldBySeller(year, monthIndex) {
+    const hamletId = requireActiveHamletId();
+    const rows = await this.db.supplyTraceability
+      .where('transactionType')
+      .anyOf(['source_to_hub', 'source_to_distributor', 'hub_to_building', 'distributor_to_consumer'])
+      .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex)
+      .toArray();
+    const units = new Map();
+    for (const row of rows) {
+      if (!row.fromId) throw new Error(`[traceability] transfer ${row.id} names no seller`);
+      units.set(row.fromId, (units.get(row.fromId) ?? 0) + row.quantity);
+    }
+    return units;
   }
 
   async recordSourceToDistributor(turn, month, year, source, distributor, foodType, quantity, price) {

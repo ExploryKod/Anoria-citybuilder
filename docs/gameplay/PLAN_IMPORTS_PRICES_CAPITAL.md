@@ -141,6 +141,10 @@ Known leftovers and consequences:
   fill), the import's `unprofitable` test against the reference price.
 
 ### Phase 3 — Margins along the chain, VAT at the last sale
+Built (2026-10-12, not yet played in the app): a producer sells at its standard cost plus its 20 % margin, the warehouse and the market at the average cost of
+their deliveries plus theirs (`PriceBook`, `StandardUnitCostPolicy`; see `PLAN_WAGES.md`, step 3). The VAT at the last sale was already in place
+(`RecordConsumerPurchases`). Still on the reference chain: a house's own business (no workforce, no wage yet), a good with no reference value, the services no
+producer makes; the margins are constants, not driven by the stock's fill (phase 6).
 - Producers and markets price with the one rule; the houses pay VAT.
 - Each actor's journal shows its purchase and sale HT; duty and VAT show in the city ledger.
 

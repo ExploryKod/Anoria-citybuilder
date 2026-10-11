@@ -39,7 +39,7 @@ export function createTradeContext({ supply, accounting }) {
     recordCityLine: (line) => accounting.recordLedgerEntry(line),
     recordImportDelivery: (params) => supply.recordImportDelivery(params),
     // What the warehouse sells a good at (its average cost plus its margin): the cost of what our merchants export.
-    hubSellingPrice: (hub, good, period) => supply.hubSellingPrice(hub, good, period),
+    hubSellingPrice: (hub, good, period) => supply.sellingPriceOf(hub, good, period),
     producerOfLot: (lotKey) => supply.producerOfLot(lotKey),
     hubHolds: (hub, category) => getCategoriesForRole(hub.type, 'hub').includes(category),
     hubRoom: (hub) => Math.max(0, hub.maxStock - (hub.stocks[getTotalKeyForRole(hub.type, 'hub')] ?? 0)),
@@ -190,11 +190,13 @@ export function createTradeContext({ supply, accounting }) {
       for (const good of new Set(selling.filter((row) => row.stage === 'distributor').map((row) => row.category))) {
         if (imported.has(good)) continue;
         const warehousePrice = average(good, 'hub');
-        if (warehousePrice === null) continue;
+        // What the producers of it really sell it at (their cost plus their margin); no producer built, no step to show.
+        const producerPrice = average(good, 'producer');
+        if (warehousePrice === null || producerPrice === null) continue;
         waterfalls.push(buildPriceWaterfall({
           good,
           reference: getResourceBaseValue(good),
-          producerPrice: unitPriceAtStage('producer', good),
+          producerPrice,
           import: null,
           warehousePrice,
           marketPrice: average(good, 'distributor'),

@@ -206,8 +206,22 @@ describe('Employment — DistributeCityWorkers', () => {
 
       const result = await useCase.execute({});
       // Tier 1 grants 'fermier': the farm is staffed from the first level.
-      expect(result).toEqual({ availableWorkers: 5, assignments: [{ buildingId: 'Farm-Wheat-a', workers: 3 }] });
+      expect(result.availableWorkers).toBe(5);
+      expect(result.assignments).toEqual([{ buildingId: 'Farm-Wheat-a', workers: 3 }]);
       expect(repo.get('Farm-Wheat-a').worker).toBe(3);
+    });
+
+    test('the pass leaves the labour market of each skill and level: the jobs, the ones filled, the vacancies, the qualified citizens still idle', async () => {
+      repo = new InMemoryEmploymentBuildingRepository([
+        house('House-Red-1-1', 2, 1, 'House-Red', 1),
+        workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 }),
+      ]);
+      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+
+      const { labourMarket } = await useCase.execute({});
+
+      // 3 farm jobs, 2 qualified citizens: both work, one job stays vacant, nobody is idle.
+      expect(labourMarket).toEqual([{ skill: 'fermier', level: 1, jobs: 3, filled: 2, vacancies: 1, idle: 0 }]);
     });
   });
 

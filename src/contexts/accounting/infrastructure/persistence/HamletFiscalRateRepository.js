@@ -35,18 +35,25 @@ export class HamletFiscalRateRepository {
     return amount;
   }
 
-  /** @returns {Promise<{ salaryPerMonth: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number }>} */
+  /** @returns {Promise<{ minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>} */
   async getSalarySettings() {
-    const [salaryPerMonth, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate] =
-      await Promise.all([
-        this.#read('salaryPerMonth'),
-        this.#read('salaryTaxThreshold1'),
-        this.#read('salaryTaxRate1'),
-        this.#read('salaryTaxThreshold2'),
-        this.#read('salaryTaxRate2'),
-        this.#read('unemploymentBenefitRate'),
-      ]);
-    return { salaryPerMonth, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate };
+    const [
+      minimumWage, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
+      employerContributionRate, employeeContributionRate,
+    ] = await Promise.all([
+      this.#read('minimumWage'),
+      this.#read('salaryTaxThreshold1'),
+      this.#read('salaryTaxRate1'),
+      this.#read('salaryTaxThreshold2'),
+      this.#read('salaryTaxRate2'),
+      this.#read('unemploymentBenefitRate'),
+      this.#read('employerContributionRate'),
+      this.#read('employeeContributionRate'),
+    ]);
+    return {
+      minimumWage, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
+      employerContributionRate, employeeContributionRate,
+    };
   }
 
   /** @returns {Promise<Record<string, number>>} the active hamlet's subsidy, in percent, for every service. */
@@ -159,8 +166,8 @@ export class HamletFiscalRateRepository {
   }
 
   /**
-   * @param {{ salaryPerMonth?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number, unemploymentBenefitRate?: number }} partial
-   * @returns {Promise<{ salaryPerMonth: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number }>}
+   * @param {{ minimumWage?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number, unemploymentBenefitRate?: number }} partial
+   * @returns {Promise<{ minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number }>}
    */
   async setSalarySettings(partial = {}) {
     await this.#write(partial);

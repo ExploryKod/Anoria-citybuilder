@@ -178,6 +178,12 @@ db.version(20).stores({
   tradePolicyEvents: '++id, turn, authority, flow, good',
 });
 
+// v21: the wage the labour market gives each (skill, level) — appended on each move, never edited, so the history of a wage reads back
+// with the shortage or the slack that moved it.
+db.version(21).stores({
+  wageRates: '++id, hamletId, turn, skill, level',
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

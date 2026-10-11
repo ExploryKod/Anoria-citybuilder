@@ -66,8 +66,14 @@ function companyStatementRows() {
     ...single(byId.exceptionalCharges, 'charge'),
     { label: '4. Résultat exceptionnel', kind: 'total', amount: result('exceptional') },
 
+    ...single(byId.workersParticipation, 'charge'),
     ...single(byId.profitTax, 'charge', true),
     { label: 'Bénéfice ou perte', kind: 'total', amount: result('net') },
+
+    // A cooperative's allocation of its result, under the net result and outside the statement: the residents' share is already a charge (691).
+    { label: 'Affectation du résultat', kind: 'section', optional: true },
+    { label: 'Dividendes versés aux associés', kind: 'line', optional: true, accounts: '457', tone: 'financial', amount: (f) => f.allocation.dividends },
+    { label: 'Résultat conservé (réserves)', kind: 'line', optional: true, amount: (f) => f.allocation.retained },
 
     { label: 'Indicateur', kind: 'section' },
     { label: 'Marge commerciale (ventes de marchandises − achats − frais accessoires − transports sur achats)', kind: 'indicator', amount: (f) => f.statement.commercialMargin },
@@ -92,6 +98,8 @@ const RATIO_ROWS = (() => {
     { label: 'Soldes intermédiaires de gestion', kind: 'section' },
     { label: 'Valeur ajoutée', kind: 'line', text: euro((r) => r.valueAdded), hint: "Chiffre d'affaires − achats − charges externes" },
     { label: 'Taux de valeur ajoutée', kind: 'line', text: percent((r) => r.valueAddedRate), hint: "Valeur ajoutée ÷ chiffre d'affaires" },
+    { label: 'Coût du personnel', kind: 'line', text: euro((r) => r.labourCost), hint: "Salaires bruts + cotisations patronales" },
+    { label: 'Part des salaires dans la valeur ajoutée', kind: 'line', text: percent((r) => r.labourShare), hint: "Coût du personnel ÷ valeur ajoutée : ce que la masse salariale prend de ce que le bâtiment ajoute (au-delà de 100 %, il perd de l'argent)" },
     { label: "Excédent brut d'exploitation (EBE)", kind: 'line', text: euro((r) => r.ebe), hint: "Valeur ajoutée + subventions − impôts et taxes − salaires − cotisations" },
     { label: "Résultat d'exploitation", kind: 'line', text: euro((r) => r.operatingResult), hint: "Produits − charges d'exploitation" },
     { label: 'Résultat net', kind: 'line', text: euro((r) => r.netResult), hint: 'Bénéfice ou perte, après impôt sur les bénéfices' },
@@ -99,6 +107,12 @@ const RATIO_ROWS = (() => {
     { label: 'Autofinancement', kind: 'section' },
     { label: "Capacité d'autofinancement (CAF)", kind: 'total', text: euro((r) => r.caf), hint: "Résultat net + charges non décaissées (aucun amortissement dans le jeu : c'est le résultat net)" },
     { label: 'CAF ÷ chiffre d\'affaires', kind: 'line', text: percent((r) => r.cafRate), hint: "Part de chaque euro vendu qui reste pour investir et rembourser" },
+
+    { label: "Coût de revient d'une unité", kind: 'section' },
+    { label: 'Unités vendues', kind: 'line', text: (f) => (f.ratios.unitsSold === null ? '—' : String(Math.round(f.ratios.unitsSold))), hint: "Biens ou prestations livrés le mois de l'activité (le mois qui précède le règlement)" },
+    { label: 'Prix de vente moyen', kind: 'line', text: euro((r) => r.averagePrice), hint: "Chiffre d'affaires ÷ unités vendues" },
+    { label: "Coût de revient par unité", kind: 'line', text: euro((r) => r.costPerUnit), hint: "Charges d'exploitation (achats, salaires, entretien…) ÷ unités vendues : c'est là que se voit le salaire" },
+    { label: 'Résultat par unité', kind: 'total', text: euro((r) => r.resultPerUnit), hint: 'Prix moyen − coût de revient : négatif, chaque unité vendue perd de l\'argent' },
 
     { label: 'Seuil de rentabilité', kind: 'section' },
     { label: 'Charges variables', kind: 'line', text: euro((r) => r.variableCharges), hint: 'Ce qui suit les quantités vendues : achats, transports et douanes sur les biens' },
@@ -119,14 +133,17 @@ const PERSONAL_ROWS = [
   { label: 'Salaires perçus', kind: 'line', flow: 'income', amount: (f) => f.wagesReceived },
   { label: 'Salaire de fonctionnaire perçu', kind: 'line', flow: 'income', amount: (f) => f.publicWageReceived },
   { label: 'Allocation chômage perçue', kind: 'line', flow: 'income', amount: (f) => f.benefitReceived },
-  { label: 'Total produits', kind: 'subtotal', amount: (f) => f.wagesReceived + f.publicWageReceived + f.benefitReceived },
+  { label: 'Participation aux résultats de la coopérative', kind: 'line', flow: 'income', amount: (f) => f.participationReceived },
+  { label: 'Dividendes de la coopérative', kind: 'line', flow: 'income', amount: (f) => f.dividendReceived },
+  { label: 'Total produits', kind: 'subtotal', amount: (f) => f.wagesReceived + f.publicWageReceived + f.benefitReceived + f.participationReceived + f.dividendReceived },
 
   { label: 'Charges', kind: 'section', flow: 'charge' },
   { label: 'Services payés', kind: 'line', flow: 'charge', amount: (f) => f.servicesPaid },
   { label: 'Biens achetés', kind: 'line', flow: 'charge', amount: (f) => f.goodsBought },
   { label: 'Impôt sur le revenu', kind: 'line', flow: 'charge', amount: (f) => f.incomeTax },
   { label: 'Impôt citoyen', kind: 'line', flow: 'charge', amount: (f) => f.citizenTax },
-  { label: 'Total charges', kind: 'subtotal', amount: (f) => f.servicesPaid + f.goodsBought + f.incomeTax + f.citizenTax },
+  { label: 'Cotisations salariales', kind: 'line', flow: 'charge', amount: (f) => f.employeeContributionPaid },
+  { label: 'Total charges', kind: 'subtotal', amount: (f) => f.servicesPaid + f.goodsBought + f.incomeTax + f.citizenTax + f.employeeContributionPaid },
 
   { label: 'Résultat net', kind: 'total', amount: (f) => f.householdResult },
 

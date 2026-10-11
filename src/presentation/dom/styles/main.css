@@ -2185,6 +2185,56 @@ button.building-info-metric-card[aria-pressed="true"] {
 .price-bar-segment[data-step="personnel"] { background: var(--pcg64-fg); }
 .price-bar-segment[data-step="purchase"] { background: var(--pcg60-fg); }
 
+/* Wages section: a row per skill and level, the market's pill in the colour family of what it says. */
+.wage-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+.wage-table th,
+.wage-table td {
+    padding: 6px 8px;
+    text-align: right;
+    font-weight: 500;
+    color: #37474f;
+    white-space: nowrap;
+}
+
+.wage-table thead th {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #78909c;
+}
+
+.wage-table th:first-child,
+.wage-table td:first-child {
+    text-align: left;
+}
+
+.wage-table tbody tr + tr th,
+.wage-table tbody tr + tr td {
+    border-top: 1px solid #eceff1;
+}
+
+.wage-table td.wage-amount {
+    font-weight: 700;
+}
+
+.wage-table tr[data-tone="external"] td:last-child .building-finance-pill { background: var(--pcg6x-bg); color: var(--pcg6x-fg); }
+.wage-table tr[data-tone="tax-paid"] td:last-child .building-finance-pill { background: var(--pcg4-bg); color: var(--pcg4-paid-fg); }
+.wage-table tr[data-tone="sales"] td:last-child .building-finance-pill { background: var(--pcg70-bg); color: var(--pcg70-fg); }
+
+.wage-level {
+    background: #eceff1;
+    color: #546e7a;
+}
+
+.wage-trend.is-up { color: var(--pcg70-fg); font-weight: 600; }
+.wage-trend.is-down { color: var(--pcg60-fg); font-weight: 600; }
+
 .price-table {
     width: 100%;
     border-collapse: collapse;

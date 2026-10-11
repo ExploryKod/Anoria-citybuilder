@@ -13,6 +13,7 @@ export class ProcessTurnBudget {
    * @param {({ time: number, deliveredTime: number }) => Promise<void>} [deps.settleBankDepositInterest] a bank's
    *   monthly interest to its depositors — run right before settleProducerCharges, same day, same month, so the
    *   expense it books already exists in the journal when the bank's own taxable profit is computed
+   * @param {({ time: number }) => Promise<unknown>} [deps.adjustWageRates] the labour market moves the wages, right after the month's payroll
    * @param {() => Promise<void>|void} [deps.processLoanPayments]
    * @param {(keepYears: number) => Promise<unknown>} deps.cleanupOldJournalYears
    * @param {() => Promise<unknown>} deps.flushJournalSessionToDexie
@@ -55,6 +56,8 @@ export class ProcessTurnBudget {
           await this.deps.settleBankDepositInterest({ time, deliveredTime: time - 1 });
         }
         await this.deps.settleProducerCharges({ time, deliveredTime: time - 1 });
+        // The month was paid at the wages in force: only now does the labour market move them for the month that opens.
+        if (this.deps.adjustWageRates) await this.deps.adjustWageRates({ time });
       }
 
       if (this.deps.processLoanPayments) {

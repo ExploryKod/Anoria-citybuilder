@@ -18,39 +18,14 @@ export class ServicesSectionPresenter {
   }
 
   async refresh() {
-    const stateBoard = document.getElementById('state-board');
     const board = document.getElementById('services-board');
-    if (!stateBoard || !board) throw new Error('[services] #state-board or #services-board is missing from the page');
+    if (!board) throw new Error('[services] #services-board is missing from the page');
 
-    const [settings, subsidies, rows] = await Promise.all([
-      this.accounting.getSalarySettings(),
+    const [subsidies, rows] = await Promise.all([
       this.accounting.getServiceSubsidies(),
       this.construction.listAllBuildingRows(),
     ]);
     const provided = providedServices(rows);
-
-    stateBoard.replaceChildren(
-      createSliderRow({
-        label: 'Salaire de référence',
-        scope: 'Hameau',
-        min: this.bounds.salaryPerMonth.min,
-        max: this.bounds.salaryPerMonth.max,
-        value: settings.salaryPerMonth,
-        unit: '€/mois',
-        ariaLabel: "Salaire de référence, en euros par mois — la base de l'allocation chômage",
-        store: (value) => this.accounting.setSalarySettings({ salaryPerMonth: value }),
-      }),
-      createSliderRow({
-        label: 'Allocation chômage',
-        scope: 'Hameau',
-        min: this.bounds.unemploymentBenefitPercent.min,
-        max: this.bounds.unemploymentBenefitPercent.max,
-        value: Math.round(settings.unemploymentBenefitRate * 100),
-        unit: '%',
-        ariaLabel: "Allocation chômage, en pourcentage du salaire de référence",
-        store: (value) => this.accounting.setSalarySettings({ unemploymentBenefitRate: value / 100 }),
-      }),
-    );
 
     board.replaceChildren(
       ...getServiceCategories().map((service) =>

@@ -1,6 +1,8 @@
 import { buildProducerLineBusinessKey, buildServiceLineBusinessKey, buildTradeLineBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 import {
   buildingChargeLines,
+  employeeContributionLines,
+  employerContributionLines,
   serviceSaleLines,
   serviceSubsidyLines,
   tradeLines,
@@ -9,6 +11,8 @@ import {
   withholdIncomeTax,
 } from '../../domain/policies/ProducerChargePolicy.js';
 import { BUSINESS_ACCOUNT, PERSONAL_ACCOUNT } from '../../domain/policies/AccountKeyPolicy.js';
+import { allocateCooperativeResult, cooperativeLines } from '../../domain/policies/CooperativeAllocationPolicy.js';
+import { COOPERATIVE_SHARES, CORPORATE_TAX_RATE } from '../../domain/catalogs/ProducerChargeCatalog.js';
 import { serviceSubsidyShare } from '../../domain/policies/ServiceSubsidyPolicy.js';
 import { addVatTo } from '../../domain/policies/VatIncludedPolicy.js';
 import { payableServiceBills } from '../../domain/policies/ServiceSolvencyPolicy.js';
@@ -38,6 +42,13 @@ const LINE_LABELS = Object.freeze({
   producer_purchase: 'Achats HT',
   producer_wage: 'Salaires des ouvriers',
   household_wage: 'Salaire perçu',
+  employer_contribution: 'Cotisations patronales',
+  employee_contribution: 'Cotisations salariales',
+  social_contribution: 'Cotisations sociales perçues',
+  cooperative_participation: 'Participation aux résultats versée',
+  cooperative_dividend: 'Dividendes versés',
+  household_participation: 'Participation aux résultats perçue',
+  household_dividend: 'Dividendes perçus',
   maintenance: 'Entretien',
   subsidy_companies: 'Subvention entretien entreprise',
   subsidy_housing: 'Subvention entretien habitation',
@@ -75,7 +86,8 @@ export class SettleProducerCharges {
    * @param {(year: number, monthIndex: number) => Promise<Array<{ sellerId: string, buyerId: string | null, amountHT: number }>>} deps.sumGoodsFlowsByPair
    * @param {(year: number, monthIndex: number) => Promise<Array<{ buildingId: string, houseId: string, service: string, units: number }>>} deps.sumServiceFlows the services each company sold to each house in the month
    * @param {() => Promise<Record<string, number>>} deps.getServiceSubsidies percent per service, of the active hamlet
-   * @param {(service: string) => number} deps.getServicePrice the price (HT) of one unit, before the subsidy and the VAT
+   * @param {(sale: { service: string, building: { id: string, type: string }, period: { year: number, monthIndex: number } }) => Promise<number> | number} deps.getServicePrice
+   *   the price (HT) of one unit the building sold in the month, before the subsidy and the VAT
    * @param {() => Promise<Record<string, number>>} deps.getVatRates the hamlet's VAT rate per service, in percent
    * @param {(year: number, monthIndex: number) => Promise<Array<{ sellerId: string, amountHT: number }>>} deps.sumHouseSales the goods a company sold to the houses in the month, from the journal (HT)
    * @param {(year: number, monthIndex: number) => Promise<Array<{ buildingId: string, amountHT: number }>>} deps.sumBankInterestByBuilding the interest a bank earned on its loans in the month, read straight from the
@@ -88,8 +100,12 @@ export class SettleProducerCharges {
    *   into `buildingChargeLines`'s `otherExpensesHT` so it actually reduces taxable profit, not just cash
    * @param {() => Promise<{ threshold1: number, rate1: number, threshold2: number, rate2: number }>} deps.getSalaryTax the progressive income tax bands: see withholdIncomeTax
    * @param {() => Promise<Array<{ id: string, pop: number }>>} deps.listHouses the hamlet's households and their residents
-   * @param {() => Promise<{ salaryPerMonth: number, unemploymentBenefitRate: number }>} deps.getPublicPay the reference salary and the benefit rate (a fraction)
+   * @param {() => Promise<{ minimumWage: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>} deps.getPublicPay
+   *   the minimum wage, the benefit rate (a fraction of it) and the two social contribution rates (fractions of the gross wage)
+   * @param {() => Promise<(skill: string, level: number) => number>} deps.getWageRateOf the monthly gross wage the labour market gives a skill at a level
+   *   (never under the minimum wage), as it stands for the month being settled
    * @param {(houseId: string) => Promise<number>} deps.fundsOf what a house has in its personal account before this settlement
+   * @param {(houseId: string) => Promise<number>} deps.businessFundsOf what a house's own business (its cooperative) holds in its business account: only that can be shared out
    * @param {(cutOff: { turn: number, year: number, monthIndex: number, houseId: string, service: string }) => Promise<void>} deps.recordServiceCutOff
    * @param {(type: string) => number} deps.buildingMaintenanceCost
    * @param {(params: object) => Promise<{ recorded: boolean, reason?: string }>} deps.recordLedgerEntry
@@ -127,9 +143,12 @@ export class SettleProducerCharges {
     const bills = [];
     for (const flow of serviceFlows) {
       if (flow.units === 0) continue;
+      const seller = buildings.find((candidate) => candidate.id === flow.buildingId);
+      if (!seller) throw new Error(`[producer] building ${flow.buildingId} sold a service but is not in the hamlet: its price cannot be read`);
       const share = serviceSubsidyShare({
         units: flow.units,
-        unitPrice: this.deps.getServicePrice(flow.service),
+        // The price the building sold it at in the month delivered: its cost plus its margin for a plant or a tank, the base value for the others.
+        unitPrice: await this.deps.getServicePrice({ service: flow.service, building: seller, period: timeInfo }),
         subsidyPercent: subsidies[flow.service],
       });
       const price = addVatTo({ ht: share.habitantShare, ratePercent: ratesPercent[flow.service] });
@@ -149,6 +168,9 @@ export class SettleProducerCharges {
     // were removed (2026-10-10, "suppress it for now") — a resident is either a worker or unemployed, the
     // city no longer directly employs a fixed share of the population.
     const publicPay = await this.deps.getPublicPay();
+    for (const field of ['minimumWage', 'unemploymentBenefitRate', 'employerContributionRate', 'employeeContributionRate']) {
+      if (!Number.isFinite(publicPay[field])) throw new Error(`[producer] the hamlet's ${field} is not a number (${publicPay[field]}): the month cannot be settled`);
+    }
     const households = await this.deps.listHouses();
     // A house that sells its own output (an artisan's, a savant's, a merchant's little business — see
     // buildingEconomy.js's activityRecipe) is still a house, never a company: the money moves on its business
@@ -161,7 +183,7 @@ export class SettleProducerCharges {
       const pay = householdPublicPayOf({
         pop: household.pop,
         workers: workersIn(household.id),
-        referenceSalaryPerMonth: publicPay.salaryPerMonth,
+        minimumWage: publicPay.minimumWage,
         unemploymentBenefitRate: publicPay.unemploymentBenefitRate,
       });
       unemployedCountByHouse.set(household.id, pay.unemployed);
@@ -196,7 +218,7 @@ export class SettleProducerCharges {
       }
     }
 
-    const { payable, wagesByBuilding } = this.#planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse, referenceSalaryPerMonth: publicPay.salaryPerMonth });
+    const { payable, wagesByBuilding } = this.#planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse, wageRateOf: await this.deps.getWageRateOf(), employeeRate: publicPay.employeeContributionRate });
 
     for (const pair of pairs) {
       for (const line of tradeLines(pair)) {
@@ -244,8 +266,10 @@ export class SettleProducerCharges {
     for (const [houseId, benefit] of benefitByHouse) {
       grossByHouse.set(houseId, centimes((grossByHouse.get(houseId) ?? 0) + benefit));
     }
+    // What each house received in wages this month: the employee's social contribution is withheld from it, and only the rest is taxed.
+    const wagesReceivedByHouse = new Map();
     for (const building of buildings) {
-      const { salesHT, wagesHT } = wagesByBuilding.get(building.id);
+      const { salesHT, wagesHT, workers, wagePerWorker } = wagesByBuilding.get(building.id);
       const purchasesHT = sumWhere(pairs, (pair) => pair.buyerId === building.id);
       const subsidyHT = subsidiesHT.get(building.id) ?? 0;
       const sources = building.workerSources ?? {};
@@ -256,13 +280,28 @@ export class SettleProducerCharges {
           time,
           key: buildTradeLineBusinessKey(line.kind, line.holder, line.counterparty, timeInfo, hamletId),
           description: line.kind === 'producer_wage'
-            ? `${LINE_LABELS[line.kind]} ${nameOf(line.holder)} → ${nameOf(line.counterparty)} - ${monthLabel}`
+            ? `${LINE_LABELS[line.kind]} ${nameOf(line.holder)} → ${nameOf(line.counterparty)} (${workers} ouvriers à ${wagePerWorker.toFixed(2)} €) - ${monthLabel}`
             : `${LINE_LABELS[line.kind]} de ${nameOf(line.counterparty)} - ${monthLabel}`,
           buildingInstanceId: line.holder,
           timeInfo,
         });
-        if (line.kind === 'household_wage') grossByHouse.set(line.holder, centimes((grossByHouse.get(line.holder) ?? 0) + line.amount));
+        if (line.kind === 'household_wage') wagesReceivedByHouse.set(line.holder, centimes((wagesReceivedByHouse.get(line.holder) ?? 0) + line.amount));
       }
+
+      // The employer's social contribution on the payroll: a charge of the company, received by the city's social security.
+      const employerLines = employerContributionLines({ workplaceId: building.id, wagesHT, rate: publicPay.employerContributionRate });
+      for (const line of employerLines) {
+        await this.#record(line, {
+          time,
+          key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
+          description: line.kind === 'employer_contribution'
+            ? `${LINE_LABELS.employer_contribution} ${nameOf(building.id)} - ${monthLabel}`
+            : `${LINE_LABELS.social_contribution} de ${nameOf(building.id)} - ${monthLabel}`,
+          buildingInstanceId: building.id,
+          timeInfo,
+        });
+      }
+      const socialChargesHT = employerLines.find((line) => line.kind === 'employer_contribution')?.amount ?? 0;
 
       // The city's subsidy to a company: a city expense and the company's receipt, both for the month.
       for (const line of serviceSubsidyLines({ sellerId: building.id, citySubsidy: subsidyHT })) {
@@ -283,6 +322,7 @@ export class SettleProducerCharges {
         subsidiesHT: subsidyHT,
         purchasesHT,
         wagesHT,
+        socialChargesHT,
         maintenanceCost: this.deps.buildingMaintenanceCost(building.type),
         otherExpensesHT,
       });
@@ -295,6 +335,45 @@ export class SettleProducerCharges {
           timeInfo,
         });
       }
+
+      // A house's own business is a cooperative: its month's surplus is shared between the residents (participation, interest on the
+      // parts sociales), the tax and its reserves. A house is no company: it has no payroll, its residents are paid out of the surplus.
+      if (houseIds.has(building.id)) {
+        const result = centimes(salesHT + subsidyHT - purchasesHT - otherExpensesHT);
+        const sharing = allocateCooperativeResult({
+          result,
+          businessCash: result > 0 ? await this.deps.businessFundsOf(building.id) : 0,
+          shares: COOPERATIVE_SHARES,
+          corporateTaxRate: CORPORATE_TAX_RATE,
+        });
+        for (const line of cooperativeLines({ houseId: building.id, ...sharing })) {
+          await this.#record(line, {
+            time,
+            key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
+            description: `${LINE_LABELS[line.kind]} ${nameOf(building.id)} - ${monthLabel}`,
+            buildingInstanceId: building.id,
+            timeInfo,
+          });
+        }
+      }
+    }
+
+    // The employee's social contribution is withheld from the wages each house received; the income tax is on what is left, with the benefit.
+    for (const [houseId, wages] of wagesReceivedByHouse) {
+      const contributionLines = employeeContributionLines({ houseId, wagesReceived: wages, rate: publicPay.employeeContributionRate });
+      for (const line of contributionLines) {
+        await this.#record(line, {
+          time,
+          key: buildProducerLineBusinessKey(line.kind, houseId, timeInfo, hamletId),
+          description: line.kind === 'employee_contribution'
+            ? `${LINE_LABELS.employee_contribution} du foyer ${nameOf(houseId)} - ${monthLabel}`
+            : `${LINE_LABELS.social_contribution} du foyer ${nameOf(houseId)} - ${monthLabel}`,
+          buildingInstanceId: houseId,
+          timeInfo,
+        });
+      }
+      const withheld = contributionLines.find((line) => line.kind === 'employee_contribution')?.amount ?? 0;
+      grossByHouse.set(houseId, centimes((grossByHouse.get(houseId) ?? 0) + wages - withheld));
     }
 
     for (const [houseId, gross] of grossByHouse) {
@@ -328,13 +407,14 @@ export class SettleProducerCharges {
    * on the wages a house receives: the paid set can only shrink, so it is found by repeating until it stops changing.
    * @returns {{ payable: boolean[], wagesByBuilding: Map<string, { salesHT: number, wagesHT: number }> }}
    */
-  #planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse, referenceSalaryPerMonth }) {
+  #planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse, wageRateOf, employeeRate }) {
     let payable = bills.map(() => true);
     for (let round = 0; round <= bills.length + 1; round += 1) {
       const grossByHouse = new Map();
       for (const [houseId, benefit] of benefitByHouse) {
         grossByHouse.set(houseId, centimes((grossByHouse.get(houseId) ?? 0) + benefit));
       }
+      const wagesReceivedByHouse = new Map();
       const wagesByBuilding = new Map();
       for (const building of buildings) {
         const servicesHT = bills.reduce(
@@ -349,12 +429,17 @@ export class SettleProducerCharges {
         const sources = building.workerSources ?? {};
         const workers = Object.values(sources).reduce((sum, count) => sum + count, 0);
         // The payroll follows the staffing, not the sales: the same whatever the month sold.
-        const wagesHT = payrollOf({ type: building.type, workers, referenceSalaryPerMonth });
-        wagesByBuilding.set(building.id, { salesHT, wagesHT });
+        const wagesHT = payrollOf({ type: building.type, workers, wageRateOf });
+        wagesByBuilding.set(building.id, { salesHT, wagesHT, workers, wagePerWorker: workers > 0 && wagesHT > 0 ? centimes(wagesHT / workers) : null });
         for (const line of wageSplitLines({ workplaceId: building.id, wagesHT, sources })) {
           if (line.kind !== 'household_wage') continue;
-          grossByHouse.set(line.holder, centimes((grossByHouse.get(line.holder) ?? 0) + line.amount));
+          wagesReceivedByHouse.set(line.holder, centimes((wagesReceivedByHouse.get(line.holder) ?? 0) + line.amount));
         }
+      }
+      // What a house has to spend is its wages less the employee's social contribution, with the benefit, less the income tax on that total.
+      for (const [houseId, wages] of wagesReceivedByHouse) {
+        const withheld = centimes(wages * employeeRate);
+        grossByHouse.set(houseId, centimes((grossByHouse.get(houseId) ?? 0) + wages - withheld));
       }
       // The house's budget is its month's wages and benefit, from every workplace, after the income tax on that total:
       // the benefit is taxed exactly like a wage, folded into the same gross before the same brackets apply.

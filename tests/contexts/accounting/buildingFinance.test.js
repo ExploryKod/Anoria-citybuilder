@@ -86,6 +86,24 @@ describe('building finance — a company account is a compte de résultat read f
     expect(ratios.caf).toBe(20); // no depreciation in the game: the net result
   });
 
+  test('the cost of a unit sets the month\'s operating charges against the units sold, and shows where a wage makes a unit lose money', () => {
+    const line = (type, amount) => ({ type, amount, year: 1, month: 1, accountBuildingId: 'farm' });
+    const entries = [line('producer_revenue', 24), line('producer_wage', 72), line('maintenance', 2)];
+
+    const { ratios } = buildingFinanceFigures(entries, 'farm', { year: 1, salesNature: 'production', unitsSold: 24 });
+
+    expect(ratios.averagePrice).toBe(1); // 24 sold for 24
+    expect(ratios.costPerUnit).toBe(3.08); // (72 + 2) / 24
+    expect(ratios.resultPerUnit).toBe(-2.08);
+  });
+
+  test('units not read, or none sold, show no cost per unit rather than a zero', () => {
+    const entries = [{ type: 'maintenance', amount: 2, year: 1, month: 1, accountBuildingId: 'farm' }];
+
+    expect(buildingFinanceFigures(entries, 'farm', { year: 1, salesNature: 'production' }).ratios.costPerUnit).toBeNull();
+    expect(buildingFinanceFigures(entries, 'farm', { year: 1, salesNature: 'production', unitsSold: 0 }).ratios.costPerUnit).toBeNull();
+  });
+
   test('with no sales there is no break-even, not a zero', () => {
     const entries = [{ type: 'maintenance', amount: 2, year: 1, month: 1, accountBuildingId: 'plant' }];
 
@@ -180,9 +198,12 @@ describe('household budget — a house buys with its savings, last month\'s sala
       wagesReceived: 60,
       publicWageReceived: 100,
       benefitReceived: 70,
+      participationReceived: 0,
+      dividendReceived: 0,
       servicesPaid: 5,
       incomeTax: 12,
       citizenTax: 0,
+      employeeContributionPaid: 0,
       goodsBought: 20,
       householdResult: 193,
     });

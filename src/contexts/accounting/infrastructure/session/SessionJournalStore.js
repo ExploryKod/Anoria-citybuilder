@@ -360,7 +360,7 @@ export class SessionJournalStore {
             // Calculate totals
             // Revenus: citizen_tax, payroll_tax, vat, capital_funds, loan_capital, export_*
             // Dépenses: tout le reste (construction, maintenance, salary, import_*, etc.)
-            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'vat' || entry.type === 'producer_revenue' || entry.type === 'corporate_tax_revenue' || entry.type === 'service_sales' || entry.type === 'service_subsidy_received' || entry.type === 'subsidy_companies_received' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || entry.type.startsWith('export_') || entry.type.startsWith('customs_import_') || entry.type.startsWith('abroad_sale_')) {
+            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'vat' || entry.type === 'producer_revenue' || entry.type === 'corporate_tax_revenue' || entry.type === 'service_sales' || entry.type === 'service_subsidy_received' || entry.type === 'subsidy_companies_received' || entry.type === 'social_contribution' || entry.type === 'household_participation' || entry.type === 'household_dividend' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || entry.type.startsWith('export_') || entry.type.startsWith('customs_import_') || entry.type.startsWith('abroad_sale_')) {
                 stats.totalIncome += entry.amount;
             } else {
                 stats.totalExpenses += entry.amount;

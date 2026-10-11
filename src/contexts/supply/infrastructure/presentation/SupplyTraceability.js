@@ -71,7 +71,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        this.priceBook.sellingPrice(hubData, transfer.category)
+        this.priceBook.sellingPrice(hubData, transfer.category, timeInfo)
       );
     }
   }
@@ -110,7 +110,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        this.priceBook.sellingPrice(sourceData, transfer.category)
+        this.priceBook.sellingPrice(sourceData, transfer.category, timeInfo)
       );
     }
   }
@@ -151,7 +151,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        this.priceBook.sellingPrice(distributorData, transfer.category)
+        this.priceBook.sellingPrice(distributorData, transfer.category, timeInfo)
       );
     }
   }
@@ -281,7 +281,7 @@ export class SupplyTraceability {
           { id: hubResult.hubId, x: hubData.x, y: hubData.y, type: hubData.type },
           transfer.category,
           transfer.amount,
-          this.priceBook.sellingPrice(sourceData, transfer.category)
+          this.priceBook.sellingPrice(sourceData, transfer.category, timeInfo)
         );
       }
     }
@@ -519,7 +519,7 @@ export class SupplyTraceability {
       { id: buyer.id, x: buyer.x, y: buyer.y, type: buyer.type },
       category,
       quantity,
-      this.priceBook.sellingPrice(hub, category)
+      this.priceBook.sellingPrice(hub, category, period)
     );
   }
 
