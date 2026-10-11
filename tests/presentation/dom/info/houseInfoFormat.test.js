@@ -24,7 +24,7 @@ describe('formatHouseResourcesModel — needs first, goods in detail', () => {
 
   test('a fully fed house reads 8/8, met', () => {
     const model = formatHouseResourcesModel({
-      lastConsumption: { demand: 8, taken: 8, totalUnfed: 0, takenByCategory: { wheat: 5, fruit: 3 } },
+      lastConsumption: { demand: 8, taken: 8, totalUnfed: 0, takenByCategory: { wheat: 5, cabbage: 3 } },
     });
     const card = needOf(model, 'food').card;
     expect(card.valueText).toBe('8/8');
@@ -43,10 +43,10 @@ describe('formatHouseResourcesModel — needs first, goods in detail', () => {
 
   test('the detail of a need says how much of each of its goods was used', () => {
     const model = formatHouseResourcesModel({
-      lastConsumption: { demand: 8, taken: 8, totalUnfed: 0, takenByCategory: { wheat: 5, fruit: 3 } },
+      lastConsumption: { demand: 8, taken: 8, totalUnfed: 0, takenByCategory: { wheat: 5, cabbage: 3 } },
     });
     expect(goodOf(model, 'food', 'wheat').valueText).toBe('5');
-    expect(goodOf(model, 'food', 'fruit').valueText).toBe('3');
+    expect(goodOf(model, 'food', 'cabbage').valueText).toBe('3');
     expect(goodOf(model, 'food', 'carrot').valueText).toBe('0');
   });
 
@@ -94,20 +94,20 @@ describe('formatHouseResourcesModel — needs first, goods in detail', () => {
   });
 });
 
-// Services (2026-10-10): flag and quantity mode alike are consumer entries, so both belong on the
-// Ressources tab — a service's sub-card is a number where the mechanism is a depleting stock (Chapel's
-// faith) and a reached/not-reached flag otherwise (doctor, school, ...), under one "Services" aggregate.
+// Services: flag and quantity mode alike are consumer entries, so both belong on the Ressources tab — a service's
+// sub-card is a number where the mechanism is a depleting stock (the tank's water, a plant's energy) and a
+// reached/not-reached flag otherwise (doctor, school, ...), under one "Services" aggregate.
 describe('formatHouseResourcesModel — the Services need (flag and quantity services alike)', () => {
-  test('the aggregate counts how many services (faith + 8 flag ones) were served this period', () => {
+  test('the aggregate counts how many services (water, energy + 9 flag ones) were served this period', () => {
     const model = formatHouseResourcesModel({
       buildingType: 'House-Red',
       buildingPop: 1,
       servedFlags: { doctor: 4, school: 4 },
-      lastFaithConsumption: { month: 4, demand: 1, taken: 1, totalUnfed: 0 },
+      outcomes: { lastWaterConsumption: { month: 4, demand: 4, taken: 4, totalUnfed: 0 } },
       periodKey: 4,
     });
     const services = needOf(model, 'services');
-    expect(services.card.valueText).toBe('3/9');
+    expect(services.card.valueText).toBe('3/11');
     expect(services.card.met).toBe(false);
   });
 
@@ -133,15 +133,15 @@ describe('formatHouseResourcesModel — the Services need (flag and quantity ser
     expect(doctor).toMatchObject({ valueText: 'inexistant', met: false });
   });
 
-  test('the quantity-mode service (faith) reads a real count, reusing needOf', () => {
+  test('the quantity-mode service (water) reads a real count, reusing needOf', () => {
     const model = formatHouseResourcesModel({
       buildingType: 'House-Red',
       buildingPop: 4,
-      lastFaithConsumption: { month: 4, demand: 4, taken: 3, totalUnfed: 1 },
+      outcomes: { lastWaterConsumption: { month: 4, demand: 16, taken: 12, totalUnfed: 4 } },
       periodKey: 4,
     });
-    const faith = goodOf(model, 'services', 'faith');
-    expect(faith).toMatchObject({ valueText: '3/4', met: false, label: 'Foi' });
+    const water = goodOf(model, 'services', 'water');
+    expect(water).toMatchObject({ valueText: '12/16', met: false, label: 'Eau' });
   });
 });
 

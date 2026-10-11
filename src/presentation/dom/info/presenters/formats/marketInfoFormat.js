@@ -51,7 +51,7 @@ export function formatMarketOverviewModel(vm) {
     const goods = goodsNames(entry.categories);
     if (!entry.hubLink) {
       // No hub leg at all (see buildingCatalog.js's `hubLink` doc): "buying" means nothing here — this
-      // building makes its own supply (Chapel's faith producer role) rather than restocking from one.
+      // building makes its own supply (the water tank's water producer role) rather than restocking from one.
       const producer = producerEntryFor(vm, entry.categories[0]);
       return producer ? [{ label: `Produit sur place · ${goods}`, value: scheduleLabel(producer.schedule) }] : [];
     }
@@ -77,7 +77,7 @@ export function formatMarketStocksModel(vm) {
   const sections = distributorEntries(vm)
     // A single-category entry legally omits `totalKey` (it's its own total — see buildingCatalog.js's
     // doc and ResourceRolePolicy.getTotalKeyForRole); resolve it the same way instead of assuming it is
-    // always explicit, or a quantity-mode entry with one good (e.g. Chapel's faith) never shows here.
+    // always explicit, or a quantity-mode entry with one good (e.g. the water tank's water) never shows here.
     .map((entry) => ({ entry, totalKey: entry.totalKey ?? getTotalKeyForCategory(entry.categories[0]) }))
     .filter(({ totalKey }) => Object.hasOwn(stocks || {}, totalKey))
     .map(({ entry, totalKey }, index) => {

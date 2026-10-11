@@ -1,25 +1,220 @@
 /**
- * The simplified analytical account of one building, read from its own journal lines. Every figure is a sum of the lines
- * on its account (`accountBuildingId`) stamped with the period (year, and month when given): the journal is the only
- * record, so nothing here is stored. Sums are in centimes, so the figures are exact.
+ * The accounts of one building, read from its own journal lines. The journal is the chronological record of every movement; what is
+ * built here is read FROM it for one account over one period, and written nowhere: nothing is stored, and no line is added to the
+ * journal for a total or a result.
  *
- * A company's account: sales HT (goods and services), purchases HT, the gross margin (sales − purchases), the city's subsidy
- * it received, its workers' wages and its upkeep, the operating result, its corporate tax, and the net result. A house
- * pays for the services it receives, and its account receives its workers' wages: its result is what is left of them.
+ * - A COMPANY's (or a house's business) account is read as a COMPTE DE RÉSULTAT in the model of the plan comptable (see
+ *   `incomeStatementOf`): only the lines of classes 6 (charges) and 7 (produits) are in it. Capital, loans, construction, bank
+ *   deposits and what is due to the State move the cash or the balance sheet, not the result, so they are not in it. The cash of the
+ *   account is a different figure (see getTreasurySnapshot), never to be shown as the result.
+ * - A house's PERSONAL account is a household budget (a household is not an entity of the plan comptable): the wages and benefits it
+ *   receives, the services and goods it pays, its taxes.
+ *
+ * Sums are in centimes, so the figures are exact.
  */
 
 import { accountKeyOf } from './AccountKeyPolicy.js';
+import { moneyDirectionOf } from './TreasuryFromJournalPolicy.js';
+import { INCOME_STATEMENT, goodOfJournalType, isVariableChargeAccount, pcgOfJournalType, statementLineOfAccount } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 
 const toCentimes = (amount) => Math.round(amount * 100);
 const fromCentimes = (centimes) => centimes / 100;
 
+/** The accounts of the commercial margin: the sale of goods, less what the goods cost to bring in (purchase, accessory costs, freight). */
+const MARGIN_COST_ACCOUNTS = Object.freeze(['607', '608', '6241']);
+
+/**
+ * The compte de résultat of one account over a period, in the model of the plan comptable (INCOME_STATEMENT): the operating income and
+ * charges, the operating result, the financial result, the current result before tax, the exceptional result, the tax on profits and the
+ * profit or loss. A line of the journal lands in it through its account (PcgJournalCatalog) and only if that account is a charge (class 6)
+ * or a product (class 7); a type with no account is not in it, and an account of class 6 or 7 that no line of the statement takes throws.
+ *
+ * @param {Array<{ type: string, amount: number, year: number, month: number, accountBuildingId: string | null, accountKind?: string | null }>} entries
+ * @param {string} buildingId
+ * @param {{ year: number, month?: number | null, accountKind?: string | null, salesNature: 'merchandise' | 'production' | 'services' | null }} period
+ *   `salesNature`: what the building's sales are (see `salesNatureOf`): goods it resold (707), what it made (701) or services (706);
+ *   null when the catalog does not say, which throws as soon as a sale is booked on the account
+ */
+export function incomeStatementOf(entries, buildingId, { year, month = null, accountKind = null, salesNature }) {
+  if (!buildingId) throw new Error('[finance] a compte de résultat needs its building');
+  if (salesNature === undefined) throw new Error(`[finance] the compte de résultat of ${buildingId} must be told its sales nature (merchandise, production, services, or null when the catalog gives none)`);
+  const SALES_ACCOUNT = { merchandise: '707', production: '701', services: '706' };
+  const accountKey = accountKeyOf({ accountBuildingId: buildingId, accountKind });
+  const byLine = new Map();
+  const byAccount = new Map();
+  const byItem = new Map();
+  for (const entry of entries) {
+    if (accountKeyOf(entry) !== accountKey || entry.year !== year) continue;
+    if (month !== null && entry.month !== month) continue;
+    const pcg = pcgOfJournalType(entry.type);
+    if (!pcg || pcg.household) continue;
+    let account = pcg.account;
+    if (account === '707') {
+      account = SALES_ACCOUNT[salesNature];
+      if (!account) throw new Error(`[finance] a sale ("${entry.type}") is booked on ${buildingId}, whose catalog entry does not say whether it sells goods, its production or services`);
+    }
+    if (account[0] !== '6' && account[0] !== '7') continue;
+    const placed = statementLineOfAccount(account);
+    if (!placed) throw new Error(`[finance] the account ${account} of "${entry.type}" has no line in the compte de résultat`);
+    byLine.set(placed.line.id, (byLine.get(placed.line.id) ?? 0) + toCentimes(entry.amount));
+    byAccount.set(account, (byAccount.get(account) ?? 0) + toCentimes(entry.amount));
+    // What the line is made of: the journal's own kinds of movement, merged when they read the same (an account, a meaning, a good).
+    const good = goodOfJournalType(entry.type);
+    const itemKey = [account, pcg.label, pcg.detail ?? '', good ?? ''].join('|');
+    const items = byItem.get(placed.line.id) ?? new Map();
+    const item = items.get(itemKey) ?? { account, label: pcg.label, detail: pcg.detail ?? null, good, tone: pcg.tone, centimes: 0 };
+    item.centimes += toCentimes(entry.amount);
+    items.set(itemKey, item);
+    byItem.set(placed.line.id, items);
+  }
+
+  const sections = INCOME_STATEMENT.map((section) => {
+    const lines = section.lines.map((line) => ({
+      id: line.id,
+      label: line.label,
+      accounts: line.accounts,
+      tone: line.tone,
+      amount: fromCentimes(byLine.get(line.id) ?? 0),
+      items: [...(byItem.get(line.id)?.values() ?? [])]
+        .map(({ centimes, ...item }) => ({ ...item, amount: fromCentimes(centimes) }))
+        .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount)),
+    }));
+    return { id: section.id, label: section.label, direction: section.direction, lines, total: fromCentimes(section.lines.reduce((sum, line) => sum + (byLine.get(line.id) ?? 0), 0)) };
+  });
+  const total = (id) => toCentimes(sections.find((section) => section.id === id).total);
+  const operating = total('operatingIncome') - total('operatingCharges');
+  const financial = total('financialIncome') - total('financialCharges');
+  const current = operating + financial;
+  const exceptional = total('exceptionalIncome') - total('exceptionalCharges');
+  const net = current + exceptional - total('profitTax');
+  const sumAccounts = (accounts) => accounts.reduce((sum, account) => sum + (byAccount.get(account) ?? 0), 0);
+  const goodsSold = byAccount.get('707') ?? 0;
+
+  return {
+    sections,
+    results: {
+      operating: fromCentimes(operating),
+      financial: fromCentimes(financial),
+      current: fromCentimes(current),
+      exceptional: fromCentimes(exceptional),
+      net: fromCentimes(net),
+    },
+    // The commercial margin: goods sold, less what they cost to bring in. An indicator read off the same accounts, not a line of the statement.
+    commercialMargin: fromCentimes(goodsSold - sumAccounts(MARGIN_COST_ACCOUNTS)),
+    goodsSold: fromCentimes(goodsSold),
+  };
+}
+
+/**
+ * What an account's cash is made of: every movement of its own journal lines, since it opened, grouped by what it is (an account, a
+ * meaning, a good) and signed (money in +, money out −). It explains the cash figure and is not a second balance: no total is
+ * made here, the cash itself stays the treasury snapshot's. A closed year is one line (its net).
+ * @param {Array<{ type: string, amount: number, accountBuildingId: string | null, accountKind?: string | null, closing?: { net: number } }>} entries
+ * @param {string} buildingId
+ * @param {{ accountKind?: string | null }} [options]
+ * @returns {Array<{ account: string | null, label: string, detail: string | null, good: string | null, tone: string, amount: number }>} the largest movement first
+ */
+export function cashMovementsOf(entries, buildingId, { accountKind = null } = {}) {
+  if (!buildingId) throw new Error('[finance] the cash of an account needs its building');
+  const accountKey = accountKeyOf({ accountBuildingId: buildingId, accountKind });
+  const groups = new Map();
+  for (const entry of entries) {
+    if (accountKeyOf(entry) !== accountKey) continue;
+    const direction = moneyDirectionOf(entry);
+    if (!direction) continue;
+    let item;
+    let signed;
+    if (direction === 'closing') {
+      item = { account: null, label: 'Années clôturées (résultat net)', detail: null, good: null, tone: 'treasury' };
+      signed = toCentimes(entry.closing.net);
+    } else {
+      const pcg = pcgOfJournalType(entry.type);
+      if (!pcg) throw new Error(`[finance] the money line "${entry.type}" has no account in the chart of accounts`);
+      item = { account: pcg.account, label: pcg.label, detail: pcg.detail ?? null, good: goodOfJournalType(entry.type), tone: pcg.tone };
+      signed = direction === 'credit' ? toCentimes(entry.amount) : -toCentimes(entry.amount);
+    }
+    const key = [item.account, item.label, item.detail ?? '', item.good ?? ''].join('|');
+    const group = groups.get(key) ?? { ...item, centimes: 0 };
+    group.centimes += signed;
+    groups.set(key, group);
+  }
+  return [...groups.values()]
+    .map(({ centimes, ...item }) => ({ ...item, amount: fromCentimes(centimes) }))
+    .filter((item) => item.amount !== 0)
+    .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+}
+
+/**
+ * The management ratios of a compte de résultat (soldes intermédiaires de gestion and the break-even), read from the statement alone:
+ * nothing new is stored. `null` is a figure that does not exist yet (no sales: no margin rate, no break-even), never a zero.
+ *
+ * - chiffre d'affaires: goods sold + production sold;
+ * - valeur ajoutée: chiffre d'affaires − purchases − external charges;
+ * - EBE (excédent brut d'exploitation): valeur ajoutée + operating subsidies − taxes − wages − social charges;
+ * - CAF (capacité d'autofinancement): net result + the charges that are not paid out (depreciation: none in the game), so the net result;
+ * - variable charges: what follows the quantity sold (purchases, freight and customs on the goods; see isVariableChargeAccount);
+ * - fixed charges: every other operating and financial charge (wages, upkeep, other external charges, interest). The exceptional charges
+ *   and the tax on profits are left out, as is the income that is not a sale (the operating subsidies, account 74: `subsidies`; the
+ *   financial and other income: `otherNonSalesIncome`);
+ * - seuil de rentabilité: the sales at which the result is nil = fixed charges ÷ the rate of margin on variable charges.
+ *
+ * @param {ReturnType<typeof incomeStatementOf>} statement
+ * @returns {{ turnover: number, valueAdded: number, valueAddedRate: number | null, ebe: number, operatingResult: number, netResult: number,
+ *   caf: number, cafRate: number | null, variableCharges: number, fixedCharges: number, subsidies: number, otherNonSalesIncome: number, variableMarginRate: number | null,
+ *   breakEven: number | null, safetyMargin: number | null, safetyIndex: number | null }}
+ */
+export function ratiosOf(statement) {
+  const line = (id) => statement.sections.flatMap((section) => section.lines).find((candidate) => candidate.id === id);
+  const sectionTotal = (id) => toCentimes(statement.sections.find((section) => section.id === id).total);
+  const lineCentimes = (id) => toCentimes(line(id).amount);
+  const variableChargesCentimes = statement.sections
+    .filter((section) => section.id === 'operatingCharges')
+    .flatMap((section) => section.lines.flatMap((candidate) => candidate.items))
+    .filter((item) => isVariableChargeAccount(item.account))
+    .reduce((sum, item) => sum + toCentimes(item.amount), 0);
+  const ratio = (part, base) => (base > 0 ? part / base : null);
+
+  const turnover = lineCentimes('goodsSold') + lineCentimes('productionSold');
+  const purchasesAndExternal = lineCentimes('merchandisePurchases') + lineCentimes('materialPurchases') + lineCentimes('externalCharges');
+  const valueAdded = turnover - purchasesAndExternal;
+  const ebe = valueAdded + lineCentimes('subsidies') - lineCentimes('taxes') - lineCentimes('wages') - lineCentimes('socialCharges');
+  const operatingResult = toCentimes(statement.results.operating);
+  const netResult = toCentimes(statement.results.net);
+
+  const variableCharges = variableChargesCentimes;
+  const fixedCharges = sectionTotal('operatingCharges') + sectionTotal('financialCharges') - variableCharges;
+  const nonSalesIncome = lineCentimes('subsidies') + lineCentimes('otherIncome') + sectionTotal('financialIncome');
+  const variableMarginRate = ratio(turnover - variableCharges, turnover);
+  const breakEven = variableMarginRate !== null && variableMarginRate > 0 ? Math.round(fixedCharges / variableMarginRate) : null;
+
+  return {
+    turnover: fromCentimes(turnover),
+    valueAdded: fromCentimes(valueAdded),
+    valueAddedRate: ratio(valueAdded, turnover),
+    ebe: fromCentimes(ebe),
+    operatingResult: fromCentimes(operatingResult),
+    netResult: fromCentimes(netResult),
+    caf: fromCentimes(netResult),
+    cafRate: ratio(netResult, turnover),
+    variableCharges: fromCentimes(variableCharges),
+    fixedCharges: fromCentimes(fixedCharges),
+    subsidies: fromCentimes(lineCentimes('subsidies')),
+    otherNonSalesIncome: fromCentimes(nonSalesIncome - lineCentimes('subsidies')),
+    variableMarginRate,
+    breakEven: breakEven === null ? null : fromCentimes(breakEven),
+    safetyMargin: breakEven === null ? null : fromCentimes(turnover - breakEven),
+    safetyIndex: breakEven === null ? null : ratio(turnover - breakEven, turnover),
+  };
+}
+
 /**
  * @param {Array<{ type: string, amount: number, year: number, month: number, accountBuildingId: string | null, accountKind?: string | null }>} entries the journal lines
  * @param {string} buildingId
- * @param {{ year: number, month?: number, accountKind?: string | null }} period a month (1 to 12) of a year, or the whole year when month is not given; accountKind picks a house's account
- * @returns {{ revenueHT: number, purchasesHT: number, grossMargin: number, subsidiesReceived: number, wages: number, upkeep: number, otherExpenses: number, operatingResult: number, corporateTax: number, netResult: number, wagesReceived: number, servicesPaid: number, goodsBought: number, incomeTax: number, citizenTax: number, householdResult: number }}
+ * @param {{ year: number, month?: number, accountKind?: string | null, salesNature?: 'merchandise' | 'production' | 'services' | null }} period a month (1 to 12) of a year, or the whole year when month is not given;
+ *   accountKind picks a house's account; `salesNature` is required for every account but a house's personal one
+ * @returns {{ statement: ReturnType<typeof incomeStatementOf> | null, wagesReceived: number, publicWageReceived: number, benefitReceived: number, servicesPaid: number, goodsBought: number, incomeTax: number, citizenTax: number, householdResult: number }}
  */
-export function buildingFinanceFigures(entries, buildingId, { year, month = null, accountKind = null }) {
+export function buildingFinanceFigures(entries, buildingId, { year, month = null, accountKind = null, salesNature }) {
   if (!buildingId) throw new Error('[finance] a building account needs its building');
   const accountKey = accountKeyOf({ accountBuildingId: buildingId, accountKind });
   const byType = new Map();
@@ -30,31 +225,15 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
   }
   const of = (type) => byType.get(type) ?? 0;
 
-  // 'loan_interest_received' is the bank's own revenue (see RecordLoanInterestExpense.js); the matching
-  // 'loan_capital_lent'/'loan_repayment_received' are its principal moving, not income or expense, so they are
-  // deliberately absent here — same reasoning as a loan's principal never appearing in a P&L, real or in-game.
-  const revenue = of('producer_revenue') + of('service_sales') + of('loan_interest_received');
-  const grossMargin = revenue - of('producer_purchase');
-  // 'deposit_interest_paid' is a bank's own real expense (see SettleBankDepositInterest.js) — a generic slot,
-  // not a bank-specific one, for whatever other settlement books its own line outside goods/services/wages.
-  const otherExpenses = of('deposit_interest_paid');
-  const operatingResult = grossMargin + of('service_subsidy_received') - of('producer_wage') - of('maintenance') - otherExpenses;
-  const netResult = operatingResult - of('corporate_tax');
   const householdIncome = of('household_wage') + of('public_wage') + of('household_benefit');
   const householdCharges = of('service_purchase') + of('consumer_purchase') + of('income_tax') + of('citizen_tax_paid');
   const householdResult = householdIncome - householdCharges;
 
+  const statement = accountKind === 'particulier' ? null : incomeStatementOf(entries, buildingId, { year, month, accountKind, salesNature });
   return {
-    revenueHT: fromCentimes(revenue),
-    purchasesHT: fromCentimes(of('producer_purchase')),
-    grossMargin: fromCentimes(grossMargin),
-    subsidiesReceived: fromCentimes(of('service_subsidy_received')),
-    wages: fromCentimes(of('producer_wage')),
-    upkeep: fromCentimes(of('maintenance')),
-    otherExpenses: fromCentimes(otherExpenses),
-    operatingResult: fromCentimes(operatingResult),
-    corporateTax: fromCentimes(of('corporate_tax')),
-    netResult: fromCentimes(netResult),
+    // A personal account is a household budget, not a compte de résultat.
+    statement,
+    ratios: statement && ratiosOf(statement),
     wagesReceived: fromCentimes(of('household_wage')),
     publicWageReceived: fromCentimes(of('public_wage')),
     benefitReceived: fromCentimes(of('household_benefit')),

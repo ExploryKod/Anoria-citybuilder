@@ -58,27 +58,29 @@ describe('servicesInfoFormat — informative chips (items)', () => {
   });
 });
 
-// "Besoins pour l'évolution" (2026-10-10): every tier requirement, uniformly met/unmet, never a number —
-// road excluded (Route is already the informative chip above, for every building type). Faith left flag
-// mode, but its evolution-requirement chip stays a plain ✓/✗ here; the real "4/12" count moved to the
-// Ressources tab's Services group (see houseInfoFormat.test.js).
+// "Besoins pour l'évolution": every tier requirement, uniformly met/unmet, never a number — road excluded (Route is already
+// the informative chip above, for every building type). The real count of a need (the water drunk, the energy used) lives
+// on the Ressources tab (see houseInfoFormat.test.js); here it is a plain ✓/✗.
 describe('servicesInfoFormat — evolution requirements', () => {
-  test('a tier-1 house (pop 1) shows population AND faith, both met, road excluded', () => {
+  const WATER_MET = { lastWaterConsumption: { month: 4, totalUnfed: 0 } };
+
+  test('a tier-1 house (pop 1) shows population, food, water and a dispensary; food and water met, road excluded', () => {
     const model = formatServicesModel(
-      houseVm({ buildingPop: 1, lastFaithConsumption: { month: 4, totalUnfed: 0 }, periodKey: 4 }),
+      houseVm({ buildingPop: 1, lastConsumption: { month: 4, totalUnfed: 0 }, outcomes: WATER_MET, periodKey: 4 }),
     );
 
-    expect(model.evolutionRequirements).toEqual([
-      { emoji: '👥', label: 'Population', value: '✓', status: 'ok', ariaLabel: 'Population : besoin couvert' },
-      { emoji: '⛪', label: 'Foi', value: '✓', status: 'ok', ariaLabel: 'Foi à portée' },
-    ]);
+    expect(model.evolutionRequirements.map((r) => r.label)).toEqual(['Population', 'Nourriture', 'Eau', 'Soins médicaux']);
+    expect(model.evolutionRequirements.find((r) => r.label === 'Eau')).toEqual({
+      emoji: '💧', label: 'Eau', value: '✓', status: 'ok', ariaLabel: 'Eau à portée',
+    });
+    expect(model.evolutionRequirements.find((r) => r.label === 'Nourriture')).toMatchObject({ status: 'ok', value: '✓' });
   });
 
-  test('faith unmet (nothing delivered) reads "inexistant", not a number', () => {
+  test('water unmet (nothing delivered) reads "inexistant", not a number', () => {
     const model = formatServicesModel(houseVm({ buildingPop: 1, periodKey: 4 }));
 
-    expect(model.evolutionRequirements.find((r) => r.label === 'Foi')).toEqual({
-      emoji: '⛪', label: 'Foi', value: 'inexistant', status: 'off', ariaLabel: 'Foi non servi : inexistant',
+    expect(model.evolutionRequirements.find((r) => r.label === 'Eau')).toEqual({
+      emoji: '💧', label: 'Eau', value: 'inexistant', status: 'off', ariaLabel: 'Eau non servi : inexistant',
     });
   });
 
@@ -87,11 +89,11 @@ describe('servicesInfoFormat — evolution requirements', () => {
       houseVm({
         buildingPop: 1,
         periodKey: 4,
-        buildingRow: { serviceCutOff: { monthIndex: 4, categories: ['faith'] } },
+        buildingRow: { serviceCutOff: { monthIndex: 4, categories: ['water'] } },
       }),
     );
 
-    expect(model.evolutionRequirements.find((r) => r.label === 'Foi')).toMatchObject({ value: 'insolvable', status: 'off' });
+    expect(model.evolutionRequirements.find((r) => r.label === 'Eau')).toMatchObject({ value: 'insolvable', status: 'off' });
   });
 
   test('population below the next tier\'s minimum reads unmet', () => {
@@ -102,21 +104,25 @@ describe('servicesInfoFormat — evolution requirements', () => {
     });
   });
 
-  test('a tier-2 house ALSO shows food and doctor, each a plain checkmark — not a quantity', () => {
+  test('a tier-2 house ALSO shows goods, fire cover, a warehouse and energy, each a plain checkmark — not a quantity', () => {
     const model = formatServicesModel(
       houseVm({
         houseLevel: 2,
         buildingPop: 4,
         lastConsumption: { month: 4, totalUnfed: 0 },
-        lastFaithConsumption: { month: 4, totalUnfed: 0 },
+        outcomes: { ...WATER_MET, lastEnergyConsumption: { month: 4, totalUnfed: 0 } },
+        activityAccess: true,
         periodKey: 4,
       }),
     );
 
-    expect(model.evolutionRequirements.map((r) => r.label)).toEqual(['Population', 'Foi', 'Nourriture', 'Soins médicaux']);
-    expect(model.evolutionRequirements.find((r) => r.label === 'Nourriture')).toEqual({
-      emoji: '🍽️', label: 'Nourriture', value: '✓', status: 'ok', ariaLabel: 'Nourriture : besoin couvert',
+    expect(model.evolutionRequirements.map((r) => r.label)).toEqual([
+      'Population', 'Nourriture', 'Eau', 'Soins médicaux', 'Biens', 'Lutte contre le feu', 'Entrepôt (activité)', 'Énergie',
+    ]);
+    expect(model.evolutionRequirements.find((r) => r.label === 'Énergie')).toMatchObject({ status: 'ok', value: '✓' });
+    expect(model.evolutionRequirements.find((r) => r.label === 'Entrepôt (activité)')).toEqual({
+      emoji: '📦', label: 'Entrepôt (activité)', value: '✓', status: 'ok', ariaLabel: 'Entrepôt (activité) : besoin couvert',
     });
-    expect(model.evolutionRequirements.find((r) => r.label === 'Soins médicaux')).toMatchObject({ status: 'off', value: 'inexistant' });
+    expect(model.evolutionRequirements.find((r) => r.label === 'Lutte contre le feu')).toMatchObject({ status: 'off', value: 'inexistant' });
   });
 });

@@ -33,7 +33,7 @@ function isStaffedAndConnected(mesh) {
   return mesh?.userData?.isUnderstaffed === false && mesh?.userData?.hasRoadAccess !== false;
 }
 
-/** A quantity distributor sells a depleting stock (a market); a flag one only covers houses (a chapel). */
+/** A quantity distributor sells a depleting stock (a market); a flag one only covers houses (a fire station). */
 function isQuantityDistributorEntry(entry) {
   return entry.role === 'distributor' && (entry.consumption ?? 'quantity') === 'quantity';
 }

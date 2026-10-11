@@ -22,7 +22,6 @@ export {
 
 export {
   LocalStorageFiscalSettingsRepository,
-  DEFAULT_FISCAL_SETTINGS,
   FISCAL_STORAGE_KEYS,
 } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 
@@ -115,8 +114,8 @@ export async function flushJournalSessionToDexie() {
   return getOrCreateAccountingContext().flushJournalSessionToDexie();
 }
 
-export async function exportJournalJson() {
-  return getOrCreateAccountingContext().exportJournalJson();
+export async function exportJournalJson(filters) {
+  return getOrCreateAccountingContext().exportJournalJson(filters);
 }
 
 export async function exportJournalPdf() {

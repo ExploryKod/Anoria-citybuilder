@@ -221,7 +221,7 @@ class TutorialPanel {
             {
                 title: 'Les services',
                 content: `
-                    <p>Chapelle, médecin, bains, taverne, école, cinéma… chaque service couvre les maisons proches par la route.</p>
+                    <p>Citerne, médecin, pompiers, police, café-restaurant, bains, école, cinéma… chaque service couvre les maisons proches par la route.</p>
                     <p>Un service est utile <strong>seulement s'il est actif</strong> : il lui faut du personnel (voir « Travailleurs »). Un bâtiment de service vide ne couvre personne.</p>
                 `
             },

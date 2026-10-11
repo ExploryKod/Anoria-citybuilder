@@ -15,9 +15,9 @@ describe('resolveVisualBuildingId', () => {
   });
 
   test('a house with declared levelVariants resolves to its tier mesh', () => {
-    expect(resolveVisualBuildingId('House-Red', 2)).toBe('Kenney-Suburban-building-type-d');
-    expect(resolveVisualBuildingId('House-Blue', 3)).toBe('Kenney-Suburban-building-type-g');
-    expect(resolveVisualBuildingId('House-Purple', 4)).toBe('Kenney-Suburban-building-type-j');
+    expect(resolveVisualBuildingId('House-Red', 2)).toBe('Kenney-Suburban-building-type-r');
+    expect(resolveVisualBuildingId('House-Blue', 3)).toBe('Kenney-Suburban-building-type-b');
+    expect(resolveVisualBuildingId('House-Purple', 6)).toBe('Kenney-Suburban-building-type-f');
   });
 
   test('a level with no declared variant falls back to the base id', () => {

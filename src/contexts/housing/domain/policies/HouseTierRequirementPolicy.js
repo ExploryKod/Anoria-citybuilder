@@ -33,13 +33,13 @@ const REQUIREMENT_DESCRIPTORS = Object.freeze({
     const target = requirement.min ?? 0;
     return { current, target, met: current >= target };
   },
-  // A house is "covered" by a service (e.g. a chapel's faith service) for
+  // A house is "covered" by a service (e.g. a tank's water service) for
   // `requirement.coveragePeriods` periods after the service's own supply
   // cycle last marked it served — see Supply's `servedFlags`
   // (contexts/supply/domain/policies/PeriodLockPolicy.js) and
   // DistributeResourceToConsumers.js. Which service — `requirement.category`
   // — is the only thing that varies per tier; this descriptor has no idea
-  // "faith"/"chapel"/any service name exists, only "a category key". Two
+  // "water"/"doctor"/any service name exists, only "a category key". Two
   // catalog numbers now govern difficulty independently: the distributor's
   // own `schedule` (how often it attempts to visit — Supply-side) and
   // `coveragePeriods` here (how many periods a visit's flag stays valid
@@ -69,13 +69,12 @@ const REQUIREMENT_DESCRIPTORS = Object.freeze({
       context.periodKey - servedAt < coveragePeriods;
     return { current: met ? 1 : 0, target: 1, met };
   },
-  // A service turned into an ordinary quantity-consumed resource (e.g. Chapel's faith, since 2026-10-10 —
-  // see buildingEconomy.js's FAITH_CONSUMER) is covered when its own demand was fully met THIS period, same
-  // freshness rule as `demandMet` below, but reading `context[requirement.outcomeField]` instead of the
-  // hardcoded `lastConsumption` — a house can hold more than one such service at once, each under its own
-  // field name (`lastFaithConsumption`, ...), unlike the single diet `demandMet` covers. `outcomeField` is
-  // deliberately REQUIRED with no default, same discipline as `serviceCoverage`'s `coveragePeriods`: a tier
-  // that declares this without it is a catalog mistake, not a "guess the field" case.
+  // A need served as an ordinary quantity-consumed resource (a tank's water, a plant's energy) is covered when its own
+  // demand was fully met THIS period, same freshness rule as `demandMet` below, but reading the house's own record of that
+  // need (`context.outcomes[requirement.outcomeField]`) instead of the diet's `lastConsumption` — a house holds several such
+  // needs at once, each under its own field name (`lastWaterConsumption`, `lastEnergyConsumption`, ...), unlike the single
+  // diet `demandMet` covers. `outcomeField` is deliberately REQUIRED with no default, same discipline as `serviceCoverage`'s
+  // `coveragePeriods`: a tier that declares this without it is a catalog mistake, not a "guess the field" case.
   serviceDemandMet: (requirement, context) => {
     const { outcomeField, category } = requirement;
     if (!outcomeField) {
@@ -84,11 +83,17 @@ const REQUIREMENT_DESCRIPTORS = Object.freeze({
       );
       return { current: 0, target: 1, met: false };
     }
-    const outcome = context[outcomeField];
+    const outcome = context.outcomes?.[outcomeField];
     const met =
       Number.isFinite(context.periodKey) &&
       outcome?.month === context.periodKey &&
       outcome?.totalUnfed === 0;
+    return { current: met ? 1 : 0, target: 1, met };
+  },
+  // The house's activity can reach what it draws on: an operational warehouse is within range of it (see Supply's
+  // DescribeActivitySupplyAccess). The caller says so through `context.activityAccess`; a missing answer is "no".
+  activityAccess: (requirement, context) => {
+    const met = context.activityAccess === true;
     return { current: met ? 1 : 0, target: 1, met };
   },
   // A house's demand for its quantity-consumed good was fully met THIS
@@ -116,14 +121,18 @@ const REQUIREMENT_DESCRIPTORS = Object.freeze({
       context.lastConsumption?.totalUnfed === 0;
     return { current: met ? 1 : 0, target: 1, met };
   },
-  // At least `requirement.min` distinct categories of that same good were
-  // drawn from THIS period (e.g. both `wheat` and `carrot`, not just one —
-  // or, for a future good, both `pot` and `amphore`) — see
-  // ConsumeResource.js's `lastConsumption.categoriesTaken`. Same scope note
-  // as `demandMet` above. A stale or missing `lastConsumption` reports 0.
+  // At least `requirement.min` distinct goods of one need were drawn from THIS period (the retail goods: both a pot and
+  // an amphora, not just one) — see ConsumeResource.js's `categoriesTaken` in the record of the need named by
+  // `requirement.outcomeField` (REQUIRED, same discipline as `serviceDemandMet`). A stale or missing record reports 0.
   goodsVariety: (requirement, context) => {
-    const fresh = Number.isFinite(context.periodKey) && context.lastConsumption?.month === context.periodKey;
-    const current = fresh ? (context.lastConsumption?.categoriesTaken?.length ?? 0) : 0;
+    const { outcomeField } = requirement;
+    if (!outcomeField) {
+      console.error('[HouseTierRequirementPolicy] goodsVariety requirement is missing "outcomeField" in socialCategoryCatalog.js — treating as unmet.');
+      return { current: 0, target: requirement.min ?? 0, met: false };
+    }
+    const outcome = context.outcomes?.[outcomeField];
+    const fresh = Number.isFinite(context.periodKey) && outcome?.month === context.periodKey;
+    const current = fresh ? (outcome?.categoriesTaken?.length ?? 0) : 0;
     const target = requirement.min ?? 0;
     return { current, target, met: current >= target };
   },

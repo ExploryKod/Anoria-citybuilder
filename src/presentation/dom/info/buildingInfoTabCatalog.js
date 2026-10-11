@@ -23,7 +23,7 @@ export const BUILDING_INFO_TAB_IDS = Object.freeze({
 export const BUILDING_INFO_TAB_LABELS = Object.freeze({
   [BUILDING_INFO_TAB_IDS.foyer]: '🏠 Bâtiment',
   [BUILDING_INFO_TAB_IDS.stocks]: '📦 Stocks',
-  [BUILDING_INFO_TAB_IDS.activity]: '🛠️ Activité',
+  [BUILDING_INFO_TAB_IDS.activity]: '🛠️ Coopératives',
   [BUILDING_INFO_TAB_IDS.trade]: '💰 Ventes',
   [BUILDING_INFO_TAB_IDS.staff]: '👷 Personnel',
   [BUILDING_INFO_TAB_IDS.services]: '🔧 Services',

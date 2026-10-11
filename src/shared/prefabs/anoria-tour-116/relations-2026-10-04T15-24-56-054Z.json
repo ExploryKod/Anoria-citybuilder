@@ -7,7 +7,12 @@
       "satisfactionScore": 10,
       "contractStartMonth": 1,
       "contractEndMonth": null,
-      "lastOrderMonth": 23
+      "lastOrderMonth": 23,
+      "ceased": null,
+      "importCeased": {},
+      "importFailures": {},
+      "exportCeased": {},
+      "exportFailures": {}
     },
     {
       "cityId": "maris",
@@ -15,7 +20,12 @@
       "satisfactionScore": 0,
       "contractStartMonth": 1,
       "contractEndMonth": null,
-      "lastOrderMonth": 23
+      "lastOrderMonth": 23,
+      "ceased": null,
+      "importCeased": {},
+      "importFailures": {},
+      "exportCeased": {},
+      "exportFailures": {}
     },
     {
       "cityId": "olivea",
@@ -23,7 +33,12 @@
       "satisfactionScore": 6,
       "contractStartMonth": 1,
       "contractEndMonth": null,
-      "lastOrderMonth": 23
+      "lastOrderMonth": 23,
+      "ceased": null,
+      "importCeased": {},
+      "importFailures": {},
+      "exportCeased": {},
+      "exportFailures": {}
     },
     {
       "cityId": "silvania",
@@ -31,7 +46,12 @@
       "satisfactionScore": 0,
       "contractStartMonth": 1,
       "contractEndMonth": null,
-      "lastOrderMonth": 22
+      "lastOrderMonth": 22,
+      "ceased": null,
+      "importCeased": {},
+      "importFailures": {},
+      "exportCeased": {},
+      "exportFailures": {}
     }
   ]
 }

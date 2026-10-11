@@ -22,7 +22,6 @@ export function createSupplyBuildingSnapshot({
   neighbors = [],
   lastProductionYear = null,
   lastConsumptionMonth = null,
-  lastSubsistenceMonth = null,
   lastConsumption = null,
   pop = 0,
   level = 1,
@@ -58,12 +57,6 @@ export function createSupplyBuildingSnapshot({
         ? null
         : Number.isFinite(lastConsumptionMonth)
           ? Math.floor(lastConsumptionMonth)
-          : null,
-    lastSubsistenceMonth:
-      lastSubsistenceMonth === null || lastSubsistenceMonth === undefined
-        ? null
-        : Number.isFinite(lastSubsistenceMonth)
-          ? Math.floor(lastSubsistenceMonth)
           : null,
     // `...lastConsumption` passthrough first — same fix as `servedFlags`
     // (see PeriodLockPolicy.js docs): a field this constructor doesn't name

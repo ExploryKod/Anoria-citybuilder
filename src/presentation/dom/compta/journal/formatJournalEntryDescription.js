@@ -110,7 +110,11 @@ export function formatJournalEntryDetails(entry) {
   if (
     entry.type === 'maintenance' ||
     entry.type?.startsWith('import_') ||
-    entry.type?.startsWith('export_')
+    entry.type?.startsWith('export_') ||
+    entry.type?.startsWith('freight_') ||
+    entry.type?.startsWith('duty_paid_') ||
+    entry.type?.startsWith('customs_import_') ||
+    entry.type?.startsWith('abroad_sale_')
   ) {
     return [];
   }

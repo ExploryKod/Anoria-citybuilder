@@ -58,15 +58,22 @@ describe('service staffing readiness (no tier-gate deadlock)', () => {
   });
 
   test('the check actually covers the gating services', () => {
-    expect(gatedServices.map(({ id }) => id)).toEqual(expect.arrayContaining(['Chapel', 'Doctor', 'School', 'Cinema']));
+    expect(gatedServices.map(({ id }) => id)).toEqual(expect.arrayContaining(['WaterTank', 'Doctor', 'FireStation', 'PoliceStation', 'CoalPlant', 'School', 'Cinema']));
   });
 
-  test.each(gatedServices.map((s) => [s.id, s]))(
-    '%s can be staffed before the tier that requires its coverage',
-    (_id, { category, employment }) => {
+  // A category several buildings provide (the energy plants) only needs ONE of them staffable in time: a later, bigger
+  // alternative (the nuclear plant, a level-2 crew) is no deadlock as long as another one opens the category.
+  const categories = [...new Set(gatedServices.map((service) => service.category))];
+
+  test.each(categories.map((category) => [category]))(
+    'the "%s" coverage can be staffed before the tier that requires it',
+    (category) => {
       const needsTier = earliestTierRequiring(category);
-      const level = employment.requiredSkillLevel ?? 1;
-      const grantedAt = earliestTierGranting(employment.requiredSkill, level);
+      const grantedAt = Math.min(
+        ...gatedServices
+          .filter((service) => service.category === category)
+          .map(({ employment }) => earliestTierGranting(employment.requiredSkill, employment.requiredSkillLevel ?? 1)),
+      );
       // Houses at tier needsTier-1 (the ones trying to advance) must already provide the skill.
       expect(grantedAt).toBeLessThanOrEqual(needsTier - 1);
     },

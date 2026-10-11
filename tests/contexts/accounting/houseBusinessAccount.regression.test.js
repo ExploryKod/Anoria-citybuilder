@@ -18,7 +18,7 @@ function settle(pairs) {
       { id: 'warehouse-1', type: 'Warehouse', workerSources: {} },
       { id: 'warehouse-2', type: 'Warehouse', workerSources: {} },
       { id: 'farm-1', type: 'Farm-Wheat', workerSources: {} },
-      { id: 'market-1', type: 'Market-Stall', workerSources: {} },
+      { id: 'market-1', type: 'Market-Stall-Red', workerSources: {} },
     ],
     sumGoodsFlowsByPair: async () => pairs,
     sumServiceFlows: async () => [],
@@ -86,7 +86,7 @@ describe('a house that runs its own business is booked on its business account, 
     expect(sales).toHaveLength(2);
     expect(sales.every((line) => line.accountKind === 'entreprise')).toBe(true);
 
-    const figures = buildingFinanceFigures(journal, HOUSE, { year: 1, accountKind: 'entreprise' });
-    expect(figures.revenueHT).toBe(130);
+    const figures = buildingFinanceFigures(journal, HOUSE, { year: 1, accountKind: 'entreprise', salesNature: 'production' });
+    expect(figures.statement.results.net).toBe(130);
   });
 });

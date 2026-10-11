@@ -10,6 +10,7 @@ export const WORLD_CITY_HEX_SITES = Object.freeze({
   maris: { q: 2, r: 3, sprite: 'port' },
   briga: { q: 4, r: 2, sprite: 'hamlet' },
   vexlor: { q: -5, r: -2, sprite: 'village' },
+  piceta: { q: 1, r: -5, sprite: 'village' },
 });
 
 /**

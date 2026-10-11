@@ -35,7 +35,7 @@ describe('the on-pick toasts only fire for a building type that declares placeme
   });
 
   test('a producer that declares placementNotice and has clients gets told who it serves first', () => {
-    showClientPriorityNotification('Factory-Oil', { producerType: 'Factory-Oil', clients: [{ type: 'Market-Stall', disabled: false }] });
+    showClientPriorityNotification('Factory-Oil', { producerType: 'Factory-Oil', clients: [{ type: 'Market-Stall-Red', disabled: false }] });
     expect(showInfoToast).toHaveBeenCalledTimes(1);
   });
 });

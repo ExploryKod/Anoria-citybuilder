@@ -1,6 +1,6 @@
 /**
  * Behavior tests — Supply: 'flag'-consumption distribution (School's coverage, standing in for any
- * remaining flag-mode service — Chapel itself left flag mode on 2026-10-10, see buildingEconomy.js).
+ * remaining flag-mode service — the water tank is a quantity distributor, see buildingEconomy.js).
  * Proves DistributeResourceToConsumers' non-depleting branch: a service with no stock marks reached
  * houses "served this period" via their own periodLock instead of moving any resource quantity.
  */
@@ -11,6 +11,7 @@ import { createSupplyStock } from '../../../src/contexts/supply/domain/value-obj
 import { DistributeResourceToConsumers } from '../../../src/contexts/supply/application/commands/distribution/DistributeResourceToConsumers.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 import { unlimitedConsumerMoney } from '../../helpers/unlimitedConsumerMoney.js';
+import { referencePriceBook } from '../../helpers/referencePriceBook.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -70,7 +71,7 @@ describe('Supply — school coverage (flag consumption)', () => {
     house1Id = createBuildingInstanceId();
     house2Id = createBuildingInstanceId();
     repo = new InMemorySupplyBuildingRepository([school(schoolId), house(house1Id), house(house2Id)]);
-    useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
+    useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
   });
 
   test('marks reached houses served this month, no stock moves at all', async () => {
@@ -134,7 +135,7 @@ describe('Supply — school coverage (flag consumption)', () => {
 
   test('skips a house without road access', async () => {
     repo = new InMemorySupplyBuildingRepository([school(schoolId), house(house1Id, { roadCount: 0 })]);
-    useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
+    useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
 
     const outcome = await useCase.execute({
       sourceId: schoolId,

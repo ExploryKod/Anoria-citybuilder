@@ -38,8 +38,8 @@ function residential(id, type, extras = {}) {
 describe('Housing — famished population', () => {
   describe('FamishedPopulationPolicy', () => {
     test('fed population uses edible category baskets', () => {
-      expect(fedPopulationAtHouse(6, { fruit: 2, game: 1, wheat: 0 })).toBe(3);
-      expect(famishedPopulationAtHouse(6, { fruit: 2, game: 1 })).toBe(3);
+      expect(fedPopulationAtHouse(6, { carrot: 2, cabbage: 1, wheat: 0 })).toBe(3);
+      expect(famishedPopulationAtHouse(6, { carrot: 2, cabbage: 1 })).toBe(3);
     });
 
     test('no famished when pantry covers pop (fallback without consumption)', () => {
@@ -50,7 +50,7 @@ describe('Housing — famished population', () => {
       expect(
         famishedPopulationAtHouse(
           6,
-          { food: 6, wheat: 0, fruit: 0, game: 0 },
+          { food: 6, wheat: 0, carrot: 0, cabbage: 0 },
           { totalUnfed: 3 },
         ),
       ).toBe(3);
@@ -59,7 +59,7 @@ describe('Housing — famished population', () => {
     test('stale stocks.food does not hide empty category shelves', () => {
       // Categories empty → fallback may still use food; with lastConsumption it is clear
       expect(
-        famishedPopulationAtHouse(6, { food: 10, wheat: 0, fruit: 0, game: 0 }, { totalUnfed: 3 }),
+        famishedPopulationAtHouse(6, { food: 10, wheat: 0, carrot: 0, cabbage: 0 }, { totalUnfed: 3 }),
       ).toBe(3);
     });
 
@@ -109,7 +109,7 @@ describe('Housing — famished population', () => {
         residential('House-Red-1', 'House-Red', {
           pop: 6,
           level: 2,
-          stocks: { food: 0, wheat: 0, carrot: 0, cabbage: 0, fruit: 0, game: 0 },
+          stocks: { food: 0, wheat: 0, carrot: 0, cabbage: 0 },
           lastConsumption: { month: 5, totalUnfed: 3 },
         }),
       ]);

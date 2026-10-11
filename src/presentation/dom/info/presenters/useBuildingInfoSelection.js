@@ -9,7 +9,7 @@
  * (services / neighbors / messages) resolve via buildingInfoSharedTabs.
  */
 
-import { getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getResourceRoles, getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { supplyTimeContextAhead } from '../../../../composition/supplyTimeLabels.js';
 import { buildingsObjects } from '../../../../shared/building-catalog/index.js';
@@ -66,14 +66,25 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
   }
 
   if (groupId === BUILDING_INFO_GROUPS.house) {
+    // Who works where, for the Savoirs tab's employers (the same reading as the Habitants tab).
+    try {
+      extra.residents = await vm.accounting.getHouseResidents(vm.uniqueId);
+    } catch (error) {
+      console.error('[BuildingInfo] getHouseResidents failed:', error);
+      extra.residents = null;
+    }
     // Needed to tell "served THIS period" from a stale flag — see
     // HouseTierRequirementPolicy.js's serviceCoverage descriptor and
     // HouseLevelPolicy.describeRelevantServiceCoverage, the Services tab's
-    // Chapel/Doctor/... chips.
+    // Doctor/Fire/... chips.
     extra.servedFlags = vm.buildingRow?.servedFlags ?? null;
-    // Chapel's faith left flag mode (2026-10-10): its coverage now reads like any `demandMet`
-    // requirement — see HouseTierRequirementPolicy.js's `serviceDemandMet`.
-    extra.lastFaithConsumption = vm.buildingRow?.lastFaithConsumption ?? null;
+    // The needs served as ordinary quantities (water, energy, the retail goods) are covered when their own record says
+    // so: one field per need, named by its consumer role in the catalog — see HouseTierRequirementPolicy.js.
+    extra.outcomes = Object.fromEntries(
+      getResourceRoles(vm.buildingType)
+        .filter((entry) => entry.role === 'consumer' && entry.outcomeField)
+        .map((entry) => [entry.outcomeField, vm.buildingRow?.[entry.outcomeField] ?? null]),
+    );
     const budget = await vm.accounting.getTreasurySnapshot();
     extra.periodKey = budget?.turn !== undefined
       ? (TimeManager.getTimeInfo(budget.turn)?.monthIndex ?? null)
@@ -85,6 +96,8 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
       x: vm.anchorX,
       y: vm.anchorY,
     });
+    // A level needing a warehouse within reach of the house's business is met when no recipe lacks a hub.
+    extra.activityAccess = !extra.activitySupplyGaps.some((gap) => gap.status === 'no-hub');
   }
 
   if (groupId === BUILDING_INFO_GROUPS.hubStorage) {
@@ -187,10 +200,10 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
     const supplyView = uniqueId ? await supply.getBuildingSupplyView(uniqueId) : null;
     // The persisted building's own `type` (the catalog/economy id every
     // format reads via getBuildingDefinition/residentialGroupForType/etc.,
-    // e.g. "PublicBath") — NOT `selectedObject.userData.id`, which is the
+    // e.g. "Hospital") — NOT `selectedObject.userData.id`, which is the
     // 3D scene object's VISUAL/mesh id and can differ from the logical type
     // for any building borrowing a Kenney mesh under a different id (every
-    // service building — Doctor, PublicBath, School, ... — see
+    // service building — Doctor, Hospital, School, ... — see
     // buildingAssets.js's building-id/mesh-id bridge). Falls back to the
     // scene object's id only when there's no tracked building row at all
     // (decorative/nature objects with no economic identity).

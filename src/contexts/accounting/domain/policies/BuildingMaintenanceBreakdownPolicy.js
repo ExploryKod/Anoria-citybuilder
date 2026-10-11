@@ -66,6 +66,12 @@ function classifyMaintenanceBuilding(type, maintenanceCosts) {
   if (kind === BUILDING_KIND_HOUSE) {
     return { category: 'houses', cost: houseMaintenanceCost(type) };
   }
+  // A building that declares its own upkeep (the energy plants, which hand out a quantity and so read as markets by kind) pays that
+  // and nothing else: the market default below is for a market that declares none.
+  const declared = buildingCatalog[type]?.accounting?.maintenance;
+  if (Number.isFinite(declared) && kind !== BUILDING_KIND_FARM) {
+    return { category: 'industry', cost: declared };
+  }
   if (kind === BUILDING_KIND_FARM) {
     return { category: 'farms', cost: maintenanceCosts.Farm };
   }

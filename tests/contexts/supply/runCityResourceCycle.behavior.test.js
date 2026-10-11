@@ -14,6 +14,7 @@ import { createResourceStock } from '../../../src/contexts/supply/domain/value-o
 import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 import { unlimitedConsumerMoney } from '../../helpers/unlimitedConsumerMoney.js';
+import { referencePriceBook } from '../../helpers/referencePriceBook.js';
 
 // Market-Stall/Windmill-001/House-Blue are real catalog types — schedule,
 // categories, totalKey, and hub-link field names all come from
@@ -87,7 +88,7 @@ const HOUSE2_ID = createBuildingInstanceId();
 function market(overrides = {}) {
   return {
     id: MARKET_ID,
-    type: 'Market-Stall',
+    type: 'Market-Stall-Red',
     x: 5,
     y: 5,
     roads: 1,
@@ -117,7 +118,7 @@ function house(id, overrides = {}) {
   };
 }
 
-// School stands in for a hub-less flag distributor — Chapel itself left flag mode on 2026-10-10
+// School stands in for a hub-less flag distributor — the water tank is a quantity distributor
 // (see buildingEconomy.js), so it is no longer an example of this mechanism.
 const SCHOOL_ID = createBuildingInstanceId();
 
@@ -142,7 +143,7 @@ describe('RunCityResourceCycle', () => {
       market({ stocks: { wheat: 10, food: 10 } }),
       house(HOUSE_ID),
     ]);
-    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
     const events = [];
     const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
 
@@ -174,7 +175,7 @@ describe('RunCityResourceCycle', () => {
       house(HOUSE_ID),
       house(HOUSE2_ID),
     ]);
-    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
     const events = [];
     const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
 
@@ -220,7 +221,7 @@ describe('RunCityResourceCycle', () => {
       market({ supplyHubId: WINDMILL_ID, stocks: { wheat: 0, food: 0 } }),
       house(HOUSE_ID),
     ]);
-    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
     const transferHubToHub = new TransferHubToHub(repo, new HubServing(repo));
     let hubLinkResolved = null;
     const cycle = new RunCityResourceCycle(repo, distribute, undefined, {
@@ -261,7 +262,7 @@ describe('RunCityResourceCycle', () => {
       market({ supplyHubId: WINDMILL_ID, stocks: { wheat: 0, food: 0 } }),
       house(HOUSE_ID),
     ]);
-    const cycle = new RunCityResourceCycle(repo, new DistributeResourceToConsumers(repo, unlimitedConsumerMoney), undefined, {
+    const cycle = new RunCityResourceCycle(repo, new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook), undefined, {
       transferHubToHub: new TransferHubToHub(repo, new HubServing(repo)),
     });
 
@@ -279,7 +280,7 @@ describe('RunCityResourceCycle', () => {
 
   test('a hub-less flag distributor (school) marks houses served, no stock leg at all', async () => {
     const repo = new FakeSupplyBuildingRepository([school(), house(HOUSE_ID)]);
-    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
     const events = [];
     const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
 
@@ -315,7 +316,7 @@ describe('RunCityResourceCycle', () => {
 
   test('the served flag tracks the REAL current month across cycles, not a stuck value', async () => {
     const repo = new FakeSupplyBuildingRepository([school(), house(HOUSE_ID)]);
-    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
     const cycle = new RunCityResourceCycle(repo, distribute);
 
     await cycle.execute({

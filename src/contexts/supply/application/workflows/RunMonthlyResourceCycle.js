@@ -28,7 +28,7 @@ export class RunMonthlyResourceCycle {
    *   deliberately broader than just food (see createSupplyContext.js).
    * @param {ReadonlyArray<string>} [config.reachCategories] Narrower set
    *   the too-far reach check (`updateDistributorReach`) scopes to — keep
-   *   this to just food's categories so a hub-less service like a chapel
+   *   this to just food's categories so a hub-less service like a fire station
    *   (also a 'distributor') never counts as "in range" for a house's food
    *   access. Omitted falls back to `categories` (pre-service behavior).
    */

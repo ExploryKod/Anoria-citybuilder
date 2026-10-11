@@ -1,4 +1,6 @@
-import { TRADE_CATALOG } from '../../../../shared/trade-catalog/TradeCatalog.js';
+import { TRADE_CATALOG, TRADE_CEASE_WORDING } from '../../../../shared/trade-catalog/TradeCatalog.js';
+import { goodLabel, unresolvedTerm } from '../../shell/CatalogVocabulary.js';
+import { getSessionGameTime } from '../../../../composition/sessionRuntime.js';
 import { satisfactionOf, formatSatisfaction } from '../../../../shared/trade-catalog/satisfaction.js';
 import { getResourceBaseValue } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
@@ -6,14 +8,14 @@ import { formatEuro } from '../../../../contexts/accounting/presentation/formatM
 const STATUS_LABEL = { active: 'Actif', suspended: 'Suspendu', expired: 'Expiré' };
 
 /**
- * Renders the commerce admin section: customs rate slider, active city
+ * Renders the commerce admin section: active city
  * relations with satisfaction scores, and last-month export revenue.
  */
 export class CommerceSectionPresenter {
   /**
    * @param {{
    *   trade: { getAllRelations: () => Promise<object[]> },
-   *   accounting: { getCustomsRate: () => number, setCustomsRate: (r: number) => number,
+   *   accounting: { getCustomsDuty: (authority: string, flow: string, good: string, turn: number) => number,
    *                  getGeneralLedger?: Function },
    * }} deps
    */
@@ -85,18 +87,20 @@ export class CommerceSectionPresenter {
       : `left:${50 - half}%;width:${half}%`;
     const goodsWanted = entry?.wants?.map((w) => w.good).join(', ') ?? '—';
     const lastOrder = rel.lastOrderMonth != null ? `mois ${rel.lastOrderMonth}` : 'jamais';
-    const customsRate = this.accounting.getCustomsRate();
 
     const priceRows = (entry?.wants ?? [])
       .filter((w) => w.merchantGood)
       .map((w) => {
         const base = getResourceBaseValue(w.good);
         const { spread } = entry.sale;
+        const customsRate = this.accounting.getCustomsDuty('anoria', 'export', w.good, getSessionGameTime());
         const low = +(base * w.baseMultiplier * (1 - spread)).toFixed(2);
         const high = +(base * w.baseMultiplier * (1 + spread)).toFixed(2);
         return `<div class="commerce-relation-row">${w.good} : <strong>${low} à ${high} €/u</strong> · douane ${Math.round(customsRate * 100)} %</div>`;
       })
       .join('');
+
+    const ceaseRows = this.#ceaseRows(rel);
 
     return `
       <div class="commerce-relation-card ${status !== 'active' ? status : ''}">
@@ -108,6 +112,7 @@ export class CommerceSectionPresenter {
           <div class="commerce-relation-row">Biens demandés : <strong>${goodsWanted}</strong></div>
           ${priceRows}
           <div class="commerce-relation-row">Dernier ordre : <strong>${lastOrder}</strong></div>
+          ${ceaseRows}
           <div class="commerce-satisfaction-bar">
             <div class="commerce-satisfaction-track">
               <div class="commerce-satisfaction-fill ${score >= 0 ? 'positive' : 'negative'}" style="${fillStyle}"></div>
@@ -116,6 +121,25 @@ export class CommerceSectionPresenter {
           </div>
         </div>
       </div>`;
+  }
+
+  /**
+   * Who ceased to deal and why: the city for the whole relation, our merchants for one good of one flow (imports and exports
+   * apart). The words come from the trade catalog (TRADE_CEASE_WORDING).
+   * @param {{ ceased: object | null, importCeased: Record<string, object>, exportCeased: Record<string, object> }} rel
+   */
+  #ceaseRows(rel) {
+    const say = ({ by, reason }) =>
+      `${TRADE_CEASE_WORDING.by[by] ?? unresolvedTerm('cease actor', by)} : ${TRADE_CEASE_WORDING.reasons[reason] ?? unresolvedTerm('cease reason', reason)}`;
+    const rows = [];
+    if (rel.ceased) rows.push(`<div class="commerce-relation-row">${say(rel.ceased)}</div>`);
+    for (const [good, ceased] of Object.entries(rel.importCeased)) {
+      rows.push(`<div class="commerce-relation-row">Import ${goodLabel(good)} — ${say(ceased)}</div>`);
+    }
+    for (const [good, ceased] of Object.entries(rel.exportCeased)) {
+      rows.push(`<div class="commerce-relation-row">Export ${goodLabel(good)} — ${say(ceased)}</div>`);
+    }
+    return rows.join('');
   }
 
   async #renderBudgetImpact() {

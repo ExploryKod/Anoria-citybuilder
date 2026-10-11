@@ -9,6 +9,7 @@ import { DistributeResourceToConsumers } from '../../../src/contexts/supply/appl
 import { fairShares } from '../../../src/contexts/supply/application/services/RoundRobinDistribution.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 import { unlimitedConsumerMoney } from '../../helpers/unlimitedConsumerMoney.js';
+import { referencePriceBook } from '../../helpers/referencePriceBook.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -36,7 +37,7 @@ class InMemorySupplyBuildingRepository {
 function market(id, stocks, extras = {}) {
   return createSupplyBuildingSnapshot({
     id,
-    type: 'Market-Stall',
+    type: 'Market-Stall-Red',
     roadCount: 1,
     worker: 1,
     workerNeed: 1,
@@ -73,7 +74,7 @@ describe('Supply — market distribution to houses', () => {
       house(house1Id),
       house(house2Id),
     ]);
-    useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
+    useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
   });
 
   test('distributes round-robin outside autumn', async () => {
@@ -110,7 +111,7 @@ describe('Supply — market distribution to houses', () => {
       market(marketId, { wheat: 2, food: 2 }),
       house(house1Id, {}, 0),
     ]);
-    useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney);
+    useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
 
     const outcome = await useCase.execute({
       sourceId: marketId,
@@ -173,7 +174,7 @@ describe('Supply — a market only fills what each house still needs', () => {
 
   async function distribute(buildings, marketId, houseIds) {
     const repo = new InMemorySupplyBuildingRepository(buildings);
-    const outcome = await new DistributeResourceToConsumers(repo, unlimitedConsumerMoney).execute({
+    const outcome = await new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook).execute({
       sourceId: marketId,
       period: { season: 'winter' },
       consumerRefs: houseIds.map((instanceId) => ({ instanceId })),

@@ -8,6 +8,8 @@ export function isJournalIncomeType(entry) {
     entry.type === 'corporate_tax_revenue' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital' ||
-    entry.type.startsWith('export_')
+    entry.type.startsWith('export_') ||
+    entry.type.startsWith('customs_import_') ||
+    entry.type.startsWith('abroad_sale_')
   );
 }

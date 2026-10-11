@@ -31,11 +31,16 @@ export function isJournalEntryIncomeForMonthlySummary(entry, allEntries, getTime
     entry.type === 'corporate_tax_revenue' ||
     entry.type === 'service_sales' ||
     entry.type === 'service_subsidy_received' ||
+    entry.type === 'subsidy_companies_received' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital';
 
-  if (entry.type.startsWith('import_')) {
+  if (entry.type.startsWith('import_') || entry.type.startsWith('freight_') || entry.type.startsWith('duty_paid_')) {
     isIncome = false;
+  }
+
+  if (entry.type.startsWith('customs_import_') || entry.type.startsWith('abroad_sale_')) {
+    isIncome = true;
   }
 
   if (entry.type.startsWith('export_')) {

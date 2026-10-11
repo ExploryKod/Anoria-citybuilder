@@ -43,6 +43,7 @@ function evolutionRequirementDisplay(requirement) {
   if (requirement.kind === 'population') return { emoji: '👥', label: 'Population' };
   if (requirement.kind === 'demandMet') return { emoji: goodIcon('food'), label: goodLabel('food') };
   if (requirement.kind === 'goodsVariety') return { emoji: goodIcon('goods'), label: goodLabel('goods') };
+  if (requirement.kind === 'activityAccess') return { emoji: '📦', label: 'Entrepôt (activité)' };
   throw new Error(`[servicesInfoFormat] unknown tier requirement kind "${requirement.kind}" has no display`);
 }
 
@@ -142,8 +143,8 @@ export function formatServicesModel(vm) {
     }
 
     // Every requirement the house's CURRENT/NEXT tier declares (road excluded — see
-    // HouseLevelPolicy.relevantServiceCoverageRequirements) — a tier-1 house shows only Chapel's faith;
-    // once it reaches tier 2, Doctor joins it, and so on.
+    // HouseLevelPolicy.relevantServiceCoverageRequirements) — a tier-1 house shows its food, its water and its
+    // dispensary; once it reaches tier 2, goods, fire, a warehouse and energy join them, and so on.
     const residentialGroup = residentialGroupForType(vm.buildingType);
     const coverage = describeRelevantServiceCoverage({
       level: vm.houseLevel,
@@ -151,7 +152,8 @@ export function formatServicesModel(vm) {
       pop: vm.buildingPop,
       servedFlags: vm.servedFlags,
       lastConsumption: vm.lastConsumption,
-      lastFaithConsumption: vm.lastFaithConsumption,
+      outcomes: vm.outcomes,
+      activityAccess: vm.activityAccess,
       periodKey: vm.periodKey,
     });
     for (const requirement of coverage) {

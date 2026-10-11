@@ -40,7 +40,7 @@ function settle(pairs, buildings) {
 describe('economy register — each private movement of the journal is in the register, with its amount', () => {
   test('a company wage and the house that receives it are both in the register, with the journal amount', async () => {
     const { journal, register } = await settle(
-      [{ sellerId: 'farm', buyerId: null, amountHT: 200 }],
+      [{ sellerId: 'farm', buyerId: null, amountHT: 2000 }], // more than the payroll of its 4 workers (400), so it has a profit to tax
       [
         { id: 'farm', type: FARM, workerSources: { house: 4 } },
         { id: 'house', type: HOUSE, workerSources: {} },

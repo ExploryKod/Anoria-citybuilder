@@ -127,7 +127,7 @@ export class GetBuildingSupplyView {
  *   not a name-string match. A 'distributor' role splits into two kinds by
  *   its `consumption` mode: 'market' moves a depleting numeric stock
  *   (Market-Stall selling food), 'service' just marks nearby consumers
- *   "served this period" with no stock at all (Chapel's faith, School,
+ *   "served this period" with no stock at all (the water tank's water, School,
  *   Doctor, ... — see DistributeResourceToConsumers.js) — these need very
  *   different info-panel content (no stock to show, no buying-period
  *   state), previously both silently routed to the market panel.

@@ -1,4 +1,5 @@
 import { getOrCreateGameSessionContext } from './createGameSessionContext.js';
+import { salesNatureOf } from '../shared/building-catalog/resourceRoleQueries.js';
 import { getSessionGameTime, getSessionProcessLoanPayments } from './sessionRuntime.js';
 import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 import { HamletFiscalRateRepository } from '../contexts/accounting/infrastructure/persistence/HamletFiscalRateRepository.js';
@@ -24,6 +25,7 @@ import { RecordLoanInterestExpense } from '../contexts/accounting/application/se
 import { RecordLoanRepaymentExpense } from '../contexts/accounting/application/services/RecordLoanRepaymentExpense.js';
 import { RecordInfoLoanInstallment } from '../contexts/accounting/application/services/RecordInfoLoanInstallment.js';
 import { RecordCommerceImportExpense } from '../contexts/accounting/application/services/RecordCommerceImportExpense.js';
+import { listTradedGoods } from '../shared/trade-catalog/TradeCatalog.js';
 import { RecordCommerceExportIncome } from '../contexts/accounting/application/services/RecordCommerceExportIncome.js';
 import { RecordCapitalFundsIncome } from '../contexts/accounting/application/services/RecordCapitalFundsIncome.js';
 import { RecordExceptionalExpense } from '../contexts/accounting/application/services/RecordExceptionalExpense.js';
@@ -44,7 +46,9 @@ import { ProcessTurnBudget } from '../contexts/accounting/application/services/P
 import { RecordConsumerPurchases } from '../contexts/accounting/application/services/RecordConsumerPurchases.js';
 import { GetProducerRevenues } from '../contexts/accounting/application/queries/GetProducerRevenues.js';
 import { buildingAccountTrace } from '../contexts/accounting/domain/policies/BuildingAccountTracePolicy.js';
-import { buildingFinanceFigures, householdBudgetOf, householdLastMonthOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
+import { accountKeyOf } from '../contexts/accounting/domain/policies/AccountKeyPolicy.js';
+import { pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
+import { buildingFinanceFigures, cashMovementsOf, householdBudgetOf, householdLastMonthOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 import { residentsOfHouse } from '../contexts/accounting/domain/policies/HouseResidentsPolicy.js';
 import { residentPayBreakdownOf } from '../contexts/accounting/domain/policies/HouseResidentsPayPolicy.js';
 import { householdPublicPayOf } from '../contexts/accounting/domain/policies/HouseholdPublicPayPolicy.js';
@@ -486,8 +490,9 @@ export function createAccountingContext(deps = {}) {
       return flushJournalSession.execute();
     },
 
-    async exportJournalJson() {
-      return exportJournalJsonQuery.execute();
+    /** @param {{ accountScope?: 'city' | 'private' | null }} [filters] */
+    async exportJournalJson(filters) {
+      return exportJournalJsonQuery.execute(filters);
     },
 
     async exportJournalPdf() {
@@ -687,26 +692,32 @@ export function createAccountingContext(deps = {}) {
       const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
       const entries = await journalRepository.getJournalEntries();
       const snapshot = await getTreasurySnapshotQuery.execute({ accountBuildingId: buildingId, accountKind });
+      // A company's account is read as a compte de résultat: what its sales are (goods resold, production, services) comes from the catalog.
+      const building = await dexieDb.houses.get(buildingId);
+      if (!building) throw new Error(`[finance] building ${buildingId} is not in the hamlet: its accounts cannot be read`);
+      const salesNature = salesNatureOf(building.type);
       // The month before the current one: a house's goods are dated by their delivery, its salary and services by the settlement.
       const previous = now.monthIndex === 0
         ? { year: now.year - 1, month: MONTHS_PER_YEAR }
         : { year: now.year, month: now.monthIndex };
       const settled = { year: now.year, month: now.monthIndex + 1 };
-      const monthToDate = buildingFinanceFigures(entries, buildingId, { ...settled, accountKind });
+      const monthToDate = buildingFinanceFigures(entries, buildingId, { ...settled, accountKind, salesNature });
       return {
         lastMonth: accountKind === 'particulier'
           ? { ...monthToDate, ...householdLastMonthOf(entries, buildingId, { settled, bought: previous }) }
           : monthToDate,
         monthToDate,
-        year: buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind }),
+        year: buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind, salesNature }),
         cash: snapshot.funds,
+        // What the cash is made of, movement by movement since the account opened (it explains the figure, it is not a second balance).
+        cashMovements: cashMovementsOf(entries, buildingId, { accountKind }),
         // A house's personal account has its monthly budget, and the savings it had at the start of the year (what its
         // balance was before the year's lines: the year's result is what it added since); a company's account has neither.
         budget: accountKind === 'particulier'
           ? householdBudgetOf(entries, buildingId, { year: now.year, month: now.monthIndex + 1, balance: snapshot.funds })
           : null,
         openingSavings: accountKind === 'particulier'
-          ? snapshot.funds - buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind }).householdResult
+          ? snapshot.funds - buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind, salesNature }).householdResult
           : null,
       };
     },
@@ -717,6 +728,46 @@ export function createAccountingContext(deps = {}) {
      */
     async getBuildingAccountTrace(buildingId) {
       return buildingAccountTrace(await journalRepository.getJournalEntries(), buildingId);
+    },
+
+    /**
+     * One account of one building as a JSON document: what the Finances tab shows (the statement for the last month and the month to
+     * date, the ratios, the cash and what it is made of) and the journal lines of that account, in the order they were written.
+     * @param {string} buildingId
+     * @param {string | null} accountKind a house's account (particulier or entreprise); null for a company's
+     * @returns {Promise<string>}
+     */
+    async exportBuildingAccountJson(buildingId, accountKind) {
+      const finance = await this.getBuildingFinance(buildingId, accountKind);
+      const building = await dexieDb.houses.get(buildingId);
+      const accountKey = accountKeyOf({ accountBuildingId: buildingId, accountKind });
+      const lines = (await journalRepository.getJournalEntries())
+        .filter((entry) => accountKeyOf(entry) === accountKey)
+        .sort((a, b) => a.id - b.id)
+        .map((entry) => ({
+          id: entry.id,
+          turn: entry.turn,
+          year: entry.year,
+          month: entry.month,
+          type: entry.type,
+          account: pcgOfJournalType(entry.type)?.account ?? null,
+          amount: entry.amount,
+          description: entry.description ?? null,
+          counterpartyBuildingId: entry.counterpartyBuildingId ?? null,
+        }));
+      return JSON.stringify(
+        {
+          building: { id: buildingId, type: building.type, accountKind: accountKind ?? 'entreprise' },
+          cash: finance.cash,
+          cashMovements: finance.cashMovements,
+          lastMonth: finance.lastMonth,
+          monthToDate: finance.monthToDate,
+          year: finance.year,
+          lines,
+        },
+        null,
+        2,
+      );
     },
 
     findBankBuildingId,
@@ -829,6 +880,11 @@ export function createAccountingContext(deps = {}) {
       return hamletFiscalRates.setServiceSubsidy(service, percent);
     },
 
+    /** @returns {Promise<Record<string, number>>} the active hamlet's VAT rate per good, in percent. */
+    getVatRates() {
+      return hamletFiscalRates.getVatRates();
+    },
+
     /** @returns {Promise<{ uniform: boolean, generalRatePercent: number, categoryRatesPercent: Record<string, number> }>} the active hamlet's VAT. */
     getVatSettings() {
       return hamletFiscalRates.getVatSettings();
@@ -854,21 +910,37 @@ export function createAccountingContext(deps = {}) {
       return hamletFiscalRates.setVatCategoryRate(category, percent);
     },
 
-    /** Writes the default customs rate when the city has none yet (boot). */
-    ensureCustomsRate() {
-      fiscalSettingsRepository.ensureCustomsRate();
+    /** Boot: gives every traded good its customs duty for each flow it takes, unless one is stored (from the catalog). */
+    ensureCustomsDuties() {
+      fiscalSettingsRepository.ensureCustomsDuties(listTradedGoods());
     },
 
-    /** @returns {number} customs rate in [0, 0.5] */
-    getCustomsRate() {
-      return fiscalSettingsRepository.getCustomsRate();
+    /** @returns {number} the duty a customs authority charges on one good, for one flow, at a turn, in [0, 1] */
+    getCustomsDuty(authority, flow, good, turn) {
+      return fiscalSettingsRepository.getCustomsDuty(authority, flow, good, turn);
     },
 
-    /** @param {number} rate @returns {number} clamped rate */
-    setCustomsRate(rate) {
-      return fiscalSettingsRepository.setCustomsRate(rate);
+    /**
+     * Sets Anoria's duty on one good for one flow, and logs the change as a dated policy event (who, which good, from, to,
+     * at which turn): the history a later trade-policy phase explains a trade war with. The log is appended, never edited.
+     * @returns {Promise<number>} the duty, once stored
+     */
+    async setCustomsDuty(flow, good, rate) {
+      const turn = getSessionGameTime();
+      const from = fiscalSettingsRepository.getCustomsDuty('anoria', flow, good, turn);
+      const stored = fiscalSettingsRepository.setCustomsDuty(flow, good, rate);
+      await dexieDb.tradePolicyEvents.add({ turn, authority: 'anoria', flow, good, from, to: stored, cause: 'player' });
+      return stored;
     },
 
+    /** @returns {Array<{ good: string, import?: number, export?: number }>} every traded good with the duties of the flows it takes */
+    listCustomsDuties() {
+      const duties = fiscalSettingsRepository.listCustomsDuties();
+      return listTradedGoods().map(({ good, flows }) => ({
+        good,
+        ...Object.fromEntries(flows.map((flow) => [flow, duties[flow][good]])),
+      }));
+    },
 
     /** @param {number} keepYears */
     async cleanupOldJournalYears(keepYears) {

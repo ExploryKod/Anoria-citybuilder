@@ -32,7 +32,9 @@ export function unresolvedTerm(what, id) {
   const key = `${what}:${id}`;
   if (!warned.has(key)) {
     warned.add(key);
-    console.warn(`[vocabulary] no ${what} declared in the catalog for "${id}" — shown as "${UNRESOLVED_TERM}"`);
+    // A missing id (null, undefined) is a caller's defect, not a catalog gap: say which caller.
+    const caller = id == null ? `\n${new Error('caller').stack}` : '';
+    console.warn(`[vocabulary] no ${what} declared in the catalog for "${id}" — shown as "${UNRESOLVED_TERM}"${caller}`);
   }
   return UNRESOLVED_TERM;
 }
@@ -40,6 +42,20 @@ export function unresolvedTerm(what, id) {
 /** @param {string} type A building id. @returns {string} Its `displayName`, e.g. "Moulin". */
 export function buildingName(type) {
   return getBuildingDefinition(type)?.displayName ?? unresolvedTerm('building name', type);
+}
+
+/**
+ * A building's icon as the toolbar shows it, ready to put in markup: the inline SVG, the emoji, or an image tag for a
+ * picture. The catalog (buildingAssets `button.icon`) is the only place it is decided; one it does not give is "…".
+ * @param {string} type A building id.
+ * @returns {string}
+ */
+export function buildingIconHtml(type) {
+  const icon = BUILDING_ASSETS[type]?.button?.icon;
+  if (!icon) return unresolvedTerm('building icon', type);
+  if (icon.kind === 'svg' || icon.kind === 'emoji') return icon.value;
+  if (icon.kind === 'png' || icon.kind === 'icon') return `<img src="${icon.value}" alt="" class="building-info-building-icon" decoding="async" />`;
+  throw new Error(`[vocabulary] the icon of "${type}" has an unknown kind "${icon.kind}"`);
 }
 
 /** @param {string} type @returns {string} `buildingName`, for the middle of a sentence. */

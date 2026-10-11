@@ -182,8 +182,8 @@ describe('Supply — farm harvest', () => {
     test('the road need is the catalog\'s call, whatever the building', () => {
       expect(isOperational({ type: 'Farm-Wheat', roadCount: 0, worker: 3, workerNeed: 3 })).toBe(true);
       expect(isOperational({ type: 'Farm-Wheat', roadCount: 0, worker: 0, workerNeed: 3 })).toBe(false);
-      expect(isOperational({ type: 'Market-Stall', roadCount: 0, worker: 2, workerNeed: 2 })).toBe(false);
-      expect(isOperational({ type: 'Market-Stall', roadCount: 1, worker: 2, workerNeed: 2 })).toBe(true);
+      expect(isOperational({ type: 'Market-Stall-Red', roadCount: 0, worker: 2, workerNeed: 2 })).toBe(false);
+      expect(isOperational({ type: 'Market-Stall-Red', roadCount: 1, worker: 2, workerNeed: 2 })).toBe(true);
     });
   });
 

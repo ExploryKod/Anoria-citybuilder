@@ -11,8 +11,9 @@ const UNKNOWN_ORIGIN = 'Origine inconnue';
  * The name of who delivered a part of a good: the producer type as the catalog names it, and — when the goods were
  * moved from another hub — the hub type they came through ("Champ d'oliviers – Entrepôt").
  */
-const originLabel = ({ producerType, via }) => {
-  const made = producerType === '' ? UNKNOWN_ORIGIN : buildingName(producerType);
+const originLabel = ({ producerName, producerType, via }) => {
+  // A trade city that sent the goods is named; a building that made them is named by its catalog type.
+  const made = producerName ? producerName : producerType === '' ? UNKNOWN_ORIGIN : buildingName(producerType);
   return via ? `${made} – ${buildingName(via)}` : made;
 };
 
@@ -61,7 +62,7 @@ function labelPoint(cx, cy, r, midDeg) {
  */
 function originLines(seg) {
   const parts = (seg.parts ?? []).filter((part) => part.amount > 0);
-  if (parts.length === 0 || (parts.length === 1 && parts[0].producerType === '' && !parts[0].via)) return '';
+  if (parts.length === 0 || (parts.length === 1 && parts[0].producerType === '' && !parts[0].producerName && !parts[0].via)) return '';
   return parts
     .map(
       (part) => `
@@ -90,6 +91,13 @@ export function renderHubStoragePieChart(view, summaryLines = []) {
     .flatMap((seg) => {
       const parts = [];
       let cursor = seg.startAngle;
+
+      if (seg.kind === 'elsewhere') {
+        parts.push(
+          `<path class="hub-pie-wedge hub-pie-wedge--elsewhere" d="${wedgePath(cx, cy, r, cursor, cursor + seg.idleAngle)}" fill="${seg.colors.dark}" data-product="${seg.productId}" />`
+        );
+        return parts;
+      }
 
       if (seg.kind === 'free') {
         const idle = seg.idleAngle ?? seg.segmentAngle ?? 0;
@@ -125,7 +133,7 @@ export function renderHubStoragePieChart(view, summaryLines = []) {
     .join('');
 
   const labels = segments
-    .filter((seg) => seg.kind !== 'free' && (seg.darkAngle > 12 || seg.segmentAngle > 18))
+    .filter((seg) => seg.kind === 'product' && (seg.darkAngle > 12 || seg.segmentAngle > 18))
     .map((seg) => {
       const mid = seg.startAngle + Math.max(seg.darkAngle, seg.segmentAngle) / 2;
       const { x, y } = labelPoint(cx, cy, labelR, mid);
@@ -139,6 +147,13 @@ export function renderHubStoragePieChart(view, summaryLines = []) {
   const legend = segments
     .filter((seg) => seg.kind !== 'free')
     .map((seg) => {
+      if (seg.kind === 'elsewhere') {
+        return `
+        <div class="hub-pie-legend-item hub-pie-legend-item--elsewhere" data-product="${seg.productId}">
+          <span class="hub-pie-legend-swatch"><span class="hub-pie-legend-swatch-dark" style="background:${seg.colors.dark}"></span></span>
+          <span class="hub-pie-legend-text">${seg.label} — ${seg.amount}</span>
+        </div>`;
+      }
       const overClass = seg.overMax ? ' hub-pie-legend-item--over' : '';
       return `
         <div class="hub-pie-legend-item${overClass}" data-product="${seg.productId}">
@@ -173,11 +188,13 @@ export function renderHubStoragePieChart(view, summaryLines = []) {
  * @param {HTMLElement} root
  * @param {object} view
  * @param {ReadonlyArray<string>} [summaryLines]
+ * @param {string} [titleText] Replaces the chart's title (the flow it now draws).
  */
-export function patchHubStoragePieChart(root, view, summaryLines = []) {
+export function patchHubStoragePieChart(root, view, summaryLines = [], titleText = null) {
   const section = root.querySelector('.hub-storage-chart-section');
   if (!section) return;
   const title = section.querySelector('.hub-storage-chart-title');
-  const titleHtml = title ? title.outerHTML : `<h3 class="hub-storage-chart-title">Stock</h3>`;
+  if (title && titleText) title.textContent = titleText;
+  const titleHtml = title ? title.outerHTML : `<h3 class="hub-storage-chart-title">${titleText ?? 'Stock'}</h3>`;
   section.innerHTML = `${titleHtml}${renderHubStoragePieChart(view, summaryLines)}`;
 }

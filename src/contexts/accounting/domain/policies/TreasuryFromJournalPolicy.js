@@ -30,7 +30,7 @@ export function moneyDirectionOf(entry) {
   if (isInformativeJournalType(type)) return null;
   if (
     type === 'capital_funds' || type === 'payroll_tax' || type === 'citizen_tax' || type === 'vat' || type === 'public_wage' || type === 'household_benefit' ||
-    type === 'producer_revenue' || type === 'corporate_tax_revenue' || type === 'service_sales' || type === 'service_subsidy_received' || type === 'household_wage' || type === 'loan_capital' || type === 'construction_refund' || type.startsWith('export_') ||
+    type === 'producer_revenue' || type === 'corporate_tax_revenue' || type === 'service_sales' || type === 'service_subsidy_received' || type === 'subsidy_companies_received' || type === 'household_wage' || type === 'loan_capital' || type === 'construction_refund' || type.startsWith('export_') || type.startsWith('customs_import_') || type.startsWith('abroad_sale_') ||
     // The lender's own mirror of a loan (see RecordLoanCapitalIncome.js etc.): interest and principal arriving at
     // its account, distinct types from the city's own loan_interest/loan_repayment so deriveLoanPortfolio (which
     // scans every entry, unfiltered by account) never double-counts one loan's installment from both sides.
@@ -55,7 +55,7 @@ export function moneyDirectionOf(entry) {
     type === 'deposit' ||
     // The bank's own mirror of a withdrawal/interest payment leaving its account.
     type === 'withdrawal_paid' || type === 'deposit_interest_paid' ||
-    type.startsWith('import_')
+    type.startsWith('import_') || type.startsWith('freight_') || type.startsWith('duty_paid_')
   ) {
     return 'debit';
   }
@@ -123,6 +123,7 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
         figures.totalTaxes += amount;
         if (today) figures.dailyIncome += amount;
       }
+      if (type.startsWith('customs_import_') && today) figures.dailyIncome += amount;
       if (type.startsWith('export_')) {
         const product = productOf(type, 'export_');
         figures.totalExports[product] = (figures.totalExports[product] ?? 0) + amount;
@@ -141,7 +142,7 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
       continue;
     }
     figures.expenses += amount;
-    if (today && (type === 'salary' || type === 'unemployment_benefit' || type === 'maintenance' || type.startsWith('import_'))) {
+    if (today && (type === 'salary' || type === 'unemployment_benefit' || type === 'maintenance' || type.startsWith('import_') || type.startsWith('freight_') || type.startsWith('duty_paid_'))) {
       figures.dailyExpenses += amount;
     }
     if (type === 'maintenance') figures.totalBuildingMaintenance += amount;

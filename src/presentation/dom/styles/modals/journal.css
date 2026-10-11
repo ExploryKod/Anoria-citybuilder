@@ -337,71 +337,60 @@
     border: 1px solid #b3d9ff;
 }
 
-/* Revenus issus de taxes en bleu */
-.journal-entry-type.citizen_tax {
-    background: #cfe2ff;
-    color: #084298;
+/*
+ * The colours of the journal follow the classes of the Plan Comptable Général, so a line can be read by the family it belongs to:
+ *   1 capitaux et emprunts → violet     2 immobilisations → grey        4 État et organismes (impôts, taxes, douanes) → BLUE
+ *   5 trésorerie → teal                 6 charges → red / amber / orange   7 produits → GREEN (the households' incomes a lime nuance)
+ * A nuance of the same hue says the side: the blue of a tax the city RECEIVES is lighter than the blue of a tax a company or a
+ * house PAYS. The filter pills of game.html use the same tokens.
+ */
+:root {
+    --pcg1-bg: #e2d5f7; --pcg1-fg: #6f42c1;          /* capitaux, emprunts reçus */
+    --pcg1-alt-bg: #d3c2ee; --pcg1-alt-fg: #4b2a8f;  /* remboursement d'emprunt */
+    --pcg2-bg: #e2e3e5; --pcg2-fg: #41464b;          /* immobilisations: construction */
+    --pcg4-bg: #cfe2ff; --pcg4-fg: #084298;          /* impôts, taxes, douanes perçus par la ville */
+    --pcg4-paid-bg: #adc8f5; --pcg4-paid-fg: #052c65; /* impôts, douanes payés par une entreprise ou une maison */
+    --pcg5-bg: #d2f4ea; --pcg5-fg: #0a5c4a;          /* trésorerie: dépôts, retraits */
+    --pcg60-bg: #f8d7da; --pcg60-fg: #842029;        /* achats */
+    --pcg6x-bg: #fff3cd; --pcg6x-fg: #856404;        /* services extérieurs: entretien, transports */
+    --pcg64-bg: #ffe0b2; --pcg64-fg: #e65100;        /* charges de personnel */
+    --pcg65-bg: #ffccbc; --pcg65-fg: #bf360c;        /* charges financières, subventions accordées */
+    --pcg70-bg: #d1e7dd; --pcg70-fg: #0f5132;        /* ventes */
+    --pcg74-bg: #c5e8b8; --pcg74-fg: #26561a;        /* subventions reçues */
+    --pcg7h-bg: #e6f4d0; --pcg7h-fg: #3b6013;        /* revenus des ménages: salaires, allocations */
 }
 
-.journal-entry-type.payroll_tax {
-    background: #cfe2ff;
-    color: #084298;
-}
+/*
+ * A line wears the colour of its tone (data-tone), which PcgJournalCatalog.js gives it from its account of the plan comptable: the
+ * account number is shown in the badge, and the tone follows its class (the rule of the player: every tax and duty is blue).
+ */
+.journal-entry-type[data-tone="capital"],
+.journal-entry-type[data-tone="loan"] { background: var(--pcg1-bg); color: var(--pcg1-fg); }
+.journal-entry-type[data-tone="loan-repayment"] { background: var(--pcg1-alt-bg); color: var(--pcg1-alt-fg); }
+.journal-entry-type[data-tone="fixed-asset"] { background: var(--pcg2-bg); color: var(--pcg2-fg); }
+.journal-entry-type[data-tone="tax-received"] { background: var(--pcg4-bg); color: var(--pcg4-fg); }
+.journal-entry-type[data-tone="tax-paid"] { background: var(--pcg4-paid-bg); color: var(--pcg4-paid-fg); }
+.journal-entry-type[data-tone="treasury"] { background: var(--pcg5-bg); color: var(--pcg5-fg); }
+.journal-entry-type[data-tone="purchase"] { background: var(--pcg60-bg); color: var(--pcg60-fg); }
+.journal-entry-type[data-tone="external"] { background: var(--pcg6x-bg); color: var(--pcg6x-fg); }
+.journal-entry-type[data-tone="personnel"] { background: var(--pcg64-bg); color: var(--pcg64-fg); }
+.journal-entry-type[data-tone="financial"],
+.journal-entry-type[data-tone="subsidy-given"] { background: var(--pcg65-bg); color: var(--pcg65-fg); }
+.journal-entry-type[data-tone="sales"] { background: var(--pcg70-bg); color: var(--pcg70-fg); }
+.journal-entry-type[data-tone="subsidy-received"] { background: var(--pcg74-bg); color: var(--pcg74-fg); }
+.journal-entry-type[data-tone="household"] { background: var(--pcg7h-bg); color: var(--pcg7h-fg); }
 
-/* Revenus issus de commerce en vert */
-.journal-entry-type.capital_funds {
-    background: #d4edda;
-    color: #155724;
-}
-
-/* Dépenses - Construction en rouge */
-.journal-entry-type.construction {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-/* Dépenses - Maintenance en jaune */
-.journal-entry-type.maintenance {
-    background: #fff3cd;
-    color: #856404;
-}
-
-/* Dépenses exceptionnelles (réparations) - marron */
-.journal-entry-type.exceptional_expenses {
-    background: #d7ccc8;
-    color: #5d4037;
-}
-
-.journal-entry-type.salary {
-    background: #ffe0b2;
-    color: #e65100;
-}
-
-.journal-entry-type[class*="import_"] {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.journal-entry-type[class*="export_"] {
-    background: #d4edda;
-    color: #155724;
-}
-
-/* Revenus issus de prêts en violet */
-.journal-entry-type.loan_capital {
-    background: #e2d5f7;
-    color: #6f42c1;
-}
-
-/* Dépenses - Intérêts et remboursement de prêt (même famille de couleur avec variante) */
-.journal-entry-type.loan_interest {
-    background: #ffe0b2;
-    color: #e65100;
-}
-
-.journal-entry-type.loan_repayment {
-    background: #ffccbc;
-    color: #bf360c;
+/* The account number, in the badge: small and muted so the label stays what is read. */
+.journal-entry-account {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 0 5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.55);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
 }
 
 .journal-entry-type.carry_forward {

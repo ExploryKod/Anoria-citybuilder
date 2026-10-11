@@ -38,7 +38,7 @@ function clampPop(pop) {
  * tier grant the job's required skill, at the required level? — see
  * GroupSkillPolicy.js / socialCategoryCatalog.js), never gated here by
  * house level: a level-1 (hunter-gatherer) house's citizens do hold a
- * skill — `spiritual` — so they must be countable as headcount just like
+ * skill — so they must be countable as headcount just like
  * any other house; DistributeCityWorkers only ever calls this for houses
  * that already passed its own per-skill filter, so no separate blanket
  * "is this level employable at all" flag is needed (or read) here.

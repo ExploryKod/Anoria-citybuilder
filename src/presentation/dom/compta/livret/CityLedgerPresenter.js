@@ -90,6 +90,7 @@ export function renderCityLedgerTable(comparison) {
     { key: 'vat', thisYear: 'vatThisYear', lastYear: 'vatLastYear' },
     { key: 'corporateTaxRevenue', thisYear: 'corporateTaxRevenueThisYear', lastYear: 'corporateTaxRevenueLastYear' },
     { key: 'exports', thisYear: 'exportsThisYear', lastYear: 'exportsLastYear' },
+    { key: 'customsImport', thisYear: 'customsImportThisYear', lastYear: 'customsImportLastYear' },
     { key: 'loanCapital', thisYear: 'loanCapitalThisYear', lastYear: 'loanCapitalLastYear' },
   ];
 

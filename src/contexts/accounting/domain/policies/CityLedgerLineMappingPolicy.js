@@ -43,6 +43,8 @@ export function cityLedgerYearLinesFromJournalSummary(
     incomeEntries,
     (e) => e.type && e.type.startsWith('export_')
   );
+  // The duty our merchants pay on what they import: the city's income (see TRADE_IMPORT).
+  const customsImport = sumByType(incomeEntries, (e) => e.type && e.type.startsWith('customs_import_'));
   const loanCapital = sumByType(incomeEntries, (e) => e.type === 'loan_capital');
   const carryForwardIncome = previousNetFlow >= 0 ? previousNetFlow : 0;
 
@@ -75,7 +77,7 @@ export function cityLedgerYearLinesFromJournalSummary(
   const carryForwardExpense = previousNetFlow < 0 ? -previousNetFlow : 0;
 
   const totalIncome =
-    initialFunds + incomeTax + payrollTax + vat + corporateTaxRevenue + exports + loanCapital;
+    initialFunds + incomeTax + payrollTax + vat + corporateTaxRevenue + exports + customsImport + loanCapital;
   const totalExpenses =
     construction +
     maintenance +
@@ -98,6 +100,7 @@ export function cityLedgerYearLinesFromJournalSummary(
     payrollTax: Math.round(payrollTax),
     vat: Math.round(vat),
     exports: Math.round(exports),
+    customsImport: Math.round(customsImport),
     loanCapital: Math.round(loanCapital),
     carryForwardIncome: Math.round(carryForwardIncome),
     totalIncome: Math.round(totalIncome),

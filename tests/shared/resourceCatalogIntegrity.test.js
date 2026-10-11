@@ -130,7 +130,7 @@ describe('no good is named in code', () => {
 
   test('goods declared by producers and consumers never appear as a word in source code', () => {
     // Words distinctive enough to grep for; a generic word ("plate", "game") would false-positive.
-    const goods = ['wheat', 'carrot', 'cabbage', 'fruit', 'amphora', 'dattes'];
+    const goods = ['wheat', 'carrot', 'cabbage', 'olive', 'amphora', 'dattes'];
     const declared = new Set(getAllCategoriesForRole('producer').concat(getAllCategoriesForRole('consumer')));
     for (const good of goods) expect(declared.has(good) || good === 'dattes').toBe(true);
 

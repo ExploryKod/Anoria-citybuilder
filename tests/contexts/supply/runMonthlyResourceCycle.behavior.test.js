@@ -46,7 +46,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
     await seedBuilding(
       makeHouseRecord({
         instanceId: marketId,
-        type: 'Market-Stall',
+        type: 'Market-Stall-Red',
         x: 5,
         y: 5,
         extra: {
@@ -67,7 +67,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
     await seedBuilding(
       makeHouseRecord({
         instanceId: marketId,
-        type: 'Market-Stall',
+        type: 'Market-Stall-Red',
         x: 5,
         y: 5,
         extra: {
@@ -219,7 +219,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
   });
 
   describe('the goods a house holds stay consistent with its total', () => {
-    const CATEGORIES = ['wheat', 'carrot', 'cabbage', 'fruit', 'game'];
+    const CATEGORIES = ['wheat', 'carrot', 'cabbage'];
     const row = (instanceId, type, x, extra) =>
       makeHouseRecord({
         instanceId,
@@ -229,20 +229,20 @@ describe('Supply — RunMonthlyResourceCycle', () => {
         extra: { roads: 1, neighbors: [{ name: 'roads', isRoad: true }], ...extra },
       });
 
-    test('a market delivery keeps what the house gathered, and the total is the sum of its goods', async () => {
+    test('a market delivery keeps what the house already held, and the total is the sum of its goods', async () => {
       const houseId = createBuildingInstanceId();
       const marketId = createBuildingInstanceId();
       await seedBuilding(
         row(houseId, 'House-Red', 1, {
-          // 10 inhabitants eat 10 units a month: the house has gathered some fruit and game by the
+          // 10 inhabitants eat 10 units a month: the house already holds some carrot and cabbage by the
           // time the market fills what is still missing.
           pop: 10,
-          stocks: { wheat: 0, carrot: 0, cabbage: 0, fruit: 3, game: 3, food: 6 },
+          stocks: { wheat: 0, carrot: 3, cabbage: 3, food: 6 },
         })
       );
       await seedBuilding(
-        row(marketId, 'Market-Stall', 3, {
-          stocks: { wheat: 40, carrot: 0, cabbage: 0, fruit: 0, game: 0, food: 40 },
+        row(marketId, 'Market-Stall-Red', 3, {
+          stocks: { wheat: 40, carrot: 0, cabbage: 0, food: 40 },
           employees: { worker: 2, worker_need: 2 },
         })
       );
@@ -252,34 +252,34 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       const { stocks, lastConsumption } = await getBuildingRow(houseId);
       const sum = CATEGORIES.reduce((total, category) => total + (stocks[category] || 0), 0);
       // The house asked for exactly this month's meal, so it holds nothing after eating: what it
-      // ate says what reached it. The delivery came in, and the fruit and game it had were not wiped.
+      // ate says what reached it. The delivery came in, and the carrot and cabbage it had were not wiped.
       expect(lastConsumption.totalUnfed).toBe(0);
       expect(lastConsumption.takenByCategory.wheat).toBeGreaterThan(0);
-      expect(lastConsumption.takenByCategory.fruit).toBeGreaterThanOrEqual(3);
-      expect(lastConsumption.takenByCategory.game).toBeGreaterThanOrEqual(3);
+      expect(lastConsumption.takenByCategory.carrot).toBeGreaterThanOrEqual(3);
+      expect(lastConsumption.takenByCategory.cabbage).toBeGreaterThanOrEqual(3);
       expect(stocks.food).toBe(sum);
     });
 
     test('a service rides the supply chain, and is logged as leaving the building that distributes it', async () => {
-      // Faith left flag mode (2026-10-10): the chapel now produces and distributes it exactly like a
-      // market sells food — round-robin, one unit per pass — so, like the wheat delivery above, this is
-      // several rows summing to the house's real need (1/resident/month), not one row of a flat amount.
+      // Water is a quantity need: the tank produces and distributes it exactly like a market sells food — round-robin,
+      // one unit per pass — so, like the wheat delivery above, this is several rows summing to the house's real need
+      // (4 m³/resident/month), not one row of a flat amount.
       const houseId = createBuildingInstanceId();
-      const chapelId = createBuildingInstanceId();
+      const tankId = createBuildingInstanceId();
       await seedBuilding(row(houseId, 'House-Red', 1, { pop: 12 }));
-      await seedBuilding(row(chapelId, 'Chapel', 3, { employees: { worker: 2, worker_need: 2 } }));
+      await seedBuilding(row(tankId, 'WaterTank', 3, { employees: { worker: 2, worker_need: 2 } }));
 
       await runAtTime(0);
 
-      const faith = (await supply.getAllSupplyTraceabilityTransactions()).filter(
-        (t) => t.toId === houseId && t.foodType === 'faith'
+      const water = (await supply.getAllSupplyTraceabilityTransactions()).filter(
+        (t) => t.toId === houseId && t.foodType === 'water'
       );
-      expect(faith.length).toBeGreaterThan(0);
-      expect(faith.reduce((sum, t) => sum + t.quantity, 0)).toBe(12);
-      // From the chapel — and not typed as a market delivery
-      for (const transfer of faith) {
-        expect(transfer.fromId).toBe(chapelId);
-        expect(transfer.fromType).toBe('Chapel');
+      expect(water.length).toBeGreaterThan(0);
+      expect(water.reduce((sum, t) => sum + t.quantity, 0)).toBe(48);
+      // From the tank — and not typed as a market delivery
+      for (const transfer of water) {
+        expect(transfer.fromId).toBe(tankId);
+        expect(transfer.fromType).toBe('WaterTank');
         expect(transfer.transactionType).toBe('distributor_to_consumer');
       }
     });
@@ -468,8 +468,8 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       const january = year.months[0].buildings;
       expect(january.employment).toEqual({ workers: 3, workerNeed: 3, understaffedBuildings: 0 });
       expect(january.houseLevels).toEqual({ 2: 1 });
-      // 20 in the pantry + 2 gathered - 12 eaten, all during the tick: the state is the end of it
-      expect(january.stocks.houses).toBe(10);
+      // 20 in the pantry - 12 eaten, all during the tick: the state is the end of it
+      expect(january.stocks.houses).toBe(8);
       expect(year.endOfYearBuildings.map((b) => b.id).sort()).toEqual([farmId, houseId].sort());
 
       await supply.recordBuildingEvent({

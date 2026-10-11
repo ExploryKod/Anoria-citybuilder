@@ -46,7 +46,7 @@ export function producedCategories(producerType) {
 /**
  * Whether a producer type's output for this category never reaches a hub at all — it declares
  * `deliversTo: 'house'` (see buildingCatalog.js), meaning its OWN 'distributor' role hands it straight to
- * houses (e.g. Chapel's faith). Structurally different from "no eligible client type exists today": that
+ * houses (e.g. the water tank's water). Structurally different from "no eligible client type exists today": that
  * good still goes to a hub, just none happens to draw from it; this one never touches a hub, by design.
  * @param {string} producerType
  * @param {string} category

@@ -255,7 +255,7 @@ export async function bootstrapGameSession(assetManager) {
   if (!sessionApi) {
     throw new Error('sessionApi is not bound after createGame');
   }
-  sessionApi.accounting.ensureCustomsRate();
+  sessionApi.accounting.ensureCustomsDuties();
   // Every hamlet carries its fiscal rates (written once, at creation): a hamlet unlocked later already has them.
   for (const hamlet of await listHamlets()) {
     await sessionApi.accounting.ensureHamletFiscalRates(hamlet.id);

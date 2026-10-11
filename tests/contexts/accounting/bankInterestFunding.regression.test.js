@@ -25,7 +25,7 @@ function settle(bankInterest, otherExpenses = []) {
     sumBankInterestByBuilding: async () => bankInterest,
     sumOtherExpensesByBuilding: async () => otherExpenses,
     listHouses: async () => [],
-    getPublicPay: async () => ({ salaryPerMonth: 0, unemploymentBenefitRate: 0 }),
+    getPublicPay: async () => ({ salaryPerMonth: 100, unemploymentBenefitRate: 0 }),
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0, threshold2: 0, rate2: 0 }),
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
@@ -39,26 +39,26 @@ function settle(bankInterest, otherExpenses = []) {
 }
 
 describe('a bank funds its own wages and corporate tax from the interest it earned', () => {
-  test('loan interest becomes the bank\'s salesHT, which pays its workers and its IS', async () => {
+  test('loan interest becomes the bank\'s salesHT: it pays its payroll from it, and its IS on what is left', async () => {
     const journal = await settle([{ buildingId: 'bank-1', amountHT: 1000 }]);
 
     const wage = journal.find((line) => line.type === 'producer_wage' && line.accountBuildingId === 'bank-1');
     expect(wage).toBeDefined();
-    expect(wage.amount).toBe(100); // 1000 * WAGE_RATE_BY_ROLE.finance (0.1)
+    expect(wage.amount).toBe(300); // 3 workers × the reference salary (100) × the factor of level 1
 
     const householdWage = journal.find((line) => line.type === 'household_wage' && line.accountBuildingId === 'house-1');
     expect(householdWage).toBeDefined();
-    expect(householdWage.amount).toBe(100);
+    expect(householdWage.amount).toBe(300);
 
     const tax = journal.find((line) => line.type === 'corporate_tax' && line.accountBuildingId === 'bank-1');
     expect(tax).toBeDefined();
-    expect(tax.amount).toBe(225); // (1000 - 100 wages - 0 upkeep) * CORPORATE_TAX_RATE (0.25)
+    expect(tax.amount).toBe(175); // (1000 - 300 wages - 0 upkeep) * CORPORATE_TAX_RATE (0.25)
   });
 
-  test('no interest earned means no wage and no tax for the bank that month', async () => {
+  test('no interest earned: the staffed bank still pays its payroll, and owes no tax that month', async () => {
     const journal = await settle([]);
 
-    expect(journal.find((line) => line.type === 'producer_wage' && line.accountBuildingId === 'bank-1')).toBeUndefined();
+    expect(journal.find((line) => line.type === 'producer_wage' && line.accountBuildingId === 'bank-1').amount).toBe(300);
     expect(journal.find((line) => line.type === 'corporate_tax' && line.accountBuildingId === 'bank-1')).toBeUndefined();
   });
 
@@ -69,9 +69,9 @@ describe('a bank funds its own wages and corporate tax from the interest it earn
     );
 
     const wage = journal.find((line) => line.type === 'producer_wage' && line.accountBuildingId === 'bank-1');
-    expect(wage.amount).toBe(100); // wages are a share of sales (salesHT), unaffected by this expense
+    expect(wage.amount).toBe(300); // the payroll follows the staffing, unaffected by this expense
 
     const tax = journal.find((line) => line.type === 'corporate_tax' && line.accountBuildingId === 'bank-1');
-    expect(tax.amount).toBe(150); // (1000 - 100 wages - 0 upkeep - 300 deposit interest) * 0.25, vs 225 without it
+    expect(tax.amount).toBe(100); // (1000 - 300 wages - 0 upkeep - 300 deposit interest) * 0.25, vs 175 without it
   });
 });

@@ -147,9 +147,6 @@ export const bullDozeButton = document.getElementById('bulldoze-btn');
 export const selectButton = document.getElementById('select-btn');
 export const playerButton = document.getElementById('player-btn');
 export const housesButton = document.getElementById('residential-btn');
-export const farmsButton = document.getElementById('farm-btn');
-export const industryButton = document.getElementById('industry-btn');
-export const marketButton = document.getElementById('market-btn');
 export const infrastructureButton = document.getElementById('infrastructure-btn');
 export const bookshopButton = document.getElementById('bookshop-btn');
 

@@ -6,7 +6,7 @@ import {
   COMPANY_MAINTENANCE_SUBSIDY_PERCENT,
   CORPORATE_TAX_RATE,
   HOUSING_MAINTENANCE_SUBSIDY_PERCENT,
-  WAGE_RATE_BY_ROLE,
+  WAGE_FACTOR_BY_SKILL_LEVEL,
 } from '../catalogs/ProducerChargeCatalog.js';
 
 /** A building with no resourceRole of its own that is still lucrative: today, only the bank (it holds and lends
@@ -30,17 +30,20 @@ export function isLucrativeBuilding(type) {
 }
 
 /**
- * The workers' wage rate of a lucrative building type: the first role, in WAGE_RATE_BY_ROLE's order, the type holds
- * — or its own `finance` rate for the bank, which holds no resourceRole at all.
- * @param {string} type
+ * The gross wage of one worker of a building for one month: the city's reference salary times the factor of the skill level its workplace
+ * requires (`employment.requiredSkillLevel`, 1 when it declares none), from the wage grid of the catalog. A skill level the grid does not
+ * declare throws.
+ * @param {{ type: string, referenceSalaryPerMonth: number }} params
  * @returns {number}
  */
-export function wageRateOfBuilding(type) {
-  const roles = getResourceRoles(type).map((entry) => entry.role);
-  const role = ['producer', 'hub', 'distributor'].find((candidate) => roles.includes(candidate));
-  if (role) return WAGE_RATE_BY_ROLE[role];
-  if (financeSkillOf(type)) return WAGE_RATE_BY_ROLE.finance;
-  throw new Error(`[producer] "${type}" is lucrative but holds no producer, hub, goods-seller role or finance skill: it has no wage rate`);
+export function wagePerWorkerOf({ type, referenceSalaryPerMonth }) {
+  const employment = getBuildingDefinition(type)?.employment;
+  if (!employment?.requiredSkill) throw new Error(`[producer] "${type}" has workers but its catalog entry declares no required skill: its wage has no grid line`);
+  const level = employment.requiredSkillLevel ?? 1;
+  const factor = WAGE_FACTOR_BY_SKILL_LEVEL[level];
+  if (factor === undefined) throw new Error(`[producer] the wage grid declares no factor for skill level ${level} ("${type}")`);
+  if (!(referenceSalaryPerMonth > 0)) throw new Error(`[producer] the reference salary must be positive to pay "${type}"'s workers, got ${referenceSalaryPerMonth}`);
+  return centimes(referenceSalaryPerMonth * factor);
 }
 
 /**
@@ -70,14 +73,15 @@ export function tradeLines({ sellerId, buyerId, amountHT }) {
 }
 
 /**
- * The wages a lucrative building pays for one month: its rate on its sales, when it has workers. A building without workers
- * pays none; a building that is not lucrative pays none (its workers are not paid by a company).
- * @param {{ type: string, salesHT: number, workers: number }} workplace
+ * The payroll of a lucrative building for one month: its staffed workers times the wage of its skill level. It follows the staffing, not the
+ * sales: a worker is paid whether the building sells or not, so an idle but staffed building shows a loss. A building without workers pays
+ * none; a building that is not lucrative pays none (its workers are not paid by a company).
+ * @param {{ type: string, workers: number, referenceSalaryPerMonth: number }} workplace
  * @returns {number}
  */
-export function wagesPaidOf({ type, salesHT, workers }) {
+export function payrollOf({ type, workers, referenceSalaryPerMonth }) {
   if (!isLucrativeBuilding(type) || workers <= 0) return 0;
-  return centimes(salesHT * wageRateOfBuilding(type));
+  return centimes(workers * wagePerWorkerOf({ type, referenceSalaryPerMonth }));
 }
 
 /**
@@ -159,7 +163,10 @@ export function buildingChargeLines({ id, type, salesHT, subsidiesHT, purchasesH
   if (lucrative) {
     const profit = centimes(salesHT + subsidiesHT - purchasesHT - wagesHT - ownUpkeep - otherExpensesHT);
     const tax = profit > 0 ? centimes(profit * CORPORATE_TAX_RATE) : 0;
-    add('maintenance', ownUpkeep, id);
+    // The company books its whole upkeep and, apart, the share the city pays it back: its statement shows what the building really
+    // costs and what the city carries. Its cash is the same as paying only the net upkeep.
+    add('maintenance', maintenanceCost, id);
+    add('subsidy_companies_received', subsidy, id);
     add('subsidy_companies', subsidy, null);
     add('corporate_tax', tax, id);
     add('corporate_tax_revenue', tax, null);

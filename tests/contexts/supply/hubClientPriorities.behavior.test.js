@@ -59,7 +59,7 @@ describe('Supply — a hub serves its clients by priority', () => {
       },
       { id: 'Factory-Plate', type: 'Factory-Plate', x: 2, y: 3, stocks: {}, lots: {}, linkedDistributors: [] },
       { id: 'first', type: 'Market-Stall-Red', x: 6, y: 3, stocks: {}, goodsHubId: 'warehouse' },
-      { id: 'second', type: 'Market-Stall', x: 7, y: 3, stocks: {}, goodsHubId: 'warehouse' },
+      { id: 'second', type: 'Market-Stall-Red', x: 7, y: 3, stocks: {}, goodsHubId: 'warehouse' },
     ]);
   });
 
@@ -71,8 +71,8 @@ describe('Supply — a hub serves its clients by priority', () => {
     new TransferHubToHub(repo, serving()).execute({ targetId, period: { turn }, demand, category: 'plate' });
 
   test('the catalog\'s default order is used until the player saves one', () => {
-    expect(resolveClientPriorities('Factory-Plate').order.length).toBeGreaterThan(1);
-    expect(resolveClientPriorities('Factory-Plate', { order: ['Market-Stall-Red'], disabled: [] }).order[0]).toBe('Market-Stall-Red');
+    expect(resolveClientPriorities('Factory-Pot').order.length).toBeGreaterThan(1);
+    expect(resolveClientPriorities('Factory-Pot', { order: ['House-Red'], disabled: [] }).order[0]).toBe('House-Red');
   });
 
   test('a client ranked first keeps what it needs; the next one only gets the rest', async () => {
@@ -105,7 +105,7 @@ describe('Supply — a hub serves its clients by priority', () => {
     const household = resolveClientPriorities('Lumberjack').order;
     const industrial = resolveClientPriorities('Lumberjack-Industry').order;
     expect([...household].sort()).toEqual([...industrial].sort());
-    expect(household[0]).toBe('Market-Stall');
+    expect(household[0]).toBe('Market-Stall-Red');
     expect(industrial[0]).toBe('Factory-Furniture');
     expect(household).toContain('Factory-Furniture');
   });
@@ -125,7 +125,7 @@ describe('Supply — a hub serves its clients by priority', () => {
 
   test('the olive grove is bought by the oil press alone; its oil by the markets — all read from the catalog', () => {
     expect(resolveClientPriorities('Farm-Olive').order).toEqual(['Factory-Oil']);
-    expect(resolveClientPriorities('Factory-Oil').order).toEqual(expect.arrayContaining(['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red']));
+    expect(resolveClientPriorities('Factory-Oil').order).toEqual(expect.arrayContaining(['Market-Stall-Red', 'Market-Stall-Red', 'Market-Stall-Red']));
     expect(resolveClientPriorities('Factory-Oil').order).not.toContain('Factory-Oil');
   });
 

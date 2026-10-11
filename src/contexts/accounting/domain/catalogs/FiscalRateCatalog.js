@@ -43,8 +43,33 @@ export const DEFAULT_VAT_GENERAL_RATE_PERCENT = 0;
 export const DEFAULT_VAT_UNIFORM = false;
 export const VAT_RATE_BOUNDS = Object.freeze({ min: 0, max: 50, integer: true });
 
-/** The city's customs rate, as a fraction of the sale (0.15 = 15 %). */
-export const CUSTOMS_RATE_BOUNDS = Object.freeze({ min: 0, max: 0.5 });
+/**
+ * A customs duty, as a fraction of the value of what crosses the border (0.15 = 15 %). One duty per traded good and per
+ * flow, set in the customs admin panel: an export duty is paid by the exporter to the city; an import duty by the
+ * merchants who import the good, also to the city, on the price plus the transport (not on their own margin). As in the real world, the general default taxes imports lightly and
+ * leaves exports free, and a few goods stand apart (an excise on energy, a levy on a raw material that leaves).
+ */
+export const CUSTOMS_RATE_BOUNDS = Object.freeze({ min: 0, max: 1 });
+export const CUSTOMS_FLOWS = Object.freeze(['import', 'export']);
+export const DEFAULT_CUSTOMS_DUTY = Object.freeze({ import: 0.1, export: 0 });
+/** Goods whose default duty differs from the general one, per flow. */
+export const DEFAULT_CUSTOMS_DUTY_BY_GOOD = Object.freeze({
+  coal: Object.freeze({ import: 0.2 }),
+  petrol: Object.freeze({ import: 0.3 }),
+  uranium: Object.freeze({ import: 0.4 }),
+  exoticWood: Object.freeze({ import: 0.15 }),
+  wood: Object.freeze({ export: 0.15 }),
+});
+
+/**
+ * @param {'import' | 'export'} flow
+ * @param {string} good
+ * @returns {number} the duty a city starts with for this good
+ */
+export function defaultCustomsDuty(flow, good) {
+  if (!CUSTOMS_FLOWS.includes(flow)) throw new Error(`[fiscal] unknown customs flow "${flow}"`);
+  return DEFAULT_CUSTOMS_DUTY_BY_GOOD[good]?.[flow] ?? DEFAULT_CUSTOMS_DUTY[flow];
+}
 
 /**
  * The range of every fiscal slider the admin panels show, in the unit the slider shows (percent for a rate).

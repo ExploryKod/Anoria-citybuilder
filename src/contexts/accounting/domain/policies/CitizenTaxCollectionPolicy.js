@@ -6,8 +6,7 @@ import {
 import { listResidentialTypes, normalizeResidentialTypeLabel } from '../../../../shared/building-identity/index.js';
 
 /**
- * Level 1 (autarky / hunter-gatherer) houses are self-sufficient and pay no
- * citizen tax — only level 2 (group profession, road-connected) houses do.
+ * Level 1 (the village) houses pay no citizen tax — only houses from level 2 do.
  * Missing `level` defaults to 1 (matches Housing's own default for
  * un-migrated / freshly-placed rows), so it's exempt until promoted.
  *
@@ -66,8 +65,12 @@ function* taxedHouses(houses, taxPerCapita) {
       continue;
     }
 
-    const statusKey = resolveCitizenStatusFromLevel(house.level ?? 1);
-    const profile = getCitizenStatusProfile(statusKey);
+    // The village (level 1) is untaxed: its residents work and live off the land before the city's economy begins.
+    const level = house.level ?? 1;
+    if (level <= 1) {
+      continue;
+    }
+    const profile = getCitizenStatusProfile(resolveCitizenStatusFromLevel(level));
 
     if (!profile.accounting.paysCitizenTax) {
       continue;

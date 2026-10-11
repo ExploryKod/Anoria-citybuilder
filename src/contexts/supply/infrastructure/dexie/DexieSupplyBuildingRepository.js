@@ -42,7 +42,6 @@ export class DexieSupplyBuildingRepository {
       neighbors: house.neighbors || [],
       lastProductionYear: house.lastProductionYear ?? null,
       lastConsumptionMonth: house.lastConsumptionMonth ?? null,
-      lastSubsistenceMonth: house.lastSubsistenceMonth ?? null,
       lastConsumption: house.lastConsumption ?? null,
       pop: house.pop ?? 0,
       level: house.level ?? 1,

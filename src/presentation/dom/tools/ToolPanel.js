@@ -19,7 +19,7 @@ import {
 import { BUILDING_ASSETS, BUILDING_THEME_COLORS } from '../../three/assets/buildingAssets.js';
 import { NATURE_ASSETS } from '../../three/assets/natureAssets.js';
 import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
-import { getDirectToolForCategory } from '../../three/assets/buildingCategories.js';
+import { getDirectToolForCategory, toolbarGroupOf } from '../../three/assets/buildingCategories.js';
 
 export { getDirectToolForCategory };
 
@@ -74,7 +74,7 @@ function catalogButton(toolId) {
  */
 function catalogClustersByGroup(group) {
   const ids = Object.entries(ASSET_CATALOG)
-    .filter(([, entry]) => entry.button?.group === group)
+    .filter(([id, entry]) => entry.button && (BUILDING_ASSETS[id] ? toolbarGroupOf(id) : entry.button.group) === group)
     .map(([id]) => id);
   const order = [];
   const buckets = new Map();
@@ -120,12 +120,13 @@ export function bindToolPanelDeps(panelDeps) {
 const GROUP_CREATORS = {
   houses: () => fillPanelFromToolIds('houses'),
   residential: () => fillPanelFromToolIds('houses'),
-  farms: () => fillPanelFromToolIds('farms'),
-  factories: () => fillPanelFromToolIds('factories'),
-  warehouses: () => fillPanelFromToolIds('warehouses'),
+  // The three social classes: each lists what its houses staff (farms, industries and energy for the artisans, markets and
+  // warehouses for the merchants, water, health and safety for the savants).
+  artisans: () => fillPanelFromToolIds('artisans'),
+  merchants: () => fillPanelFromToolIds('merchants'),
+  scholars: () => fillPanelFromToolIds('scholars'),
   // The road tool and its variants have their own pill (Routes): not listed again here.
   infrastructure: () => fillPanelFromToolIds('infrastructure', { exclude: listRoadTypes() }),
-  public: () => fillPanelFromToolIds('public'),
   nature: () => fillPanelFromToolIds('nature'),
   decoration: () => fillPanelFromToolIds('decoration'),
   tombs: () => fillPanelFromToolIds('tombs'),

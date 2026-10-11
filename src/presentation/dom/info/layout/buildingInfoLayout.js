@@ -275,6 +275,39 @@ export function appendHouseholdSkills(container, skills) {
 }
 
 /**
+ * Where a household works: each employer category with its icon and how many of the household's people work there.
+ * `employers` is null when the city could not say (a note, never an empty row that would read as "nobody works").
+ * @param {HTMLElement} container
+ * @param {ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }> | null} employers
+ */
+export function appendHouseholdEmployers(container, employers) {
+  const wrap = document.createElement('div');
+  wrap.className = 'building-info-skills building-info-employers';
+
+  const title = document.createElement('h3');
+  title.className = 'building-info-section-label';
+  title.textContent = 'Employeurs';
+  wrap.appendChild(title);
+
+  if (employers === null) {
+    const note = document.createElement('p');
+    note.className = 'building-info-footnote';
+    note.textContent = "Les employeurs de cette maison ne sont pas disponibles.";
+    wrap.appendChild(note);
+  } else if (employers.length > 0) {
+    appendIconStatRow(
+      wrap,
+      employers.map((employer) => ({ emoji: employer.emoji, value: employer.count, label: employer.label, ariaLabel: employer.ariaLabel })),
+    );
+  } else {
+    return null;
+  }
+
+  container.appendChild(wrap);
+  return wrap;
+}
+
+/**
  * One metric card's DOM element — the card shape any icon+value fact uses (a resource's have/need, a tier
  * requirement's current/target, an activity's material/step/product...): {icon, label, met, valueText,
  * ariaLabel, detailText?, keywords?}. Shared by `appendMetricCards` (one even grid) and
@@ -372,9 +405,7 @@ export function appendStockIconRow(container, stocks, footnote = null) {
 /**
  * @param {HTMLElement} container
  * @param {{
- *   subsistence?: ReadonlyArray<{ emoji: string, value: string | number, ariaLabel: string }>,
  *   farms?: ReadonlyArray<{ emoji: string, value: string | number, ariaLabel: string }>,
- *   showSubsistence?: boolean,
  * }} groups
  * @param {{ footnote?: string | null }} [options]
  */
@@ -389,11 +420,6 @@ export function appendGroupedStockSections(container, groups, options = {}) {
 
   const groupsRow = document.createElement('div');
   groupsRow.className = 'building-info-stock-groups';
-
-  const showSubsistence = groups.showSubsistence !== false && groups.subsistence?.length;
-  if (showSubsistence) {
-    groupsRow.appendChild(buildStockGroup('Chasse-cueillette', groups.subsistence));
-  }
 
   if (groups.farms?.length) {
     groupsRow.appendChild(buildStockGroup('Produits des fermes', groups.farms));

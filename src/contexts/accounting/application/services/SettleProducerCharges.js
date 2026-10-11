@@ -5,7 +5,7 @@ import {
   serviceSubsidyLines,
   tradeLines,
   wageSplitLines,
-  wagesPaidOf,
+  payrollOf,
   withholdIncomeTax,
 } from '../../domain/policies/ProducerChargePolicy.js';
 import { BUSINESS_ACCOUNT, PERSONAL_ACCOUNT } from '../../domain/policies/AccountKeyPolicy.js';
@@ -27,6 +27,7 @@ const ECONOMY_REGISTER_KINDS = new Set([
   'household_wage',
   'maintenance',
   'subsidy_companies',
+  'subsidy_companies_received',
   'subsidy_housing',
   'corporate_tax',
 ]);
@@ -46,6 +47,7 @@ const LINE_LABELS = Object.freeze({
   service_purchase: 'Achats de services',
   service_subsidy: 'Subvention versée',
   service_subsidy_received: 'Subvention reçue',
+  subsidy_companies_received: 'Subvention entretien reçue',
   vat: 'TVA sur les services',
   income_tax: 'Impôt sur le revenu retenu',
   payroll_tax: 'Impôt sur le revenu perçu',
@@ -194,7 +196,7 @@ export class SettleProducerCharges {
       }
     }
 
-    const { payable, wagesByBuilding } = this.#planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse });
+    const { payable, wagesByBuilding } = this.#planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse, referenceSalaryPerMonth: publicPay.salaryPerMonth });
 
     for (const pair of pairs) {
       for (const line of tradeLines(pair)) {
@@ -326,7 +328,7 @@ export class SettleProducerCharges {
    * on the wages a house receives: the paid set can only shrink, so it is found by repeating until it stops changing.
    * @returns {{ payable: boolean[], wagesByBuilding: Map<string, { salesHT: number, wagesHT: number }> }}
    */
-  #planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse }) {
+  #planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse, referenceSalaryPerMonth }) {
     let payable = bills.map(() => true);
     for (let round = 0; round <= bills.length + 1; round += 1) {
       const grossByHouse = new Map();
@@ -346,7 +348,8 @@ export class SettleProducerCharges {
         const salesHT = centimes(sumWhere(pairs, (pair) => pair.sellerId === building.id) + goodsToHousesHT + servicesHT + bankInterestHT);
         const sources = building.workerSources ?? {};
         const workers = Object.values(sources).reduce((sum, count) => sum + count, 0);
-        const wagesHT = wagesPaidOf({ type: building.type, salesHT, workers });
+        // The payroll follows the staffing, not the sales: the same whatever the month sold.
+        const wagesHT = payrollOf({ type: building.type, workers, referenceSalaryPerMonth });
         wagesByBuilding.set(building.id, { salesHT, wagesHT });
         for (const line of wageSplitLines({ workplaceId: building.id, wagesHT, sources })) {
           if (line.kind !== 'household_wage') continue;

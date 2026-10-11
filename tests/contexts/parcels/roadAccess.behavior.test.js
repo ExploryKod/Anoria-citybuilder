@@ -130,7 +130,7 @@ describe('Recalcul et consultation de l\'accès routier', () => {
     const h = harnessFor(
       [
         makeParcelHouseSnapshot({ instanceId: fieldId, type: 'Farm-Wheat' }),
-        makeParcelHouseSnapshot({ instanceId: marketId, type: 'Market-Stall' }),
+        makeParcelHouseSnapshot({ instanceId: marketId, type: 'Market-Stall-Red' }),
       ],
       []
     );

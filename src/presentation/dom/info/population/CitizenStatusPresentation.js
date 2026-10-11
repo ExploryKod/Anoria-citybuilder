@@ -4,16 +4,6 @@
 
 import { getResidentialGroupLabel } from '../../shell/ResidentialGroupLabels.js';
 
-/** @type {Readonly<Record<string, { label: string, emoji: string, singular: string, plural: string }>>} */
-export const STATUS_PRESENTATION = Object.freeze({
-  'hunter-gatherer': Object.freeze({
-    label: 'Chasseurs-cueilleurs',
-    emoji: '🏹',
-    singular: 'chasseur-cueilleur',
-    plural: 'chasseurs-cueilleurs',
-  }),
-});
-
 /**
  * The citizens of one social category: named after the category the catalog gives its house
  * (`Artisans` → "citoyens artisans"), so renaming it there renames it here. Only the
@@ -52,7 +42,4 @@ export const GROUP_CITIZEN_PRESENTATION = Object.freeze({
 
 export const DEFAULT_RESIDENTIAL_GROUP = 'artisans';
 
-export const PROFILE_DISPLAY_ORDER = Object.freeze([
-  'hunter-gatherer',
-  'worker',
-]);
+export const PROFILE_DISPLAY_ORDER = Object.freeze(['worker']);

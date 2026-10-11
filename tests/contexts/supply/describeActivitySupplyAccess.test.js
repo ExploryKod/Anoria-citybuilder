@@ -58,6 +58,26 @@ describe('DescribeActivitySupplyAccess', () => {
     expect(gaps).toContainEqual({ category: 'decoratedPot', inputCategory: 'pot', role: 'hub', status: 'no-hub' });
   });
 
+  test('an import deal needs a trade warehouse to be collected: without one, no-collector names it (a plain warehouse does not hold deals)', async () => {
+    const id = ids('merchants', 'wh');
+    const repo = new InMemoryRepository([
+      { id: id.merchants, type: 'House-Blue', x: 0, y: 0 },
+      { id: id.wh, type: 'Warehouse', x: 3, y: 0 },
+    ]);
+    const gaps = await new DescribeActivitySupplyAccess(repo).execute({ id: id.merchants, type: 'House-Blue', x: 0, y: 0 });
+    expect(gaps).toContainEqual({ category: 'dealCoal', inputCategory: 'dealCoal', role: 'hub', status: 'no-collector' });
+  });
+
+  test('with an operational trade warehouse, the import deals have a collector', async () => {
+    const id = ids('merchants', 'trade');
+    const repo = new InMemoryRepository([
+      { id: id.merchants, type: 'House-Blue', x: 0, y: 0 },
+      { id: id.trade, type: 'TradeWarehouse', x: 40, y: 0 },
+    ]);
+    const gaps = await new DescribeActivitySupplyAccess(repo).execute({ id: id.merchants, type: 'House-Blue', x: 0, y: 0 });
+    expect(gaps.some((gap) => gap.status === 'no-collector' && gap.category === 'dealCoal')).toBe(false);
+  });
+
   test('a building without a recipe (a plain source) has no gap to report', async () => {
     const repo = new InMemoryRepository([]);
     const gaps = await new DescribeActivitySupplyAccess(repo).execute({ id: 'x', type: 'Lumberjack', x: 0, y: 0 });

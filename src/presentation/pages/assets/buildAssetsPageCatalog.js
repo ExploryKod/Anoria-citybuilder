@@ -10,7 +10,10 @@ import {
 } from '../../../shared/building-catalog/kenneyCityKitRegistry.generated.js';
 import {
   ASSET_IDS_BY_CATEGORY,
+  COMMERCE_MODEL_GROUPS,
+  DECORATION_MODEL_GROUPS,
   HOUSE_MODEL_GROUPS,
+  INDUSTRY_MODEL_GROUPS,
   NATURE_GAME_IDS,
   NATURE_MESH_ALIASES,
 } from '../../../shared/building-catalog/assetIdsByCategory.js';
@@ -31,7 +34,7 @@ import { PLAYABLE_CATEGORY_FILTER_GROUP } from './assetsPageFilters.js';
 /** @type {Readonly<Record<string, string>>} */
 const KENNEY_KIT_RESOURCE_DIRS = Object.freeze({
   commercial: 'kenney_city-kit-commercial_2.1',
-  industrial: 'kenney_city-kit-industrial_1.0',
+  industrial: 'kenney_city-kit-industrial_2.0',
   suburban: 'kenney_city-kit-suburban_20',
 });
 
@@ -67,6 +70,7 @@ export const ASSET_CATEGORY_LABELS = Object.freeze({
   farms: 'Agriculture',
   industry: 'Industrie',
   markets: 'Commerce',
+  decoration: 'Jardin et décor',
   infrastructure: 'Infrastructure & routes',
   nature: 'Nature procédurale',
   zones: 'Zones',
@@ -78,6 +82,7 @@ export const ASSET_CATEGORY_ORDER = Object.freeze([
   'farms',
   'industry',
   'markets',
+  'decoration',
   'infrastructure',
   'nature',
   'zones',
@@ -213,7 +218,55 @@ function buildItemFromCatalogEntry(id, category, filterGroup) {
   };
 }
 
-const UNCLASSIFIED_HOUSE_GROUP = Object.freeze({ id: 'unclassified', label: 'Modèles de maison non classés' });
+/**
+ * For each model of a category, the game's buildings that wear it (no level: they do not evolve) — read from the
+ * mesh catalog. Houses are left out: they evolve, see `buildHouseModelUsage`.
+ *
+ * @param {string} category A key of `KENNEY_CITY_KIT_TOOLS_BY_CATEGORY`.
+ * @returns {Map<string, Array<{ name: string, levels?: number[] }>>}
+ */
+function buildBuildingModelUsage(category) {
+  const modelIds = new Set(KENNEY_CITY_KIT_TOOLS_BY_CATEGORY[category]);
+  /** @type {Map<string, Array<{ name: string }>>} */
+  const usage = new Map();
+  for (const [gameId, entry] of Object.entries(BUILDING_ASSETS)) {
+    // A mesh entry with no building in the catalog (a legacy alias) is not a building of the game.
+    if (entry.source !== 'kenneyCityKit' || modelIds.has(gameId) || !buildingCatalog[gameId] || buildingCatalog[gameId].residentialGroup) continue;
+    const modelId = entry.geometry.buildingId;
+    if (!modelIds.has(modelId)) continue;
+    usage.set(modelId, [...(usage.get(modelId) ?? []), { name: buildingName(gameId) }]);
+  }
+  return usage;
+}
+
+/**
+ * How each category of Kenney models is laid out on the page: its groups (what the models look like), the
+ * section prefix, the label of the visible "unclassified" group, and who wears each model. A category absent
+ * here keeps one section per pack. The game's own ids of such a category are not cards of their own: each
+ * model's card says which of them wear it.
+ */
+const MODEL_LAYOUT_BY_CATEGORY = Object.freeze({
+  houses: Object.freeze({
+    groups: HOUSE_MODEL_GROUPS,
+    unclassified: Object.freeze({ id: 'unclassified', label: 'Modèles de maison non classés' }),
+    usage: () => buildHouseModelUsage(),
+  }),
+  markets: Object.freeze({
+    groups: COMMERCE_MODEL_GROUPS,
+    unclassified: Object.freeze({ id: 'unclassified', label: 'Modèles de commerce non classés' }),
+    usage: () => buildBuildingModelUsage('markets'),
+  }),
+  decoration: Object.freeze({
+    groups: DECORATION_MODEL_GROUPS,
+    unclassified: Object.freeze({ id: 'unclassified', label: 'Pièces de décor non classées' }),
+    usage: () => buildBuildingModelUsage('decoration'),
+  }),
+  industry: Object.freeze({
+    groups: INDUSTRY_MODEL_GROUPS,
+    unclassified: Object.freeze({ id: 'unclassified', label: 'Modèles industriels non classés' }),
+    usage: () => buildBuildingModelUsage('industry'),
+  }),
+});
 
 /**
  * For each house model, the game's houses that wear it and at which levels: what `resolveVisualBuildingId`
@@ -238,29 +291,30 @@ function buildHouseModelUsage() {
   return new Map(
     [...levelsByModel].map(([modelId, byHouse]) => [
       modelId,
-      [...byHouse].map(([houseName, levels]) => ({ houseName, levels })),
+      [...byHouse].map(([name, levels]) => ({ name, levels })),
     ]),
   );
 }
 
 /**
- * Splits the houses of a pack by kind of house (`HOUSE_MODEL_GROUPS`). A
- * model in no group lands in a visibly named "unclassified" group so it gets classified, rather than hiding in one of the others.
+ * Splits the models of a category by kind (its groups in `MODEL_LAYOUT_BY_CATEGORY`). A model in no group lands in
+ * a visibly named "unclassified" group so it gets classified, rather than hiding in one of the others.
  *
+ * @param {string} category
  * @param {ReadonlyArray<{ id: string }>} items
  * @returns {Array<{ sectionId: string, sectionLabel: string, items: object[] }>}
  */
-function splitHousesByModelGroup(items) {
+function splitByModelGroup(category, items) {
+  const layout = MODEL_LAYOUT_BY_CATEGORY[category];
   const groupOfId = new Map();
-  for (const group of HOUSE_MODEL_GROUPS) {
+  for (const group of layout.groups) {
     for (const assetId of group.assetIds) groupOfId.set(assetId, group);
   }
-  const usage = buildHouseModelUsage();
-  const groupOf = (item) => groupOfId.get(item.id) ?? UNCLASSIFIED_HOUSE_GROUP;
-  const groups = [...HOUSE_MODEL_GROUPS, UNCLASSIFIED_HOUSE_GROUP];
-  return groups
+  const usage = layout.usage();
+  const groupOf = (item) => groupOfId.get(item.id) ?? layout.unclassified;
+  return [...layout.groups, layout.unclassified]
     .map((group) => ({
-      sectionId: `houses-${group.id}`,
+      sectionId: `${category}-${group.id}`,
       sectionLabel: group.label,
       items: items
         .filter((item) => groupOf(item) === group)
@@ -328,11 +382,9 @@ function buildPlayableAssetSections() {
     for (const packId of PLAYABLE_PACK_ORDER) {
       const packItems = items.filter((item) => item.packId === packId);
       if (packItems.length === 0) continue;
-      if (category === 'houses' && packId === KENNEY_CITY_PACK_ID) {
-        // The game's own house ids (one per social category) are not cards of their own: each model's card says
-        // which of them wear it, and at which levels.
-        const modelItems = packItems.filter((item) => KENNEY_CITY_KIT_TOOLS_BY_CATEGORY.houses.includes(item.id));
-        for (const houseSection of splitHousesByModelGroup(modelItems)) {
+      if (MODEL_LAYOUT_BY_CATEGORY[category] && packId === KENNEY_CITY_PACK_ID) {
+        const modelItems = packItems.filter((item) => KENNEY_CITY_KIT_TOOLS_BY_CATEGORY[category].includes(item.id));
+        for (const houseSection of splitByModelGroup(category, modelItems)) {
           sections.push({
             filterGroup,
             packId,

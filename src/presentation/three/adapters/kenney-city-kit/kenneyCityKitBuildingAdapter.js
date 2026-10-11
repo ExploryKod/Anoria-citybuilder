@@ -48,6 +48,7 @@ registerBuildingSourceAdapter('kenneyCityKit', {
   createMesh(x, y, { catalogEntry, plotBuildingId, rotationStep, showPlot }) {
     return getKenneyCityKitMeshAdapter().createBuilding(x, y, {
       buildingId: catalogEntry.geometry.buildingId,
+      parts: catalogEntry.geometry.parts,
       plotBuildingId,
       rotationStep,
       showPlot,

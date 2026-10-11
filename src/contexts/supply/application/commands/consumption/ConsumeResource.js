@@ -25,7 +25,7 @@ import {
  *
  * Only ever targets the 'quantity'-consumption consumer entry — a building
  * can also hold a 'flag'-consumption consumer entry (a service coverage
- * need, e.g. Chapel's faith service) with no stock to drain at all; that
+ * need, e.g. the water tank's water service) with no stock to drain at all; that
  * entry is handled entirely inside DistributeResourceToConsumers.js and
  * never reaches this command.
  */

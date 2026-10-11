@@ -1,6 +1,5 @@
 import {
   getConsumableCategories,
-  getSelfProducedCategories,
   getSuppliedCategories,
   getResourceStockShape,
 } from '../../../../shared/building-catalog/resourceRoleQueries.js';
@@ -22,16 +21,6 @@ import {
 function sumCategories(stocks, categories) {
   if (!stocks) return 0;
   return categories.reduce((sum, category) => sum + (stocks[category] || 0), 0);
-}
-
-/**
- * Goods the household produces itself (gathering), outside the market circuit.
- *
- * @param {FoodStocks | null | undefined} stocks
- * @returns {number}
- */
-export function gatheringBasketsFromStocks(stocks) {
-  return sumCategories(stocks, getSelfProducedCategories());
 }
 
 /**

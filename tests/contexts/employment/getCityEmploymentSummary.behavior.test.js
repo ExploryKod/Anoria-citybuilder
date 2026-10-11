@@ -147,7 +147,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
       const summary = computeCityEmploymentSummary([
         house('h1', 10, 1),
         workplace('farm', { workerNeed: 3, sector: 1, worker: 2, workerSources: { h1: 2 } }),
-        workplace('market', { workerNeed: 2, sector: 2, worker: 2, type: 'Market-Stall', workerSources: { h1: 2 } }),
+        workplace('market', { workerNeed: 2, sector: 2, worker: 2, type: 'Market-Stall-Red', workerSources: { h1: 2 } }),
       ]);
 
       expect(summary.totalAssigned).toBe(4);
@@ -163,7 +163,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
           sector: 2,
           roadCount: 0,
           worker: 0,
-          type: 'Market-Stall',
+          type: 'Market-Stall-Red',
         }),
       ]);
 
@@ -189,7 +189,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
         house('red-house', 5, 1, 'House-Red'), // artisans
         house('blue-house', 3, 1, 'House-Blue'), // commerçants
         workplace('farm', { workerNeed: 3, sector: 1, worker: 3 }), // artisans sector
-        workplace('market', { workerNeed: 2, sector: 2, worker: 1, type: 'Market-Stall' }), // commerçants sector
+        workplace('market', { workerNeed: 2, sector: 2, worker: 1, type: 'Market-Stall-Red' }), // commerçants sector
       ]);
 
       expect(summary.byGroup['artisans']).toEqual({
@@ -219,7 +219,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
     test('level 1 (autarkic) houses now count toward their group pool (headcount is skill-agnostic here)', () => {
       // computeCityEmploymentSummary's byGroup is a coarse, skill-agnostic
       // pool/assigned breakdown (see its own docstring) — it doesn't know a
-      // level-1 house can only actually staff Chapel (sector 6), not this
+      // level-1 house can only actually staff the water tank (sector 6), not this
       // farm (sector 1); DistributeCityWorkers is what enforces that via
       // skill matching, and is covered separately.
       const summary = computeCityEmploymentSummary([

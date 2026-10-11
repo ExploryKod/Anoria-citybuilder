@@ -13,7 +13,7 @@ import {
   residentialGroupForType,
 } from '../../../shell/ResidentialGroupLabels.js';
 import { computeHouseCitizenComposition } from '../../../../../composition/housingCatalog.js';
-import { buildingName, goodIcon, goodLabel, goodUnit } from '../../../shell/CatalogVocabulary.js';
+import { buildingIconHtml, buildingName, goodIcon, goodLabel, goodUnit } from '../../../shell/CatalogVocabulary.js';
 import {
   getConsumerEntries,
   getQuantityConsumerEntry,
@@ -47,8 +47,38 @@ export function formatHouseLayoutOptions() {
   };
 }
 
+/** The unemployment icon, the same picture as the HUD's "Chômage" tab (game.html) and the buildings' no-work status. */
+const UNEMPLOYED_ICON_HTML = '<img src="/resources/textures/status/no-work_colored.png" alt="" class="building-info-building-icon" decoding="async" />';
+
 /**
- * Savoirs tab — skills grid only. No group/pop chips here: the panel header
+ * Where a household's people work: one entry per type of building that employs some of them (the most first), then
+ * those with no job (always, even at 0). Read from the household's residents (the accounting's one reading of who works where), never
+ * counted a second time. Null when the residents could not be read.
+ * @param {ReadonlyArray<{ status: string, workplaceType: string | null }> | null | undefined} residents
+ * @returns {Array<{ emoji: string, count: number, label: string, ariaLabel: string }> | null}
+ */
+function employersOf(residents) {
+  if (!residents) return null;
+  /** @type {Map<string, number>} */
+  const workersByType = new Map();
+  let withoutJob = 0;
+  for (const resident of residents) {
+    if (resident.status === 'worker') workersByType.set(resident.workplaceType, (workersByType.get(resident.workplaceType) ?? 0) + 1);
+    else withoutJob += 1;
+  }
+  const employers = [...workersByType]
+    .sort(([typeA, a], [typeB, b]) => b - a || typeA.localeCompare(typeB))
+    .map(([type, count]) => {
+      const name = buildingName(type);
+      return { emoji: buildingIconHtml(type), count, label: name, ariaLabel: `${count} de cette maison travaillent : ${name}` };
+    });
+  // Always shown, even at 0: the player learns that the category exists.
+  employers.push({ emoji: UNEMPLOYED_ICON_HTML, count: withoutJob, label: 'sans emploi', ariaLabel: `${withoutJob} de cette maison sont sans emploi` });
+  return employers;
+}
+
+/**
+ * Savoirs tab — skills grid, then where the household works. No group/pop chips here: the panel header
  * already shows the residential group and "x/max hab.", so repeating them
  * in the tab body would be pure duplication.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
@@ -65,6 +95,7 @@ export function formatHouseSkillsModel(vm) {
 
   return {
     skills,
+    employers: employersOf(vm.residents),
     anchorX: vm.anchorX,
     anchorY: vm.anchorY,
   };
@@ -88,7 +119,7 @@ const formatNumber = (value) => Number(value).toLocaleString('fr-FR', { maximumF
  * entries — a new need or good is a catalog entry, never a change here.
  *
  * Services (2026-10-10) sit under their own "Services" need rather than one card each: a service — flag
- * (doctor, school, ...) or quantity (Chapel's faith) alike — is still a consumer entry and still a fact
+ * (doctor, school, ...) or quantity (the water tank's water) alike — is still a consumer entry and still a fact
  * the house consumed or did not, so it belongs here exactly like the diet does. Which categories are
  * "services" is read from the SAME catalog fact the Services tab's evolution requirements and the accounting
  * side already use (ResourceCategoryCatalog's `kind: 'service'`), never a second list.
@@ -120,7 +151,7 @@ export function formatHouseResourcesModel(vm) {
 /**
  * The "Services" need: one sub-card per service the house's catalog gives it, picked together under one
  * aggregate ("6/8 servis") exactly like the diet's own goods sit under "Nourriture". A quantity-mode
- * service (Chapel's faith) reuses `needOf` — it IS an ordinary quantity consumer entry, nothing special
+ * service (the water tank's water) reuses `needOf` — it IS an ordinary quantity consumer entry, nothing special
  * about it; a flag-mode one (doctor, school, ...) reads `servedFlags`, the same "served this period" fact
  * the evolution requirements read too (see servicesInfoFormat.js) — this card asks "was I served", that
  * one asks "does it count toward my next tier", so the same fact legitimately appears in both places.
@@ -130,7 +161,7 @@ export function formatHouseResourcesModel(vm) {
 function servicesNeedOf(serviceEntries, vm) {
   const details = serviceEntries.map((entry) => {
     if ((entry.consumption ?? 'quantity') === 'quantity') {
-      return needOf(entry, vm[entry.outcomeField] ?? null, vm.buildingPop, null).card;
+      return needOf(entry, vm.outcomes?.[entry.outcomeField] ?? null, vm.buildingPop, null).card;
     }
     return flagServiceCard(entry.categories[0], vm);
   });
@@ -198,7 +229,7 @@ function needOf(entry, last, pop, shortfall) {
   const { categories } = entry;
   // A single-category entry legally omits `totalKey` (it's its own total — see buildingCatalog.js's doc
   // and ResourceRolePolicy.getTotalKeyForRole); resolve it the same way instead of assuming it is always
-  // explicit, or a quantity-mode need with one good (e.g. Chapel's faith) renders as "…"/"…".
+  // explicit, or a quantity-mode need with one good (e.g. the water tank's water) renders as "…"/"…".
   const totalKey = entry.totalKey ?? getTotalKeyForCategory(categories[0]);
   const whole = (value) => Math.max(0, Math.floor(Number(value) || 0));
 

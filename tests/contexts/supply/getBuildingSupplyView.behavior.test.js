@@ -34,7 +34,7 @@ describe('Supply — GetBuildingSupplyView', () => {
       [
       createSupplyBuildingView({
         id: 'Market-Stall-5-5',
-        type: 'Market-Stall',
+        type: 'Market-Stall-Red',
         stocks: { wheat: 10, food: 10 },
         maxStock: 500,
         isBuying: true,
@@ -69,7 +69,7 @@ describe('Supply — GetBuildingSupplyView', () => {
       {
         'Market-Stall-5-5': createSupplyBuildingSnapshot({
           id: 'Market-Stall-5-5',
-          type: 'Market-Stall',
+          type: 'Market-Stall-Red',
           roadCount: 1,
           worker: 2,
           workerNeed: 2,
@@ -105,7 +105,7 @@ describe('Supply — GetBuildingSupplyView', () => {
     const repo = new InMemorySupplyBuildingRepository([
       createSupplyBuildingView({
         id: 'Market-Stall-1-1',
-        type: 'Market-Stall',
+        type: 'Market-Stall-Red',
         stocks: { food: 0 },
         neighbors: [{ name: 'Farm-Wheat', type: 'Farm-Wheat', x: 1, y: 2 }],
       }),
@@ -143,7 +143,7 @@ describe('Supply — GetBuildingSupplyView', () => {
       [
         createSupplyBuildingView({
           id: 'Market-Stall-1-1',
-          type: 'Market-Stall',
+          type: 'Market-Stall-Red',
           stocks: { food: 0 },
           isBuying: true,
         }),
@@ -157,7 +157,7 @@ describe('Supply — GetBuildingSupplyView', () => {
       {
         'Market-Stall-1-1': createSupplyBuildingSnapshot({
           id: 'Market-Stall-1-1',
-          type: 'Market-Stall',
+          type: 'Market-Stall-Red',
           roadCount: 1,
           worker: 0,
           workerNeed: 2,
@@ -178,12 +178,11 @@ describe('Supply — GetBuildingSupplyView', () => {
 
   describe('classifySupplyKind — flag-distributor services vs quantity-distributor markets', () => {
     test('a quantity distributor (sells a depleting stock) classifies as market', () => {
-      expect(classifySupplyKind('Market-Stall')).toBe('market');
       expect(classifySupplyKind('Market-Stall-Red')).toBe('market');
-      // Chapel left flag mode (2026-10-10): it now produces and distributes faith exactly like a market
-      // sells food, a depleting stock behind it — this is the intended consequence of that mode switch,
-      // not a case the "flag → service" rule below is meant to catch.
-      expect(classifySupplyKind('Chapel')).toBe('market');
+      expect(classifySupplyKind('Market-Stall-Red')).toBe('market');
+      // The water tank produces and distributes water exactly like a market sells food, a depleting stock behind it:
+      // a quantity distributor, not a case the "flag → service" rule below is meant to catch.
+      expect(classifySupplyKind('WaterTank')).toBe('market');
     });
 
     test('a flag distributor (marks houses "served", no stock) classifies as service, not market', () => {
@@ -194,35 +193,36 @@ describe('Supply — GetBuildingSupplyView', () => {
       expect(classifySupplyKind('Library')).toBe('service');
       expect(classifySupplyKind('Doctor')).toBe('service');
       expect(classifySupplyKind('Hospital')).toBe('service');
-      expect(classifySupplyKind('PublicBath')).toBe('service');
       expect(classifySupplyKind('Theatre')).toBe('service');
       expect(classifySupplyKind('Cinema')).toBe('service');
       expect(classifySupplyKind('Pub')).toBe('service');
+      expect(classifySupplyKind('FireStation')).toBe('service');
+      expect(classifySupplyKind('PoliceStation')).toBe('service');
     });
   });
 
-  test('Chapel view classifies as market (produces and distributes faith, no hub) via the real repository path', async () => {
+  test('WaterTank view classifies as market (produces and distributes water, no hub) via the real repository path', async () => {
     const repo = new InMemorySupplyBuildingRepository(
       [
         createSupplyBuildingView({
-          id: 'Chapel-1-1',
-          type: 'Chapel',
+          id: 'WaterTank-1-1',
+          type: 'WaterTank',
           stocks: {},
         }),
       ],
       {
-        'Chapel-1-1': createSupplyBuildingSnapshot({
-          id: 'Chapel-1-1',
-          type: 'Chapel',
+        'WaterTank-1-1': createSupplyBuildingSnapshot({
+          id: 'WaterTank-1-1',
+          type: 'WaterTank',
           roadCount: 1,
           worker: 2,
           workerNeed: 2,
         }),
       },
     );
-    const dto = await new GetBuildingSupplyView(repo).execute('Chapel-1-1');
+    const dto = await new GetBuildingSupplyView(repo).execute('WaterTank-1-1');
     expect(dto.kind).toBe('market');
-    // No hubLink declared (self-produces — see buildingEconomy.js's comment on Chapel): never "buying".
+    // No hubLink declared (self-produces — see buildingEconomy.js's comment on WaterTank): never "buying".
     expect(dto.isBuying).toBe(false);
   });
 });

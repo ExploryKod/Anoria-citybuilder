@@ -4,7 +4,7 @@ import { createSliderRow } from '../sliderRow.js';
 
 /**
  * The Taxes section, in two sub-tabs. "Impôts": the taxes the city collects — the citizen tax and the progressive
- * income tax (three bands: exempt, then two taxed thresholds/rates) are the active hamlet's, customs are the city's.
+ * income tax (three bands: exempt, then two taxed thresholds/rates) are the active hamlet's, customs have their own section (CustomsSectionPresenter).
  * "TVA": the value-added tax, one rate per VAT category, with a uniform switch that puts every category at one general
  * rate.
  */
@@ -17,10 +17,9 @@ export class TaxesSectionPresenter {
 
   /** Reads every rate from its owner (the hamlet's row, the city's storage) and shows it. */
   async refresh() {
-    const [citizenTax, salary, customsRate, vat] = await Promise.all([
+    const [citizenTax, salary, vat] = await Promise.all([
       this.accounting.getCitizenTaxPerCapita(),
       this.accounting.getSalarySettings(),
-      this.accounting.getCustomsRate(),
       this.accounting.getVatSettings(),
     ]);
     this.#show('tax-citizen', citizenTax, '€');
@@ -28,7 +27,6 @@ export class TaxesSectionPresenter {
     this.#show('tax-salary-1', Math.round(salary.salaryTaxRate1 * 100), '%');
     this.#show('tax-threshold-2', salary.salaryTaxThreshold2, '€');
     this.#show('tax-salary-2', Math.round(salary.salaryTaxRate2 * 100), '%');
-    this.#show('tax-customs', Math.round(customsRate * 100), '%');
     this.#showVat(vat);
   }
 
@@ -50,16 +48,12 @@ export class TaxesSectionPresenter {
     this.#bindSlider('tax-salary-2', '%', async (value) => {
       await this.accounting.setSalarySettings({ salaryTaxRate2: value / 100 });
     });
-    this.#bindSlider('tax-customs', '%', async (value) => {
-      await this.accounting.setCustomsRate(value / 100);
-    });
 
     this.#fit('tax-citizen', this.bounds.citizenTaxPerCapita);
     this.#fit('tax-threshold-1', this.bounds.salaryTaxThreshold1);
     this.#fit('tax-salary-1', this.bounds.salaryTaxPercent1);
     this.#fit('tax-threshold-2', this.bounds.salaryTaxThreshold2);
     this.#fit('tax-salary-2', this.bounds.salaryTaxPercent2);
-    this.#fit('tax-customs', this.bounds.customsPercent);
     this.#fit('tax-vat-general', this.bounds.vatPercent);
     this.#bindSlider('tax-vat-general', '%', async (value) => {
       await this.accounting.setVatGeneralRate(value);

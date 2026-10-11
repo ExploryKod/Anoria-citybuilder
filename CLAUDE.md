@@ -102,3 +102,10 @@ A view that waits for the journal shows "…", never a stale or a zero figure.
 "Trésorerie" is the cash in the till: at 31 December for a past year, now for the current one (the snapshot with
 `untilYear`). "Résultat de l'année" is the year's net flow, the figure the net columns carry forward. Never show one
 under the other's name, and never use the cash as a result.
+
+## Keep the flow: no commands that make the user wait
+
+The user is often away while a task runs; a command that stops for approval freezes the work. Change files with the Edit
+and Write tools, never with `python3 - <<EOF`, `sed -i` or `cat >> file <<EOF`. Read files with Read, not `cat`/`sed`.
+Run one simple command at a time (no `;`, `&&` or pipe chains that mix actions). Run the tests once the change is whole,
+not after each small step. Never create a placeholder or empty file.

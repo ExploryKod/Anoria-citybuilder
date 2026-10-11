@@ -155,12 +155,13 @@ export function showPlacementNeedsNotification(buildingType) {
  * Why a recipe cannot even reach one of its inputs (see DescribeActivitySupplyAccess.js), in the player's
  * words: which building would fix it — a hub to reach, or an industry to supply it — named from the catalog,
  * never hand-picked here.
- * @param {{ inputCategory: string, role: string, status: 'no-hub' | 'no-supplier' }} gap
+ * @param {{ inputCategory: string, role: string, status: 'no-hub' | 'no-supplier' | 'no-collector' }} gap
  * @returns {string}
  */
 export function describeActivitySupplyGap(gap) {
   const good = goodLabel(gap.inputCategory).toLowerCase();
-  const names = namesOfBuildings(gap.status === 'no-hub' ? gap.role : 'producer', [gap.inputCategory]);
+  // A missing hub, or a missing collector for the output, is fixed by building a hub; a missing supplier by an industry.
+  const names = namesOfBuildings(gap.status === 'no-supplier' ? 'producer' : gap.role, [gap.inputCategory]);
   return `${[...new Set(names)].join(' ou ')} nécessaire pour ${good}`;
 }
 

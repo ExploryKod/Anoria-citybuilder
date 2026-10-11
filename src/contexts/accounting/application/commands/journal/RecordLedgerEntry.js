@@ -34,6 +34,8 @@ export class RecordLedgerEntry {
    * @param {string|null} [params.accountBuildingId] the company whose own account the line moves; null for the city's
    * @param {string|null} [params.accountKind] which of a house's two accounts (particulier or entreprise); null for a company's
    * @param {string|null} [params.counterpartyBuildingId] the other company of a trade line (its trace); null when none
+   * @param {number|null} [params.dutyRate] a customs line: the duty rate that was applied (stamped when written, never recomputed)
+   * @param {number|null} [params.customsBase] a customs line: the value the rate was applied to
    * @param {boolean} [params.persist]
    * @returns {Promise<RecordLedgerEntryResult>}
    */
@@ -52,6 +54,8 @@ export class RecordLedgerEntry {
     loan = null,
     taxYear = null,
     taxBreakdown = null,
+    dutyRate = null,
+    customsBase = null,
     persist,
   }) {
     if (typeof turn !== 'number' || Number.isNaN(turn)) {
@@ -86,6 +90,8 @@ export class RecordLedgerEntry {
         loan,
         taxYear,
         taxBreakdown,
+        dutyRate,
+        customsBase,
         month:
           timeInfo?.monthIndex != null ? timeInfo.monthIndex + 1 : null,
         year: timeInfo?.year ?? null,

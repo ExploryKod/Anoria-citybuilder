@@ -5,7 +5,7 @@ import { describePlacementNeeds, describeActivitySupplyGap } from '../../../src/
 describe('describePlacementNeeds', () => {
   test('a building that needs another in reach says which, how far, and that it needs room', () => {
     expect(describePlacementNeeds('Market-Stall-Red')).toBe(
-      'Étal rouge requiert : Moulin à moins de 5 cases (avec de la place libre).'
+      'Étal rouge requiert : Grenier à moins de 5 cases (avec de la place libre).'
     );
   });
 
@@ -20,7 +20,7 @@ describe('describePlacementNeeds', () => {
   });
 
   test('a building that depends on nothing says nothing', () => {
-    expect(describePlacementNeeds('Chapel')).toBeNull();
+    expect(describePlacementNeeds('WaterTank')).toBeNull();
   });
 
   test('a house running its own business names what it buys for it, same as a workshop', () => {

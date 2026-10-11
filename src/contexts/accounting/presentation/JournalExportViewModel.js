@@ -1,4 +1,32 @@
+import { goodLabel } from '../../../presentation/dom/shell/CatalogVocabulary.js';
+
 /** @param {object} entry */
+/**
+ * The words of the trade lines, by journal type prefix. Imports and exports are told apart everywhere: the merchants' own
+ * lines (what they bought and sold, the duty they paid, the freight) and the city's (the duty it received, one per flow).
+ * `import_` is what our merchants paid a foreign city; `export_` is the city's income from the export duty.
+ */
+export const TRADE_LINE_WORDS = Object.freeze([
+  ['import_', 'Import'],
+  ['freight_', 'Transport'],
+  ['duty_paid_import_', 'Douane import payée'],
+  ['customs_import_', 'Douane import perçue'],
+  ['abroad_sale_', 'Vente export'],
+  ['duty_paid_export_', 'Douane export payée'],
+  ['export_', 'Douane export perçue'],
+]);
+
+/**
+ * @param {string} type A journal type
+ * @returns {string | null} e.g. "Import Charbon", or null when the type is not a trade line
+ */
+export function tradeLineLabel(type) {
+  for (const [prefix, word] of TRADE_LINE_WORDS) {
+    if (type.startsWith(prefix)) return `${word} ${goodLabel(type.slice(prefix.length))}`;
+  }
+  return null;
+}
+
 export function journalEntryTypeLabel(entry) {
   const typeLabels = {
     citizen_tax: 'Impôt Citoyen',
@@ -27,20 +55,17 @@ export function journalEntryTypeLabel(entry) {
     household_benefit: 'Allocation chômage perçue',
     service_purchase: 'Achats de services',
     service_subsidy_received: 'Subvention reçue',
+    subsidy_companies_received: 'Subvention entretien reçue',
     exceptional_expenses: 'Réparation',
     commercial_route: 'Commission Négociants',
     contribution: 'Contribution',
-    import_wheat: 'Import Blé',
-    import_carrot: 'Import Carotte',
-    import_cabbage: 'Import Chou',
-    import_wood: 'Import Bois',
-    export_wheat: 'Export Blé',
-    export_carrot: 'Export Carotte',
-    export_cabbage: 'Export Chou',
-    export_wood: 'Export Bois',
     loan_interest: 'Intérêts',
     loan_repayment: 'Remboursement',
   };
+
+  // A trade line is named after what it is and after its good, as the catalog names it ("Import Charbon").
+  const traded = tradeLineLabel(entry.type);
+  if (traded) return traded;
 
   return typeLabels[entry.type] || entry.type;
 }

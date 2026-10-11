@@ -2006,7 +2006,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -2057,7 +2057,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -2108,7 +2108,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -2159,7 +2159,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -2210,7 +2210,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -2261,7 +2261,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -2314,7 +2314,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -2367,7 +2367,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -2837,11 +2837,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -2856,11 +2856,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -2875,11 +2875,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -2894,11 +2894,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -2913,11 +2913,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -2932,11 +2932,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -2951,11 +2951,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -2970,11 +2970,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -3664,7 +3664,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -3747,7 +3747,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -3830,7 +3830,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -3880,7 +3880,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -3930,7 +3930,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -4046,7 +4046,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -4098,7 +4098,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -4150,7 +4150,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -6913,7 +6913,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -6964,7 +6964,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -7015,7 +7015,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -7066,7 +7066,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -7117,7 +7117,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -7168,7 +7168,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -7219,7 +7219,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -7270,7 +7270,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -7585,11 +7585,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -7604,11 +7604,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -7623,11 +7623,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -7642,11 +7642,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -7661,11 +7661,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -7680,11 +7680,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -7699,11 +7699,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -7718,11 +7718,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -7957,7 +7957,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -8007,7 +8007,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -8057,7 +8057,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -8107,7 +8107,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -8157,7 +8157,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -8240,7 +8240,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -8290,7 +8290,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -8340,7 +8340,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -8708,7 +8708,7 @@
           "workers": 24,
           "need": 0
         },
-        "spiritual": {
+        "hydraulique": {
           "workerNeed": 2,
           "workers": 2,
           "need": 0
@@ -9174,7 +9174,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -9270,7 +9270,7 @@
     "transactionType": "building_state",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": null,
     "toCoords": null,
     "toType": null,
@@ -9384,7 +9384,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -9501,7 +9501,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -9582,7 +9582,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -9633,7 +9633,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -9750,7 +9750,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -9866,7 +9866,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -9919,7 +9919,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -11857,7 +11857,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -11908,7 +11908,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -11959,7 +11959,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -12010,7 +12010,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -12061,7 +12061,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -12112,7 +12112,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -12165,7 +12165,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -12218,7 +12218,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -12552,11 +12552,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -12571,11 +12571,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -12590,11 +12590,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -12609,11 +12609,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -12628,11 +12628,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -12647,11 +12647,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -12666,11 +12666,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -12685,11 +12685,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -13253,7 +13253,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -13303,7 +13303,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -13386,7 +13386,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -13436,7 +13436,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -13486,7 +13486,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -13569,7 +13569,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -13621,7 +13621,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -13673,7 +13673,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 9
+        "water": 9
       },
       "lastConsumption": {
         "month": 9,
@@ -16436,7 +16436,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -16487,7 +16487,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -16538,7 +16538,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -16589,7 +16589,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -16640,7 +16640,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -16691,7 +16691,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -16742,7 +16742,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -16793,7 +16793,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -17108,11 +17108,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -17127,11 +17127,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -17146,11 +17146,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -17165,11 +17165,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -17184,11 +17184,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -17203,11 +17203,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -17222,11 +17222,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -17241,11 +17241,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -17579,7 +17579,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -17728,7 +17728,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -17811,7 +17811,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -17861,7 +17861,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -17911,7 +17911,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -17994,7 +17994,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -18077,7 +18077,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -18127,7 +18127,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 8
+        "water": 8
       },
       "lastConsumption": {
         "month": 8,
@@ -20890,7 +20890,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -20941,7 +20941,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -20992,7 +20992,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -21043,7 +21043,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -21094,7 +21094,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -21145,7 +21145,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -21198,7 +21198,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -21251,7 +21251,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -21585,11 +21585,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -21604,11 +21604,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -21623,11 +21623,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -21642,11 +21642,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -21661,11 +21661,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -21680,11 +21680,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -21699,11 +21699,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -21718,11 +21718,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -22286,7 +22286,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -22336,7 +22336,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -22419,7 +22419,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -22469,7 +22469,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -22519,7 +22519,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -22602,7 +22602,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -22654,7 +22654,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -22706,7 +22706,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 7
+        "water": 7
       },
       "lastConsumption": {
         "month": 7,
@@ -25469,7 +25469,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -25520,7 +25520,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -25571,7 +25571,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -25622,7 +25622,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -25673,7 +25673,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -25724,7 +25724,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -25775,7 +25775,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -25826,7 +25826,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -26141,11 +26141,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -26160,11 +26160,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -26179,11 +26179,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -26198,11 +26198,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -26217,11 +26217,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -26236,11 +26236,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -26255,11 +26255,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -26274,11 +26274,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -26513,7 +26513,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -26563,7 +26563,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -26613,7 +26613,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -26663,7 +26663,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -26713,7 +26713,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -26796,7 +26796,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -26846,7 +26846,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -26896,7 +26896,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 6
+        "water": 6
       },
       "lastConsumption": {
         "month": 6,
@@ -29659,7 +29659,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -29710,7 +29710,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -29761,7 +29761,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -29812,7 +29812,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -29863,7 +29863,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -29914,7 +29914,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -29967,7 +29967,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -30020,7 +30020,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -30354,11 +30354,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -30373,11 +30373,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -30392,11 +30392,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -30411,11 +30411,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -30430,11 +30430,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -30449,11 +30449,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -30468,11 +30468,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -30487,11 +30487,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -31055,7 +31055,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -31105,7 +31105,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -31188,7 +31188,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -31238,7 +31238,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -31288,7 +31288,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -31371,7 +31371,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -31423,7 +31423,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -31475,7 +31475,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 5
+        "water": 5
       },
       "lastConsumption": {
         "month": 5,
@@ -31843,7 +31843,7 @@
           "workers": 24,
           "need": 0
         },
-        "spiritual": {
+        "hydraulique": {
           "workerNeed": 2,
           "workers": 2,
           "need": 0
@@ -34319,7 +34319,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -34370,7 +34370,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -34421,7 +34421,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -34472,7 +34472,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -34523,7 +34523,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -34574,7 +34574,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -34625,7 +34625,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -34676,7 +34676,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -34991,11 +34991,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -35010,11 +35010,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -35029,11 +35029,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -35048,11 +35048,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -35067,11 +35067,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -35086,11 +35086,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -35105,11 +35105,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -35124,11 +35124,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -35363,7 +35363,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -35413,7 +35413,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -35463,7 +35463,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -35513,7 +35513,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -35563,7 +35563,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -35646,7 +35646,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -35696,7 +35696,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -35746,7 +35746,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 4
+        "water": 4
       },
       "lastConsumption": {
         "month": 4,
@@ -36114,7 +36114,7 @@
           "workers": 24,
           "need": 0
         },
-        "spiritual": {
+        "hydraulique": {
           "workerNeed": 2,
           "workers": 2,
           "need": 0
@@ -38571,7 +38571,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -38622,7 +38622,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -38673,7 +38673,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -38724,7 +38724,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -38775,7 +38775,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -38826,7 +38826,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -38879,7 +38879,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -38932,7 +38932,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -39266,11 +39266,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -39285,11 +39285,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -39304,11 +39304,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -39323,11 +39323,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -39342,11 +39342,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -39361,11 +39361,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -39380,11 +39380,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -39399,11 +39399,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -40027,7 +40027,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -40077,7 +40077,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -40160,7 +40160,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -40210,7 +40210,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -40260,7 +40260,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -40343,7 +40343,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -40395,7 +40395,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -40447,7 +40447,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 3
+        "water": 3
       },
       "lastConsumption": {
         "month": 3,
@@ -40815,7 +40815,7 @@
           "workers": 24,
           "need": 0
         },
-        "spiritual": {
+        "hydraulique": {
           "workerNeed": 2,
           "workers": 2,
           "need": 0
@@ -43177,7 +43177,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -43228,7 +43228,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -43279,7 +43279,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -43330,7 +43330,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -43383,7 +43383,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -43467,7 +43467,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -43520,7 +43520,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -43573,7 +43573,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -43918,11 +43918,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -43937,11 +43937,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -43956,11 +43956,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -43975,11 +43975,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -43994,11 +43994,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -44013,11 +44013,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -44032,11 +44032,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -44051,11 +44051,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -44390,7 +44390,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -44440,7 +44440,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -44490,7 +44490,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -44540,7 +44540,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -44592,7 +44592,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -44642,7 +44642,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -44692,7 +44692,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -44742,7 +44742,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 2
+        "water": 2
       },
       "lastConsumption": {
         "month": 2,
@@ -45110,7 +45110,7 @@
           "workers": 24,
           "need": 0
         },
-        "spiritual": {
+        "hydraulique": {
           "workerNeed": 2,
           "workers": 2,
           "need": 0
@@ -45854,7 +45854,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -45945,7 +45945,7 @@
     "transactionType": "building_state",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": null,
     "toCoords": null,
     "toType": null,
@@ -46061,7 +46061,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -46178,7 +46178,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -46259,7 +46259,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -46310,7 +46310,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -46428,7 +46428,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -46539,7 +46539,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -46590,7 +46590,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -48205,7 +48205,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -48256,7 +48256,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -48307,7 +48307,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -48388,7 +48388,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -48439,7 +48439,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -48523,7 +48523,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -48574,7 +48574,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -48625,7 +48625,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -48938,11 +48938,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -48957,11 +48957,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -48976,11 +48976,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -48995,11 +48995,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -49014,11 +49014,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -49033,11 +49033,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -49052,11 +49052,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -49071,11 +49071,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -49272,7 +49272,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -49322,7 +49322,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -49405,7 +49405,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -49455,7 +49455,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -49505,7 +49505,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -49555,7 +49555,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -49605,7 +49605,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -49655,7 +49655,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 1
+        "water": 1
       },
       "lastConsumption": {
         "month": 1,
@@ -50115,7 +50115,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -50204,7 +50204,7 @@
     "transactionType": "building_state",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": null,
     "toCoords": null,
     "toType": null,
@@ -50321,7 +50321,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -50434,7 +50434,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -50514,7 +50514,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -50564,7 +50564,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -50678,7 +50678,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -50788,7 +50788,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -50838,7 +50838,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -50947,7 +50947,7 @@
           "workers": 24,
           "need": 0
         },
-        "spiritual": {
+        "hydraulique": {
           "workerNeed": 2,
           "workers": 2,
           "need": 0
@@ -52856,7 +52856,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -52906,7 +52906,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -52986,7 +52986,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -53066,7 +53066,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -53116,7 +53116,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -53200,7 +53200,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -53250,7 +53250,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -53300,7 +53300,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -53611,11 +53611,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -53630,11 +53630,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -53649,11 +53649,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -53668,11 +53668,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -53687,11 +53687,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -53706,11 +53706,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -53725,11 +53725,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -53744,11 +53744,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -53944,7 +53944,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -53991,7 +53991,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -54038,7 +54038,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -54085,7 +54085,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -54132,7 +54132,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -54179,7 +54179,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -54226,7 +54226,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -54273,7 +54273,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 0
+        "water": 0
       },
       "lastConsumption": {
         "month": 0,
@@ -54757,7 +54757,7 @@
           "workers": 24,
           "need": 0
         },
-        "spiritual": {
+        "hydraulique": {
           "workerNeed": 2,
           "workers": 2,
           "need": 0
@@ -55296,7 +55296,7 @@
           "workers": 24,
           "need": 0
         },
-        "spiritual": {
+        "hydraulique": {
           "workerNeed": 2,
           "workers": 2,
           "need": 0
@@ -57872,7 +57872,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -57955,7 +57955,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -58005,7 +58005,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -58055,7 +58055,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -58105,7 +58105,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -58155,7 +58155,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -58235,7 +58235,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -58285,7 +58285,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -58755,11 +58755,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -58774,11 +58774,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -58793,11 +58793,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -58812,11 +58812,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -58831,11 +58831,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -58850,11 +58850,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -58869,11 +58869,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -58888,11 +58888,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -59967,7 +59967,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -60077,7 +60077,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -60124,7 +60124,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -60171,7 +60171,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -60218,7 +60218,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -60298,7 +60298,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -60345,7 +60345,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -60392,7 +60392,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 11
+        "water": 11
       },
       "lastConsumption": {
         "month": 11,
@@ -60724,7 +60724,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -60769,7 +60769,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -60847,7 +60847,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -60892,7 +60892,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -60937,7 +60937,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -60982,7 +60982,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -61027,7 +61027,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -61108,7 +61108,7 @@
           "workers": 21,
           "need": 3
         },
-        "spiritual": {
+        "hydraulique": {
           "workerNeed": 2,
           "workers": 2,
           "need": 0
@@ -61567,7 +61567,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -61711,7 +61711,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -61756,7 +61756,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -61801,7 +61801,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -61846,7 +61846,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -61891,7 +61891,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -61966,7 +61966,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -62011,7 +62011,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -62039,7 +62039,7 @@
     "transactionType": "game_event",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": null,
     "toCoords": null,
     "toType": null,
@@ -62347,7 +62347,7 @@
     "transactionType": "building_state",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": null,
     "toCoords": null,
     "toType": null,
@@ -62662,11 +62662,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "24e26db3-b178-4f93-bcd7-55c72fcf3ad1",
     "toCoords": "9,8",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -62681,11 +62681,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14",
     "toCoords": "4,10",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -62700,11 +62700,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b",
     "toCoords": "9,6",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -62719,11 +62719,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
     "toCoords": "6,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -62738,11 +62738,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "ac5f9ab6-d318-464d-ac42-29ba94edd892",
     "toCoords": "4,4",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -62757,11 +62757,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "c0e59748-0467-4384-9518-9abc1fe2d4f8",
     "toCoords": "4,8",
     "toType": "House-Purple",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -62776,11 +62776,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "cf03427f-7b10-474f-a84d-9090dc930e3e",
     "toCoords": "6,6",
     "toType": "House-Blue",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -62795,11 +62795,11 @@
     "transactionType": "distributor_to_consumer",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": "d189b194-fa20-4087-a172-eee11d4962d0",
     "toCoords": "9,7",
     "toType": "House-Red",
-    "foodType": "faith",
+    "foodType": "water",
     "quantity": 1,
     "price": 0,
     "totalPrice": 0,
@@ -62831,7 +62831,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -62859,7 +62859,7 @@
     "transactionType": "building_state",
     "fromId": "585af32d-7c56-4fbe-8f85-55e149297b38",
     "fromCoords": "0,9",
-    "fromType": "Chapel",
+    "fromType": "WaterTank",
     "toId": null,
     "toCoords": null,
     "toType": null,
@@ -62906,7 +62906,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -62951,7 +62951,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -62996,7 +62996,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -63041,7 +63041,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -63086,7 +63086,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -63131,7 +63131,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,
@@ -63176,7 +63176,7 @@
       "workers": 0,
       "workerNeed": 0,
       "servedFlags": {
-        "faith": 10
+        "water": 10
       },
       "lastConsumption": {
         "month": 10,

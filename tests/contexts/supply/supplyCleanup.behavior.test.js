@@ -81,7 +81,7 @@ describe('Supply — cleanup queries and flag commands', () => {
         }),
         createSupplyBuildingView({
           id: 'Market-Stall-2-2',
-          type: 'Market-Stall',
+          type: 'Market-Stall-Red',
           x: 2,
           y: 2,
           stocks: { wheat: 5, food: 5 },
@@ -114,7 +114,7 @@ describe('Supply — cleanup queries and flag commands', () => {
         }),
         createSupplyBuildingView({
           id: 'Market-Stall-2-2',
-          type: 'Market-Stall',
+          type: 'Market-Stall-Red',
           x: 2,
           y: 2,
           stocks: { wheat: 8, food: 8 },
@@ -217,7 +217,7 @@ describe('Supply — cleanup queries and flag commands', () => {
       views: [
         createSupplyBuildingView({
           id: 'Market-Stall-5-5',
-          type: 'Market-Stall',
+          type: 'Market-Stall-Red',
           stocks: { food: 0 },
         }),
       ],

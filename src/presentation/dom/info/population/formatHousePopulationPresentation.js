@@ -6,7 +6,6 @@ import {
   DEFAULT_RESIDENTIAL_GROUP,
   GROUP_CITIZEN_PRESENTATION,
   PROFILE_DISPLAY_ORDER,
-  STATUS_PRESENTATION,
 } from './CitizenStatusPresentation.js';
 import { SKILL_CATALOG, getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
 
@@ -18,11 +17,11 @@ import { SKILL_CATALOG, getSkillDisplay } from '../../../../shared/population/sk
 function toProfileDisplayItem(statusKey, count, residentialGroup) {
   if (count <= 0) return null;
 
-  const meta = statusKey === 'worker'
-    ? (GROUP_CITIZEN_PRESENTATION[residentialGroup ?? DEFAULT_RESIDENTIAL_GROUP]
-      ?? GROUP_CITIZEN_PRESENTATION[DEFAULT_RESIDENTIAL_GROUP])
-    : STATUS_PRESENTATION[statusKey];
-  if (!meta) return null;
+  if (statusKey !== 'worker') {
+    throw new Error(`[formatHousePopulationPresentation] no display for the citizen status "${statusKey}"`);
+  }
+  const meta = GROUP_CITIZEN_PRESENTATION[residentialGroup ?? DEFAULT_RESIDENTIAL_GROUP]
+    ?? GROUP_CITIZEN_PRESENTATION[DEFAULT_RESIDENTIAL_GROUP];
 
   const labelForm = count > 1 ? meta.plural : meta.singular;
   return {

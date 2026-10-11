@@ -18,7 +18,6 @@ import {
   computeConsumerDeficit,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 import { getCategoriesForTotalKey, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
-import { unitPriceOf } from '../../../../../shared/resource-catalog/ValueChainCatalog.js';
 
 /**
  * Command: a source building distributes resource units to consumers in
@@ -32,7 +31,7 @@ import { unitPriceOf } from '../../../../../shared/resource-catalog/ValueChainCa
  * transfer shapes: 'quantity' (default, below `#distributeQuantity`) moves
  * a depleting numeric stock; 'flag' (`#distributeFlag`) has no stock at
  * all — it just marks each newly-reached consumer "served this period" on
- * ITS OWN 'consumer'-role `periodLock` (e.g. a chapel's faith service
+ * ITS OWN 'consumer'-role `periodLock` (e.g. a tank's water service
  * reaching nearby houses), reusing the exact once-per-period lock
  * ConsumeResource already relies on for food. Same `{ distributed,
  * transfers, totalUnits }` return shape either way, so callers (walker
@@ -44,12 +43,14 @@ export class DistributeResourceToConsumers {
    * @param {{ fundsOf: (consumerId: string) => Promise<number> }} consumerMoney what each consumer can spend now, from its
    *   personal account: a consumer buys only what it can pay
    */
-  constructor(supplyBuildingRepository, consumerMoney) {
+  constructor(supplyBuildingRepository, consumerMoney, priceBook) {
     if (!consumerMoney || typeof consumerMoney.fundsOf !== 'function') {
       throw new Error('[supply] the distribution needs the consumers\' money (fundsOf)');
     }
+    if (!priceBook) throw new Error('[supply] the distribution needs the price book: a consumer pays the price its seller sells at');
     this.supplyBuildingRepository = supplyBuildingRepository;
     this.consumerMoney = consumerMoney;
+    this.priceBook = priceBook;
   }
 
   /**
@@ -102,6 +103,7 @@ export class DistributeResourceToConsumers {
       return this.#distributeFlag({ categories, consumerIds, period });
     }
 
+    await this.priceBook.ensure(period);
     const totalKey = getTotalKeyForRole(source.type, 'distributor', category);
     // A stock is rebuilt with EVERY good filed under its total, not just the ones this
     // distributor moves: a house also holds what it gathered (fruit, game), and rebuilding
@@ -130,7 +132,7 @@ export class DistributeResourceToConsumers {
       getAmount: getCategoryAmount,
       money: {
         fundsOf: (consumerId) => this.consumerMoney.fundsOf(consumerId),
-        priceOf: (category) => unitPriceOf(source.type, category),
+        priceOf: (category) => this.priceBook.sellingPrice(source, category),
       },
     });
 

@@ -1,0 +1,137 @@
+{
+  "exportDate": "2026-10-11T15:18:59.765Z",
+  "relations": [
+    {
+      "cityId": "briga",
+      "status": "active",
+      "satisfactionScore": -46,
+      "contractStartMonth": 1,
+      "contractEndMonth": null,
+      "lastOrderMonth": 35,
+      "ceased": null,
+      "importCeased": {},
+      "importFailures": {
+        "coal": {
+          "no_merchants": 0,
+          "no_warehouse": 0,
+          "warehouse_full": 0
+        }
+      },
+      "exportCeased": {},
+      "exportFailures": {}
+    },
+    {
+      "cityId": "maris",
+      "status": "expired",
+      "satisfactionScore": -70,
+      "contractStartMonth": 1,
+      "contractEndMonth": null,
+      "lastOrderMonth": 15,
+      "ceased": {
+        "reason": "satisfaction_too_low",
+        "by": "city",
+        "turn": 79
+      },
+      "importCeased": {
+        "petrol": {
+          "reason": "no_warehouse",
+          "by": "merchants",
+          "turn": 19
+        }
+      },
+      "importFailures": {
+        "petrol": {
+          "no_merchants": 0,
+          "no_warehouse": 14,
+          "warehouse_full": 0
+        }
+      },
+      "exportCeased": {
+        "carrotCake": {
+          "reason": "export_no_warehouse",
+          "by": "merchants",
+          "turn": 19
+        }
+      },
+      "exportFailures": {
+        "carrotCake": {
+          "export_no_merchants": 0,
+          "export_no_warehouse": 14
+        }
+      }
+    },
+    {
+      "cityId": "olivea",
+      "status": "active",
+      "satisfactionScore": -72,
+      "contractStartMonth": 1,
+      "contractEndMonth": null,
+      "lastOrderMonth": 37,
+      "ceased": null,
+      "importCeased": {},
+      "importFailures": {},
+      "exportCeased": {
+        "wood": {
+          "reason": "export_no_merchants",
+          "by": "merchants",
+          "turn": 149
+        }
+      },
+      "exportFailures": {
+        "wood": {
+          "export_no_merchants": 10,
+          "export_no_warehouse": 0
+        }
+      }
+    },
+    {
+      "cityId": "silvania",
+      "status": "expired",
+      "satisfactionScore": -42,
+      "contractStartMonth": 1,
+      "contractEndMonth": null,
+      "lastOrderMonth": 14,
+      "ceased": {
+        "reason": "satisfaction_too_low",
+        "by": "city",
+        "turn": 74
+      },
+      "importCeased": {
+        "exoticWood": {
+          "reason": "no_warehouse",
+          "by": "merchants",
+          "turn": 29
+        }
+      },
+      "importFailures": {
+        "exoticWood": {
+          "no_merchants": 0,
+          "no_warehouse": 7,
+          "warehouse_full": 0
+        }
+      },
+      "exportCeased": {
+        "book": {
+          "reason": "export_no_warehouse",
+          "by": "merchants",
+          "turn": 29
+        },
+        "decoratedPot": {
+          "reason": "export_no_warehouse",
+          "by": "merchants",
+          "turn": 29
+        }
+      },
+      "exportFailures": {
+        "book": {
+          "export_no_merchants": 0,
+          "export_no_warehouse": 7
+        },
+        "decoratedPot": {
+          "export_no_merchants": 0,
+          "export_no_warehouse": 7
+        }
+      }
+    }
+  ]
+}

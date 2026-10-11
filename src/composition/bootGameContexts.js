@@ -45,6 +45,11 @@ export function bootGameContexts() {
   const accounting = getOrCreateAccountingContext({ cityAssets });
   // The supply needs the consumers' money (their personal accounts), so the accounting exists first.
   const supply = getOrCreateSupplyContext({ consumerMoney: createConsumerMoneyPort(accounting) });
+  // A house reaches level 3 only if its own business can reach a warehouse: no 'no-hub' gap in any of its recipes.
+  housing.setActivityAccessCheck(async (house) => {
+    const gaps = await supply.describeActivitySupplyAccess({ id: house.id, type: house.type, x: house.x, y: house.y });
+    return !gaps.some((gap) => gap.status === 'no-hub');
+  });
   const intelligence = getOrCreateIntelligenceContext();
   const trade = getOrCreateTradeContext({ supply, accounting });
   const sessionApi = assembleSessionApi({

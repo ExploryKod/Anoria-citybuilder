@@ -172,6 +172,12 @@ db.version(19).stores({
   journal: '++id, hamletId, turn, type, amount, description',
 });
 
+// v20: customs policy events — every change of a duty, dated by its turn and appended, never edited: who set which duty on
+// which good, from what to what, and why (cause). The trace a trade war is told with.
+db.version(20).stores({
+  tradePolicyEvents: '++id, turn, authority, flow, good',
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

@@ -197,3 +197,10 @@
     gap: 6px;
     cursor: pointer;
 }
+
+/* Customs: the two lists of duties, what comes in and what goes out. */
+.customs-group-title {
+    margin: 16px 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+}

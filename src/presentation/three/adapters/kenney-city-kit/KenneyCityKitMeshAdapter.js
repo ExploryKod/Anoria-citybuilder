@@ -134,11 +134,20 @@ export class KenneyCityKitMeshAdapter {
       throw new Error(`No Kenney city kit prefab for building id: ${buildingId}`);
     }
 
-    const def = resolvePrefabEntry(catalog, prefabKey);
-    const mesh = await cloneKenneyCityKitPrefab(prefabKey, def.glb);
     const group = new THREE.Group();
     group.name = `kenney-city-kit-${prefabKey}`;
-    group.add(mesh);
+    if (options.parts) {
+      // A building made of several meshes: each part sits at its offset (in tiles) from the plot's centre.
+      for (const part of options.parts) {
+        const partKey = KENNEY_CITY_KIT_PREFAB_BY_BUILDING_ID[part.buildingId];
+        if (!partKey) throw new Error(`No Kenney city kit prefab for the part "${part.buildingId}" of ${buildingId}`);
+        const partMesh = await cloneKenneyCityKitPrefab(partKey, resolvePrefabEntry(catalog, partKey).glb);
+        partMesh.position.set(part.x, 0, part.z);
+        group.add(partMesh);
+      }
+    } else {
+      group.add(await cloneKenneyCityKitPrefab(prefabKey, resolvePrefabEntry(catalog, prefabKey).glb));
+    }
 
     if (!options.plotBuildingId) {
       throw new Error(`[KenneyCityKitMeshAdapter] plotBuildingId is required to centre "${buildingId}" on its plot`);

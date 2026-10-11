@@ -6,13 +6,11 @@ import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { formatJournalEntryDetails } from './formatJournalEntryDescription.js';
 import { goodLabel, unresolvedTerm } from '../../shell/CatalogVocabulary.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
+import { tradeLineLabel } from '../../../../contexts/accounting/presentation/JournalExportViewModel.js';
+import { pcgOfJournalType } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 
-/** "Import Blé" / "Export Bois": a trade line is named after the good the catalog names. */
-function tradeLabel(type) {
-  const trade = /^(import|export)_(.+)$/.exec(type);
-  if (!trade) return null;
-  return `${trade[1] === 'import' ? 'Import' : 'Export'} ${goodLabel(trade[2])}`;
-}
+/** "Import Blé" / "Douane export perçue Bois": a trade line is named after what it is and the good the catalog names. */
+const tradeLabel = tradeLineLabel;
 
 /**
  * @param {number} amount
@@ -219,14 +217,15 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     entry.type === 'corporate_tax_revenue' ||
     entry.type === 'service_sales' ||
     entry.type === 'service_subsidy_received' ||
+    entry.type === 'subsidy_companies_received' ||
     entry.type === 'household_wage' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital'
   ) {
     isIncome = true;
-  } else if (entry.type.startsWith('export_')) {
+  } else if (entry.type.startsWith('export_') || entry.type.startsWith('customs_import_') || entry.type.startsWith('abroad_sale_')) {
     isIncome = true;
-  } else if (entry.type.startsWith('import_')) {
+  } else if (entry.type.startsWith('import_') || entry.type.startsWith('freight_') || entry.type.startsWith('duty_paid_')) {
     isIncome = false;
   } else if (
     entry.type === 'salary' ||
@@ -269,6 +268,7 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     household_benefit: 'Allocation chômage perçue',
     service_purchase: 'Achats de services',
     service_subsidy_received: 'Subvention reçue',
+    subsidy_companies_received: 'Subvention entretien reçue',
     commercial_route: 'Commission Négociants',
     contribution: 'Contribution',
     loan_capital: 'Capital Prêt',
@@ -286,6 +286,10 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     entry.partnerId &&
     (entry.type.startsWith('import_') ||
       entry.type.startsWith('export_') ||
+      entry.type.startsWith('freight_') ||
+      entry.type.startsWith('duty_paid_') ||
+      entry.type.startsWith('customs_import_') ||
+      entry.type.startsWith('abroad_sale_') ||
       entry.type === 'commercial_route')
   ) {
     try {
@@ -302,10 +306,18 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     }
   }
 
+  // Where the line sits in the chart of accounts (PcgJournalCatalog.js): its account number, and the colour family that follows.
+  const pcg = pcgOfJournalType(entry.type);
+  const isInformative = Object.hasOwn(INFO_JOURNAL_TYPE_LABELS, entry.type) || entry.type.startsWith('loan_default_');
+  if (!pcg && !isInformative) unresolvedTerm('journal account', entry.type);
+  const accountBadge = pcg
+    ? `<span class="journal-entry-account" title="${pcg.label}${pcg.household ? ' (hors PCG : un ménage n\'est pas une entité)' : ''}">${pcg.account}</span>`
+    : '';
+
   return `
         <div class="journal-entry">
             <div class="journal-entry-header">
-                <span class="journal-entry-type ${entry.type}">${typeLabels[entry.type] ?? tradeLabel(entry.type) ?? unresolvedTerm('journal line label', entry.type)}</span>
+                <span class="journal-entry-type ${entry.type}"${pcg ? ` data-tone="${pcg.tone}"` : ''}>${accountBadge}${typeLabels[entry.type] ?? tradeLabel(entry.type) ?? unresolvedTerm('journal line label', entry.type)}</span>
                 <span class="journal-entry-hamlet">${hamletName}</span>
                 ${partnerName ? `<span class="journal-entry-partner">🤝 ${partnerName}</span>` : ''}
                 <span class="journal-entry-amount ${typeClass}">

@@ -9,14 +9,14 @@ import {
 
 describe('CatalogVocabulary — words the catalog decides', () => {
   test('a building, a good and its unit are read from the catalog, the unit agreeing with the count', () => {
-    expect(buildingName('Windmill-001')).toBe('Moulin');
+    expect(buildingName('Windmill-001')).toBe('Grenier');
     expect(goodAmount('wheat', 1)).toBe('1 panier');
     expect(goodAmount('wheat', 12)).toBe('12 paniers');
     expect(goodAmount('wood', 3)).toBe('3 bûches');
   });
 
   test('who holds a role for a good comes from the catalog: the windmill takes wheat, the warehouse does not', () => {
-    expect(namesOfBuildings('hub', ['wheat'])).toEqual(['Moulin']);
+    expect(namesOfBuildings('hub', ['wheat'])).toEqual(['Grenier']);
     expect(namesOfBuildings('hub', ['wood'])).toEqual(['Entrepôt']);
   });
 

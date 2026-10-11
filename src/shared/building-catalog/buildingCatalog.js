@@ -86,6 +86,8 @@
  * @property {number} [linkCapacity] Max number of distributors a 'hub' can
  *   stay linked to at once (e.g. how many markets one windmill can serve).
  *   Only meaningful for 'hub'.
+ * @property {Array<{ id: string, label: string, categories: string[] }>} [storageViews] On a 'hub' role: the flows of goods it
+ *   holds, read apart in its info panel (one chart each — e.g. a trade warehouse's exports and imports). Omitted: one chart.
  * @property {number} [maxStock] Max total units this building type can hold
  *   (a silo's storage, a market stall's shelves). Declared on the role
  *   entry that holds the stock. Omitted means UNBOUNDED — there is no
@@ -121,10 +123,10 @@
  *   move a depleting numeric stock ('quantity', the default — take/add,
  *   source can run out) or simply mark the consumer "served this period"
  *   with no stock movement at all ('flag' — a coverage-style service, e.g.
- *   a chapel's faith service reaching nearby houses). See
+ *   a tank's water service reaching nearby houses). See
  *   DistributeResourceToConsumers.js. A building type can hold more than one
  *   entry for the SAME role when they differ by category and/or this field
- *   (e.g. a house is both a 'quantity' food consumer and a 'flag' faith
+ *   (e.g. a house is both a 'quantity' food consumer and a 'flag' doctor
  *   consumer) — see ResourceRolePolicy's `category`/`consumption` accessor
  *   params, which disambiguate exactly that case.
  * @property {{ field?: string, unit: 'year' | 'month' }} [periodLock] Once-per-period
@@ -132,7 +134,7 @@
  *   `{ field, unit }` uses one dedicated building field (e.g. a farm's
  *   `lastProductionYear`) — reserve this for a role that will only ever
  *   hold ONE such lock. `{ unit }` (no `field`) uses the SHARED
- *   `servedFlags` object keyed by category (e.g. `{ faith: 3 }`) — the same
+ *   `servedFlags` object keyed by category (e.g. `{ doctor: 3 }`) — the same
  *   "one field, many keys" shape `stocks` already uses for quantity
  *   resources — so a new 'flag'-consumption service (a school, a bath
  *   house, ...) never needs a new field name, only a new catalog entry.
@@ -169,8 +171,8 @@
  * @property {'hub' | 'house'} [deliversTo] On a 'producer': where its output structurally ends up.
  *   Omitted (default) means 'hub' — collected by a 'hub'-role building elsewhere, the chain every
  *   producer used until 2026-10-10. 'house' means it never reaches a hub at all: the SAME building's own
- *   'distributor' role (no hubLink — see below) hands it straight to houses instead (e.g. Chapel's own
- *   'faith', produced and distributed by Chapel alone). Declared explicitly rather than inferred from
+ *   'distributor' role (no hubLink — see below) hands it straight to houses instead (e.g. the water tank's own
+ *   'water', produced and distributed by the tank alone). Declared explicitly rather than inferred from
  *   "does any hub role happen to exist for this category" so a later gameplay change (a different
  *   building playing hub, a producer switching destination) is a catalog edit, never new code — read by
  *   GetClientPriorityBoardForBuilding.js (Clients-tab message) and marketInfoFormat.js (État-tab label).

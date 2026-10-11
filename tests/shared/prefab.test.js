@@ -43,21 +43,15 @@ describe('prefab anoria-tour-116 — its state is the saved one', () => {
       });
     });
     const summary = computeCityEmploymentSummary(snapshots);
-    expect(summary.totalPopulation).toBe(41);
-    // Civil servants were removed (2026-10-10, "suppress it for now"): the ~1-in-12 residents that used to be
-    // exempted from both "unemployed" and the hiring pool now need a real job like anyone else. This prefab's
-    // `manutention` shortage (see `lack`/`bySkill` below) was already there before — these residents simply
-    // have nowhere to go until it's filled, so the bound moves from "≤1" to the real figure.
+    // The starter city is a level-1 village (cabanes of at most 6 inhabitants, one water tank): its people all work, and
+    // it has more jobs than hands (the lack below), never more hands than jobs.
+    expect(summary.totalPopulation).toBe(23);
     expect(summary.unemployed).toBeLessThanOrEqual(4);
-    // The Warehouse and TradeWarehouse's 4 worker slots each (BuildingRolePolicy's `isHouseType` used to misread
-    // their names — "ware**house**" — as a house and zero their need) are now correctly counted. A blanket
-    // `lack: 8` would not say which caste is short — the game has three (artisans/merchants/scholars), each
-    // holding its own skills — so this pins it to the actual skill both buildings require: `manutention`,
-    // which only merchants (from their tier 2 on) hold. No other skill is short.
-    expect(summary.lack).toBe(8);
-    expect(summary.bySkill.manutention).toEqual({ workerNeed: 8, workers: 0, need: 8 });
-    for (const [skillId, stats] of Object.entries(summary.bySkill)) {
-      if (skillId !== 'manutention') expect(stats.need).toBe(0);
+    // The trades the first level holds are fully staffed: food storage and sale, and the water tank (hydraulique).
+    for (const skillId of ['stockage-alimentaire', 'vente-alimentaire', 'hydraulique']) {
+      expect(summary.bySkill[skillId].need).toBe(0);
     }
+    // The warehouses ask for `manutention`, which only merchants hold, from their second level: nobody can staff them yet.
+    expect(summary.bySkill.manutention).toEqual({ workerNeed: 8, workers: 0, need: 8 });
   });
 });

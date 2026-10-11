@@ -3,6 +3,7 @@
  */
 
 import {
+  appendHouseholdEmployers,
   appendHouseholdSkills,
   appendLocationFootnote,
   appendMetricCardGroups,
@@ -20,6 +21,7 @@ import {
 /**
  * @typedef {object} HouseSkillsViewModel
  * @property {ReadonlyArray<HouseSkillsDisplayItem>} skills
+ * @property {ReadonlyArray<HouseSkillsDisplayItem> | null} employers Where its people work, one per employer category; null when unknown
  * @property {number} anchorX
  * @property {number} anchorY
  */
@@ -32,6 +34,7 @@ export function renderHouseSkillsView(container, model) {
   container.innerHTML = '';
 
   appendHouseholdSkills(container, model.skills);
+  appendHouseholdEmployers(container, model.employers);
   appendLocationFootnote(container, model.anchorX, model.anchorY);
 }
 

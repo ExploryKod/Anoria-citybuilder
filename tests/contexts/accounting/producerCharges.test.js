@@ -2,9 +2,12 @@ import { describe, test, expect } from '@jest/globals';
 import {
   buildingChargeLines,
   tradeLines,
+  isLucrativeBuilding,
+  payrollOf,
+  wagePerWorkerOf,
   wageSplitLines,
-  wagesPaidOf,
 } from '../../../src/contexts/accounting/domain/policies/ProducerChargePolicy.js';
+import { buildingCatalog } from '../../../src/shared/building-catalog/buildingCatalog.js';
 
 describe('trade lines — a sale and its purchase name each other, on each company account', () => {
   test('a sale between two companies is a revenue on the seller and a purchase on the buyer', () => {
@@ -22,9 +25,21 @@ describe('trade lines — a sale and its purchase name each other, on each compa
 });
 
 describe('wages — each worker is paid the same, and the house it comes from receives it', () => {
-  test('a company pays nothing without workers, and its rate on its sales with workers', () => {
-    expect(wagesPaidOf({ type: 'Market-Stall', salesHT: 100, workers: 0 })).toBe(0);
-    expect(wagesPaidOf({ type: 'Market-Stall', salesHT: 100, workers: 3 })).toBe(15);
+  test('the payroll follows the staffing, not the sales: nothing without workers, the wage of the skill level for each worker with them', () => {
+    expect(payrollOf({ type: 'Market-Stall-Red', workers: 0, referenceSalaryPerMonth: 100 })).toBe(0);
+    expect(payrollOf({ type: 'Market-Stall-Red', workers: 3, referenceSalaryPerMonth: 100 })).toBe(300);
+  });
+
+  test('a higher skill level is paid more, by the grid of the catalog', () => {
+    // The hospital's workers need the medical skill at level 2.
+    expect(payrollOf({ type: 'Hospital', workers: 2, referenceSalaryPerMonth: 100 })).toBe(280);
+  });
+
+  test('every skill level a workplace requires has a line in the wage grid', () => {
+    for (const [type, definition] of Object.entries(buildingCatalog)) {
+      if (!definition.employment?.requiredSkill || !isLucrativeBuilding(type)) continue;
+      expect({ type, wage: wagePerWorkerOf({ type, referenceSalaryPerMonth: 100 }) }).toEqual({ type, wage: expect.any(Number) });
+    }
   });
 
   test('the wages split by workers per house, and the total is exact to the centime', () => {
@@ -41,7 +56,7 @@ describe('wages — each worker is paid the same, and the house it comes from re
 describe('building lines — a company pays its upkeep and its corporate tax; a house is subsidised by the city', () => {
   test('a market stall keeps its profit after its wages: the tax is its own, the tax reaches the city', () => {
     expect(
-      buildingChargeLines({ id: 'market', type: 'Market-Stall', salesHT: 100, subsidiesHT: 0, purchasesHT: 40, wagesHT: 15, maintenanceCost: 2 })
+      buildingChargeLines({ id: 'market', type: 'Market-Stall-Red', salesHT: 100, subsidiesHT: 0, purchasesHT: 40, wagesHT: 15, maintenanceCost: 2 })
     ).toEqual([
       { kind: 'maintenance', amount: 2, holder: 'market', counterparty: null },
       { kind: 'corporate_tax', amount: 10.75, holder: 'market', counterparty: null },
@@ -51,7 +66,7 @@ describe('building lines — a company pays its upkeep and its corporate tax; a 
 
   test('a loss pays no corporate tax', () => {
     expect(
-      buildingChargeLines({ id: 'market', type: 'Market-Stall', salesHT: 10, subsidiesHT: 0, purchasesHT: 12, wagesHT: 0, maintenanceCost: 2 }).map(
+      buildingChargeLines({ id: 'market', type: 'Market-Stall-Red', salesHT: 10, subsidiesHT: 0, purchasesHT: 12, wagesHT: 0, maintenanceCost: 2 }).map(
         (line) => line.kind
       )
     ).not.toContain('corporate_tax');

@@ -1,4 +1,5 @@
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+import { getResourceRoles } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { getResourceCategoryPresentation } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { buildHubStorageLines } from '../../domain/policies/HubStorageOrdersPolicy.js';
 import { buildHubStoragePieSegments } from '../../domain/policies/HubStoragePiePolicy.js';
@@ -20,8 +21,9 @@ export class GetHubStorageInfoView {
    * @param {(producerId: string) => string | null} [params.resolveProducerType] Producer instance id →
    *   catalog type, for the pie chart's origin breakdown (see HubStoragePiePolicy.js) — this view has
    *   no repository of its own, so the caller resolves it (createSupplyContext.js).
+   * @param {(producerId: string) => string | null} [params.resolveProducerName] Lot key of a trade city → its name.
    */
-  execute({ hubKind, buildingRow, stocks = null, maxStock = null, timeContextAhead = null, resolveProducerType = () => null }) {
+  execute({ hubKind, buildingRow, stocks = null, maxStock = null, timeContextAhead = null, resolveProducerType = () => null, resolveProducerName = () => null }) {
     if (!buildingRow) {
       return Object.freeze({ hubKind, lines: Object.freeze([]), pieSegments: Object.freeze([]) });
     }
@@ -49,6 +51,31 @@ export class GetHubStorageInfoView {
       })
     );
 
+    // A hub that holds goods of different flows (a trade warehouse: what it sells, what it buys) declares them as
+    // `storageViews`: one chart per flow, each leaving the others' goods out as one grey slice.
+    const declaredViews = getResourceRoles(buildingRow.type).find((entry) => entry.role === 'hub')?.storageViews ?? [];
+    const storageViews = Object.freeze(
+      declaredViews.map((declared) => {
+        const viewLines = lines.filter((line) => declared.categories.includes(line.productId));
+        const elsewhereLines = lines.filter((line) => !declared.categories.includes(line.productId));
+        const elsewhereAmount = elsewhereLines.reduce((sum, line) => sum + line.amount, 0);
+        const otherLabels = declaredViews.filter((other) => other.id !== declared.id).map((other) => other.label);
+        return Object.freeze({
+          id: declared.id,
+          label: declared.label,
+          lines: Object.freeze(viewLines),
+          total: viewLines.reduce((sum, line) => sum + line.amount, 0),
+          pieSegments: buildHubStoragePieSegments({
+            lines: viewLines,
+            totalCapacity,
+            elsewhere: { amount: elsewhereAmount, label: otherLabels.join(' · ') },
+            resolveProducerType,
+            resolveProducerName,
+          }),
+        });
+      })
+    );
+
     return Object.freeze({
       hubKind,
       buildingType: buildingRow.type,
@@ -68,7 +95,9 @@ export class GetHubStorageInfoView {
         lines,
         totalCapacity,
         resolveProducerType,
+        resolveProducerName,
       }),
+      storageViews,
       linkedMarkets: Object.freeze(
         (buildingRow.linkedDistributors ?? []).map((entry) =>
           Object.freeze({

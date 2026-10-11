@@ -48,7 +48,7 @@ describe('buildingInfoGroupRegistry tabs', () => {
     ]);
   });
 
-  test('service (Chapel, School, Doctor, ...) exposes état + staff + common context tabs and its finance, not market tabs', () => {
+  test('service (FireStation, School, Doctor, ...) exposes état + staff + common context tabs and its finance, not market tabs', () => {
     const ids = tabIds(BUILDING_INFO_GROUPS.service);
     expect(ids).not.toContain(BUILDING_INFO_TAB_IDS.stocks);
     expect(ids).not.toContain(BUILDING_INFO_TAB_IDS.trade);

@@ -14,16 +14,20 @@ describe('Employment — WorkplaceSkillRequirementPolicy', () => {
     expect(getRequiredSkillForBuilding('Barn-001')).toBeNull();
   });
 
-  test('Chapel and every other public/service building now requires a skill too', () => {
-    expect(getRequiredSkillForBuilding('Chapel')).toBe('spiritual');
-    expect(getRequiredSkillForBuilding('Market-Stall')).toBe('vente-alimentaire');
+  test('the water tank and every other public/service building requires a skill too', () => {
+    expect(getRequiredSkillForBuilding('WaterTank')).toBe('hydraulique');
+    expect(getRequiredSkillForBuilding('FireStation')).toBe('incendie');
+    expect(getRequiredSkillForBuilding('PoliceStation')).toBe('securite');
+    expect(getRequiredSkillForBuilding('CoalPlant')).toBe('energie');
+    expect(getRequiredSkillForBuilding('PetrolPlant')).toBe('energie');
+    expect(getRequiredSkillForBuilding('Market-Stall-Red')).toBe('vente-alimentaire');
     expect(getRequiredSkillForBuilding('Factory-Plate')).toBe('artisanat');
     expect(getRequiredSkillForBuilding('Doctor')).toBe('medical');
     expect(getRequiredSkillForBuilding('Hospital')).toBe('medical');
   });
 
   test('requiredSkillLevel defaults to 1, and a bigger sibling building can require level 2', () => {
-    expect(getRequiredSkillLevelForBuilding('Chapel')).toBe(1);
+    expect(getRequiredSkillLevelForBuilding('WaterTank')).toBe(1);
     expect(getRequiredSkillLevelForBuilding('Doctor')).toBe(1);
     expect(getRequiredSkillLevelForBuilding('Hospital')).toBe(2);
     expect(getRequiredSkillLevelForBuilding('Cinema')).toBe(1);

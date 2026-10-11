@@ -58,7 +58,7 @@ function windmill(id, stocks, linkedDistributors) {
 function market(id, stocks, supplyHubId) {
   return {
     id,
-    type: 'Market-Stall',
+    type: 'Market-Stall-Red',
     roadCount: 1,
     worker: 1,
     workerNeed: 1,
@@ -123,7 +123,7 @@ describe('Supply — market buys from assigned windmill', () => {
 
   test('takes no more than the market has room for', async () => {
     // The ceiling is the catalog's: leave the stall three units below it.
-    const ceiling = getMaxStockForRole('Market-Stall', 'distributor', 'wheat');
+    const ceiling = getMaxStockForRole('Market-Stall-Red', 'distributor', 'wheat');
     repo.raw.get(marketId).stocks = { wheat: ceiling - 3, carrot: 0, cabbage: 0, food: ceiling - 3 };
 
     const outcome = await pull(ceiling + 10);

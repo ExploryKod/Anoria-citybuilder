@@ -17,15 +17,17 @@
 
 /** @type {Readonly<Record<string, { label: string, emoji: string }>>} */
 export const SERVICE_CATEGORY_PRESENTATION = Object.freeze({
-  faith: Object.freeze({ label: 'Foi', emoji: '⛪' }),
+  water: Object.freeze({ label: 'Eau', emoji: '💧' }),
+  energy: Object.freeze({ label: 'Énergie', emoji: '⚡' }),
+  fire: Object.freeze({ label: 'Lutte contre le feu', emoji: '🚒' }),
+  police: Object.freeze({ label: 'Sécurité', emoji: '🚓' }),
   school: Object.freeze({ label: 'Éducation', emoji: '🏫' }),
   library: Object.freeze({ label: 'Savoir', emoji: '📖' }),
   doctor: Object.freeze({ label: 'Soins médicaux', emoji: '⚕️' }),
   hospital: Object.freeze({ label: 'Soins hospitaliers', emoji: '🏥' }),
-  publicBath: Object.freeze({ label: 'Hygiène publique', emoji: '🛁' }),
   theatre: Object.freeze({ label: 'Spectacles', emoji: '🎭' }),
   cinema: Object.freeze({ label: 'Cinéma', emoji: '🎬' }),
-  pub: Object.freeze({ label: 'Convivialité', emoji: '🍺' }),
+  pub: Object.freeze({ label: 'Café-restaurant', emoji: '🍽️' }),
 });
 
 /**

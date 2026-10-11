@@ -77,7 +77,7 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     getActiveLoans: () => accounting.getActiveLoans(),
     getGeneralLedger: (filters) => accounting.getGeneralLedger(filters),
     getCityLedgerYearComparison: (options) => accounting.getCityLedgerYearComparison(options),
-    exportJournalJson: () => accounting.exportJournalJson(),
+    exportJournalJson: (filters) => accounting.exportJournalJson(filters),
     exportJournalPdf: () => accounting.exportJournalPdf(),
 
     getCitizenTaxPerCapita: () => accounting.getCitizenTaxPerCapita(),
@@ -86,7 +86,7 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     setSalarySettings: (partial) => accounting.setSalarySettings(partial),
     ensureHamletFiscalRates: (hamletId) => accounting.ensureHamletFiscalRates(hamletId),
 
-    ensureCustomsRate: () => accounting.ensureCustomsRate(),
+    ensureCustomsDuties: () => accounting.ensureCustomsDuties(),
     getServiceSubsidies: () => accounting.getServiceSubsidies(),
     setServiceSubsidy: (service, percent) => accounting.setServiceSubsidy(service, percent),
     getVatSettings: () => accounting.getVatSettings(),
@@ -94,6 +94,7 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     getBuildingAccountBalance: (buildingId, accountKind) => accounting.getBuildingAccountBalance(buildingId, accountKind),
     getBuildingAccountTrace: (buildingId) => accounting.getBuildingAccountTrace(buildingId),
     getBuildingFinance: (buildingId, accountKind) => accounting.getBuildingFinance(buildingId, accountKind),
+    exportBuildingAccountJson: (buildingId, accountKind) => accounting.exportBuildingAccountJson(buildingId, accountKind),
     getHouseResidents: (houseId) => accounting.getHouseResidents(houseId),
     hasBuildingAccount: (buildingType) => accounting.hasBuildingAccount(buildingType),
     findBankBuildingId: () => accounting.findBankBuildingId(),
@@ -106,8 +107,9 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     setVatGeneralRate: (percent) => accounting.setVatGeneralRate(percent),
     setVatCategoryRate: (category, percent) => accounting.setVatCategoryRate(category, percent),
     setVatExempt: (item, exempt) => accounting.setVatExempt(item, exempt),
-    getCustomsRate: () => accounting.getCustomsRate(),
-    setCustomsRate: (rate) => accounting.setCustomsRate(rate),
+    getCustomsDuty: (authority, flow, good, turn) => accounting.getCustomsDuty(authority, flow, good, turn),
+    setCustomsDuty: (flow, good, rate) => accounting.setCustomsDuty(flow, good, rate),
+    listCustomsDuties: () => accounting.listCustomsDuties(),
 
     getCommercialRouteFee: () => COMMERCIAL_ROUTE_FEE,
     recordCommercialRouteFee: (...args) => accounting.recordCommercialRouteFee(...args),

@@ -19,7 +19,7 @@ export const SOCIAL_GROUP_ARTISANS = 'artisans';
 export const SOCIAL_GROUP_MERCHANTS = 'merchants';
 export const SOCIAL_GROUP_SCHOLARS = 'scholars';
 
-/** Priority-tab id for a skill granted to more than one social group (e.g. `spiritual`). */
+/** Priority-tab id for a skill granted to more than one social group (a skill several groups grant). */
 export const SHARED_SKILL_TAB_ID = 'shared';
 
 /** @type {Readonly<Record<string, ReadonlyArray<number>>>} */
@@ -135,9 +135,8 @@ export function exclusiveSkillsForGroup(group) {
 }
 
 /**
- * Workplace-relevant skills granted to more than one social group (today:
- * `spiritual`, staffing Chapel — every group's tier 1 grants it so the city
- * can bootstrap before any house reaches tier 2).
+ * Workplace-relevant skills granted to more than one social group (none today: each trade belongs to one
+ * group; the catalog may share one again later, and it then lands in the shared tab).
  * @returns {ReadonlyArray<string>}
  */
 export function sharedWorkplaceSkills() {
@@ -146,13 +145,13 @@ export function sharedWorkplaceSkills() {
 
 /**
  * Every employment-priority tab id: one per social group, plus
- * `SHARED_SKILL_TAB_ID` for skills more than one group provides. Derived
+ * `SHARED_SKILL_TAB_ID` when some skill is provided by more than one group (no empty tab otherwise). Derived
  * from `allSocialGroups()`, so a catalog-added 4th social category produces
  * a 4th tab with no code change here.
  * @returns {ReadonlyArray<string>}
  */
 export function allPriorityTabs() {
-  return [...allSocialGroups(), SHARED_SKILL_TAB_ID];
+  return sharedWorkplaceSkills().length > 0 ? [...allSocialGroups(), SHARED_SKILL_TAB_ID] : [...allSocialGroups()];
 }
 
 /**

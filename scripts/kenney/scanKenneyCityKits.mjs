@@ -11,16 +11,21 @@ const KITS = [
   {
     id: 'commercial',
     resourceDir: 'kenney_city-kit-commercial_2.1',
-    buildingPattern: /^building(-skyscraper)?-[a-z]\.glb$/,
+    // The buildings (with the simplified low-detail ones), and the shop details (awnings, overhangs, parasols).
+    buildingPattern: /^(building(-skyscraper)?-[a-z]|low-detail-building(-wide)?-[a-z]|detail-[a-z-]+)\.glb$/,
     gameCategory: 'markets',
     displayPrefix: 'Commerce',
+    pieceCategory: 'decoration',
+    piecePattern: /^detail-/,
+    pieceDisplayPrefix: 'Commerce (détail)',
     basePrice: 10,
     pricePerExtraTile: 6,
   },
   {
     id: 'industrial',
-    resourceDir: 'kenney_city-kit-industrial_1.0',
-    buildingPattern: /^building-[a-t]\.glb$/,
+    resourceDir: 'kenney_city-kit-industrial_2.0',
+    // The buildings, and the pieces that are not buildings (energy, tanks, chimneys, containers).
+    buildingPattern: /^(building-[a-t]|(chimney|detail-tank|shipping-container|solar-panel|water-tower|windmill)[a-z-]*)\.glb$/,
     gameCategory: 'industry',
     displayPrefix: 'Industrie',
     basePrice: 25,
@@ -29,9 +34,13 @@ const KITS = [
   {
     id: 'suburban',
     resourceDir: 'kenney_city-kit-suburban_20',
-    buildingPattern: /^building-type-[a-u]\.glb$/,
+    // The houses, and the garden pieces around them (fences, paths, driveways, planter, trees).
+    buildingPattern: /^(building-type-[a-u]|(driveway|fence|path|planter|tree)[a-z0-9-]*)\.glb$/,
     gameCategory: 'houses',
     displayPrefix: 'Maison',
+    pieceCategory: 'decoration',
+    piecePattern: /^(driveway|fence|path|planter|tree)/,
+    pieceDisplayPrefix: 'Jardin',
     basePrice: 10,
     pricePerExtraTile: 8,
   },
@@ -130,6 +139,7 @@ const toolsByCategory = {
   markets: [],
   industry: [],
   houses: [],
+  decoration: [],
 };
 
 for (const kit of KITS) {
@@ -171,9 +181,14 @@ for (const kit of KITS) {
           footprintWidth: existing.footprintWidth,
           footprintDepth: existing.footprintDepth,
         };
+      } else if (meshSize) {
+        // No OBJ and not scanned before: the grid is the measured size rounded up, as the OBJ measure does.
+        footprint = {
+          footprintWidth: Math.max(1, Math.ceil(meshSize.width - 0.05)),
+          footprintDepth: Math.max(1, Math.ceil(meshSize.depth - 0.05)),
+        };
       } else {
-        footprint = { footprintWidth: 1, footprintDepth: 1 };
-        console.warn(`[kenney scan] Missing OBJ for ${kit.id}/${buildingId}, defaulting 1×1`);
+        throw new Error(`[kenney scan] ${kit.id}/${buildingId}: no OBJ, no GLB and not scanned before — cannot measure its footprint`);
       }
     }
     const gridSize = Math.max(footprint.footprintWidth, footprint.footprintDepth);
@@ -190,14 +205,19 @@ for (const kit of KITS) {
     const prefabKey = `${kit.id}:${buildingId}`;
     const footprintLabel = `${footprint.footprintWidth}×${footprint.footprintDepth}`;
 
+    // A piece that is not a building of the kit (a fence, a path...) has its own category and name prefix.
+    const isPiece = Boolean(kit.piecePattern?.test(buildingId));
+    const category = isPiece ? kit.pieceCategory : kit.gameCategory;
+    const displayPrefix = isPiece ? kit.pieceDisplayPrefix : kit.displayPrefix;
+
     prefabByBuildingId[gameBuildingId] = prefabKey;
-    toolsByCategory[kit.gameCategory].push(gameBuildingId);
+    toolsByCategory[category].push(gameBuildingId);
 
     catalogEntries[gameBuildingId] = {
-      displayName: `${kit.displayPrefix} — ${buildingId}`,
+      displayName: `${displayPrefix} — ${buildingId}`,
       construction: {
         price,
-        category: kit.gameCategory,
+        category,
         gridSize,
         footprintWidth: footprint.footprintWidth,
         footprintDepth: footprint.footprintDepth,
@@ -252,11 +272,12 @@ export const KENNEY_CITY_KIT_PREFAB_BY_BUILDING_ID = Object.freeze(${JSON.string
  * }>>} */
 export const KENNEY_CITY_KIT_TOOL_META = Object.freeze(${JSON.stringify(toolMeta, null, 2)});
 
-/** @type {Readonly<Record<'markets' | 'industry' | 'houses', readonly string[]>>} */
+/** @type {Readonly<Record<'markets' | 'industry' | 'houses' | 'decoration', readonly string[]>>} */
 export const KENNEY_CITY_KIT_TOOLS_BY_CATEGORY = Object.freeze({
   markets: Object.freeze(${JSON.stringify(toolsByCategory.markets)}),
   industry: Object.freeze(${JSON.stringify(toolsByCategory.industry)}),
   houses: Object.freeze(${JSON.stringify(toolsByCategory.houses)}),
+  decoration: Object.freeze(${JSON.stringify(toolsByCategory.decoration)}),
 });
 `;
 

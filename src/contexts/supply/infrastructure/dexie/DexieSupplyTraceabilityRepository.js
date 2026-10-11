@@ -1,6 +1,7 @@
 import db from '../../../../core/persistence/dexie/db.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { getGoodCategories, getServiceCategories } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
 
 /**
  * Dexie adapter — resource supply chain audit log (`supplyTraceability` table).
@@ -148,11 +149,9 @@ export class DexieSupplyTraceabilityRepository {
    * The goods flows of one month, pair by pair, at the catalog's price (HT): each seller's sales to a buyer of the chain
    * (`buyerId`), or to the houses (`buyerId` null). Services are not goods: they are not in it.
    *
-   * An export sale (`merchant_sale`) is the hub's own sale too, credited the same way, with `buyerId` null — the city
-   * partner is not a building of the chain, so there is no `producer_purchase` counterpart (`tradeLines` already leaves
-   * that line out when `buyerId` is null). Its amount is the row's `netRevenue` (after customs, already split across
-   * the hubs that supplied the order), not `quantity * price`: that product is the gross, and the hub never holds the
-   * customs part — the city does, credited separately by `recordCommerceExportIncome`.
+   * An export sale (`merchant_sale`) is not in it: our merchants are the exporters, so the sale is theirs (their lines are
+   * written when the city's order is delivered, see RunMonthlyCityTradeCycle), and what they bought from the warehouse
+   * to make the deals is a `hub_to_building` purchase, in it like any other.
    * @param {number} year
    * @param {number} monthIndex
    * @returns {Promise<Array<{ sellerId: string, buyerId: string | null, amountHT: number }>>}
@@ -163,26 +162,48 @@ export class DexieSupplyTraceabilityRepository {
     // The goods a distributor sells to the houses are not here: each delivery is paid when it is made (RecordConsumerPurchases).
     const rows = await this.db.supplyTraceability
       .where('transactionType')
-      .anyOf(['source_to_hub', 'source_to_distributor', 'merchant_sale'])
-      .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex && (row.transactionType === 'merchant_sale' || goods.includes(row.foodType)))
+      .anyOf(['source_to_hub', 'source_to_distributor', 'hub_to_building'])
+      .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex && goods.includes(row.foodType))
       .toArray();
     const pairs = new Map();
     for (const row of rows) {
       if (!row.fromId) throw new Error(`[traceability] goods transfer ${row.id} names no seller`);
-      const isExport = row.transactionType === 'merchant_sale';
-      if (!isExport && !row.toId) throw new Error(`[traceability] goods transfer ${row.id} names no buyer`);
-      const buyerId = isExport ? null : row.toId;
-      const key = `${row.fromId}>${buyerId}`;
-      const pair = pairs.get(key) ?? { sellerId: row.fromId, buyerId, amountHT: 0 };
-      if (isExport) {
-        if (!Number.isFinite(row.netRevenue)) throw new Error(`[traceability] export sale ${row.id} has no net revenue`);
-        pair.amountHT += row.netRevenue;
-      } else {
-        pair.amountHT += row.quantity * row.price;
-      }
+      if (!row.toId) throw new Error(`[traceability] goods transfer ${row.id} names no buyer`);
+      const key = `${row.fromId}>${row.toId}`;
+      const pair = pairs.get(key) ?? { sellerId: row.fromId, buyerId: row.toId, amountHT: 0 };
+      pair.amountHT += row.quantity * row.price;
       pairs.set(key, pair);
     }
     return [...pairs.values()].map((pair) => ({ ...pair, amountHT: Math.round(pair.amountHT * 100) / 100 }));
+  }
+
+  /**
+   * What the warehouses and the markets of the active hamlet received over a range of months, per receiver and good: the quantity and what
+   * it cost (the sellers' prices at the time). It is what a stock's average cost is read from (see PriceBook).
+   * @param {{ fromKey: number, toKey: number }} range months as `year × 12 + monthIndex`, both ends included
+   * @returns {Promise<Array<{ buyerId: string, category: string, quantity: number, amount: number }>>}
+   */
+  async sumInflowCosts({ fromKey, toKey }) {
+    const hamletId = requireActiveHamletId();
+    const goods = getGoodCategories();
+    const rows = await this.db.supplyTraceability
+      .where('transactionType')
+      .anyOf(['source_to_hub', 'source_to_distributor'])
+      .filter((row) => {
+        const key = row.year * MONTHS_PER_YEAR + row.month;
+        return row.hamletId === hamletId && key >= fromKey && key <= toKey && goods.includes(row.foodType);
+      })
+      .toArray();
+    const sums = new Map();
+    for (const row of rows) {
+      if (!row.toId) throw new Error(`[traceability] goods transfer ${row.id} names no buyer`);
+      const key = `${row.toId}|${row.foodType}`;
+      const sum = sums.get(key) ?? { buyerId: row.toId, category: row.foodType, quantity: 0, amount: 0 };
+      sum.quantity += row.quantity;
+      sum.amount += row.quantity * row.price;
+      sums.set(key, sum);
+    }
+    return [...sums.values()];
   }
 
   async recordSourceToDistributor(turn, month, year, source, distributor, foodType, quantity, price) {
@@ -249,6 +270,11 @@ export class DexieSupplyTraceabilityRepository {
   /** A producer's harvest bought by a hub on that turn — the only proof it really delivered. */
   async recordSourceToHub(turn, month, year, source, hub, foodType, quantity, price) {
     await this.addTransaction(turn, month, year, 'source_to_hub', source, hub, foodType, quantity, price);
+  }
+
+  /** What a building drew from a hub for a recipe, bought at the hub's price (the hub's sale, the building's purchase). */
+  async recordHubToBuilding(turn, month, year, hub, building, foodType, quantity, price) {
+    await this.addTransaction(turn, month, year, 'hub_to_building', hub, building, foodType, quantity, price);
   }
 
   async recordDistributorToConsumer(turn, month, year, distributor, consumer, foodType, quantity, price) {

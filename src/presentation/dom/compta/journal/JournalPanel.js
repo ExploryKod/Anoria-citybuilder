@@ -140,7 +140,14 @@ export function initJournalPopup(panelDeps) {
 
   if (exportJsonBtn) {
     exportJsonBtn.addEventListener('click', async () => {
-      await exportJournalToJSON();
+      await exportJournalToJSON('city');
+    });
+  }
+
+  const exportPrivateJsonBtn = document.getElementById('journal-export-private-json-btn');
+  if (exportPrivateJsonBtn) {
+    exportPrivateJsonBtn.addEventListener('click', async () => {
+      await exportJournalToJSON('private');
     });
   }
 
@@ -239,15 +246,20 @@ function exportStamp() {
   return `${now.toISOString().split('T')[0]}-${now.toTimeString().slice(0, 8).replace(/:/g, '')}`;
 }
 
-export async function exportJournalToJSON() {
+/**
+ * Downloads the journal as JSON: the hamlet's own account ('city'), or the flux of the companies' and the houses' accounts
+ * ('private'), each in its own file so they can be read apart.
+ * @param {'city' | 'private'} [accountScope]
+ */
+export async function exportJournalToJSON(accountScope = 'city') {
   if (!deps?.accounting) return;
   try {
-    const jsonString = await deps.accounting.exportJournalJson();
+    const jsonString = await deps.accounting.exportJournalJson({ accountScope });
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `journal-${exportStamp()}.json`;
+    a.download = `${accountScope === 'private' ? 'flux-prives' : 'journal'}-${exportStamp()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

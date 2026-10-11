@@ -54,6 +54,8 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     growHousePopulation,
     growAllHousePopulation,
     evolveHouseBuilding,
+    /** @param {(house: object) => Promise<boolean>} check whether a warehouse is within reach of the house's activity */
+    setActivityAccessCheck: (check) => evolveHouseBuilding.setActivityAccessCheck(check),
     evolveAllHouseBuildings,
     getCityPopulationSummaryQuery,
     getResidentialHouseAtTileQuery,

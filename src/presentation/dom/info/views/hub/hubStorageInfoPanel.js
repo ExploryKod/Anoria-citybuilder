@@ -5,6 +5,39 @@ import { buildingName, goodLabel, scheduleLabel } from '../../../shell/CatalogVo
 import { formatHubStockSummary } from '../../presenters/formats/hubStorageInfoFormat.js';
 
 /**
+ * The view the chart draws: a hub that holds several flows of goods (see `storageViews`) draws one flow at a time,
+ * the one the player picked; any other hub draws all it holds.
+ * @param {object} view
+ * @param {string | null} flowId
+ */
+function chartViewOf(view, flowId) {
+  const flow = view.storageViews?.find((candidate) => candidate.id === flowId);
+  return flow ? { ...view, pieSegments: flow.pieSegments, currentTotal: flow.total } : view;
+}
+
+/** The orders listed under the selected pill: only the goods of that flow (the whole list for a hub that holds one flow). */
+function ordersViewOf(view, flowId) {
+  const flow = view.storageViews?.find((candidate) => candidate.id === flowId);
+  return flow ? { ...view, lines: flow.lines } : view;
+}
+
+/** The title over the chart: the flow's own name when the hub has several, else "Stock". */
+function chartTitleOf(view, flowId) {
+  return view.storageViews?.find((candidate) => candidate.id === flowId)?.label ?? 'Stock';
+}
+
+/** The buttons that switch the chart from one flow to another (none when the hub holds a single flow). */
+function renderFlowTabs(view, flowId) {
+  if (!(view.storageViews?.length > 1)) return '';
+  return `<div class="hub-flow-tabs" role="tablist">${view.storageViews
+    .map(
+      (flow) =>
+        `<button type="button" role="tab" class="hub-flow-tab hub-flow-tab--${flow.id}${flow.id === flowId ? ' is-active' : ''}" data-flow="${flow.id}" aria-selected="${flow.id === flowId}">${flow.label}</button>`
+    )
+    .join('')}</div>`;
+}
+
+/**
  * @param {HTMLElement} ordersPanel
  * @param {string|null} message
  */
@@ -115,11 +148,12 @@ async function softRefreshHubPanel(ctx, orderWarning = null) {
   ctx.buildingRow = freshRow ?? buildingRow;
   ctx.view = freshView;
 
-  patchHubStoragePieChart(body, freshView, formatHubStockSummary(freshView));
+  const chartView = chartViewOf(freshView, ctx.flowId);
+  patchHubStoragePieChart(body, chartView, formatHubStockSummary(chartView), chartTitleOf(freshView, ctx.flowId));
 
   const ordersPanel = body.querySelector('.hub-orders-panel');
   if (ordersPanel && !ordersPanel.classList.contains('hidden')) {
-    patchOrdersPanelRows(ordersPanel, freshView, orderWarning);
+    patchOrdersPanelRows(ordersPanel, ordersViewOf(freshView, ctx.flowId), orderWarning);
   }
 
   return freshView;
@@ -151,6 +185,8 @@ export async function renderHubStorageInfoPanel({
     buildingRow,
     supplyView,
     timeContextAhead,
+    // The flow whose chart is drawn, for a hub that holds several (null when it holds a single one).
+    flowId: view.storageViews?.[0]?.id ?? null,
   };
 
   const workerLine = `${view.workers} / ${view.workerNeed} requis`;
@@ -174,9 +210,10 @@ export async function renderHubStorageInfoPanel({
         <div class="hub-info-workers">👷 ${workerLine}</div>
         ${statusMessage ? `<p class="hub-info-status">${statusMessage}</p>` : ''}
       </div>
-      <section class="hub-storage-chart-section">
-        <h3 class="hub-storage-chart-title">Stock</h3>
-        ${renderHubStoragePieChart(view, formatHubStockSummary(view))}
+      ${renderFlowTabs(view, ctx.flowId)}
+      <section class="hub-storage-chart-section${ctx.flowId ? ` hub-storage-chart-section--${ctx.flowId}` : ''}">
+        <h3 class="hub-storage-chart-title">${chartTitleOf(view, ctx.flowId)}</h3>
+        ${renderHubStoragePieChart(chartViewOf(view, ctx.flowId), formatHubStockSummary(chartViewOf(view, ctx.flowId)))}
       </section>
       <div class="hub-info-actions">
         <button type="button" class="hub-orders-toggle-btn">${ordersOpen ? 'Masquer ordres' : 'Ordres'}</button>
@@ -189,8 +226,25 @@ export async function renderHubStorageInfoPanel({
   const ordersPanel = body.querySelector('.hub-orders-panel');
 
   if (ordersOpen && ordersPanel) {
-    renderHubOrdersPanelShell(ordersPanel, ctx.view);
+    renderHubOrdersPanelShell(ordersPanel, ordersViewOf(ctx.view, ctx.flowId));
   }
+
+  body.querySelector('.hub-flow-tabs')?.addEventListener('click', (event) => {
+    const tab = /** @type {HTMLElement} */ (event.target).closest('[data-flow]');
+    if (!tab || tab.dataset.flow === ctx.flowId) return;
+    ctx.flowId = tab.dataset.flow;
+    body.querySelectorAll('.hub-flow-tab').forEach((button) => {
+      const active = button.dataset.flow === ctx.flowId;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    const section = body.querySelector('.hub-storage-chart-section');
+    if (section) section.className = `hub-storage-chart-section hub-storage-chart-section--${ctx.flowId}`;
+    const chartView = chartViewOf(ctx.view, ctx.flowId);
+    patchHubStoragePieChart(body, chartView, formatHubStockSummary(chartView), chartTitleOf(ctx.view, ctx.flowId));
+    // The orders follow the pill, like the chart.
+    if (ordersPanel && !ordersPanel.classList.contains('hidden')) renderHubOrdersPanelShell(ordersPanel, ordersViewOf(ctx.view, ctx.flowId));
+  });
 
   ordersPanel?.addEventListener('click', async (event) => {
     const target = /** @type {HTMLElement} */ (event.target);
@@ -236,7 +290,7 @@ export async function renderHubStorageInfoPanel({
       ordersPanel.classList.remove('hidden');
       ordersPanel.setAttribute('aria-hidden', 'false');
       ordersBtn.textContent = 'Masquer ordres';
-      renderHubOrdersPanelShell(ordersPanel, ctx.view);
+      renderHubOrdersPanelShell(ordersPanel, ordersViewOf(ctx.view, ctx.flowId));
     } else {
       ordersPanel.classList.add('hidden');
       ordersPanel.setAttribute('aria-hidden', 'true');

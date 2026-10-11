@@ -177,8 +177,10 @@ function createAssetCard(item) {
       body.appendChild(fieldRow(
         'Portée par',
         item.usedBy.length === 0
-          ? 'aucune maison du jeu'
-          : item.usedBy.map(({ houseName, levels }) => `${houseName} · niveau ${levels.join(', ')}`).join(' / '),
+          ? 'aucun bâtiment du jeu'
+          : item.usedBy
+            .map(({ name, levels }) => (levels ? `${name} · niveau ${levels.join(', ')}` : name))
+            .join(' / '),
       ));
     }
     if (item.meshSize) {

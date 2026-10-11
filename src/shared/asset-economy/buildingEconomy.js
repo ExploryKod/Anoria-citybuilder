@@ -16,13 +16,11 @@ import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../building-catalog/kenneyCityK
  */
 /**
  * Goods, declared ONCE. Every list of categories below (a house's diet, a
- * market's stock, the silo's collection) is built from these two arrays, so
+ * market's stock, the silo's collection) is built from these arrays, so
  * adding a good is one edit here — never a name written in code.
- * Crops are supplied through the farm → silo → market → house chain; gathered
- * goods are produced by the house itself (see HOUSE_GATHERING below).
+ * Crops are supplied through the farm → silo → market → house chain: a house eats nothing it did not receive.
  */
 const SUPPLIED_GOODS = ['wheat', 'carrot', 'cabbage'];
-const GATHERED_GOODS = ['fruit', 'game'];
 /** Aggregate stock field summing every good a citizen can eat. */
 const DIET_TOTAL_KEY = 'food';
 
@@ -44,6 +42,13 @@ const RAW_FARM_GOODS = ['olive'];
 const ARTISAN_ACTIVITY_GOODS = ['decoratedPot', 'carrotCake'];
 const SAVANT_ACTIVITY_GOODS = ['bandwidth', 'book'];
 const MERCHANT_ACTIVITY_GOODS = ['dealWood', 'dealDecoratedPot', 'dealBook', 'dealCarrotCake'];
+/**
+ * Goods bought from trade cities (see TradeCatalog `offers`): they arrive by import, never from a producer here, so
+ * only the trade warehouse holds them — in the same stock as the deal goods, told apart by where they came from.
+ */
+const IMPORTED_GOODS = ['coal', 'petrol', 'uranium', 'exoticWood'];
+/** The merchants' deals waiting for those imports (one per imported good): see ResourceCategoryCatalog `importGood`. */
+const MERCHANT_IMPORT_DEAL_GOODS = ['dealCoal', 'dealPetrol', 'dealUranium', 'dealExoticWood'];
 const STORED_GOODS = [
   'wood', ...RETAIL_GOODS, ...LIGHT_GOODS, ...RAW_FARM_GOODS,
   ...ARTISAN_ACTIVITY_GOODS, ...SAVANT_ACTIVITY_GOODS,
@@ -62,7 +67,7 @@ const HUB_EMPTY_RATE = 20;
 /** How far a house's own business reaches for its raw material — any warehouse in the city, like the
  * market's own reach: what matters is what it can get, not how far it walks. */
 const ACTIVITY_RANGE = Infinity;
-/** Tiles between a market and the warehouse it draws its goods from. */
+/** Tiles between a market and the warehouse it draws its goods from (enforced when the market is placed and linked). */
 const MARKET_WAREHOUSE_RANGE = 8;
 /** Goods one market stall can hold at once. */
 const MARKET_GOODS_MAX_STOCK = 120;
@@ -97,11 +102,11 @@ const twoMonthCycle = ({ first, second, base, factor, inputs }) => ({
 });
 
 /** A raw-material producer of wood from the trees around it; its name and who it serves first vary. */
-const lumberjack = ({ displayName, clients }) => ({
+const lumberjack = ({ displayName, clients, requiredSkillLevel = 1 }) => ({
   displayName,
   placementNotice: true,
   construction: { price: 45, category: 'industry' },
-  employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
+  employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat', requiredSkillLevel },
   resourceRoles: [{
     role: 'producer',
     categories: ['wood'],
@@ -158,10 +163,24 @@ const SAVANT_ACTIVITY_ROLES = [
  * `clients: ['House-Blue']` on decoratedPot/book (declared with each recipe) is what makes the merchants the
  * only buyer today — a catalog list, so opening it to another house type later is one edit, not a new rule.
  */
-const dealRecipe = (sourceGood, dealGood) =>
-  activityRecipe(dealGood, { first: 'sourcing', second: 'dealing' }, [fromWarehouse(sourceGood, 10)]);
+const dealRecipe = (sourceGood, dealGood) => ({
+  ...activityRecipe(dealGood, { first: 'sourcing', second: 'dealing' }, [fromWarehouse(sourceGood, 10)]),
+  // Made only while a city wants the good: the goods it draws from a warehouse are bought, never spent for nothing.
+  requiresOpenDeal: true,
+});
+
+/**
+ * An import deal needs no good to start from: the merchants only negotiate (their time, their staff). It is made
+ * only while a trade city that offers the good is open to deal (`requiresOpenDeal`, resolved by the trade context),
+ * and what the merchants earn is paid when the city delivers, not when the deal is made (its baseValue is 0).
+ */
+const importDealRecipe = (dealGood) => ({
+  ...activityRecipe(dealGood, { first: 'negotiating', second: 'dealing' }),
+  requiresOpenDeal: true,
+});
 
 const MERCHANT_ACTIVITY_ROLES = [
+  ...MERCHANT_IMPORT_DEAL_GOODS.map(importDealRecipe),
   dealRecipe('wood', 'dealWood'),
   dealRecipe('decoratedPot', 'dealDecoratedPot'),
   dealRecipe('book', 'dealBook'),
@@ -187,7 +206,7 @@ const HUB_MAX_STOCK = FARMS_PER_HUB * FARM_ANNUAL_YIELD;
 /** A citizen's need: `amount` units per inhabitant per month (see ConsumeResource.js). */
 const HOUSE_DIET_CONSUMER = {
   role: 'consumer',
-  categories: [...SUPPLIED_GOODS, ...GATHERED_GOODS],
+  categories: [...SUPPLIED_GOODS],
   totalKey: DIET_TOTAL_KEY,
   amount: CITIZEN_MONTHLY_NEED,
   // Asks for exactly this period's meal and holds nothing back: the supply hub stays the
@@ -214,42 +233,77 @@ const HOUSE_GOODS_CONSUMER = {
 };
 
 /**
- * Free household gathering (autarky) — every house produces these on its own,
- * outside farms and markets. `scale` picks how `amount` is read:
- *   'building'   — a FIXED amount per house, whatever its population;
- *   'population' — amount × the house's inhabitants.
- * `requiresOperational: false` lets a house without a road still gather.
+ * Water as a real need, not a coverage flag: a quantity of cubic metres per inhabitant per month, same shape as the diet or the goods
+ * (ConsumeResource drains it, the water tank's own producer role refills it from the groundwater of the land). The tank's
+ * capacity is a flat figure standing for its reservoir: it is not yet derived from its staffing, and the groundwater is not yet
+ * a depleting reserve of the map (a later step), so one tank leaves part of the city dry when it serves more than its reservoir.
  */
-const HOUSE_GATHERING = {
-  role: 'producer',
-  categories: [...GATHERED_GOODS],
-  totalKey: DIET_TOTAL_KEY,
-  amount: 1,
-  scale: 'building',
-  requiresOperational: false,
+/** Cubic metres of water a citizen uses in a month (the supply moves one unit at a time: a unit is a cubic metre, not a litre). */
+const CITIZEN_MONTHLY_WATER_NEED = 4;
+/** Cubic metres a tank draws from the ground and can hand out in a month: the water of 120 citizens. */
+const WATER_TANK_M3_PER_MONTH = 480;
+const WATER_CONSUMER = {
+  role: 'consumer',
+  categories: ['water'],
+  amount: CITIZEN_MONTHLY_WATER_NEED,
+  stockTarget: { periods: 1 },
   schedule: { unit: 'always' },
-  periodLock: { field: 'lastSubsistenceMonth', unit: 'month' },
+  periodLock: { field: 'lastWaterMonth', unit: 'month' },
+  outcomeField: 'lastWaterConsumption',
 };
 
 /**
- * Faith as a real need, not a coverage flag: 1 cérémonie per inhabitant per month, same shape as the diet
- * or the goods (ConsumeResource drains it, Chapel's own producer role refills it) — the pilot for turning a
- * service into an ordinary resource (2026-10-10). Its capacity (`FAITH_CEREMONIES_PER_MONTH` below) is a flat
- * placeholder, not a tuned number: it is not yet derived from Chapel's staffing (a separate, undecided idea —
- * see docs/ECONOMIE_REPRISE.md §6.10), so one understaffed or short-handed chapel can leave part of the city
- * uncovered where the old flag mode never could.
+ * Energy: a quantity of MWh per inhabitant per month, drained from the house's own stock like water. A plant makes it from
+ * the coal or the petrol it draws from the trade warehouse (imports) and hands it out to the houses it reaches while it has
+ * fuel; with none, it makes none. One plant makes the energy of 120 citizens a month, from `*_PER_MONTH` units of fuel:
+ * flat placeholders, not yet derived from the staffing. Factories needing energy too is a later step.
  */
-/** Placeholder monthly capacity of ONE chapel, regardless of its staffing — see the comment above. */
-const FAITH_CEREMONIES_PER_MONTH = 120;
-const FAITH_CONSUMER = {
+/** MWh a citizen uses in a month (the supply moves one unit at a time, so a unit is a megawatt-hour). */
+const CITIZEN_MONTHLY_ENERGY_NEED = 1;
+/** MWh one plant makes in a month: the energy of 120 citizens. */
+const ENERGY_PLANT_MWH_PER_MONTH = 120;
+const ENERGY_CONSUMER = {
   role: 'consumer',
-  categories: ['faith'],
-  amount: 1,
+  categories: ['energy'],
+  amount: CITIZEN_MONTHLY_ENERGY_NEED,
   stockTarget: { periods: 1 },
   schedule: { unit: 'always' },
-  periodLock: { field: 'lastFaithMonth', unit: 'month' },
-  outcomeField: 'lastFaithConsumption',
+  periodLock: { field: 'lastEnergyMonth', unit: 'month' },
+  outcomeField: 'lastEnergyConsumption',
 };
+
+/**
+ * A power plant: burns `fuelPerMonth` of an imported fuel (drawn from a trade warehouse) into a month's energy, and distributes it.
+ * `mwhPerMonth` is its monthly output (the fossil plants make the energy of 120 citizens), `requiredSkillLevel` the level of the
+ * energy skill its workers need.
+ */
+const energyPlant = ({ displayName, fuel, fuelPerMonth, price, maintenance, mwhPerMonth = ENERGY_PLANT_MWH_PER_MONTH, workerNeed = 3, requiredSkillLevel = 1 }) => ({
+  displayName,
+  construction: { price, category: 'industry' },
+  accounting: { maintenance },
+  employment: { sector: 3, workerNeed, requiredSkill: 'energie', requiredSkillLevel },
+  resourceRoles: [
+    {
+      role: 'producer',
+      categories: ['energy'],
+      schedule: { unit: 'always' },
+      amount: mwhPerMonth,
+      // Burning takes the fuel from a warehouse that holds it; with none there, the plant makes nothing this month.
+      inputs: [{ category: fuel, amount: fuelPerMonth, from: { role: 'hub', range: Infinity } }],
+      periodLock: { field: 'lastEnergyProductionMonth', unit: 'month' },
+      // Never reaches a hub: its own 'distributor' role below hands it straight to the houses.
+      deliversTo: 'house',
+    },
+    {
+      role: 'distributor',
+      categories: ['energy'],
+      range: Infinity,
+      schedule: { unit: 'always' },
+      // One month of the plant's output buffers the two roles; ConsumeResource drains it from the house side.
+      maxStock: mwhPerMonth,
+    },
+  ],
+});
 
 /** One coverage-flag consumer per (still-flag) service category (see socialCategoryCatalog.js for which tier needs which). */
 const serviceConsumer = (category) => ({
@@ -290,19 +344,20 @@ const HOUSE_LIGHT_CONSUMER = {
   outcomeField: 'lastLightConsumption',
 };
 
-/** Everything a house-like building holds: diet, gathering, and every service it can be covered by. */
+/** Everything a house-like building holds: diet, goods, heat, light, and every service it can be covered by. */
 const HOUSE_RESOURCE_ROLES = [
   HOUSE_DIET_CONSUMER,
   HOUSE_GOODS_CONSUMER,
   HOUSE_HEAT_CONSUMER,
   HOUSE_LIGHT_CONSUMER,
-  HOUSE_GATHERING,
-  FAITH_CONSUMER,
+  WATER_CONSUMER,
+  ENERGY_CONSUMER,
+  serviceConsumer('fire'),
+  serviceConsumer('police'),
   serviceConsumer('school'),
   serviceConsumer('library'),
   serviceConsumer('doctor'),
   serviceConsumer('hospital'),
-  serviceConsumer('publicBath'),
   serviceConsumer('theatre'),
   serviceConsumer('cinema'),
   serviceConsumer('pub'),
@@ -409,8 +464,8 @@ export const BUILDING_ECONOMY = {
   // Mutable progression (autarky vs specialized profession) lives in `level`,
   // a per-instance house row field owned by Housing — not a catalog fact.
   // Every house holds one 'flag' consumer entry per service category:
-  // faith (Chapel) + one per service building (school, library, doctor,
-  // hospital, publicBath, theatre, cinema, pub) — see
+  // water (the tank) + one per service building (school, library, doctor,
+  // hospital, theatre, cinema, pub) — see
   // shared/population/socialCategoryCatalog.js for which tier requires
   // which. Adding a 10th service later means one more line here per house
   // type, never a new field name (see `servedFlags` in PeriodLockPolicy.js).
@@ -457,7 +512,7 @@ export const BUILDING_ECONOMY = {
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
       // Citizens eat first; the cake business (House-Red) only gets what is left over.
-      clients: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'House-Red'],
+      clients: ['Market-Stall-Red', 'House-Red'],
     }],
   },
   'Farm-Carrot': {
@@ -472,7 +527,7 @@ export const BUILDING_ECONOMY = {
       sale: HARVEST_SALE,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
-      clients: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'House-Red'],
+      clients: ['Market-Stall-Red', 'House-Red'],
     }],
   },
   'Farm-Cabbage': {
@@ -539,7 +594,7 @@ export const BUILDING_ECONOMY = {
       // 2 in the first month, x5 in the second: 10 every two months, sold once complete.
       ...twoMonthCycle({ first: 'shaping', second: 'firing', base: 2, factor: 5 }),
       // Households' own goods first; the decorating business (House-Red) only gets what is left over.
-      clients: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'House-Red'],
+      clients: ['Market-Stall-Red', 'House-Red'],
     }],
   },
   'Factory-Amphora': {
@@ -574,13 +629,13 @@ export const BUILDING_ECONOMY = {
         inputs: [{ category: 'olive', amount: 10, from: { role: 'hub', range: WAREHOUSE_RANGE } }],
       }),
       // Households' own lighting first; the cake business (House-Red) only gets what is left over.
-      clients: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'House-Red'],
+      clients: ['Market-Stall-Red', 'House-Red'],
     }],
   },
   'Factory-Candle': {
     displayName: 'Chandellerie',
     construction: { price: 60, category: 'industry' },
-    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat', requiredSkillLevel: 2 /* a chain opened at level 3 */ },
     resourceRoles: [{
       role: 'producer',
       categories: ['candle'],
@@ -599,11 +654,13 @@ export const BUILDING_ECONOMY = {
   // one for workshops. Same mesh and footprint (see buildingAssets.js / buildingFootprint.js).
   'Lumberjack': lumberjack({
     displayName: 'Bûcheron',
-    clients: ['Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'Factory-Furniture', 'House-Blue'],
+    clients: ['Market-Stall-Red', 'Factory-Furniture', 'House-Blue'],
   }),
   'Lumberjack-Industry': lumberjack({
     displayName: 'Bûcheron industriel',
-    clients: ['Factory-Furniture', 'Market-Stall', 'Market-Stall-Blue', 'Market-Stall-Red', 'House-Blue'],
+    // One of the chains opened at level 3 (artisanat, level 2).
+    requiredSkillLevel: 2,
+    clients: ['Factory-Furniture', 'Market-Stall-Red', 'House-Blue'],
   }),
 
   // Network provider: what the savants' business runs on (see SAVANT_ACTIVITY_ROLES). Produces from nothing but
@@ -663,13 +720,20 @@ export const BUILDING_ECONOMY = {
         // WAREHOUSE_RANGE away — CollectResourceToHub gates collection on this range city-wide, not
         // just for display. Revisit once trade placement is actually being tuned for distance.
         range: Infinity,
-        categories: [...MERCHANT_ACTIVITY_GOODS],
+        categories: [...MERCHANT_ACTIVITY_GOODS, ...MERCHANT_IMPORT_DEAL_GOODS],
         totalKey: GOODS_TOTAL_KEY,
         schedule: { unit: 'always' },
       },
       {
         role: 'hub',
-        categories: [...MERCHANT_ACTIVITY_GOODS],
+        categories: [...MERCHANT_ACTIVITY_GOODS, ...MERCHANT_IMPORT_DEAL_GOODS, ...IMPORTED_GOODS],
+        // Three things in one stock, read apart (one chart each): the deals to sell abroad, the deals to buy from abroad
+        // (agreements, not goods yet), and the goods that really arrived.
+        storageViews: [
+          { id: 'export', label: "Accords d'export", categories: [...MERCHANT_ACTIVITY_GOODS] },
+          { id: 'importDeals', label: "Accords d'import", categories: [...MERCHANT_IMPORT_DEAL_GOODS] },
+          { id: 'import', label: 'Biens importés', categories: [...IMPORTED_GOODS] },
+        ],
         totalKey: GOODS_TOTAL_KEY,
         maxStock: WAREHOUSE_MAX_STOCK,
         emptyRate: HUB_EMPTY_RATE,
@@ -708,9 +772,9 @@ export const BUILDING_ECONOMY = {
 
   // Industry
   'Windmill-001': {
-    displayName: 'Moulin',
+    displayName: 'Grenier',
     construction: { price: 50, category: 'industry' },
-    employment: { sector: 4, workerNeed: 4, requiredSkill: 'stockage-alimentaire' },
+    employment: { sector: 2, workerNeed: 4, requiredSkill: 'stockage-alimentaire' },
     accounting: { maintenance: 4 },
     // No `range` on 'collector': today it collects city-wide (matches
     // RunHubSurplusCycle passing every source, unfiltered by distance).
@@ -734,42 +798,13 @@ export const BUILDING_ECONOMY = {
     ],
   },
 
-  // Markets
-  // requiredSkill: 'vente-alimentaire' (2026-09-10) — same skill as
-  // Market-Stall-Red below (merchants' tier-2 Commerces skill); every
-  // market stall variant shares it regardless of house-color naming.
-  'Market-Stall': {
-    placementNotice: true,
-    displayName: 'Étal',
-    construction: { price: 10, category: 'markets' },
-    employment: { sector: 2, workerNeed: 2, requiredSkill: 'vente-alimentaire' },
-    // Unlimited reach (2026-09-11, same reasoning as Chapel below) — a
-    // debugging aid so a house's food access is never confounded by tile
-    // distance while chasing other bugs; `placementRequires`'s hub range
-    // just below is a DIFFERENT mechanic (construction placement gating,
-    // not service reach) and is deliberately left untouched.
-    resourceRoles: MARKET_RESOURCE_ROLES,
-    placementRequires: MARKET_PLACEMENT_REQUIRES,
-  },
-  'Market-Stall-Blue': {
-    placementNotice: true,
-    displayName: 'Étal bleu',
-    construction: { price: 10, category: 'markets' },
-    employment: { sector: 2, workerNeed: 2, requiredSkill: 'vente-alimentaire' },
-    // Unlimited reach (2026-09-11, same reasoning as Chapel below) — a
-    // debugging aid so a house's food access is never confounded by tile
-    // distance while chasing other bugs; `placementRequires`'s hub range
-    // just below is a DIFFERENT mechanic (construction placement gating,
-    // not service reach) and is deliberately left untouched.
-    resourceRoles: MARKET_RESOURCE_ROLES,
-    placementRequires: MARKET_PLACEMENT_REQUIRES,
-  },
+  // Markets: one placeable market. requiredSkill: 'vente-alimentaire' (merchants' tier-1 skill).
   'Market-Stall-Red': {
     placementNotice: true,
     displayName: 'Étal rouge',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, requiredSkill: 'vente-alimentaire' },
-    // Unlimited reach (2026-09-11, same reasoning as Chapel below) — a
+    // Unlimited reach (2026-09-11, same reasoning as the water tank below) — a
     // debugging aid so a house's food access is never confounded by tile
     // distance while chasing other bugs; `placementRequires`'s hub range
     // just below is a DIFFERENT mechanic (construction placement gating,
@@ -783,7 +818,7 @@ export const BUILDING_ECONOMY = {
   // `resourceRoles` to decide whether a type can be built, employed or placed; it only drives the
   // collection/distribution cycle, which a bank has no part in). Its workers hold the 'finance' skill
   // (merchants' tier 2, alongside 'vente-alimentaire' — see socialCategoryCatalog.js), and
-  // ProducerChargePolicy.js's isLucrativeBuilding/WAGE_RATE_BY_ROLE learn to treat a 'finance' requiredSkill
+  // ProducerChargePolicy.js's isLucrativeBuilding learns to treat a 'finance' requiredSkill
   // as lucrative the same way a resourceRole does, since this building has none to read.
   'Bank': {
     displayName: 'Banque',
@@ -792,58 +827,37 @@ export const BUILDING_ECONOMY = {
     accounting: { maintenance: 6 },
   },
 
-  // Public (Chapel only — Church-002 mesh discarded as broken duplicate)
-  // Sector 6 (Services Publics) — scholars' workplaces.
-  // requiredSkill: 'spiritual' (2026-09-10) — every group's own tier-1
-  // skill (see socialCategoryCatalog.js): Chapel MUST be staffable before
-  // any house has reached tier 2, since tier 2 is what requires Chapel's
-  // own faith coverage in the first place.
-  Chapel: {
-    displayName: 'Chapelle',
+  // Water tank: it draws water from the ground of the land (its reservoir) and distributes it straight to the houses,
+  // like a market sells food, into each house's own WATER_CONSUMER need. Sector 6 (Services Publics) — savants' workplace,
+  // staffed by the `hydraulique` skill their houses hold from the start (a level-1 house needs water to evolve).
+  WaterTank: {
+    displayName: 'Citerne',
     construction: { price: 60, category: 'public' },
-    employment: { sector: 6, workerNeed: 2, requiredSkill: 'spiritual' },
-    // No hub leg — distributes straight from itself each cycle, same
-    // pattern RunCityResourceCycle's own docstring anticipates for a
-    // service like this (compare Market-Stall's hubLink above: none here).
-    //
-    // Pilot (2026-10-10): 'faith' left flag mode — a chapel now PRODUCES cérémonies (from labour alone, like
-    // the network provider's bandwidth) and DISTRIBUTES them exactly like a market sells food, into each
-    // house's own FAITH_CONSUMER need (1/resident/month, drained by ConsumeResource). FAITH_CEREMONIES_PER_MONTH
-    // is a flat placeholder standing in for "staffing-derived capacity" (not built yet — see
-    // docs/ECONOMIE_REPRISE.md §6.10): unlike the old flag mode, which always reached every house in range for
-    // free, this chapel can now run short and leave part of the city's demand unmet.
+    employment: { sector: 6, workerNeed: 2, requiredSkill: 'hydraulique' },
     resourceRoles: [
       {
         role: 'producer',
-        categories: ['faith'],
+        categories: ['water'],
         schedule: { unit: 'always' },
-        amount: FAITH_CEREMONIES_PER_MONTH,
-        periodLock: { field: 'lastFaithProductionMonth', unit: 'month' },
-        // Never reaches a hub — Chapel's own 'distributor' role below hands it straight to houses.
+        amount: WATER_TANK_M3_PER_MONTH,
+        periodLock: { field: 'lastWaterProductionMonth', unit: 'month' },
+        // Never reaches a hub: its own 'distributor' role below hands it straight to the houses.
         deliversTo: 'house',
       },
       {
         role: 'distributor',
-        categories: ['faith'],
-        // Unlimited — faith reaches every road-connected house on the map,
-        // not just ones within a fixed tile radius (2026-09-11: was `range: 5`).
-        // `Infinity` is honest about "every tile present in the game" without
-        // hardcoding any particular map's dimensions — ResourceRangePolicy's
-        // `isWithinRange` is a plain `<=` comparison, so this flows through
-        // with no special-casing anywhere it's read.
+        categories: ['water'],
+        // Every road-connected house of the map, whatever the tile distance (`isWithinRange` is a plain `<=`).
         range: Infinity,
         schedule: { unit: 'always' },
-        // Same figure as the producer's own monthly output: this stock buffers one month of production
-        // between the two roles, nothing more (ConsumeResource drains it from the house side, not here).
-        maxStock: FAITH_CEREMONIES_PER_MONTH,
+        // One month of the reservoir buffers the two roles; ConsumeResource drains it from the house side.
+        maxStock: WATER_TANK_M3_PER_MONTH,
       },
     ],
   },
-  // Legacy save alias — same building as Chapel, kept for old saves
-  'Church-002': { displayName: 'Chapelle', construction: { price: 60, category: 'public' } },
 
   // Service layers (2026-09-08) — same 'flag'-distributor pattern as
-  // Chapel's 'faith'. Grouped into 3 conceptual layers (education/medical/
+  // the water tank's 'water'. Grouped into 3 conceptual layers (education/medical/
   // entertainment — see contexts/housing/docs/service-coverage.md), but
   // each building distributes its OWN category (not a shared per-layer
   // one): the tier ladder needs to tell "a doctor visited" apart from "a
@@ -853,7 +867,7 @@ export const BUILDING_ECONOMY = {
   // category — sharing is a per-building catalog choice, not a layer rule.
   // Which category(ies) a house tier actually requires is a
   // socialCategoryCatalog.js decision, not decided here — a tier can
-  // require more than one category at once (e.g. 'pub' AND 'publicBath'),
+  // require more than one category at once (e.g. 'pub' AND 'school'),
   // that's just two requirement entries, nothing special about this catalog.
   // Meshes borrowed from Kenney's commercial/industrial city kits — see
   // presentation/three/assets/buildingAssets.js for the id/mesh bridge
@@ -861,13 +875,13 @@ export const BUILDING_ECONOMY = {
   // it can be swapped freely without touching this file).
   //
   // requiredSkill (2026-09-10) — every service building below is wired to
-  // one of scholars' service skills (medical/education/hygiene/
+  // one of scholars' service skills (medical/education/
   // entertainment/hospitality — see socialCategoryCatalog.js), matching
   // `eligibleSectors: [6]` for that group. Where two buildings cover the
   // same need at different scale (Doctor/Hospital, Cinema/Theatre), the bigger
   // one requires the skill's level-2 grant — unless it gates a house tier (School).
   //
-  // range: Infinity (2026-09-11, same reasoning as Chapel/Market above) —
+  // range: Infinity (2026-09-11, same reasoning as the tank/Market above) —
   // a debugging aid: with distance never a confound, a house failing to
   // reach a tier or hold a skill is provably a REAL bug (allocation order,
   // a missing skill grant, ...), not just "too far from the service." Once
@@ -904,12 +918,6 @@ export const BUILDING_ECONOMY = {
     employment: { sector: 6, workerNeed: 4, requiredSkill: 'medical', requiredSkillLevel: 2 },
     resourceRoles: [{ role: 'distributor', categories: ['hospital'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
-  PublicBath: {
-    displayName: 'Bains publics',
-    construction: { price: 85, category: 'public' },
-    employment: { sector: 6, workerNeed: 3, requiredSkill: 'hygiene' },
-    resourceRoles: [{ role: 'distributor', categories: ['publicBath'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
-  },
   Theatre: {
     displayName: 'Théâtre',
     construction: { price: 130, category: 'public' },
@@ -922,10 +930,30 @@ export const BUILDING_ECONOMY = {
     employment: { sector: 6, workerNeed: 3, requiredSkill: 'entertainment' },
     resourceRoles: [{ role: 'distributor', categories: ['cinema'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
+  // The café-restaurant (the former Taverne; its id and category stay `Pub`/`pub`) — the merchants' trade of hospitality.
   Pub: {
-    displayName: 'Taverne',
+    displayName: 'Café-restaurant',
     construction: { price: 45, category: 'public' },
-    employment: { sector: 6, workerNeed: 2, requiredSkill: 'hospitality' },
+    employment: { sector: 2, workerNeed: 2, requiredSkill: 'hospitality' },
     resourceRoles: [{ role: 'distributor', categories: ['pub'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
+  // Fire and police: coverage services of the savants, from the second and third level.
+  FireStation: {
+    displayName: 'Caserne de pompiers',
+    construction: { price: 100, category: 'public' },
+    employment: { sector: 6, workerNeed: 3, requiredSkill: 'incendie' },
+    resourceRoles: [{ role: 'distributor', categories: ['fire'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
+  },
+  PoliceStation: {
+    displayName: 'Poste de police',
+    construction: { price: 90, category: 'public' },
+    employment: { sector: 6, workerNeed: 3, requiredSkill: 'securite' },
+    resourceRoles: [{ role: 'distributor', categories: ['police'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
+  },
+  // The two power plants: the artisans' energy industry (sector 3), one on coal, one on petrol.
+  CoalPlant: energyPlant({ displayName: 'Centrale à charbon', fuel: 'coal', fuelPerMonth: 4, price: 110, maintenance: 5 }),
+  PetrolPlant: energyPlant({ displayName: 'Centrale à pétrole', fuel: 'petrol', fuelPerMonth: 2, price: 120, maintenance: 5 }),
+  // The nuclear plant: four times a fossil plant's output from two drums of imported uranium a month, at the price of a big
+  // site and a trained crew (level 2 of the energy skill, which the level-3 houses grant).
+  NuclearPlant: energyPlant({ displayName: 'Centrale nucléaire', fuel: 'uranium', fuelPerMonth: 2, price: 600, maintenance: 25, mwhPerMonth: 480, workerNeed: 8, requiredSkillLevel: 2 }),
 };

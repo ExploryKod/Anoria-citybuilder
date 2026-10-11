@@ -73,9 +73,14 @@ describe('formatMessagesModel — personnel complaints (moved off the Staff tab 
 });
 
 describe('formatMessagesModel — why an unstaffed workplace stays empty', () => {
-  /** A farm asks for the "fermier" skill, which the catalog gives to artisan houses from tier 2. */
+  /** A farm asks for the "fermier" skill, which the catalog gives to artisan houses from tier 1. */
   const farmVm = (byGroup) => ({
     ...workplaceVm('Farm-Wheat', { roads: 0, worker: 0, workerNeed: 3 }),
+    employmentSummary: { byGroup },
+  });
+  /** A workshop asks for "artisanat", which the catalog gives to artisan houses from tier 2 (the farm's skill comes with the village). */
+  const workshopVm = (byGroup) => ({
+    ...workplaceVm('Factory-Pot', { roads: 1, worker: 0, workerNeed: 2 }),
     employmentSummary: { byGroup },
   });
   const noWorkerAvailable = "Nous manquons de personnel, l'activité est totalement à l'arrêt";
@@ -93,12 +98,12 @@ describe('formatMessagesModel — why an unstaffed workplace stays empty', () =>
   });
 
   test('says the houses are still below the tier that grants the skill, even with nobody unemployed', () => {
-    const [complaint] = formatMessagesModel(farmVm({ artisans: { workerPool: 36, assigned: 36, unemployed: 0, poolByLevel: { 1: 36 } } })).complaints;
+    const [complaint] = formatMessagesModel(workshopVm({ artisans: { workerPool: 36, assigned: 36, unemployed: 0, poolByLevel: { 1: 36 } } })).complaints;
     expect(complaint).toMatch(/les maisons des Artisans n'ont pas encore le niveau 2 : aucune n'a la compétence « .+ »$/);
   });
 
   test('does not mention idle residents when none of the group has the skill', () => {
-    const [complaint] = formatMessagesModel(farmVm({ artisans: { workerPool: 36, assigned: 30, unemployed: 6, poolByLevel: { 1: 36 } } })).complaints;
+    const [complaint] = formatMessagesModel(workshopVm({ artisans: { workerPool: 36, assigned: 30, unemployed: 6, poolByLevel: { 1: 36 } } })).complaints;
     expect(complaint).toMatch(/les maisons des Artisans n'ont pas encore le niveau 2 : aucune n'a la compétence « .+ »$/);
   });
 
@@ -124,7 +129,7 @@ describe('formatMessagesModel — why an unstaffed workplace stays empty', () =>
 describe('formatMessagesModel — market supply-chain complaints (moved off the État tab)', () => {
   function marketVm({ noFarmsNearby = false, hasHousesNearby = true, ...staffing } = {}) {
     return {
-      ...workplaceVm('Market-Stall', staffing),
+      ...workplaceVm('Market-Stall-Red', staffing),
       supplyView: { kind: 'market', noFarmsNearby, hasHousesNearby },
     };
   }

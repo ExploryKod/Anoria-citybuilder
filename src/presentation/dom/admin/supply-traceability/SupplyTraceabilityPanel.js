@@ -4,6 +4,7 @@
  */
 
 import { buildingName, goodLabel } from '../../shell/CatalogVocabulary.js';
+import { getWorldCityById } from '../../../../composition/worldCityCatalog.js';
 import { listHamlets, requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { getSessionGameTime } from '../../../../composition/sessionRuntime.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
@@ -156,9 +157,15 @@ export function initializeSupplyTraceabilityTabs() {
     tabsInitialized = true;
 }
 
-/** The name the catalog gives a building type — what the player reads, whatever the origin (market, chapel, windmill…). */
+/** The name the catalog gives a building type — what the player reads, whatever the origin (market, tank, windmill…). */
 function buildingLabelOf(type) {
     return type ? buildingName(type) : '—';
+}
+
+/** One end of a transaction: a building, a trade city (a sale to another city names the city), or nothing ("—"). */
+function endpointLabelOf(type, id) {
+    if (type !== 'city') return buildingLabelOf(type);
+    return getWorldCityById(id)?.name ?? buildingName(type);
 }
 
 /**
@@ -196,9 +203,9 @@ async function renderTransactionLog() {
             const cells = [
                 ['supply-traceability-log-hamlet', hamlet.name],
                 ['supply-traceability-log-date', TimeManager.formatGameDate(transaction.turn)],
-                ['supply-traceability-log-good', goodLabel(transaction.foodType) || transaction.foodType || ''],
+                ['supply-traceability-log-good', transaction.foodType ? goodLabel(transaction.foodType) : ''],
                 ['supply-traceability-log-quantity', String(transaction.quantity ?? '')],
-                ['supply-traceability-log-route', `${buildingName(transaction.fromType)} → ${buildingName(transaction.toType)}`],
+                ['supply-traceability-log-route', `${endpointLabelOf(transaction.fromType, transaction.fromId)} → ${endpointLabelOf(transaction.toType, transaction.toId)}`],
             ];
             for (const [className, text] of cells) {
                 const cell = document.createElement('span');
