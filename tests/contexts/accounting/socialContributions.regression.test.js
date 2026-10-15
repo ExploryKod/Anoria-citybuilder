@@ -1,5 +1,6 @@
 import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
+import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 import { employeeContributionLines, employerContributionLines } from '../../../src/contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { moneyDirectionOf } from '../../../src/contexts/accounting/domain/policies/TreasuryFromJournalPolicy.js';
 import { pcgOfJournalType } from '../../../src/shared/accounting-catalog/PcgJournalCatalog.js';
@@ -9,7 +10,8 @@ import { pcgOfJournalType } from '../../../src/shared/accounting-catalog/PcgJour
 function settle({ employerContributionRate, employeeContributionRate }) {
   const journal = [];
   const service = new SettleProducerCharges({
-    getTimeInfo: () => ({ year: 1, monthIndex: 0, month: 'Janvier' }),
+    // The month delivered is the last of the year: the settlement that closes the fiscal year, the one that books the corporate tax.
+    getTimeInfo: () => ({ year: 1, monthIndex: 11, month: 'Décembre' }),
     listBuildings: async () => [
       { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 3 } },
       { id: 'house-1', type: 'House-Blue', workerSources: {} },
@@ -24,17 +26,20 @@ function settle({ employerContributionRate, employeeContributionRate }) {
     sumBankInterestByBuilding: async () => [{ buildingId: 'bank-1', amountHT: 1000 }],
     sumOtherExpensesByBuilding: async () => [],
     listHouses: async () => [{ id: 'house-1', pop: 3 }],
-    getPublicPay: async () => ({ minimumWage: 100, unemploymentBenefitRate: 0, employerContributionRate, employeeContributionRate }),
+    getPublicPay: async () => ({ benefitBase: 100, unemploymentBenefitRate: 0, employerContributionRate, employeeContributionRate }),
     getWageRateOf: async () => () => 100,
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0.1, threshold2: 0, rate2: 0.1 }),
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
+    readCompanyYear: companyYearReaderOf(journal),
     recordLedgerEntry: async (line) => {
       journal.push(line);
       return { recorded: true };
     },
     recordEconomyMovement: async () => {},
   });
+  // The interest the bank earned is already in the journal (another settlement wrote it): the company's statement reads it there.
+  journal.push({ type: 'loan_interest_received', amount: 1000, accountBuildingId: 'bank-1' });
   return service.execute({ time: 2, deliveredTime: 1 }).then(() => journal);
 }
 

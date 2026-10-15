@@ -195,6 +195,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
     busy: false,
   };
 
+  /** Demolition, also Cesar III style: a square from where the player pressed to the cursor, demolished on release. */
+  let erasePaint = {
+    active: false,
+    anchor: null,
+    end: null,
+    busy: false,
+  };
+
   /** Touch/tablet: anchor ghost + rotation HUD before confirming placement. */
   let touchPendingPlacement = null;
 
@@ -333,16 +341,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
   );
   gameUI.updateTimeDisplay(time);
   const freshGame = isFreshGameIntent();
-  bootTreasuryHud({
-    gameUI,
-    freshGame,
-    // Returning to a save resumes its day counter; only a new game starts at day 0.
-    restoreClock: async () => {
-      time = freshGame ? 0 : await readGameClock();
-      if (freshGame) await writeGameClock(0);
-    },
-  });
 
+  // The contexts first: the accounting is a singleton wired (labour market, selling prices) by this call, so nothing
+  // may ask for it before.
   const {
     parcels,
     supply,
@@ -355,6 +356,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
     sessionApi,
     runtime,
   } = bootGameContexts();
+  bootTreasuryHud({
+    gameUI,
+    freshGame,
+    // Returning to a save resumes its day counter; only a new game starts at day 0.
+    restoreClock: async () => {
+      time = freshGame ? 0 : await readGameClock();
+      if (freshGame) await writeGameClock(0);
+    },
+  });
   const { construction: constructionApi } = sessionApi;
   const {
     isRoadBuildingType,
@@ -1026,6 +1036,117 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
   }
 
+  /** The tiles of the square from where the player pressed to the cursor (inside the city). */
+  function eraseSquareTiles() {
+    const { anchor, end } = erasePaint;
+    const tiles = [];
+    for (let x = Math.min(anchor.x, end.x); x <= Math.max(anchor.x, end.x); x += 1) {
+      for (let y = Math.min(anchor.y, end.y); y <= Math.max(anchor.y, end.y); y += 1) {
+        if (x >= 0 && y >= 0 && x < city.size && y < city.size) tiles.push({ x, y });
+      }
+    }
+    return tiles;
+  }
+
+  function showEraseDragPreview() {
+    scene.roadPaintPreview.show({ valid: [], blocked: eraseSquareTiles() });
+  }
+
+  function cancelErasePaint() {
+    erasePaint.active = false;
+    erasePaint.anchor = null;
+    erasePaint.end = null;
+    scene.roadPaintPreview.clear();
+  }
+
+  /** The cursor moved: the square is redrawn from where the player pressed. */
+  function dragEraseToward(x, y) {
+    erasePaint.end = { x, y };
+    showEraseDragPreview();
+  }
+
+  /**
+   * Demolish the building on each tile (one that already went down with a neighbour is skipped), then bring the city
+   * up to date once. A hub that takes buildings down with it asks first, and a "no" spares that hub only.
+   * @param {Array<{ x: number, y: number, instanceId?: string | null }>} targets
+   */
+  async function demolishTiles(targets) {
+    let lastBuildingId = null;
+    let demolished = 0;
+    for (const target of targets) {
+      const { x, y } = target;
+      const tile = city.tiles[x][y];
+      if (!tile?.buildingId) {
+        continue;
+      }
+      const removedInstanceId = target.instanceId ?? tile.instanceId ?? null;
+      const isHub = supply.hasResourceRole(tile.buildingId, 'hub');
+      const hasPlacementRequirements = supply.getPlacementRequirements(tile.buildingId).length > 0;
+
+      if (isHub && removedInstanceId) {
+        const dependents = await supply.previewHubCascade({ hubId: removedInstanceId });
+        if (dependents.length > 0 && !(await confirmHubCascadeDemolition(tile.buildingId, dependents))) {
+          continue;
+        }
+      }
+
+      const removedType = tile.buildingId;
+      let cascadeOutcome = null;
+      if ((isHub || hasPlacementRequirements) && removedInstanceId) {
+        cascadeOutcome = await syncSupplyLinksAfterBuildingChange({
+          supply,
+          construction: constructionApi,
+          city,
+          event: 'bulldozed',
+          buildingType: removedType,
+          instanceId: removedInstanceId,
+          x,
+          y,
+        });
+      }
+
+      const { buildingId } = await constructionApi.bulldozeBuildingAtTile({
+        city,
+        x,
+        y,
+        meshInstanceId: removedInstanceId,
+      });
+
+      if (buildingId) {
+        demolished += 1;
+        lastBuildingId = buildingId;
+        await recordBuildingHistory('demolished', { id: removedInstanceId, type: buildingId, x, y });
+      }
+      if (cascadeOutcome?.destroyed?.length) {
+        showHubCascadeNotification(removedType, cascadeOutcome.destroyed);
+      }
+    }
+
+    if (demolished === 0) {
+      return;
+    }
+    playBulldozeSound();
+    await scene.update(city, time);
+    await syncEmploymentAfterBuildingChange(scene, city, lastBuildingId);
+    await refreshPlacementPresentation();
+    await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+  }
+
+  /** The button is released: demolish what the square covers. */
+  async function commitErasePaint() {
+    if (!erasePaint.active || erasePaint.busy) {
+      return;
+    }
+    erasePaint.busy = true;
+    try {
+      const targets = eraseSquareTiles();
+      cancelErasePaint();
+      await demolishTiles(targets);
+    } finally {
+      erasePaint.busy = false;
+    }
+  }
+
   function isModalBlockingEscapeToSelect() {
     if (infoObjectOverlay.classList.contains('active')) return true;
     if ((popupManager?.getActivePopups?.() || []).length > 0) return true;
@@ -1149,52 +1270,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
 
     if (behaviorMode === BEHAVIOR_MODE.ERASE) {
-      const removedInstanceId = selectedObject.userData?.instanceId ?? tile.instanceId ?? null;
-      const isHub = supply.hasResourceRole(tile.buildingId, 'hub');
-      const hasPlacementRequirements = supply.getPlacementRequirements(tile.buildingId).length > 0;
-
-      // A hub that takes buildings down with it asks first: nothing is touched until the player says yes.
-      if (isHub && removedInstanceId) {
-        const dependents = await supply.previewHubCascade({ hubId: removedInstanceId });
-        if (dependents.length > 0 && !(await confirmHubCascadeDemolition(tile.buildingId, dependents))) {
-          return;
-        }
+      // Playing (not the editor): Cesar III — the press anchors a square, dragging stretches it, letting go demolishes it.
+      if (!isEditorMode()) {
+        erasePaint.active = true;
+        erasePaint.anchor = { x, y };
+        erasePaint.end = { x, y };
+        showEraseDragPreview();
+        return;
       }
-
-      let cascadeOutcome = null;
-      if ((isHub || hasPlacementRequirements) && removedInstanceId) {
-        cascadeOutcome = await syncSupplyLinksAfterBuildingChange({
-          supply,
-          construction: constructionApi,
-          city,
-          event: 'bulldozed',
-          buildingType: tile.buildingId,
-          instanceId: removedInstanceId,
-          x,
-          y,
-        });
-      }
-
-      const { buildingId } = await constructionApi.bulldozeBuildingAtTile({
-        city,
-        x,
-        y,
-        meshInstanceId: removedInstanceId,
-      });
-
-      if (buildingId) {
-        playBulldozeSound();
-        await recordBuildingHistory('demolished', { id: removedInstanceId, type: buildingId, x, y });
-      }
-
-      if (cascadeOutcome?.destroyed?.length) {
-        showHubCascadeNotification(tile.buildingId, cascadeOutcome.destroyed);
-      }
-
-      await scene.update(city, time);
-      await syncEmploymentAfterBuildingChange(scene, city, buildingId);
-      await refreshPlacementPresentation();
-      await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+      await demolishTiles([{ x, y, instanceId: selectedObject.userData?.instanceId ?? tile.instanceId ?? null }]);
     } else if (behaviorMode === BEHAVIOR_MODE.SELECT) {
       await presentBuildingInfoSelection(selectedObject, {
         city,
@@ -1321,6 +1405,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
   };
 
   scene.onRoadPaintMove = async (focusedObject) => {
+    if (erasePaint.active) {
+      const ex = focusedObject?.userData?.x;
+      const ey = focusedObject?.userData?.y;
+      if (typeof ex === 'number' && typeof ey === 'number') {
+        dragEraseToward(ex, ey);
+      }
+      return;
+    }
     const dragsHouses = housePaint.active && isPlotDragTool(activeToolId);
     const dragsRoad = roadPaint.active && isRoadBuildingType(activeToolId);
     if (!dragsHouses && !dragsRoad) {
@@ -1342,6 +1434,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   scene.onRoadPaintEnd = async () => {
     await commitRoadPaint();
     await commitHousePaint();
+    await commitErasePaint();
   };
 
   scene.onPlacementHover = (focusedObject) => {
@@ -1621,6 +1714,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
       if (housePaint.active && !isPlotDragTool(toolId)) {
         cancelHousePaint();
+      }
+      if (erasePaint.active) {
+        cancelErasePaint();
       }
     },
 

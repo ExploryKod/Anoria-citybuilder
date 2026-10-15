@@ -11,12 +11,12 @@ export class AdjustWageRates {
   /**
    * @param {object} deps
    * @param {{ latestRows: () => Promise<Map<string, object>>, append: (row: object) => Promise<void> }} deps.wageRateRepository
-   * @param {() => Promise<number>} deps.getMinimumWage
+   * @param {() => Promise<number | null>} deps.getWageFloor the floor of every wage, null when the hamlet has no minimum wage
    * @param {(turn: number) => { year: number, monthIndex: number }} deps.getTimeInfo
    */
-  constructor({ wageRateRepository, getMinimumWage, getTimeInfo }) {
+  constructor({ wageRateRepository, getWageFloor, getTimeInfo }) {
     this.wageRateRepository = wageRateRepository;
-    this.getMinimumWage = getMinimumWage;
+    this.getWageFloor = getWageFloor;
     this.getTimeInfo = getTimeInfo;
   }
 
@@ -31,7 +31,7 @@ export class AdjustWageRates {
     if (!market) return { moved: 0 };
     const timeInfo = this.getTimeInfo(time);
     const month = timeInfo.monthIndex + 1;
-    const [latest, minimumWage] = await Promise.all([this.wageRateRepository.latestRows(), this.getMinimumWage()]);
+    const [latest, minimumWage] = await Promise.all([this.wageRateRepository.latestRows(), this.getWageFloor()]);
     let moved = 0;
     for (const row of market.rows) {
       if (!(row.jobs > 0)) continue;

@@ -165,6 +165,9 @@ const HOUSE_ACCOUNTS = Object.freeze([
 export async function renderBuildingFinanceTab(container, model) {
   container.replaceChildren();
   if (!model) return;
+  // A tab opens on the current month; the player picks a past one with its pill.
+  viewedMonth = null;
+  viewedYear = false;
 
   if (resolveBuildingKind(model.buildingType) !== BUILDING_KIND_HOUSE) {
     await renderAccount(container, model, null, COMPANY_ROWS);
@@ -211,7 +214,7 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
   let bankId = null;
   let depositBalance = 0;
   try {
-    finance = await model.accounting.getBuildingFinance(model.buildingId, accountKind);
+    finance = await model.accounting.getBuildingFinance(model.buildingId, accountKind, { month: viewedMonth, year: viewedYear });
     if (isPersonal) {
       bankId = await model.accounting.findBankBuildingId();
       if (bankId) depositBalance = await model.accounting.getHouseholdDepositBalance(model.buildingId);
@@ -229,14 +232,53 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
   const showContent = () => content.replaceChildren(isPersonal || financeView === 'statement' ? statementTable(rows, figures) : statementTable(RATIO_ROWS, figures));
   showContent();
   container.replaceChildren(
+    monthPills(finance, ({ month, year }) => {
+      viewedMonth = month;
+      viewedYear = year;
+      rerender();
+    }),
     financeToolbar(model, accountKind, isPersonal, showContent),
     content,
     cashLine(isPersonal ? 'Épargne privée' : 'Trésorerie du compte à ce jour', finance.cash),
     cashMovementsDetails(finance.cashMovements),
     ...(isPersonal ? [depositBalanceLine(depositBalance)] : []),
     ...(isPersonal && bankId ? depositControls(model, bankId, rerender) : []),
-    el('p', 'building-finance-note', "Les ventes et les charges d'un mois sont réglées le premier jour du mois suivant : « Mois dernier » est donc l'activité du mois précédent."),
+    el('p', 'building-finance-note', finance.scope === 'year'
+      ? "L'année est la somme des lignes du journal de l'année ; la trésorerie ci-dessus est celle d'aujourd'hui."
+      : "Les ventes et les charges d'un mois sont réglées le premier jour du mois suivant : « Mois dernier » est donc l'activité du mois précédent."),
   );
+}
+
+/** The month of this year the account is read at (null: the current one); a per-viewer convenience, not game state. */
+let viewedMonth = null;
+/** True when the account is read as a year state (last year next to this year so far) instead of a month. */
+let viewedYear = false;
+
+/**
+ * One pill per month of the year so far, from 1 to the current month: a click reads the account as it stood at the end of that month.
+ * The last pill, in another colour, is the year state: last year and this year so far.
+ * @param {{ month: number | null, currentMonth: number, scope?: string }} finance
+ * @param {(view: { month: number | null, year: boolean }) => void} pick month null for the current month (the last month pill)
+ */
+function monthPills(finance, pick) {
+  const bar = el('div', 'building-finance-months');
+  const isYear = finance.scope === 'year';
+  for (let month = 1; month <= finance.currentMonth; month += 1) {
+    const open = !isYear && month === finance.month;
+    const button = el('button', `building-finance-pill-tab${open ? ' is-active' : ''}`, String(month));
+    button.type = 'button';
+    button.setAttribute('aria-label', `Mois ${month}`);
+    button.setAttribute('aria-pressed', String(open));
+    button.addEventListener('click', () => pick({ month: month === finance.currentMonth ? null : month, year: false }));
+    bar.append(button);
+  }
+  const yearButton = el('button', `building-finance-pill-tab building-finance-pill-year${isYear ? ' is-active' : ''}`, 'Année');
+  yearButton.type = 'button';
+  yearButton.title = 'Année précédente et année en cours';
+  yearButton.setAttribute('aria-pressed', String(isYear));
+  yearButton.addEventListener('click', () => pick({ month: null, year: true }));
+  bar.append(yearButton);
+  return bar;
 }
 
 /** Which of the two readings of a company's account is open, the statement or its ratios (a per-viewer convenience, not game state). */
@@ -303,6 +345,19 @@ function financeToolbar(model, accountKind, isPersonal, showContent) {
  * @param {{ lastMonth: object, monthToDate: object, year: object, budget: object | null, openingSavings: number | null, cash: number }} finance
  */
 function withCarryForward(finance) {
+  if (finance.scope === 'year') {
+    // The year state: this year opens on the 1st of January's balance, which is what last year closed on.
+    if (finance.openingSavings === null) return finance;
+    return {
+      ...finance,
+      lastMonth: finance.lastMonth && {
+        ...finance.lastMonth,
+        openingBalance: finance.openingSavings - finance.lastMonth.householdResult,
+        closingBalance: finance.openingSavings,
+      },
+      monthToDate: { ...finance.monthToDate, openingBalance: finance.openingSavings, closingBalance: finance.cash },
+    };
+  }
   if (!finance.budget) return finance;
   return {
     ...finance,
@@ -333,7 +388,15 @@ function statementTable(rows, finance) {
   const table = el('table', 'building-finance-table');
   const head = document.createElement('thead');
   const headRow = document.createElement('tr');
-  for (const label of ['', 'Mois dernier', 'Cumul du mois']) {
+  // The game runs on months: the month columns are the default, the year pill swaps them for last year and this year so far (the PCG's N-1 and N).
+  const isYear = finance.scope === 'year';
+  const columnList = isYear
+    ? [
+      ...(finance.lastMonth ? [{ label: `Année ${finance.years.previous}`, figures: finance.lastMonth }] : []),
+      { label: `Année ${finance.years.current} (en cours)`, figures: finance.monthToDate },
+    ]
+    : [{ label: 'Mois dernier', figures: finance.lastMonth }, { label: 'Cumul du mois', figures: finance.monthToDate }];
+  for (const label of ['', ...columnList.map((column) => column.label)]) {
     const th = el('th', null, label);
     th.scope = 'col';
     headRow.append(th);
@@ -341,8 +404,7 @@ function statementTable(rows, finance) {
   head.append(headRow);
 
   const body = document.createElement('tbody');
-  // The game runs on months: the PCG's year columns (N, N-1) are not copied here.
-  const columns = [finance.lastMonth, finance.monthToDate];
+  const columns = columnList.map((column) => column.figures);
   // An optional line with nothing in any column is not shown, nor a section header with no line left under it, unless the
   // player asked to see everything ("Voir tout").
   const isShown = (row) => showAllLines || !row.optional || columns.some((figures) => row.amount(figures) !== 0);
@@ -360,7 +422,7 @@ function statementTable(rows, finance) {
     if (row.kind === 'section') {
       const th = el('th', null, row.label);
       th.scope = 'colgroup';
-      th.colSpan = 3;
+      th.colSpan = columns.length + 1;
       tr.append(th);
       body.append(tr);
       continue;

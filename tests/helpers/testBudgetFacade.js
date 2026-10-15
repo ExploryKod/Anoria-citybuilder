@@ -30,6 +30,8 @@ export class TestBudgetFacade {
 
   /** @param {object} [extraDeps] */
   wireAccountingContext(extraDeps = {}) {
+    // The accounting is a singleton wired by its first caller: a test that wires it again starts from a fresh one.
+    resetAccountingContextForTests();
     getOrCreateAccountingContext({
       db: this.db,
       journalManager: this.journalManager,

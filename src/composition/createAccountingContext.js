@@ -1,5 +1,5 @@
 import { getOrCreateGameSessionContext } from './createGameSessionContext.js';
-import { salesNatureOf } from '../shared/building-catalog/resourceRoleQueries.js';
+import { getQuantityConsumerEntries, salesNatureOf } from '../shared/building-catalog/resourceRoleQueries.js';
 import { getSessionGameTime, getSessionProcessLoanPayments } from './sessionRuntime.js';
 import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 import { HamletFiscalRateRepository } from '../contexts/accounting/infrastructure/persistence/HamletFiscalRateRepository.js';
@@ -48,11 +48,12 @@ import { GetProducerRevenues } from '../contexts/accounting/application/queries/
 import { buildingAccountTrace } from '../contexts/accounting/domain/policies/BuildingAccountTracePolicy.js';
 import { accountKeyOf } from '../contexts/accounting/domain/policies/AccountKeyPolicy.js';
 import { AdjustWageRates } from '../contexts/accounting/application/services/AdjustWageRates.js';
+import { RevalueMinimumWage } from '../contexts/accounting/application/services/RevalueMinimumWage.js';
 import { DexieWageRateRepository, wageKey } from '../contexts/accounting/infrastructure/persistence/DexieWageRateRepository.js';
-import { readLabourMarket, startWageOf } from '../contexts/accounting/domain/policies/WageRatePolicy.js';
+import { benefitBaseOf, flooredWage, readLabourMarket, startWageOf, wageFloorOf } from '../contexts/accounting/domain/policies/WageRatePolicy.js';
 import { wagePerWorkerOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
-import { buildingFinanceFigures, cashMovementsOf, householdBudgetOf, householdLastMonthOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
+import { buildingFinanceFigures, cashMovementsOf, householdBudgetOf, householdLastMonthOf, incomeStatementOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 import { residentsOfHouse } from '../contexts/accounting/domain/policies/HouseResidentsPolicy.js';
 import { residentPayBreakdownOf } from '../contexts/accounting/domain/policies/HouseResidentsPayPolicy.js';
 import { householdPublicPayOf } from '../contexts/accounting/domain/policies/HouseholdPublicPayPolicy.js';
@@ -60,7 +61,7 @@ import { MONTHS_PER_YEAR } from '../shared/time/TimeCalendar.js';
 import { isLucrativeBuilding } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../shared/building-identity/index.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
-import { getResourceBaseValue } from '../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { getResourceBaseValue, getServiceCategories } from '../shared/resource-catalog/ResourceCategoryCatalog.js';
 import {
   canAffordFromBudget,
 } from '../contexts/accounting/application/queries/treasury/GameTreasuryProjections.js';
@@ -70,10 +71,15 @@ import { SettleProducerCharges } from '../contexts/accounting/application/servic
 import { RecordHouseholdDeposit } from '../contexts/accounting/application/services/RecordHouseholdDeposit.js';
 import { RecordHouseholdWithdrawal } from '../contexts/accounting/application/services/RecordHouseholdWithdrawal.js';
 import { SettleBankDepositInterest } from '../contexts/accounting/application/services/SettleBankDepositInterest.js';
-import { depositBalanceOf, depositBalancesByBank } from '../contexts/accounting/domain/policies/DepositBalancePolicy.js';
+import { depositBalanceOf, depositInterestsOf } from '../contexts/accounting/domain/policies/DepositBalancePolicy.js';
 import { DEPOSIT_INTEREST_RATE } from '../contexts/accounting/domain/catalogs/BankCatalog.js';
 import { getBuildingDefinition } from '../shared/building-catalog/buildingCatalog.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
+import { SOCIAL_CATEGORY } from '../shared/population/socialCategoryCatalog.js';
+import { COST_OF_LIVING_BASKET } from '../contexts/accounting/domain/catalogs/LabourMarketCatalog.js';
+import { costOfLivingOf } from '../contexts/accounting/domain/policies/CostOfLivingPolicy.js';
+import { serviceSubsidyShare } from '../contexts/accounting/domain/policies/ServiceSubsidyPolicy.js';
+import { addVatTo } from '../contexts/accounting/domain/policies/VatIncludedPolicy.js';
 
 /**
  * Composition root — Accounting bounded context.
@@ -94,6 +100,8 @@ import { resolveGetTimeInfo } from './gameTimeBridge.js';
  * @param {() => number} [deps.getCitizenTaxPerCapita]
  * @param {() => { minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number }} [deps.getSalarySettings]
  * @param {(building: { id: string, type: string }, category: string, period: { year: number, monthIndex: number }) => Promise<number>} [deps.getSellingPrice]
+ * @param {(period: { year: number, monthIndex: number }) => Promise<Array<{ stage: string, buildingId: string, category: string, price: number }>>} [deps.listSellingPrices] what each seller charges per good (HT), for the cost of living
+ * @param {(period: { year: number, monthIndex: number }) => Promise<Array<{ stage: string, buildingId: string, category: string, price: number }>>} [deps.listServicePrices] what each seller charges per service unit (HT), for the cost of living
  *   the supply's price of a good or a service a building sold in a month (its price book), what a service is billed at
  * @param {() => { rows: Array<{ skill: string, level: number, jobs: number, filled: number, vacancies: number, idle: number }> } | null} [deps.getLabourMarket]
  *   the labour market of the last worker distribution (employment's), read each month to move the wages
@@ -292,15 +300,27 @@ export function createAccountingContext(deps = {}) {
     getBuildingTypes: async () =>
       new Map((await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => [row.id, row.type])),
   });
-  // The wage the labour market gives each (skill, level), never under the city's minimum wage (see WageRatePolicy.js).
+  // The wage the labour market gives each (skill, level), never under the city's minimum wage when it has one (see WageRatePolicy.js).
   const wageRateRepository = new DexieWageRateRepository();
   const marketWageRateOf = async () => {
     const [latest, settings] = await Promise.all([wageRateRepository.latestRows(), hamletFiscalRates.getSalarySettings()]);
-    return (skill, level) => Math.max(settings.minimumWage, latest.get(wageKey(skill, level))?.amount ?? startWageOf(level));
+    const floor = wageFloorOf(settings);
+    return (skill, level) => flooredWage(latest.get(wageKey(skill, level))?.amount ?? startWageOf(level), floor);
   };
+  // What the unemployment benefit is a share of: the lowest wage in force, so it exists with or without a minimum wage.
+  const benefitBaseOfHamlet = async (settings) => {
+    const latest = await wageRateRepository.latestRows();
+    return benefitBaseOf({ floor: wageFloorOf(settings), rates: [startWageOf(1), ...[...latest.values()].map((row) => row.amount)] });
+  };
+  // An indexed minimum wage follows the cost of living (read lazily: the context's own reader, defined below, is called only when a month settles).
+  const revalueMinimumWage = new RevalueMinimumWage({
+    getSalarySettings: () => hamletFiscalRates.getSalarySettings(),
+    getCostOfLiving: () => accountingApi.getCostOfLiving(),
+    setMinimumWage: (amount) => hamletFiscalRates.setSalarySettings({ minimumWage: amount }),
+  });
   const adjustWageRates = new AdjustWageRates({
     wageRateRepository,
-    getMinimumWage: async () => (await hamletFiscalRates.getSalarySettings()).minimumWage,
+    getWageFloor: async () => wageFloorOf(await hamletFiscalRates.getSalarySettings()),
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
   });
   // A company's charges are read from its goods and service flows and its upkeep, once per delivered month.
@@ -329,7 +349,7 @@ export function createAccountingContext(deps = {}) {
     getPublicPay: async () => {
       const settings = await hamletFiscalRates.getSalarySettings();
       return {
-        minimumWage: settings.minimumWage,
+        benefitBase: await benefitBaseOfHamlet(settings),
         unemploymentBenefitRate: settings.unemploymentBenefitRate,
         employerContributionRate: settings.employerContributionRate,
         employeeContributionRate: settings.employeeContributionRate,
@@ -361,13 +381,25 @@ export function createAccountingContext(deps = {}) {
     // RecordLoanInterestExpense.js / SettleBankDepositInterest.js, which actually write these lines.
     sumBankInterestByBuilding: async (year, monthIndex) =>
       sumJournalAmountByBuilding(await journalRepository.getJournalEntries(), 'loan_interest_received', year, monthIndex),
-    sumOtherExpensesByBuilding: async (year, monthIndex) =>
-      sumJournalAmountByBuilding(await journalRepository.getJournalEntries(), 'deposit_interest_paid', year, monthIndex),
     recordServiceCutOff: (cutOff) => supplyTraceabilityRepository.recordServiceCutOff(cutOff),
     getServiceSubsidies: () => hamletFiscalRates.getServiceSubsidies(),
     getServicePrice: ({ service, building, period }) => {
       if (typeof deps.getSellingPrice !== 'function') throw new Error('[accounting] the selling prices were not wired (deps.getSellingPrice): a service could not be priced');
       return deps.getSellingPrice(building, service, period);
+    },
+    // The corporate tax is based on the résultat courant avant impôts of the statement the player reads: the same function, over the same lines.
+    readCompanyYear: async (buildingId, year, accountKind = null) => {
+      const building = await dexieDb.houses.get(buildingId);
+      if (!building) throw new Error(`[finance] building ${buildingId} is not in the hamlet: its corporate tax cannot be based`);
+      const statement = incomeStatementOf(await journalRepository.getJournalEntries(), buildingId, {
+        year,
+        accountKind,
+        salesNature: salesNatureOf(building.type),
+      });
+      return {
+        rcaiYearToDate: statement.results.current,
+        taxPaidYearToDate: statement.sections.find((section) => section.id === 'profitTax').total,
+      };
     },
     buildingMaintenanceCost,
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
@@ -403,7 +435,7 @@ export function createAccountingContext(deps = {}) {
   const settleBankDepositInterest = new SettleBankDepositInterest({
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
     listBuildings: async () => (await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => ({ id: row.id, type: row.type })),
-    listDepositBalances: async () => depositBalancesByBank(await journalRepository.getJournalEntries()),
+    listDepositInterests: async (year, annualRate) => depositInterestsOf(await journalRepository.getJournalEntries(), { year, annualRate }),
     getDepositInterestRate: () => DEPOSIT_INTEREST_RATE,
     getBuildingDisplayName: (buildingType) => getBuildingDefinition(buildingType)?.displayName,
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
@@ -414,6 +446,7 @@ export function createAccountingContext(deps = {}) {
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
     settleProducerCharges: (params) => settleProducerCharges.execute(params),
     settleBankDepositInterest: (params) => settleBankDepositInterest.execute(params),
+    revalueMinimumWage: () => revalueMinimumWage.execute(),
     adjustWageRates: ({ time }) => {
       if (typeof deps.getLabourMarket !== 'function') throw new Error('[accounting] the labour market was not wired (deps.getLabourMarket): the wages could not be settled');
       return adjustWageRates.execute({ time, market: deps.getLabourMarket() });
@@ -431,7 +464,7 @@ export function createAccountingContext(deps = {}) {
     flushJournalSessionToDexie: () => flushJournalSession.execute(),
   });
 
-  return {
+  const accountingApi = {
     journalRepository,
     fiscalSettingsRepository,
     hamletFiscalRates,
@@ -720,24 +753,60 @@ export function createAccountingContext(deps = {}) {
      * — the two agree on everything except goods, by construction.
      * @param {string} buildingId
      * @param {string | null} accountKind a house's account (particulier or entreprise); null for a company's account
-     * @returns {Promise<{ lastMonth: object, monthToDate: object, year: object, cash: number }>}
+     * @param {{ month?: number | null, year?: boolean }} [view] `month` (1 to the current month of this year): the account as it stood at the end of that month, every
+     *   figure read as if that month were the current one; null for now. `year`: last year's figures and this year's so far, in the place of
+     *   the two month columns (`scope: 'year'`)
+     * @returns {Promise<{ lastMonth: object, monthToDate: object, year: object, cash: number, month: number, currentMonth: number }>}
      */
-    async getBuildingFinance(buildingId, accountKind) {
+    async getBuildingFinance(buildingId, accountKind, { month = null, year: yearView = false } = {}) {
       const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
-      const entries = await journalRepository.getJournalEntries();
-      const snapshot = await getTreasurySnapshotQuery.execute({ accountBuildingId: buildingId, accountKind });
+      const currentMonth = now.monthIndex + 1;
+      if (yearView && month !== null) throw new Error('[finance] a view is a month or the year, not both');
+      if (month !== null && !(Number.isInteger(month) && month >= 1 && month <= currentMonth)) {
+        throw new Error(`[finance] month ${month} cannot be viewed: the account goes from month 1 to the current month (${currentMonth})`);
+      }
+      const viewedMonth = month ?? currentMonth;
+      const isPast = viewedMonth < currentMonth;
+      // Viewing a month closes the account there: the later lines of the year are not read, whatever the figure.
+      const allEntries = await journalRepository.getJournalEntries();
+      const entries = isPast ? allEntries.filter((entry) => entry.year !== now.year || entry.month <= viewedMonth) : allEntries;
+      const snapshot = await getTreasurySnapshotQuery.execute({
+        accountBuildingId: buildingId,
+        accountKind,
+        ...(isPast ? { untilYear: now.year, untilMonth: viewedMonth } : {}),
+      });
       // A company's account is read as a compte de résultat: what its sales are (goods resold, production, services) comes from the catalog.
       const building = await dexieDb.houses.get(buildingId);
       if (!building) throw new Error(`[finance] building ${buildingId} is not in the hamlet: its accounts cannot be read`);
       const salesNature = salesNatureOf(building.type);
+      if (yearView) {
+        // The year state: last year's result next to this year's so far (none for the first year: it has no year before it).
+        const thisYear = buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind, salesNature });
+        const lastYear = now.year > 0 ? buildingFinanceFigures(entries, buildingId, { year: now.year - 1, accountKind, salesNature }) : null;
+        return {
+          scope: 'year',
+          years: { current: now.year, previous: lastYear ? now.year - 1 : null },
+          lastMonth: lastYear,
+          monthToDate: thisYear,
+          year: thisYear,
+          cash: snapshot.funds,
+          month: null,
+          currentMonth,
+          cashMovements: cashMovementsOf(entries, buildingId, { accountKind }),
+          budget: null,
+          // What a house had at the 1st of January: this year's opening, and last year's closing.
+          openingSavings: accountKind === 'particulier' ? snapshot.funds - thisYear.householdResult : null,
+        };
+      }
       // The month before the current one: a house's goods are dated by their delivery, its salary and services by the settlement.
-      const previous = now.monthIndex === 0
+      const viewedIndex = viewedMonth - 1;
+      const previous = viewedIndex === 0
         ? { year: now.year - 1, month: MONTHS_PER_YEAR }
-        : { year: now.year, month: now.monthIndex };
-      const settled = { year: now.year, month: now.monthIndex + 1 };
+        : { year: now.year, month: viewedIndex };
+      const settled = { year: now.year, month: viewedMonth };
       // The lines of the settlement month are the activity of the month before it: the units sold are read for that month, so the cost of a
       // unit sets the charges against the units they were incurred for.
-      const activity = now.monthIndex === 0 ? { year: now.year - 1, monthIndex: MONTHS_PER_YEAR - 1 } : { year: now.year, monthIndex: now.monthIndex - 1 };
+      const activity = viewedIndex === 0 ? { year: now.year - 1, monthIndex: MONTHS_PER_YEAR - 1 } : { year: now.year, monthIndex: viewedIndex - 1 };
       const unitsSold = accountKind === 'particulier'
         ? null
         : (await supplyTraceabilityRepository.sumUnitsSoldBySeller(activity.year, activity.monthIndex)).get(buildingId) ?? 0;
@@ -749,12 +818,14 @@ export function createAccountingContext(deps = {}) {
         monthToDate,
         year: buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind, salesNature }),
         cash: snapshot.funds,
+        month: viewedMonth,
+        currentMonth,
         // What the cash is made of, movement by movement since the account opened (it explains the figure, it is not a second balance).
         cashMovements: cashMovementsOf(entries, buildingId, { accountKind }),
         // A house's personal account has its monthly budget, and the savings it had at the start of the year (what its
         // balance was before the year's lines: the year's result is what it added since); a company's account has neither.
         budget: accountKind === 'particulier'
-          ? householdBudgetOf(entries, buildingId, { year: now.year, month: now.monthIndex + 1, balance: snapshot.funds })
+          ? householdBudgetOf(entries, buildingId, { year: now.year, month: viewedMonth, balance: snapshot.funds })
           : null,
         openingSavings: accountKind === 'particulier'
           ? snapshot.funds - buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind, salesNature }).householdResult
@@ -766,25 +837,77 @@ export function createAccountingContext(deps = {}) {
      * What the labour market pays each (skill, level), for the wages panel and the staff tabs: the wage in force (never under the minimum
      * wage), the wage before its last move and the reading that caused it.
      * @param {Array<{ skill: string, level: number, jobs: number, filled: number, vacancies: number, idle: number }>} marketRows the labour market read by employment
-     * @returns {Promise<{ minimumWage: number, unemploymentBenefitRate: number, wages: Array<{ skill: string, level: number, amount: number, previous: number | null, signal: 'shortage' | 'slack' | 'balanced', atMinimum: boolean, jobs: number, filled: number, vacancies: number, idle: number }> }>}
+     * @returns {Promise<{ wageFloor: number | null, benefitBase: number, unemploymentBenefitRate: number, wages: Array<{ skill: string, level: number, amount: number, previous: number | null, signal: 'shortage' | 'slack' | 'balanced', atMinimum: boolean, jobs: number, filled: number, vacancies: number, idle: number }> }>}
      */
     async getWageBoard(marketRows) {
       const settings = await hamletFiscalRates.getSalarySettings();
+      const floor = wageFloorOf(settings);
       const wages = [];
       for (const row of marketRows) {
         const history = await wageRateRepository.history(row.skill, row.level);
         const last = history.at(-1) ?? null;
-        const amount = Math.max(settings.minimumWage, last ? last.amount : startWageOf(row.level));
+        const amount = flooredWage(last ? last.amount : startWageOf(row.level), floor);
         const previous = history.length >= 2 ? history.at(-2).amount : last ? startWageOf(row.level) : null;
         wages.push({
           ...row,
           amount,
           previous,
           signal: readLabourMarket(row).signal,
-          atMinimum: amount === settings.minimumWage,
+          atMinimum: floor !== null && amount === floor,
         });
       }
-      return { minimumWage: settings.minimumWage, unemploymentBenefitRate: settings.unemploymentBenefitRate, wages };
+      return { wageFloor: floor, benefitBase: await benefitBaseOfHamlet(settings), unemploymentBenefitRate: settings.unemploymentBenefitRate, wages };
+    },
+
+    /** Revalues an indexed minimum wage on the cost of living now (done every January by the settlement, and when the player turns the mode on). */
+    revalueMinimumWage() {
+      return revalueMinimumWage.execute();
+    },
+
+    /**
+     * The cost of living: what a month costs a citizen of the reference household (`COST_OF_LIVING_BASKET`) at the prices on the shelves now, read
+     * from the catalog's needs and the sellers' prices; nothing is stored. A good is priced at the cheapest market, tax included; a service at the
+     * cheapest seller, less the city's subsidy, VAT added. What nobody sells has no price: `total` is then null and `missing` names it.
+     * @returns {Promise<ReturnType<typeof costOfLivingOf> & { householdSize: number }>}
+     */
+    async getCostOfLiving() {
+      if (typeof deps.listSellingPrices !== 'function' || typeof deps.listServicePrices !== 'function') {
+        throw new Error('[accounting] the selling prices were not wired (deps.listSellingPrices, deps.listServicePrices): the cost of living cannot be read');
+      }
+      const period = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
+      const [goodsPrices, servicePrices, vatRates, subsidies] = await Promise.all([
+        deps.listSellingPrices(period),
+        deps.listServicePrices(period),
+        hamletFiscalRates.getVatRates(),
+        hamletFiscalRates.getServiceSubsidies(),
+      ]);
+      const { houseType, tier } = COST_OF_LIVING_BASKET;
+      const group = getBuildingDefinition(houseType)?.residentialGroup;
+      const tierFacts = SOCIAL_CATEGORY[group]?.tiers?.[tier];
+      if (!tierFacts) throw new Error(`[cost-of-living] "${houseType}" has no tier ${tier} in the social categories (residential group ${group})`);
+
+      // A good's shelf price is already what the house pays (tax included).
+      const goodPrices = (good) => goodsPrices.filter((row) => row.stage === 'distributor' && row.category === good).map((row) => row.price);
+      // A service's price is before tax: the city's subsidy comes off, then the VAT is added.
+      const servicePricesPaid = (service) =>
+        servicePrices
+          .filter((row) => row.category === service)
+          .map((row) => {
+            const { habitantShare } = serviceSubsidyShare({ units: 1, unitPrice: row.price, subsidyPercent: subsidies[service] });
+            return addVatTo({ ht: habitantShare, ratePercent: vatRates[service] }).ttc;
+          });
+      const isService = (category) => getServiceCategories().includes(category);
+
+      const needs = getQuantityConsumerEntries(houseType).map((entry) => ({
+        key: entry.totalKey ?? entry.categories[0],
+        quantity: entry.amount,
+        // The goods that serve one need are interchangeable: any of them meets it, the cheapest is bought.
+        unitPrices: entry.categories.flatMap((category) => (isService(category) ? servicePricesPaid(category) : goodPrices(category))),
+      }));
+      const services = tierFacts.requirements
+        .filter((requirement) => requirement.kind === 'serviceCoverage')
+        .map((requirement) => ({ key: requirement.category, unitPrices: servicePricesPaid(requirement.category) }));
+      return { ...costOfLivingOf({ needs, services, householdSize: tierFacts.maxPopulation }), householdSize: tierFacts.maxPopulation };
     },
 
     /**
@@ -921,7 +1044,7 @@ export function createAccountingContext(deps = {}) {
       const expectedPay = householdPublicPayOf({
         pop: house.pop,
         workers,
-        minimumWage: settings.minimumWage,
+        benefitBase: await benefitBaseOfHamlet(settings),
         unemploymentBenefitRate: settings.unemploymentBenefitRate,
       });
       const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
@@ -1077,6 +1200,7 @@ export function createAccountingContext(deps = {}) {
       return objectiveHistoryRepository.getFailuresForObjective(objectiveId);
     },
   };
+  return accountingApi;
 }
 
 /** @type {ReturnType<typeof createAccountingContext> | null} */
@@ -1085,6 +1209,12 @@ let sharedAccounting = null;
 export function getOrCreateAccountingContext(deps = {}) {
   if (!sharedAccounting) {
     sharedAccounting = createAccountingContext(deps);
+  } else if (Object.keys(deps).length > 0) {
+    // The first caller wires the singleton: wiring passed later would be ignored, and a missing dependency would only
+    // show much later (at the first settlement). Whoever wires it must be the first to ask for it.
+    throw new Error(
+      `[accounting] the context already exists, so the wiring passed now would be ignored (${Object.keys(deps).join(', ')}): wire it at the first call`,
+    );
   }
   return sharedAccounting;
 }

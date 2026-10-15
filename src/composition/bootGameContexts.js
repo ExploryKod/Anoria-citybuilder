@@ -47,6 +47,9 @@ export function bootGameContexts() {
     getLabourMarket: () => employment.getLabourMarket(),
     // A service is billed at the price its seller sold it at (the supply's price book, built after the accounting: read at call time).
     getSellingPrice: (building, category, period) => supply.sellingPriceOf(building, category, period),
+    // The shelves' prices, for the cost of living.
+    listSellingPrices: (period) => supply.listSellingPrices(period),
+    listServicePrices: (period) => supply.listServicePrices(period),
   });
   // The supply needs the consumers' money (their personal accounts), so the accounting exists first.
   const supply = getOrCreateSupplyContext({ consumerMoney: createConsumerMoneyPort(accounting) });

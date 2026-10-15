@@ -1,5 +1,6 @@
 import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
+import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 import { buildingFinanceFigures } from '../../../src/contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 
 // Regression: a house's own little business (an artisan's, a savant's, a merchant's — buildingEconomy.js's
@@ -12,7 +13,8 @@ const HOUSE = 'house-1';
 function settle(pairs) {
   const journal = [];
   const service = new SettleProducerCharges({
-    getTimeInfo: () => ({ year: 1, monthIndex: 0, month: 'Janvier' }),
+    // The month delivered is the last of the year: the settlement that closes the fiscal year, the one that shares the cooperative's surplus.
+    getTimeInfo: () => ({ year: 1, monthIndex: 11, month: 'Décembre' }),
     listBuildings: async () => [
       { id: HOUSE, type: 'House-Red', workerSources: {} },
       { id: 'warehouse-1', type: 'Warehouse', workerSources: {} },
@@ -30,12 +32,13 @@ function settle(pairs) {
     sumBankInterestByBuilding: async () => [],
     sumOtherExpensesByBuilding: async () => [],
     listHouses: async () => [{ id: HOUSE, pop: 4 }],
-    getPublicPay: async () => ({ minimumWage: 0, unemploymentBenefitRate: 0, employerContributionRate: 0, employeeContributionRate: 0 }),
+    getPublicPay: async () => ({ benefitBase: 0, unemploymentBenefitRate: 0, employerContributionRate: 0, employeeContributionRate: 0 }),
     getWageRateOf: async () => () => 100,
     businessFundsOf: async () => 0,
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0, threshold2: 0, rate2: 0 }),
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
+    readCompanyYear: companyYearReaderOf(journal),
     recordLedgerEntry: async (line) => {
       // The real RecordLedgerEntry command stamps year/month from its own getTimeInfo(turn); this fake
       // does it directly, matching the fixed deliveredTime (year 1, monthIndex 0) settle() uses below.

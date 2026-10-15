@@ -1,6 +1,6 @@
 /**
- * The rates a hamlet sets for its own budget: the citizen tax, the minimum wage (the floor of every wage, and what the
- * unemployment benefit is a share of) and the taxes on wages. The wages themselves are not set here: the labour market settles them.
+ * The rates a hamlet sets for its own budget: the citizen tax, the minimum wage (the floor of every wage, when the hamlet has one: see
+ * `MINIMUM_WAGE_MODES`) and the taxes on wages. The unemployment benefit is a share of the lowest wage the city pays (see `benefitBaseOf`). The wages themselves are not set here: the labour market settles them.
  * Declared here once: the defaults are written on a hamlet when it is created, the bounds are what the admin
  * panel accepts. Customs are not here: they are one rate for the whole city (see the trade relations).
  */
@@ -8,13 +8,15 @@
 /**
  * The income tax (IR) is progressive, fixed at three bands: exempt below `salaryTaxThreshold1`, `salaryTaxRate1` on the
  * part between the two thresholds, `salaryTaxRate2` on the part above `salaryTaxThreshold2` (see withholdIncomeTax).
- * @type {Readonly<{ citizenTaxPerCapita: number, minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>}
+ * @type {Readonly<{ citizenTaxPerCapita: number, minimumWage: number, minimumWageBasketRatio: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>}
  */
 export const DEFAULT_HAMLET_FISCAL_RATES = Object.freeze({
   citizenTaxPerCapita: 25,
   // The economy's own scale: a citizen's needs cost about 5.8 a month, a first wage is 8 (see LabourMarketCatalog.js). The brackets are per
   // household (foyer): a household with three workers earns about 24.
   minimumWage: 6,
+  // In `indexed` mode, the floor is this many times the cost of living (a citizen's month): 1.5 is a floor a half above what a citizen needs.
+  minimumWageBasketRatio: 1.5,
   salaryTaxThreshold1: 10,
   salaryTaxRate1: 0.1,
   salaryTaxThreshold2: 30,
@@ -26,10 +28,24 @@ export const DEFAULT_HAMLET_FISCAL_RATES = Object.freeze({
   employeeContributionRate: 0.1,
 });
 
+/**
+ * How a hamlet treats the minimum wage, the first lever of its economic regime:
+ * - `none`: no floor at all, the labour market alone sets every wage (very liberal);
+ * - `fixed`: a floor in euros a month that stays where the player set it (`minimumWage`), as in the US;
+ * - `indexed`: a floor that follows the cost of living, as in France: every January it is revalued to `minimumWageBasketRatio` times what a
+ *   citizen's month costs (see CostOfLivingPolicy.js), and the revalued amount is the floor (`minimumWage`) until the next January. When the cost
+ *   of living is not known (a good nobody sells) the floor stays where it was.
+ * It is a text, not a rate: it lives apart from `DEFAULT_HAMLET_FISCAL_RATES`, whose fields are all numbers.
+ */
+export const MINIMUM_WAGE_MODES = Object.freeze(['none', 'fixed', 'indexed']);
+export const DEFAULT_MINIMUM_WAGE_MODE = 'fixed';
+
 /** @type {Readonly<Record<keyof typeof DEFAULT_HAMLET_FISCAL_RATES, { min: number, max: number, integer: boolean }>>} */
 export const HAMLET_FISCAL_RATE_BOUNDS = Object.freeze({
   citizenTaxPerCapita: Object.freeze({ min: 0, max: 1000, integer: true }),
-  minimumWage: Object.freeze({ min: 1, max: 60, integer: true }),
+  // Not whole euros: an indexed floor is revalued to the centime.
+  minimumWage: Object.freeze({ min: 0.1, max: 60, integer: false }),
+  minimumWageBasketRatio: Object.freeze({ min: 0.5, max: 5, integer: false }),
   salaryTaxThreshold1: Object.freeze({ min: 0, max: 500, integer: true }),
   salaryTaxRate1: Object.freeze({ min: 0, max: 1, integer: false }),
   salaryTaxThreshold2: Object.freeze({ min: 0, max: 1000, integer: true }),
@@ -88,7 +104,8 @@ export function fiscalSliderBounds() {
   const inPercent = (bounds) => ({ min: Math.round(bounds.min * 100), max: Math.round(bounds.max * 100) });
   return Object.freeze({
     citizenTaxPerCapita: HAMLET_FISCAL_RATE_BOUNDS.citizenTaxPerCapita,
-    minimumWage: HAMLET_FISCAL_RATE_BOUNDS.minimumWage,
+    minimumWage: Object.freeze({ min: Math.ceil(HAMLET_FISCAL_RATE_BOUNDS.minimumWage.min), max: HAMLET_FISCAL_RATE_BOUNDS.minimumWage.max }),
+    minimumWageBasketPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.minimumWageBasketRatio),
     salaryTaxThreshold1: HAMLET_FISCAL_RATE_BOUNDS.salaryTaxThreshold1,
     salaryTaxPercent1: inPercent(HAMLET_FISCAL_RATE_BOUNDS.salaryTaxRate1),
     salaryTaxThreshold2: HAMLET_FISCAL_RATE_BOUNDS.salaryTaxThreshold2,

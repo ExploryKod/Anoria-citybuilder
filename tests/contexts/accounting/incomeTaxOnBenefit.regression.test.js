@@ -1,5 +1,6 @@
 import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
+import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 
 // Regression: the unemployment benefit is taxed exactly like a wage — folded into the same monthly gross per
 // household, under the same brackets, no separate threshold or rate for it (decided 2026-10-09).
@@ -20,11 +21,12 @@ function settle({ pop, minimumWage, unemploymentBenefitRate, taxRate }) {
     sumBankInterestByBuilding: async () => [],
     sumOtherExpensesByBuilding: async () => [],
     listHouses: async () => [{ id: 'house', pop }],
-    getPublicPay: async () => ({ minimumWage, unemploymentBenefitRate, employerContributionRate: 0, employeeContributionRate: 0 }),
+    getPublicPay: async () => ({ benefitBase: minimumWage, unemploymentBenefitRate, employerContributionRate: 0, employeeContributionRate: 0 }),
     getWageRateOf: async () => () => 100,
     getSalaryTax: async () => taxRate,
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
+    readCompanyYear: companyYearReaderOf(journal),
     recordLedgerEntry: async (line) => {
       journal.push(line);
       return { recorded: true };

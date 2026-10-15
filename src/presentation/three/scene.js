@@ -2351,8 +2351,8 @@ function onTouchEnd(event) {
         if (objectToSelect) {
             updateSelectedObject.call(this, objectToSelect);
             event.preventDefault();
-            // Touch has no mouseup paint trail — close Cesar road-paint session after each gesture.
-            if (placementDrag && typeof this.onRoadPaintEnd === 'function') {
+            // Touch has no mouseup paint trail — close the paint session (road, house or demolition) after each gesture.
+            if (typeof this.onRoadPaintEnd === 'function') {
                 Promise.resolve(this.onRoadPaintEnd()).catch((error) => {
                     console.error('[scene.js] onRoadPaintEnd (touch) failed:', error);
                 });

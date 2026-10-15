@@ -1,5 +1,6 @@
 import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
+import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 
 // Every private movement the journal books for a company or a house is also in the economy register, once, with the same
 // amount: the register is the source the journal is read from, so the two must never disagree.
@@ -10,7 +11,8 @@ function settle(pairs, buildings) {
   const journal = [];
   const register = [];
   const service = new SettleProducerCharges({
-    getTimeInfo: () => ({ year: 1, monthIndex: 0, month: 'Janvier' }),
+    // The month delivered is the last of the year: the settlement that closes the fiscal year, the one that books the corporate tax.
+    getTimeInfo: () => ({ year: 1, monthIndex: 11, month: 'Décembre' }),
     listBuildings: async () => buildings,
     sumGoodsFlowsByPair: async () => pairs,
     sumServiceFlows: async () => [],
@@ -22,11 +24,12 @@ function settle(pairs, buildings) {
     sumBankInterestByBuilding: async () => [],
     sumOtherExpensesByBuilding: async () => [],
     listHouses: async () => [],
-    getPublicPay: async () => ({ minimumWage: 100, unemploymentBenefitRate: 0.7, employerContributionRate: 0, employeeContributionRate: 0 }),
+    getPublicPay: async () => ({ benefitBase: 100, unemploymentBenefitRate: 0.7, employerContributionRate: 0, employeeContributionRate: 0 }),
     getWageRateOf: async () => () => 100,
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0.1, threshold2: 0, rate2: 0.1 }),
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 10,
+    readCompanyYear: companyYearReaderOf(journal),
     recordLedgerEntry: async (line) => {
       journal.push(line);
       return { recorded: true };

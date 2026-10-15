@@ -1,10 +1,11 @@
 import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
+import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 import { allocateCooperativeResult } from '../../../src/contexts/accounting/domain/policies/CooperativeAllocationPolicy.js';
 import { COOPERATIVE_MINIMUM_SHARES, COOPERATIVE_SHARES, CORPORATE_TAX_RATE } from '../../../src/contexts/accounting/domain/catalogs/ProducerChargeCatalog.js';
 import { buildingFinanceFigures } from '../../../src/contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 
-// A house's own business is a cooperative (SCOP): its month's surplus goes to the residents (participation, a charge before the tax), to the tax,
+// A house's own business is a cooperative (SCOP): its year's surplus, shared when the fiscal year closes, goes to the residents (participation, a charge before the tax), to the tax,
 // to the interest on the parts sociales (after the tax) and to the reserves. A loss shares nothing; only the cash the business holds can leave it.
 const shares = COOPERATIVE_SHARES;
 const allocate = (result, businessCash) => allocateCooperativeResult({ result, businessCash, shares, corporateTaxRate: CORPORATE_TAX_RATE });
@@ -19,7 +20,7 @@ describe('the shares of a cooperative follow the rules of the SCOP', () => {
   });
 });
 
-describe('allocateCooperativeResult — what a cooperative shares in a month', () => {
+describe('allocateCooperativeResult — what a cooperative shares in a year', () => {
   test('a surplus is shared: the participation, the tax on what is left, then the interest on the parts', () => {
     expect(allocate(100, 1000)).toEqual({ participation: 40, corporateTax: 15, dividend: 15 });
   });
@@ -39,7 +40,8 @@ describe('allocateCooperativeResult — what a cooperative shares in a month', (
 function settle({ pairs, businessCash }) {
   const journal = [];
   const service = new SettleProducerCharges({
-    getTimeInfo: () => ({ year: 1, monthIndex: 0, month: 'Janvier' }),
+    // The month delivered is the last of the year: the settlement that closes the fiscal year, the one that shares the surplus.
+    getTimeInfo: () => ({ year: 1, monthIndex: 11, month: 'Décembre' }),
     listBuildings: async () => [
       { id: 'house-1', type: 'House-Red', workerSources: {} },
       { id: 'supplier', type: 'Farm-Wheat', workerSources: {} },
@@ -55,11 +57,12 @@ function settle({ pairs, businessCash }) {
     sumBankInterestByBuilding: async () => [],
     sumOtherExpensesByBuilding: async () => [],
     listHouses: async () => [{ id: 'house-1', pop: 4 }],
-    getPublicPay: async () => ({ minimumWage: 0, unemploymentBenefitRate: 0, employerContributionRate: 0, employeeContributionRate: 0 }),
+    getPublicPay: async () => ({ benefitBase: 0, unemploymentBenefitRate: 0, employerContributionRate: 0, employeeContributionRate: 0 }),
     getWageRateOf: async () => () => 8,
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0, threshold2: 0, rate2: 0 }),
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
+    readCompanyYear: companyYearReaderOf(journal),
     recordLedgerEntry: async (line) => {
       journal.push({ ...line, year: 1, month: 1 });
       return { recorded: true };
@@ -69,7 +72,7 @@ function settle({ pairs, businessCash }) {
   return service.execute({ time: 2, deliveredTime: 1 }).then(() => journal);
 }
 
-describe('a month\'s settlement of a house\'s cooperative', () => {
+describe('the year-end settlement of a house\'s cooperative', () => {
   test('the surplus reaches the residents\' personal account, the tax reaches the city, and the statement carries the participation before the tax', async () => {
     const journal = await settle({ pairs: [{ sellerId: 'house-1', buyerId: null, amountHT: 200 }], businessCash: 1000 });
 

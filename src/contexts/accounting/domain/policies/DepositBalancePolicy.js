@@ -27,22 +27,48 @@ export function depositBalanceOf(entries, houseId, bankId) {
 }
 
 /**
- * Every (house, bank) pair with a deposit balance — what SettleBankDepositInterest.js folds the monthly interest
- * over. Built from the same lines depositBalanceOf reads, grouped instead of filtered to one pair.
+ * The interest each (house, bank) pair earned over a fiscal year, credited once when the year closes (as a real savings account does). Each
+ * month earns a twelfth of the annual rate on the lowest balance the month held (the smaller of its opening and closing balance: what was
+ * withdrawn within the month earns nothing, and a deposit made late in the month does not earn for the whole of it). The balance carries the
+ * interest of the earlier years, which is how it compounds, once a year. Built from the same lines depositBalanceOf reads, with the month each
+ * line is stamped with.
  * @param {Array<object>} entries journal lines
- * @returns {Array<{ houseId: string, bankId: string, balance: number }>}
+ * @param {{ year: number, annualRate: number }} period the fiscal year to credit, and the rate for the year (a fraction of the balance)
+ * @returns {Array<{ houseId: string, bankId: string, interest: number }>} only the pairs that earned something
  */
-export function depositBalancesByBank(entries) {
+export function depositInterestsOf(entries, { year, annualRate }) {
   const byPair = new Map();
   for (const entry of entries) {
     const isIncoming = INCOMING_TYPES.has(entry.type);
     const isOutgoing = OUTGOING_TYPES.has(entry.type);
     if (!isIncoming && !isOutgoing) continue;
     if (!entry.accountBuildingId || !entry.counterpartyBuildingId) continue;
+    if (entry.year > year) continue;
     const key = `${entry.accountBuildingId}:${entry.counterpartyBuildingId}`;
-    const current = byPair.get(key) ?? { houseId: entry.accountBuildingId, bankId: entry.counterpartyBuildingId, centimes: 0 };
-    current.centimes += (isIncoming ? 1 : -1) * Math.round(entry.amount * 100);
-    byPair.set(key, current);
+    const pair = byPair.get(key) ?? { houseId: entry.accountBuildingId, bankId: entry.counterpartyBuildingId, opening: 0, months: new Array(12).fill(0) };
+    const signed = (isIncoming ? 1 : -1) * Math.round(entry.amount * 100);
+    if (entry.year < year) {
+      pair.opening += signed;
+    } else {
+      if (!Number.isInteger(entry.month) || entry.month < 1 || entry.month > 12) {
+        throw new Error(`[deposit] journal line ${entry.type} (turn ${entry.turn}) has no month stamp: its interest cannot be placed in the year`);
+      }
+      pair.months[entry.month - 1] += signed;
+    }
+    byPair.set(key, pair);
   }
-  return [...byPair.values()].map(({ houseId, bankId, centimes }) => ({ houseId, bankId, balance: centimes / 100 }));
+  const interests = [];
+  for (const { houseId, bankId, opening, months } of byPair.values()) {
+    let balance = opening;
+    let earned = 0;
+    for (const movement of months) {
+      const closing = balance + movement;
+      const lowest = Math.min(balance, closing);
+      if (lowest > 0) earned += (lowest * annualRate) / 12;
+      balance = closing;
+    }
+    const interest = Math.round(earned) / 100;
+    if (interest > 0) interests.push({ houseId, bankId, interest });
+  }
+  return interests;
 }

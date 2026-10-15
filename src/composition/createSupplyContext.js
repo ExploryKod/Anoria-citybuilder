@@ -283,6 +283,22 @@ export function createSupplyContext({
   });
   const describeActivitySupplyAccessQuery = new DescribeActivitySupplyAccess(supplyBuildingRepositoryImpl);
 
+  // What each seller of the hamlet charges per unit this month: its goods, or its services.
+  const listPrices = async (period, { services: wantServices }) => {
+    await priceBook.ensure(period);
+    const serviceCategories = getServiceCategories();
+    const prices = [];
+    for (const role of ['producer', 'hub', 'distributor']) {
+      for (const building of await supplyBuildingRepositoryImpl.findByResourceRole(role)) {
+        for (const category of getCategoriesForRole(building.type, role)) {
+          if (serviceCategories.includes(category) !== wantServices) continue;
+          prices.push({ stage: role, buildingId: building.id, category, price: priceBook.sellingPrice(building, category, period) });
+        }
+      }
+    }
+    return prices;
+  };
+
   return {
     /** @param {(dealCategory: string) => Promise<boolean>} check whether the merchants may make this deal now */
     setOpenDealCheck(check) {
@@ -538,18 +554,17 @@ export function createSupplyContext({
      * @returns {Promise<Array<{ stage: 'producer' | 'hub' | 'distributor', buildingId: string, category: string, price: number }>>}
      */
     async listSellingPrices(period) {
-      await priceBook.ensure(period);
-      const services = getServiceCategories();
-      const prices = [];
-      for (const role of ['producer', 'hub', 'distributor']) {
-        for (const building of await supplyBuildingRepositoryImpl.findByResourceRole(role)) {
-          for (const category of getCategoriesForRole(building.type, role)) {
-            if (services.includes(category)) continue;
-            prices.push({ stage: role, buildingId: building.id, category, price: priceBook.sellingPrice(building, category, period) });
-          }
-        }
-      }
-      return prices;
+      return listPrices(period, { services: false });
+    },
+
+    /**
+     * What every seller of a service (a tank, a plant, a doctor's, a fire station...) charges per unit this month (HT, before the city's subsidy
+     * and the VAT): the services `listSellingPrices` leaves out.
+     * @param {{ year?: number, monthIndex?: number }} period
+     * @returns {Promise<Array<{ stage: 'producer' | 'hub' | 'distributor', buildingId: string, category: string, price: number }>>}
+     */
+    async listServicePrices(period) {
+      return listPrices(period, { services: true });
     },
 
     /** The building that made the goods of a hub's lot (a lot key), or null when it has none. */

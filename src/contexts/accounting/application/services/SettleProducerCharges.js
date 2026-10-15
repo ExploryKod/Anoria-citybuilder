@@ -1,6 +1,9 @@
 import { buildProducerLineBusinessKey, buildServiceLineBusinessKey, buildTradeLineBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 import {
   buildingChargeLines,
+  corporateTaxDueOf,
+  corporateTaxLines,
+  isLucrativeBuilding,
   employeeContributionLines,
   employerContributionLines,
   serviceSaleLines,
@@ -17,6 +20,7 @@ import { serviceSubsidyShare } from '../../domain/policies/ServiceSubsidyPolicy.
 import { addVatTo } from '../../domain/policies/VatIncludedPolicy.js';
 import { payableServiceBills } from '../../domain/policies/ServiceSolvencyPolicy.js';
 import { householdPublicPayOf } from '../../domain/policies/HouseholdPublicPayPolicy.js';
+import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { getResourceCategoryPresentation } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
@@ -94,19 +98,18 @@ export class SettleProducerCharges {
    *   journal's `loan_interest_received` lines (no supply-chain trace exists for a loan) — this is what lets a
    *   bank fund its own wages/upkeep/corporate tax from what it actually earns, the same way goods and service
    *   sales do for every other lucrative building
-   * @param {(year: number, monthIndex: number) => Promise<Array<{ buildingId: string, amountHT: number }>>} deps.sumOtherExpensesByBuilding real expenses already paid this month by some other settlement, outside
-   *   goods/services/wages — today only a bank's `deposit_interest_paid` (see SettleBankDepositInterest.js,
-   *   which must run before this settlement in the same turn so the line already exists to be read) — folded
-   *   into `buildingChargeLines`'s `otherExpensesHT` so it actually reduces taxable profit, not just cash
    * @param {() => Promise<{ threshold1: number, rate1: number, threshold2: number, rate2: number }>} deps.getSalaryTax the progressive income tax bands: see withholdIncomeTax
    * @param {() => Promise<Array<{ id: string, pop: number }>>} deps.listHouses the hamlet's households and their residents
-   * @param {() => Promise<{ minimumWage: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>} deps.getPublicPay
-   *   the minimum wage, the benefit rate (a fraction of it) and the two social contribution rates (fractions of the gross wage)
+   * @param {() => Promise<{ benefitBase: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>} deps.getPublicPay
+   *   the benefit base (the lowest wage the city pays), the benefit rate (a fraction of it) and the two social contribution rates (fractions of the gross wage)
    * @param {() => Promise<(skill: string, level: number) => number>} deps.getWageRateOf the monthly gross wage the labour market gives a skill at a level
    *   (never under the minimum wage), as it stands for the month being settled
    * @param {(houseId: string) => Promise<number>} deps.fundsOf what a house has in its personal account before this settlement
    * @param {(houseId: string) => Promise<number>} deps.businessFundsOf what a house's own business (its cooperative) holds in its business account: only that can be shared out
    * @param {(cutOff: { turn: number, year: number, monthIndex: number, houseId: string, service: string }) => Promise<void>} deps.recordServiceCutOff
+   * @param {(buildingId: string, year: number, accountKind?: string | null) => Promise<{ rcaiYearToDate: number, taxPaidYearToDate: number }>} deps.readCompanyYear an account's
+   *   résultat courant avant impôts and the corporate tax booked so far in a year, read off its compte de résultat (the one the player reads): a company's account, or a
+   *   house's business account (`accountKind`)
    * @param {(type: string) => number} deps.buildingMaintenanceCost
    * @param {(params: object) => Promise<{ recorded: boolean, reason?: string }>} deps.recordLedgerEntry
    * @param {(movement: object) => Promise<void>} deps.recordEconomyMovement the economy register
@@ -161,14 +164,13 @@ export class SettleProducerCharges {
 
     const houseSales = await this.deps.sumHouseSales(timeInfo.year, timeInfo.monthIndex);
     const bankInterest = await this.deps.sumBankInterestByBuilding(timeInfo.year, timeInfo.monthIndex);
-    const otherExpenses = await this.deps.sumOtherExpensesByBuilding(timeInfo.year, timeInfo.monthIndex);
     const taxRate = await this.deps.getSalaryTax();
 
     // The city's pay to the households: the unemployed's benefit, from the residents of each. Civil servants
     // were removed (2026-10-10, "suppress it for now") — a resident is either a worker or unemployed, the
     // city no longer directly employs a fixed share of the population.
     const publicPay = await this.deps.getPublicPay();
-    for (const field of ['minimumWage', 'unemploymentBenefitRate', 'employerContributionRate', 'employeeContributionRate']) {
+    for (const field of ['benefitBase', 'unemploymentBenefitRate', 'employerContributionRate', 'employeeContributionRate']) {
       if (!Number.isFinite(publicPay[field])) throw new Error(`[producer] the hamlet's ${field} is not a number (${publicPay[field]}): the month cannot be settled`);
     }
     const households = await this.deps.listHouses();
@@ -183,7 +185,7 @@ export class SettleProducerCharges {
       const pay = householdPublicPayOf({
         pop: household.pop,
         workers: workersIn(household.id),
-        minimumWage: publicPay.minimumWage,
+        benefitBase: publicPay.benefitBase,
         unemploymentBenefitRate: publicPay.unemploymentBenefitRate,
       });
       unemployedCountByHouse.set(household.id, pay.unemployed);
@@ -269,8 +271,7 @@ export class SettleProducerCharges {
     // What each house received in wages this month: the employee's social contribution is withheld from it, and only the rest is taxed.
     const wagesReceivedByHouse = new Map();
     for (const building of buildings) {
-      const { salesHT, wagesHT, workers, wagePerWorker } = wagesByBuilding.get(building.id);
-      const purchasesHT = sumWhere(pairs, (pair) => pair.buyerId === building.id);
+      const { wagesHT, workers, wagePerWorker } = wagesByBuilding.get(building.id);
       const subsidyHT = subsidiesHT.get(building.id) ?? 0;
       const sources = building.workerSources ?? {};
 
@@ -301,7 +302,6 @@ export class SettleProducerCharges {
           timeInfo,
         });
       }
-      const socialChargesHT = employerLines.find((line) => line.kind === 'employer_contribution')?.amount ?? 0;
 
       // The city's subsidy to a company: a city expense and the company's receipt, both for the month.
       for (const line of serviceSubsidyLines({ sellerId: building.id, citySubsidy: subsidyHT })) {
@@ -314,17 +314,10 @@ export class SettleProducerCharges {
         });
       }
 
-      const otherExpensesHT = sumWhere(otherExpenses, (expense) => expense.buildingId === building.id);
       const lines = buildingChargeLines({
         id: building.id,
         type: building.type,
-        salesHT,
-        subsidiesHT: subsidyHT,
-        purchasesHT,
-        wagesHT,
-        socialChargesHT,
         maintenanceCost: this.deps.buildingMaintenanceCost(building.type),
-        otherExpensesHT,
       });
       for (const line of lines) {
         await this.#record(line, {
@@ -336,10 +329,29 @@ export class SettleProducerCharges {
         });
       }
 
-      // A house's own business is a cooperative: its month's surplus is shared between the residents (participation, interest on the
-      // parts sociales), the tax and its reserves. A house is no company: it has no payroll, its residents are paid out of the surplus.
-      if (houseIds.has(building.id)) {
-        const result = centimes(salesHT + subsidyHT - purchasesHT - otherExpensesHT);
+      // The corporate tax is a yearly one, settled when the fiscal year closes: this settlement opens a new year, so the lines of the year
+      // that ended are all written. It is read off the company's statement of that year, so it is based on the same résultat courant avant
+      // impôts the player reads, not on a second computation of it, and it is dated in the year it taxes (its last turn).
+      if (timeInfo.monthIndex === MONTHS_PER_YEAR - 1 && isLucrativeBuilding(building.type)) {
+        const { rcaiYearToDate, taxPaidYearToDate } = await this.deps.readCompanyYear(building.id, timeInfo.year);
+        const taxLines = corporateTaxLines({ id: building.id, amount: corporateTaxDueOf({ rcaiYearToDate, taxPaidYearToDate }) });
+        for (const line of taxLines) {
+          await this.#record(line, {
+            time: deliveredTime,
+            key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
+            description: `${LINE_LABELS[line.kind]} ${nameOf(building.id)} - ${monthLabel}`,
+            buildingInstanceId: building.id,
+            timeInfo,
+          });
+        }
+      }
+
+      // A house's own business is a cooperative: its surplus is shared once a year, when the fiscal year closes, between the residents
+      // (participation, interest on the parts sociales), the tax and its reserves. A house is no company: it has no payroll, its residents
+      // are paid out of the surplus. The surplus is the résultat courant avant impôts of the business account over the year, as its
+      // statement shows it, and the lines are dated in the year they share (its last turn).
+      if (timeInfo.monthIndex === MONTHS_PER_YEAR - 1 && houseIds.has(building.id)) {
+        const { rcaiYearToDate: result } = await this.deps.readCompanyYear(building.id, timeInfo.year, BUSINESS_ACCOUNT);
         const sharing = allocateCooperativeResult({
           result,
           businessCash: result > 0 ? await this.deps.businessFundsOf(building.id) : 0,
@@ -348,7 +360,7 @@ export class SettleProducerCharges {
         });
         for (const line of cooperativeLines({ houseId: building.id, ...sharing })) {
           await this.#record(line, {
-            time,
+            time: deliveredTime,
             key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
             description: `${LINE_LABELS[line.kind]} ${nameOf(building.id)} - ${monthLabel}`,
             buildingInstanceId: building.id,

@@ -166,16 +166,13 @@ export function employeeContributionLines({ houseId, wagesReceived, rate }) {
 
 /**
  * The building lines of one month: a lucrative building pays its wages (`wagesHT`, paid to its workers' houses by the
- * settlement), its upkeep less the company subsidy, its other real expenses already paid this month by some other
- * settlement (`otherExpensesHT` — today only a bank's deposit interest, see SettleBankDepositInterest.js; a generic
- * slot, not a bank-specific one, for whatever earns its own line outside the goods/service/wage pipeline later), and
- * its corporate tax on what profit is left. A non-lucrative building has no account: its upkeep is the city's, as the
- * housing subsidy. A line of zero is not written.
- * @param {{ id: string, type: string, salesHT: number, subsidiesHT: number, purchasesHT: number, wagesHT: number, maintenanceCost: number, otherExpensesHT?: number, socialChargesHT?: number }} building
- *   `socialChargesHT`: the employer's social contributions on the month's wages, a deductible charge like the wages
+ * settlement), its upkeep less the company subsidy. A non-lucrative building has no account: its upkeep is the city's, as the
+ * housing subsidy. A line of zero is not written. Its corporate tax is not here: it is read off the company's own statement once these
+ * lines are written (`corporateTaxDueOf`).
+ * @param {{ id: string, type: string, maintenanceCost: number }} building
  * @returns {ChargeLine[]}
  */
-export function buildingChargeLines({ id, type, salesHT, subsidiesHT, purchasesHT, wagesHT, maintenanceCost, otherExpensesHT = 0, socialChargesHT = 0 }) {
+export function buildingChargeLines({ id, type, maintenanceCost }) {
   const lucrative = isLucrativeBuilding(type);
   const lines = [];
   const add = (kind, amount, holder) => {
@@ -188,20 +185,43 @@ export function buildingChargeLines({ id, type, salesHT, subsidiesHT, purchasesH
   const ownUpkeep = centimes(maintenanceCost - subsidy);
 
   if (lucrative) {
-    const profit = centimes(salesHT + subsidiesHT - purchasesHT - wagesHT - socialChargesHT - ownUpkeep - otherExpensesHT);
-    const tax = profit > 0 ? centimes(profit * CORPORATE_TAX_RATE) : 0;
     // The company books its whole upkeep and, apart, the share the city pays it back: its statement shows what the building really
     // costs and what the city carries. Its cash is the same as paying only the net upkeep.
     add('maintenance', maintenanceCost, id);
     add('subsidy_companies_received', subsidy, id);
     add('subsidy_companies', subsidy, null);
-    add('corporate_tax', tax, id);
-    add('corporate_tax_revenue', tax, null);
   } else {
     add('maintenance', ownUpkeep, null);
     add('subsidy_housing', subsidy, null);
   }
   return lines;
+}
+
+/**
+ * The corporate tax a company owes this month: the rate on its résultat courant avant impôts (RCAI) of the year so far, as its compte de
+ * résultat shows it, less the tax it already paid this year. The year's total, not the month's: a seasonal company (a harvest once a year)
+ * is taxed on what it really earned over the year, and a tax is never more than the rate of the RCAI it is based on, so it cannot turn a
+ * profit into a loss. Nothing is refunded: a later loss does not give back a tax already paid.
+ * @param {{ rcaiYearToDate: number, taxPaidYearToDate: number }} year
+ * @returns {number} the tax to book now (never negative)
+ */
+export function corporateTaxDueOf({ rcaiYearToDate, taxPaidYearToDate }) {
+  const owed = rcaiYearToDate > 0 ? centimes(rcaiYearToDate * CORPORATE_TAX_RATE) : 0;
+  return Math.max(0, centimes(owed - taxPaidYearToDate));
+}
+
+/**
+ * The lines of a company's corporate tax: its charge (695) and the city's receipt. Nothing when the tax is nil.
+ * @param {{ id: string, amount: number }} tax
+ * @returns {ChargeLine[]}
+ */
+export function corporateTaxLines({ id, amount }) {
+  const rounded = centimes(amount);
+  if (rounded <= 0) return [];
+  return [
+    { kind: 'corporate_tax', amount: rounded, holder: id, counterparty: null },
+    { kind: 'corporate_tax_revenue', amount: rounded, holder: null, counterparty: null },
+  ];
 }
 
 /**

@@ -18,14 +18,16 @@ export class GetTreasurySnapshot {
   }
 
   /**
-   * @param {{ hamletId?: string|null, untilYear?: number|null, accountBuildingId?: string|null }} [options]
+   * @param {{ hamletId?: string|null, untilYear?: number|null, untilMonth?: number|null, accountBuildingId?: string|null }} [options]
    *   hamletId: the hamlet's own treasury, or the whole city's when null.
    *   untilYear: the treasury as it stood at the end of that fiscal year (its lines and every earlier one), or now when null.
+   *   untilMonth (1 to 12, with untilYear): the end of that month of the year instead of the end of the year.
    *   accountBuildingId: a company's own account (its net profit stays there); null for the city's treasury, which holds
    *   no company line. accountKind: which of a house's two accounts (particulier or entreprise); null for a company's.
    * @returns {Promise<object>}
    */
-  async execute({ hamletId = null, untilYear = null, accountBuildingId = null, accountKind = null } = {}) {
+  async execute({ hamletId = null, untilYear = null, untilMonth = null, accountBuildingId = null, accountKind = null } = {}) {
+    if (untilMonth != null && untilYear == null) throw new Error('[treasury] a month needs its year: untilMonth was given without untilYear');
     let entries = await this.journalRepository.getJournalEntries();
     if (entries.length === 0) {
       // A brand-new game has no journal yet: its treasury starts from the capital line. Once any line exists, the
@@ -37,7 +39,7 @@ export class GetTreasurySnapshot {
     const accountKey = accountKeyOf({ accountBuildingId, accountKind });
     const inScope = (entry) =>
       (hamletId == null || hamletOf(entry) === hamletId) &&
-      (untilYear == null || yearOf(entry) <= untilYear) &&
+      (untilYear == null || isUntil(entry, untilYear, untilMonth)) &&
       accountKeyOf(entry) === accountKey;
     const scoped = entries.filter(inScope);
     const lines = treasuryLinesInOrder(scoped);
@@ -80,6 +82,16 @@ function hamletOf(entry) {
     throw new Error(`[treasury] journal line ${entry.type} (turn ${entry.turn}) has no hamletId`);
   }
   return entry.hamletId;
+}
+
+/** A line of that year up to that month (the whole year when the month is null), or of an earlier year. */
+function isUntil(entry, untilYear, untilMonth) {
+  const year = yearOf(entry);
+  if (year !== untilYear || untilMonth == null) return year <= untilYear;
+  if (typeof entry.month !== 'number') {
+    throw new Error(`[treasury] journal line ${entry.type} (turn ${entry.turn}) has no month stamp`);
+  }
+  return entry.month <= untilMonth;
 }
 
 /** @param {object} entry @returns {number} the fiscal year a line was stamped with; a line without one is an error. */

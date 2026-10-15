@@ -1,6 +1,8 @@
 import { describe, test, expect } from '@jest/globals';
 import {
   buildingChargeLines,
+  corporateTaxDueOf,
+  corporateTaxLines,
   tradeLines,
   isLucrativeBuilding,
   payrollOf,
@@ -56,28 +58,41 @@ describe('wages — each worker is paid the same, and the house it comes from re
   });
 });
 
-describe('building lines — a company pays its upkeep and its corporate tax; a house is subsidised by the city', () => {
-  test('a market stall keeps its profit after its wages: the tax is its own, the tax reaches the city', () => {
-    expect(
-      buildingChargeLines({ id: 'market', type: 'Market-Stall-Red', salesHT: 100, subsidiesHT: 0, purchasesHT: 40, wagesHT: 15, maintenanceCost: 2 })
-    ).toEqual([
+describe('building lines — a company pays its upkeep; a house is subsidised by the city', () => {
+  test('a market stall books its upkeep on its account', () => {
+    expect(buildingChargeLines({ id: 'market', type: 'Market-Stall-Red', maintenanceCost: 2 })).toEqual([
       { kind: 'maintenance', amount: 2, holder: 'market', counterparty: null },
-      { kind: 'corporate_tax', amount: 10.75, holder: 'market', counterparty: null },
-      { kind: 'corporate_tax_revenue', amount: 10.75, holder: null, counterparty: null },
     ]);
   });
 
-  test('a loss pays no corporate tax', () => {
-    expect(
-      buildingChargeLines({ id: 'market', type: 'Market-Stall-Red', salesHT: 10, subsidiesHT: 0, purchasesHT: 12, wagesHT: 0, maintenanceCost: 2 }).map(
-        (line) => line.kind
-      )
-    ).not.toContain('corporate_tax');
+  test('a house has no account: the city books its upkeep as the housing subsidy', () => {
+    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 3 })).toEqual([
+      { kind: 'subsidy_housing', amount: 3, holder: null, counterparty: null },
+    ]);
+  });
+});
+
+describe('corporate tax — the rate on the résultat courant avant impôts of the year, never more', () => {
+  test('the tax is the rate of the RCAI of the year so far (25 %), and it reaches the city', () => {
+    expect(corporateTaxDueOf({ rcaiYearToDate: 92.81, taxPaidYearToDate: 0 })).toBe(23.2);
+    expect(corporateTaxLines({ id: 'farm', amount: 23.2 })).toEqual([
+      { kind: 'corporate_tax', amount: 23.2, holder: 'farm', counterparty: null },
+      { kind: 'corporate_tax_revenue', amount: 23.2, holder: null, counterparty: null },
+    ]);
   });
 
-  test('a house has no account: the city books its upkeep as the housing subsidy', () => {
-    expect(
-      buildingChargeLines({ id: 'house', type: 'House-Red', salesHT: 0, subsidiesHT: 0, purchasesHT: 0, wagesHT: 0, maintenanceCost: 3 })
-    ).toEqual([{ kind: 'subsidy_housing', amount: 3, holder: null, counterparty: null }]);
+  test('a tax never turns a profit into a loss: what is owed over the year is the rate of the RCAI, whatever the months', () => {
+    // A harvest month earns 400, then two lean months lose 100 each: 25 % of 400, then of 300, then of 200, less what was paid.
+    const monthly = [400, 300, 200];
+    let paid = 0;
+    for (const rcai of monthly) paid += corporateTaxDueOf({ rcaiYearToDate: rcai, taxPaidYearToDate: paid });
+    expect(paid).toBe(100); // 25 % of the 400 of the first month: nothing is refunded afterwards
+    expect(paid).toBeLessThanOrEqual(0.25 * 400);
+  });
+
+  test('a loss pays no corporate tax, and a year that already paid it owes nothing more', () => {
+    expect(corporateTaxDueOf({ rcaiYearToDate: -165.15, taxPaidYearToDate: 0 })).toBe(0);
+    expect(corporateTaxDueOf({ rcaiYearToDate: 400, taxPaidYearToDate: 100 })).toBe(0);
+    expect(corporateTaxLines({ id: 'farm', amount: 0 })).toEqual([]);
   });
 });

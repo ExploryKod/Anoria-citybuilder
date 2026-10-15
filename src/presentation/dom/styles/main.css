@@ -1951,6 +1951,19 @@ button.building-info-metric-card[aria-pressed="true"] {
     gap: 6px;
 }
 
+/* The months of the year so far, above the account: one pill each, the open one lit. */
+.building-finance-months {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.building-finance-months .building-finance-pill-tab {
+    min-width: 28px;
+    padding: 3px 8px;
+}
+
 .building-finance-pill-tab,
 .building-finance-download {
     padding: 4px 14px;
@@ -1961,6 +1974,19 @@ button.building-info-metric-card[aria-pressed="true"] {
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
+}
+
+/* The year pill is told apart from the month pills by its colour. */
+.building-finance-pill-year {
+    background: #e8f0fe;
+    border-color: #90a4d4;
+    color: #1a3a8a;
+}
+
+.building-finance-pill-tab.building-finance-pill-year.is-active {
+    background: #dbe7ff;
+    border-color: #1a56db;
+    color: #0b2a6f;
 }
 
 .building-finance-pill-tab:hover,

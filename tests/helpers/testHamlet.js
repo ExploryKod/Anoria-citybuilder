@@ -1,5 +1,6 @@
 import {
   DEFAULT_HAMLET_FISCAL_RATES,
+  DEFAULT_MINIMUM_WAGE_MODE,
   DEFAULT_SERVICE_SUBSIDY_PERCENT,
   DEFAULT_VAT_GENERAL_RATE_PERCENT,
   DEFAULT_VAT_RATE_PERCENT,
@@ -28,6 +29,7 @@ export async function seedTestHamlet(database) {
     natureSeeded: true,
     unlocked: true,
     ...DEFAULT_HAMLET_FISCAL_RATES,
+    minimumWageMode: DEFAULT_MINIMUM_WAGE_MODE,
     serviceSubsidy: Object.fromEntries(getServiceCategories().map((service) => [service, DEFAULT_SERVICE_SUBSIDY_PERCENT])),
     vatRatePercent: Object.fromEntries(getVatCategories().map((category) => [category, DEFAULT_VAT_RATE_PERCENT])),
     vatUniform: DEFAULT_VAT_UNIFORM,

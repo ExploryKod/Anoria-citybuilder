@@ -4,11 +4,13 @@ import { getServiceCategories } from '../../../../shared/resource-catalog/Resour
 import { getVatCategories, getVatCategoryOf, getVatItems } from '../../../../shared/resource-catalog/VatCategoryCatalog.js';
 import {
   DEFAULT_HAMLET_FISCAL_RATES,
+  DEFAULT_MINIMUM_WAGE_MODE,
   DEFAULT_SERVICE_SUBSIDY_PERCENT,
   DEFAULT_VAT_GENERAL_RATE_PERCENT,
   DEFAULT_VAT_RATE_PERCENT,
   DEFAULT_VAT_UNIFORM,
   HAMLET_FISCAL_RATE_BOUNDS,
+  MINIMUM_WAGE_MODES,
   SERVICE_SUBSIDY_BOUNDS,
   VAT_RATE_BOUNDS,
 } from '../../domain/catalogs/FiscalRateCatalog.js';
@@ -35,13 +37,15 @@ export class HamletFiscalRateRepository {
     return amount;
   }
 
-  /** @returns {Promise<{ minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>} */
+  /** @returns {Promise<{ minimumWageMode: string, minimumWage: number, minimumWageBasketRatio: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>} */
   async getSalarySettings() {
     const [
-      minimumWage, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
+      minimumWageMode, minimumWage, minimumWageBasketRatio, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
       employerContributionRate, employeeContributionRate,
     ] = await Promise.all([
+      this.#readMinimumWageMode(),
       this.#read('minimumWage'),
+      this.#read('minimumWageBasketRatio'),
       this.#read('salaryTaxThreshold1'),
       this.#read('salaryTaxRate1'),
       this.#read('salaryTaxThreshold2'),
@@ -51,7 +55,7 @@ export class HamletFiscalRateRepository {
       this.#read('employeeContributionRate'),
     ]);
     return {
-      minimumWage, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
+      minimumWageMode, minimumWage, minimumWageBasketRatio, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
       employerContributionRate, employeeContributionRate,
     };
   }
@@ -166,11 +170,16 @@ export class HamletFiscalRateRepository {
   }
 
   /**
-   * @param {{ minimumWage?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number, unemploymentBenefitRate?: number }} partial
-   * @returns {Promise<{ minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number }>}
+   * @param {{ minimumWageMode?: string, minimumWage?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number, unemploymentBenefitRate?: number, employerContributionRate?: number, employeeContributionRate?: number }} partial
+   * @returns {Promise<Awaited<ReturnType<HamletFiscalRateRepository['getSalarySettings']>>>}
    */
   async setSalarySettings(partial = {}) {
-    await this.#write(partial);
+    const { minimumWageMode, ...rates } = partial;
+    if (minimumWageMode !== undefined) {
+      if (!MINIMUM_WAGE_MODES.includes(minimumWageMode)) throw new Error(`[fiscal] unknown minimum wage mode "${minimumWageMode}"`);
+      await this.db.hamlets.update(requireActiveHamletId(), { minimumWageMode });
+    }
+    await this.#write(rates);
     return this.getSalarySettings();
   }
 
@@ -184,6 +193,7 @@ export class HamletFiscalRateRepository {
     if (!row) throw new Error(`[fiscal] hamlet ${hamletId} has no row to hold its rates`);
     const missing = Object.keys(DEFAULT_HAMLET_FISCAL_RATES).filter((field) => typeof row[field] !== 'number');
     const defaults = Object.fromEntries(missing.map((field) => [field, DEFAULT_HAMLET_FISCAL_RATES[field]]));
+    if (!row.minimumWageMode) defaults.minimumWageMode = DEFAULT_MINIMUM_WAGE_MODE;
     if (!row.serviceSubsidy) {
       defaults.serviceSubsidy = Object.fromEntries(getServiceCategories().map((service) => [service, DEFAULT_SERVICE_SUBSIDY_PERCENT]));
     }
@@ -194,6 +204,17 @@ export class HamletFiscalRateRepository {
       defaults.vatExempt = Object.fromEntries(getVatItems().map((item) => [item, false]));
     }
     if (Object.keys(defaults).length > 0) await this.db.hamlets.update(hamletId, defaults);
+  }
+
+  /** @returns {Promise<string>} the hamlet's way of treating the minimum wage (see MINIMUM_WAGE_MODES) */
+  async #readMinimumWageMode() {
+    const hamletId = requireActiveHamletId();
+    const row = await this.db.hamlets.get(hamletId);
+    if (!row) throw new Error(`[fiscal] hamlet ${hamletId} has no row`);
+    if (!MINIMUM_WAGE_MODES.includes(row.minimumWageMode)) {
+      throw new Error(`[fiscal] hamlet ${hamletId} has no valid minimum wage mode (${row.minimumWageMode}): its rates are written when it is created`);
+    }
+    return row.minimumWageMode;
   }
 
   /** @param {keyof typeof DEFAULT_HAMLET_FISCAL_RATES} field */

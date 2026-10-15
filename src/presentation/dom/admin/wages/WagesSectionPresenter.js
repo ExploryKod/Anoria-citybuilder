@@ -1,6 +1,7 @@
 import { getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 import { createSliderRow } from '../sliderRow.js';
+import { UNRESOLVED_TERM, goodIcon, goodLabel } from '../../shell/CatalogVocabulary.js';
 
 /** What the market says of a skill this month, in words and in the colour family of the journal. */
 const SIGNALS = Object.freeze({
@@ -8,6 +9,13 @@ const SIGNALS = Object.freeze({
   balanced: Object.freeze({ label: 'Équilibre', tone: 'sales' }),
   slack: Object.freeze({ label: 'Chômage qualifié', tone: 'tax-paid' }),
 });
+
+/** The regimes of the minimum wage, in the words of the lever (the list itself is the catalog's MINIMUM_WAGE_MODES). */
+const MINIMUM_WAGE_MODE_LABELS = Object.freeze([
+  ['none', 'Aucun : le marché décide'],
+  ['fixed', 'Fixe : un plancher qui ne bouge pas'],
+  ['indexed', 'Indexé : suit le coût de la vie chaque janvier'],
+]);
 
 const el = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -35,7 +43,9 @@ export class WagesSectionPresenter {
     if (!levers || !board) throw new Error('[wages] #wages-levers or #wages-board is missing from the page');
 
     const settings = await this.accounting.getSalarySettings();
+    const mode = settings.minimumWageMode;
     levers.replaceChildren(
+      this.#floorModeSelect(mode),
       createSliderRow({
         label: 'Salaire minimum',
         scope: 'Hameau',
@@ -43,9 +53,25 @@ export class WagesSectionPresenter {
         max: this.bounds.minimumWage.max,
         value: settings.minimumWage,
         unit: '€/mois',
-        ariaLabel: "Salaire minimum, en euros par mois — le plancher de tous les salaires et la base de l'allocation chômage",
+        active: mode === 'fixed',
+        ariaLabel: 'Salaire minimum, en euros par mois — le plancher de tous les salaires, quand la ville en fixe un (réévalué chaque janvier quand il est indexé)',
         store: async (value) => {
           await this.accounting.setSalarySettings({ minimumWage: value });
+          await this.refresh();
+        },
+      }),
+      createSliderRow({
+        label: 'Salaire minimum / coût de la vie',
+        scope: 'Hameau',
+        min: this.bounds.minimumWageBasketPercent.min,
+        max: this.bounds.minimumWageBasketPercent.max,
+        value: Math.round(settings.minimumWageBasketRatio * 100),
+        unit: '%',
+        active: mode === 'indexed',
+        ariaLabel: "Salaire minimum indexé, en pourcentage du coût de la vie d'un citoyen, réévalué chaque janvier",
+        store: async (value) => {
+          await this.accounting.setSalarySettings({ minimumWageBasketRatio: value / 100 });
+          await this.accounting.revalueMinimumWage();
           await this.refresh();
         },
       }),
@@ -56,7 +82,7 @@ export class WagesSectionPresenter {
         max: this.bounds.unemploymentBenefitPercent.max,
         value: Math.round(settings.unemploymentBenefitRate * 100),
         unit: '%',
-        ariaLabel: 'Allocation chômage, en pourcentage du salaire minimum',
+        ariaLabel: 'Allocation chômage, en pourcentage du plus bas salaire versé dans la ville',
         store: (value) => this.accounting.setSalarySettings({ unemploymentBenefitRate: value / 100 }),
       }),
       createSliderRow({
@@ -86,6 +112,10 @@ export class WagesSectionPresenter {
     if (!socialBoard) throw new Error('[wages] #wages-social is missing from the page');
     socialBoard.replaceChildren(this.#socialCard(social));
 
+    const costOfLivingBoard = document.getElementById('wages-cost-of-living');
+    if (!costOfLivingBoard) throw new Error('[wages] #wages-cost-of-living is missing from the page');
+    costOfLivingBoard.replaceChildren(this.#costOfLivingCard(await this.accounting.getCostOfLiving()));
+
     const market = this.employment.getLabourMarket();
     if (!market || market.rows.length === 0) {
       board.replaceChildren(el('p', 'commerce-customs-hint', "Aucun marché du travail n'a encore été lu : il faut des ouvriers et des emplois. Les salaires restent à leur niveau de départ."));
@@ -93,6 +123,60 @@ export class WagesSectionPresenter {
     }
     const { wages } = await this.accounting.getWageBoard(market.rows);
     board.replaceChildren(this.#table(wages));
+  }
+
+  /**
+   * The first lever of the city's economic regime: no minimum wage (the market alone sets the wages), a fixed one, or one indexed on the cost of living.
+   * @param {string} mode one of MINIMUM_WAGE_MODES
+   */
+  #floorModeSelect(mode) {
+    const row = el('div', 'taxes-row');
+    const head = el('div', 'taxes-row-head');
+    head.append(el('span', 'taxes-row-label', 'Salaire minimum légal'), el('span', 'taxes-row-scope', 'Hameau'));
+    const select = el('select');
+    select.setAttribute('aria-label', 'Régime du salaire minimum : aucun, fixe, ou indexé sur le coût de la vie');
+    for (const [value, label] of MINIMUM_WAGE_MODE_LABELS) {
+      const option = el('option', null, label);
+      option.value = value;
+      option.selected = value === mode;
+      select.append(option);
+    }
+    select.addEventListener('change', async () => {
+      await this.accounting.setSalarySettings({ minimumWageMode: select.value });
+      // An indexed floor takes the cost of living's measure at once, not only next January.
+      if (select.value === 'indexed') await this.accounting.revalueMinimumWage();
+      await this.refresh();
+    });
+    const controls = el('div', 'commerce-customs-controls');
+    controls.append(select);
+    row.append(head, controls);
+    return row;
+  }
+
+  /**
+   * What a month costs a citizen at the prices on the shelves, need by need. A need nobody sells shows "…" and the total with it: no price is guessed.
+   * @param {Awaited<ReturnType<import('../../../../contexts/accounting/domain/policies/CostOfLivingPolicy.js')['costOfLivingOf']>> & { householdSize: number }} cost
+   */
+  #costOfLivingCard(cost) {
+    const card = el('section', 'price-card');
+    card.append(el('h3', 'price-card-title', 'Coût de la vie — un citoyen, un mois'));
+    const table = el('table', 'price-table');
+    const row = (label, amount, tone) => {
+      const tr = el('tr');
+      tr.dataset.step = tone;
+      tr.append(el('th', null, label), el('td', 'price-total', amount === null ? UNRESOLVED_TERM : formatEuro(amount)));
+      return tr;
+    };
+    for (const line of cost.lines) {
+      const label = `${goodIcon(line.key)} ${goodLabel(line.key)}`;
+      table.append(row(line.kind === 'service' ? `${label} (partagé à ${cost.householdSize})` : label, line.amount, 'sales'));
+    }
+    table.append(row('Total', cost.total, 'external'));
+    card.append(table);
+    if (cost.missing.length > 0) {
+      card.append(el('p', 'commerce-customs-hint', `Personne ne vend encore : ${cost.missing.map((key) => goodLabel(key)).join(', ')}. Le coût de la vie n'est connu que lorsque tout se vend.`));
+    }
+    return card;
   }
 
   /** @param {{ contributions: number, benefits: number, balance: number }} social */
@@ -154,7 +238,7 @@ export class WagesSectionPresenter {
       el(
         'p',
         'commerce-customs-hint',
-        "Chaque mois, un métier où des emplois restent vacants voit son salaire monter (de quelques % au plus) ; un métier où des citoyens qualifiés restent sans emploi le voit baisser, sans jamais passer sous le salaire minimum. Le salaire minimum relève tout salaire qui serait en dessous.",
+        "Chaque mois, un métier où des emplois restent vacants voit son salaire monter (de quelques % au plus) ; un métier où des citoyens qualifiés restent sans emploi le voit baisser, sans jamais passer sous le salaire minimum quand la ville en fixe un. Sans salaire minimum, rien ne retient la baisse : le marché décide seul.",
       ),
     );
     return card;

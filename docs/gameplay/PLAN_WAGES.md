@@ -40,8 +40,6 @@ paid whatever the sales, that classification becomes true instead of a conventio
   carries "n ouvriers à x €".
 - **Not done:** the ceiling of what firms can afford (it needs the labour in the price, step 3), employer-specific wages, wages in a house's own business
   (the SCOP step), per-skill starting wages (only per level).
-- **An older game still loads:** every session start writes the default of each fiscal rate a hamlet lacks (`ensureRates`), so an older hamlet
-  gets the minimum wage and the contribution rates; its other rates (brackets, benefit) keep the values it had.
 
 **Step 3, labour in the price: first half built (2026-10-12), the feedback on prices NOT built, on purpose.**
 - **Built:** the cost of a unit is read, not yet charged. The Ratios pill of a company's account has a "Coût de revient d'une unité" block: the units sold
@@ -118,6 +116,10 @@ and a loss. The ratios and the break-even tell the player why. (Later: the bankr
   city lines (`social_contribution`, PCG 431) and the unemployment benefit stays a city expense: the "Sécurité sociale" card of the section and the new
   "Cotisations sociales" row of the city ledger show contributions against benefits; a deficit is the treasury's, shown as such. The employer's share
   is a charge of the company (645, deductible, in its price); the employee's is withheld from the household's personal account and the income tax is on the wage after it.
+- **Yearly, as in real life (decided 2026-10-15).** The corporate tax of every company, and the sharing of a cooperative's surplus, are settled **once a
+  year**, at the settlement that closes the fiscal year (the one that opens January): both are read off the account's own compte de résultat for the
+  year that ends (`readCompanyYear`: its RCAI), never from a second computation, and dated in the year they concern. A company's tax is 25 % of the
+  RCAI of the year, so it can never turn a profit into a loss; a loss pays nothing and nothing is refunded.
 - **Step 5:** a house's cooperative has **no payroll**: its residents are also the labour pool of every other workplace, so paying them a wage for the
   same work would double count them (or leave no unemployed to draw a benefit). They are paid out of the surplus instead, as the SCOP rules say
   (section 4): the participation (40 %, charge 691), the tax on what is left (25 %), the interest on the parts (15 %, after the tax, 457) and the rest in
@@ -196,3 +198,61 @@ Open (to settle when step 1 starts):
   funds of `PLAN_IMPORTS_PRICES_CAPITAL.md`, phase 5, are an advance, not capital).
 - What a building staffed by fewer workers than it needs pays and produces (production already follows staffing in places; check it follows it
   everywhere before the payroll relies on it).
+
+## 6. Direction: the city's economic regime, by adjustments (decided 2026-10-12)
+
+The city will be able to move its economy from very liberal to very socialist, **one adjustment at a time, not all at once**. Each one is a lever of
+the hamlet's fiscal rates (`FiscalRateCatalog.js`), declared once, with a trade-off the player can read. The regime's name is never chosen: it
+would be computed from where the levers sit.
+
+**Levers for the wage step (the only ones in scope now):**
+1. **Minimum wage, three modes**: *none* (very liberal), *fixed* (the US: it stays where it was set), *indexed* (France: revalued on the cost of the
+   citizen's basket, the game's own price index). "None" is a mode, not a value of 0: the labour market today throws on a wage floor that is not
+   above 0 (`nextWageRate`), and the wage log has no meaning without a floor to read.
+2. **Social contribution rate**, from 0 % (liberal: no benefit worth the name) to a high rate (socialist: a funded unemployment benefit and, later,
+   health). The employer and the employee shares exist already (25 % / 10 %). Today the whole population works: no children, no elders, no
+   retirement. The contribution funds unemployment only; health and retirement come later with a population that is not all of working age.
+
+**Built (2026-10-12, not played yet):**
+- **Minimum wage mode** (`MINIMUM_WAGE_MODES` in `FiscalRateCatalog.js`): `none` or `fixed`, stored per hamlet (`minimumWageMode`). `wageFloorOf`
+  (`WageRatePolicy.js`) gives the floor, null when there is none, and the labour market, the wage board and the payroll read that one floor.
+  The admin "Salaires" section has a switch for it; the slider of the fixed amount is greyed out with no floor.
+- **The `indexed` mode is built (2026-10-12, not played yet).** Every January the settlement revalues the floor to `minimumWageBasketRatio` (default
+  150 %) times the cost of living (`RevalueMinimumWage`, called by `ProcessTurnBudget` before the market moves the wages), and the revalued amount is
+  stored as the hamlet's `minimumWage` until the next January. Turning the mode on revalues at once. With the cost of living unknown the floor stays
+  where it was. The admin "Salaires" section has a three-way choice (none / fixed / indexed) and, when indexed, the ratio slider.
+- **The cost of living is measured (2026-10-12, not played yet).** `accounting.getCostOfLiving()` prices what a
+  citizen of a reference household uses up in a month (`COST_OF_LIVING_BASKET`: the artisans' house, tier 2) at the prices on the shelves:
+  the quantity needs are read from the catalog (food, goods, heat, light, water, energy), each met by the **cheapest** good that serves it, a good at
+  its market's price (tax included), a service at the cheapest seller less the city's subsidy plus VAT. The **services** a house is billed
+  (`serviceCoverage` of the tier: a doctor at tier 2) are one unit a month per house, shared between the residents of a full house of that tier.
+  What nobody sells has no price: the total is null and the Salaires panel shows "…" with what is missing (`CostOfLivingPolicy.js`).
+- **The benefit base** is the lowest wage the city pays (`benefitBaseOf`): the floor when there is one, the lowest market wage otherwise. It replaces
+  "a share of the minimum wage", which has no meaning with no floor. Read once (`benefitBaseOfHamlet`) for the settlement and the household panel.
+- **Contributions:** the employer and employee rates are the two existing levers (0 to 60 % and 0 to 40 %); nothing to add for this step.
+
+**Recorded, not built:**
+- **State funding of a private sector, and nationalisation** (the state buys every shareholder, so it owes the salaries). **There is no ownership system
+  at all today**: a company has no shareholders, no capital in parts, no owner who can be bought out. The only form of ownership in the game is the
+  house's cooperative (SCOP, section 4), whose parts are held by its residents by construction. Funding and nationalising wait for that system.
+- **Wage grid set by the city, wage spread cap, price control, job guarantee**: later adjustments, not part of this step.
+
+**A condition, stated here so it is not forgotten:** these levers change nothing in play unless there is a real **competition market** and real
+**economic transactions** behind them. A minimum wage with every firm paying the same market wage has no visible effect; contributions with no firm
+choosing between workers have none either. The levers come after (or with) the wage a firm offers (section 7), the workers' choice between firms,
+and prices that are not simply the cost of the wage plus a margin.
+
+## 7. Direction: what a firm decides to pay (decided 2026-10-12)
+
+A firm's offer is set by **what it can afford**, not by a hierarchy of occupations.
+- **No "poor trade".** The skills are not transferable (an artisan cannot become a farmer) and the game wants every trade to be able to get rich in
+  its own way. So the catalog does **not** carry a pay coefficient per occupation (no "carers are paid less"). A job pays less or more because the
+  firm that offers it sells at a thin or fat margin, or because the city funds it, never because of its name.
+- **What the firm can afford** is read from its own account: its value added per worker (sales plus subsidies, less purchases and upkeep),
+  smoothed over a few months. A firm whose product sells with a high margin pays a high wage; a thin margin pays near the floor.
+- **What others pay** is the market reading of the (skill, level), which already exists (`AdjustWageRates`): it is the reference the offer moves from.
+- Useful but low-margin work (a medical transport, a school) is paid by what it can afford, and the city lifts that ceiling with a subsidy: the
+  player's lever, as the service subsidy already is.
+- **Prerequisites, in order:** workers choose between workplaces of the same skill by the wage offered (`DistributeCityWorkers`); a price that is not the
+  wage's cost plus a fixed 20 %, so a margin can differ from one good to another (price anchored on the good's reference value, cost as a floor);
+  then the offer policy itself. One test for the core rule: an unaffordable firm never offers under the minimum wage when there is one.
