@@ -166,6 +166,7 @@ const NON_SALE_CAUSES = {
   no_workers: () => `${noWorkIconHTML} sans travailleurs à la récolte`,
   no_road: () => '🛣️ sans route',
   hub_full: (capacity, hub) => `📦 ${hub} plein${capacity ? ` (plafond ${goodAmount(chainTotalKey, capacity)})` : ''}`,
+  good_ceiling: (_capacity, hub) => `📦 ${hub} : plafond de ce bien atteint`,
   hub_idle: (_capacity, hub) => `🏚️ ${hub} sans travailleurs`,
   no_hub: (_capacity, hub) => `❌ pas de ${hub}`,
   demolished: () => '🚧 démolie avant la vente',

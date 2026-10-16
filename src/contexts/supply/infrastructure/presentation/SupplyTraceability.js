@@ -546,6 +546,22 @@ export class SupplyTraceability {
   }
 
   /**
+   * An unsold harvest that went bad when the next one came in.
+   * @param {{ period: object, building: { id: string, type: string, x?: number, y?: number }, category: string, quantity: number }} loss
+   */
+  async recordSpoilage({ period, building, category, quantity }) {
+    await this.traceabilityRepository.recordGameEvent(
+      turnOf(period),
+      period.monthIndex || 0,
+      period.year || 0,
+      'crop_spoiled',
+      { id: building.id, x: building.x, y: building.y, type: building.type },
+      quantity,
+      { good: category }
+    );
+  }
+
+  /**
    * Inhabitants lost to famine this month.
    * @param {object} timeInfo
    * @param {number} deaths

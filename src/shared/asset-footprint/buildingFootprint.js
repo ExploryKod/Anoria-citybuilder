@@ -65,6 +65,7 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   // A house reserves one uniform 2x2 plot — the widest of the house models — whatever model it wears at its
   // level: the plot is the house's land (it is what road access and collision read), and its model sits in the
   // middle of it, so evolving never reaches past the plot.
+  'House-Mayor': Object.freeze({ width: 2, depth: 2 }),
   'House-Blue': Object.freeze({ width: 2, depth: 2 }),
   'House-Purple': Object.freeze({ width: 2, depth: 2 }),
   'House-Red': Object.freeze({ width: 2, depth: 2 }),

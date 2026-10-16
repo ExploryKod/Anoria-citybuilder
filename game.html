@@ -847,6 +847,44 @@
                             </span>
                         </div>
                     </div>
+                    <!-- Why people are out of work and why posts stay empty (the title of each row says it in full). -->
+                    <div class="pop-detail-groups pop-detail-causes" aria-label="Causes du chômage et du manque de main-d'œuvre">
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoSkill" title="Chômeurs : il y a des postes libres, mais ils n'ont pas la compétence">
+                            <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoPosts" title="Chômeurs : il n'y a aucun poste libre">
+                            <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoRoad" title="Chômeurs : leur maison n'a pas de route">
+                            <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="lackNoSkill" title="Postes vides : il y a des chômeurs, mais sans la compétence">
+                            <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="lackNoHands" title="Postes vides : plus personne de disponible">
+                            <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </section>
             <section
@@ -1342,6 +1380,13 @@
                     </div>
                 </div>
             </nav>
+
+            <!-- Short reminders under the HUD, one after the other (HudTicker.js); hidden while there is none. -->
+            <div id="hud-ticker" class="hud-ticker" role="status" aria-live="polite" aria-label="Rappels" hidden>
+                <div class="splide hud-ticker__splide">
+                    <div class="splide__track"><ul class="splide__list"></ul></div>
+                </div>
+            </div>
 
             <aside id="hud-fab-dock" class="hud-fab-dock" aria-label="Outils">
             </aside>
@@ -3071,7 +3116,14 @@
                 <p class="news-event-funds-hint" id="news-event-funds-hint"></p>
             </div>
         </div>
+        <div class="news-event-modal-action" id="news-event-action" hidden>
+            <button type="button" class="news-event-action-btn" id="news-event-action-btn">
+                <span class="news-event-action-icon" id="news-event-action-icon" aria-hidden="true"></span>
+                <span class="news-event-action-label" id="news-event-action-label"></span>
+            </button>
+        </div>
         <div class="news-event-modal-footer">
+            <button type="button" class="modal-btn" id="news-event-close-btn">Fermer</button>
             <button type="button" class="modal-btn modal-btn-primary" id="news-event-next-btn">Lire le suivant</button>
         </div>
     </div>

@@ -201,11 +201,14 @@ describe('household budget — a house buys with its savings, last month\'s sala
       participationReceived: 0,
       dividendReceived: 0,
       servicesPaid: 5,
+      rentPaid: 0,
       incomeTax: 12,
       citizenTax: 0,
       employeeContributionPaid: 0,
       goodsBought: 20,
       householdResult: 193,
+      // What the two purchase lines add up: the service of the settlement month, the good of the month it was bought in.
+      details: { services: [{ amount: 5 }], goods: [{ amount: 20 }] },
     });
   });
 });

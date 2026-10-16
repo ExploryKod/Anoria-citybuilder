@@ -75,6 +75,25 @@ export class DexieHousingBuildingRepository {
     return house ? this.#toSnapshot(house) : null;
   }
 
+  /**
+   * Every residential house of the active hamlet, by each tile of its footprint: the answer of `findResidentialAt` for the whole city from ONE
+   * read of the table (asking tile by tile reads the whole table each time).
+   * @returns {Promise<Map<string, ReturnType<DexieHousingBuildingRepository['findResidentialHouses']> extends Promise<Array<infer S>> ? S : never>>} keyed `"x,y"`
+   */
+  async indexResidentialByTile() {
+    const rows = await db.houses.toArray();
+    const index = new Map();
+    for (const row of rows) {
+      if (!isActiveHamletRow(row)) continue;
+      if (!isResidentialHouseType(normalizeResidentialType(row.type || ''))) continue;
+      const footprint = footprintFromRecord(row);
+      if (!footprint) continue;
+      const snapshot = this.#toSnapshot(row);
+      for (const tile of footprint.tiles) index.set(`${tile.x},${tile.y}`, snapshot);
+    }
+    return index;
+  }
+
   async findResidentialHouses() {
     const rows = await db.houses.toArray();
     return rows

@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@splidejs/splide": "^4.1.4",
+    "@splidejs/splide-extension-auto-scroll": "^0.5.3",
     "dexie": "^4.0.11",
     "gsap": "^3.13.0",
     "js-toast-notifier": "^1.0.14",

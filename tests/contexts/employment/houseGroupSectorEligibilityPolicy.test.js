@@ -54,7 +54,7 @@ describe('Employment — HouseGroupSectorEligibilityPolicy (skill/tab derivation
 
   describe('allPriorityTabs / skillsForTab', () => {
     test('one tab per social group, and no shared tab while no skill is shared', () => {
-      expect(allPriorityTabs().sort()).toEqual(['artisans', 'merchants', 'scholars']);
+      expect(allPriorityTabs().sort()).toEqual(['administrators', 'artisans', 'merchants', 'scholars']);
     });
 
     test('every workplace-relevant skill appears in exactly one tab', () => {

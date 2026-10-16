@@ -88,6 +88,23 @@ export const popGroupPopNodes = queryGroupMetricNodes('pop');
 export const popGroupWorkerNodes = queryGroupMetricNodes('workers');
 export const popGroupLaborNodes = queryGroupMetricNodes('labor');
 
+const LABOR_CAUSES = ['unemployedNoSkill', 'unemployedNoPosts', 'unemployedNoRoad', 'lackNoSkill', 'lackNoHands'];
+
+/** The rows that say why people are out of work and why posts are empty, by cause (see computeCityEmploymentSummary.js). */
+export const popLaborCauseNodes = Object.fromEntries(
+    LABOR_CAUSES.map((cause) => {
+        const row = document.querySelector(`${popHudRoot} [data-metric="cause"][data-cause="${cause}"]`);
+        return [
+            cause,
+            {
+                row,
+                country: row?.querySelector('.pop-detail-value--country') ?? null,
+                hamlet: row?.querySelector('.pop-detail-value--hamlet') ?? null,
+            },
+        ];
+    })
+);
+
 // Goods the citizens eat that a hub stores, straight from the catalog — no good is named here.
 const POP_RESOURCE_CITY_PRODUCTS = getSuppliedCategories();
 // Deposits of the map, straight from the catalog too.

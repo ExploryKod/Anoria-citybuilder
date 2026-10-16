@@ -173,6 +173,7 @@ export function createSupplyContext({
     hubServing,
     dealGate,
     recordInputPurchase: (purchase) => traceability.recordInputPurchase(purchase),
+    recordSpoilage: (loss) => traceability.recordSpoilage(loss),
     removeBuilding: (params) => syncRemovedBuilding(params),
   });
   const runProducerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, produceResource);

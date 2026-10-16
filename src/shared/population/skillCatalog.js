@@ -38,6 +38,9 @@ export const SKILL_CATALOG = Object.freeze({
   hospitality: Object.freeze({ label: 'Convivialité', emoji: '🍺' }),
   'employment-eligible': Object.freeze({ label: "Éligibilité à l'emploi", emoji: '💼' }),
   administration: Object.freeze({ label: 'Administration', emoji: '🏛️' }),
+  // The administrators' two skills, held by right (see socialCategoryCatalog.js).
+  proprietaire: Object.freeze({ label: 'Propriétaire', emoji: '🔑' }),
+  percepteur: Object.freeze({ label: 'Percepteur', emoji: '🧾' }),
   'elder-wisdom': Object.freeze({ label: 'Sagesse', emoji: '📜' }),
   learning: Object.freeze({ label: 'Apprentissage', emoji: '📚' }),
 });

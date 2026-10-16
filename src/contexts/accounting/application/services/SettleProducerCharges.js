@@ -68,6 +68,8 @@ const LINE_LABELS = Object.freeze({
   payroll_tax: 'Impôt sur le revenu perçu',
   unemployment_benefit: 'Allocation chômage versée',
   household_benefit: 'Allocation chômage perçue',
+  salary: 'Traitement versé',
+  public_wage: 'Traitement perçu',
 });
 
 const centimes = (amount) => Math.round(amount * 100) / 100;
@@ -99,7 +101,8 @@ export class SettleProducerCharges {
    *   bank fund its own wages/upkeep/corporate tax from what it actually earns, the same way goods and service
    *   sales do for every other lucrative building
    * @param {() => Promise<{ threshold1: number, rate1: number, threshold2: number, rate2: number }>} deps.getSalaryTax the progressive income tax bands: see withholdIncomeTax
-   * @param {() => Promise<Array<{ id: string, pop: number }>>} deps.listHouses the hamlet's households and their residents
+   * @param {() => Promise<Array<{ id: string, pop: number }>>} deps.listHouses the hamlet's households and their residents who look for a job (the
+   *   ones the unemployment benefit counts: the administrators do not look for one)
    * @param {() => Promise<{ benefitBase: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>} deps.getPublicPay
    *   the benefit base (the lowest wage the city pays), the benefit rate (a fraction of it) and the two social contribution rates (fractions of the gross wage)
    * @param {() => Promise<(skill: string, level: number) => number>} deps.getWageRateOf the monthly gross wage the labour market gives a skill at a level
@@ -220,7 +223,44 @@ export class SettleProducerCharges {
       }
     }
 
-    const { payable, wagesByBuilding } = this.#planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse, wageRateOf: await this.deps.getWageRateOf(), employeeRate: publicPay.employeeContributionRate });
+    // The administrators do not look for a job and have no workplace: the city pays them a stipend, the lowest wage it pays
+    // (the benefit base) per administrator and month. Without it their house has no money and its services are cut off.
+    const stipendByHouse = new Map();
+    for (const household of households) {
+      if (!Number.isInteger(household.salaried) || household.salaried < 0) {
+        throw new Error(`[producer] house ${household.id} has no count of salaried residents (${household.salaried}): the month cannot be settled`);
+      }
+      const stipend = centimes(household.salaried * publicPay.benefitBase);
+      if (stipend <= 0) continue;
+      stipendByHouse.set(household.id, stipend);
+      await this.#record(
+        { kind: 'salary', amount: stipend, holder: null, counterparty: household.id, accountKind: null },
+        {
+          time,
+          key: buildProducerLineBusinessKey('salary', household.id, timeInfo, hamletId),
+          description: `${LINE_LABELS.salary} : ${household.salaried} administrateur(s) pour ${nameOf(household.id)} - ${monthLabel}`,
+          buildingInstanceId: household.id,
+          timeInfo,
+        },
+      );
+      await this.#record(
+        { kind: 'public_wage', amount: stipend, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT },
+        {
+          time,
+          key: buildProducerLineBusinessKey('public_wage', household.id, timeInfo, hamletId),
+          description: `${LINE_LABELS.public_wage} - ${monthLabel}`,
+          buildingInstanceId: household.id,
+          timeInfo,
+        },
+      );
+    }
+    // What the city pays a house is taxed and spent like a wage: the benefit and the stipend together.
+    const publicPayByHouse = new Map(benefitByHouse);
+    for (const [houseId, stipend] of stipendByHouse) {
+      publicPayByHouse.set(houseId, centimes((publicPayByHouse.get(houseId) ?? 0) + stipend));
+    }
+
+    const { payable, wagesByBuilding } = this.#planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse: publicPayByHouse, wageRateOf: await this.deps.getWageRateOf(), employeeRate: publicPay.employeeContributionRate });
 
     for (const pair of pairs) {
       for (const line of tradeLines(pair)) {
@@ -250,7 +290,7 @@ export class SettleProducerCharges {
         continue;
       }
       const label = getResourceCategoryPresentation(bill.service).label;
-      for (const line of serviceSaleLines({ sellerId: bill.buildingId, buyerId: bill.houseId, ttc: bill.ttc, ht: bill.ht, vat: bill.vat })) {
+      for (const line of serviceSaleLines({ sellerId: bill.buildingId, buyerId: bill.houseId, service: bill.service, ttc: bill.ttc, ht: bill.ht, vat: bill.vat })) {
         await this.#record(line, {
           time,
           key: buildServiceLineBusinessKey(line.kind, line.holder ?? 'city', line.counterparty, bill.service, timeInfo, hamletId),
@@ -265,7 +305,7 @@ export class SettleProducerCharges {
     // The income tax is per household (foyer): its wages of the month, from every workplace, and its unemployment
     // benefit, are taxed once together, above the threshold.
     const grossByHouse = new Map();
-    for (const [houseId, benefit] of benefitByHouse) {
+    for (const [houseId, benefit] of publicPayByHouse) {
       grossByHouse.set(houseId, centimes((grossByHouse.get(houseId) ?? 0) + benefit));
     }
     // What each house received in wages this month: the employee's social contribution is withheld from it, and only the rest is taxed.
@@ -496,6 +536,7 @@ export class SettleProducerCharges {
       accountBuildingId: line.holder,
       accountKind: line.accountKind ?? null,
       counterpartyBuildingId: line.counterparty,
+      resource: line.resource ?? null,
     });
     // A month already settled is not charged again; any other refusal is a defect, not a skipped line.
     if (!result.recorded && result.reason !== 'duplicate_business_key') {

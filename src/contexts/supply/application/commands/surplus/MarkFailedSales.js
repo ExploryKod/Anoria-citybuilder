@@ -1,8 +1,10 @@
 import { isOperational } from '../../../domain/policies/OperationalGatePolicy.js';
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import { isWithinRange } from '../../../domain/policies/ResourceRangePolicy.js';
+import { getHubProductRemainingInbound, normalizeHubStorageOrders } from '../../../domain/policies/HubStorageOrdersPolicy.js';
 import {
   getAllCategoriesForRole,
+  getCategoriesForRole,
   getRangeForRole,
   getResourceRoles,
   getTotalKeyForRole,
@@ -88,6 +90,21 @@ export class MarkFailedSales {
     if (working.length === 0) return 'hub_idle';
 
     const withRoom = working.filter((hub) => (hub.stocks?.[getTotalKeyForRole(hub.type, 'collector')] ?? 0) < hub.maxStock);
-    return withRoom.length === 0 ? 'hub_full' : 'unknown';
+    if (withRoom.length === 0) return 'hub_full';
+
+    // The hub as a whole has room, but each good has its own ceiling (a share of the hub, set by its storage orders).
+    const withRoomForGood = withRoom.filter((hub) => {
+      const goods = getCategoriesForRole(hub.type, 'hub');
+      return getHubProductRemainingInbound({
+        productId: category,
+        productIds: goods,
+        orders: normalizeHubStorageOrders(hub.hubStorageOrders, goods),
+        stocks: hub.stocks ?? {},
+        totalCapacity: hub.maxStock,
+      }) > 0;
+    });
+    if (withRoomForGood.length === 0) return 'good_ceiling';
+
+    throw new Error(`[sales] ${producer.type} ${producer.id} could not sell its ${category}: a working hub in reach has room for it, yet it was not collected`);
   }
 }

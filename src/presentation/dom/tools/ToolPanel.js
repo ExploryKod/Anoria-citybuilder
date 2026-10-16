@@ -157,6 +157,17 @@ export function activateSelectToolButton() {
   syncMobileClickStateFab('select-object');
 }
 
+/**
+ * Show a building tool as the one picked in the toolbar (visual only): its pill is lit, as if the player had opened its panel and clicked it.
+ * Pair with game.setActiveToolId(toolId).
+ * @param {string} toolId
+ */
+export function activateBuildToolButton(toolId) {
+  getButtonsUnactive();
+  const group = toolbarGroupOf(toolId);
+  document.querySelector(`.toolbar-btn[data-group="${group}"]`)?.classList.add('selected');
+}
+
 export function getButtonsDisabled() {
   toolBarButtons.forEach((button) => {
     if (button.classList.contains('disabled')) {

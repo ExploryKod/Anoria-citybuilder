@@ -422,7 +422,16 @@ describe('BudgetManager', () => {
             // level: 2 — citizen tax only applies to specialized (non-autarkic)
             // houses; level 1 (hunter-gatherer) is tax-exempt (see
             // CitizenTaxCollectionPolicy).
+            // The mayor's house holds the tax collector skill: without it nobody collects. It is tier 1, so tax-exempt itself.
             await testDb.houses.bulkPut([
+                {
+                    id: 'house-mayor',
+                    name: 'House-Mayor',
+                    type: 'House-Mayor',
+                    hamletId: TEST_HAMLET_ID,
+                    pop: 1,
+                    level: 1
+                },
                 {
                     id: 'house-blue-0-0',
                     name: 'House-Blue-0-0',

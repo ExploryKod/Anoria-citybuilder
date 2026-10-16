@@ -9,6 +9,10 @@
  *   export const CARAVAN_NEWS_ENTRIES = CARAVAN_NEWS_ENTRIES_MVP;
  */
 
+import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+import { SOCIAL_CATEGORY, OWNER_SKILL, TAX_COLLECTOR_SKILL } from '../../../../shared/population/socialCategoryCatalog.js';
+import { getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
+
 /**
  * @typedef {object} CityNewsSignals
  * @property {number} [famishedPopulation]
@@ -147,6 +151,73 @@ export const CARAVAN_NEWS_ENTRIES_MVP = [
     weight: 0.33,
   },
 ];
+
+/**
+ * Les dépêches qui marquent un moment de la partie (récit écrit à la main), une par identifiant de jalon : voir AnnounceMilestone.js.
+ * Chacune reçoit ce que son texte demande (une somme déjà écrite par la monnaie du jeu, par exemple).
+ * @type {Record<string, (params: any) => object>}
+ */
+const MILESTONE_DRAFTS = {
+  // Avant le tour où la ville reçoit son argent de départ : le trésor trouvé en chemin. `amountLabel` : « 500 € ».
+  // Elle porte le bouton de la maison du maire : tout commence par elle (voir `requiresPlaced` des autres maisons).
+  'starting-fortune': ({ amountLabel }) => {
+    const owner = getSkillDisplay(OWNER_SKILL).label.toLowerCase();
+    return {
+      sourceId: 'city',
+      categoryId: 'announcement',
+      title: 'Vous décidez de rester',
+      body: `Vous décidez de rester sur ce territoire. Vous dotez le budget de votre ville avec le trésor trouvé en chemin, ${amountLabel}, pour bâtir vos premières maisons. `
+        + `Tout commence par la vôtre : cliquez sur la maison ci-dessous, puis placez-la sur la carte. C'est elle qui fait de vous un ${owner} et ouvre la construction de toutes les autres.`,
+      teaser: 'Vous avez fait votre choix…',
+      reliability: 'trusted',
+      revelation: 'free',
+      action: { kind: 'buildTool', toolId: 'House-Mayor' },
+    };
+  },
+  // La première maison du maire : son rôle, et ce que ses deux compétences permettent. Les noms viennent des catalogues.
+  'mayor-house': () => {
+    const house = getBuildingDefinition('House-Mayor').displayName;
+    const owner = getSkillDisplay(OWNER_SKILL).label.toLowerCase();
+    const collector = getSkillDisplay(TAX_COLLECTOR_SKILL).label.toLowerCase();
+    const administrators = SOCIAL_CATEGORY.administrators.tiers[1].maxPopulation;
+    return {
+      sourceId: 'city',
+      categoryId: 'announcement',
+      title: 'La maison du maire est bâtie',
+      body: `Les ${house.toLowerCase()} de la ville s'installent (${administrators} au plus). Leur maison leur donne deux compétences, d'office : `
+        + `${owner} — ils perçoivent les loyers et leur maison est la condition pour bâtir toutes les autres maisons ; `
+        + `${collector} — ils perçoivent les impôts des autres maisons.`,
+      teaser: 'Les administrateurs prennent leurs quartiers…',
+      reliability: 'trusted',
+      revelation: 'free',
+    };
+  },
+  // November came and nobody holds the tax collector skill: the citizen tax of the year was not collected. Says who collects it.
+  'tax-uncollected': () => {
+    const house = getBuildingDefinition('House-Mayor').displayName;
+    const collector = getSkillDisplay(TAX_COLLECTOR_SKILL).label.toLowerCase();
+    return {
+      sourceId: 'city',
+      categoryId: 'announcement',
+      title: "L'impôt n'a pas été levé",
+      body: `Personne n'a la compétence de ${collector} : l'impôt citoyen de l'année n'a pas été collecté. Elle revient aux ${house.toLowerCase()}, `
+        + 'qui vivent dans la maison du maire : bâtissez-la et logez-y du monde, et l\'impôt sera levé dès ce mois.',
+      teaser: 'Les caisses restent vides…',
+      reliability: 'trusted',
+      revelation: 'free',
+    };
+  },
+};
+
+/**
+ * @param {string} milestoneId
+ * @param {object} [params]
+ */
+export function milestoneDraft(milestoneId, params = {}) {
+  const draft = MILESTONE_DRAFTS[milestoneId];
+  if (!draft) throw new Error(`[news] "${milestoneId}" is not a milestone of NewsDraftCatalog.js: it has no dépêche to announce`);
+  return draft(params);
+}
 
 /** Catalogue actif — vide jusqu’au prochain design gameplay. */
 export const CITY_NEWS_ENTRIES = [];

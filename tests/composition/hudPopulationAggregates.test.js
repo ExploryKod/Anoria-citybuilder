@@ -60,6 +60,13 @@ describe('getHudPopulationScopeSnapshot', () => {
         }
       )
     ).toEqual({
+      administrators: {
+        workerPool: 0,
+        assigned: 0,
+        unemployed: 0,
+        unemploymentPercentage: 0,
+        lack: 0,
+      },
       artisans: {
         workerPool: 5,
         assigned: 3,
@@ -83,15 +90,15 @@ describe('getHudPopulationScopeSnapshot', () => {
       },
     });
 
+    // Out of work and vacant posts at the same time: both are shown (a mismatch of skills the player must see).
     expect(laborSlotFromStats({ lack: 3, unemployed: 2, unemploymentPercentage: 40 })).toEqual({
-      mode: 'lack',
-      display: '3',
+      mode: 'both',
+      display: '40% · 3',
       count: 3,
+      unemployed: 2,
+      lack: 3,
     });
-    expect(laborSlotFromStats({ lack: 0, unemployed: 2, unemploymentPercentage: 40 })).toEqual({
-      mode: 'unemployment',
-      display: '40%',
-      count: 2,
-    });
+    expect(laborSlotFromStats({ lack: 3, unemployed: 0, unemploymentPercentage: 0 })).toMatchObject({ mode: 'lack', display: '3' });
+    expect(laborSlotFromStats({ lack: 0, unemployed: 2, unemploymentPercentage: 40 })).toMatchObject({ mode: 'unemployment', display: '40%', count: 2 });
   });
 });

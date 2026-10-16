@@ -41,7 +41,7 @@ export class HamletFiscalRateRepository {
   async getSalarySettings() {
     const [
       minimumWageMode, minimumWage, minimumWageBasketRatio, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
-      employerContributionRate, employeeContributionRate,
+      employerContributionRate, employeeContributionRate, rentPerHouse,
     ] = await Promise.all([
       this.#readMinimumWageMode(),
       this.#read('minimumWage'),
@@ -53,10 +53,11 @@ export class HamletFiscalRateRepository {
       this.#read('unemploymentBenefitRate'),
       this.#read('employerContributionRate'),
       this.#read('employeeContributionRate'),
+      this.#read('rentPerHouse'),
     ]);
     return {
       minimumWageMode, minimumWage, minimumWageBasketRatio, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
-      employerContributionRate, employeeContributionRate,
+      employerContributionRate, employeeContributionRate, rentPerHouse,
     };
   }
 

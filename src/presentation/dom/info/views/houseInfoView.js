@@ -4,6 +4,7 @@
 
 import {
   appendHouseholdEmployers,
+  appendHouseholdProblems,
   appendHouseholdSkills,
   appendLocationFootnote,
   appendMetricCardGroups,
@@ -35,6 +36,7 @@ export function renderHouseSkillsView(container, model) {
 
   appendHouseholdSkills(container, model.skills);
   appendHouseholdEmployers(container, model.employers);
+  appendHouseholdProblems(container, model.problems);
   appendLocationFootnote(container, model.anchorX, model.anchorY);
 }
 

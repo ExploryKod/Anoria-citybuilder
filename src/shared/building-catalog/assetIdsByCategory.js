@@ -40,7 +40,7 @@ export const NATURE_MESH_ALIASES = Object.freeze({
 /** @type {Readonly<Record<string, ReadonlyArray<string>>>} */
 export const ASSET_IDS_BY_CATEGORY = Object.freeze({
   zones: Object.freeze(['grass']),
-  houses: Object.freeze(['House-Blue', 'House-Red', 'House-Purple']),
+  houses: Object.freeze(['House-Mayor', 'House-Blue', 'House-Red', 'House-Purple']),
   farms: Object.freeze([
     'Farm-Wheat',
     'Farm-Carrot',

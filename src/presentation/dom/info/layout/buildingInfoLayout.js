@@ -65,7 +65,8 @@ export function setBuildingInfoGroupAccent(groupClass) {
   panel.classList.remove(
     'info-building-panel--merchants',
     'info-building-panel--artisans',
-    'info-building-panel--scholars'
+    'info-building-panel--scholars',
+    'info-building-panel--administrators'
   );
   if (groupClass) {
     panel.classList.add(`info-building-panel--${groupClass}`);
@@ -300,9 +301,74 @@ export function appendHouseholdEmployers(container, employers) {
       employers.map((employer) => ({ emoji: employer.emoji, value: employer.count, label: employer.label, ariaLabel: employer.ariaLabel })),
     );
   } else {
-    return null;
+    // Nobody of the house works anywhere: the section says so rather than disappearing.
+    const note = document.createElement('p');
+    note.className = 'building-info-footnote';
+    note.textContent = "Aucun habitant n'a d'employeurs.";
+    wrap.appendChild(note);
   }
 
+  container.appendChild(wrap);
+  return wrap;
+}
+
+/**
+ * The "Problèmes" block of a house: blocks of icon, number and word side by side. The first is the residents without a job, with under it, side by side
+ * and smaller, why (no skill, no post); then the hungry, the angry, the sick. Nothing is said when the residents could not be read for the first block.
+ * @param {HTMLElement} container
+ * @param {{
+ *   unemployed: { emoji: string, count: number, label: string, ariaLabel: string, causes: ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }> } | null,
+ *   others: ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }>,
+ * }} problems
+ */
+export function appendHouseholdProblems(container, problems) {
+  const wrap = document.createElement('div');
+  wrap.className = 'building-info-skills building-info-problems';
+
+  const title = document.createElement('h3');
+  title.className = 'building-info-section-label';
+  title.textContent = 'Problèmes';
+  wrap.appendChild(title);
+
+  const row = document.createElement('div');
+  row.className = 'building-info-problems__row';
+
+  const chipOf = (item) => {
+    const chip = document.createElement('span');
+    chip.className = 'building-info-icon-chip';
+    chip.title = item.ariaLabel;
+    chip.setAttribute('aria-label', item.ariaLabel);
+    chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span><span class="building-info-icon-chip__value">${item.count}</span><span class="building-info-icon-chip__label">${item.label}</span>`;
+    return chip;
+  };
+
+  if (problems.unemployed) {
+    const block = document.createElement('div');
+    block.className = 'building-info-problems__block';
+    block.appendChild(chipOf(problems.unemployed));
+    if (problems.unemployed.causes.length > 0) {
+      const causes = document.createElement('div');
+      causes.className = 'building-info-problems__causes';
+      for (const cause of problems.unemployed.causes) {
+        const mini = document.createElement('span');
+        mini.className = 'building-info-problems__cause';
+        mini.title = cause.ariaLabel;
+        mini.setAttribute('aria-label', cause.ariaLabel);
+        mini.innerHTML = `<span aria-hidden="true">${cause.emoji}</span><strong>${cause.count}</strong>`;
+        causes.appendChild(mini);
+      }
+      block.appendChild(causes);
+    }
+    row.appendChild(block);
+  }
+  for (const item of problems.others) {
+    const block = document.createElement('div');
+    block.className = 'building-info-problems__block';
+    block.appendChild(chipOf(item));
+    row.appendChild(block);
+  }
+
+  wrap.appendChild(row);
   container.appendChild(wrap);
   return wrap;
 }

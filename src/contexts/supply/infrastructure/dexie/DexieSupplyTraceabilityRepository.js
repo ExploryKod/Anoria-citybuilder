@@ -235,6 +235,28 @@ export class DexieSupplyTraceabilityRepository {
     return units;
   }
 
+  /**
+   * What one building lost to spoilage (`crop_spoiled` events), per good: in a month, or in the whole year when `monthIndex` is null.
+   * @param {number} buildingId
+   * @param {number} year
+   * @param {number | null} monthIndex
+   * @returns {Promise<Record<string, number>>} good → units lost
+   */
+  async sumSpoilageOf(buildingId, year, monthIndex = null) {
+    const hamletId = requireActiveHamletId();
+    const rows = await this.db.supplyTraceability
+      .where('transactionType')
+      .equals('game_event')
+      .filter((row) => row.event === 'crop_spoiled' && row.hamletId === hamletId && row.fromId === buildingId && row.year === year && (monthIndex === null || row.month === monthIndex))
+      .toArray();
+    const lost = {};
+    for (const row of rows) {
+      if (!row.details?.good) throw new Error(`[traceability] spoilage ${row.id} names no good`);
+      lost[row.details.good] = (lost[row.details.good] ?? 0) + row.quantity;
+    }
+    return lost;
+  }
+
   async recordSourceToDistributor(turn, month, year, source, distributor, foodType, quantity, price) {
     await this.addTransaction(
       turn,

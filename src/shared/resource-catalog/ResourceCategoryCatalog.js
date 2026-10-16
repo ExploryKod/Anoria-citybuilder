@@ -83,6 +83,33 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
 });
 
 /**
+ * What a household's purchases are grouped into, in the order its budget lists them: the household's consumption by purpose, after the
+ * international nomenclature of household consumption (COICOP, `coicop` is the division's number). Each group names the categories a house
+ * buys (a good at a market, a service on its bill). A category a house buys must be in one, or `householdConsumptionGroupOf` throws.
+ */
+export const HOUSEHOLD_CONSUMPTION_GROUPS = Object.freeze([
+  Object.freeze({ id: 'food', coicop: '01', label: 'Alimentation', categories: Object.freeze(['wheat', 'cabbage', 'carrot', 'dattes']) }),
+  Object.freeze({ id: 'housing', coicop: '04', label: 'Logement, eau et énergie', categories: Object.freeze(['water', 'energy', 'wood', 'oil', 'candle']) }),
+  Object.freeze({ id: 'equipment', coicop: '05', label: 'Équipement du ménage', categories: Object.freeze(['furniture', 'plate', 'pot', 'amphora']) }),
+  Object.freeze({ id: 'health', coicop: '06', label: 'Santé', categories: Object.freeze(['doctor', 'hospital']) }),
+  Object.freeze({ id: 'leisure', coicop: '09', label: 'Loisirs et culture', categories: Object.freeze(['library', 'theatre', 'cinema']) }),
+  Object.freeze({ id: 'education', coicop: '10', label: 'Enseignement', categories: Object.freeze(['school']) }),
+  Object.freeze({ id: 'restaurants', coicop: '11', label: 'Restauration', categories: Object.freeze(['pub']) }),
+  Object.freeze({ id: 'other', coicop: '12', label: 'Autres biens et services', categories: Object.freeze(['fire', 'police']) }),
+]);
+
+/**
+ * The consumption group of a category a house bought.
+ * @param {string} category
+ * @returns {{ id: string, coicop: string, label: string, categories: readonly string[] }}
+ */
+export function householdConsumptionGroupOf(category) {
+  const group = HOUSEHOLD_CONSUMPTION_GROUPS.find((candidate) => candidate.categories.includes(category));
+  if (!group) throw new Error(`[resource-catalog] "${category}" is bought by a household but is in no HOUSEHOLD_CONSUMPTION_GROUPS: declare its group`);
+  return group;
+}
+
+/**
  * What a category with no entry here is shown as: the "…" marker, never the id or an invented icon.
  * (presentation/dom/shell/CatalogVocabulary.js also warns about it in the console.)
  */

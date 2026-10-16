@@ -73,6 +73,8 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
       console.error('[BuildingInfo] getHouseResidents failed:', error);
       extra.residents = null;
     }
+    // The posts left vacant by the last distribution of workers (null before any): they tell why a resident is out of work (the Savoirs tab).
+    extra.labourVacancies = vm.employment.getLabourMarket()?.rows.filter((row) => row.vacancies > 0) ?? null;
     // Needed to tell "served THIS period" from a stale flag — see
     // HouseTierRequirementPolicy.js's serviceCoverage descriptor and
     // HouseLevelPolicy.describeRelevantServiceCoverage, the Services tab's

@@ -237,15 +237,21 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
   if (!buildingId) throw new Error('[finance] a building account needs its building');
   const accountKey = accountKeyOf({ accountBuildingId: buildingId, accountKind });
   const byType = new Map();
+  // What a household's two purchase lines are made of, one entry per journal line: the player opens the line that adds them up to see them.
+  const details = { services: [], goods: [] };
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey || entry.year !== year) continue;
     if (month !== null && entry.month !== month) continue;
     byType.set(entry.type, (byType.get(entry.type) ?? 0) + toCentimes(entry.amount));
+    if (accountKind === 'particulier') {
+      const bucket = entry.type === 'service_purchase' ? details.services : entry.type === 'consumer_purchase' ? details.goods : null;
+      if (bucket) bucket.push({ id: entry.id, turn: entry.turn, description: entry.description, amount: entry.amount, resource: entry.resource });
+    }
   }
   const of = (type) => byType.get(type) ?? 0;
 
   const householdIncome = of('household_wage') + of('public_wage') + of('household_benefit') + of('household_participation') + of('household_dividend');
-  const householdCharges = of('service_purchase') + of('consumer_purchase') + of('income_tax') + of('citizen_tax_paid') + of('employee_contribution');
+  const householdCharges = of('service_purchase') + of('consumer_purchase') + of('rent_paid') + of('income_tax') + of('citizen_tax_paid') + of('employee_contribution');
   const householdResult = householdIncome - householdCharges;
 
   const statement = accountKind === 'particulier' ? null : incomeStatementOf(entries, buildingId, { year, month, accountKind, salesNature });
@@ -269,10 +275,12 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
     dividendReceived: fromCentimes(of('household_dividend')),
     servicesPaid: fromCentimes(of('service_purchase')),
     goodsBought: fromCentimes(of('consumer_purchase')),
+    rentPaid: fromCentimes(of('rent_paid')),
     incomeTax: fromCentimes(of('income_tax')),
     citizenTax: fromCentimes(of('citizen_tax_paid')),
     employeeContributionPaid: fromCentimes(of('employee_contribution')),
     householdResult: fromCentimes(householdResult),
+    details,
   };
 }
 
@@ -305,7 +313,7 @@ export function householdBudgetOf(entries, houseId, { year, month, balance }) {
     if (accountKeyOf(entry) !== accountKey || entry.year !== year || entry.month !== month) continue;
     const amount = toCentimes(entry.amount);
     if (['household_wage', 'public_wage', 'household_benefit', 'household_participation', 'household_dividend'].includes(entry.type)) wages += amount;
-    else if (['service_purchase', 'income_tax', 'citizen_tax_paid', 'employee_contribution'].includes(entry.type)) services += amount;
+    else if (['service_purchase', 'rent_paid', 'income_tax', 'citizen_tax_paid', 'employee_contribution'].includes(entry.type)) services += amount;
     else if (entry.type === 'consumer_purchase') purchases += amount;
     else if (entry.type === 'deposit') depositedOut += amount;
     else if (entry.type === 'withdrawal' || entry.type === 'household_deposit_interest') returnedIn += amount;
@@ -343,10 +351,13 @@ export function householdLastMonthOf(entries, houseId, { settled, bought }) {
     participationReceived: settledFigures.participationReceived,
     dividendReceived: settledFigures.dividendReceived,
     servicesPaid: settledFigures.servicesPaid,
+    rentPaid: settledFigures.rentPaid,
     incomeTax: settledFigures.incomeTax,
     citizenTax: settledFigures.citizenTax,
     employeeContributionPaid: settledFigures.employeeContributionPaid,
     goodsBought: boughtFigures.goodsBought,
+    // The services come from the settlement month, the goods from the month they were bought in, like the two lines they detail.
+    details: { services: settledFigures.details.services, goods: boughtFigures.details.goods },
     householdResult: fromCentimes(
       toCentimes(settledFigures.wagesReceived)
         + toCentimes(settledFigures.publicWageReceived)
@@ -354,6 +365,7 @@ export function householdLastMonthOf(entries, houseId, { settled, bought }) {
         + toCentimes(settledFigures.participationReceived)
         + toCentimes(settledFigures.dividendReceived)
         - toCentimes(settledFigures.servicesPaid)
+        - toCentimes(settledFigures.rentPaid)
         - toCentimes(settledFigures.incomeTax)
         - toCentimes(settledFigures.citizenTax)
         - toCentimes(settledFigures.employeeContributionPaid)

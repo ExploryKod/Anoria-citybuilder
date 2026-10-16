@@ -474,11 +474,25 @@ export const BUILDING_ECONOMY = {
   // type, never a new field name (see `servedFlags` in PeriodLockPolicy.js).
   // A house is named after the social category living in it (the colour in the id
   // is only how the code tells the three apart) — `displayName` is what the player reads.
+  // The mayor's house: the city's administrators live here (a fourth social category, six at most). Its residents are owners
+  // and tax collectors by right (see socialCategoryCatalog.js), which is why every other house waits for it (`requiresPlaced`).
+  // One per hamlet (`maxPerHamlet`).
+  'House-Mayor': {
+    displayName: 'Administrateurs',
+    construction: { price: 10, category: 'houses' },
+    accounting: { maintenance: 6 },
+    residentialGroup: 'administrators',
+    maxPerHamlet: 1,
+    // The first one built says what the house is for (the dépêche `mayor-house` of NewsDraftCatalog.js).
+    firstBuiltNews: 'mayor-house',
+    resourceRoles: [...HOUSE_RESOURCE_ROLES],
+  },
   'House-Blue': {
     displayName: 'Commerçants',
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'merchants',
+    requiresPlaced: ['House-Mayor'],
     // Their own business, on top of the household needs every house shares (see MERCHANT_ACTIVITY_ROLES above).
     resourceRoles: [...HOUSE_RESOURCE_ROLES, ...MERCHANT_ACTIVITY_ROLES],
   },
@@ -487,6 +501,7 @@ export const BUILDING_ECONOMY = {
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'artisans',
+    requiresPlaced: ['House-Mayor'],
     resourceRoles: [...HOUSE_RESOURCE_ROLES, ...ARTISAN_ACTIVITY_ROLES],
   },
   'House-Purple': {
@@ -494,6 +509,7 @@ export const BUILDING_ECONOMY = {
     construction: { price: 10, category: 'houses' },
     accounting: { maintenance: 6 },
     residentialGroup: 'scholars',
+    requiresPlaced: ['House-Mayor'],
     resourceRoles: [...HOUSE_RESOURCE_ROLES, ...SAVANT_ACTIVITY_ROLES],
   },
 
@@ -512,6 +528,7 @@ export const BUILDING_ECONOMY = {
       categories: ['wheat'],
       schedule: { unit: 'season', values: ['autumn'] },
       sale: HARVEST_SALE,
+      spoilsUnsold: true,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
       // Citizens eat first; the cake business (House-Red) only gets what is left over.
@@ -528,6 +545,7 @@ export const BUILDING_ECONOMY = {
       categories: ['carrot'],
       schedule: { unit: 'season', values: ['autumn'] },
       sale: HARVEST_SALE,
+      spoilsUnsold: true,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
       clients: ['Market-Stall-Red', 'House-Red'],
@@ -543,6 +561,7 @@ export const BUILDING_ECONOMY = {
       categories: ['cabbage'],
       schedule: { unit: 'season', values: ['autumn'] },
       sale: HARVEST_SALE,
+      spoilsUnsold: true,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],

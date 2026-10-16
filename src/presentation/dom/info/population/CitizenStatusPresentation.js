@@ -30,6 +30,7 @@ export const GROUP_CITIZEN_PRESENTATION = Object.freeze({
   artisans: citizensOf('artisans', '🔨'),
   merchants: citizensOf('merchants', '🛒'),
   scholars: citizensOf('scholars', '📚'),
+  administrators: citizensOf('administrators', '🏛️'),
 });
 
 // Skill display (label/emoji + preferred order) lives in

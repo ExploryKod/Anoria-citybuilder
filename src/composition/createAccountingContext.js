@@ -60,6 +60,10 @@ import { householdPublicPayOf } from '../contexts/accounting/domain/policies/Hou
 import { MONTHS_PER_YEAR } from '../shared/time/TimeCalendar.js';
 import { isLucrativeBuilding } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../shared/building-identity/index.js';
+import { houseHoldsSkill, residentsSeekingWork } from '../shared/population/workforceQueries.js';
+import { OWNER_SKILL, TAX_COLLECTOR_SKILL } from '../shared/population/socialCategoryCatalog.js';
+import { rentDebtsOf } from '../contexts/accounting/domain/policies/RentPolicy.js';
+import { SettleHouseRents } from '../contexts/accounting/application/services/SettleHouseRents.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
 import { getResourceBaseValue, getServiceCategories } from '../shared/resource-catalog/ResourceCategoryCatalog.js';
 import {
@@ -211,7 +215,8 @@ export function createAccountingContext(deps = {}) {
 
   const initializeTreasury = new InitializeTreasury(
     recordCapitalFundsIncome,
-    defaultInitialFunds
+    defaultInitialFunds,
+    { hasAnyEntry: async () => (await journalRepository.getJournalEntries()).length > 0 }
   );
   const getTreasurySnapshotQuery = new GetTreasurySnapshot(
     initializeTreasury,
@@ -272,6 +277,11 @@ export function createAccountingContext(deps = {}) {
     houseReadPort,
     getCitizenTaxPerCapita,
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
+    // The tax is collected by the city's tax collectors: the residents of the house that holds the skill (the mayor's house).
+    hasTaxCollector: async () =>
+      (await dexieDb.houses.toArray())
+        .filter(isActiveHamletRow)
+        .some((row) => resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE && row.pop >= 1 && houseHoldsSkill(row.type, row.level ?? 1, TAX_COLLECTOR_SKILL)),
   });
 
   const gameTreasuryRecording = new GameTreasuryRecording({
@@ -344,7 +354,10 @@ export function createAccountingContext(deps = {}) {
         .filter((row) => resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE)
         .map((row) => {
           if (!Number.isInteger(row.pop) || row.pop < 0) throw new Error(`[households] house ${row.id} has no residents count`);
-          return { id: row.id, pop: row.pop };
+          // The residents who look for a job: the administrators do not, so no benefit is paid for them.
+          const seeking = residentsSeekingWork(row.type, row.pop);
+          // `salaried`: the residents the city pays a stipend (the administrators).
+          return { id: row.id, pop: seeking, salaried: row.pop - seeking };
         }),
     getPublicPay: async () => {
       const settings = await hamletFiscalRates.getSalarySettings();
@@ -441,10 +454,34 @@ export function createAccountingContext(deps = {}) {
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
 
+  // The rent of every house but the owner's goes to the owner: the house whose residents hold the owner skill (the mayor's house).
+  const settleHouseRents = new SettleHouseRents({
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    getRentalHouses: async () => {
+      const houses = (await dexieDb.houses.toArray())
+        .filter(isActiveHamletRow)
+        .filter((row) => resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE && row.pop >= 1)
+        .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+      const owner = houses.find((row) => houseHoldsSkill(row.type, row.level ?? 1, OWNER_SKILL));
+      if (!owner) return null;
+      const nameOf = (row) => getBuildingDefinition(row.type)?.displayName;
+      return {
+        ownerId: owner.id,
+        ownerName: nameOf(owner),
+        tenants: houses.filter((row) => row.id !== owner.id && !houseHoldsSkill(row.type, row.level ?? 1, OWNER_SKILL)).map((row) => ({ id: row.id, name: nameOf(row) })),
+      };
+    },
+    getRentPerHouse: async () => (await hamletFiscalRates.getSalarySettings()).rentPerHouse,
+    getJournalEntries: () => journalRepository.getJournalEntries(),
+    fundsOf: async (houseId) => (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: 'particulier' })).funds,
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
+
   const processTurnBudget = new ProcessTurnBudget({
     collectCitizenTaxes: (time) => collectCitizenTaxes.execute({ time }),
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
     settleProducerCharges: (params) => settleProducerCharges.execute(params),
+    settleHouseRents: (params) => settleHouseRents.execute(params),
     settleBankDepositInterest: (params) => settleBankDepositInterest.execute(params),
     revalueMinimumWage: () => revalueMinimumWage.execute(),
     adjustWageRates: ({ time }) => {
@@ -779,10 +816,28 @@ export function createAccountingContext(deps = {}) {
       const building = await dexieDb.houses.get(buildingId);
       if (!building) throw new Error(`[finance] building ${buildingId} is not in the hamlet: its accounts cannot be read`);
       const salesNature = salesNatureOf(building.type);
+      // Analytic reading, outside the journal: what the building lost to spoilage in a period, and what those units would have
+      // sold for (the manque à gagner, at the price the building sells that good at). A house's personal account has none.
+      const spoilageOf = async (year, monthIndex = null) => {
+        if (accountKind === 'particulier') return null;
+        const lost = await supplyTraceabilityRepository.sumSpoilageOf(buildingId, year, monthIndex);
+        const goods = Object.keys(lost);
+        if (goods.length === 0) return { units: 0, lostRevenue: 0 };
+        if (typeof deps.getSellingPrice !== 'function') throw new Error('[accounting] the selling prices were not wired (deps.getSellingPrice): the spoiled goods could not be valued');
+        let units = 0;
+        let lostRevenue = 0;
+        for (const good of goods) {
+          units += lost[good];
+          lostRevenue += lost[good] * (await deps.getSellingPrice({ id: buildingId, type: building.type }, good, { year, monthIndex: monthIndex ?? MONTHS_PER_YEAR - 1 }));
+        }
+        return { units, lostRevenue: Math.round(lostRevenue * 100) / 100 };
+      };
       if (yearView) {
         // The year state: last year's result next to this year's so far (none for the first year: it has no year before it).
-        const thisYear = buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind, salesNature });
-        const lastYear = now.year > 0 ? buildingFinanceFigures(entries, buildingId, { year: now.year - 1, accountKind, salesNature }) : null;
+        const thisYear = { ...buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind, salesNature }), spoilage: await spoilageOf(now.year) };
+        const lastYear = now.year > 0
+          ? { ...buildingFinanceFigures(entries, buildingId, { year: now.year - 1, accountKind, salesNature }), spoilage: await spoilageOf(now.year - 1) }
+          : null;
         return {
           scope: 'year',
           years: { current: now.year, previous: lastYear ? now.year - 1 : null },
@@ -810,13 +865,13 @@ export function createAccountingContext(deps = {}) {
       const unitsSold = accountKind === 'particulier'
         ? null
         : (await supplyTraceabilityRepository.sumUnitsSoldBySeller(activity.year, activity.monthIndex)).get(buildingId) ?? 0;
-      const monthToDate = buildingFinanceFigures(entries, buildingId, { ...settled, accountKind, salesNature, unitsSold });
+      const monthToDate = { ...buildingFinanceFigures(entries, buildingId, { ...settled, accountKind, salesNature, unitsSold }), spoilage: await spoilageOf(activity.year, activity.monthIndex) };
       return {
         lastMonth: accountKind === 'particulier'
           ? { ...monthToDate, ...householdLastMonthOf(entries, buildingId, { settled, bought: previous }) }
           : monthToDate,
         monthToDate,
-        year: buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind, salesNature }),
+        year: { ...buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind, salesNature }), spoilage: await spoilageOf(now.year) },
         cash: snapshot.funds,
         month: viewedMonth,
         currentMonth,
@@ -830,7 +885,18 @@ export function createAccountingContext(deps = {}) {
         openingSavings: accountKind === 'particulier'
           ? snapshot.funds - buildingFinanceFigures(entries, buildingId, { year: now.year, accountKind, salesNature }).householdResult
           : null,
+        // What a house owes the owner, derived from the journal as it stood at the end of the month viewed (never stored).
+        rentDebt: accountKind === 'particulier' ? rentDebtsOf(entries).get(buildingId) ?? 0 : null,
       };
+    },
+
+    /**
+     * The rents owed by the houses, from the journal: how many houses owe one and how much in all (derived every time, never stored).
+     * @returns {Promise<{ debtors: number, total: number }>}
+     */
+    async getRentDebtSummary() {
+      const debts = [...rentDebtsOf(await journalRepository.getJournalEntries()).values()].filter((debt) => debt > 0);
+      return { debtors: debts.length, total: Math.round(debts.reduce((sum, debt) => sum + debt * 100, 0)) / 100 };
     },
 
     /**

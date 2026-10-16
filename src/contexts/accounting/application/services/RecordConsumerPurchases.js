@@ -52,6 +52,7 @@ export class RecordConsumerPurchases {
         accountBuildingId: purchase.houseId,
         accountKind: 'particulier',
         counterpartyBuildingId: distributorId,
+        resource: purchase.category,
       }, key);
       await this.#record({
         ...common,

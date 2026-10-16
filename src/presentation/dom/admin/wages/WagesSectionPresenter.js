@@ -105,6 +105,16 @@ export class WagesSectionPresenter {
         ariaLabel: 'Cotisations salariales, en pourcentage du salaire brut, retenues sur le salaire',
         store: (value) => this.accounting.setSalarySettings({ employeeContributionRate: value / 100 }),
       }),
+      createSliderRow({
+        label: 'Loyer par maison',
+        scope: 'Hameau',
+        min: this.bounds.rentPerHouse.min,
+        max: this.bounds.rentPerHouse.max,
+        value: settings.rentPerHouse,
+        unit: '€/mois',
+        ariaLabel: 'Loyer mensuel que chaque maison verse à la maison du maire (celle des administrateurs, propriétaires) ; un loyer impayé devient une dette',
+        store: (value) => this.accounting.setSalarySettings({ rentPerHouse: value }),
+      }),
     );
 
     const social = await this.accounting.getSocialSecurityBoard();

@@ -9,6 +9,8 @@
  * it doesn't gate who's employable.
  */
 
+import { residentsSeekingWork } from '../../../../shared/population/workforceQueries.js';
+
 /** Max citizen slots per house. */
 export const HOUSE_CITIZEN_CAP = 6;
 
@@ -61,5 +63,6 @@ export function citizenPopFromHouse(_type, pop) {
  * @returns {number}
  */
 export function workerPopFromHouse(type, pop) {
-  return citizenPopFromHouse(type, pop);
+  // The administrators do not look for a job (catalog `seeksWork`): they are no part of the pool.
+  return residentsSeekingWork(type, citizenPopFromHouse(type, pop));
 }

@@ -5,12 +5,23 @@ const TIERS = [1, 2, 3, 4, 5, 6];
 const kindsOf = (tier) => tier.requirements.map((requirement) => requirement.kind);
 const namesOf = (tier) => tier.requirements.map((requirement) => requirement.category).filter(Boolean);
 
-describe('SOCIAL_CATEGORY — single source for the 3 social categories', () => {
-  test('declares exactly artisans, merchants, scholars, each with a 6-tier ladder', () => {
-    expect(Object.keys(SOCIAL_CATEGORY).sort()).toEqual(['artisans', 'merchants', 'scholars']);
-    for (const facts of Object.values(SOCIAL_CATEGORY)) {
+/** Every category but the administrators (the mayor's house, a ladder of its own), which share the 6-tier ladder. */
+const WORKING_CLASSES = Object.entries(SOCIAL_CATEGORY).filter(([id]) => id !== 'administrators').map(([, facts]) => facts);
+
+describe('SOCIAL_CATEGORY — single source for the social categories', () => {
+  test('declares artisans, merchants, scholars (a 6-tier ladder each) and the administrators (3 tiers)', () => {
+    expect(Object.keys(SOCIAL_CATEGORY).sort()).toEqual(['administrators', 'artisans', 'merchants', 'scholars']);
+    for (const facts of WORKING_CLASSES) {
       expect(Object.keys(facts.tiers).map(Number)).toEqual(TIERS);
     }
+    expect(Object.keys(SOCIAL_CATEGORY.administrators.tiers).map(Number)).toEqual([1, 2, 3]);
+  });
+
+  test('the administrators are six at most whatever the tier, and hold their two skills by right from the first tier', () => {
+    const { administrators } = SOCIAL_CATEGORY;
+    for (const tier of Object.values(administrators.tiers)) expect(tier.maxPopulation).toBe(6);
+    expect(administrators.tiers[1].requirements).toEqual([]);
+    expect(administrators.tiers[1].skills).toEqual({ proprietaire: 1, percepteur: 1 });
   });
 
   test('the ladder is the same for the 3 categories: only the skills they hold differ', () => {
@@ -53,7 +64,7 @@ describe('SOCIAL_CATEGORY — single source for the 3 social categories', () => 
   });
 
   test('each requirement from an earlier tier is repeated in every later tier (cumulative, not inherited)', () => {
-    for (const category of Object.values(SOCIAL_CATEGORY)) {
+    for (const category of WORKING_CLASSES) {
       for (const tier of [3, 4, 5, 6]) {
         for (const earlier of category.tiers[tier - 1].requirements.filter((requirement) => requirement.kind !== 'population' && requirement.kind !== 'goodsVariety')) {
           expect(category.tiers[tier].requirements).toContainEqual(earlier);
@@ -63,7 +74,7 @@ describe('SOCIAL_CATEGORY — single source for the 3 social categories', () => 
   });
 
   test('every tier declares a growing population ceiling, defined once and shared by default', () => {
-    for (const facts of Object.values(SOCIAL_CATEGORY)) {
+    for (const facts of WORKING_CLASSES) {
       const caps = TIERS.map((level) => facts.tiers[level].maxPopulation);
       expect(caps.every((cap) => Number.isInteger(cap) && cap > 0)).toBe(true);
       expect([...caps].sort((a, b) => a - b)).toEqual(caps);

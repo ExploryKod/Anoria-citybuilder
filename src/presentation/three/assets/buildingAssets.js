@@ -3671,6 +3671,45 @@ export const BUILDING_ASSETS = Object.freeze({
       6: 'Kenney-Suburban-building-type-f',
     },
   },
+  // Maison du maire — les administrateurs de la ville. Elle porte les trois modèles de banlieue que les autres maisons n'utilisent pas (g, c, u);
+  // économie et empreinte sont celles de 'House-Mayor'.
+  'House-Mayor': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-building-type-g',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+      instanceable: true,
+    },
+    button: {
+      group: 'houses',
+      editorGroup: null,
+      label: 'type-g',
+      tooltip: 'Maison du maire (2×2, 10€)',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-g.png' },
+    },
+    tags: ['suburban', 'building'],
+    // Visible tier evolution for the administrators (three tiers, see socialCategoryCatalog.js).
+    levelVariants: {
+      2: 'Kenney-Suburban-building-type-c',
+      3: 'Kenney-Suburban-building-type-u',
+    },
+  },
   // Maison — building-type-d
   'Kenney-Suburban-building-type-d': {
     source: 'kenneyCityKit',

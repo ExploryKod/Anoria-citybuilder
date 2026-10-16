@@ -42,6 +42,15 @@ export function filterJournalEntriesByHamlet(entries, hamletId) {
   });
 }
 
+/**
+ * The city's own lines: those that hold no account of a building. The yearly summary is the city's figure — a house's or a
+ * company's lines (wages, purchases, rents) are movements between private accounts, not the city's income and expenses.
+ * @param {Array<object>} entries
+ */
+export function filterCityAccountEntries(entries) {
+  return entries.filter((entry) => (entry.accountBuildingId ?? null) === null);
+}
+
 
 /**
  * @param {Array<object>} entries

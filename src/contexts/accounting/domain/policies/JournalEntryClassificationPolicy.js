@@ -35,6 +35,7 @@ export function isJournalEntryIncomeForMonthlySummary(entry, allEntries, getTime
     entry.type === 'social_contribution' ||
     entry.type === 'household_participation' ||
     entry.type === 'household_dividend' ||
+    entry.type === 'rent_received' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital';
 

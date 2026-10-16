@@ -274,6 +274,8 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     subsidy_companies_received: 'Subvention entretien reçue',
     employer_contribution: 'Cotisations patronales',
     employee_contribution: 'Cotisations salariales',
+    rent_paid: 'Loyer payé',
+    rent_received: 'Loyer perçu',
     social_contribution: 'Cotisations sociales perçues',
     cooperative_participation: 'Participation aux résultats versée',
     cooperative_dividend: 'Dividendes versés',

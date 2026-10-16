@@ -88,6 +88,7 @@
  * @property {Record<string, object | null>} [outcomes] House group only — the latest record of each need the house consumes, by its outcomeField (water, energy, goods).
  * @property {boolean} [activityAccess] House group only — a warehouse is within reach of the house's business.
  * @property {ReadonlyArray<{ status: string, workplaceType: string | null }> | null} [residents] House group only — who works where (accounting.getHouseResidents); null when it could not be read.
+ * @property {ReadonlyArray<{ skill: string, level: number, vacancies: number }> | null} [labourVacancies] House group only — the vacant posts of the last distribution of workers; null before any.
  * @property {ReadonlyArray<{ category: string, inputCategory: string, role: string, status: 'no-hub' | 'no-supplier' }>} [activitySupplyGaps]
  *   House and farm groups only — see DescribeActivitySupplyAccess.js.
  */

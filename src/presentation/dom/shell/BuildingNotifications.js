@@ -3,6 +3,8 @@
  */
 
 import { getBuildingDefinition } from '../../../shared/building-catalog/buildingCatalog.js';
+import { getSkillDisplay } from '../../../shared/population/skillCatalog.js';
+import { OWNER_SKILL } from '../../../shared/population/socialCategoryCatalog.js';
 import { listClientTypes, producedCategories } from '../../../shared/building-catalog/clientQueries.js';
 import {
   showErrorToast,
@@ -44,40 +46,70 @@ export function getBuildingDisplayName(buildingId) {
   return EXTRA_TRANSLATIONS[buildingId] ?? buildingName(buildingId);
 }
 
-const FIXED_PLACEMENT_REASONS = {
-  area_not_available: 'Espace non disponible',
-  insufficient_funds: 'Fonds insuffisants',
-  building_already_exists: 'Un bâtiment existe déjà à cet emplacement',
-  database_error: "Erreur lors de l'enregistrement du bâtiment",
-  persistence_conflict: 'Conflit de sauvegarde — réessaie dans un instant',
-  natural_resource_missing: 'Aucune ressource naturelle à proximité',
-};
+/**
+ * The palette of the refusals of a placement: what stops a building says its own words. Each entry names the reason it answers (`reason`: a code
+ * or a pattern for a family of codes) and what it says (`say`), from the refused building's own catalog entry where the words depend on it. A new
+ * condition that can stop a construction is one more entry here, and the code that refuses only has to name its reason.
+ * @type {ReadonlyArray<{ reason: string | RegExp, say: (building: string, found: RegExpExecArray | null) => string }>}
+ */
+const PLACEMENT_REFUSALS = Object.freeze([
+  // The ground or the purse.
+  { reason: 'area_not_available', say: () => 'Espace non disponible' },
+  { reason: 'insufficient_funds', say: () => 'Fonds insuffisants' },
+  { reason: 'building_already_exists', say: () => 'Un bâtiment existe déjà à cet emplacement' },
+  { reason: 'database_error', say: () => "Erreur lors de l'enregistrement du bâtiment" },
+  { reason: 'persistence_conflict', say: () => 'Conflit de sauvegarde — réessaie dans un instant' },
+  { reason: 'natural_resource_missing', say: () => 'Aucune ressource naturelle à proximité' },
+  // What the player lacks, not what the land lacks: the catalog's `requiresPlaced` (a house waits for the owner's house) and `maxPerHamlet`.
+  {
+    reason: 'building_missing',
+    say: (building) => {
+      const houses = (getBuildingDefinition(building)?.requiresPlaced ?? []).map((type) => getBuildingDisplayName(type)).join(', ');
+      return `Vous n'avez pas encore la compétence pour construire : bâtissez d'abord votre propre maison (${houses}) pour devenir ${getSkillDisplay(OWNER_SKILL).label.toLowerCase()}.`;
+    },
+  },
+  {
+    reason: 'building_limit',
+    say: (building) => `${getBuildingDefinition(building)?.maxPerHamlet ?? UNRESOLVED_TERM} ${getBuildingDisplayName(building)} au plus par hameau.`,
+  },
+  // A neighbouring building the placement needs (`<role>_missing`, `_too_far`, `_full`), put in words from the building's own catalog requirement:
+  // which buildings, how far, how many.
+  {
+    reason: /^([a-z]+)_(missing|too_far|full)$/,
+    say: (building, found) => {
+      const requirement = (getBuildingDefinition(building)?.placementRequires ?? []).find((candidate) => candidate.role === found[1]);
+      if (!requirement) return unresolvedTerm('wording for the placement refusal', found[0]);
+      const names = namesOfBuildings(requirement.role, requirement.categories).join(', ');
+      switch (found[2]) {
+        case 'missing':
+          return `Construisez d'abord : ${names}.`;
+        case 'too_far':
+          return Number.isFinite(requirement.range) ? `${names} trop loin (portée : ${requirement.range} cases).` : `${names} introuvable.`;
+        default: {
+          const [hubType] = typesHoldingRole(requirement.role, requirement.categories);
+          const capacity = getResourceRoles(hubType).find((entry) => entry.role === requirement.role)?.linkCapacity;
+          return `${names} à portée : plus de place (${capacity ?? UNRESOLVED_TERM} ${getBuildingDisplayName(building)} au plus).`;
+        }
+      }
+    },
+  },
+]);
 
 /**
- * Why a placement is refused. A reason about a neighbouring building (`<role>_missing`, `_too_far`, `_full`)
- * is put in words from the placed building's own catalog requirement: which buildings, how far, how many.
+ * Why a placement is refused, in the words of the palette; a reason the palette does not know is shown as "…" and warned about, never guessed.
  * @param {string} reason
  * @param {string} buildingType
  */
 function translateErrorReason(reason, buildingType) {
-  if (FIXED_PLACEMENT_REASONS[reason]) return FIXED_PLACEMENT_REASONS[reason];
-
-  const neighbour = /^([a-z]+)_(missing|too_far|full)$/.exec(reason);
-  const requirement = neighbour && (getBuildingDefinition(buildingType)?.placementRequires ?? []).find((candidate) => candidate.role === neighbour[1]);
-  if (!requirement) return unresolvedTerm('wording for the placement refusal', reason);
-
-  const names = namesOfBuildings(requirement.role, requirement.categories).join(', ');
-  switch (neighbour[2]) {
-    case 'missing':
-      return `Construisez d'abord : ${names}.`;
-    case 'too_far':
-      return Number.isFinite(requirement.range) ? `${names} trop loin (portée : ${requirement.range} cases).` : `${names} introuvable.`;
-    default: {
-      const [hubType] = typesHoldingRole(requirement.role, requirement.categories);
-      const capacity = getResourceRoles(hubType).find((entry) => entry.role === requirement.role)?.linkCapacity;
-      return `${names} à portée : plus de place (${capacity ?? UNRESOLVED_TERM} ${getBuildingDisplayName(buildingType)} au plus).`;
+  for (const refusal of PLACEMENT_REFUSALS) {
+    if (typeof refusal.reason === 'string') {
+      if (refusal.reason === reason) return refusal.say(buildingType, null);
+      continue;
     }
+    const found = refusal.reason.exec(reason);
+    if (found) return refusal.say(buildingType, found);
   }
+  return unresolvedTerm('wording for the placement refusal', reason);
 }
 
 export function showInsufficientFundsNotification(buildingType, price) {

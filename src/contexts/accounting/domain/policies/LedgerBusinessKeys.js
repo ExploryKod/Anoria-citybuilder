@@ -121,6 +121,22 @@ export function buildDepositInterestBusinessKey(type, houseId, bankId, year, mon
 }
 
 /**
+ * Idempotence key for one house's rent in one month: the due line and the payment (and its mirror at the owner's) each get their own.
+ * @param {'info_rent_due' | 'rent_paid' | 'rent_received'} type
+ * @param {string} tenantId
+ * @param {string} landlordId
+ * @param {number} year
+ * @param {number} monthIndex
+ * @returns {string | null}
+ */
+export function buildRentBusinessKey(type, tenantId, landlordId, year, monthIndex) {
+  if (!tenantId || !landlordId || typeof year !== 'number' || typeof monthIndex !== 'number') {
+    return null;
+  }
+  return `${type}:${tenantId}:${landlordId}:${year}:${monthIndex}`;
+}
+
+/**
  * Idempotence key for initial capital journal line (turn 0).
  * @returns {string}
  */

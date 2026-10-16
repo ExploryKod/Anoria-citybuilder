@@ -17,6 +17,7 @@ export class CollectCitizenTaxes {
    * @param {{ listHouses: () => Promise<Array<object>> }} deps.houseReadPort
    * @param {() => number} deps.getCitizenTaxPerCapita
    * @param {(time: number) => { year: number, monthIndex: number }} deps.getTimeInfo
+   * @param {() => Promise<boolean>} deps.hasTaxCollector whether a house of the city has residents who hold the tax collector skill
    */
   constructor({
     getTreasurySnapshot,
@@ -25,7 +26,9 @@ export class CollectCitizenTaxes {
     houseReadPort,
     getCitizenTaxPerCapita,
     getTimeInfo,
+    hasTaxCollector,
   }) {
+    this.hasTaxCollector = hasTaxCollector;
     this.getTreasurySnapshot = getTreasurySnapshot;
     this.recordCitizenTaxIncome = recordCitizenTaxIncome;
     this.recordLedgerEntry = recordLedgerEntry;
@@ -47,6 +50,12 @@ export class CollectCitizenTaxes {
 
     if (timeInfo.year === lastTaxYear) {
       return budget;
+    }
+
+    // Nobody collects the tax without a tax collector (the mayor's house): nothing is written, and the turn says so (its dépêche is announced
+    // once a year). It stays to be collected the day a collector lives in the city, within the same November.
+    if (!(await this.hasTaxCollector())) {
+      return { ...budget, citizenTaxUncollectedYear: timeInfo.year };
     }
 
     const houses = await this.houseReadPort.listHouses();

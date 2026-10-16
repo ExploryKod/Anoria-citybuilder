@@ -61,6 +61,8 @@ export function buildInfoMovementBusinessKey(sourceType, entityId, turn) {
 export const INFO_JOURNAL_TYPE_LABELS = {
   info_loan_interest: 'Intérêts prêt (informatif — impayé)',
   info_loan_repayment: 'Capital prêt (informatif — impayé)',
+  // A house's rent for the month, whether or not it could pay it: the debt of a house is what is due less what it paid (see RentDebtPolicy).
+  info_rent_due: 'Loyer dû (informatif)',
 };
 
 /**

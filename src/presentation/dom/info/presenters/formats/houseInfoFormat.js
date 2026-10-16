@@ -21,6 +21,7 @@ import {
   getTotalKeyForCategory,
 } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { getServiceCategories } from '../../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { groupGrantsSkill, houseSkillLevel, houseUnemploymentCauses } from '../../../../../shared/population/workforceQueries.js';
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
 import { describeActivitySupplyGap } from '../../../shell/BuildingNotifications.js';
 import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
@@ -35,7 +36,8 @@ export function formatHouseLayoutHeader(vm) {
   const maxPop = maxPopulationForLevel(vm.houseLevel, group);
   const dwellingLabel = getHouseDwellingLevelLabel(vm.houseLevel);
   const dwellingAria = getHouseDwellingLevelAriaLabel(vm.houseLevel);
-  const meta = `<span aria-label="${dwellingAria}">${dwellingLabel}</span> · <span aria-label="${vm.buildingPop} habitants sur ${maxPop}">${vm.buildingPop}/${maxPop} hab.</span>`;
+  // The dwelling's name and its level in brackets: the level is the house's own (it moves as the house evolves).
+  const meta = `<span aria-label="${dwellingAria}">${dwellingLabel} (niv. ${vm.houseLevel})</span> ·<span aria-label="${vm.buildingPop} habitants sur ${maxPop}">${vm.buildingPop}/${maxPop} hab.</span>`;
 
   return { title, meta, accent: group };
 }
@@ -51,8 +53,8 @@ export function formatHouseLayoutOptions() {
 const UNEMPLOYED_ICON_HTML = '<img src="/resources/textures/status/no-work_colored.png" alt="" class="building-info-building-icon" decoding="async" />';
 
 /**
- * Where a household's people work: one entry per type of building that employs some of them (the most first), then
- * those with no job (always, even at 0). Read from the household's residents (the accounting's one reading of who works where), never
+ * Where a household's people work: one entry per type of building that employs some of them (the most first). The ones with no job are in the
+ * "Problèmes" block (see problemsOf). Read from the household's residents (the accounting's one reading of who works where), never
  * counted a second time. Null when the residents could not be read.
  * @param {ReadonlyArray<{ status: string, workplaceType: string | null }> | null | undefined} residents
  * @returns {Array<{ emoji: string, count: number, label: string, ariaLabel: string }> | null}
@@ -61,20 +63,56 @@ function employersOf(residents) {
   if (!residents) return null;
   /** @type {Map<string, number>} */
   const workersByType = new Map();
-  let withoutJob = 0;
   for (const resident of residents) {
     if (resident.status === 'worker') workersByType.set(resident.workplaceType, (workersByType.get(resident.workplaceType) ?? 0) + 1);
-    else withoutJob += 1;
   }
-  const employers = [...workersByType]
+  return [...workersByType]
     .sort(([typeA, a], [typeB, b]) => b - a || typeA.localeCompare(typeB))
     .map(([type, count]) => {
       const name = buildingName(type);
       return { emoji: buildingIconHtml(type), count, label: name, ariaLabel: `${count} de cette maison travaillent : ${name}` };
     });
-  // Always shown, even at 0: the player learns that the category exists.
-  employers.push({ emoji: UNEMPLOYED_ICON_HTML, count: withoutJob, label: 'sans emploi', ariaLabel: `${withoutJob} de cette maison sont sans emploi` });
-  return employers;
+}
+
+/**
+ * What goes wrong in a household, as blocks of icon, number and word: the residents without a job (with, under them, why: no skill or no post, once
+ * the labour market has been read), then the hungry, the angry and the sick. The angry and the sick are not measured yet: a fixed 0 for now.
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @returns {{
+ *   unemployed: { emoji: string, count: number, label: string, ariaLabel: string, causes: Array<{ emoji: string, count: number, label: string, ariaLabel: string }> } | null,
+ *   others: Array<{ emoji: string, count: number, label: string, ariaLabel: string }>,
+ * }}
+ */
+function problemsOf(vm) {
+  let unemployed = null;
+  if (vm.residents) {
+    const withoutJob = vm.residents.filter((resident) => resident.status !== 'worker').length;
+    let causes = [];
+    // Once the labour market has been read, the unemployed are told apart: out of work for lack of the skill the vacant posts of their class
+    // ask for, or because no post is free for them at all.
+    if (vm.labourVacancies) {
+      const { noSkill, noPost } = houseUnemploymentCauses({
+        unemployed: withoutJob,
+        vacancies: vm.labourVacancies,
+        classGrants: (skill) => groupGrantsSkill(vm.buildingType, skill),
+        houseHolds: (skill, level) => houseSkillLevel(vm.buildingType, vm.houseLevel, skill) >= level,
+      });
+      causes = [
+        { emoji: '🎓', count: noSkill, label: 'sans compétence', ariaLabel: `${noSkill} sans emploi : des postes sont libres, mais ils n'ont pas la compétence` },
+        { emoji: '🪑', count: noPost, label: 'sans poste', ariaLabel: `${noPost} sans emploi : aucun poste libre pour eux` },
+      ];
+    }
+    unemployed = { emoji: UNEMPLOYED_ICON_HTML, count: withoutJob, label: 'sans emploi', ariaLabel: `${withoutJob} de cette maison sont sans emploi`, causes };
+  }
+  const hungry = Math.max(0, Math.floor(vm.lastConsumption?.totalUnfed) || 0);
+  return {
+    unemployed,
+    others: [
+      { emoji: '🍽️', count: hungry, label: 'Affamés', ariaLabel: `${hungry} de cette maison sont affamés` },
+      { emoji: '😠', count: 0, label: 'En colère', ariaLabel: '0 de cette maison sont en colère (pas encore mesuré)' },
+      { emoji: '🤒', count: 0, label: 'Malades', ariaLabel: '0 de cette maison sont malades (pas encore mesuré)' },
+    ],
+  };
 }
 
 /**
@@ -96,6 +134,7 @@ export function formatHouseSkillsModel(vm) {
   return {
     skills,
     employers: employersOf(vm.residents),
+    problems: problemsOf(vm),
     anchorX: vm.anchorX,
     anchorY: vm.anchorY,
   };

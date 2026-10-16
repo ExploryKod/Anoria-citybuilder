@@ -272,6 +272,7 @@ export function assembleSessionApi({
       deleteNewsItem: (params) => intelligence.deleteNewsItem(params),
       generateMonthlyCityNews: (params) => intelligence.generateMonthlyCityNews(params),
       generateMonthlyNews: (params) => intelligence.generateMonthlyNews(params),
+      announceMilestone: (params) => intelligence.announceMilestone(params),
       payForNewsItem: (params) => intelligence.payForNewsItem(params),
       canAffordContribution: (amount) => intelligence.canAffordContribution(amount),
     });

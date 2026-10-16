@@ -6,6 +6,16 @@
  */
 const TIER_MAX_POPULATION = Object.freeze({ 1: 6, 2: 12, 3: 18, 4: 24, 5: 30, 6: 36 });
 
+/** The city's administrators (the mayor's house): six, whatever the tier. */
+const ADMINISTRATORS_MAX = 6;
+
+/**
+ * The two skills the administrators hold by right, named once: the owner (collects the rents) and the tax collector (collects the other houses'
+ * taxes). Every rule that asks for one reads the name here, never spells it.
+ */
+export const OWNER_SKILL = 'proprietaire';
+export const TAX_COLLECTOR_SKILL = 'percepteur';
+
 /**
  * The requirements a tier can list, declared once and combined below (a kind is evaluated by
  * contexts/housing/domain/policies/HouseTierRequirementPolicy.js). Each tier repeats every earlier one explicitly:
@@ -213,6 +223,31 @@ export const SOCIAL_CATEGORY = Object.freeze({
           covered('hospital'), covered('police'), covered('pub'), covered('school'),
           covered('theatre'), covered('cinema'), covered('library'),
         ]),
+        skills: Object.freeze({}),
+      }),
+    }),
+  }),
+  // The city's administrators (the mayor's house): six at most, whatever the tier. They hold two skills by right, from the first tier and
+  // with no requirement: `proprietaire` (collects the rents and lets the other houses be built, see the houses' `requiresPlaced`) and
+  // `percepteur` (collects the other houses' taxes). No workplace asks for either as a worker: they are the house's own functions.
+  administrators: Object.freeze({
+    eligibleSectors: Object.freeze([]),
+    // Governing is not a post of the labour market (see workforceQueries.js): no hiring, no unemployment, no benefit.
+    seeksWork: false,
+    tiers: Object.freeze({
+      1: Object.freeze({
+        maxPopulation: ADMINISTRATORS_MAX,
+        requirements: Object.freeze([]),
+        skills: Object.freeze({ [OWNER_SKILL]: 1, [TAX_COLLECTOR_SKILL]: 1 }),
+      }),
+      2: Object.freeze({
+        maxPopulation: ADMINISTRATORS_MAX,
+        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor')]),
+        skills: Object.freeze({}),
+      }),
+      3: Object.freeze({
+        maxPopulation: ADMINISTRATORS_MAX,
+        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
         skills: Object.freeze({}),
       }),
     }),

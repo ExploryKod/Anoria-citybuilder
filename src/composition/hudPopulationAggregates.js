@@ -6,6 +6,7 @@
 import db from '../core/persistence/dexie/db.js';
 import { createEmptyStocks } from '../shared/building-catalog/resourceRoleQueries.js';
 import { hamletIdOf, getActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
+import { sumShortfallCauses } from '../contexts/employment/domain/policies/EmploymentShortfallPolicy.js';
 import { computeCityFamishedPopulation } from '../contexts/housing/domain/policies/FamishedPopulationPolicy.js';
 import { computeCityEmploymentSummary } from '../contexts/employment/domain/computeCityEmploymentSummary.js';
 import { createHousingBuildingSnapshot } from '../contexts/housing/domain/HousingBuildingSnapshot.js';
@@ -20,21 +21,24 @@ import {
 } from '../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 
 /**
- * Lack replaces unemployment in the HUD on the same scope: they cannot both
- * be the visible problem. A group may still have unemployment while another
- * has lack.
+ * What a labour cell of the HUD says: the unemployment (a percentage) and the vacant posts (a count), both when both exist. They are not
+ * exclusive: citizens out of work and posts left empty at the same time is a mismatch of skills, which the player must see, so showing only the
+ * vacancies hid the unemployed.
  *
  * @param {{ lack?: number, unemployed?: number, unemploymentPercentage?: number }} [stats]
- * @returns {{ mode: 'lack' | 'unemployment', display: string, count: number }}
+ * @returns {{ mode: 'lack' | 'unemployment' | 'both', display: string, count: number, unemployed: number, lack: number }}
  */
 export function laborSlotFromStats(stats = {}) {
   const lack = Math.max(0, Math.floor(stats.lack) || 0);
-  if (lack > 0) {
-    return { mode: 'lack', display: String(lack), count: lack };
-  }
   const unemployed = Math.max(0, Math.floor(stats.unemployed) || 0);
   const pct = Math.max(0, Math.floor(stats.unemploymentPercentage) || 0);
-  return { mode: 'unemployment', display: `${pct}%`, count: unemployed };
+  if (lack > 0 && unemployed > 0) {
+    return { mode: 'both', display: `${pct}% · ${lack}`, count: lack, unemployed, lack };
+  }
+  if (lack > 0) {
+    return { mode: 'lack', display: String(lack), count: lack, unemployed, lack };
+  }
+  return { mode: 'unemployment', display: `${pct}%`, count: unemployed, unemployed, lack };
 }
 
 /**
@@ -159,10 +163,24 @@ export async function getHudPopulationScopeSnapshot(scope = 'active') {
   const { famishedPopulation } = computeCityFamishedPopulation(residential);
   const employment = computeCityEmploymentSummary(rows.map(toEmploymentSnapshot));
 
+  // Why people are out of work and posts empty is worked out hamlet by hamlet (workers do not commute): the country is the sum of its hamlets.
+  let employmentCauses = employment.causes;
+  if (scope === 'country') {
+    const rowsByHamlet = new Map();
+    for (const row of rows) {
+      const hamletId = hamletIdOf(row);
+      rowsByHamlet.set(hamletId, [...(rowsByHamlet.get(hamletId) ?? []), row]);
+    }
+    employmentCauses = sumShortfallCauses(
+      [...rowsByHamlet.values()].map((hamletRows) => computeCityEmploymentSummary(hamletRows.map(toEmploymentSnapshot)).causes)
+    );
+  }
+
   return {
     totalPop,
     popByGroup: popByGroupFromHouses(residential),
     famishedPopulation,
     employment,
+    employmentCauses,
   };
 }

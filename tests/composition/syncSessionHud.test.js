@@ -145,8 +145,8 @@ describe('syncSessionHud', () => {
       expect.objectContaining({
         popCountry: { artisans: 6, merchants: 4, scholars: 0 },
         popHamlet: { artisans: 3, merchants: 1, scholars: 0 },
-        workersCountry: { artisans: 6, merchants: 4, scholars: 0 },
-        workersHamlet: { artisans: 3, merchants: 1, scholars: 0 },
+        workersCountry: { administrators: 0, artisans: 6, merchants: 4, scholars: 0 },
+        workersHamlet: { administrators: 0, artisans: 3, merchants: 1, scholars: 0 },
         laborCountry: { unemployed: 3, unemploymentPercentage: 30, lack: 1 },
         laborHamlet: { unemployed: 1, unemploymentPercentage: 25, lack: 0 },
       })

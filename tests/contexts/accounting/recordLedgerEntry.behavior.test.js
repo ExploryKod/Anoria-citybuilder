@@ -392,7 +392,9 @@ describe('Accounting — RecordLedgerEntry (citizen_tax slice)', () => {
     await testDb.hamlets.update(TEST_HAMLET_ID, { citizenTaxPerCapita: 100 });
 
     // level: 2 — level 1 (autarkic) houses are tax-exempt, see CitizenTaxCollectionPolicy.
+    // The mayor's house holds the tax collector skill (tier 1, so tax-exempt itself): without it nobody collects.
     await testDb.houses.bulkPut([
+      { id: 'house-mayor', name: 'House-Mayor', type: 'House-Mayor', hamletId: TEST_HAMLET_ID, pop: 1, level: 1 },
       { id: 'house-blue-0-0', name: 'House-Blue-0-0', type: 'House-Blue', hamletId: TEST_HAMLET_ID, pop: 3, level: 2 },
       { id: 'house-red-1-1', name: 'House-Red-1-1', type: 'House-Red', hamletId: TEST_HAMLET_ID, pop: 4, level: 2 },
     ]);

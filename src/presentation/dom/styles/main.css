@@ -1378,6 +1378,10 @@ footer .footer-links a:hover {
     background: linear-gradient(135deg, #6a1b9a, #ab47bc);
 }
 
+.info-building-panel--administrators .info-building__header {
+    background: linear-gradient(135deg, #8d6e00, #f9a825);
+}
+
 .info-building__tabs {
     display: flex;
     gap: 0;
@@ -1480,6 +1484,35 @@ footer .footer-links a:hover {
 .building-info-icon-row--compact {
     gap: 12px 20px;
     margin-bottom: 0;
+}
+
+/* "Problèmes" of a house: blocks side by side, the first with its two causes under it, smaller and side by side. */
+.building-info-problems__row {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+}
+
+.building-info-problems__block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.building-info-problems__causes {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+}
+
+.building-info-problems__cause {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: default;
 }
 
 .building-info-icon-chip {
@@ -2023,6 +2056,30 @@ button.building-info-metric-card[aria-pressed="true"] {
 
 .building-finance-toggle:hover {
     background: #e3e7ea;
+}
+
+/* A household's purchase line opens the table of its purchases; the table has a way back. */
+.building-finance-detail-link,
+.building-finance-back {
+    padding: 0;
+    border: none;
+    background: none;
+    color: #1a56db;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.building-finance-detail-link:hover,
+.building-finance-back:hover {
+    text-decoration: underline;
+}
+
+.building-finance-back {
+    display: block;
+    margin: 0 0 6px;
+    font-size: 12px;
 }
 
 /* What a line is made of: small grey rows under it, indented. */

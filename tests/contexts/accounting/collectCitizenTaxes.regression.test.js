@@ -5,7 +5,7 @@ import { CollectCitizenTaxes } from '../../../src/contexts/accounting/applicatio
 // 'particulier'), not only folded into the city's lump sum (citizen_tax) — see buildingFinanceInfoView.js's
 // "Impôt citoyen" row, which reads a house's own journal lines.
 describe('CollectCitizenTaxes — one citizen_tax_paid line per taxed house, alongside the city lump sum', () => {
-  function buildService({ houses, lastTaxYear = -1 }) {
+  function buildService({ houses, lastTaxYear = -1, taxCollector = true }) {
     const cityLines = [];
     const houseLines = [];
     const service = new CollectCitizenTaxes({
@@ -25,9 +25,21 @@ describe('CollectCitizenTaxes — one citizen_tax_paid line per taxed house, alo
       houseReadPort: { listHouses: async () => houses },
       getCitizenTaxPerCapita: async () => 25,
       getTimeInfo: () => ({ year: 3, monthIndex: 10 }),
+      hasTaxCollector: async () => taxCollector,
     });
     return { service, cityLines, houseLines };
   }
+
+  test('without a tax collector nobody collects the tax: nothing is written, and the turn says which year was not collected', async () => {
+    const houses = [{ id: 'house-1', type: 'House-Blue', pop: 3, level: 2 }];
+    const { service, cityLines, houseLines } = buildService({ houses, taxCollector: false });
+
+    const result = await service.execute({ time: 320 });
+
+    expect(cityLines).toHaveLength(0);
+    expect(houseLines).toHaveLength(0);
+    expect(result.citizenTaxUncollectedYear).toBe(3);
+  });
 
   test('one citizen_tax_paid debit per taxed house, summing to the city lump sum', async () => {
     const houses = [

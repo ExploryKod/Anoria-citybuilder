@@ -23,7 +23,11 @@ import {
   getResourceStockShape,
   getMaxStockForBuilding,
 } from '../../src/shared/building-catalog/resourceRoleQueries.js';
-import { RESOURCE_CATEGORY_PRESENTATION } from '../../src/shared/resource-catalog/ResourceCategoryCatalog.js';
+import {
+  RESOURCE_CATEGORY_PRESENTATION,
+  getServiceCategories,
+  householdConsumptionGroupOf,
+} from '../../src/shared/resource-catalog/ResourceCategoryCatalog.js';
 
 const entriesOf = (role) =>
   Object.entries(buildingCatalog).flatMap(([type, definition]) =>
@@ -289,6 +293,21 @@ describe('economy catalog — the food loop can be closed', () => {
       const farmCapableShareNeeded = farmersPerInhabitant / workersPerInhabitant;
       // Below 1: a city made only of farm-capable residents can feed itself
       expect({ type, soluble: farmCapableShareNeeded < 1 }).toEqual({ type, soluble: true });
+    }
+  });
+});
+
+describe('a household\'s purchases are grouped by use, declared in the catalog', () => {
+  test('every service and every good a house consumes is in a consumption group', () => {
+    const houseCategories = ['House-Red', 'House-Blue', 'House-Purple'].flatMap((type) =>
+      getResourceRoles(type).filter((entry) => entry.role === 'consumer').flatMap((entry) => entry.categories),
+    );
+    const bought = [...new Set([...getServiceCategories(), ...houseCategories])]
+      // The stock aggregates of a need (food, heat, light, goods) are not something a house buys: its goods are.
+      .filter((category) => !['food', 'heat', 'light', 'goods'].includes(category));
+    expect(bought.length).toBeGreaterThan(0);
+    for (const category of bought) {
+      expect({ category, group: householdConsumptionGroupOf(category).id }).toEqual({ category, group: expect.any(String) });
     }
   });
 });

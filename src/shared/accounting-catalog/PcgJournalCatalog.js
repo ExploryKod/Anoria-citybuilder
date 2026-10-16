@@ -52,6 +52,9 @@ const BY_TYPE = Object.freeze({
   household_wage: entry('421', 'Personnel - Rémunérations dues', 'household', true),
   public_wage: entry('421', 'Personnel - Rémunérations dues', 'household', true),
   household_benefit: entry('437', 'Autres organismes sociaux', 'household', true),
+  // Le loyer d'une maison à la maison du maire (le propriétaire) : une charge de logement du ménage, un produit locatif de la maison du maire.
+  rent_paid: entry('6132', 'Locations immobilières', 'purchase', true, 'Loyer versé au propriétaire'),
+  rent_received: entry('752', 'Revenus des immeubles', 'sales', false, 'Loyers des maisons'),
   // Classe 5 — financiers
   deposit: entry('512', 'Banques', 'treasury'),
   withdrawal: entry('512', 'Banques', 'treasury'),

@@ -27,6 +27,7 @@ import {
     popGroupPopNodes,
     popGroupWorkerNodes,
     popGroupLaborNodes,
+    popLaborCauseNodes,
     popResourceCityNodes,
     popResourceNatureNodes,
     displayFunds,
@@ -74,16 +75,21 @@ function setHudCount(el, value) {
 
 /**
  * @param {HTMLElement | null} el
- * @param {{ mode: 'lack' | 'unemployment', display: string, count: number }} slot
+ * @param {{ mode: 'lack' | 'unemployment' | 'both', display: string, count: number, unemployed: number, lack: number }} slot
  * @param {string} scopeLabel
  */
 function setLaborCell(el, slot, scopeLabel) {
     if (!(el instanceof HTMLElement)) return;
     el.textContent = slot.display;
-    el.classList.toggle('pop-detail-value--lack', slot.mode === 'lack');
-    const tooltip = slot.mode === 'lack'
-        ? `${scopeLabel} : manque de ${slot.count} travailleur${slot.count === 1 ? '' : 's'}`
-        : `${scopeLabel} : ${slot.count} chômeur${slot.count === 1 ? '' : 's'}`;
+    el.classList.toggle('pop-detail-value--lack', slot.mode !== 'unemployment');
+    const plural = (n) => (n === 1 ? '' : 's');
+    const unemployedWords = `${slot.unemployed} chômeur${plural(slot.unemployed)}`;
+    const lackWords = `${slot.lack} poste${plural(slot.lack)} vide${plural(slot.lack)}`;
+    const tooltip = slot.mode === 'both'
+        ? `${scopeLabel} : ${unemployedWords} (${slot.display.split(' · ')[0]}) et ${lackWords}`
+        : slot.mode === 'lack'
+            ? `${scopeLabel} : ${lackWords}`
+            : `${scopeLabel} : ${unemployedWords}`;
     el.title = tooltip;
     el.setAttribute('aria-label', tooltip);
 }
@@ -376,6 +382,8 @@ class GameUI {
      *   laborHamlet?: { unemployed?: number, unemploymentPercentage?: number, lack?: number },
      *   groupsCountry?: Record<string, { workerPool?: number, assigned?: number, unemployed?: number, unemploymentPercentage?: number, lack?: number }>,
      *   groupsHamlet?: Record<string, { workerPool?: number, assigned?: number, unemployed?: number, unemploymentPercentage?: number, lack?: number }>,
+     *   causesCountry?: Record<string, number>,
+     *   causesHamlet?: Record<string, number>,
      * }} payload
      */
     updateGroupHud(payload = {}) {
@@ -395,6 +403,13 @@ class GameUI {
             const groupTitle = getResidentialGroupTitle(group);
             setLaborCell(nodes.country, laborSlotFromStats(country), `${groupTitle} — pays`);
             setLaborCell(nodes.hamlet, laborSlotFromStats(hamlet), `${groupTitle} — hameau visible`);
+        }
+
+        // Why people are out of work and why posts stay empty: a row each, dimmed while both scopes are at zero.
+        for (const [cause, nodes] of Object.entries(popLaborCauseNodes)) {
+            setHudCount(nodes.country, payload.causesCountry?.[cause] ?? 0);
+            setHudCount(nodes.hamlet, payload.causesHamlet?.[cause] ?? 0);
+            nodes.row?.classList.toggle('is-zero', !(payload.causesCountry?.[cause] > 0) && !(payload.causesHamlet?.[cause] > 0));
         }
     }
 

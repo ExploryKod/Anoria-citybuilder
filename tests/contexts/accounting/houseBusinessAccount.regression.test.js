@@ -31,7 +31,7 @@ function settle(pairs) {
     sumHouseSales: async () => [],
     sumBankInterestByBuilding: async () => [],
     sumOtherExpensesByBuilding: async () => [],
-    listHouses: async () => [{ id: HOUSE, pop: 4 }],
+    listHouses: async () => [{ id: HOUSE, pop: 4, salaried: 0 }],
     getPublicPay: async () => ({ benefitBase: 0, unemploymentBenefitRate: 0, employerContributionRate: 0, employeeContributionRate: 0 }),
     getWageRateOf: async () => () => 100,
     businessFundsOf: async () => 0,

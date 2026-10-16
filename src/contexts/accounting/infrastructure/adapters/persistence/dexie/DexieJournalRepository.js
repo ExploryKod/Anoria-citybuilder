@@ -3,6 +3,7 @@ import { JournalRepository } from '../../../../application/ports/JournalReposito
 import {
   buildMonthlyFinancialSummary,
   buildYearlyFinancialSummary,
+  filterCityAccountEntries,
   filterJournalEntriesByHamlet,
   filterAndSortJournalEntries,
 } from './journalAggregations.js';
@@ -36,7 +37,7 @@ export class DexieJournalRepository extends JournalRepository {
    * @returns {Promise<Array<object>>}
    */
   async getYearlyFinancialSummary({ hamletId = null } = {}) {
-    const entries = filterJournalEntriesByHamlet(await this.getJournalEntries(), hamletId);
+    const entries = filterCityAccountEntries(filterJournalEntriesByHamlet(await this.getJournalEntries(), hamletId));
     const monthlyData = buildMonthlyFinancialSummary(entries, (turn) =>
       this.gameTimePort.getTimeInfo(turn)
     );

@@ -38,7 +38,9 @@ export function moneyDirectionOf(entry) {
     // A house taking its savings back, or the interest the bank credited it — both arrive at the house's account.
     type === 'withdrawal' || type === 'household_deposit_interest' ||
     // The bank's own mirror of a deposit arriving.
-    type === 'deposit_received'
+    type === 'deposit_received' ||
+    // The rent a house pays to the mayor's house: it arrives at the mayor's house's business account.
+    type === 'rent_received'
   ) {
     return 'credit';
   }
@@ -55,6 +57,8 @@ export function moneyDirectionOf(entry) {
     type === 'deposit' ||
     // The bank's own mirror of a withdrawal/interest payment leaving its account.
     type === 'withdrawal_paid' || type === 'deposit_interest_paid' ||
+    // The rent leaving a house's personal account.
+    type === 'rent_paid' ||
     type.startsWith('import_') || type.startsWith('freight_') || type.startsWith('duty_paid_')
   ) {
     return 'debit';

@@ -1,6 +1,7 @@
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../../../../shared/building-identity/index.js';
 import { INCOME_STATEMENT } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
+import { HOUSEHOLD_CONSUMPTION_GROUPS, householdConsumptionGroupOf } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { buildingName, goodLabel } from '../../shell/CatalogVocabulary.js';
 
 /**
@@ -114,6 +115,10 @@ const RATIO_ROWS = (() => {
     { label: "Coût de revient par unité", kind: 'line', text: euro((r) => r.costPerUnit), hint: "Charges d'exploitation (achats, salaires, entretien…) ÷ unités vendues : c'est là que se voit le salaire" },
     { label: 'Résultat par unité', kind: 'total', text: euro((r) => r.resultPerUnit), hint: 'Prix moyen − coût de revient : négatif, chaque unité vendue perd de l\'argent' },
 
+    { label: 'Pertes de stock (analytique)', kind: 'section' },
+    { label: 'Unités avariées', kind: 'line', optional: true, amount: (f) => f.spoilage.units, text: (f) => String(Math.round(f.spoilage.units)), hint: "Récolte invendue qui a péri quand la suivante est arrivée. Hors journal : aucune écriture, aucun effet sur la trésorerie" },
+    { label: 'Manque à gagner', kind: 'line', optional: true, amount: (f) => f.spoilage.lostRevenue, text: (f) => (f.spoilage.lostRevenue === 0 ? '—' : formatEuro(f.spoilage.lostRevenue)), hint: "Unités avariées × prix de vente du bâtiment : ce qu'elles auraient rapporté. Un coût d'opportunité, jamais une charge du compte de résultat" },
+
     { label: 'Seuil de rentabilité', kind: 'section' },
     { label: 'Charges variables', kind: 'line', text: euro((r) => r.variableCharges), hint: 'Ce qui suit les quantités vendues : achats, transports et douanes sur les biens' },
     { label: 'Charges fixes', kind: 'line', text: euro((r) => r.fixedCharges), hint: 'Salaires (dus même sans vente), entretien, autres charges externes, intérêts' },
@@ -128,24 +133,41 @@ const RATIO_ROWS = (() => {
 
 /** The personal account of a house: what it earns and what it pays for its own needs. */
 /** @type {ReadonlyArray<StatementRow>} */
+/** A household's disposable income: what it earned less the levies it owes (taxes and social contributions). */
+const disposableIncomeOf = (f) =>
+  f.wagesReceived + f.publicWageReceived + f.benefitReceived + f.participationReceived + f.dividendReceived
+  - (f.incomeTax + f.citizenTax + f.employeeContributionPaid);
+
+/**
+ * A household is not a company: no PCG compte de résultat. Its account follows the national accounts' sequence for the household sector
+ * (SEC 2010): revenues, compulsory levies, disposable income, final consumption, and what is left is saving. The PCG's wording and account
+ * numbers stay where a company-side line mirrors one (a wage is a 421 for the employer who pays it).
+ */
 const PERSONAL_ROWS = [
-  { label: 'Produits', kind: 'section', flow: 'income' },
+  { label: 'Revenus', kind: 'section', flow: 'income' },
   { label: 'Salaires perçus', kind: 'line', flow: 'income', amount: (f) => f.wagesReceived },
   { label: 'Salaire de fonctionnaire perçu', kind: 'line', flow: 'income', amount: (f) => f.publicWageReceived },
   { label: 'Allocation chômage perçue', kind: 'line', flow: 'income', amount: (f) => f.benefitReceived },
   { label: 'Participation aux résultats de la coopérative', kind: 'line', flow: 'income', amount: (f) => f.participationReceived },
   { label: 'Dividendes de la coopérative', kind: 'line', flow: 'income', amount: (f) => f.dividendReceived },
-  { label: 'Total produits', kind: 'subtotal', amount: (f) => f.wagesReceived + f.publicWageReceived + f.benefitReceived + f.participationReceived + f.dividendReceived },
+  { label: 'Total revenus', kind: 'subtotal', amount: (f) => f.wagesReceived + f.publicWageReceived + f.benefitReceived + f.participationReceived + f.dividendReceived },
 
-  { label: 'Charges', kind: 'section', flow: 'charge' },
-  { label: 'Services payés', kind: 'line', flow: 'charge', amount: (f) => f.servicesPaid },
-  { label: 'Biens achetés', kind: 'line', flow: 'charge', amount: (f) => f.goodsBought },
+  { label: 'Prélèvements obligatoires', kind: 'section', flow: 'charge' },
   { label: 'Impôt sur le revenu', kind: 'line', flow: 'charge', amount: (f) => f.incomeTax },
   { label: 'Impôt citoyen', kind: 'line', flow: 'charge', amount: (f) => f.citizenTax },
   { label: 'Cotisations salariales', kind: 'line', flow: 'charge', amount: (f) => f.employeeContributionPaid },
-  { label: 'Total charges', kind: 'subtotal', amount: (f) => f.servicesPaid + f.goodsBought + f.incomeTax + f.citizenTax + f.employeeContributionPaid },
+  { label: 'Total prélèvements', kind: 'subtotal', amount: (f) => f.incomeTax + f.citizenTax + f.employeeContributionPaid },
 
-  { label: 'Résultat net', kind: 'total', amount: (f) => f.householdResult },
+  { label: 'Revenu disponible', kind: 'subtotal', hint: 'Revenus − prélèvements obligatoires', amount: (f) => disposableIncomeOf(f) },
+
+  { label: 'Consommation finale', kind: 'section', flow: 'charge' },
+  // A line with a `detailKey` opens the table of the purchases it adds up (see `detailTable`).
+  { label: 'Services payés', kind: 'line', flow: 'charge', amount: (f) => f.servicesPaid, detailKey: 'services' },
+  { label: 'Biens achetés', kind: 'line', flow: 'charge', amount: (f) => f.goodsBought, detailKey: 'goods' },
+  { label: 'Loyer', kind: 'line', flow: 'charge', amount: (f) => f.rentPaid, optional: true },
+  { label: 'Total consommation', kind: 'subtotal', amount: (f) => f.servicesPaid + f.goodsBought + f.rentPaid },
+
+  { label: 'Épargne', kind: 'total', hint: 'Revenu disponible − consommation', amount: (f) => f.householdResult },
 
   { label: 'Report à nouveau', kind: 'section' },
   { label: 'Ouverture', kind: 'line', amount: (f) => f.openingBalance },
@@ -168,6 +190,7 @@ export async function renderBuildingFinanceTab(container, model) {
   // A tab opens on the current month; the player picks a past one with its pill.
   viewedMonth = null;
   viewedYear = false;
+  openedDetail = null;
 
   if (resolveBuildingKind(model.buildingType) !== BUILDING_KIND_HOUSE) {
     await renderAccount(container, model, null, COMPANY_ROWS);
@@ -229,7 +252,21 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
   const figures = withCarryForward(finance);
   // A company's account reads as its statement or as its ratios (a pill each); the JSON of the account is one click away.
   const content = el('div', 'building-finance-content');
-  const showContent = () => content.replaceChildren(isPersonal || financeView === 'statement' ? statementTable(rows, figures) : statementTable(RATIO_ROWS, figures));
+  const showContent = () => {
+    // A household's purchase line opened: the table of what it adds up, until the player goes back.
+    if (isPersonal && openedDetail) {
+      content.replaceChildren(detailTable(openedDetail, figures, () => {
+        openedDetail = null;
+        showContent();
+      }));
+      return;
+    }
+    const openDetail = (detail) => {
+      openedDetail = detail;
+      showContent();
+    };
+    content.replaceChildren(isPersonal || financeView === 'statement' ? statementTable(rows, figures, openDetail) : statementTable(RATIO_ROWS, figures));
+  };
   showContent();
   container.replaceChildren(
     monthPills(finance, ({ month, year }) => {
@@ -242,6 +279,7 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
     cashLine(isPersonal ? 'Épargne privée' : 'Trésorerie du compte à ce jour', finance.cash),
     cashMovementsDetails(finance.cashMovements),
     ...(isPersonal ? [depositBalanceLine(depositBalance)] : []),
+    ...(isPersonal && finance.rentDebt > 0 ? [cashLine('Dette de loyer', finance.rentDebt)] : []),
     ...(isPersonal && bankId ? depositControls(model, bankId, rerender) : []),
     el('p', 'building-finance-note', finance.scope === 'year'
       ? "L'année est la somme des lignes du journal de l'année ; la trésorerie ci-dessus est celle d'aujourd'hui."
@@ -253,6 +291,8 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
 let viewedMonth = null;
 /** True when the account is read as a year state (last year next to this year so far) instead of a month. */
 let viewedYear = false;
+/** The household purchase line opened as a table (`{ key, label }`), or null on the statement (a per-viewer convenience, not game state). */
+let openedDetail = null;
 
 /**
  * One pill per month of the year so far, from 1 to the current month: a click reads the account as it stood at the end of that month.
@@ -383,19 +423,12 @@ function withCarryForward(finance) {
  * @param {ReadonlyArray<StatementRow>} rows
  * @param {{ lastMonth: object, monthToDate: object, year: object }} finance
  */
-function statementTable(rows, finance) {
+function statementTable(rows, finance, onOpenDetail = null) {
   const wrapper = el('div', 'building-finance-statement');
   const table = el('table', 'building-finance-table');
   const head = document.createElement('thead');
   const headRow = document.createElement('tr');
-  // The game runs on months: the month columns are the default, the year pill swaps them for last year and this year so far (the PCG's N-1 and N).
-  const isYear = finance.scope === 'year';
-  const columnList = isYear
-    ? [
-      ...(finance.lastMonth ? [{ label: `Année ${finance.years.previous}`, figures: finance.lastMonth }] : []),
-      { label: `Année ${finance.years.current} (en cours)`, figures: finance.monthToDate },
-    ]
-    : [{ label: 'Mois dernier', figures: finance.lastMonth }, { label: 'Cumul du mois', figures: finance.monthToDate }];
+  const columnList = columnsOf(finance);
   for (const label of ['', ...columnList.map((column) => column.label)]) {
     const th = el('th', null, label);
     th.scope = 'col';
@@ -428,7 +461,15 @@ function statementTable(rows, finance) {
       continue;
     }
     if (row.tone) tr.dataset.tone = row.tone;
-    const th = el('th', null, row.label);
+    const th = el('th', null, row.detailKey && onOpenDetail ? '' : row.label);
+    if (row.detailKey && onOpenDetail) {
+      // A line that adds up purchases opens the table of them.
+      const link = el('button', 'building-finance-detail-link', `${row.label} ›`);
+      link.type = 'button';
+      link.title = 'Voir le détail';
+      link.addEventListener('click', () => onOpenDetail({ key: row.detailKey, label: row.label }));
+      th.append(link);
+    }
     if (row.accounts) th.append(el('span', 'building-finance-pill', row.accounts));
     if (row.hint) th.append(el('span', 'building-finance-hint', row.hint));
     th.scope = 'row';
@@ -462,6 +503,102 @@ function statementTable(rows, finance) {
     fill();
   });
   wrapper.append(toggle, table);
+  return wrapper;
+}
+
+/**
+ * The columns of the table: the month columns by default, the year pill swaps them for last year and this year so far (the PCG's N-1 and N).
+ * @param {{ scope?: string, years?: { previous: number | null, current: number }, lastMonth: object | null, monthToDate: object }} finance
+ * @returns {Array<{ label: string, figures: object }>}
+ */
+function columnsOf(finance) {
+  if (finance.scope === 'year') {
+    return [
+      ...(finance.lastMonth ? [{ label: `Année ${finance.years.previous}`, figures: finance.lastMonth }] : []),
+      { label: `Année ${finance.years.current} (en cours)`, figures: finance.monthToDate },
+    ];
+  }
+  return [{ label: 'Mois dernier', figures: finance.lastMonth }, { label: 'Cumul du mois', figures: finance.monthToDate }];
+}
+
+/**
+ * The table of what a household's purchase line adds up: one row per journal line (the tour it was paid, what it was), with the same columns as
+ * the account, and a way back to it. A purchase counted in both columns shows in both.
+ * @param {{ key: 'services' | 'goods', label: string }} detail
+ * @param {{ scope?: string, years?: object, lastMonth: object | null, monthToDate: object }} finance
+ * @param {() => void} back
+ */
+function detailTable(detail, finance, back) {
+  const wrapper = el('div', 'building-finance-statement building-finance-detail');
+  const backButton = el('button', 'building-finance-back', '‹ Retour au compte');
+  backButton.type = 'button';
+  backButton.addEventListener('click', back);
+
+  const columnList = columnsOf(finance);
+  const table = el('table', 'building-finance-table');
+  const head = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  for (const label of [detail.label, ...columnList.map((column) => column.label)]) {
+    const th = el('th', null, label);
+    th.scope = 'col';
+    headRow.append(th);
+  }
+  head.append(headRow);
+
+  // One row per journal line, in the order they were paid, with its amount in each column that counts it.
+  const purchases = new Map();
+  columnList.forEach((column, index) => {
+    for (const purchase of column.figures.details[detail.key]) {
+      const known = purchases.get(purchase.id) ?? { ...purchase, amounts: columnList.map(() => null) };
+      known.amounts[index] = purchase.amount;
+      purchases.set(purchase.id, known);
+    }
+  });
+  const body = document.createElement('tbody');
+  const ordered = [...purchases.values()].sort((a, b) => a.turn - b.turn || a.id - b.id);
+  // The purchases are grouped by what the household used them for (the catalog's consumption groups, in the order it lists them), each group
+  // opening with its own total.
+  const byGroup = new Map(HOUSEHOLD_CONSUMPTION_GROUPS.map((group) => [group.id, { group, purchases: [] }]));
+  for (const purchase of ordered) byGroup.get(householdConsumptionGroupOf(purchase.resource).id).purchases.push(purchase);
+  for (const { group, purchases: inGroup } of byGroup.values()) {
+    if (inGroup.length === 0) continue;
+    const header = el('tr', 'building-finance-row building-finance-row--subtotal');
+    const title = el('th', null, group.label);
+    title.scope = 'rowgroup';
+    title.append(el('span', 'building-finance-pill', group.coicop));
+    header.append(title);
+    columnList.forEach((_, index) => {
+      const cents = inGroup.reduce((sum, purchase) => sum + (purchase.amounts[index] === null ? 0 : Math.round(purchase.amounts[index] * 100)), 0);
+      header.append(el('td', null, formatEuro(cents / 100)));
+    });
+    body.append(header);
+    for (const purchase of inGroup) {
+      const tr = el('tr', 'building-finance-row building-finance-row--line building-finance-flow--charge');
+      // The journal's wording of the line, without the month it ends with (the columns say the period).
+      const th = el('th', null, `Tour ${purchase.turn} — ${purchase.description.replace(/\s-\s[^-]+$/, '')}`);
+      th.scope = 'row';
+      tr.append(th);
+      for (const amount of purchase.amounts) tr.append(el('td', null, amount === null ? '' : formatEuro(amount)));
+      body.append(tr);
+    }
+  }
+  if (ordered.length === 0) {
+    const tr = el('tr', 'building-finance-row');
+    const td = el('td', null, 'Aucun achat sur cette période.');
+    td.colSpan = columnList.length + 1;
+    tr.append(td);
+    body.append(tr);
+  }
+  const totalRow = el('tr', 'building-finance-row building-finance-row--subtotal');
+  totalRow.append(el('th', null, `Total ${detail.label.toLowerCase()}`));
+  for (const column of columnList) {
+    const cents = column.figures.details[detail.key].reduce((sum, purchase) => sum + Math.round(purchase.amount * 100), 0);
+    totalRow.append(el('td', null, formatEuro(cents / 100)));
+  }
+  body.append(totalRow);
+
+  table.append(head, body);
+  wrapper.append(backButton, table);
   return wrapper;
 }
 

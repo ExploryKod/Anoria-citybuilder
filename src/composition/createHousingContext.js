@@ -91,6 +91,11 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
       return getResidentialHouseAtTileQuery.execute({ x, y });
     },
 
+    /** Every residential house by each tile of its footprint (keyed "x,y"), from one read: what the scene asks tile by tile otherwise. */
+    async getResidentialHouseTileIndex() {
+      return housingBuildingRepositoryImpl.indexResidentialByTile();
+    },
+
     async getFamishedPopulation() {
       return getFamishedPopulationQuery.execute();
     },

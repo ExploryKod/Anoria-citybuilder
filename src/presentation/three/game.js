@@ -6,7 +6,6 @@
 import {
   registerAppService,
   getMultiplayerManager,
-  invokeStartTutorial,
   getObjectivesManager,
   getButtonStateManager,
   isEditorMode,
@@ -47,6 +46,11 @@ import {
 import { HAMLET_ACCESS_CHANGED_EVENT, canTravelToHamlet } from '../../core/persistence/hamlet/hamletAccess.js';
 import { runGameTick } from '../../composition/runGameTick.js';
 import { presentIncomingNewsEvents } from '../dom/intelligence/NewsEventModal.js';
+import { createHudTicker } from '../dom/shell/HudTicker.js';
+import { gatherReminderFacts, readRentDebts } from '../../composition/reminderFacts.js';
+import { remindersFor } from '../../shared/gameplay/reminderCatalog.js';
+import { TimeManager } from '../../shared/time/TimeManager.js';
+import { formatEuro } from '../../contexts/accounting/presentation/formatMoney.js';
 import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
@@ -262,6 +266,18 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
   }
 
+  /** The first time a building the catalog says so is built, a dépêche tells the player what it is for. A failure shows, it never stops the game. */
+  async function announceFirstBuiltNews(buildingType) {
+    const milestoneId = getBuildingDefinition(buildingType)?.firstBuiltNews;
+    if (!milestoneId) return;
+    try {
+      const announced = await sessionApi.intelligence.announceMilestone({ milestoneId, turn: time });
+      if (announced) await presentIncomingNewsEvents();
+    } catch (error) {
+      console.error(`[game] The dépêche "${milestoneId}" could not be announced:`, error);
+    }
+  }
+
   async function finalizeBuildingPlacement(placeX, placeY, buildingType, rotationStep = 0) {
     const result = await constructionApi.placeBuildingAtTile({
       city,
@@ -288,6 +304,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       playPlaceBuildingSound();
     }
     await recordBuildingHistory('placed', { id: result.instanceId, type: buildingType, x: placeX, y: placeY });
+    await announceFirstBuiltNews(buildingType);
 
     await scene.update(city, time);
     await runSimulationPass(time);
@@ -653,9 +670,31 @@ export function createGame(gameStore, assetManager, citySize = null) {
     },
   });
 
+  // The bar of reminders under the HUD: the rules of the catalog, read against the hamlet each time it changes (a placement, a demolition, a day).
+  const hudTicker = createHudTicker(document.getElementById('hud-ticker'));
+  /** The rents owed change once a month, with the settlement: read once a month, not at every refresh. */
+  let rentDebtsReading = { month: null, debts: { debtors: 0, total: 0 } };
+  /** The game's opening (the dépêches that guide the player) is over: until then the bar says nothing, the dépêches do the talking. */
+  let openingOver = false;
+
+  async function refreshHudReminders() {
+    if (isEditorMode()) return;
+    const month = Math.floor(time / TimeManager.DAYS_PER_MONTH);
+    if (rentDebtsReading.month !== month) {
+      rentDebtsReading = { month, debts: await readRentDebts() };
+    }
+    const facts = await gatherReminderFacts({ city, rentDebts: rentDebtsReading.debts, activeToolId, openingOver });
+    hudTicker.show(remindersFor(facts, { euro: formatEuro }));
+  }
+  awaitBudgetReady().then(() => {
+    openingOver = true;
+    return refreshHudReminders();
+  }).catch((error) => console.error('[game] The opening did not end, the reminders stay silent:', error));
+
   async function refreshPlacementPresentation() {
     const rows = await constructionApi.listAllBuildingRows();
     refreshSupplyPlacementIndex(rows);
+    await refreshHudReminders();
   }
 
   bindGameUIDeps({ getScene: () => scene });
@@ -679,12 +718,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
     await refreshEmploymentPresentationForCity();
     loaderManager.hide(500);
     scene.onEnterSelectMode?.();
-    if (sessionStorage.getItem('anoria.startTutorial') === '1') {
-      sessionStorage.removeItem('anoria.startTutorial');
-      setTimeout(() => {
-        invokeStartTutorial();
-      }, 800);
-    }
   }).catch((error) => {
     // Sans ce filet, une erreur ici (asset manquant, réseau mobile instable,
     // perte de contexte WebGL...) laissait le loader bloqué
@@ -899,7 +932,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   /** A tool whose building takes a plot of the player's land (a house): it can be dragged out like a road. */
   function isPlotDragTool(toolId) {
-    return Boolean(getBuildingDefinition(resolvePlacementBuildingId(toolId))?.residentialGroup);
+    const definition = getBuildingDefinition(resolvePlacementBuildingId(toolId));
+    // A house the hamlet holds only so many of (the mayor's) is placed one at a time: a dragged row of them could not all be built.
+    return Boolean(definition?.residentialGroup) && definition.maxPerHamlet === undefined;
   }
 
   /**
@@ -914,19 +949,30 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
     const valid = [];
     const blocked = [];
+    // Why the first plot that cannot take the house cannot: the player is told that reason, not a guessed one.
+    let blockedReason = null;
     for (const plot of plotsAlongPath({ path: housePaint.path, width, depth })) {
       const inCity = plot.x >= 0 && plot.y >= 0 && plot.x + width <= city.size && plot.y + depth <= city.size;
-      const fits = blocked.length === 0 && inCity && canPlaceBuildingAtTileWithSupplyRules({
-        city,
-        x: plot.x,
-        y: plot.y,
-        buildingType,
-        assetCatalog: buildingPlacementCatalog,
-        rotationStep,
-      }).ok;
+      let fits = false;
+      if (blocked.length === 0) {
+        if (inCity) {
+          const check = canPlaceBuildingAtTileWithSupplyRules({
+            city,
+            x: plot.x,
+            y: plot.y,
+            buildingType,
+            assetCatalog: buildingPlacementCatalog,
+            rotationStep,
+          });
+          fits = check.ok;
+          if (!fits) blockedReason = check.reason;
+        } else {
+          blockedReason = 'area_not_available';
+        }
+      }
       (fits ? valid : blocked).push(plot);
     }
-    return { valid, blocked, buildingType, rotationStep, width, depth };
+    return { valid, blocked, blockedReason, buildingType, rotationStep, width, depth };
   }
 
   function showHouseDragPreview() {
@@ -960,19 +1006,45 @@ export function createGame(gameStore, assetManager, citySize = null) {
     showHouseDragPreview();
   }
 
-  /** The button is released: place the houses that were previewed, then bring the city up to date once. */
+  /** Dev only: how long each step of a placement takes, logged once it is over, to see what makes a house appear late. */
+  function createStepTimer(label) {
+    const steps = [];
+    const start = performance.now();
+    let last = start;
+    return {
+      step(name) {
+        const now = performance.now();
+        steps.push(`${name} ${Math.round(now - last)}ms`);
+        last = now;
+      },
+      done() {
+        if (import.meta.env.DEV) console.info(`[perf] ${label}: ${steps.join(' | ')} | total ${Math.round(performance.now() - start)}ms`);
+      },
+    };
+  }
+
+  /** The placements of released drags, one after the other: a drag released while the previous one is still being placed waits its turn, never lost. */
+  let housePlacementQueue = Promise.resolve();
+
+  /** The button is released: the plan is taken now (and the preview cleared), the houses are placed when the ones before are done. */
   async function commitHousePaint() {
-    if (!housePaint.active || housePaint.busy) {
+    if (!housePaint.active) {
       return;
     }
+    const plan = planHouseDrag();
+    cancelHousePaint();
+    housePlacementQueue = housePlacementQueue.catch(() => {}).then(() => placeHousePlan(plan));
+    await housePlacementQueue;
+  }
+
+  /** Place the houses that were previewed, then bring the city up to date once. */
+  async function placeHousePlan({ valid, blocked, blockedReason, buildingType, rotationStep }) {
+    const timer = createStepTimer(`${valid.length} house(s)`);
     housePaint.busy = true;
     try {
-      const { valid, blocked, buildingType, rotationStep } = planHouseDrag();
-      cancelHousePaint();
-
-      // Not one plot could take the house (where the drag began, something is in the way): say so.
+      // Not one plot could take the house (where the drag began, something is in the way, or the mayor's house is not built): say why.
       if (valid.length === 0 && blocked.length > 0) {
-        showGenericErrorNotification(activeToolId, 'area_not_available');
+        showGenericErrorNotification(activeToolId, blockedReason);
         return;
       }
 
@@ -1006,13 +1078,17 @@ export function createGame(gameStore, assetManager, citySize = null) {
         }
       }
 
+      timer.step('payment + save + history');
       if (placed.length === 0) {
         return;
       }
       playPlaceBuildingSound();
       await scene.update(city, time);
+      timer.step('scene.update (the houses appear)');
       await runSimulationPass(time);
+      timer.step('simulation pass');
       await syncEmploymentAfterBuildingChange(scene, city, buildingType);
+      timer.step('employment');
       for (const { plot, instanceId } of placed) {
         await syncSupplyLinksAfterBuildingChange({
           supply,
@@ -1025,14 +1101,18 @@ export function createGame(gameStore, assetManager, citySize = null) {
           y: plot.y,
         });
       }
+      timer.step('supply links');
       await refreshPlacementPresentation();
+      timer.step('placement refresh + reminders');
       await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+      timer.step('HUD');
       placementGhostSession.sync(scene.focusedObject);
       if (game?.play) {
         game.play();
       }
     } finally {
       housePaint.busy = false;
+      timer.done();
     }
   }
 
@@ -1652,6 +1732,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
     },
 
+    /** Resolves when the hamlet's scene is loaded and the loader is gone: what a new game's opening waits for. */
+    whenSceneReady: () => hamletSceneGate,
+
     refreshEmployment: refreshEmploymentPresentationForCity,
     runSimulationPass,
     runScenePresentationPass,
@@ -1697,6 +1780,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
       selectedMeshIndex = 0;
       gameUI.activeToolId = toolId;
       placementGhostSession.onToolChanged();
+      // The reminders depend on the tool in hand (picking the mayor's house to place it is the guided way: nothing to remind).
+      void refreshHudReminders().catch((error) => console.error('[game] The reminders could not be refreshed:', error));
       // What a building needs (a hub in reach, a natural resource, a supplier) is said when it is picked.
       if (toolChanged && isActivePlacementTool(toolId)) {
         const placingType = resolvePlacementBuildingId(toolId);

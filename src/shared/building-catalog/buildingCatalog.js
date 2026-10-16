@@ -71,7 +71,7 @@
  * @typedef {Object} BuildingAccountingFacts
  * @property {number} maintenance
  *
- * @typedef {'artisans' | 'merchants' | 'scholars'} ResidentialGroup
+ * @typedef {'artisans' | 'merchants' | 'scholars' | 'administrators'} ResidentialGroup
  *
  * @typedef {'producer' | 'collector' | 'hub' | 'distributor' | 'consumer'} ResourceRoleKind
  *
@@ -143,6 +143,9 @@
  *   lock field name (when one is used at all) is declared — see
  *   contexts/supply/domain/policies/PeriodLockPolicy.js, which knows
  *   nothing about "producer", "consumer", or any resource/service name.
+ * @property {boolean} [spoilsUnsold] On a 'producer' entry with a once-a-year harvest: what is left of the previous
+ *   harvest in the building's own stock goes bad the moment the new one comes in (it is lost, and the loss is traced
+ *   as a `crop_spoiled` event). Declared on a crop field, never written as a rule in the harvest code.
  * @property {Array<{ id: string, when?: object, amount?: number, factor?: number, inputs?: object[], missed?: number, wait?: boolean }>} [cycle]
  *   On a 'producer' entry: a chain of steps instead of a single production. `when` is a schedule (see
  *   ResourceSchedulePolicy.js); the first step sets a base (`amount`), each next one multiplies the running
@@ -229,6 +232,11 @@
  *   depends on a road — every context reads this one fact (via
  *   resourceRoleQueries.requiresRoad / isRoadNeedMet) instead of checking
  *   road counts or type names on its own.
+ * @property {number} [maxPerHamlet] How many of this building a hamlet can hold (the mayor's house: one). Omitted means no limit.
+ * @property {string} [firstBuiltNews] The milestone dépêche announced the first time the hamlet builds this one
+ *   (a key of NewsDraftCatalog.js's milestones).
+ * @property {string[]} [requiresPlaced] Building types that must already be placed in the hamlet before this one can be
+ *   (every house waits for the mayor's house). Omitted/empty means unconstrained.
  * @property {PlacementRequirement[]} [placementRequires] One or more other
  *   buildings that must already be placed (and, if `requiresCapacity`, have
  *   room) before this building can be placed at all — e.g. a market can't be

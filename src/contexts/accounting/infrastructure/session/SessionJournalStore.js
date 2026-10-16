@@ -184,6 +184,10 @@ export class SessionJournalStore {
                 entry.customsBase = options.customsBase;
             }
 
+            if (options.resource) {
+                entry.resource = options.resource;
+            }
+
             if (options.taxYear != null) {
                 entry.taxYear = options.taxYear;
             }

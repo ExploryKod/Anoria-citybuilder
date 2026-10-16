@@ -93,8 +93,13 @@ export class ProduceResource {
    *   building removal, so Supply is handed it rather than reaching into it).
    *   `hubServing` says how much of a hub's goods this building may draw (see HubServing).
    */
-  constructor(supplyBuildingRepository, { removeBuilding, hubServing, dealGate, recordInputPurchase } = {}) {
+  constructor(supplyBuildingRepository, { removeBuilding, hubServing, dealGate, recordInputPurchase, recordSpoilage } = {}) {
     this.supplyBuildingRepository = supplyBuildingRepository;
+    /**
+     * Traces the unsold harvest that went bad when the next one came in.
+     * @type {((loss: { period: object, building: { id: string, type: string, x?: number, y?: number }, category: string, quantity: number }) => Promise<void>) | null}
+     */
+    this.recordSpoilage = recordSpoilage ?? null;
     /**
      * What a building draws from a hub for a recipe is bought from it: the supply logs each draw as a sale (hub → building)
      * at the hub's price, and the month's settlement turns it into the two accounts' lines. Without it, inputs would be free.
@@ -325,6 +330,7 @@ export class ProduceResource {
     }
 
     const credited = {};
+    const spoiled = {};
     let firstFailure = null;
 
     for (const entry of entries) {
@@ -441,6 +447,19 @@ export class ProduceResource {
       // otherwise lose it on every production.
       let nextStock = await this.#takeInputs(building, plan, inputNeed, period);
 
+      // The previous harvest, still unsold when the new one comes in, goes bad (a crop field declares `spoilsUnsold`).
+      if (entry.spoilsUnsold) {
+        for (const produced of entry.categories) {
+          const left = getCategoryAmount(nextStock, produced);
+          if (left <= 0) continue;
+          if (!this.recordSpoilage) throw new Error(`[supply] ${building.id} spoils its unsold ${produced} but ProduceResource has no recordSpoilage: the loss would go unseen`);
+          const shape = stockShapeFor(produced, entry.totalKey);
+          nextStock = { ...nextStock, ...takeCategoryAmount(nextStock, produced, left, shape.categories, shape.totalKey) };
+          await this.recordSpoilage({ period, building, category: produced, quantity: left });
+          spoiled[produced] = (spoiled[produced] ?? 0) + left;
+        }
+      }
+
       for (const produced of entry.categories) {
         const shape = stockShapeFor(produced, entry.totalKey);
         nextStock = {
@@ -472,6 +491,7 @@ export class ProduceResource {
       buildingId,
       category: categories[0],
       amount: credited[categories[0]],
+      ...(Object.keys(spoiled).length > 0 ? { spoiled } : {}),
     };
   }
 }

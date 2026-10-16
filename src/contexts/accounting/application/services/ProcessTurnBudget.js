@@ -44,7 +44,9 @@ export class ProcessTurnBudget {
     const result = {};
 
     try {
-      await this.deps.collectCitizenTaxes(time);
+      const taxCollection = await this.deps.collectCitizenTaxes(time);
+      // November without a tax collector: the caller says so to the player (see runGameTurnEconomy.js).
+      if (taxCollection?.citizenTaxUncollectedYear != null) result.citizenTaxUncollectedYear = taxCollection.citizenTaxUncollectedYear;
 
       const timeInfo = this.deps.getTimeInfo(time);
       if (!timeInfo.month) throw new Error(`[ProcessTurnBudget] the calendar gave no month name for turn ${time}`);
@@ -57,6 +59,10 @@ export class ProcessTurnBudget {
           await this.deps.settleBankDepositInterest({ time, deliveredTime: time - 1 });
         }
         await this.deps.settleProducerCharges({ time, deliveredTime: time - 1 });
+        // The rents come last of the month's charges: a house pays what is left of its month, and what it cannot pay stays a debt.
+        if (this.deps.settleHouseRents) {
+          await this.deps.settleHouseRents({ time, deliveredTime: time - 1 });
+        }
         // Every January an indexed minimum wage is revalued on the cost of living, before the market moves the wages above it.
         if (this.deps.revalueMinimumWage && timeInfo.monthIndex === 0) await this.deps.revalueMinimumWage();
         // The month was paid at the wages in force: only now does the labour market move them for the month that opens.

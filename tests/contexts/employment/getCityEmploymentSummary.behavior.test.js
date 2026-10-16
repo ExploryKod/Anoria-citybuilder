@@ -82,8 +82,9 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(eligibleSectorsForGroup('unknown-group')).toEqual([]);
     });
 
-    test('exposes all three groups', () => {
-      expect(allSocialGroups().sort()).toEqual(['artisans', 'merchants', 'scholars']);
+    test('exposes every social group (the administrators work in no sector)', () => {
+      expect(allSocialGroups().sort()).toEqual(['administrators', 'artisans', 'merchants', 'scholars']);
+      expect(eligibleSectorsForGroup('administrators')).toEqual([]);
     });
   });
 

@@ -25,7 +25,7 @@ function settle({ employerContributionRate, employeeContributionRate }) {
     sumHouseSales: async () => [],
     sumBankInterestByBuilding: async () => [{ buildingId: 'bank-1', amountHT: 1000 }],
     sumOtherExpensesByBuilding: async () => [],
-    listHouses: async () => [{ id: 'house-1', pop: 3 }],
+    listHouses: async () => [{ id: 'house-1', pop: 3, salaried: 0 }],
     getPublicPay: async () => ({ benefitBase: 100, unemploymentBenefitRate: 0, employerContributionRate, employeeContributionRate }),
     getWageRateOf: async () => () => 100,
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0.1, threshold2: 0, rate2: 0.1 }),

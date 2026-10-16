@@ -36,6 +36,7 @@ export class RecordLedgerEntry {
    * @param {string|null} [params.counterpartyBuildingId] the other company of a trade line (its trace); null when none
    * @param {number|null} [params.dutyRate] a customs line: the duty rate that was applied (stamped when written, never recomputed)
    * @param {number|null} [params.customsBase] a customs line: the value the rate was applied to
+   * @param {string|null} [params.resource] a household's purchase line: the catalog category it bought (a good or a service), to group its budget by use
    * @param {boolean} [params.persist]
    * @returns {Promise<RecordLedgerEntryResult>}
    */
@@ -56,6 +57,7 @@ export class RecordLedgerEntry {
     taxBreakdown = null,
     dutyRate = null,
     customsBase = null,
+    resource = null,
     persist,
   }) {
     if (typeof turn !== 'number' || Number.isNaN(turn)) {
@@ -92,6 +94,7 @@ export class RecordLedgerEntry {
         taxBreakdown,
         dutyRate,
         customsBase,
+        resource,
         month:
           timeInfo?.monthIndex != null ? timeInfo.monthIndex + 1 : null,
         year: timeInfo?.year ?? null,

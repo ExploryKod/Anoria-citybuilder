@@ -16,6 +16,7 @@ import { getOrCreateGameSessionContext } from '../../../composition/createGameSe
 import {
   bindSessionRuntime,
   getSessionApi,
+  getSessionCity,
   getSessionPopupManager,
   getSessionService,
   updateSessionDisplayedFunds,
@@ -57,11 +58,14 @@ import {
 import { initJournalPopup } from '../compta/journal/JournalPanel.js';
 import { initSupplyTraceabilityPopup } from '../admin/supply-traceability/SupplyTraceabilityPanel.js';
 import { initAdminSections } from '../admin/initAdminSections.js';
-import { initNewsEventModal } from '../intelligence/NewsEventModal.js';
+import { initNewsEventModal, presentIncomingNewsEvents, waitForNewsModalClosed } from '../intelligence/NewsEventModal.js';
+import { awaitTreasuryReady, endOpening, failOpening } from '../../../composition/budgetReadyGate.js';
+import { formatEuro } from '../../../contexts/accounting/presentation/formatMoney.js';
 import { bindObjectivesHistoryDeps } from '../onboarding/objectives-history.js';
 import { initObjectivesPanel } from '../onboarding/ObjectivesPanel.js';
 import loaderManager from '../shell/LoaderManager.js';
 import { initTutorialPanel } from '../onboarding/TutorialPanel.js';
+import { activateBuildToolButton } from '../tools/ToolPanel.js';
 
 function persistCitySize(size) {
   try {
@@ -75,11 +79,6 @@ function persistCitySize(size) {
 function resolveBootSelection(bootMode) {
   if (bootMode === 'tutorial') {
     clearMissionMapLayout();
-    try {
-      sessionStorage.setItem('anoria.startTutorial', '1');
-    } catch {
-      /* ignore */
-    }
     return {
       size: DEFAULT_CITY_SIZE,
       multiplayer: false,
@@ -298,7 +297,42 @@ export async function bootstrapGameSession(assetManager) {
       getGameTime,
       popupManager,
       registerAppService,
+      // A dépêche's button that offers a building to place: the tool is lit in the toolbar and put in hand.
+      activateBuildTool: (toolId) => {
+        activateBuildToolButton(toolId);
+        game.setActiveToolId(toolId);
+      },
+      // Whether the hamlet already has that building: a button offering to place it has nothing left to offer.
+      isBuilt: (toolId) => (getSessionCity()?.tiles ?? []).some((column) => (column ?? []).some((tile) => tile?.buildingId === toolId)),
     });
+  }
+
+  // A new game opens with a prelude at turn 0, before the first day: the founder's story (the tutorial's, when the player chose it), then the
+  // dépêche of the treasure found on the way, which is the city's starting funds. The game's clock and construction were held at boot
+  // (bootTreasuryHud); the funds show, and day 1 starts, once the player has read both. (A saved game or the starter city has funds of its
+  // own: no prelude.)
+  if (isNewGame) {
+    const announcesGift = bootMode !== 'prefab' && !isEditorMode() && Boolean(sessionApi.intelligence);
+    (async () => {
+      await awaitTreasuryReady();
+      await game.whenSceneReady();
+      const { funds } = await sessionApi.accounting.getTreasurySnapshot();
+      if (bootMode === 'tutorial') {
+        // The loader is fading out (see the scene's gate): the story opens once it is gone.
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        const tutorial = getTutorialManager();
+        if (!tutorial?.waitForClose || !invokeStartTutorial()) {
+          throw new Error('[prelude] the founder story could not be opened: the tutorial panel is not ready');
+        }
+        await tutorial.waitForClose();
+      }
+      if (announcesGift) {
+        await sessionApi.intelligence.announceMilestone({ milestoneId: 'starting-fortune', turn: getGameTime(), params: { amountLabel: formatEuro(funds) } });
+        await presentIncomingNewsEvents();
+        await waitForNewsModalClosed();
+      }
+      updateSessionDisplayedFunds(funds);
+    })().then(endOpening, failOpening);
   }
 
   await initAdminSections({

@@ -13,6 +13,8 @@ import {
   residentialGroupForType,
 } from './catalogs/HouseGroupSectorEligibilityPolicy.js';
 import { getRequiredSkillForBuilding } from './policies/WorkplaceSkillRequirementPolicy.js';
+import { employmentShortfallCauses } from './policies/EmploymentShortfallPolicy.js';
+import { residentsSeekingWork } from '../../../shared/population/workforceQueries.js';
 
 /**
  * Pure read model: city-wide employment summary from building snapshots.
@@ -99,14 +101,17 @@ export function computeCityEmploymentSummary(buildings) {
   // workplace, see workerPool above).
   let totalPopulation = 0;
   let unemployed = 0;
+  let unemployedNoRoad = 0;
   for (const building of buildings) {
     if (!isLaborSource(building)) continue;
+    // Only the residents who look for a job can be out of work (the administrators do not, see workforceQueries.js).
     const { unemployed: unemployedHere } = computeHouseholdEmploymentStatus({
-      pop: building.pop,
+      pop: residentsSeekingWork(building.type, building.pop),
       workers: workersByHouseId.get(building.id) ?? 0,
     });
     totalPopulation += building.pop;
     unemployed += unemployedHere;
+    if (!hasRoadAccess(building)) unemployedNoRoad += unemployedHere;
   }
   const activeCitizenCount = Math.max(0, totalPopulation - unemployed);
   const unemploymentPercentage = totalPopulation > 0 ? Math.round((unemployed / totalPopulation) * 100) : 0;
@@ -122,6 +127,8 @@ export function computeCityEmploymentSummary(buildings) {
     unemployed,
     unemploymentPercentage,
     lack,
+    // Why they are out of work and why posts are empty (worked out for this one hamlet's counts).
+    causes: employmentShortfallCauses({ unemployed, unemployedNoRoad, lack }),
     understaffedBuildingIds: Object.freeze([...understaffedBuildingIds]),
     bySector: Object.freeze(bySector),
     bySkill: Object.freeze(bySkill),

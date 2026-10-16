@@ -6,6 +6,7 @@
 import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import { getOrCreateConstructionContext } from './createConstructionContext.js';
+import { getOrCreateIntelligenceContext } from './createIntelligenceContext.js';
 import { getCumulativeDeaths } from './gameplayMortalityState.js';
 
 /**
@@ -55,8 +56,17 @@ export async function persistGameplayTurn({ gameStore, housing, time }) {
  */
 export async function processGameTurnBudget({ city, buildings, time, totalPop }) {
   getOrCreateConstructionContext().bindSceneBuildingGrid({ city, buildings });
-  return getOrCreateAccountingContext().processTurnBudget({
+  const result = await getOrCreateAccountingContext().processTurnBudget({
     time,
     totalPop,
   });
+  // November without a tax collector: a dépêche says so, once for the year (the modal shows it at the end of the tick).
+  if (result?.citizenTaxUncollectedYear != null) {
+    await getOrCreateIntelligenceContext().announceMilestone({
+      milestoneId: 'tax-uncollected',
+      turn: time,
+      occurrence: result.citizenTaxUncollectedYear,
+    });
+  }
+  return result;
 }

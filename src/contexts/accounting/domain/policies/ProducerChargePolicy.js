@@ -84,13 +84,15 @@ export function payrollOf({ type, workers, wageRateOf }) {
  * The lines of one service a company sold to a house in one month. The house pays the final price (TTC) on its personal
  * account; the company receives it without the VAT (HT); the city receives the VAT, the last buyer being the one who pays
  * it. A fully subsidised service costs the house nothing: no line.
- * @param {{ sellerId: string, buyerId: string, ttc: number, ht: number, vat: number }} sale
+ * @param {{ sellerId: string, buyerId: string, service: string, ttc: number, ht: number, vat: number }} sale `service`: the catalog category sold,
+ *   written on the house's purchase line so its budget can be grouped by use
  * @returns {ChargeLine[]}
  */
-export function serviceSaleLines({ sellerId, buyerId, ttc, ht, vat }) {
+export function serviceSaleLines({ sellerId, buyerId, service, ttc, ht, vat }) {
+  if (!service) throw new Error(`[producer] a service sold by ${sellerId} to ${buyerId} must name the service: its purchase line cannot be grouped otherwise`);
   if (centimes(ttc) <= 0) return [];
   return [
-    { kind: 'service_purchase', amount: centimes(ttc), holder: buyerId, counterparty: sellerId, accountKind: PERSONAL_ACCOUNT },
+    { kind: 'service_purchase', amount: centimes(ttc), holder: buyerId, counterparty: sellerId, accountKind: PERSONAL_ACCOUNT, resource: service },
     { kind: 'service_sales', amount: centimes(ht), holder: sellerId, counterparty: buyerId },
     { kind: 'vat', amount: centimes(vat), holder: null, counterparty: sellerId },
   ];

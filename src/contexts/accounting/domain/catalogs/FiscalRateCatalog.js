@@ -8,7 +8,7 @@
 /**
  * The income tax (IR) is progressive, fixed at three bands: exempt below `salaryTaxThreshold1`, `salaryTaxRate1` on the
  * part between the two thresholds, `salaryTaxRate2` on the part above `salaryTaxThreshold2` (see withholdIncomeTax).
- * @type {Readonly<{ citizenTaxPerCapita: number, minimumWage: number, minimumWageBasketRatio: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>}
+ * @type {Readonly<{ citizenTaxPerCapita: number, minimumWage: number, minimumWageBasketRatio: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number, rentPerHouse: number }>}
  */
 export const DEFAULT_HAMLET_FISCAL_RATES = Object.freeze({
   citizenTaxPerCapita: 25,
@@ -26,6 +26,9 @@ export const DEFAULT_HAMLET_FISCAL_RATES = Object.freeze({
   // wage). Both go to the city's social security, which pays the unemployment benefit.
   employerContributionRate: 0.25,
   employeeContributionRate: 0.1,
+  // The rent every house but the mayor's pays each month, to the mayor's house (the owner): very low to begin with (a citizen's needs cost about
+  // 5.8 a month), whole euros. An unpaid rent becomes a debt the house settles when it has the money.
+  rentPerHouse: 1,
 });
 
 /**
@@ -53,6 +56,7 @@ export const HAMLET_FISCAL_RATE_BOUNDS = Object.freeze({
   unemploymentBenefitRate: Object.freeze({ min: 0, max: 1, integer: false }),
   employerContributionRate: Object.freeze({ min: 0, max: 0.6, integer: false }),
   employeeContributionRate: Object.freeze({ min: 0, max: 0.4, integer: false }),
+  rentPerHouse: Object.freeze({ min: 0, max: 20, integer: true }),
 });
 
 /** A service's subsidy, in whole percent of its price: 0 = the inhabitants pay all of it. */
@@ -113,6 +117,7 @@ export function fiscalSliderBounds() {
     unemploymentBenefitPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.unemploymentBenefitRate),
     employerContributionPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.employerContributionRate),
     employeeContributionPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.employeeContributionRate),
+    rentPerHouse: HAMLET_FISCAL_RATE_BOUNDS.rentPerHouse,
     serviceSubsidyPercent: SERVICE_SUBSIDY_BOUNDS,
     customsPercent: inPercent(CUSTOMS_RATE_BOUNDS),
     vatPercent: VAT_RATE_BOUNDS,

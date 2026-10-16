@@ -398,6 +398,13 @@ export function createScene(_gameStore, assetManager, deps) {
     let currentCitySize = 16; // Store current city size for citizen pathfinding
     let currentCity = null; // Store current city object for citizen updates
     let lastSceneUpdateTime = 0;
+    /**
+     * What an update already wrote for each building, so it does not write it again: the day stamped on its row (`worldTime`) and whether its
+     * employees schema was checked. Without it every tile of every building cost several database operations at every update (placements update
+     * the scene twice), which is what made a placement take seconds.
+     */
+    const stampedWorldTime = new Map();
+    const employeesSchemaChecked = new Set();
     
     // Note: per-turn budget orchestration lives in ProcessTurnBudget (accounting BC) via scene.update
     // Note: Citizen-related variables and CitizenData class moved to CitizenManager
@@ -691,6 +698,16 @@ export function createScene(_gameStore, assetManager, deps) {
         lastSceneUpdateTime = time;
 
         /**
+         * The residential house on a tile, from ONE read of the houses of the hamlet per update: asking the database tile by tile read the
+         * whole table for every tile of every house, which is what made each update (and so each placement) take seconds.
+         */
+        let residentialTileIndex = null;
+        async function residentialHouseAt(x, y) {
+            residentialTileIndex ??= await housing.getResidentialHouseTileIndex();
+            return residentialTileIndex.get(`${x},${y}`) ?? null;
+        }
+
+        /**
          * Housing ECS may rename persisted id/type (Blue→Red, etc.) while the mesh
          * still carries the old userData. Resolve by tile before existence checks.
          */
@@ -702,7 +719,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 return { buildingId: meshBuildingId, instanceId: null, synced: false };
             }
 
-            const tileHouse = await housing.getResidentialHouseAt({ x, y });
+            const tileHouse = await residentialHouseAt(x, y);
             if (!tileHouse || !buildings[x]?.[y]) {
                 return {
                     buildingId: meshBuildingId,
@@ -1091,7 +1108,7 @@ export function createScene(_gameStore, assetManager, deps) {
                         tileBuildingId &&
                         houses.includes(currentBuildingId)
                     ) {
-                        const tileHouse = await housing.getResidentialHouseAt({ x, y });
+                        const tileHouse = await residentialHouseAt(x, y);
                         if (tileHouse) {
                             currentInstanceId = tileHouse.id;
                             currentBuildingId = tileHouse.type;
@@ -1123,17 +1140,30 @@ export function createScene(_gameStore, assetManager, deps) {
                 }
                 
                 // Update building data in database
+                // Once per building and day, and its employees schema once per session (a building spans several tiles, and the scene is
+                // updated more than once a day).
                 if (!isRoad) {
-                    await updateBuildingFields(currentInstanceId, { worldTime: time });
-                    await ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId);
+                    if (stampedWorldTime.get(currentInstanceId) !== time) {
+                        await updateBuildingFields(currentInstanceId, { worldTime: time });
+                        stampedWorldTime.set(currentInstanceId, time);
+                    }
+                    if (!employeesSchemaChecked.has(currentInstanceId)) {
+                        await ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId);
+                        employeesSchemaChecked.add(currentInstanceId);
+                    }
                 } else {
                     try {
-                        await updateBuildingFields(currentInstanceId, { worldTime: time });
-                        if (buildings[x][y]?.userData) {
-                            await updateBuildingFields(currentInstanceId, {});
+                        if (stampedWorldTime.get(currentInstanceId) !== time) {
+                            await updateBuildingFields(currentInstanceId, { worldTime: time });
+                            if (buildings[x][y]?.userData) {
+                                await updateBuildingFields(currentInstanceId, {});
+                            }
+                            stampedWorldTime.set(currentInstanceId, time);
                         }
-
-                        await ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId);
+                        if (!employeesSchemaChecked.has(currentInstanceId)) {
+                            await ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId);
+                            employeesSchemaChecked.add(currentInstanceId);
+                        }
                     } catch (_err) {
                         // Route peut ne pas exister encore dans la DB, c'est normal lors de la création
                     }

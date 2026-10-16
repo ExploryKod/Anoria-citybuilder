@@ -43,6 +43,7 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
         taxBreakdown: entry.taxBreakdown ?? null,
         dutyRate: entry.dutyRate ?? null,
         customsBase: entry.customsBase ?? null,
+        resource: entry.resource ?? null,
         persist: options.persist,
       }
     );
