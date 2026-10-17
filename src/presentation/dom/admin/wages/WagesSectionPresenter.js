@@ -43,7 +43,11 @@ export class WagesSectionPresenter {
     const board = document.getElementById('wages-board');
     if (!levers || !board) throw new Error('[wages] #wages-levers or #wages-board is missing from the page');
 
-    const settings = await this.accounting.getSalarySettings();
+    const [settings, rentControl, rentQuote] = await Promise.all([
+      this.accounting.getSalarySettings(),
+      this.accounting.getRentControl(),
+      this.accounting.getRentQuote(),
+    ]);
     const mode = settings.minimumWageMode;
     levers.replaceChildren(
       this.#floorModeSelect(mode),
@@ -106,16 +110,22 @@ export class WagesSectionPresenter {
         ariaLabel: 'Cotisations salariales, en pourcentage du salaire brut, retenues sur le salaire',
         store: (value) => this.accounting.setSalarySettings({ employeeContributionRate: value / 100 }),
       }),
+      this.#rentControlSelect(rentControl.enabled),
       createSliderRow({
-        label: 'Loyer par maison',
+        label: 'Plafond du loyer',
         scope: 'Hameau',
-        min: this.bounds.rentPerHouse.min,
-        max: this.bounds.rentPerHouse.max,
-        value: settings.rentPerHouse,
+        min: this.bounds.rentCapPerHouse.min,
+        max: this.bounds.rentCapPerHouse.max,
+        value: settings.rentCapPerHouse,
         unit: '€/mois',
-        ariaLabel: 'Loyer mensuel que chaque maison verse à la maison du maire (celle des administrateurs, propriétaires) ; un loyer impayé devient une dette',
-        store: (value) => this.accounting.setSalarySettings({ rentPerHouse: value }),
+        active: rentControl.enabled,
+        ariaLabel: 'Plafond du loyer mensuel de chaque maison, quand le hameau encadre les loyers : au-delà, le propriétaire ne peut pas le demander et supporte la perte',
+        store: async (value) => {
+          await this.accounting.setSalarySettings({ rentCapPerHouse: value });
+          await this.refresh();
+        },
       }),
+      this.#rentQuoteNotice(rentQuote),
       createSliderRow({
         label: 'Traitement des administrateurs',
         scope: 'Hameau',
@@ -176,6 +186,41 @@ export class WagesSectionPresenter {
     controls.append(select);
     row.append(head, controls);
     return row;
+  }
+
+  /** Whether the hamlet controls rents: without control the owner fixes the rent that covers its charges; with it, the rent cannot exceed the cap. */
+  #rentControlSelect(enabled) {
+    const row = el('div', 'taxes-row');
+    const head = el('div', 'taxes-row-head');
+    head.append(el('span', 'taxes-row-label', 'Encadrement des loyers'), el('span', 'taxes-row-scope', 'Hameau'));
+    const select = el('select');
+    select.setAttribute('aria-label', 'Encadrement des loyers : aucun, ou plafonné');
+    for (const [value, label] of [['off', 'Aucun : le propriétaire fixe le loyer'], ['on', 'Plafonné : le loyer ne dépasse pas le plafond']]) {
+      const option = el('option', null, label);
+      option.value = value;
+      option.selected = (value === 'on') === enabled;
+      select.append(option);
+    }
+    select.addEventListener('change', async () => {
+      await this.accounting.setRentControlEnabled(select.value === 'on');
+      await this.refresh();
+    });
+    const controls = el('div', 'commerce-customs-controls');
+    controls.append(select);
+    row.append(head, controls);
+    return row;
+  }
+
+  /**
+   * The rent the owner asks now, and its result when the cap keeps it under what its charges need (a loss, shown as a negative figure for now).
+   * @param {{ rent: number, breakEven: number, capped: boolean, monthlyLoss: number } | null} quote null when no house is an owner
+   */
+  #rentQuoteNotice(quote) {
+    if (!quote) return el('p', 'commerce-customs-hint', "Aucun propriétaire : aucun loyer n'est demandé.");
+    const text = quote.capped
+      ? `Loyer demandé : ${formatEuro(quote.rent)} par maison, plafonné ; il en faudrait ${formatEuro(quote.breakEven)} pour couvrir les charges. Le propriétaire perd ${formatEuro(quote.monthlyLoss)} par mois (résultat : ${formatEuro(-quote.monthlyLoss)}).`
+      : `Loyer demandé : ${formatEuro(quote.rent)} par maison, ce qui couvre les charges du propriétaire (après la subvention du hameau).`;
+    return el('p', 'commerce-customs-hint', text);
   }
 
   /**

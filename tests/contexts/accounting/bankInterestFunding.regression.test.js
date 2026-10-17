@@ -31,6 +31,8 @@ function settle(bankInterest, otherExpenses = []) {
     getWageRateOf: async () => () => 100,
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0, threshold2: 0, rate2: 0 }),
     getCorporateTaxRate: async () => 0.25,
+    getHouseMaintenanceSubsidyRate: async () => 1,
+    listSpoilage: async () => [],
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
     readCompanyYear: companyYearReaderOf(journal),

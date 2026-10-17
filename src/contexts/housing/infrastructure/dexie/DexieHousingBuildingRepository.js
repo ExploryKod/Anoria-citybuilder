@@ -117,6 +117,12 @@ export class DexieHousingBuildingRepository {
     await this.#putFields(instanceId, fields);
   }
 
+  /** Persist the crises of a house (what made inhabitants leave, see RunMonthlyDepartures.js) with its population after the departures. */
+  async saveDepartures(instanceId, { departures, repopulationBans, pop }) {
+    if (!instanceId) return;
+    await this.#putFields(instanceId, { departures, repopulationBans, pop });
+  }
+
   /**
    * Persist a level change (1 <-> 2) for a Blue/Red/Purple house. The house `type` (color) never changes here — only
    * `level` and `pop` (see `HouseLevelPolicy`).

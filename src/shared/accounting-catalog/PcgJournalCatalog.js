@@ -44,6 +44,9 @@ const BY_TYPE = Object.freeze({
   vat: entry('4457', 'Taxes sur le chiffre d’affaires collectées', 'tax-received'),
   corporate_tax_revenue: entry('444', 'État - Impôts sur les bénéfices', 'tax-received'),
   income_tax: entry('4421', 'Prélèvements à la source (impôt sur le revenu)', 'tax-paid'),
+  // An advance that turned out too high is given back at the year's close: the household receives it, the city pays it (the same account 4421).
+  income_tax_refund: entry('4421', 'Prélèvements à la source (impôt sur le revenu) — remboursement', 'tax-received'),
+  payroll_tax_refund: entry('4421', 'Prélèvements à la source (impôt sur le revenu) — remboursement', 'tax-paid'),
   citizen_tax_paid: entry('447', 'Autres impôts, taxes et versements assimilés', 'tax-paid'),
   corporate_tax: entry('695', 'Impôts sur les bénéfices', 'tax-paid'),
   social_contribution: entry('431', 'Sécurité sociale — cotisations perçues', 'tax-received'),
@@ -72,9 +75,9 @@ const BY_TYPE = Object.freeze({
   salary: entry('6411', 'Salaires, appointements', 'personnel'),
   producer_wage: entry('6411', 'Salaires, appointements', 'personnel', false, 'Salaires des ouvriers du bâtiment'),
   employer_contribution: entry('645', 'Charges de sécurité sociale et de prévoyance', 'personnel', false, 'Cotisations patronales'),
-  cooperative_participation: entry('691', 'Participation des salariés aux résultats', 'personnel', false, 'Part des résidents dans le surplus de la coopérative'),
-  // The interest on the parts sociales is a share of the result paid out after the tax, not a charge: class 4, outside the compte de résultat.
-  cooperative_dividend: entry('457', 'Associés — dividendes à payer', 'financial', false, 'Intérêts aux parts sociales'),
+  enterprise_participation: entry('691', 'Participation des salariés aux résultats', 'personnel', false, 'Part des résidents dans le résultat de l’entreprise'),
+  // What the associates are paid is a share of the result paid out after the tax, not a charge: class 4, outside the compte de résultat.
+  enterprise_dividend: entry('457', 'Associés — dividendes à payer', 'financial', false, 'Part des associés dans le résultat'),
   household_participation: entry('421', 'Personnel — participation aux résultats', 'household', true),
   household_dividend: entry('457', 'Associés — dividendes reçus', 'household', true),
   unemployment_benefit: entry('648', 'Autres charges de personnel', 'personnel', false, 'Allocation chômage'),
@@ -87,6 +90,8 @@ const BY_TYPE = Object.freeze({
   producer_revenue: entry('707', 'Ventes de marchandises', 'sales', false, 'Ventes du bâtiment'),
   service_sales: entry('706', 'Prestations de services', 'sales'),
   subsidy_companies_received: entry('741', 'Subventions d’exploitation', 'subsidy-received', false, 'Aide à l’entretien reçue de la ville'),
+  // The share of the upkeep of the houses the hamlet pays their owner (the property company that bears it).
+  subsidy_housing_received: entry('741', 'Subventions d’exploitation', 'subsidy-received', false, 'Aide du hameau à l’entretien des maisons'),
   service_subsidy_received: entry('741', 'Subventions d’exploitation', 'subsidy-received', false, 'Aide aux services publics reçue'),
   loan_interest_received: entry('7626', 'Revenus des prêts', 'sales'),
 });

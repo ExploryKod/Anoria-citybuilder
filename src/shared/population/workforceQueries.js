@@ -14,6 +14,35 @@ export function houseSeeksWork(houseType) {
 }
 
 /**
+ * The businesses of a house, as its social category declares them, and the one the Enterprises tab opens on: the only one, or the one flagged
+ * `default: true`. A house with none, or with several and no default (or several defaults), is an error: the tab would not know what to show.
+ * @param {string} houseType
+ * @returns {{ enterprises: ReadonlyArray<{ id: string, label: string, activity: string }>, defaultId: string }}
+ */
+export function houseEnterprises(houseType) {
+  const group = getBuildingDefinition(houseType)?.residentialGroup;
+  const enterprises = SOCIAL_CATEGORY[group]?.enterprises;
+  if (!Array.isArray(enterprises) || enterprises.length === 0) throw new Error(`[enterprises] house type "${houseType}" (category "${group}") declares no enterprise`);
+  const flagged = enterprises.filter((enterprise) => enterprise.default === true);
+  if (flagged.length > 1) throw new Error(`[enterprises] category "${group}" flags several default enterprises: ${flagged.map((enterprise) => enterprise.id).join(', ')}`);
+  if (flagged.length === 0 && enterprises.length > 1) throw new Error(`[enterprises] category "${group}" has several enterprises and flags none as default`);
+  return { enterprises, defaultId: (flagged[0] ?? enterprises[0]).id };
+}
+
+/**
+ * The enterprise of a house that does an activity (`recipes`: makes and sells goods, `rental`: lets the houses): the one its money is booked on.
+ * A house with none, or with several that do the same, is an error: the line would not know whose it is.
+ * @param {string} houseType
+ * @param {'recipes' | 'rental'} activity
+ * @returns {{ id: string, label: string, activity: string }}
+ */
+export function houseEnterpriseOf(houseType, activity) {
+  const doing = houseEnterprises(houseType).enterprises.filter((enterprise) => enterprise.activity === activity);
+  if (doing.length !== 1) throw new Error(`[enterprises] house type "${houseType}" has ${doing.length} enterprises doing "${activity}": exactly one is needed to book its lines`);
+  return doing[0];
+}
+
+/**
  * Whether the residents of a house hold a skill: the highest level the catalog grants its social category at any tier up to the house's own.
  * Used for the administrators' functions (a house is an owner, or a tax collector, when it has residents and the skill is granted).
  * @param {string} houseType
@@ -54,6 +83,47 @@ export function groupGrantsSkill(houseType, skill) {
   const group = getBuildingDefinition(houseType)?.residentialGroup;
   const tiers = group ? SOCIAL_CATEGORY[group]?.tiers : null;
   return Boolean(tiers) && Object.values(tiers).some((facts) => (facts.skills[skill] ?? 0) >= 1);
+}
+
+/**
+ * The skills a house does not hold yet but its social category grants at a higher tier, each with the lowest tier that grants it.
+ * @param {string} houseType
+ * @param {number} level the house's tier
+ * @returns {ReadonlyArray<{ skill: string, tier: number }>} in order of tier
+ */
+export function upcomingHouseSkills(houseType, level) {
+  const group = getBuildingDefinition(houseType)?.residentialGroup;
+  const tiers = group ? SOCIAL_CATEGORY[group]?.tiers : null;
+  if (!tiers) return [];
+  const upcoming = [];
+  for (const tier of Object.keys(tiers).map(Number).sort((a, b) => a - b)) {
+    if (tier <= level) continue;
+    for (const [skill, skillLevel] of Object.entries(tiers[tier].skills)) {
+      if (skillLevel >= 1 && houseSkillLevel(houseType, level, skill) < 1 && !upcoming.some((entry) => entry.skill === skill)) {
+        upcoming.push({ skill, tier });
+      }
+    }
+  }
+  return upcoming;
+}
+
+/**
+ * The house tier from which a building can be given workers: the lowest tier, over every social category whose residents look for a job, that grants the
+ * skill at the level the building asks. A skill no such tier grants is an error: the building could never be staffed.
+ * @param {string} skill the building's `employment.requiredSkill`
+ * @param {number} level the building's `employment.requiredSkillLevel`
+ * @returns {number}
+ */
+export function lowestHouseTierForWorkers(skill, level) {
+  let lowest = null;
+  for (const [group, category] of Object.entries(SOCIAL_CATEGORY)) {
+    if (category.seeksWork === false) continue;
+    for (const [tier, facts] of Object.entries(category.tiers)) {
+      if ((facts.skills[skill] ?? 0) >= level && (lowest === null || Number(tier) < lowest)) lowest = Number(tier);
+    }
+  }
+  if (lowest === null) throw new Error(`[workforce] no house tier of a category that looks for work grants the skill "${skill}" at level ${level}: its workplaces could never be staffed`);
+  return lowest;
 }
 
 /**

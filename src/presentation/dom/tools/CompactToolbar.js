@@ -12,6 +12,9 @@ import { attachBuildToolHoverPreview, hideBuildToolHoverPreview } from './BuildT
 import { MOBILE_TOOLBAR_CATEGORIES } from './mobileToolbarCategories.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
 import { getSessionGame } from '../../../composition/sessionRuntime.js';
+import { getRequiredSkillForBuilding, getRequiredSkillLevelForBuilding } from '../../../composition/employmentCatalog.js';
+import { lowestHouseTierForWorkers } from '../../../shared/population/workforceQueries.js';
+import { STAFF_LEVEL_COLORS } from '../../three/assets/buildingAssets.js';
 
 /** Gap between build bar bottom edge and top of the round FAB container. */
 const BUILD_BAR_GAP_PX = 8;
@@ -683,8 +686,13 @@ function renderCarousel(categoryId) {
         icon = getDirectToolIcon(buttonInfo.tool) || icon;
       }
 
+      // A card is its button and, under it, the level the building's workers need (see staffLevelPill)
+      const card = document.createElement('div');
+      card.className = 'mobile-build-bar__card';
+      group.appendChild(card);
+
       createToolButton(buttonInfo, icon, {
-        container: group,
+        container: card,
         extraClass: 'mobile-tool-btn',
         onClick: (e) => {
           getButtonsUnactive();
@@ -700,6 +708,8 @@ function renderCarousel(categoryId) {
           }
         },
       });
+      const levelPill = staffLevelPill(buttonInfo.tool);
+      if (levelPill) card.appendChild(levelPill);
     });
 
     listEl.appendChild(slide);
@@ -717,6 +727,26 @@ function renderCarousel(categoryId) {
     const height = carouselEl?.offsetHeight ?? 0;
     if (height > 0) lastCarouselHeightPx = height;
   });
+}
+
+/**
+ * The "niv. N" pill under a building's card: the house level from which it can be given workers (the lowest tier that grants the skill at the level it
+ * asks), one color per level. A building that takes no workers (a road, a house) has none.
+ * @param {string} toolId
+ * @returns {HTMLElement | null}
+ */
+function staffLevelPill(toolId) {
+  const skill = getRequiredSkillForBuilding(toolId);
+  if (!skill) return null;
+  const level = lowestHouseTierForWorkers(skill, getRequiredSkillLevelForBuilding(toolId));
+  const color = STAFF_LEVEL_COLORS[level];
+  if (!color) throw new Error(`[CompactToolbar] "${toolId}" is staffed from house level ${level}, which STAFF_LEVEL_COLORS (buildingAssets.js) gives no color`);
+  const pill = document.createElement('span');
+  pill.className = 'mobile-build-bar__level-pill';
+  pill.style.setProperty('--level-color', color);
+  pill.textContent = `niv. ${level}`;
+  pill.title = `Il a des travailleurs à partir des maisons de niveau ${level}`;
+  return pill;
 }
 
 function getDirectToolIcon(toolId) {

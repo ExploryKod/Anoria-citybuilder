@@ -63,6 +63,10 @@ export const INFO_JOURNAL_TYPE_LABELS = {
   info_loan_repayment: 'Capital prêt (informatif — impayé)',
   // A house's rent for the month, whether or not it could pay it: the debt of a house is what is due less what it paid (see RentDebtPolicy).
   info_rent_due: 'Loyer dû (informatif)',
+  // The rent debt of a house its inhabitants all left: the owner knows it will not be paid (no prosecution in the game), so the debt is written off.
+  info_rent_written_off: 'Loyer impayé abandonné (informatif)',
+  // What a building's spoiled goods would have sold for: a loss of opportunity, never a charge, so it moves no money.
+  info_goods_spoiled: 'Avarie — manque à gagner (informatif)',
 };
 
 /**

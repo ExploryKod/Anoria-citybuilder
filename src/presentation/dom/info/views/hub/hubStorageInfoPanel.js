@@ -3,7 +3,6 @@ import { patchHubStoragePieChart, renderHubStoragePieChart } from './hubStorageP
 import { getResourceRoles, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { buildingName, goodLabel, scheduleLabel } from '../../../shell/CatalogVocabulary.js';
 import { formatHubStockSummary } from '../../presenters/formats/hubStorageInfoFormat.js';
-
 /**
  * The view the chart draws: a hub that holds several flows of goods (see `storageViews`) draws one flow at a time,
  * the one the player picked; any other hub draws all it holds.
@@ -152,9 +151,7 @@ async function softRefreshHubPanel(ctx, orderWarning = null) {
   patchHubStoragePieChart(body, chartView, formatHubStockSummary(chartView), chartTitleOf(freshView, ctx.flowId));
 
   const ordersPanel = body.querySelector('.hub-orders-panel');
-  if (ordersPanel && !ordersPanel.classList.contains('hidden')) {
-    patchOrdersPanelRows(ordersPanel, ordersViewOf(freshView, ctx.flowId), orderWarning);
-  }
+  if (ordersPanel) patchOrdersPanelRows(ordersPanel, ordersViewOf(freshView, ctx.flowId), orderWarning);
 
   return freshView;
 }
@@ -169,7 +166,6 @@ export async function renderHubStorageInfoPanel({
   buildingRow,
   supplyView = null,
   timeContextAhead = null,
-  ordersOpen = false,
 }) {
   const body = getBuildingInfoBody();
   if (!body || !view) return;
@@ -215,19 +211,13 @@ export async function renderHubStorageInfoPanel({
         <h3 class="hub-storage-chart-title">${chartTitleOf(view, ctx.flowId)}</h3>
         ${renderHubStoragePieChart(chartViewOf(view, ctx.flowId), formatHubStockSummary(chartViewOf(view, ctx.flowId)))}
       </section>
-      <div class="hub-info-actions">
-        <button type="button" class="hub-orders-toggle-btn">${ordersOpen ? 'Masquer ordres' : 'Ordres'}</button>
-      </div>
-      <div class="hub-orders-panel ${ordersOpen ? '' : 'hidden'}" aria-hidden="${ordersOpen ? 'false' : 'true'}"></div>
+      <div class="hub-orders-panel"></div>
     </div>
   `;
 
-  const ordersBtn = body.querySelector('.hub-orders-toggle-btn');
+  // The storage orders are always there, under the chart: the panel scrolls.
   const ordersPanel = body.querySelector('.hub-orders-panel');
-
-  if (ordersOpen && ordersPanel) {
-    renderHubOrdersPanelShell(ordersPanel, ordersViewOf(ctx.view, ctx.flowId));
-  }
+  renderHubOrdersPanelShell(ordersPanel, ordersViewOf(ctx.view, ctx.flowId));
 
   body.querySelector('.hub-flow-tabs')?.addEventListener('click', (event) => {
     const tab = /** @type {HTMLElement} */ (event.target).closest('[data-flow]');
@@ -243,10 +233,10 @@ export async function renderHubStorageInfoPanel({
     const chartView = chartViewOf(ctx.view, ctx.flowId);
     patchHubStoragePieChart(body, chartView, formatHubStockSummary(chartView), chartTitleOf(ctx.view, ctx.flowId));
     // The orders follow the pill, like the chart.
-    if (ordersPanel && !ordersPanel.classList.contains('hidden')) renderHubOrdersPanelShell(ordersPanel, ordersViewOf(ctx.view, ctx.flowId));
+    renderHubOrdersPanelShell(ordersPanel, ordersViewOf(ctx.view, ctx.flowId));
   });
 
-  ordersPanel?.addEventListener('click', async (event) => {
+  ordersPanel.addEventListener('click', async (event) => {
     const target = /** @type {HTMLElement} */ (event.target);
     const btn = target.closest('[data-action]');
     if (!btn || !ordersPanel.contains(btn)) return;
@@ -282,22 +272,6 @@ export async function renderHubStorageInfoPanel({
     }
   });
 
-  ordersBtn?.addEventListener('click', async () => {
-    if (!ordersPanel) return;
-    const willOpen = ordersPanel.classList.contains('hidden');
-    if (willOpen) {
-      await softRefreshHubPanel(ctx);
-      ordersPanel.classList.remove('hidden');
-      ordersPanel.setAttribute('aria-hidden', 'false');
-      ordersBtn.textContent = 'Masquer ordres';
-      renderHubOrdersPanelShell(ordersPanel, ordersViewOf(ctx.view, ctx.flowId));
-    } else {
-      ordersPanel.classList.add('hidden');
-      ordersPanel.setAttribute('aria-hidden', 'true');
-      ordersPanel.innerHTML = '';
-      ordersBtn.textContent = 'Ordres';
-    }
-  });
 }
 
 /**

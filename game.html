@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="/src/presentation/dom/styles/tutorial.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/objectives.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/news-event-modal.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/shelf-life.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/parameters.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/legends.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/hud.css">
@@ -177,6 +178,7 @@
                     <button type="button" role="tab" id="tab-foyer" data-tab="foyer" aria-controls="panel-foyer" aria-selected="true" tabindex="0">🏠 Bâtiment</button>
                     <button type="button" role="tab" id="tab-diet" data-tab="diet" aria-controls="panel-diet" aria-selected="false" tabindex="-1" hidden>🍽️ Régime</button>
                     <button type="button" role="tab" id="tab-stocks" data-tab="stocks" aria-controls="panel-stocks" aria-selected="false" tabindex="-1" hidden>📦 Stocks</button>
+                    <button type="button" role="tab" id="tab-shelfLife" data-tab="shelfLife" aria-controls="panel-shelfLife" aria-selected="false" tabindex="-1" hidden>⏳ Durée de vie</button>
                     <button type="button" role="tab" id="tab-activity" data-tab="activity" aria-controls="panel-activity" aria-selected="false" tabindex="-1" hidden>🛠️ Activité</button>
                     <button type="button" role="tab" id="tab-trade" data-tab="trade" aria-controls="panel-trade" aria-selected="false" tabindex="-1" hidden>💰 Ventes</button>
                     <button type="button" role="tab" id="tab-staff" data-tab="staff" aria-controls="panel-staff" aria-selected="false" tabindex="-1" hidden>👷 Personnel</button>
@@ -190,6 +192,7 @@
                     <div id="panel-foyer" role="tabpanel" class="info-building__tabpanel is-active" aria-labelledby="tab-foyer" tabindex="0"></div>
                     <div id="panel-diet" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-diet" tabindex="0" hidden></div>
                     <div id="panel-stocks" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-stocks" tabindex="0" hidden></div>
+                    <div id="panel-shelfLife" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-shelfLife" tabindex="0" hidden></div>
                     <div id="panel-activity" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-activity" tabindex="0" hidden></div>
                     <div id="panel-trade" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-trade" tabindex="0" hidden></div>
                     <div id="panel-staff" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-staff" tabindex="0" hidden></div>
@@ -740,13 +743,34 @@
                                 <span class="pop-detail-value pop-detail-value--hamlet">0</span>
                             </span>
                         </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="pop" data-social-group="administrators">
+                            <span class="pop-detail-emoji" title="Administrateurs" aria-hidden="true">🏛️</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
+                <div class="pop-detail-metric pop-detail-hunger-risk">
+                    <span class="pop-detail-icon pop-detail-icon--hunger-risk" aria-hidden="true"></span>
+                    <span class="pop-detail-values" aria-label="Citoyens menacés par la faim">
+                        <span class="pop-detail-value display-hunger-risk pop-detail-value--country">0</span>
+                        <span class="pop-detail-value display-hunger-risk--hamlet pop-detail-value--hamlet">0</span>
+                    </span>
+                </div>
+                <div class="pop-detail-metric pop-detail-disette">
+                    <span class="pop-detail-icon pop-detail-icon--disette" title="Disette" aria-hidden="true"></span>
+                    <span class="pop-detail-values" aria-label="Citoyens en disette">
+                        <span class="pop-detail-value display-disette-pop pop-detail-value--country">0</span>
+                        <span class="pop-detail-value display-disette-pop--hamlet pop-detail-value--hamlet">0</span>
+                    </span>
+                </div>
                 <div class="pop-detail-metric pop-detail-hunger">
-                    <span class="pop-detail-icon" title="Faim">
+                    <span class="pop-detail-icon" title="Pénurie">
                         <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
                     </span>
-                    <span class="pop-detail-values" aria-label="Citoyens affamés">
+                    <span class="pop-detail-values" aria-label="Citoyens en pénurie">
                         <span class="pop-detail-value display-hunger-pop pop-detail-value--country">0</span>
                         <span class="pop-detail-value display-hunger-pop--hamlet pop-detail-value--hamlet">0</span>
                     </span>
@@ -788,23 +812,6 @@
                             </span>
                         </div>
                     </div>
-                </div>
-                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
-                <div class="pop-detail-block pop-breakdown" aria-label="Détail population active">
-                        <span class="pop-detail-metric pop-segment pop-segment--citizen">
-                            <span class="pop-detail-emoji pop-segment-emoji" title="Citoyens" aria-hidden="true">🔨</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
-                            </span>
-                        </span>
-                        <span class="pop-detail-metric pop-segment pop-segment--servant">
-                            <span class="pop-detail-emoji pop-segment-emoji" title="Fonctionnaires" aria-hidden="true">🏛</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
-                            </span>
-                        </span>
                 </div>
             </section>
             <section
@@ -2760,6 +2767,10 @@
                             <span class="pill-color" style="background: var(--pcg4-paid-bg); color: var(--pcg4-paid-fg);"></span>
                             <span class="pill-label">Impôts payés</span>
                         </button>
+                        <button class="journal-filter-pill" data-filter="tax_credit" data-types='["income_tax_refund","payroll_tax_refund"]'>
+                            <span class="pill-color" style="background: var(--pcg4-bg); color: var(--pcg4-fg);"></span>
+                            <span class="pill-label">Crédit d'impôt</span>
+                        </button>
                         <button class="journal-filter-pill" data-filter="duty_paid" data-types='["duty_paid_"]'>
                             <span class="pill-color" style="background: var(--pcg4-paid-bg); color: var(--pcg4-paid-fg);"></span>
                             <span class="pill-label">Douanes payées</span>
@@ -2792,9 +2803,9 @@
                             <span class="pill-color" style="background: var(--pcg64-bg); color: var(--pcg64-fg);"></span>
                             <span class="pill-label">Cotisations patronales</span>
                         </button>
-                        <button class="journal-filter-pill" data-filter="cooperative_sharing" data-types='["cooperative_participation","cooperative_dividend"]'>
+                        <button class="journal-filter-pill" data-filter="cooperative_sharing" data-types='["enterprise_participation","enterprise_dividend"]'>
                             <span class="pill-color" style="background: var(--pcg65-bg); color: var(--pcg65-fg);"></span>
-                            <span class="pill-label">Participation et dividendes</span>
+                            <span class="pill-label">Participation et distributions</span>
                         </button>
                         <button class="journal-filter-pill" data-filter="exceptional_expenses" data-types='["exceptional_expenses"]'>
                             <span class="pill-color" style="background: var(--pcg6x-bg); color: var(--pcg6x-fg);"></span>

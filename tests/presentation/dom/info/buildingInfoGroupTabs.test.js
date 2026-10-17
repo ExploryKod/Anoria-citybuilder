@@ -22,9 +22,10 @@ describe('buildingInfoGroupRegistry tabs', () => {
     ]);
   });
 
-  test('hub storage exposes foyer, staff, common context tabs and finance', () => {
+  test('hub storage exposes foyer, shelf life, staff, common context tabs and finance', () => {
     expect(tabIds(BUILDING_INFO_GROUPS.hubStorage)).toEqual([
       BUILDING_INFO_TAB_IDS.foyer,
+      BUILDING_INFO_TAB_IDS.shelfLife,
       BUILDING_INFO_TAB_IDS.staff,
       BUILDING_INFO_TAB_IDS.services,
       BUILDING_INFO_TAB_IDS.clients,
@@ -38,6 +39,7 @@ describe('buildingInfoGroupRegistry tabs', () => {
     expect(tabIds(BUILDING_INFO_GROUPS.farm)).toEqual([
       BUILDING_INFO_TAB_IDS.foyer,
       BUILDING_INFO_TAB_IDS.stocks,
+      BUILDING_INFO_TAB_IDS.shelfLife,
       BUILDING_INFO_TAB_IDS.trade,
       BUILDING_INFO_TAB_IDS.staff,
       BUILDING_INFO_TAB_IDS.services,

@@ -29,8 +29,8 @@ export function moneyDirectionOf(entry) {
   if (type === 'year_closing') return 'closing';
   if (isInformativeJournalType(type)) return null;
   if (
-    type === 'capital_funds' || type === 'payroll_tax' || type === 'citizen_tax' || type === 'vat' || type === 'public_wage' || type === 'household_benefit' ||
-    type === 'producer_revenue' || type === 'corporate_tax_revenue' || type === 'service_sales' || type === 'service_subsidy_received' || type === 'subsidy_companies_received' || type === 'social_contribution' || type === 'household_participation' || type === 'household_dividend' || type === 'household_wage' || type === 'loan_capital' || type === 'construction_refund' || type.startsWith('export_') || type.startsWith('customs_import_') || type.startsWith('abroad_sale_') ||
+    type === 'capital_funds' || type === 'payroll_tax' || type === 'income_tax_refund' || type === 'citizen_tax' || type === 'vat' || type === 'public_wage' || type === 'household_benefit' ||
+    type === 'producer_revenue' || type === 'corporate_tax_revenue' || type === 'service_sales' || type === 'service_subsidy_received' || type === 'subsidy_companies_received' || type === 'subsidy_housing_received' || type === 'social_contribution' || type === 'household_participation' || type === 'household_dividend' || type === 'household_wage' || type === 'loan_capital' || type === 'construction_refund' || type.startsWith('export_') || type.startsWith('customs_import_') || type.startsWith('abroad_sale_') ||
     // The lender's own mirror of a loan (see RecordLoanCapitalIncome.js etc.): interest and principal arriving at
     // its account, distinct types from the city's own loan_interest/loan_repayment so deriveLoanPortfolio (which
     // scans every entry, unfiltered by account) never double-counts one loan's installment from both sides.
@@ -49,7 +49,7 @@ export function moneyDirectionOf(entry) {
     type === 'unemployment_benefit' || type === 'loan_interest' || type === 'loan_repayment' ||
     type === 'exceptional_expenses' || type === 'commercial_route' || type === 'contribution' ||
     type === 'service_subsidy' ||
-    type === 'producer_purchase' || type === 'service_purchase' || type === 'consumer_purchase' || type === 'income_tax' || type === 'citizen_tax_paid' || type === 'corporate_tax' || type === 'producer_wage' || type === 'employer_contribution' || type === 'employee_contribution' || type === 'cooperative_participation' || type === 'cooperative_dividend' ||
+    type === 'producer_purchase' || type === 'service_purchase' || type === 'consumer_purchase' || type === 'income_tax' || type === 'payroll_tax_refund' || type === 'citizen_tax_paid' || type === 'corporate_tax' || type === 'producer_wage' || type === 'employer_contribution' || type === 'employee_contribution' || type === 'enterprise_participation' || type === 'enterprise_dividend' ||
     type === 'subsidy_companies' || type === 'subsidy_housing' ||
     // The lender's own capital leaving its account when a loan is drawn — the city's mirror of this is 'loan_capital' (credit, its own account).
     type === 'loan_capital_lent' ||

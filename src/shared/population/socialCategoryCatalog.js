@@ -6,6 +6,9 @@
  */
 const TIER_MAX_POPULATION = Object.freeze({ 1: 6, 2: 12, 3: 18, 4: 24, 5: 30, 6: 36 });
 
+/** The business of a house of the three working categories: a cooperative that makes and sells goods (their `activityRecipe`s). */
+const COOPERATIVE_ENTERPRISES = Object.freeze([Object.freeze({ id: 'cooperative', label: 'Coopérative', activity: 'recipes' })]);
+
 /** The city's administrators (the mayor's house): six, whatever the tier. */
 const ADMINISTRATORS_MAX = 6;
 
@@ -73,6 +76,10 @@ const WAREHOUSE_ACCESS = Object.freeze({ kind: 'activityAccess' });
  *     contexts/employment/domain/computeCityEmploymentSummary.js) — a coarse
  *     fact for that summary/HUD only; the actual worker-to-workplace
  *     assignment is skill-based.
+ *   - `enterprises`: the legal forms of the businesses the houses of this category run, shown as the pills of the
+ *     house's Enterprises tab: `{ id, label, activity }`, `activity` being what the form does (`recipes`: makes and sells goods,
+ *     `rental`: lets the houses to the other houses). The one shown first is the only one, or the one flagged `default: true`
+ *     (see houseEnterprises in workforceQueries.js: several without a default is an error).
  *
  * Data only — no functions that compute or decide anything, no imports from
  * `src/contexts/**`. Same hard rules as buildingCatalog.js.
@@ -95,6 +102,7 @@ const WAREHOUSE_ACCESS = Object.freeze({ kind: 'activityAccess' });
 export const SOCIAL_CATEGORY = Object.freeze({
   artisans: Object.freeze({
     eligibleSectors: Object.freeze([1, 3, 4]),
+    enterprises: COOPERATIVE_ENTERPRISES,
     tiers: Object.freeze({
       1: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[1],
@@ -140,6 +148,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
   }),
   merchants: Object.freeze({
     eligibleSectors: Object.freeze([2]),
+    enterprises: COOPERATIVE_ENTERPRISES,
     tiers: Object.freeze({
       1: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[1],
@@ -186,6 +195,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
   }),
   scholars: Object.freeze({
     eligibleSectors: Object.freeze([6]),
+    enterprises: COOPERATIVE_ENTERPRISES,
     tiers: Object.freeze({
       1: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[1],
@@ -239,6 +249,8 @@ export const SOCIAL_CATEGORY = Object.freeze({
   // as a worker: they are the house's own functions, and the house reaches its tiers only while its needs are paid (so while its stipend is enough).
   administrators: Object.freeze({
     eligibleSectors: Object.freeze([]),
+    // They let the city's houses: a property company, which collects the rents (the `proprietaire` skill).
+    enterprises: Object.freeze([Object.freeze({ id: 'sci', label: 'SCI', activity: 'rental' })]),
     // Governing is not a post of the labour market (see workforceQueries.js): no hiring, no unemployment, no benefit.
     seeksWork: false,
     tiers: Object.freeze({

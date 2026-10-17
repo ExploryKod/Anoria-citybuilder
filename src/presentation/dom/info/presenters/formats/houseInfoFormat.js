@@ -12,7 +12,8 @@ import {
   getResidentialGroupTitle,
   residentialGroupForType,
 } from '../../../shell/ResidentialGroupLabels.js';
-import { computeHouseCitizenComposition } from '../../../../../composition/housingCatalog.js';
+import { computeHouseCitizenComposition, splitUnfedByCause } from '../../../../../composition/housingCatalog.js';
+import { HUNGER_CAUSES } from '../../../../../shared/population/HungerCauseCatalog.js';
 import { buildingIconHtml, buildingName, goodIcon, goodLabel, goodUnit } from '../../../shell/CatalogVocabulary.js';
 import {
   getConsumerEntries,
@@ -21,7 +22,10 @@ import {
   getTotalKeyForCategory,
 } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { getServiceCategories } from '../../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
-import { groupGrantsSkill, houseSkillLevel, houseUnemploymentCauses } from '../../../../../shared/population/workforceQueries.js';
+import { getSkillDisplay } from '../../../../../shared/population/skillCatalog.js';
+import { STAFF_LEVEL_COLORS } from '../../../../three/assets/buildingAssets.js';
+import { groupGrantsSkill, houseEnterprises, houseSeeksWork, houseSkillLevel, houseUnemploymentCauses, upcomingHouseSkills } from '../../../../../shared/population/workforceQueries.js';
+import { formatEuro } from '../../../../../contexts/accounting/presentation/formatMoney.js';
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
 import { describeActivitySupplyGap } from '../../../shell/BuildingNotifications.js';
 import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
@@ -66,12 +70,18 @@ function employersOf(residents) {
   for (const resident of residents) {
     if (resident.status === 'worker') workersByType.set(resident.workplaceType, (workersByType.get(resident.workplaceType) ?? 0) + 1);
   }
-  return [...workersByType]
+  const employers = [...workersByType]
     .sort(([typeA, a], [typeB, b]) => b - a || typeA.localeCompare(typeB))
     .map(([type, count]) => {
       const name = buildingName(type);
       return { emoji: buildingIconHtml(type), count, label: name, ariaLabel: `${count} de cette maison travaillent : ${name}` };
     });
+  // The administrators work in no building: their employer is the hamlet, which pays them a stipend.
+  const administrators = residents.filter((resident) => resident.status === 'administrator').length;
+  if (administrators > 0) {
+    employers.push({ emoji: '🏛️', count: administrators, label: 'Hameau', ariaLabel: `${administrators} de cette maison sont payés par le hameau` });
+  }
+  return employers;
 }
 
 /**
@@ -85,8 +95,10 @@ function employersOf(residents) {
  */
 function problemsOf(vm) {
   let unemployed = null;
-  if (vm.residents) {
-    const withoutJob = vm.residents.filter((resident) => resident.status !== 'worker').length;
+  // Only the residents who look for a job can be out of work: the administrators are paid by the hamlet (their status says so), so a house
+  // of administrators has no such block at all.
+  if (vm.residents && houseSeeksWork(vm.buildingType)) {
+    const withoutJob = vm.residents.filter((resident) => resident.status === 'unemployed').length;
     let causes = [];
     // Once the labour market has been read, the unemployed are told apart: out of work for lack of the skill the vacant posts of their class
     // ask for, or because no post is free for them at all.
@@ -105,10 +117,24 @@ function problemsOf(vm) {
     unemployed = { emoji: UNEMPLOYED_ICON_HTML, count: withoutJob, label: 'sans emploi', ariaLabel: `${withoutJob} de cette maison sont sans emploi`, causes };
   }
   const hungry = Math.max(0, Math.floor(vm.lastConsumption?.totalUnfed) || 0);
+  // The hungry are told apart: could not pay the food on sale (disette) or nothing to buy (pénurie), see HungerCausePolicy.js.
+  const hunger = splitUnfedByCause({
+    unfed: hungry,
+    houseType: vm.buildingType,
+    lastConsumption: vm.lastConsumption,
+    supplyShortfall: vm.buildingRow?.supplyShortfall ?? null,
+  });
+  const hungerEntry = (cause) => ({
+    emoji: HUNGER_CAUSES[cause].icon,
+    count: hunger[cause],
+    label: HUNGER_CAUSES[cause].label,
+    ariaLabel: `${hunger[cause]} de cette maison ${HUNGER_CAUSES[cause].detail}`,
+  });
   return {
     unemployed,
     others: [
-      { emoji: '🍽️', count: hungry, label: 'Affamés', ariaLabel: `${hungry} de cette maison sont affamés` },
+      hungerEntry('disette'),
+      hungerEntry('penurie'),
       { emoji: '😠', count: 0, label: 'En colère', ariaLabel: '0 de cette maison sont en colère (pas encore mesuré)' },
       { emoji: '🤒', count: 0, label: 'Malades', ariaLabel: '0 de cette maison sont malades (pas encore mesuré)' },
     ],
@@ -130,9 +156,22 @@ export function formatHouseSkillsModel(vm) {
     residentialGroup,
   });
   const { skills } = formatHousePopulationPresentation(composition, residentialGroup);
+  const upcoming = upcomingHouseSkills(vm.buildingType, vm.houseLevel).map(({ skill, tier }) => {
+    const meta = getSkillDisplay(skill);
+    const color = STAFF_LEVEL_COLORS[tier];
+    if (!color) throw new Error(`[houseInfoFormat] the skill "${skill}" comes at house level ${tier}, which STAFF_LEVEL_COLORS (buildingAssets.js) gives no color`);
+    return {
+      emoji: meta.emoji,
+      label: meta.label.toLowerCase(),
+      tier,
+      color,
+      ariaLabel: `${meta.label} : disponible au niveau ${tier}`,
+    };
+  });
 
   return {
     skills,
+    upcomingSkills: upcoming,
     employers: employersOf(vm.residents),
     problems: problemsOf(vm),
     anchorX: vm.anchorX,
@@ -252,8 +291,8 @@ function unmetKeywords(shortfall, totalKey, month) {
   const figures = record?.byNeed?.[totalKey];
   if (!figures) return [];
   const keywords = [];
-  if (figures.shortage > 0) keywords.push({ kind: 'shortage', label: 'Pénurie', units: figures.shortage });
-  if (figures.unpaid > 0) keywords.push({ kind: 'unpaid', label: 'Non payé', units: figures.unpaid });
+  if (figures.shortage > 0) keywords.push({ kind: 'shortage', label: HUNGER_CAUSES.penurie.label, units: figures.shortage });
+  if (figures.unpaid > 0) keywords.push({ kind: 'unpaid', label: HUNGER_CAUSES.disette.label, units: figures.unpaid });
   return keywords;
 }
 
@@ -340,7 +379,41 @@ const NO_CYCLE_YET = '–';
 export function formatHouseActivityModel(vm) {
   const entries = vm.buildingType ? getCycleRecipeEntries(vm.buildingType) : [];
   const gaps = vm.activitySupplyGaps ?? [];
-  return { recipes: entries.map((entry) => activityRecipeOf(entry, vm.buildingRow, gaps)) };
+  // The legal forms of the house's businesses (its category's `enterprises`), one pill each; the tab opens on the default one.
+  const { enterprises, defaultId } = vm.buildingType ? houseEnterprises(vm.buildingType) : { enterprises: [], defaultId: null };
+  return {
+    recipes: entries.map((entry) => activityRecipeOf(entry, vm.buildingRow, gaps)),
+    enterprises,
+    defaultId,
+    rental: enterprises.some((enterprise) => enterprise.activity === 'rental') ? rentalOf(vm.rentalBoard ?? null) : null,
+  };
+}
+
+/**
+ * What the property company shows: the rent it asks of each house, how many houses pay it, what the last settlement owed and collected, and
+ * each tenant's situation. `null` when the house is not the owner (nobody holds the owner skill yet): it lets nothing.
+ * @param {{ rent: number, breakEven: number, capped: boolean, monthlyLoss: number, tenants: Array<{ id: string, name: string, debt: number }>, due: number, collected: number, debtTotal: number } | null} board
+ */
+function rentalOf(board) {
+  if (!board) return { rows: [], tenants: [], note: "Aucune maison à louer : la maison doit être habitée pour percevoir des loyers." };
+  if (board.tenants.length === 0) return { rows: [], tenants: [], note: "Aucun locataire pour l'instant : les autres maisons paient un loyer dès qu'elles sont habitées." };
+  return {
+    rows: [
+      { label: 'Loyer par maison', value: `${formatEuro(board.rent)} / mois${board.capped ? ' (plafonné)' : ''}` },
+      { label: 'Loyer qui couvrirait les charges', value: `${formatEuro(board.breakEven)} / mois` },
+      ...(board.capped ? [{ label: 'Perte mensuelle (loyers plafonnés)', value: formatEuro(-board.monthlyLoss) }] : []),
+      { label: 'Locataires', value: String(board.tenants.length) },
+      { label: 'Loyers dus au dernier règlement', value: formatEuro(board.due) },
+      { label: 'Loyers perçus', value: formatEuro(board.collected) },
+      { label: 'Dettes de loyer', value: formatEuro(board.debtTotal) },
+    ],
+    tenants: board.tenants.map((tenant) => ({
+      name: tenant.name,
+      status: tenant.debt > 0 ? `doit ${formatEuro(tenant.debt)}` : 'à jour',
+      owing: tenant.debt > 0,
+    })),
+    note: null,
+  };
 }
 
 /**

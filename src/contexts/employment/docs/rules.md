@@ -92,7 +92,6 @@ civilServantCount = floor(totalPopulation / 12)
 laborPool         = max(0, workerPool − civilServantCount)
 totalAssigned     = Σ employees.worker   (postes éligibles, avec route)
 unemployed        = max(0, laborPool − totalAssigned)
-activeCitizenCount = max(0, laborPool − unemployed)
 unemploymentPercentage = round(unemployed / laborPool × 100)   si laborPool > 0, sinon 0
 ```
 

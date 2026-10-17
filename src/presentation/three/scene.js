@@ -25,7 +25,6 @@ import {
 import { houses } from './assets/buildingCategories.js';
 import { applyRoleStatusSprites, isQuantityDistributor } from './meshs/roleStatusSprites.js';
 import { setupRoadAccessIcons } from '../../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
-import { TimeManager } from '../../shared/time/TimeManager.js';
 import { LightingManager } from './managers/LightingManager.js';
 import { BackdropManager } from './managers/BackdropManager.js';
 import { ResourceManager } from './managers/ResourceManager.js';
@@ -1290,53 +1289,12 @@ export function createScene(_gameStore, assetManager, deps) {
                     // Read stocks from Supply BC
                     const houseSupply = await supply.getBuildingSupplyView(currentInstanceId);
                     const houseFoodStocks = houseSupply?.stocks || null;
-                    let houseNeighbors = await getBuildingField(currentInstanceId, 'neighbors');
-                    const currentPop = await getBuildingField(currentInstanceId, 'pop');
-                    const worldTime = await getBuildingField(currentInstanceId, 'worldTime');
-                    
+
                     // Sync Supply stocks to userData for visual display
                     if (houseFoodStocks && buildings[x][y] && buildings[x][y].userData) {
                         buildings[x][y].userData.stocks = { ...createEmptyStocks(), ...houseFoodStocks };
                     }
-                    
-                    const houseData = await getBuildingById(currentInstanceId);
-                    const foodAffluence = housing.evaluateHouseFoodAffluence({
-                        stocks: houseFoodStocks || {},
-                        population: currentPop,
-                    });
-                    const { hasFood, isInsufficient } = foodAffluence;
-                    // Road icon refreshed after neighbor pass (see refresh loop below)
-                    // Use unified time system for decay check (worldTime is source of truth)
-                    const buildingAge = TimeManager.getBuildingAge(time, worldTime);
-                    const decay = buildingAge > 3 && isInsufficient;
-
-                    // Set food status sprite based on module result
-                    // Show "no-food" icon when !hasFood (sprite shown when condition is true)
-                    // hasFood is computed above from IndexedDB stocks (source of truth)
-                    if(buildings[x][y]) {
-                        // A house with no road gets no food by definition: its only status is no-road (see the
-                        // residential road sync after the neighbor pass, which settles hasRoadAccess for this frame).
-                        const showNoFoodIcon = !hasFood && buildings[x][y].userData.hasRoadAccess !== false;
-                        const houseNoFoodIcon = resolveIconAppearance(
-                            buildings[x][y], 'no-food', statutsIconsMeta.food.position, statutsIconsMeta.food.scale
-                        );
-                        assetManager.setStatusSprite(
-                            buildings[x][y],
-                            textures['nofood'],
-                            'no-food',
-                            houseNoFoodIcon.scale,
-                            houseNoFoodIcon.position,
-                            productionSpriteVisible(showNoFoodIcon)
-                        );
-                    }
-                    
-                  
-                    // DISABLED: Don't change building material color on decay
-                    // This was causing unwanted color changes when opening info panel
-                    // if(decay) {
-                    //     assetManager.changeMeshColor(buildings[x][y],  0X404040)
-                    // }
-
+                    // A house's hunger is no longer drawn on its mesh: the player reads it (disette / pénurie) in its panel and messages.
 
                 }
 
@@ -1378,10 +1336,6 @@ export function createScene(_gameStore, assetManager, deps) {
                     position: residentialRoadIcon.position,
                     scale: residentialRoadIcon.scale,
                 });
-                // No road → the no-road icon is the only status: no-food only means something once connected.
-                if (mesh.userData.hasRoadAccess === false) {
-                    assetManager.removeStatusSprite(mesh, 'no-food');
-                }
             }
         }
 

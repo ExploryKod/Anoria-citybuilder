@@ -3,7 +3,6 @@ import { RunMonthlyCityTradeCycle } from '../contexts/geography/application/work
 import { TRADE_CATALOG, SATISFACTION_START, getTradeCatalogEntry } from '../shared/trade-catalog/TradeCatalog.js';
 import { canOpenRelation } from '../contexts/geography/application/canOpenRelation.js';
 import { getCategoriesForRole, getTotalKeyForRole } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
-import { BUSINESS_ACCOUNT } from '../contexts/accounting/domain/policies/AccountKeyPolicy.js';
 import { addCategoryAmount, takeCategoryAmount } from '../contexts/supply/domain/value-objects/ResourceStock.js';
 import { buildPriceWaterfall } from '../contexts/geography/domain/policies/PriceWaterfallPolicy.js';
 import { priceImportDelivery } from '../contexts/geography/domain/policies/ImportPricePolicy.js';
@@ -34,8 +33,8 @@ export function createTradeContext({ supply, accounting }) {
       takeCategoryAmount(hub.stocks, category, amount, getCategoriesForRole(hub.type, 'hub'), getTotalKeyForRole(hub.type, 'hub')),
     recordMerchantSale: (params) => supply.recordMerchantSale(params),
     // The exporters and the importers are the merchant houses: their lines go on their business accounts, the duty on the city's.
-    recordMerchantLine: ({ houseId, ...line }) =>
-      accounting.recordLedgerEntry({ ...line, accountBuildingId: houseId, accountKind: BUSINESS_ACCOUNT }),
+    recordMerchantLine: async ({ houseId, ...line }) =>
+      accounting.recordLedgerEntry({ ...line, accountBuildingId: houseId, accountKind: await accounting.businessAccountOfHouse(houseId, 'recipes') }),
     recordCityLine: (line) => accounting.recordLedgerEntry(line),
     recordImportDelivery: (params) => supply.recordImportDelivery(params),
     // What the warehouse sells a good at (its average cost plus its margin): the cost of what our merchants export.

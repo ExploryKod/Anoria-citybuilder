@@ -304,6 +304,21 @@
     background: #f8f9fa;
 }
 
+/* A line that moves no money (an `info_*` type): marked with an info icon and drawn lighter, so it is not read as a movement. */
+.journal-entry--informative {
+    background: rgba(120, 144, 156, 0.06);
+}
+
+.journal-entry--informative .journal-entry-amount {
+    opacity: 0.6;
+    font-style: italic;
+}
+
+.journal-entry-info {
+    cursor: help;
+    margin-right: 6px;
+}
+
 .journal-entry:last-child {
     border-bottom: none;
 }

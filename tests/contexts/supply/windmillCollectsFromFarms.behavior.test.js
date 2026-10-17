@@ -27,6 +27,11 @@ class InMemorySupplyBuildingRepository {
   }
 
   async saveSupplyFlags() {}
+
+  async updateBuildingFields(id, fields) {
+    const b = this.raw.get(id);
+    if (b) Object.assign(b, fields);
+  }
 }
 
 function windmill(id, stocks, extras = {}) {
@@ -89,7 +94,7 @@ describe('Supply — windmill collection', () => {
     test('collects from all farms in december', async () => {
       const outcome = await useCase.execute({
         hubId: windmillId,
-        period: { month: 'december' },
+        period: { month: 'december', turn: 1 },
         sourceRefs: [
           { instanceId: wheatFarmId },
           { instanceId: carrotFarmId },
@@ -132,7 +137,7 @@ describe('Supply — windmill collection', () => {
 
       const outcome = await useCase.execute({
         hubId: windmillId,
-        period: { month: 'december' },
+        period: { month: 'december', turn: 1 },
         sourceRefs: [{ instanceId: wheatFarmId }],
       });
 
@@ -150,7 +155,7 @@ describe('Supply — windmill collection', () => {
 
       const outcome = await useCase.execute({
         hubId: windmillId,
-        period: { month: 'december' },
+        period: { month: 'december', turn: 1 },
         sourceRefs: [{ instanceId: wheatFarmId }],
       });
 
@@ -168,7 +173,7 @@ describe('Supply — windmill collection', () => {
 
       const outcome = await useCase.execute({
         hubId: windmillId,
-        period: { month: 'december' },
+        period: { month: 'december', turn: 1 },
         sourceRefs: [{ instanceId: wheatFarmId }, { instanceId: carrotFarmId }],
       });
 

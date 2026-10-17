@@ -1,9 +1,10 @@
 import { buildRentBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
-import { BUSINESS_ACCOUNT, PERSONAL_ACCOUNT } from '../../domain/policies/AccountKeyPolicy.js';
+import { PERSONAL_ACCOUNT, businessAccountOf } from '../../domain/policies/AccountKeyPolicy.js';
+import { houseEnterpriseOf } from '../../../../shared/population/workforceQueries.js';
 import { rentDebtsOf, rentOfMonth } from '../../domain/policies/RentPolicy.js';
 
 /**
- * Application service — once a month, every house but the owner's pays its rent to the owner (the mayor's house, whose residents hold the owner
+ * Application service — once a month, every house (the owner's own included) pays its rent to the owner (the mayor's house, whose residents hold the owner
  * skill). The rent falls due whether or not the house can pay (`info_rent_due`); the house pays what it owes, its debt included, as far as its money
  * goes (`rent_paid` on its personal account, `rent_received` on the owner's business account), and what it cannot pay stays a debt, derived from the
  * journal (see RentPolicy.js). With no owner there is nobody to be paid: no rent falls due. Run after the month's other charges, so the money a house
@@ -13,9 +14,10 @@ export class SettleHouseRents {
   /**
    * @param {object} deps
    * @param {(turn: number) => { year: number, monthIndex: number, month?: string }} deps.getTimeInfo
-   * @param {() => Promise<{ ownerId: string, ownerName: string, tenants: Array<{ id: string, name: string }> } | null>} deps.getRentalHouses the house of the owner and the houses
+   * @param {() => Promise<{ ownerId: string, ownerType: string, ownerName: string, tenants: Array<{ id: string, name: string }> } | null>} deps.getRentalHouses the house of the owner and the houses
    *   that pay it (named as the catalog names them, for the journal lines), or null when no house is an owner
-   * @param {() => Promise<number>} deps.getRentPerHouse the monthly rent the hamlet sets
+   * @param {(rentals: object) => Promise<{ rent: number }>} deps.getRentQuote the monthly rent the owner asks each house: it deduces it from the upkeep it bears,
+   *   within the hamlet's rent control (see rentQuoteOf)
    * @param {() => Promise<Array<object>>} deps.getJournalEntries the journal lines (the debts are derived from them)
    * @param {(houseId: string) => Promise<number>} deps.fundsOf what a house has in its personal account now
    * @param {(params: object) => Promise<{ recorded: boolean, reason?: string }>} deps.recordLedgerEntry
@@ -33,10 +35,12 @@ export class SettleHouseRents {
     const rentals = await this.deps.getRentalHouses();
     if (!rentals) return;
     const timeInfo = this.deps.getTimeInfo(deliveredTime);
-    const rent = await this.deps.getRentPerHouse();
+    const { rent } = await this.deps.getRentQuote(rentals);
     const debts = rentDebtsOf(await this.deps.getJournalEntries());
     const monthLabel = `${timeInfo.month} ${timeInfo.year}`;
     const { ownerId } = rentals;
+    // The rents are the income of the owner's property company: its business account, not the house's other enterprises'.
+    const ownerBusinessAccount = businessAccountOf(houseEnterpriseOf(rentals.ownerType, 'rental').id);
 
     for (const { id: tenantId, name } of rentals.tenants) {
       const month = rentOfMonth({
@@ -54,7 +58,7 @@ export class SettleHouseRents {
           description: `[Informatif] Loyer dû ${names} - ${monthLabel}`,
           businessKey: buildRentBusinessKey('info_rent_due', tenantId, ownerId, timeInfo.year, timeInfo.monthIndex),
           accountBuildingId: ownerId,
-          accountKind: BUSINESS_ACCOUNT,
+          accountKind: ownerBusinessAccount,
           counterpartyBuildingId: tenantId,
         });
       }
@@ -76,7 +80,7 @@ export class SettleHouseRents {
           description: `Loyer perçu ${names} - ${monthLabel}`,
           businessKey: buildRentBusinessKey('rent_received', tenantId, ownerId, timeInfo.year, timeInfo.monthIndex),
           accountBuildingId: ownerId,
-          accountKind: BUSINESS_ACCOUNT,
+          accountKind: ownerBusinessAccount,
           counterpartyBuildingId: tenantId,
         });
       }

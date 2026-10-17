@@ -1,41 +1,4 @@
 /**
- * Partition de la population ville en ensembles disjoints :
- * total = citoyens actifs + chômeurs.
- *
- * Civil servants were removed (2026-10-10, "suppress it for now") — a resident is either a worker or
- * unemployed, nothing in between.
- *
- * - Chômeurs       : surplus du pool ouvrier après affectation, hors emplois.
- * - Citoyens actifs: ouvriers employés (pas chômeurs).
- *
- * @param {{ workerPool: number, totalAssigned: number }} params
- * @returns {{
- *   totalPopulation: number,
- *   workerPool: number,
- *   activeCitizenCount: number,
- *   unemployed: number,
- *   unemploymentPercentage: number,
- * }}
- */
-export function computePopulationBreakdown({ workerPool, totalAssigned }) {
-  const workers = Math.max(0, workerPool ?? 0);
-  const assigned = Math.max(0, totalAssigned ?? 0);
-  const totalPopulation = workers;
-  const unemployed = Math.max(0, totalPopulation - assigned);
-  const activeCitizenCount = Math.max(0, totalPopulation - unemployed);
-  const unemploymentPercentage =
-    totalPopulation > 0 ? Math.round((unemployed / totalPopulation) * 100) : 0;
-
-  return {
-    totalPopulation,
-    workerPool: workers,
-    activeCitizenCount,
-    unemployed,
-    unemploymentPercentage,
-  };
-}
-
-/**
  * Un foyer, pour sa part de chômeurs : la règle unique que la ville doit partager avec le foyer
  * (HouseholdPublicPayPolicy, HouseResidentsPolicy). L'accès routier n'intervient pas ici : qu'un habitant
  * soit appariable à un emploi est une question séparée de son statut de chômeur.

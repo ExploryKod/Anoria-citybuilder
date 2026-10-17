@@ -13,9 +13,11 @@ import {
   payrollOf,
   withholdIncomeTax,
 } from '../../domain/policies/ProducerChargePolicy.js';
-import { BUSINESS_ACCOUNT, PERSONAL_ACCOUNT } from '../../domain/policies/AccountKeyPolicy.js';
-import { allocateCooperativeResult, cooperativeLines } from '../../domain/policies/CooperativeAllocationPolicy.js';
-import { COOPERATIVE_SHARES } from '../../domain/catalogs/ProducerChargeCatalog.js';
+import { PERSONAL_ACCOUNT, businessAccountOf } from '../../domain/policies/AccountKeyPolicy.js';
+import { houseEnterpriseOf, houseEnterprises, houseHoldsSkill } from '../../../../shared/population/workforceQueries.js';
+import { OWNER_SKILL } from '../../../../shared/population/socialCategoryCatalog.js';
+import { allocateEnterpriseResult, enterpriseLines } from '../../domain/policies/EnterpriseAllocationPolicy.js';
+import { legalFormOf } from '../../../../shared/accounting-catalog/LegalFormCatalog.js';
 import { serviceSubsidyShare } from '../../domain/policies/ServiceSubsidyPolicy.js';
 import { addVatTo } from '../../domain/policies/VatIncludedPolicy.js';
 import { payableServiceBills } from '../../domain/policies/ServiceSolvencyPolicy.js';
@@ -34,6 +36,7 @@ const ECONOMY_REGISTER_KINDS = new Set([
   'producer_wage',
   'household_wage',
   'maintenance',
+  'subsidy_housing_received',
   'subsidy_companies',
   'subsidy_companies_received',
   'subsidy_housing',
@@ -49,11 +52,8 @@ const LINE_LABELS = Object.freeze({
   employer_contribution: 'Cotisations patronales',
   employee_contribution: 'Cotisations salariales',
   social_contribution: 'Cotisations sociales perçues',
-  cooperative_participation: 'Participation aux résultats versée',
-  cooperative_dividend: 'Dividendes versés',
-  household_participation: 'Participation aux résultats perçue',
-  household_dividend: 'Dividendes perçus',
   maintenance: 'Entretien',
+  subsidy_housing_received: 'Subvention entretien des maisons reçue',
   subsidy_companies: 'Subvention entretien entreprise',
   subsidy_housing: 'Subvention entretien habitation',
   corporate_tax: 'Impôt sur les sociétés',
@@ -66,6 +66,8 @@ const LINE_LABELS = Object.freeze({
   vat: 'TVA sur les services',
   income_tax: 'Impôt sur le revenu retenu',
   payroll_tax: 'Impôt sur le revenu perçu',
+  income_tax_refund: 'Impôt sur le revenu remboursé',
+  payroll_tax_refund: 'Impôt sur le revenu remboursé aux foyers',
   unemployment_benefit: 'Allocation chômage versée',
   household_benefit: 'Allocation chômage perçue',
   salary: 'Traitement versé',
@@ -102,6 +104,9 @@ export class SettleProducerCharges {
    *   sales do for every other lucrative building
    * @param {() => Promise<{ threshold1: number, rate1: number, threshold2: number, rate2: number }>} deps.getSalaryTax the progressive income tax bands: see withholdIncomeTax
    *   (all nil when nobody holds the collection of the income tax)
+   * @param {(year: number, monthIndex: number) => Promise<Array<{ buildingId: string, units: number, lostRevenue: number }>>} deps.listSpoilage what each building lost to
+   *   spoilage in the month, and what it would have sold for
+   * @param {() => Promise<number>} deps.getHouseMaintenanceSubsidyRate the share of a house's upkeep the hamlet pays, a fraction (the household pays the rest)
    * @param {() => Promise<number>} deps.getCorporateTaxRate the corporate tax rate in force, a fraction: the player's, or 0 while nobody holds its collection
    * @param {() => Promise<Array<{ id: string, pop: number }>>} deps.listHouses the hamlet's households and their residents who look for a job (the
    *   ones the unemployment benefit counts: the administrators do not look for one)
@@ -111,8 +116,10 @@ export class SettleProducerCharges {
    * @param {() => Promise<(skill: string, level: number) => number>} deps.getWageRateOf the monthly gross wage the labour market gives a skill at a level
    *   (never under the minimum wage), as it stands for the month being settled
    * @param {(houseId: string) => Promise<number>} deps.fundsOf what a house has in its personal account before this settlement
-   * @param {(houseId: string) => Promise<number>} deps.businessFundsOf what a house's own business (its cooperative) holds in its business account: only that can be shared out
+   * @param {(houseId: string, businessAccount: string) => Promise<number>} deps.businessFundsOf what one enterprise of a house holds in its business account: only that can be shared out
    * @param {(cutOff: { turn: number, year: number, monthIndex: number, houseId: string, service: string }) => Promise<void>} deps.recordServiceCutOff
+   * @param {(houseId: string, year: number) => Promise<{ incomeYearToDate: number, taxWithheldYearToDate: number }>} deps.readHouseholdYear what a household took in over a
+   *   year (wages net of the employee's contribution, benefit, stipend, and what its enterprises paid it) and the income tax already withheld, off its personal account
    * @param {(buildingId: string, year: number, accountKind?: string | null) => Promise<{ rcaiYearToDate: number, taxPaidYearToDate: number }>} deps.readCompanyYear an account's
    *   résultat courant avant impôts and the corporate tax booked so far in a year, read off its compte de résultat (the one the player reads): a company's account, or a
    *   house's business account (`accountKind`)
@@ -172,6 +179,7 @@ export class SettleProducerCharges {
     const bankInterest = await this.deps.sumBankInterestByBuilding(timeInfo.year, timeInfo.monthIndex);
     const taxRate = await this.deps.getSalaryTax();
     const corporateTaxRate = await this.deps.getCorporateTaxRate();
+    const houseSubsidyRate = await this.deps.getHouseMaintenanceSubsidyRate();
 
     // The city's pay to the households: the unemployed's benefit, from the residents of each. Civil servants
     // were removed (2026-10-10, "suppress it for now") — a resident is either a worker or unemployed, the
@@ -183,8 +191,13 @@ export class SettleProducerCharges {
     const households = await this.deps.listHouses();
     // A house that sells its own output (an artisan's, a savant's, a merchant's little business — see
     // buildingEconomy.js's activityRecipe) is still a house, never a company: the money moves on its business
-    // account (BUSINESS_ACCOUNT), not the bare company-style key a lucrative building's holder gets.
+    // account of its enterprise that makes and sells goods (businessAccountOf), not the bare company-style key a lucrative building's holder gets.
     const houseIds = new Set(households.map((household) => household.id));
+    const typeOfBuilding = new Map(buildings.map((building) => [building.id, building.type]));
+    // The owner of the houses: the house whose category holds the owner skill (the mayor's), standing whether or not people live in it yet. Its
+    // property company bears the upkeep of every house, its own included. None stands once it is demolished: the hamlet then bears it (see buildingChargeLines).
+    const ownerHouse = buildings.find((building) => houseIds.has(building.id) && houseHoldsSkill(building.type, 1, OWNER_SKILL));
+    const owner = ownerHouse ? { id: ownerHouse.id, businessAccount: businessAccountOf(houseEnterpriseOf(ownerHouse.type, 'rental').id) } : null;
     const workersIn = (houseId) => buildings.reduce((sum, building) => sum + (building.workerSources?.[houseId] ?? 0), 0);
     const benefitByHouse = new Map();
     const unemployedCountByHouse = new Map();
@@ -269,7 +282,7 @@ export class SettleProducerCharges {
 
     for (const pair of pairs) {
       for (const line of tradeLines(pair)) {
-        const accountKind = houseIds.has(line.holder) ? BUSINESS_ACCOUNT : null;
+        const accountKind = houseIds.has(line.holder) ? businessAccountOf(houseEnterpriseOf(typeOfBuilding.get(line.holder), 'recipes').id) : null;
         await this.#record({ ...line, accountKind }, {
           time,
           key: buildTradeLineBusinessKey(line.kind, line.holder, line.counterparty, timeInfo, hamletId),
@@ -363,12 +376,16 @@ export class SettleProducerCharges {
         id: building.id,
         type: building.type,
         maintenanceCost: this.deps.buildingMaintenanceCost(building.type),
+        houseSubsidyRate,
+        owner,
       });
+      // A house's upkeep with no owner standing is the hamlet's: the line says why, so the player is not left to guess.
+      const ownerless = owner === null && houseIds.has(building.id) ? ' (sans propriétaire : à la charge du hameau)' : '';
       for (const line of lines) {
         await this.#record(line, {
           time,
           key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
-          description: `${LINE_LABELS[line.kind]} ${nameOf(building.id)} - ${monthLabel}`,
+          description: `${LINE_LABELS[line.kind]} ${nameOf(building.id)}${ownerless} - ${monthLabel}`,
           buildingInstanceId: building.id,
           timeInfo,
         });
@@ -395,22 +412,35 @@ export class SettleProducerCharges {
       // (participation, interest on the parts sociales), the tax and its reserves. A house is no company: it has no payroll, its residents
       // are paid out of the surplus. The surplus is the résultat courant avant impôts of the business account over the year, as its
       // statement shows it, and the lines are dated in the year they share (its last turn).
+      // Each enterprise of the house is a legal person of its own: it shares its own result, out of its own account.
       if (timeInfo.monthIndex === MONTHS_PER_YEAR - 1 && houseIds.has(building.id)) {
-        const { rcaiYearToDate: result } = await this.deps.readCompanyYear(building.id, timeInfo.year, BUSINESS_ACCOUNT);
-        const sharing = allocateCooperativeResult({
-          result,
-          businessCash: result > 0 ? await this.deps.businessFundsOf(building.id) : 0,
-          shares: COOPERATIVE_SHARES,
-          corporateTaxRate,
-        });
-        for (const line of cooperativeLines({ houseId: building.id, ...sharing })) {
-          await this.#record(line, {
-            time: deliveredTime,
-            key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
-            description: `${LINE_LABELS[line.kind]} ${nameOf(building.id)} - ${monthLabel}`,
-            buildingInstanceId: building.id,
-            timeInfo,
+        for (const enterprise of houseEnterprises(building.type).enterprises) {
+          const businessAccount = businessAccountOf(enterprise.id);
+          // The rule of its legal form: how it shares, whether it pays the corporate tax, and the words of its jargon for the journal.
+          const form = legalFormOf(enterprise.id);
+          const { rcaiYearToDate: result } = await this.deps.readCompanyYear(building.id, timeInfo.year, businessAccount);
+          const sharing = allocateEnterpriseResult({
+            result,
+            businessCash: result > 0 ? await this.deps.businessFundsOf(building.id, businessAccount) : 0,
+            shares: form.regime.shares,
+            corporateTaxRate: form.regime.taxed ? corporateTaxRate : 0,
           });
+          const sharingWords = {
+            ...LINE_LABELS,
+            enterprise_participation: form.terms.participation?.paid,
+            household_participation: form.terms.participation?.received,
+            enterprise_dividend: form.terms.dividend.paid,
+            household_dividend: form.terms.dividend.received,
+          };
+          for (const line of enterpriseLines({ houseId: building.id, businessAccount, ...sharing })) {
+            await this.#record(line, {
+              time: deliveredTime,
+              key: buildProducerLineBusinessKey(line.kind, `${building.id}:${enterprise.id}`, timeInfo, hamletId),
+              description: `${sharingWords[line.kind]} ${nameOf(building.id)} · ${enterprise.label} - ${monthLabel}`,
+              buildingInstanceId: building.id,
+              timeInfo,
+            });
+          }
         }
       }
     }
@@ -456,6 +486,68 @@ export class SettleProducerCharges {
           timeInfo,
         },
       );
+    }
+
+    // What the buildings lost to spoilage in the month: an informative line each (the manque à gagner), on the account of the building or of its
+    // enterprise. It moves no money, it only tells the player what the loss would have sold for.
+    for (const loss of await this.deps.listSpoilage(timeInfo.year, timeInfo.monthIndex)) {
+      if (!(loss.lostRevenue > 0)) continue;
+      const accountKind = houseIds.has(loss.buildingId) ? businessAccountOf(houseEnterpriseOf(typeOfBuilding.get(loss.buildingId), 'recipes').id) : null;
+      await this.#record(
+        { kind: 'info_goods_spoiled', amount: loss.lostRevenue, holder: loss.buildingId, counterparty: null, accountKind },
+        {
+          time,
+          key: buildProducerLineBusinessKey('info_goods_spoiled', loss.buildingId, timeInfo, hamletId),
+          description: `[Informatif] Avarie ${nameOf(loss.buildingId)} : ${loss.units} unité${loss.units > 1 ? 's' : ''} jetée${loss.units > 1 ? 's' : ''}, manque à gagner - ${monthLabel}`,
+          buildingInstanceId: loss.buildingId,
+          timeInfo,
+        },
+      );
+    }
+
+    // The year closes: each household's income tax is recalculated on the whole year's income, what its enterprises paid it included (the
+    // participation and the dividends are taxed with the wages, on the same bands). The monthly withholdings were an advance on the wages;
+    // what is still owed is charged now, dated in the year it taxes. An advance that turns out too high is not refunded (no refund line
+    // exists): it is only never topped up.
+    if (timeInfo.monthIndex === MONTHS_PER_YEAR - 1) {
+      for (const household of households) {
+        const year = await this.deps.readHouseholdYear(household.id, timeInfo.year);
+        const annualTax = withholdIncomeTax({
+          gross: year.incomeYearToDate,
+          threshold1: taxRate.threshold1 * MONTHS_PER_YEAR,
+          rate1: taxRate.rate1,
+          threshold2: taxRate.threshold2 * MONTHS_PER_YEAR,
+          rate2: taxRate.rate2,
+        }).incomeTax;
+        // Positive: the advances did not cover the tax of the year, the household owes the rest. Negative: they went beyond it, the city gives back
+        // the difference (never more than was withheld, since the tax of the year is never below nothing).
+        const balance = centimes(annualTax - year.taxWithheldYearToDate);
+        if (balance === 0) continue;
+        const refund = balance < 0;
+        const amount = Math.abs(balance);
+        const description = `du foyer ${nameOf(household.id)} - régularisation ${timeInfo.year}`;
+        const [householdKind, cityKind] = refund ? ['income_tax_refund', 'payroll_tax_refund'] : ['income_tax', 'payroll_tax'];
+        await this.#record(
+          { kind: householdKind, amount, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT },
+          {
+            time: deliveredTime,
+            key: buildProducerLineBusinessKey(householdKind, `${household.id}:annual`, timeInfo, hamletId),
+            description: `${LINE_LABELS[householdKind]} ${description}`,
+            buildingInstanceId: household.id,
+            timeInfo,
+          },
+        );
+        await this.#record(
+          { kind: cityKind, amount, holder: null, counterparty: household.id, accountKind: null },
+          {
+            time: deliveredTime,
+            key: buildProducerLineBusinessKey(cityKind, `${household.id}:annual`, timeInfo, hamletId),
+            description: `${LINE_LABELS[cityKind]} ${description}`,
+            buildingInstanceId: household.id,
+            timeInfo,
+          },
+        );
+      }
     }
   }
 

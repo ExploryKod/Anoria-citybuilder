@@ -25,6 +25,8 @@ function settle({ pop, salaried = 0, minimumWage, administratorStipend = 0, unem
     getWageRateOf: async () => () => 100,
     getSalaryTax: async () => taxRate,
     getCorporateTaxRate: async () => 0.25,
+    getHouseMaintenanceSubsidyRate: async () => 1,
+    listSpoilage: async () => [],
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
     readCompanyYear: companyYearReaderOf(journal),

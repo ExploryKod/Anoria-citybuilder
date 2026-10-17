@@ -137,11 +137,8 @@ describe('Supply — farm harvest', () => {
       expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(YIELD);
     });
 
-    // The previous harvest, still unsold when the next one comes in, goes bad: the stock does not pile up year after year
-    // (it reached 9,169 carrots on six fields before the loss was declared in the catalog).
-    test('allows harvest again next year, and the unsold harvest of the year before goes bad', async () => {
-      const losses = [];
-      useCase = new ProduceResource(repo, { recordSpoilage: async (loss) => { losses.push(loss); } });
+    // What the harvest of a year leaves unsold does not pile up for ever: it goes bad when its shelf life is over (StockAgingPolicy.js).
+    test('allows harvest again next year', async () => {
       await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3 },
@@ -151,16 +148,7 @@ describe('Supply — farm harvest', () => {
         period: { season: 'autumn', year: 4 },
       });
 
-      expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(YIELD);
-      expect(second.spoiled).toEqual({ wheat: YIELD });
-      expect(losses).toHaveLength(1);
-      expect(losses[0]).toMatchObject({ category: 'wheat', quantity: YIELD });
-    });
-
-    test('a spoiled harvest that nothing traces is an error, not a silent loss', async () => {
-      await useCase.execute({ buildingId: 'Farm-Wheat-2-3', period: { season: 'autumn', year: 3 } });
-      await expect(useCase.execute({ buildingId: 'Farm-Wheat-2-3', period: { season: 'autumn', year: 4 } }))
-        .rejects.toThrow('recordSpoilage');
+      expect(second.produced).toBe(true);
     });
 
     test('refuses outside autumn', async () => {

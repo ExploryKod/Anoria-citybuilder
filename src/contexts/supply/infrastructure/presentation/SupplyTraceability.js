@@ -546,7 +546,7 @@ export class SupplyTraceability {
   }
 
   /**
-   * An unsold harvest that went bad when the next one came in.
+   * A stock that outlived its shelf life (see StockAgingPolicy.js) and was thrown away.
    * @param {{ period: object, building: { id: string, type: string, x?: number, y?: number }, category: string, quantity: number }} loss
    */
   async recordSpoilage({ period, building, category, quantity }) {
@@ -554,7 +554,7 @@ export class SupplyTraceability {
       turnOf(period),
       period.monthIndex || 0,
       period.year || 0,
-      'crop_spoiled',
+      'goods_spoiled',
       { id: building.id, x: building.x, y: building.y, type: building.type },
       quantity,
       { good: category }

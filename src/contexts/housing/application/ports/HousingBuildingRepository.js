@@ -23,6 +23,11 @@ export class HousingBuildingRepository {
     throw new Error('HousingBuildingRepository: port not implemented');
   }
 
+  /** Persist a house's crises of departure and its population after the departures. */
+  async saveDepartures(_buildingId, _payload) {
+    throw new Error('HousingBuildingRepository: port not implemented');
+  }
+
   /** Persist a level change (1 <-> 2) — house `type`/color never changes here. */
   async applyLevelChange(_payload) {
     throw new Error('HousingBuildingRepository: port not implemented');

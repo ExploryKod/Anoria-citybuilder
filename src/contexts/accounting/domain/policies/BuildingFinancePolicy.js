@@ -250,7 +250,8 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
   }
   const of = (type) => byType.get(type) ?? 0;
 
-  const householdIncome = of('household_wage') + of('public_wage') + of('household_benefit') + of('household_participation') + of('household_dividend');
+  // The income tax the city gave back at the year's close (an advance that was too high) reaches the household like any receipt.
+  const householdIncome = of('household_wage') + of('public_wage') + of('household_benefit') + of('household_participation') + of('household_dividend') + of('income_tax_refund');
   const householdCharges = of('service_purchase') + of('consumer_purchase') + of('rent_paid') + of('income_tax') + of('citizen_tax_paid') + of('employee_contribution');
   const householdResult = householdIncome - householdCharges;
 
@@ -259,13 +260,13 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
     // A personal account is a household budget, not a compte de résultat.
     statement,
     ratios: statement && ratiosOf(statement, { unitsSold }),
-    // What a cooperative did with its result: the interest paid to its associates after the tax, and what stays in the business as reserves.
-    // The participation is already a charge of the statement (691). Read from the same lines, nothing is stored.
-    // Only an account that shared something is a cooperative's: another company has no allocation to show.
+    // What an enterprise did with its result: what its associates were paid after the tax, and what stays in the business. The participation is
+    // already a charge of the statement (691). Read from the same lines, nothing is stored. Only an account that shared something has an
+    // allocation to show: another company has none.
     allocation: statement && {
-      dividends: fromCentimes(of('cooperative_dividend')),
-      retained: of('cooperative_dividend') !== 0 || of('cooperative_participation') !== 0
-        ? fromCentimes(toCentimes(statement.results.net) - of('cooperative_dividend'))
+      dividends: fromCentimes(of('enterprise_dividend')),
+      retained: of('enterprise_dividend') !== 0 || of('enterprise_participation') !== 0
+        ? fromCentimes(toCentimes(statement.results.net) - of('enterprise_dividend'))
         : 0,
     },
     wagesReceived: fromCentimes(of('household_wage')),
@@ -273,6 +274,7 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
     benefitReceived: fromCentimes(of('household_benefit')),
     participationReceived: fromCentimes(of('household_participation')),
     dividendReceived: fromCentimes(of('household_dividend')),
+    incomeTaxRefunded: fromCentimes(of('income_tax_refund')),
     servicesPaid: fromCentimes(of('service_purchase')),
     goodsBought: fromCentimes(of('consumer_purchase')),
     rentPaid: fromCentimes(of('rent_paid')),
@@ -312,7 +314,7 @@ export function householdBudgetOf(entries, houseId, { year, month, balance }) {
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey || entry.year !== year || entry.month !== month) continue;
     const amount = toCentimes(entry.amount);
-    if (['household_wage', 'public_wage', 'household_benefit', 'household_participation', 'household_dividend'].includes(entry.type)) wages += amount;
+    if (['household_wage', 'public_wage', 'household_benefit', 'household_participation', 'household_dividend', 'income_tax_refund'].includes(entry.type)) wages += amount;
     else if (['service_purchase', 'rent_paid', 'income_tax', 'citizen_tax_paid', 'employee_contribution'].includes(entry.type)) services += amount;
     else if (entry.type === 'consumer_purchase') purchases += amount;
     else if (entry.type === 'deposit') depositedOut += amount;
@@ -350,6 +352,7 @@ export function householdLastMonthOf(entries, houseId, { settled, bought }) {
     benefitReceived: settledFigures.benefitReceived,
     participationReceived: settledFigures.participationReceived,
     dividendReceived: settledFigures.dividendReceived,
+    incomeTaxRefunded: settledFigures.incomeTaxRefunded,
     servicesPaid: settledFigures.servicesPaid,
     rentPaid: settledFigures.rentPaid,
     incomeTax: settledFigures.incomeTax,
@@ -364,6 +367,7 @@ export function householdLastMonthOf(entries, houseId, { settled, bought }) {
         + toCentimes(settledFigures.benefitReceived)
         + toCentimes(settledFigures.participationReceived)
         + toCentimes(settledFigures.dividendReceived)
+        + toCentimes(settledFigures.incomeTaxRefunded)
         - toCentimes(settledFigures.servicesPaid)
         - toCentimes(settledFigures.rentPaid)
         - toCentimes(settledFigures.incomeTax)

@@ -39,6 +39,7 @@ import {
   formatHubStorageRenderParams,
   formatHubStorageLayoutHeader,
   formatHubStorageLayoutOptions,
+  formatShelfLifeTabModel,
 } from './formats/hubStorageInfoFormat.js';
 import {
   formatMarketOverviewModel,
@@ -61,6 +62,7 @@ import {
 import { renderHouseSkillsView, renderHouseResourcesView, renderHouseActivityView } from '../views/houseInfoView.js';
 import { renderHubStorageFoyerView } from '../views/hub/hubStorageFoyerView.js';
 import { renderKvPanelView } from '../views/kvPanelView.js';
+import { renderShelfLifeTab } from '../views/shelfLifeTabView.js';
 import { renderBuildingFinanceTab } from '../views/buildingFinanceInfoView.js';
 import { renderHouseResidentsTab } from '../views/houseResidentsInfoView.js';
 
@@ -134,6 +136,11 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         render: (container, model) => renderHubStorageFoyerView(container, model),
       },
       {
+        id: BUILDING_INFO_TAB_IDS.shelfLife,
+        format: formatShelfLifeTabModel,
+        render: (container, model) => renderShelfLifeTab(container, model),
+      },
+      {
         id: BUILDING_INFO_TAB_IDS.staff,
         format: formatHubStorageStaffModel,
         render: (container, model) => renderKvPanelView(container, model),
@@ -156,6 +163,11 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         id: BUILDING_INFO_TAB_IDS.stocks,
         format: formatFarmStocksModel,
         render: (container, model) => renderKvPanelView(container, model),
+      },
+      {
+        id: BUILDING_INFO_TAB_IDS.shelfLife,
+        format: formatShelfLifeTabModel,
+        render: (container, model) => renderShelfLifeTab(container, model),
       },
       {
         id: BUILDING_INFO_TAB_IDS.trade,

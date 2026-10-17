@@ -1,6 +1,9 @@
 import { getResourceRoles, getResourceStockShape, getSuppliedCategories } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { buildingNameInSentence, goodAmount, goodLabel, namesOfBuildings } from '../../../shell/CatalogVocabulary.js';
 import { roadCause, shortageCause } from './staffingReasonFormat.js';
+import { departureCauses } from '../../../../../shared/population/DepartureCauseCatalog.js';
+import { HUNGER_CAUSES } from '../../../../../shared/population/HungerCauseCatalog.js';
+import { splitUnfedByCause } from '../../../../../composition/housingCatalog.js';
 /**
  * Messages tab — pure format (VM → display model).
  *
@@ -22,14 +25,24 @@ import { roadCause, shortageCause } from './staffingReasonFormat.js';
  */
 
 /**
- * @param {number} totalUnfed
- * @returns {string | null}
+ * The hungry of the house, told apart (see HungerCauseCatalog.js): one short complaint per way to go hungry ("<icon> <n> <label>"), the sentence in
+ * its tooltip.
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @returns {ReadonlyArray<{ text: string, detail: string }>}
  */
-function unfedComplaint(totalUnfed) {
-  if (!(totalUnfed > 0)) return null;
-  return totalUnfed === 1
-    ? "1 d'entre nous est affamé"
-    : `${totalUnfed} d'entre nous sommes affamés`;
+function hungerComplaints(vm) {
+  const hunger = splitUnfedByCause({
+    unfed: Math.max(0, vm.lastConsumption?.totalUnfed ?? 0),
+    houseType: vm.buildingType,
+    lastConsumption: vm.lastConsumption,
+    supplyShortfall: vm.buildingRow?.supplyShortfall ?? null,
+  });
+  return Object.entries(HUNGER_CAUSES)
+    .filter(([cause]) => hunger[cause] > 0)
+    .map(([cause, { icon, label, detail }]) => ({
+      text: `${icon} ${hunger[cause]} ${label.toLowerCase()}`,
+      detail: `${hunger[cause]} d'entre nous ${detail}`,
+    }));
 }
 
 /**
@@ -109,20 +122,50 @@ function foodForecastComplaints(vm) {
 }
 
 /**
+ * A house's crises of departure (see RunMonthlyDepartures.js), worded by the catalog: once inhabitants have left, "<icon> x/y" with the detail in
+ * its tooltip; before that, the warning of the cause ("<icon> <label>"), whose tooltip says how long is left. Once the crisis is over, the penalty
+ * the house serves before it can be repopulated ("<icon> <penalty>", the months left in its tooltip).
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
- * @returns {{ complaints: ReadonlyArray<string> }}
+ * @returns {ReadonlyArray<{ text: string, detail: string }>}
+ */
+function departureComplaints(vm) {
+  const crises = vm.buildingRow?.departures ?? {};
+  const bans = vm.buildingRow?.repopulationBans ?? {};
+  const complaints = [];
+  for (const [causeId, cause] of departureCauses()) {
+    const crisis = crises[causeId];
+    const ban = bans[causeId];
+    if (ban && !crisis) {
+      complaints.push({ text: `${cause.icon} ${cause.penalty}`, detail: cause.penaltyDetail.replace('{months}', String(ban.remaining)) });
+    }
+    if (!crisis) continue;
+    if (crisis.left > 0) {
+      complaints.push({
+        text: `${cause.icon} ${crisis.left}/${crisis.of}`,
+        detail: `${crisis.left} des ${crisis.of} habitants sont partis : ${cause.reason}`,
+      });
+    } else {
+      complaints.push({ text: `${cause.icon} ${cause.label}`, detail: cause.warning.replace('{months}', String(Math.max(0, cause.thresholdMonths - crisis.months))) });
+    }
+  }
+  return complaints;
+}
+
+/**
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @returns {{ complaints: ReadonlyArray<string | { text: string, detail: string }> }}
  */
 export function formatMessagesModel(vm) {
   const complaints = [];
 
-  const hunger = unfedComplaint(vm.lastConsumption?.totalUnfed ?? 0);
-  if (hunger) complaints.push(hunger);
+  complaints.push(...hungerComplaints(vm));
 
   const personnel = personnelComplaint(vm);
   if (personnel) complaints.push(personnel);
 
   complaints.push(...marketSupplyComplaints(vm));
   complaints.push(...foodForecastComplaints(vm));
+  complaints.push(...departureComplaints(vm));
 
   return { complaints };
 }

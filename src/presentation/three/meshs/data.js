@@ -34,7 +34,8 @@ export const textures = Object.freeze({
     'base' : loadTextures(`/resources/textures/maps/base.png`),
     'specular' : loadTextures(`/resources/textures/maps/specular.png`),
     'grid': loadTextures(`/resources/textures/maps/grid.png`),
-    'nofood': loadTextures(`/resources/textures/status/nofood.png`, true),
+    // A farm left fallow for the season
+    'fallow': loadTextures(`/resources/textures/status/fallow.png`, true),
     // Farm season sprites
     'grow-food': loadTextures(`/resources/textures/status/grow_food.png`, true),
     'harvest': loadTextures(`/resources/textures/status/harvest.png`, true),

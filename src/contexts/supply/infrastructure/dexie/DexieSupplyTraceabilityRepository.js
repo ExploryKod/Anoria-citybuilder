@@ -3,6 +3,9 @@ import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamle
 import { getGoodCategories, getServiceCategories } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
 
+/** The transfers by which a building sells its goods on. */
+const SOLD_ON_TYPES = Object.freeze(['source_to_hub', 'source_to_distributor', 'hub_to_building', 'distributor_to_consumer']);
+
 /**
  * Dexie adapter — resource supply chain audit log (`supplyTraceability` table).
  */
@@ -236,7 +239,7 @@ export class DexieSupplyTraceabilityRepository {
   }
 
   /**
-   * What one building lost to spoilage (`crop_spoiled` events), per good: in a month, or in the whole year when `monthIndex` is null.
+   * What one building lost to spoilage (`goods_spoiled` events), per good: in a month, or in the whole year when `monthIndex` is null.
    * @param {number} buildingId
    * @param {number} year
    * @param {number | null} monthIndex
@@ -247,12 +250,66 @@ export class DexieSupplyTraceabilityRepository {
     const rows = await this.db.supplyTraceability
       .where('transactionType')
       .equals('game_event')
-      .filter((row) => row.event === 'crop_spoiled' && row.hamletId === hamletId && row.fromId === buildingId && row.year === year && (monthIndex === null || row.month === monthIndex))
+      .filter((row) => row.event === 'goods_spoiled' && row.hamletId === hamletId && row.fromId === buildingId && row.year === year && (monthIndex === null || row.month === monthIndex))
       .toArray();
     const lost = {};
     for (const row of rows) {
       if (!row.details?.good) throw new Error(`[traceability] spoilage ${row.id} names no good`);
       lost[row.details.good] = (lost[row.details.good] ?? 0) + row.quantity;
+    }
+    return lost;
+  }
+
+  /**
+   * What one building handled over a range of months, per good and per month: the units it sold on (to a hub, a market, a house) and the units it
+   * lost to spoilage. Together they are what went through its stock, the total a loss is set against.
+   * @param {string} buildingId
+   * @param {{ fromKey: number, toKey: number }} range months as `year × 12 + monthIndex`, both ends included
+   * @returns {Promise<Record<string, Record<number, { sold: number, spoiled: number }>>>} good → month key → units
+   */
+  async sumShelfFlowsOf(buildingId, { fromKey, toKey }) {
+    const hamletId = requireActiveHamletId();
+    const rows = await this.db.supplyTraceability
+      .where('transactionType')
+      .anyOf([...SOLD_ON_TYPES, 'game_event'])
+      .filter((row) => {
+        if (row.hamletId !== hamletId || row.fromId !== buildingId) return false;
+        const key = row.year * MONTHS_PER_YEAR + row.month;
+        return key >= fromKey && key <= toKey && (row.event === 'goods_spoiled' || SOLD_ON_TYPES.includes(row.transactionType));
+      })
+      .toArray();
+    const flows = {};
+    for (const row of rows) {
+      const spoiled = row.event === 'goods_spoiled';
+      const good = spoiled ? row.details?.good : row.foodType;
+      if (!good) throw new Error(`[traceability] row ${row.id} names no good`);
+      const key = row.year * MONTHS_PER_YEAR + row.month;
+      flows[good] ??= {};
+      flows[good][key] ??= { sold: 0, spoiled: 0 };
+      flows[good][key][spoiled ? 'spoiled' : 'sold'] += row.quantity;
+    }
+    return flows;
+  }
+
+  /**
+   * What every building lost to spoilage in one month (`goods_spoiled` events), per good.
+   * @param {number} year
+   * @param {number} monthIndex
+   * @returns {Promise<Map<string, Record<string, number>>>} building id → good → units lost
+   */
+  async sumSpoilageByBuilding(year, monthIndex) {
+    const hamletId = requireActiveHamletId();
+    const rows = await this.db.supplyTraceability
+      .where('transactionType')
+      .equals('game_event')
+      .filter((row) => row.event === 'goods_spoiled' && row.hamletId === hamletId && row.year === year && row.month === monthIndex)
+      .toArray();
+    const lost = new Map();
+    for (const row of rows) {
+      if (!row.details?.good) throw new Error(`[traceability] spoilage ${row.id} names no good`);
+      const goods = lost.get(row.fromId) ?? {};
+      goods[row.details.good] = (goods[row.details.good] ?? 0) + row.quantity;
+      lost.set(row.fromId, goods);
     }
     return lost;
   }

@@ -14,6 +14,7 @@ import { sessionLedgerBuffer, SessionLedgerBuffer, toPublicEntry } from './Sessi
 import { buildLedgerBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 import { buildYearClosingLine, isFoldedIntoClosing } from '../../domain/policies/YearClosingPolicy.js';
 import { accountKeyOf } from '../../domain/policies/AccountKeyPolicy.js';
+import { isInformativeJournalType } from '../../domain/policies/JournalEntryClassificationPolicy.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
@@ -363,8 +364,11 @@ export class SessionJournalStore {
 
             // Calculate totals
             // Revenus: citizen_tax, payroll_tax, vat, capital_funds, loan_capital, export_*
-            // Dépenses: tout le reste (construction, maintenance, salary, import_*, etc.)
-            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'vat' || entry.type === 'producer_revenue' || entry.type === 'corporate_tax_revenue' || entry.type === 'service_sales' || entry.type === 'service_subsidy_received' || entry.type === 'subsidy_companies_received' || entry.type === 'social_contribution' || entry.type === 'household_participation' || entry.type === 'household_dividend' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || entry.type.startsWith('export_') || entry.type.startsWith('customs_import_') || entry.type.startsWith('abroad_sale_')) {
+            // Dépenses: tout le reste (construction, maintenance, salary, import_*, etc.), sauf les lignes informatives, qui ne déplacent aucun argent
+            if (isInformativeJournalType(entry.type)) {
+                return;
+            }
+            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'vat' || entry.type === 'producer_revenue' || entry.type === 'corporate_tax_revenue' || entry.type === 'service_sales' || entry.type === 'service_subsidy_received' || entry.type === 'subsidy_companies_received' || entry.type === 'subsidy_housing_received' || entry.type === 'social_contribution' || entry.type === 'household_participation' || entry.type === 'household_dividend' || entry.type === 'income_tax_refund' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || entry.type.startsWith('export_') || entry.type.startsWith('customs_import_') || entry.type.startsWith('abroad_sale_')) {
                 stats.totalIncome += entry.amount;
             } else {
                 stats.totalExpenses += entry.amount;

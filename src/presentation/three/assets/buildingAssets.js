@@ -111,9 +111,23 @@ export const BUILDING_THEME_COLORS = Object.freeze({
   leisure: '#6a3fa0',
 });
 
+/**
+ * The color of the level pill under a building's card in the construction bar: one color per house tier (level) from which the building can be given
+ * workers (see workforceQueries.js `lowestHouseTierForWorkers`). A tier with no entry here throws where the pill is drawn (CompactToolbar.js).
+ * @type {Readonly<Record<number, string>>}
+ */
+export const STAFF_LEVEL_COLORS = Object.freeze({
+  1: '#3f8f3f',
+  2: '#2f7fb8',
+  3: '#8a2f6b',
+  4: '#c1440e',
+  5: '#d4a017',
+  6: '#5c5f66',
+});
+
 /** What a crop field shows through the year: one icon per season, the field's own look follows the same ids. */
 const CROP_CYCLE_GRAPHICS = Object.freeze([
-  { id: 'winter', when: { unit: 'season', values: ['winter'] }, status: 'no-food-farm' },
+  { id: 'winter', when: { unit: 'season', values: ['winter'] }, status: 'fallow' },
   { id: 'spring', when: { unit: 'season', values: ['spring'] }, status: 'grow-food' },
   { id: 'summer', when: { unit: 'season', values: ['summer'] }, status: 'harvest' },
   { id: 'autumn', when: { unit: 'season', values: ['autumn'] }, status: 'sell-food' },

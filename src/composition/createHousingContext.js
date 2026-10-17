@@ -1,6 +1,7 @@
 import { DexieHousingBuildingRepository } from '../contexts/housing/infrastructure/dexie/DexieHousingBuildingRepository.js';
 import { GrowHousePopulation } from '../contexts/housing/application/commands/growth/GrowHousePopulation.js';
 import { GrowAllHousePopulation } from '../contexts/housing/application/commands/growth/GrowAllHousePopulation.js';
+import { RunMonthlyDepartures } from '../contexts/housing/application/commands/departure/RunMonthlyDepartures.js';
 import { EvolveHouseBuilding } from '../contexts/housing/application/commands/evolution/EvolveHouseBuilding.js';
 import { EvolveAllHouseBuildings } from '../contexts/housing/application/commands/evolution/EvolveAllHouseBuildings.js';
 import { GetCityPopulationSummary } from '../contexts/housing/application/queries/GetCityPopulationSummary.js';
@@ -30,6 +31,7 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     housingBuildingRepositoryImpl,
     growHousePopulation
   );
+  const runMonthlyDepartures = new RunMonthlyDepartures(housingBuildingRepositoryImpl);
   const evolveHouseBuilding = new EvolveHouseBuilding(housingBuildingRepositoryImpl);
   const evolveAllHouseBuildings = new EvolveAllHouseBuildings(
     housingBuildingRepositoryImpl,
@@ -73,6 +75,11 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
 
     async growAllHousePopulation({ monthIndex, applyFamineLimits = false }) {
       return growAllHousePopulation.execute({ monthIndex, applyFamineLimits });
+    },
+
+    /** @param {{ monthKey: number, signals: Record<string, Map<string, number>> }} params */
+    async runMonthlyDepartures({ monthKey, signals }) {
+      return runMonthlyDepartures.execute({ monthKey, signals });
     },
 
     async evolveHouseBuilding(houseId) {

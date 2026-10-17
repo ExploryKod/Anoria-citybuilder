@@ -25,7 +25,7 @@ describe('building finance — a company account is a compte de résultat read f
   });
 
   test('a merchant house\'s account counts what an import cost: price, freight and duty are in the commercial margin', () => {
-    const line = (type, amount) => ({ type, amount, year: 3, month: 11, accountBuildingId: 'merchants', accountKind: 'entreprise' });
+    const line = (type, amount) => ({ type, amount, year: 3, month: 11, accountBuildingId: 'merchants', accountKind: 'entreprise:cooperative' });
     const entries = [
       line('import_coal', 16.2),
       line('freight_coal', 1.71),
@@ -33,7 +33,7 @@ describe('building finance — a company account is a compte de résultat read f
       line('producer_revenue', 23.64),
     ];
 
-    const { statement } = buildingFinanceFigures(entries, 'merchants', { year: 3, month: 11, accountKind: 'entreprise', salesNature: 'merchandise' });
+    const { statement } = buildingFinanceFigures(entries, 'merchants', { year: 3, month: 11, accountKind: 'entreprise:cooperative', salesNature: 'merchandise' });
 
     expect(statement.goodsSold).toBe(23.64);
     expect(statement.commercialMargin).toBe(2.15); // sales − purchases − freight − import duty: the merchants' 10%
@@ -41,14 +41,14 @@ describe('building finance — a company account is a compte de résultat read f
   });
 
   test('an export is a sale abroad, and its duty is an operating tax, not a cost of the goods', () => {
-    const line = (type, amount) => ({ type, amount, year: 3, month: 5, accountBuildingId: 'merchants', accountKind: 'entreprise' });
+    const line = (type, amount) => ({ type, amount, year: 3, month: 5, accountBuildingId: 'merchants', accountKind: 'entreprise:cooperative' });
     const entries = [
       line('producer_purchase', 100),
       line('abroad_sale_book', 160),
       line('duty_paid_export_book', 16),
     ];
 
-    const { statement } = buildingFinanceFigures(entries, 'merchants', { year: 3, month: 5, accountKind: 'entreprise', salesNature: 'merchandise' });
+    const { statement } = buildingFinanceFigures(entries, 'merchants', { year: 3, month: 5, accountKind: 'entreprise:cooperative', salesNature: 'merchandise' });
 
     expect(statement.goodsSold).toBe(160);
     expect(statement.commercialMargin).toBe(60); // 160 − 100: the duty is not in it
@@ -143,11 +143,11 @@ describe('building finance — a company account is a compte de résultat read f
   test('a house keeps its two accounts apart: the wages and the business sales never mix', () => {
     const entries = [
       { type: 'household_wage', amount: 60, year: 2026, month: 2, accountBuildingId: 'house-1', accountKind: 'particulier' },
-      { type: 'producer_revenue', amount: 20, year: 2026, month: 2, accountBuildingId: 'house-1', accountKind: 'entreprise' },
+      { type: 'producer_revenue', amount: 20, year: 2026, month: 2, accountBuildingId: 'house-1', accountKind: 'entreprise:cooperative' },
     ];
 
     const personal = buildingFinanceFigures(entries, 'house-1', { year: 2026, month: 2, accountKind: 'particulier' });
-    const business = buildingFinanceFigures(entries, 'house-1', { year: 2026, month: 2, accountKind: 'entreprise', salesNature: 'production' });
+    const business = buildingFinanceFigures(entries, 'house-1', { year: 2026, month: 2, accountKind: 'entreprise:cooperative', salesNature: 'production' });
 
     expect(personal.wagesReceived).toBe(60);
     expect(business.statement.results.net).toBe(20);
@@ -200,7 +200,7 @@ describe('household budget — a house buys with its savings, last month\'s sala
       benefitReceived: 70,
       participationReceived: 0,
       dividendReceived: 0,
-      servicesPaid: 5,
+      incomeTaxRefunded: 0,      servicesPaid: 5,
       rentPaid: 0,
       incomeTax: 12,
       citizenTax: 0,

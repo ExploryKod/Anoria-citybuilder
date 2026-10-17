@@ -1,6 +1,7 @@
 import { getSuppliedCategories } from '../../../shared/building-catalog/resourceRoleQueries.js';
 import { listDepositKinds } from '../../../shared/building-catalog/depositQueries.js';
 import { renderHudResourceRows } from './hudResourceRows.js';
+import { getResidentialGroupLabel } from './ResidentialGroupLabels.js';
 // game.js
 export const displayTime = document.querySelector('.info-panel .display-time');
 export const displaySeason = document.querySelector('.info-panel .hud-season');
@@ -37,30 +38,26 @@ export const gameWindow = document.getElementById('game-window');
 // HUD population — left vertical rail
 const popHudRoot = '#hud-pop-rail';
 
-export const displayPop = document.querySelector(`${popHudRoot} .pop-breakdown`);
 export const displayPopTotal = document.querySelector(`${popHudRoot} .pop-total.pop-detail-value--country`);
 export const displayPopTotalHamlet = document.querySelector(`${popHudRoot} .pop-total--hamlet`);
 export const displayPopActiveTotal = document.querySelector(`${popHudRoot} .pop-active-total.pop-detail-value--country`);
 export const displayPopActiveTotalHamlet = document.querySelector(`${popHudRoot} .pop-active-total--hamlet`);
-export const displayPopCitizens = document.querySelector(
-    `${popHudRoot} .pop-segment--citizen .pop-segment-value.pop-detail-value--country`
-);
-export const displayPopCitizensHamlet = document.querySelector(
-    `${popHudRoot} .pop-segment--citizen .pop-segment-value--hamlet`
-);
-export const displayPopServants = document.querySelector(
-    `${popHudRoot} .pop-segment--servant .pop-segment-value.pop-detail-value--country`
-);
-export const displayPopServantsHamlet = document.querySelector(
-    `${popHudRoot} .pop-segment--servant .pop-segment-value--hamlet`
-);
-export const displayHungerPop = document.querySelector(`${popHudRoot} .display-hunger-pop.pop-detail-value--country`);
+export const displayHungerRisk = document.querySelector(`${popHudRoot} .display-hunger-risk.pop-detail-value--country`);
+export const displayHungerRiskHamlet = document.querySelector(`${popHudRoot} .display-hunger-risk--hamlet`);
+export const iconHungerRisk = document.querySelector(`${popHudRoot} .pop-detail-icon--hunger-risk`);
+export const displayDisettePop =document.querySelector(`${popHudRoot} .display-disette-pop.pop-detail-value--country`);
+export const displayDisettePopHamlet = document.querySelector(`${popHudRoot} .display-disette-pop--hamlet`);
+export const iconDisette = document.querySelector(`${popHudRoot} .pop-detail-icon--disette`);
+export const iconPenurie = document.querySelector(`${popHudRoot} .pop-detail-hunger .pop-detail-icon`);
+export const displayHungerPop =document.querySelector(`${popHudRoot} .display-hunger-pop.pop-detail-value--country`);
 export const displayHungerPopHamlet = document.querySelector(`${popHudRoot} .display-hunger-pop--hamlet`);
 export const displayDeathsPop = document.querySelector(`${popHudRoot} .display-deaths-pop`);
 export const displayLaborCountry = document.querySelector(`${popHudRoot} .pop-labor-value--country`);
 export const displayLaborHamlet = document.querySelector(`${popHudRoot} .pop-labor-value--hamlet`);
 
-const POP_SOCIAL_GROUPS = ['artisans', 'merchants', 'scholars'];
+// The social categories the rail has a row for. The administrators have a population row only: they look for no job, so they have no workers or
+// labour-market row (their rows in those metrics do not exist, and a missing row is left alone).
+const POP_SOCIAL_GROUPS = ['artisans', 'merchants', 'scholars', 'administrators'];
 
 /**
  * @param {'pop' | 'workers' | 'labor'} metric
@@ -72,6 +69,9 @@ function queryGroupMetricNodes(metric) {
             const row = document.querySelector(
                 `${popHudRoot} [data-metric="${metric}"][data-social-group="${group}"]`
             );
+            // The row is named by its category, as the catalog names it (the name of its house), whatever the page says.
+            const emoji = row?.querySelector('.pop-detail-emoji');
+            if (emoji) emoji.title = getResidentialGroupLabel(group);
             return [
                 group,
                 {

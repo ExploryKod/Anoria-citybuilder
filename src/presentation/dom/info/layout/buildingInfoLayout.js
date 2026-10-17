@@ -238,7 +238,17 @@ export function appendIconStatRow(container, items) {
     chip.className = 'building-info-icon-chip';
     chip.title = item.ariaLabel;
     chip.setAttribute('aria-label', item.ariaLabel);
-    chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span><span class="building-info-icon-chip__value">${item.value}</span><span class="building-info-icon-chip__label">${item.label}</span>`;
+    // A chip with a `pill` is not held yet: dimmed, with the house level that brings it in a colored pill under it.
+    const value = item.pill ? '' : `<span class="building-info-icon-chip__value">${item.value}</span>`;
+    chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span>${value}<span class="building-info-icon-chip__label">${item.label}</span>`;
+    if (item.pill) {
+      chip.classList.add('building-info-icon-chip--upcoming');
+      const pill = document.createElement('span');
+      pill.className = 'building-info-icon-chip__level-pill';
+      pill.style.setProperty('--level-color', item.pill.color);
+      pill.textContent = `niv. ${item.pill.tier}`;
+      chip.appendChild(pill);
+    }
     row.appendChild(chip);
   }
 
@@ -250,8 +260,8 @@ export function appendIconStatRow(container, items) {
  * @param {HTMLElement} container
  * @param {ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }>} skills
  */
-export function appendHouseholdSkills(container, skills) {
-  if (!skills?.length) return null;
+export function appendHouseholdSkills(container, skills, upcomingSkills = []) {
+  if (!skills?.length && !upcomingSkills.length) return null;
 
   const wrap = document.createElement('div');
   wrap.className = 'building-info-skills';
@@ -263,12 +273,20 @@ export function appendHouseholdSkills(container, skills) {
 
   appendIconStatRow(
     wrap,
-    skills.map((skill) => ({
-      emoji: skill.emoji,
-      value: skill.count,
-      label: skill.label,
-      ariaLabel: skill.ariaLabel,
-    })),
+    [
+      ...skills.map((skill) => ({
+        emoji: skill.emoji,
+        value: skill.count,
+        label: skill.label,
+        ariaLabel: skill.ariaLabel,
+      })),
+      ...upcomingSkills.map((skill) => ({
+        emoji: skill.emoji,
+        label: skill.label,
+        ariaLabel: skill.ariaLabel,
+        pill: { tier: skill.tier, color: skill.color },
+      })),
+    ],
   );
 
   container.appendChild(wrap);
@@ -583,7 +601,7 @@ export function renderNeighborsTab(container, neighbors) {
 
 /**
  * @param {HTMLElement} container
- * @param {{ complaints: ReadonlyArray<string> }} [model]
+ * @param {{ complaints: ReadonlyArray<string | { text: string, detail: string }> }} [model]
  */
 export function renderMessagesTab(container, model) {
   const complaints = model?.complaints ?? [];
@@ -599,10 +617,16 @@ export function renderMessagesTab(container, model) {
   if (!hasComplaints) return;
 
   const list = container.querySelector('.building-info-messages-list');
-  for (const text of complaints) {
+  for (const complaint of complaints) {
     const li = document.createElement('li');
     li.className = 'building-info-messages-item';
-    li.textContent = text;
+    // A short text, its detail in a tooltip (see the departures of a house); a plain sentence has none.
+    if (typeof complaint === 'string') {
+      li.textContent = complaint;
+    } else {
+      li.textContent = complaint.text;
+      li.title = complaint.detail;
+    }
     list.appendChild(li);
   }
 }

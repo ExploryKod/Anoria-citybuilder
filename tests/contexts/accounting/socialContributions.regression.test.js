@@ -1,6 +1,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
 import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
+import { householdYearReaderOf } from '../../helpers/householdYearReader.js';
 import { employeeContributionLines, employerContributionLines } from '../../../src/contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { moneyDirectionOf } from '../../../src/contexts/accounting/domain/policies/TreasuryFromJournalPolicy.js';
 import { pcgOfJournalType } from '../../../src/shared/accounting-catalog/PcgJournalCatalog.js';
@@ -30,9 +31,12 @@ function settle({ employerContributionRate, employeeContributionRate }) {
     getWageRateOf: async () => () => 100,
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0.1, threshold2: 0, rate2: 0.1 }),
     getCorporateTaxRate: async () => 0.25,
+    getHouseMaintenanceSubsidyRate: async () => 1,
+    listSpoilage: async () => [],
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
     readCompanyYear: companyYearReaderOf(journal),
+    readHouseholdYear: householdYearReaderOf(journal),
     recordLedgerEntry: async (line) => {
       journal.push(line);
       return { recorded: true };

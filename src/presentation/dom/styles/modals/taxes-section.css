@@ -12,6 +12,13 @@
 
 .taxes-board #state-board,
 .taxes-board #vat-board,
+.taxes-board #customs-import-list,
+.taxes-board #customs-export-list,
+.taxes-board #prices-list,
+.taxes-board #wages-levers,
+.taxes-board #wages-social,
+.taxes-board #wages-cost-of-living,
+.taxes-board #wages-board,
 .taxes-board .services-board {
     display: flex;
     flex-direction: column;

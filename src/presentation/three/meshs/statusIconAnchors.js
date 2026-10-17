@@ -13,13 +13,11 @@ import { BUILDING_ASSETS } from '../assets/buildingAssets.js';
  */
 export const STATUS_ICON_DEFAULTS = Object.freeze({
   road: { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 0.6, y: 0.6, z: 1 }, spriteColor: null, backgroundColor: null },
-  food: { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 1.0, y: 1.0, z: 1 }, spriteColor: null, backgroundColor: null },
-  'no-food': { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 1.0, y: 1.0, z: 1 }, spriteColor: null, backgroundColor: null },
-  'no-food-farm': {
+  fallow: {
     position: { x: -0.8, y: 0.5, z: -0.2 },
-    scale: { x: 0.6, y: 0.6, z: 0.6 },
-    spriteColor: 0xffff00,
-    backgroundColor: null,
+    scale: { x: 0.4, y: 0.4, z: 0.4 },
+    spriteColor: null,
+    backgroundColor: 0xffe8e8,
   },
   'grow-food': {
     position: { x: -0.8, y: 0.5, z: -0.2 },

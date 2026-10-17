@@ -201,6 +201,7 @@ describe('Supply — windmill surplus cycle', () => {
       monthIndex: 11,
       dayInMonth: 15,
       year: 2,
+      turn: 15,
     });
 
     expect(outcome.ranCollection).toBe(true);
@@ -234,7 +235,7 @@ describe('Supply — windmill surplus cycle', () => {
   });
 
   describe('what the hub carries over from before a harvest', () => {
-    const december = (dayInMonth, year = 2) => ({ month: 'december', monthIndex: 11, dayInMonth, year });
+    const december = (dayInMonth, year = 2) => ({ month: 'december', monthIndex: 11, dayInMonth, year, turn: dayInMonth });
 
     test('the first harvest of the game carries nothing over: the hub was empty', async () => {
       await runCycle.execute(december(1));

@@ -28,6 +28,8 @@ function settle(pairs, buildings) {
     getWageRateOf: async () => () => 100,
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0.1, threshold2: 0, rate2: 0.1 }),
     getCorporateTaxRate: async () => 0.25,
+    getHouseMaintenanceSubsidyRate: async () => 1,
+    listSpoilage: async () => [],
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 10,
     readCompanyYear: companyYearReaderOf(journal),

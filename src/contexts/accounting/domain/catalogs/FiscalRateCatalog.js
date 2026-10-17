@@ -8,7 +8,7 @@
 /**
  * The income tax (IR) is progressive, fixed at three bands: exempt below `salaryTaxThreshold1`, `salaryTaxRate1` on the
  * part between the two thresholds, `salaryTaxRate2` on the part above `salaryTaxThreshold2` (see withholdIncomeTax).
- * @type {Readonly<{ citizenTaxPerCapita: number, minimumWage: number, minimumWageBasketRatio: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number, rentPerHouse: number, administratorStipend: number, corporateTaxRate: number }>}
+ * @type {Readonly<{ citizenTaxPerCapita: number, minimumWage: number, minimumWageBasketRatio: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number, rentCapPerHouse: number, administratorStipend: number, corporateTaxRate: number, houseMaintenanceSubsidyRate: number }>}
  */
 export const DEFAULT_HAMLET_FISCAL_RATES = Object.freeze({
   citizenTaxPerCapita: 25,
@@ -26,14 +26,16 @@ export const DEFAULT_HAMLET_FISCAL_RATES = Object.freeze({
   // wage). Both go to the city's social security, which pays the unemployment benefit.
   employerContributionRate: 0.25,
   employeeContributionRate: 0.1,
-  // The rent every house but the mayor's pays each month, to the mayor's house (the owner): very low to begin with (a citizen's needs cost about
-  // 5.8 a month), whole euros. An unpaid rent becomes a debt the house settles when it has the money.
-  rentPerHouse: 1,
+  // The ceiling of the rent when the hamlet controls rents (see `DEFAULT_RENT_CONTROL_ENABLED`), whole euros a month per house. The rent itself is not set
+  // here: the owner (the property company) deduces it from the upkeep it bears (see rentQuoteOf). An unpaid rent becomes a debt the house settles when it has the money.
+  rentCapPerHouse: 3,
   // What the city pays each administrator a month (the mayor's house): the player's choice, apart from the minimum wage. It starts at a first wage (see
   // START_WAGE_BY_SKILL_LEVEL), so the mayor's house can pay its needs from the first month; too low, its services are cut and its tiers (so its skills) stay out of reach.
   administratorStipend: 8,
   // The corporate tax (IS) on a company's profit of the year, and on a cooperative's surplus: a quarter, as it was before the player could set it.
   corporateTaxRate: 0.25,
+  // The share of a house's upkeep the hamlet pays its owner (a fraction): the owner (the property company) bears the rest, which the rents cover. All of it by default.
+  houseMaintenanceSubsidyRate: 1,
 });
 
 /**
@@ -48,6 +50,9 @@ export const DEFAULT_HAMLET_FISCAL_RATES = Object.freeze({
 export const MINIMUM_WAGE_MODES = Object.freeze(['none', 'fixed', 'indexed']);
 export const DEFAULT_MINIMUM_WAGE_MODE = 'fixed';
 
+/** Whether the hamlet controls rents (a ceiling, `rentCapPerHouse`). A switch, not a rate: it lives apart from the numeric defaults. Off by default: the owner fixes its rent freely. */
+export const DEFAULT_RENT_CONTROL_ENABLED = false;
+
 /** @type {Readonly<Record<keyof typeof DEFAULT_HAMLET_FISCAL_RATES, { min: number, max: number, integer: boolean }>>} */
 export const HAMLET_FISCAL_RATE_BOUNDS = Object.freeze({
   citizenTaxPerCapita: Object.freeze({ min: 0, max: 1000, integer: true }),
@@ -61,9 +66,10 @@ export const HAMLET_FISCAL_RATE_BOUNDS = Object.freeze({
   unemploymentBenefitRate: Object.freeze({ min: 0, max: 1, integer: false }),
   employerContributionRate: Object.freeze({ min: 0, max: 0.6, integer: false }),
   employeeContributionRate: Object.freeze({ min: 0, max: 0.4, integer: false }),
-  rentPerHouse: Object.freeze({ min: 0, max: 20, integer: true }),
+  rentCapPerHouse: Object.freeze({ min: 0, max: 20, integer: true }),
   administratorStipend: Object.freeze({ min: 0, max: 100, integer: true }),
   corporateTaxRate: Object.freeze({ min: 0, max: 0.6, integer: false }),
+  houseMaintenanceSubsidyRate: Object.freeze({ min: 0, max: 1, integer: false }),
 });
 
 /** A service's subsidy, in whole percent of its price: 0 = the inhabitants pay all of it. */
@@ -124,9 +130,10 @@ export function fiscalSliderBounds() {
     unemploymentBenefitPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.unemploymentBenefitRate),
     employerContributionPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.employerContributionRate),
     employeeContributionPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.employeeContributionRate),
-    rentPerHouse: HAMLET_FISCAL_RATE_BOUNDS.rentPerHouse,
+    rentCapPerHouse: HAMLET_FISCAL_RATE_BOUNDS.rentCapPerHouse,
     administratorStipend: HAMLET_FISCAL_RATE_BOUNDS.administratorStipend,
     corporateTaxPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.corporateTaxRate),
+    houseMaintenanceSubsidyPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.houseMaintenanceSubsidyRate),
     serviceSubsidyPercent: SERVICE_SUBSIDY_BOUNDS,
     customsPercent: inPercent(CUSTOMS_RATE_BOUNDS),
     vatPercent: VAT_RATE_BOUNDS,

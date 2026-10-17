@@ -67,6 +67,8 @@ export class ProcessTurnBudget {
         if (this.deps.revalueMinimumWage && timeInfo.monthIndex === 0) await this.deps.revalueMinimumWage();
         // The month was paid at the wages in force: only now does the labour market move them for the month that opens.
         if (this.deps.adjustWageRates) await this.deps.adjustWageRates({ time });
+        // The month's accounts are closed: the caller may judge what they show (the departures, see runGameTurnEconomy.js).
+        result.monthSettled = true;
       }
 
       if (this.deps.processLoanPayments) {

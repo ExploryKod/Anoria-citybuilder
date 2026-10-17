@@ -23,7 +23,6 @@ import { residentsSeekingWork } from '../../../shared/population/workforceQuerie
  * @returns {{
  *   workerPool: number,
  *   totalPopulation: number,
- *   activeCitizenCount: number,
  *   totalAssigned: number,
  *   totalNeed: number,
  *   unemployed: number,
@@ -100,28 +99,30 @@ export function computeCityEmploymentSummary(buildings) {
   // filtered by road access: a disconnected house's residents still count (they're just unreachable by a
   // workplace, see workerPool above).
   let totalPopulation = 0;
+  let seekingWork = 0;
   let unemployed = 0;
   let unemployedNoRoad = 0;
   for (const building of buildings) {
     if (!isLaborSource(building)) continue;
     // Only the residents who look for a job can be out of work (the administrators do not, see workforceQueries.js).
+    const seekingHere = residentsSeekingWork(building.type, building.pop);
     const { unemployed: unemployedHere } = computeHouseholdEmploymentStatus({
-      pop: residentsSeekingWork(building.type, building.pop),
+      pop: seekingHere,
       workers: workersByHouseId.get(building.id) ?? 0,
     });
     totalPopulation += building.pop;
+    seekingWork += seekingHere;
     unemployed += unemployedHere;
     if (!hasRoadAccess(building)) unemployedNoRoad += unemployedHere;
   }
-  const activeCitizenCount = Math.max(0, totalPopulation - unemployed);
-  const unemploymentPercentage = totalPopulation > 0 ? Math.round((unemployed / totalPopulation) * 100) : 0;
+  // The rate of unemployment is over the residents who look for a job, not the whole population: the administrators would dilute it (the classes' own rates are over their workers).
+  const unemploymentPercentage = seekingWork > 0 ? Math.round((unemployed / seekingWork) * 100) : 0;
 
   const byGroup = computeEmploymentByGroup(buildings);
 
   return Object.freeze({
     workerPool,
     totalPopulation,
-    activeCitizenCount,
     totalAssigned,
     totalNeed,
     unemployed,

@@ -7,7 +7,7 @@ import db from '../core/persistence/dexie/db.js';
 import { createEmptyStocks } from '../shared/building-catalog/resourceRoleQueries.js';
 import { hamletIdOf, getActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
 import { sumShortfallCauses } from '../contexts/employment/domain/policies/EmploymentShortfallPolicy.js';
-import { computeCityFamishedPopulation } from '../contexts/housing/domain/policies/FamishedPopulationPolicy.js';
+import { computeCityFamishedPopulation, computeCityHungerRisk } from '../contexts/housing/domain/policies/FamishedPopulationPolicy.js';
 import { computeCityEmploymentSummary } from '../contexts/employment/domain/computeCityEmploymentSummary.js';
 import { createHousingBuildingSnapshot } from '../contexts/housing/domain/HousingBuildingSnapshot.js';
 import { createEmploymentBuildingSnapshot } from '../contexts/employment/domain/EmploymentBuildingSnapshot.js';
@@ -106,6 +106,7 @@ function toHousingSnapshot(row) {
     lastPopulationGrowthMonth: row.lastPopulationGrowthMonth ?? null,
     lastFamineDeathMonth: row.lastFamineDeathMonth ?? null,
     lastConsumption: row.lastConsumption ?? null,
+    supplyShortfall: row.supplyShortfall ?? null,
     stocks: row.stocks || createEmptyStocks(),
     price: row.price ?? 0,
     neighbors: row.neighbors || [],
@@ -149,6 +150,9 @@ function rowMatchesScope(row, scope) {
  *   totalPop: number,
  *   popByGroup: Record<string, number>,
  *   famishedPopulation: number,
+ *   disettePopulation: number,
+ *   penuriePopulation: number,
+ *   hungerRisk: { disette: number, penurie: number },
  *   employment: ReturnType<typeof computeCityEmploymentSummary>,
  * }>}
  */
@@ -160,7 +164,8 @@ export async function getHudPopulationScopeSnapshot(scope = 'active') {
     .map(toHousingSnapshot);
 
   const totalPop = residential.reduce((sum, house) => sum + (house.pop || 0), 0);
-  const { famishedPopulation } = computeCityFamishedPopulation(residential);
+  const { famishedPopulation, disettePopulation, penuriePopulation } = computeCityFamishedPopulation(residential);
+  const hungerRisk = computeCityHungerRisk(residential);
   const employment = computeCityEmploymentSummary(rows.map(toEmploymentSnapshot));
 
   // Why people are out of work and posts empty is worked out hamlet by hamlet (workers do not commute): the country is the sum of its hamlets.
@@ -180,6 +185,9 @@ export async function getHudPopulationScopeSnapshot(scope = 'active') {
     totalPop,
     popByGroup: popByGroupFromHouses(residential),
     famishedPopulation,
+    disettePopulation,
+    penuriePopulation,
+    hungerRisk,
     employment,
     employmentCauses,
   };

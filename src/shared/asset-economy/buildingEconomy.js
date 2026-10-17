@@ -205,6 +205,13 @@ const FARM_ANNUAL_YIELD = CITIZENS_FED_PER_FARM * CITIZEN_MONTHLY_NEED * MONTHS_
 /** Farms whose harvest one hub can hold at once (a full year of their citizens). */
 const FARMS_PER_HUB = 10;
 const HUB_MAX_STOCK = FARMS_PER_HUB * FARM_ANNUAL_YIELD;
+/**
+ * How much longer a good keeps in the place built to keep it than in a field or on a stall (`shelfLifeFactor` of the hub role; the good's own life is
+ * in ResourceCategoryCatalog.js). A granary keeps the food four times as long: three months of carrot become a year, enough to hold a harvest until
+ * the next. A warehouse keeps the other goods twice as long.
+ */
+const GRANARY_SHELF_LIFE_FACTOR = 4;
+const WAREHOUSE_SHELF_LIFE_FACTOR = 2;
 
 /** A citizen's need: `amount` units per inhabitant per month (see ConsumeResource.js). */
 const HOUSE_DIET_CONSUMER = {
@@ -528,7 +535,6 @@ export const BUILDING_ECONOMY = {
       categories: ['wheat'],
       schedule: { unit: 'season', values: ['autumn'] },
       sale: HARVEST_SALE,
-      spoilsUnsold: true,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
       // Citizens eat first; the cake business (House-Red) only gets what is left over.
@@ -545,7 +551,6 @@ export const BUILDING_ECONOMY = {
       categories: ['carrot'],
       schedule: { unit: 'season', values: ['autumn'] },
       sale: HARVEST_SALE,
-      spoilsUnsold: true,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
       clients: ['Market-Stall-Red', 'House-Red'],
@@ -561,7 +566,6 @@ export const BUILDING_ECONOMY = {
       categories: ['cabbage'],
       schedule: { unit: 'season', values: ['autumn'] },
       sale: HARVEST_SALE,
-      spoilsUnsold: true,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
@@ -787,6 +791,7 @@ export const BUILDING_ECONOMY = {
         linkCapacity: WAREHOUSE_LINK_CAPACITY,
         emptyRate: HUB_EMPTY_RATE,
         maxStock: WAREHOUSE_MAX_STOCK,
+        shelfLifeFactor: WAREHOUSE_SHELF_LIFE_FACTOR,
         hubLink: { linksField: 'linkedDistributors', linkTargetIdField: 'distributorId', allocationField: 'allocatedStocks' },
       },
     ],
@@ -815,6 +820,7 @@ export const BUILDING_ECONOMY = {
         linkCapacity: 2,
         emptyRate: HUB_EMPTY_RATE,
         maxStock: HUB_MAX_STOCK,
+        shelfLifeFactor: GRANARY_SHELF_LIFE_FACTOR,
         hubLink: { linksField: 'linkedDistributors', linkTargetIdField: 'distributorId', allocationField: 'allocatedStocks' },
       },
     ],

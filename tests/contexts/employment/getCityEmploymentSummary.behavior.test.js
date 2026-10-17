@@ -99,7 +99,6 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(summary.workerPool).toBe(12); // 5 + 7 — h3 is unreachable by a workplace
       expect(summary).not.toHaveProperty('elitePool');
       expect(summary.totalPopulation).toBe(16); // 5 + 7 + 4 — a foyer is a foyer, road or not
-      expect(summary.activeCitizenCount).toBe(0);
       expect(summary.unemployed).toBe(16); // includes h3's 4 residents, unreachable by a job but still unemployed
       expect(summary.workerPool).toBeLessThan(summary.totalPopulation);
     });

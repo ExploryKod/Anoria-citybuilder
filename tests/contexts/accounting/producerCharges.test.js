@@ -58,15 +58,47 @@ describe('wages — each worker is paid the same, and the house it comes from re
   });
 });
 
-describe('building lines — a company pays its upkeep; a house is subsidised by the city', () => {
+describe('building lines — a company pays its upkeep; the upkeep of a house is its owner\'s', () => {
+  const owner = { id: 'mayor', businessAccount: 'entreprise:sci' };
+
   test('a market stall books its upkeep on its account', () => {
     expect(buildingChargeLines({ id: 'market', type: 'Market-Stall-Red', maintenanceCost: 2 })).toEqual([
       { kind: 'maintenance', amount: 2, holder: 'market', counterparty: null },
     ]);
   });
 
-  test('a house has no account: the city books its upkeep as the housing subsidy', () => {
-    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 3 })).toEqual([
+  test('the owner books the whole upkeep of a house on its property company, and the hamlet pays it the subsidy', () => {
+    // Fully subsidised: the owner is made whole, the hamlet pays everything.
+    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 3, houseSubsidyRate: 1, owner })).toEqual([
+      { kind: 'maintenance', amount: 3, holder: 'mayor', counterparty: null, accountKind: 'entreprise:sci' },
+      { kind: 'subsidy_housing_received', amount: 3, holder: 'mayor', counterparty: null, accountKind: 'entreprise:sci' },
+      { kind: 'subsidy_housing', amount: 3, holder: null, counterparty: null },
+    ]);
+    // A quarter subsidised: the owner bears the rest, which the rent has to cover.
+    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 6, houseSubsidyRate: 0.25, owner })).toEqual([
+      { kind: 'maintenance', amount: 6, holder: 'mayor', counterparty: null, accountKind: 'entreprise:sci' },
+      { kind: 'subsidy_housing_received', amount: 1.5, holder: 'mayor', counterparty: null, accountKind: 'entreprise:sci' },
+      { kind: 'subsidy_housing', amount: 1.5, holder: null, counterparty: null },
+    ]);
+    // No subsidy: the whole upkeep is the owner's.
+    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 6, houseSubsidyRate: 0, owner })).toEqual([
+      { kind: 'maintenance', amount: 6, holder: 'mayor', counterparty: null, accountKind: 'entreprise:sci' },
+    ]);
+  });
+
+  test('with no owner standing (its house was demolished) the hamlet bears the whole upkeep', () => {
+    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 6, houseSubsidyRate: 0.25, owner: null })).toEqual([
+      { kind: 'subsidy_housing', amount: 6, holder: null, counterparty: null },
+    ]);
+  });
+
+  test('a house\'s upkeep cannot be settled without the hamlet\'s subsidy rate nor without saying who owns it', () => {
+    expect(() => buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 3, owner })).toThrow('subsidy rate');
+    expect(() => buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 3, houseSubsidyRate: 1 })).toThrow('owner');
+  });
+
+  test('a road, which is neither a house nor a company, stays at the city\'s expense', () => {
+    expect(buildingChargeLines({ id: 'road', type: 'StonePath-Tee-001', maintenanceCost: 3 })).toEqual([
       { kind: 'subsidy_housing', amount: 3, holder: null, counterparty: null },
     ]);
   });

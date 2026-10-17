@@ -158,10 +158,10 @@ describe('ACL cross-context reads (formerly HousesStore facades)', () => {
 
   test('getFamishedPopulation counts unfed residents', async () => {
     await seedBuilding(
-      makeHouseRecord({ type: 'House-Blue', x: 1, y: 1, extra: { pop: 6, stocks: { food: 3 } } })
+      makeHouseRecord({ type: 'House-Blue', x: 1, y: 1, extra: { pop: 6, lastConsumption: { month: 4, totalUnfed: 3 } } })
     );
     await seedBuilding(
-      makeHouseRecord({ type: 'House-Red', x: 2, y: 2, extra: { pop: 4, stocks: { food: 2 } } })
+      makeHouseRecord({ type: 'House-Red', x: 2, y: 2, extra: { pop: 4, lastConsumption: { month: 4, totalUnfed: 2 } } })
     );
 
     expect(await getFamishedPopulation()).toBe(5);

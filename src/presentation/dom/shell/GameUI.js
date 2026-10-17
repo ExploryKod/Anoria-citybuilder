@@ -3,6 +3,7 @@
  * Inspired by simcity-threejs-clone's GameUI pattern
  */
 
+import { HUNGER_CAUSES, HUNGER_RISK } from '../../../shared/population/HungerCauseCatalog.js';
 import {
     displayTime,
     displaySeason,
@@ -10,17 +11,19 @@ import {
     infoPanelClockIcon,
     infoPanelNoClockIcon,
     gameWindow as gameWindowElement,
-    displayPop,
     displayPopTotal,
     displayPopTotalHamlet,
     displayPopActiveTotal,
     displayPopActiveTotalHamlet,
-    displayPopCitizens,
-    displayPopCitizensHamlet,
-    displayPopServants,
-    displayPopServantsHamlet,
     displayHungerPop,
     displayHungerPopHamlet,
+    displayDisettePop,
+    displayDisettePopHamlet,
+    displayHungerRisk,
+    displayHungerRiskHamlet,
+    iconHungerRisk,
+    iconDisette,
+    iconPenurie,
     displayDeathsPop,
     displayLaborCountry,
     displayLaborHamlet,
@@ -285,78 +288,54 @@ class GameUI {
     }
 
     /**
-     * Population totale résidentielle (Housing) + détail actifs (Employment).
-     * `totalPopulation` = tous les habitants des maisons (cabanes incluses).
+     * The population of the houses (all their residents, the huts and the administrators included) and the workers placed in a workplace
+     * (what the per-class worker rows add up to).
      * @param {number} totalPopulation
-     * @param {number} activeCitizenCount
-     * @param {number} [civilServantCount=0]
-     * @param {number} [activePopulationCount] — si omis : actifs + fonctionnaires
-     * @param {{
-     *   totalPop?: number,
-     *   activeCitizenCount?: number,
-     *   civilServantCount?: number,
-     *   activePopulationCount?: number,
-     * } | null} [hamletBreakdown]
+     * @param {number} workersCount
+     * @param {{ totalPop: number, workersCount: number } | null} [hamlet] the active hamlet's own figures
      */
-    updatePopulationBreakdown(
-        totalPopulation,
-        activeCitizenCount,
-        civilServantCount = 0,
-        activePopulationCount = null,
-        hamletBreakdown = null
-    ) {
-        const total = Math.max(0, Math.floor(totalPopulation) || 0);
-        const activeCitizens = Math.max(0, Math.floor(activeCitizenCount) || 0);
-        const servants = Math.max(0, Math.floor(civilServantCount) || 0);
-        const activeTotal = activePopulationCount != null
-            ? Math.max(0, Math.floor(activePopulationCount) || 0)
-            : activeCitizens + servants;
-
-        setHudCount(displayPopTotal, total);
-        setHudCount(displayPopActiveTotal, activeTotal);
-        setHudCount(displayPopCitizens, activeCitizens);
-        setHudCount(displayPopServants, servants);
-
-        if (hamletBreakdown) {
-            const hTotal = Math.max(0, Math.floor(hamletBreakdown.totalPop) || 0);
-            const hCitizens = Math.max(0, Math.floor(hamletBreakdown.activeCitizenCount) || 0);
-            const hServants = Math.max(0, Math.floor(hamletBreakdown.civilServantCount) || 0);
-            const hActiveTotal = hamletBreakdown.activePopulationCount != null
-                ? Math.max(0, Math.floor(hamletBreakdown.activePopulationCount) || 0)
-                : hCitizens + hServants;
-
-            setHudCount(displayPopTotalHamlet, hTotal);
-            setHudCount(displayPopActiveTotalHamlet, hActiveTotal);
-            setHudCount(displayPopCitizensHamlet, hCitizens);
-            setHudCount(displayPopServantsHamlet, hServants);
+    updatePopulationTotals(totalPopulation, workersCount, hamlet = null) {
+        setHudCount(displayPopTotal, totalPopulation);
+        setHudCount(displayPopActiveTotal, workersCount);
+        if (hamlet) {
+            setHudCount(displayPopTotalHamlet, hamlet.totalPop);
+            setHudCount(displayPopActiveTotalHamlet, hamlet.workersCount);
         }
-
-        // Fallback if markup is missing (e.g. tests)
-        if (displayPop && !displayPopTotal) {
-            displayPop.textContent = `${total} | ${activeTotal} (${activeCitizens}, ${servants})`;
-        }
-    }
-
-    /** @deprecated Use updatePopulationBreakdown */
-    updateCitizenPopulation(citizenPopulation) {
-        this.updatePopulationBreakdown(citizenPopulation, citizenPopulation);
-    }
-
-    /** @deprecated Use updatePopulationBreakdown */
-    updatePopulation(population) {
-        this.updatePopulationBreakdown(population, population);
     }
 
     /**
-     * Updates famished (hungry) population display
-     * @param {number} famishedPopulation - Country-wide famished count
-     * @param {number} [hamletFamishedPopulation] - Active hamlet famished count
+     * Updates the hunger displays, the two ways to go hungry told apart (see HungerCauseCatalog.js): the words and the disette icon come from the catalog.
+     * @param {{ disette: number, penurie: number }} country - Country-wide famished counts
+     * @param {{ disette: number, penurie: number }} [hamlet] - Active hamlet famished counts
      */
-    updateFamishedPopulation(famishedPopulation, hamletFamishedPopulation = null) {
-        setHudCount(displayHungerPop, famishedPopulation || 0);
-        if (hamletFamishedPopulation != null) {
-            setHudCount(displayHungerPopHamlet, hamletFamishedPopulation || 0);
+    updateFamishedPopulation(country, hamlet = null) {
+        if (iconDisette) {
+            iconDisette.textContent = HUNGER_CAUSES.disette.icon;
+            iconDisette.title = HUNGER_CAUSES.disette.label;
         }
+        if (iconPenurie) iconPenurie.title = HUNGER_CAUSES.penurie.label;
+        setHudCount(displayDisettePop, country.disette);
+        setHudCount(displayHungerPop, country.penurie);
+        if (hamlet != null) {
+            setHudCount(displayDisettePopHamlet, hamlet.disette);
+            setHudCount(displayHungerPopHamlet, hamlet.penurie);
+        }
+    }
+
+    /**
+     * Updates the early warning of hunger (see HUNGER_RISK): the inhabitants whose house still misses part of its ration today. It is a forecast that moves
+     * every day, apart from the famished counts (the month's consumption record); its tooltip tells the two causes apart.
+     * @param {{ disette: number, penurie: number }} country
+     * @param {{ disette: number, penurie: number }} [hamlet]
+     */
+    updateHungerRisk(country, hamlet = null) {
+        const total = (risk) => risk.disette + risk.penurie;
+        if (iconHungerRisk) {
+            iconHungerRisk.textContent = HUNGER_RISK.icon;
+            iconHungerRisk.title = `${HUNGER_RISK.label} : ${HUNGER_CAUSES.disette.label.toLowerCase()} ${country.disette}, ${HUNGER_CAUSES.penurie.label.toLowerCase()} ${country.penurie}`;
+        }
+        setHudCount(displayHungerRisk, total(country));
+        if (hamlet != null) setHudCount(displayHungerRiskHamlet, total(hamlet));
     }
 
     /**
@@ -450,30 +429,13 @@ class GameUI {
 
     /** Initial HUD placeholders at city load (owned by GameUI, not scene). */
     resetInitialHud() {
-        this.updatePopulationBreakdown(0, 0, 0, 0);
+        this.updatePopulationTotals(0, 0);
         if (displayFunds) {
             displayFunds.textContent = formatEuroAmount(0);
         }
         const debtBox = document.querySelector('.debt-box');
         if (debtBox) {
             debtBox.style.display = 'none';
-        }
-    }
-
-    /**
-     * Updates title bar with city information (population, funds, etc.)
-     * Similar to simcity's updateTitleBar pattern
-     * @param {Object} data - City data object
-     * @param {string} data.name - City name (optional)
-     * @param {number} data.population - Population count
-     * @param {number} data.funds - Current funds
-     */
-    updateTitleBar(data = {}) {
-        if (data.population !== undefined) {
-            this.updatePopulation(data.population);
-        }
-        if (data.funds !== undefined) {
-            this.updateFunds(data.funds);
         }
     }
 

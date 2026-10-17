@@ -969,15 +969,6 @@
   width: 100%;
 }
 
-.hud-pop-rail .pop-breakdown {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-  flex-wrap: nowrap;
-  width: 100%;
-}
-
 .hud-pop-rail .pop-detail-block {
   display: flex;
   flex-direction: column;
@@ -1560,10 +1551,6 @@
   .hud-pop-rail .infos-pop-ressources > .pop-detail-sep + * {
     margin-top: 0;
     padding-top: 0;
-  }
-
-  .hud-pop-rail .pop-breakdown {
-    gap: 5px;
   }
 
   .hud-pop-rail .pop-detail-active {

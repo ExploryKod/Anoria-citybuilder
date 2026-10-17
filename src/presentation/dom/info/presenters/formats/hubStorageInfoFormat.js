@@ -54,6 +54,16 @@ export function formatHubStorageRenderParams(vm) {
 }
 
 /**
+ * Shelf-life tab — what the stock has left to live; only for a building that has a way to read it (a farm, a hub).
+ *
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @returns {{ load: (turn?: number) => Promise<object> } | null}
+ */
+export function formatShelfLifeTabModel(vm) {
+  return vm.loadShelfLife ? { load: vm.loadShelfLife } : null;
+}
+
+/**
  * The short lines under the hub's pie: how full it is, how long the stock lasts, and what is
  * left of previous harvests. The pie itself carries the goods (icon + amount).
  *

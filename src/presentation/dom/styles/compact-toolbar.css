@@ -257,8 +257,27 @@
    getToolButtonInfoClustersForCategory for how a slide's contents are decided. */
 .mobile-build-bar__theme-group {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
+}
+
+/* A card: its button and, under it, the pill of the level its workers need (one --level-color per level, set inline). */
+.mobile-build-bar__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.mobile-build-bar__level-pill {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--level-color);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .mobile-build-bar__arrows {

@@ -7,23 +7,14 @@
  *   level: it follows the staffing, not the sales (see ProducerChargePolicy.js's payrollOf).
  * - The corporate tax on a lucrative building's profit (sales − purchases − wages − its own upkeep) is a rate the player sets
  *   (`corporateTaxRate`, see FiscalRateCatalog.js). A loss pays nothing and is not carried forward.
- * - `HOUSING_MAINTENANCE_SUBSIDY_PERCENT`: the share of a non-lucrative building's upkeep the city pays (houses, roads,
- *   services): 100 by default.
+ * - `HOUSING_MAINTENANCE_SUBSIDY_PERCENT`: the share of the upkeep of a non-lucrative building that is not a house (roads, services)
+ *   the city pays: all of it. A house's upkeep is a charge of its household, subsidised at a rate the player sets
+ *   (`houseMaintenanceSubsidyRate`, see FiscalRateCatalog.js).
  * - `COMPANY_MAINTENANCE_SUBSIDY_PERCENT`: the share of a lucrative building's upkeep the city pays: 0 by default, the
  *   building pays its own.
+ * - How the enterprise of a house shares its result (a cooperative, a property company) is the rule of its legal form: see
+ *   shared/accounting-catalog/LegalFormCatalog.js.
  */
-/**
- * A house's own business is a cooperative (SCOP): its residents are its workers and its associates. Each month's surplus (what it sells less
- * what it buys) is shared in three parts, as the French rules of the SCOP ask (entreprendre.service-public.gouv.fr/vosdroits/F31328):
- * - `workers` (part salarié, "participation"): at least 25 %, paid to the residents, a charge before the tax on profits (PCG 691);
- * - `associates` (part associé, interest on the parts sociales): paid to the residents after the tax, lower than both other parts (PCG 457);
- * - `enterprise` (part entreprise): the legal reserve (at least 15 %) and the development fund (at least 1 %) and the other reserves, which stay in
- *   the business and are never shared out. The tax on profits is paid out of it.
- * The three add up to one. The usual shares are 40 / 15 / 45.
- */
-export const COOPERATIVE_SHARES = Object.freeze({ workers: 0.4, associates: 0.15, enterprise: 0.45 });
-/** The least the rules ask of each part (a fraction of the surplus). */
-export const COOPERATIVE_MINIMUM_SHARES = Object.freeze({ workers: 0.25, enterprise: 0.16 });
 
 export const HOUSING_MAINTENANCE_SUBSIDY_PERCENT = 100;
 export const COMPANY_MAINTENANCE_SUBSIDY_PERCENT = 0;

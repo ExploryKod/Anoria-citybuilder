@@ -9,7 +9,6 @@ import { BUILDING_ASSETS } from '../../../src/presentation/three/assets/building
 // never fails loudly: it just puts a no-road icon on the wrong building.
 describe('every status the role sprites can draw has a texture', () => {
   const statuses = new Set([
-    'no-food',
     'isBuying',
     'isCollecting',
     'sold-to-hub',

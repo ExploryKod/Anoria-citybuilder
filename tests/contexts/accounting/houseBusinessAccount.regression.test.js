@@ -1,13 +1,14 @@
 import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
 import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
+import { householdYearReaderOf } from '../../helpers/householdYearReader.js';
 import { buildingFinanceFigures } from '../../../src/contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 
 // Regression: a house's own little business (an artisan's, a savant's, a merchant's — buildingEconomy.js's
 // activityRecipe) sells and buys through the same pairs a company does (sumGoodsFlowsByPair → tradeLines).
 // Before this fix, tradeLines never tagged an accountKind, so the house's trade lines landed on the bare
 // houseId key — a third, unenumerated account, invisible to both the "Particulier" and "Entreprise" tabs
-// (buildingFinanceInfoView.js), which read accountKind 'particulier'/'entreprise' exactly.
+// (buildingFinanceInfoView.js), which read accountKind 'particulier'/'entreprise:<enterprise>' exactly.
 const HOUSE = 'house-1';
 
 function settle(pairs) {
@@ -37,9 +38,12 @@ function settle(pairs) {
     businessFundsOf: async () => 0,
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0, threshold2: 0, rate2: 0 }),
     getCorporateTaxRate: async () => 0.25,
+    getHouseMaintenanceSubsidyRate: async () => 1,
+    listSpoilage: async () => [],
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
     readCompanyYear: companyYearReaderOf(journal),
+    readHouseholdYear: householdYearReaderOf(journal),
     recordLedgerEntry: async (line) => {
       // The real RecordLedgerEntry command stamps year/month from its own getTimeInfo(turn); this fake
       // does it directly, matching the fixed deliveredTime (year 1, monthIndex 0) settle() uses below.
@@ -57,7 +61,7 @@ describe('a house that runs its own business is booked on its business account, 
 
     const sale = journal.find((line) => line.type === 'producer_revenue' && line.accountBuildingId === HOUSE);
     expect(sale).toBeDefined();
-    expect(sale.accountKind).toBe('entreprise');
+    expect(sale.accountKind).toBe('entreprise:cooperative');
   });
 
   test('buying its raw material from a warehouse is producer_purchase on the house\'s entreprise account', async () => {
@@ -65,7 +69,7 @@ describe('a house that runs its own business is booked on its business account, 
 
     const purchase = journal.find((line) => line.type === 'producer_purchase' && line.accountBuildingId === HOUSE);
     expect(purchase).toBeDefined();
-    expect(purchase.accountKind).toBe('entreprise');
+    expect(purchase.accountKind).toBe('entreprise:cooperative');
   });
 
   test('a sale between two companies still carries no accountKind', async () => {
@@ -90,9 +94,9 @@ describe('a house that runs its own business is booked on its business account, 
 
     const sales = journal.filter((line) => line.type === 'producer_revenue' && line.accountBuildingId === HOUSE);
     expect(sales).toHaveLength(2);
-    expect(sales.every((line) => line.accountKind === 'entreprise')).toBe(true);
+    expect(sales.every((line) => line.accountKind === 'entreprise:cooperative')).toBe(true);
 
-    const figures = buildingFinanceFigures(journal, HOUSE, { year: 1, accountKind: 'entreprise', salesNature: 'production' });
+    const figures = buildingFinanceFigures(journal, HOUSE, { year: 1, accountKind: 'entreprise:cooperative', salesNature: 'production' });
     // Both activities are in the sales; the corporate tax of the cooperative (25 % of the surplus, nothing was paid out of an empty cash) comes off them.
     expect(figures.statement.sections.find((section) => section.id === 'operatingIncome').total).toBe(130);
     expect(figures.statement.results.net).toBe(97.5);

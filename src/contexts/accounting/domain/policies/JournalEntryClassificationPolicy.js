@@ -32,9 +32,11 @@ export function isJournalEntryIncomeForMonthlySummary(entry, allEntries, getTime
     entry.type === 'service_sales' ||
     entry.type === 'service_subsidy_received' ||
     entry.type === 'subsidy_companies_received' ||
+    entry.type === 'subsidy_housing_received' ||
     entry.type === 'social_contribution' ||
     entry.type === 'household_participation' ||
     entry.type === 'household_dividend' ||
+    entry.type === 'income_tax_refund' ||
     entry.type === 'rent_received' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital';

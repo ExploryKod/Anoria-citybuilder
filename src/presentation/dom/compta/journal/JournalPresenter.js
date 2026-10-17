@@ -218,9 +218,11 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     entry.type === 'service_sales' ||
     entry.type === 'service_subsidy_received' ||
     entry.type === 'subsidy_companies_received' ||
+    entry.type === 'subsidy_housing_received' ||
     entry.type === 'social_contribution' ||
     entry.type === 'household_participation' ||
     entry.type === 'household_dividend' ||
+    entry.type === 'income_tax_refund' ||
     entry.type === 'household_wage' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital'
@@ -266,19 +268,21 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     service_sales: 'Ventes de services',
     consumer_purchase: 'Achats des maisons',
     income_tax: 'Impôt sur le revenu retenu',
+    income_tax_refund: 'Impôt sur le revenu remboursé',
+    payroll_tax_refund: 'Impôt sur le revenu remboursé aux foyers',
     citizen_tax_paid: 'Impôt Citoyen retenu',
     public_wage: 'Salaire de fonctionnaire perçu',
     household_benefit: 'Allocation chômage perçue',
     service_purchase: 'Achats de services',
     service_subsidy_received: 'Subvention reçue',
     subsidy_companies_received: 'Subvention entretien reçue',
+    subsidy_housing_received: 'Subvention entretien des maisons reçue',
     employer_contribution: 'Cotisations patronales',
     employee_contribution: 'Cotisations salariales',
-    rent_paid: 'Loyer payé',
-    rent_received: 'Loyer perçu',
+    rent_paid: 'Loyer payé',    rent_received: 'Loyer perçu',
     social_contribution: 'Cotisations sociales perçues',
-    cooperative_participation: 'Participation aux résultats versée',
-    cooperative_dividend: 'Dividendes versés',
+    enterprise_participation: 'Participation aux résultats versée',
+    enterprise_dividend: 'Dividendes versés',
     household_participation: 'Participation aux résultats perçue',
     household_dividend: 'Dividendes perçus',
     commercial_route: 'Commission Négociants',
@@ -320,15 +324,16 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
 
   // Where the line sits in the chart of accounts (PcgJournalCatalog.js): its account number, and the colour family that follows.
   const pcg = pcgOfJournalType(entry.type);
-  const isInformative = Object.hasOwn(INFO_JOURNAL_TYPE_LABELS, entry.type) || entry.type.startsWith('loan_default_');
+  const isInformative = isInfoPseudoMovementType(entry.type) || Object.hasOwn(INFO_JOURNAL_TYPE_LABELS, entry.type) || entry.type.startsWith('loan_default_');
   if (!pcg && !isInformative) unresolvedTerm('journal account', entry.type);
   const accountBadge = pcg
     ? `<span class="journal-entry-account" title="${pcg.label}${pcg.household ? ' (hors PCG : un ménage n\'est pas une entité)' : ''}">${pcg.account}</span>`
     : '';
 
   return `
-        <div class="journal-entry">
+        <div class="journal-entry${isInformative ? ' journal-entry--informative' : ''}">
             <div class="journal-entry-header">
+                ${isInformative ? '<span class="journal-entry-info" role="img" title="Informatif : cette ligne ne déplace aucun argent" aria-label="Informatif : aucun argent déplacé">ℹ️</span>' : ''}
                 <span class="journal-entry-type ${entry.type}"${pcg ? ` data-tone="${pcg.tone}"` : ''}>${accountBadge}${typeLabels[entry.type] ?? tradeLabel(entry.type) ?? unresolvedTerm('journal line label', entry.type)}</span>
                 <span class="journal-entry-hamlet">${hamletName}</span>
                 ${partnerName ? `<span class="journal-entry-partner">🤝 ${partnerName}</span>` : ''}

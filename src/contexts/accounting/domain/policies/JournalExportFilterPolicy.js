@@ -9,6 +9,7 @@ export function isJournalIncomeType(entry) {
     entry.type === 'social_contribution' ||
     entry.type === 'household_participation' ||
     entry.type === 'household_dividend' ||
+    entry.type === 'income_tax_refund' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital' ||
     entry.type.startsWith('export_') ||

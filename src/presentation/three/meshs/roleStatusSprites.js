@@ -18,8 +18,6 @@ import { getResourceRoles } from '../../../shared/building-catalog/resourceRoleQ
  * of STATUS_ICON_DEFAULTS; most are their own texture and name, the exceptions are listed.
  */
 const STATUS_SPRITE = Object.freeze({
-  'no-food': { texture: 'nofood', name: 'no-food' },
-  'no-food-farm': { texture: 'nofood', name: 'no-food' },
   'sold-to-hub': { texture: 'isCollecting', name: 'sold-to-hub' },
 });
 
@@ -114,9 +112,9 @@ async function applyHubSprites(ctx, mesh, instanceId) {
   }
 }
 
-/** Quantity distributor: shows for the month in which it really bought, and while houses it serves stay unfed. */
+/** Quantity distributor: shows for the month in which it really bought. */
 async function applyDistributorSprites(ctx, mesh, instanceId) {
-  ['isBuying', 'isBuying-bg', 'no-food', 'no-food-bg'].forEach((name) => ctx.assetManager.removeStatusSprite(mesh, name));
+  ['isBuying', 'isBuying-bg'].forEach((name) => ctx.assetManager.removeStatusSprite(mesh, name));
   if (!isStaffedAndConnected(mesh)) return;
 
   const view = await ctx.supply.getBuildingSupplyView(instanceId);
@@ -132,10 +130,6 @@ async function applyDistributorSprites(ctx, mesh, instanceId) {
   } else {
     setSprite(ctx, mesh, 'isBuying', { visible: false });
   }
-
-  // Not "nothing on the stalls" (a stall hands out all it buys, so it is empty after every tick): a house
-  // it serves still waiting for food after its pass.
-  setSprite(ctx, mesh, 'no-food', { visible: ctx.productionSpriteVisible((view?.unmetDemand ?? 0) > 0) });
 }
 
 /** The game's time in the vocabulary schedules use (see ResourceSchedulePolicy.js). */
@@ -169,7 +163,7 @@ async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset
   const failedStatus = asset?.failedSaleStatus ?? 'failed-sell';
   const shortfallStatus = asset?.activityShortfallStatus ?? 'input-shortage';
   const names = graphics.map((graphic) => spriteOf(graphic.status).name);
-  [...names, 'no-food', saleStatus, failedStatus, shortfallStatus].forEach((name) => {
+  [...names, saleStatus, failedStatus, shortfallStatus].forEach((name) => {
     ctx.assetManager.removeStatusSprite(mesh, name);
     ctx.assetManager.removeStatusSprite(mesh, `${name}-bg`);
   });

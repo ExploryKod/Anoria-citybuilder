@@ -32,14 +32,10 @@ describe('formatMessagesModel', () => {
     expect(model).toEqual({ complaints: [] });
   });
 
-  test('singular complaint for exactly one unfed citizen', () => {
-    const model = formatMessagesModel(vm({ lastConsumption: { month: 4, totalUnfed: 1 } }));
-    expect(model.complaints).toEqual(["1 d'entre nous est affamé"]);
-  });
-
-  test('plural complaint, phrased as a citizen grievance rather than a status readout', () => {
+  test('hunger with no seller reached is a pénurie: one short complaint, the sentence in its tooltip', () => {
     const model = formatMessagesModel(vm({ lastConsumption: { month: 4, totalUnfed: 10 } }));
-    expect(model.complaints).toEqual(["10 d'entre nous sommes affamés"]);
+    expect(model.complaints).toHaveLength(1);
+    expect(model.complaints[0]).toMatchObject({ text: expect.stringContaining('10 pénurie'), detail: expect.stringContaining("10 d'entre nous") });
   });
 });
 

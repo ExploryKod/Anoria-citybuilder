@@ -143,9 +143,9 @@
  *   lock field name (when one is used at all) is declared — see
  *   contexts/supply/domain/policies/PeriodLockPolicy.js, which knows
  *   nothing about "producer", "consumer", or any resource/service name.
- * @property {boolean} [spoilsUnsold] On a 'producer' entry with a once-a-year harvest: what is left of the previous
- *   harvest in the building's own stock goes bad the moment the new one comes in (it is lost, and the loss is traced
- *   as a `crop_spoiled` event). Declared on a crop field, never written as a rule in the harvest code.
+ * @property {number} [shelfLifeFactor] On a 'hub' entry: how many times longer the goods it holds keep than their own
+ *   shelf life (ResourceCategoryCatalog.js), because the place is built to keep them (a granary, a warehouse). Omitted
+ *   means 1. A good whose shelf life is infinite never goes bad, whatever the factor.
  * @property {Array<{ id: string, when?: object, amount?: number, factor?: number, inputs?: object[], missed?: number, wait?: boolean }>} [cycle]
  *   On a 'producer' entry: a chain of steps instead of a single production. `when` is a schedule (see
  *   ResourceSchedulePolicy.js); the first step sets a base (`amount`), each next one multiplies the running

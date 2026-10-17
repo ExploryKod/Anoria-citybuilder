@@ -37,7 +37,10 @@ export function cityLedgerYearLinesFromJournalSummary(
 
   const initialFunds = sumByType(incomeEntries, (e) => e.type === 'capital_funds');
   const incomeTax = sumByType(incomeEntries, (e) => e.type === 'citizen_tax');
-  const payrollTax = sumByType(incomeEntries, (e) => e.type === 'payroll_tax');
+  // The income tax the households paid, less what the city gave back at the year's close (an advance that was too high): a refund reduces the line
+  // it comes from, so the ledger's totals still agree with the treasury.
+  const payrollTax =
+    sumByType(incomeEntries, (e) => e.type === 'payroll_tax') - sumByType(expenseEntries, (e) => e.type === 'payroll_tax_refund');
   const vat = sumByType(incomeEntries, (e) => e.type === 'vat');
   const exports = sumByType(
     incomeEntries,

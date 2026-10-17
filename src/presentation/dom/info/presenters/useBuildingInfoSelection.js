@@ -10,6 +10,7 @@
  */
 
 import { getResourceRoles, getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { houseEnterprises } from '../../../../shared/population/workforceQueries.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { supplyTimeContextAhead } from '../../../../composition/supplyTimeLabels.js';
 import { buildingsObjects } from '../../../../shared/building-catalog/index.js';
@@ -40,6 +41,13 @@ import { playDoorOpenSound } from '../../../audio/SoundEffects.js';
 async function enrichBuildingInfoViewModel(groupId, vm) {
   /** @type {Record<string, unknown>} */
   const extra = {};
+
+  // The Shelf-life tab of a stock reads what the stock has left to live.
+  if ((groupId === BUILDING_INFO_GROUPS.farm || groupId === BUILDING_INFO_GROUPS.hubStorage) && vm.uniqueId) {
+    // What the stock has left to live; the turn is the game's now unless the caller already knows it (the live bars are told it each turn).
+    extra.loadShelfLife = async (turn) =>
+      vm.supply.describeShelfLife({ buildingId: vm.uniqueId, turn: turn ?? (await vm.accounting.getTreasurySnapshot())?.turn });
+  }
 
   if (groupId === BUILDING_INFO_GROUPS.nature && vm.uniqueId) {
     if (!vm.stocks && vm.buildingRow?.stocks == null) {
@@ -74,6 +82,10 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
     } catch (error) {
       console.error('[BuildingInfo] getHouseResidents failed:', error);
       extra.residents = null;
+    }
+    // A house that runs a property company (its category's `rental` enterprise) shows what it lets and collects (the Enterprises tab).
+    if (houseEnterprises(vm.buildingType).enterprises.some((enterprise) => enterprise.activity === 'rental')) {
+      extra.rentalBoard = await vm.accounting.getRentalBoard(vm.uniqueId);
     }
     // The posts left vacant by the last distribution of workers (null before any): they tell why a resident is out of work (the Savoirs tab).
     extra.labourVacancies = vm.employment.getLabourMarket()?.rows.filter((row) => row.vacancies > 0) ?? null;

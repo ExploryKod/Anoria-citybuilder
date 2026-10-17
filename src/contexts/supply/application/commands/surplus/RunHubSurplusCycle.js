@@ -53,14 +53,15 @@ export class RunHubSurplusCycle {
    * @param {number} params.dayInMonth
    * @param {number} params.year
    * @param {string | null} [params.season]
+   * @param {number} [params.turn] the tick, which dates the age of the goods a hub moves
    * @returns {Promise<{ ranCollection: boolean, hubs?: object[] }>}
    */
-  async execute({ month, monthIndex, dayInMonth, year, season = null }) {
-    const period = { season, month, monthIndex, year, dayInMonth };
+  async execute({ month, monthIndex, dayInMonth, year, season = null, turn }) {
+    const period = { season, month, monthIndex, year, dayInMonth, turn };
     // A producer whose sale window has just closed with goods unsold says so (whichever hubs collect this tick).
     await this.markFailedSales?.execute({ period });
     // Hubs ordered to empty a good give some of it to the others each tick, whatever the collection period.
-    await this.emptyHubGoods?.execute();
+    await this.emptyHubGoods?.execute({ turn });
     const hubs = await this.supplyBuildingRepository.findByResourceRole('hub');
     const isCollectionPeriod = hubs.some((hub) =>
       matchesSchedule(getScheduleForRole(hub.type, 'collector'), { month, monthIndex, year })

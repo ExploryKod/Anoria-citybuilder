@@ -167,19 +167,38 @@ export function employeeContributionLines({ houseId, wagesReceived, rate }) {
 
 /**
  * The building lines of one month: a lucrative building pays its wages (`wagesHT`, paid to its workers' houses by the
- * settlement), its upkeep less the company subsidy. A non-lucrative building has no account: its upkeep is the city's, as the
- * housing subsidy. A line of zero is not written. Its corporate tax is not here: it is read off the company's own statement once these
- * lines are written (`corporateTaxDueOf`).
- * @param {{ id: string, type: string, maintenanceCost: number }} building
+ * settlement), its upkeep less the company subsidy. The upkeep of a house is its owner's charge, as in real life (account 615 of the property
+ * company that owns it): the owner books the whole upkeep and, apart, the hamlet's subsidy (the rate the player sets) that is paid to it; the
+ * tenant pays only its rent. With no owner standing (the owner's house was demolished), nobody can bear it: the hamlet pays all of it, and
+ * the line says so. Any other non-lucrative building (a road) has no account: its upkeep is the city's, as the subsidy of public buildings.
+ * A line of zero is not written. Its corporate tax is not here: it is read off the company's own statement once these lines are written
+ * (`corporateTaxDueOf`).
+ * @param {{ id: string, type: string, maintenanceCost: number, houseSubsidyRate?: number, owner?: { id: string, businessAccount: string } | null }} building
+ *   `houseSubsidyRate`: the hamlet's share of a house's upkeep, a fraction; `owner` (null when none stands): the house that owns the houses and the kind of
+ *   its business account; both must be given for a house
  * @returns {ChargeLine[]}
  */
-export function buildingChargeLines({ id, type, maintenanceCost }) {
+export function buildingChargeLines({ id, type, maintenanceCost, houseSubsidyRate, owner }) {
   const lucrative = isLucrativeBuilding(type);
   const lines = [];
-  const add = (kind, amount, holder) => {
+  const add = (kind, amount, holder, accountKind) => {
     const rounded = centimes(amount);
-    if (rounded > 0) lines.push({ kind, amount: rounded, holder, counterparty: null });
+    if (rounded > 0) lines.push({ kind, amount: rounded, holder, counterparty: null, ...(accountKind ? { accountKind } : {}) });
   };
+
+  if (resolveBuildingKind(type) === BUILDING_KIND_HOUSE) {
+    if (!(houseSubsidyRate >= 0 && houseSubsidyRate <= 1)) throw new Error(`[maintenance] the upkeep of house ${id} needs the hamlet's subsidy rate (a fraction), got ${houseSubsidyRate}`);
+    if (owner === undefined) throw new Error(`[maintenance] the upkeep of house ${id} needs its owner (or null when none stands)`);
+    if (owner === null) {
+      add('subsidy_housing', maintenanceCost, null);
+      return lines;
+    }
+    const houseSubsidy = centimes(maintenanceCost * houseSubsidyRate);
+    add('maintenance', maintenanceCost, owner.id, owner.businessAccount);
+    add('subsidy_housing_received', houseSubsidy, owner.id, owner.businessAccount);
+    add('subsidy_housing', houseSubsidy, null);
+    return lines;
+  }
 
   const subsidyPercent = lucrative ? COMPANY_MAINTENANCE_SUBSIDY_PERCENT : HOUSING_MAINTENANCE_SUBSIDY_PERCENT;
   const subsidy = centimes((maintenanceCost * subsidyPercent) / 100);

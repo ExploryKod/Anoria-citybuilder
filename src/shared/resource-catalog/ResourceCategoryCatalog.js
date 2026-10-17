@@ -164,6 +164,69 @@ export function getResourceBaseValue(category) {
   return entry.baseValue;
 }
 
+/**
+ * How long a good keeps, in months, before it goes bad, kept where it has no better place than a field or a stall. `Infinity` for a good that never
+ * does: it is then not aged at all, whatever the place it is kept in. The months are the calendar's (they do not change with the days a month has).
+ * A place that keeps a good longer says so with a `shelfLifeFactor` on its hub role (a granary for the food, a warehouse for the other goods).
+ * Every good that can sit in a stock must be here: `getShelfLifeMonths` throws for one that is not. First values, to tune with a play-through: a year's
+ * food has to keep from one harvest to the next in a granary, so the crops that feed the citizens live a quarter of that unprotected.
+ */
+const SHELF_LIFE_MONTHS = Object.freeze({
+  wheat: 6, carrot: 3, cabbage: 2, dattes: 6, olive: 1, oil: 18, carrotCake: 1, wood: 36,
+  coal: Infinity, petrol: Infinity, uranium: Infinity, exoticWood: Infinity, candle: Infinity,
+  decoratedPot: Infinity, book: Infinity, furniture: Infinity, plate: Infinity, pot: Infinity, amphora: Infinity,
+  rock: Infinity, clay: Infinity, iron: Infinity, gold: Infinity, bandwidth: Infinity,
+  // An agreement waiting for its import is not a good: it never goes bad.
+  dealCoal: Infinity, dealPetrol: Infinity, dealUranium: Infinity, dealExoticWood: Infinity,
+});
+
+/**
+ * @param {string} category
+ * @returns {number} months, or `Infinity` for a good that never goes bad
+ */
+export function getShelfLifeMonths(category) {
+  if (!hasResourceCategoryPresentation(category)) {
+    throw new Error(`[resource-catalog] "${category}" is not declared in ResourceCategoryCatalog: it has no shelf life`);
+  }
+  const entry = RESOURCE_CATEGORY_PRESENTATION[category];
+  if (entry.standsFor) return getShelfLifeMonths(entry.standsFor);
+  const months = SHELF_LIFE_MONTHS[category];
+  if (!(months > 0)) throw new Error(`[resource-catalog] "${category}" declares no shelf life: add one in SHELF_LIFE_MONTHS (Infinity for a good that never goes bad)`);
+  return months;
+}
+
+/**
+ * The delivery cycle of a good, in months: the span over which what it lost to spoilage is set against what went through the stock (the shelf-life
+ * screen's "spoiled out of total"). The food comes in once a year, with the harvest; the others follow the rhythm of their making. First values, to
+ * tune with a play-through.
+ */
+const DELIVERY_CYCLE_MONTHS = Object.freeze({
+  wheat: 12, carrot: 12, cabbage: 12, dattes: 12, olive: 12, oil: 12, carrotCake: 1, wood: 12,
+});
+
+/**
+ * @param {string} category a good that can go bad
+ * @returns {number} months
+ */
+export function getDeliveryCycleMonths(category) {
+  if (!hasResourceCategoryPresentation(category)) {
+    throw new Error(`[resource-catalog] "${category}" is not declared in ResourceCategoryCatalog: it has no delivery cycle`);
+  }
+  const entry = RESOURCE_CATEGORY_PRESENTATION[category];
+  if (entry.standsFor) return getDeliveryCycleMonths(entry.standsFor);
+  const months = DELIVERY_CYCLE_MONTHS[category];
+  if (!(months > 0)) throw new Error(`[resource-catalog] "${category}" declares no delivery cycle: add one in DELIVERY_CYCLE_MONTHS`);
+  return months;
+}
+
+/**
+ * The goods that declare a shelf life, an agreement waiting for its import excepted (it is not a good): what the shelf-life screen lists.
+ * @returns {string[]}
+ */
+export function listShelfLifeGoods() {
+  return Object.keys(SHELF_LIFE_MONTHS).filter((category) => RESOURCE_CATEGORY_PRESENTATION[category]?.kind !== 'importDeal');
+}
+
 /** Neutral chart colors for a category that declares none. */
 const FALLBACK_COLORS = Object.freeze({ dark: '#546E7A', pale: '#B0BEC5' });
 

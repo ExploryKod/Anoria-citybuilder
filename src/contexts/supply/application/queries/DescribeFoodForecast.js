@@ -4,7 +4,8 @@
  * need, the capacity and the per-good ceiling of each working granary (its storage orders). Read-only, nothing is persisted.
  */
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
-import { getCategoriesForRole } from '../../domain/policies/ResourceRolePolicy.js';
+import { getCategoriesForRole, listRoleEntries } from '../../domain/policies/ResourceRolePolicy.js';
+import { getShelfLifeMonths } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { getHubProductRemainingInbound, normalizeHubStorageOrders } from '../../domain/policies/HubStorageOrdersPolicy.js';
 import { foodForecastOf } from '../../domain/policies/FoodForecastPolicy.js';
 import { getAnnualSupplyEntry, getPerCapitaDemand, getSuppliedCategories } from '../../../../shared/building-catalog/resourceRoleQueries.js';
@@ -44,11 +45,13 @@ export class DescribeFoodForecast {
       const goods = getCategoriesForRole(granary.type, 'hub');
       const orders = normalizeHubStorageOrders(granary.hubStorageOrders, goods);
       total += granary.maxStock;
+      const granaryEntry = listRoleEntries(granary.type, 'hub').find((entry) => entry.categories.some((category) => goods.includes(category)));
       for (const category of Object.keys(harvestByCategory)) {
         // An empty granary: what a good can still go in is the room its own ceiling gives it (nil when the granary refuses or empties it).
-        byCategory[category] =
-          (byCategory[category] ?? 0) +
-          getHubProductRemainingInbound({ productId: category, productIds: goods, orders, stocks: {}, totalCapacity: granary.maxStock });
+        const room = getHubProductRemainingInbound({ productId: category, productIds: goods, orders, stocks: {}, totalCapacity: granary.maxStock });
+        // A good that goes bad before the next harvest feeds the citizens only for the part of the year it lasts.
+        const lifeMonths = getShelfLifeMonths(category) * (granaryEntry?.shelfLifeFactor ?? 1);
+        byCategory[category] = (byCategory[category] ?? 0) + Math.floor(room * Math.min(1, lifeMonths / MONTHS_PER_YEAR));
       }
     }
 

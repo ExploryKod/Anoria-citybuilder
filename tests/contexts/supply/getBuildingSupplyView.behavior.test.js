@@ -9,9 +9,10 @@ import { GetHubStorageInfoView } from '../../../src/contexts/supply/application/
 import { GetBuildingSupplyView, classifySupplyKind } from '../../../src/contexts/supply/application/queries/GetBuildingSupplyView.js';
 
 class InMemorySupplyBuildingRepository {
-  constructor(views = [], snapshots = {}) {
+  constructor(views = [], snapshots = {}, rows = []) {
     this.views = new Map(views.map((v) => [v.id, v]));
     this.snapshots = new Map(Object.entries(snapshots));
+    this.rows = rows;
   }
 
   async findById(id) {
@@ -20,6 +21,11 @@ class InMemorySupplyBuildingRepository {
 
   async findSupplyView(id) {
     return this.views.get(id) ?? null;
+  }
+
+  /** The buildings of the city as the cycle reads them: a row each, with its place and its road count. */
+  async listAllBuildingRows() {
+    return [...this.rows ?? []];
   }
 
   async saveStocks() {}
@@ -35,14 +41,12 @@ describe('Supply — GetBuildingSupplyView', () => {
       createSupplyBuildingView({
         id: 'Market-Stall-5-5',
         type: 'Market-Stall-Red',
+        x: 5,
+        y: 5,
         stocks: { wheat: 10, food: 10 },
         maxStock: 500,
         isBuying: true,
         noSourcesNearby: false,
-        neighbors: [
-          { name: 'House-Blue', type: 'House-Blue', x: 5, y: 6 },
-          { name: 'Farm-Wheat', type: 'Farm-Wheat', x: 4, y: 5 },
-        ],
       }),
       createSupplyBuildingView({
         id: 'House-Blue-0-0',
@@ -81,7 +85,9 @@ describe('Supply — GetBuildingSupplyView', () => {
           worker: 4,
           workerNeed: 4,
         }),
-      }
+      },
+      // A house far from the stall (the stall's reach is infinite, so it counts) and connected to a road.
+      [{ id: 'House-Blue-30-30', type: 'House-Blue', x: 30, y: 30, roads: 1 }]
     );
     useCase = new GetBuildingSupplyView(repo);
   });
@@ -91,7 +97,7 @@ describe('Supply — GetBuildingSupplyView', () => {
     expect(await useCase.execute('')).toBeNull();
   });
 
-  test('market view exposes buying flags and neighbor houses', async () => {
+  test('market view exposes buying flags, and a house far away counts since the stall reaches the whole map', async () => {
     const dto = await useCase.execute('Market-Stall-5-5');
     expect(dto.kind).toBe('market');
     expect(dto.isBuying).toBe(true);
@@ -101,17 +107,27 @@ describe('Supply — GetBuildingSupplyView', () => {
     expect(dto.maxStock).toBe(500);
   });
 
-  test('market without house neighbors has hasHousesNearby false', async () => {
-    const repo = new InMemorySupplyBuildingRepository([
-      createSupplyBuildingView({
-        id: 'Market-Stall-1-1',
-        type: 'Market-Stall-Red',
-        stocks: { food: 0 },
-        neighbors: [{ name: 'Farm-Wheat', type: 'Farm-Wheat', x: 1, y: 2 }],
-      }),
-    ]);
+  test('a stall with no house in reach has hasHousesNearby false: a house without a road does not count', async () => {
+    const repo = new InMemorySupplyBuildingRepository(
+      [createSupplyBuildingView({ id: 'Market-Stall-1-1', type: 'Market-Stall-Red', x: 1, y: 1, stocks: { food: 0 } })],
+      {},
+      [{ id: 'House-Blue-2-2', type: 'House-Blue', x: 2, y: 2, roads: 0 }]
+    );
     const dto = await new GetBuildingSupplyView(repo).execute('Market-Stall-1-1');
     expect(dto.hasHousesNearby).toBe(false);
+  });
+
+  // Regression: the water tank read "aucune maison à portée" whatever stood on the map, because only the buildings touching it were looked at;
+  // its catalog reach is infinite, so any road-connected house of the map is in reach.
+  test('a water tank sees a house at the other end of the map: its reach is the catalog\'s, not its neighbours', async () => {
+    const repo = new InMemorySupplyBuildingRepository(
+      [createSupplyBuildingView({ id: 'WaterTank-0-0', type: 'WaterTank', x: 0, y: 0, stocks: {} })],
+      {},
+      [{ id: 'House-Red-60-60', type: 'House-Red', x: 60, y: 60, roads: 1 }]
+    );
+    const dto = await new GetBuildingSupplyView(repo).execute('WaterTank-0-0');
+    expect(dto.kind).toBe('market');
+    expect(dto.hasHousesNearby).toBe(true);
   });
 
   test('house view exposes stocks and marketTooFar', async () => {

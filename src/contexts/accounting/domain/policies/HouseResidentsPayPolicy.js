@@ -26,10 +26,11 @@ function splitAcrossResidents(group, amount) {
  * a nil rate is a legitimate zero, not a missing settlement). A worker's pay is never legitimately zero while he is
  * assigned to a workplace, so a missing household_wage line is always reported unsettled.
  *
- * @param {Array<{ id: string, status: 'worker' | 'unemployed', workplaceId: string | null }>} residents from residentsOfHouse(), in their display order
+ * @param {Array<{ id: string, status: 'worker' | 'administrator' | 'unemployed', workplaceId: string | null }>} residents from residentsOfHouse(), in their display order
  * @param {Array<{ type: string, amount: number, year: number, month: number, accountBuildingId: string | null, accountKind: string | null, counterpartyBuildingId: string | null }>} journalEntries the whole journal
  * @param {{ houseId: string, year: number, month: number }} period the settled month (1-based month, as stored on a journal entry)
- * @param {{ predictedBenefit: number }} expected this house's household_benefit computed from the current rates (HouseholdPublicPayPolicy.householdPublicPayOf) — used only to tell a legitimate zero from a pending settlement, never displayed as if it were the booked amount
+ * @param {{ predictedBenefit: number, predictedStipend: number }} expected this house's household_benefit computed from the current rates (HouseholdPublicPayPolicy.householdPublicPayOf)
+ *   and the stipend its administrators are owed (their count times the stipend the player set) — used only to tell a legitimate zero from a pending settlement, never displayed as if it were the booked amount
  * @returns {Array<{ id: string, amount: number | null, settled: boolean }>} one entry per resident, same order as `residents`
  */
 export function residentPayBreakdownOf(residents, journalEntries, { houseId, year, month }, expected) {
@@ -48,6 +49,19 @@ export function residentPayBreakdownOf(residents, journalEntries, { houseId, yea
       for (const resident of unemployed) breakdown.set(resident.id, { id: resident.id, amount: 0, settled: true });
     } else {
       for (const resident of unemployed) breakdown.set(resident.id, { id: resident.id, amount: null, settled: false });
+    }
+  }
+
+  // The administrators are paid a stipend by the hamlet (`public_wage` on the household's account), shared evenly among them.
+  const administrators = residents.filter((resident) => resident.status === 'administrator');
+  if (administrators.length > 0) {
+    const line = houseEntries.find((entry) => entry.type === 'public_wage');
+    if (line) {
+      for (const [id, amount] of splitAcrossResidents(administrators, line.amount)) breakdown.set(id, { id, amount, settled: true });
+    } else if (expected.predictedStipend === 0) {
+      for (const resident of administrators) breakdown.set(resident.id, { id: resident.id, amount: 0, settled: true });
+    } else {
+      for (const resident of administrators) breakdown.set(resident.id, { id: resident.id, amount: null, settled: false });
     }
   }
 

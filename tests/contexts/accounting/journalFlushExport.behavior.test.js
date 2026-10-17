@@ -82,7 +82,7 @@ describe('Accounting — journal flush & export (Phase 6.4)', () => {
   test('ExportJournalJson splits the journal in two files: the hamlet\'s own account, and the private flux of the companies and houses', async () => {
     const entries = [
       { id: 1, turn: 1, type: 'maintenance', amount: 10, description: 'city line', year: 0, month: 1 },
-      { id: 2, turn: 1, type: 'import_coal', amount: 16.2, description: 'merchants line', year: 0, month: 1, accountBuildingId: 'house-1', accountKind: 'entreprise' },
+      { id: 2, turn: 1, type: 'import_coal', amount: 16.2, description: 'merchants line', year: 0, month: 1, accountBuildingId: 'house-1', accountKind: 'entreprise:cooperative' },
       { id: 3, turn: 1, type: 'service_purchase', amount: 2, description: 'house line', year: 0, month: 1, accountBuildingId: 'house-1', accountKind: 'particulier' },
     ];
     const repository = {

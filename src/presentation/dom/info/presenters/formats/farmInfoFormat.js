@@ -88,7 +88,10 @@ export function formatFarmStocksModel(vm) {
   stockRows.push({ label: 'Total', value: goodAmount(totalKey, houseStocks[totalKey] || 0) });
 
   return {
-    sections: [{ title: `Stocks · ${buildingName(buildingType)}`, rows: stockRows }],
+    sections: [{
+      title: `Stocks · ${buildingName(buildingType)}`,
+      rows: stockRows,
+    }],
   };
 }
 

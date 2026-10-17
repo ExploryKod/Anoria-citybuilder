@@ -4,7 +4,8 @@ import { INCOME_STATEMENT } from '../../../../shared/accounting-catalog/PcgJourn
 import { HOUSEHOLD_CONSUMPTION_GROUPS, householdConsumptionGroupOf } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { buildingName, goodLabel } from '../../shell/CatalogVocabulary.js';
 import { administratorPayNotice } from '../../shell/administratorPayNotice.js';
-import { houseSeeksWork } from '../../../../shared/population/workforceQueries.js';
+import { houseEnterprises } from '../../../../shared/population/workforceQueries.js';
+import { legalFormOf } from '../../../../shared/accounting-catalog/LegalFormCatalog.js';import { houseSeeksWork } from '../../../../shared/population/workforceQueries.js';
 
 /**
  * The Finances tab of a building: its simplified analytical account, for the last month and for the year so far, and its
@@ -34,9 +35,11 @@ const rate = (part, base) => (base > 0 ? `${Math.round((part / base) * 100)} %`
  * generated from the statement the catalog declares (INCOME_STATEMENT), each line with the account numbers that feed it, then the
  * results in the model's order. It is read from the journal's lines, never written to it; the cash of the account is a different figure,
  * shown under the table. A line with nothing in any column is not shown (the model lists every line; the game shows the ones in use).
+ * @param {{ allocation: string, retained: string, dividend: { toAssociates: string } } | null} terms the jargon of the legal form of a house's enterprise
+ *   (LegalFormCatalog.js); null for a company, which has no allocation to show
  * @returns {ReadonlyArray<StatementRow>}
  */
-function companyStatementRows() {
+function companyStatementRows(terms) {
   const lineAmount = (lineId) => (f) => f.statement.sections.flatMap((section) => section.lines).find((line) => line.id === lineId).amount;
   const sectionTotal = (sectionId) => (f) => f.statement.sections.find((section) => section.id === sectionId).total;
   const result = (name) => (f) => f.statement.results[name];
@@ -73,10 +76,15 @@ function companyStatementRows() {
     ...single(byId.profitTax, 'charge', true),
     { label: 'Bénéfice ou perte', kind: 'total', amount: result('net') },
 
-    // A cooperative's allocation of its result, under the net result and outside the statement: the residents' share is already a charge (691).
-    { label: 'Affectation du résultat', kind: 'section', optional: true },
-    { label: 'Dividendes versés aux associés', kind: 'line', optional: true, accounts: '457', tone: 'financial', amount: (f) => f.allocation.dividends },
-    { label: 'Résultat conservé (réserves)', kind: 'line', optional: true, amount: (f) => f.allocation.retained },
+    // An enterprise's allocation of its result, under the net result and outside the statement: the residents' share is already a charge (691).
+    // Worded by its legal form (a house's enterprise); a company has no allocation.
+    ...(terms
+      ? [
+          { label: terms.allocation, kind: 'section', optional: true },
+          { label: terms.dividend.toAssociates, kind: 'line', optional: true, accounts: '457', tone: 'financial', amount: (f) => f.allocation.dividends },
+          { label: terms.retained, kind: 'line', optional: true, amount: (f) => f.allocation.retained },
+        ]
+      : []),
 
     { label: 'Indicateur', kind: 'section' },
     { label: 'Marge commerciale (ventes de marchandises − achats − frais accessoires − transports sur achats)', kind: 'indicator', amount: (f) => f.statement.commercialMargin },
@@ -84,7 +92,7 @@ function companyStatementRows() {
   ];
 }
 
-const COMPANY_ROWS = companyStatementRows();
+const COMPANY_ROWS = companyStatementRows(null);
 
 /**
  * The management ratios of a company's account, read from its statement (BuildingFinancePolicy.ratiosOf): what a manager reads next to the
@@ -118,7 +126,7 @@ const RATIO_ROWS = (() => {
     { label: 'Résultat par unité', kind: 'total', text: euro((r) => r.resultPerUnit), hint: 'Prix moyen − coût de revient : négatif, chaque unité vendue perd de l\'argent' },
 
     { label: 'Pertes de stock (analytique)', kind: 'section' },
-    { label: 'Unités avariées', kind: 'line', optional: true, amount: (f) => f.spoilage.units, text: (f) => String(Math.round(f.spoilage.units)), hint: "Récolte invendue qui a péri quand la suivante est arrivée. Hors journal : aucune écriture, aucun effet sur la trésorerie" },
+    { label: 'Unités avariées', kind: 'line', optional: true, amount: (f) => f.spoilage.units, text: (f) => String(Math.round(f.spoilage.units)), hint: "Stock qui a dépassé sa durée de vie et a été jeté. Hors journal : aucune écriture, aucun effet sur la trésorerie" },
     { label: 'Manque à gagner', kind: 'line', optional: true, amount: (f) => f.spoilage.lostRevenue, text: (f) => (f.spoilage.lostRevenue === 0 ? '—' : formatEuro(f.spoilage.lostRevenue)), hint: "Unités avariées × prix de vente du bâtiment : ce qu'elles auraient rapporté. Un coût d'opportunité, jamais une charge du compte de résultat" },
 
     { label: 'Seuil de rentabilité', kind: 'section' },
@@ -137,22 +145,39 @@ const RATIO_ROWS = (() => {
 /** @type {ReadonlyArray<StatementRow>} */
 /** A household's disposable income: what it earned less the levies it owes (taxes and social contributions). */
 const disposableIncomeOf = (f) =>
-  f.wagesReceived + f.publicWageReceived + f.benefitReceived + f.participationReceived + f.dividendReceived
+  f.wagesReceived + f.publicWageReceived + f.benefitReceived + f.participationReceived + f.dividendReceived + f.incomeTaxRefunded
   - (f.incomeTax + f.citizenTax + f.employeeContributionPaid);
 
 /**
  * A household is not a company: no PCG compte de résultat. Its account follows the national accounts' sequence for the household sector
  * (SEC 2010): revenues, compulsory levies, disposable income, final consumption, and what is left is saving. The PCG's wording and account
  * numbers stay where a company-side line mirrors one (a wage is a 421 for the employer who pays it).
+ * What the household receives from its enterprises is worded by their legal forms (LegalFormCatalog.js): a cooperative pays a participation and
+ * dividends, a property company distributions and no participation. The household's account does not tell the enterprises apart, so a line
+ * carries the word of each form that has one, followed by the enterprise.
+ * @param {ReadonlyArray<{ id: string, label: string }>} enterprises the enterprises of the house
  */
-const PERSONAL_ROWS = [
+const personalRowsOf = (enterprises) => {
+  const wording = (pick) =>
+    enterprises
+      .map((enterprise) => {
+        const term = pick(legalFormOf(enterprise.id).terms);
+        return term ? `${term.name} · ${enterprise.label}` : null;
+      })
+      .filter(Boolean)
+      .join(' / ');
+  const participation = wording((terms) => terms.participation);
+  const dividend = wording((terms) => terms.dividend);
+  return [
   { label: 'Revenus', kind: 'section', flow: 'income' },
   { label: 'Salaires perçus', kind: 'line', flow: 'income', amount: (f) => f.wagesReceived },
   { label: 'Salaire de fonctionnaire perçu', kind: 'line', flow: 'income', amount: (f) => f.publicWageReceived },
   { label: 'Allocation chômage perçue', kind: 'line', flow: 'income', amount: (f) => f.benefitReceived },
-  { label: 'Participation aux résultats de la coopérative', kind: 'line', flow: 'income', amount: (f) => f.participationReceived },
-  { label: 'Dividendes de la coopérative', kind: 'line', flow: 'income', amount: (f) => f.dividendReceived },
-  { label: 'Total revenus', kind: 'subtotal', amount: (f) => f.wagesReceived + f.publicWageReceived + f.benefitReceived + f.participationReceived + f.dividendReceived },
+  ...(participation ? [{ label: participation, kind: 'line', flow: 'income', amount: (f) => f.participationReceived }] : []),
+  { label: dividend, kind: 'line', flow: 'income', amount: (f) => f.dividendReceived },
+  // An advance of income tax that went beyond the tax of the year, given back at its close.
+  { label: 'Impôt sur le revenu remboursé', kind: 'line', flow: 'income', optional: true, amount: (f) => f.incomeTaxRefunded },
+  { label: 'Total revenus', kind: 'subtotal', amount: (f) => f.wagesReceived + f.publicWageReceived + f.benefitReceived + f.participationReceived + f.dividendReceived + f.incomeTaxRefunded },
 
   { label: 'Prélèvements obligatoires', kind: 'section', flow: 'charge' },
   { label: 'Impôt sur le revenu', kind: 'line', flow: 'charge', amount: (f) => f.incomeTax },
@@ -174,13 +199,22 @@ const PERSONAL_ROWS = [
   { label: 'Report à nouveau', kind: 'section' },
   { label: 'Ouverture', kind: 'line', amount: (f) => f.openingBalance },
   { label: 'Clôture', kind: 'total', amount: (f) => f.closingBalance },
-];
+  ];
+};
 
-/** The sub-tabs of a house: its personal account first, then its business account (read as a company's). */
-const HOUSE_ACCOUNTS = Object.freeze([
-  { kind: 'particulier', label: 'Particulier', rows: PERSONAL_ROWS },
-  { kind: 'entreprise', label: 'Entreprise', rows: COMPANY_ROWS },
-]);
+/**
+ * The sub-tabs of a house: its personal account first, then one per enterprise it runs (each a legal person with its own account, read as a
+ * company's), named by its form as the catalog gives it and in the catalog's order.
+ * @param {string} buildingType
+ * @param {{ businessAccountOf: (enterpriseId: string) => string }} accounting names the account of an enterprise
+ */
+function houseAccountsOf(buildingType, accounting) {
+  const { enterprises } = houseEnterprises(buildingType);
+  return [
+    { kind: 'particulier', label: 'Particulier', rows: personalRowsOf(enterprises) },
+    ...enterprises.map((enterprise) => ({ kind: accounting.businessAccountOf(enterprise.id), label: enterprise.label, rows: companyStatementRows(legalFormOf(enterprise.id).terms) })),
+  ];
+}
 
 /**
  * @param {HTMLElement} container
@@ -203,7 +237,7 @@ export async function renderBuildingFinanceTab(container, model) {
   tabs.setAttribute('role', 'tablist');
   const body = el('div', 'building-finance-body');
   let request = 0;
-  const buttons = HOUSE_ACCOUNTS.map((account) => {
+  const buttons = houseAccountsOf(model.buildingType, model.accounting).map((account) => {
     const button = el('button', 'building-finance-account-tab', account.label);
     button.type = 'button';
     button.setAttribute('role', 'tab');

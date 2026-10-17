@@ -29,8 +29,6 @@ Implémentation : `computeCityEmploymentSummary.js` → query `GetCityEmployment
   totalPopulation,      // workerPool + elitePool
   civilServantCount,    // floor(totalPopulation / 12)
   laborPool,            // workerPool − civilServantCount
-  activeCitizenCount,   // citoyens actifs (employés, hors chômeurs/élites/fonct.)
-  activePopulationCount,// activeCitizenCount + elitePool + civilServantCount
   totalAssigned,        // Σ employees.worker (postes routés)
   totalNeed,            // Σ workerNeed (postes routés)
   unemployed,           // max(0, laborPool − totalAssigned)

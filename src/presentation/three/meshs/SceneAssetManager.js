@@ -184,18 +184,17 @@ class SceneAssetManager {
         // If background color is specified, this is a farm season sprite
         // Remove ALL existing farm sprites to prevent overlapping between seasons
         if (backgroundColor !== null) {
-            const farmSpriteNames = ['grow-food', 'harvest', 'sell-food', 'no-work',
-                                     'grow-food-bg', 'harvest-bg', 'sell-food-bg', 'no-work-bg'];
+            const farmSpriteNames = ['grow-food', 'harvest', 'sell-food', 'fallow', 'no-work',
+                                     'grow-food-bg', 'harvest-bg', 'sell-food-bg', 'fallow-bg', 'no-work-bg'];
             farmSpriteNames.forEach(spriteName => {
                 this.removeStatusSprite(mesh, spriteName);
             });
         }
-        
-        // Also clean up farm sprites if this is a farm winter sprite (no-food with red color)
-        // or a no-work sprite (farm has no employees)
-        if ((name === 'no-food' && color === 0xff0000) || name === 'no-work') {
-            const farmSpriteNames = ['grow-food', 'harvest', 'sell-food', 'no-work',
-                                     'grow-food-bg', 'harvest-bg', 'sell-food-bg', 'no-work-bg'];
+
+        // Also clean up farm sprites if this is a no-work sprite (farm has no employees)
+        if (name === 'no-work') {
+            const farmSpriteNames = ['grow-food', 'harvest', 'sell-food', 'fallow', 'no-work',
+                                     'grow-food-bg', 'harvest-bg', 'sell-food-bg', 'fallow-bg', 'no-work-bg'];
             farmSpriteNames.forEach(spriteName => {
                 this.removeStatusSprite(mesh, spriteName);
             });
@@ -338,10 +337,6 @@ class SceneAssetManager {
 
     setNoRoadSprite(mesh, position, visible = false) {
         this.setStatusSprite(mesh, textures['no-roads'], 'no-road', {x: 0.6, y: 0.6, z: 1}, position, visible);
-    }
-
-    setNoFoodSprite(mesh, position, visible = false) {
-        this.setStatusSprite(mesh, textures['nofood'], 'no-food', {x: 0.6, y: 0.6, z: 1}, position, visible);
     }
 }
 

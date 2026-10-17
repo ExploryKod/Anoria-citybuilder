@@ -36,6 +36,7 @@ import { SupplyTraceability } from '../contexts/supply/infrastructure/presentati
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { DescribeActivitySupplyAccess } from '../contexts/supply/application/queries/DescribeActivitySupplyAccess.js';
 import { DescribeFoodForecast } from '../contexts/supply/application/queries/DescribeFoodForecast.js';
+import { DescribeShelfLife } from '../contexts/supply/application/queries/DescribeShelfLife.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListHubSupplyViews } from '../contexts/supply/application/queries/ListHubSupplyViews.js';
 import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries/ListSupplyStockSnapshots.js';
@@ -174,7 +175,6 @@ export function createSupplyContext({
     hubServing,
     dealGate,
     recordInputPurchase: (purchase) => traceability.recordInputPurchase(purchase),
-    recordSpoilage: (loss) => traceability.recordSpoilage(loss),
     removeBuilding: (params) => syncRemovedBuilding(params),
   });
   const runProducerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, produceResource);
@@ -265,6 +265,7 @@ export function createSupplyContext({
     runHubSurplusCycle,
     runConsumerCommand,
     traceability,
+    { supplyBuildingRepository: supplyBuildingRepositoryImpl, recordSpoilage: (loss) => traceability.recordSpoilage(loss) },
     { categories: distributionCategories, reachCategories: producerCategories }
   );
   const getBuildingSupplyViewQuery = new GetBuildingSupplyView(
@@ -285,6 +286,9 @@ export function createSupplyContext({
   });
   const describeActivitySupplyAccessQuery = new DescribeActivitySupplyAccess(supplyBuildingRepositoryImpl);
   const describeFoodForecastQuery = new DescribeFoodForecast(supplyBuildingRepositoryImpl);
+  const describeShelfLifeQuery = new DescribeShelfLife(supplyBuildingRepositoryImpl, {
+    sumShelfFlowsOf: (buildingId, range) => supplyTraceabilityRepositoryImpl.sumShelfFlowsOf(buildingId, range),
+  });
 
   // What each seller of the hamlet charges per unit this month: its goods, or its services.
   const listPrices = async (period, { services: wantServices }) => {
@@ -418,6 +422,11 @@ export function createSupplyContext({
     /** What the farms can expect in a year against the citizens' meals and the granaries' room — see DescribeFoodForecast.js. */
     async describeFoodForecast() {
       return describeFoodForecastQuery.execute();
+    },
+
+    /** How long the stock of one building has left to live, good by good — see DescribeShelfLife.js. */
+    async describeShelfLife(params) {
+      return describeShelfLifeQuery.execute(params);
     },
 
     async updateHubStorageOrderMode(hubKind, buildingId, productId) {

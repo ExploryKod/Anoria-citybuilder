@@ -5,6 +5,7 @@ import { getVatCategories, getVatCategoryOf, getVatItems } from '../../../../sha
 import {
   DEFAULT_HAMLET_FISCAL_RATES,
   DEFAULT_MINIMUM_WAGE_MODE,
+  DEFAULT_RENT_CONTROL_ENABLED,
   DEFAULT_SERVICE_SUBSIDY_PERCENT,
   DEFAULT_VAT_GENERAL_RATE_PERCENT,
   DEFAULT_VAT_RATE_PERCENT,
@@ -37,6 +38,17 @@ export class HamletFiscalRateRepository {
     return amount;
   }
 
+  /** @returns {Promise<number>} the share of a house's upkeep the hamlet pays, a fraction */
+  async getHouseMaintenanceSubsidyRate() {
+    return this.#read('houseMaintenanceSubsidyRate');
+  }
+
+  /** @param {number} rate a fraction @returns {Promise<number>} */
+  async setHouseMaintenanceSubsidyRate(rate) {
+    await this.#write({ houseMaintenanceSubsidyRate: rate });
+    return rate;
+  }
+
   /** @returns {Promise<number>} the corporate tax rate the player set, a fraction */
   async getCorporateTaxRate() {
     return this.#read('corporateTaxRate');
@@ -52,7 +64,7 @@ export class HamletFiscalRateRepository {
   async getSalarySettings() {
     const [
       minimumWageMode, minimumWage, minimumWageBasketRatio, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
-      employerContributionRate, employeeContributionRate, rentPerHouse, administratorStipend,
+      employerContributionRate, employeeContributionRate, rentCapPerHouse, administratorStipend,
     ] = await Promise.all([
       this.#readMinimumWageMode(),
       this.#read('minimumWage'),
@@ -64,13 +76,29 @@ export class HamletFiscalRateRepository {
       this.#read('unemploymentBenefitRate'),
       this.#read('employerContributionRate'),
       this.#read('employeeContributionRate'),
-      this.#read('rentPerHouse'),
+      this.#read('rentCapPerHouse'),
       this.#read('administratorStipend'),
     ]);
     return {
       minimumWageMode, minimumWage, minimumWageBasketRatio, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
-      employerContributionRate, employeeContributionRate, rentPerHouse, administratorStipend,
+      employerContributionRate, employeeContributionRate, rentCapPerHouse, administratorStipend,
     };
+  }
+
+  /** @returns {Promise<{ enabled: boolean, cap: number }>} the hamlet's rent control: whether the owner's rent is capped, and the ceiling (whole euros a month per house) */
+  async getRentControl() {
+    const hamletId = requireActiveHamletId();
+    const row = await this.db.hamlets.get(hamletId);
+    if (!row) throw new Error(`[fiscal] hamlet ${hamletId} has no row`);
+    if (typeof row.rentControlEnabled !== 'boolean') throw new Error(`[fiscal] hamlet ${hamletId} has no rent control switch: its rates are written when it is created`);
+    return { enabled: row.rentControlEnabled, cap: await this.#read('rentCapPerHouse') };
+  }
+
+  /** @param {boolean} enabled @returns {Promise<boolean>} */
+  async setRentControlEnabled(enabled) {
+    if (typeof enabled !== 'boolean') throw new Error(`[fiscal] the rent control switch must be a boolean, got ${enabled}`);
+    await this.db.hamlets.update(requireActiveHamletId(), { rentControlEnabled: enabled });
+    return enabled;
   }
 
   /** @returns {Promise<Record<string, number>>} the active hamlet's subsidy, in percent, for every service. */
@@ -207,6 +235,7 @@ export class HamletFiscalRateRepository {
     const missing = Object.keys(DEFAULT_HAMLET_FISCAL_RATES).filter((field) => typeof row[field] !== 'number');
     const defaults = Object.fromEntries(missing.map((field) => [field, DEFAULT_HAMLET_FISCAL_RATES[field]]));
     if (!row.minimumWageMode) defaults.minimumWageMode = DEFAULT_MINIMUM_WAGE_MODE;
+    if (typeof row.rentControlEnabled !== 'boolean') defaults.rentControlEnabled = DEFAULT_RENT_CONTROL_ENABLED;
     if (!row.serviceSubsidy) {
       defaults.serviceSubsidy = Object.fromEntries(getServiceCategories().map((service) => [service, DEFAULT_SERVICE_SUBSIDY_PERCENT]));
     }

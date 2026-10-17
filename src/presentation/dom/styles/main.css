@@ -1552,6 +1552,23 @@ footer .footer-links a:hover {
     color: #455a64;
 }
 
+.building-info-icon-chip--upcoming .building-info-icon-chip__emoji,
+.building-info-icon-chip--upcoming .building-info-icon-chip__label {
+    opacity: 0.6;
+}
+
+.building-info-icon-chip__level-pill {
+    margin-top: 4px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--level-color);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
 .building-info-icon-chip--compact .building-info-icon-chip__emoji {
     font-size: 24px;
 }
@@ -1589,6 +1606,33 @@ footer .footer-links a:hover {
 
 .building-info-metrics-detail {
     margin-top: 12px;
+}
+
+/* The Enterprises tab of a house: one pill per business (its legal form), the panel of the picked one under them. */
+.enterprise-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.enterprise-pill {
+    padding: 4px 14px;
+    border: 1px solid rgba(120, 144, 156, 0.5);
+    border-radius: 999px;
+    background: transparent;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.enterprise-pill.is-active {
+    background: rgba(120, 144, 156, 0.2);
+    font-weight: 600;
+}
+
+.enterprise-tenant--owing .kv-value {
+    color: #cf3d2e;
+    font-weight: 600;
 }
 
 .building-info-activity-recipe {
@@ -2500,20 +2544,11 @@ button.building-info-metric-card[aria-pressed="true"] {
     color: #495057;
 }
 
-.hub-info-actions {
-    display: flex;
-    justify-content: center;
-}
-
 .hub-orders-panel {
     border: 1px solid #e9ecef;
     border-radius: 8px;
     padding: 10px 12px;
     background: #fafafa;
-}
-
-.hub-orders-panel.hidden {
-    display: none;
 }
 
 .hub-orders-title {
@@ -2525,16 +2560,6 @@ button.building-info-metric-card[aria-pressed="true"] {
     margin: 0 0 10px;
     font-size: 12px;
     color: #6c757d;
-}
-
-.hub-orders-toggle-btn {
-    background: linear-gradient(135deg, #ff9800, #ffb74d);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 18px;
-    font-weight: 600;
-    cursor: pointer;
 }
 
 .hub-orders-c3-list {

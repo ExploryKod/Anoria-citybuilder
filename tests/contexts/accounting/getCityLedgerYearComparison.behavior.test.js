@@ -116,6 +116,17 @@ describe('Accounting — city ledger (Phase 1)', () => {
       expect(lines.unemploymentBenefit).toBe(40);
       expect(lines.totalExpenses).toBe(140);
     });
+
+    // Regression: the city giving back an income-tax advance leaves its treasury; the ledger shows it as a smaller income tax, so its totals agree with the treasury.
+    test('an income tax refund reduces the income tax line, so the ledger agrees with the treasury', () => {
+      const summary = yearSummary(1, [{ type: 'payroll_tax', amount: 100 }], [{ type: 'payroll_tax_refund', amount: 20 }]);
+
+      const lines = cityLedgerYearLinesFromJournalSummary(summary, 80);
+
+      expect(lines.payrollTax).toBe(80);
+      expect(lines.totalIncome).toBe(80);
+      expect(lines.totalExpenses).toBe(0);
+    });
   });
 
   describe('CityLedgerFinancialStatusPolicy', () => {
