@@ -48,7 +48,8 @@ export function createTradeContext({ supply, accounting }) {
       addCategoryAmount(hub.stocks, category, amount, getCategoriesForRole(hub.type, 'hub'), getTotalKeyForRole(hub.type, 'hub')),
     // The duty a customs authority charges on one good for one flow, at a turn: an export's is read at each order's
     // sale, an import's at each delivery.
-    getCustomsDuty: (authority, flow, good, turn) => accounting.getCustomsDuty(authority, flow, good, turn),
+    // The duty in force: nil while nobody holds the collection of the customs (the player's rate stays set).
+    getCustomsDuty: (authority, flow, good, turn) => accounting.getCustomsDutyInForce(authority, flow, good, turn),
     random: () => Math.random(),
     // Where a sale's range is centred. No game event moves it yet, so every sale is centred on 0 (no
     // favour, no hurt); events, the relation's state and the merchant's experience plug in here.
@@ -167,7 +168,7 @@ export function createTradeContext({ supply, accounting }) {
           imported.add(offer.good);
           const warehousePrice = average(offer.good, 'hub');
           if (warehousePrice === null) continue;
-          const dutyRate = accounting.getCustomsDuty('anoria', 'import', offer.good, turn);
+          const dutyRate = await accounting.getCustomsDutyInForce('anoria', 'import', offer.good, turn);
           const delivery = priceImportDelivery({ cityId: entry.cityId, offer, quantity: offer.quantityPerOrder, dutyRate });
           waterfalls.push(buildPriceWaterfall({
             good: offer.good,

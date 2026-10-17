@@ -6,7 +6,7 @@ import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 // household, under the same brackets, no separate threshold or rate for it (decided 2026-10-09).
 const HOUSE = 'House-Blue';
 
-function settle({ pop, salaried = 0, minimumWage, unemploymentBenefitRate, taxRate }) {
+function settle({ pop, salaried = 0, minimumWage, administratorStipend = 0, unemploymentBenefitRate, taxRate }) {
   const journal = [];
   const service = new SettleProducerCharges({
     getTimeInfo: () => ({ year: 1, monthIndex: 0, month: 'Janvier' }),
@@ -21,9 +21,10 @@ function settle({ pop, salaried = 0, minimumWage, unemploymentBenefitRate, taxRa
     sumBankInterestByBuilding: async () => [],
     sumOtherExpensesByBuilding: async () => [],
     listHouses: async () => [{ id: 'house', pop, salaried }],
-    getPublicPay: async () => ({ benefitBase: minimumWage, unemploymentBenefitRate, employerContributionRate: 0, employeeContributionRate: 0 }),
+    getPublicPay: async () => ({ benefitBase: minimumWage, unemploymentBenefitRate, employerContributionRate: 0, employeeContributionRate: 0, administratorStipend }),
     getWageRateOf: async () => () => 100,
     getSalaryTax: async () => taxRate,
+    getCorporateTaxRate: async () => 0.25,
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
     readCompanyYear: companyYearReaderOf(journal),
@@ -72,12 +73,13 @@ describe('income tax on the unemployment benefit — taxed together with wages, 
   });
 
   // Regression: the administrators look for no job, so they got no benefit and no pay at all — their house could not pay for
-  // its services. The city now pays them a stipend, the lowest wage it pays, on both sides of the journal.
+  // its services. The city now pays them the stipend the player sets (apart from the minimum wage), on both sides of the journal.
   test('the administrators of a house are paid a stipend by the city, not a benefit', async () => {
     const journal = await settle({
       pop: 0,
       salaried: 2,
-      minimumWage: 100,
+      minimumWage: 7,
+      administratorStipend: 100,
       unemploymentBenefitRate: 0.7,
       taxRate: { threshold1: 1000, rate1: 0.1, threshold2: 2000, rate2: 0.2 },
     });

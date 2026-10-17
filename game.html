@@ -2427,6 +2427,7 @@
                         <button type="button" role="tab" data-taxes-tab="vat" aria-selected="false" tabindex="-1">TVA</button>
                     </div>
                     <div class="taxes-board" id="taxes-board" role="tabpanel" data-taxes-panel="general">
+                        <p class="commerce-customs-hint" id="tax-citizen-notice" role="alert" hidden></p>
                         <div class="taxes-row">
                             <div class="taxes-row-head">
                                 <span class="taxes-row-label">Impôt par citoyen</span>
@@ -2437,6 +2438,18 @@
                                 <span class="commerce-customs-value" id="tax-citizen-value">…</span>
                             </div>
                         </div>
+                        <p class="commerce-customs-hint" id="tax-corporate-notice" role="alert" hidden></p>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Impôt sur les sociétés</span>
+                                <span class="taxes-row-scope">Hameau</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="tax-corporate-slider" class="commerce-customs-slider" step="1" aria-label="Impôt sur les sociétés (IS), en pourcentage du résultat de l'année" />
+                                <span class="commerce-customs-value" id="tax-corporate-value">…</span>
+                            </div>
+                        </div>
+                        <p class="commerce-customs-hint" id="tax-income-notice" role="alert" hidden></p>
                         <div class="taxes-row">
                             <div class="taxes-row-head">
                                 <span class="taxes-row-label">Impôt sur le revenu</span>
@@ -2479,6 +2492,7 @@
                         </div>
                     </div>
                     <div class="taxes-board" id="vat-panel" role="tabpanel" data-taxes-panel="vat" hidden>
+                        <p class="commerce-customs-hint" id="tax-vat-notice" role="alert" hidden></p>
                         <div class="taxes-row">
                             <label class="taxes-uniform">
                                 <input type="checkbox" id="tax-vat-uniform" />
@@ -2507,6 +2521,7 @@
                 <div class="administrator-section-title">Douanes</div>
                 <div class="administrator-section-content">
                     <div class="taxes-board" id="customs-board">
+                        <p class="commerce-customs-hint" id="customs-notice" role="alert" hidden></p>
                         <p class="commerce-customs-hint">Un droit par produit et par sens, sur la valeur des biens qui passent la frontière. L'export est payé à la ville par l'exportateur ; l'import l'est par l'importateur, au moment où il revend le bien.</p>
                         <h3 class="customs-group-title">Importations</h3>
                         <div id="customs-import-list"></div>

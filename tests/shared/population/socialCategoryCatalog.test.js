@@ -21,7 +21,8 @@ describe('SOCIAL_CATEGORY — single source for the social categories', () => {
     const { administrators } = SOCIAL_CATEGORY;
     for (const tier of Object.values(administrators.tiers)) expect(tier.maxPopulation).toBe(6);
     expect(administrators.tiers[1].requirements).toEqual([]);
-    expect(administrators.tiers[1].skills).toEqual({ proprietaire: 1, percepteur: 1 });
+    expect(administrators.tiers[1].skills).toEqual({ proprietaire: 1, perception_ic: 1, perception_ir: 1, perception_tva: 1 });
+    expect(administrators.tiers[2].skills).toEqual({ perception_is: 1, perception_douane: 1 });
   });
 
   test('the ladder is the same for the 3 categories: only the skills they hold differ', () => {

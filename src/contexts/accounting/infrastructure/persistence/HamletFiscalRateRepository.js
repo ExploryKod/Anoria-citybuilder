@@ -37,11 +37,22 @@ export class HamletFiscalRateRepository {
     return amount;
   }
 
+  /** @returns {Promise<number>} the corporate tax rate the player set, a fraction */
+  async getCorporateTaxRate() {
+    return this.#read('corporateTaxRate');
+  }
+
+  /** @param {number} rate a fraction @returns {Promise<number>} */
+  async setCorporateTaxRate(rate) {
+    await this.#write({ corporateTaxRate: rate });
+    return rate;
+  }
+
   /** @returns {Promise<{ minimumWageMode: string, minimumWage: number, minimumWageBasketRatio: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>} */
   async getSalarySettings() {
     const [
       minimumWageMode, minimumWage, minimumWageBasketRatio, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
-      employerContributionRate, employeeContributionRate, rentPerHouse,
+      employerContributionRate, employeeContributionRate, rentPerHouse, administratorStipend,
     ] = await Promise.all([
       this.#readMinimumWageMode(),
       this.#read('minimumWage'),
@@ -54,10 +65,11 @@ export class HamletFiscalRateRepository {
       this.#read('employerContributionRate'),
       this.#read('employeeContributionRate'),
       this.#read('rentPerHouse'),
+      this.#read('administratorStipend'),
     ]);
     return {
       minimumWageMode, minimumWage, minimumWageBasketRatio, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
-      employerContributionRate, employeeContributionRate, rentPerHouse,
+      employerContributionRate, employeeContributionRate, rentPerHouse, administratorStipend,
     };
   }
 

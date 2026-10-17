@@ -63,6 +63,8 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
       x: vm.anchorX,
       y: vm.anchorY,
     });
+    // The year ahead of the city's farms against its citizens' meals and its granaries' room: the Messages tab's complaints.
+    extra.foodForecast = await vm.supply.describeFoodForecast();
   }
 
   if (groupId === BUILDING_INFO_GROUPS.house) {

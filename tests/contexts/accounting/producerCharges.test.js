@@ -74,7 +74,7 @@ describe('building lines — a company pays its upkeep; a house is subsidised by
 
 describe('corporate tax — the rate on the résultat courant avant impôts of the year, never more', () => {
   test('the tax is the rate of the RCAI of the year so far (25 %), and it reaches the city', () => {
-    expect(corporateTaxDueOf({ rcaiYearToDate: 92.81, taxPaidYearToDate: 0 })).toBe(23.2);
+    expect(corporateTaxDueOf({ rcaiYearToDate: 92.81, taxPaidYearToDate: 0, rate: 0.25 })).toBe(23.2);
     expect(corporateTaxLines({ id: 'farm', amount: 23.2 })).toEqual([
       { kind: 'corporate_tax', amount: 23.2, holder: 'farm', counterparty: null },
       { kind: 'corporate_tax_revenue', amount: 23.2, holder: null, counterparty: null },
@@ -85,14 +85,16 @@ describe('corporate tax — the rate on the résultat courant avant impôts of t
     // A harvest month earns 400, then two lean months lose 100 each: 25 % of 400, then of 300, then of 200, less what was paid.
     const monthly = [400, 300, 200];
     let paid = 0;
-    for (const rcai of monthly) paid += corporateTaxDueOf({ rcaiYearToDate: rcai, taxPaidYearToDate: paid });
+    for (const rcai of monthly) paid += corporateTaxDueOf({ rcaiYearToDate: rcai, taxPaidYearToDate: paid, rate: 0.25 });
     expect(paid).toBe(100); // 25 % of the 400 of the first month: nothing is refunded afterwards
     expect(paid).toBeLessThanOrEqual(0.25 * 400);
   });
 
   test('a loss pays no corporate tax, and a year that already paid it owes nothing more', () => {
-    expect(corporateTaxDueOf({ rcaiYearToDate: -165.15, taxPaidYearToDate: 0 })).toBe(0);
-    expect(corporateTaxDueOf({ rcaiYearToDate: 400, taxPaidYearToDate: 100 })).toBe(0);
+    expect(corporateTaxDueOf({ rcaiYearToDate: -165.15, taxPaidYearToDate: 0, rate: 0.25 })).toBe(0);
+    expect(corporateTaxDueOf({ rcaiYearToDate: 400, taxPaidYearToDate: 100, rate: 0.25 })).toBe(0);
+    // A rate of nothing (set by the player, or imposed while nobody collects the tax) levies nothing.
+    expect(corporateTaxDueOf({ rcaiYearToDate: 400, taxPaidYearToDate: 0, rate: 0 })).toBe(0);
     expect(corporateTaxLines({ id: 'farm', amount: 0 })).toEqual([]);
   });
 });

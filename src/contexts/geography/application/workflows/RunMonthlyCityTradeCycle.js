@@ -56,7 +56,7 @@ export class RunMonthlyCityTradeCycle {
    *   hubServing: import('../../../supply/application/services/HubServing.js').HubServing,
    *   takeHubStock: (hub: object, category: string, amount: number) => object,
    *   recordMerchantSale: (params: object) => Promise<void>,
-   *   getCustomsDuty: (authority: string, flow: 'import' | 'export', good: string, turn: number) => number,
+   *   getCustomsDuty: (authority: string, flow: 'import' | 'export', good: string, turn: number) => number | Promise<number>,
    *   recordMerchantLine: (params: { turn: number, type: string, amount: number, description: string, partnerId: string, houseId: string, dutyRate?: number, customsBase?: number }) => Promise<{ recorded: boolean, reason?: string }>, // a merchant house's business account
    *   recordCityLine: (params: { turn: number, type: string, amount: number, description: string, partnerId: string, dutyRate?: number, customsBase?: number }) => Promise<{ recorded: boolean, reason?: string }>, // the city's own account
    *   recordImportDelivery: (params: { turn: number, monthIndex: number, year: number, houseId: string, hubId: string, good: string, quantity: number, unitPrice: number }) => Promise<void>, // the merchants' sale to the warehouse, for the month's settlement
@@ -193,7 +193,7 @@ export class RunMonthlyCityTradeCycle {
     };
     relation.exportFailures = { ...relation.exportFailures, [good]: failures };
 
-    const dutyRate = this.getCustomsDuty('anoria', 'export', good, turn);
+    const dutyRate = await this.getCustomsDuty('anoria', 'export', good, turn);
     // What our merchants paid for a unit (the warehouse's price), against what the city pays at the centre of its range,
     // duty taken off. The freight is the buying city's.
     // The warehouse's price is built on what its stock cost it (the average price of its deliveries, plus its margin), so a dearer import
@@ -321,7 +321,7 @@ export class RunMonthlyCityTradeCycle {
     // A deal sits in the warehouse and becomes the real good in it: the room it takes is the room the good takes.
     const planned = Math.min(offer.quantityPerOrder, waiting);
     const pricing = priceImportDelivery({
-      cityId, offer, quantity: planned > 0 ? planned : offer.quantityPerOrder, dutyRate: this.getCustomsDuty('anoria', 'import', good, turn),
+      cityId, offer, quantity: planned > 0 ? planned : offer.quantityPerOrder, dutyRate: await this.getCustomsDuty('anoria', 'import', good, turn),
     });
     const ceases = findCeaseReason('import', { pricing, baseValue: getResourceBaseValue(good), failures });
     const ceasedBefore = relation.importCeased[good] ?? null;
@@ -351,7 +351,7 @@ export class RunMonthlyCityTradeCycle {
     // The hubs just lost their deals: the room and the stocks to file the goods on are the ones they hold now.
     const receiving = hubs.filter((hub) => this.hubHolds(hub, good));
 
-    const delivery = priceImportDelivery({ cityId, offer, quantity: taken, dutyRate: this.getCustomsDuty('anoria', 'import', good, turn) });
+    const delivery = priceImportDelivery({ cityId, offer, quantity: taken, dutyRate: await this.getCustomsDuty('anoria', 'import', good, turn) });
 
     // Each merchant house is the importer of the deals it made, in proportion.
     const unitsByHouse = new Map();
@@ -366,7 +366,7 @@ export class RunMonthlyCityTradeCycle {
     const transportOf = splitByWeight(delivery.transport, weights);
     const dutyOf = splitByWeight(delivery.duty, weights);
     const marginOf = splitByWeight(delivery.margin, weights);
-    const dutyRate = this.getCustomsDuty('anoria', 'import', good, turn);
+    const dutyRate = await this.getCustomsDuty('anoria', 'import', good, turn);
 
     const book = async (result, what) => {
       if (!result?.recorded) throw new Error(`[trade] the journal refused ${what}: ${result?.reason ?? 'no reason given'}`);

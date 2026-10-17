@@ -10,7 +10,7 @@
  */
 
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
-import { SOCIAL_CATEGORY, OWNER_SKILL, TAX_COLLECTOR_SKILL } from '../../../../shared/population/socialCategoryCatalog.js';
+import { SOCIAL_CATEGORY, OWNER_SKILL, TAX_COLLECTION_SKILLS } from '../../../../shared/population/socialCategoryCatalog.js';
 import { getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
 
 /**
@@ -178,15 +178,19 @@ const MILESTONE_DRAFTS = {
   'mayor-house': () => {
     const house = getBuildingDefinition('House-Mayor').displayName;
     const owner = getSkillDisplay(OWNER_SKILL).label.toLowerCase();
-    const collector = getSkillDisplay(TAX_COLLECTOR_SKILL).label.toLowerCase();
+    // The collections the first tier grants: the simple taxes. The companies' tax and the customs come with the house's second tier.
+    const collections = Object.keys(SOCIAL_CATEGORY.administrators.tiers[1].skills)
+      .filter((skill) => skill !== OWNER_SKILL)
+      .map((skill) => getSkillDisplay(skill).label.toLowerCase())
+      .join(', ');
     const administrators = SOCIAL_CATEGORY.administrators.tiers[1].maxPopulation;
     return {
       sourceId: 'city',
       categoryId: 'announcement',
       title: 'La maison du maire est bâtie',
-      body: `Les ${house.toLowerCase()} de la ville s'installent (${administrators} au plus). Leur maison leur donne deux compétences, d'office : `
+      body: `Les ${house.toLowerCase()} de la ville s'installent (${administrators} au plus). Leur maison leur donne des compétences, d'office : `
         + `${owner} — ils perçoivent les loyers et leur maison est la condition pour bâtir toutes les autres maisons ; `
-        + `${collector} — ils perçoivent les impôts des autres maisons.`,
+        + `${collections} — ils perçoivent les impôts des autres maisons.`,
       teaser: 'Les administrateurs prennent leurs quartiers…',
       reliability: 'trusted',
       revelation: 'free',
@@ -195,12 +199,12 @@ const MILESTONE_DRAFTS = {
   // November came and nobody holds the tax collector skill: the citizen tax of the year was not collected. Says who collects it.
   'tax-uncollected': () => {
     const house = getBuildingDefinition('House-Mayor').displayName;
-    const collector = getSkillDisplay(TAX_COLLECTOR_SKILL).label.toLowerCase();
+    const collector = getSkillDisplay(TAX_COLLECTION_SKILLS.citizen).label.toLowerCase();
     return {
       sourceId: 'city',
       categoryId: 'announcement',
       title: "L'impôt n'a pas été levé",
-      body: `Personne n'a la compétence de ${collector} : l'impôt citoyen de l'année n'a pas été collecté. Elle revient aux ${house.toLowerCase()}, `
+      body: `Personne n'a la compétence « ${collector} » : l'impôt citoyen de l'année n'a pas été collecté. Elle revient aux ${house.toLowerCase()}, `
         + 'qui vivent dans la maison du maire : bâtissez-la et logez-y du monde, et l\'impôt sera levé dès ce mois.',
       teaser: 'Les caisses restent vides…',
       reliability: 'trusted',

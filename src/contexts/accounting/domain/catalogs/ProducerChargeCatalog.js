@@ -5,15 +5,13 @@
  * - The wages are not declared here: the labour market settles one wage per skill and level (LabourMarketCatalog.js, WageRatePolicy.js),
  *   never under the city's minimum wage. The payroll of a building is its staffed workers times the wage of its workplace's skill and
  *   level: it follows the staffing, not the sales (see ProducerChargePolicy.js's payrollOf).
- * - `CORPORATE_TAX_RATE`: the corporate tax on a lucrative building's profit (sales − purchases − wages − its own upkeep),
- *   per month. A loss pays nothing and is not carried forward.
+ * - The corporate tax on a lucrative building's profit (sales − purchases − wages − its own upkeep) is a rate the player sets
+ *   (`corporateTaxRate`, see FiscalRateCatalog.js). A loss pays nothing and is not carried forward.
  * - `HOUSING_MAINTENANCE_SUBSIDY_PERCENT`: the share of a non-lucrative building's upkeep the city pays (houses, roads,
  *   services): 100 by default.
  * - `COMPANY_MAINTENANCE_SUBSIDY_PERCENT`: the share of a lucrative building's upkeep the city pays: 0 by default, the
  *   building pays its own.
  */
-export const CORPORATE_TAX_RATE = 0.25;
-
 /**
  * A house's own business is a cooperative (SCOP): its residents are its workers and its associates. Each month's surplus (what it sells less
  * what it buys) is shared in three parts, as the French rules of the SCOP ask (entreprendre.service-public.gouv.fr/vosdroits/F31328):

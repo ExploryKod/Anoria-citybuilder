@@ -15,7 +15,7 @@ import {
 } from '../../domain/policies/ProducerChargePolicy.js';
 import { BUSINESS_ACCOUNT, PERSONAL_ACCOUNT } from '../../domain/policies/AccountKeyPolicy.js';
 import { allocateCooperativeResult, cooperativeLines } from '../../domain/policies/CooperativeAllocationPolicy.js';
-import { COOPERATIVE_SHARES, CORPORATE_TAX_RATE } from '../../domain/catalogs/ProducerChargeCatalog.js';
+import { COOPERATIVE_SHARES } from '../../domain/catalogs/ProducerChargeCatalog.js';
 import { serviceSubsidyShare } from '../../domain/policies/ServiceSubsidyPolicy.js';
 import { addVatTo } from '../../domain/policies/VatIncludedPolicy.js';
 import { payableServiceBills } from '../../domain/policies/ServiceSolvencyPolicy.js';
@@ -101,10 +101,13 @@ export class SettleProducerCharges {
    *   bank fund its own wages/upkeep/corporate tax from what it actually earns, the same way goods and service
    *   sales do for every other lucrative building
    * @param {() => Promise<{ threshold1: number, rate1: number, threshold2: number, rate2: number }>} deps.getSalaryTax the progressive income tax bands: see withholdIncomeTax
+   *   (all nil when nobody holds the collection of the income tax)
+   * @param {() => Promise<number>} deps.getCorporateTaxRate the corporate tax rate in force, a fraction: the player's, or 0 while nobody holds its collection
    * @param {() => Promise<Array<{ id: string, pop: number }>>} deps.listHouses the hamlet's households and their residents who look for a job (the
    *   ones the unemployment benefit counts: the administrators do not look for one)
-   * @param {() => Promise<{ benefitBase: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>} deps.getPublicPay
-   *   the benefit base (the lowest wage the city pays), the benefit rate (a fraction of it) and the two social contribution rates (fractions of the gross wage)
+   * @param {() => Promise<{ benefitBase: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number, administratorStipend: number }>} deps.getPublicPay
+   *   the benefit base (the lowest wage the city pays), the benefit rate (a fraction of it), the two social contribution rates (fractions of the gross wage)
+   *   and the monthly stipend of one administrator (the player's setting)
    * @param {() => Promise<(skill: string, level: number) => number>} deps.getWageRateOf the monthly gross wage the labour market gives a skill at a level
    *   (never under the minimum wage), as it stands for the month being settled
    * @param {(houseId: string) => Promise<number>} deps.fundsOf what a house has in its personal account before this settlement
@@ -168,12 +171,13 @@ export class SettleProducerCharges {
     const houseSales = await this.deps.sumHouseSales(timeInfo.year, timeInfo.monthIndex);
     const bankInterest = await this.deps.sumBankInterestByBuilding(timeInfo.year, timeInfo.monthIndex);
     const taxRate = await this.deps.getSalaryTax();
+    const corporateTaxRate = await this.deps.getCorporateTaxRate();
 
     // The city's pay to the households: the unemployed's benefit, from the residents of each. Civil servants
     // were removed (2026-10-10, "suppress it for now") — a resident is either a worker or unemployed, the
     // city no longer directly employs a fixed share of the population.
     const publicPay = await this.deps.getPublicPay();
-    for (const field of ['benefitBase', 'unemploymentBenefitRate', 'employerContributionRate', 'employeeContributionRate']) {
+    for (const field of ['benefitBase', 'unemploymentBenefitRate', 'employerContributionRate', 'employeeContributionRate', 'administratorStipend']) {
       if (!Number.isFinite(publicPay[field])) throw new Error(`[producer] the hamlet's ${field} is not a number (${publicPay[field]}): the month cannot be settled`);
     }
     const households = await this.deps.listHouses();
@@ -223,14 +227,15 @@ export class SettleProducerCharges {
       }
     }
 
-    // The administrators do not look for a job and have no workplace: the city pays them a stipend, the lowest wage it pays
-    // (the benefit base) per administrator and month. Without it their house has no money and its services are cut off.
+    // The administrators do not look for a job and have no workplace: the city pays them the stipend the player sets
+    // (`administratorStipend`, apart from the minimum wage) per administrator and month. A direct charge on the city's funds; without
+    // enough of it their house cannot pay its needs, its services are cut off and its tiers (so its skills) stay out of reach.
     const stipendByHouse = new Map();
     for (const household of households) {
       if (!Number.isInteger(household.salaried) || household.salaried < 0) {
         throw new Error(`[producer] house ${household.id} has no count of salaried residents (${household.salaried}): the month cannot be settled`);
       }
-      const stipend = centimes(household.salaried * publicPay.benefitBase);
+      const stipend = centimes(household.salaried * publicPay.administratorStipend);
       if (stipend <= 0) continue;
       stipendByHouse.set(household.id, stipend);
       await this.#record(
@@ -374,7 +379,7 @@ export class SettleProducerCharges {
       // impôts the player reads, not on a second computation of it, and it is dated in the year it taxes (its last turn).
       if (timeInfo.monthIndex === MONTHS_PER_YEAR - 1 && isLucrativeBuilding(building.type)) {
         const { rcaiYearToDate, taxPaidYearToDate } = await this.deps.readCompanyYear(building.id, timeInfo.year);
-        const taxLines = corporateTaxLines({ id: building.id, amount: corporateTaxDueOf({ rcaiYearToDate, taxPaidYearToDate }) });
+        const taxLines = corporateTaxLines({ id: building.id, amount: corporateTaxDueOf({ rcaiYearToDate, taxPaidYearToDate, rate: corporateTaxRate }) });
         for (const line of taxLines) {
           await this.#record(line, {
             time: deliveredTime,
@@ -396,7 +401,7 @@ export class SettleProducerCharges {
           result,
           businessCash: result > 0 ? await this.deps.businessFundsOf(building.id) : 0,
           shares: COOPERATIVE_SHARES,
-          corporateTaxRate: CORPORATE_TAX_RATE,
+          corporateTaxRate,
         });
         for (const line of cooperativeLines({ houseId: building.id, ...sharing })) {
           await this.#record(line, {

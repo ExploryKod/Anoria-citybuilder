@@ -38,9 +38,13 @@ export const SKILL_CATALOG = Object.freeze({
   hospitality: Object.freeze({ label: 'Convivialité', emoji: '🍺' }),
   'employment-eligible': Object.freeze({ label: "Éligibilité à l'emploi", emoji: '💼' }),
   administration: Object.freeze({ label: 'Administration', emoji: '🏛️' }),
-  // The administrators' two skills, held by right (see socialCategoryCatalog.js).
+  // The administrators' skills: the owner and one collection per tax (see socialCategoryCatalog.js).
   proprietaire: Object.freeze({ label: 'Propriétaire', emoji: '🔑' }),
-  percepteur: Object.freeze({ label: 'Percepteur', emoji: '🧾' }),
+  perception_ic: Object.freeze({ label: "Perception de l'impôt citoyen", emoji: '🧾' }),
+  perception_ir: Object.freeze({ label: "Perception de l'impôt sur le revenu", emoji: '🧾' }),
+  perception_tva: Object.freeze({ label: 'Perception de la TVA', emoji: '🧾' }),
+  perception_is: Object.freeze({ label: "Perception de l'impôt sur les sociétés", emoji: '🧾' }),
+  perception_douane: Object.freeze({ label: 'Perception des douanes', emoji: '🛃' }),
   'elder-wisdom': Object.freeze({ label: 'Sagesse', emoji: '📜' }),
   learning: Object.freeze({ label: 'Apprentissage', emoji: '📚' }),
 });

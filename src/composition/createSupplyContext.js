@@ -35,6 +35,7 @@ import { findNaturalSourcesInRange } from '../contexts/supply/domain/policies/Re
 import { SupplyTraceability } from '../contexts/supply/infrastructure/presentation/SupplyTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { DescribeActivitySupplyAccess } from '../contexts/supply/application/queries/DescribeActivitySupplyAccess.js';
+import { DescribeFoodForecast } from '../contexts/supply/application/queries/DescribeFoodForecast.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListHubSupplyViews } from '../contexts/supply/application/queries/ListHubSupplyViews.js';
 import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries/ListSupplyStockSnapshots.js';
@@ -283,6 +284,7 @@ export function createSupplyContext({
     listExternalClients: listExternalClientsForCategory,
   });
   const describeActivitySupplyAccessQuery = new DescribeActivitySupplyAccess(supplyBuildingRepositoryImpl);
+  const describeFoodForecastQuery = new DescribeFoodForecast(supplyBuildingRepositoryImpl);
 
   // What each seller of the hamlet charges per unit this month: its goods, or its services.
   const listPrices = async (period, { services: wantServices }) => {
@@ -411,6 +413,11 @@ export function createSupplyContext({
     /** Structural gaps in a building's own recipe(s) — see DescribeActivitySupplyAccess.js. */
     async describeActivitySupplyAccess(building) {
       return describeActivitySupplyAccessQuery.execute(building);
+    },
+
+    /** What the farms can expect in a year against the citizens' meals and the granaries' room — see DescribeFoodForecast.js. */
+    async describeFoodForecast() {
+      return describeFoodForecastQuery.execute();
     },
 
     async updateHubStorageOrderMode(hubKind, buildingId, productId) {

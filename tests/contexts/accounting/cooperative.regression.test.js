@@ -2,7 +2,10 @@ import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
 import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 import { allocateCooperativeResult } from '../../../src/contexts/accounting/domain/policies/CooperativeAllocationPolicy.js';
-import { COOPERATIVE_MINIMUM_SHARES, COOPERATIVE_SHARES, CORPORATE_TAX_RATE } from '../../../src/contexts/accounting/domain/catalogs/ProducerChargeCatalog.js';
+import { COOPERATIVE_MINIMUM_SHARES, COOPERATIVE_SHARES } from '../../../src/contexts/accounting/domain/catalogs/ProducerChargeCatalog.js';
+import { DEFAULT_HAMLET_FISCAL_RATES } from '../../../src/contexts/accounting/domain/catalogs/FiscalRateCatalog.js';
+
+const CORPORATE_TAX_RATE = DEFAULT_HAMLET_FISCAL_RATES.corporateTaxRate;
 import { buildingFinanceFigures } from '../../../src/contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 
 // A house's own business is a cooperative (SCOP): its year's surplus, shared when the fiscal year closes, goes to the residents (participation, a charge before the tax), to the tax,
@@ -57,9 +60,10 @@ function settle({ pairs, businessCash }) {
     sumBankInterestByBuilding: async () => [],
     sumOtherExpensesByBuilding: async () => [],
     listHouses: async () => [{ id: 'house-1', pop: 4, salaried: 0 }],
-    getPublicPay: async () => ({ benefitBase: 0, unemploymentBenefitRate: 0, employerContributionRate: 0, employeeContributionRate: 0 }),
+    getPublicPay: async () => ({ benefitBase: 0, unemploymentBenefitRate: 0, employerContributionRate: 0, employeeContributionRate: 0, administratorStipend: 0 }),
     getWageRateOf: async () => () => 8,
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0, threshold2: 0, rate2: 0 }),
+    getCorporateTaxRate: async () => 0.25,
     recordServiceCutOff: async () => {},
     buildingMaintenanceCost: () => 0,
     readCompanyYear: companyYearReaderOf(journal),

@@ -1,6 +1,8 @@
 import { getVatCategories, getVatCategoryLabel, getVatItemsOf } from '../../../../shared/resource-catalog/VatCategoryCatalog.js';
 import { goodLabel } from '../../shell/CatalogVocabulary.js';
 import { createSliderRow } from '../sliderRow.js';
+import { TAX_COLLECTION_SKILLS } from '../../../../shared/population/socialCategoryCatalog.js';
+import { applyTaxCollection } from '../taxCollectionNotice.js';
 
 /**
  * The Taxes section, in two sub-tabs. "Impôts": the taxes the city collects — the citizen tax and the progressive
@@ -17,17 +19,52 @@ export class TaxesSectionPresenter {
 
   /** Reads every rate from its owner (the hamlet's row, the city's storage) and shows it. */
   async refresh() {
-    const [citizenTax, salary, vat] = await Promise.all([
+    const [citizenTax, corporateTaxRate, salary, vat, collection] = await Promise.all([
       this.accounting.getCitizenTaxPerCapita(),
+      this.accounting.getCorporateTaxRate(),
       this.accounting.getSalarySettings(),
       this.accounting.getVatSettings(),
+      this.accounting.getTaxCollection(),
     ]);
-    this.#show('tax-citizen', citizenTax, '€');
+    // A tax nobody collects is in force at 0 %, as if the player had set it so, and its controls are locked (see taxCollectionNotice.js).
+    this.#show('tax-citizen', collection.citizen ? citizenTax : 0, '€');
+    this.#show('tax-corporate', collection.corporate ? Math.round(corporateTaxRate * 100) : 0, '%');
     this.#show('tax-threshold-1', salary.salaryTaxThreshold1, '€');
-    this.#show('tax-salary-1', Math.round(salary.salaryTaxRate1 * 100), '%');
+    this.#show('tax-salary-1', collection.income ? Math.round(salary.salaryTaxRate1 * 100) : 0, '%');
     this.#show('tax-threshold-2', salary.salaryTaxThreshold2, '€');
-    this.#show('tax-salary-2', Math.round(salary.salaryTaxRate2 * 100), '%');
-    this.#showVat(vat);
+    this.#show('tax-salary-2', collection.income ? Math.round(salary.salaryTaxRate2 * 100) : 0, '%');
+    this.#showVat(vat, collection.vat);
+    applyTaxCollection({
+      collected: collection.citizen,
+      skill: TAX_COLLECTION_SKILLS.citizen,
+      notice: this.#element('tax-citizen-notice'),
+      controls: [this.#element('tax-citizen-slider')],
+    });
+    applyTaxCollection({
+      collected: collection.corporate,
+      skill: TAX_COLLECTION_SKILLS.corporate,
+      notice: this.#element('tax-corporate-notice'),
+      controls: [this.#element('tax-corporate-slider')],
+    });
+    applyTaxCollection({
+      collected: collection.income,
+      skill: TAX_COLLECTION_SKILLS.income,
+      notice: this.#element('tax-income-notice'),
+      controls: ['tax-threshold-1', 'tax-salary-1', 'tax-threshold-2', 'tax-salary-2'].map((prefix) => this.#element(`${prefix}-slider`)),
+    });
+    applyTaxCollection({
+      collected: collection.vat,
+      skill: TAX_COLLECTION_SKILLS.vat,
+      notice: this.#element('tax-vat-notice'),
+      controls: [this.#element('tax-vat-uniform'), this.#element('tax-vat-general-slider')],
+    });
+  }
+
+  /** @param {string} id */
+  #element(id) {
+    const node = document.getElementById(id);
+    if (!node) throw new Error(`[taxes] #${id} is missing from the page`);
+    return node;
   }
 
   /** Binds the sub-tabs and the sliders once: a move shows the value, the release stores it. */
@@ -35,6 +72,9 @@ export class TaxesSectionPresenter {
     this.#bindSubTabs();
     this.#bindSlider('tax-citizen', '€', async (value) => {
       await this.accounting.setCitizenTaxPerCapita(value);
+    });
+    this.#bindSlider('tax-corporate', '%', async (value) => {
+      await this.accounting.setCorporateTaxRate(value / 100);
     });
     this.#bindSlider('tax-threshold-1', '€', async (value) => {
       await this.accounting.setSalarySettings({ salaryTaxThreshold1: value });
@@ -50,6 +90,7 @@ export class TaxesSectionPresenter {
     });
 
     this.#fit('tax-citizen', this.bounds.citizenTaxPerCapita);
+    this.#fit('tax-corporate', this.bounds.corporateTaxPercent);
     this.#fit('tax-threshold-1', this.bounds.salaryTaxThreshold1);
     this.#fit('tax-salary-1', this.bounds.salaryTaxPercent1);
     this.#fit('tax-threshold-2', this.bounds.salaryTaxThreshold2);
@@ -67,22 +108,22 @@ export class TaxesSectionPresenter {
   }
 
   /** @param {{ uniform: boolean, generalRatePercent: number, categoryRatesPercent: Record<string, number>, exempt: Record<string, boolean> }} vat */
-  #showVat({ uniform, generalRatePercent, categoryRatesPercent, exempt }) {
+  #showVat({ uniform, generalRatePercent, categoryRatesPercent, exempt }, collected) {
     this.#checkbox('tax-vat-uniform').checked = uniform;
-    this.#show('tax-vat-general', generalRatePercent, '%');
+    this.#show('tax-vat-general', collected ? generalRatePercent : 0, '%');
     const board = document.getElementById('vat-board');
     if (!board) throw new Error('[taxes] #vat-board is missing from the page');
     board.replaceChildren(
-      ...getVatCategories().map((category) => this.#vatCategoryBlock(category, { uniform, rate: categoryRatesPercent[category], exempt }))
+      ...getVatCategories().map((category) => this.#vatCategoryBlock(category, { uniform, collected, rate: categoryRatesPercent[category], exempt }))
     );
   }
 
   /**
    * One VAT category: its rate slider, then a box per item of the category that exempts it from VAT.
    * @param {string} category
-   * @param {{ uniform: boolean, rate: number, exempt: Record<string, boolean> }} state
+   * @param {{ uniform: boolean, collected: boolean, rate: number, exempt: Record<string, boolean> }} state `collected` false: nobody collects the VAT, it is shown at 0 % and locked
    */
-  #vatCategoryBlock(category, { uniform, rate, exempt }) {
+  #vatCategoryBlock(category, { uniform, collected, rate, exempt }) {
     const label = getVatCategoryLabel(category);
     const block = document.createElement('div');
     block.className = 'vat-category';
@@ -91,13 +132,13 @@ export class TaxesSectionPresenter {
       scope: uniform ? 'Taux général' : 'Catégorie',
       min: this.bounds.vatPercent.min,
       max: this.bounds.vatPercent.max,
-      value: rate,
+      value: collected ? rate : 0,
       unit: '%',
       ariaLabel: `TVA sur ${label}, en pourcentage du prix HT`,
       dataset: { vatCategory: category },
       store: (value) => this.accounting.setVatCategoryRate(category, value),
     });
-    slider.querySelector('input').disabled = uniform;
+    slider.querySelector('input').disabled = uniform || !collected;
 
     const exemptionsTitle = document.createElement('span');
     exemptionsTitle.className = 'vat-items-title';
@@ -108,6 +149,7 @@ export class TaxesSectionPresenter {
       const box = document.createElement('input');
       box.type = 'checkbox';
       box.checked = exempt[item];
+      box.disabled = !collected;
       box.addEventListener('change', () => {
         void this.accounting.setVatExempt(item, box.checked);
       });

@@ -1,5 +1,5 @@
-import { getResourceRoles } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
-import { buildingNameInSentence, goodLabel } from '../../../shell/CatalogVocabulary.js';
+import { getResourceRoles, getResourceStockShape, getSuppliedCategories } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { buildingNameInSentence, goodAmount, goodLabel, namesOfBuildings } from '../../../shell/CatalogVocabulary.js';
 import { roadCause, shortageCause } from './staffingReasonFormat.js';
 /**
  * Messages tab — pure format (VM → display model).
@@ -83,6 +83,32 @@ function marketSupplyComplaints(vm) {
 }
 
 /**
+ * A farm's gripes about the year ahead of the city's farms (see FoodForecastPolicy.js), read from `vm.foodForecast` (only a farm has one): too many
+ * farms for the citizens to eat, and granaries too small to keep their meals from one harvest to the next. Both are voiced by every farm, since they
+ * concern the farms as a whole. The granaries are named as the catalog names them.
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @returns {ReadonlyArray<string>}
+ */
+function foodForecastComplaints(vm) {
+  const forecast = vm.foodForecast;
+  if (!forecast?.judged) return [];
+  const total = getResourceStockShape().totalKey;
+  const amount = (count) => goodAmount(total, count);
+  const granaries = namesOfBuildings('hub', getSuppliedCategories()).join(', ').toLowerCase();
+
+  const complaints = [];
+  if (forecast.surplus > 0) {
+    const spoil = forecast.spoilRisk > 0 ? ` ${amount(forecast.spoilRisk)} risquent d'être jetés, avariés.` : '';
+    complaints.push(`Trop de champs (${forecast.farms}) : ${amount(forecast.harvest)} récoltés par an pour ${amount(forecast.demand)} mangés.${spoil}`);
+  }
+  if (forecast.unkeepable > 0) {
+    const kept = forecast.kept > 0 ? `${amount(forecast.kept)} gardés` : `aucun ${granaries} en état de marche`;
+    complaints.push(`Conservation insuffisante : ${kept} sur ${amount(forecast.demand)} à tenir jusqu'à la prochaine récolte.`);
+  }
+  return complaints;
+}
+
+/**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  * @returns {{ complaints: ReadonlyArray<string> }}
  */
@@ -96,6 +122,7 @@ export function formatMessagesModel(vm) {
   if (personnel) complaints.push(personnel);
 
   complaints.push(...marketSupplyComplaints(vm));
+  complaints.push(...foodForecastComplaints(vm));
 
   return { complaints };
 }

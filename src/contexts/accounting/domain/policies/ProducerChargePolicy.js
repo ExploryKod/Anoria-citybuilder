@@ -4,7 +4,6 @@ import { getBuildingDefinition } from '../../../../shared/building-catalog/build
 import { resolveBuildingKind, BUILDING_KIND_HOUSE } from '../../../../shared/building-identity/index.js';
 import {
   COMPANY_MAINTENANCE_SUBSIDY_PERCENT,
-  CORPORATE_TAX_RATE,
   HOUSING_MAINTENANCE_SUBSIDY_PERCENT,
 } from '../catalogs/ProducerChargeCatalog.js';
 
@@ -204,11 +203,12 @@ export function buildingChargeLines({ id, type, maintenanceCost }) {
  * résultat shows it, less the tax it already paid this year. The year's total, not the month's: a seasonal company (a harvest once a year)
  * is taxed on what it really earned over the year, and a tax is never more than the rate of the RCAI it is based on, so it cannot turn a
  * profit into a loss. Nothing is refunded: a later loss does not give back a tax already paid.
- * @param {{ rcaiYearToDate: number, taxPaidYearToDate: number }} year
+ * @param {{ rcaiYearToDate: number, taxPaidYearToDate: number, rate: number }} year `rate`: the corporate tax rate in force, a fraction
  * @returns {number} the tax to book now (never negative)
  */
-export function corporateTaxDueOf({ rcaiYearToDate, taxPaidYearToDate }) {
-  const owed = rcaiYearToDate > 0 ? centimes(rcaiYearToDate * CORPORATE_TAX_RATE) : 0;
+export function corporateTaxDueOf({ rcaiYearToDate, taxPaidYearToDate, rate }) {
+  if (!Number.isFinite(rate) || rate < 0 || rate > 1) throw new Error(`[tax] the corporate tax rate must be a fraction, got ${rate}`);
+  const owed = rcaiYearToDate > 0 ? centimes(rcaiYearToDate * rate) : 0;
   return Math.max(0, centimes(owed - taxPaidYearToDate));
 }
 

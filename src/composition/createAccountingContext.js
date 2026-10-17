@@ -50,6 +50,7 @@ import { accountKeyOf } from '../contexts/accounting/domain/policies/AccountKeyP
 import { AdjustWageRates } from '../contexts/accounting/application/services/AdjustWageRates.js';
 import { RevalueMinimumWage } from '../contexts/accounting/application/services/RevalueMinimumWage.js';
 import { DexieWageRateRepository, wageKey } from '../contexts/accounting/infrastructure/persistence/DexieWageRateRepository.js';
+import { administratorPayStatusOf } from '../contexts/accounting/domain/policies/AdministratorPayPolicy.js';
 import { benefitBaseOf, flooredWage, readLabourMarket, startWageOf, wageFloorOf } from '../contexts/accounting/domain/policies/WageRatePolicy.js';
 import { wagePerWorkerOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
@@ -61,7 +62,7 @@ import { MONTHS_PER_YEAR } from '../shared/time/TimeCalendar.js';
 import { isLucrativeBuilding } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../shared/building-identity/index.js';
 import { houseHoldsSkill, residentsSeekingWork } from '../shared/population/workforceQueries.js';
-import { OWNER_SKILL, TAX_COLLECTOR_SKILL } from '../shared/population/socialCategoryCatalog.js';
+import { OWNER_SKILL, TAX_COLLECTION_SKILLS } from '../shared/population/socialCategoryCatalog.js';
 import { rentDebtsOf } from '../contexts/accounting/domain/policies/RentPolicy.js';
 import { SettleHouseRents } from '../contexts/accounting/application/services/SettleHouseRents.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
@@ -270,6 +271,24 @@ export function createAccountingContext(deps = {}) {
   const getCitizenTaxPerCapita =
     deps.getCitizenTaxPerCapita ?? (() => hamletFiscalRates.getCitizenTaxPerCapita());
 
+  // A tax is levied only while a house of the city has residents who hold its collection (the mayor's house, by its tier): one skill per tax.
+  const taxIsCollected = async (taxSkill) =>
+    (await dexieDb.houses.toArray())
+      .filter(isActiveHamletRow)
+      .some((row) => resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE && row.pop >= 1 && houseHoldsSkill(row.type, row.level ?? 1, taxSkill));
+
+  // The rates in force are the player's, or nil for a tax nobody holds the collection of: it stays set, but nothing can be collected, so
+  // nothing is paid. The admin panels still show and edit the rates the player set.
+  const vatRatesInForce = async () => {
+    const rates = await hamletFiscalRates.getVatRates();
+    if (await taxIsCollected(TAX_COLLECTION_SKILLS.vat)) return rates;
+    return Object.fromEntries(Object.keys(rates).map((item) => [item, 0]));
+  };
+  const corporateTaxRateInForce = async () =>
+    (await taxIsCollected(TAX_COLLECTION_SKILLS.corporate)) ? hamletFiscalRates.getCorporateTaxRate() : 0;
+  const customsDutyInForce = async (authority, flow, good, turn) =>
+    (await taxIsCollected(TAX_COLLECTION_SKILLS.customs)) ? fiscalSettingsRepository.getCustomsDuty(authority, flow, good, turn) : 0;
+
   const collectCitizenTaxes = new CollectCitizenTaxes({
     getTreasurySnapshot: getTreasurySnapshotQuery,
     recordCitizenTaxIncome,
@@ -277,11 +296,8 @@ export function createAccountingContext(deps = {}) {
     houseReadPort,
     getCitizenTaxPerCapita,
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
-    // The tax is collected by the city's tax collectors: the residents of the house that holds the skill (the mayor's house).
-    hasTaxCollector: async () =>
-      (await dexieDb.houses.toArray())
-        .filter(isActiveHamletRow)
-        .some((row) => resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE && row.pop >= 1 && houseHoldsSkill(row.type, row.level ?? 1, TAX_COLLECTOR_SKILL)),
+    // The citizen tax is collected by the residents of the house that holds its collection (the mayor's house).
+    hasTaxCollector: () => taxIsCollected(TAX_COLLECTION_SKILLS.citizen),
   });
 
   const gameTreasuryRecording = new GameTreasuryRecording({
@@ -347,7 +363,7 @@ export function createAccountingContext(deps = {}) {
       (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: 'particulier' })).funds,
     businessFundsOf: async (houseId) =>
       (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: 'entreprise' })).funds,
-    getVatRates: () => hamletFiscalRates.getVatRates(),
+    getVatRates: () => vatRatesInForce(),
     listHouses: async () =>
       (await dexieDb.houses.toArray())
         .filter(isActiveHamletRow)
@@ -366,10 +382,14 @@ export function createAccountingContext(deps = {}) {
         unemploymentBenefitRate: settings.unemploymentBenefitRate,
         employerContributionRate: settings.employerContributionRate,
         employeeContributionRate: settings.employeeContributionRate,
+        administratorStipend: settings.administratorStipend,
       };
     },
     getWageRateOf: () => marketWageRateOf(),
+    getCorporateTaxRate: () => corporateTaxRateInForce(),
     getSalaryTax: async () => {
+      // Nobody holds the collection of the income tax: it is not levied, which is a rate of nothing on every band.
+      if (!(await taxIsCollected(TAX_COLLECTION_SKILLS.income))) return { threshold1: 0, rate1: 0, threshold2: 0, rate2: 0 };
       const settings = await hamletFiscalRates.getSalarySettings();
       return {
         threshold1: settings.salaryTaxThreshold1,
@@ -419,7 +439,7 @@ export function createAccountingContext(deps = {}) {
     recordEconomyMovement: (movement) => supplyTraceabilityRepository.recordEconomyMovement(movement),
   });
   const recordConsumerPurchases = new RecordConsumerPurchases({
-    getVatRates: () => hamletFiscalRates.getVatRates(),
+    getVatRates: () => vatRatesInForce(),
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
 
@@ -748,6 +768,14 @@ export function createAccountingContext(deps = {}) {
     },
 
     /** The active hamlet's citizen tax per inhabitant. */
+    getCorporateTaxRate() {
+      return hamletFiscalRates.getCorporateTaxRate();
+    },
+
+    setCorporateTaxRate(rate) {
+      return hamletFiscalRates.setCorporateTaxRate(rate);
+    },
+
     getCitizenTaxPerCapita() {
       return hamletFiscalRates.getCitizenTaxPerCapita();
     },
@@ -944,7 +972,7 @@ export function createAccountingContext(deps = {}) {
       const [goodsPrices, servicePrices, vatRates, subsidies] = await Promise.all([
         deps.listSellingPrices(period),
         deps.listServicePrices(period),
-        hamletFiscalRates.getVatRates(),
+        vatRatesInForce(),
         hamletFiscalRates.getServiceSubsidies(),
       ]);
       const { houseType, tier } = COST_OF_LIVING_BASKET;
@@ -974,6 +1002,16 @@ export function createAccountingContext(deps = {}) {
         .filter((requirement) => requirement.kind === 'serviceCoverage')
         .map((requirement) => ({ key: requirement.category, unitPrices: servicePricesPaid(requirement.category) }));
       return { ...costOfLivingOf({ needs, services, householdSize: tierFacts.maxPopulation }), householdSize: tierFacts.maxPopulation };
+    },
+
+    /**
+     * The stipend the player pays each administrator, and whether it keeps their house alive: it is judged against the cost of living (see
+     * AdministratorPayPolicy.js). Read live from the settings and the shelf prices; nothing is stored.
+     * @returns {Promise<{ stipend: number, known: boolean, tooLow: boolean, floor: number | null }>}
+     */
+    async getAdministratorPayStatus() {
+      const [{ administratorStipend: stipend }, cost] = await Promise.all([hamletFiscalRates.getSalarySettings(), accountingApi.getCostOfLiving()]);
+      return { stipend, ...administratorPayStatusOf({ stipend, costOfLiving: cost.total }) };
     },
 
     /**
@@ -1174,9 +1212,9 @@ export function createAccountingContext(deps = {}) {
       return hamletFiscalRates.setServiceSubsidy(service, percent);
     },
 
-    /** @returns {Promise<Record<string, number>>} the active hamlet's VAT rate per good, in percent. */
+    /** @returns {Promise<Record<string, number>>} the VAT rate in force per good, in percent: nil while nobody holds the collection of the VAT. */
     getVatRates() {
-      return hamletFiscalRates.getVatRates();
+      return vatRatesInForce();
     },
 
     /** @returns {Promise<{ uniform: boolean, generalRatePercent: number, categoryRatesPercent: Record<string, number> }>} the active hamlet's VAT. */
@@ -1212,6 +1250,21 @@ export function createAccountingContext(deps = {}) {
     /** @returns {number} the duty a customs authority charges on one good, for one flow, at a turn, in [0, 1] */
     getCustomsDuty(authority, flow, good, turn) {
       return fiscalSettingsRepository.getCustomsDuty(authority, flow, good, turn);
+    },
+
+    /**
+     * Which taxes have someone to collect them now (a house of the city whose residents hold the tax's collection). A tax with nobody is in force at
+     * 0 %, and the admin panels lock its rate and say why.
+     * @returns {Promise<Record<keyof typeof TAX_COLLECTION_SKILLS, boolean>>}
+     */
+    async getTaxCollection() {
+      const entries = await Promise.all(Object.entries(TAX_COLLECTION_SKILLS).map(async ([tax, skill]) => [tax, await taxIsCollected(skill)]));
+      return Object.fromEntries(entries);
+    },
+
+    /** @returns {Promise<number>} the duty in force: the player's, or nil while nobody holds the collection of the customs */
+    getCustomsDutyInForce(authority, flow, good, turn) {
+      return customsDutyInForce(authority, flow, good, turn);
     },
 
     /**

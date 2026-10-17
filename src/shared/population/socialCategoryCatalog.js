@@ -10,11 +10,17 @@ const TIER_MAX_POPULATION = Object.freeze({ 1: 6, 2: 12, 3: 18, 4: 24, 5: 30, 6:
 const ADMINISTRATORS_MAX = 6;
 
 /**
- * The two skills the administrators hold by right, named once: the owner (collects the rents) and the tax collector (collects the other houses'
- * taxes). Every rule that asks for one reads the name here, never spells it.
+ * The skills the administrators hold, named once: the owner (collects the rents, from the first tier) and one tax collection per tax. A tax
+ * nobody holds the collection of is not levied. Every rule that asks for one reads the name here, never spells it.
  */
 export const OWNER_SKILL = 'proprietaire';
-export const TAX_COLLECTOR_SKILL = 'percepteur';
+export const TAX_COLLECTION_SKILLS = Object.freeze({
+  citizen: 'perception_ic',
+  income: 'perception_ir',
+  vat: 'perception_tva',
+  corporate: 'perception_is',
+  customs: 'perception_douane',
+});
 
 /**
  * The requirements a tier can list, declared once and combined below (a kind is evaluated by
@@ -227,9 +233,10 @@ export const SOCIAL_CATEGORY = Object.freeze({
       }),
     }),
   }),
-  // The city's administrators (the mayor's house): six at most, whatever the tier. They hold two skills by right, from the first tier and
-  // with no requirement: `proprietaire` (collects the rents and lets the other houses be built, see the houses' `requiresPlaced`) and
-  // `percepteur` (collects the other houses' taxes). No workplace asks for either as a worker: they are the house's own functions.
+  // The city's administrators (the mayor's house): six at most, whatever the tier. From the first tier, with no requirement, they hold
+  // `proprietaire` (collects the rents and lets the other houses be built, see the houses' `requiresPlaced`) and the collection of the simple
+  // taxes (citizen, income, VAT). The second tier adds the collection of the companies' tax and of the customs. No workplace asks for any of them
+  // as a worker: they are the house's own functions, and the house reaches its tiers only while its needs are paid (so while its stipend is enough).
   administrators: Object.freeze({
     eligibleSectors: Object.freeze([]),
     // Governing is not a post of the labour market (see workforceQueries.js): no hiring, no unemployment, no benefit.
@@ -238,12 +245,17 @@ export const SOCIAL_CATEGORY = Object.freeze({
       1: Object.freeze({
         maxPopulation: ADMINISTRATORS_MAX,
         requirements: Object.freeze([]),
-        skills: Object.freeze({ [OWNER_SKILL]: 1, [TAX_COLLECTOR_SKILL]: 1 }),
+        skills: Object.freeze({
+          [OWNER_SKILL]: 1,
+          [TAX_COLLECTION_SKILLS.citizen]: 1,
+          [TAX_COLLECTION_SKILLS.income]: 1,
+          [TAX_COLLECTION_SKILLS.vat]: 1,
+        }),
       }),
       2: Object.freeze({
         maxPopulation: ADMINISTRATORS_MAX,
         requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor')]),
-        skills: Object.freeze({}),
+        skills: Object.freeze({ [TAX_COLLECTION_SKILLS.corporate]: 1, [TAX_COLLECTION_SKILLS.customs]: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: ADMINISTRATORS_MAX,

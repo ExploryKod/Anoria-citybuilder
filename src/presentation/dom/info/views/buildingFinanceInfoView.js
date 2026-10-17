@@ -3,6 +3,8 @@ import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../../../../shared/bui
 import { INCOME_STATEMENT } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 import { HOUSEHOLD_CONSUMPTION_GROUPS, householdConsumptionGroupOf } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { buildingName, goodLabel } from '../../shell/CatalogVocabulary.js';
+import { administratorPayNotice } from '../../shell/administratorPayNotice.js';
+import { houseSeeksWork } from '../../../../shared/population/workforceQueries.js';
 
 /**
  * The Finances tab of a building: its simplified analytical account, for the last month and for the year so far, and its
@@ -236,8 +238,11 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
   let finance;
   let bankId = null;
   let depositBalance = 0;
+  let administratorPay = null;
   try {
     finance = await model.accounting.getBuildingFinance(model.buildingId, accountKind, { month: viewedMonth, year: viewedYear });
+    // The administrators' house lives on the stipend the player sets: its account says at once whether that stipend is too low.
+    if (isPersonal && !houseSeeksWork(model.buildingType)) administratorPay = await model.accounting.getAdministratorPayStatus();
     if (isPersonal) {
       bankId = await model.accounting.findBankBuildingId();
       if (bankId) depositBalance = await model.accounting.getHouseholdDepositBalance(model.buildingId);
@@ -269,6 +274,7 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
   };
   showContent();
   container.replaceChildren(
+    ...(administratorPay ? [administratorPayNotice(administratorPay)] : []),
     monthPills(finance, ({ month, year }) => {
       viewedMonth = month;
       viewedYear = year;

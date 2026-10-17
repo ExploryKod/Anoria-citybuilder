@@ -2,6 +2,7 @@ import { getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 import { createSliderRow } from '../sliderRow.js';
 import { UNRESOLVED_TERM, goodIcon, goodLabel } from '../../shell/CatalogVocabulary.js';
+import { administratorPayNotice } from '../../shell/administratorPayNotice.js';
 
 /** What the market says of a skill this month, in words and in the colour family of the journal. */
 const SIGNALS = Object.freeze({
@@ -115,6 +116,20 @@ export class WagesSectionPresenter {
         ariaLabel: 'Loyer mensuel que chaque maison verse à la maison du maire (celle des administrateurs, propriétaires) ; un loyer impayé devient une dette',
         store: (value) => this.accounting.setSalarySettings({ rentPerHouse: value }),
       }),
+      createSliderRow({
+        label: 'Traitement des administrateurs',
+        scope: 'Hameau',
+        min: this.bounds.administratorStipend.min,
+        max: this.bounds.administratorStipend.max,
+        value: settings.administratorStipend,
+        unit: '€/mois',
+        ariaLabel: "Traitement mensuel de chaque administrateur (la maison du maire), à ne pas confondre avec le salaire minimum : une charge directe pour le hameau ; trop bas, la maison du maire ne paie pas ses besoins et ses compétences restent limitées",
+        store: async (value) => {
+          await this.accounting.setSalarySettings({ administratorStipend: value });
+          await this.refresh();
+        },
+      }),
+      administratorPayNotice(await this.accounting.getAdministratorPayStatus()),
     );
 
     const social = await this.accounting.getSocialSecurityBoard();

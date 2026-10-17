@@ -1,6 +1,6 @@
 import { getBuildingDefinition } from '../building-catalog/buildingCatalog.js';
 import { getSkillDisplay } from '../population/skillCatalog.js';
-import { OWNER_SKILL, TAX_COLLECTOR_SKILL } from '../population/socialCategoryCatalog.js';
+import { OWNER_SKILL, TAX_COLLECTION_SKILLS } from '../population/socialCategoryCatalog.js';
 
 /**
  * The short reminders the bar of the game shows while their cause lasts (see HudTicker.js): each rule reads the facts of the city
@@ -36,7 +36,7 @@ export const REMINDERS = Object.freeze([
     id: 'house-the-mayor',
     // Right after it is placed the house is empty, which is normal: it is a problem once other houses stand and it still has no residents.
     when: (facts) => facts.ownerHousePlaced && facts.otherHousesPlaced && !facts.ownerHouseHasResidents,
-    text: () => `La maison du maire attend ses habitants : sans ${getSkillDisplay(OWNER_SKILL).label.toLowerCase()} ni ${getSkillDisplay(TAX_COLLECTOR_SKILL).label.toLowerCase()}, ni loyers ni impôts.`,
+    text: () => `La maison du maire attend ses habitants : sans ${getSkillDisplay(OWNER_SKILL).label.toLowerCase()} ni ${getSkillDisplay(TAX_COLLECTION_SKILLS.citizen).label.toLowerCase()}, ni loyers ni impôts.`,
   },
   {
     id: 'rent-debt',
