@@ -1,5 +1,6 @@
 import { listHamlets } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { renderCityLedger, renderCityLedgerMessage } from '../../compta/livret/CityLedgerPresenter.js';
+import { renderBalanceSheet, renderIncomeStatement, renderTrialBalance } from '../../compta/cityStatements/CityStatementsPresenter.js';
 import { getSessionGameTime } from '../../../../composition/sessionRuntime.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { buildingName } from '../../shell/CatalogVocabulary.js';
@@ -48,7 +49,55 @@ export class FinancesSectionPresenter {
     this.loadFinancialData();
   }
 
+  /** The pills that switch the view of the board, and the button that downloads every view in one JSON file. Bound once. */
+  bindToolbar() {
+    if (this._toolbarBound) return;
+    this._toolbarBound = true;
+    this.view = 'budget';
+    for (const pill of document.querySelectorAll('#finances-board [data-finances-pill]')) {
+      pill.addEventListener('click', () => this.showView(pill.dataset.financesPill));
+    }
+    document.getElementById('finances-download')?.addEventListener('click', () => this.downloadAllViews());
+    this.showView(this.view);
+  }
+
+  /**
+   * Shows one view of the board (the Caesar-style budget, the compte de résultat, the balance sheet, the balance) and hides the others.
+   * @param {'budget' | 'result' | 'balance' | 'trial'} view
+   */
+  showView(view) {
+    this.view = view;
+    for (const pill of document.querySelectorAll('#finances-board [data-finances-pill]')) {
+      pill.classList.toggle('is-active', pill.dataset.financesPill === view);
+    }
+    for (const part of document.querySelectorAll('#finances-board [data-finances-view]')) {
+      part.hidden = part.dataset.financesView !== view;
+    }
+  }
+
+  /**
+   * Downloads every view of the board (budget, compte de résultat, bilan, balance) of the chosen hamlet, or of the whole city, as one JSON file. The real date only
+   * stamps the file name, so two downloads never collide (the game's own dates are turns).
+   */
+  async downloadAllViews() {
+    try {
+      const data = await this.accounting.exportCityFinances({ hamletId: this.selectedHamletId() });
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `finances-${this.selectedHamletId() === null ? 'ville' : 'hameau'}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error('[FinancesSection] export failed:', error);
+      alert(`Export impossible : ${error.message}`);
+    }
+  }
+
   async loadFinancialData() {
+    this.bindToolbar();
     // Loads can overlap (a turn while the hamlet changes): only the latest one may render.
     const load = (this._latestLoad = (this._latestLoad ?? 0) + 1);
     this.showLoading();
@@ -62,6 +111,7 @@ export class FinancesSectionPresenter {
       if (load !== this._latestLoad) return;
       this.financialData = financialData;
       this.render();
+      await this.loadCityStatements(load);
     } catch (error) {
       console.error('[FinancesSection] Error loading financial data:', error);
       this.showError(`Budget indisponible : ${error.message}`);
@@ -69,6 +119,31 @@ export class FinancesSectionPresenter {
     }
 
     await this.loadProducerRanking();
+  }
+
+  /**
+   * The city's compte de résultat, balance sheet and balance (M57), read from the same journal, each in its own view of the board. A failure is shown in the views
+   * themselves, never as figures of zero.
+   * @param {number} load the load this belongs to: only the latest one may render
+   */
+  async loadCityStatements(load) {
+    const views = {
+      result: [document.getElementById('finances-view-result'), renderIncomeStatement],
+      balance: [document.getElementById('finances-view-balance'), renderBalanceSheet],
+      trial: [document.getElementById('finances-view-trial'), renderTrialBalance],
+    };
+    try {
+      const statements = await this.accounting.getCityStatements({ hamletId: this.selectedHamletId() });
+      if (load !== this._latestLoad) return;
+      for (const [container, render] of Object.values(views)) container?.replaceChildren(...render(statements));
+    } catch (error) {
+      console.error('[FinancesSection] Error loading the city statements:', error);
+      for (const [container] of Object.values(views)) {
+        const message = document.createElement('p');
+        message.textContent = `Comptes de la ville indisponibles : ${error.message}`;
+        container?.replaceChildren(message);
+      }
+    }
   }
 
   /**

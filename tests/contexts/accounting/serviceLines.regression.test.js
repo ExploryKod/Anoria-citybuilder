@@ -22,6 +22,13 @@ describe('service lines — the house pays the final price, the company gets the
     ]);
   });
 
+  // Regression: a service with no VAT wrote a VAT line of zero, which the journal refuses (an écriture of zero is no écriture) and stopped the month.
+  test('a service with no VAT has no VAT line: a line of zero is not written', () => {
+    const lines = serviceSaleLines({ sellerId: 'chapel', buyerId: 'house-1', service: 'school', ttc: 4, ht: 4, vat: 0 });
+
+    expect(lines.map((line) => line.kind)).toEqual(['service_purchase', 'service_sales']);
+  });
+
   test('a fully subsidised service costs the house nothing: no line on either side of the sale', () => {
     expect(serviceSaleLines({ sellerId: 'chapel', buyerId: 'house-1', service: 'school', ttc: 0, ht: 0, vat: 0 })).toMatchObject([]);
   });

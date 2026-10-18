@@ -9,6 +9,7 @@ import { GetFinancialHealth } from '../contexts/accounting/application/queries/t
 import { InitializeTreasury } from '../contexts/accounting/application/commands/treasury/InitializeTreasury.js';
 import { ForceReinitializeTreasury } from '../contexts/accounting/application/commands/treasury/ForceReinitializeTreasury.js';
 import { GetCityLedgerYearComparison } from '../contexts/accounting/application/queries/city-ledger/GetCityLedgerYearComparison.js';
+import { GetCityStatements } from '../contexts/accounting/application/queries/city-ledger/GetCityStatements.js';
 import { GetGeneralLedger } from '../contexts/accounting/application/queries/journal/GetGeneralLedger.js';
 import { FlushJournalSession } from '../contexts/accounting/application/commands/journal/FlushJournalSession.js';
 import { ExportJournalJson } from '../contexts/accounting/application/queries/journal/ExportJournalJson.js';
@@ -180,8 +181,14 @@ export function createAccountingContext(deps = {}) {
   const recordMaintenanceExpense = new RecordMaintenanceExpense(
     recordLedgerEntryCommand
   );
+  // The property company that owns every building stands as long as the house whose category holds the owner skill does (the mayor's), lived in or not.
+  const ownerStands = async () =>
+    (await dexieDb.houses.toArray()).some(
+      (row) => isActiveHamletRow(row) && resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE && houseHoldsSkill(row.type, 1, OWNER_SKILL)
+    );
   const recordConstructionExpense = new RecordConstructionExpense(
-    recordLedgerEntryCommand
+    recordLedgerEntryCommand,
+    ownerStands
   );
   const recordCitizenTaxIncome = new RecordCitizenTaxIncome(
     recordLedgerEntryCommand
@@ -214,7 +221,8 @@ export function createAccountingContext(deps = {}) {
     recordLedgerEntryCommand
   );
   const recordConstructionRefundIncome = new RecordConstructionRefundIncome(
-    recordLedgerEntryCommand
+    recordLedgerEntryCommand,
+    ownerStands
   );
 
   const journalRepository =
@@ -257,6 +265,7 @@ export function createAccountingContext(deps = {}) {
     getTreasurySnapshotQuery,
     gameTimePort
   );
+  const getCityStatementsQuery = new GetCityStatements(journalRepository, getTreasurySnapshotQuery, gameTimePort);
   const getGeneralLedgerQuery = new GetGeneralLedger(
     journalRepository,
     getTreasurySnapshotQuery,
@@ -385,10 +394,10 @@ export function createAccountingContext(deps = {}) {
       supplyTraceabilityRepository.sumGoodsFlowsByPair(year, monthIndex),
     sumServiceFlows: (year, monthIndex) => supplyTraceabilityRepository.sumServiceFlows(year, monthIndex),
     fundsOf: async (houseId) =>
-      (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: 'particulier' })).funds,
+      await getTreasurySnapshotQuery.cashOf({ accountBuildingId: houseId, accountKind: 'particulier' }),
     businessFundsOf: async (houseId, businessAccount) =>
-      (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: businessAccount })).funds,
-    companyFundsOf: async (buildingId) => (await getTreasurySnapshotQuery.execute({ accountBuildingId: buildingId })).funds,
+      await getTreasurySnapshotQuery.cashOf({ accountBuildingId: houseId, accountKind: businessAccount }),
+    companyFundsOf: async (buildingId) => await getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId }),
     getJournalEntries: () => journalRepository.getJournalEntries(),
     getVatRates: () => vatRatesInForce(),
     listHouses: async () =>
@@ -508,12 +517,12 @@ export function createAccountingContext(deps = {}) {
   const recordHouseholdDeposit = new RecordHouseholdDeposit({
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
     fundsOf: async (houseId) =>
-      (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: 'particulier' })).funds,
+      await getTreasurySnapshotQuery.cashOf({ accountBuildingId: houseId, accountKind: 'particulier' }),
   });
   const recordHouseholdWithdrawal = new RecordHouseholdWithdrawal({
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
     depositBalanceOf: async (houseId, bankId) => depositBalanceOf(await journalRepository.getJournalEntries(), houseId, bankId),
-    fundsOf: async (bankId) => (await getTreasurySnapshotQuery.execute({ accountBuildingId: bankId })).funds,
+    fundsOf: async (bankId) => await getTreasurySnapshotQuery.cashOf({ accountBuildingId: bankId }),
   });
   const settleBankDepositInterest = new SettleBankDepositInterest({
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
@@ -668,9 +677,9 @@ export function createAccountingContext(deps = {}) {
     getRentQuote: quoteRent,
     getPremisesRent: quotePremisesRent,
     businessFundsOf: async (houseId, businessAccount) =>
-      (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: businessAccount })).funds,
+      await getTreasurySnapshotQuery.cashOf({ accountBuildingId: houseId, accountKind: businessAccount }),
     getJournalEntries: () => journalRepository.getJournalEntries(),
-    fundsOf: async (houseId) => (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: 'particulier' })).funds,
+    fundsOf: async (houseId) => await getTreasurySnapshotQuery.cashOf({ accountBuildingId: houseId, accountKind: 'particulier' }),
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
 
@@ -684,6 +693,8 @@ export function createAccountingContext(deps = {}) {
   const processTurnBudget = new ProcessTurnBudget({
     collectCitizenTaxes: (time) => collectCitizenTaxes.execute({ time }),
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
+    // The month's settlement is written in one go: hundreds of lines, one transaction (see SessionJournalStore.batch).
+    inJournalBatch: (work) => sessionJournalStoreInstance.batch(work),
     settleProducerCharges: (params) => settleProducerCharges.execute(params),
     settleHouseRents: (params) => settleHouseRents.execute(params),
     fundNewCompanies: (params) => fundNewCompanies.execute(params),
@@ -773,6 +784,32 @@ export function createAccountingContext(deps = {}) {
 
     async getActiveLoans() {
       return (await getTreasurySnapshotQuery.execute()).loans;
+    },
+
+    /** The compte de résultat of a year of the city (or a hamlet), its balance sheet and its balance, in the M57 model: see GetCityStatements. */
+    async getCityStatements(options) {
+      return getCityStatementsQuery.execute(options);
+    },
+
+    /**
+     * Everything the Finances panel shows, in one object, to download and to read afterwards: the livret (the Caesar-style budget of three years), the compte de
+     * résultat, the balance sheet and the balance of the city or of a hamlet. The real date stamps the export only (the game's own dates are turns).
+     * @param {{ hamletId?: string | null }} [options]
+     */
+    async exportCityFinances(options = {}) {
+      const hamletId = options.hamletId ?? null;
+      const livret = await getCityLedgerYearComparisonQuery.execute({ hamletId });
+      const statements = await getCityStatementsQuery.execute({ hamletId });
+      return {
+        exportDate: new Date().toISOString(),
+        scope: hamletId === null ? 'ville' : { hamletId },
+        turn: gameTimePort.currentTurn(),
+        year: statements.year,
+        livret,
+        compteDeResultat: statements.incomeStatement,
+        bilan: statements.balanceSheet,
+        balance: statements.trialBalance,
+      };
     },
 
     async getCityLedgerYearComparison(options) {
@@ -1192,7 +1229,7 @@ export function createAccountingContext(deps = {}) {
       const ledger = accountLedgerOf(entries, buildingId, options);
       const balance = trialBalanceOf(entries, buildingId, options);
       const bank = ledger.find((account) => account.account === '512')?.balance ?? 0;
-      const funds = (await getTreasurySnapshotQuery.execute({ accountBuildingId: buildingId, accountKind })).funds;
+      const funds = await getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId, accountKind });
       if (Math.round(bank * 100) !== Math.round(funds * 100)) {
         throw new Error(`[ledger] the bank account of ${buildingId} is ${bank} but its treasury is ${funds}: the same lines were read two ways`);
       }
@@ -1521,8 +1558,7 @@ export function createAccountingContext(deps = {}) {
     },
 
     async getBuildingAccountBalance(buildingId, accountKind = null) {
-      const snapshot = await getTreasurySnapshotQuery.execute({ accountBuildingId: buildingId, accountKind });
-      return snapshot.funds;
+      return getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId, accountKind });
     },
 
     /**

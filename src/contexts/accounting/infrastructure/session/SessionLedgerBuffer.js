@@ -12,6 +12,9 @@ import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamle
 
 let nextSessionId = 1;
 
+/** The ids the disk gives are small whole numbers: a provisional id (a line held in memory, not yet written) starts far above them. */
+const PROVISIONAL_ID_BASE = 2 ** 40;
+
 /** @typedef {object} SessionLedgerRecord
  * @property {number} sessionId
  * @property {boolean} persisted
@@ -28,6 +31,12 @@ export class SessionLedgerBuffer {
   #fold = new LegsFold();
   /** How many of the lines held the fold has taken in: the journal only grows, so a read folds only the ones after it. */
   #folded = 0;
+  /**
+   * The provisional id the next line held in memory is given. The real id is the disk's, given when the line is written; but a batch holds a month's lines in
+   * memory, and its readers (the treasury, the sort of the journal) order the lines by id. A provisional id is above every id the disk can give, so a line not yet
+   * written stands after all the written ones, in the order it was held; writing the line replaces it by the disk's id (`markPersisted`), which keeps that order.
+   */
+  #nextProvisionalId = PROVISIONAL_ID_BASE;
   /** @type {() => string} */
   #getHamletId;
 
@@ -41,6 +50,7 @@ export class SessionLedgerBuffer {
     this.#businessKeys.clear();
     this.#fold.clear();
     this.#folded = 0;
+    this.#nextProvisionalId = PROVISIONAL_ID_BASE;
     this.#hydrated = false;
     nextSessionId = 1;
   }
@@ -122,6 +132,7 @@ export class SessionLedgerBuffer {
     const record = {
       ...entry,
       hamletId: entry.hamletId ?? this.#getHamletId(),
+      id: this.#nextProvisionalId++,
       sessionId: nextSessionId++,
       persisted: false,
       persist,
@@ -162,11 +173,11 @@ export class SessionLedgerBuffer {
    * @param {Array<{ sessionId: number, id: number }>} pairs
    */
   markPersisted(pairs) {
-    for (const { sessionId, id } of pairs) {
-      const index = this.#entries.findIndex((entry) => entry.sessionId === sessionId);
-      if (index >= 0) {
-        this.#entries[index] = { ...this.#entries[index], id, persisted: true };
-      }
+    // One pass over the lines held, whatever the number written: a month's batch is hundreds of lines.
+    const ids = new Map(pairs.map(({ sessionId, id }) => [sessionId, id]));
+    for (let index = 0; index < this.#entries.length; index += 1) {
+      const entry = this.#entries[index];
+      if (ids.has(entry.sessionId)) this.#entries[index] = { ...entry, id: ids.get(entry.sessionId), persisted: true };
     }
   }
 
@@ -244,8 +255,9 @@ export function toPublicEntry(entry) {
 
 /** @param {SessionLedgerRecord & object} entry */
 export function toDexieRow(entry) {
-  const { sessionId, persisted, persist, ...row } = entry;
-  return row;
+  const { sessionId, persisted, persist, id, ...row } = entry;
+  // A provisional id is not the disk's: the disk gives the real one when the line is written.
+  return id >= PROVISIONAL_ID_BASE ? row : { ...row, id };
 }
 
 export const sessionLedgerBuffer = new SessionLedgerBuffer();

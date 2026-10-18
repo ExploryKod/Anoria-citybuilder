@@ -22,6 +22,23 @@ import { INCOME_STATEMENT, goodOfJournalType, isVariableChargeAccount, pcgOfJour
 const toCentimes = (amount) => Math.round(amount * 100);
 const fromCentimes = (centimes) => centimes / 100;
 
+/** The pays of a household: a wage, the city's stipend, the unemployment benefit. Each is a payslip: its payer withholds the contribution and the tax (see WithholdingPolicy). */
+const PAYSLIP_TYPES = new Set(['household_wage', 'public_wage', 'household_benefit']);
+
+/**
+ * @param {{ type: string, legs?: Array<{ account: string, debit: number, credit: number }> }} entry
+ * @returns {{ contribution: number, tax: number }} what a payslip withheld, in centimes: the debits of 431 (the employee's contribution) and of 4421 (the income tax)
+ */
+function withheldOf(entry) {
+  const withheld = { contribution: 0, tax: 0 };
+  if (!PAYSLIP_TYPES.has(entry.type) || !entry.legs) return withheld;
+  for (const leg of entry.legs) {
+    if (leg.account === '431') withheld.contribution += leg.debit - leg.credit;
+    else if (leg.account === '4421') withheld.tax += leg.debit - leg.credit;
+  }
+  return withheld;
+}
+
 /** The accounts of the commercial margin: the sale of goods, less what the goods cost to bring in (purchase, accessory costs, freight). */
 const MARGIN_COST_ACCOUNTS = Object.freeze(['607', '608', '6241']);
 
@@ -246,10 +263,15 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
   const byType = new Map();
   // What a household's two purchase lines are made of, one entry per journal line: the player opens the line that adds them up to see them.
   const details = { services: [], goods: [] };
+  // What the payers of its pays withheld before paying the household: its contribution and its income tax, read off the legs of the payslips.
+  const withheld = { contribution: 0, tax: 0 };
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey || entry.year !== year) continue;
     if (month !== null && entry.month !== month) continue;
     byType.set(entry.type, (byType.get(entry.type) ?? 0) + toCentimes(entry.amount));
+    const kept = withheldOf(entry);
+    withheld.contribution += kept.contribution;
+    withheld.tax += kept.tax;
     if (accountKind === 'particulier') {
       const bucket = entry.type === 'service_purchase' ? details.services : entry.type === 'consumer_purchase' ? details.goods : null;
       if (bucket) bucket.push({ id: entry.id, turn: entry.turn, description: entry.description, amount: entry.amount, resource: entry.resource });
@@ -259,7 +281,7 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
 
   // The income tax the city gave back at the year's close (an advance that was too high) reaches the household like any receipt.
   const householdIncome = of('household_wage') + of('public_wage') + of('household_benefit') + of('household_participation') + of('household_dividend') + of('income_tax_refund');
-  const householdCharges = of('service_purchase') + of('consumer_purchase') + of('rent_paid') + of('income_tax') + of('citizen_tax_paid') + of('employee_contribution');
+  const householdCharges = of('service_purchase') + of('consumer_purchase') + of('rent_paid') + of('income_tax') + of('citizen_tax_paid') + withheld.tax + withheld.contribution;
   const householdResult = householdIncome - householdCharges;
 
   const statement = accountKind === 'particulier' ? null : incomeStatementOf(entries, buildingId, { year, month, accountKind, salesNature });
@@ -285,9 +307,10 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
     servicesPaid: fromCentimes(of('service_purchase')),
     goodsBought: fromCentimes(of('consumer_purchase')),
     rentPaid: fromCentimes(of('rent_paid')),
-    incomeTax: fromCentimes(of('income_tax')),
+    // The income tax paid: what was withheld from the pays, and what the year's regularisation charged on top.
+    incomeTax: fromCentimes(of('income_tax') + withheld.tax),
     citizenTax: fromCentimes(of('citizen_tax_paid')),
-    employeeContributionPaid: fromCentimes(of('employee_contribution')),
+    employeeContributionPaid: fromCentimes(withheld.contribution),
     householdResult: fromCentimes(householdResult),
     details,
   };
@@ -321,8 +344,12 @@ export function householdBudgetOf(entries, houseId, { year, month, balance }) {
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey || entry.year !== year || entry.month !== month) continue;
     const amount = toCentimes(entry.amount);
-    if (['household_wage', 'public_wage', 'household_benefit', 'household_participation', 'household_dividend', 'income_tax_refund'].includes(entry.type)) wages += amount;
-    else if (['service_purchase', 'rent_paid', 'income_tax', 'citizen_tax_paid', 'employee_contribution'].includes(entry.type)) services += amount;
+    if (['household_wage', 'public_wage', 'household_benefit', 'household_participation', 'household_dividend', 'income_tax_refund'].includes(entry.type)) {
+      wages += amount;
+      // The payer kept the contribution and the tax back: they are charges of the month beside the service bills, though they never reached the account.
+      const kept = withheldOf(entry);
+      services += kept.contribution + kept.tax;
+    } else if (['service_purchase', 'rent_paid', 'income_tax', 'citizen_tax_paid'].includes(entry.type)) services += amount;
     else if (entry.type === 'consumer_purchase') purchases += amount;
     else if (entry.type === 'deposit') depositedOut += amount;
     else if (entry.type === 'withdrawal' || entry.type === 'household_deposit_interest') returnedIn += amount;

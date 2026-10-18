@@ -14,8 +14,8 @@ const el = (tag, className, text) => {
   return node;
 };
 
-/** One table: a title, its rows (`{ label, amount, kind?, note? }`), and its total. */
-function sideTable(title, rows, total) {
+/** One table: a title, its rows (`{ label, amount, kind?, note?, tone?, pill? }`: `pill` the account number, tinted by `tone`), and its total. Shared with the city's balance sheet, which reads the same. */
+export function sideTable(title, rows, total) {
   const table = el('table', 'building-finance-table balance-sheet-table');
   const head = document.createElement('thead');
   const headRow = document.createElement('tr');
@@ -28,9 +28,12 @@ function sideTable(title, rows, total) {
   const body = document.createElement('tbody');
   for (const row of [...rows, { label: `Total ${title.toLowerCase()}`, amount: total, kind: 'total' }]) {
     const tr = el('tr', `balance-sheet-row${row.kind ? ` balance-sheet-row--${row.kind}` : ''}`);
+    // The family of the account (the journal's colours) tints its number, shown as a small pill after the label.
+    if (row.tone) tr.dataset.tone = row.tone;
     const label = el('th', null, row.label);
     label.scope = 'row';
     if (row.note) label.title = row.note;
+    if (row.pill) label.append(el('span', 'building-finance-pill', row.pill));
     tr.append(label, el('td', 'balance-sheet-amount', row.amount === null ? '' : formatEuro(row.amount)));
     body.append(tr);
   }

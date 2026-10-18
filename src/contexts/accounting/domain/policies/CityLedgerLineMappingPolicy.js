@@ -22,11 +22,13 @@ const LINES = Object.freeze({
   // The duty our merchants pay on what they import: the city's income.
   customsImport: { in: ['73431'] },
   // The social contributions, the employers' and the employees', held by the city's social security (it pays the unemployment benefit out of them).
-  socialContributions: { in: ['431'] },
+  // What a company owed and paid late reaches the cash against the receivable the city booked (4387 for the contributions, 411 for the tax).
+  socialContributions: { in: ['431', '4387'] },
   loanCapital: { in: ['1641'] },
-  corporateTaxRevenue: { in: ['73118'] },
+  corporateTaxRevenue: { in: ['73118', '411'] },
   // The constructions, and the founding capital the city pays the companies: both are the city's investments, one line; a refund takes off.
-  construction: { out: ['2131', '261'], takeOff: ['2131'] },
+  // A building the city holds through the owner (261), its own building (2131) or its roads (2151).
+  construction: { out: ['2131', '261', '2151'], takeOff: ['2131', '261', '2151'] },
   // The upkeep of the buildings the hamlet does not run itself is the rent it pays their owner: one line, "Entretien".
   maintenance: { out: ['6156', '613'] },
   salary: { out: ['6411'] },

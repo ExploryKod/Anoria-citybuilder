@@ -2028,6 +2028,20 @@ button.building-info-metric-card[aria-pressed="true"] {
     gap: 6px;
 }
 
+/* The Finances board of the administrator: its views (budget, compte de résultat, bilan, balance) are switched by pills; a hidden view takes no room. */
+#finances-board [data-finances-view][hidden] {
+    display: none !important;
+}
+
+.finances-toolbar .building-finance-pills {
+    flex-wrap: wrap;
+}
+
+.city-statements-heading {
+    margin: 12px 0 6px;
+    font-size: 14px;
+}
+
 /* The months of the year so far, above the account: one pill each, the open one lit. */
 .building-finance-months {
     display: flex;
@@ -2493,10 +2507,44 @@ button.building-info-metric-card[aria-pressed="true"] {
     text-align: left;
 }
 
+/* The title of a table (Actif, Passif, Charges, Produits): darker and larger than the column heads of the other statements, so each side reads as one block. */
+.balance-sheet-table thead th {
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    color: #263238;
+}
+
+/* A big section (a family of the balance sheet, a section of the compte de résultat): bold, set apart by a little room above it. */
+.balance-sheet-table .balance-sheet-row--section th[scope="row"],
+.balance-sheet-table .balance-sheet-row--section td {
+    padding-top: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #263238;
+}
+
 .balance-sheet-amount {
     text-align: right;
     font-variant-numeric: tabular-nums;
 }
+
+/*
+ * The accounts wear the journal's colours (the --pcg… tokens, the families PcgJournalCatalog gives each account): their number is a small pill in the colour of its
+ * family (.building-finance-pill, which reads --tone-bg and --tone-fg from the row). The rows stay white and the figures stay dark, so the colour tells the accounts
+ * apart without weighing on the reading.
+ */
+.balance-sheet-row[data-tone="capital"], .balance-sheet-row[data-tone="loan"] { --tone-bg: var(--pcg1-bg); --tone-fg: var(--pcg1-fg); }
+.balance-sheet-row[data-tone="loan-repayment"] { --tone-bg: var(--pcg1-alt-bg); --tone-fg: var(--pcg1-alt-fg); }
+.balance-sheet-row[data-tone="fixed-asset"] { --tone-bg: var(--pcg2-bg); --tone-fg: var(--pcg2-fg); }
+.balance-sheet-row[data-tone="tax-received"] { --tone-bg: var(--pcg4-bg); --tone-fg: var(--pcg4-fg); }
+.balance-sheet-row[data-tone="tax-paid"] { --tone-bg: var(--pcg4-paid-bg); --tone-fg: var(--pcg4-paid-fg); }
+.balance-sheet-row[data-tone="treasury"] { --tone-bg: var(--pcg5-bg); --tone-fg: var(--pcg5-fg); }
+.balance-sheet-row[data-tone="purchase"] { --tone-bg: var(--pcg60-bg); --tone-fg: var(--pcg60-fg); }
+.balance-sheet-row[data-tone="external"] { --tone-bg: var(--pcg6x-bg); --tone-fg: var(--pcg6x-fg); }
+.balance-sheet-row[data-tone="personnel"] { --tone-bg: var(--pcg64-bg); --tone-fg: var(--pcg64-fg); }
+.balance-sheet-row[data-tone="financial"], .balance-sheet-row[data-tone="subsidy-given"] { --tone-bg: var(--pcg65-bg); --tone-fg: var(--pcg65-fg); }
+.balance-sheet-row[data-tone="sales"] { --tone-bg: var(--pcg70-bg); --tone-fg: var(--pcg70-fg); }
+.balance-sheet-row[data-tone="subsidy-received"] { --tone-bg: var(--pcg74-bg); --tone-fg: var(--pcg74-fg); }
 
 .balance-sheet-row--detail th {
     padding-left: 24px;

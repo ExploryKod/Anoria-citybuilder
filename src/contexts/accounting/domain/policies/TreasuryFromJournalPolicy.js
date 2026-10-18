@@ -10,11 +10,12 @@ import { isEcriture } from './EntryLegsPolicy.js';
 /** The cash account of the chart of accounts. */
 const CASH = '512';
 
-const BUILDING_INVESTMENT_MARKERS = ['Building:', 'building'];
-const REFUND_INVESTMENT_MARKERS = [...BUILDING_INVESTMENT_MARKERS, 'Refund for'];
+/** The words a construction line's description carries when it is a building the city pays for (see PlaceBuildingWithPayment), and what its refund's carries. */
+export const BUILDING_INVESTMENT_MARKERS = ['Building:', 'building'];
+export const REFUND_INVESTMENT_MARKERS = [...BUILDING_INVESTMENT_MARKERS, 'Refund for'];
 
 /** @param {string} description @param {string[]} markers */
-function isBuildingInvestment(description, markers) {
+export function isBuildingInvestment(description, markers) {
   return markers.some((marker) => description.includes(marker));
 }
 

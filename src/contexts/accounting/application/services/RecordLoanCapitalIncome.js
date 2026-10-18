@@ -47,6 +47,8 @@ export class RecordLoanCapitalIncome {
       businessKey: buildLoanCapitalBusinessKey(loanId),
       loanId,
       loan,
+      // The city borrows and the lender lends: two écritures, one flow.
+      transactionId: `loan:${loanId}:capital`,
     });
 
     if (!ledgerResult.recorded) {
@@ -67,6 +69,7 @@ export class RecordLoanCapitalIncome {
         loanId,
         loan,
         accountBuildingId: lenderBuildingId,
+        transactionId: `loan:${loanId}:capital`,
       });
       if (!lenderResult.recorded && lenderResult.reason !== 'duplicate_business_key') {
         throw new Error(`[loan] the lender's capital line for ${loanId} was not recorded: ${lenderResult.reason}`);

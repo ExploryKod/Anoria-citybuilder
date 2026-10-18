@@ -23,7 +23,9 @@ describe('SessionLedgerBuffer', () => {
 
     expect(record.sessionId).toBe(1);
     expect(record.persisted).toBe(false);
+    // A line held in memory has a provisional id, so the readers that order the lines by id see it after the ones on disk.
     expect(toPublicEntry(record)).toEqual({
+      id: expect.any(Number),
       hamletId: '5f0c8a1e-2b3d-4c5e-8f6a-7b8c9d0e1f2a',
       turn: 1,
       date: '2026-01-01',

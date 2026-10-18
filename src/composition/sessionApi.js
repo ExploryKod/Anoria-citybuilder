@@ -77,6 +77,8 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     getActiveLoans: () => accounting.getActiveLoans(),
     getGeneralLedger: (filters) => accounting.getGeneralLedger(filters),
     getCityLedgerYearComparison: (options) => accounting.getCityLedgerYearComparison(options),
+    getCityStatements: (options) => accounting.getCityStatements(options),
+    exportCityFinances: (options) => accounting.exportCityFinances(options),
     exportJournalJson: (filters) => accounting.exportJournalJson(filters),
     exportJournalPdf: () => accounting.exportJournalPdf(),
 

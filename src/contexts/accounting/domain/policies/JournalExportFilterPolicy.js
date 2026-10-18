@@ -6,6 +6,8 @@ export function isJournalIncomeType(entry) {
     entry.type === 'vat' ||
     entry.type === 'producer_revenue' ||
     entry.type === 'corporate_tax_revenue' ||
+    entry.type === 'corporate_tax_debt_received' ||
+    entry.type === 'contribution_debt_received' ||
     entry.type === 'social_contribution' ||
     entry.type === 'household_participation' ||
     entry.type === 'household_dividend' ||

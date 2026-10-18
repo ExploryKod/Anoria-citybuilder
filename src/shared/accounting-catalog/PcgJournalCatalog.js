@@ -54,13 +54,13 @@ const publicVariant = (legs, label, detail = undefined) => variant(legs, label, 
 /**
  * `detail` says what the line is in the game, in the player's words, where the account's own title does not (it is what the compte de
  * résultat prints in small grey under a line, so the player sees what a "charge externe" really is). `m57` is the M57 variant, for a type the city
- * writes too.
- * @param {EntryLegs} legs @param {string} label @param {JournalTone} tone @param {boolean} [household] @param {string} [detail] @param {AccountingVariant} [m57]
+ * writes too. `journal` is the journal code, `BQ` (bank) unless the type says another (`PA`: the pay).
+ * @param {EntryLegs} legs @param {string} label @param {JournalTone} tone @param {boolean} [household] @param {string} [detail] @param {AccountingVariant} [m57] @param {string} [journal]
  * @returns {PcgJournalEntry}
  */
-const entry = (legs, label, tone, household = false, detail = undefined, m57 = undefined) => {
+const entry = (legs, label, tone, household = false, detail = undefined, m57 = undefined, journal = 'BQ') => {
   const pcg = variant(legs, label, detail);
-  return Object.freeze({ ...pcg, tone, journal: 'BQ', plans: Object.freeze({ pcg, ...(m57 ? { m57 } : {}) }), ...(household ? { household } : {}) });
+  return Object.freeze({ ...pcg, tone, journal, plans: Object.freeze({ pcg, ...(m57 ? { m57 } : {}) }), ...(household ? { household } : {}) });
 };
 
 /**
@@ -101,11 +101,12 @@ const BY_TYPE = Object.freeze({
   corporate_tax: entry(outflow('695'), 'Impôts sur les bénéfices', 'tax-paid'),
   // The contributions the city collects are owed to the social body: class 4 in its books (431), not a product. The benefit is paid out of the same account.
   social_contribution: publicEntry(inflow('431'), 'Sécurité sociale', 'tax-received', 'Cotisations perçues pour la sécurité sociale'),
-  employee_contribution: entry(outflow('431'), 'Sécurité sociale — cotisations salariales', 'tax-paid', true),
-  // Classe 4 — ce que les ménages perçoivent (hors PCG: un ménage n'est pas une entité)
-  household_wage: entry(inflow('421'), 'Personnel - Rémunérations dues', 'household', true),
-  public_wage: entry(inflow('421'), 'Personnel - Rémunérations dues', 'household', true),
-  household_benefit: entry(inflow('437'), 'Autres organismes sociaux', 'household', true),
+  // Classe 4 — ce que les ménages perçoivent (hors PCG: un ménage n'est pas une entité). Une paie est une écriture du journal de paie (PA), le brut au crédit de ce que
+  // le payeur doit : quand il retient la cotisation et l'impôt (431, 4421), elle a plus de deux jambes (voir WithholdingPolicy.payslipLegs) et l'argent qui arrive
+  // sur le compte du ménage est le net.
+  household_wage: entry(inflow('421'), 'Personnel - Rémunérations dues', 'household', true, undefined, undefined, 'PA'),
+  public_wage: entry(inflow('421'), 'Personnel - Rémunérations dues', 'household', true, undefined, undefined, 'PA'),
+  household_benefit: entry(inflow('437'), 'Autres organismes sociaux', 'household', true, undefined, undefined, 'PA'),
   // Le loyer d'une maison à la maison du maire (le propriétaire) : une charge de logement du ménage, un produit locatif de la maison du maire.
   rent_paid: entry(outflow('6132'), 'Locations immobilières', 'purchase', true, 'Loyer versé au propriétaire'),
   rent_received: entry(inflow('752'), 'Revenus des immeubles', 'sales', false, 'Loyers des maisons'),
@@ -120,6 +121,9 @@ const BY_TYPE = Object.freeze({
   corporate_tax_debt_paid: entry(outflow('444'), 'État - Impôts sur les bénéfices', 'tax-paid', false, 'Impôt impayé réglé'),
   premises_rent_debt_paid: entry(outflow('401'), 'Fournisseurs — loyers dus', 'purchase', false, 'Loyer du local impayé réglé'),
   premises_rent_debt_received: entry(inflow('411'), 'Clients — loyers dus', 'sales', false, 'Loyer du local impayé encaissé'),
+  // What a company owed the city and pays at last: the city books it against the receivable it wrote when the debt fell due (see od_receivable_*), not as a product again.
+  corporate_tax_debt_received: publicEntry(inflow('411'), 'Redevables', 'tax-received', 'Impôt sur les sociétés impayé encaissé'),
+  contribution_debt_received: publicEntry(inflow('4387'), 'Organismes sociaux — produits à recevoir', 'tax-received', 'Cotisations impayées encaissées'),
   // Classe 5 — financiers
   // A deposit moves money from a house's account to the bank's, and the bank owes it back: 275 for the depositor, 165 for the bank.
   deposit: entry(outflow('275'), 'Dépôts et cautionnements versés', 'treasury'),
@@ -135,8 +139,8 @@ const BY_TYPE = Object.freeze({
   exceptional_expenses: entry(outflow('615'), 'Entretien et réparation', 'external', false, 'Réparations exceptionnelles', publicVariant(outflow('615221'), 'Entretien et réparations des bâtiments publics', 'Réparations exceptionnelles')),
   commercial_route: entry(outflow('6222'), 'Commissions et courtages sur ventes', 'external', false, 'Frais d’ouverture d’une route commerciale', publicVariant(outflow('622'), 'Rémunérations d’intermédiaires et honoraires', 'Frais d’ouverture d’une route commerciale')),
   contribution: entry(outflow('6281'), 'Concours divers (cotisations)', 'external', false, 'Contribution pour révéler une dépêche', publicVariant(outflow('6281'), 'Concours divers (cotisations...)', 'Contribution pour révéler une dépêche')),
-  salary: entry(outflow('6411'), 'Salaires, appointements', 'personnel', false, undefined, publicVariant(outflow('6411'), 'Personnel titulaire')),
-  producer_wage: entry(outflow('6411'), 'Salaires, appointements', 'personnel', false, 'Salaires des ouvriers du bâtiment'),
+  salary: entry(outflow('6411'), 'Salaires, appointements', 'personnel', false, undefined, publicVariant(outflow('6411'), 'Personnel titulaire'), 'PA'),
+  producer_wage: entry(outflow('6411'), 'Salaires, appointements', 'personnel', false, 'Salaires des ouvriers du bâtiment', undefined, 'PA'),
   employer_contribution: entry(outflow('645'), 'Charges de sécurité sociale et de prévoyance', 'personnel', false, 'Cotisations patronales'),
   enterprise_participation: entry(outflow('691'), 'Participation des salariés aux résultats', 'personnel', false, 'Part des résidents dans le résultat de l’entreprise'),
   // What the associates are paid is a share of the result paid out after the tax, not a charge: class 4, outside the compte de résultat.
@@ -198,6 +202,10 @@ const OPERATIONS_DIVERSES = Object.freeze({
   od_payable_corporate_tax: Object.freeze({ debit: '695', credit: '444', label: 'Impôts sur les bénéfices', tone: 'tax-paid', detail: 'Impôt dû, pas encore payé' }),
   od_payable_premises_rent: Object.freeze({ debit: '6132', credit: '401', label: 'Locations immobilières', tone: 'purchase', detail: 'Loyer du local dû, pas encore payé' }),
   od_receivable_premises_rent: Object.freeze({ debit: '411', credit: '752', label: 'Revenus des immeubles', tone: 'sales', detail: 'Loyer du local dû à la SCI, pas encore encaissé' }),
+  // The city's side of what a company owes it (M57 chart): the tax is a product of the year it falls due, against a receivable (411, redevables); the contributions are
+  // owed to the social body, so the city holds a receivable on the company (4387) against what it owes that body (431), no product.
+  od_receivable_corporate_tax: Object.freeze({ debit: '411', credit: '73118', label: 'Autres contributions directes', tone: 'tax-received', detail: 'Impôt sur les bénéfices dû à la ville, pas encore encaissé' }),
+  od_receivable_contribution: Object.freeze({ debit: '4387', credit: '431', label: 'Sécurité sociale', tone: 'tax-received', detail: 'Cotisations dues à la sécurité sociale, pas encore encaissées' }),
   // The owner holds the buildings the city paid for: they enter its books as fixed assets (213) against the city's contribution in kind (capital, 101).
   od_asset_contribution: Object.freeze({ debit: '213', credit: '101', label: 'Constructions apportées par la ville', tone: 'fixed-asset', detail: 'Un bâtiment payé par la ville entre dans le patrimoine de la SCI' }),
   // A building that is gone leaves the owner's books: its depreciation so far is released, and what it was still worth is a loss (675).
@@ -281,15 +289,17 @@ export function legsOfType(type, plan) {
 const NO_COUNTERPART_TYPES = Object.freeze(new Set(['capital_funds', 'construction', 'construction_refund', 'maintenance', 'exceptional_expenses', 'commercial_route', 'contribution']));
 const NO_COUNTERPART_PREFIXES = Object.freeze(['import_', 'freight_', 'abroad_sale_']);
 /** The opérations diverses that are one side of a flow: the rent a company owes its owner is the owner's receivable. */
-const PAIRED_OPERATIONS = Object.freeze(new Set(['od_payable_premises_rent', 'od_receivable_premises_rent']));
+const PAIRED_OPERATIONS = Object.freeze(new Set([
+  'od_payable_premises_rent', 'od_receivable_premises_rent', 'od_payable_corporate_tax', 'od_receivable_corporate_tax', 'od_payable_contribution', 'od_receivable_contribution',
+]));
 
 /**
  * @param {string} type A journal line's type.
  * @returns {boolean} true when the type is one side of a flow between two accounts (the other side is booked by the other account, with the same `transactionId`).
  */
 export function hasCounterpart(type) {
-  if (!pcgOfJournalType(type)) return false;
   if (isOperationDiverse(type)) return PAIRED_OPERATIONS.has(type);
+  if (!pcgOfJournalType(type)) return false;
   return !NO_COUNTERPART_TYPES.has(type) && !NO_COUNTERPART_PREFIXES.some((prefix) => type.startsWith(prefix));
 }
 

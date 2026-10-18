@@ -41,6 +41,8 @@ export class RecordLoanInterestExpense {
       description,
       businessKey: buildLoanInstallmentBusinessKey('loan_interest', loanId, turn),
       loanId,
+      // The borrower pays and the lender receives: two écritures, one flow.
+      transactionId: `loan:${loanId}:interest:${turn}`,
     });
 
     if (!ledgerResult.recorded) {
@@ -60,6 +62,7 @@ export class RecordLoanInterestExpense {
         businessKey: buildLoanLenderBusinessKey('loan_interest_received', loanId, turn),
         loanId,
         accountBuildingId: lenderBuildingId,
+        transactionId: `loan:${loanId}:interest:${turn}`,
       });
       if (!lenderResult.recorded && lenderResult.reason !== 'duplicate_business_key') {
         throw new Error(`[loan] the lender's interest line for ${loanId} (turn ${turn}) was not recorded: ${lenderResult.reason}`);

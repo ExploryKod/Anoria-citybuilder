@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid';
+
 /**
  * Application service — a house moves money into its bank: debited from its personal account, credited to the
  * bank's own account (the bank's cash, and its liability to the house — see DepositBalancePolicy.js for how the
@@ -37,8 +39,11 @@ export class RecordHouseholdDeposit {
       return { recorded: false, skipped: true, reason: 'insufficient_funds' };
     }
 
+    // A one-off action of the player: the house and the bank each book their own écriture of it, tied by one flow.
+    const transactionId = uuidv4();
     const houseResult = await this.deps.recordLedgerEntry({
       turn,
+      transactionId,
       type: 'deposit',
       amount: roundedAmount,
       description,
@@ -52,6 +57,7 @@ export class RecordHouseholdDeposit {
 
     const bankResult = await this.deps.recordLedgerEntry({
       turn,
+      transactionId,
       type: 'deposit_received',
       amount: roundedAmount,
       description,

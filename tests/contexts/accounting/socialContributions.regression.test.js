@@ -4,7 +4,7 @@ import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 import { householdYearReaderOf } from '../../helpers/householdYearReader.js';
 import { booked } from '../../helpers/booked.js';
 import { unpairedFlowsOf } from '../../../src/contexts/accounting/domain/policies/TransactionLinkPolicy.js';
-import { employeeContributionLines, employerContributionLines } from '../../../src/contexts/accounting/domain/policies/ProducerChargePolicy.js';
+import { employerContributionLines } from '../../../src/contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { moneyDirectionOf } from '../../../src/contexts/accounting/domain/policies/TreasuryFromJournalPolicy.js';
 import { pcgOfJournalType } from '../../../src/shared/accounting-catalog/PcgJournalCatalog.js';
 
@@ -61,30 +61,49 @@ describe('social contributions — employer, employee, and the city\'s social se
     expect(employerContributionLines({ workplaceId: 'farm', wagesHT: 300, rate: 0 })).toMatchObject([]);
   });
 
-  test('the employee\'s share is withheld from the household\'s personal account, the city receives it', () => {
-    expect(employeeContributionLines({ houseId: 'house-1', wagesReceived: 300, rate: 0.1 })).toMatchObject([
-      { kind: 'employee_contribution', amount: 30, holder: 'house-1', counterparty: null, accountKind: 'particulier' },
-      { kind: 'social_contribution', amount: 30, holder: null, counterparty: 'house-1' },
-    ]);
-  });
-
-  test('a month\'s settlement writes both, deducts the employer\'s from the company\'s taxable profit and taxes the wage after the employee\'s share', async () => {
+  // The employer withholds the employee's share and the income tax before it pays: the household receives a payslip (one écriture, the gross against what is
+  // withheld and what reaches its account), the city receives what was withheld from the employer.
+  test('a month\'s settlement: the employer pays the wage, withholds the employee\'s share and the tax, and the city receives them from it', async () => {
     const journal = await settle({ employerContributionRate: 0.25, employeeContributionRate: 0.1 });
 
     expect(journal.find((line) => line.type === 'producer_wage').amount).toBe(300);
     expect(journal.find((line) => line.type === 'employer_contribution')).toMatchObject({ amount: 75, accountBuildingId: 'bank-1' });
-    expect(journal.find((line) => line.type === 'employee_contribution')).toMatchObject({ amount: 30, accountBuildingId: 'house-1', accountKind: 'particulier' });
-    // Both reach the city: 75 from the company and 30 from the household, on the city's own account.
+    const payslip = journal.find((line) => line.type === 'household_wage');
+    expect(payslip).toMatchObject({ amount: 300, accountBuildingId: 'house-1', accountKind: 'particulier', counterpartyBuildingId: 'bank-1', journal: 'PA' });
+    // The tax is on the wage after the employee's share (270): 27. The household's account receives the 243 left.
+    expect(payslip.legs).toEqual([
+      { account: '512', debit: 24300, credit: 0 },
+      { account: '431', debit: 3000, credit: 0 },
+      { account: '4421', debit: 2700, credit: 0 },
+      { account: '421', debit: 0, credit: 30000 },
+    ]);
+    // The household pays nothing itself any more: no line of its own for the contribution or the tax.
+    expect(journal.some((line) => line.type === 'employee_contribution')).toBe(false);
+    expect(journal.some((line) => line.type === 'income_tax')).toBe(false);
+    // The city receives 75 (employer's) + 30 (employee's) of contributions, and the 27 of tax, from the company, on its own account.
     const received = journal.filter((line) => line.type === 'social_contribution');
-    expect(received.map((line) => line.amount).sort((a, b) => a - b)).toMatchObject([30, 75]);
+    expect(received.map((line) => [line.amount, line.counterpartyBuildingId]).sort((a, b) => a[0] - b[0])).toEqual([[30, 'bank-1'], [75, 'bank-1']]);
     expect(received.every((line) => line.accountBuildingId === null)).toBe(true);
-    // The tax is on the wage after the employee's share (270), and the corporate tax on the profit after the wages and the employer's share.
-    expect(journal.find((line) => line.type === 'income_tax').amount).toBe(27);
+    expect(journal.find((line) => line.type === 'payroll_tax')).toMatchObject({ amount: 27, accountBuildingId: null, counterpartyBuildingId: 'bank-1' });
+    // The corporate tax is on the profit after the wages and the employer's share.
     expect(journal.find((line) => line.type === 'corporate_tax').amount).toBe(156.25); // (1000 − 300 − 75) × 25 %
   });
 
-  // Each actor books its own écriture of a flow; the two sides carry the same transactionId, so the consolidation can set them against one another.
-  test('the two sides of each flow of the month carry one transactionId, each on its own account', async () => {
+  test('the cash of the wage adds up: what the company pays out is what the household and the city receive', async () => {
+    const journal = await settle({ employerContributionRate: 0.25, employeeContributionRate: 0.1 });
+    const wageFlow = journal.find((line) => line.type === 'producer_wage').transactionId;
+
+    const cash = journal
+      .filter((line) => line.transactionId === wageFlow)
+      .flatMap((line) => line.legs)
+      .filter((leg) => leg.account === '512')
+      .reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
+
+    expect(cash).toBe(0);
+  });
+
+  // Each actor books its own écriture of a flow; the sides carry the same transactionId, so the consolidation can set them against one another.
+  test('the sides of each flow of the month carry one transactionId, each on its own account', async () => {
     const journal = await settle({ employerContributionRate: 0.25, employeeContributionRate: 0.1 });
 
     const { lonely } = unpairedFlowsOf(journal);
@@ -93,19 +112,25 @@ describe('social contributions — employer, employee, and the city\'s social se
     const flowOf = (type) => journal.find((line) => line.type === type).transactionId;
     expect(flowOf('employer_contribution')).toBeTruthy();
     expect(journal.filter((line) => line.transactionId === flowOf('employer_contribution')).map((line) => line.type).sort()).toEqual(['employer_contribution', 'social_contribution']);
-    expect(flowOf('income_tax')).toBe(journal.find((line) => line.type === 'payroll_tax').transactionId);
+    // The wage, the payslip and what was withheld are one flow, four écritures on three accounts.
+    expect(journal.filter((line) => line.transactionId === flowOf('household_wage')).map((line) => line.type).sort()).toEqual(['household_wage', 'payroll_tax', 'producer_wage', 'social_contribution']);
   });
 
-  test('with no contribution rate nothing is written and the wage is taxed whole', async () => {
+  test('with no contribution rate nothing is withheld for the contribution and the wage is taxed whole', async () => {
     const journal = await settle({ employerContributionRate: 0, employeeContributionRate: 0 });
 
-    expect(journal.some((line) => ['employer_contribution', 'employee_contribution', 'social_contribution'].includes(line.type))).toBe(false);
-    expect(journal.find((line) => line.type === 'income_tax').amount).toBe(30);
+    expect(journal.some((line) => ['employer_contribution', 'social_contribution'].includes(line.type))).toBe(false);
+    const payslip = journal.find((line) => line.type === 'household_wage');
+    expect(payslip.legs).toEqual([
+      { account: '512', debit: 27000, credit: 0 },
+      { account: '4421', debit: 3000, credit: 0 },
+      { account: '421', debit: 0, credit: 30000 },
+    ]);
+    expect(journal.find((line) => line.type === 'payroll_tax').amount).toBe(30);
   });
 
   test('each type is known to the treasury and the chart of accounts', () => {
     expect(moneyDirectionOf(booked({ type: 'employer_contribution', amount: 1, turn: 0, accountBuildingId: 'farm' }))).toBe('debit');
-    expect(moneyDirectionOf(booked({ type: 'employee_contribution', amount: 1, turn: 0, accountBuildingId: 'house' }))).toBe('debit');
     expect(moneyDirectionOf(booked({ type: 'social_contribution', amount: 1, turn: 0, accountBuildingId: null }))).toBe('credit');
     expect(pcgOfJournalType('employer_contribution').account).toBe('645');
   });

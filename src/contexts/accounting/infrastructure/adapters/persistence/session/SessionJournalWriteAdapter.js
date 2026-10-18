@@ -19,6 +19,11 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
     return sessionLedgerBuffer.hasBusinessKey(businessKey);
   }
 
+  /** @inheritdoc */
+  async batch(work) {
+    return this.sessionJournalStore.batch(work);
+  }
+
   /**
    * @param {object} entry
    * @param {{ persist?: boolean }} [options]

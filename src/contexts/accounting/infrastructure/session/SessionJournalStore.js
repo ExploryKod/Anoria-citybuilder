@@ -28,6 +28,10 @@ export class SessionJournalStore {
      */
     #writes = Promise.resolve();
 
+    /** How many batches are open (see `batch`), and the lines they hold, which are in memory and not yet on disk. */
+    #batchDepth = 0;
+    #batchSessionIds = new Set();
+
     /**
      * @param {object} [deps]
      * @param {import('dexie').Dexie} [deps.db]
@@ -111,6 +115,47 @@ export class SessionJournalStore {
      */
     async addJournalEntry(turn, type, amount, description, partnerId = null, options = {}) {
         return this.#queued(() => this.#appendLine(turn, type, amount, description, partnerId, options));
+    }
+
+    /**
+     * Writes everything `work` records in one go: each line is held in memory as it is recorded (the journal and its fold are up to date at once, so `work` reads
+     * what it has just written), and the whole is written to IndexedDB in one transaction when `work` is done. A month's settlement is hundreds of lines; written
+     * one by one, each waits for its own transaction and its own pass over the buffer. The month is atomic: if `work` or the write fails, none of its lines is
+     * kept (a business key lets the month be settled again).
+     * @template T
+     * @param {() => Promise<T>} work
+     * @returns {Promise<T>}
+     */
+    async batch(work) {
+        const outermost = this.#batchDepth === 0;
+        if (outermost) this.#batchSessionIds = new Set();
+        this.#batchDepth += 1;
+        let result;
+        try {
+            result = await work();
+        } catch (error) {
+            this.#batchDepth -= 1;
+            if (outermost) await this.#dropBatch();
+            throw error;
+        }
+        this.#batchDepth -= 1;
+        if (!outermost) return result;
+        const held = this.#batchSessionIds.size;
+        try {
+            await this.#queued(() => this._getSessionPersistence().flushPendingEntries());
+        } catch (error) {
+            await this.#dropBatch();
+            throw new Error(`[journal] the batch of ${held} lines could not be written: ${error.message}`, { cause: error });
+        }
+        this.#batchSessionIds = new Set();
+        return result;
+    }
+
+    /** The lines of a batch that failed leave the journal: none of them was written. */
+    async #dropBatch() {
+        const dropped = this.#batchSessionIds;
+        this.#batchSessionIds = new Set();
+        await this.#queued(async () => this._buffer.removeSessionIds(dropped));
     }
 
     /** @template T @param {() => Promise<T>} task @returns {Promise<T>} */
@@ -222,6 +267,12 @@ export class SessionJournalStore {
                     skipped: true,
                     reason: appendResult.reason ?? 'duplicate_business_key',
                 };
+            }
+
+            // In a batch the line waits in memory with the others and the batch writes them all at once (see `batch`).
+            if (this.#batchDepth > 0) {
+                this.#batchSessionIds.add(appendResult.record.sessionId);
+                return { recorded: true, skipped: false, businessKey };
             }
 
             // Write-through: the entry is on disk before the caller learns it is recorded. The treasury is derived
@@ -392,7 +443,7 @@ export class SessionJournalStore {
             if (isInformativeJournalType(entry.type)) {
                 return;
             }
-            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'vat' || entry.type === 'producer_revenue' || entry.type === 'corporate_tax_revenue' || entry.type === 'service_sales' || entry.type === 'service_subsidy_received' || entry.type === 'subsidy_companies_received' || entry.type === 'subsidy_housing_received' || entry.type === 'social_contribution' || entry.type === 'household_participation' || entry.type === 'household_dividend' || entry.type === 'income_tax_refund' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || entry.type.startsWith('export_') || entry.type.startsWith('customs_import_') || entry.type.startsWith('abroad_sale_')) {
+            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'vat' || entry.type === 'producer_revenue' || entry.type === 'corporate_tax_revenue' || entry.type === 'corporate_tax_debt_received' || entry.type === 'contribution_debt_received' || entry.type === 'service_sales' || entry.type === 'service_subsidy_received' || entry.type === 'subsidy_companies_received' || entry.type === 'subsidy_housing_received' || entry.type === 'social_contribution' || entry.type === 'household_participation' || entry.type === 'household_dividend' || entry.type === 'income_tax_refund' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || entry.type.startsWith('export_') || entry.type.startsWith('customs_import_') || entry.type.startsWith('abroad_sale_')) {
                 stats.totalIncome += entry.amount;
             } else {
                 stats.totalExpenses += entry.amount;

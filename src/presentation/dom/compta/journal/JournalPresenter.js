@@ -253,6 +253,8 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     entry.type === 'vat' ||
     entry.type === 'producer_revenue' ||
     entry.type === 'corporate_tax_revenue' ||
+    entry.type === 'corporate_tax_debt_received' ||
+    entry.type === 'contribution_debt_received' ||
     entry.type === 'service_sales' ||
     entry.type === 'service_subsidy_received' ||
     entry.type === 'subsidy_companies_received' ||
@@ -316,12 +318,12 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     subsidy_companies_received: 'Subvention entretien reçue',
     subsidy_housing_received: 'Subvention entretien des maisons reçue',
     employer_contribution: 'Cotisations patronales',
-    employee_contribution: 'Cotisations salariales',
     rent_paid: 'Loyer payé',    rent_received: 'Loyer perçu',
     premises_rent_paid: 'Loyer du local payé',    premises_rent_received: 'Loyer du local perçu',
     company_capital_paid: 'Fonds propres versés',    company_capital_received: 'Fonds propres reçus',
     wage_debt_paid: 'Salaires impayés réglés',    contribution_debt_paid: 'Cotisations impayées réglées',
     corporate_tax_debt_paid: 'Impôt impayé réglé',    premises_rent_debt_paid: 'Loyer du local impayé réglé',
+    corporate_tax_debt_received: 'Impôt sur les sociétés impayé encaissé', contribution_debt_received: 'Cotisations impayées encaissées',
     premises_rent_debt_received: 'Loyer du local impayé encaissé',
     social_contribution: 'Cotisations sociales perçues',
     enterprise_participation: 'Participation aux résultats versée',

@@ -2,6 +2,7 @@ import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
 import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 import { difficultyMonthsOf, payablesOf, payByRank } from '../../../src/contexts/accounting/domain/policies/DebtPolicy.js';
+import { unpairedFlowsOf } from '../../../src/contexts/accounting/domain/policies/TransactionLinkPolicy.js';
 
 const FARM = 'Farm-Wheat';
 const HOUSE = 'House-Blue';
@@ -94,7 +95,11 @@ describe('the debts of a company', () => {
     expect(amountOf(journal, 'household_wage')).toBe(800);
     expect(amountOf(journal, 'producer_wage')).toBe(700);
     expect(amountOf(journal, 'contribution_debt_paid')).toBe(40);
-    expect(amountOf(journal, 'social_contribution')).toBe(80);
+    // The city booked a receivable when the first month's contributions fell due, and collects it now: not a product a second time.
+    expect(amountOf(journal, 'od_receivable_contribution')).toBe(40);
+    expect(amountOf(journal, 'contribution_debt_received')).toBe(40);
+    expect(amountOf(journal, 'social_contribution')).toBe(40);
+    expect(unpairedFlowsOf(journal).lonely).toEqual([]);
     expect(payablesOf(journal).size).toBe(0);
   });
 

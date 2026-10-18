@@ -56,6 +56,8 @@ export class SettleBankDepositInterest {
         accountBuildingId: houseId,
         accountKind: 'particulier',
         counterpartyBuildingId: bankId,
+        // The bank pays and the household receives: two écritures, one flow.
+        transactionId: `deposit_interest:${houseId}:${bankId}:${timeInfo.year}:${timeInfo.monthIndex}`,
       });
       if (!houseResult.recorded && houseResult.reason !== 'duplicate_business_key') {
         throw new Error(`[deposit] the household interest line for ${houseId} was not recorded: ${houseResult.reason}`);
@@ -69,6 +71,7 @@ export class SettleBankDepositInterest {
         businessKey: buildDepositInterestBusinessKey('deposit_interest_paid', houseId, bankId, timeInfo.year, timeInfo.monthIndex),
         accountBuildingId: bankId,
         counterpartyBuildingId: houseId,
+        transactionId: `deposit_interest:${houseId}:${bankId}:${timeInfo.year}:${timeInfo.monthIndex}`,
       });
       if (!bankResult.recorded && bankResult.reason !== 'duplicate_business_key') {
         throw new Error(`[deposit] the bank's interest line for ${houseId} was not recorded: ${bankResult.reason}`);

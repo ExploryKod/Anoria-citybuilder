@@ -1797,22 +1797,33 @@
                     </div>
                     <div class="administrator-section-content">
                         <div class="finances-board" id="finances-board">
+                            <!-- The views of the board: the Caesar-style budget, then the city's statements (M57) read from the same journal. The JSON button downloads all of them in one file. -->
+                            <div class="building-finance-toolbar finances-toolbar">
+                                <div class="building-finance-pills" role="tablist" aria-label="Vue des finances">
+                                    <button type="button" class="building-finance-pill-tab is-active" data-finances-pill="budget" role="tab">Budget</button>
+                                    <button type="button" class="building-finance-pill-tab" data-finances-pill="result" role="tab">Compte de résultat</button>
+                                    <button type="button" class="building-finance-pill-tab" data-finances-pill="balance" role="tab">Bilan</button>
+                                    <button type="button" class="building-finance-pill-tab" data-finances-pill="trial" role="tab">Balance</button>
+                                </div>
+                                <button type="button" class="building-finance-download" id="finances-download" title="Télécharger toutes les vues (budget, compte de résultat, bilan, balance) en un fichier JSON">JSON</button>
+                            </div>
+
                             <div class="finances-hamlet-filter-row">
                                 <label class="finances-hamlet-filter-label" for="finances-hamlet-filter">Budget de :</label>
                                 <select id="finances-hamlet-filter" class="finances-hamlet-filter" aria-label="Choisir le hameau dont afficher le budget"></select>
                             </div>
 
-                            <div class="finances-debt-info" id="finances-debt-info">
+                            <div class="finances-debt-info" id="finances-debt-info" data-finances-view="budget">
                                 <p class="finances-debt-text">
                                     La ville a une dette envers les prêteurs de <span class="finances-debt-amount" id="finances-debt-amount">0</span> €
                                 </p>
                             </div>
 
-                            <div class="finances-tax-registration" id="tax-registration">
+                            <div class="finances-tax-registration" id="tax-registration" data-finances-view="budget">
                                 100% de la population est enregistrée pour les impôts
                             </div>
 
-                            <table class="finances-table">
+                            <table class="finances-table" data-finances-view="budget">
                                 <thead>
                                     <tr>
                                         <th class="indicator-col"></th>
@@ -2155,13 +2166,18 @@
                                 </tbody>
                             </table>
 
-                            <div class="finances-message-area" id="finances-message-area">
+                            <div class="finances-message-area" id="finances-message-area" data-finances-view="budget">
                                 <p class="finances-message-text" id="finances-message-text">
                                     Analyse financière : La ville fonctionne avec un déficit cette année. Il est recommandé d'augmenter les revenus ou de réduire les dépenses.
                                 </p>
                             </div>
 
-                            <div class="producer-ranking" id="producer-ranking">
+                            <!-- The city's statements in the M57 model, read from the same journal as the budget (see CityStatementsPresenter). -->
+                            <div class="city-statements-view" id="finances-view-result" data-finances-view="result" hidden></div>
+                            <div class="city-statements-view" id="finances-view-balance" data-finances-view="balance" hidden></div>
+                            <div class="city-statements-view" id="finances-view-trial" data-finances-view="trial" hidden></div>
+
+                            <div class="producer-ranking" id="producer-ranking" data-finances-view="budget">
                                 <div class="producer-ranking-header">
                                     <h3 class="producer-ranking-title">Classement des producteurs</h3>
                                     <span class="producer-ranking-period" id="producer-ranking-period">…</span>

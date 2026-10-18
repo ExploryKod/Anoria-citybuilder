@@ -9,6 +9,7 @@ export class ProcessTurnBudget {
    * @param {object} deps
    * @param {(time: number) => Promise<object>} deps.collectCitizenTaxes
    * @param {(time: number) => object} deps.getTimeInfo
+   * @param {<T>(work: () => Promise<T>) => Promise<T>} [deps.inJournalBatch] runs the month's settlement so that all its lines are written to disk at once
    * @param {({ time: number, deliveredTime: number }) => Promise<void>} deps.settleProducerCharges
    * @param {({ time: number, deliveredTime: number }) => Promise<void>} [deps.settleBankDepositInterest] a bank's
    *   monthly interest to its depositors — run right before settleProducerCharges, same day, same month, so the
@@ -52,7 +53,7 @@ export class ProcessTurnBudget {
       if (!timeInfo.month) throw new Error(`[ProcessTurnBudget] the calendar gave no month name for turn ${time}`);
       const isFirstTurnOfMonth = timeInfo.dayInMonth === 1;
 
-      if (isFirstTurnOfMonth && time > 0) {
+      const settleMonth = async () => {
         // A company created since the last month receives its founding capital from the city before its first month is settled.
         if (this.deps.fundNewCompanies) await this.deps.fundNewCompanies({ time });
         // The bank's own interest expense must exist in the journal before settleProducerCharges reads it (its
@@ -75,6 +76,11 @@ export class ProcessTurnBudget {
         if (this.deps.adjustWageRates) await this.deps.adjustWageRates({ time });
         // The month's accounts are closed: the caller may judge what they show (the departures, see runGameTurnEconomy.js).
         result.monthSettled = true;
+      };
+      if (isFirstTurnOfMonth && time > 0) {
+        // The month is written in one go: hundreds of lines, one transaction, all or none (see SessionJournalStore.batch).
+        if (this.deps.inJournalBatch) await this.deps.inJournalBatch(settleMonth);
+        else await settleMonth();
       }
 
       if (this.deps.processLoanPayments) {

@@ -97,11 +97,12 @@ export function serviceSaleLines({ sellerId, buyerId, service, ttc, ht, vat }) {
   if (centimes(ttc) <= 0) return [];
   // Three actors, one flow: the house pays the price with VAT, the company books it without, the city books the VAT.
   const flow = `service:${service}:${sellerId}:${buyerId}`;
+  // A line of zero moves nothing and is no écriture (a service with no VAT has no VAT line): it is not written.
   return [
     { kind: 'service_purchase', amount: centimes(ttc), holder: buyerId, counterparty: sellerId, accountKind: PERSONAL_ACCOUNT, resource: service, flow },
     { kind: 'service_sales', amount: centimes(ht), holder: sellerId, counterparty: buyerId, flow },
     { kind: 'vat', amount: centimes(vat), holder: null, counterparty: sellerId, flow },
-  ];
+  ].filter((line) => line.amount > 0);
 }
 
 /**
@@ -157,22 +158,6 @@ export function employerContributionLines({ workplaceId, wagesHT, rate }) {
   return [
     { kind: 'employer_contribution', amount, holder: workplaceId, counterparty: null, flow },
     { kind: 'social_contribution', amount, holder: null, counterparty: workplaceId, flow },
-  ];
-}
-
-/**
- * The employee's social contribution, withheld from the wages a household received in a month: it leaves the household's personal account and
- * reaches the city's social security.
- * @param {{ houseId: string, wagesReceived: number, rate: number }} receipt
- * @returns {ChargeLine[]}
- */
-export function employeeContributionLines({ houseId, wagesReceived, rate }) {
-  const amount = centimes(wagesReceived * rate);
-  if (amount <= 0) return [];
-  const flow = `employee_contribution:${houseId}`;
-  return [
-    { kind: 'employee_contribution', amount, holder: houseId, counterparty: null, accountKind: PERSONAL_ACCOUNT, flow },
-    { kind: 'social_contribution', amount, holder: null, counterparty: houseId, flow },
   ];
 }
 

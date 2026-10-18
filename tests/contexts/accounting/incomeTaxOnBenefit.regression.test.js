@@ -54,14 +54,18 @@ describe('income tax on the unemployment benefit — taxed together with wages, 
     const benefit = journal.find((line) => line.type === 'household_benefit');
     expect(benefit.amount).toBe(210);
 
-    const incomeTax = journal.find((line) => line.type === 'income_tax');
-    expect(incomeTax).toBeDefined();
-    expect(incomeTax.amount).toBe(21); // 210 * 10%, same bracket as a wage would use
-    expect(incomeTax.accountBuildingId).toBe('house');
-    expect(incomeTax.accountKind).toBe('particulier');
-
+    // The city withholds the tax from its own pay: the payslip credits the 210 and debits the 21 withheld (4421) and the 189 that reaches the account.
+    expect(benefit.legs).toEqual([
+      { account: '512', debit: 18900, credit: 0 },
+      { account: '4421', debit: 2100, credit: 0 }, // 210 * 10%, same bracket as a wage would use
+      { account: '437', debit: 0, credit: 21000 },
+    ]);
+    expect(benefit.accountBuildingId).toBe('house');
+    expect(benefit.accountKind).toBe('particulier');
+    // The household no longer pays it itself: there is no monthly income tax line of its own, and the city books what it retained.
+    expect(journal.find((line) => line.type === 'income_tax')).toBeUndefined();
     const payrollTax = journal.find((line) => line.type === 'payroll_tax');
-    expect(payrollTax.amount).toBe(21);
+    expect(payrollTax).toMatchObject({ amount: 21, accountBuildingId: null, counterpartyBuildingId: 'house' });
   });
 
   test('below the exemption threshold, the benefit alone pays no income tax', async () => {

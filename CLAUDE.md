@@ -96,7 +96,8 @@ the treasury nor the balance sheet. Regression tests: `tests/contexts/accounting
 
 ## The journal holds écritures only
 
-The journal stores écritures (movements of value) and loan contracts, nothing else. A *total* is never written as a line:
+The journal stores écritures (movements of value) and loan contracts, nothing else but the informative lines (`info_*`): they move
+nothing, carry no legs and are no écriture (`isEcriture` is false for them), but the loan schedule and the player's warnings read them. A *total* is never written as a line:
 no `cumul_*`, no `carry_forward`, no `balance`. A closing entry or an à-nouveau is not a total: it is an écriture with its
 legs, as the plan comptable has it. A year's totals are read from its écritures, or from the à-nouveaux and the `summary` of its
 closing once purged; the balance is derived.

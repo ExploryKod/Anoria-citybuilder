@@ -4,7 +4,6 @@ import {
   corporateTaxDueOf,
   corporateTaxLines,
   isLucrativeBuilding,
-  employeeContributionLines,
   employerContributionLines,
   serviceSaleLines,
   serviceSubsidyLines,
@@ -26,6 +25,7 @@ import { addVatTo } from '../../domain/policies/VatIncludedPolicy.js';
 import { payableServiceBills } from '../../domain/policies/ServiceSolvencyPolicy.js';
 import { householdPublicPayOf } from '../../domain/policies/HouseholdPublicPayPolicy.js';
 import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
+import { payslipLegs, planWithholding } from '../../domain/policies/WithholdingPolicy.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { getResourceCategoryPresentation } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
@@ -53,7 +53,6 @@ const LINE_LABELS = Object.freeze({
   producer_wage: 'Salaires des ouvriers',
   household_wage: 'Salaire perçu',
   employer_contribution: 'Cotisations patronales',
-  employee_contribution: 'Cotisations salariales',
   social_contribution: 'Cotisations sociales perçues',
   maintenance: 'Entretien',
   premises_rent_paid: 'Loyer du local',
@@ -61,6 +60,8 @@ const LINE_LABELS = Object.freeze({
   wage_debt_paid: 'Salaires impayés réglés',
   contribution_debt_paid: 'Cotisations impayées réglées',
   corporate_tax_debt_paid: 'Impôt sur les sociétés impayé réglé',
+  corporate_tax_debt_received: 'Impôt sur les sociétés impayé encaissé',
+  contribution_debt_received: 'Cotisations impayées encaissées',
   premises_rent_debt_paid: 'Loyer du local impayé réglé',
   premises_rent_debt_received: 'Loyer du local impayé encaissé',
   subsidy_housing_received: 'Subvention entretien des maisons reçue',
@@ -84,7 +85,12 @@ const LINE_LABELS = Object.freeze({
   public_wage: 'Traitement perçu',
 });
 
+/** What a company owes the city when it cannot pay: the receivable the city books on its own account (an opération diverse), by kind of debt. */
+const CITY_RECEIVABLES = Object.freeze({ corporate_tax: 'od_receivable_corporate_tax', contribution: 'od_receivable_contribution' });
+
 const centimes = (amount) => Math.round(amount * 100) / 100;
+/** @param {number} euros @returns {number} whole centimes */
+const toCentimes = (euros) => Math.round(euros * 100);
 
 /**
  * Application service — settles one delivered month of the active hamlet's chain, on the first day of the month after it.
@@ -230,34 +236,6 @@ export class SettleProducerCharges {
       if (pay.benefit > 0) benefitByHouse.set(household.id, pay.benefit);
     }
 
-    for (const household of households) {
-      const benefit = benefitByHouse.get(household.id) ?? 0;
-      const unemployed = unemployedCountByHouse.get(household.id);
-      const name = nameOf(household.id);
-      if (benefit > 0) {
-        await this.#record(
-          { kind: 'unemployment_benefit', amount: benefit, holder: null, counterparty: household.id, accountKind: null, flow: `benefit:${household.id}` },
-          {
-            time,
-            key: buildProducerLineBusinessKey('unemployment_benefit', household.id, timeInfo, hamletId),
-            description: `${LINE_LABELS.unemployment_benefit} : ${unemployed} chôm. pour ${name} - ${monthLabel}`,
-            buildingInstanceId: household.id,
-            timeInfo,
-          },
-        );
-        await this.#record(
-          { kind: 'household_benefit', amount: benefit, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT, flow: `benefit:${household.id}` },
-          {
-            time,
-            key: buildProducerLineBusinessKey('household_benefit', household.id, timeInfo, hamletId),
-            description: `${LINE_LABELS.household_benefit} - ${monthLabel}`,
-            buildingInstanceId: household.id,
-            timeInfo,
-          },
-        );
-      }
-    }
-
     // The administrators do not look for a job and have no workplace: the city pays them the stipend the player sets
     // (`administratorStipend`, apart from the minimum wage) per administrator and month. A direct charge on the city's funds; without
     // enough of it their house cannot pay its needs, its services are cut off and its tiers (so its skills) stay out of reach.
@@ -269,26 +247,6 @@ export class SettleProducerCharges {
       const stipend = centimes(household.salaried * publicPay.administratorStipend);
       if (stipend <= 0) continue;
       stipendByHouse.set(household.id, stipend);
-      await this.#record(
-        { kind: 'salary', amount: stipend, holder: null, counterparty: household.id, accountKind: null, flow: `stipend:${household.id}` },
-        {
-          time,
-          key: buildProducerLineBusinessKey('salary', household.id, timeInfo, hamletId),
-          description: `${LINE_LABELS.salary} : ${household.salaried} administrateur(s) pour ${nameOf(household.id)} - ${monthLabel}`,
-          buildingInstanceId: household.id,
-          timeInfo,
-        },
-      );
-      await this.#record(
-        { kind: 'public_wage', amount: stipend, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT, flow: `stipend:${household.id}` },
-        {
-          time,
-          key: buildProducerLineBusinessKey('public_wage', household.id, timeInfo, hamletId),
-          description: `${LINE_LABELS.public_wage} - ${monthLabel}`,
-          buildingInstanceId: household.id,
-          timeInfo,
-        },
-      );
     }
     // What the city pays a house is taxed and spent like a wage: the benefit and the stipend together.
     const publicPayByHouse = new Map(benefitByHouse);
@@ -297,6 +255,57 @@ export class SettleProducerCharges {
     }
 
     const { payable, wagesByBuilding } = this.#planMonth({ bills, pairs, houseSales, bankInterest, buildings, fundsByHouse, taxRate, benefitByHouse: publicPayByHouse, wageRateOf: await this.deps.getWageRateOf(), employeeRate: publicPay.employeeContributionRate });
+
+    // The withholding at source: each pay of a household (its wages from every workplace, the city's benefit and stipend) keeps back its share of the employee's
+    // contribution and of the income tax, which is the household's: progressive over all it receives in the month.
+    const slots = [];
+    for (const building of buildings) {
+      const { wagesHT } = wagesByBuilding.get(building.id);
+      for (const line of wageSplitLines({ workplaceId: building.id, wagesHT, sources: building.workerSources ?? {} })) {
+        if (line.kind === 'household_wage') slots.push({ key: `wage|${building.id}|${line.holder}`, houseId: line.holder, kind: 'wage', gross: toCentimes(line.amount) });
+      }
+    }
+    for (const [houseId, benefit] of benefitByHouse) slots.push({ key: `benefit|${houseId}`, houseId, kind: 'public', gross: toCentimes(benefit) });
+    for (const [houseId, stipend] of stipendByHouse) slots.push({ key: `stipend|${houseId}`, houseId, kind: 'public', gross: toCentimes(stipend) });
+    const withholding = planWithholding({ slots, employeeRate: publicPay.employeeContributionRate, taxRate });
+
+    // What the city pays the households: the benefit of the unemployed and the stipend of the administrators. The city withholds the tax itself.
+    for (const household of households) {
+      const benefit = benefitByHouse.get(household.id);
+      if (benefit > 0) {
+        await this.#record(
+          { kind: 'unemployment_benefit', amount: benefit, holder: null, counterparty: household.id, accountKind: null, flow: `benefit:${household.id}` },
+          {
+            time,
+            key: buildProducerLineBusinessKey('unemployment_benefit', household.id, timeInfo, hamletId),
+            description: `${LINE_LABELS.unemployment_benefit} : ${unemployedCountByHouse.get(household.id)} chôm. pour ${nameOf(household.id)} - ${monthLabel}`,
+            buildingInstanceId: household.id,
+            timeInfo,
+          },
+        );
+        await this.#recordPayslip({
+          kind: 'household_benefit', houseId: household.id, gross: toCentimes(benefit), withheld: withholding.get(`benefit|${household.id}`), payerId: null, flow: `benefit:${household.id}`,
+          key: `${household.id}:benefit`, description: `${LINE_LABELS.household_benefit} - ${monthLabel}`, time, timeInfo, hamletId, monthLabel, nameOf,
+        });
+      }
+      const stipend = stipendByHouse.get(household.id);
+      if (stipend > 0) {
+        await this.#record(
+          { kind: 'salary', amount: stipend, holder: null, counterparty: household.id, accountKind: null, flow: `stipend:${household.id}` },
+          {
+            time,
+            key: buildProducerLineBusinessKey('salary', household.id, timeInfo, hamletId),
+            description: `${LINE_LABELS.salary} : ${household.salaried} administrateur(s) pour ${nameOf(household.id)} - ${monthLabel}`,
+            buildingInstanceId: household.id,
+            timeInfo,
+          },
+        );
+        await this.#recordPayslip({
+          kind: 'public_wage', houseId: household.id, gross: toCentimes(stipend), withheld: withholding.get(`stipend|${household.id}`), payerId: null, flow: `stipend:${household.id}`,
+          key: `${household.id}:stipend`, description: `${LINE_LABELS.public_wage} - ${monthLabel}`, time, timeInfo, hamletId, monthLabel, nameOf,
+        });
+      }
+    }
 
     for (const pair of pairs) {
       for (const line of tradeLines(pair)) {
@@ -338,14 +347,6 @@ export class SettleProducerCharges {
       subsidiesHT.set(bill.buildingId, centimes((subsidiesHT.get(bill.buildingId) ?? 0) + bill.citySubsidy));
     }
 
-    // The income tax is per household (foyer): its wages of the month, from every workplace, and its unemployment
-    // benefit, are taxed once together, above the threshold.
-    const grossByHouse = new Map();
-    for (const [houseId, benefit] of publicPayByHouse) {
-      grossByHouse.set(houseId, centimes((grossByHouse.get(houseId) ?? 0) + benefit));
-    }
-    // What each house received in wages this month: the employee's social contribution is withheld from it, and only the rest is taxed.
-    const wagesReceivedByHouse = new Map();
     // The debts the companies carry (a charge they could not pay), and what each holds once its charges of the month are paid.
     const payables = payablesOf(await this.deps.getJournalEntries());
     const cashAfterCharges = new Map();
@@ -360,23 +361,9 @@ export class SettleProducerCharges {
         // what it cannot pay becomes a debt (see DebtPolicy). What it holds after is what the year's tax may use.
         cashAfterCharges.set(building.id, await this.#settleCompanyMonth({
           building, wagesHT, workers, wagePerWorker, sources, subsidyHT, owner, houseSubsidyRate, publicPay, payables,
-          time, timeInfo, hamletId, monthLabel, nameOf, wagesReceivedByHouse,
+          time, timeInfo, hamletId, monthLabel, nameOf, withholding,
         }));
       } else {
-        // The wages go to the houses the workers come from: each house receives its workers' share, on its own account.
-        for (const line of wageSplitLines({ workplaceId: building.id, wagesHT, sources })) {
-          await this.#record(line, {
-            time,
-            key: buildTradeLineBusinessKey(line.kind, line.holder, line.counterparty, timeInfo, hamletId),
-            description: line.kind === 'producer_wage'
-              ? `${LINE_LABELS[line.kind]} ${nameOf(line.holder)} → ${nameOf(line.counterparty)} (${workers} ouvriers à ${wagePerWorker.toFixed(2)} €) - ${monthLabel}`
-              : `${LINE_LABELS[line.kind]} de ${nameOf(line.counterparty)} - ${monthLabel}`,
-            buildingInstanceId: line.holder,
-            timeInfo,
-          });
-          if (line.kind === 'household_wage') wagesReceivedByHouse.set(line.holder, centimes((wagesReceivedByHouse.get(line.holder) ?? 0) + line.amount));
-        }
-
         // The city's subsidy to a company: a city expense and the company's receipt, both for the month.
         for (const line of serviceSubsidyLines({ sellerId: building.id, citySubsidy: subsidyHT })) {
           await this.#record(line, {
@@ -469,49 +456,6 @@ export class SettleProducerCharges {
           }
         }
       }
-    }
-
-    // The employee's social contribution is withheld from the wages each house received; the income tax is on what is left, with the benefit.
-    for (const [houseId, wages] of wagesReceivedByHouse) {
-      const contributionLines = employeeContributionLines({ houseId, wagesReceived: wages, rate: publicPay.employeeContributionRate });
-      for (const line of contributionLines) {
-        await this.#record(line, {
-          time,
-          key: buildProducerLineBusinessKey(line.kind, houseId, timeInfo, hamletId),
-          description: line.kind === 'employee_contribution'
-            ? `${LINE_LABELS.employee_contribution} du foyer ${nameOf(houseId)} - ${monthLabel}`
-            : `${LINE_LABELS.social_contribution} du foyer ${nameOf(houseId)} - ${monthLabel}`,
-          buildingInstanceId: houseId,
-          timeInfo,
-        });
-      }
-      const withheld = contributionLines.find((line) => line.kind === 'employee_contribution')?.amount ?? 0;
-      grossByHouse.set(houseId, centimes((grossByHouse.get(houseId) ?? 0) + wages - withheld));
-    }
-
-    for (const [houseId, gross] of grossByHouse) {
-      const { incomeTax } = withholdIncomeTax({ gross, ...taxRate });
-      if (incomeTax <= 0) continue;
-      await this.#record(
-        { kind: 'income_tax', amount: incomeTax, holder: houseId, counterparty: null, accountKind: PERSONAL_ACCOUNT, flow: `income_tax:${houseId}` },
-        {
-          time,
-          key: buildProducerLineBusinessKey('income_tax', houseId, timeInfo, hamletId),
-          description: `${LINE_LABELS.income_tax} du foyer ${nameOf(houseId)} - ${monthLabel}`,
-          buildingInstanceId: houseId,
-          timeInfo,
-        },
-      );
-      await this.#record(
-        { kind: 'payroll_tax', amount: incomeTax, holder: null, counterparty: houseId, accountKind: null, flow: `income_tax:${houseId}` },
-        {
-          time,
-          key: buildProducerLineBusinessKey('payroll_tax', houseId, timeInfo, hamletId),
-          description: `${LINE_LABELS.payroll_tax} du foyer ${nameOf(houseId)} - ${monthLabel}`,
-          buildingInstanceId: houseId,
-          timeInfo,
-        },
-      );
     }
 
     // What the buildings lost to spoilage in the month: an informative line each (the manque à gagner), on the account of the building or of its
@@ -636,7 +580,7 @@ export class SettleProducerCharges {
    * the charge against what is owed). What has no creditor in the game (the upkeep when no owner stands) is written whole, as before.
    * @returns {Promise<number>} what the company holds once all is paid, in centimes
    */
-  async #settleCompanyMonth({ building, wagesHT, workers, wagePerWorker, sources, subsidyHT, owner, houseSubsidyRate, publicPay, payables, time, timeInfo, hamletId, monthLabel, nameOf, wagesReceivedByHouse }) {
+  async #settleCompanyMonth({ building, wagesHT, workers, wagePerWorker, sources, subsidyHT, owner, houseSubsidyRate, publicPay, payables, time, timeInfo, hamletId, monthLabel, nameOf, withholding }) {
     const id = building.id;
     const toC = (euros) => Math.round(euros * 100);
     const write = (line, description, key) => this.#record(line, { time, key, description, buildingInstanceId: id, timeInfo });
@@ -681,8 +625,14 @@ export class SettleProducerCharges {
       const paid = plan.chargePaid.get(chargeId) ?? 0;
       if (paid > 0) {
         await write(scaled(wage, paid), `${LINE_LABELS.producer_wage} ${nameOf(id)} → ${nameOf(wage.counterparty)} (${workers} ouvriers à ${wagePerWorker.toFixed(2)} €) - ${monthLabel}`, buildTradeLineBusinessKey(wage.kind, wage.holder, wage.counterparty, timeInfo, hamletId));
-        await write(scaled(received, paid), `${LINE_LABELS.household_wage} de ${nameOf(id)} - ${monthLabel}`, buildTradeLineBusinessKey(received.kind, received.holder, received.counterparty, timeInfo, hamletId));
-        wagesReceivedByHouse.set(received.holder, centimes((wagesReceivedByHouse.get(received.holder) ?? 0) + paid / 100));
+        // The employer pays the wage and keeps back the contribution and the tax the plan gave this pay (in proportion, when it can pay only part of it): the
+        // household receives its payslip, the city what was withheld.
+        const planned = withholding.get(`wage|${id}|${received.holder}`);
+        const share = (centimesWithheld) => (paid === toCentimes(received.amount) ? centimesWithheld : Math.round((centimesWithheld * paid) / toCentimes(received.amount)));
+        await this.#recordPayslip({
+          kind: 'household_wage', houseId: received.holder, gross: paid, withheld: { contribution: share(planned.contribution), tax: share(planned.tax) }, payerId: id, flow: received.flow,
+          key: `${id}:${received.holder}`, description: `${LINE_LABELS.household_wage} de ${nameOf(id)} - ${monthLabel}`, time, timeInfo, hamletId, monthLabel, nameOf,
+        });
       }
       const unpaid = plan.chargeUnpaid.get(chargeId) ?? 0;
       if (unpaid > 0) {
@@ -737,8 +687,9 @@ export class SettleProducerCharges {
     await write({ kind: settlement, amount, holder: debt.debtorId, counterparty: debt.creditorId, accountKind: debt.accountKind, flow }, `${LINE_LABELS[settlement]} ${nameOf(debt.debtorId)}${to} - ${monthLabel}`);
     const credit = {
       wage: { kind: 'household_wage', amount, holder: debt.creditorId, counterparty: debt.debtorId, accountKind: PERSONAL_ACCOUNT, flow },
-      contribution: { kind: 'social_contribution', amount, holder: null, counterparty: debt.debtorId, flow },
-      corporate_tax: { kind: 'corporate_tax_revenue', amount, holder: null, counterparty: null, flow },
+      // The city collects what it had booked as a receivable: not a product a second time.
+      contribution: { kind: 'contribution_debt_received', amount, holder: null, counterparty: debt.debtorId, flow },
+      corporate_tax: { kind: 'corporate_tax_debt_received', amount, holder: null, counterparty: debt.debtorId, flow },
       premises_rent: { kind: 'premises_rent_debt_received', amount, holder: debt.creditorId, counterparty: debt.debtorId, accountKind: owner?.businessAccount, flow },
     }[debt.kind];
     await write(credit, `${LINE_LABELS[credit.kind]} de ${nameOf(debt.debtorId)} - ${monthLabel}`);
@@ -760,10 +711,70 @@ export class SettleProducerCharges {
       accountBuildingId: debtorId,
       accountKind,
       counterpartyBuildingId: creditorId,
-      // The rent a company cannot pay is the owner's receivable: the two écritures are one flow.
+      // What a company cannot pay is its creditor's receivable (the owner's for the rent, the city's for the tax and the contributions): the two écritures are one flow.
       ...(kind === 'premises_rent' ? { transactionId: this.#rentDueFlow(debtorId, timeInfo) } : {}),
+      ...(CITY_RECEIVABLES[kind] ? { transactionId: this.#cityDebtFlow(kind, debtorId, timeInfo) } : {}),
     });
     if (!result.recorded && result.reason !== 'duplicate_business_key') throw new Error(`[producer] the ${type} line "${description}" was not recorded: ${result.reason}`);
+    // The city, owed by the company, books its receivable on its own account the same month.
+    if (CITY_RECEIVABLES[kind]) {
+      const receivable = CITY_RECEIVABLES[kind];
+      const booked = await this.deps.recordLedgerEntry({
+        turn: time,
+        type: receivable,
+        amount,
+        description: `[OD] ${description} (créance de la ville)`,
+        businessKey: `${receivable}:${hamletId}:${debtorId}:${timeInfo.year}:${timeInfo.monthIndex}`,
+        buildingInstanceId: debtorId,
+        accountBuildingId: null,
+        accountKind: null,
+        counterpartyBuildingId: debtorId,
+        transactionId: this.#cityDebtFlow(kind, debtorId, timeInfo),
+      });
+      if (!booked.recorded && booked.reason !== 'duplicate_business_key') throw new Error(`[producer] the ${receivable} line "${description}" was not recorded: ${booked.reason}`);
+    }
+  }
+
+  /** @returns {string} the flow of what a company owes the city for a month (tax or contributions): its debt and the city's receivable carry it */
+  #cityDebtFlow(kind, debtorId, timeInfo) {
+    return `${timeInfo.year}:${timeInfo.monthIndex}:debt_due:${kind}:${debtorId}`;
+  }
+
+  /**
+   * A household's pay as a payslip, and what its payer withheld from it. The household's écriture credits the gross to what the payer owes it and debits what
+   * reaches its account (the net) and what was withheld (431, 4421): it has more than two legs when something is withheld. The city receives the contribution and
+   * the tax from the payer (an employer remits what it withheld; the city retains what it withholds from its own pay), each on its own account.
+   * @param {{ kind: 'household_wage' | 'public_wage' | 'household_benefit', houseId: string, gross: number, withheld: { contribution: number, tax: number }, payerId: string | null,
+   *   flow: string, key: string, description: string, time: number, timeInfo: object, hamletId: string, monthLabel: string, nameOf: (id: string) => string }} payslip
+   *   `gross` and what is withheld in centimes; `payerId` the employer, null for the city; `key` tells this payslip from another of the same kind that month
+   */
+  async #recordPayslip({ kind, houseId, gross, withheld, payerId, flow, key, description, time, timeInfo, hamletId, monthLabel, nameOf }) {
+    const creditAccount = kind === 'household_benefit' ? '437' : '421';
+    const legs = payslipLegs({ creditAccount, gross, contribution: withheld.contribution, tax: withheld.tax });
+    const counterparty = payerId ?? houseId;
+    await this.#record(
+      { kind, amount: gross / 100, holder: houseId, counterparty: payerId, accountKind: PERSONAL_ACCOUNT, flow, ...(legs ? { legs } : {}) },
+      {
+        time,
+        key: kind === 'household_wage' ? buildTradeLineBusinessKey(kind, houseId, payerId, timeInfo, hamletId) : buildProducerLineBusinessKey(kind, houseId, timeInfo, hamletId),
+        description,
+        buildingInstanceId: houseId,
+        timeInfo,
+      },
+    );
+    const keyOf = (type) => (payerId ? buildTradeLineBusinessKey(type, payerId, houseId, timeInfo, hamletId) : buildProducerLineBusinessKey(type, key, timeInfo, hamletId));
+    if (withheld.contribution > 0) {
+      await this.#record(
+        { kind: 'social_contribution', amount: withheld.contribution / 100, holder: null, counterparty, accountKind: null, flow },
+        { time, key: keyOf('social_contribution'), description: `${LINE_LABELS.social_contribution} sur le salaire de ${nameOf(houseId)} - ${monthLabel}`, buildingInstanceId: houseId, timeInfo },
+      );
+    }
+    if (withheld.tax > 0) {
+      await this.#record(
+        { kind: 'payroll_tax', amount: withheld.tax / 100, holder: null, counterparty, accountKind: null, flow },
+        { time, key: keyOf('payroll_tax'), description: `${LINE_LABELS.payroll_tax} du foyer ${nameOf(houseId)} - ${monthLabel}`, buildingInstanceId: houseId, timeInfo },
+      );
+    }
   }
 
   /** @returns {string} the flow of the rent a company owes its owner for a month: its debt and the owner's receivable carry it */
@@ -823,6 +834,8 @@ export class SettleProducerCharges {
       accountKind: line.accountKind ?? null,
       counterpartyBuildingId: line.counterparty,
       resource: line.resource ?? null,
+      // The legs of an écriture with more than two (a payslip that withholds); the journal gives the others their two.
+      legs: line.legs ?? null,
       transactionId: line.flow ? `${timeInfo.year}:${timeInfo.monthIndex}:${line.flow}` : null,
     });
     // A month already settled is not charged again; any other refusal is a defect, not a skipped line.

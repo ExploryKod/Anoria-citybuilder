@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid';
+
 /**
  * Application service — a house takes money back out of its bank: credited to its personal account, debited from
  * the bank's own account. Refused (not thrown) when the house asks for more than it actually has on deposit, or
@@ -43,8 +45,11 @@ export class RecordHouseholdWithdrawal {
       return { recorded: false, skipped: true, reason: 'bank_insufficient_funds' };
     }
 
+    // A one-off action of the player: the house and the bank each book their own écriture of it, tied by one flow.
+    const transactionId = uuidv4();
     const houseResult = await this.deps.recordLedgerEntry({
       turn,
+      transactionId,
       type: 'withdrawal',
       amount: roundedAmount,
       description,
@@ -58,6 +63,7 @@ export class RecordHouseholdWithdrawal {
 
     const bankResult = await this.deps.recordLedgerEntry({
       turn,
+      transactionId,
       type: 'withdrawal_paid',
       amount: roundedAmount,
       description,

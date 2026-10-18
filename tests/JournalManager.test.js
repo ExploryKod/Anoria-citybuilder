@@ -62,6 +62,42 @@ describe('JournalManager', () => {
         }
     });
 
+    describe('batch', () => {
+        test('the lines of a batch are in the journal as they are recorded and on disk together, once the batch is done', async () => {
+            let onDiskDuring;
+            let readDuring;
+            let idsDuring;
+            await journalManager.batch(async () => {
+                await journalManager.addJournalEntry(1, 'citizen_tax', 10, 'A', null, { businessKey: 'a' });
+                await journalManager.addJournalEntry(2, 'citizen_tax', 20, 'B', null, { businessKey: 'b' });
+                const held = await journalManager.getJournalEntries();
+                readDuring = held.length;
+                // Regression: a line held in a batch has an id already, so the treasury (which orders and checks the lines by id) can be read in the middle of a settlement.
+                idsDuring = held.map((entry) => entry.id);
+                onDiskDuring = await testDb.journal.count();
+            });
+
+            expect(readDuring).toBe(2);
+            expect(idsDuring.every((id) => typeof id === 'number')).toBe(true);
+            expect(onDiskDuring).toBe(0);
+            expect(await testDb.journal.count()).toBe(2);
+            // Once written, the lines have the disk's ids, in the order they were recorded.
+            expect((await journalManager.getJournalEntries()).map((entry) => entry.id).sort((a, b) => a - b)).toEqual([1, 2]);
+        });
+
+        test('a batch that fails keeps none of its lines, in memory or on disk', async () => {
+            await journalManager.addJournalEntry(1, 'citizen_tax', 5, 'before', null, { businessKey: 'before' });
+
+            await expect(journalManager.batch(async () => {
+                await journalManager.addJournalEntry(2, 'citizen_tax', 20, 'inside', null, { businessKey: 'inside' });
+                throw new Error('the settlement failed');
+            })).rejects.toThrow('the settlement failed');
+
+            expect((await journalManager.getJournalEntries()).map((entry) => entry.description)).toEqual(['before']);
+            expect(await testDb.journal.count()).toBe(1);
+        });
+    });
+
     describe('addJournalEntry', () => {
         test('should add a journal entry with correct fields', async () => {
             await journalManager.addJournalEntry(1, 'citizen_tax', 1000, 'Taxes from citizens');
