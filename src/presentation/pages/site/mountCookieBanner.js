@@ -1,9 +1,11 @@
 import { hasRecordedConsent } from './cookieConsent.js';
+// Bundled by Vite: a `/src/...` URL does not exist once the site is built.
+import './cookie-consent-fab.css';
 
-const JQUERY_URL = 'https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js';
+// Served by us (public/cookiebanner): no request goes to a third party before the player has consented.
+const JQUERY_URL = '/cookiebanner/jquery-3.5.1.min.js';
 const STYLE_HREF = '/cookiebanner/cookiebanner.style.css';
 const PANELS_STYLE_HREF = '/cookiebanner/cookiebanner.panels.css';
-const FAB_STYLE_HREF = '/src/presentation/pages/site/cookie-consent-fab.css';
 const SCRIPT_SRC = '/cookiebanner/cookiebanner.script.js';
 const FAB_ID = 'cookieConsentFab';
 
@@ -36,7 +38,6 @@ function loadCookieAssets() {
   if (!assetsPromise) {
     loadStylesheet(STYLE_HREF);
     loadStylesheet(PANELS_STYLE_HREF);
-    loadStylesheet(FAB_STYLE_HREF);
     assetsPromise = loadScript(JQUERY_URL).then(() => loadScript(SCRIPT_SRC));
   }
   return assetsPromise;
