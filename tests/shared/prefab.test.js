@@ -23,8 +23,9 @@ describe('prefab anoria-tour-116 — its state is the saved one', () => {
   });
 
   test('its journal starts clean, at the same capital a new game starts with (no inherited deficit)', () => {
-    const figures = deriveTreasuryFigures(prefab.journal, { currentTurn: prefab.turn });
-    expect(figures.funds).toBe(500);
+    // The city's own account: the founding capital it paid its companies is already in the journal, so it starts at the capital of a new game.
+    const figures = deriveTreasuryFigures(prefab.journal.filter((line) => !line.accountBuildingId), { currentTurn: prefab.turn });
+    expect(figures.funds).toBeCloseTo(2000, 2);
   });
 
   test('its merchant and scholar housing is sized to the jobs actually built: no chronic mass unemployment', () => {

@@ -1,4 +1,5 @@
 import { isInfoPseudoMovementType } from './LedgerInformativeTypePolicy.js';
+import { isOperationDiverse } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 
 /** Legacy info types (renamed to `info_*`). */
 const LEGACY_INFO_PSEUDO_MOVEMENT_TYPES = new Set([
@@ -6,9 +7,13 @@ const LEGACY_INFO_PSEUDO_MOVEMENT_TYPES = new Set([
   'loan_default_repayment',
 ]);
 
-/** @param {string} type */
+/**
+ * A line that moves no money: an informative one, or an opération diverse (the month's closing: variation of stock, depreciation). Neither is
+ * a flow of the treasury, of the monthly summaries or of the city's ledger.
+ * @param {string} type
+ */
 export function isInformativeJournalType(type) {
-  if (isInfoPseudoMovementType(type) || LEGACY_INFO_PSEUDO_MOVEMENT_TYPES.has(type)) {
+  if (isInfoPseudoMovementType(type) || LEGACY_INFO_PSEUDO_MOVEMENT_TYPES.has(type) || isOperationDiverse(type)) {
     return true;
   }
 
@@ -38,6 +43,9 @@ export function isJournalEntryIncomeForMonthlySummary(entry, allEntries, getTime
     entry.type === 'household_dividend' ||
     entry.type === 'income_tax_refund' ||
     entry.type === 'rent_received' ||
+    entry.type === 'premises_rent_received' ||
+    entry.type === 'premises_rent_debt_received' ||
+    entry.type === 'company_capital_received' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital';
 

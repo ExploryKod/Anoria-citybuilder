@@ -53,6 +53,8 @@ export class ProcessTurnBudget {
       const isFirstTurnOfMonth = timeInfo.dayInMonth === 1;
 
       if (isFirstTurnOfMonth && time > 0) {
+        // A company created since the last month receives its founding capital from the city before its first month is settled.
+        if (this.deps.fundNewCompanies) await this.deps.fundNewCompanies({ time });
         // The bank's own interest expense must exist in the journal before settleProducerCharges reads it (its
         // otherExpensesHT) to compute the bank's taxable profit for the same month — see SettleBankDepositInterest.js.
         if (this.deps.settleBankDepositInterest) {
@@ -62,6 +64,10 @@ export class ProcessTurnBudget {
         // The rents come last of the month's charges: a house pays what is left of its month, and what it cannot pay stays a debt.
         if (this.deps.settleHouseRents) {
           await this.deps.settleHouseRents({ time, deliveredTime: time - 1 });
+        }
+        // The month is settled: the closing writes what the books need and no money moves (the variation of stock, the depreciation).
+        if (this.deps.closeMonthAccounts) {
+          await this.deps.closeMonthAccounts({ time, deliveredTime: time - 1 });
         }
         // Every January an indexed minimum wage is revalued on the cost of living, before the market moves the wages above it.
         if (this.deps.revalueMinimumWage && timeInfo.monthIndex === 0) await this.deps.revalueMinimumWage();

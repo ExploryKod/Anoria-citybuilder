@@ -14,8 +14,9 @@
  */
 
 import { accountKeyOf } from './AccountKeyPolicy.js';
+import { expandYearClosings } from './YearClosingPolicy.js';
 import { moneyDirectionOf } from './TreasuryFromJournalPolicy.js';
-import { INCOME_STATEMENT, goodOfJournalType, isVariableChargeAccount, pcgOfJournalType, statementLineOfAccount } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
+import { INCOME_STATEMENT, goodOfJournalType, isOperationDiverse, isVariableChargeAccount, pcgOfJournalType, statementAmountOfOd, statementLineOfAccount } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 
 const toCentimes = (amount) => Math.round(amount * 100);
 const fromCentimes = (centimes) => centimes / 100;
@@ -40,6 +41,8 @@ export function incomeStatementOf(entries, buildingId, { year, month = null, acc
   if (salesNature === undefined) throw new Error(`[finance] the compte de résultat of ${buildingId} must be told its sales nature (merchandise, production, services, or null when the catalog gives none)`);
   const SALES_ACCOUNT = { merchandise: '707', production: '701', services: '706' };
   const accountKey = accountKeyOf({ accountBuildingId: buildingId, accountKind });
+  // A purged year is read from its closing's totals per type, as its lines would have been (a year view only: they carry no month).
+  entries = expandYearClosings(entries);
   const byLine = new Map();
   const byAccount = new Map();
   const byItem = new Map();
@@ -56,14 +59,16 @@ export function incomeStatementOf(entries, buildingId, { year, month = null, acc
     if (account[0] !== '6' && account[0] !== '7') continue;
     const placed = statementLineOfAccount(account);
     if (!placed) throw new Error(`[finance] the account ${account} of "${entry.type}" has no line in the compte de résultat`);
-    byLine.set(placed.line.id, (byLine.get(placed.line.id) ?? 0) + toCentimes(entry.amount));
-    byAccount.set(account, (byAccount.get(account) ?? 0) + toCentimes(entry.amount));
+    // An opération diverse can take off (a stock that grows lowers the cost of the purchases): its amount is signed for the line it feeds.
+    const amount = toCentimes(isOperationDiverse(entry.type) ? statementAmountOfOd(entry.type, entry.amount) : entry.amount);
+    byLine.set(placed.line.id, (byLine.get(placed.line.id) ?? 0) + amount);
+    byAccount.set(account, (byAccount.get(account) ?? 0) + amount);
     // What the line is made of: the journal's own kinds of movement, merged when they read the same (an account, a meaning, a good).
     const good = goodOfJournalType(entry.type);
     const itemKey = [account, pcg.label, pcg.detail ?? '', good ?? ''].join('|');
     const items = byItem.get(placed.line.id) ?? new Map();
     const item = items.get(itemKey) ?? { account, label: pcg.label, detail: pcg.detail ?? null, good, tone: pcg.tone, centimes: 0 };
-    item.centimes += toCentimes(entry.amount);
+    item.centimes += amount;
     items.set(itemKey, item);
     byItem.set(placed.line.id, items);
   }
@@ -150,9 +155,9 @@ export function cashMovementsOf(entries, buildingId, { accountKind = null } = {}
  * nothing new is stored. `null` is a figure that does not exist yet (no sales: no margin rate, no break-even), never a zero.
  *
  * - chiffre d'affaires: goods sold + production sold;
- * - valeur ajoutée: chiffre d'affaires − purchases − external charges;
+ * - valeur ajoutée: chiffre d'affaires + the goods made and stored − purchases − the variation of stock − external charges;
  * - EBE (excédent brut d'exploitation): valeur ajoutée + operating subsidies − taxes − wages − social charges;
- * - CAF (capacité d'autofinancement): net result + the charges that are not paid out (depreciation: none in the game), so the net result;
+ * - CAF (capacité d'autofinancement): net result + the charges that are not paid out (the depreciation);
  * - variable charges: what follows the quantity sold (purchases, freight and customs on the goods; see isVariableChargeAccount);
  * - fixed charges: every other operating and financial charge (wages, upkeep, other external charges, interest). The exceptional charges
  *   and the tax on profits are left out, as is the income that is not a sale (the operating subsidies, account 74: `subsidies`; the
@@ -183,8 +188,9 @@ export function ratiosOf(statement, { unitsSold }) {
   const ratio = (part, base) => (base > 0 ? part / base : null);
 
   const turnover = lineCentimes('goodsSold') + lineCentimes('productionSold');
-  const purchasesAndExternal = lineCentimes('merchandisePurchases') + lineCentimes('materialPurchases') + lineCentimes('externalCharges');
-  const valueAdded = turnover - purchasesAndExternal;
+  // What the stock changed enters the value added: purchases less the stock they leave on the shelf, and the goods made but not yet sold.
+  const purchasesAndExternal = lineCentimes('merchandisePurchases') + lineCentimes('materialPurchases') + lineCentimes('stockVariation') + lineCentimes('externalCharges');
+  const valueAdded = turnover + lineCentimes('storedProduction') - purchasesAndExternal;
   const labourCost = lineCentimes('wages') + lineCentimes('socialCharges');
   const ebe = valueAdded + lineCentimes('subsidies') - lineCentimes('taxes') - lineCentimes('wages') - lineCentimes('socialCharges');
   const operatingResult = toCentimes(statement.results.operating);
@@ -212,8 +218,8 @@ export function ratiosOf(statement, { unitsSold }) {
     ebe: fromCentimes(ebe),
     operatingResult: fromCentimes(operatingResult),
     netResult: fromCentimes(netResult),
-    caf: fromCentimes(netResult),
-    cafRate: ratio(netResult, turnover),
+    caf: fromCentimes(netResult + lineCentimes('depreciation')),
+    cafRate: ratio(netResult + lineCentimes('depreciation'), turnover),
     variableCharges: fromCentimes(variableCharges),
     fixedCharges: fromCentimes(fixedCharges),
     subsidies: fromCentimes(lineCentimes('subsidies')),

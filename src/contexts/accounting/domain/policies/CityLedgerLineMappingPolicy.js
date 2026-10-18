@@ -53,8 +53,10 @@ export function cityLedgerYearLinesFromJournalSummary(
   const loanCapital = sumByType(incomeEntries, (e) => e.type === 'loan_capital');
   const carryForwardIncome = previousNetFlow >= 0 ? previousNetFlow : 0;
 
-  const construction = sumByType(expenseEntries, (e) => e.type === 'construction');
-  const maintenance = sumByType(expenseEntries, (e) => e.type === 'maintenance');
+  // The constructions, and the founding capital the city pays the companies: both are the city's investments, one line.
+  const construction = sumByType(expenseEntries, (e) => e.type === 'construction' || e.type === 'company_capital_paid');
+  // The upkeep of the buildings the hamlet does not run itself is the rent it pays their owner: one line, "Entretien".
+  const maintenance = sumByType(expenseEntries, (e) => e.type === 'maintenance' || e.type === 'premises_rent_paid');
   const salary = sumByType(expenseEntries, (e) => e.type === 'salary');
   const unemploymentBenefit = sumByType(
     expenseEntries,

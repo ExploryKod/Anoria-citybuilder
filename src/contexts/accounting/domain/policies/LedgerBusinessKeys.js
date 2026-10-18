@@ -122,7 +122,7 @@ export function buildDepositInterestBusinessKey(type, houseId, bankId, year, mon
 
 /**
  * Idempotence key for one house's rent in one month: the due line and the payment (and its mirror at the owner's) each get their own.
- * @param {'info_rent_due' | 'info_rent_written_off' | 'rent_paid' | 'rent_received'} type
+ * @param {'info_rent_due' | 'info_rent_written_off' | 'rent_paid' | 'rent_received' | 'premises_rent_paid' | 'premises_rent_received' | 'premises_rent_debt_paid' | 'premises_rent_debt_received' | 'od_payable_premises_rent' | 'od_receivable_premises_rent'} type
  * @param {string} tenantId
  * @param {string} landlordId
  * @param {number} year

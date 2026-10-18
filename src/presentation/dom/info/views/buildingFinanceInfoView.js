@@ -1,3 +1,5 @@
+import { balanceSheetView } from './balanceSheetView.js';
+import { accountLedgerView, trialBalanceView } from './accountLedgerView.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../../../../shared/building-identity/index.js';
 import { INCOME_STATEMENT } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
@@ -304,7 +306,22 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
       openedDetail = detail;
       showContent();
     };
+    if (!isPersonal && DERIVED_READINGS[financeView]) {
+      showDerivedReading(financeView);
+      return;
+    }
     content.replaceChildren(isPersonal || financeView === 'statement' ? statementTable(rows, figures, openDetail) : statementTable(RATIO_ROWS, figures));
+  };
+  // The balance sheet is the account as it stands now, whichever month is picked: it is read on its own, and says why when it cannot be drawn.
+  const showDerivedReading = async (reading) => {
+    content.replaceChildren(el('p', 'building-finance-note', '…'));
+    try {
+      const view = await DERIVED_READINGS[reading].load(model.accounting, model.buildingId, accountKind);
+      if (stillCurrent() && financeView === reading) content.replaceChildren(view);
+    } catch (error) {
+      console.error(`[BuildingFinanceTab] ${reading} failed:`, error);
+      if (stillCurrent()) content.replaceChildren(el('p', 'building-finance-note', `${DERIVED_READINGS[reading].label} n’est pas disponible : ${error.message}`));
+    }
   };
   showContent();
   container.replaceChildren(
@@ -361,8 +378,27 @@ function monthPills(finance, pick) {
   return bar;
 }
 
-/** Which of the two readings of a company's account is open, the statement or its ratios (a per-viewer convenience, not game state). */
+/** Which reading of a company's account is open (a per-viewer convenience, not game state). */
 let financeView = 'statement';
+
+/**
+ * The readings the accounting context derives from the journal at display time, each read on its own (they are the account as it stands now, whichever
+ * month is picked) and each saying why it cannot be drawn: the balance sheet, the grand livre and the balance.
+ */
+const DERIVED_READINGS = Object.freeze({
+  balance: Object.freeze({
+    label: 'Le bilan',
+    load: async (accounting, buildingId, accountKind) => balanceSheetView(await accounting.getBuildingBalanceSheet(buildingId, accountKind)),
+  }),
+  ledger: Object.freeze({
+    label: 'Le grand livre',
+    load: async (accounting, buildingId, accountKind) => accountLedgerView((await accounting.getBuildingLedger(buildingId, accountKind)).ledger),
+  }),
+  trial: Object.freeze({
+    label: 'La balance',
+    load: async (accounting, buildingId, accountKind) => trialBalanceView((await accounting.getBuildingLedger(buildingId, accountKind)).balance),
+  }),
+});
 
 /**
  * The pills that switch between the statement and the ratios, and the button that downloads the account as JSON.
@@ -375,7 +411,7 @@ function financeToolbar(model, accountKind, isPersonal, showContent) {
   const bar = el('div', 'building-finance-toolbar');
   if (!isPersonal) {
     const pills = el('div', 'building-finance-pills');
-    const readings = [['statement', 'Compte de résultat'], ['ratios', 'Ratios']];
+    const readings = [['statement', 'Compte de résultat'], ['ratios', 'Ratios'], ['balance', 'Bilan'], ['ledger', 'Grand livre'], ['trial', 'Balance']];
     const buttons = readings.map(([id, label]) => {
       const button = el('button', `building-finance-pill-tab${id === financeView ? ' is-active' : ''}`, label);
       button.type = 'button';

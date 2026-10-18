@@ -55,6 +55,7 @@ import {
   getPlacementRequirements,
   getAllCategoriesForRole,
   getMaxStockForBuilding,
+  listRoleEntries,
 } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 
 /**
@@ -563,6 +564,34 @@ export function createSupplyContext({
     async sellingPriceOf(building, category, period) {
       await priceBook.ensure(period);
       return priceBook.sellingPrice(building, category, period);
+    },
+
+    /**
+     * What a building's stock is worth at cost, good by good (a service is not a stock): the units it holds times what a unit cost it (see PriceBook.stockUnitCost).
+     * @param {string} buildingId
+     * @param {{ year?: number, monthIndex?: number }} period
+     * @returns {Promise<Array<{ category: string, amount: number, unitCost: number, value: number }>>}
+     */
+    async valueStockOf(buildingId, period) {
+      const building = await supplyBuildingRepositoryImpl.findById(buildingId);
+      if (!building) throw new Error(`[supply] building ${buildingId} is not in the hamlet: its stock cannot be valued`);
+      await priceBook.ensure(period);
+      const services = new Set(getServiceCategories());
+      const seen = new Set();
+      const items = [];
+      for (const role of ['producer', 'hub', 'distributor']) {
+        for (const entry of listRoleEntries(building.type, role)) {
+          for (const category of entry.categories) {
+            if (seen.has(category) || services.has(category)) continue;
+            seen.add(category);
+            const amount = building.stocks?.[category] ?? 0;
+            if (!(amount > 0)) continue;
+            const unitCost = priceBook.stockUnitCost({ id: building.id, type: building.type }, category, period);
+            items.push({ category, amount, unitCost, value: Math.round(amount * unitCost * 100) / 100 });
+          }
+        }
+      }
+      return items;
     },
 
     /**

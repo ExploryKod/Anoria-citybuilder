@@ -49,6 +49,11 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
       vm.supply.describeShelfLife({ buildingId: vm.uniqueId, turn: turn ?? (await vm.accounting.getTreasurySnapshot())?.turn });
   }
 
+  // A company that cannot pay what it owes says so in its problems (the Messages tab); null for a building that is no company.
+  if (vm.uniqueId && vm.accounting.hasBuildingAccount(vm.buildingType)) {
+    extra.insolvency = await vm.accounting.getInsolvency(vm.uniqueId);
+  }
+
   if (groupId === BUILDING_INFO_GROUPS.nature && vm.uniqueId) {
     if (!vm.stocks && vm.buildingRow?.stocks == null) {
       extra.stocks = await vm.construction.getBuildingField(vm.uniqueId, 'stocks');

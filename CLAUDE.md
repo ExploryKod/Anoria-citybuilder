@@ -63,11 +63,16 @@ loudly; do not patch it at load time.
 
 ## Money: one flow, the journal
 
-The journal is the only record of money. Every money movement (cash, income, expense, loan, tax, construction,
-maintenance, salary) is a journal line, written to IndexedDB when it is recorded (write-through). The treasury
-(balance, income, expenses, totals, daily flows, loans, last tax year) is derived from the journal lines
-(`GetTreasurySnapshot` → `TreasuryFromJournalPolicy`). Never store a derived money figure, never write a balance
-into a row, never update a second store alongside the journal. Monthly charges are idempotent per hamlet and per month
+The journal is the only record of value. The accounting follows the French plan comptable (PCG) as a real double-entry
+system. Every movement (cash, income, expense, loan, tax, construction, maintenance, salary, accrual, depreciation) is an
+*écriture* in the journal, written to IndexedDB when it is recorded (write-through). An écriture is one record: a journal code
+(`BQ` bank, `VT` sales, `AC` purchases, `PA` payroll, `OD` opérations diverses, `AN` à-nouveaux), a date (the turn, with the
+year and month stamped at write time), an account (the entity it belongs to) and two or more legs, each
+`{ compte, débit, crédit }` in centimes. The legs must balance; the write refuses an unbalanced écriture, naming it. A leg
+never guesses its account: the writer names every compte (no implied bank leg, no counter-account looked up afterwards).
+The treasury (balance, income, expenses, totals, daily flows, loans, last tax year) is derived from the legs, the cash being
+the balance of the cash accounts (512, 53): there is no "money direction". Never store a derived money figure, never write a
+balance into a row, never update a second store alongside the journal. Monthly charges are idempotent per hamlet and per month
 (business key `type:hamletId:year:month`): a second charge for the same key is refused, not silently recomputed.
 
 ## One clock: the turn
@@ -78,24 +83,55 @@ its turn from that clock.
 
 ## Purge closes a year, it never changes the treasury
 
-A purge (keeping the last N full years) never moves the balance. Each full year is closed per hamlet into one
-`year_closing` line: its net flow (the balance effect) and its totals per journal type (the sub-totals the yearly
-summary shows). Loan lines are kept whole, since a loan's schedule runs past the purge. The yearly summary reads a
-closed year from its closing; nothing else keeps a year's result (no localStorage copy). Regression test:
-`tests/contexts/accounting/yearClosing.regression.test.js`.
+A purge (keeping the last N full years) never moves the balance. The purge is a performance device, not an accounting
+act: it replaces the écritures of the years it drops with the real year-end entries of the plan comptable, and nothing else.
+For each full year and each account, the closing of the exercise is written as ordinary écritures: the charges (class 6) and
+the products (class 7) are closed against the result (12), then the result is allocated (110/119, dividends). The next year opens
+with *à-nouveaux* (journal `AN`): one écriture per account carrying the balance-sheet accounts' balances (capital, fixed assets,
+depreciation, stock, debts, receivables, loans) against nothing but themselves, balanced. A year's per-type totals (the
+sub-totals the yearly summary shows) and what each building cost are kept as the closing's `summary`, a read-only digest of the
+year dropped, never a leg. Loan écritures are kept whole, since a loan's schedule runs past the purge. A purge changes neither
+the treasury nor the balance sheet. Regression tests: `tests/contexts/accounting/yearClosing.regression.test.js` and
+`tests/contexts/accounting/balanceSheet.test.js`.
 
-## The journal holds movements only
+## The journal holds écritures only
 
-The journal stores money movements and loan contracts, nothing else. Totals are never written as lines: no `cumul_*`,
-no `carry_forward`, no `balance`. A year's totals are read from its lines, or from its `year_closing` line once purged;
-the carried result is the previous year's net flow; the balance is derived.
+The journal stores écritures (movements of value) and loan contracts, nothing else. A *total* is never written as a line:
+no `cumul_*`, no `carry_forward`, no `balance`. A closing entry or an à-nouveau is not a total: it is an écriture with its
+legs, as the plan comptable has it. A year's totals are read from its écritures, or from the à-nouveaux and the `summary` of its
+closing once purged; the balance is derived.
+
+The journal code says what kind of écriture it is, not whether money moves: `BQ`/`VT`/`AC`/`PA` are the daily ones, `OD` is
+what the closing of a month writes once per account and month (business key), never a turn's code (the variation of stock, the
+depreciation, the accruals, the disposals of assets). An écriture moves the treasury only through a leg on a cash account.
+Every view reads the same legs: the grand livre, the balance, the compte de résultat, the balance sheet and the city's
+ledger are sums of legs by compte. A type of écriture (what a sale, a wage, a depreciation posts, and to which comptes) is one
+entry in `PcgJournalCatalog`, not a new rule.
+
+A company that cannot pay a charge that is due to a creditor (wages, social contributions, tax, the rent of its premises) books it all
+the same as an écriture against the debt it owes (the charge debited, the debt credited: 421, 431, 444, 401), and pays the debt,
+oldest first, when it has the money (`PayableCatalog`, `DebtPolicy`). The debt is derived from those lines, never stored. A company starts with a founding capital the city pays it
+once (`FOUNDING_CAPITAL_MONTHS` months of its charges at full staffing, `FundNewCompanies`): the company's equity (101) against the
+city's holding in it (261), never repaid, an investment of the city rather than a running expense. Whether a company is funded is
+read from the journal. A company already in a starter prefab carries its capital lines in the prefab's journal. An account below
+nothing shows on the balance sheet as an overdraft (519), a debt.
+
+## The balance sheet is derived, never written
+
+A company's balance sheet (`BalanceSheetPolicy`) is read at display time from the legs of its écritures (the opérations
+diverses included), the cash being the balance of its cash accounts, and its stock valued at cost (the supply's `PriceBook`).
+No écriture is added for a result or a total. The two sides must balance; a gap throws, it is never plugged. A
+household has no balance sheet (it is not an entity of the plan comptable). Regression test:
+`tests/contexts/accounting/balanceSheet.test.js`.
 
 ## One balance: the treasury derivation, for every scope
 
-Every balance (the city's, a hamlet's, a year's flows) is read from one derivation of the journal lines:
-`GetTreasurySnapshot` with `{ hamletId }` (null = the whole city). Nothing computes a second balance from the journal,
-and no view compares two balances. The city balance equals the sum of the hamlets' balances by construction.
-A view that waits for the journal shows "…", never a stale or a zero figure.
+Every balance (the city's, a hamlet's, a year's flows) is read from one derivation of the journal's legs, in memory,
+never stored: a single fold of the journal into the totals of each compte per account, per year and per month, kept up to date
+by folding only the new écritures (the journal is append-only) and rebuilt on load and after a purge. `GetTreasurySnapshot`
+with `{ hamletId }` (null = the whole city) reads it. Nothing computes a second balance from the journal, and no view
+compares two balances. The city balance equals the sum of the hamlets' balances by construction. The fold never runs
+inside a turn's hot path. A view that waits for the journal shows "…", never a stale or a zero figure.
 
 ## Two notions in the city ledger, two rows
 

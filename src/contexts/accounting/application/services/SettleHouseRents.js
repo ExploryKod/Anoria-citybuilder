@@ -1,7 +1,9 @@
 import { buildRentBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 import { PERSONAL_ACCOUNT, businessAccountOf } from '../../domain/policies/AccountKeyPolicy.js';
-import { houseEnterpriseOf } from '../../../../shared/population/workforceQueries.js';
+import { houseEnterpriseOf, houseEnterprises } from '../../../../shared/population/workforceQueries.js';
 import { rentDebtsOf, rentOfMonth } from '../../domain/policies/RentPolicy.js';
+import { payablesOf, planCompanyPayments } from '../../domain/policies/DebtPolicy.js';
+import { PAYABLE_KINDS } from '../../domain/catalogs/PayableCatalog.js';
 
 /**
  * Application service — once a month, every house (the owner's own included) pays its rent to the owner (the mayor's house, whose residents hold the owner
@@ -18,6 +20,8 @@ export class SettleHouseRents {
    *   that pay it (named as the catalog names them, for the journal lines), or null when no house is an owner
    * @param {(rentals: object) => Promise<{ rent: number }>} deps.getRentQuote the monthly rent the owner asks each house: it deduces it from the upkeep it bears,
    *   within the hamlet's rent control (see rentQuoteOf)
+   * @param {(rentals: object, houseType: string) => Promise<number>} deps.getPremisesRent the monthly rent of the premises a house's business works in (see premisesRentOf)
+   * @param {(houseId: string, businessAccount: string) => Promise<number>} deps.businessFundsOf what a business account of a house holds now
    * @param {() => Promise<Array<object>>} deps.getJournalEntries the journal lines (the debts are derived from them)
    * @param {(houseId: string) => Promise<number>} deps.fundsOf what a house has in its personal account now
    * @param {(params: object) => Promise<{ recorded: boolean, reason?: string }>} deps.recordLedgerEntry
@@ -36,13 +40,15 @@ export class SettleHouseRents {
     if (!rentals) return;
     const timeInfo = this.deps.getTimeInfo(deliveredTime);
     const { rent } = await this.deps.getRentQuote(rentals);
-    const debts = rentDebtsOf(await this.deps.getJournalEntries());
+    const entries = await this.deps.getJournalEntries();
+    const debts = rentDebtsOf(entries);
+    const payables = payablesOf(entries);
     const monthLabel = `${timeInfo.month} ${timeInfo.year}`;
     const { ownerId } = rentals;
     // The rents are the income of the owner's property company: its business account, not the house's other enterprises'.
     const ownerBusinessAccount = businessAccountOf(houseEnterpriseOf(rentals.ownerType, 'rental').id);
 
-    for (const { id: tenantId, name } of rentals.tenants) {
+    for (const { id: tenantId, type, name } of rentals.tenants) {
       const month = rentOfMonth({
         rent,
         debt: debts.get(tenantId) ?? 0,
@@ -84,6 +90,43 @@ export class SettleHouseRents {
           counterpartyBuildingId: tenantId,
         });
       }
+
+      await this.#settlePremises({ tenant: { id: tenantId, type, name }, rentals, ownerBusinessAccount, payables, time, timeInfo, monthLabel });
+    }
+  }
+
+  /**
+   * The business of a house (its cooperative) rents the premises it works in from the owner, apart from the household's rent. It pays its old debt of
+   * rent first, then the rent of the month, as far as its own account goes; what it cannot pay is a debt (see DebtPolicy.js), booked on both sides: a charge
+   * to pay for the business, an income to collect for the owner.
+   */
+  async #settlePremises({ tenant, rentals, ownerBusinessAccount, payables, time, timeInfo, monthLabel }) {
+    const business = houseEnterprises(tenant.type).enterprises.find((enterprise) => enterprise.activity === 'recipes');
+    if (!business) return;
+    const rent = await this.deps.getPremisesRent(rentals, tenant.type);
+    const businessAccount = businessAccountOf(business.id);
+    const { ownerId } = rentals;
+    const owed = [...payables.values()].find((debt) => debt.debtorId === tenant.id && debt.accountKind === businessAccount && debt.kind === 'premises_rent' && debt.creditorId === ownerId);
+    if (!(rent > 0) && !owed) return;
+    const rank = PAYABLE_KINDS.premises_rent.rank;
+    const plan = planCompanyPayments({
+      cash: Math.round((await this.deps.businessFundsOf(tenant.id, businessAccount)) * 100),
+      debts: owed ? [{ id: 'debt', rank, amount: owed.centimes }] : [],
+      charges: [{ id: 'rent', rank, amount: Math.round(rent * 100) }],
+    });
+    const names = `${tenant.name} · ${business.label} → ${rentals.ownerName}`;
+    const pay = async (paidType, receivedType, centimes, label) => {
+      if (centimes <= 0) return;
+      const key = (type) => buildRentBusinessKey(type, tenant.id, ownerId, timeInfo.year, timeInfo.monthIndex);
+      await this.#record({ turn: time, type: paidType, amount: centimes / 100, description: `${label} payé ${names} - ${monthLabel}`, businessKey: key(paidType), accountBuildingId: tenant.id, accountKind: businessAccount, counterpartyBuildingId: ownerId });
+      await this.#record({ turn: time, type: receivedType, amount: centimes / 100, description: `${label} perçu ${names} - ${monthLabel}`, businessKey: key(receivedType), accountBuildingId: ownerId, accountKind: ownerBusinessAccount, counterpartyBuildingId: tenant.id });
+    };
+    await pay(PAYABLE_KINDS.premises_rent.settlement, 'premises_rent_debt_received', plan.debtPaid.get('debt') ?? 0, 'Loyer du local impayé');
+    await pay('premises_rent_paid', 'premises_rent_received', plan.chargePaid.get('rent') ?? 0, 'Loyer du local');
+    const unpaid = plan.chargeUnpaid.get('rent') ?? 0;
+    if (unpaid > 0) {
+      await this.#record({ turn: time, type: PAYABLE_KINDS.premises_rent.payable, amount: unpaid / 100, description: `[OD] Loyer du local non payé ${names} - ${monthLabel}`, businessKey: buildRentBusinessKey(PAYABLE_KINDS.premises_rent.payable, tenant.id, ownerId, timeInfo.year, timeInfo.monthIndex), buildingInstanceId: tenant.id, accountBuildingId: tenant.id, accountKind: businessAccount, counterpartyBuildingId: ownerId });
+      await this.#record({ turn: time, type: 'od_receivable_premises_rent', amount: unpaid / 100, description: `[OD] Loyer du local à encaisser ${names} - ${monthLabel}`, businessKey: buildRentBusinessKey('od_receivable_premises_rent', tenant.id, ownerId, timeInfo.year, timeInfo.monthIndex), buildingInstanceId: tenant.id, accountBuildingId: ownerId, accountKind: ownerBusinessAccount, counterpartyBuildingId: tenant.id });
     }
   }
 

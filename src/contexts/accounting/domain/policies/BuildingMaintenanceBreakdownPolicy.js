@@ -89,6 +89,15 @@ function classifyMaintenanceBuilding(type, maintenanceCosts) {
 }
 
 /**
+ * The family a building's upkeep (and its depreciation) belongs to: 'roads', 'houses', 'farms', 'markets', 'industry', or null for a building not maintained.
+ * @param {string} type
+ * @returns {'roads'|'houses'|'farms'|'markets'|'industry'|null}
+ */
+export function maintenanceCategoryOf(type) {
+  return classifyMaintenanceBuilding(type, DEFAULT_MAINTENANCE_COSTS).category;
+}
+
+/**
  * What one building costs to maintain in a month, as the maintenance costs declare it (0 for a building not maintained).
  * @param {string} type
  * @returns {number}

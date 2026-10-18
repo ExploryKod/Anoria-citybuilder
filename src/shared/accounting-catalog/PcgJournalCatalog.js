@@ -15,7 +15,10 @@
  *
  * @typedef {'capital' | 'loan' | 'loan-repayment' | 'fixed-asset' | 'tax-received' | 'tax-paid' | 'treasury' | 'purchase' | 'external'
  *   | 'personnel' | 'financial' | 'subsidy-given' | 'sales' | 'subsidy-received' | 'household'} JournalTone
- * @typedef {{ account: string, label: string, tone: JournalTone, household?: boolean, detail?: string }} PcgJournalEntry
+ * @typedef {{ account: string, label: string, tone: JournalTone, household?: boolean, detail?: string, counter?: string }} PcgJournalEntry
+ *
+ * Every line of the journal moves money, so it is one leg on the bank (512) and one on `account`. A line whose own account IS the bank (a deposit, a
+ * withdrawal) says the other leg in `counter`.
  */
 
 /**
@@ -24,13 +27,16 @@
  * @param {string} account @param {string} label @param {JournalTone} tone @param {boolean} [household] @param {string} [detail]
  * @returns {PcgJournalEntry}
  */
-const entry = (account, label, tone, household = false, detail = undefined) =>
-  Object.freeze({ account, label, tone, ...(household ? { household } : {}), ...(detail ? { detail } : {}) });
+const entry = (account, label, tone, household = false, detail = undefined, counter = undefined) =>
+  Object.freeze({ account, label, tone, ...(household ? { household } : {}), ...(detail ? { detail } : {}), ...(counter ? { counter } : {}) });
 
 /** The lines whose type is exactly this. */
 const BY_TYPE = Object.freeze({
   // Classe 1 — capitaux et emprunts
   capital_funds: entry('101', 'Capital', 'capital'),
+  // The founding capital the city pays a company or the business of a house: the city's holding in it (261), the company's capital (101). Never repaid.
+  company_capital_paid: entry('261', 'Titres de participation', 'capital', false, 'Fonds propres versés à une entreprise'),
+  company_capital_received: entry('101', 'Capital', 'capital', false, 'Fonds propres reçus de la ville'),
   loan_capital: entry('164', 'Emprunts auprès des établissements de crédit', 'loan'),
   loan_repayment: entry('164', 'Emprunts auprès des établissements de crédit', 'loan-repayment'),
   // Classe 2 — immobilisations
@@ -58,12 +64,24 @@ const BY_TYPE = Object.freeze({
   // Le loyer d'une maison à la maison du maire (le propriétaire) : une charge de logement du ménage, un produit locatif de la maison du maire.
   rent_paid: entry('6132', 'Locations immobilières', 'purchase', true, 'Loyer versé au propriétaire'),
   rent_received: entry('752', 'Revenus des immeubles', 'sales', false, 'Loyers des maisons'),
+  // What a business pays the owner for the premises it works in (a cooperative's share of its house, a company's building): a charge of the
+  // business, a rental income of the owner, apart from a household's rent.
+  premises_rent_paid: entry('6132', 'Locations immobilières', 'purchase', false, 'Loyer du local d’activité'),
+  premises_rent_received: entry('752', 'Revenus des immeubles', 'sales', false, 'Loyers des locaux d’activité'),
+  // The debts a company paid off once it had the money (see PayableCatalog): the line of money against the debt account, the charge having been
+  // booked when it fell due (an opération diverse). A debt of wages is received by the house of the workers like any wage.
+  wage_debt_paid: entry('421', 'Personnel - Rémunérations dues', 'personnel', false, 'Salaires impayés réglés'),
+  contribution_debt_paid: entry('431', 'Sécurité sociale — cotisations dues', 'personnel', false, 'Cotisations impayées réglées'),
+  corporate_tax_debt_paid: entry('444', 'État - Impôts sur les bénéfices', 'tax-paid', false, 'Impôt impayé réglé'),
+  premises_rent_debt_paid: entry('401', 'Fournisseurs — loyers dus', 'purchase', false, 'Loyer du local impayé réglé'),
+  premises_rent_debt_received: entry('411', 'Clients — loyers dus', 'sales', false, 'Loyer du local impayé encaissé'),
   // Classe 5 — financiers
-  deposit: entry('512', 'Banques', 'treasury'),
-  withdrawal: entry('512', 'Banques', 'treasury'),
-  deposit_received: entry('512', 'Banques', 'treasury'),
-  withdrawal_paid: entry('512', 'Banques', 'treasury'),
-  household_deposit_interest: entry('512', 'Banques', 'treasury', true),
+  // A deposit moves money from a house's account to the bank's, and the bank owes it back: 275 for the depositor, 165 for the bank.
+  deposit: entry('512', 'Banques', 'treasury', false, undefined, '275'),
+  withdrawal: entry('512', 'Banques', 'treasury', false, undefined, '275'),
+  deposit_received: entry('512', 'Banques', 'treasury', false, undefined, '165'),
+  withdrawal_paid: entry('512', 'Banques', 'treasury', false, undefined, '165'),
+  household_deposit_interest: entry('512', 'Banques', 'treasury', true, undefined, '768'),
   // Classe 6 — charges
   producer_purchase: entry('607', 'Achats de marchandises', 'purchase', false, 'Biens achetés à un entrepôt'),
   consumer_purchase: entry('607', 'Achats de marchandises', 'purchase', true),
@@ -111,13 +129,117 @@ const BY_PREFIX = Object.freeze([
 ]);
 
 /**
+ * The opérations diverses (OD): lines that move no money and are written once a month by the closing of the accounts (see CloseMonthAccounts). Each says
+ * its two legs: the account debited and the account credited, one of them a charge or a product (the result) and the other a balance-sheet account.
+ *   - the variation of stock: a stock that grows is debited to the stock account (37 goods bought and resold, 35 goods made) and credited to the
+ *     variation (6037, 713); a stock that shrinks is the other way round. It is what turns purchases into the cost of the goods sold;
+ *   - the depreciation: the monthly dotation (6811) against the accumulated depreciation of the constructions (281).
+ * @type {Readonly<Record<string, { debit: string, credit: string, label: string, tone: JournalTone, detail: string }>>}
+ */
+const OPERATIONS_DIVERSES = Object.freeze({
+  od_stock_up_merchandise: Object.freeze({ debit: '37', credit: '6037', label: 'Variation des stocks de marchandises', tone: 'purchase', detail: 'Le stock a grandi : une partie des achats n’est pas encore consommée' }),
+  od_stock_down_merchandise: Object.freeze({ debit: '6037', credit: '37', label: 'Variation des stocks de marchandises', tone: 'purchase', detail: 'Le stock a baissé : des achats d’avant sont consommés' }),
+  od_stock_up_production: Object.freeze({ debit: '35', credit: '713', label: 'Production stockée', tone: 'sales', detail: 'Le stock de ce qui est fabriqué a grandi' }),
+  od_stock_down_production: Object.freeze({ debit: '713', credit: '35', label: 'Production stockée', tone: 'sales', detail: 'Le stock de ce qui est fabriqué a baissé' }),
+  od_depreciation: Object.freeze({ debit: '6811', credit: '281', label: 'Dotations aux amortissements des immobilisations', tone: 'external', detail: 'Les constructions perdent de leur valeur avec le temps' }),
+  // A charge a company cannot pay when it falls due is booked all the same (the charge of the month) against what it owes (see PayableCatalog); the owner's
+  // rent that is not paid is an income of the owner all the same, against what it is owed (a receivable, 411).
+  od_payable_wage: Object.freeze({ debit: '6411', credit: '421', label: 'Salaires', tone: 'personnel', detail: 'Salaires dus, pas encore payés' }),
+  od_payable_contribution: Object.freeze({ debit: '645', credit: '431', label: 'Cotisations sociales', tone: 'personnel', detail: 'Cotisations dues, pas encore payées' }),
+  od_payable_corporate_tax: Object.freeze({ debit: '695', credit: '444', label: 'Impôts sur les bénéfices', tone: 'tax-paid', detail: 'Impôt dû, pas encore payé' }),
+  od_payable_premises_rent: Object.freeze({ debit: '6132', credit: '401', label: 'Locations immobilières', tone: 'purchase', detail: 'Loyer du local dû, pas encore payé' }),
+  od_receivable_premises_rent: Object.freeze({ debit: '411', credit: '752', label: 'Revenus des immeubles', tone: 'sales', detail: 'Loyer du local dû à la SCI, pas encore encaissé' }),
+  // The owner holds the buildings the city paid for: they enter its books as fixed assets (213) against the city's contribution in kind (capital, 101).
+  od_asset_contribution: Object.freeze({ debit: '213', credit: '101', label: 'Constructions apportées par la ville', tone: 'fixed-asset', detail: 'Un bâtiment payé par la ville entre dans le patrimoine de la SCI' }),
+  // A building that is gone leaves the owner's books: its depreciation so far is released, and what it was still worth is a loss (675).
+  od_asset_disposal_amortization: Object.freeze({ debit: '281', credit: '213', label: 'Amortissements des constructions démolies', tone: 'fixed-asset', detail: 'Un bâtiment démoli sort du patrimoine : son amortissement est soldé' }),
+  od_asset_disposal_loss: Object.freeze({ debit: '675', credit: '213', label: 'Valeur nette des constructions démolies', tone: 'external', detail: 'Ce que le bâtiment démoli valait encore dans les livres' }),
+});
+
+/** @param {string} type @returns {boolean} true for an opération diverse: a line that moves no money. */
+export function isOperationDiverse(type) {
+  return typeof type === 'string' && Object.hasOwn(OPERATIONS_DIVERSES, type);
+}
+
+/**
+ * @param {string} type An opération diverse's type.
+ * @returns {{ debit: string, credit: string, label: string, tone: JournalTone, detail: string }}
+ */
+export function odLegsOf(type) {
+  if (!isOperationDiverse(type)) throw new Error(`[PcgJournalCatalog] "${type}" is not an opération diverse`);
+  return OPERATIONS_DIVERSES[type];
+}
+
+const isResultAccount = (account) => account[0] === '6' || account[0] === '7';
+
+/** The leg of an opération diverse that is a charge or a product, the one the compte de résultat reads; null when both legs are balance-sheet accounts. */
+function resultLegOf(od) {
+  if (isResultAccount(od.debit)) return { account: od.debit, side: 'debit' };
+  if (isResultAccount(od.credit)) return { account: od.credit, side: 'credit' };
+  return null;
+}
+
+/**
+ * What an opération diverse adds to the line of the compte de résultat its account feeds: a charge counts as positive when debited, a product when
+ * credited, and the other way round takes off (a stock that grows lowers the cost of the purchases).
+ * @param {string} type @param {number} amount
+ * @returns {number} the signed amount
+ */
+export function statementAmountOfOd(type, amount) {
+  const leg = resultLegOf(odLegsOf(type));
+  if (!leg) throw new Error(`[PcgJournalCatalog] "${type}" touches no charge or product: it has no place in the compte de résultat`);
+  const { account, side } = leg;
+  const isCharge = account[0] === '6';
+  return (isCharge ? side === 'debit' : side === 'credit') ? amount : -amount;
+}
+
+/**
  * @param {string} type A journal line's type.
  * @returns {PcgJournalEntry | null} Where the line sits in the chart of accounts, or null for a type with none (an informative line, a
  *   closing): the journal says so, it never invents an account.
  */
 export function pcgOfJournalType(type) {
   if (BY_TYPE[type]) return BY_TYPE[type];
+  // An opération diverse is read in the result through its charge or product leg.
+  if (isOperationDiverse(type)) {
+    const od = OPERATIONS_DIVERSES[type];
+    const leg = resultLegOf(od);
+    return leg ? entry(leg.account, od.label, od.tone, false, od.detail) : null;
+  }
   return BY_PREFIX.find(([prefix]) => type.startsWith(prefix))?.[1] ?? null;
+}
+
+/** The accounts no line is "about" (the bank, a counter-account, the carried result of a purged year). */
+const EXTRA_ACCOUNT_LABELS = Object.freeze({
+  '512': 'Banques',
+  '12': 'Résultat reporté (années clôturées)',
+  '275': 'Dépôts et cautionnements versés',
+  '165': 'Dépôts et cautionnements reçus',
+  '768': 'Autres produits financiers',
+  '35': 'Stocks de produits',
+  '37': 'Stocks de marchandises',
+  '281': 'Amortissements des immobilisations corporelles',
+  '6037': 'Variation des stocks de marchandises',
+  '713': 'Variation des stocks de produits',
+  '6811': 'Dotations aux amortissements des immobilisations',
+  '675': 'Valeurs comptables des éléments d’actif cédés',
+  '431': 'Sécurité sociale',
+  '6411': 'Salaires, appointements',
+  '645': 'Charges de sécurité sociale et de prévoyance',
+  '695': 'Impôts sur les bénéfices',
+  '6132': 'Locations immobilières',
+  '752': 'Revenus des immeubles',
+});
+
+/**
+ * @param {string} account A PCG account number the journal posts to.
+ * @returns {string} Its title in the plan comptable, as the catalog gives it (the first line type that posts to it names it); throws for an account it does not know.
+ */
+export function accountLabelOf(account) {
+  if (EXTRA_ACCOUNT_LABELS[account]) return EXTRA_ACCOUNT_LABELS[account];
+  const named = Object.values(BY_TYPE).find((candidate) => candidate.account === account) ?? BY_PREFIX.map(([, candidate]) => candidate).find((candidate) => candidate.account === account);
+  if (!named) throw new Error(`[PcgJournalCatalog] the account ${account} has no title: no line type posts to it`);
+  return named.label.replace(/ \(.*\)$/, '');
 }
 
 /**
@@ -152,6 +274,7 @@ const RAW_INCOME_STATEMENT = Object.freeze([
     lines: Object.freeze([
       Object.freeze({ id: 'goodsSold', label: 'Ventes de marchandises', accounts: Object.freeze(['707']) }),
       Object.freeze({ id: 'productionSold', label: 'Production vendue (biens et services)', accounts: Object.freeze(['701', '702', '703', '704', '705', '706', '708']) }),
+      Object.freeze({ id: 'storedProduction', label: 'Production stockée', accounts: Object.freeze(['713']) }),
       Object.freeze({ id: 'subsidies', label: "Subventions d'exploitation", accounts: Object.freeze(['74']) }),
       Object.freeze({ id: 'otherIncome', label: 'Autres produits', accounts: Object.freeze(['75', '78']) }),
     ]),
@@ -161,10 +284,12 @@ const RAW_INCOME_STATEMENT = Object.freeze([
     lines: Object.freeze([
       Object.freeze({ id: 'merchandisePurchases', label: 'Achats de marchandises', accounts: Object.freeze(['607', '608']) }),
       Object.freeze({ id: 'materialPurchases', label: 'Achats de matières premières et autres approvisionnements', accounts: Object.freeze(['601', '602']) }),
+      Object.freeze({ id: 'stockVariation', label: 'Variation de stock de marchandises', accounts: Object.freeze(['603']) }),
       Object.freeze({ id: 'externalCharges', label: 'Autres achats et charges externes', accounts: Object.freeze(['604', '605', '606', '61', '62']) }),
       Object.freeze({ id: 'taxes', label: 'Impôts, taxes et versements assimilés', accounts: Object.freeze(['63']) }),
       Object.freeze({ id: 'wages', label: 'Salaires', accounts: Object.freeze(['641']) }),
       Object.freeze({ id: 'socialCharges', label: 'Cotisations sociales', accounts: Object.freeze(['645', '647']) }),
+      Object.freeze({ id: 'depreciation', label: 'Dotations aux amortissements', accounts: Object.freeze(['681']) }),
       Object.freeze({ id: 'otherCharges', label: 'Autres charges', accounts: Object.freeze(['648', '65']) }),
     ]),
   }),
@@ -197,8 +322,8 @@ const RAW_INCOME_STATEMENT = Object.freeze([
 
 /** The colour family of each line of the statement, the same families as the journal's lines (a tax is blue, a wage orange, a sale green…). */
 const LINE_TONES = Object.freeze({
-  goodsSold: 'sales', productionSold: 'sales', subsidies: 'subsidy-received', otherIncome: 'sales',
-  merchandisePurchases: 'purchase', materialPurchases: 'purchase', externalCharges: 'external', taxes: 'tax-paid',
+  goodsSold: 'sales', productionSold: 'sales', storedProduction: 'sales', subsidies: 'subsidy-received', otherIncome: 'sales',
+  merchandisePurchases: 'purchase', materialPurchases: 'purchase', stockVariation: 'purchase', depreciation: 'external', externalCharges: 'external', taxes: 'tax-paid',
   wages: 'personnel', socialCharges: 'personnel', otherCharges: 'subsidy-given',
   financialIncomeLine: 'sales', financialChargesLine: 'financial', exceptionalIncomeLine: 'sales', exceptionalChargesLine: 'external',
   workersParticipationLine: 'personnel', profitTaxLine: 'tax-paid',
@@ -224,7 +349,7 @@ export const INCOME_STATEMENT = Object.freeze(
  * financial charge is fixed in the break-even analysis. An account is named by the start of its number, like the statement's lines.
  * Exceptional charges and the tax on profits are in neither class: they are not part of the usual cost structure.
  */
-const VARIABLE_CHARGE_ACCOUNTS = Object.freeze(['601', '602', '607', '608', '6241', '6353']);
+const VARIABLE_CHARGE_ACCOUNTS = Object.freeze(['601', '602', '603', '607', '608', '6241', '6353']);
 
 /** @param {string} account @returns {boolean} true for a charge that varies with the volume sold (see VARIABLE_CHARGE_ACCOUNTS). */
 export function isVariableChargeAccount(account) {

@@ -4,6 +4,7 @@ import { roadCause, shortageCause } from './staffingReasonFormat.js';
 import { departureCauses } from '../../../../../shared/population/DepartureCauseCatalog.js';
 import { HUNGER_CAUSES } from '../../../../../shared/population/HungerCauseCatalog.js';
 import { splitUnfedByCause } from '../../../../../composition/housingCatalog.js';
+import { formatEuro } from '../../../../../contexts/accounting/presentation/formatMoney.js';
 /**
  * Messages tab — pure format (VM → display model).
  *
@@ -152,6 +153,21 @@ function departureComplaints(vm) {
 }
 
 /**
+ * A company that owes what it cannot pay: an icon and a short word with the months, and in the tooltip what it owes (the amounts, by kind).
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @returns {ReadonlyArray<{ text: string, detail: string }>}
+ */
+function insolvencyComplaints(vm) {
+  const insolvency = vm.insolvency;
+  if (!insolvency || insolvency.months <= 0) return [];
+  const owed = insolvency.debts.map((debt) => `${debt.label.toLowerCase()} ${formatEuro(debt.amount)}`).join(', ');
+  return [{
+    text: `${insolvency.display.icon} ${insolvency.display.label} ${insolvency.months} mois`,
+    detail: `Elle doit ${owed} et ne peut pas le payer : ${insolvency.months} mois d'impayés. Les salaires sont payés en premier dès que la caisse le permet.`,
+  }];
+}
+
+/**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  * @returns {{ complaints: ReadonlyArray<string | { text: string, detail: string }> }}
  */
@@ -166,6 +182,7 @@ export function formatMessagesModel(vm) {
   complaints.push(...marketSupplyComplaints(vm));
   complaints.push(...foodForecastComplaints(vm));
   complaints.push(...departureComplaints(vm));
+  complaints.push(...insolvencyComplaints(vm));
 
   return { complaints };
 }

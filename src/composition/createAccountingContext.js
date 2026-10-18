@@ -59,11 +59,13 @@ import { residentsOfHouse } from '../contexts/accounting/domain/policies/HouseRe
 import { residentPayBreakdownOf } from '../contexts/accounting/domain/policies/HouseResidentsPayPolicy.js';
 import { householdPublicPayOf } from '../contexts/accounting/domain/policies/HouseholdPublicPayPolicy.js';
 import { MONTHS_PER_YEAR } from '../shared/time/TimeCalendar.js';
-import { isLucrativeBuilding } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
+import { balanceSheetOf } from '../contexts/accounting/domain/policies/BalanceSheetPolicy.js';
+import { accountLedgerOf, trialBalanceOf } from '../contexts/accounting/domain/policies/AccountLedgerPolicy.js';
+import { isLucrativeBuilding, payrollOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../shared/building-identity/index.js';
-import { houseEnterpriseOf, houseHoldsSkill, residentsSeekingWork } from '../shared/population/workforceQueries.js';
+import { houseEnterpriseOf, houseEnterprises, houseHoldsSkill, premisesShareOf, residentsSeekingWork } from '../shared/population/workforceQueries.js';
 import { OWNER_SKILL, TAX_COLLECTION_SKILLS } from '../shared/population/socialCategoryCatalog.js';
-import { rentArrearsMonthsByHouse, rentDebtsOf, rentQuoteOf } from '../contexts/accounting/domain/policies/RentPolicy.js';
+import { premisesRentOf, rentArrearsMonthsByHouse, rentDebtsOf, rentQuoteOf } from '../contexts/accounting/domain/policies/RentPolicy.js';
 import { legalFormOf } from '../shared/accounting-catalog/LegalFormCatalog.js';
 import { SettleHouseRents } from '../contexts/accounting/application/services/SettleHouseRents.js';
 import { WriteOffVacantRentDebts } from '../contexts/accounting/application/services/WriteOffVacantRentDebts.js';
@@ -73,7 +75,12 @@ import {
   canAffordFromBudget,
 } from '../contexts/accounting/application/queries/treasury/GameTreasuryProjections.js';
 import { isActiveHamletRow } from '../core/persistence/hamlet/hamletSession.js';
-import { buildingMaintenanceCost } from '../contexts/accounting/domain/policies/BuildingMaintenanceBreakdownPolicy.js';
+import { buildingMaintenanceCost, maintenanceCategoryOf } from '../contexts/accounting/domain/policies/BuildingMaintenanceBreakdownPolicy.js';
+import { CloseMonthAccounts } from '../contexts/accounting/application/services/CloseMonthAccounts.js';
+import { FundNewCompanies } from '../contexts/accounting/application/services/FundNewCompanies.js';
+import { difficultyMonthsOf, payablesOf } from '../contexts/accounting/domain/policies/DebtPolicy.js';
+import { INSOLVENCY_DISPLAY, INSOLVENCY_GRACE_MONTHS, PAYABLE_KINDS } from '../contexts/accounting/domain/catalogs/PayableCatalog.js';
+import { buildingTypeOfConstruction } from '../contexts/accounting/domain/policies/MonthClosingPolicy.js';
 import { SettleProducerCharges } from '../contexts/accounting/application/services/SettleProducerCharges.js';
 import { RecordHouseholdDeposit } from '../contexts/accounting/application/services/RecordHouseholdDeposit.js';
 import { RecordHouseholdWithdrawal } from '../contexts/accounting/application/services/RecordHouseholdWithdrawal.js';
@@ -107,6 +114,8 @@ import { addVatTo } from '../contexts/accounting/domain/policies/VatIncludedPoli
  * @param {() => number} [deps.getCitizenTaxPerCapita]
  * @param {() => { minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number }} [deps.getSalarySettings]
  * @param {(building: { id: string, type: string }, category: string, period: { year: number, monthIndex: number }) => Promise<number>} [deps.getSellingPrice]
+ * @param {(buildingId: string, period: { year: number, monthIndex: number }) => Promise<Array<{ category: string, amount: number, unitCost: number, value: number }>>} [deps.valueStock]
+ *   what a building's stock is worth at cost (the supply's), for a company's balance sheet
  * @param {(period: { year: number, monthIndex: number }) => Promise<Array<{ stage: string, buildingId: string, category: string, price: number }>>} [deps.listSellingPrices] what each seller charges per good (HT), for the cost of living
  * @param {(period: { year: number, monthIndex: number }) => Promise<Array<{ stage: string, buildingId: string, category: string, price: number }>>} [deps.listServicePrices] what each seller charges per service unit (HT), for the cost of living
  *   the supply's price of a good or a service a building sold in a month (its price book), what a service is billed at
@@ -379,6 +388,8 @@ export function createAccountingContext(deps = {}) {
       (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: 'particulier' })).funds,
     businessFundsOf: async (houseId, businessAccount) =>
       (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: businessAccount })).funds,
+    companyFundsOf: async (buildingId) => (await getTreasurySnapshotQuery.execute({ accountBuildingId: buildingId })).funds,
+    getJournalEntries: () => journalRepository.getJournalEntries(),
     getVatRates: () => vatRatesInForce(),
     listHouses: async () =>
       (await dexieDb.houses.toArray())
@@ -528,7 +539,7 @@ export function createAccountingContext(deps = {}) {
       ownerType: owner.type,
       ownerName: nameOf(owner),
       // The owner lives in its own house and pays its rent like the others (to itself: it is the same company's income and its associates' cost).
-      tenants: houses.map((row) => ({ id: row.id, name: nameOf(row) })),
+      tenants: houses.map((row) => ({ id: row.id, type: row.type, name: nameOf(row) })),
       // Every house the owner holds, vacant ones included: it bears their upkeep.
       ownedTypes: owned.map((row) => row.type),
       vacantIds: owned.filter((row) => !(row.pop >= 1)).map((row) => row.id),
@@ -537,7 +548,8 @@ export function createAccountingContext(deps = {}) {
   // The rent the owner asks each house, deduced from the upkeep it bears (less the hamlet's subsidy) and the rent control (see rentQuoteOf).
   const quoteRent = async (rentals) => {
     const [subsidyRate, control] = await Promise.all([hamletFiscalRates.getHouseMaintenanceSubsidyRate(), hamletFiscalRates.getRentControl()]);
-    const upkeep = rentals.ownedTypes.reduce((total, type) => total + buildingMaintenanceCost(type), 0);
+    // The homes' share of the upkeep: the part of a house set aside for its business is rented apart (see premisesRentOf), not by the household.
+    const upkeep = rentals.ownedTypes.reduce((total, type) => total + buildingMaintenanceCost(type) * (1 - premisesShareOf(type)), 0);
     const quote = rentQuoteOf({
       upkeepToCover: upkeep * (1 - subsidyRate),
       tenants: rentals.tenants.length,
@@ -546,10 +558,117 @@ export function createAccountingContext(deps = {}) {
     });
     return { ...quote, control };
   };
+  // Every building the city paid for (but the roads, which stay the hamlet's), each with what it cost net of refunds, the month it was built
+  // (`year × 12 + monthIndex`, from its first construction line), its type (the row's while it stands, else the one its construction line names), its
+  // family and whether it still stands. The owner's property company holds them all; the city's construction line is its contribution in kind.
+  const constructionsOf = async (entries) => {
+    const rows = new Map((await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => [row.id, row.type]));
+    const built = new Map();
+    const entryOf = (id) => {
+      if (!built.has(id)) built.set(id, { buildingId: id, type: rows.get(id) ?? null, centimes: 0, builtKey: null });
+      return built.get(id);
+    };
+    for (const entry of entries) {
+      // A purged year keeps what each building cost (see YearClosingPolicy): the lines themselves are gone.
+      if (entry.type === 'year_closing') {
+        for (const [id, kept] of Object.entries(entry.closing.constructions ?? {})) {
+          const building = entryOf(id);
+          building.centimes += Math.round(kept.cost * 100);
+          building.builtKey = building.builtKey === null ? kept.builtKey : Math.min(building.builtKey, kept.builtKey);
+          building.type ??= kept.type ?? null;
+        }
+        continue;
+      }
+      if (!entry.buildingInstanceId || (entry.type !== 'construction' && entry.type !== 'construction_refund')) continue;
+      const building = entryOf(entry.buildingInstanceId);
+      building.centimes += (entry.type === 'construction' ? 1 : -1) * Math.round(entry.amount * 100);
+      if (entry.type === 'construction' && building.builtKey === null) {
+        if (!Number.isInteger(entry.year) || !Number.isInteger(entry.month)) throw new Error(`[ledger] the construction line of building ${entry.buildingInstanceId} has no year and month`);
+        building.builtKey = entry.year * MONTHS_PER_YEAR + (entry.month - 1);
+        building.type ??= buildingTypeOfConstruction(entry);
+      }
+    }
+    return [...built.values()]
+      .filter((building) => building.centimes > 0 && building.builtKey !== null)
+      .map(({ centimes, ...building }) => ({
+        buildingId: building.buildingId,
+        type: building.type,
+        category: building.type ? maintenanceCategoryOf(building.type) : null,
+        cost: centimes / 100,
+        builtKey: building.builtKey,
+        held: rows.has(building.buildingId),
+      }))
+      .filter((building) => building.category !== 'roads');
+  };
+  // The companies and the businesses of the houses, with what their month costs at full staffing: the capital the city pays them when they are created.
+  const fundNewCompanies = new FundNewCompanies({
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    getJournalEntries: () => journalRepository.getJournalEntries(),
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+    listFoundingNeeds: async () => {
+      const wageRateOf = await marketWageRateOf();
+      const { employerContributionRate } = await hamletFiscalRates.getSalarySettings();
+      const needs = [];
+      for (const row of (await dexieDb.houses.toArray()).filter(isActiveHamletRow)) {
+        const name = getBuildingDefinition(row.type)?.displayName;
+        if (resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE) {
+          const business = houseEnterprises(row.type).enterprises.find((enterprise) => enterprise.activity === 'recipes');
+          const share = premisesShareOf(row.type);
+          // The business of a house rents a share of it: its month is that rent.
+          if (business && share > 0) needs.push({ buildingId: row.id, accountKind: businessAccountOf(business.id), monthlyNeed: buildingMaintenanceCost(row.type) * share, name });
+        } else if (isLucrativeBuilding(row.type)) {
+          const payroll = payrollOf({ type: row.type, workers: getBuildingDefinition(row.type)?.employment?.workerNeed ?? 0, wageRateOf });
+          needs.push({ buildingId: row.id, accountKind: null, monthlyNeed: payroll * (1 + employerContributionRate) + buildingMaintenanceCost(row.type), name });
+        }
+      }
+      return needs;
+    },
+  });
+  const closeMonthAccounts = new CloseMonthAccounts({
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    listStockAccounts: async () => {
+      if (typeof deps.valueStock !== 'function') throw new Error('[accounting] the stock valuation was not wired (deps.valueStock): the month could not be closed');
+      const accounts = [];
+      for (const row of (await dexieDb.houses.toArray()).filter(isActiveHamletRow)) {
+        const nature = salesNatureOf(row.type);
+        if (nature === null) continue;
+        const stockNature = nature === 'merchandise' ? 'merchandise' : 'production';
+        if (resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE) {
+          const business = houseEnterprises(row.type).enterprises.find((enterprise) => enterprise.activity === 'recipes');
+          if (business) accounts.push({ buildingId: row.id, accountKind: businessAccountOf(business.id), nature: stockNature });
+        } else if (isLucrativeBuilding(row.type)) {
+          accounts.push({ buildingId: row.id, accountKind: null, nature: stockNature });
+        }
+      }
+      return accounts;
+    },
+    valueStock: (buildingId, period) => deps.valueStock(buildingId, period),
+    getOwnerHoldings: async () => {
+      const rentals = await getRentalHouses();
+      if (!rentals) return null;
+      const constructions = await constructionsOf(await journalRepository.getJournalEntries());
+      return { ownerId: rentals.ownerId, businessAccount: businessAccountOf(houseEnterpriseOf(rentals.ownerType, 'rental').id), constructions };
+    },
+    getJournalEntries: () => journalRepository.getJournalEntries(),
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
+  // The rent of the premises a house's business works in: its share of the house's upkeep, less the hamlet's subsidy, plus the owner's margin.
+  const quotePremisesRent = async (rentals, houseType) => {
+    const subsidyRate = await hamletFiscalRates.getHouseMaintenanceSubsidyRate();
+    return premisesRentOf({
+      upkeep: buildingMaintenanceCost(houseType),
+      share: premisesShareOf(houseType),
+      subsidyRate,
+      margin: legalFormOf(houseEnterpriseOf(rentals.ownerType, 'rental').id).regime.rentMargin,
+    });
+  };
   const settleHouseRents = new SettleHouseRents({
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
     getRentalHouses,
     getRentQuote: quoteRent,
+    getPremisesRent: quotePremisesRent,
+    businessFundsOf: async (houseId, businessAccount) =>
+      (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: businessAccount })).funds,
     getJournalEntries: () => journalRepository.getJournalEntries(),
     fundsOf: async (houseId) => (await getTreasurySnapshotQuery.execute({ accountBuildingId: houseId, accountKind: 'particulier' })).funds,
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
@@ -567,6 +686,8 @@ export function createAccountingContext(deps = {}) {
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
     settleProducerCharges: (params) => settleProducerCharges.execute(params),
     settleHouseRents: (params) => settleHouseRents.execute(params),
+    fundNewCompanies: (params) => fundNewCompanies.execute(params),
+    closeMonthAccounts: (params) => closeMonthAccounts.execute(params),
     settleBankDepositInterest: (params) => settleBankDepositInterest.execute(params),
     revalueMinimumWage: () => revalueMinimumWage.execute(),
     adjustWageRates: ({ time }) => {
@@ -1005,6 +1126,77 @@ export function createAccountingContext(deps = {}) {
         // What a house owes the owner, derived from the journal as it stood at the end of the month viewed (never stored).
         rentDebt: accountKind === 'particulier' ? rentDebtsOf(entries).get(buildingId) ?? 0 : null,
       };
+    },
+
+    /**
+     * The balance sheet of a company, as it stands now: derived from its journal lines, its cash and what its stock is worth at cost (see
+     * BalanceSheetPolicy.js). A household has none.
+     * @param {string} buildingId
+     * @param {string | null} accountKind a house's business account (`entreprise`); null for a company's own account
+     * @returns {Promise<ReturnType<typeof balanceSheetOf>>}
+     */
+    async getBuildingBalanceSheet(buildingId, accountKind) {
+      if (typeof deps.valueStock !== 'function') throw new Error('[accounting] the stock valuation was not wired (deps.valueStock): the balance sheet could not value the stock');
+      const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
+      const entries = await journalRepository.getJournalEntries();
+      const snapshot = await getTreasurySnapshotQuery.execute({ accountBuildingId: buildingId, accountKind });
+      const stock = await deps.valueStock(buildingId, { year: now.year, monthIndex: now.monthIndex });
+      return balanceSheetOf(entries, buildingId, { accountKind, cash: snapshot.funds, stock, currentYear: now.year });
+    },
+
+    /**
+     * What a company (or a house's business) owes and has not paid, and for how many months in a row: the building's problems say it. Null for a building that
+     * is no company. Derived from the journal, never stored.
+     * @param {string} buildingId
+     * @returns {Promise<{ months: number, graceMonths: number, display: { icon: string, label: string }, debts: Array<{ label: string, amount: number }> } | null>}
+     */
+    async getInsolvency(buildingId) {
+      const row = await dexieDb.houses.get(buildingId);
+      if (!row) return null;
+      let accountKind = null;
+      if (resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE) {
+        const business = houseEnterprises(row.type).enterprises.find((enterprise) => enterprise.activity === 'recipes');
+        if (!business) return null;
+        accountKind = businessAccountOf(business.id);
+      } else if (!isLucrativeBuilding(row.type)) {
+        return null;
+      }
+      const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
+      const entries = await journalRepository.getJournalEntries();
+      const months = difficultyMonthsOf(entries, buildingId, accountKind, { year: now.year, month: now.monthIndex + 1 }, MONTHS_PER_YEAR);
+      const totals = new Map();
+      for (const debt of payablesOf(entries).values()) {
+        if (debt.debtorId !== buildingId || debt.accountKind !== accountKind) continue;
+        totals.set(debt.kind, (totals.get(debt.kind) ?? 0) + debt.centimes);
+      }
+      return {
+        months,
+        graceMonths: INSOLVENCY_GRACE_MONTHS,
+        display: INSOLVENCY_DISPLAY,
+        debts: [...totals].map(([kind, centimes]) => ({ label: PAYABLE_KINDS[kind].label, amount: centimes / 100 })),
+      };
+    },
+
+    /**
+     * The grand livre and the balance of a building's account, derived from its journal lines (see AccountLedgerPolicy.js). The bank's balance is checked
+     * against the treasury of the same account: they are the same lines read twice, so a gap is a defect.
+     * @param {string} buildingId
+     * @param {string | null} accountKind
+     * @returns {Promise<{ ledger: ReturnType<typeof accountLedgerOf>, balance: ReturnType<typeof trialBalanceOf> }>}
+     */
+    async getBuildingLedger(buildingId, accountKind) {
+      const building = await dexieDb.houses.get(buildingId);
+      if (!building) throw new Error(`[ledger] building ${buildingId} is not in the hamlet: its ledger cannot be read`);
+      const entries = await journalRepository.getJournalEntries();
+      const options = { accountKind, salesNature: salesNatureOf(building.type) };
+      const ledger = accountLedgerOf(entries, buildingId, options);
+      const balance = trialBalanceOf(entries, buildingId, options);
+      const bank = ledger.find((account) => account.account === '512')?.balance ?? 0;
+      const funds = (await getTreasurySnapshotQuery.execute({ accountBuildingId: buildingId, accountKind })).funds;
+      if (Math.round(bank * 100) !== Math.round(funds * 100)) {
+        throw new Error(`[ledger] the bank account of ${buildingId} is ${bank} but its treasury is ${funds}: the same lines were read two ways`);
+      }
+      return { ledger, balance };
     },
 
     /**

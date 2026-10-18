@@ -76,6 +76,21 @@ export function rentQuoteOf({ upkeepToCover, tenants, margin, cap }) {
 }
 
 /**
+ * The monthly rent of the premises a house's business works in: the share of the house's upkeep set aside for the activity, less the hamlet's subsidy on
+ * the upkeep, plus the owner's margin, rounded up to the centime. It is not capped by the rent control, which protects households.
+ * @param {{ upkeep: number, share: number, subsidyRate: number, margin: number }} premises `share`: the part of the house used by the business, a fraction
+ * @returns {number}
+ */
+export function premisesRentOf({ upkeep, share, subsidyRate, margin }) {
+  if (!(upkeep >= 0)) throw new Error(`[rent] the upkeep of the premises is an amount of at least 0, got ${upkeep}`);
+  for (const [name, fraction] of Object.entries({ share, subsidyRate })) {
+    if (!(fraction >= 0 && fraction <= 1)) throw new Error(`[rent] the ${name} of the premises is a fraction, got ${fraction}`);
+  }
+  if (!(margin >= 0)) throw new Error(`[rent] the owner's margin is a fraction of at least 0, got ${margin}`);
+  return Math.max(0, Math.ceil(upkeep * share * (1 - subsidyRate) * (1 + margin) * 100 - 1e-9)) / 100;
+}
+
+/**
  * One house's rent for one month: the rent falls due, and the house pays what it owes (the debt it carries plus the month's rent) as far as its
  * money goes, never more than it has.
  * @param {{ rent: number, debt: number, funds: number }} month

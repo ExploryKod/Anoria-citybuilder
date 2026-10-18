@@ -14,6 +14,8 @@ import {
   withholdIncomeTax,
 } from '../../domain/policies/ProducerChargePolicy.js';
 import { PERSONAL_ACCOUNT, businessAccountOf } from '../../domain/policies/AccountKeyPolicy.js';
+import { payablesOf, planCompanyPayments } from '../../domain/policies/DebtPolicy.js';
+import { PAYABLE_KINDS } from '../../domain/catalogs/PayableCatalog.js';
 import { houseEnterpriseOf, houseEnterprises, houseHoldsSkill } from '../../../../shared/population/workforceQueries.js';
 import { OWNER_SKILL } from '../../../../shared/population/socialCategoryCatalog.js';
 import { allocateEnterpriseResult, enterpriseLines } from '../../domain/policies/EnterpriseAllocationPolicy.js';
@@ -53,6 +55,13 @@ const LINE_LABELS = Object.freeze({
   employee_contribution: 'Cotisations salariales',
   social_contribution: 'Cotisations sociales perçues',
   maintenance: 'Entretien',
+  premises_rent_paid: 'Loyer du local',
+  premises_rent_received: 'Loyer du local perçu',
+  wage_debt_paid: 'Salaires impayés réglés',
+  contribution_debt_paid: 'Cotisations impayées réglées',
+  corporate_tax_debt_paid: 'Impôt sur les sociétés impayé réglé',
+  premises_rent_debt_paid: 'Loyer du local impayé réglé',
+  premises_rent_debt_received: 'Loyer du local impayé encaissé',
   subsidy_housing_received: 'Subvention entretien des maisons reçue',
   subsidy_companies: 'Subvention entretien entreprise',
   subsidy_housing: 'Subvention entretien habitation',
@@ -117,6 +126,8 @@ export class SettleProducerCharges {
    *   (never under the minimum wage), as it stands for the month being settled
    * @param {(houseId: string) => Promise<number>} deps.fundsOf what a house has in its personal account before this settlement
    * @param {(houseId: string, businessAccount: string) => Promise<number>} deps.businessFundsOf what one enterprise of a house holds in its business account: only that can be shared out
+   * @param {(buildingId: string) => Promise<number>} deps.companyFundsOf what a company holds in its own account now, the month's sales and subsidies included
+   * @param {() => Promise<Array<object>>} deps.getJournalEntries the journal lines (the debts the companies carry are derived from them)
    * @param {(cutOff: { turn: number, year: number, monthIndex: number, houseId: string, service: string }) => Promise<void>} deps.recordServiceCutOff
    * @param {(houseId: string, year: number) => Promise<{ incomeYearToDate: number, taxWithheldYearToDate: number }>} deps.readHouseholdYear what a household took in over a
    *   year (wages net of the employee's contribution, benefit, stipend, and what its enterprises paid it) and the income tax already withheld, off its personal account
@@ -197,7 +208,13 @@ export class SettleProducerCharges {
     // The owner of the houses: the house whose category holds the owner skill (the mayor's), standing whether or not people live in it yet. Its
     // property company bears the upkeep of every house, its own included. None stands once it is demolished: the hamlet then bears it (see buildingChargeLines).
     const ownerHouse = buildings.find((building) => houseIds.has(building.id) && houseHoldsSkill(building.type, 1, OWNER_SKILL));
-    const owner = ownerHouse ? { id: ownerHouse.id, businessAccount: businessAccountOf(houseEnterpriseOf(ownerHouse.type, 'rental').id) } : null;
+    const owner = ownerHouse
+      ? {
+        id: ownerHouse.id,
+        businessAccount: businessAccountOf(houseEnterpriseOf(ownerHouse.type, 'rental').id),
+        rentMargin: legalFormOf(houseEnterpriseOf(ownerHouse.type, 'rental').id).regime.rentMargin,
+      }
+      : null;
     const workersIn = (houseId) => buildings.reduce((sum, building) => sum + (building.workerSources?.[houseId] ?? 0), 0);
     const benefitByHouse = new Map();
     const unemployedCountByHouse = new Map();
@@ -328,67 +345,66 @@ export class SettleProducerCharges {
     }
     // What each house received in wages this month: the employee's social contribution is withheld from it, and only the rest is taxed.
     const wagesReceivedByHouse = new Map();
+    // The debts the companies carry (a charge they could not pay), and what each holds once its charges of the month are paid.
+    const payables = payablesOf(await this.deps.getJournalEntries());
+    const cashAfterCharges = new Map();
     for (const building of buildings) {
       const { wagesHT, workers, wagePerWorker } = wagesByBuilding.get(building.id);
       const subsidyHT = subsidiesHT.get(building.id) ?? 0;
       const sources = building.workerSources ?? {};
+      const isCompany = isLucrativeBuilding(building.type);
 
-      // The wages go to the houses the workers come from: each house receives its workers' share, on its own account.
-      for (const line of wageSplitLines({ workplaceId: building.id, wagesHT, sources })) {
-        await this.#record(line, {
-          time,
-          key: buildTradeLineBusinessKey(line.kind, line.holder, line.counterparty, timeInfo, hamletId),
-          description: line.kind === 'producer_wage'
-            ? `${LINE_LABELS[line.kind]} ${nameOf(line.holder)} → ${nameOf(line.counterparty)} (${workers} ouvriers à ${wagePerWorker.toFixed(2)} €) - ${monthLabel}`
-            : `${LINE_LABELS[line.kind]} de ${nameOf(line.counterparty)} - ${monthLabel}`,
-          buildingInstanceId: line.holder,
-          timeInfo,
-        });
-        if (line.kind === 'household_wage') wagesReceivedByHouse.set(line.holder, centimes((wagesReceivedByHouse.get(line.holder) ?? 0) + line.amount));
-      }
+      if (isCompany) {
+        // A company pays what it owes as far as its money goes: its old debts first, then the charges of the month by rank (wages, contributions, rent);
+        // what it cannot pay becomes a debt (see DebtPolicy). What it holds after is what the year's tax may use.
+        cashAfterCharges.set(building.id, await this.#settleCompanyMonth({
+          building, wagesHT, workers, wagePerWorker, sources, subsidyHT, owner, houseSubsidyRate, publicPay, payables,
+          time, timeInfo, hamletId, monthLabel, nameOf, wagesReceivedByHouse,
+        }));
+      } else {
+        // The wages go to the houses the workers come from: each house receives its workers' share, on its own account.
+        for (const line of wageSplitLines({ workplaceId: building.id, wagesHT, sources })) {
+          await this.#record(line, {
+            time,
+            key: buildTradeLineBusinessKey(line.kind, line.holder, line.counterparty, timeInfo, hamletId),
+            description: line.kind === 'producer_wage'
+              ? `${LINE_LABELS[line.kind]} ${nameOf(line.holder)} → ${nameOf(line.counterparty)} (${workers} ouvriers à ${wagePerWorker.toFixed(2)} €) - ${monthLabel}`
+              : `${LINE_LABELS[line.kind]} de ${nameOf(line.counterparty)} - ${monthLabel}`,
+            buildingInstanceId: line.holder,
+            timeInfo,
+          });
+          if (line.kind === 'household_wage') wagesReceivedByHouse.set(line.holder, centimes((wagesReceivedByHouse.get(line.holder) ?? 0) + line.amount));
+        }
 
-      // The employer's social contribution on the payroll: a charge of the company, received by the city's social security.
-      const employerLines = employerContributionLines({ workplaceId: building.id, wagesHT, rate: publicPay.employerContributionRate });
-      for (const line of employerLines) {
-        await this.#record(line, {
-          time,
-          key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
-          description: line.kind === 'employer_contribution'
-            ? `${LINE_LABELS.employer_contribution} ${nameOf(building.id)} - ${monthLabel}`
-            : `${LINE_LABELS.social_contribution} de ${nameOf(building.id)} - ${monthLabel}`,
-          buildingInstanceId: building.id,
-          timeInfo,
-        });
-      }
+        // The city's subsidy to a company: a city expense and the company's receipt, both for the month.
+        for (const line of serviceSubsidyLines({ sellerId: building.id, citySubsidy: subsidyHT })) {
+          await this.#record(line, {
+            time,
+            key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
+            description: `${LINE_LABELS[line.kind]} ${nameOf(building.id)} - ${monthLabel}`,
+            buildingInstanceId: building.id,
+            timeInfo,
+          });
+        }
 
-      // The city's subsidy to a company: a city expense and the company's receipt, both for the month.
-      for (const line of serviceSubsidyLines({ sellerId: building.id, citySubsidy: subsidyHT })) {
-        await this.#record(line, {
-          time,
-          key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
-          description: `${LINE_LABELS[line.kind]} ${nameOf(building.id)} - ${monthLabel}`,
-          buildingInstanceId: building.id,
-          timeInfo,
+        const lines = buildingChargeLines({
+          id: building.id,
+          type: building.type,
+          maintenanceCost: this.deps.buildingMaintenanceCost(building.type),
+          houseSubsidyRate,
+          owner,
         });
-      }
-
-      const lines = buildingChargeLines({
-        id: building.id,
-        type: building.type,
-        maintenanceCost: this.deps.buildingMaintenanceCost(building.type),
-        houseSubsidyRate,
-        owner,
-      });
-      // A house's upkeep with no owner standing is the hamlet's: the line says why, so the player is not left to guess.
-      const ownerless = owner === null && houseIds.has(building.id) ? ' (sans propriétaire : à la charge du hameau)' : '';
-      for (const line of lines) {
-        await this.#record(line, {
-          time,
-          key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
-          description: `${LINE_LABELS[line.kind]} ${nameOf(building.id)}${ownerless} - ${monthLabel}`,
-          buildingInstanceId: building.id,
-          timeInfo,
-        });
+        // A house's upkeep with no owner standing is the hamlet's: the line says why, so the player is not left to guess.
+        const ownerless = owner === null && houseIds.has(building.id) ? ' (sans propriétaire : à la charge du hameau)' : '';
+        for (const line of lines) {
+          await this.#record(line, {
+            time,
+            key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
+            description: `${LINE_LABELS[line.kind]} ${nameOf(building.id)}${ownerless} - ${monthLabel}`,
+            buildingInstanceId: building.id,
+            timeInfo,
+          });
+        }
       }
 
       // The corporate tax is a yearly one, settled when the fiscal year closes: this settlement opens a new year, so the lines of the year
@@ -397,14 +413,23 @@ export class SettleProducerCharges {
       if (timeInfo.monthIndex === MONTHS_PER_YEAR - 1 && isLucrativeBuilding(building.type)) {
         const { rcaiYearToDate, taxPaidYearToDate } = await this.deps.readCompanyYear(building.id, timeInfo.year);
         const taxLines = corporateTaxLines({ id: building.id, amount: corporateTaxDueOf({ rcaiYearToDate, taxPaidYearToDate, rate: corporateTaxRate }) });
+        // The tax is paid with what the company holds once its charges of the month are paid; what it cannot pay is a debt to the city.
+        const due = taxLines.length > 0 ? Math.round(taxLines[0].amount * 100) : 0;
+        // `cashAfterCharges` is what it still holds once its charges of the month are paid.
+        const payment = planCompanyPayments({ cash: cashAfterCharges.get(building.id), debts: [], charges: [{ id: 'tax', rank: PAYABLE_KINDS.corporate_tax.rank, amount: due }] });
+        const taxPaid = payment.chargePaid.get('tax') ?? 0;
         for (const line of taxLines) {
-          await this.#record(line, {
+          if (taxPaid <= 0) break;
+          await this.#record({ ...line, amount: taxPaid / 100 }, {
             time: deliveredTime,
             key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
             description: `${LINE_LABELS[line.kind]} ${nameOf(building.id)} - ${monthLabel}`,
             buildingInstanceId: building.id,
             timeInfo,
           });
+        }
+        if (due - taxPaid > 0) {
+          await this.#recordPayable({ kind: 'corporate_tax', debtorId: building.id, accountKind: null, creditorId: null, amount: (due - taxPaid) / 100, time: deliveredTime, timeInfo, hamletId, description: `${LINE_LABELS.corporate_tax} ${nameOf(building.id)} non payé - ${monthLabel}` });
         }
       }
 
@@ -602,6 +627,154 @@ export class SettleProducerCharges {
       payable = next;
     }
     throw new Error('[producer] the services of the month did not settle: the bills paid kept changing');
+  }
+
+  /**
+   * The month of one company's charges, paid as far as its money goes. Its old debts are paid first, then the charges of the month by rank (the wages of
+   * each house, the employer's contributions, the rent of its premises); what it cannot pay of them becomes a new debt (an opération diverse that books
+   * the charge against what is owed). What has no creditor in the game (the upkeep when no owner stands) is written whole, as before.
+   * @returns {Promise<number>} what the company holds once all is paid, in centimes
+   */
+  async #settleCompanyMonth({ building, wagesHT, workers, wagePerWorker, sources, subsidyHT, owner, houseSubsidyRate, publicPay, payables, time, timeInfo, hamletId, monthLabel, nameOf, wagesReceivedByHouse }) {
+    const id = building.id;
+    const toC = (euros) => Math.round(euros * 100);
+    const write = (line, description, key) => this.#record(line, { time, key, description, buildingInstanceId: id, timeInfo });
+
+    // What comes in, and what has no creditor, is written first: the company's money for the month is what is left of them.
+    for (const line of serviceSubsidyLines({ sellerId: id, citySubsidy: subsidyHT })) {
+      await write(line, `${LINE_LABELS[line.kind]} ${nameOf(id)} - ${monthLabel}`, buildProducerLineBusinessKey(line.kind, id, timeInfo, hamletId));
+    }
+    const chargeLines = buildingChargeLines({ id, type: building.type, maintenanceCost: this.deps.buildingMaintenanceCost(building.type), houseSubsidyRate, owner });
+    const isRentLine = (line) => line.kind === 'premises_rent_paid' || line.kind === 'premises_rent_received';
+    for (const line of chargeLines.filter((candidate) => !isRentLine(candidate))) {
+      await write(line, `${LINE_LABELS[line.kind]} ${nameOf(id)} - ${monthLabel}`, buildProducerLineBusinessKey(line.kind, id, timeInfo, hamletId));
+    }
+
+    // What it owes, and what it has.
+    const wageLines = wageSplitLines({ workplaceId: id, wagesHT, sources });
+    const employerLines = employerContributionLines({ workplaceId: id, wagesHT, rate: publicPay.employerContributionRate });
+    const rentLines = chargeLines.filter(isRentLine);
+    const charges = [];
+    for (let index = 0; index < wageLines.length; index += 2) {
+      charges.push({ id: `wage|${wageLines[index].counterparty}`, rank: PAYABLE_KINDS.wage.rank, amount: toC(wageLines[index].amount) });
+    }
+    if (employerLines.length > 0) charges.push({ id: 'contribution', rank: PAYABLE_KINDS.contribution.rank, amount: toC(employerLines[0].amount) });
+    if (rentLines.length > 0) charges.push({ id: 'premises_rent', rank: PAYABLE_KINDS.premises_rent.rank, amount: toC(rentLines[0].amount) });
+    // A debt of rent is payable only while the owner it is owed to stands.
+    const debts = [...payables.values()]
+      .filter((debt) => debt.debtorId === id && debt.accountKind === null && (debt.kind !== 'premises_rent' || owner?.id === debt.creditorId))
+      .map((debt) => ({ id: `${debt.kind}|${debt.creditorId ?? ''}`, rank: PAYABLE_KINDS[debt.kind].rank, amount: debt.centimes, debt }));
+    const cash = toC(await this.deps.companyFundsOf(id));
+    const plan = planCompanyPayments({ cash, debts, charges });
+
+    for (const { id: debtId, debt } of debts) {
+      const paid = plan.debtPaid.get(debtId) ?? 0;
+      if (paid > 0) await this.#recordDebtPayment({ debt, amount: paid / 100, owner, time, timeInfo, hamletId, monthLabel, nameOf });
+    }
+
+    // The charges of the month: the paid part is written as the charge, the rest is a debt.
+    const scaled = (line, kindPaid) => ({ ...line, amount: kindPaid / 100 });
+    for (let index = 0; index < wageLines.length; index += 2) {
+      const [wage, received] = [wageLines[index], wageLines[index + 1]];
+      const chargeId = `wage|${wage.counterparty}`;
+      const paid = plan.chargePaid.get(chargeId) ?? 0;
+      if (paid > 0) {
+        await write(scaled(wage, paid), `${LINE_LABELS.producer_wage} ${nameOf(id)} → ${nameOf(wage.counterparty)} (${workers} ouvriers à ${wagePerWorker.toFixed(2)} €) - ${monthLabel}`, buildTradeLineBusinessKey(wage.kind, wage.holder, wage.counterparty, timeInfo, hamletId));
+        await write(scaled(received, paid), `${LINE_LABELS.household_wage} de ${nameOf(id)} - ${monthLabel}`, buildTradeLineBusinessKey(received.kind, received.holder, received.counterparty, timeInfo, hamletId));
+        wagesReceivedByHouse.set(received.holder, centimes((wagesReceivedByHouse.get(received.holder) ?? 0) + paid / 100));
+      }
+      const unpaid = plan.chargeUnpaid.get(chargeId) ?? 0;
+      if (unpaid > 0) {
+        await this.#recordPayable({ kind: 'wage', debtorId: id, accountKind: null, creditorId: wage.counterparty, amount: unpaid / 100, time, timeInfo, hamletId, description: `${LINE_LABELS.producer_wage} ${nameOf(id)} → ${nameOf(wage.counterparty)} non payés - ${monthLabel}` });
+      }
+    }
+    if (employerLines.length > 0) {
+      const [contribution, received] = employerLines;
+      const paid = plan.chargePaid.get('contribution') ?? 0;
+      if (paid > 0) {
+        await write(scaled(contribution, paid), `${LINE_LABELS.employer_contribution} ${nameOf(id)} - ${monthLabel}`, buildProducerLineBusinessKey(contribution.kind, id, timeInfo, hamletId));
+        await write(scaled(received, paid), `${LINE_LABELS.social_contribution} de ${nameOf(id)} - ${monthLabel}`, buildProducerLineBusinessKey(received.kind, id, timeInfo, hamletId));
+      }
+      const unpaid = plan.chargeUnpaid.get('contribution') ?? 0;
+      if (unpaid > 0) {
+        await this.#recordPayable({ kind: 'contribution', debtorId: id, accountKind: null, creditorId: null, amount: unpaid / 100, time, timeInfo, hamletId, description: `${LINE_LABELS.employer_contribution} ${nameOf(id)} non payées - ${monthLabel}` });
+      }
+    }
+    if (rentLines.length > 0) {
+      const [rent, received] = rentLines;
+      const paid = plan.chargePaid.get('premises_rent') ?? 0;
+      if (paid > 0) {
+        await write(scaled(rent, paid), `${LINE_LABELS.premises_rent_paid} ${nameOf(id)} - ${monthLabel}`, buildProducerLineBusinessKey(rent.kind, id, timeInfo, hamletId));
+        await write(scaled(received, paid), `${LINE_LABELS.premises_rent_received} ${nameOf(id)} - ${monthLabel}`, buildProducerLineBusinessKey(received.kind, id, timeInfo, hamletId));
+      }
+      const unpaid = plan.chargeUnpaid.get('premises_rent') ?? 0;
+      if (unpaid > 0) {
+        await this.#recordPayable({ kind: 'premises_rent', debtorId: id, accountKind: null, creditorId: owner.id, amount: unpaid / 100, time, timeInfo, hamletId, description: `${LINE_LABELS.premises_rent_paid} ${nameOf(id)} non payé - ${monthLabel}` });
+        await this.#recordReceivable({ ownerId: owner.id, businessAccount: owner.businessAccount, debtorId: id, amount: unpaid / 100, time, timeInfo, hamletId, description: `${LINE_LABELS.premises_rent_paid} ${nameOf(id)} à encaisser - ${monthLabel}` });
+      }
+    }
+    return plan.left;
+  }
+
+  /**
+   * A company's debt paid off, in whole or in part: the line of money against the debt account, and what the creditor receives (the house of the workers,
+   * the city's social security or treasury, the owner).
+   */
+  async #recordDebtPayment({ debt, amount, owner, time, timeInfo, hamletId, monthLabel, nameOf }) {
+    const settlement = PAYABLE_KINDS[debt.kind].settlement;
+    const creditorKey = debt.creditorId ?? 'city';
+    const write = (line, description) => this.#record(line, {
+      time,
+      key: buildProducerLineBusinessKey(line.kind, `${debt.debtorId}:${creditorKey}`, timeInfo, hamletId),
+      description,
+      buildingInstanceId: debt.debtorId,
+      timeInfo,
+    });
+    const to = debt.creditorId ? ` → ${nameOf(debt.creditorId)}` : '';
+    await write({ kind: settlement, amount, holder: debt.debtorId, counterparty: debt.creditorId, accountKind: debt.accountKind }, `${LINE_LABELS[settlement]} ${nameOf(debt.debtorId)}${to} - ${monthLabel}`);
+    const credit = {
+      wage: { kind: 'household_wage', amount, holder: debt.creditorId, counterparty: debt.debtorId, accountKind: PERSONAL_ACCOUNT },
+      contribution: { kind: 'social_contribution', amount, holder: null, counterparty: debt.debtorId },
+      corporate_tax: { kind: 'corporate_tax_revenue', amount, holder: null, counterparty: null },
+      premises_rent: { kind: 'premises_rent_debt_received', amount, holder: debt.creditorId, counterparty: debt.debtorId, accountKind: owner?.businessAccount },
+    }[debt.kind];
+    await write(credit, `${LINE_LABELS[credit.kind]} de ${nameOf(debt.debtorId)} - ${monthLabel}`);
+  }
+
+  /**
+   * The charge a company could not pay, booked against what it owes: an opération diverse on its account, to the one it is owed to.
+   * @param {{ kind: string, debtorId: string, accountKind: string | null, creditorId: string | null, amount: number, time: number, timeInfo: object, hamletId: string, description: string }} debt
+   */
+  async #recordPayable({ kind, debtorId, accountKind, creditorId, amount, time, timeInfo, hamletId, description }) {
+    const type = PAYABLE_KINDS[kind].payable;
+    const result = await this.deps.recordLedgerEntry({
+      turn: time,
+      type,
+      amount,
+      description: `[OD] ${description}`,
+      businessKey: `${type}:${hamletId}:${debtorId}:${creditorId ?? 'city'}:${timeInfo.year}:${timeInfo.monthIndex}`,
+      buildingInstanceId: debtorId,
+      accountBuildingId: debtorId,
+      accountKind,
+      counterpartyBuildingId: creditorId,
+    });
+    if (!result.recorded && result.reason !== 'duplicate_business_key') throw new Error(`[producer] the ${type} line "${description}" was not recorded: ${result.reason}`);
+  }
+
+  /** The rent of the premises the owner is owed and has not received: an opération diverse on its account (an income against a receivable). */
+  async #recordReceivable({ ownerId, businessAccount, debtorId, amount, time, timeInfo, hamletId, description }) {
+    const result = await this.deps.recordLedgerEntry({
+      turn: time,
+      type: 'od_receivable_premises_rent',
+      amount,
+      description: `[OD] ${description}`,
+      businessKey: `od_receivable_premises_rent:${hamletId}:${debtorId}:${timeInfo.year}:${timeInfo.monthIndex}`,
+      buildingInstanceId: debtorId,
+      accountBuildingId: ownerId,
+      accountKind: businessAccount,
+      counterpartyBuildingId: debtorId,
+    });
+    if (!result.recorded && result.reason !== 'duplicate_business_key') throw new Error(`[producer] the premises rent receivable "${description}" was not recorded: ${result.reason}`);
   }
 
   /**

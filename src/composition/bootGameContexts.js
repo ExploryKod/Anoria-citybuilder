@@ -47,6 +47,8 @@ export function bootGameContexts() {
     getLabourMarket: () => employment.getLabourMarket(),
     // A service is billed at the price its seller sold it at (the supply's price book, built after the accounting: read at call time).
     getSellingPrice: (building, category, period) => supply.sellingPriceOf(building, category, period),
+    // What a company's stock is worth at cost, for its balance sheet.
+    valueStock: (buildingId, period) => supply.valueStockOf(buildingId, period),
     // The shelves' prices, for the cost of living.
     listSellingPrices: (period) => supply.listSellingPrices(period),
     listServicePrices: (period) => supply.listServicePrices(period),

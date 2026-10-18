@@ -30,6 +30,20 @@ export function houseEnterprises(houseType) {
 }
 
 /**
+ * The share of a house set aside for its business, a fraction: the `premisesShare` of the enterprise that makes and sells goods (see the catalog), or
+ * 0 for a house with no such business (the administrators'). A business that declares no share is an error: its rent could not be split from the home's.
+ * @param {string} houseType
+ * @returns {number}
+ */
+export function premisesShareOf(houseType) {
+  const group = getBuildingDefinition(houseType)?.residentialGroup;
+  const business = SOCIAL_CATEGORY[group]?.enterprises?.find((enterprise) => enterprise.activity === 'recipes');
+  if (!business) return 0;
+  if (!(business.premisesShare >= 0 && business.premisesShare < 1)) throw new Error(`[premises] the "${business.id}" business of category "${group}" must declare a premisesShare (a fraction below 1), got ${business.premisesShare}`);
+  return business.premisesShare;
+}
+
+/**
  * The enterprise of a house that does an activity (`recipes`: makes and sells goods, `rental`: lets the houses): the one its money is booked on.
  * A house with none, or with several that do the same, is an error: the line would not know whose it is.
  * @param {string} houseType

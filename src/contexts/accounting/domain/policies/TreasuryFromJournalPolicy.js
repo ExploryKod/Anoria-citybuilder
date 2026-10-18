@@ -29,7 +29,7 @@ export function moneyDirectionOf(entry) {
   if (type === 'year_closing') return 'closing';
   if (isInformativeJournalType(type)) return null;
   if (
-    type === 'capital_funds' || type === 'payroll_tax' || type === 'income_tax_refund' || type === 'citizen_tax' || type === 'vat' || type === 'public_wage' || type === 'household_benefit' ||
+    type === 'capital_funds' || type === 'company_capital_received' || type === 'payroll_tax' || type === 'income_tax_refund' || type === 'citizen_tax' || type === 'vat' || type === 'public_wage' || type === 'household_benefit' ||
     type === 'producer_revenue' || type === 'corporate_tax_revenue' || type === 'service_sales' || type === 'service_subsidy_received' || type === 'subsidy_companies_received' || type === 'subsidy_housing_received' || type === 'social_contribution' || type === 'household_participation' || type === 'household_dividend' || type === 'household_wage' || type === 'loan_capital' || type === 'construction_refund' || type.startsWith('export_') || type.startsWith('customs_import_') || type.startsWith('abroad_sale_') ||
     // The lender's own mirror of a loan (see RecordLoanCapitalIncome.js etc.): interest and principal arriving at
     // its account, distinct types from the city's own loan_interest/loan_repayment so deriveLoanPortfolio (which
@@ -40,12 +40,12 @@ export function moneyDirectionOf(entry) {
     // The bank's own mirror of a deposit arriving.
     type === 'deposit_received' ||
     // The rent a house pays to the mayor's house: it arrives at the mayor's house's business account.
-    type === 'rent_received'
+    type === 'rent_received' || type === 'premises_rent_received' || type === 'premises_rent_debt_received'
   ) {
     return 'credit';
   }
   if (
-    type === 'maintenance' || type === 'construction' || type === 'salary' ||
+    type === 'maintenance' || type === 'construction' || type === 'company_capital_paid' || type === 'salary' ||
     type === 'unemployment_benefit' || type === 'loan_interest' || type === 'loan_repayment' ||
     type === 'exceptional_expenses' || type === 'commercial_route' || type === 'contribution' ||
     type === 'service_subsidy' ||
@@ -58,7 +58,9 @@ export function moneyDirectionOf(entry) {
     // The bank's own mirror of a withdrawal/interest payment leaving its account.
     type === 'withdrawal_paid' || type === 'deposit_interest_paid' ||
     // The rent leaving a house's personal account.
-    type === 'rent_paid' ||
+    type === 'rent_paid' || type === 'premises_rent_paid' ||
+    // The debts a company paid off: wages, contributions, tax, rent of its premises.
+    type === 'wage_debt_paid' || type === 'contribution_debt_paid' || type === 'corporate_tax_debt_paid' || type === 'premises_rent_debt_paid' ||
     type.startsWith('import_') || type.startsWith('freight_') || type.startsWith('duty_paid_')
   ) {
     return 'debit';
@@ -137,6 +139,11 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
     }
 
     figures.funds -= amount;
+    // The capital the city pays a company is an investment of the city, like a construction: it is not a running expense.
+    if (type === 'company_capital_paid') {
+      figures.totalInvestments += amount;
+      continue;
+    }
     if (type === 'construction') {
       if (isBuildingInvestment(description, BUILDING_INVESTMENT_MARKERS)) {
         figures.totalInvestments += amount;
@@ -146,10 +153,11 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
       continue;
     }
     figures.expenses += amount;
-    if (today && (type === 'salary' || type === 'unemployment_benefit' || type === 'maintenance' || type.startsWith('import_') || type.startsWith('freight_') || type.startsWith('duty_paid_'))) {
+    // The city's upkeep of the buildings it does not run itself is the rent it pays their owner.
+    if (today && (type === 'salary' || type === 'unemployment_benefit' || type === 'maintenance' || type === 'premises_rent_paid' || type.startsWith('import_') || type.startsWith('freight_') || type.startsWith('duty_paid_'))) {
       figures.dailyExpenses += amount;
     }
-    if (type === 'maintenance') figures.totalBuildingMaintenance += amount;
+    if (type === 'maintenance' || type === 'premises_rent_paid') figures.totalBuildingMaintenance += amount;
     if (type === 'salary') figures.totalSalaries += amount;
     if (type === 'unemployment_benefit') figures.totalUnemploymentBenefits += amount;
     if (type === 'loan_interest') {

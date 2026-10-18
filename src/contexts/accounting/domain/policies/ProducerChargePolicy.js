@@ -1,4 +1,5 @@
 import { PERSONAL_ACCOUNT } from './AccountKeyPolicy.js';
+import { isRoadType } from '../../../../shared/building-catalog/roadQueries.js';
 import { getResourceRoles } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { resolveBuildingKind, BUILDING_KIND_HOUSE } from '../../../../shared/building-identity/index.js';
@@ -173,7 +174,7 @@ export function employeeContributionLines({ houseId, wagesReceived, rate }) {
  * the line says so. Any other non-lucrative building (a road) has no account: its upkeep is the city's, as the subsidy of public buildings.
  * A line of zero is not written. Its corporate tax is not here: it is read off the company's own statement once these lines are written
  * (`corporateTaxDueOf`).
- * @param {{ id: string, type: string, maintenanceCost: number, houseSubsidyRate?: number, owner?: { id: string, businessAccount: string } | null }} building
+ * @param {{ id: string, type: string, maintenanceCost: number, houseSubsidyRate?: number, owner?: { id: string, businessAccount: string, rentMargin: number } | null }} building
  *   `houseSubsidyRate`: the hamlet's share of a house's upkeep, a fraction; `owner` (null when none stands): the house that owns the houses and the kind of
  *   its business account; both must be given for a house
  * @returns {ChargeLine[]}
@@ -203,6 +204,23 @@ export function buildingChargeLines({ id, type, maintenanceCost, houseSubsidyRat
   const subsidyPercent = lucrative ? COMPANY_MAINTENANCE_SUBSIDY_PERCENT : HOUSING_MAINTENANCE_SUBSIDY_PERCENT;
   const subsidy = centimes((maintenanceCost * subsidyPercent) / 100);
   const ownUpkeep = centimes(maintenanceCost - subsidy);
+
+  // The owner holds every building (the property company of the mayor's house): it books the upkeep, and the operator (a company; the hamlet for
+  // a building nobody runs) pays it a rent for the premises. With no owner standing, the operator bears the upkeep itself, as before. The roads are the
+  // hamlet's own, not the owner's: their upkeep stays the city's.
+  if (owner && !isRoadType(type)) {
+    if (!(owner.rentMargin >= 0)) throw new Error(`[maintenance] the owner of building ${id} must give its rent margin, got ${owner.rentMargin}`);
+    const rent = centimes(maintenanceCost * (1 + owner.rentMargin));
+    const operatorId = lucrative ? id : null;
+    add('premises_rent_paid', rent, operatorId);
+    add('premises_rent_received', rent, owner.id, owner.businessAccount);
+    add('maintenance', maintenanceCost, owner.id, owner.businessAccount);
+    if (lucrative) {
+      add('subsidy_companies_received', subsidy, id);
+      add('subsidy_companies', subsidy, null);
+    }
+    return lines;
+  }
 
   if (lucrative) {
     // The company books its whole upkeep and, apart, the share the city pays it back: its statement shows what the building really

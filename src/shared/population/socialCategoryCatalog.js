@@ -7,7 +7,7 @@
 const TIER_MAX_POPULATION = Object.freeze({ 1: 6, 2: 12, 3: 18, 4: 24, 5: 30, 6: 36 });
 
 /** The business of a house of the three working categories: a cooperative that makes and sells goods (their `activityRecipe`s). */
-const COOPERATIVE_ENTERPRISES = Object.freeze([Object.freeze({ id: 'cooperative', label: 'Coopérative', activity: 'recipes' })]);
+const COOPERATIVE_ENTERPRISES = Object.freeze([Object.freeze({ id: 'cooperative', label: 'Coopérative', activity: 'recipes', premisesShare: 0.3 })]);
 
 /** The city's administrators (the mayor's house): six, whatever the tier. */
 const ADMINISTRATORS_MAX = 6;
@@ -78,7 +78,9 @@ const WAREHOUSE_ACCESS = Object.freeze({ kind: 'activityAccess' });
  *     assignment is skill-based.
  *   - `enterprises`: the legal forms of the businesses the houses of this category run, shown as the pills of the
  *     house's Enterprises tab: `{ id, label, activity }`, `activity` being what the form does (`recipes`: makes and sells goods,
- *     `rental`: lets the houses to the other houses). The one shown first is the only one, or the one flagged `default: true`
+ *     `rental`: lets the houses to the other houses). A `recipes` form also declares its `premisesShare`: the share of the house
+ *     (a fraction of its upkeep) set aside for its activity, which the business rents from the owner apart from the home's rent.
+ *     The one shown first is the only one, or the one flagged `default: true`
  *     (see houseEnterprises in workforceQueries.js: several without a default is an error).
  *
  * Data only — no functions that compute or decide anything, no imports from

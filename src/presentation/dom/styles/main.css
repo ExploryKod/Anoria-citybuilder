@@ -2452,6 +2452,74 @@ button.building-info-metric-card[aria-pressed="true"] {
     color: #78909c;
 }
 
+.account-ledger-table {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.account-ledger-amount {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.account-ledger-row--total td {
+    font-weight: 700;
+    border-top: 2px solid #cfd8dc;
+}
+
+.account-ledger-account {
+    margin-bottom: 8px;
+}
+
+.account-ledger-account summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.account-ledger-balance {
+    margin-left: 12px;
+    font-weight: 400;
+    color: #78909c;
+}
+
+.balance-sheet-table {
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.balance-sheet-table th[scope="row"] {
+    font-weight: 400;
+    text-align: left;
+}
+
+.balance-sheet-amount {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.balance-sheet-row--detail th {
+    padding-left: 24px;
+    font-size: 12px;
+    color: #78909c;
+}
+
+.balance-sheet-row--detail .balance-sheet-amount {
+    font-size: 12px;
+    color: #78909c;
+}
+
+.balance-sheet-row--subtotal th,
+.balance-sheet-row--subtotal td,
+.balance-sheet-row--total th,
+.balance-sheet-row--total td {
+    font-weight: 700;
+}
+
+.balance-sheet-row--total {
+    border-top: 2px solid #cfd8dc;
+}
+
 .building-finance-deposit-controls {
     display: flex;
     gap: 6px;

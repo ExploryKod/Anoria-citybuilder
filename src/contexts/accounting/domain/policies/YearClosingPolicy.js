@@ -8,6 +8,10 @@
  */
 import { moneyDirectionOf } from './TreasuryFromJournalPolicy.js';
 import { accountKeyOf } from './AccountKeyPolicy.js';
+import { postingsOf } from './AccountLedgerPolicy.js';
+import { buildingTypeOfConstruction } from './MonthClosingPolicy.js';
+import { isOperationDiverse } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
+import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
 
 export const YEAR_CLOSING_TYPE = 'year_closing';
 
@@ -49,13 +53,35 @@ export function buildYearClosingLine({ year, hamletId, accountBuildingId, accoun
   let net = 0;
   const byType = {};
   const months = new Set();
+  // What the balance sheet needs of the year (in centimes while it is summed): each balance-sheet account's net (debit minus credit), the year's result
+  // (the charges and products, credit minus debit), and what each building cost to build (only the city's account holds the constructions).
+  const accountNets = new Map();
+  const assetNets = new Map();
+  let resultCentimes = 0;
+  const constructions = new Map();
   let lastTurn = -Infinity;
   for (const line of lines) {
     const direction = moneyDirectionOf(line);
     if (direction === 'credit') net += line.amount;
     else if (direction === 'debit') net -= line.amount;
-    if (direction !== null) {
+    if (direction !== null || isOperationDiverse(line.type)) {
       byType[line.type] = (byType[line.type] ?? 0) + line.amount;
+      for (const leg of postingsOf(line)) {
+        const legNet = leg.debit - leg.credit;
+        if (leg.account[0] === '6' || leg.account[0] === '7') resultCentimes -= legNet;
+        else accountNets.set(leg.account, (accountNets.get(leg.account) ?? 0) + legNet);
+        // The fixed assets the books carry, per building: the owner's closing needs to know which buildings are already in its books.
+        if (leg.account === '213' && line.buildingInstanceId) assetNets.set(line.buildingInstanceId, (assetNets.get(line.buildingInstanceId) ?? 0) + legNet);
+      }
+    }
+    if ((line.type === 'construction' || line.type === 'construction_refund') && line.buildingInstanceId) {
+      const built = constructions.get(line.buildingInstanceId) ?? { centimes: 0, builtKey: null, type: null };
+      built.centimes += (line.type === 'construction' ? 1 : -1) * Math.round(line.amount * 100);
+      if (line.type === 'construction' && built.builtKey === null) {
+        built.builtKey = line.year * MONTHS_PER_YEAR + (line.month - 1);
+        built.type = buildingTypeOfConstruction(line);
+      }
+      constructions.set(line.buildingInstanceId, built);
     }
     const timeInfo = getTimeInfo(line.turn);
     if (!timeInfo) {
@@ -81,6 +107,15 @@ export function buildYearClosingLine({ year, hamletId, accountBuildingId, accoun
       monthCount: months.size,
       lineCount: lines.length,
       byType,
+      // The carried balances (à-nouveaux): a purge keeps what the balance sheet reads, so it still balances once the lines are gone.
+      balances: Object.fromEntries([...accountNets].filter(([, centimes]) => centimes !== 0).map(([account, centimes]) => [account, centimes / 100])),
+      result: resultCentimes / 100,
+      assets: Object.fromEntries([...assetNets].filter(([, centimes]) => centimes !== 0).map(([id, centimes]) => [id, centimes / 100])),
+      constructions: Object.fromEntries(
+        [...constructions]
+          .filter(([, built]) => built.builtKey !== null)
+          .map(([id, built]) => [id, { cost: built.centimes / 100, builtKey: built.builtKey, type: built.type }]),
+      ),
     },
   };
 }

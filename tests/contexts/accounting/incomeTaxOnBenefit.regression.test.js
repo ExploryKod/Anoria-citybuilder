@@ -16,6 +16,8 @@ function settle({ pop, salaried = 0, minimumWage, administratorStipend = 0, unem
     getServiceSubsidies: async () => ({}),
     getServicePrice: () => 0,
     fundsOf: async () => 0,
+    companyFundsOf: async () => 1e9, // a company that can pay everything: these tests are not about debts
+    getJournalEntries: async () => [],
     getVatRates: async () => ({}),
     sumHouseSales: async () => [],
     sumBankInterestByBuilding: async () => [],

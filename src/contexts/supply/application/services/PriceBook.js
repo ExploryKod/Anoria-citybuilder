@@ -101,6 +101,26 @@ export class PriceBook {
   }
 
   /**
+   * What a unit of a good in a building's stock cost it, for the balance sheet: a producer's standard cost (what it costs to make), a warehouse's or a
+   * market's average cost of its deliveries. No margin: a stock is valued at cost, never at its selling price.
+   * @param {{ id: string, type: string }} building
+   * @param {string} category a good (not a service)
+   * @param {{ year?: number, monthIndex?: number }} period the month whose costs are used (prepared with `ensure`)
+   * @returns {number} the unit cost HT, in euros
+   */
+  stockUnitCost(building, category, period) {
+    const state = this.months.get(monthKeyOf(period));
+    if (!state) throw new Error(`[supply] the price book was asked ${building.type}'s stock cost for a month that was not prepared (ensure): year ${period.year}, month ${period.monthIndex}`);
+    const stage = stageOfBuildingType(building.type);
+    const makesIt = getResourceRoles(building.type).some((entry) => entry.role === 'producer' && entry.categories.includes(category));
+    if (stage === 'producer' || makesIt) {
+      const cost = getResourceBaseValue(category) > 0 ? this.#standardCost(state, building.type, category) : null;
+      return cost === null ? unitPriceAtStage('producer', category) : cost;
+    }
+    return state.averageCosts.get(`${building.id}|${category}`) ?? openingUnitCost(stage, category);
+  }
+
+  /**
    * @param {{ id: string, type: string }} building the seller
    * @param {string} category the good or service
    * @param {{ year?: number, monthIndex?: number }} period the month whose price is asked (it must have been prepared with `ensure`)
