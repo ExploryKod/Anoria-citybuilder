@@ -67,6 +67,15 @@ export const WORLD_CITIES = Object.freeze([
     description: 'Village isolé.',
   },
   {
+    id: 'piceta',
+    name: 'Piceta',
+    category: WORLD_CITY_CATEGORIES.far,
+    x: 46,
+    y: 16,
+    labelAnchor: 'top',
+    description: "Cité minière lointaine, qui vend de l'uranium.",
+  },
+  {
     id: 'vexlor',
     name: 'Vexlor',
     category: WORLD_CITY_CATEGORIES.enemy,
@@ -85,6 +94,7 @@ export const WORLD_CITY_CONNECTIONS = Object.freeze([
   { from: 'anoria', to: 'olivea', kind: 'inter-city' },
   { from: 'anoria', to: 'silvania', kind: 'inter-city' },
   { from: 'anoria', to: 'maris', kind: 'inter-city' },
+  { from: 'anoria', to: 'piceta', kind: 'inter-city' },
   { from: 'olivea', to: 'silvania', kind: 'inter-city' },
 ]);
 

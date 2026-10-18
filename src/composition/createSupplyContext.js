@@ -25,6 +25,7 @@ import { RunCityResourceCycle } from '../contexts/supply/application/commands/pr
 import { RunMonthlyResourceCycle } from '../contexts/supply/application/workflows/RunMonthlyResourceCycle.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
 import { TRADE_CATALOG } from '../shared/trade-catalog/TradeCatalog.js';
+import { lotOrigin } from '../contexts/supply/domain/policies/HubLotsPolicy.js';
 import { getWorldCityById } from '../contexts/geography/domain/catalogs/WorldCityCatalog.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { syncRemovedBuilding } from './parcelsOps.js';
@@ -34,6 +35,8 @@ import { findNaturalSourcesInRange } from '../contexts/supply/domain/policies/Re
 import { SupplyTraceability } from '../contexts/supply/infrastructure/presentation/SupplyTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { DescribeActivitySupplyAccess } from '../contexts/supply/application/queries/DescribeActivitySupplyAccess.js';
+import { DescribeFoodForecast } from '../contexts/supply/application/queries/DescribeFoodForecast.js';
+import { DescribeShelfLife } from '../contexts/supply/application/queries/DescribeShelfLife.js';
 import { ListSupplyMapBuildings } from '../contexts/supply/application/queries/ListSupplyMapBuildings.js';
 import { ListHubSupplyViews } from '../contexts/supply/application/queries/ListHubSupplyViews.js';
 import { ListSupplyStockSnapshots } from '../contexts/supply/application/queries/ListSupplyStockSnapshots.js';
@@ -44,12 +47,15 @@ import {
   tryAdjustHubStoragePercent,
 } from '../contexts/supply/domain/policies/HubStorageOrdersPolicy.js';
 import { getCategoriesForRole } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { PriceBook } from '../contexts/supply/application/services/PriceBook.js';
+import { getServiceCategories } from '../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { getSharedEventBus } from './sharedEventBus.js';
 import {
   hasResourceRole,
   getPlacementRequirements,
   getAllCategoriesForRole,
   getMaxStockForBuilding,
+  listRoleEntries,
 } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
 
 /**
@@ -70,14 +76,16 @@ export function createSupplyContext({
   supplyBuildingRepository,
   supplyTraceabilityRepository,
   getTimeInfo: getTimeInfoDep,
+  consumerMoney,
 } = {}) {
+  if (!consumerMoney) throw new Error('[supply] createSupplyContext needs consumerMoney: the consumers\' accounts (fundsOf, recordPurchases)');
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
   // Goods that travel the production → hub → market chain (what the citizens eat that a hub
   // stores) — NOT every producible good (household gathering never enters a hub) and not every
   // hub's goods (a goods warehouse has its own, and no market draws on it).
   const producerCategories = getSuppliedCategories();
   // Every category any distributor covers — food (has a producer/hub leg)
-  // and any hub-less service like Chapel's 'faith' (none) alike. Kept
+  // and any hub-less service like the water tank's 'water' (none) alike. Kept
   // separate from producerCategories: the hub-link plumbing below
   // (assign/detach/rebalance) is specifically about the production→hub
   // chain, which a hub-less service never enters.
@@ -122,8 +130,15 @@ export function createSupplyContext({
   const cascadeDestroyHubDistributors = new CascadeDestroyHubDistributors(
     supplyBuildingRepositoryImpl
   );
+  // Every seller's price is built on what its stock cost (see PriceBook): the traceability logs the transfers at it, the houses pay it.
+  const priceBook = new PriceBook({
+    sumInflowCosts: (range) => supplyTraceabilityRepositoryImpl.sumInflowCosts(range),
+    loadProducerCosting: () => consumerMoney.producerCosting(),
+  });
   const distributeResourceToConsumers = new DistributeResourceToConsumers(
-    supplyBuildingRepositoryImpl
+    supplyBuildingRepositoryImpl,
+    consumerMoney,
+    priceBook
   );
   const collectResourceToHub = new CollectResourceToHub(
     supplyBuildingRepositoryImpl,
@@ -148,8 +163,19 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl
   );
   // A used-up natural resource (a felled tree) leaves the game like any demolished building.
+  // Which deals the merchants may make is the trade context's to say, and it is built after this one: it registers
+  // its answer through `setOpenDealCheck`. Asked before that, the gate throws (see ProduceResource).
+  let openDealCheck = null;
+  const dealGate = {
+    isOpen: (category) => {
+      if (!openDealCheck) throw new Error('[supply] the open-deal check was never set: the trade context must register it');
+      return openDealCheck(category);
+    },
+  };
   const produceResource = new ProduceResource(supplyBuildingRepositoryImpl, {
     hubServing,
+    dealGate,
+    recordInputPurchase: (purchase) => traceability.recordInputPurchase(purchase),
     removeBuilding: (params) => syncRemovedBuilding(params),
   });
   const runProducerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, produceResource);
@@ -178,6 +204,7 @@ export function createSupplyContext({
   const traceability = new SupplyTraceability({
     supplyTraceabilityRepository: supplyTraceabilityRepositoryImpl,
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
+    priceBook,
   });
   const runCityResourceCycle = new RunCityResourceCycle(
     supplyBuildingRepositoryImpl,
@@ -194,12 +221,42 @@ export function createSupplyContext({
           distributorId,
           transfers.map((t) => ({ hubId: t.sourceId, category: t.category, amount: t.amount }))
         ),
-      onDistribute: (distributorId, transfers, timeInfo) =>
-        traceability.recordDistributorToConsumerTransfers(
+      onDistribute: async (distributorId, transfers, timeInfo) => {
+        await traceability.recordDistributorToConsumerTransfers(
           timeInfo,
           distributorId,
           transfers.map((t) => ({ houseId: t.consumerId, category: t.category, amount: t.amount }))
-        ),
+        );
+        // Each unit of a GOOD is paid when it is delivered: one purchase per house and good, at the chain's
+        // final price (TTC, extracted here). A service is not a good: it is a prestation, priced HT with the
+        // VAT added on top, and settled once a month in arrears (subsidy, insolvency) by SettleProducerCharges
+        // from sumServiceFlows — never here, or it would be billed twice (this instant TTC-shaped line, then
+        // the arrears service_purchase line for the same delivery).
+        const serviceCategories = getServiceCategories();
+        const goodsTransfers = transfers.filter((t) => !serviceCategories.includes(t.category));
+        if (goodsTransfers.length === 0) return;
+        const distributor = await supplyBuildingRepositoryImpl.findById(distributorId);
+        if (!distributor) throw new Error(`[supply] distributor ${distributorId} of a delivery is not in the city`);
+        const purchases = new Map();
+        for (const transfer of goodsTransfers) {
+          const key = `${transfer.consumerId}>${transfer.category}`;
+          const line = purchases.get(key) ?? {
+            houseId: transfer.consumerId,
+            category: transfer.category,
+            units: 0,
+            unitPrice: priceBook.sellingPrice(distributor, transfer.category, timeInfo),
+          };
+          line.units += transfer.amount;
+          purchases.set(key, line);
+        }
+        await consumerMoney.recordPurchases({
+          turn: timeInfo?.turn ?? timeInfo?.days ?? 0,
+          timeInfo,
+          distributorId,
+          distributorType: distributor.type,
+          purchases: [...purchases.values()],
+        });
+      },
     }
   );
   const runMonthlyResourceCycle = new RunMonthlyResourceCycle(
@@ -209,6 +266,7 @@ export function createSupplyContext({
     runHubSurplusCycle,
     runConsumerCommand,
     traceability,
+    { supplyBuildingRepository: supplyBuildingRepositoryImpl, recordSpoilage: (loss) => traceability.recordSpoilage(loss) },
     { categories: distributionCategories, reachCategories: producerCategories }
   );
   const getBuildingSupplyViewQuery = new GetBuildingSupplyView(
@@ -228,8 +286,32 @@ export function createSupplyContext({
     listExternalClients: listExternalClientsForCategory,
   });
   const describeActivitySupplyAccessQuery = new DescribeActivitySupplyAccess(supplyBuildingRepositoryImpl);
+  const describeFoodForecastQuery = new DescribeFoodForecast(supplyBuildingRepositoryImpl);
+  const describeShelfLifeQuery = new DescribeShelfLife(supplyBuildingRepositoryImpl, {
+    sumShelfFlowsOf: (buildingId, range) => supplyTraceabilityRepositoryImpl.sumShelfFlowsOf(buildingId, range),
+  });
+
+  // What each seller of the hamlet charges per unit this month: its goods, or its services.
+  const listPrices = async (period, { services: wantServices }) => {
+    await priceBook.ensure(period);
+    const serviceCategories = getServiceCategories();
+    const prices = [];
+    for (const role of ['producer', 'hub', 'distributor']) {
+      for (const building of await supplyBuildingRepositoryImpl.findByResourceRole(role)) {
+        for (const category of getCategoriesForRole(building.type, role)) {
+          if (serviceCategories.includes(category) !== wantServices) continue;
+          prices.push({ stage: role, buildingId: building.id, category, price: priceBook.sellingPrice(building, category, period) });
+        }
+      }
+    }
+    return prices;
+  };
 
   return {
+    /** @param {(dealCategory: string) => Promise<boolean>} check whether the merchants may make this deal now */
+    setOpenDealCheck(check) {
+      openDealCheck = check;
+    },
     supplyBuildingRepository: supplyBuildingRepositoryImpl,
     hubServing,
     transferHubToHub,
@@ -328,12 +410,24 @@ export function createSupplyContext({
         buildingRow,
         ...options,
         resolveProducerType: (producerId) => typeById.get(producerId) ?? null,
+        // A lot filed under a trade city (`city:<id>`, see RunMonthlyCityTradeCycle's imports) is told by its name.
+        resolveProducerName: (producerId) => (producerId.startsWith('city:') ? getWorldCityById(producerId.slice('city:'.length))?.name ?? null : null),
       });
     },
 
     /** Structural gaps in a building's own recipe(s) — see DescribeActivitySupplyAccess.js. */
     async describeActivitySupplyAccess(building) {
       return describeActivitySupplyAccessQuery.execute(building);
+    },
+
+    /** What the farms can expect in a year against the citizens' meals and the granaries' room — see DescribeFoodForecast.js. */
+    async describeFoodForecast() {
+      return describeFoodForecastQuery.execute();
+    },
+
+    /** How long the stock of one building has left to live, good by good — see DescribeShelfLife.js. */
+    async describeShelfLife(params) {
+      return describeShelfLifeQuery.execute(params);
     },
 
     async updateHubStorageOrderMode(hubKind, buildingId, productId) {
@@ -422,8 +516,8 @@ export function createSupplyContext({
       return supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, fields);
     },
 
-    async getAllSupplyTraceabilityTransactions(maxAge = null, hamletId = null) {
-      return supplyTraceabilityRepositoryImpl.getAllTransactions(maxAge, hamletId);
+    async getAllSupplyTraceabilityTransactions(hamletId = null) {
+      return supplyTraceabilityRepositoryImpl.getAllTransactions(hamletId);
     },
 
     async getSupplyTraceabilityTransactionsForMonth(turn, month = null) {
@@ -432,10 +526,6 @@ export function createSupplyContext({
 
     async getSupplyTraceabilityTransactionsByMonth(turn) {
       return supplyTraceabilityRepositoryImpl.getTransactionsByMonth(turn);
-    },
-
-    async cleanupOldSupplyTraceabilityTransactions(maxAge = 60) {
-      return supplyTraceabilityRepositoryImpl.cleanupOldTransactions(maxAge);
     },
 
     /** A building was placed / demolished — kept in the city's history. */
@@ -458,6 +548,74 @@ export function createSupplyContext({
       return traceability.recordFamineDeaths(timeInfo, deaths);
     },
 
+    /** The merchants' sale of an imported good to a warehouse — see SupplyTraceability.recordImportDelivery. */
+    async recordImportDelivery(params) {
+      return traceability.recordImportDelivery(params);
+    },
+
+    /**
+     * The unit price (HT) a building sells a good or a service at in a month: a producer at its cost plus its margin, a warehouse and a market at
+     * the average cost of their deliveries plus theirs (see PriceBook).
+     * @param {{ id: string, type: string }} building
+     * @param {string} category
+     * @param {{ year?: number, monthIndex?: number }} period
+     * @returns {Promise<number>}
+     */
+    async sellingPriceOf(building, category, period) {
+      await priceBook.ensure(period);
+      return priceBook.sellingPrice(building, category, period);
+    },
+
+    /**
+     * What a building's stock is worth at cost, good by good (a service is not a stock): the units it holds times what a unit cost it (see PriceBook.stockUnitCost).
+     * @param {string} buildingId
+     * @param {{ year?: number, monthIndex?: number }} period
+     * @returns {Promise<Array<{ category: string, amount: number, unitCost: number, value: number }>>}
+     */
+    async valueStockOf(buildingId, period) {
+      const building = await supplyBuildingRepositoryImpl.findById(buildingId);
+      if (!building) throw new Error(`[supply] building ${buildingId} is not in the hamlet: its stock cannot be valued`);
+      await priceBook.ensure(period);
+      const services = new Set(getServiceCategories());
+      const seen = new Set();
+      const items = [];
+      for (const role of ['producer', 'hub', 'distributor']) {
+        for (const entry of listRoleEntries(building.type, role)) {
+          for (const category of entry.categories) {
+            if (seen.has(category) || services.has(category)) continue;
+            seen.add(category);
+            const amount = building.stocks?.[category] ?? 0;
+            if (!(amount > 0)) continue;
+            const unitCost = priceBook.stockUnitCost({ id: building.id, type: building.type }, category, period);
+            items.push({ category, amount, unitCost, value: Math.round(amount * unitCost * 100) / 100 });
+          }
+        }
+      }
+      return items;
+    },
+
+    /**
+     * What every producer, warehouse and market of the hamlet sells each of its goods at this month (HT), for the price panel.
+     * @param {{ year?: number, monthIndex?: number }} period
+     * @returns {Promise<Array<{ stage: 'producer' | 'hub' | 'distributor', buildingId: string, category: string, price: number }>>}
+     */
+    async listSellingPrices(period) {
+      return listPrices(period, { services: false });
+    },
+
+    /**
+     * What every seller of a service (a tank, a plant, a doctor's, a fire station...) charges per unit this month (HT, before the city's subsidy
+     * and the VAT): the services `listSellingPrices` leaves out.
+     * @param {{ year?: number, monthIndex?: number }} period
+     * @returns {Promise<Array<{ stage: 'producer' | 'hub' | 'distributor', buildingId: string, category: string, price: number }>>}
+     */
+    async listServicePrices(period) {
+      return listPrices(period, { services: true });
+    },
+
+    /** The building that made the goods of a hub's lot (a lot key), or null when it has none. */
+    producerOfLot: (lotKey) => lotOrigin(lotKey).producerId ?? null,
+
     /** A merchant city-trade sale — records a merchant_sale traceability entry. */
     async recordMerchantSale(params) {
       return traceability.recordMerchantSale(params);
@@ -473,9 +631,10 @@ export function createSupplyContext({
 /** @type {ReturnType<typeof createSupplyContext> | null} */
 let sharedSupply = null;
 
-export function getOrCreateSupplyContext() {
+/** @param {{ consumerMoney: object }} deps the consumers' accounts, from the accounting context (see consumerMoneyPort.js) */
+export function getOrCreateSupplyContext(deps) {
   if (!sharedSupply) {
-    sharedSupply = createSupplyContext();
+    sharedSupply = createSupplyContext(deps);
   }
   return sharedSupply;
 }

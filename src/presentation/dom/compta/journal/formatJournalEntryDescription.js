@@ -1,17 +1,12 @@
-/** Strip embedded breakdown JSON from legacy descriptions. */
-export function stripBreakdownMarkup(description) {
-  if (!description) {
-    return '';
-  }
-  return description.replace(/\|BREAKDOWN\|.*?\|BREAKDOWN\|/, '').trim();
-}
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 
 const MONTH_NAMES =
   'Janvier|Février|Mars|Avril|Mai|Juin|Juillet|Août|Septembre|Octobre|Novembre|Décembre';
 
 /** Remove type label prefix already shown in the entry badge. */
 const DESCRIPTION_PREFIX_BY_TYPE = {
-  payroll_tax: /^Impôt sur les salaires(?:\s*\(assiette citoyens\))?\s*-\s*/i,
+  payroll_tax: /^Impôt sur le revenu \(IR\)\s*-\s*/i,
+  vat: /^TVA ventes\s*-\s*/i,
   salary: /^Salaires fonctionnaires\s*-\s*/i,
   unemployment_benefit: /^Salaires chômeurs\s*-\s*/i,
   maintenance: /^Maintenance mensuelle\s*-\s*/i,
@@ -71,7 +66,7 @@ function splitPeriodLabel(text) {
  * @returns {JournalEntryDetail[]} Labeled detail rows (month/year omitted — shown in section headers).
  */
 export function formatJournalEntryDetails(entry) {
-  const raw = stripBreakdownMarkup(entry.description || '');
+  const raw = (entry.description || '').trim();
   if (!raw) {
     return [];
   }
@@ -85,7 +80,7 @@ export function formatJournalEntryDetails(entry) {
       details.push({ label: 'Taux', value: `${rate[1]}%` });
     }
     if (assietteTotal) {
-      details.push({ label: 'Assiette', value: `${assietteTotal[1]}€` });
+      details.push({ label: 'Assiette', value: formatEuro(assietteTotal[1]) });
     }
     if (assietteDetail) {
       details.push({ label: 'Détail assiette', value: assietteDetail[1] });
@@ -115,7 +110,11 @@ export function formatJournalEntryDetails(entry) {
   if (
     entry.type === 'maintenance' ||
     entry.type?.startsWith('import_') ||
-    entry.type?.startsWith('export_')
+    entry.type?.startsWith('export_') ||
+    entry.type?.startsWith('freight_') ||
+    entry.type?.startsWith('duty_paid_') ||
+    entry.type?.startsWith('customs_import_') ||
+    entry.type?.startsWith('abroad_sale_')
   ) {
     return [];
   }

@@ -27,8 +27,8 @@ describe('ledgerBusinessKeys', () => {
   });
 
   test('buildLedgerBusinessKey for citizen_tax is yearly', () => {
-    expect(buildLedgerBusinessKey('citizen_tax', { year: 2, monthIndex: 10 })).toBe(
-      'citizen_tax:2'
+    expect(buildLedgerBusinessKey('citizen_tax', { year: 2, monthIndex: 10 }, 'h1')).toBe(
+      'citizen_tax:h1:2'
     );
   });
 

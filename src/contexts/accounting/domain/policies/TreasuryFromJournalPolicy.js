@@ -1,17 +1,21 @@
 /**
- * The treasury is derived from the journal, the single record of money. Every figure the game shows (balance,
- * income, expenses, totals, daily flows, loans) is folded from the journal lines here, in journal order.
+ * The treasury is derived from the journal, the single record of money. The balance is the balance of the cash account (512) in the
+ * fold of the journal's legs (LegsFold). The other figures the game shows (income, expenses, totals, daily flows, loans) are folded from
+ * the journal lines here, in journal order: they say what the money was for, which the cash account does not.
  *
- * The rules are the ones the treasury mutations applied before: a credit raises the balance, a debit lowers it.
  * An unknown money type throws: a line the policy does not know must never be silently counted or skipped.
  */
-import { isInformativeJournalType } from './JournalEntryClassificationPolicy.js';
+import { isEcriture } from './EntryLegsPolicy.js';
 
-const BUILDING_INVESTMENT_MARKERS = ['Building:', 'building'];
-const REFUND_INVESTMENT_MARKERS = [...BUILDING_INVESTMENT_MARKERS, 'Refund for'];
+/** The cash account of the chart of accounts. */
+const CASH = '512';
+
+/** The words a construction line's description carries when it is a building the city pays for (see PlaceBuildingWithPayment), and what its refund's carries. */
+export const BUILDING_INVESTMENT_MARKERS = ['Building:', 'building'];
+export const REFUND_INVESTMENT_MARKERS = [...BUILDING_INVESTMENT_MARKERS, 'Refund for'];
 
 /** @param {string} description @param {string[]} markers */
-function isBuildingInvestment(description, markers) {
+export function isBuildingInvestment(description, markers) {
   return markers.some((marker) => description.includes(marker));
 }
 
@@ -21,36 +25,26 @@ function productOf(type, prefix) {
 }
 
 /**
+ * Which way the money of a line went, read from the legs the journal booked: the cash account (512) debited is money in, credited is money out. A line with no
+ * leg on the cash (an opération diverse, an informative line) moves no money.
  * @param {object} entry
  * @returns {'credit' | 'debit' | 'closing' | null} null for a line that moves no money; 'closing' is a year's net.
  */
 export function moneyDirectionOf(entry) {
-  const { type } = entry;
-  if (type === 'year_closing') return 'closing';
-  if (isInformativeJournalType(type)) return null;
-  if (
-    type === 'capital_funds' || type === 'payroll_tax' || type === 'citizen_tax' ||
-    type === 'loan_capital' || type === 'construction_refund' || type.startsWith('export_')
-  ) {
-    return 'credit';
-  }
-  if (
-    type === 'maintenance' || type === 'construction' || type === 'salary' ||
-    type === 'unemployment_benefit' || type === 'loan_interest' || type === 'loan_repayment' ||
-    type === 'exceptional_expenses' || type === 'commercial_route' || type === 'contribution' ||
-    type.startsWith('import_')
-  ) {
-    return 'debit';
-  }
-  if (type.startsWith('info_')) return null;
-  throw new Error(`[treasury] journal line of unknown money type "${type}" (turn ${entry.turn})`);
+  if (entry.type === 'year_closing') return 'closing';
+  if (!isEcriture(entry.type)) return null;
+  if (!entry.legs) throw new Error(`[treasury] journal line ${entry.type} (turn ${entry.turn}) carries no legs: it was never booked`);
+  const net = entry.legs.filter((leg) => leg.account === CASH).reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
+  if (net > 0) return 'credit';
+  if (net < 0) return 'debit';
+  return null;
 }
 
 /**
  * @param {Array<object>} entries journal lines, in journal order
  * @param {{ currentTurn: number }} options
  * @returns {{
- *   funds: number, initialFunds: number, income: number, expenses: number, netFlow: number,
+ *   initialFunds: number, income: number, expenses: number, netFlow: number,
  *   dailyIncome: number, dailyExpenses: number, totalTaxes: number, totalSalaries: number,
  *   totalBuildingMaintenance: number, totalInvestments: number, totalUnemploymentBenefits: number,
  *   totalLoanInterest: number, totalLoanInterestExpenses: number, totalLoanRepayments: number,
@@ -59,7 +53,6 @@ export function moneyDirectionOf(entry) {
  */
 export function deriveTreasuryFigures(entries, { currentTurn }) {
   const figures = {
-    funds: 0,
     initialFunds: 0,
     income: 0,
     expenses: 0,
@@ -81,17 +74,13 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
   for (const entry of entries) {
     const direction = moneyDirectionOf(entry);
     if (!direction) continue;
-    if (direction === 'closing') {
-      // A closed year: only its net reaches the funds. Its sub-totals are views, not flows of the treasury.
-      figures.funds += entry.closing.net;
-      continue;
-    }
+    // A closed year carries its balances (the cash among them, read from the fold): its sub-totals are views, not flows of the treasury.
+    if (direction === 'closing') continue;
     const amount = entry.amount;
     const today = entry.turn === currentTurn;
     const { type, description = '' } = entry;
 
     if (direction === 'credit') {
-      figures.funds += amount;
       if (type === 'construction_refund') {
         if (isBuildingInvestment(description, REFUND_INVESTMENT_MARKERS)) {
           figures.totalInvestments = Math.max(0, figures.totalInvestments - amount);
@@ -106,6 +95,7 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
         figures.totalTaxes += amount;
         if (today) figures.dailyIncome += amount;
       }
+      if (type.startsWith('customs_import_') && today) figures.dailyIncome += amount;
       if (type.startsWith('export_')) {
         const product = productOf(type, 'export_');
         figures.totalExports[product] = (figures.totalExports[product] ?? 0) + amount;
@@ -114,7 +104,11 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
       continue;
     }
 
-    figures.funds -= amount;
+    // The capital the city pays a company is an investment of the city, like a construction: it is not a running expense.
+    if (type === 'company_capital_paid') {
+      figures.totalInvestments += amount;
+      continue;
+    }
     if (type === 'construction') {
       if (isBuildingInvestment(description, BUILDING_INVESTMENT_MARKERS)) {
         figures.totalInvestments += amount;
@@ -124,10 +118,11 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
       continue;
     }
     figures.expenses += amount;
-    if (today && (type === 'salary' || type === 'unemployment_benefit' || type === 'maintenance' || type.startsWith('import_'))) {
+    // The city's upkeep of the buildings it does not run itself is the rent it pays their owner.
+    if (today && (type === 'salary' || type === 'unemployment_benefit' || type === 'maintenance' || type === 'premises_rent_paid' || type.startsWith('import_') || type.startsWith('freight_') || type.startsWith('duty_paid_'))) {
       figures.dailyExpenses += amount;
     }
-    if (type === 'maintenance') figures.totalBuildingMaintenance += amount;
+    if (type === 'maintenance' || type === 'premises_rent_paid') figures.totalBuildingMaintenance += amount;
     if (type === 'salary') figures.totalSalaries += amount;
     if (type === 'unemployment_benefit') figures.totalUnemploymentBenefits += amount;
     if (type === 'loan_interest') {

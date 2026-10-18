@@ -159,11 +159,17 @@ export class RunCityResourceCycle {
         category,
         // monthIndex is what PeriodLockPolicy.resolvePeriodKey('month', ...)
         // actually reads (not `month`, the season-relative name) — without
-        // it, every flag-mode service (Chapel's faith, School, Doctor, ...)
+        // it, every flag-mode service (the water tank's water, School, Doctor, ...)
         // falls back to period key 0 forever, so a consumer's periodLock
         // only ever matches in month 0 and looks permanently unserved (or
         // gets demoted right back) every month after.
-        period: { season, month, monthIndex: timeInfo.monthIndex },
+        period: {
+          season,
+          month,
+          monthIndex: timeInfo.monthIndex,
+          year: timeInfo.year,
+          turn: timeInfo?.turn ?? timeInfo?.days ?? 0,
+        },
       });
 
       if (distributeOutcome.distributed) {

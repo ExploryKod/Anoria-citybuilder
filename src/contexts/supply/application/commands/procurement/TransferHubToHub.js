@@ -7,6 +7,7 @@ import {
   addCategoryAmount,
 } from '../../../domain/value-objects/ResourceStock.js';
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
+import { movedAgeBooks } from '../../../domain/policies/StockAgingPolicy.js';
 import { fairShares } from '../../services/RoundRobinDistribution.js';
 import {
   getCategoriesForRole,
@@ -131,9 +132,21 @@ export class TransferHubToHub {
     const desired = fairShares(categories.map((category) => getCategoryAmount(sourceStock, category)), asking);
 
     const transfers = [];
+    // Each unit keeps its age on the way (see StockAgingPolicy.js): the oldest units of the source go first.
+    let sourceBook = source.stockAges;
+    let targetBook = target.stockAges;
     categories.forEach((category, index) => {
       const amount = amounts[index];
       if (amount <= 0) return;
+      const moved = movedAgeBooks({
+        category,
+        amount,
+        turn,
+        from: { book: sourceBook, stock: getCategoryAmount(sourceStock, category) },
+        to: { book: targetBook, stock: getCategoryAmount(targetStock, category) },
+      });
+      sourceBook = moved.from;
+      targetBook = moved.to;
       sourceStock = takeCategoryAmount(sourceStock, category, amount, sourceCategories, sourceTotalKey);
       targetStock = addCategoryAmount(targetStock, category, amount, categories, totalKey);
       transfers.push({ sourceId, category, amount });
@@ -160,6 +173,8 @@ export class TransferHubToHub {
 
     await this.supplyBuildingRepository.saveStocks(sourceId, sourceStock);
     await this.supplyBuildingRepository.saveStocks(targetId, targetStock);
+    if (sourceBook !== source.stockAges) await this.supplyBuildingRepository.updateBuildingFields(sourceId, { stockAges: sourceBook });
+    if (targetBook !== target.stockAges) await this.supplyBuildingRepository.updateBuildingFields(targetId, { stockAges: targetBook });
     // The pace at which the hub is drawn down: what left it this month, all its targets together.
     const previous = source.lastOutflow;
     const sameMonth = previous != null && previous.year === period?.year && previous.monthIndex === period?.monthIndex;

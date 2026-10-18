@@ -4,6 +4,7 @@
  * reset every month, so nothing could move a sale's price.
  */
 
+import { importCapabilities, openRelationRow } from './importCapabilities.js';
 import { describe, test, expect } from '@jest/globals';
 import { RunMonthlyCityTradeCycle } from '../../../src/contexts/geography/application/workflows/RunMonthlyCityTradeCycle.js';
 import { getTradeCatalogEntry } from '../../../src/shared/trade-catalog/TradeCatalog.js';
@@ -11,11 +12,11 @@ import { getResourceBaseValue } from '../../../src/shared/resource-catalog/Resou
 import { takeCategoryAmount } from '../../../src/contexts/supply/domain/value-objects/ResourceStock.js';
 import { getCategoriesForRole, getTotalKeyForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 
-/** Sells `silvania`'s book (baseMultiplier 1.5, the first want) at the given draw and bias; returns its unit price. */
+/** Sells `silvania`'s book (its first want) at the given draw and bias; returns its unit price. */
 async function unitPriceSold({ draw, bias }) {
   const sales = [];
-  const relation = { cityId: 'silvania', status: 'active', demandMultiplier: 1, satisfactionScore: 50, lastOrderMonth: null };
-  const hub = { id: 'hub1', type: 'TradeWarehouse', stocks: { book: 10, goods: 10 } };
+  const relation = openRelationRow({ cityId: 'silvania', demandMultiplier: 1 });
+  const hub = { id: 'hub1', type: 'TradeWarehouse', maxStock: 500, stocks: { dealBook: 10, goods: 10 } };
   const cycle = new RunMonthlyCityTradeCycle({
     cityTradeRepository: {
       async getActiveRelations() { return [relation]; },
@@ -27,14 +28,14 @@ async function unitPriceSold({ draw, bias }) {
     },
     hubServing: {
       async availableTo() { return 10; },
-      async take({ amount, category }) { return [{ amount, category }]; },
+      async take({ amount, category }) { return [{ key: 'merchant-1', amount, category }]; },
       async recordDemand() {},
     },
     takeHubStock: (h, category, amount) =>
       takeCategoryAmount(h.stocks, category, amount, getCategoriesForRole(h.type, 'hub'), getTotalKeyForRole(h.type, 'hub')),
-    recordCommerceExportIncome: async () => {},
     recordMerchantSale: async (sale) => sales.push(sale),
-    getCustomsRate: () => 0.1,
+    getCustomsDuty: () => 0.1,
+    ...importCapabilities(),
     random: () => draw,
     saleBias: () => bias,
   });
@@ -47,7 +48,7 @@ async function unitPriceSold({ draw, bias }) {
 describe('trade sale price — drawn in the catalog range, moved by events', () => {
   const entry = getTradeCatalogEntry('silvania');
   const bookBase = getResourceBaseValue('book');
-  const centre = bookBase * 1.5;
+  const centre = bookBase * entry.wants.find((want) => want.good === 'book').baseMultiplier;
 
   test('an unbiased draw stays within baseMultiplier ± spread', async () => {
     const low = await unitPriceSold({ draw: 0, bias: 0 });

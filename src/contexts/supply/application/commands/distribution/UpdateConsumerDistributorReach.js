@@ -25,7 +25,7 @@ export class UpdateConsumerDistributorReach {
    * @param {string} [params.tooFarFlag='distributorTooFar']
    * @param {string | string[]} [params.category] Scopes both the source and
    *   target search to this category — required once more than one
-   *   'distributor'/'consumer' need exists (e.g. food vs. a chapel's faith
+   *   'distributor'/'consumer' need exists (e.g. food vs. a tank's water
    *   service), so this flag doesn't conflate "too far for food" with "too
    *   far for an unrelated service". Omitted keeps the old unscoped
    *   behavior (every source/target holding the role, regardless of need).

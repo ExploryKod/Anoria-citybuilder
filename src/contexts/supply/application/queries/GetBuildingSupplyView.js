@@ -6,7 +6,8 @@
  * isBuying / isCollecting are gated by OperationalGatePolicy (route + staff).
  */
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
-import { hasResourceRole, getConsumptionModeForRole, getResourceRoles, listRoleEntries } from '../../domain/policies/ResourceRolePolicy.js';
+import { hasResourceRole, getConsumptionModeForRole, getResourceRoles, listRoleEntries, requireRangeForRole } from '../../domain/policies/ResourceRolePolicy.js';
+import { findBuildingsWithRoleInRange } from '../../domain/policies/ResourceRangePolicy.js';
 
 export class GetBuildingSupplyView {
   /**
@@ -63,7 +64,8 @@ export class GetBuildingSupplyView {
         isBuying: operational === true && view.isBuying,
         unmetDemand: view.unmetDemand,
         noFarmsNearby: view.noSourcesNearby,
-        hasHousesNearby: neighborsMatch(view.neighbors, isHouseNeighbor),
+        // Whether a house it serves stands within the reach its catalog gives it (infinite for a stall or a tank), road-connected, as the cycle asks.
+        hasHousesNearby: await this.#hasConsumerInReach(view),
         marketTooFar: view.distributorTooFar,
       };
     }
@@ -100,6 +102,25 @@ export class GetBuildingSupplyView {
   }
 
   /**
+   * Whether a distributor has a consumer of what it hands out within its own reach: the distributor's catalog `range` (infinite for a stall or
+   * a water tank, so any road-connected house of the map counts), read the way the distribution cycle reads it (see RunCityResourceCycle.js), never
+   * from the buildings standing next to it.
+   * @param {{ type: string, x: number | null, y: number | null }} view the distributor
+   * @returns {Promise<boolean>}
+   */
+  async #hasConsumerInReach(view) {
+    const [entry] = listRoleEntries(view.type, 'distributor');
+    const rows = await this.supplyBuildingRepository.listAllBuildingRows();
+    return (
+      findBuildingsWithRoleInRange(view, rows, {
+        role: 'consumer',
+        category: entry.categories,
+        maxDistance: requireRangeForRole(view.type, 'distributor', entry.categories[0]),
+      }).length > 0
+    );
+  }
+
+  /**
    * For each thing a distributor hands out that names a hub link: the goods, and the hub it is
    * linked to now (its type and id), or none.
    * @param {string} type
@@ -127,7 +148,7 @@ export class GetBuildingSupplyView {
  *   not a name-string match. A 'distributor' role splits into two kinds by
  *   its `consumption` mode: 'market' moves a depleting numeric stock
  *   (Market-Stall selling food), 'service' just marks nearby consumers
- *   "served this period" with no stock at all (Chapel's faith, School,
+ *   "served this period" with no stock at all (the water tank's water, School,
  *   Doctor, ... — see DistributeResourceToConsumers.js) — these need very
  *   different info-panel content (no stock to show, no buying-period
  *   state), previously both silently routed to the market panel.
@@ -149,15 +170,4 @@ function currentCycleStep(view) {
   if (!entry) return null;
   const index = view.cycleState?.[entry.categories[0]]?.index ?? 0;
   return entry.cycle[index]?.id ?? null;
-}
-
-function neighborsMatch(neighbors, predicate) {
-  if (!Array.isArray(neighbors)) return false;
-  return neighbors.some((n) => n && predicate(n));
-}
-
-/** Same filters as legacy game.js neighbor checks for houses. */
-function isHouseNeighbor(neighbor) {
-  const name = neighbor.type || neighbor.name || '';
-  return name.includes('House') || name.includes('house');
 }

@@ -173,6 +173,21 @@ function createAssetCard(item) {
     if (item.kitId) {
       body.appendChild(fieldRow('Kit', item.kitId));
     }
+    if (item.usedBy) {
+      body.appendChild(fieldRow(
+        'Portée par',
+        item.usedBy.length === 0
+          ? 'aucun bâtiment du jeu'
+          : item.usedBy
+            .map(({ name, levels }) => (levels ? `${name} · niveau ${levels.join(', ')}` : name))
+            .join(' / '),
+      ));
+    }
+    if (item.meshSize) {
+      body.appendChild(fieldRow('Mesh mesuré (tuiles)', `${item.meshSize.width} × ${item.meshSize.depth}`));
+      body.appendChild(fieldRow('Emprise du mesh', `${item.meshGrid.width}×${item.meshGrid.depth}`));
+      body.appendChild(fieldRow('Parcelle du jeu', `${item.plot.width}×${item.plot.depth}`));
+    }
   }
 
   card.append(previewWrap, body);

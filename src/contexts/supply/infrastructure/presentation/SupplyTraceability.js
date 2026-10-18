@@ -8,7 +8,6 @@ import {
 } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
-import { getResourceBaseValue } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 
 /**
  * The game turn a time context stands for: the time info the game builds carries the
@@ -27,9 +26,11 @@ export class SupplyTraceability {
    * @param {import('../dexie/DexieSupplyTraceabilityRepository.js').DexieSupplyTraceabilityRepository} deps.supplyTraceabilityRepository
    * @param {import('../../application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} deps.supplyBuildingRepository
    */
-  constructor({ supplyTraceabilityRepository, supplyBuildingRepository }) {
+  constructor({ supplyTraceabilityRepository, supplyBuildingRepository, priceBook }) {
+    if (!priceBook) throw new Error('[supply] the traceability needs the price book: it logs every transfer at its seller\'s price');
     this.traceabilityRepository = supplyTraceabilityRepository;
     this.supplyBuildingRepository = supplyBuildingRepository;
+    this.priceBook = priceBook;
     /** Last logged state of each building, as text — a row is written only when it changes. */
     this.lastLoggedStates = new Map();
     this.lastLoggedTurn = -1;
@@ -46,6 +47,7 @@ export class SupplyTraceability {
 
     const distributorData = await this.supplyBuildingRepository.findRowById(distributorId);
     if (!distributorData) return;
+    await this.priceBook.ensure(timeInfo);
 
     for (const transfer of transfers) {
       const hubData = await this.supplyBuildingRepository.findRowById(transfer.hubId);
@@ -69,7 +71,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        getResourceBaseValue(transfer.category)
+        this.priceBook.sellingPrice(hubData, transfer.category, timeInfo)
       );
     }
   }
@@ -84,6 +86,7 @@ export class SupplyTraceability {
 
     const distributorData = await this.supplyBuildingRepository.findRowById(distributorId);
     if (!distributorData) return;
+    await this.priceBook.ensure(timeInfo);
 
     for (const transfer of transfers) {
       const sourceData = await this.supplyBuildingRepository.findRowById(transfer.sourceId);
@@ -107,7 +110,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        getResourceBaseValue(transfer.category)
+        this.priceBook.sellingPrice(sourceData, transfer.category, timeInfo)
       );
     }
   }
@@ -122,8 +125,9 @@ export class SupplyTraceability {
 
     const distributorData = await this.supplyBuildingRepository.findRowById(distributorId);
     if (!distributorData) return;
+    await this.priceBook.ensure(timeInfo);
 
-    // A service rides the same chain as a good (a chapel's "basket" of faith), so it is
+    // A service rides the same chain as a good (a tank's water), so it is
     // logged like one — from the building that distributes it, which is not always a market.
     for (const transfer of transfers) {
       const houseData = await this.supplyBuildingRepository.findRowById(transfer.houseId);
@@ -147,7 +151,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        getResourceBaseValue(transfer.category)
+        this.priceBook.sellingPrice(distributorData, transfer.category, timeInfo)
       );
     }
   }
@@ -258,6 +262,7 @@ export class SupplyTraceability {
     const turn = turnOf(timeInfo);
     const month = timeInfo.monthIndex || 0;
     const year = timeInfo.year || 0;
+    await this.priceBook.ensure(timeInfo);
 
     for (const hubResult of allHubResults) {
       if (!hubResult?.transfers?.length) continue;
@@ -276,7 +281,7 @@ export class SupplyTraceability {
           { id: hubResult.hubId, x: hubData.x, y: hubData.y, type: hubData.type },
           transfer.category,
           transfer.amount,
-          getResourceBaseValue(transfer.category)
+          this.priceBook.sellingPrice(sourceData, transfer.category, timeInfo)
         );
       }
     }
@@ -475,21 +480,84 @@ export class SupplyTraceability {
   }
 
   /**
-   * A completed export sale to a partner city by the merchants.
-   * @param {{ turn: number, monthIndex: number, year: number, cityId: string, good: string, dealGood: string, quantity: number, unitPrice: number, saleRatio: number, grossRevenue: number, netRevenue: number, customsCollected: number, customsRate: number }} params
+   * A completed export sale to a partner city, by the hub whose stock supplied it. `netRevenue` is this
+   * hub's own share (after customs, already split across hubs when more than one filled the order) — it is
+   * what `sumGoodsFlowsByPair` reads to credit the hub exactly like any other seller in the chain.
+   * @param {{ turn: number, monthIndex: number, year: number, cityId: string, hubId: string, hubX: number, hubY: number, hubType: string, good: string, dealGood: string, quantity: number, unitPrice: number, saleRatio: number, grossRevenue: number, netRevenue: number, customsCollected: number, customsRate: number }} params
    */
-  async recordMerchantSale({ turn, monthIndex, year, cityId, good, dealGood, quantity, unitPrice, saleRatio, grossRevenue, netRevenue, customsCollected, customsRate }) {
+  async recordMerchantSale({ turn, monthIndex, year, cityId, hubId, hubX, hubY, hubType, good, dealGood, quantity, unitPrice, saleRatio, grossRevenue, netRevenue, customsCollected, customsRate }) {
+    if (!hubId) throw new Error('[traceability] a merchant sale names no hub');
     await this.traceabilityRepository.addTransaction(
       turn,
       monthIndex,
       year,
       'merchant_sale',
-      null,
+      { id: hubId, x: hubX, y: hubY, type: hubType },
       { id: cityId, x: null, y: null, type: 'city' },
       dealGood,
       quantity,
       unitPrice,
       { cityId, good, saleRatio, grossRevenue, netRevenue, customsCollected, customsRate }
+    );
+  }
+
+  /**
+   * A recipe's input drawn from a hub: the hub sells it to the building at its price (the value chain's), logged like
+   * any other sale of the chain so the month's settlement credits the hub and charges the building.
+   * @param {{ period: object, buyerId: string, hubId: string, category: string, quantity: number }} purchase
+   */
+  async recordInputPurchase({ period, buyerId, hubId, category, quantity }) {
+    const hub = await this.supplyBuildingRepository.findRowById(hubId);
+    const buyer = await this.supplyBuildingRepository.findRowById(buyerId);
+    if (!hub || !buyer) throw new Error(`[traceability] an input purchase names ${!hub ? `an unknown warehouse ${hubId}` : `an unknown building ${buyerId}`}`);
+    await this.priceBook.ensure(period);
+    await this.traceabilityRepository.recordHubToBuilding(
+      turnOf(period),
+      period.monthIndex || 0,
+      period.year || 0,
+      { id: hub.id, x: hub.x, y: hub.y, type: hub.type },
+      { id: buyer.id, x: buyer.x, y: buyer.y, type: buyer.type },
+      category,
+      quantity,
+      this.priceBook.sellingPrice(hub, category, period)
+    );
+  }
+
+  /**
+   * What the merchants sold to a warehouse when a city delivered an import: a sale from the importing house to the hub,
+   * at the price the merchants set (the cost of the import plus their margin) — not at the value chain's ladder price —
+   * so the month's settlement credits the house and charges the warehouse exactly that.
+   * @param {{ turn: number, monthIndex: number, year: number, houseId: string, hubId: string, good: string, quantity: number, unitPrice: number }} params
+   */
+  async recordImportDelivery({ turn, monthIndex, year, houseId, hubId, good, quantity, unitPrice }) {
+    const house = await this.supplyBuildingRepository.findRowById(houseId);
+    const hub = await this.supplyBuildingRepository.findRowById(hubId);
+    if (!house || !hub) throw new Error(`[traceability] an import delivery names ${!house ? `an unknown house ${houseId}` : `an unknown warehouse ${hubId}`}`);
+    await this.traceabilityRepository.recordSourceToHub(
+      turn,
+      monthIndex,
+      year,
+      { id: house.id, x: house.x, y: house.y, type: house.type },
+      { id: hub.id, x: hub.x, y: hub.y, type: hub.type },
+      good,
+      quantity,
+      unitPrice
+    );
+  }
+
+  /**
+   * A stock that outlived its shelf life (see StockAgingPolicy.js) and was thrown away.
+   * @param {{ period: object, building: { id: string, type: string, x?: number, y?: number }, category: string, quantity: number }} loss
+   */
+  async recordSpoilage({ period, building, category, quantity }) {
+    await this.traceabilityRepository.recordGameEvent(
+      turnOf(period),
+      period.monthIndex || 0,
+      period.year || 0,
+      'goods_spoiled',
+      { id: building.id, x: building.x, y: building.y, type: building.type },
+      quantity,
+      { good: category }
     );
   }
 

@@ -18,6 +18,7 @@ export const PLAYABLE_CATEGORY_FILTER_GROUP = Object.freeze({
   farms: 'buildings',
   industry: 'buildings',
   markets: 'buildings',
+  decoration: 'decoration',
   infrastructure: 'buildings',
   nature: 'nature',
   zones: 'terrains',

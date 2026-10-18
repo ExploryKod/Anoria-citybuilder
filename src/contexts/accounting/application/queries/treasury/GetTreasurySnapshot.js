@@ -1,4 +1,5 @@
 import { deriveTreasuryFigures, deriveLoanPortfolio, deriveCitizenTaxState, moneyDirectionOf } from '../../../domain/policies/TreasuryFromJournalPolicy.js';
+import { accountKeyOf } from '../../../domain/policies/AccountKeyPolicy.js';
 
 /**
  * The treasury as the journal says it is. The row keeps only what is not money (turn, tax breakdown, tax year); every
@@ -17,12 +18,16 @@ export class GetTreasurySnapshot {
   }
 
   /**
-   * @param {{ hamletId?: string|null, untilYear?: number|null }} [options]
+   * @param {{ hamletId?: string|null, untilYear?: number|null, untilMonth?: number|null, accountBuildingId?: string|null }} [options]
    *   hamletId: the hamlet's own treasury, or the whole city's when null.
    *   untilYear: the treasury as it stood at the end of that fiscal year (its lines and every earlier one), or now when null.
+   *   untilMonth (1 to 12, with untilYear): the end of that month of the year instead of the end of the year.
+   *   accountBuildingId: a company's own account (its net profit stays there); null for the city's treasury, which holds
+   *   no company line. accountKind: which of a house's two accounts (particulier or entreprise); null for a company's.
    * @returns {Promise<object>}
    */
-  async execute({ hamletId = null, untilYear = null } = {}) {
+  async execute({ hamletId = null, untilYear = null, untilMonth = null, accountBuildingId = null, accountKind = null } = {}) {
+    if (untilMonth != null && untilYear == null) throw new Error('[treasury] a month needs its year: untilMonth was given without untilYear');
     let entries = await this.journalRepository.getJournalEntries();
     if (entries.length === 0) {
       // A brand-new game has no journal yet: its treasury starts from the capital line. Once any line exists, the
@@ -31,9 +36,12 @@ export class GetTreasurySnapshot {
       entries = await this.journalRepository.getJournalEntries();
     }
 
+    const accountKey = accountKeyOf({ accountBuildingId, accountKind });
+    const funds = await this.cashOf({ hamletId, untilYear, untilMonth, accountBuildingId, accountKind });
     const inScope = (entry) =>
       (hamletId == null || hamletOf(entry) === hamletId) &&
-      (untilYear == null || yearOf(entry) <= untilYear);
+      (untilYear == null || isUntil(entry, untilYear, untilMonth)) &&
+      accountKeyOf(entry) === accountKey;
     const scoped = entries.filter(inScope);
     const lines = treasuryLinesInOrder(scoped);
     const currentTurn = this.gameTimePort.currentTurn();
@@ -45,12 +53,32 @@ export class GetTreasurySnapshot {
       turn: currentTurn,
       taxBreakdown: citizenTax.taxBreakdown,
       lastTaxYear: citizenTax.lastTaxYear,
+      funds,
       ...figures,
       loans: portfolio.loans,
       loanDebt: portfolio.loanDebt,
     };
   }
+
+  /**
+   * The cash alone, the balance of the bank account (512) in the fold of the journal's legs, without reading a line: what the HUD and every view of a balance ask.
+   * The scope is the one `execute` takes. A brand-new game has no journal yet: its treasury starts from the capital line, as in `execute`.
+   * @param {{ hamletId?: string|null, untilYear?: number|null, untilMonth?: number|null, accountBuildingId?: string|null, accountKind?: string|null }} [options]
+   * @returns {Promise<number>}
+   */
+  async cashOf({ hamletId = null, untilYear = null, untilMonth = null, accountBuildingId = null, accountKind = null } = {}) {
+    let fold = await this.journalRepository.getLegsFold();
+    if (fold.isEmpty()) {
+      await this.initializeTreasury.execute(null);
+      fold = await this.journalRepository.getLegsFold();
+    }
+    const centimes = fold.balanceOf(CASH, { hamletId, accountKey: accountKeyOf({ accountBuildingId, accountKind }), untilYear, untilMonth });
+    return centimes / 100;
+  }
 }
+
+/** The cash account of the chart of accounts: the treasury is its balance. */
+const CASH = '512';
 
 /**
  * The journal lines the treasury is folded from (money movements and the loan installments that move the schedule),
@@ -75,6 +103,16 @@ function hamletOf(entry) {
     throw new Error(`[treasury] journal line ${entry.type} (turn ${entry.turn}) has no hamletId`);
   }
   return entry.hamletId;
+}
+
+/** A line of that year up to that month (the whole year when the month is null), or of an earlier year. */
+function isUntil(entry, untilYear, untilMonth) {
+  const year = yearOf(entry);
+  if (year !== untilYear || untilMonth == null) return year <= untilYear;
+  if (typeof entry.month !== 'number') {
+    throw new Error(`[treasury] journal line ${entry.type} (turn ${entry.turn}) has no month stamp`);
+  }
+  return entry.month <= untilMonth;
 }
 
 /** @param {object} entry @returns {number} the fiscal year a line was stamped with; a line without one is an error. */

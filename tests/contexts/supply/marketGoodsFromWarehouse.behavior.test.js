@@ -53,14 +53,14 @@ describe('Supply — a market with two distributor entries', () => {
       { id: 'mill', type: 'Windmill-001', x: 5, y: 3, stocks: { wheat: 40, food: 40 } },
       { id: 'warehouse', type: 'Warehouse', x: 8, y: 3, stocks: { plate: 10, pot: 10, wood: 10, goods: 30 } },
       { id: 'far-warehouse', type: 'Warehouse', x: 40, y: 40, stocks: {} },
-      { id: 'stall', type: 'Market-Stall', x: 6, y: 3, stocks: { wheat: 5, food: 5 } },
+      { id: 'stall', type: 'Market-Stall-Red', x: 6, y: 3, stocks: { wheat: 5, food: 5 } },
     ]);
   });
 
   const assign = () => new AssignDistributorToHub(repo, new RebalanceHubAllocations(repo));
 
   test('each entry is linked to its own hub, in its own field, and only to a hub the catalog lets it use', async () => {
-    const outcome = await assign().execute({ distributorId: 'stall', distributorType: 'Market-Stall', x: 6, y: 3 });
+    const outcome = await assign().execute({ distributorId: 'stall', distributorType: 'Market-Stall-Red', x: 6, y: 3 });
 
     expect(outcome.assigned).toBe(true);
     expect(repo.rows.get('stall').supplyHubId).toBe('mill');
@@ -68,7 +68,7 @@ describe('Supply — a market with two distributor entries', () => {
   });
 
   test('a goods pull takes goods from the warehouse and leaves the diet of the stall untouched', async () => {
-    await assign().execute({ distributorId: 'stall', distributorType: 'Market-Stall', x: 6, y: 3 });
+    await assign().execute({ distributorId: 'stall', distributorType: 'Market-Stall-Red', x: 6, y: 3 });
 
     const outcome = await new TransferHubToHub(repo, new HubServing(repo)).execute({ targetId: 'stall', period: {}, demand: 8, category: 'plate' });
 
@@ -83,21 +83,21 @@ describe('Supply — a market with two distributor entries', () => {
   test('a warehouse built after the market serves it too', async () => {
     repo.rows.get('warehouse').stocks = { plate: 10, goods: 10 };
     const late = new InMemoryRepository([...repo.rows.values()].filter((row) => row.id !== 'warehouse'));
-    await new AssignDistributorToHub(late, new RebalanceHubAllocations(late)).execute({ distributorId: 'stall', distributorType: 'Market-Stall', x: 6, y: 3 });
+    await new AssignDistributorToHub(late, new RebalanceHubAllocations(late)).execute({ distributorId: 'stall', distributorType: 'Market-Stall-Red', x: 6, y: 3 });
     expect(late.rows.get('stall').goodsHubId ?? null).toBeNull();
 
     late.rows.set('warehouse', { id: 'warehouse', type: 'Warehouse', x: 8, y: 3, roadCount: 1, worker: 1, workerNeed: 1, linkedDistributors: [], stocks: { plate: 10, goods: 10 } });
     const { linked } = await new AssignDistributorToHub(late, new RebalanceHubAllocations(late)).linkWaitingDistributors({ hubId: 'warehouse' });
 
     // Every entry of the stall that may draw on a warehouse finds it, each in its own field.
-    const drawsOnWarehouse = listRoleEntries('Market-Stall', 'distributor').filter((entry) => entry.hubLink?.hubTypes?.includes('Warehouse'));
+    const drawsOnWarehouse = listRoleEntries('Market-Stall-Red', 'distributor').filter((entry) => entry.hubLink?.hubTypes?.includes('Warehouse'));
     expect(drawsOnWarehouse.length).toBeGreaterThan(1);
     expect(linked).toBe(drawsOnWarehouse.length);
     for (const entry of drawsOnWarehouse) expect(late.rows.get('stall')[entry.hubLink.sourceLinkField]).toBe('warehouse');
   });
 
   test('only the hub a market cannot be placed without takes it down: demolishing the other just unlinks it', async () => {
-    await assign().execute({ distributorId: 'stall', distributorType: 'Market-Stall', x: 6, y: 3 });
+    await assign().execute({ distributorId: 'stall', distributorType: 'Market-Stall-Red', x: 6, y: 3 });
     const cascade = new CascadeDestroyHubDistributors(repo);
 
     expect((await cascade.findDependents({ hubId: 'mill' })).map((d) => d.distributorId)).toEqual(['stall']);

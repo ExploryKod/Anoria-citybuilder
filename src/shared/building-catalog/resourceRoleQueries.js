@@ -1,4 +1,5 @@
 import { buildingCatalog, getBuildingDefinition } from './buildingCatalog.js';
+import { RESOURCE_CATEGORY_PRESENTATION } from '../resource-catalog/ResourceCategoryCatalog.js';
 
 /**
  * Catalog-derived questions about goods and stocks that MORE THAN ONE
@@ -253,6 +254,18 @@ export function getQuantityConsumerEntries(buildingType) {
 }
 
 /**
+ * Every 'consumer' entry a building type declares, flag or quantity mode alike — what it consumes, full
+ * stop, unlike getQuantityConsumerEntries which only ever saw the quantity half (a service's coverage flag
+ * was invisible to it). The Ressources tab reads this to show every need as a fact — a number where the
+ * mechanism is a depleting stock, a reached/not-reached flag where it is not (see houseInfoFormat.js).
+ * @param {string} buildingType
+ * @returns {import('./buildingCatalog.js').ResourceRoleFacts[]}
+ */
+export function getConsumerEntries(buildingType) {
+  return getResourceRoles(buildingType).filter((entry) => entry.role === 'consumer');
+}
+
+/**
  * Every 'producer' entry declared as a `cycle` (a recipe with steps), in declaration order — a house's own
  * business (decorating pots, baking cakes, writing books, dealing goods) as much as a workshop's. A house's
  * OTHER producer entry, its own gathering, declares a plain `schedule` instead and is never one of these.
@@ -435,4 +448,32 @@ export function getCategoriesForTotalKey(totalKey) {
     }
   }
   return Object.freeze([...categories]);
+}
+
+/**
+ * What a building's sales are in its accounts, read from the roles and the categories the catalog declares:
+ * - 'merchandise' (account 707, ventes de marchandises): it sells goods it did not make: a warehouse, a market, a windmill, the
+ *   merchants' business (it only deals: an import deal is an agreement, not something it made);
+ * - 'production' (701, production vendue): it makes the goods it sells: a farm, a factory, an artisan's business;
+ * - 'services' (706, prestations de services): what it hands out or makes is a service (water, energy, health, school, police...);
+ * - null: the catalog gives it no role, so nothing says what it sells (a bank, a decoration). A sale booked on such an account
+ *   throws in the statement instead of being filed under a guess.
+ * @param {string} buildingType
+ * @returns {'merchandise' | 'production' | 'services' | null}
+ */
+export function salesNatureOf(buildingType) {
+  const roles = getResourceRoles(buildingType);
+  const facts = (category) => RESOURCE_CATEGORY_PRESENTATION[category];
+  const isDeal = (category) => facts(category)?.kind === 'importDeal' || facts(category)?.standsFor !== undefined;
+  const isService = (category) => facts(category)?.kind === 'service';
+  const producedCategories = roles.filter((entry) => entry.role === 'producer').flatMap((entry) => entry.categories);
+  const handedOutCategories = roles.filter((entry) => entry.role === 'distributor').flatMap((entry) => entry.categories);
+
+  if (producedCategories.some((category) => !isDeal(category))) {
+    return producedCategories.filter((category) => !isDeal(category)).every(isService) ? 'services' : 'production';
+  }
+  if (producedCategories.length > 0) return 'merchandise';
+  if (handedOutCategories.length > 0 && handedOutCategories.every(isService)) return 'services';
+  if (roles.some((entry) => entry.role === 'collector' || entry.role === 'hub' || entry.role === 'distributor')) return 'merchandise';
+  return null;
 }

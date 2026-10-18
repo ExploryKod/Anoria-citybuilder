@@ -88,7 +88,10 @@ export function formatFarmStocksModel(vm) {
   stockRows.push({ label: 'Total', value: goodAmount(totalKey, houseStocks[totalKey] || 0) });
 
   return {
-    sections: [{ title: `Stocks · ${buildingName(buildingType)}`, rows: stockRows }],
+    sections: [{
+      title: `Stocks · ${buildingName(buildingType)}`,
+      rows: stockRows,
+    }],
   };
 }
 
@@ -105,8 +108,9 @@ export function formatFarmTradeModel(vm) {
   const currentYearHubSales = salesToHub.filter((s) => s.year === currentYear);
   // Who buys this building's goods, named as the catalog names those buildings.
   const goods = producedCategories(buildingType);
-  const buyers = namesOfBuildings('distributor', goods).join(', ');
-  const collectors = namesOfBuildings('hub', goods).join(', ');
+  // Looked up only for the sales shown: a good no distributor sells to the houses (it feeds a recipe) has no buyers to name.
+  const buyers = () => namesOfBuildings('distributor', goods).join(', ');
+  const collectors = () => namesOfBuildings('hub', goods).join(', ');
 
   if (currentYearMarketSales.length === 0 && currentYearHubSales.length === 0) {
     return {
@@ -121,7 +125,7 @@ export function formatFarmTradeModel(vm) {
   /** @type {import('../../buildingInfoTypes.js').InfoKvRow[]} */
   const saleRows = [];
   if (currentYearMarketSales.length > 0) {
-    saleRows.push({ label: `Ventes · ${buyers}`, value: `${currentYearMarketSales.length} vente(s)` });
+    saleRows.push({ label: `Ventes · ${buyers()}`, value: `${currentYearMarketSales.length} vente(s)` });
     for (const sale of currentYearMarketSales) {
       const subtext = `${sale.monthName || `Mois ${sale.month + 1}`} - Tour ${sale.turn}: ${goodAmount(sale.productType, sale.quantity)}`;
       saleRows.push({
@@ -133,7 +137,7 @@ export function formatFarmTradeModel(vm) {
   }
   if (currentYearHubSales.length > 0) {
     saleRows.push({
-      label: `Ventes · ${collectors}`,
+      label: `Ventes · ${collectors()}`,
       value: `${currentYearHubSales.length} type(s) de produit`,
     });
     for (const sale of currentYearHubSales) {
@@ -156,7 +160,7 @@ export function formatFarmTradeModel(vm) {
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
 export function formatFarmStaffModel(vm) {
-  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment, staffingStatusLine(vm));
+  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment, staffingStatusLine(vm), vm.wagePerWorker, vm.employerContributionRate);
 }
 
 /** @deprecated Prefer thematic tab formatters */

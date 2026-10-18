@@ -85,7 +85,7 @@ describe('buildingPlacementCatalog — derived from buildingCatalog', () => {
 describe('EmploymentSectorCatalog — derived employment facts', () => {
   test('sector map matches catalog for a sample of types', () => {
     expect(BUILDING_SECTOR_MAP['Farm-Wheat']).toBe(1);
-    expect(BUILDING_SECTOR_MAP['Market-Stall']).toBe(2);
+    expect(BUILDING_SECTOR_MAP['Market-Stall-Red']).toBe(2);
     expect(BUILDING_SECTOR_MAP['StonePath-001']).toBe(5);
   });
 
@@ -119,7 +119,7 @@ describe('buildingPlacementCatalog — every buildingCatalog entry with a constr
     expect(buildingPlacementCatalog['StonePath-001']).toBeDefined();
     expect(buildingPlacementCatalog.roads).toBeUndefined();
     expect(buildingPlacementCatalog['House-Blue']).toBeDefined();
-    expect(buildingPlacementCatalog['Market-Stall']).toBeDefined();
+    expect(buildingPlacementCatalog['Market-Stall-Red']).toBeDefined();
   });
 });
 
@@ -140,9 +140,9 @@ describe('Declared facts the city map and every context read from the catalog', 
   test('the map code is the first two letters of the name the player reads, not of the id', () => {
     expect(getMapCode('House-Red')).toBe('AR'); // Artisans-ouvriers
     expect(getMapCode('Farm-Cabbage')).toBe('CH'); // Champ de choux
-    expect(getMapCode('Windmill-001')).toBe('MO'); // Moulin
-    expect(getMapCode('Chapel')).toBe('CH'); // Chapelle
-    expect(getMapCode('Market-Stall')).toBe('ET'); // Étal — accent dropped
+    expect(getMapCode('Windmill-001')).toBe('GR'); // Grenier
+    expect(getMapCode('WaterTank')).toBe('CI'); // Citerne
+    expect(getMapCode('Market-Stall-Red')).toBe('ET'); // Étal — accent dropped
     expect(getMapCode('')).toBe('');
   });
 
@@ -178,7 +178,7 @@ describe('The message the player reads when inhabitants leave', () => {
     const message = buildPopulationDepartureMessage({
       count: 6,
       unmet: [
-        { kind: 'serviceCoverage', category: 'faith' },
+        { kind: 'serviceCoverage', category: 'fire' },
         { kind: 'demandMet' },
         { kind: 'demandMet' },
       ],

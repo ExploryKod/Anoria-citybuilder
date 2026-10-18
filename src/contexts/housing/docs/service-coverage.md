@@ -1,3 +1,7 @@
+> **Superseded in part (2026-10-11).** The tier ladder below (faith, the Chapel) is replaced: see `docs/gameplay/PLAN_LEVELS_WATER_ENERGY.md`
+> for the current ladder (water, energy, fire, police, a warehouse within reach) and `shared/population/socialCategoryCatalog.js` for the
+> data. The mechanism described here (the `serviceCoverage` requirement, coverage windows) is unchanged.
+
 # Service coverage tier requirement (2026-09-07)
 
 ## What this is
@@ -142,12 +146,12 @@ resources (several farms CAN feed one `food` total; here they can't, by
 design, because the tiers below care which specific building it was):
 
 - **education**: `School` → `school`, `Library` → `library`
-- **medical**: `Doctor` → `doctor`, `Hospital` → `hospital`, `PublicBath` → `publicBath`
+- **medical**: `Doctor` → `doctor`, `Hospital` → `hospital`
 - **entertainment**: `Theatre` → `theatre`, `Cinema` → `cinema`, `Pub` → `pub`
 
 A tier's `requirements` list can still mix categories freely — "reach this
-tier only with BOTH pub AND public-bath coverage" is just two
-`serviceCoverage` entries (`category: 'pub'` and `category: 'publicBath'`)
+tier only with BOTH pub AND school coverage" is just two
+`serviceCoverage` entries (`category: 'pub'` and `category: 'school'`)
 in the same tier's array. `HouseTierRequirementPolicy.js` needed no change
 for this — it already evaluates every requirement in the list independently
 and ANDs them via `meetsTierRequirements`. A service layer never has to
@@ -173,7 +177,7 @@ merges automatically — see `socialCategoryCatalog.js`'s file-level comment):
 | 1 | cabane  | none (free starting tier) |
 | 2 | masure  | road, population ≥1, **faith** |
 | 3 | logis   | + population ≥4, **demandMet**, **doctor** |
-| 4 | demeure | + population ≥8, **publicBath**, **pub** |
+| 4 | demeure | + population ≥8, **pub** |
 | 5 | manoir  | + population ≥12, **school**, **cinema**, **2 distinct food categories this period** |
 
 Tier 5 ("manoir") and its population cap (`HOUSE_LEVEL_5_MAX_POP` in

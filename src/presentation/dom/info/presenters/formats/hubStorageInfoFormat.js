@@ -30,7 +30,7 @@ export function formatHubStorageStaffModel(vm) {
   const { hubKind, buildingRow, employment } = vm;
   if (!hubKind) return null;
 
-  return formatWorkplaceEmployeesPanel(buildingRow, employment, staffingStatusLine(vm));
+  return formatWorkplaceEmployeesPanel(buildingRow, employment, staffingStatusLine(vm), vm.wagePerWorker, vm.employerContributionRate);
 }
 
 /** @deprecated Prefer formatHubStorageStaffModel */
@@ -51,6 +51,16 @@ export function formatHubStorageRenderParams(vm) {
     supplyView: vm.supplyView,
     timeContextAhead: vm.hubTimeContextAhead ?? null,
   };
+}
+
+/**
+ * Shelf-life tab — what the stock has left to live; only for a building that has a way to read it (a farm, a hub).
+ *
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @returns {{ load: (turn?: number) => Promise<object> } | null}
+ */
+export function formatShelfLifeTabModel(vm) {
+  return vm.loadShelfLife ? { load: vm.loadShelfLife } : null;
 }
 
 /**

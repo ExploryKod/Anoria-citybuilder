@@ -35,6 +35,11 @@ export class GrowHousePopulation {
       return { changed: false, reason: 'house_not_found', deaths: 0 };
     }
 
+    // A house in a crisis of departure (a rent it cannot pay, ...) does not grow back, nor does one serving the penalty that follows it (see RunMonthlyDepartures.js).
+    if (Object.keys(house.departures ?? {}).length > 0 || Object.keys(house.repopulationBans ?? {}).length > 0) {
+      return { changed: false, houseId, pop: house.pop, reason: 'departure_crisis', deaths: 0 };
+    }
+
     const previousPop = house.pop;
     let deaths = 0;
     let workingPop = previousPop;

@@ -54,7 +54,7 @@ describe('Shared Kernel — building identity', () => {
     });
 
     test('instanceIdFromHouseRow reads canonical row', () => {
-      const record = makeHouseRecord({ type: 'Market-Stall', x: 4, y: 5 });
+      const record = makeHouseRecord({ type: 'Market-Stall-Red', x: 4, y: 5 });
       expect(instanceIdFromHouseRow(record)).toBe(record.instanceId);
     });
 

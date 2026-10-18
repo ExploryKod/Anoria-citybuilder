@@ -52,14 +52,17 @@ export function toneVariant(hex, index) {
  * @param {number} capacity
  * @param {string} baseColor
  * @param {(producerId: string) => string | null} resolveProducerType
+ * @param {(producerId: string) => string | null} resolveProducerName
  */
-function buildParts(lots, startAngle, capacity, baseColor, resolveProducerType) {
+function buildParts(lots, startAngle, capacity, baseColor, resolveProducerType, resolveProducerName) {
   let cursor = startAngle;
   return lots.map(([lotKey, lotAmount], index) => {
     const angle = (lotAmount / capacity) * 360;
     const { producerId, via } = lotOrigin(lotKey);
     const producerType = producerId ? resolveProducerType(producerId) ?? '' : '';
-    const part = Object.freeze({ producerType, via, amount: lotAmount, startAngle: cursor, angle, color: toneVariant(baseColor, index) });
+    // An outside partner (a trade city) is not a building: it has a name, not a type.
+    const producerName = producerId ? resolveProducerName(producerId) ?? '' : '';
+    const part = Object.freeze({ producerId, producerName, producerType, via, amount: lotAmount, startAngle: cursor, angle, color: toneVariant(baseColor, index) });
     cursor += angle;
     return part;
   });
@@ -78,12 +81,17 @@ function buildParts(lots, startAngle, capacity, baseColor, resolveProducerType) 
  * @param {object} params
  * @param {ReadonlyArray<object>} params.lines enriched with emoji/label
  * @param {number} params.totalCapacity
+ * @param {{ amount: number, label: string } | null} [params.elsewhere] What the hub holds that this chart leaves out
+ *   (another storage view of the same hub, see `storageViews`): drawn as one grey slice, named by `label`, so the
+ *   free space stays what is really free.
+ * @param {(producerId: string) => string | null} [params.resolveProducerName] Lot key of an outside partner (a trade
+ *   city, `city:<id>`) → its name; null for a building's instance id.
  * @param {(producerId: string) => string | null} [params.resolveProducerType] Producer instance id →
  *   catalog type, for the origin breakdown under each good (see buildParts). Omitted shows every
  *   lot as "Origine inconnue" rather than guessing — the same visible-not-silent rule as everywhere
  *   else a name is missing (CatalogVocabulary.js's "…").
  */
-export function buildHubStoragePieSegments({ lines, totalCapacity, resolveProducerType = () => null }) {
+export function buildHubStoragePieSegments({ lines, totalCapacity, elsewhere = null, resolveProducerType = () => null, resolveProducerName = () => null }) {
   const capacity = Math.max(1, Math.floor(Number(totalCapacity) || 0));
   let cursor = 0;
   /** @type {object[]} */
@@ -99,7 +107,7 @@ export function buildHubStoragePieSegments({ lines, totalCapacity, resolveProduc
     const colors = getHubStoragePieColors(line.productId);
     // Where this good came from: one part per producer type, told apart by tone.
     const lots = Object.entries(reconcileLots(line.lots, amount)).sort(([a], [b]) => a.localeCompare(b));
-    const parts = buildParts(lots, startAngle, capacity, colors.dark, resolveProducerType);
+    const parts = buildParts(lots, startAngle, capacity, colors.dark, resolveProducerType, resolveProducerName);
 
     segments.push(
       Object.freeze({
@@ -123,6 +131,31 @@ export function buildHubStoragePieSegments({ lines, totalCapacity, resolveProduc
         kind: 'product',
       })
     );
+  }
+
+  const elsewhereAmount = Math.max(0, Math.floor(Number(elsewhere?.amount) || 0));
+  if (elsewhereAmount > 0) {
+    const angle = (elsewhereAmount / capacity) * 360;
+    segments.push(
+      Object.freeze({
+        productId: '__elsewhere__',
+        emoji: '',
+        label: elsewhere.label,
+        amount: elsewhereAmount,
+        maxCap: 0,
+        remainingInbound: 0,
+        startAngle: cursor,
+        darkAngle: 0,
+        paleAngle: 0,
+        idleAngle: angle,
+        segmentAngle: angle,
+        endAngle: cursor + angle,
+        colors: { dark: '#b0bec5', pale: '#cfd8dc' },
+        overMax: false,
+        kind: 'elsewhere',
+      })
+    );
+    cursor += angle;
   }
 
   const freeAngle = Math.max(0, 360 - cursor);

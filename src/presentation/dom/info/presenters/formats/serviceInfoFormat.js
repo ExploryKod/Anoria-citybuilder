@@ -3,8 +3,8 @@
  *
  * Covers every building whose sole 'distributor' role is 'flag'-mode (marks
  * a nearby consumer "served this period", no stock at all — see
- * ResourceRolePolicy.js / DistributeResourceToConsumers.js): Chapel,
- * School, Library, Doctor, Hospital, PublicBath, Theatre, Cinema, Pub,
+ * ResourceRolePolicy.js / DistributeResourceToConsumers.js): the water tank,
+ * School, Library, Doctor, Hospital, Theatre, Cinema, Pub,
  * and any future building shaped the same way. Deliberately ONE format,
  * driven entirely by the building's own catalog facts (displayName,
  * resourceRoles, employment) — a new service building needs a catalog
@@ -82,5 +82,5 @@ export function formatServiceOverviewModel(vm) {
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
 export function formatServiceStaffModel(vm) {
-  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment, staffingStatusLine(vm));
+  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment, staffingStatusLine(vm), vm.wagePerWorker, vm.employerContributionRate);
 }

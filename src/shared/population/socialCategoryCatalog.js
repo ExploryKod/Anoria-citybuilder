@@ -4,142 +4,145 @@
  * A category that should differ overrides its own tier's `maxPopulation`.
  * Read by HouseCapacityPolicy.maxPopulationForLevel.
  */
-const TIER_MAX_POPULATION = Object.freeze({ 1: 6, 2: 12, 3: 18, 4: 24, 5: 30 });
+const TIER_MAX_POPULATION = Object.freeze({ 1: 6, 2: 12, 3: 18, 4: 24, 5: 30, 6: 36 });
+
+/** The business of a house of the three working categories: a cooperative that makes and sells goods (their `activityRecipe`s). */
+const COOPERATIVE_ENTERPRISES = Object.freeze([Object.freeze({ id: 'cooperative', label: 'Coopérative', activity: 'recipes', premisesShare: 0.3 })]);
+
+/** The city's administrators (the mayor's house): six, whatever the tier. */
+const ADMINISTRATORS_MAX = 6;
 
 /**
- * Single source of truth for the 3 social categories (Artisans / Savants /
- * Commerçants — French display labels live in presentation, not here) and
+ * The skills the administrators hold, named once: the owner (collects the rents, from the first tier) and one tax collection per tax. A tax
+ * nobody holds the collection of is not levied. Every rule that asks for one reads the name here, never spells it.
+ */
+export const OWNER_SKILL = 'proprietaire';
+export const TAX_COLLECTION_SKILLS = Object.freeze({
+  citizen: 'perception_ic',
+  income: 'perception_ir',
+  vat: 'perception_tva',
+  corporate: 'perception_is',
+  customs: 'perception_douane',
+});
+
+/**
+ * The requirements a tier can list, declared once and combined below (a kind is evaluated by
+ * contexts/housing/domain/policies/HouseTierRequirementPolicy.js). Each tier repeats every earlier one explicitly:
+ * `HouseLevelPolicy.js` only ever checks the CURRENT tier (to decide demotion) or the NEXT one (to decide advancement).
+ */
+const ROAD = Object.freeze({ kind: 'roadAccess' });
+const population = (min) => Object.freeze({ kind: 'population', min });
+/** The diet is fully met (a market reaches the house with food). */
+const FOOD = Object.freeze({ kind: 'demandMet' });
+/** A quantity need served by a building (water by a tank, energy by a plant), fully met this period. */
+const need = (category, outcomeField) => Object.freeze({ kind: 'serviceDemandMet', category, outcomeField });
+const WATER = need('water', 'lastWaterConsumption');
+const ENERGY = need('energy', 'lastEnergyConsumption');
+/** A service building reaches the house (a coverage flag kept for `coveragePeriods` periods). */
+const covered = (category) => Object.freeze({ kind: 'serviceCoverage', category, coveragePeriods: 2 });
+/** At least `min` kinds of the retail goods (pot, plate, amphora, furniture) were drawn this period. */
+const goods = (min) => Object.freeze({ kind: 'goodsVariety', min, outcomeField: 'lastGoodsConsumption' });
+/** The house's own business can reach a warehouse. */
+const WAREHOUSE_ACCESS = Object.freeze({ kind: 'activityAccess' });
+
+/**
+ * Single source of truth for the 3 social categories (Artisans / Commerçants /
+ * Savants — French display labels live in presentation, not here) and
  * the facts tied to a category itself rather than to any one building:
  *   - `tiers`: this category's house-progression ladder, keyed by tier
  *     number (what was called `level` elsewhere — a house's own stored
  *     tier number). Any number of tiers is supported, each declaring:
  *       - `requirements`: what must hold to ADVANCE from the previous tier
  *         into this one — a list of `{ kind, ...params }` objects, each
- *         `kind` evaluated by contexts/housing/domain/policies/
- *         HouseTierRequirementPolicy.js. Empty for tier 1 (the starting
- *         tier — nothing to require). Losing a tier's own requirements
- *         (e.g. road access) demotes a house back down, exactly the
- *         inverse of advancing. A tier's `requirements` are NOT merged
- *         with the previous tier's automatically — `HouseLevelPolicy.js`
- *         only ever checks the CURRENT tier (to decide demotion) or the
- *         NEXT tier (to decide advancement), never anything further back.
- *         So every requirement from an earlier tier that should still hold
- *         at a later one (e.g. faith coverage, required from tier 2 on) is
- *         repeated explicitly in every later tier's own list below — this
- *         is intentional cumulative gameplay design, not something the
- *         code infers.
+ *         `kind` evaluated by HouseTierRequirementPolicy.js. Empty for tier 1
+ *         (the starting tier). Losing a tier's own requirements (e.g. road
+ *         access) demotes a house back down, exactly the inverse of advancing.
+ *         A tier's `requirements` are NOT merged with the previous tier's
+ *         automatically, so every earlier requirement that should still hold
+ *         is repeated explicitly in every later tier's own list below — this is
+ *         intentional cumulative gameplay design, not something the code infers.
  *       - `skills`: a `{ skillName: level }` map of citizen skills granted
- *         once a house is AT this tier or higher — see GroupSkillPolicy.js,
- *         the one policy that reads this regardless of how many tiers
- *         exist. A citizen's effective level for a skill is the MAX level
- *         declared for it across every tier ≤ the house's own level (so a
- *         skill can be granted again at a later tier to raise its level,
- *         e.g. `medical` 1 at tier 2 then `medical` 2 at tier 5 — the
- *         second entry doesn't need to repeat anything about the first). A
- *         workplace opts into hiring a skill via its own
- *         `employment.requiredSkill` fact (+ optional `requiredSkillLevel`,
- *         default 1) — see shared/asset-economy/buildingEconomy.js — the
- *         skill string is the join key between the two, declared once
- *         here. A citizen whose level for a skill is N can staff any
- *         workplace requiring that same skill at level ≤ N (a level-2
- *         `medical` citizen can also do a level-1 `medical` job).
+ *         once a house is AT this tier or higher — see GroupSkillPolicy.js.
+ *         A citizen's effective level for a skill is the MAX level declared
+ *         for it across every tier ≤ the house's own level. A workplace opts
+ *         into hiring a skill via its own `employment.requiredSkill` fact
+ *         (+ optional `requiredSkillLevel`, default 1) — see
+ *         shared/asset-economy/buildingEconomy.js; the skill string is the join
+ *         key between the two, declared once here.
  *     Adding a tier, changing what unlocks it, or changing what it grants
- *     is a catalog edit here, never a code change in the policies that
- *     read it.
+ *     is a catalog edit here, never a code change in the policies that read it.
  *   - `eligibleSectors`: which employment sectors this category's citizens
  *     may be counted against in the per-group employment summary (see
- *     contexts/employment/domain/computeCityEmploymentSummary.js). This is
- *     a coarser, sector-level fact used only for that summary/HUD
- *     breakdown — the actual worker-to-workplace assignment is skill-based,
- *     via `tiers[N].skills` above and each building's `requiredSkill`.
+ *     contexts/employment/domain/computeCityEmploymentSummary.js) — a coarse
+ *     fact for that summary/HUD only; the actual worker-to-workplace
+ *     assignment is skill-based.
+ *   - `enterprises`: the legal forms of the businesses the houses of this category run, shown as the pills of the
+ *     house's Enterprises tab: `{ id, label, activity }`, `activity` being what the form does (`recipes`: makes and sells goods,
+ *     `rental`: lets the houses to the other houses). A `recipes` form also declares its `premisesShare`: the share of the house
+ *     (a fraction of its upkeep) set aside for its activity, which the business rents from the owner apart from the home's rent.
+ *     The one shown first is the only one, or the one flagged `default: true`
+ *     (see houseEnterprises in workforceQueries.js: several without a default is an error).
  *
  * Data only — no functions that compute or decide anything, no imports from
  * `src/contexts/**`. Same hard rules as buildingCatalog.js.
  *
- * Tier ladder (2026-09-08, identical for all 3 categories — see
- * contexts/housing/docs/service-coverage.md "Tier ladder" section for the
- * full rationale and the gameplay test plan this was built for):
- *   1 (cabane)  — free starting tier, no requirements.
- *   2 (masure)  — road + faith (Chapel).
- *   3 (logis)   — + demandMet (food fully met, via market distribution) + doctor (Cabinet médical).
- *   4 (demeure) — + publicBath (Bains publics) + pub (Taverne).
- *   5 (manoir)  — + school (École) + cinema (Cinéma) + goodsVariety 2 (2 distinct food categories in the same period).
- * Population thresholds continue the pre-existing +4 progression (1/4/8/12).
- * Every building with `employment.workerNeed > 0` is wired to a skill
- * granted somewhere on this ladder (2026-09-10) — Library/Hospital/Theatre
- * included, even though none of the three is itself referenced by any
- * tier's `requirements` yet; wiring one into a gate later is a pure catalog
- * edit here, unrelated to whether it already has hiring staff.
- *
- * Tier 1 grants TWO skills to every group: `subsistence-forager` (unpaid
- * self-sufficiency — produces food outside the formal economy) and
- * `spiritual` (staffs Chapel). `spiritual` is deliberately the one skill
- * every group grants at tier 1: Chapel's own faith service is what tier 2
- * requires from every group, so it can't itself depend on any house
- * already being tier 2 — the same reasoning that already keeps tier 1's
- * `requirements` empty applies to needing at least one hireable skill
- * before any house has advanced at all.
+ * THE LADDER (2026-10-11, identical for the 3 categories; only the skills a class holds differ). Read a row as: what a
+ * house AT that level needs, met, to evolve to the next level (= the next tier's `requirements`); and the skills it holds
+ * once it is at it, one level AHEAD of the buildings they staff (a tier's list can only be met if its buildings can be
+ * run already), exactly as the old ladder did:
+ *   1 (cabane)  — starts free. Needs food (a market), water (a tank), a dispensary (Doctor).
+ *                 Skills: farmer (artisans), food sale and storage (merchants), water and medicine (savants).
+ *   2           — + one retail good, fire cover (fire station), a warehouse within reach of its business, energy (a plant).
+ *                 Skills: the pottery, wood and oil chains and energy (artisans), handling and finance (merchants), fire (savants).
+ *   3           — + two retail goods, a hospital, a police station, a café-restaurant (the Taverne).
+ *                 Skills: the other industry chains and telecoms (artisans), hospitality (merchants), the hospital and police (savants).
+ *   4, 5, 6     — placeholders made of the services the old ladder kept (public bath, school, theatre, cinema, library) and
+ *                 more retail goods, to be redesigned.
+ * Population thresholds continue the +4 progression (1/4/8/12/16). Every building with `employment.workerNeed > 0` is wired
+ * to a skill granted somewhere on this ladder.
  */
 export const SOCIAL_CATEGORY = Object.freeze({
   artisans: Object.freeze({
     eligibleSectors: Object.freeze([1, 3, 4]),
+    enterprises: COOPERATIVE_ENTERPRISES,
     tiers: Object.freeze({
       1: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[1],
         requirements: Object.freeze([]),
-        skills: Object.freeze({ 'subsistence-forager': 1, spiritual: 1 }),
+        skills: Object.freeze({ fermier: 1 }),
       }),
       2: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[2],
-        requirements: Object.freeze([
-          Object.freeze({ kind: 'roadAccess' }),
-          Object.freeze({ kind: 'population', min: 1 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
-        ]),
-        // 'artisanat' (pottery workshops) — sector 3, this group's own
-        // Industries sector (see eligibleSectors above), same tier as the
-        // group's namesake trade. 'manutention' (the goods warehouse) — sector 4, also in eligibleSectors:
-        // the group of manual workers carries and stacks the goods. 'telecoms' (the network provider) — sector
-        // 3 too, another industrial trade this group holds.
-        skills: Object.freeze({ fermier: 1, artisanat: 1, manutention: 1, telecoms: 1 }),
+        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor')]),
+        skills: Object.freeze({ artisanat: 1, energie: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[3],
-        requirements: Object.freeze([
-          Object.freeze({ kind: 'roadAccess' }),
-          Object.freeze({ kind: 'population', min: 4 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'demandMet' }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
-        ]),
-        skills: Object.freeze({}),
+        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
+        skills: Object.freeze({ artisanat: 2, telecoms: 1, energie: 2 }),
       }),
       4: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[4],
         requirements: Object.freeze([
-          Object.freeze({ kind: 'roadAccess' }),
-          Object.freeze({ kind: 'population', min: 8 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'demandMet' }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'pub', coveragePeriods: 2 }),
+          ROAD, population(8), FOOD, WATER, covered('doctor'), goods(2), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          covered('hospital'), covered('police'), covered('pub'),
         ]),
         skills: Object.freeze({}),
       }),
       5: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[5],
         requirements: Object.freeze([
-          Object.freeze({ kind: 'roadAccess' }),
-          Object.freeze({ kind: 'population', min: 12 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'demandMet' }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'pub', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'school', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'cinema', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'goodsVariety', min: 2 }),
+          ROAD, population(12), FOOD, WATER, covered('doctor'), goods(3), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          covered('hospital'), covered('police'), covered('pub'), covered('school'),
+        ]),
+        skills: Object.freeze({}),
+      }),
+      6: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[6],
+        requirements: Object.freeze([
+          ROAD, population(16), FOOD, WATER, covered('doctor'), goods(4), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          covered('hospital'), covered('police'), covered('pub'), covered('school'),
+          covered('theatre'), covered('cinema'), covered('library'),
         ]),
         skills: Object.freeze({}),
       }),
@@ -147,58 +150,46 @@ export const SOCIAL_CATEGORY = Object.freeze({
   }),
   merchants: Object.freeze({
     eligibleSectors: Object.freeze([2]),
+    enterprises: COOPERATIVE_ENTERPRISES,
     tiers: Object.freeze({
       1: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[1],
         requirements: Object.freeze([]),
-        skills: Object.freeze({ 'subsistence-forager': 1, spiritual: 1 }),
+        skills: Object.freeze({ 'vente-alimentaire': 1, 'stockage-alimentaire': 1 }),
       }),
       2: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[2],
-        requirements: Object.freeze([
-          Object.freeze({ kind: 'roadAccess' }),
-          Object.freeze({ kind: 'population', min: 1 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
-        ]),
-        skills: Object.freeze({ 'vente-alimentaire': 1 }),
+        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor')]),
+        // 'manutention' (the warehouses, the trade warehouse) and 'finance' (the bank): the group's own Commerces sector.
+        skills: Object.freeze({ finance: 1, manutention: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[3],
-        requirements: Object.freeze([
-          Object.freeze({ kind: 'roadAccess' }),
-          Object.freeze({ kind: 'population', min: 4 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'demandMet' }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
-        ]),
-        skills: Object.freeze({}),
+        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
+        skills: Object.freeze({ hospitality: 1 }),
       }),
       4: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[4],
         requirements: Object.freeze([
-          Object.freeze({ kind: 'roadAccess' }),
-          Object.freeze({ kind: 'population', min: 8 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'demandMet' }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'pub', coveragePeriods: 2 }),
+          ROAD, population(8), FOOD, WATER, covered('doctor'), goods(2), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          covered('hospital'), covered('police'), covered('pub'),
         ]),
         skills: Object.freeze({}),
       }),
       5: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[5],
         requirements: Object.freeze([
-          Object.freeze({ kind: 'roadAccess' }),
-          Object.freeze({ kind: 'population', min: 12 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'demandMet' }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'pub', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'school', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'cinema', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'goodsVariety', min: 2 }),
+          ROAD, population(12), FOOD, WATER, covered('doctor'), goods(3), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          covered('hospital'), covered('police'), covered('pub'), covered('school'),
+        ]),
+        skills: Object.freeze({}),
+      }),
+      6: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[6],
+        requirements: Object.freeze([
+          ROAD, population(16), FOOD, WATER, covered('doctor'), goods(4), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          covered('hospital'), covered('police'), covered('pub'), covered('school'),
+          covered('theatre'), covered('cinema'), covered('library'),
         ]),
         skills: Object.freeze({}),
       }),
@@ -206,72 +197,84 @@ export const SOCIAL_CATEGORY = Object.freeze({
   }),
   scholars: Object.freeze({
     eligibleSectors: Object.freeze([6]),
+    enterprises: COOPERATIVE_ENTERPRISES,
     tiers: Object.freeze({
       1: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[1],
         requirements: Object.freeze([]),
-        skills: Object.freeze({ 'subsistence-forager': 1, spiritual: 1 }),
+        // The water tank and the dispensary (Doctor) the first tier needs are staffed from the start.
+        skills: Object.freeze({ hydraulique: 1, medical: 1 }),
       }),
       2: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[2],
-        requirements: Object.freeze([
-          Object.freeze({ kind: 'roadAccess' }),
-          Object.freeze({ kind: 'population', min: 1 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
-        ]),
-        // 'medical' 1 lands here (not at tier 3) so Doctor can already be
-        // staffed BY the time some house first reaches tier 3 and starts
-        // requiring `serviceCoverage: 'doctor'` — same reasoning applies to
-        // every other new service skill's placement below: one tier ahead
-        // of the earliest requirement that reads its category.
-        skills: Object.freeze({ 'stockage-alimentaire': 1, medical: 1 }),
+        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor')]),
+        skills: Object.freeze({ incendie: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[3],
-        requirements: Object.freeze([
-          Object.freeze({ kind: 'roadAccess' }),
-          Object.freeze({ kind: 'population', min: 4 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'demandMet' }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
-        ]),
-        // Ready ahead of tier 4's publicBath/pub requirements.
-        skills: Object.freeze({ hygiene: 1, hospitality: 1 }),
+        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
+        // The hospital (medical, level 2) and the police station gate tier 4: ready one tier ahead.
+        skills: Object.freeze({ medical: 2, securite: 1 }),
       }),
       4: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[4],
         requirements: Object.freeze([
-          Object.freeze({ kind: 'roadAccess' }),
-          Object.freeze({ kind: 'population', min: 8 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'demandMet' }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'pub', coveragePeriods: 2 }),
+          ROAD, population(8), FOOD, WATER, covered('doctor'), goods(2), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          covered('hospital'), covered('police'), covered('pub'),
         ]),
-        // Ready ahead of tier 5's school/cinema requirements.
-        skills: Object.freeze({ education: 1, entertainment: 1 }),
+        // Ready ahead of tier 5's school.
+        skills: Object.freeze({ education: 1 }),
       }),
       5: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[5],
         requirements: Object.freeze([
-          Object.freeze({ kind: 'roadAccess' }),
-          Object.freeze({ kind: 'population', min: 12 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'demandMet' }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'pub', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'school', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'serviceCoverage', category: 'cinema', coveragePeriods: 2 }),
-          Object.freeze({ kind: 'goodsVariety', min: 2 }),
+          ROAD, population(12), FOOD, WATER, covered('doctor'), goods(3), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          covered('hospital'), covered('police'), covered('pub'), covered('school'),
         ]),
-        // Level-2 raise for the buildings not wired to any tier gate
-        // (Hospital, Theatre) — end-game unlocks, no house needs these to
-        // advance further. School is NOT one of them: it gates this very tier
-        // (`serviceCoverage: 'school'` above), so it is staffed by `education`
-        // level 1, granted at tier 4 — a level-2 grant here would come too late.
-        skills: Object.freeze({ medical: 2, entertainment: 2 }),
+        // Ready ahead of tier 6's theatre (entertainment, level 2), cinema and library.
+        skills: Object.freeze({ entertainment: 2 }),
+      }),
+      6: Object.freeze({
+        maxPopulation: TIER_MAX_POPULATION[6],
+        requirements: Object.freeze([
+          ROAD, population(16), FOOD, WATER, covered('doctor'), goods(4), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          covered('hospital'), covered('police'), covered('pub'), covered('school'),
+          covered('theatre'), covered('cinema'), covered('library'),
+        ]),
+        skills: Object.freeze({}),
+      }),
+    }),
+  }),
+  // The city's administrators (the mayor's house): six at most, whatever the tier. From the first tier, with no requirement, they hold
+  // `proprietaire` (collects the rents and lets the other houses be built, see the houses' `requiresPlaced`) and the collection of the simple
+  // taxes (citizen, income, VAT). The second tier adds the collection of the companies' tax and of the customs. No workplace asks for any of them
+  // as a worker: they are the house's own functions, and the house reaches its tiers only while its needs are paid (so while its stipend is enough).
+  administrators: Object.freeze({
+    eligibleSectors: Object.freeze([]),
+    // They let the city's houses: a property company, which collects the rents (the `proprietaire` skill).
+    enterprises: Object.freeze([Object.freeze({ id: 'sci', label: 'SCI', activity: 'rental' })]),
+    // Governing is not a post of the labour market (see workforceQueries.js): no hiring, no unemployment, no benefit.
+    seeksWork: false,
+    tiers: Object.freeze({
+      1: Object.freeze({
+        maxPopulation: ADMINISTRATORS_MAX,
+        requirements: Object.freeze([]),
+        skills: Object.freeze({
+          [OWNER_SKILL]: 1,
+          [TAX_COLLECTION_SKILLS.citizen]: 1,
+          [TAX_COLLECTION_SKILLS.income]: 1,
+          [TAX_COLLECTION_SKILLS.vat]: 1,
+        }),
+      }),
+      2: Object.freeze({
+        maxPopulation: ADMINISTRATORS_MAX,
+        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor')]),
+        skills: Object.freeze({ [TAX_COLLECTION_SKILLS.corporate]: 1, [TAX_COLLECTION_SKILLS.customs]: 1 }),
+      }),
+      3: Object.freeze({
+        maxPopulation: ADMINISTRATORS_MAX,
+        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
+        skills: Object.freeze({}),
       }),
     }),
   }),

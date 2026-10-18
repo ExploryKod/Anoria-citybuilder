@@ -47,7 +47,7 @@ describe('config.simulation', () => {
     });
 
     test('définit la taille de la ville', () => {
-        expect(config.simulation.citySize).toBe(12);
+        expect(config.simulation.citySize).toBe(16);
     });
 
     test('ne porte plus de distance de distribution : la portée vit dans le catalogue économique', () => {
@@ -121,11 +121,11 @@ describe('config.employment', () => {
         });
 
         test('les marchés sont dans le secteur 2 (Commerces)', () => {
-            expect(sectorMap['Market-Stall']).toBe(2);
+            expect(sectorMap['Market-Stall-Red']).toBe(2);
         });
 
-        test('les moulins sont dans le secteur 4 (Stockage)', () => {
-            expect(sectorMap['Windmill-001']).toBe(4);
+        test('les moulins sont dans le secteur 2 (Commerce)', () => {
+            expect(sectorMap['Windmill-001']).toBe(2);
         });
 
         test('les routes sont dans le secteur 5 (Infrastructure)', () => {
@@ -147,7 +147,7 @@ describe('config.employment', () => {
         });
 
         test('les marchés nécessitent des travailleurs', () => {
-            expect(buildingNeeds['Market-Stall'].worker_need).toBe(2);
+            expect(buildingNeeds['Market-Stall-Red'].worker_need).toBe(2);
         });
 
         test('les moulins ont les plus gros besoins', () => {

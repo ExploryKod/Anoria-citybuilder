@@ -22,7 +22,7 @@ import { textures } from '../../three/meshs/data.js';
 // Icon key -> texture key (matches scene.js's setStatusSprite call sites).
 const ICON_TEXTURE_KEYS = {
   road: 'no-roads',
-  'no-food': 'nofood',
+  fallow: 'fallow',
   isBuying: 'isBuying',
   isCollecting: 'isCollecting',
   'grow-food': 'grow-food',

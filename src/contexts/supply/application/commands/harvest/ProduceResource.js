@@ -14,6 +14,7 @@ import {
 } from '../../../domain/policies/ResourceRangePolicy.js';
 import {
   getCategoriesForTotalKey,
+  getMaxStockForBuilding,
   getTotalKeyForCategory,
 } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
@@ -53,6 +54,9 @@ import {
  *     fresh every tick, not a one-off event: it clears itself the moment the step gets what it needs. The last
  *     time a step's inputs WERE taken, `activityInputs[category]` keeps what was taken, per good — how much
  *     was needed is never stored: it is read straight from this same catalog entry when it is shown.
+ *   - `requiresOpenDeal: true` — the entry makes a deal for a trade, so it runs only while the trade context says one
+ *     is open for its good (`dealGate.isOpen(category)`): no city to deal with, nothing made. A gate that was never
+ *     given throws, it never lets the entry through.
  *   - `source: { resource, range, consume }` — makes the entry a RAW-MATERIAL
  *     producer: it works only while enough natural resources of that kind lie
  *     within `range` tiles, and each production uses `consume` of them up
@@ -89,8 +93,16 @@ export class ProduceResource {
    *   building removal, so Supply is handed it rather than reaching into it).
    *   `hubServing` says how much of a hub's goods this building may draw (see HubServing).
    */
-  constructor(supplyBuildingRepository, { removeBuilding, hubServing } = {}) {
+  constructor(supplyBuildingRepository, { removeBuilding, hubServing, dealGate, recordInputPurchase } = {}) {
     this.supplyBuildingRepository = supplyBuildingRepository;
+    /**
+     * What a building draws from a hub for a recipe is bought from it: the supply logs each draw as a sale (hub → building)
+     * at the hub's price, and the month's settlement turns it into the two accounts' lines. Without it, inputs would be free.
+     * @type {((purchase: { period: object, buyerId: string, hubId: string, category: string, quantity: number }) => Promise<void>) | null}
+     */
+    this.recordInputPurchase = recordInputPurchase ?? null;
+    /** @type {{ isOpen: (category: string) => Promise<boolean> } | null} */
+    this.dealGate = dealGate ?? null;
     this.removeBuilding = removeBuilding ?? null;
     // How a hub serves a recipe drawing on it, among the other clients of the same goods.
     this.hubServing = hubServing;
@@ -159,11 +171,14 @@ export class ProduceResource {
   }
 
   /** Take what #planInputs planned; returns the building's stock without its own inputs. */
-  async #takeInputs(building, plan, need, turn) {
+  async #takeInputs(building, plan, need, period) {
+    const turn = period?.turn ?? 0;
     for (const draw of plan.draws) {
+      if (!this.recordInputPurchase) throw new Error(`[supply] ${building.id} draws ${draw.category} from a hub but ProduceResource has no recordInputPurchase: inputs would be free`);
       const holder = await this.supplyBuildingRepository.findById(draw.holderId);
       await this.hubServing.take({ hubId: draw.holderId, category: draw.category, client: building.id, amount: draw.amount, turn });
       await this.hubServing.recordDemand({ hubId: draw.holderId, category: draw.category, client: building.id, turn, wanted: 0, served: draw.amount });
+      await this.recordInputPurchase({ period, buyerId: building.id, hubId: draw.holderId, category: draw.category, quantity: draw.amount });
       // The holder's stock is written under the aggregate ITS role files the good under.
       const categories = getCategoriesForRole(holder.type, 'hub', draw.category);
       const totalKey = getTotalKeyForRole(holder.type, 'hub', draw.category);
@@ -222,7 +237,7 @@ export class ProduceResource {
         const need = (input) => input.amount ?? 0;
         const plan = operational ? await this.#planInputs({ ...building, stocks: stock }, inputs, need, period?.turn ?? 0) : null;
         if (plan && !plan.missing) {
-          stock = await this.#takeInputs({ ...building, stocks: stock }, plan, need, period?.turn ?? 0);
+          stock = await this.#takeInputs({ ...building, stocks: stock }, plan, need, period);
           state.value = state.index === 0 ? (step.amount ?? 0) : state.value * (step.factor ?? 1);
           advanced = true;
           if (inputs.length > 0) {
@@ -319,6 +334,14 @@ export class ProduceResource {
         continue;
       }
 
+      if (entry.requiresOpenDeal) {
+        if (!this.dealGate) throw new Error(`[supply] "${category}" requires an open deal but no dealGate was given to ProduceResource`);
+        if (!(await this.dealGate.isOpen(category))) {
+          firstFailure ??= 'no_open_deal';
+          continue;
+        }
+      }
+
       // A raw-material producer needs its natural resource in range.
       let sources = [];
       const sourceNeed = entry.source ? (entry.source.consume ?? 1) : 0;
@@ -377,14 +400,30 @@ export class ProduceResource {
         }
         if (entry.scale === 'population') multiplier = pop;
       }
-      const amount = (entry.amount ?? 0) * multiplier;
+      let amount = (entry.amount ?? 0) * multiplier;
+
+      // A reservoir cannot overflow: a building that declares a stock ceiling (a tank, a power plant) makes only what fits
+      // under it, and burns only the share of its inputs that makes. Full, it makes nothing and takes nothing.
+      let share = 1;
+      const ceiling = getMaxStockForBuilding(building.type);
+      if (Number.isFinite(ceiling) && amount > 0) {
+        const room = Math.max(0, Math.floor(ceiling - getCategoryAmount(building.stocks, category)));
+        if (room <= 0) {
+          firstFailure ??= 'stock_full';
+          continue;
+        }
+        if (room < amount) {
+          share = room / amount;
+          amount = room;
+        }
+      }
 
       // A transformation: this entry turns goods the building already holds
       // into its own output. All or nothing — short of any one input it
       // produces nothing AND stays unlocked for the period, so it runs as
       // soon as it is supplied. The same `multiplier` scales the recipe, so
       // its ratio holds whatever scales the output.
-      const inputNeed = (input) => (input.amount ?? 0) * multiplier;
+      const inputNeed = (input) => (share < 1 ? Math.max(1, Math.ceil((input.amount ?? 0) * multiplier * share)) : (input.amount ?? 0) * multiplier);
       const plan = await this.#planInputs(building, entry.inputs ?? [], inputNeed, period?.turn ?? 0);
       if (plan.missing) {
         firstFailure ??= 'missing_input';
@@ -400,7 +439,7 @@ export class ProduceResource {
       // aggregate returns only that aggregate's fields, and a building that
       // holds a good outside it (its inputs, another chain's output) would
       // otherwise lose it on every production.
-      let nextStock = await this.#takeInputs(building, plan, inputNeed, period?.turn ?? 0);
+      let nextStock = await this.#takeInputs(building, plan, inputNeed, period);
 
       for (const produced of entry.categories) {
         const shape = stockShapeFor(produced, entry.totalKey);

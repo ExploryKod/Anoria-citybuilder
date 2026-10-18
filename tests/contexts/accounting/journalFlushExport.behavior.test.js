@@ -79,6 +79,30 @@ describe('Accounting — journal flush & export (Phase 6.4)', () => {
     expect(parsed.yearlySummary).toBeTruthy();
   });
 
+  test('ExportJournalJson splits the journal in two files: the hamlet\'s own account, and the private flux of the companies and houses', async () => {
+    const entries = [
+      { id: 1, turn: 1, type: 'maintenance', amount: 10, description: 'city line', year: 0, month: 1 },
+      { id: 2, turn: 1, type: 'import_coal', amount: 16.2, description: 'merchants line', year: 0, month: 1, accountBuildingId: 'house-1', accountKind: 'entreprise:cooperative' },
+      { id: 3, turn: 1, type: 'service_purchase', amount: 2, description: 'house line', year: 0, month: 1, accountBuildingId: 'house-1', accountKind: 'particulier' },
+    ];
+    const repository = {
+      getJournalEntries: async () => entries,
+      getYearlyFinancialSummary: async () => [{ year: 0, income: { total: 0 }, expenses: { total: 10 }, netFlow: -10, monthCount: 1 }],
+    };
+    const exportJson = new ExportJournalJson(repository);
+
+    const city = JSON.parse(await exportJson.execute({ accountScope: 'city' }));
+    const privateFlux = JSON.parse(await exportJson.execute({ accountScope: 'private' }));
+    const all = JSON.parse(await exportJson.execute());
+
+    expect(city.entries.map((e) => e.id)).toEqual([1]);
+    expect(city.yearlySummary).toHaveLength(1); // the yearly summary is the city's figure
+    expect(privateFlux.entries.map((e) => e.id)).toEqual([2, 3]);
+    expect(privateFlux.yearlySummary).toEqual([]); // so a private export carries none
+    expect(all.entries).toHaveLength(3);
+    await expect(exportJson.execute({ accountScope: 'nobody' })).rejects.toThrow(/unknown export scope/);
+  });
+
   test('buildJournalExportPayload maps entry fields', () => {
     const payload = buildJournalExportPayload({
       entries: [{ id: 1, turn: 0, date: '2026-01-01', type: 'citizen_tax', amount: 5, description: 'x' }],

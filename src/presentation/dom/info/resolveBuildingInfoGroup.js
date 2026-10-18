@@ -34,11 +34,20 @@ export function resolveBuildingInfoGroup({ buildingRow, supplyView }) {
   if (supplyView?.kind === 'market') {
     return BUILDING_INFO_GROUPS.market;
   }
-  // 'service' — a flag-distributor (Chapel, School, Library, Doctor,
-  // Hospital, PublicBath, Theatre, Cinema, Pub, ...): see classifySupplyKind
+  // 'service' — a flag-distributor (School, Library, Doctor,
+  // Hospital, Theatre, Cinema, Pub, ...): see classifySupplyKind
   // in GetBuildingSupplyView.js. Its own group, not market's, since it has
   // no stock/buying-period concept at all.
   if (supplyView?.kind === 'service') {
+    return BUILDING_INFO_GROUPS.service;
+  }
+  // A workplace with no resourceRole at all (today only the Bank — it holds and lends money, not goods: see
+  // buildingEconomy.js's 'Bank' entry) is classifySupplyKind's 'other', which has no stock/production/service
+  // category to show either — but it still has workers, so it belongs with the other staffed buildings
+  // (service's panel already renders an empty "État" section gracefully when there is no category/range to
+  // report), not with `generic`, which has no Personnel tab at all and labels its one KV row "Habitants" — a
+  // house's word for a building with no residents.
+  if (buildingRow?.employees?.worker_need > 0) {
     return BUILDING_INFO_GROUPS.service;
   }
   return BUILDING_INFO_GROUPS.generic;

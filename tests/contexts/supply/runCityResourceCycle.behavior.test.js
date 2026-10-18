@@ -13,6 +13,8 @@ import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domai
 import { createResourceStock } from '../../../src/contexts/supply/domain/value-objects/ResourceStock.js';
 import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
+import { unlimitedConsumerMoney } from '../../helpers/unlimitedConsumerMoney.js';
+import { referencePriceBook } from '../../helpers/referencePriceBook.js';
 
 // Market-Stall/Windmill-001/House-Blue are real catalog types — schedule,
 // categories, totalKey, and hub-link field names all come from
@@ -86,7 +88,7 @@ const HOUSE2_ID = createBuildingInstanceId();
 function market(overrides = {}) {
   return {
     id: MARKET_ID,
-    type: 'Market-Stall',
+    type: 'Market-Stall-Red',
     x: 5,
     y: 5,
     roads: 1,
@@ -116,18 +118,20 @@ function house(id, overrides = {}) {
   };
 }
 
-const CHAPEL_ID = createBuildingInstanceId();
+// School stands in for a hub-less flag distributor — the water tank is a quantity distributor
+// (see buildingEconomy.js), so it is no longer an example of this mechanism.
+const SCHOOL_ID = createBuildingInstanceId();
 
-function chapel(overrides = {}) {
+function school(overrides = {}) {
   return {
-    id: CHAPEL_ID,
-    type: 'Chapel',
+    id: SCHOOL_ID,
+    type: 'School',
     x: 5,
     y: 5,
     roads: 1,
     roadCount: 1,
-    worker: 2,
-    workerNeed: 2,
+    worker: 3,
+    workerNeed: 3,
     stocks: {},
     ...overrides,
   };
@@ -139,7 +143,7 @@ describe('RunCityResourceCycle', () => {
       market({ stocks: { wheat: 10, food: 10 } }),
       house(HOUSE_ID),
     ]);
-    const distribute = new DistributeResourceToConsumers(repo);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
     const events = [];
     const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
 
@@ -171,7 +175,7 @@ describe('RunCityResourceCycle', () => {
       house(HOUSE_ID),
       house(HOUSE2_ID),
     ]);
-    const distribute = new DistributeResourceToConsumers(repo);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
     const events = [];
     const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
 
@@ -217,7 +221,7 @@ describe('RunCityResourceCycle', () => {
       market({ supplyHubId: WINDMILL_ID, stocks: { wheat: 0, food: 0 } }),
       house(HOUSE_ID),
     ]);
-    const distribute = new DistributeResourceToConsumers(repo);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
     const transferHubToHub = new TransferHubToHub(repo, new HubServing(repo));
     let hubLinkResolved = null;
     const cycle = new RunCityResourceCycle(repo, distribute, undefined, {
@@ -258,7 +262,7 @@ describe('RunCityResourceCycle', () => {
       market({ supplyHubId: WINDMILL_ID, stocks: { wheat: 0, food: 0 } }),
       house(HOUSE_ID),
     ]);
-    const cycle = new RunCityResourceCycle(repo, new DistributeResourceToConsumers(repo), undefined, {
+    const cycle = new RunCityResourceCycle(repo, new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook), undefined, {
       transferHubToHub: new TransferHubToHub(repo, new HubServing(repo)),
     });
 
@@ -274,14 +278,14 @@ describe('RunCityResourceCycle', () => {
     expect((await repo.findBuildingRow(WINDMILL_ID)).stocks.wheat).toBe(90);
   });
 
-  test('a hub-less flag distributor (chapel) marks houses served, no stock leg at all', async () => {
-    const repo = new FakeSupplyBuildingRepository([chapel(), house(HOUSE_ID)]);
-    const distribute = new DistributeResourceToConsumers(repo);
+  test('a hub-less flag distributor (school) marks houses served, no stock leg at all', async () => {
+    const repo = new FakeSupplyBuildingRepository([school(), house(HOUSE_ID)]);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
     const events = [];
     const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
 
     const result = await cycle.execute({
-      categories: ['faith'],
+      categories: ['school'],
       season: 'summer',
       month: 'January',
       timeInfo: { turn: 1, monthIndex: 5 },
@@ -294,41 +298,41 @@ describe('RunCityResourceCycle', () => {
     // regression the bug hid behind: `period` built here used to omit
     // `monthIndex` (only `season`/`month`, the string name), so
     // PeriodLockPolicy.resolvePeriodKey('month', ...) fell back to 0 every
-    // time. A house's tier-2 `serviceCoverage: 'faith'` requirement compares
-    // this flag against the REAL current monthIndex (see
-    // HouseTierRequirementPolicy.js), so a flag stuck at 0 only ever matched
-    // in month 0 and looked permanently unserved (or caused a demotion)
-    // every month after — Chapel could be fully staffed and in range and
-    // houses would still never reach tier 2.
-    expect(houseRow.servedFlags).toEqual({ faith: 5 });
+    // time. A house's tier requirement compares this flag against the REAL
+    // current monthIndex (see HouseTierRequirementPolicy.js), so a flag
+    // stuck at 0 only ever matched in month 0 and looked permanently
+    // unserved (or caused a demotion) every month after — the service
+    // could be fully staffed and in range and houses would still never
+    // reach that tier.
+    expect(houseRow.servedFlags).toEqual({ school: 5 });
     expect(events).toEqual([
       {
         type: 'supply.resourceDeliveryRoute',
-        sourceId: CHAPEL_ID,
+        sourceId: SCHOOL_ID,
         consumerIds: [HOUSE_ID],
       },
     ]);
   });
 
   test('the served flag tracks the REAL current month across cycles, not a stuck value', async () => {
-    const repo = new FakeSupplyBuildingRepository([chapel(), house(HOUSE_ID)]);
-    const distribute = new DistributeResourceToConsumers(repo);
+    const repo = new FakeSupplyBuildingRepository([school(), house(HOUSE_ID)]);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
     const cycle = new RunCityResourceCycle(repo, distribute);
 
     await cycle.execute({
-      categories: ['faith'],
+      categories: ['school'],
       season: 'summer',
       timeInfo: { turn: 1, monthIndex: 6 },
       maxDistance: 5,
     });
-    expect((await repo.findBuildingRow(HOUSE_ID)).servedFlags).toEqual({ faith: 6 });
+    expect((await repo.findBuildingRow(HOUSE_ID)).servedFlags).toEqual({ school: 6 });
 
     await cycle.execute({
-      categories: ['faith'],
+      categories: ['school'],
       season: 'summer',
       timeInfo: { turn: 2, monthIndex: 7 },
       maxDistance: 5,
     });
-    expect((await repo.findBuildingRow(HOUSE_ID)).servedFlags).toEqual({ faith: 7 });
+    expect((await repo.findBuildingRow(HOUSE_ID)).servedFlags).toEqual({ school: 7 });
   });
 });

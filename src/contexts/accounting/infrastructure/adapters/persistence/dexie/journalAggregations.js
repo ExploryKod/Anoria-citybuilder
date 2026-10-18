@@ -14,24 +14,14 @@ export { isInformativeJournalType, isJournalEntryIncomeForMonthlySummary };
 
 /**
  * @param {Array<object>} entries
- * @param {number|null} maxAge days
  */
-export function filterAndSortJournalEntries(entries, maxAge = null) {
-  let filtered = entries;
-
-  if (maxAge) {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - maxAge);
-    filtered = filtered.filter(
-      (entry) => new Date(entry.date) >= cutoffDate
-    );
-  }
-
-  return filtered.sort((a, b) => {
+export function filterAndSortJournalEntries(entries) {
+  return entries.sort((a, b) => {
     if (a.turn !== b.turn) {
       return b.turn - a.turn;
     }
-    return new Date(b.date) - new Date(a.date);
+    // Within a turn, the most recent insertion first: the wall-clock date can tie within a millisecond.
+    return b.id - a.id;
   });
 }
 
@@ -50,6 +40,15 @@ export function filterJournalEntriesByHamlet(entries, hamletId) {
     }
     return entry.hamletId === hamletId;
   });
+}
+
+/**
+ * The city's own lines: those that hold no account of a building. The yearly summary is the city's figure — a house's or a
+ * company's lines (wages, purchases, rents) are movements between private accounts, not the city's income and expenses.
+ * @param {Array<object>} entries
+ */
+export function filterCityAccountEntries(entries) {
+  return entries.filter((entry) => (entry.accountBuildingId ?? null) === null);
 }
 
 
@@ -99,11 +98,16 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
         businessKey: entry.businessKey,
         partnerId: entry.partnerId,
         buildingInstanceId: entry.buildingInstanceId,
+        accountBuildingId: entry.accountBuildingId ?? null,
+        counterpartyBuildingId: entry.counterpartyBuildingId ?? null,
         type: entry.type,
         amount: entry.amount,
         description: entry.description,
-        date: entry.date,
         turn: entry.turn,
+        journal: entry.journal ?? null,
+        legs: entry.legs ?? null,
+        transactionId: entry.transactionId ?? null,
+        closed: entry.closed ?? false,
       });
     } else {
       grouped[key].expenses.total += entry.amount;
@@ -113,11 +117,16 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
         businessKey: entry.businessKey,
         partnerId: entry.partnerId,
         buildingInstanceId: entry.buildingInstanceId,
+        accountBuildingId: entry.accountBuildingId ?? null,
+        counterpartyBuildingId: entry.counterpartyBuildingId ?? null,
         type: entry.type,
         amount: entry.amount,
         description: entry.description,
-        date: entry.date,
         turn: entry.turn,
+        journal: entry.journal ?? null,
+        legs: entry.legs ?? null,
+        transactionId: entry.transactionId ?? null,
+        closed: entry.closed ?? false,
       });
     }
 

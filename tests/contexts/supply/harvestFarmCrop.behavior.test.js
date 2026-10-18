@@ -137,17 +137,18 @@ describe('Supply — farm harvest', () => {
       expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(YIELD);
     });
 
+    // What the harvest of a year leaves unsold does not pile up for ever: it goes bad when its shelf life is over (StockAgingPolicy.js).
     test('allows harvest again next year', async () => {
       await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 3 },
       });
-      await useCase.execute({
+      const second = await useCase.execute({
         buildingId: 'Farm-Wheat-2-3',
         period: { season: 'autumn', year: 4 },
       });
 
-      expect((await repo.findById('Farm-Wheat-2-3')).stocks.wheat).toBe(2 * YIELD);
+      expect(second.produced).toBe(true);
     });
 
     test('refuses outside autumn', async () => {
@@ -182,8 +183,8 @@ describe('Supply — farm harvest', () => {
     test('the road need is the catalog\'s call, whatever the building', () => {
       expect(isOperational({ type: 'Farm-Wheat', roadCount: 0, worker: 3, workerNeed: 3 })).toBe(true);
       expect(isOperational({ type: 'Farm-Wheat', roadCount: 0, worker: 0, workerNeed: 3 })).toBe(false);
-      expect(isOperational({ type: 'Market-Stall', roadCount: 0, worker: 2, workerNeed: 2 })).toBe(false);
-      expect(isOperational({ type: 'Market-Stall', roadCount: 1, worker: 2, workerNeed: 2 })).toBe(true);
+      expect(isOperational({ type: 'Market-Stall-Red', roadCount: 0, worker: 2, workerNeed: 2 })).toBe(false);
+      expect(isOperational({ type: 'Market-Stall-Red', roadCount: 1, worker: 2, workerNeed: 2 })).toBe(true);
     });
   });
 

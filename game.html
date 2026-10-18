@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="/src/presentation/dom/styles/tutorial.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/objectives.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/news-event-modal.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/shelf-life.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/parameters.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/legends.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/hud.css">
@@ -51,6 +52,7 @@
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/archives-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/commerce-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/administrator-panel-flat.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/taxes-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/multiplayer.css" media="print" onload="this.media='all'">
     <noscript>
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/loans-panel.css">
@@ -69,6 +71,7 @@
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/commerce-section.css">
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/news-event-modal.css">
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/administrator-panel-flat.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/taxes-section.css">
         <link rel="stylesheet" href="/src/presentation/dom/styles/multiplayer.css">
     </noscript>
 
@@ -175,6 +178,7 @@
                     <button type="button" role="tab" id="tab-foyer" data-tab="foyer" aria-controls="panel-foyer" aria-selected="true" tabindex="0">🏠 Bâtiment</button>
                     <button type="button" role="tab" id="tab-diet" data-tab="diet" aria-controls="panel-diet" aria-selected="false" tabindex="-1" hidden>🍽️ Régime</button>
                     <button type="button" role="tab" id="tab-stocks" data-tab="stocks" aria-controls="panel-stocks" aria-selected="false" tabindex="-1" hidden>📦 Stocks</button>
+                    <button type="button" role="tab" id="tab-shelfLife" data-tab="shelfLife" aria-controls="panel-shelfLife" aria-selected="false" tabindex="-1" hidden>⏳ Durée de vie</button>
                     <button type="button" role="tab" id="tab-activity" data-tab="activity" aria-controls="panel-activity" aria-selected="false" tabindex="-1" hidden>🛠️ Activité</button>
                     <button type="button" role="tab" id="tab-trade" data-tab="trade" aria-controls="panel-trade" aria-selected="false" tabindex="-1" hidden>💰 Ventes</button>
                     <button type="button" role="tab" id="tab-staff" data-tab="staff" aria-controls="panel-staff" aria-selected="false" tabindex="-1" hidden>👷 Personnel</button>
@@ -182,11 +186,13 @@
                     <button type="button" role="tab" id="tab-clients" data-tab="clients" aria-controls="panel-clients" aria-selected="false" tabindex="-1" hidden>🤝 Clients</button>
                     <button type="button" role="tab" id="tab-neighbors" data-tab="neighbors" aria-controls="panel-neighbors" aria-selected="false" tabindex="-1" hidden>🏘️ Voisins</button>
                     <button type="button" role="tab" id="tab-messages" data-tab="messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1" hidden>💬 Messages</button>
+                    <button type="button" role="tab" id="tab-finance" data-tab="finance" aria-controls="panel-finance" aria-selected="false" tabindex="-1" hidden>💰 Finances</button>
                 </div>
                 <div class="info-building__body">
                     <div id="panel-foyer" role="tabpanel" class="info-building__tabpanel is-active" aria-labelledby="tab-foyer" tabindex="0"></div>
                     <div id="panel-diet" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-diet" tabindex="0" hidden></div>
                     <div id="panel-stocks" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-stocks" tabindex="0" hidden></div>
+                    <div id="panel-shelfLife" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-shelfLife" tabindex="0" hidden></div>
                     <div id="panel-activity" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-activity" tabindex="0" hidden></div>
                     <div id="panel-trade" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-trade" tabindex="0" hidden></div>
                     <div id="panel-staff" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-staff" tabindex="0" hidden></div>
@@ -194,6 +200,7 @@
                     <div id="panel-clients" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-clients" tabindex="0" hidden></div>
                     <div id="panel-neighbors" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-neighbors" tabindex="0" hidden></div>
                     <div id="panel-messages" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-messages" tabindex="0" hidden></div>
+                    <div id="panel-finance" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-finance" tabindex="0" hidden></div>
                 </div>
             </div>
         </div>
@@ -254,29 +261,6 @@
 
         <div class="toolbar__container">
             <div class="toolbar__sub-container">
-                <div class="toolbar__label">Agriculture</div>
-                <div class="toolbar__buttons">
-                    <button type="button" id="farm-btn" class="toolbar-btn" data-group="farms" title="Agriculture" aria-label="Agriculture">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
-                            <path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                            <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                            <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                            <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
-                            <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                            <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                            <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                        </svg>
-                    </button>
-                    <button type="button" id="industry-btn" data-toolid="factories" data-group="factories" class="toolbar-btn" title="Usines" aria-label="Usines">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="toolbar__container">
-            <div class="toolbar__sub-container">
                 <div class="toolbar__label">Infrastructure</div>
                 <div class="toolbar__buttons">
                     <button type="button" id="infrastructure-btn" class="toolbar-btn" data-group="infrastructure" title="Infrastructure" aria-label="Infrastructure" hidden>
@@ -294,14 +278,16 @@
 
                 <div class="toolbar__container">
                     <div class="toolbar__sub-container">
-                        <div class="toolbar__label">Commerce</div>
+                        <div class="toolbar__label">Métiers</div>
                         <div class="toolbar__buttons">
-                            <button type="button" id="market-btn" class="toolbar-btn" data-group="warehouses" title="Entrepôts et commerce">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse">
-                                    <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
-                                    <path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>
+                            <!-- One pill per social class: what its houses staff, from the catalog (see toolbarGroupOf). The titles are set at boot from the house names. -->
+                            <button type="button" id="artisans-btn" class="toolbar-btn" data-group="artisans" data-social-group="artisans" title="Artisans">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hammer"><path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9"/><path d="m18 15 4-4"/><path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/></svg>
                             </button>
-                            <button type="button" id="public-btn" class="toolbar-btn" data-group="public" title="Services publics">
+                            <button type="button" id="merchants-btn" class="toolbar-btn" data-group="merchants" data-social-group="merchants" title="Commerçants">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>
+                            </button>
+                            <button type="button" id="scholars-btn" class="toolbar-btn" data-group="scholars" data-social-group="scholars" title="Savants">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                             </button>
                         </div>
@@ -757,13 +743,34 @@
                                 <span class="pop-detail-value pop-detail-value--hamlet">0</span>
                             </span>
                         </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="pop" data-social-group="administrators">
+                            <span class="pop-detail-emoji" title="Administrateurs" aria-hidden="true">🏛️</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
+                <div class="pop-detail-metric pop-detail-hunger-risk">
+                    <span class="pop-detail-icon pop-detail-icon--hunger-risk" aria-hidden="true"></span>
+                    <span class="pop-detail-values" aria-label="Citoyens menacés par la faim">
+                        <span class="pop-detail-value display-hunger-risk pop-detail-value--country">0</span>
+                        <span class="pop-detail-value display-hunger-risk--hamlet pop-detail-value--hamlet">0</span>
+                    </span>
+                </div>
+                <div class="pop-detail-metric pop-detail-disette">
+                    <span class="pop-detail-icon pop-detail-icon--disette" title="Disette" aria-hidden="true"></span>
+                    <span class="pop-detail-values" aria-label="Citoyens en disette">
+                        <span class="pop-detail-value display-disette-pop pop-detail-value--country">0</span>
+                        <span class="pop-detail-value display-disette-pop--hamlet pop-detail-value--hamlet">0</span>
+                    </span>
+                </div>
                 <div class="pop-detail-metric pop-detail-hunger">
-                    <span class="pop-detail-icon" title="Faim">
+                    <span class="pop-detail-icon" title="Pénurie">
                         <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
                     </span>
-                    <span class="pop-detail-values" aria-label="Citoyens affamés">
+                    <span class="pop-detail-values" aria-label="Citoyens en pénurie">
                         <span class="pop-detail-value display-hunger-pop pop-detail-value--country">0</span>
                         <span class="pop-detail-value display-hunger-pop--hamlet pop-detail-value--hamlet">0</span>
                     </span>
@@ -806,23 +813,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
-                <div class="pop-detail-block pop-breakdown" aria-label="Détail population active">
-                        <span class="pop-detail-metric pop-segment pop-segment--citizen">
-                            <span class="pop-detail-emoji pop-segment-emoji" title="Citoyens" aria-hidden="true">🔨</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
-                            </span>
-                        </span>
-                        <span class="pop-detail-metric pop-segment pop-segment--servant">
-                            <span class="pop-detail-emoji pop-segment-emoji" title="Fonctionnaires" aria-hidden="true">🏛</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
-                            </span>
-                        </span>
-                </div>
             </section>
             <section
                 id="hud-pop-panel-emploi"
@@ -861,6 +851,44 @@
                             <span class="pop-detail-values">
                                 <span class="pop-detail-value pop-detail-value--country">0%</span>
                                 <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Why people are out of work and why posts stay empty (the title of each row says it in full). -->
+                    <div class="pop-detail-groups pop-detail-causes" aria-label="Causes du chômage et du manque de main-d'œuvre">
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoSkill" title="Chômeurs : il y a des postes libres, mais ils n'ont pas la compétence">
+                            <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoPosts" title="Chômeurs : il n'y a aucun poste libre">
+                            <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoRoad" title="Chômeurs : leur maison n'a pas de route">
+                            <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="lackNoSkill" title="Postes vides : il y a des chômeurs, mais sans la compétence">
+                            <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="lackNoHands" title="Postes vides : plus personne de disponible">
+                            <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
                             </span>
                         </div>
                     </div>
@@ -1360,6 +1388,13 @@
                 </div>
             </nav>
 
+            <!-- Short reminders under the HUD, one after the other (HudTicker.js); hidden while there is none. -->
+            <div id="hud-ticker" class="hud-ticker" role="status" aria-live="polite" aria-label="Rappels" hidden>
+                <div class="splide hud-ticker__splide">
+                    <div class="splide__track"><ul class="splide__list"></ul></div>
+                </div>
+            </div>
+
             <aside id="hud-fab-dock" class="hud-fab-dock" aria-label="Outils">
             </aside>
         </section>
@@ -1647,6 +1682,76 @@
 
                 <button
                     class="administrator-nav-btn"
+                    id="admin-nav-taxes"
+                    data-section="taxes"
+                    title="Taxes"
+                    aria-label="Ouvrir la section Taxes">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-percent">
+                        <line x1="19" x2="5" y1="5" y2="19"/>
+                        <circle cx="6.5" cy="6.5" r="2.5"/>
+                        <circle cx="17.5" cy="17.5" r="2.5"/>
+                    </svg>
+                    <span class="sr-only">Taxes</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-customs"
+                    data-section="customs"
+                    title="Douanes"
+                    aria-label="Ouvrir la section Douanes">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-right">
+                        <path d="M8 3 4 7l4 4"/>
+                        <path d="M4 7h16"/>
+                        <path d="m16 21 4-4-4-4"/>
+                        <path d="M20 17H4"/>
+                    </svg>
+                    <span class="sr-only">Douanes</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-prices"
+                    data-section="prices"
+                    title="Prix"
+                    aria-label="Ouvrir la section Prix">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag">
+                        <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/>
+                        <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>
+                    </svg>
+                    <span class="sr-only">Prix</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-wages"
+                    data-section="wages"
+                    title="Salaires"
+                    aria-label="Ouvrir la section Salaires">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hand-coins">
+                        <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
+                        <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
+                        <path d="m2 16 6 6"/>
+                        <circle cx="16" cy="9" r="2.9"/>
+                        <circle cx="6" cy="5" r="3"/>
+                    </svg>
+                    <span class="sr-only">Salaires</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-services"
+                    data-section="services"
+                    title="Services"
+                    aria-label="Ouvrir la section Services">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                    </svg>
+                    <span class="sr-only">Services</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
                     id="admin-nav-archives"
                     data-section="archives"
                     title="Archives"
@@ -1692,44 +1797,33 @@
                     </div>
                     <div class="administrator-section-content">
                         <div class="finances-board" id="finances-board">
+                            <!-- The views of the board: the Caesar-style budget, then the city's statements (M57) read from the same journal. The JSON button downloads all of them in one file. -->
+                            <div class="building-finance-toolbar finances-toolbar">
+                                <div class="building-finance-pills" role="tablist" aria-label="Vue des finances">
+                                    <button type="button" class="building-finance-pill-tab is-active" data-finances-pill="budget" role="tab">Budget</button>
+                                    <button type="button" class="building-finance-pill-tab" data-finances-pill="result" role="tab">Compte de résultat</button>
+                                    <button type="button" class="building-finance-pill-tab" data-finances-pill="balance" role="tab">Bilan</button>
+                                    <button type="button" class="building-finance-pill-tab" data-finances-pill="trial" role="tab">Balance</button>
+                                </div>
+                                <button type="button" class="building-finance-download" id="finances-download" title="Télécharger toutes les vues (budget, compte de résultat, bilan, balance) en un fichier JSON">JSON</button>
+                            </div>
+
                             <div class="finances-hamlet-filter-row">
                                 <label class="finances-hamlet-filter-label" for="finances-hamlet-filter">Budget de :</label>
                                 <select id="finances-hamlet-filter" class="finances-hamlet-filter" aria-label="Choisir le hameau dont afficher le budget"></select>
                             </div>
 
-                            <div class="finances-debt-info" id="finances-debt-info">
+                            <div class="finances-debt-info" id="finances-debt-info" data-finances-view="budget">
                                 <p class="finances-debt-text">
                                     La ville a une dette envers les prêteurs de <span class="finances-debt-amount" id="finances-debt-amount">0</span> €
                                 </p>
                             </div>
 
-                            <div class="finances-tax-controls">
-                                <div class="finances-tax-controls-row">
-                                    <span class="finances-tax-label">Impôt par citoyen :</span>
-                                    <div class="finances-tax-buttons">
-                                        <button type="button" class="finances-tax-btn" id="tax-decrease-btn" aria-label="Diminuer l'impôt par citoyen">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                <path d="M5 12h14"/>
-                                            </svg>
-                                        </button>
-                                        <span class="finances-tax-rate" id="tax-rate-display">25</span>
-                                        <button type="button" class="finances-tax-btn" id="tax-increase-btn" aria-label="Augmenter l'impôt par citoyen">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                <path d="M5 12h14"/>
-                                                <path d="M12 5v14"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="finances-tax-estimate-wrapper">
-                                    <span class="finances-tax-estimate" id="tax-estimate">€ par citoyen</span>
-                                </div>
-                            </div>
-                            <div class="finances-tax-registration" id="tax-registration">
+                            <div class="finances-tax-registration" id="tax-registration" data-finances-view="budget">
                                 100% de la population est enregistrée pour les impôts
                             </div>
 
-                            <table class="finances-table">
+                            <table class="finances-table" data-finances-view="budget">
                                 <thead>
                                     <tr>
                                         <th class="indicator-col"></th>
@@ -1782,9 +1876,21 @@
                                                 <path d="M16 10h1v4"></path>
                                             </svg>
                                         </td>
-                                        <td class="label-col finances-row-label">Impôt sur les salaires (assiette citoyens)</td>
+                                        <td class="label-col finances-row-label">Impôt sur le revenu (IR)</td>
                                         <td class="last-year-col finances-value-positive" data-field="payrollTaxLastYear" id="payroll-tax-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="payrollTaxThisYear" id="payroll-tax-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">TVA ventes</td>
+                                        <td class="last-year-col finances-value-positive" data-field="vatLastYear" id="vat-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="vatThisYear" id="vat-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Impôt sur les sociétés perçu</td>
+                                        <td class="last-year-col finances-value-positive" data-field="corporateTaxRevenueLastYear" id="corporatetaxrevenue-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="corporateTaxRevenueThisYear" id="corporatetaxrevenue-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -1793,9 +1899,31 @@
                                                 <path d="M21 21V2l-9 6-9-6v19"></path>
                                             </svg>
                                         </td>
-                                        <td class="label-col finances-row-label">Exportations</td>
+                                        <td class="label-col finances-row-label">Douanes à l'exportation</td>
                                         <td class="last-year-col finances-value-positive" data-field="exportsLastYear" id="exports-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="exportsThisYear" id="exports-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ship">
+                                                <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"></path>
+                                                <path d="M21 21V2l-9 6-9-6v19"></path>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">Douanes à l'importation</td>
+                                        <td class="last-year-col finances-value-positive" data-field="customsImportLastYear" id="customs-import-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="customsImportThisYear" id="customs-import-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake">
+                                                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                                                <path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"/>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">Cotisations sociales</td>
+                                        <td class="last-year-col finances-value-positive" data-field="socialContributionsLastYear" id="social-contributions-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="socialContributionsThisYear" id="social-contributions-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -1872,6 +2000,24 @@
                                         <td class="label-col finances-row-label">Salaires chômeurs</td>
                                         <td class="last-year-col finances-value-negative" data-field="unemploymentBenefitLastYear" id="unemployment-benefit-last-year">0</td>
                                         <td class="this-year-col finances-value-negative" data-field="unemploymentBenefitThisYear" id="unemployment-benefit-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Subventions des services</td>
+                                        <td class="last-year-col finances-value-negative" data-field="serviceSubsidyLastYear" id="service-subsidy-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="serviceSubsidyThisYear" id="service-subsidy-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Subvention entretien entreprise</td>
+                                        <td class="last-year-col finances-value-negative" data-field="companySubsidyLastYear" id="companysubsidy-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="companySubsidyThisYear" id="companysubsidy-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Subvention entretien habitation</td>
+                                        <td class="last-year-col finances-value-negative" data-field="housingSubsidyLastYear" id="housingsubsidy-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="housingSubsidyThisYear" id="housingsubsidy-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -2020,10 +2166,37 @@
                                 </tbody>
                             </table>
 
-                            <div class="finances-message-area" id="finances-message-area">
+                            <div class="finances-message-area" id="finances-message-area" data-finances-view="budget">
                                 <p class="finances-message-text" id="finances-message-text">
                                     Analyse financière : La ville fonctionne avec un déficit cette année. Il est recommandé d'augmenter les revenus ou de réduire les dépenses.
                                 </p>
+                            </div>
+
+                            <!-- The city's statements in the M57 model, read from the same journal as the budget (see CityStatementsPresenter). -->
+                            <div class="city-statements-view" id="finances-view-result" data-finances-view="result" hidden></div>
+                            <div class="city-statements-view" id="finances-view-balance" data-finances-view="balance" hidden></div>
+                            <div class="city-statements-view" id="finances-view-trial" data-finances-view="trial" hidden></div>
+
+                            <div class="producer-ranking" id="producer-ranking" data-finances-view="budget">
+                                <div class="producer-ranking-header">
+                                    <h3 class="producer-ranking-title">Classement des producteurs</h3>
+                                    <span class="producer-ranking-period" id="producer-ranking-period">…</span>
+                                </div>
+                                <p class="producer-ranking-note">
+                                    Les biens sont datés du jour de leur livraison ; les services sont datés du jour de leur
+                                    règlement, le 1er du mois suivant leur consommation. Pour le mois affiché, les ventes de
+                                    services sont donc celles réglées ce mois-là — l'activité du mois précédent.
+                                </p>
+                                <table class="producer-ranking-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="producer-ranking-rank-col">#</th>
+                                            <th class="producer-ranking-name-col">Producteur</th>
+                                            <th class="producer-ranking-revenue-col">Ventes aux maisons (HT)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="producer-ranking-body"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -2111,102 +2284,6 @@
                                 </div>
                             </div>
 
-                            <div class="work-controls">
-                                <div class="work-control-group">
-                                    <div class="work-control-label">Salaires des fonctionnaires</div>
-                                    <div class="work-control-input-wrapper">
-                                        <div class="work-control-buttons">
-                                            <button type="button" class="work-control-btn" id="salary-decrease-btn" aria-label="Diminuer le salaire">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                    <path d="M5 12h14"/>
-                                                </svg>
-                                            </button>
-                                            <span class="work-control-value" id="salary-display">100</span>
-                                            <button type="button" class="work-control-btn" id="salary-increase-btn" aria-label="Augmenter le salaire">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                    <path d="M5 12h14"/>
-                                                    <path d="M12 5v14"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <span class="work-control-info">
-                                            Salaire de référence (base de calcul interne) : <span class="work-control-info-value" id="salary-month-display">100</span> €/mois
-                                        </span>
-                                    </div>
-                                    <div class="work-control-info">
-                                        Salaire de référence annuel : <span class="work-control-info-value" id="salary-year-display">1200</span> €/an
-                                    </div>
-                                    <div class="work-control-info">
-                                        Fonctionnaires (<span class="work-control-info-value" id="civil-servant-count-display">0</span>, 1 pour 12 habitants) : charge mensuelle incluse ci-dessous
-                                    </div>
-                                    <div class="work-control-info">
-                                        Masse salariale citoyens actifs — hors fonctionnaires et chômeurs (informatif) : <span class="work-control-info-value" id="citizen-payroll-display">0</span> €/mois
-                                    </div>
-                                    <div class="work-control-info">
-                                        Charge mensuelle ville (fonctionnaires + chômeurs, population <span class="work-control-info-value" id="salary-population-display">0</span>) : voir détail ci-dessous
-                                    </div>
-                                    <div class="work-control-info">
-                                        Charge annuelle estimée — salaires ville : <span class="work-control-info-value" id="salary-annual-bill">0</span> €
-                                    </div>
-                                </div>
-
-                                <div class="work-control-group">
-                                    <div class="work-control-label">Impôt sur les salaires</div>
-                                    <div class="work-control-row">
-                                        <div class="work-control-buttons">
-                                            <button type="button" class="work-control-btn" id="salary-tax-decrease-btn" aria-label="Diminuer le taux d'imposition sur les salaires">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                    <path d="M5 12h14"></path>
-                                                </svg>
-                                            </button>
-                                            <span class="work-control-info">
-                                                Taux d'imposition : <span class="work-control-info-value" id="salary-tax-rate-display">10</span>%
-                                            </span>
-                                            <button type="button" class="work-control-btn" id="salary-tax-increase-btn" aria-label="Augmenter le taux d'imposition sur les salaires">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                    <path d="M5 12h14"></path>
-                                                    <path d="M12 5v14"></path>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <div class="work-control-info">
-                                            Assiette mensuelle estimée : <span class="work-control-info-value" id="payroll-tax-base-display">0</span> €
-                                        </div>
-                                        <div class="work-control-info">
-                                            Impôt mensuel estimé : <span class="work-control-info-value" id="salary-tax-amount-display">0</span> €/mois
-                                        </div>
-                                        <div class="work-control-info">
-                                            Impôt annuel estimé : <span class="work-control-info-value" id="salary-tax-annual-display">0</span> €/an
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="work-control-group">
-                                    <div class="work-control-label">Taux d'allocation chômage</div>
-                                    <div class="work-control-input-wrapper">
-                                        <div class="work-control-buttons">
-                                            <button type="button" class="work-control-btn" id="unemployment-decrease-btn" aria-label="Diminuer le taux d'allocation">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                    <path d="M5 12h14"/>
-                                                </svg>
-                                            </button>
-                                            <span class="work-control-value" id="unemployment-rate-display">70%</span>
-                                            <button type="button" class="work-control-btn" id="unemployment-increase-btn" aria-label="Augmenter le taux d'allocation">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                    <path d="M5 12h14"/>
-                                                    <path d="M12 5v14"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <span class="work-control-info">
-                                            Pourcentage du salaire de référence versé aux chômeurs
-                                        </span>
-                                    </div>
-                                    <div class="work-control-info">
-                                        Charge mensuelle estimée — salaires chômeurs (<span class="work-control-info-value" id="unemployment-count-display">0</span> chômeurs) : <span class="work-control-info-value" id="unemployment-benefit-display">0</span> €
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -2348,20 +2425,6 @@
                 </div>
                 <div class="administrator-section-content">
                     <div class="commerce-board" id="commerce-board">
-                        <!-- Customs rate control -->
-                        <div class="commerce-customs-controls">
-                            <span class="commerce-customs-label">Taux de douane :</span>
-                            <input
-                                type="range"
-                                id="commerce-customs-slider"
-                                class="commerce-customs-slider"
-                                min="0" max="50" step="1"
-                                aria-label="Taux de douane en pourcentage"
-                            />
-                            <span class="commerce-customs-value" id="commerce-customs-value">15 %</span>
-                        </div>
-                        <p class="commerce-customs-hint">Seule la part douanière entre dans le trésor ; le reste revient aux marchands.</p>
-
                         <!-- Relations list -->
                         <button type="button" class="commerce-relations-export" id="commerce-relations-export">Exporter les relations (JSON)</button>
                         <div class="commerce-relations-list" id="commerce-relations-list">
@@ -2372,6 +2435,157 @@
                         <div class="commerce-budget-impact" id="commerce-budget-impact">
                             <span class="commerce-budget-impact-label">Recettes douanières ce mois :</span>
                             <span class="commerce-budget-impact-value" id="commerce-export-this-month">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-taxes">
+                <div class="administrator-section-title">
+                    Taxes — <span class="admin-hamlet-label" data-hamlet-label></span>
+                </div>
+                <div class="administrator-section-content">
+                    <div class="taxes-subtabs" role="tablist" aria-label="Sections des taxes">
+                        <button type="button" role="tab" data-taxes-tab="general" aria-selected="true" tabindex="0">Impôts</button>
+                        <button type="button" role="tab" data-taxes-tab="vat" aria-selected="false" tabindex="-1">TVA</button>
+                    </div>
+                    <div class="taxes-board" id="taxes-board" role="tabpanel" data-taxes-panel="general">
+                        <p class="commerce-customs-hint" id="tax-citizen-notice" role="alert" hidden></p>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Impôt par citoyen</span>
+                                <span class="taxes-row-scope">Hameau</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="tax-citizen-slider" class="commerce-customs-slider" step="5" aria-label="Impôt par citoyen, en euros" />
+                                <span class="commerce-customs-value" id="tax-citizen-value">…</span>
+                            </div>
+                        </div>
+                        <p class="commerce-customs-hint" id="tax-corporate-notice" role="alert" hidden></p>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Impôt sur les sociétés</span>
+                                <span class="taxes-row-scope">Hameau</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="tax-corporate-slider" class="commerce-customs-slider" step="1" aria-label="Impôt sur les sociétés (IS), en pourcentage du résultat de l'année" />
+                                <span class="commerce-customs-value" id="tax-corporate-value">…</span>
+                            </div>
+                        </div>
+                        <p class="commerce-customs-hint" id="tax-income-notice" role="alert" hidden></p>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Impôt sur le revenu</span>
+                                <span class="taxes-row-scope">Hameau</span>
+                            </div>
+                            <div class="ir-brackets">
+                                <div class="ir-bracket-group">
+                                    <div class="ir-bracket-line">
+                                        <span class="ir-bracket-line-label">Seuil d'exonération</span>
+                                        <div class="commerce-customs-controls">
+                                            <input type="range" id="tax-threshold-1-slider" class="commerce-customs-slider" step="5" aria-label="Seuil d'exonération de l'IR, en euros par mois" />
+                                            <span class="commerce-customs-value" id="tax-threshold-1-value">…</span>
+                                        </div>
+                                    </div>
+                                    <div class="ir-bracket-line">
+                                        <span class="ir-bracket-line-label">Taux IR (1ère tranche)</span>
+                                        <div class="commerce-customs-controls">
+                                            <input type="range" id="tax-salary-1-slider" class="commerce-customs-slider" step="1" aria-label="Impôt sur le revenu (IR), 1ère tranche, en pourcentage" />
+                                            <span class="commerce-customs-value" id="tax-salary-1-value">…</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ir-bracket-group">
+                                    <div class="ir-bracket-line">
+                                        <span class="ir-bracket-line-label">Seuil 2ᵉ tranche</span>
+                                        <div class="commerce-customs-controls">
+                                            <input type="range" id="tax-threshold-2-slider" class="commerce-customs-slider" step="5" aria-label="Seuil de la 2ᵉ tranche de l'IR, en euros par mois" />
+                                            <span class="commerce-customs-value" id="tax-threshold-2-value">…</span>
+                                        </div>
+                                    </div>
+                                    <div class="ir-bracket-line">
+                                        <span class="ir-bracket-line-label">Taux IR (2e tranche)</span>
+                                        <div class="commerce-customs-controls">
+                                            <input type="range" id="tax-salary-2-slider" class="commerce-customs-slider" step="1" aria-label="Impôt sur le revenu (IR), 2ᵉ tranche, en pourcentage" />
+                                            <span class="commerce-customs-value" id="tax-salary-2-value">…</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="taxes-board" id="vat-panel" role="tabpanel" data-taxes-panel="vat" hidden>
+                        <p class="commerce-customs-hint" id="tax-vat-notice" role="alert" hidden></p>
+                        <div class="taxes-row">
+                            <label class="taxes-uniform">
+                                <input type="checkbox" id="tax-vat-uniform" />
+                                <span>Même taux pour tous les produits</span>
+                            </label>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Taux général</span>
+                                <span class="taxes-row-scope">Toutes les catégories</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="tax-vat-general-slider" class="commerce-customs-slider" step="1" aria-label="Taux général de TVA, en pourcentage du prix HT" />
+                                <span class="commerce-customs-value" id="tax-vat-general-value">…</span>
+                            </div>
+                        </div>
+                        <div class="services-group">
+                            <p class="commerce-customs-hint">La TVA porte sur la dernière vente de chaque bien ou prestation aux maisons, au prix HT ; elle s'ajoute au prix pour former le TTC. Cocher « exonéré » retire la TVA de ce bien ou de cette prestation. Base imposable : prix HT de la vente, y compris la part de la ville. Une subvention directement liée au prix d'une prestation fait partie de la base et ne la réduit pas.</p>
+                            <div id="vat-board"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-customs">
+                <div class="administrator-section-title">Douanes</div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board" id="customs-board">
+                        <p class="commerce-customs-hint" id="customs-notice" role="alert" hidden></p>
+                        <p class="commerce-customs-hint">Un droit par produit et par sens, sur la valeur des biens qui passent la frontière. L'export est payé à la ville par l'exportateur ; l'import l'est par l'importateur, au moment où il revend le bien.</p>
+                        <h3 class="customs-group-title">Importations</h3>
+                        <div id="customs-import-list"></div>
+                        <h3 class="customs-group-title">Exportations</h3>
+                        <div id="customs-export-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-prices">
+                <div class="administrator-section-title">Prix</div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board">
+                        <p class="commerce-customs-hint">Le prix d'une unité à chaque étape, de la référence à ce que paie la maison : ce qu'ajoutent le transport, les droits de douane, les marges et la TVA. Les prix de l'entrepôt et du marché sont ceux du mois, bâtis sur le coût de leur stock : un changement de droits de douane met un mois à s'y voir.</p>
+                        <div id="prices-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-wages">
+                <div class="administrator-section-title">Salaires</div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board">
+                        <p class="commerce-customs-hint">Le marché du travail fixe un salaire par métier et par niveau : il monte là où des emplois restent vacants, il baisse là où des citoyens qualifiés restent sans emploi. La ville ne fixe que le plancher (le salaire minimum), l'allocation chômage (une part de ce plancher) et les cotisations sociales : celles de l'entreprise s'ajoutent au salaire brut, celles du salarié en sont retenues, et toutes financent l'allocation chômage.</p>
+                        <div id="wages-levers"></div>
+                        <div id="wages-social"></div>
+                        <div id="wages-cost-of-living"></div>
+                        <div id="wages-board"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-services">
+                <div class="administrator-section-title">
+                    Services — <span class="admin-hamlet-label" data-hamlet-label></span>
+                </div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board">
+                        <div class="services-group">
+                            <p class="commerce-customs-hint">La subvention couvre ce pourcentage du prix de chaque prestation du service ; les habitants paient le reste. La base imposable à la TVA est le prix HT total : la subvention directement liée au prix d'une prestation y est incluse, elle ne la réduit pas.</p>
+                            <div class="services-board" id="services-board"></div>
                         </div>
                     </div>
                 </div>
@@ -2538,39 +2752,79 @@
                 <div class="journal-filter-pills">
                     <div class="journal-filter-pills-section">
                         <span class="journal-filter-pills-label">Revenus:</span>
-                        <button class="journal-filter-pill" data-filter="taxes" data-types='["citizen_tax","payroll_tax"]'>
-                            <span class="pill-color" style="background: #cfe2ff; color: #084298;"></span>
+                        <button class="journal-filter-pill" data-filter="taxes" data-types='["citizen_tax","payroll_tax","vat","corporate_tax_revenue","social_contribution"]'>
+                            <span class="pill-color" style="background: var(--pcg4-bg); color: var(--pcg4-fg);"></span>
                             <span class="pill-label">Impôts et taxes</span>
                         </button>
-                        <button class="journal-filter-pill" data-filter="exports" data-types='["export_"]'>
-                            <span class="pill-color" style="background: #d4edda; color: #155724;"></span>
-                            <span class="pill-label">Exports</span>
+                        <button class="journal-filter-pill" data-filter="export_duty" data-types='["export_"]'>
+                            <span class="pill-color" style="background: var(--pcg4-bg); color: var(--pcg4-fg);"></span>
+                            <span class="pill-label">Douane à l'export</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="import_duty" data-types='["customs_import_"]'>
+                            <span class="pill-color" style="background: var(--pcg4-bg); color: var(--pcg4-fg);"></span>
+                            <span class="pill-label">Douane à l'import</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="sales" data-types='["producer_revenue","service_sales","abroad_sale_"]'>
+                            <span class="pill-color" style="background: var(--pcg70-bg); color: var(--pcg70-fg);"></span>
+                            <span class="pill-label">Ventes</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="household_income" data-types='["household_wage","public_wage","household_benefit","household_participation","household_dividend"]'>
+                            <span class="pill-color" style="background: var(--pcg7h-bg); color: var(--pcg7h-fg);"></span>
+                            <span class="pill-label">Revenus des ménages</span>
                         </button>
                         <button class="journal-filter-pill" data-filter="loan_capital" data-types='["loan_capital"]'>
-                            <span class="pill-color" style="background: #e2d5f7; color: #6f42c1;"></span>
+                            <span class="pill-color" style="background: var(--pcg1-bg); color: var(--pcg1-fg);"></span>
                             <span class="pill-label">Revenus exceptionnels</span>
                         </button>
                     </div>
                     <div class="journal-filter-pills-section">
                         <span class="journal-filter-pills-label">Dépenses:</span>
+                        <button class="journal-filter-pill" data-filter="taxes_paid" data-types='["income_tax","citizen_tax_paid","corporate_tax","employee_contribution"]'>
+                            <span class="pill-color" style="background: var(--pcg4-paid-bg); color: var(--pcg4-paid-fg);"></span>
+                            <span class="pill-label">Impôts payés</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="tax_credit" data-types='["income_tax_refund","payroll_tax_refund"]'>
+                            <span class="pill-color" style="background: var(--pcg4-bg); color: var(--pcg4-fg);"></span>
+                            <span class="pill-label">Crédit d'impôt</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="duty_paid" data-types='["duty_paid_"]'>
+                            <span class="pill-color" style="background: var(--pcg4-paid-bg); color: var(--pcg4-paid-fg);"></span>
+                            <span class="pill-label">Douanes payées</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="purchases" data-types='["producer_purchase","service_purchase","consumer_purchase"]'>
+                            <span class="pill-color" style="background: var(--pcg60-bg); color: var(--pcg60-fg);"></span>
+                            <span class="pill-label">Achats</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="imports" data-types='["import_"]'>
+                            <span class="pill-color" style="background: var(--pcg60-bg); color: var(--pcg60-fg);"></span>
+                            <span class="pill-label">Achats à l'étranger</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="freight" data-types='["freight_"]'>
+                            <span class="pill-color" style="background: var(--pcg6x-bg); color: var(--pcg6x-fg);"></span>
+                            <span class="pill-label">Transports</span>
+                        </button>
                         <button class="journal-filter-pill" data-filter="loan_interest" data-types='["loan_interest"]'>
-                            <span class="pill-color" style="background: #ffe0b2; color: #e65100;"></span>
+                            <span class="pill-color" style="background: var(--pcg65-bg); color: var(--pcg65-fg);"></span>
                             <span class="pill-label">Intérêts</span>
                         </button>
                         <button class="journal-filter-pill" data-filter="salary" data-types='["salary"]'>
-                            <span class="pill-color" style="background: #ffe0b2; color: #e65100;"></span>
+                            <span class="pill-color" style="background: var(--pcg64-bg); color: var(--pcg64-fg);"></span>
                             <span class="pill-label">Salaires fonctionnaires</span>
                         </button>
                         <button class="journal-filter-pill" data-filter="unemployment_benefit" data-types='["unemployment_benefit"]'>
-                            <span class="pill-color" style="background: #ffe0b2; color: #e65100;"></span>
+                            <span class="pill-color" style="background: var(--pcg64-bg); color: var(--pcg64-fg);"></span>
                             <span class="pill-label">Salaires chômeurs</span>
                         </button>
-                        <button class="journal-filter-pill" data-filter="imports" data-types='["import_"]'>
-                            <span class="pill-color" style="background: #fff3cd; color: #856404;"></span>
-                            <span class="pill-label">Imports</span>
+                        <button class="journal-filter-pill" data-filter="employer_contribution" data-types='["employer_contribution"]'>
+                            <span class="pill-color" style="background: var(--pcg64-bg); color: var(--pcg64-fg);"></span>
+                            <span class="pill-label">Cotisations patronales</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="cooperative_sharing" data-types='["enterprise_participation","enterprise_dividend"]'>
+                            <span class="pill-color" style="background: var(--pcg65-bg); color: var(--pcg65-fg);"></span>
+                            <span class="pill-label">Participation et distributions</span>
                         </button>
                         <button class="journal-filter-pill" data-filter="exceptional_expenses" data-types='["exceptional_expenses"]'>
-                            <span class="pill-color" style="background: #d7ccc8; color: #5d4037;"></span>
+                            <span class="pill-color" style="background: var(--pcg6x-bg); color: var(--pcg6x-fg);"></span>
                             <span class="pill-label">Dépenses exceptionnelles</span>
                         </button>
                     </div>
@@ -2585,6 +2839,10 @@
         </div>
         
         <div class="journal-content">
+            <div class="journal-scope-tabs" role="tablist" aria-label="Comptabilité">
+                <button class="journal-scope-tab active" type="button" role="tab" aria-selected="true" data-scope="city">🏛️ Hameau</button>
+                <button class="journal-scope-tab" type="button" role="tab" aria-selected="false" data-scope="private">🤝 Flux privés</button>
+            </div>
             <div class="journal-filters">
                 <button class="journal-filter-btn active" data-period="all">Tout l'historique</button>
                 <button class="journal-filter-btn" data-period="7">7 derniers jours</button>
@@ -2604,13 +2862,21 @@
                     Actualiser le journal
                 </button>
                 <div class="journal-export-buttons">
-                    <button class="journal-export-btn" id="journal-export-json-btn" title="Télécharger en JSON">
+                    <button class="journal-export-btn" id="journal-export-json-btn" title="Télécharger le journal du hameau en JSON">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                             <polyline points="7 10 12 15 17 10"/>
                             <line x1="12" y1="15" x2="12" y2="3"/>
                         </svg>
-                        JSON
+                        JSON hameau
+                    </button>
+                    <button class="journal-export-btn" id="journal-export-private-json-btn" title="Télécharger les flux privés (entreprises et maisons) en JSON">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        JSON flux privés
                     </button>
                     <button class="journal-export-btn" id="journal-export-pdf-btn" title="Télécharger en PDF">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text">
@@ -2892,7 +3158,14 @@
                 <p class="news-event-funds-hint" id="news-event-funds-hint"></p>
             </div>
         </div>
+        <div class="news-event-modal-action" id="news-event-action" hidden>
+            <button type="button" class="news-event-action-btn" id="news-event-action-btn">
+                <span class="news-event-action-icon" id="news-event-action-icon" aria-hidden="true"></span>
+                <span class="news-event-action-label" id="news-event-action-label"></span>
+            </button>
+        </div>
         <div class="news-event-modal-footer">
+            <button type="button" class="modal-btn" id="news-event-close-btn">Fermer</button>
             <button type="button" class="modal-btn modal-btn-primary" id="news-event-next-btn">Lire le suivant</button>
         </div>
     </div>

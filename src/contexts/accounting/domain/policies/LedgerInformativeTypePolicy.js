@@ -61,6 +61,26 @@ export function buildInfoMovementBusinessKey(sourceType, entityId, turn) {
 export const INFO_JOURNAL_TYPE_LABELS = {
   info_loan_interest: 'Intérêts prêt (informatif — impayé)',
   info_loan_repayment: 'Capital prêt (informatif — impayé)',
+  // A house's rent for the month, whether or not it could pay it: the debt of a house is what is due less what it paid (see RentDebtPolicy).
+  info_rent_due: 'Loyer dû (informatif)',
+  // The month's closing (opérations diverses): no money moves, the lines say what the books must show.
+  od_stock_up_merchandise: 'Variation de stock : le stock grandit (OD)',
+  od_stock_down_merchandise: 'Variation de stock : le stock baisse (OD)',
+  od_stock_up_production: 'Production stockée : le stock grandit (OD)',
+  od_stock_down_production: 'Production stockée : le stock baisse (OD)',
+  od_depreciation: 'Dotation aux amortissements (OD)',
+  od_payable_wage: 'Salaires dus non payés (OD)',
+  od_payable_contribution: 'Cotisations dues non payées (OD)',
+  od_payable_corporate_tax: 'Impôt dû non payé (OD)',
+  od_payable_premises_rent: 'Loyer du local dû non payé (OD)',
+  od_receivable_premises_rent: 'Loyer du local à encaisser (OD)',
+  od_asset_contribution: 'Apport de constructions par la ville (OD)',
+  od_asset_disposal_amortization: 'Sortie d’actif : amortissement soldé (OD)',
+  od_asset_disposal_loss: 'Sortie d’actif : valeur nette perdue (OD)',
+  // The rent debt of a house its inhabitants all left: the owner knows it will not be paid (no prosecution in the game), so the debt is written off.
+  info_rent_written_off: 'Loyer impayé abandonné (informatif)',
+  // What a building's spoiled goods would have sold for: a loss of opportunity, never a charge, so it moves no money.
+  info_goods_spoiled: 'Avarie — manque à gagner (informatif)',
 };
 
 /**

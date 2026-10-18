@@ -23,26 +23,14 @@ function groupTabLabel(groupId) {
 
 export class WorkSectionPresenter {
     /**
-     * @param {{ accounting: object, employment: object, housing: object }} deps
+     * @param {{ employment: object }} deps
      */
     constructor(deps) {
-        this.accounting = deps.accounting;
         this.employment = deps.employment;
-        this.housing = deps.housing;
-        const settings = this.accounting?.getSalarySettings?.() ?? {
-          salaryPerMonth: 0,
-          salaryTaxRate: 0,
-          unemploymentBenefitRate: 0.7,
-        };
-        this.salary = settings.salaryPerMonth;
-        this.salaryTaxRate = settings.salaryTaxRate;
-        this.unemploymentBenefitRate = settings.unemploymentBenefitRate ?? 0.7;
-        this.lastKnownPopulation = 0;
         this.workData = null;
     }
 
     async init() {
-        this.setupEventListeners();
         await this.showActiveHamletName();
         await this.loadWorkData();
         // No automatic refresh - data is read directly from IndexedDB when panel opens
@@ -59,85 +47,11 @@ export class WorkSectionPresenter {
         label.textContent = active.name;
     }
 
-    setupEventListeners() {
-        const salaryDecreaseBtn = document.getElementById('salary-decrease-btn');
-        const salaryIncreaseBtn = document.getElementById('salary-increase-btn');
-        const salaryTaxDecreaseBtn = document.getElementById('salary-tax-decrease-btn');
-        const salaryTaxIncreaseBtn = document.getElementById('salary-tax-increase-btn');
-        const unemploymentDecreaseBtn = document.getElementById('unemployment-decrease-btn');
-        const unemploymentIncreaseBtn = document.getElementById('unemployment-increase-btn');
-
-        // Utiliser des fonctions nommées pour pouvoir les retirer si nécessaire
-        const handleSalaryDecrease = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.adjustSalary(-1);
-        };
-
-        const handleSalaryIncrease = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.adjustSalary(1);
-        };
-
-        if (salaryDecreaseBtn) {
-            // Retirer l'ancien listener s'il existe
-            salaryDecreaseBtn.removeEventListener('click', this._handleSalaryDecrease);
-            this._handleSalaryDecrease = handleSalaryDecrease;
-            salaryDecreaseBtn.addEventListener('click', this._handleSalaryDecrease);
-        }
-
-        if (salaryIncreaseBtn) {
-            salaryIncreaseBtn.removeEventListener('click', this._handleSalaryIncrease);
-            this._handleSalaryIncrease = handleSalaryIncrease;
-            salaryIncreaseBtn.addEventListener('click', this._handleSalaryIncrease);
-        }
-
-        const handleSalaryTaxDecrease = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.adjustSalaryTaxRate(-0.01);
-        };
-
-        const handleSalaryTaxIncrease = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.adjustSalaryTaxRate(0.01);
-        };
-
-        if (salaryTaxDecreaseBtn) {
-            salaryTaxDecreaseBtn.removeEventListener('click', this._handleSalaryTaxDecrease);
-            this._handleSalaryTaxDecrease = handleSalaryTaxDecrease;
-            salaryTaxDecreaseBtn.addEventListener('click', this._handleSalaryTaxDecrease);
-        }
-
-        if (salaryTaxIncreaseBtn) {
-            salaryTaxIncreaseBtn.removeEventListener('click', this._handleSalaryTaxIncrease);
-            this._handleSalaryTaxIncrease = handleSalaryTaxIncrease;
-            salaryTaxIncreaseBtn.addEventListener('click', this._handleSalaryTaxIncrease);
-        }
-
-        if (unemploymentDecreaseBtn) {
-            unemploymentDecreaseBtn.addEventListener('click', () => this.adjustUnemploymentRate(-5));
-        }
-
-        if (unemploymentIncreaseBtn) {
-            unemploymentIncreaseBtn.addEventListener('click', () => this.adjustUnemploymentRate(5));
-        }
-
-        // Priority inputs are handled in renderWorkTable(), tab clicks in
-        // renderGroupTabs() — both attach listeners during element creation
-        // (rows/tabs are rebuilt from scratch on every render).
-    }
-
     async loadWorkData() {
         this.workData = this.generatePlaceholderWorkData();
 
         // Load employee statistics from IndexedDB (independent of service)
         await this.updateEmployeeStatistics();
-
-        // Réattacher les event listeners au cas où le panneau vient d'être rendu
-        this.setupEventListeners();
 
         this.render();
     }
@@ -174,7 +88,6 @@ export class WorkSectionPresenter {
             this.workData.totalAvailable = summary.workerPool;
             this.workData.totalNeed = summary.totalNeed;
             this.workData.totalAvailableWorkers = summary.workerPool;
-            this.workData.payrollEligiblePopulation = summary.totalPopulation;
 
         } catch (error) {
             console.error('[WorkSection] Error updating employee statistics:', error);
@@ -223,40 +136,6 @@ export class WorkSectionPresenter {
         return this.workData?.tabs?.find((tab) => tab.id === this.workData.activeTabId) ?? null;
     }
 
-    adjustSalary(delta) {
-        const newSalary = Math.max(10, Math.min(500, this.salary + delta));
-
-        if (newSalary !== this.salary) {
-            const settings = this.accounting.setSalarySettings({ salaryPerMonth: newSalary });
-            this.salary = settings.salaryPerMonth;
-            this.updateSalaryDisplay();
-        }
-    }
-
-    adjustSalaryTaxRate(delta) {
-        const newRate = Math.max(0, Math.min(1, this.salaryTaxRate + delta));
-
-        if (newRate !== this.salaryTaxRate) {
-            const settings = this.accounting.setSalarySettings({ salaryTaxRate: newRate });
-            this.salaryTaxRate = settings.salaryTaxRate;
-            this.updateSalaryTaxDisplay();
-        }
-    }
-
-    adjustUnemploymentRate(delta) {
-        const currentPercent = Math.round(this.unemploymentBenefitRate * 100);
-        const newPercent = Math.max(0, Math.min(100, currentPercent + delta));
-        const newRate = newPercent / 100;
-
-        if (newRate !== this.unemploymentBenefitRate) {
-            const settings = this.accounting.setSalarySettings({
-              unemploymentBenefitRate: newRate,
-            });
-            this.unemploymentBenefitRate = settings.unemploymentBenefitRate;
-            this.updateUnemploymentDisplay();
-        }
-    }
-
     /**
      * @param {string} skillId
      * @param {number} priority
@@ -285,126 +164,12 @@ export class WorkSectionPresenter {
         }
     }
 
-    #payrollEligiblePopulation() {
-        return this.workData?.payrollEligiblePopulation ?? 0;
-    }
-
-    #buildPayrollPreview(unemployed) {
-        return this.accounting.computeReferenceSalaryPayrollBreakdown({
-            population: this.#payrollEligiblePopulation(),
-            unemployed,
-            referenceSalaryPerMonth: this.salary,
-            unemploymentBenefitRate: this.unemploymentBenefitRate,
-            salaryTaxRate: this.salaryTaxRate,
-        });
-    }
-
-    async updateSalaryDisplay() {
-        const salaryDisplay = document.getElementById('salary-display');
-        const salaryMonthDisplay = document.getElementById('salary-month-display');
-        const salaryYearDisplay = document.getElementById('salary-year-display');
-        const annualBillDisplay = document.getElementById('salary-annual-bill');
-        const populationDisplay = document.getElementById('salary-population-display');
-
-        if (salaryDisplay) {
-            salaryDisplay.textContent = this.salary;
-        }
-
-        if (salaryMonthDisplay) {
-            salaryMonthDisplay.textContent = this.salary;
-        }
-
-        if (salaryYearDisplay) {
-            const yearlyAmount = this.salary * 12;
-            salaryYearDisplay.textContent = yearlyAmount;
-        }
-
-        let totalPopulation = 0;
-        try {
-            totalPopulation = await this.housing.getCityTotalPopulation();
-        } catch (error) {
-            console.warn('[WorkSection] Error getting population for salary display:', error);
-        }
-
-        if (populationDisplay) {
-            populationDisplay.textContent = totalPopulation;
-        }
-
-        this.lastKnownPopulation = totalPopulation;
-
-        if (annualBillDisplay) {
-            const payroll = this.#buildPayrollPreview(this.workData?.totalUnemployed ?? 0);
-            annualBillDisplay.textContent = Math.round(payroll.cityExpenseTotal * 12);
-        }
-
-        this.updateSalaryTaxDisplay();
-    }
-
-    async updateSalaryTaxDisplay() {
-        const salaryTaxRateDisplay = document.getElementById('salary-tax-rate-display');
-        const salaryTaxAmountDisplay = document.getElementById('salary-tax-amount-display');
-        const salaryTaxAnnualDisplay = document.getElementById('salary-tax-annual-display');
-
-        if (salaryTaxRateDisplay) {
-            salaryTaxRateDisplay.textContent = Math.round(this.salaryTaxRate * 100);
-        }
-
-        const payroll = this.#buildPayrollPreview(this.workData?.totalUnemployed ?? 0);
-
-        if (salaryTaxAmountDisplay) {
-            salaryTaxAmountDisplay.textContent = payroll.payrollTax;
-        }
-
-        if (salaryTaxAnnualDisplay) {
-            salaryTaxAnnualDisplay.textContent = Math.round(payroll.payrollTax * 12);
-        }
-    }
-
-    updateUnemploymentDisplay() {
-        const unemploymentDisplay = document.getElementById('unemployment-rate-display');
-        const unemploymentCountDisplay = document.getElementById('unemployment-count-display');
-        const unemploymentBenefitDisplay = document.getElementById('unemployment-benefit-display');
-
-        if (unemploymentDisplay) {
-            unemploymentDisplay.textContent = `${Math.round(this.unemploymentBenefitRate * 100)}%`;
-        }
-
-        const unemployed = this.workData?.totalUnemployed ?? 0;
-        const payroll = this.#buildPayrollPreview(unemployed);
-
-        if (unemploymentCountDisplay) {
-            unemploymentCountDisplay.textContent = unemployed;
-        }
-
-        if (unemploymentBenefitDisplay) {
-            unemploymentBenefitDisplay.textContent = payroll.unemploymentBenefitExpense;
-        }
-
-        const citizenPayrollDisplay = document.getElementById('citizen-payroll-display');
-        if (citizenPayrollDisplay) {
-            citizenPayrollDisplay.textContent = payroll.citizenPayrollMass;
-        }
-
-        const civilServantCountDisplay = document.getElementById('civil-servant-count-display');
-        if (civilServantCountDisplay) {
-            civilServantCountDisplay.textContent = payroll.civilServantCount;
-        }
-
-        const payrollTaxBaseDisplay = document.getElementById('payroll-tax-base-display');
-        if (payrollTaxBaseDisplay) {
-            payrollTaxBaseDisplay.textContent = payroll.payrollTaxBase;
-        }
-    }
-
     render() {
         if (!this.workData) return;
 
         this.renderGroupTabs();
         this.renderWorkTable();
         this.renderSummary();
-        this.updateSalaryDisplay();
-        this.updateSalaryTaxDisplay();
-        this.updateUnemploymentDisplay();
     }
 
     /**

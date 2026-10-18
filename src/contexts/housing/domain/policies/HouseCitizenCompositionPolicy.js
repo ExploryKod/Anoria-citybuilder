@@ -20,10 +20,6 @@ function clampPop(pop) {
 function computeProfileCounts({ level, pop, buildingType }) {
   const safePop = clampPop(pop);
 
-  if (level === 1) {
-    return safePop > 0 ? [{ statusKey: 'hunter-gatherer', count: safePop }] : [];
-  }
-
   return safePop > 0 ? [{ statusKey: 'worker', count: safePop }] : [];
 }
 
@@ -38,27 +34,10 @@ function computeSkillCounts(profiles, residentialGroup, level) {
   const counts = {};
 
   const workerEntry = profiles.find((profile) => profile.statusKey === 'worker');
-  const hunterEntry = profiles.find((profile) => profile.statusKey === 'hunter-gatherer');
-
-  if (hunterEntry?.count > 0) {
-    // Route through the catalog instead of hardcoding 'subsistence-forager':
-    // tier 1 also grants 'spiritual' (see socialCategoryCatalog.js) — falls
-    // back to the bare forager skill only when the group itself is unknown.
-    const tier1Skills = residentialGroup
-      ? getCitizenSkillsForHouse({ level: 1, residentialGroup })
-      : ['subsistence-forager'];
-    for (const skillKey of tier1Skills) {
-      counts[skillKey] = (counts[skillKey] ?? 0) + hunterEntry.count;
-    }
-  }
 
   if (workerEntry?.count > 0 && residentialGroup) {
     for (const skillKey of getCitizenSkillsForHouse({ level, residentialGroup })) {
-      if (skillKey === 'subsistence-forager') {
-        counts[skillKey] = (counts[skillKey] ?? 0) + workerEntry.count;
-      } else {
-        counts[skillKey] = workerEntry.count;
-      }
+      counts[skillKey] = workerEntry.count;
     }
   }
 

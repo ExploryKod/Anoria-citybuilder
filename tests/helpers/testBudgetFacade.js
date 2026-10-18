@@ -19,7 +19,6 @@ import {
   recordConstructionRefund,
 } from '../../src/composition/budgetOps.js';
 import * as accountingGame from '../../src/composition/accountingGameOps.js';
-import { computeReferenceSalaryPayrollBreakdown } from '../../src/contexts/accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
 
 /** @deprecated Tests only — use acl/accounting.js in production. */
 export class TestBudgetFacade {
@@ -31,6 +30,8 @@ export class TestBudgetFacade {
 
   /** @param {object} [extraDeps] */
   wireAccountingContext(extraDeps = {}) {
+    // The accounting is a singleton wired by its first caller: a test that wires it again starts from a fresh one.
+    resetAccountingContextForTests();
     getOrCreateAccountingContext({
       db: this.db,
       journalManager: this.journalManager,
@@ -79,8 +80,8 @@ export class TestBudgetFacade {
     return this.journalManager.addJournalEntry(turn, type, amount, description);
   }
 
-  async getJournalEntries(maxAge = null) {
-    return this.journalManager.getJournalEntries(maxAge);
+  async getJournalEntries() {
+    return this.journalManager.getJournalEntries();
   }
 
   async getJournalEntriesForTurn(turn) {
@@ -113,25 +114,6 @@ export class TestBudgetFacade {
 
   async addCommercialRouteFee(amount, description, partnerId) {
     return accountingGame.recordCommercialRouteFee(amount, description, partnerId);
-  }
-
-  async addBuildingMaintenance(amount, description = 'Maintenance bâtiments', turn = null) {
-    return accountingGame.recordBuildingMaintenance(amount, description, turn, { db: this.db });
-  }
-
-  async addSalaries(salaryPerMonth, population, description = null, turn = null) {
-    const amount = computeReferenceSalaryPayrollBreakdown({
-      population,
-      unemployed: 0,
-      referenceSalaryPerMonth: salaryPerMonth,
-      unemploymentBenefitRate: 0,
-      salaryTaxRate: 0,
-    }).civilServantExpense;
-    return accountingGame.recordSalaries(amount, description, turn);
-  }
-
-  async addSalaryTax(salaryAmount, taxRate, description = null, turn = null) {
-    return accountingGame.recordPayrollTax(salaryAmount, taxRate, description, turn);
   }
 
   async addTaxes(time = 0) {

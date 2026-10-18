@@ -161,6 +161,29 @@ db.version(16).stores({
 // v17: settings frozen when a game is created (the calendar's days per month: it must never change in a game).
 db.version(17).stores({ gameSettings: 'name' });
 
+// v18: the traceability rows are dated by their turn (no wall-clock date), and indexed on the fields they are written with
+// (fromId, toId: the buildings; fromInstanceId, toInstanceId and the date were never written).
+db.version(18).stores({
+  supplyTraceability: '++id, hamletId, turn, month, year, transactionType, fromId, toId, foodType',
+});
+
+// v19: journal lines are dated by their turn too: the wall-clock date is no longer written, so it is no longer indexed.
+db.version(19).stores({
+  journal: '++id, hamletId, turn, type, amount, description',
+});
+
+// v20: customs policy events — every change of a duty, dated by its turn and appended, never edited: who set which duty on
+// which good, from what to what, and why (cause). The trace a trade war is told with.
+db.version(20).stores({
+  tradePolicyEvents: '++id, turn, authority, flow, good',
+});
+
+// v21: the wage the labour market gives each (skill, level) — appended on each move, never edited, so the history of a wage reads back
+// with the shortage or the slack that moved it.
+db.version(21).stores({
+  wageRates: '++id, hamletId, turn, skill, level',
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

@@ -4,7 +4,7 @@
 
 import { readInitialFundsFromImportMeta } from '../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
-import { setBudgetReadyPromise } from './budgetReadyGate.js';
+import { holdBudgetReadyForOpening, setBudgetReadyPromise } from './budgetReadyGate.js';
 
 /**
  * @param {object} params
@@ -22,12 +22,15 @@ export function bootTreasuryHud({ gameUI, freshGame, restoreClock = async () => 
     ? accounting.forceReinitializeTreasury(initialFunds)
     : accounting.ensureTreasury(initialFunds);
 
+  // A new game opens on a dépêche: its clock stays at turn 0 until the opening is over (GameSessionBootstrap ends it).
+  if (freshGame) holdBudgetReadyForOpening();
   setBudgetReadyPromise(
     setup.then(async () => {
       await restoreClock();
       const initialBudget = await accounting.getTreasurySnapshot();
       console.log('[Game] Budget initialized, current budget:', initialBudget);
-      gameUI.updateFunds(initialBudget.funds);
+      // A new game shows its funds only when its opening says where they come from (the mayor's gift, see GameSessionBootstrap).
+      if (!freshGame) gameUI.updateFunds(initialBudget.funds);
       return initialBudget;
     })
   );

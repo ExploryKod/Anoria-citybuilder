@@ -1,4 +1,5 @@
 import { HAMLET_ACCESS } from '../../../core/persistence/hamlet/hamletAccess.js';
+import { satisfactionOf, formatSatisfaction } from '../../../shared/trade-catalog/satisfaction.js';
 import {
   WORLD_CITY_CATEGORY_LABELS,
   getWorldCityById,
@@ -67,7 +68,7 @@ function renderTradeBlock({ relation, entry, sales }) {
       </div>
       ${status === 'active' ? `
         <p class="trade-map-trade-wants">Demande : <strong>${wantsLine}</strong></p>
-        <p class="trade-map-trade-satisfaction">Satisfaction : <strong>${relation.satisfactionScore ?? 50}/100</strong></p>
+        <p class="trade-map-trade-satisfaction">Satisfaction : <strong>${formatSatisfaction(satisfactionOf(relation))}</strong></p>
         <div class="trade-map-trade-recent">
           <p class="trade-map-trade-recent-label">Dernières ventes :</p>
           <ul class="trade-map-trade-sales-list">${salesLines}</ul>

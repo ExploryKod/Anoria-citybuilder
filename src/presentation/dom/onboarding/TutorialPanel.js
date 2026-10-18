@@ -33,7 +33,20 @@ class TutorialPanel {
         this.eventBlocker = new EventBlocker();
         /** @type {HTMLElement | null} */
         this.lastFocusedElement = null;
+        /** @type {Array<() => void>} */
+        this.closeWaiters = [];
         this.handleDocumentKeyDown = this.handleDocumentKeyDown.bind(this);
+    }
+
+    /**
+     * Résolu quand le panneau est refermé (tout de suite s'il est fermé).
+     * @returns {Promise<void>}
+     */
+    waitForClose() {
+        if (!this.isVisible) return Promise.resolve();
+        return new Promise((resolve) => {
+            this.closeWaiters.push(resolve);
+        });
     }
 
     init() {
@@ -221,7 +234,7 @@ class TutorialPanel {
             {
                 title: 'Les services',
                 content: `
-                    <p>Chapelle, médecin, bains, taverne, école, cinéma… chaque service couvre les maisons proches par la route.</p>
+                    <p>Citerne, médecin, pompiers, police, café-restaurant, bains, école, cinéma… chaque service couvre les maisons proches par la route.</p>
                     <p>Un service est utile <strong>seulement s'il est actif</strong> : il lui faut du personnel (voir « Travailleurs »). Un bâtiment de service vide ne couvre personne.</p>
                 `
             },
@@ -379,6 +392,10 @@ class TutorialPanel {
         this.deps.playGame?.();
 
         this.restoreFocusAfterClose();
+
+        const waiters = this.closeWaiters;
+        this.closeWaiters = [];
+        for (const resolve of waiters) resolve();
     }
 
     /**

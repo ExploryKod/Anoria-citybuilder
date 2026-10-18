@@ -2,6 +2,7 @@ import { rankHubDestinations } from '../../../domain/policies/HubDestinationPoli
 import { listHubEmptyProductIds, normalizeHubStorageOrders } from '../../../domain/policies/HubStorageOrdersPolicy.js';
 import { getCategoriesForRole, getRoleEntry, getTotalKeyForRole } from '../../../domain/policies/ResourceRolePolicy.js';
 import { addCategoryAmount, createResourceStock, takeCategoryAmount } from '../../../domain/value-objects/ResourceStock.js';
+import { movedAgeBooks } from '../../../domain/policies/StockAgingPolicy.js';
 
 /**
  * Command: a hub whose order for a good is "empty" gives that good to the other hubs, a little each tick (the
@@ -20,8 +21,11 @@ export class EmptyHubGoods {
     this.hubServing = hubServing;
   }
 
-  /** @returns {Promise<{ moved: number }>} Units moved this tick. */
-  async execute() {
+  /**
+   * @param {{ turn?: number }} [params] the tick, which dates the age of the goods that move
+   * @returns {Promise<{ moved: number }>} Units moved this tick.
+   */
+  async execute({ turn } = {}) {
     const hubs = await this.supplyBuildingRepository.findByResourceRole('hub');
     let movedTotal = 0;
 
@@ -45,7 +49,7 @@ export class EmptyHubGoods {
         for (const { hub: destination, room } of rankHubDestinations({ hubs: others, category: good, from: hub, excludeId: hub.id })) {
           const amount = Math.min(left, room);
           if (amount <= 0) continue;
-          await this.#move(hub.id, destination.id, good, amount);
+          await this.#move(hub.id, destination.id, good, amount, turn);
           left -= amount;
           moved += amount;
           if (left <= 0) break;
@@ -63,7 +67,7 @@ export class EmptyHubGoods {
     return { moved: movedTotal };
   }
 
-  async #move(fromId, toId, good, amount) {
+  async #move(fromId, toId, good, amount, turn) {
     // The lots first (the receiving hub's are brought in step with the stock it still holds), then both stocks,
     // each under the aggregate its own hub role files the good under.
     await this.hubServing.moveLots({ fromId, toId, category: good, amount });
@@ -83,5 +87,16 @@ export class EmptyHubGoods {
       toId,
       addCategoryAmount(createResourceStock(to.stocks, toCategories, toKey), good, amount, toCategories, toKey)
     );
+
+    // What moves keeps its age (see StockAgingPolicy.js).
+    const books = movedAgeBooks({
+      category: good,
+      amount,
+      turn,
+      from: { book: from.stockAges, stock: from.stocks?.[good] ?? 0 },
+      to: { book: to.stockAges, stock: to.stocks?.[good] ?? 0 },
+    });
+    if (books.from !== from.stockAges) await this.supplyBuildingRepository.updateBuildingFields(fromId, { stockAges: books.from });
+    if (books.to !== to.stockAges) await this.supplyBuildingRepository.updateBuildingFields(toId, { stockAges: books.to });
   }
 }

@@ -22,7 +22,6 @@ export {
 
 export {
   LocalStorageFiscalSettingsRepository,
-  DEFAULT_FISCAL_SETTINGS,
   FISCAL_STORAGE_KEYS,
 } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 
@@ -39,25 +38,25 @@ export function getCommercialRouteFee() {
 
 /** @returns {number} */
 export function getCitizenTaxPerCapita() {
-  return getOrCreateAccountingContext().fiscalSettingsRepository.getCitizenTaxPerCapita();
+  return getOrCreateAccountingContext().getCitizenTaxPerCapita();
 }
 
 /** @param {number} amount @returns {number} */
 export function setCitizenTaxPerCapita(amount) {
-  return getOrCreateAccountingContext().fiscalSettingsRepository.setCitizenTaxPerCapita(amount);
+  return getOrCreateAccountingContext().setCitizenTaxPerCapita(amount);
 }
 
-/** @returns {{ salaryPerMonth: number, salaryTaxRate: number }} */
+/** @returns {{ minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number }} */
 export function getSalarySettings() {
-  return getOrCreateAccountingContext().fiscalSettingsRepository.getSalarySettings();
+  return getOrCreateAccountingContext().getSalarySettings();
 }
 
 /**
- * @param {{ salaryPerMonth?: number, salaryTaxRate?: number }} partial
- * @returns {{ salaryPerMonth: number, salaryTaxRate: number }}
+ * @param {{ minimumWage?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number }} partial
+ * @returns {{ minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number }}
  */
 export function setSalarySettings(partial) {
-  return getOrCreateAccountingContext().fiscalSettingsRepository.setSalarySettings(partial);
+  return getOrCreateAccountingContext().setSalarySettings(partial);
 }
 
 /** Clear persisted fiscal settings (new game / reset). */
@@ -115,8 +114,8 @@ export async function flushJournalSessionToDexie() {
   return getOrCreateAccountingContext().flushJournalSessionToDexie();
 }
 
-export async function exportJournalJson() {
-  return getOrCreateAccountingContext().exportJournalJson();
+export async function exportJournalJson(filters) {
+  return getOrCreateAccountingContext().exportJournalJson(filters);
 }
 
 export async function exportJournalPdf() {
@@ -135,20 +134,6 @@ export async function recordMaintenanceExpense(params) {
  */
 export async function recordConstructionExpense(params) {
   return getOrCreateAccountingContext().recordConstructionExpense(params);
-}
-
-/**
- * @param {Parameters<ReturnType<typeof createAccountingContext>['recordSalaryExpense']>[0]} params
- */
-export async function recordSalaryExpense(params) {
-  return getOrCreateAccountingContext().recordSalaryExpense(params);
-}
-
-/**
- * @param {Parameters<ReturnType<typeof createAccountingContext>['recordPayrollTaxIncome']>[0]} params
- */
-export async function recordPayrollTaxIncome(params) {
-  return getOrCreateAccountingContext().recordPayrollTaxIncome(params);
 }
 
 /**
@@ -250,35 +235,6 @@ export async function canAfford(amount) {
 export async function collectCitizenTaxes(time = 0, options = {}) {
   const ctx = options.db ? createAccountingContext({ db: options.db }) : getOrCreateAccountingContext();
   return ctx.collectCitizenTaxes({ time });
-}
-
-export async function recordSalaries(amount, description = null, turn = null) {
-  return getOrCreateAccountingContext().recordSalaries(amount, description, turn);
-}
-
-export async function recordUnemploymentBenefits(amount, description = null, turn = null) {
-  return getOrCreateAccountingContext().recordUnemploymentBenefits(amount, description, turn);
-}
-
-export async function recordPayrollTax(salaryAmount, taxRate, description = null, turn = null) {
-  return getOrCreateAccountingContext().recordPayrollTax(
-    salaryAmount,
-    taxRate,
-    description,
-    turn
-  );
-}
-
-export async function recordBuildingMaintenance(
-  amount,
-  description = 'Maintenance bâtiments',
-  turn = null
-) {
-  return getOrCreateAccountingContext().recordBuildingMaintenanceForCity({
-    amount,
-    description,
-    turn,
-  });
 }
 
 export async function recordExceptionalRepairExpense(amount, description) {

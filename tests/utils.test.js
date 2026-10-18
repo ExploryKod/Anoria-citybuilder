@@ -29,7 +29,7 @@ describe('getAssetPrice', () => {
         'House-Red': { price: 20 },
         'Farm-Wheat': { price: 10 },
         'Farm-Carrot': { price: 20 },
-        'Market-Stall': { price: 25 },
+        'Market-Stall-Red': { price: 25 },
         'roads': { price: 5 }
     };
 
@@ -43,7 +43,7 @@ describe('getAssetPrice', () => {
         });
 
         test('retourne le prix d\'un marché', () => {
-            expect(getAssetPrice('Market-Stall', testPrices)).toBe(25);
+            expect(getAssetPrice('Market-Stall-Red', testPrices)).toBe(25);
         });
     });
 
@@ -187,7 +187,7 @@ describe('getAssetsByCategory', () => {
         'House-Red': { category: 'residential', price: 20 },
         'Farm-Wheat': { category: 'production', price: 15 },
         'Farm-Carrot': { category: 'production', price: 20 },
-        'Market-Stall': { category: 'commercial', price: 25 },
+        'Market-Stall-Red': { category: 'commercial', price: 25 },
         'roads': { category: 'infrastructure', price: 5 }
     };
 

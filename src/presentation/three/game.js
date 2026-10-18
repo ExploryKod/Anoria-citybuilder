@@ -6,7 +6,6 @@
 import {
   registerAppService,
   getMultiplayerManager,
-  invokeStartTutorial,
   getObjectivesManager,
   getButtonStateManager,
   isEditorMode,
@@ -47,13 +46,19 @@ import {
 import { HAMLET_ACCESS_CHANGED_EVENT, canTravelToHamlet } from '../../core/persistence/hamlet/hamletAccess.js';
 import { runGameTick } from '../../composition/runGameTick.js';
 import { presentIncomingNewsEvents } from '../dom/intelligence/NewsEventModal.js';
+import { createHudTicker } from '../dom/shell/HudTicker.js';
+import { gatherReminderFacts, readRentDebts } from '../../composition/reminderFacts.js';
+import { remindersFor } from '../../shared/gameplay/reminderCatalog.js';
+import { TimeManager } from '../../shared/time/TimeManager.js';
+import { formatEuro } from '../../contexts/accounting/presentation/formatMoney.js';
 import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
 import { computeBuildingReach, listPlacedBuildings } from '../../shared/building-catalog/buildingReach.js';
 import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
 import { BUILDING_ASSETS } from './assets/buildingAssets.js';
-import { planRoadPaint, roadPathBetween, roadPiecesFrom, turnedSides } from './placement/roadPaintPlanner.js';
+import { planRoadPaint, plotsAlongPath, roadPathBetween, roadPiecesFrom, turnedSides } from './placement/roadPaintPlanner.js';
+import { resolveFootprint } from '../../shared/asset-footprint/resolveFootprint.js';
 import {
   BEHAVIOR_MODE,
   resolveBehaviorMode,
@@ -182,6 +187,26 @@ export function createGame(gameStore, assetManager, citySize = null) {
   };
   const roadPieces = roadPiecesFrom(BUILDING_ASSETS);
 
+  /**
+   * The same press-and-drag for a house: from where the player pressed to the cursor, as many plots as fit along
+   * the L, shown before they are placed and placed on release (a plain click places the one plot).
+   */
+  let housePaint = {
+    active: false,
+    anchor: null,
+    axis: null,
+    path: [],
+    busy: false,
+  };
+
+  /** Demolition, also Cesar III style: a square from where the player pressed to the cursor, demolished on release. */
+  let erasePaint = {
+    active: false,
+    anchor: null,
+    end: null,
+    busy: false,
+  };
+
   /** Touch/tablet: anchor ghost + rotation HUD before confirming placement. */
   let touchPendingPlacement = null;
 
@@ -241,6 +266,18 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
   }
 
+  /** The first time a building the catalog says so is built, a dépêche tells the player what it is for. A failure shows, it never stops the game. */
+  async function announceFirstBuiltNews(buildingType) {
+    const milestoneId = getBuildingDefinition(buildingType)?.firstBuiltNews;
+    if (!milestoneId) return;
+    try {
+      const announced = await sessionApi.intelligence.announceMilestone({ milestoneId, turn: time });
+      if (announced) await presentIncomingNewsEvents();
+    } catch (error) {
+      console.error(`[game] The dépêche "${milestoneId}" could not be announced:`, error);
+    }
+  }
+
   async function finalizeBuildingPlacement(placeX, placeY, buildingType, rotationStep = 0) {
     const result = await constructionApi.placeBuildingAtTile({
       city,
@@ -267,6 +304,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       playPlaceBuildingSound();
     }
     await recordBuildingHistory('placed', { id: result.instanceId, type: buildingType, x: placeX, y: placeY });
+    await announceFirstBuiltNews(buildingType);
 
     await scene.update(city, time);
     await runSimulationPass(time);
@@ -320,16 +358,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
   );
   gameUI.updateTimeDisplay(time);
   const freshGame = isFreshGameIntent();
-  bootTreasuryHud({
-    gameUI,
-    freshGame,
-    // Returning to a save resumes its day counter; only a new game starts at day 0.
-    restoreClock: async () => {
-      time = freshGame ? 0 : await readGameClock();
-      if (freshGame) await writeGameClock(0);
-    },
-  });
 
+  // The contexts first: the accounting is a singleton wired (labour market, selling prices) by this call, so nothing
+  // may ask for it before.
   const {
     parcels,
     supply,
@@ -342,6 +373,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
     sessionApi,
     runtime,
   } = bootGameContexts();
+  bootTreasuryHud({
+    gameUI,
+    freshGame,
+    // Returning to a save resumes its day counter; only a new game starts at day 0.
+    restoreClock: async () => {
+      time = freshGame ? 0 : await readGameClock();
+      if (freshGame) await writeGameClock(0);
+    },
+  });
   const { construction: constructionApi } = sessionApi;
   const {
     isRoadBuildingType,
@@ -630,9 +670,31 @@ export function createGame(gameStore, assetManager, citySize = null) {
     },
   });
 
+  // The bar of reminders under the HUD: the rules of the catalog, read against the hamlet each time it changes (a placement, a demolition, a day).
+  const hudTicker = createHudTicker(document.getElementById('hud-ticker'));
+  /** The rents owed change once a month, with the settlement: read once a month, not at every refresh. */
+  let rentDebtsReading = { month: null, debts: { debtors: 0, total: 0 } };
+  /** The game's opening (the dépêches that guide the player) is over: until then the bar says nothing, the dépêches do the talking. */
+  let openingOver = false;
+
+  async function refreshHudReminders() {
+    if (isEditorMode()) return;
+    const month = Math.floor(time / TimeManager.DAYS_PER_MONTH);
+    if (rentDebtsReading.month !== month) {
+      rentDebtsReading = { month, debts: await readRentDebts() };
+    }
+    const facts = await gatherReminderFacts({ city, rentDebts: rentDebtsReading.debts, activeToolId, openingOver });
+    hudTicker.show(remindersFor(facts, { euro: formatEuro }));
+  }
+  awaitBudgetReady().then(() => {
+    openingOver = true;
+    return refreshHudReminders();
+  }).catch((error) => console.error('[game] The opening did not end, the reminders stay silent:', error));
+
   async function refreshPlacementPresentation() {
     const rows = await constructionApi.listAllBuildingRows();
     refreshSupplyPlacementIndex(rows);
+    await refreshHudReminders();
   }
 
   bindGameUIDeps({ getScene: () => scene });
@@ -653,14 +715,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   hamletSceneGate = loadActiveHamletScene().then(async () => {
     await refreshPlacementPresentation();
+    await refreshEmploymentPresentationForCity();
     loaderManager.hide(500);
     scene.onEnterSelectMode?.();
-    if (sessionStorage.getItem('anoria.startTutorial') === '1') {
-      sessionStorage.removeItem('anoria.startTutorial');
-      setTimeout(() => {
-        invokeStartTutorial();
-      }, 800);
-    }
   }).catch((error) => {
     // Sans ce filet, une erreur ici (asset manquant, réseau mobile instable,
     // perte de contexte WebGL...) laissait le loader bloqué
@@ -873,6 +930,303 @@ export function createGame(gameStore, assetManager, citySize = null) {
     showRoadDragPreview();
   }
 
+  /** A tool whose building takes a plot of the player's land (a house): it can be dragged out like a road. */
+  function isPlotDragTool(toolId) {
+    const definition = getBuildingDefinition(resolvePlacementBuildingId(toolId));
+    // A house the hamlet holds only so many of (the mayor's) is placed one at a time: a dragged row of them could not all be built.
+    return Boolean(definition?.residentialGroup) && definition.maxPerHamlet === undefined;
+  }
+
+  /**
+   * What the house drag would place: the plots along the path, cut at the first one that cannot take the house
+   * (a drag does not jump an obstacle). `valid` is what would be placed, `blocked` the rest; both as plots.
+   */
+  function planHouseDrag() {
+    const buildingType = resolvePlacementBuildingId();
+    const rotationStep = getPlacementRotationStep();
+    let { width, depth } = resolveFootprint(buildingType);
+    if (rotationStep % 2 === 1) [width, depth] = [depth, width];
+
+    const valid = [];
+    const blocked = [];
+    // Why the first plot that cannot take the house cannot: the player is told that reason, not a guessed one.
+    let blockedReason = null;
+    for (const plot of plotsAlongPath({ path: housePaint.path, width, depth })) {
+      const inCity = plot.x >= 0 && plot.y >= 0 && plot.x + width <= city.size && plot.y + depth <= city.size;
+      let fits = false;
+      if (blocked.length === 0) {
+        if (inCity) {
+          const check = canPlaceBuildingAtTileWithSupplyRules({
+            city,
+            x: plot.x,
+            y: plot.y,
+            buildingType,
+            assetCatalog: buildingPlacementCatalog,
+            rotationStep,
+          });
+          fits = check.ok;
+          if (!fits) blockedReason = check.reason;
+        } else {
+          blockedReason = 'area_not_available';
+        }
+      }
+      (fits ? valid : blocked).push(plot);
+    }
+    return { valid, blocked, blockedReason, buildingType, rotationStep, width, depth };
+  }
+
+  function showHouseDragPreview() {
+    const { valid, blocked, width, depth } = planHouseDrag();
+    const tilesOf = (plots) => plots.flatMap((plot) => {
+      const tiles = [];
+      for (let dx = 0; dx < width; dx += 1) {
+        for (let dy = 0; dy < depth; dy += 1) tiles.push({ x: plot.x + dx, y: plot.y + dy });
+      }
+      return tiles;
+    });
+    scene.roadPaintPreview.show({ valid: tilesOf(valid), blocked: tilesOf(blocked) });
+  }
+
+  function cancelHousePaint() {
+    housePaint.active = false;
+    housePaint.anchor = null;
+    housePaint.axis = null;
+    housePaint.path = [];
+    scene.roadPaintPreview.clear();
+  }
+
+  /** The cursor moved: the houses are replanned from where the player pressed. */
+  function dragHousesToward(x, y) {
+    if (!housePaint.active || !isPlotDragTool(activeToolId)) {
+      return;
+    }
+    const { cells, axis } = roadPathBetween(housePaint.anchor, { x, y }, housePaint.axis);
+    housePaint.path = cells;
+    housePaint.axis = axis;
+    showHouseDragPreview();
+  }
+
+  /** Dev only: how long each step of a placement takes, logged once it is over, to see what makes a house appear late. */
+  function createStepTimer(label) {
+    const steps = [];
+    const start = performance.now();
+    let last = start;
+    return {
+      step(name) {
+        const now = performance.now();
+        steps.push(`${name} ${Math.round(now - last)}ms`);
+        last = now;
+      },
+      done() {
+        if (import.meta.env.DEV) console.info(`[perf] ${label}: ${steps.join(' | ')} | total ${Math.round(performance.now() - start)}ms`);
+      },
+    };
+  }
+
+  /** The placements of released drags, one after the other: a drag released while the previous one is still being placed waits its turn, never lost. */
+  let housePlacementQueue = Promise.resolve();
+
+  /** The button is released: the plan is taken now (and the preview cleared), the houses are placed when the ones before are done. */
+  async function commitHousePaint() {
+    if (!housePaint.active) {
+      return;
+    }
+    const plan = planHouseDrag();
+    cancelHousePaint();
+    housePlacementQueue = housePlacementQueue.catch(() => {}).then(() => placeHousePlan(plan));
+    await housePlacementQueue;
+  }
+
+  /** Place the houses that were previewed, then bring the city up to date once. */
+  async function placeHousePlan({ valid, blocked, blockedReason, buildingType, rotationStep }) {
+    const timer = createStepTimer(`${valid.length} house(s)`);
+    housePaint.busy = true;
+    try {
+      // Not one plot could take the house (where the drag began, something is in the way, or the mayor's house is not built): say why.
+      if (valid.length === 0 && blocked.length > 0) {
+        showGenericErrorNotification(activeToolId, blockedReason);
+        return;
+      }
+
+      const placed = [];
+      for (const plot of valid) {
+        const result = await constructionApi.placeBuildingAtTile({
+          city,
+          x: plot.x,
+          y: plot.y,
+          buildingType,
+          gameTurn: time,
+          placementRotationStep: rotationStep,
+        });
+        if (!result.success) {
+          if (result.reason === 'insufficient_funds') {
+            showInsufficientFundsNotification(buildingType, result.price || 0);
+          } else if (result.reason && result.reason !== 'in_progress') {
+            showGenericErrorNotification(buildingType, result.reason);
+          }
+          break;
+        }
+        placed.push({ plot, instanceId: result.instanceId });
+        await recordBuildingHistory('placed', { id: result.instanceId, type: buildingType, x: plot.x, y: plot.y });
+        const multiplayerManager = getMultiplayerManager();
+        if (multiplayerManager?.isMultiplayer) {
+          try {
+            await multiplayerManager.placeBuilding(buildingType, plot.x, plot.y);
+          } catch (error) {
+            console.warn('[Multiplayer] Erreur envoi bâtiment:', error);
+          }
+        }
+      }
+
+      timer.step('payment + save + history');
+      if (placed.length === 0) {
+        return;
+      }
+      playPlaceBuildingSound();
+      await scene.update(city, time);
+      timer.step('scene.update (the houses appear)');
+      await runSimulationPass(time);
+      timer.step('simulation pass');
+      await syncEmploymentAfterBuildingChange(scene, city, buildingType);
+      timer.step('employment');
+      for (const { plot, instanceId } of placed) {
+        await syncSupplyLinksAfterBuildingChange({
+          supply,
+          construction: constructionApi,
+          city,
+          event: 'placed',
+          buildingType,
+          instanceId,
+          x: plot.x,
+          y: plot.y,
+        });
+      }
+      timer.step('supply links');
+      await refreshPlacementPresentation();
+      timer.step('placement refresh + reminders');
+      await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+      timer.step('HUD');
+      placementGhostSession.sync(scene.focusedObject);
+      if (game?.play) {
+        game.play();
+      }
+    } finally {
+      housePaint.busy = false;
+      timer.done();
+    }
+  }
+
+  /** The tiles of the square from where the player pressed to the cursor (inside the city). */
+  function eraseSquareTiles() {
+    const { anchor, end } = erasePaint;
+    const tiles = [];
+    for (let x = Math.min(anchor.x, end.x); x <= Math.max(anchor.x, end.x); x += 1) {
+      for (let y = Math.min(anchor.y, end.y); y <= Math.max(anchor.y, end.y); y += 1) {
+        if (x >= 0 && y >= 0 && x < city.size && y < city.size) tiles.push({ x, y });
+      }
+    }
+    return tiles;
+  }
+
+  function showEraseDragPreview() {
+    scene.roadPaintPreview.show({ valid: [], blocked: eraseSquareTiles() });
+  }
+
+  function cancelErasePaint() {
+    erasePaint.active = false;
+    erasePaint.anchor = null;
+    erasePaint.end = null;
+    scene.roadPaintPreview.clear();
+  }
+
+  /** The cursor moved: the square is redrawn from where the player pressed. */
+  function dragEraseToward(x, y) {
+    erasePaint.end = { x, y };
+    showEraseDragPreview();
+  }
+
+  /**
+   * Demolish the building on each tile (one that already went down with a neighbour is skipped), then bring the city
+   * up to date once. A hub that takes buildings down with it asks first, and a "no" spares that hub only.
+   * @param {Array<{ x: number, y: number, instanceId?: string | null }>} targets
+   */
+  async function demolishTiles(targets) {
+    let lastBuildingId = null;
+    let demolished = 0;
+    for (const target of targets) {
+      const { x, y } = target;
+      const tile = city.tiles[x][y];
+      if (!tile?.buildingId) {
+        continue;
+      }
+      const removedInstanceId = target.instanceId ?? tile.instanceId ?? null;
+      const isHub = supply.hasResourceRole(tile.buildingId, 'hub');
+      const hasPlacementRequirements = supply.getPlacementRequirements(tile.buildingId).length > 0;
+
+      if (isHub && removedInstanceId) {
+        const dependents = await supply.previewHubCascade({ hubId: removedInstanceId });
+        if (dependents.length > 0 && !(await confirmHubCascadeDemolition(tile.buildingId, dependents))) {
+          continue;
+        }
+      }
+
+      const removedType = tile.buildingId;
+      let cascadeOutcome = null;
+      if ((isHub || hasPlacementRequirements) && removedInstanceId) {
+        cascadeOutcome = await syncSupplyLinksAfterBuildingChange({
+          supply,
+          construction: constructionApi,
+          city,
+          event: 'bulldozed',
+          buildingType: removedType,
+          instanceId: removedInstanceId,
+          x,
+          y,
+        });
+      }
+
+      const { buildingId } = await constructionApi.bulldozeBuildingAtTile({
+        city,
+        x,
+        y,
+        meshInstanceId: removedInstanceId,
+      });
+
+      if (buildingId) {
+        demolished += 1;
+        lastBuildingId = buildingId;
+        await recordBuildingHistory('demolished', { id: removedInstanceId, type: buildingId, x, y });
+      }
+      if (cascadeOutcome?.destroyed?.length) {
+        showHubCascadeNotification(removedType, cascadeOutcome.destroyed);
+      }
+    }
+
+    if (demolished === 0) {
+      return;
+    }
+    playBulldozeSound();
+    await scene.update(city, time);
+    await syncEmploymentAfterBuildingChange(scene, city, lastBuildingId);
+    await refreshPlacementPresentation();
+    await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+  }
+
+  /** The button is released: demolish what the square covers. */
+  async function commitErasePaint() {
+    if (!erasePaint.active || erasePaint.busy) {
+      return;
+    }
+    erasePaint.busy = true;
+    try {
+      const targets = eraseSquareTiles();
+      cancelErasePaint();
+      await demolishTiles(targets);
+    } finally {
+      erasePaint.busy = false;
+    }
+  }
+
   function isModalBlockingEscapeToSelect() {
     if (infoObjectOverlay.classList.contains('active')) return true;
     if ((popupManager?.getActivePopups?.() || []).length > 0) return true;
@@ -996,52 +1350,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
 
     if (behaviorMode === BEHAVIOR_MODE.ERASE) {
-      const removedInstanceId = selectedObject.userData?.instanceId ?? tile.instanceId ?? null;
-      const isHub = supply.hasResourceRole(tile.buildingId, 'hub');
-      const hasPlacementRequirements = supply.getPlacementRequirements(tile.buildingId).length > 0;
-
-      // A hub that takes buildings down with it asks first: nothing is touched until the player says yes.
-      if (isHub && removedInstanceId) {
-        const dependents = await supply.previewHubCascade({ hubId: removedInstanceId });
-        if (dependents.length > 0 && !(await confirmHubCascadeDemolition(tile.buildingId, dependents))) {
-          return;
-        }
+      // Playing (not the editor): Cesar III — the press anchors a square, dragging stretches it, letting go demolishes it.
+      if (!isEditorMode()) {
+        erasePaint.active = true;
+        erasePaint.anchor = { x, y };
+        erasePaint.end = { x, y };
+        showEraseDragPreview();
+        return;
       }
-
-      let cascadeOutcome = null;
-      if ((isHub || hasPlacementRequirements) && removedInstanceId) {
-        cascadeOutcome = await syncSupplyLinksAfterBuildingChange({
-          supply,
-          construction: constructionApi,
-          city,
-          event: 'bulldozed',
-          buildingType: tile.buildingId,
-          instanceId: removedInstanceId,
-          x,
-          y,
-        });
-      }
-
-      const { buildingId } = await constructionApi.bulldozeBuildingAtTile({
-        city,
-        x,
-        y,
-        meshInstanceId: removedInstanceId,
-      });
-
-      if (buildingId) {
-        playBulldozeSound();
-        await recordBuildingHistory('demolished', { id: removedInstanceId, type: buildingId, x, y });
-      }
-
-      if (cascadeOutcome?.destroyed?.length) {
-        showHubCascadeNotification(tile.buildingId, cascadeOutcome.destroyed);
-      }
-
-      await scene.update(city, time);
-      await syncEmploymentAfterBuildingChange(scene, city, buildingId);
-      await refreshPlacementPresentation();
-      await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+      await demolishTiles([{ x, y, instanceId: selectedObject.userData?.instanceId ?? tile.instanceId ?? null }]);
     } else if (behaviorMode === BEHAVIOR_MODE.SELECT) {
       await presentBuildingInfoSelection(selectedObject, {
         city,
@@ -1142,6 +1459,16 @@ export function createGame(gameStore, assetManager, citySize = null) {
         return;
       }
 
+      // Desktop: a house is dragged out like a road — the press anchors, dragging plans the plots, letting go places them.
+      if (isPlotDragTool(activeToolId)) {
+        housePaint.active = true;
+        housePaint.anchor = { x: placeX, y: placeY };
+        housePaint.axis = null;
+        housePaint.path = [{ x: placeX, y: placeY }];
+        showHouseDragPreview();
+        return;
+      }
+
       const placed = await finalizeBuildingPlacement(
         placeX,
         placeY,
@@ -1158,7 +1485,17 @@ export function createGame(gameStore, assetManager, citySize = null) {
   };
 
   scene.onRoadPaintMove = async (focusedObject) => {
-    if (!roadPaint.active || !isRoadBuildingType(activeToolId)) {
+    if (erasePaint.active) {
+      const ex = focusedObject?.userData?.x;
+      const ey = focusedObject?.userData?.y;
+      if (typeof ex === 'number' && typeof ey === 'number') {
+        dragEraseToward(ex, ey);
+      }
+      return;
+    }
+    const dragsHouses = housePaint.active && isPlotDragTool(activeToolId);
+    const dragsRoad = roadPaint.active && isRoadBuildingType(activeToolId);
+    if (!dragsHouses && !dragsRoad) {
       return;
     }
     const x = focusedObject?.userData?.x;
@@ -1166,12 +1503,18 @@ export function createGame(gameStore, assetManager, citySize = null) {
     if (typeof x !== 'number' || typeof y !== 'number') {
       return;
     }
-    dragRoadToward(x, y);
+    if (dragsHouses) {
+      dragHousesToward(x, y);
+    } else {
+      dragRoadToward(x, y);
+    }
     placementGhostSession.sync(focusedObject);
   };
 
   scene.onRoadPaintEnd = async () => {
     await commitRoadPaint();
+    await commitHousePaint();
+    await commitErasePaint();
   };
 
   scene.onPlacementHover = (focusedObject) => {
@@ -1305,6 +1648,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
     if (roadPaint.active) {
       void commitRoadPaint();
     }
+    if (housePaint.active) {
+      void commitHousePaint();
+    }
   });
 
   window.addEventListener('blur', () => {
@@ -1386,6 +1732,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
     },
 
+    /** Resolves when the hamlet's scene is loaded and the loader is gone: what a new game's opening waits for. */
+    whenSceneReady: () => hamletSceneGate,
+
     refreshEmployment: refreshEmploymentPresentationForCity,
     runSimulationPass,
     runScenePresentationPass,
@@ -1431,6 +1780,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
       selectedMeshIndex = 0;
       gameUI.activeToolId = toolId;
       placementGhostSession.onToolChanged();
+      // The reminders depend on the tool in hand (picking the mayor's house to place it is the guided way: nothing to remind).
+      void refreshHudReminders().catch((error) => console.error('[game] The reminders could not be refreshed:', error));
       // What a building needs (a hub in reach, a natural resource, a supplier) is said when it is picked.
       if (toolChanged && isActivePlacementTool(toolId)) {
         const placingType = resolvePlacementBuildingId(toolId);
@@ -1445,6 +1796,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
       if (!isRoadBuildingType(toolId) && roadPaint.active) {
         cancelRoadPaint();
+      }
+      if (housePaint.active && !isPlotDragTool(toolId)) {
+        cancelHousePaint();
+      }
+      if (erasePaint.active) {
+        cancelErasePaint();
       }
     },
 
@@ -1484,7 +1841,6 @@ export function createGame(gameStore, assetManager, citySize = null) {
   gameLoop.start();
 
   scene.start();
-  void refreshEmploymentPresentationForCity();
 
   try {
     const target = document.getElementById('game-window');

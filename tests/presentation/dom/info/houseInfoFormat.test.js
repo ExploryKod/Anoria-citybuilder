@@ -3,7 +3,6 @@
  * need one click away.
  */
 import { describe, test, expect } from '@jest/globals';
-import { getQuantityConsumerEntries } from '../../../../src/shared/building-catalog/resourceRoleQueries.js';
 import { formatHouseResourcesModel, formatHouseActivityModel } from '../../../../src/presentation/dom/info/presenters/formats/houseInfoFormat.js';
 
 const needOf = (model, kind) => model.needs.find((need) => need.kind === kind);
@@ -14,15 +13,18 @@ describe('formatHouseResourcesModel — needs first, goods in detail', () => {
     expect(formatHouseResourcesModel({ lastConsumption: null }).caption).toBe('Consommé le mois dernier :');
   });
 
-  test('a house has one card per need the catalog gives it, the diet first', () => {
+  // Services (2026-10-10) sit under their own "Services" need rather than one each — see
+  // servicesNeedOf in houseInfoFormat.js. "card" being the basic diet/goods/heat/light needs, "services"
+  // the aggregate over the house's 9 service categories (flag or quantity mode alike).
+  test('a house has one card per basic need the catalog gives it, the diet first, plus a Services aggregate', () => {
     const model = formatHouseResourcesModel({ buildingType: 'House-Red', lastConsumption: null });
-    expect(model.needs.map((need) => need.kind)).toEqual(getQuantityConsumerEntries('House-Red').map((entry) => entry.totalKey));
+    expect(model.needs.map((need) => need.kind)).toEqual(['food', 'goods', 'heat', 'light', 'services']);
     expect(model.needs[0].kind).toBe('food');
   });
 
   test('a fully fed house reads 8/8, met', () => {
     const model = formatHouseResourcesModel({
-      lastConsumption: { demand: 8, taken: 8, totalUnfed: 0, takenByCategory: { wheat: 5, fruit: 3 } },
+      lastConsumption: { demand: 8, taken: 8, totalUnfed: 0, takenByCategory: { wheat: 5, cabbage: 3 } },
     });
     const card = needOf(model, 'food').card;
     expect(card.valueText).toBe('8/8');
@@ -41,10 +43,10 @@ describe('formatHouseResourcesModel — needs first, goods in detail', () => {
 
   test('the detail of a need says how much of each of its goods was used', () => {
     const model = formatHouseResourcesModel({
-      lastConsumption: { demand: 8, taken: 8, totalUnfed: 0, takenByCategory: { wheat: 5, fruit: 3 } },
+      lastConsumption: { demand: 8, taken: 8, totalUnfed: 0, takenByCategory: { wheat: 5, cabbage: 3 } },
     });
     expect(goodOf(model, 'food', 'wheat').valueText).toBe('5');
-    expect(goodOf(model, 'food', 'fruit').valueText).toBe('3');
+    expect(goodOf(model, 'food', 'cabbage').valueText).toBe('3');
     expect(goodOf(model, 'food', 'carrot').valueText).toBe('0');
   });
 
@@ -92,6 +94,57 @@ describe('formatHouseResourcesModel — needs first, goods in detail', () => {
   });
 });
 
+// Services: flag and quantity mode alike are consumer entries, so both belong on the Ressources tab — a service's
+// sub-card is a number where the mechanism is a depleting stock (the tank's water, a plant's energy) and a
+// reached/not-reached flag otherwise (doctor, school, ...), under one "Services" aggregate.
+describe('formatHouseResourcesModel — the Services need (flag and quantity services alike)', () => {
+  test('the aggregate counts how many services (water, energy + 9 flag ones) were served this period', () => {
+    const model = formatHouseResourcesModel({
+      buildingType: 'House-Red',
+      buildingPop: 1,
+      servedFlags: { doctor: 4, school: 4 },
+      outcomes: { lastWaterConsumption: { month: 4, demand: 4, taken: 4, totalUnfed: 0 } },
+      periodKey: 4,
+    });
+    const services = needOf(model, 'services');
+    expect(services.card.valueText).toBe('3/11');
+    expect(services.card.met).toBe(false);
+  });
+
+  test('a flag service sub-card is a plain ✓, not a count', () => {
+    const model = formatHouseResourcesModel({
+      buildingType: 'House-Red',
+      buildingPop: 1,
+      servedFlags: { doctor: 4 },
+      periodKey: 4,
+    });
+    const doctor = goodOf(model, 'services', 'doctor');
+    expect(doctor).toMatchObject({ valueText: '✓', met: true });
+  });
+
+  test('a flag service not served this period reads "inexistant"', () => {
+    const model = formatHouseResourcesModel({
+      buildingType: 'House-Red',
+      buildingPop: 1,
+      servedFlags: null,
+      periodKey: 4,
+    });
+    const doctor = goodOf(model, 'services', 'doctor');
+    expect(doctor).toMatchObject({ valueText: 'inexistant', met: false });
+  });
+
+  test('the quantity-mode service (water) reads a real count, reusing needOf', () => {
+    const model = formatHouseResourcesModel({
+      buildingType: 'House-Red',
+      buildingPop: 4,
+      outcomes: { lastWaterConsumption: { month: 4, demand: 16, taken: 12, totalUnfed: 4 } },
+      periodKey: 4,
+    });
+    const water = goodOf(model, 'services', 'water');
+    expect(water).toMatchObject({ valueText: '12/16', met: false, label: 'Eau' });
+  });
+});
+
 describe('formatHouseActivityModel — a house\'s own business, one block per recipe', () => {
   test('a house without a business gets an empty list, not a thrown error', () => {
     expect(formatHouseActivityModel({}).recipes).toEqual([]);
@@ -102,33 +155,40 @@ describe('formatHouseActivityModel — a house\'s own business, one block per re
     expect(model.recipes.map((r) => r.category)).toEqual(['decoratedPot', 'carrotCake']);
   });
 
+  // Raw materials collapse to ONE card even for a multi-input recipe (2026-10-10) — the bottleneck
+  // ingredient (the smallest "taken" of the last cycle); a good-by-good breakdown was redundant with the
+  // step cards' own "waiting for material" wording — see houseInfoFormat.js's materialCardOf.
   test('before any cycle ran, the raw material reads "not yet", not zero', () => {
     const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow: null });
     const pot = model.recipes[0];
-    expect(pot.materials).toHaveLength(1);
-    expect(pot.materials[0].kind).toBe('pot');
-    expect(pot.materials[0].valueText).toBe('–');
-    expect(pot.materials[0].met).toBe(false);
+    expect(pot.material.kind).toBe('materials');
+    expect(pot.material.valueText).toBe('–');
+    expect(pot.material.met).toBe(false);
     expect(pot.product.valueText).toBe('0');
   });
 
-  test('after a cycle took its inputs, the material reads consommé/besoin like a personal need', () => {
+  test('after a cycle took its inputs, the material reads the amount taken, met once the need is covered', () => {
     const buildingRow = {
       activityInputs: { decoratedPot: { year: 1, monthIndex: 1, takenByCategory: { pot: 10 } } },
       stocks: { decoratedPot: 10 },
     };
     const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow });
     const pot = model.recipes[0];
-    expect(pot.materials[0].valueText).toBe('10/10');
-    expect(pot.materials[0].met).toBe(true);
+    expect(pot.material.valueText).toBe('10');
+    expect(pot.material.met).toBe(true);
     expect(pot.product.valueText).toBe('10');
     expect(pot.product.met).toBe(true);
   });
 
-  test('the cake needs three goods at once: each gets its own card', () => {
-    const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow: null });
+  test('the cake needs three goods at once: the single material card reads the bottleneck one', () => {
+    const buildingRow = {
+      activityInputs: { carrotCake: { year: 1, monthIndex: 1, takenByCategory: { wheat: 4, carrot: 0, oil: 2 } } },
+    };
+    const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow });
     const cake = model.recipes[1];
-    expect(cake.materials.map((m) => m.kind)).toEqual(['wheat', 'carrot', 'oil']);
+    expect(cake.material.kind).toBe('materials');
+    expect(cake.material.valueText).toBe('0');
+    expect(cake.material.met).toBe(false);
   });
 
   test('a two-step recipe gets two step cards, numbered', () => {

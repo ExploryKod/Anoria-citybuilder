@@ -10,7 +10,7 @@ import {
 describe('ACL Employment — isEmploymentWorkplaceType', () => {
   test('workplaces with worker_need', () => {
     expect(isEmploymentWorkplaceType('Farm-Wheat')).toBe(true);
-    expect(isEmploymentWorkplaceType('Market-Stall')).toBe(true);
+    expect(isEmploymentWorkplaceType('Market-Stall-Red')).toBe(true);
     expect(isEmploymentWorkplaceType('Windmill-001')).toBe(true);
   });
 

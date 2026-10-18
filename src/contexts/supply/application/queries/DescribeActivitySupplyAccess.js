@@ -6,12 +6,16 @@
  *     the recipe cannot reach anything to ask.
  *   - 'no-supplier': a holder IS reachable, but no operational 'producer' of that good exists anywhere in the
  *     city to feed it, so it can never be restocked.
+ * A third kind concerns the OUTPUT: 'no-collector': no operational hub that holds the good, and collects it from where
+ * the building stands, exists — what the recipe makes would stay where it is made (a merchant house's deals without a
+ * trade warehouse).
  * Read-only, no side effect; nothing is persisted — freshly computed whenever asked. Resource-agnostic: every
  * good and role comes from the building's own catalog entry (`getCycleRecipeEntries`), never named here.
  */
 import { isOperational } from '../../domain/policies/OperationalGatePolicy.js';
 import { isWithinRange } from '../../domain/policies/ResourceRangePolicy.js';
 import { getCycleRecipeEntries } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getResourceRoles } from '../../domain/policies/ResourceRolePolicy.js';
 
 export class DescribeActivitySupplyAccess {
   /**
@@ -23,7 +27,7 @@ export class DescribeActivitySupplyAccess {
 
   /**
    * @param {{ id: string, type: string, x?: number, y?: number }} building
-   * @returns {Promise<Array<{ category: string, inputCategory: string, role: string, status: 'no-hub' | 'no-supplier' }>>}
+   * @returns {Promise<Array<{ category: string, inputCategory: string, role: string, status: 'no-hub' | 'no-supplier' | 'no-collector' }>>}
    *   Only the problems — an empty list means every recipe can reach and be supplied.
    */
   async execute(building) {
@@ -33,6 +37,9 @@ export class DescribeActivitySupplyAccess {
       for (const input of inputs) {
         const status = await this.#gapFor(building, input);
         if (status) gaps.push({ category: entry.categories[0], inputCategory: input.category, role: input.from.role, status });
+      }
+      if (!(await this.#hasCollector(building, entry.categories[0]))) {
+        gaps.push({ category: entry.categories[0], inputCategory: entry.categories[0], role: 'hub', status: 'no-collector' });
       }
     }
     return gaps;
@@ -50,6 +57,15 @@ export class DescribeActivitySupplyAccess {
     const suppliers = await this.supplyBuildingRepository.findByResourceRole('producer', input.category);
     const hasSupplier = suppliers.some((supplier) => this.#isOperationalBuilding(supplier));
     return hasSupplier ? null : 'no-supplier';
+  }
+
+  /** Whether an operational hub holding the good collects it from the building: its collector role names the good, in range. */
+  async #hasCollector(building, category) {
+    const hubs = await this.supplyBuildingRepository.findByResourceRole('hub', category);
+    return hubs.some((hub) => {
+      const collector = getResourceRoles(hub.type).find((entry) => entry.role === 'collector' && entry.categories.includes(category));
+      return collector !== undefined && this.#isUsableHolder(building, hub, collector.range ?? Infinity);
+    });
   }
 
   #isUsableHolder(building, holder, range) {

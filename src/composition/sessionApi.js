@@ -6,6 +6,7 @@
  */
 
 import { COMMERCIAL_ROUTE_FEE } from '../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
+import { fiscalSliderBounds } from '../contexts/accounting/domain/catalogs/FiscalRateCatalog.js';
 import { createEmptyCityLedgerYearLines } from '../contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
 import {
   computeLoanRate,
@@ -21,7 +22,6 @@ import {
   OBJECTIVE_CATALOG,
   isObjectiveRequirementMet,
 } from '../contexts/accounting/domain/catalogs/ObjectiveCatalog.js';
-import { computeReferenceSalaryPayrollBreakdown } from '../contexts/accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
 import { hasRoadAccessFromCount } from '../contexts/parcels/domain/value-objects/RoadAccess.js';
 import {
   getBuildingsNamesInZone,
@@ -70,8 +70,6 @@ export function createConstructionSessionApi(construction) {
  * @param {{ getCityBuildingValuation: Function }} [cityAssets]
  */
 export function createAccountingSessionApi(accounting, cityAssets = null) {
-  const fiscal = accounting.fiscalSettingsRepository;
-
   return Object.freeze({
     getTreasuryBalance: () => accounting.getTreasuryBalance(),
     getTreasurySnapshot: () => accounting.getTreasurySnapshot(),
@@ -79,18 +77,61 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     getActiveLoans: () => accounting.getActiveLoans(),
     getGeneralLedger: (filters) => accounting.getGeneralLedger(filters),
     getCityLedgerYearComparison: (options) => accounting.getCityLedgerYearComparison(options),
-    exportJournalJson: () => accounting.exportJournalJson(),
+    getCityStatements: (options) => accounting.getCityStatements(options),
+    exportCityFinances: (options) => accounting.exportCityFinances(options),
+    exportJournalJson: (filters) => accounting.exportJournalJson(filters),
     exportJournalPdf: () => accounting.exportJournalPdf(),
 
-    getCitizenTaxPerCapita: () => fiscal.getCitizenTaxPerCapita(),
-    setCitizenTaxPerCapita: (amount) => fiscal.setCitizenTaxPerCapita(amount),
-    getSalarySettings: () => fiscal.getSalarySettings(),
-    setSalarySettings: (partial) => fiscal.setSalarySettings(partial),
-    computeReferenceSalaryPayrollBreakdown: (params) =>
-      computeReferenceSalaryPayrollBreakdown(params),
+    getHouseMaintenanceSubsidyRate: () => accounting.getHouseMaintenanceSubsidyRate(),
+    setHouseMaintenanceSubsidyRate: (rate) => accounting.setHouseMaintenanceSubsidyRate(rate),
+    getCorporateTaxRate: () => accounting.getCorporateTaxRate(),
+    setCorporateTaxRate: (rate) => accounting.setCorporateTaxRate(rate),
+    getCitizenTaxPerCapita: () => accounting.getCitizenTaxPerCapita(),
+    setCitizenTaxPerCapita: (amount) => accounting.setCitizenTaxPerCapita(amount),
+    getSalarySettings: () => accounting.getSalarySettings(),
+    getWageBoard: (marketRows) => accounting.getWageBoard(marketRows),
+    getSocialSecurityBoard: () => accounting.getSocialSecurityBoard(),
+    getCostOfLiving: () => accounting.getCostOfLiving(),
+    getAdministratorPayStatus: () => accounting.getAdministratorPayStatus(),
+    getRentalBoard: (ownerId) => accounting.getRentalBoard(ownerId),
+    getRentControl: () => accounting.getRentControl(),
+    setRentControlEnabled: (enabled) => accounting.setRentControlEnabled(enabled),
+    getRentQuote: () => accounting.getRentQuote(),
+    businessAccountOf: (enterpriseId) => accounting.businessAccountOf(enterpriseId),
+    businessAccountOfHouse: (houseId, activity) => accounting.businessAccountOfHouse(houseId, activity),
+    getTaxCollection: () => accounting.getTaxCollection(),
+    revalueMinimumWage: () => accounting.revalueMinimumWage(),
+    getWagePerWorkerOf: (buildingType) => accounting.getWagePerWorkerOf(buildingType),
+    setSalarySettings: (partial) => accounting.setSalarySettings(partial),
+    ensureHamletFiscalRates: (hamletId) => accounting.ensureHamletFiscalRates(hamletId),
 
-    getCustomsRate: () => accounting.getCustomsRate(),
-    setCustomsRate: (rate) => accounting.setCustomsRate(rate),
+    ensureCustomsDuties: () => accounting.ensureCustomsDuties(),
+    getServiceSubsidies: () => accounting.getServiceSubsidies(),
+    setServiceSubsidy: (service, percent) => accounting.setServiceSubsidy(service, percent),
+    getVatSettings: () => accounting.getVatSettings(),
+    getProducerRevenues: (year, monthIndex) => accounting.getProducerRevenues(year, monthIndex),
+    getBuildingAccountBalance: (buildingId, accountKind) => accounting.getBuildingAccountBalance(buildingId, accountKind),
+    getBuildingAccountTrace: (buildingId) => accounting.getBuildingAccountTrace(buildingId),
+    getBuildingFinance: (buildingId, accountKind, view) => accounting.getBuildingFinance(buildingId, accountKind, view),
+    getBuildingBalanceSheet: (buildingId, accountKind) => accounting.getBuildingBalanceSheet(buildingId, accountKind),
+    getBuildingLedger: (buildingId, accountKind) => accounting.getBuildingLedger(buildingId, accountKind),
+    getInsolvency: (buildingId) => accounting.getInsolvency(buildingId),
+    exportBuildingAccountJson: (buildingId, accountKind) => accounting.exportBuildingAccountJson(buildingId, accountKind),
+    getHouseResidents: (houseId) => accounting.getHouseResidents(houseId),
+    hasBuildingAccount: (buildingType) => accounting.hasBuildingAccount(buildingType),
+    findBankBuildingId: () => accounting.findBankBuildingId(),
+    getHouseholdDepositBalance: (houseId) => accounting.getHouseholdDepositBalance(houseId),
+    recordHouseholdDeposit: (params) => accounting.recordHouseholdDeposit(params),
+    recordHouseholdWithdrawal: (params) => accounting.recordHouseholdWithdrawal(params),
+    /** The range of every fiscal slider (see fiscalSliderBounds). */
+    getFiscalSliderBounds: () => fiscalSliderBounds(),
+    setVatUniform: (uniform) => accounting.setVatUniform(uniform),
+    setVatGeneralRate: (percent) => accounting.setVatGeneralRate(percent),
+    setVatCategoryRate: (category, percent) => accounting.setVatCategoryRate(category, percent),
+    setVatExempt: (item, exempt) => accounting.setVatExempt(item, exempt),
+    getCustomsDuty: (authority, flow, good, turn) => accounting.getCustomsDuty(authority, flow, good, turn),
+    setCustomsDuty: (flow, good, rate) => accounting.setCustomsDuty(flow, good, rate),
+    listCustomsDuties: () => accounting.listCustomsDuties(),
 
     getCommercialRouteFee: () => COMMERCIAL_ROUTE_FEE,
     recordCommercialRouteFee: (...args) => accounting.recordCommercialRouteFee(...args),
@@ -143,8 +184,8 @@ export function createSupplySessionApi(supply) {
     },
     updateSupplyBuildingFields: (id, fields) => supply.updateSupplyBuildingFields(id, fields),
     getSupplyBuildingRow: (id) => supply.getSupplyBuildingRow(id),
-    getAllSupplyTraceabilityTransactions: (maxAge = null, hamletId = null) =>
-      supply.getAllSupplyTraceabilityTransactions(maxAge, hamletId),
+    getAllSupplyTraceabilityTransactions: (hamletId = null) =>
+      supply.getAllSupplyTraceabilityTransactions(hamletId),
     recordBuildingEvent: (params) => supply.recordBuildingEvent(params),
     getHubStorageInfoView: (hubKind, buildingRow, options = {}) =>
       supply.getHubStorageInfoView(hubKind, buildingRow, options),
@@ -173,6 +214,7 @@ export function createEmploymentSessionApi(employment) {
     getSectorName: (sector) => employment.getSectorName(sector),
     getStaffingGroups: (buildingType) => employment.getStaffingGroups(buildingType),
     getCityEmploymentSummary: () => employment.getCityEmploymentSummary(),
+    getLabourMarket: () => employment.getLabourMarket(),
   });
 }
 
@@ -247,6 +289,7 @@ export function assembleSessionApi({
       deleteNewsItem: (params) => intelligence.deleteNewsItem(params),
       generateMonthlyCityNews: (params) => intelligence.generateMonthlyCityNews(params),
       generateMonthlyNews: (params) => intelligence.generateMonthlyNews(params),
+      announceMilestone: (params) => intelligence.announceMilestone(params),
       payForNewsItem: (params) => intelligence.payForNewsItem(params),
       canAffordContribution: (amount) => intelligence.canAffordContribution(amount),
     });

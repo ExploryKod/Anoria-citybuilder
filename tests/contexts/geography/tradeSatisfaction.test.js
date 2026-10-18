@@ -16,10 +16,10 @@ describe('trade satisfaction — declared factors, one number', () => {
     }
   });
 
-  test('clamps to 0..100 and refuses an unknown factor', () => {
+  test('clamps to -100..100 and refuses an unknown factor', () => {
     const sales = [{ name: 'sales', gain: 2, loss: 5 }];
     expect(reviewSatisfaction(99, sales, { sold: true })).toBe(100);
-    expect(reviewSatisfaction(1, sales, { sold: false })).toBe(0);
+    expect(reviewSatisfaction(-99, sales, { sold: false })).toBe(-100);
     expect(() => reviewSatisfaction(50, [{ name: 'unknown' }], { sold: true })).toThrow(/unknown/);
   });
 });

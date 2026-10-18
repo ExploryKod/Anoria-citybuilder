@@ -39,6 +39,8 @@ export function createEmploymentContext({ employmentBuildingRepository, citizenP
   const getCityEmploymentSummaryQuery = new GetCityEmploymentSummary(
     employmentBuildingRepositoryImpl
   );
+  /** The reading of the last worker distribution, kept for the wage settlement and the wages panel (a reading, not a store: the next pass replaces it). */
+  let lastLabourMarket = null;
 
   return {
     employmentBuildingRepository: employmentBuildingRepositoryImpl,
@@ -126,7 +128,18 @@ export function createEmploymentContext({ employmentBuildingRepository, citizenP
      * @param {{ skillPriorities?: Record<string, number> }} [params]
      */
     async distributeCityWorkers(params = {}) {
-      return distributeCityWorkersCommand.execute(params);
+      const result = await distributeCityWorkersCommand.execute(params);
+      lastLabourMarket = { rows: result.labourMarket };
+      return result;
+    },
+
+    /**
+     * The labour market the last worker distribution left: for each (skill, level) the workplaces ask for, the jobs, the ones filled, the
+     * vacancies and the qualified citizens still idle. Null until a distribution has run (nothing is guessed before).
+     * @returns {{ rows: Array<{ skill: string, level: number, jobs: number, filled: number, vacancies: number, idle: number }> } | null}
+     */
+    getLabourMarket() {
+      return lastLabourMarket;
     },
 
     /** @returns {Promise<import('../contexts/employment/domain/computeCityEmploymentSummary.js').ReturnType<typeof import('../contexts/employment/domain/computeCityEmploymentSummary.js').computeCityEmploymentSummary>>} */

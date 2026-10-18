@@ -176,6 +176,33 @@
     color: white;
 }
 
+.journal-scope-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.journal-scope-tab {
+    padding: 8px 16px;
+    border: 1px solid var(--cta);
+    background: white;
+    color: var(--cta);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.journal-scope-tab:hover {
+    background: #f0f0f0;
+}
+
+.journal-scope-tab.active {
+    background: var(--cta);
+    color: white;
+}
+
 .journal-refresh-section {
     margin-bottom: 20px;
     display: flex;
@@ -277,6 +304,21 @@
     background: #f8f9fa;
 }
 
+/* A line that moves no money (an `info_*` type): marked with an info icon and drawn lighter, so it is not read as a movement. */
+.journal-entry--informative {
+    background: rgba(120, 144, 156, 0.06);
+}
+
+.journal-entry--informative .journal-entry-amount {
+    opacity: 0.6;
+    font-style: italic;
+}
+
+.journal-entry-info {
+    cursor: help;
+    margin-right: 6px;
+}
+
 .journal-entry:last-child {
     border-bottom: none;
 }
@@ -310,72 +352,85 @@
     border: 1px solid #b3d9ff;
 }
 
-/* Revenus issus de taxes en bleu */
-.journal-entry-type.citizen_tax {
-    background: #cfe2ff;
-    color: #084298;
+/*
+ * The colours of the journal follow the classes of the Plan Comptable Général, so a line can be read by the family it belongs to:
+ *   1 capitaux et emprunts → violet     2 immobilisations → grey        4 État et organismes (impôts, taxes, douanes) → BLUE
+ *   5 trésorerie → teal                 6 charges → red / amber / orange   7 produits → GREEN (the households' incomes a lime nuance)
+ * A nuance of the same hue says the side: the blue of a tax the city RECEIVES is lighter than the blue of a tax a company or a
+ * house PAYS. The filter pills of game.html use the same tokens.
+ */
+:root {
+    --pcg1-bg: #e2d5f7; --pcg1-fg: #6f42c1;          /* capitaux, emprunts reçus */
+    --pcg1-alt-bg: #d3c2ee; --pcg1-alt-fg: #4b2a8f;  /* remboursement d'emprunt */
+    --pcg2-bg: #e2e3e5; --pcg2-fg: #41464b;          /* immobilisations: construction */
+    --pcg4-bg: #cfe2ff; --pcg4-fg: #084298;          /* impôts, taxes, douanes perçus par la ville */
+    --pcg4-paid-bg: #adc8f5; --pcg4-paid-fg: #052c65; /* impôts, douanes payés par une entreprise ou une maison */
+    --pcg5-bg: #d2f4ea; --pcg5-fg: #0a5c4a;          /* trésorerie: dépôts, retraits */
+    --pcg60-bg: #f8d7da; --pcg60-fg: #842029;        /* achats */
+    --pcg6x-bg: #fff3cd; --pcg6x-fg: #856404;        /* services extérieurs: entretien, transports */
+    --pcg64-bg: #ffe0b2; --pcg64-fg: #e65100;        /* charges de personnel */
+    --pcg65-bg: #ffccbc; --pcg65-fg: #bf360c;        /* charges financières, subventions accordées */
+    --pcg70-bg: #d1e7dd; --pcg70-fg: #0f5132;        /* ventes */
+    --pcg74-bg: #c5e8b8; --pcg74-fg: #26561a;        /* subventions reçues */
+    --pcg7h-bg: #e6f4d0; --pcg7h-fg: #3b6013;        /* revenus des ménages: salaires, allocations */
 }
 
-.journal-entry-type.payroll_tax {
-    background: #cfe2ff;
-    color: #084298;
+/*
+ * A line wears the colour of its tone (data-tone), which PcgJournalCatalog.js gives it from its account of the plan comptable: the
+ * account number is shown in the badge, and the tone follows its class (the rule of the player: every tax and duty is blue).
+ */
+.journal-entry-type[data-tone="capital"],
+.journal-entry-type[data-tone="loan"] { background: var(--pcg1-bg); color: var(--pcg1-fg); }
+.journal-entry-type[data-tone="loan-repayment"] { background: var(--pcg1-alt-bg); color: var(--pcg1-alt-fg); }
+.journal-entry-type[data-tone="fixed-asset"] { background: var(--pcg2-bg); color: var(--pcg2-fg); }
+.journal-entry-type[data-tone="tax-received"] { background: var(--pcg4-bg); color: var(--pcg4-fg); }
+.journal-entry-type[data-tone="tax-paid"] { background: var(--pcg4-paid-bg); color: var(--pcg4-paid-fg); }
+.journal-entry-type[data-tone="treasury"] { background: var(--pcg5-bg); color: var(--pcg5-fg); }
+.journal-entry-type[data-tone="purchase"] { background: var(--pcg60-bg); color: var(--pcg60-fg); }
+.journal-entry-type[data-tone="external"] { background: var(--pcg6x-bg); color: var(--pcg6x-fg); }
+.journal-entry-type[data-tone="personnel"] { background: var(--pcg64-bg); color: var(--pcg64-fg); }
+.journal-entry-type[data-tone="financial"],
+.journal-entry-type[data-tone="subsidy-given"] { background: var(--pcg65-bg); color: var(--pcg65-fg); }
+.journal-entry-type[data-tone="sales"] { background: var(--pcg70-bg); color: var(--pcg70-fg); }
+.journal-entry-type[data-tone="subsidy-received"] { background: var(--pcg74-bg); color: var(--pcg74-fg); }
+.journal-entry-type[data-tone="household"] { background: var(--pcg7h-bg); color: var(--pcg7h-fg); }
+
+/* The account number, in the badge: small and muted so the label stays what is read. */
+.journal-entry-account {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 0 5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.55);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums;
 }
 
-/* Revenus issus de commerce en vert */
-.journal-entry-type.capital_funds {
-    background: #d4edda;
-    color: #155724;
+/* The legs of an écriture: account, title, debit, credit; the credit leg is indented as in a journal book. */
+.journal-entry-legs {
+    width: 100%;
+    margin-top: 6px;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
 }
-
-/* Dépenses - Construction en rouge */
-.journal-entry-type.construction {
-    background: #f8d7da;
-    color: #721c24;
+.journal-entry-legs th,
+.journal-entry-legs td {
+    padding: 2px 6px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
-
-/* Dépenses - Maintenance en jaune */
-.journal-entry-type.maintenance {
-    background: #fff3cd;
-    color: #856404;
+.journal-entry-legs th {
+    font-weight: 600;
+    color: #6c757d;
 }
-
-/* Dépenses exceptionnelles (réparations) - marron */
-.journal-entry-type.exceptional_expenses {
-    background: #d7ccc8;
-    color: #5d4037;
-}
-
-.journal-entry-type.salary {
-    background: #ffe0b2;
-    color: #e65100;
-}
-
-.journal-entry-type[class*="import_"] {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.journal-entry-type[class*="export_"] {
-    background: #d4edda;
-    color: #155724;
-}
-
-/* Revenus issus de prêts en violet */
-.journal-entry-type.loan_capital {
-    background: #e2d5f7;
-    color: #6f42c1;
-}
-
-/* Dépenses - Intérêts et remboursement de prêt (même famille de couleur avec variante) */
-.journal-entry-type.loan_interest {
-    background: #ffe0b2;
-    color: #e65100;
-}
-
-.journal-entry-type.loan_repayment {
-    background: #ffccbc;
-    color: #bf360c;
-}
+.journal-entry-legs .journal-entry-leg-amount { text-align: right; white-space: nowrap; }
+.journal-entry-legs .journal-entry-leg-account { font-weight: 700; white-space: nowrap; }
+.journal-entry-legs .journal-entry-leg--credit .journal-entry-leg-label { padding-left: 18px; }
+.journal-entry-legs tfoot td { font-weight: 700; border-bottom: 0; }
+.journal-entry-legs-note { margin-top: 6px; font-size: 12px; color: #6c757d; }
 
 .journal-entry-type.carry_forward {
     background: #d1e7dd;
@@ -483,57 +538,6 @@
 .journal-entry-description {
     text-align: left;
     margin-bottom: 4px;
-}
-
-.journal-maintenance-breakdown {
-    list-style: none;
-    padding: 0;
-    margin: 8px 0;
-    text-align: left;
-}
-
-.journal-breakdown-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 0;
-    text-align: left;
-    font-size: 13px;
-    flex-wrap: wrap;
-}
-
-.breakdown-label {
-    font-weight: 600;
-    color: var(--primary);
-    min-width: 80px;
-    text-align: left;
-}
-
-.breakdown-count {
-    color: #495057;
-    text-align: left;
-}
-
-.breakdown-multiply {
-    color: #6c757d;
-    margin: 0 2px;
-}
-
-.breakdown-unit-cost {
-    color: #495057;
-    font-weight: 500;
-}
-
-.breakdown-equals {
-    color: #6c757d;
-    margin: 0 4px;
-}
-
-.breakdown-total {
-    color: var(--primary);
-    font-weight: 600;
-    margin-left: auto;
-    text-align: right;
 }
 
 .journal-entry-turn {
@@ -668,29 +672,6 @@
 
     .journal-entry-details {
         font-size: 13px;
-    }
-
-    .journal-maintenance-breakdown {
-        margin: 6px 0;
-    }
-
-    .journal-breakdown-item {
-        font-size: 12px;
-        gap: 4px;
-        padding: 3px 0;
-    }
-
-    .breakdown-label {
-        min-width: 60px;
-        font-size: 12px;
-    }
-
-    .breakdown-total {
-        margin-left: 0;
-        width: 100%;
-        text-align: left;
-        margin-top: 2px;
-        padding-left: 64px;
     }
 
     .journal-entry-description {

@@ -14,7 +14,6 @@ import path from 'path';
 import { describe, test, expect } from '@jest/globals';
 import { buildingCatalog } from '../../src/shared/building-catalog/buildingCatalog.js';
 import { SOCIAL_CATEGORY } from '../../src/shared/population/socialCategoryCatalog.js';
-import { CITIZENS_PER_CIVIL_SERVANT } from '../../src/contexts/accounting/domain/policies/ReferenceSalaryPayrollPolicy.js';
 import { MONTHS } from '../../src/shared/time/TimeCalendar.js';
 import {
   getAllCategoriesForRole,
@@ -24,7 +23,11 @@ import {
   getResourceStockShape,
   getMaxStockForBuilding,
 } from '../../src/shared/building-catalog/resourceRoleQueries.js';
-import { RESOURCE_CATEGORY_PRESENTATION } from '../../src/shared/resource-catalog/ResourceCategoryCatalog.js';
+import {
+  RESOURCE_CATEGORY_PRESENTATION,
+  getServiceCategories,
+  householdConsumptionGroupOf,
+} from '../../src/shared/resource-catalog/ResourceCategoryCatalog.js';
 
 const entriesOf = (role) =>
   Object.entries(buildingCatalog).flatMap(([type, definition]) =>
@@ -131,7 +134,7 @@ describe('no good is named in code', () => {
 
   test('goods declared by producers and consumers never appear as a word in source code', () => {
     // Words distinctive enough to grep for; a generic word ("plate", "game") would false-positive.
-    const goods = ['wheat', 'carrot', 'cabbage', 'fruit', 'amphora', 'dattes'];
+    const goods = ['wheat', 'carrot', 'cabbage', 'olive', 'amphora', 'dattes'];
     const declared = new Set(getAllCategoriesForRole('producer').concat(getAllCategoriesForRole('consumer')));
     for (const good of goods) expect(declared.has(good) || good === 'dattes').toBe(true);
 
@@ -281,13 +284,30 @@ describe('economy catalog — the food loop can be closed', () => {
 
   test('the farmers needed per inhabitant fit in the labor pool of the farm-capable groups', () => {
     const basketsPerInhabitantPerYear = getPerCapitaDemand() * MONTHS.length;
-    const workersPerInhabitant = 1 - 1 / CITIZENS_PER_CIVIL_SERVANT;
+    // The whole worker pool is hireable — civil servants were removed (2026-10-10, "suppress it for now"):
+    // nothing is set aside before hiring (see DistributeCityWorkers.js's hireablePopOf).
+    const workersPerInhabitant = 1;
 
     for (const { type, farmersPerBasket } of farms) {
       const farmersPerInhabitant = basketsPerInhabitantPerYear * farmersPerBasket;
       const farmCapableShareNeeded = farmersPerInhabitant / workersPerInhabitant;
       // Below 1: a city made only of farm-capable residents can feed itself
       expect({ type, soluble: farmCapableShareNeeded < 1 }).toEqual({ type, soluble: true });
+    }
+  });
+});
+
+describe('a household\'s purchases are grouped by use, declared in the catalog', () => {
+  test('every service and every good a house consumes is in a consumption group', () => {
+    const houseCategories = ['House-Red', 'House-Blue', 'House-Purple'].flatMap((type) =>
+      getResourceRoles(type).filter((entry) => entry.role === 'consumer').flatMap((entry) => entry.categories),
+    );
+    const bought = [...new Set([...getServiceCategories(), ...houseCategories])]
+      // The stock aggregates of a need (food, heat, light, goods) are not something a house buys: its goods are.
+      .filter((category) => !['food', 'heat', 'light', 'goods'].includes(category));
+    expect(bought.length).toBeGreaterThan(0);
+    for (const category of bought) {
+      expect({ category, group: householdConsumptionGroupOf(category).id }).toEqual({ category, group: expect.any(String) });
     }
   });
 });

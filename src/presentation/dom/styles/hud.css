@@ -33,6 +33,44 @@
 }
 
 /* -------------------------------------------------------------------------
+   Reminder bar: short messages one after the other, under the HUD (HudTicker.js)
+   ------------------------------------------------------------------------- */
+
+.hud-ticker {
+  align-self: center;
+  width: min(720px, 100%);
+  box-sizing: border-box;
+  padding: 4px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 248, 225, 0.94);
+  color: #3e2f10;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.hud-ticker[hidden] {
+  display: none;
+}
+
+/* Slides as wide as their text, with a dot between them, scrolling by (the width is set by Splide's autoWidth). */
+.hud-ticker__message {
+  display: flex;
+  align-items: center;
+  width: auto;
+  padding-right: 2.5rem;
+  white-space: nowrap;
+}
+
+.hud-ticker__message::after {
+  content: "•";
+  margin-left: 2.5rem;
+  opacity: 0.5;
+}
+
+/* -------------------------------------------------------------------------
    Status strip (date / speed / pop / funds)
    ------------------------------------------------------------------------- */
 
@@ -931,15 +969,6 @@
   width: 100%;
 }
 
-.hud-pop-rail .pop-breakdown {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-  flex-wrap: nowrap;
-  width: 100%;
-}
-
 .hud-pop-rail .pop-detail-block {
   display: flex;
   flex-direction: column;
@@ -954,6 +983,17 @@
   align-items: stretch;
   gap: 4px;
   width: 100%;
+}
+
+/* Why people are out of work / why posts are empty: set apart from the groups, dimmed while a cause is at zero. */
+.hud-pop-rail .pop-detail-causes {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.hud-pop-rail .pop-cause-row.is-zero {
+  opacity: 0.45;
 }
 
 .hud-pop-rail .pop-group-row .pop-detail-value {
@@ -1511,10 +1551,6 @@
   .hud-pop-rail .infos-pop-ressources > .pop-detail-sep + * {
     margin-top: 0;
     padding-top: 0;
-  }
-
-  .hud-pop-rail .pop-breakdown {
-    gap: 5px;
   }
 
   .hud-pop-rail .pop-detail-active {

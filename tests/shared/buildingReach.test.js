@@ -36,13 +36,13 @@ describe('buildingReach — what a building reaches, from the catalog alone', ()
 
   test('an unlimited service range reaches every consumer of its category', () => {
     const city = cityWith([
-      ['chapel', 'Chapel', [[2, 2], [3, 2], [2, 3], [3, 3]]],
+      ['tank', 'WaterTank', [[2, 2], [3, 2], [2, 3], [3, 3]]],
       ['h1', 'House-Blue', [[20, 20]]],
       ['h2', 'House-Red', [[25, 3]]],
       ['far-road', 'StonePath-001', [[28, 28]]],
     ]);
     const { buildings, roadTiles } = listPlacedBuildings(city);
-    const reach = computeBuildingReach(buildings.find((b) => b.instanceId === 'chapel'), buildings, roadTiles);
+    const reach = computeBuildingReach(buildings.find((b) => b.instanceId === 'tank'), buildings, roadTiles);
     expect(reach.buildings.map((b) => b.instanceId).sort()).toEqual(['h1', 'h2']);
     expect(reach.buildings.every((b) => b.direction === 'out')).toBe(true);
     expect(reach.roads).toEqual([{ x: 28, y: 28 }]); // no limit: the whole road network

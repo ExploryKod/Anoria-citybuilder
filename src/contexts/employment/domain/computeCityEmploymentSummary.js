@@ -6,13 +6,15 @@ import {
 import {
   workerPopFromHouse,
 } from './policies/LaborPoolPolicy.js';
-import { computePopulationBreakdown } from '../../../shared/population/computePopulationBreakdown.js';
+import { computeHouseholdEmploymentStatus } from '../../../shared/population/computePopulationBreakdown.js';
 import {
   allSocialGroups,
   eligibleSectorsForGroup,
   residentialGroupForType,
 } from './catalogs/HouseGroupSectorEligibilityPolicy.js';
 import { getRequiredSkillForBuilding } from './policies/WorkplaceSkillRequirementPolicy.js';
+import { employmentShortfallCauses } from './policies/EmploymentShortfallPolicy.js';
+import { residentsSeekingWork } from '../../../shared/population/workforceQueries.js';
 
 /**
  * Pure read model: city-wide employment summary from building snapshots.
@@ -21,10 +23,6 @@ import { getRequiredSkillForBuilding } from './policies/WorkplaceSkillRequiremen
  * @returns {{
  *   workerPool: number,
  *   totalPopulation: number,
- *   civilServantCount: number,
- *   laborPool: number,
- *   activeCitizenCount: number,
- *   activePopulationCount: number,
  *   totalAssigned: number,
  *   totalNeed: number,
  *   unemployed: number,
@@ -47,6 +45,16 @@ export function computeCityEmploymentSummary(buildings) {
   const bySector = {};
   /** @type {Record<string, { workerNeed: number, workers: number, need: number }>} */
   const bySkill = {};
+
+  // Every house's workers, wherever they work — the one tally the city's unemployed count shares with a
+  // household's own (HouseholdPublicPayPolicy, HouseResidentsPolicy): never a second, independent count.
+  /** @type {Map<string, number>} */
+  const workersByHouseId = new Map();
+  for (const building of buildings) {
+    for (const [houseId, count] of Object.entries(building.workerSources ?? {})) {
+      workersByHouseId.set(houseId, (workersByHouseId.get(houseId) ?? 0) + count);
+    }
+  }
 
   for (const building of buildings) {
     if (isLaborSource(building) && hasRoadAccess(building)) {
@@ -87,25 +95,41 @@ export function computeCityEmploymentSummary(buildings) {
     }
   }
 
-  const population = computePopulationBreakdown({
-    workerPool,
-    totalAssigned,
-  });
+  // The city's unemployed are the sum of each house's own count — never a city-wide floor, and never
+  // filtered by road access: a disconnected house's residents still count (they're just unreachable by a
+  // workplace, see workerPool above).
+  let totalPopulation = 0;
+  let seekingWork = 0;
+  let unemployed = 0;
+  let unemployedNoRoad = 0;
+  for (const building of buildings) {
+    if (!isLaborSource(building)) continue;
+    // Only the residents who look for a job can be out of work (the administrators do not, see workforceQueries.js).
+    const seekingHere = residentsSeekingWork(building.type, building.pop);
+    const { unemployed: unemployedHere } = computeHouseholdEmploymentStatus({
+      pop: seekingHere,
+      workers: workersByHouseId.get(building.id) ?? 0,
+    });
+    totalPopulation += building.pop;
+    seekingWork += seekingHere;
+    unemployed += unemployedHere;
+    if (!hasRoadAccess(building)) unemployedNoRoad += unemployedHere;
+  }
+  // The rate of unemployment is over the residents who look for a job, not the whole population: the administrators would dilute it (the classes' own rates are over their workers).
+  const unemploymentPercentage = seekingWork > 0 ? Math.round((unemployed / seekingWork) * 100) : 0;
 
   const byGroup = computeEmploymentByGroup(buildings);
 
   return Object.freeze({
     workerPool,
-    totalPopulation: population.totalPopulation,
-    civilServantCount: population.civilServantCount,
-    laborPool: population.laborPool,
-    activeCitizenCount: population.activeCitizenCount,
-    activePopulationCount: population.activePopulationCount,
+    totalPopulation,
     totalAssigned,
     totalNeed,
-    unemployed: population.unemployed,
-    unemploymentPercentage: population.unemploymentPercentage,
+    unemployed,
+    unemploymentPercentage,
     lack,
+    // Why they are out of work and why posts are empty (worked out for this one hamlet's counts).
+    causes: employmentShortfallCauses({ unemployed, unemployedNoRoad, lack }),
     understaffedBuildingIds: Object.freeze([...understaffedBuildingIds]),
     bySector: Object.freeze(bySector),
     bySkill: Object.freeze(bySkill),

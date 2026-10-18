@@ -62,6 +62,12 @@ class InMemoryEmploymentBuildingRepository {
     this.raw.set(buildingId, { ...b, worker: workerCount });
   }
 
+  async saveWorkerSources(buildingId, sources) {
+    const b = this.raw.get(buildingId);
+    if (!b) return;
+    this.raw.set(buildingId, { ...b, workerSources: sources });
+  }
+
   get(id) {
     return this.raw.get(id);
   }
@@ -114,9 +120,9 @@ describe('Employment — DistributeCityWorkers', () => {
       expect(isWorkplace({ type: 'roads', workerNeed: 0 })).toBe(false);
       // The road need is the catalog's call: fields declare `requiresRoad: false`, a market does not
       expect(requiresRoad('Farm-Wheat')).toBe(false);
-      expect(requiresRoad('Market-Stall')).toBe(true);
+      expect(requiresRoad('Market-Stall-Red')).toBe(true);
       expect(isEligibleWorkplace({ type: 'Farm-Wheat', workerNeed: 3, roadCount: 0 })).toBe(true);
-      expect(isEligibleWorkplace({ type: 'Market-Stall', workerNeed: 2, roadCount: 0 })).toBe(false);
+      expect(isEligibleWorkplace({ type: 'Market-Stall-Red', workerNeed: 2, roadCount: 0 })).toBe(false);
       expect(hasRoadAccess({ roadCount: 1 })).toBe(true);
       expect(hasRoadAccess({ roadCount: 0 })).toBe(false);
     });
@@ -191,7 +197,7 @@ describe('Employment — DistributeCityWorkers', () => {
       expect(result.assignments).toEqual([{ buildingId: 'Farm-Wheat-0-0', workers: 3 }]);
     });
 
-    test('level 1 artisan houses count as headcount but cannot staff fermier-gated farms (spiritual only)', async () => {
+    test('level 1 artisan houses staff fermier-gated farms: the village farms from its first house', async () => {
       repo = new InMemoryEmploymentBuildingRepository([
         house('House-Red-1-1', 5, 1, 'House-Red', 1),
         workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 }),
@@ -199,38 +205,47 @@ describe('Employment — DistributeCityWorkers', () => {
       useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
       const result = await useCase.execute({});
-      // Tier 1 grants 'spiritual' + 'subsistence-forager', not 'fermier' —
-      // so this house's 5 citizens count toward `availableWorkers` (total
-      // city headcount) but leave the farm at 0, with nothing to spend them
-      // on (no Chapel in this repo).
-      expect(result).toEqual({ availableWorkers: 5, assignments: [] });
-      expect(repo.get('Farm-Wheat-a').worker).toBe(0);
+      // Tier 1 grants 'fermier': the farm is staffed from the first level.
+      expect(result.availableWorkers).toBe(5);
+      expect(result.assignments).toEqual([{ buildingId: 'Farm-Wheat-a', workers: 3 }]);
+      expect(repo.get('Farm-Wheat-a').worker).toBe(3);
+    });
+
+    test('the pass leaves the labour market of each skill and level: the jobs, the ones filled, the vacancies, the qualified citizens still idle', async () => {
+      repo = new InMemoryEmploymentBuildingRepository([
+        house('House-Red-1-1', 2, 1, 'House-Red', 1),
+        workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 }),
+      ]);
+      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+
+      const { labourMarket } = await useCase.execute({});
+
+      // 3 farm jobs, 2 qualified citizens: both work, one job stays vacant, nobody is idle.
+      expect(labourMarket).toEqual([{ skill: 'fermier', level: 1, jobs: 3, filled: 2, vacancies: 1, idle: 0 }]);
     });
   });
 
   describe('DistributeCityWorkers — skill isolation between groups', () => {
-    test('each group staffs its mapped workplace; Chapel is shared via everyone\'s tier-1 spiritual skill', async () => {
+    test('each group staffs its mapped workplace; the water tank is the savants\' (hydraulique, from their first tier)', async () => {
       const repo = new InMemoryEmploymentBuildingRepository([
         house('House-Red-1-1', 5, 1, 'House-Red'),
-        house('House-Blue-2-2', 3, 1, 'House-Blue'),
+        house('House-Blue-2-2', 6, 1, 'House-Blue'),
         house('House-Purple-3-3', 4, 1, 'House-Purple'),
         workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 }),
         workplace('Market-Stall-b', { workerNeed: 2, sector: 2, type: 'Market-Stall-Red' }),
-        workplace('Windmill-c', { workerNeed: 4, sector: 4, type: 'Windmill-001' }),
-        workplace('Chapel-d', { workerNeed: 2, sector: 6, type: 'Chapel' }),
+        workplace('Windmill-c', { workerNeed: 4, sector: 2, type: 'Windmill-001' }),
+        workplace('WaterTank-d', { workerNeed: 2, sector: 6, type: 'WaterTank' }),
       ]);
       const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
       const result = await useCase.execute({});
 
-      expect(result.availableWorkers).toBe(12);
+      expect(result.availableWorkers).toBe(15);
       expect(repo.get('Farm-Wheat-a').worker).toBe(3);
       expect(repo.get('Market-Stall-b').worker).toBe(2);
       expect(repo.get('Windmill-c').worker).toBe(4);
-      // The bug this whole file used to pin: Chapel has no group of its
-      // own (every group grants 'spiritual' at tier 1), so it must get
-      // staffed from the shared pool — not stay at 0 forever.
-      expect(repo.get('Chapel-d').worker).toBe(2);
+      // The water tank is staffed by the savants' own tier-1 skill, so the first level can already run it.
+      expect(repo.get('WaterTank-d').worker).toBe(2);
     });
 
     test('surplus artisans cannot staff commerçant workplaces', async () => {
@@ -271,19 +286,37 @@ describe('Employment — DistributeCityWorkers', () => {
     });
   });
 
-  describe('DistributeCityWorkers — cold-start deadlock regression', () => {
-    test('a single tier-1 house can staff Chapel from turn one, with no other building placed', async () => {
+  describe('DistributeCityWorkers — the whole house pool is hireable', () => {
+    test('a 12-pop house can staff all twelve, with enough job slots for all of them', async () => {
+      // Civil servants were removed (2026-10-10, "suppress it for now"): nothing is set aside before hiring
+      // anymore — a house's whole worker pool is hireable (see HouseResidentsPolicy/HouseholdPublicPayPolicy,
+      // which now split residents into workers and unemployed only).
       const repo = new InMemoryEmploymentBuildingRepository([
-        house('House-Red-1-1', 5, 1, 'House-Red', 1),
-        workplace('Chapel-x', { workerNeed: 2, sector: 6, type: 'Chapel' }),
+        house('House-Red-1-1', 12, 1, 'House-Red'),
+        workplace('Farm-Wheat-a', { workerNeed: 20, sector: 1 }),
+      ]);
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+
+      const result = await useCase.execute({});
+
+      expect(result.availableWorkers).toBe(12);
+      expect(repo.get('Farm-Wheat-a').worker).toBe(12);
+    });
+  });
+
+  describe('DistributeCityWorkers — cold-start deadlock regression', () => {
+    test('a single tier-1 savants house can staff the water tank from turn one, with no other building placed', async () => {
+      const repo = new InMemoryEmploymentBuildingRepository([
+        house('House-Purple-1-1', 5, 1, 'House-Purple', 1),
+        workplace('WaterTank-x', { workerNeed: 2, sector: 6, type: 'WaterTank' }),
       ]);
       const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
 
       const result = await useCase.execute({});
 
       expect(result.availableWorkers).toBe(5);
-      expect(result.assignments).toEqual([{ buildingId: 'Chapel-x', workers: 2 }]);
-      expect(repo.get('Chapel-x').worker).toBe(2);
+      expect(result.assignments).toEqual([{ buildingId: 'WaterTank-x', workers: 2 }]);
+      expect(repo.get('WaterTank-x').worker).toBe(2);
     });
   });
 

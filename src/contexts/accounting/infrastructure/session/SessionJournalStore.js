@@ -13,6 +13,9 @@ import { DexieJournalSessionPersistenceAdapter } from '../adapters/persistence/d
 import { sessionLedgerBuffer, SessionLedgerBuffer, toPublicEntry } from './SessionLedgerBuffer.js';
 import { buildLedgerBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 import { buildYearClosingLine, isFoldedIntoClosing } from '../../domain/policies/YearClosingPolicy.js';
+import { accountKeyOf } from '../../domain/policies/AccountKeyPolicy.js';
+import { entryLegsOf, isEcriture } from '../../domain/policies/EntryLegsPolicy.js';
+import { isInformativeJournalType } from '../../domain/policies/JournalEntryClassificationPolicy.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
@@ -24,6 +27,10 @@ export class SessionJournalStore {
      * a read never sees a line that is still being written.
      */
     #writes = Promise.resolve();
+
+    /** How many batches are open (see `batch`), and the lines they hold, which are in memory and not yet on disk. */
+    #batchDepth = 0;
+    #batchSessionIds = new Set();
 
     /**
      * @param {object} [deps]
@@ -110,6 +117,47 @@ export class SessionJournalStore {
         return this.#queued(() => this.#appendLine(turn, type, amount, description, partnerId, options));
     }
 
+    /**
+     * Writes everything `work` records in one go: each line is held in memory as it is recorded (the journal and its fold are up to date at once, so `work` reads
+     * what it has just written), and the whole is written to IndexedDB in one transaction when `work` is done. A month's settlement is hundreds of lines; written
+     * one by one, each waits for its own transaction and its own pass over the buffer. The month is atomic: if `work` or the write fails, none of its lines is
+     * kept (a business key lets the month be settled again).
+     * @template T
+     * @param {() => Promise<T>} work
+     * @returns {Promise<T>}
+     */
+    async batch(work) {
+        const outermost = this.#batchDepth === 0;
+        if (outermost) this.#batchSessionIds = new Set();
+        this.#batchDepth += 1;
+        let result;
+        try {
+            result = await work();
+        } catch (error) {
+            this.#batchDepth -= 1;
+            if (outermost) await this.#dropBatch();
+            throw error;
+        }
+        this.#batchDepth -= 1;
+        if (!outermost) return result;
+        const held = this.#batchSessionIds.size;
+        try {
+            await this.#queued(() => this._getSessionPersistence().flushPendingEntries());
+        } catch (error) {
+            await this.#dropBatch();
+            throw new Error(`[journal] the batch of ${held} lines could not be written: ${error.message}`, { cause: error });
+        }
+        this.#batchSessionIds = new Set();
+        return result;
+    }
+
+    /** The lines of a batch that failed leave the journal: none of them was written. */
+    async #dropBatch() {
+        const dropped = this.#batchSessionIds;
+        this.#batchSessionIds = new Set();
+        await this.#queued(async () => this._buffer.removeSessionIds(dropped));
+    }
+
     /** @template T @param {() => Promise<T>} task @returns {Promise<T>} */
     #queued(task) {
         const run = this.#writes.then(task);
@@ -139,7 +187,6 @@ export class SessionJournalStore {
 
             const entry = {
                 turn: turn,
-                date: new Date().toISOString(),
                 type: type,
                 amount: amount,
                 description: description,
@@ -159,12 +206,45 @@ export class SessionJournalStore {
                 entry.buildingInstanceId = options.buildingInstanceId;
             }
 
+            if (options.accountBuildingId) {
+                entry.accountBuildingId = options.accountBuildingId;
+            }
+
+            if (options.accountKind) {
+                entry.accountKind = options.accountKind;
+            }
+
+            if (options.counterpartyBuildingId) {
+                entry.counterpartyBuildingId = options.counterpartyBuildingId;
+            }
+
             if (options.loanId) {
                 entry.loanId = options.loanId;
             }
 
             if (options.loan) {
                 entry.loan = options.loan;
+            }
+
+            if (options.dutyRate != null) {
+                entry.dutyRate = options.dutyRate;
+                entry.customsBase = options.customsBase;
+            }
+
+            if (options.resource) {
+                entry.resource = options.resource;
+            }
+
+            // Every écriture is booked as it is written: its legs (the two the catalog gives its type in the chart of accounts of its account,
+            // or the ones the writer brings) and its journal code, which must balance. An informative line is no écriture and has none.
+            if (isEcriture(type)) {
+                const booked = entryLegsOf({ type, amount, accountBuildingId: options.accountBuildingId ?? null, legs: options.legs ?? null });
+                entry.legs = booked.legs;
+                entry.journal = booked.journal;
+            }
+
+            if (options.transactionId) {
+                entry.transactionId = options.transactionId;
             }
 
             if (options.taxYear != null) {
@@ -189,6 +269,12 @@ export class SessionJournalStore {
                 };
             }
 
+            // In a batch the line waits in memory with the others and the batch writes them all at once (see `batch`).
+            if (this.#batchDepth > 0) {
+                this.#batchSessionIds.add(appendResult.record.sessionId);
+                return { recorded: true, skipped: false, businessKey };
+            }
+
             // Write-through: the entry is on disk before the caller learns it is recorded. The treasury is derived
             // from the journal, so a line that is only in memory would be lost on reload while its effect is not.
             if (persist) {
@@ -208,13 +294,23 @@ export class SessionJournalStore {
 
     /**
      * Get journal entries
-     * @param {number} maxAge - Maximum age in days (optional)
      * @returns {Promise<Array>} Journal entries
      */
-    async getJournalEntries(maxAge = null) {
+    async getJournalEntries() {
         return this.#queued(async () => {
             await this.ensureHydrated();
-            return filterAndSortJournalEntries(this._buffer.getAllPublic(), maxAge);
+            return filterAndSortJournalEntries(this._buffer.getAllPublic());
+        });
+    }
+
+    /**
+     * The journal folded into the totals of each compte, up to date with every line written (see LegsFold): the one derivation of every balance.
+     * @returns {Promise<import('../../domain/policies/LegsFold.js').LegsFold>}
+     */
+    async getLegsFold() {
+        return this.#queued(async () => {
+            await this.ensureHydrated();
+            return this._buffer.legsFold();
         });
     }
 
@@ -246,7 +342,7 @@ export class SessionJournalStore {
     }
 
     /**
-     * Each full year before the cutoff is closed per hamlet: its folded lines are replaced by one `year_closing` line
+     * Each full year before the cutoff is closed per hamlet and per account: its folded lines are replaced by one `year_closing` line
      * that keeps the year's net and its totals per type. Loan lines stay. One transaction per purge: the lines are never
      * half-replaced.
      */
@@ -261,20 +357,20 @@ export class SessionJournalStore {
 
         const groups = new Map();
         for (const record of folded) {
-            const key = `${record.hamletId}:${SessionLedgerBuffer.fiscalYearOf(record)}`;
+            const key = `${record.hamletId}:${SessionLedgerBuffer.fiscalYearOf(record)}:${accountKeyOf(record) ?? 'city'}`;
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key).push(record);
         }
 
-        const date = new Date().toISOString();
         const closings = [...groups.values()].map((lines) => {
             const first = lines[0];
             return buildYearClosingLine({
               year: SessionLedgerBuffer.fiscalYearOf(first),
               hamletId: first.hamletId,
+              accountBuildingId: first.accountBuildingId ?? null,
+              accountKind: first.accountKind ?? null,
               lines: lines.map(toPublicEntry),
               getTimeInfo: (turn) => this._getTimeInfo(turn),
-              date,
             });
         });
 
@@ -342,21 +438,22 @@ export class SessionJournalStore {
             stats.byType[entry.type]++;
 
             // Calculate totals
-            // Revenus: citizen_tax, payroll_tax, capital_funds, loan_capital, export_*
-            // Dépenses: tout le reste (construction, maintenance, salary, import_*, etc.)
-            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || entry.type.startsWith('export_')) {
+            // Revenus: citizen_tax, payroll_tax, vat, capital_funds, loan_capital, export_*
+            // Dépenses: tout le reste (construction, maintenance, salary, import_*, etc.), sauf les lignes informatives, qui ne déplacent aucun argent
+            if (isInformativeJournalType(entry.type)) {
+                return;
+            }
+            if (entry.type === 'citizen_tax' || entry.type === 'payroll_tax' || entry.type === 'vat' || entry.type === 'producer_revenue' || entry.type === 'corporate_tax_revenue' || entry.type === 'corporate_tax_debt_received' || entry.type === 'contribution_debt_received' || entry.type === 'service_sales' || entry.type === 'service_subsidy_received' || entry.type === 'subsidy_companies_received' || entry.type === 'subsidy_housing_received' || entry.type === 'social_contribution' || entry.type === 'household_participation' || entry.type === 'household_dividend' || entry.type === 'income_tax_refund' || entry.type === 'capital_funds' || entry.type === 'loan_capital' || entry.type.startsWith('export_') || entry.type.startsWith('customs_import_') || entry.type.startsWith('abroad_sale_')) {
                 stats.totalIncome += entry.amount;
             } else {
                 stats.totalExpenses += entry.amount;
             }
         });
 
-        // Find earliest and latest entries
-        const sortedByDate = [...entries].sort((a, b) => 
-            new Date(a.date) - new Date(b.date)
-        );
-        stats.earliestEntry = sortedByDate[0];
-        stats.latestEntry = sortedByDate[sortedByDate.length - 1];
+        // Find earliest and latest entries: by turn, then insertion order (the sort is stable).
+        const sortedByTurn = [...entries].sort((a, b) => a.turn - b.turn);
+        stats.earliestEntry = sortedByTurn[0];
+        stats.latestEntry = sortedByTurn[sortedByTurn.length - 1];
 
         return stats;
     }

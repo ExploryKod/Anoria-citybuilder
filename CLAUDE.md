@@ -45,6 +45,16 @@ Write few tests, and only for what must not break: the core rules (calendar, jou
 year and rate labels) and a bug that was just fixed (a regression test). Never write a test that checks a
 feature was removed, nor one per UI wording or per small change. A test is not a rule: the rule lives here.
 
+## A catalog or default change that moves a building's stored fields updates the prefab too
+
+`src/shared/prefabs/anoria-tour-116/` is a real city exported at a turn, bundled as the game's starter prefab.
+When a change to the catalog or to a building's default fields (`employment.workerNeed`, a default `employees`
+shape, a stat derived from the catalog, ...) means an existing building's *stored* data no longer matches what
+the game would now compute for it, check whether the prefab's `city-*.json` holds that building type and fix its
+JSON directly (not a runtime migration — see "No saved games to migrate" below): otherwise the starter city keeps
+shipping the old, wrong values forever, exactly like a bug that was fixed in code but not in the save that
+exposed it.
+
 ## No saved games to migrate
 
 There are no saved games to keep. Never write a migration, a compatibility path, or a fallback for data written by an
@@ -53,11 +63,16 @@ loudly; do not patch it at load time.
 
 ## Money: one flow, the journal
 
-The journal is the only record of money. Every money movement (cash, income, expense, loan, tax, construction,
-maintenance, salary) is a journal line, written to IndexedDB when it is recorded (write-through). The treasury
-(balance, income, expenses, totals, daily flows, loans, last tax year) is derived from the journal lines
-(`GetTreasurySnapshot` → `TreasuryFromJournalPolicy`). Never store a derived money figure, never write a balance
-into a row, never update a second store alongside the journal. Monthly charges are idempotent per hamlet and per month
+The journal is the only record of value. The accounting follows the French plan comptable (PCG) as a real double-entry
+system. Every movement (cash, income, expense, loan, tax, construction, maintenance, salary, accrual, depreciation) is an
+*écriture* in the journal, written to IndexedDB when it is recorded (write-through). An écriture is one record: a journal code
+(`BQ` bank, `VT` sales, `AC` purchases, `PA` payroll, `OD` opérations diverses, `AN` à-nouveaux), a date (the turn, with the
+year and month stamped at write time), an account (the entity it belongs to) and two or more legs, each
+`{ compte, débit, crédit }` in centimes. The legs must balance; the write refuses an unbalanced écriture, naming it. A leg
+never guesses its account: the writer names every compte (no implied bank leg, no counter-account looked up afterwards).
+The treasury (balance, income, expenses, totals, daily flows, loans, last tax year) is derived from the legs, the cash being
+the balance of the cash accounts (512, 53): there is no "money direction". Never store a derived money figure, never write a
+balance into a row, never update a second store alongside the journal. Monthly charges are idempotent per hamlet and per month
 (business key `type:hamletId:year:month`): a second charge for the same key is refused, not silently recomputed.
 
 ## One clock: the turn
@@ -68,27 +83,70 @@ its turn from that clock.
 
 ## Purge closes a year, it never changes the treasury
 
-A purge (keeping the last N full years) never moves the balance. Each full year is closed per hamlet into one
-`year_closing` line: its net flow (the balance effect) and its totals per journal type (the sub-totals the yearly
-summary shows). Loan lines are kept whole, since a loan's schedule runs past the purge. The yearly summary reads a
-closed year from its closing; nothing else keeps a year's result (no localStorage copy). Regression test:
-`tests/contexts/accounting/yearClosing.regression.test.js`.
+A purge (keeping the last N full years) never moves the balance. The purge is a performance device, not an accounting
+act: it replaces the écritures of the years it drops with the year-end entry of the plan comptable, and nothing else.
+For each full year and each account, the year closes into one *à-nouveaux* écriture (journal `AN`, the `year_closing` line): the
+balance-sheet accounts' balances (capital, fixed assets, depreciation, stock, debts, receivables, loans, cash) against the carried
+result (12), balanced, which the fold, the grand livre and the balance sheet read like any other écriture. A year's per-type totals
+(the sub-totals the yearly summary shows), what moved its cash by account (what the city's ledger reads) and what each building
+cost are kept in the line's `closing`, a read-only digest of the year dropped, never a leg. (The allocation of the result,
+110/119 and dividends, is not written: the dividends are already écritures of the year closed.) Loan écritures are kept whole, since a loan's schedule runs past the purge. A purge changes neither
+the treasury nor the balance sheet. Regression tests: `tests/contexts/accounting/yearClosing.regression.test.js` and
+`tests/contexts/accounting/balanceSheet.test.js`.
 
-## The journal holds movements only
+## The journal holds écritures only
 
-The journal stores money movements and loan contracts, nothing else. Totals are never written as lines: no `cumul_*`,
-no `carry_forward`, no `balance`. A year's totals are read from its lines, or from its `year_closing` line once purged;
-the carried result is the previous year's net flow; the balance is derived.
+The journal stores écritures (movements of value) and loan contracts, nothing else but the informative lines (`info_*`): they move
+nothing, carry no legs and are no écriture (`isEcriture` is false for them), but the loan schedule and the player's warnings read them. A *total* is never written as a line:
+no `cumul_*`, no `carry_forward`, no `balance`. A closing entry or an à-nouveau is not a total: it is an écriture with its
+legs, as the plan comptable has it. A year's totals are read from its écritures, or from the à-nouveaux and the `summary` of its
+closing once purged; the balance is derived.
+
+The journal code says what kind of écriture it is, not whether money moves: `BQ`/`VT`/`AC`/`PA` are the daily ones, `OD` is
+what the closing of a month writes once per account and month (business key), never a turn's code (the variation of stock, the
+depreciation, the accruals, the disposals of assets). An écriture moves the treasury only through a leg on a cash account.
+Every view reads the same legs: the grand livre, the balance, the compte de résultat, the balance sheet and the city's
+ledger are sums of legs by compte. A type of écriture (what a sale, a wage, a depreciation posts, and to which comptes) is one
+entry in `PcgJournalCatalog`, not a new rule.
+
+A company that cannot pay a charge that is due to a creditor (wages, social contributions, tax, the rent of its premises) books it all
+the same as an écriture against the debt it owes (the charge debited, the debt credited: 421, 431, 444, 401), and pays the debt,
+oldest first, when it has the money (`PayableCatalog`, `DebtPolicy`). The debt is derived from those lines, never stored. A company starts with a founding capital the city pays it
+once (`FOUNDING_CAPITAL_MONTHS` months of its charges at full staffing, `FundNewCompanies`): the company's equity (101) against the
+city's holding in it (261), never repaid, an investment of the city rather than a running expense. Whether a company is funded is
+read from the journal. A company already in a starter prefab carries its capital lines in the prefab's journal. An account below
+nothing shows on the balance sheet as an overdraft (519), a debt.
+
+## The balance sheet is derived, never written
+
+A company's balance sheet (`BalanceSheetPolicy`) is read at display time from the legs of its écritures (the opérations
+diverses included), the cash being the balance of its cash accounts, and its stock valued at cost (the supply's `PriceBook`).
+No écriture is added for a result or a total. The two sides must balance; a gap throws, it is never plugged. A
+household has no balance sheet (it is not an entity of the plan comptable). Regression test:
+`tests/contexts/accounting/balanceSheet.test.js`.
 
 ## One balance: the treasury derivation, for every scope
 
-Every balance (the city's, a hamlet's, a year's flows) is read from one derivation of the journal lines:
-`GetTreasurySnapshot` with `{ hamletId }` (null = the whole city). Nothing computes a second balance from the journal,
-and no view compares two balances. The city balance equals the sum of the hamlets' balances by construction.
-A view that waits for the journal shows "…", never a stale or a zero figure.
+Every balance (the city's, a hamlet's, a year's flows) is read from one derivation of the journal's legs, in memory,
+never stored: a single fold of the journal into the totals of each compte per account, per year and per month, kept up to date
+by folding only the new écritures (the journal is append-only) and rebuilt on load and after a purge. `GetTreasurySnapshot`
+with `{ hamletId }` (null = the whole city) reads it. Nothing computes a second balance from the journal, and no view
+compares two balances. The city balance equals the sum of the hamlets' balances by construction. The fold never runs
+inside a turn's hot path. A view that waits for the journal shows "…", never a stale or a zero figure.
 
 ## Two notions in the city ledger, two rows
+
+The ledger's lines are read from the fold of the journal's legs (what moved the city's cash in the year, by M57 account, see
+`CityLedgerLineMappingPolicy`): money that moved against an account no line takes throws. A new account the city books against
+needs its line there.
 
 "Trésorerie" is the cash in the till: at 31 December for a past year, now for the current one (the snapshot with
 `untilYear`). "Résultat de l'année" is the year's net flow, the figure the net columns carry forward. Never show one
 under the other's name, and never use the cash as a result.
+
+## Keep the flow: no commands that make the user wait
+
+The user is often away while a task runs; a command that stops for approval freezes the work. Change files with the Edit
+and Write tools, never with `python3 - <<EOF`, `sed -i` or `cat >> file <<EOF`. Read files with Read, not `cat`/`sed`.
+Run one simple command at a time (no `;`, `&&` or pipe chains that mix actions). Run the tests once the change is whole,
+not after each small step. Never create a placeholder or empty file.

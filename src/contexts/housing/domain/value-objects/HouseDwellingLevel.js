@@ -17,6 +17,7 @@ export const HOUSE_DWELLING_LEVELS = Object.freeze({
   3: Object.freeze({ level: 3, label: 'logis' }),
   4: Object.freeze({ level: 4, label: 'demeure' }),
   5: Object.freeze({ level: 5, label: 'manoir' }),
+  6: Object.freeze({ level: 6, label: 'palais' }),
 });
 
 const MAX_DWELLING_LEVEL = Math.max(...Object.keys(HOUSE_DWELLING_LEVELS).map(Number));

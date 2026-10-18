@@ -22,6 +22,11 @@ function createTestDb() {
 }
 
 class TestGameTimePort extends LegacyGameTimePort {
+  // The running game is on turn 62 (the budget row seeded below).
+  currentTurn() {
+    return 62;
+  }
+
   getTimeInfo(turn) {
     const monthIndex = turn % 12;
     return {

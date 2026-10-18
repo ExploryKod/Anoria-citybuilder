@@ -1,6 +1,7 @@
 /**
  * Gestion de l'historique des objectifs (succès et échecs)
  */
+import { TimeManager } from '../../../shared/time/TimeManager.js';
 
 class ObjectivesHistory {
     constructor() {
@@ -122,7 +123,7 @@ class ObjectivesHistory {
      * Affiche un succès
      */
     renderSuccess(success) {
-        const date = new Date(success.recordedAt).toLocaleString('fr-FR');
+        const date = TimeManager.formatGameDate(success.successTurn);
         const details = success.successDetails || {};
         
         return `
@@ -152,7 +153,7 @@ class ObjectivesHistory {
      * Affiche un échec
      */
     renderFailure(failure) {
-        const date = new Date(failure.recordedAt).toLocaleString('fr-FR');
+        const date = TimeManager.formatGameDate(failure.failureTurn);
         const details = failure.failureDetails || {};
         
         return `

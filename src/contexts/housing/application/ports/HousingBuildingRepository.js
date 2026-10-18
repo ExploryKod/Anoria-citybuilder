@@ -10,11 +10,21 @@ export class HousingBuildingRepository {
     throw new Error('HousingBuildingRepository: port not implemented');
   }
 
+  /** @returns {Promise<Map<string, object>>} the residential houses by each tile of their footprint, keyed "x,y" */
+  async indexResidentialByTile() {
+    throw new Error('HousingBuildingRepository: port not implemented');
+  }
+
   async findResidentialHouses() {
     throw new Error('HousingBuildingRepository: port not implemented');
   }
 
   async savePopulation(_buildingId, _payload) {
+    throw new Error('HousingBuildingRepository: port not implemented');
+  }
+
+  /** Persist a house's crises of departure and its population after the departures. */
+  async saveDepartures(_buildingId, _payload) {
     throw new Error('HousingBuildingRepository: port not implemented');
   }
 

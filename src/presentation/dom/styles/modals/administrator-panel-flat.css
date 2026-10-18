@@ -36,6 +36,7 @@
 /* Main section boards */
 .administrator-panel :is(
   .work-board,
+  .taxes-board,
   .finances-board,
   .health-board,
   .storage-board,
@@ -244,3 +245,4 @@
 .administrator-panel .commerce-good-modal-industry-btn.active {
   box-shadow: none;
 }
+

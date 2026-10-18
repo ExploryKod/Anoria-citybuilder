@@ -10,6 +10,11 @@ import { initStorageSection } from './storage/initStorageSection.js';
 import { initReportSection } from './report/initReportSection.js';
 import { initArchivesSection } from './archives/initArchivesSection.js';
 import { initCommerceSection } from './commerce/initCommerceSection.js';
+import { initTaxesSection } from './taxes/initTaxesSection.js';
+import { initCustomsSection } from './customs/initCustomsSection.js';
+import { initServicesSection } from './services/initServicesSection.js';
+import { initPricesSection } from './prices/initPricesSection.js';
+import { initWagesSection } from './wages/initWagesSection.js';
 
 /**
  * @param {object} deps
@@ -35,4 +40,9 @@ export async function initAdminSections(deps) {
   initReportSection(deps);
   initArchivesSection(deps);
   if (deps.trade) initCommerceSection(deps);
+  initTaxesSection(deps);
+  initCustomsSection(deps);
+  if (deps.trade) initPricesSection(deps);
+  if (deps.employment) initWagesSection(deps);
+  initServicesSection(deps);
 }

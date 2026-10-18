@@ -1,0 +1,35 @@
+import { describe, test, expect } from '@jest/globals';
+import { serviceSaleLines, serviceSubsidyLines } from '../../../src/contexts/accounting/domain/policies/ProducerChargePolicy.js';
+import { serviceSubsidyShare } from '../../../src/contexts/accounting/domain/policies/ServiceSubsidyPolicy.js';
+import { addVatTo } from '../../../src/contexts/accounting/domain/policies/VatIncludedPolicy.js';
+
+// The catalog's price is HT and a subsidy cannot be taken on a tax: the subsidy comes off the HT price, and the VAT is
+// charged on what the house pays. The house pays that TTC, the company sells the HT, the city receives the VAT, and the
+// city's subsidy goes to the company, without any VAT.
+describe('service lines — the house pays the final price, the company gets the price without VAT, the city the VAT', () => {
+  test('a partly subsidised service: the house pays its HT share plus the VAT, the company sells the HT, the city takes the VAT', () => {
+    const share = serviceSubsidyShare({ units: 4, unitPrice: 2, subsidyPercent: 50 });
+    const price = addVatTo({ ht: share.habitantShare, ratePercent: 10 });
+
+    expect(serviceSaleLines({ sellerId: 'chapel', buyerId: 'house-1', service: 'school', ttc: price.ttc, ht: price.ht, vat: price.vat })).toMatchObject([
+      { kind: 'service_purchase', amount: 4.4, holder: 'house-1', counterparty: 'chapel', accountKind: 'particulier', resource: 'school' },
+      { kind: 'service_sales', amount: 4, holder: 'chapel', counterparty: 'house-1' },
+      { kind: 'vat', amount: 0.4, holder: null, counterparty: 'chapel' },
+    ]);
+    expect(serviceSubsidyLines({ sellerId: 'chapel', citySubsidy: share.citySubsidy })).toMatchObject([
+      { kind: 'service_subsidy', amount: 4, holder: null, counterparty: 'chapel' },
+      { kind: 'service_subsidy_received', amount: 4, holder: 'chapel', counterparty: null },
+    ]);
+  });
+
+  // Regression: a service with no VAT wrote a VAT line of zero, which the journal refuses (an écriture of zero is no écriture) and stopped the month.
+  test('a service with no VAT has no VAT line: a line of zero is not written', () => {
+    const lines = serviceSaleLines({ sellerId: 'chapel', buyerId: 'house-1', service: 'school', ttc: 4, ht: 4, vat: 0 });
+
+    expect(lines.map((line) => line.kind)).toEqual(['service_purchase', 'service_sales']);
+  });
+
+  test('a fully subsidised service costs the house nothing: no line on either side of the sale', () => {
+    expect(serviceSaleLines({ sellerId: 'chapel', buyerId: 'house-1', service: 'school', ttc: 0, ht: 0, vat: 0 })).toMatchObject([]);
+  });
+});

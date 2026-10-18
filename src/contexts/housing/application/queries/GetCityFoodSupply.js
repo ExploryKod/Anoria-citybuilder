@@ -1,7 +1,7 @@
 import { computeCityFoodSupply } from '../../domain/policies/CityFoodSupplyPolicy.js';
 
 /**
- * Query: city-wide food stored in houses (gathering + market channels).
+ * Query: city-wide food stored in houses (what the market channel delivered).
  */
 export class GetCityFoodSupply {
   /**

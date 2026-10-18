@@ -3,4 +3,5 @@
  * operations stay on housingOps.js, composition-internal only.
  */
 export { computeHouseCitizenComposition } from '../contexts/housing/domain/policies/HouseCitizenCompositionPolicy.js';
+export { splitUnfedByCause } from '../contexts/housing/domain/policies/HungerCausePolicy.js';
 export { describeRelevantServiceCoverage } from '../contexts/housing/domain/policies/HouseLevelPolicy.js';

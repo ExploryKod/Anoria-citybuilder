@@ -7,7 +7,7 @@
  */
 
 import { describe, test, expect } from '@jest/globals';
-import { computeCitizenTaxBreakdown } from '../../../src/contexts/accounting/domain/policies/CitizenTaxCollectionPolicy.js';
+import { computeCitizenTaxBreakdown, computeCitizenTaxByHouse } from '../../../src/contexts/accounting/domain/policies/CitizenTaxCollectionPolicy.js';
 
 describe('Accounting — CitizenTaxCollectionPolicy', () => {
   test('taxes level 2 houses per capita, split by color', () => {
@@ -59,5 +59,28 @@ describe('Accounting — CitizenTaxCollectionPolicy', () => {
 
     expect(breakdown.total).toBe(0);
     expect(breakdown.population).toBe(0);
+  });
+});
+
+describe('Accounting — CitizenTaxCollectionPolicy (per house)', () => {
+  test('computeCitizenTaxByHouse sums to the same total as computeCitizenTaxBreakdown, exempt houses excluded', () => {
+    const houses = [
+      { id: 'house-1', type: 'House-Blue', pop: 3, level: 2 },
+      { id: 'house-2', type: 'House-Red', pop: 4, level: 2 },
+      { id: 'house-3', type: 'House-Purple', pop: 5, level: 1 }, // exempt
+    ];
+
+    const byHouse = computeCitizenTaxByHouse(houses, 100);
+    const breakdown = computeCitizenTaxBreakdown(houses, 100);
+
+    expect(byHouse).toEqual([
+      { houseId: 'house-1', pop: 3, amount: 300 },
+      { houseId: 'house-2', pop: 4, amount: 400 },
+    ]);
+    expect(byHouse.reduce((sum, h) => sum + h.amount, 0)).toBe(breakdown.total);
+  });
+
+  test('a taxed house with no id throws: its tax cannot be attributed to an account', () => {
+    expect(() => computeCitizenTaxByHouse([{ type: 'House-Blue', pop: 3, level: 2 }], 100)).toThrow(/has no id/);
   });
 });

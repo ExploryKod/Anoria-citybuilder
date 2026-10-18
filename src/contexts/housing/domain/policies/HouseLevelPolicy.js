@@ -46,13 +46,19 @@ function normalizeLevel(level) {
  * @param {number} params.roadCount
  * @param {string | null} params.residentialGroup
  * @param {Record<string, number>} [params.servedFlags] This house's
- *   service-coverage state (Supply's `servedFlags`, e.g. `{ faith: 7 }`) —
+ *   service-coverage state (Supply's `servedFlags`, e.g. `{ doctor: 7 }`) —
  *   only read when a tier declares a `serviceCoverage` requirement.
  * @param {{ month?: number, totalUnfed?: number, categoriesTaken?: string[] }} [params.lastConsumption]
  *   This house's latest food-consumption record (Supply's `lastConsumption`)
- *   — only read when a tier declares a `demandMet` or `goodsVariety` requirement.
+ *   — only read when a tier declares a `demandMet` requirement.
+ * @param {Record<string, { month?: number, totalUnfed?: number, categoriesTaken?: string[] }>} [params.outcomes]
+ *   This house's latest record of each other need it consumes, by the field the catalog names it under
+ *   (`lastWaterConsumption`, `lastEnergyConsumption`, `lastGoodsConsumption`, written by ConsumeResource) — only read
+ *   when a tier declares a `serviceDemandMet` or `goodsVariety` requirement naming that `outcomeField`.
+ * @param {boolean} [params.activityAccess] Whether a warehouse is within reach of the house's activity — only read
+ *   when a tier declares an `activityAccess` requirement.
  * @param {number} [params.periodKey] Current month index, compared against
- *   `servedFlags`/`lastConsumption` entries — only read for the same reason.
+ *   `servedFlags`/`lastConsumption`/`outcomes` entries — only read for the same reason.
  * @returns {{
  *   targetLevel: number,
  *   targetPop: number,
@@ -62,7 +68,7 @@ function normalizeLevel(level) {
  *   reason?: string,
  * }}
  */
-export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, servedFlags, lastConsumption, periodKey }) {
+export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, servedFlags, lastConsumption, outcomes, activityAccess, periodKey }) {
   const previousLevel = normalizeLevel(level);
   const previousPop = clampPop(pop);
   const tiers = residentialGroup ? SOCIAL_CATEGORY[residentialGroup]?.tiers : null;
@@ -74,7 +80,7 @@ export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, ser
   let unmetRequirements;
 
   if (tiers) {
-    const context = { pop: previousPop, roadCount: roadCount ?? 0, servedFlags, lastConsumption, periodKey };
+    const context = { pop: previousPop, roadCount: roadCount ?? 0, servedFlags, lastConsumption, outcomes, activityAccess, periodKey };
     const nextTier = tiers[previousLevel + 1];
 
     if (nextTier && meetsTierRequirements(nextTier.requirements, context)) {
@@ -107,19 +113,25 @@ export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, ser
 }
 
 /**
- * The `serviceCoverage` requirements relevant to a house RIGHT NOW: the
- * NEXT tier's, while the house hasn't maxed out (what's still blocking its
- * growth — e.g. a tier-1 house shows only Chapel's `faith`), or its own
- * final tier's once maxed (what's still sustaining it). Tier count is read
- * from the catalog, never hardcoded, so a 6th tier added later needs no
- * change here.
+ * EVERY requirement relevant to a house RIGHT NOW: the NEXT tier's, while
+ * the house hasn't maxed out (what's still blocking its growth — e.g. a
+ * tier-1 house shows its water, its food and its dispensary), or its own final tier's once
+ * maxed (what's still sustaining it). Tier count is read from the catalog,
+ * never hardcoded, so a 6th tier added later needs no change here.
  *
- * Used by the house info panel's Services tab to show "reached or not" for
- * Chapel/Doctor/etc. the same way it already shows road/market reach — see
- * contexts/housing/docs/service-coverage.md.
+ * Used by the house info panel's Services tab, under "Besoins pour
+ * l'évolution" (2026-10-10): every requirement kind the tier ladder
+ * declares — road, population, demandMet (food), goodsVariety,
+ * serviceCoverage/serviceDemandMet (Doctor, the tank's water, ...) — each
+ * read as a plain met/unmet fact there, never the raw figure (that figure
+ * already lives on the Ressources tab, under its own need or the Services
+ * group). `roadAccess` is excluded: the panel already shows Route as its
+ * own, building-type-agnostic chip (works for a farm too, which has no
+ * tier ladder at all) — repeating the exact same fact here would be the
+ * redundancy this split is meant to avoid.
  *
  * @param {{ level: number, residentialGroup: string | null }} params
- * @returns {ReadonlyArray<{ kind: 'serviceCoverage', category: string }>}
+ * @returns {ReadonlyArray<{ kind: string, category?: string }>}
  */
 export function relevantServiceCoverageRequirements({ level, residentialGroup }) {
   const tiers = residentialGroup ? SOCIAL_CATEGORY[residentialGroup]?.tiers : null;
@@ -131,7 +143,7 @@ export function relevantServiceCoverageRequirements({ level, residentialGroup })
   const targetTier = tiers[targetTierNum];
   if (!targetTier) return [];
 
-  return targetTier.requirements.filter((requirement) => requirement.kind === 'serviceCoverage');
+  return targetTier.requirements.filter((requirement) => requirement.kind !== 'roadAccess');
 }
 
 /**
@@ -141,10 +153,10 @@ export function relevantServiceCoverageRequirements({ level, residentialGroup })
  * (`{ category, current, target, met }` per entry, `category` riding along
  * from the original requirement).
  *
- * @param {{ level: number, residentialGroup: string | null, servedFlags?: Record<string, number>, periodKey?: number }} params
- * @returns {ReadonlyArray<{ kind: 'serviceCoverage', category: string, current: number, target: number, met: boolean }>}
+ * @param {{ level: number, residentialGroup: string | null, pop?: number, servedFlags?: Record<string, number>, lastConsumption?: object, outcomes?: object, activityAccess?: boolean, periodKey?: number }} params
+ * @returns {ReadonlyArray<{ kind: string, category?: string, current: number, target: number, met: boolean }>}
  */
-export function describeRelevantServiceCoverage({ level, residentialGroup, servedFlags, periodKey }) {
+export function describeRelevantServiceCoverage({ level, residentialGroup, pop, servedFlags, lastConsumption, outcomes, activityAccess, periodKey }) {
   const requirements = relevantServiceCoverageRequirements({ level, residentialGroup });
-  return describeTierRequirements(requirements, { servedFlags, periodKey });
+  return describeTierRequirements(requirements, { pop, servedFlags, lastConsumption, outcomes, activityAccess, periodKey });
 }

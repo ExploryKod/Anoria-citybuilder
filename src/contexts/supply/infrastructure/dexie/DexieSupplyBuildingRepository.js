@@ -42,7 +42,6 @@ export class DexieSupplyBuildingRepository {
       neighbors: house.neighbors || [],
       lastProductionYear: house.lastProductionYear ?? null,
       lastConsumptionMonth: house.lastConsumptionMonth ?? null,
-      lastSubsistenceMonth: house.lastSubsistenceMonth ?? null,
       lastConsumption: house.lastConsumption ?? null,
       pop: house.pop ?? 0,
       level: house.level ?? 1,
@@ -163,7 +162,6 @@ export class DexieSupplyBuildingRepository {
         quantity,
         count: 1,
         hubId,
-        date: new Date().toISOString(),
       });
     }
 
@@ -285,7 +283,6 @@ export class DexieSupplyBuildingRepository {
       productType: sale.productType,
       quantity: sale.quantity,
       distributorId: sale.distributorId,
-      date: new Date().toISOString(),
     });
 
     const filteredSales = salesToDistributor.filter((entry) => entry.year === currentYear);

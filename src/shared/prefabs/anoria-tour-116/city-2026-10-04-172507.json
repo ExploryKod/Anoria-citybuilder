@@ -1,7 +1,7 @@
 {
   "exportDate": "2026-10-04T15:25:07.604Z",
   "config": {
-    "citySize": 12,
+    "citySize": 16,
     "daysPerMonth": 5,
     "perCapitaDemand": 1,
     "annualYieldPerProducer": 288,
@@ -66,8 +66,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -196,8 +194,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -334,8 +330,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -472,8 +466,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -610,8 +602,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -740,8 +730,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -878,8 +866,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -1000,8 +986,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -1106,8 +1090,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -1288,8 +1270,6 @@
         "wheat": 784,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -1327,10 +1307,13 @@
       "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
-        "worker_need": 4,
-        "worker": 4,
-        "sector": 4,
-        "salary": 40
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 2,
+        "salary": 40,
+        "workerSources": {
+          "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b": 3
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "windmill",
@@ -1353,8 +1336,6 @@
           "x": 4,
           "y": 2,
           "allocatedStocks": {
-            "fruit": 0,
-            "game": 0,
             "dealWood": 0,
             "dealDecoratedPot": 0,
             "dealBook": 0,
@@ -1545,8 +1526,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -1699,8 +1678,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -1741,7 +1718,11 @@
         "worker_need": 2,
         "worker": 2,
         "sector": 2,
-        "salary": 20
+        "salary": 20,
+        "workerSources": {
+          "cf03427f-7b10-474f-a84d-9090dc930e3e": 1,
+          "6bf7dcdb-765b-40b5-8b00-5f92d8f3ac14": 1
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "market",
@@ -1828,8 +1809,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -2042,8 +2021,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -2244,8 +2221,6 @@
         "wheat": 36,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -2283,10 +2258,13 @@
       "footprintHeight": 1,
       "placementRotationStep": 0,
       "employees": {
-        "worker_need": 3,
-        "worker": 3,
+        "worker_need": 2,
+        "worker": 2,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b": 2
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "farm",
@@ -2442,8 +2420,6 @@
         "wheat": 288,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -2481,10 +2457,13 @@
       "footprintHeight": 1,
       "placementRotationStep": 0,
       "employees": {
-        "worker_need": 3,
-        "worker": 3,
+        "worker_need": 2,
+        "worker": 1,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "8e7ad9b6-d4fc-4e90-af5f-ccab3904820b": 1
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "farm",
@@ -2625,8 +2604,6 @@
         "wheat": 474,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -2665,9 +2642,10 @@
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 3,
-        "worker": 3,
+        "worker": 0,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {}
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "farm",
@@ -2820,8 +2798,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -2860,9 +2836,12 @@
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 3,
-        "worker": 3,
+        "worker": 2,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "d189b194-fa20-4087-a172-eee11d4962d0": 2
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -3034,8 +3013,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -3076,7 +3053,10 @@
         "worker_need": 3,
         "worker": 3,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "d189b194-fa20-4087-a172-eee11d4962d0": 3
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -3221,8 +3201,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -3261,9 +3239,12 @@
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 2,
-        "worker": 2,
+        "worker": 1,
         "sector": 3,
-        "salary": 20
+        "salary": 20,
+        "workerSources": {
+          "d189b194-fa20-4087-a172-eee11d4962d0": 1
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -3417,8 +3398,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -3515,8 +3494,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -3554,10 +3531,10 @@
       "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
-        "worker_need": 0,
+        "worker_need": 4,
         "worker": 0,
-        "sector": 0,
-        "salary": 0
+        "sector": 2,
+        "salary": 40
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -3731,8 +3708,6 @@
           "x": 4,
           "y": 2,
           "allocatedStocks": {
-            "fruit": 0,
-            "game": 0,
             "dealWood": 0,
             "dealDecoratedPot": 0,
             "dealBook": 0,
@@ -3879,8 +3854,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -4028,13 +4001,11 @@
           "isRoad": true
         }
       ],
-      "pop": 12,
+      "pop": 1,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 2,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -4059,17 +4030,17 @@
       "gameTurn": 25,
       "time": 0,
       "isBuilding": true,
-      "roads": 3,
+      "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
       "worldTime": 116,
-      "x": 4,
-      "y": 4,
+      "x": 12,
+      "y": 5,
       "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 1,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 0,
@@ -4079,22 +4050,29 @@
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "house",
-      "tier": 3,
+      "tier": 1,
       "footprintTiles": [
         [
-          4,
-          4
+          12,
+          5
         ],
         [
-          5,
-          4
+          12,
+          6
+        ],
+        [
+          13,
+          5
+        ],
+        [
+          13,
+          6
         ]
       ],
       "markets": [],
       "saleWindowOpen": true,
       "distributorTooFar": false,
       "lastPopulationGrowthMonth": 4,
-      "lastSubsistenceMonth": 11,
       "lastConsumptionMonth": 11,
       "lastConsumption": {
         "month": 11,
@@ -4102,14 +4080,10 @@
         "taken": 12,
         "totalUnfed": 0,
         "categoriesTaken": [
-          "wheat",
-          "fruit",
-          "game"
+          "wheat"
         ],
         "takenByCategory": {
-          "wheat": 10,
-          "fruit": 1,
-          "game": 1
+          "wheat": 10
         }
       },
       "lastGoodsConsumptionMonth": 11,
@@ -4156,10 +4130,8 @@
       "salesToDistributor": [],
       "salesToHub": [],
       "collectedByHub": false,
-      "servedFlags": {
-        "faith": 11
-      },
-      "level": 2
+      "servedFlags": {},
+      "level": 1
     },
     {
       "instanceId": "610078a5-18ed-40d1-a5e2-4b5ac1edf174",
@@ -4244,8 +4216,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -4390,8 +4360,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -4536,8 +4504,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -4698,8 +4664,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -4844,8 +4808,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -5006,8 +4968,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -5168,8 +5128,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -5354,8 +5312,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -5524,8 +5480,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -5654,8 +5608,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -5768,8 +5720,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -5789,7 +5739,10 @@
         "food": 0,
         "goods": 0,
         "heat": 0,
-        "light": 0
+        "light": 0,
+        "coal": 0,
+        "petrol": 0,
+        "exoticWood": 0
       },
       "gameTurn": 40,
       "time": 0,
@@ -5802,15 +5755,15 @@
       "worldTime": 116,
       "x": 1,
       "y": 6,
-      "gridSize": 3,
+      "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 3,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
-        "worker_need": 0,
+        "worker_need": 4,
         "worker": 0,
-        "sector": 0,
-        "salary": 0
+        "sector": 2,
+        "salary": 40
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -5943,8 +5896,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -6105,8 +6056,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -6145,9 +6094,10 @@
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 2,
-        "worker": 2,
+        "worker": 0,
         "sector": 3,
-        "salary": 20
+        "salary": 20,
+        "workerSources": {}
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -6285,13 +6235,11 @@
           "isRoad": false
         }
       ],
-      "pop": 12,
+      "pop": 1,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 2,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -6386,7 +6334,6 @@
       },
       "distributorTooFar": false,
       "lastPopulationGrowthMonth": 3,
-      "lastSubsistenceMonth": 11,
       "lastConsumptionMonth": 11,
       "lastConsumption": {
         "month": 11,
@@ -6394,14 +6341,10 @@
         "taken": 12,
         "totalUnfed": 0,
         "categoriesTaken": [
-          "wheat",
-          "fruit",
-          "game"
+          "wheat"
         ],
         "takenByCategory": {
-          "wheat": 10,
-          "fruit": 1,
-          "game": 1
+          "wheat": 10
         }
       },
       "lastGoodsConsumptionMonth": 11,
@@ -6439,10 +6382,8 @@
       "salesToDistributor": [],
       "salesToHub": [],
       "collectedByHub": false,
-      "servedFlags": {
-        "faith": 11
-      },
-      "level": 2
+      "servedFlags": {},
+      "level": 1
     },
     {
       "instanceId": "217a1019-c58d-41e5-9b39-b347d29eeb61",
@@ -6527,8 +6468,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -6567,9 +6506,12 @@
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 3,
-        "worker": 3,
+        "worker": 1,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "24e26db3-b178-4f93-bcd7-55c72fcf3ad1": 1
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "farm",
@@ -6720,13 +6662,11 @@
           "isRoad": true
         }
       ],
-      "pop": 12,
+      "pop": 6,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 2,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -6751,7 +6691,7 @@
       "gameTurn": 20,
       "time": 0,
       "isBuilding": true,
-      "roads": 3,
+      "roads": 4,
       "stage": 0,
       "stageName": "",
       "price": 10,
@@ -6761,7 +6701,7 @@
       "y": 6,
       "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 1,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 0,
@@ -6771,15 +6711,23 @@
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "house",
-      "tier": 2,
+      "tier": 1,
       "footprintTiles": [
         [
           9,
           6
         ],
         [
+          9,
+          7
+        ],
+        [
           10,
           6
+        ],
+        [
+          10,
+          7
         ]
       ],
       "markets": [],
@@ -6801,7 +6749,6 @@
       },
       "distributorTooFar": false,
       "lastPopulationGrowthMonth": 3,
-      "lastSubsistenceMonth": 11,
       "lastConsumptionMonth": 11,
       "lastConsumption": {
         "month": 11,
@@ -6809,14 +6756,10 @@
         "taken": 12,
         "totalUnfed": 0,
         "categoriesTaken": [
-          "wheat",
-          "fruit",
-          "game"
+          "wheat"
         ],
         "takenByCategory": {
-          "wheat": 10,
-          "fruit": 1,
-          "game": 1
+          "wheat": 10
         }
       },
       "lastGoodsConsumptionMonth": 11,
@@ -6854,10 +6797,8 @@
       "salesToDistributor": [],
       "salesToHub": [],
       "collectedByHub": false,
-      "servedFlags": {
-        "faith": 11
-      },
-      "level": 2
+      "servedFlags": {},
+      "level": 1
     },
     {
       "instanceId": "3b3d2831-2c49-4cfd-8b79-46b4e5dc7edf",
@@ -6926,8 +6867,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -7064,8 +7003,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -7226,8 +7163,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -7268,7 +7203,10 @@
         "worker_need": 3,
         "worker": 3,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "24e26db3-b178-4f93-bcd7-55c72fcf3ad1": 3
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "farm",
@@ -7451,13 +7389,11 @@
           "isRoad": true
         }
       ],
-      "pop": 12,
+      "pop": 6,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 2,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -7482,17 +7418,17 @@
       "gameTurn": 19,
       "time": 0,
       "isBuilding": true,
-      "roads": 1,
+      "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
       "worldTime": 116,
-      "x": 9,
-      "y": 7,
+      "x": 12,
+      "y": 1,
       "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 1,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 0,
@@ -7502,22 +7438,29 @@
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "house",
-      "tier": 2,
+      "tier": 1,
       "footprintTiles": [
         [
-          9,
-          7
+          12,
+          1
         ],
         [
-          10,
-          7
+          12,
+          2
+        ],
+        [
+          13,
+          1
+        ],
+        [
+          13,
+          2
         ]
       ],
       "markets": [],
       "saleWindowOpen": true,
       "distributorTooFar": false,
       "lastPopulationGrowthMonth": 3,
-      "lastSubsistenceMonth": 11,
       "cycleState": {
         "decoratedPot": {
           "index": 0,
@@ -7541,14 +7484,10 @@
         "taken": 12,
         "totalUnfed": 0,
         "categoriesTaken": [
-          "wheat",
-          "fruit",
-          "game"
+          "wheat"
         ],
         "takenByCategory": {
-          "wheat": 10,
-          "fruit": 1,
-          "game": 1
+          "wheat": 10
         }
       },
       "lastGoodsConsumptionMonth": 11,
@@ -7585,10 +7524,8 @@
       "salesToDistributor": [],
       "salesToHub": [],
       "collectedByHub": false,
-      "servedFlags": {
-        "faith": 11
-      },
-      "level": 2
+      "servedFlags": {},
+      "level": 1
     },
     {
       "instanceId": "57d0ab61-4a45-4061-8357-2a4bfcd30dc8",
@@ -7665,8 +7602,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -7787,8 +7722,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -7904,13 +7837,11 @@
           "isRoad": true
         }
       ],
-      "pop": 12,
+      "pop": 1,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 2,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -7935,17 +7866,17 @@
       "gameTurn": 24,
       "time": 0,
       "isBuilding": true,
-      "roads": 3,
+      "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
       "worldTime": 116,
-      "x": 4,
-      "y": 8,
+      "x": 12,
+      "y": 7,
       "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 1,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 0,
@@ -7955,14 +7886,22 @@
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "house",
-      "tier": 3,
+      "tier": 1,
       "footprintTiles": [
         [
-          4,
+          12,
+          7
+        ],
+        [
+          12,
           8
         ],
         [
-          5,
+          13,
+          7
+        ],
+        [
+          13,
           8
         ]
       ],
@@ -7979,7 +7918,6 @@
       },
       "distributorTooFar": false,
       "lastPopulationGrowthMonth": 3,
-      "lastSubsistenceMonth": 11,
       "lastConsumptionMonth": 11,
       "lastConsumption": {
         "month": 11,
@@ -7987,14 +7925,10 @@
         "taken": 12,
         "totalUnfed": 0,
         "categoriesTaken": [
-          "wheat",
-          "fruit",
-          "game"
+          "wheat"
         ],
         "takenByCategory": {
-          "wheat": 10,
-          "fruit": 1,
-          "game": 1
+          "wheat": 10
         }
       },
       "lastGoodsConsumptionMonth": 11,
@@ -8032,10 +7966,8 @@
       "salesToDistributor": [],
       "salesToHub": [],
       "collectedByHub": false,
-      "servedFlags": {
-        "faith": 11
-      },
-      "level": 2
+      "servedFlags": {},
+      "level": 1
     },
     {
       "instanceId": "9b3a954e-69da-4895-8b90-70c36dcfb9d8",
@@ -8107,13 +8039,11 @@
           "isRoad": true
         }
       ],
-      "pop": 12,
+      "pop": 1,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 2,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -8138,17 +8068,17 @@
       "gameTurn": 24,
       "time": 0,
       "isBuilding": true,
-      "roads": 2,
+      "roads": 1,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
       "worldTime": 116,
-      "x": 6,
-      "y": 8,
+      "x": 11,
+      "y": 10,
       "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 1,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 0,
@@ -8158,15 +8088,23 @@
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "house",
-      "tier": 3,
+      "tier": 1,
       "footprintTiles": [
         [
-          6,
-          8
+          11,
+          10
         ],
         [
-          7,
-          8
+          11,
+          11
+        ],
+        [
+          12,
+          10
+        ],
+        [
+          12,
+          11
         ]
       ],
       "markets": [],
@@ -8182,7 +8120,6 @@
       },
       "distributorTooFar": false,
       "lastPopulationGrowthMonth": 3,
-      "lastSubsistenceMonth": 11,
       "saleWindowOpen": true,
       "lastConsumptionMonth": 11,
       "lastConsumption": {
@@ -8191,14 +8128,10 @@
         "taken": 12,
         "totalUnfed": 0,
         "categoriesTaken": [
-          "wheat",
-          "fruit",
-          "game"
+          "wheat"
         ],
         "takenByCategory": {
-          "wheat": 10,
-          "fruit": 1,
-          "game": 1
+          "wheat": 10
         }
       },
       "lastGoodsConsumptionMonth": 11,
@@ -8235,10 +8168,8 @@
       "salesToDistributor": [],
       "salesToHub": [],
       "collectedByHub": false,
-      "servedFlags": {
-        "faith": 11
-      },
-      "level": 2
+      "servedFlags": {},
+      "level": 1
     },
     {
       "instanceId": "7ffa4094-302d-42ae-b7a0-011d22f78532",
@@ -8315,8 +8246,6 @@
         "wheat": 576,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -8355,9 +8284,12 @@
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 3,
-        "worker": 3,
+        "worker": 2,
         "sector": 1,
-        "salary": 30
+        "salary": 30,
+        "workerSources": {
+          "24e26db3-b178-4f93-bcd7-55c72fcf3ad1": 2
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "farm",
@@ -8491,13 +8423,11 @@
           "isRoad": true
         }
       ],
-      "pop": 12,
+      "pop": 6,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 2,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -8522,17 +8452,17 @@
       "gameTurn": 19,
       "time": 0,
       "isBuilding": true,
-      "roads": 3,
+      "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
       "worldTime": 116,
-      "x": 9,
-      "y": 8,
+      "x": 12,
+      "y": 3,
       "gridSize": 2,
       "footprintWidth": 2,
-      "footprintHeight": 1,
+      "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 0,
@@ -8542,22 +8472,29 @@
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "house",
-      "tier": 2,
+      "tier": 1,
       "footprintTiles": [
         [
-          9,
-          8
+          12,
+          3
         ],
         [
-          10,
-          8
+          12,
+          4
+        ],
+        [
+          13,
+          3
+        ],
+        [
+          13,
+          4
         ]
       ],
       "markets": [],
       "saleWindowOpen": true,
       "distributorTooFar": false,
       "lastPopulationGrowthMonth": 3,
-      "lastSubsistenceMonth": 11,
       "lastConsumptionMonth": 11,
       "lastConsumption": {
         "month": 11,
@@ -8565,14 +8502,10 @@
         "taken": 12,
         "totalUnfed": 0,
         "categoriesTaken": [
-          "wheat",
-          "fruit",
-          "game"
+          "wheat"
         ],
         "takenByCategory": {
-          "wheat": 10,
-          "fruit": 1,
-          "game": 1
+          "wheat": 10
         }
       },
       "lastGoodsConsumptionMonth": 11,
@@ -8625,10 +8558,8 @@
       "salesToDistributor": [],
       "salesToHub": [],
       "collectedByHub": false,
-      "servedFlags": {
-        "faith": 11
-      },
-      "level": 2
+      "servedFlags": {},
+      "level": 1
     },
     {
       "instanceId": "50a9e1ad-e40e-4f4a-830d-3b2558b20219",
@@ -8689,8 +8620,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -8746,7 +8675,7 @@
     },
     {
       "instanceId": "585af32d-7c56-4fbe-8f85-55e149297b38",
-      "type": "Chapel",
+      "type": "WaterTank",
       "category": "construction",
       "neighbors": [
         {
@@ -8771,8 +8700,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -8805,15 +8732,19 @@
       "worldTime": 116,
       "x": 0,
       "y": 9,
-      "gridSize": 3,
-      "footprintWidth": 3,
+      "gridSize": 2,
+      "footprintWidth": 2,
       "footprintHeight": 2,
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 2,
         "worker": 2,
         "sector": 6,
-        "salary": 20
+        "salary": 20,
+        "workerSources": {
+          "ac5f9ab6-d318-464d-ac42-29ba94edd892": 1,
+          "c0e59748-0467-4384-9518-9abc1fe2d4f8": 1
+        }
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -8833,14 +8764,6 @@
         ],
         [
           1,
-          10
-        ],
-        [
-          2,
-          9
-        ],
-        [
-          2,
           10
         ]
       ],
@@ -8905,8 +8828,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -9019,8 +8940,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -9141,8 +9060,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -9263,8 +9180,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -9385,8 +9300,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -9507,8 +9420,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -9653,8 +9564,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -9791,8 +9700,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -9897,8 +9804,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -10006,13 +9911,11 @@
           "isRoad": true
         }
       ],
-      "pop": 12,
+      "pop": 1,
       "stocks": {
         "wheat": 10,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 2,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -10107,7 +10010,6 @@
       },
       "distributorTooFar": false,
       "lastPopulationGrowthMonth": 3,
-      "lastSubsistenceMonth": 11,
       "lastConsumptionMonth": 11,
       "lastConsumption": {
         "month": 11,
@@ -10115,14 +10017,10 @@
         "taken": 12,
         "totalUnfed": 0,
         "categoriesTaken": [
-          "wheat",
-          "fruit",
-          "game"
+          "wheat"
         ],
         "takenByCategory": {
-          "wheat": 10,
-          "fruit": 1,
-          "game": 1
+          "wheat": 10
         }
       },
       "lastGoodsConsumptionMonth": 11,
@@ -10160,10 +10058,8 @@
       "salesToDistributor": [],
       "salesToHub": [],
       "collectedByHub": false,
-      "servedFlags": {
-        "faith": 11
-      },
-      "level": 2
+      "servedFlags": {},
+      "level": 1
     },
     {
       "instanceId": "8b9b1897-f1c1-40ea-b197-6d40ddfbb4fc",
@@ -10232,8 +10128,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 0,
@@ -10272,9 +10166,10 @@
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 2,
-        "worker": 2,
+        "worker": 0,
         "sector": 3,
-        "salary": 20
+        "salary": 20,
+        "workerSources": {}
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -10391,8 +10286,6 @@
         "wheat": 0,
         "carrot": 0,
         "cabbage": 0,
-        "fruit": 0,
-        "game": 0,
         "furniture": 0,
         "plate": 0,
         "pot": 60,
@@ -10431,9 +10324,10 @@
       "placementRotationStep": 0,
       "employees": {
         "worker_need": 2,
-        "worker": 2,
+        "worker": 0,
         "sector": 3,
-        "salary": 20
+        "salary": 20,
+        "workerSources": {}
       },
       "hamletId": "0f2deabd-6075-4fd9-b233-58535c90aade",
       "kind": "other",
@@ -10527,17 +10421,17 @@
         "workers": 24,
         "need": 0
       },
-      "spiritual": {
-        "workerNeed": 2,
-        "workers": 2,
-        "need": 0
-      },
       "artisanat": {
         "workerNeed": 8,
         "workers": 8,
         "need": 0
       },
       "vente-alimentaire": {
+        "workerNeed": 2,
+        "workers": 2,
+        "need": 0
+      },
+      "hydraulique": {
         "workerNeed": 2,
         "workers": 2,
         "need": 0
@@ -10571,7 +10465,7 @@
     }
   },
   "populationSummary": {
-    "totalPop": 96,
+    "totalPop": 23,
     "houseCount": 8
   },
   "news": {

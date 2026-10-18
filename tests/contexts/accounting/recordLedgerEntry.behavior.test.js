@@ -2,7 +2,9 @@
  * Behavior tests — Accounting Phase 3½: RecordLedgerEntry (maintenance slice)
  */
 
+import { seedTestHamlet } from '../../helpers/testHamlet.js';
 import Dexie from 'dexie';
+import { TEST_HAMLET_ID } from '../../helpers/testHamlet.js';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { JournalManager } from '../../../src/composition/accountingSessionJournal.js';
 import { BudgetManager } from '../../../tests/helpers/testBudgetFacade.js';
@@ -21,6 +23,7 @@ function createTestDb() {
     budget: 'name',
     journal: '++id, turn, date, type, amount, description',
     houses: 'name',
+    hamlets: 'id',
   });
   return testDb;
 }
@@ -50,6 +53,7 @@ describe('Accounting — RecordLedgerEntry (maintenance slice)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',
@@ -134,26 +138,6 @@ describe('Accounting — RecordLedgerEntry (maintenance slice)', () => {
     expect(budget.funds).toBe(989);
     expect(budget.totalBuildingMaintenance).toBe(11);
   });
-
-  test('BudgetManager.addBuildingMaintenance delegates to accounting BC', async () => {
-    resetAccountingContextForTests();
-    getOrCreateAccountingContext({
-      db: testDb,
-      journalManager,
-      budgetManager,
-      gameTimePort: new FixedGameTimePort(),
-    });
-
-    const budget = await budgetManager.addBuildingMaintenance(
-      11,
-      'Maintenance mensuelle - Juin 1'
-    );
-
-    expect(budget.funds).toBe(989);
-
-    const entries = await journalManager.getJournalEntries();
-    expect(entries.filter((entry) => entry.type === 'maintenance')).toHaveLength(1);
-  });
 });
 
 describe('Accounting — RecordLedgerEntry (construction slice)', () => {
@@ -168,6 +152,7 @@ describe('Accounting — RecordLedgerEntry (construction slice)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',
@@ -283,206 +268,6 @@ describe('Accounting — RecordLedgerEntry (construction slice)', () => {
   });
 });
 
-describe('Accounting — RecordLedgerEntry (salary / payroll_tax slice)', () => {
-  let testDb;
-  let journalManager;
-  let budgetManager;
-  let accounting;
-
-  beforeEach(async () => {
-    resetSessionLedgerBufferForTests();
-    resetAccountingContextForTests();
-
-    testDb = createTestDb();
-    await testDb.open();
-
-    await testDb.budget.put({
-      name: 'budget_current',
-      turn: 30,
-      income: 0,
-      expenses: 0,
-      dailyExpenses: 0,
-      totalSalaries: 0,
-      netFlow: 0,
-    });
-
-    journalManager = new JournalManager();
-    journalManager.db = testDb;
-
-    budgetManager = new BudgetManager();
-    budgetManager.db = testDb;
-    budgetManager.journalManager = journalManager;
-
-    accounting = getOrCreateAccountingContext({
-      db: testDb,
-      journalManager,
-      budgetManager,
-      gameTimePort: new FixedGameTimePort(),
-    });
-    await journalManager.addJournalEntry(0, 'capital_funds', 1000, 'Capital de départ', null, { businessKey: 'capital_funds:0' });
-  });
-
-  afterEach(async () => {
-    resetAccountingContextForTests();
-    if (testDb) {
-      await testDb.delete();
-    }
-  });
-
-  test('records salary journal line and debits treasury once', async () => {
-    const result = await accounting.recordSalaryExpense({
-      turn: 30,
-      amount: 200,
-      description: 'Salaires fonctionnaires - Juin 0 JC (2 fonct. × 100€)',
-    });
-
-    expect(result).toEqual({
-      recorded: true,
-      skipped: false,
-    });
-
-    const entries = await journalManager.getJournalEntries();
-    expect(entries.filter((entry) => entry.type === 'salary')).toHaveLength(1);
-    expect(entries[0].businessKey).toMatch(/^salary:[^:]+:0:5$/);
-
-    const budget = (await getTreasurySnapshot());
-    expect(budget.funds).toBe(800);
-    expect(budget.expenses).toBe(200);
-    expect(budget.totalSalaries).toBe(200);
-  });
-
-  test('skips duplicate salary for same civil month', async () => {
-    await accounting.recordSalaryExpense({
-      turn: 30,
-      amount: 200,
-      description: 'Salaires fonctionnaires - Juin 1',
-    });
-
-    const second = await accounting.recordSalaryExpense({
-      turn: 31,
-      amount: 9999,
-      description: 'Salaires fonctionnaires - Juin duplicate',
-    });
-
-    expect(second).toMatchObject({
-      recorded: false,
-      skipped: true,
-      reason: 'duplicate_business_key',
-    });
-
-    const budget = (await getTreasurySnapshot());
-    expect(budget.funds).toBe(800);
-    expect(budget.totalSalaries).toBe(200);
-  });
-
-  test('records payroll tax as income once per civil month', async () => {
-    const result = await accounting.recordPayrollTaxIncome({
-      turn: 30,
-      amount: 560,
-      description: 'Impôt sur les salaires - Juin 0 JC (20%)',
-    });
-
-    expect(result).toEqual({
-      recorded: true,
-      skipped: false,
-    });
-
-    const entries = await journalManager.getJournalEntries();
-    expect(entries.filter((entry) => entry.type === 'payroll_tax')).toHaveLength(1);
-    expect(entries[0].businessKey).toMatch(/^payroll_tax:[^:]+:0:5$/);
-
-    const budget = (await getTreasurySnapshot());
-    expect(budget.funds).toBe(1560);
-    expect(budget.income).toBe(1560);
-  });
-
-  test('skips duplicate payroll tax for same civil month', async () => {
-    await accounting.recordPayrollTaxIncome({
-      turn: 30,
-      amount: 560,
-      description: 'Impôt sur les salaires - Juin 1',
-    });
-
-    const second = await accounting.recordPayrollTaxIncome({
-      turn: 31,
-      amount: 999,
-      description: 'Impôt sur les salaires - Juin duplicate',
-    });
-
-    expect(second.reason).toBe('duplicate_business_key');
-
-    const budget = (await getTreasurySnapshot());
-    expect(budget.funds).toBe(1560);
-    expect(budget.income).toBe(1560);
-  });
-
-  test('BudgetManager.addSalaries delegates to accounting BC', async () => {
-    resetAccountingContextForTests();
-    getOrCreateAccountingContext({
-      db: testDb,
-      journalManager,
-      budgetManager,
-      gameTimePort: new FixedGameTimePort(),
-    });
-
-    const budget = await budgetManager.addSalaries(
-      100,
-      28,
-      'Salaires fonctionnaires - Juin 0 JC (2 fonct. × 100€)'
-    );
-
-    expect(budget.funds).toBe(800);
-    expect(budget.totalSalaries).toBe(200);
-
-    const entries = await journalManager.getJournalEntries();
-    expect(entries.filter((entry) => entry.type === 'salary')).toHaveLength(1);
-  });
-
-  test('BudgetManager.addSalaryTax delegates to accounting BC', async () => {
-    resetAccountingContextForTests();
-    getOrCreateAccountingContext({
-      db: testDb,
-      journalManager,
-      budgetManager,
-      gameTimePort: new FixedGameTimePort(),
-    });
-
-    const budget = await budgetManager.addSalaryTax(
-      2800,
-      0.2,
-      'Impôt sur les salaires - Juin 0 JC (20%)'
-    );
-
-    expect(budget.funds).toBe(1560);
-    expect(budget.income).toBe(1560);
-
-    const entries = await journalManager.getJournalEntries();
-    expect(entries.filter((entry) => entry.type === 'payroll_tax')).toHaveLength(1);
-  });
-
-  test('records unemployment benefit journal line and debits treasury once', async () => {
-    const result = await accounting.recordUnemploymentBenefitExpense({
-      turn: 30,
-      amount: 200,
-      description: 'Salaires chômeurs - Juin 0 JC (4 chôm. × 100€ × 50%)',
-    });
-
-    expect(result).toEqual({
-      recorded: true,
-      skipped: false,
-    });
-
-    const entries = await journalManager.getJournalEntries();
-    expect(entries.filter((entry) => entry.type === 'unemployment_benefit')).toHaveLength(1);
-    expect(entries[0].businessKey).toMatch(/^unemployment_benefit:[^:]+:0:5$/);
-
-    const budget = (await getTreasurySnapshot());
-    expect(budget.funds).toBe(800);
-    expect(budget.expenses).toBe(200);
-    expect(budget.totalUnemploymentBenefits).toBe(200);
-  });
-});
-
 describe('Accounting — RecordLedgerEntry (citizen_tax slice)', () => {
   let testDb;
   let journalManager;
@@ -495,6 +280,7 @@ describe('Accounting — RecordLedgerEntry (citizen_tax slice)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',
@@ -552,7 +338,7 @@ describe('Accounting — RecordLedgerEntry (citizen_tax slice)', () => {
 
     const entries = await journalManager.getJournalEntries();
     expect(entries.filter((entry) => entry.type === 'citizen_tax')).toHaveLength(1);
-    expect(entries[0].businessKey).toBe('citizen_tax:0');
+    expect(entries[0].businessKey).toMatch(/^citizen_tax:.+:0$/);
 
     const budget = (await getTreasurySnapshot());
     expect(budget.funds).toBe(900);
@@ -599,16 +385,18 @@ describe('Accounting — RecordLedgerEntry (citizen_tax slice)', () => {
 
     // Force a fixed 100€/capita rate so this test's hardcoded expectation
     // (7 habitants × 100€ = 700€) stays meaningful, independent of the real
-    // default (25€, see LocalStorageFiscalSettingsRepository). `addTaxes`
+    // default (25€, see FiscalRateCatalog). `addTaxes`
     // builds a fresh accounting context per call (see accountingOps.js
-    // collectCitizenTaxes), so the rate must be forced at the localStorage
+    // collectCitizenTaxes), so the rate must be set on the hamlet's row
     // source of truth rather than injected via context deps.
-    localStorage.setItem('citizen_tax_amount', '100');
+    await testDb.hamlets.update(TEST_HAMLET_ID, { citizenTaxPerCapita: 100 });
 
     // level: 2 — level 1 (autarkic) houses are tax-exempt, see CitizenTaxCollectionPolicy.
+    // The mayor's house holds the tax collector skill (tier 1, so tax-exempt itself): without it nobody collects.
     await testDb.houses.bulkPut([
-      { name: 'House-Blue-0-0', type: 'House-Blue', pop: 3, level: 2 },
-      { name: 'House-Red-1-1', type: 'House-Red', pop: 4, level: 2 },
+      { id: 'house-mayor', name: 'House-Mayor', type: 'House-Mayor', hamletId: TEST_HAMLET_ID, pop: 1, level: 1 },
+      { id: 'house-blue-0-0', name: 'House-Blue-0-0', type: 'House-Blue', hamletId: TEST_HAMLET_ID, pop: 3, level: 2 },
+      { id: 'house-red-1-1', name: 'House-Red-1-1', type: 'House-Red', hamletId: TEST_HAMLET_ID, pop: 4, level: 2 },
     ]);
 
     try {
@@ -621,7 +409,7 @@ describe('Accounting — RecordLedgerEntry (citizen_tax slice)', () => {
       const entries = await journalManager.getJournalEntries();
       expect(entries.filter((entry) => entry.type === 'citizen_tax')).toHaveLength(1);
     } finally {
-      localStorage.removeItem('citizen_tax_amount');
+      await testDb.hamlets.update(TEST_HAMLET_ID, { citizenTaxPerCapita: 25 });
     }
   });
 });
@@ -638,6 +426,7 @@ describe('Accounting — RecordLedgerEntry (loans slice)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',
@@ -877,6 +666,7 @@ describe('Accounting — RecordLedgerEntry (commerce slice)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',
@@ -917,7 +707,7 @@ describe('Accounting — RecordLedgerEntry (commerce slice)', () => {
     const result = await accounting.recordCommerceImportExpense({
       turn: 3,
       amount: 15,
-      description: 'Import wheat |BREAKDOWN|[{"label":"Savana"}]|BREAKDOWN|',
+      description: 'Import wheat',
       productId: 'wheat',
       partnerId: 'city_savana',
     });
@@ -1036,6 +826,7 @@ describe('Accounting — RecordLedgerEntry (misc operational slice)', () => {
 
     testDb = createTestDb();
     await testDb.open();
+    await seedTestHamlet(testDb);
 
     await testDb.budget.put({
       name: 'budget_current',

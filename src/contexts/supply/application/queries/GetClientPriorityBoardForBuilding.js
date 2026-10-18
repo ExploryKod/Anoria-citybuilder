@@ -1,4 +1,9 @@
-import { listClientTypes, producedCategories, resolveInstanceClientPriorities } from '../../../../shared/building-catalog/clientQueries.js';
+import {
+  deliversDirectlyToHouses,
+  listClientTypes,
+  producedCategories,
+  resolveInstanceClientPriorities,
+} from '../../../../shared/building-catalog/clientQueries.js';
 
 /**
  * Query: for ONE producer building instance, one priority board PER GOOD it produces — a producer
@@ -30,6 +35,7 @@ export class GetClientPriorityBoardForBuilding {
    *     category: string,
    *     isCustom: boolean,
    *     hasEligibleClientTypes: boolean,
+   *     deliversDirectlyToHouses: boolean,
    *     clients: Array<{ id: string, type: string, x: number|null, y: number|null, label: string|null, disabled: boolean, wanted: number, served: number }>,
    *   }>,
    * } | null>} `null` only when the building itself no longer exists. `goods` is empty for a
@@ -83,6 +89,9 @@ export class GetClientPriorityBoardForBuilding {
         // here for a structural reason — nobody, ever, not just "none placed nearby yet" — so the
         // view must tell the two apart instead of showing the same "no client" message either way.
         hasEligibleClientTypes: clientTypes.length > 0 || externalClients.length > 0,
+        // A third, different structural reason for zero clients: this good never touches a hub at
+        // all (see buildingCatalog.js's `deliversTo`), so "it still goes to a warehouse" would be wrong.
+        deliversDirectlyToHouses: deliversDirectlyToHouses(producer.type, category),
         clients: order
           .filter((id) => byId.has(id))
           .map((id) => {

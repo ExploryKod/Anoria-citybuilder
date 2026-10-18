@@ -7,9 +7,13 @@
  */
 
 import { inferBusinessKeyFromRow } from '../../domain/policies/LedgerBusinessKeys.js';
+import { LegsFold } from '../../domain/policies/LegsFold.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 let nextSessionId = 1;
+
+/** The ids the disk gives are small whole numbers: a provisional id (a line held in memory, not yet written) starts far above them. */
+const PROVISIONAL_ID_BASE = 2 ** 40;
 
 /** @typedef {object} SessionLedgerRecord
  * @property {number} sessionId
@@ -21,6 +25,18 @@ export class SessionLedgerBuffer {
   /** @type {Array<SessionLedgerRecord & object>} */
   #entries = [];
   #hydrated = false;
+  /** The business keys of the lines held, so a second charge for the same key is found without reading the whole journal. */
+  #businessKeys = new Set();
+  /** The journal folded into the totals of each compte (see LegsFold), taking in the lines written since it was last read. */
+  #fold = new LegsFold();
+  /** How many of the lines held the fold has taken in: the journal only grows, so a read folds only the ones after it. */
+  #folded = 0;
+  /**
+   * The provisional id the next line held in memory is given. The real id is the disk's, given when the line is written; but a batch holds a month's lines in
+   * memory, and its readers (the treasury, the sort of the journal) order the lines by id. A provisional id is above every id the disk can give, so a line not yet
+   * written stands after all the written ones, in the order it was held; writing the line replaces it by the disk's id (`markPersisted`), which keeps that order.
+   */
+  #nextProvisionalId = PROVISIONAL_ID_BASE;
   /** @type {() => string} */
   #getHamletId;
 
@@ -31,8 +47,28 @@ export class SessionLedgerBuffer {
 
   reset() {
     this.#entries = [];
+    this.#businessKeys.clear();
+    this.#fold.clear();
+    this.#folded = 0;
+    this.#nextProvisionalId = PROVISIONAL_ID_BASE;
     this.#hydrated = false;
     nextSessionId = 1;
+  }
+
+  /**
+   * The journal folded into the totals of each compte: the one derivation of every balance. A line that cannot be folded (no legs, no stamp) throws, naming it,
+   * on this read and on every one after, until it is gone.
+   * @returns {LegsFold}
+   */
+  legsFold() {
+    for (; this.#folded < this.#entries.length; this.#folded++) this.#fold.add(this.#entries[this.#folded]);
+    return this.#fold;
+  }
+
+  /** @param {SessionLedgerRecord & object} record */
+  #hold(record) {
+    this.#entries.push(record);
+    if (record.businessKey) this.#businessKeys.add(record.businessKey);
   }
 
   isHydrated() {
@@ -47,7 +83,7 @@ export class SessionLedgerBuffer {
     this.reset();
     for (const row of idbEntries) {
       const businessKey = inferBusinessKeyFromRow(row);
-      this.#entries.push({
+      this.#hold({
         ...row,
         ...(businessKey ? { businessKey } : {}),
         sessionId: nextSessionId++,
@@ -68,7 +104,7 @@ export class SessionLedgerBuffer {
     if (!businessKey) {
       return false;
     }
-    return this.#entries.some((entry) => entry.businessKey === businessKey);
+    return this.#businessKeys.has(businessKey);
   }
 
   /**
@@ -96,11 +132,12 @@ export class SessionLedgerBuffer {
     const record = {
       ...entry,
       hamletId: entry.hamletId ?? this.#getHamletId(),
+      id: this.#nextProvisionalId++,
       sessionId: nextSessionId++,
       persisted: false,
       persist,
     };
-    this.#entries.push(record);
+    this.#hold(record);
     return record;
   }
 
@@ -124,7 +161,6 @@ export class SessionLedgerBuffer {
   getForTurn(turn) {
     return this.#entries
       .filter((entry) => entry.turn === turn)
-      .sort((a, b) => new Date(a.date) - new Date(b.date))
       .map(toPublicEntry);
   }
 
@@ -137,11 +173,11 @@ export class SessionLedgerBuffer {
    * @param {Array<{ sessionId: number, id: number }>} pairs
    */
   markPersisted(pairs) {
-    for (const { sessionId, id } of pairs) {
-      const index = this.#entries.findIndex((entry) => entry.sessionId === sessionId);
-      if (index >= 0) {
-        this.#entries[index] = { ...this.#entries[index], id, persisted: true };
-      }
+    // One pass over the lines held, whatever the number written: a month's batch is hundreds of lines.
+    const ids = new Map(pairs.map(({ sessionId, id }) => [sessionId, id]));
+    for (let index = 0; index < this.#entries.length; index += 1) {
+      const entry = this.#entries[index];
+      if (ids.has(entry.sessionId)) this.#entries[index] = { ...entry, id: ids.get(entry.sessionId), persisted: true };
     }
   }
 
@@ -182,6 +218,13 @@ export class SessionLedgerBuffer {
   /** @param {Set<number>} sessionIds */
   removeSessionIds(sessionIds) {
     this.#entries = this.#entries.filter((entry) => !sessionIds.has(entry.sessionId));
+    // Lines left the journal (a purge, a write that failed): the keys are rebuilt from what is left, and the fold is refolded at its next read.
+    this.#businessKeys.clear();
+    for (const entry of this.#entries) {
+      if (entry.businessKey) this.#businessKeys.add(entry.businessKey);
+    }
+    this.#fold.clear();
+    this.#folded = 0;
   }
 
   /**
@@ -192,7 +235,7 @@ export class SessionLedgerBuffer {
    */
   appendPersisted(entry, id) {
     const record = { ...entry, id, sessionId: nextSessionId++, persisted: true, persist: true };
-    this.#entries.push(record);
+    this.#hold(record);
     return record;
   }
 
@@ -212,8 +255,9 @@ export function toPublicEntry(entry) {
 
 /** @param {SessionLedgerRecord & object} entry */
 export function toDexieRow(entry) {
-  const { sessionId, persisted, persist, ...row } = entry;
-  return row;
+  const { sessionId, persisted, persist, id, ...row } = entry;
+  // A provisional id is not the disk's: the disk gives the real one when the line is written.
+  return id >= PROVISIONAL_ID_BASE ? row : { ...row, id };
 }
 
 export const sessionLedgerBuffer = new SessionLedgerBuffer();

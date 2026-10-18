@@ -34,6 +34,11 @@ export class TimeManager {
     return TimeCalendar.formatTime(days, this.DAYS_PER_MONTH, options);
   }
 
+  /** The date the player reads for a turn: the day and month, the year, and the season (e.g. « 12 Mars | 1 ap JC · Printemps »). */
+  static formatGameDate(turn) {
+    return `${this.formatTime(turn, { abbreviated: false })} · ${this.getTimeInfo(turn).season}`;
+  }
+
   static formatTimeShort(days) {
     return TimeCalendar.formatTimeShort(days, this.DAYS_PER_MONTH);
   }

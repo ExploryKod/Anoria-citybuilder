@@ -1,6 +1,7 @@
 import { DexieHousingBuildingRepository } from '../contexts/housing/infrastructure/dexie/DexieHousingBuildingRepository.js';
 import { GrowHousePopulation } from '../contexts/housing/application/commands/growth/GrowHousePopulation.js';
 import { GrowAllHousePopulation } from '../contexts/housing/application/commands/growth/GrowAllHousePopulation.js';
+import { RunMonthlyDepartures } from '../contexts/housing/application/commands/departure/RunMonthlyDepartures.js';
 import { EvolveHouseBuilding } from '../contexts/housing/application/commands/evolution/EvolveHouseBuilding.js';
 import { EvolveAllHouseBuildings } from '../contexts/housing/application/commands/evolution/EvolveAllHouseBuildings.js';
 import { GetCityPopulationSummary } from '../contexts/housing/application/queries/GetCityPopulationSummary.js';
@@ -30,6 +31,7 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     housingBuildingRepositoryImpl,
     growHousePopulation
   );
+  const runMonthlyDepartures = new RunMonthlyDepartures(housingBuildingRepositoryImpl);
   const evolveHouseBuilding = new EvolveHouseBuilding(housingBuildingRepositoryImpl);
   const evolveAllHouseBuildings = new EvolveAllHouseBuildings(
     housingBuildingRepositoryImpl,
@@ -54,6 +56,8 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     growHousePopulation,
     growAllHousePopulation,
     evolveHouseBuilding,
+    /** @param {(house: object) => Promise<boolean>} check whether a warehouse is within reach of the house's activity */
+    setActivityAccessCheck: (check) => evolveHouseBuilding.setActivityAccessCheck(check),
     evolveAllHouseBuildings,
     getCityPopulationSummaryQuery,
     getResidentialHouseAtTileQuery,
@@ -73,6 +77,11 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
       return growAllHousePopulation.execute({ monthIndex, applyFamineLimits });
     },
 
+    /** @param {{ monthKey: number, signals: Record<string, Map<string, number>> }} params */
+    async runMonthlyDepartures({ monthKey, signals }) {
+      return runMonthlyDepartures.execute({ monthKey, signals });
+    },
+
     async evolveHouseBuilding(houseId) {
       return evolveHouseBuilding.execute({ houseId });
     },
@@ -87,6 +96,11 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
 
     async getResidentialHouseAt({ x, y }) {
       return getResidentialHouseAtTileQuery.execute({ x, y });
+    },
+
+    /** Every residential house by each tile of its footprint (keyed "x,y"), from one read: what the scene asks tile by tile otherwise. */
+    async getResidentialHouseTileIndex() {
+      return housingBuildingRepositoryImpl.indexResidentialByTile();
     },
 
     async getFamishedPopulation() {

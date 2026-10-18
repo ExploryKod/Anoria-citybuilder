@@ -1,7 +1,10 @@
+import { SATISFACTION_RANGE } from '../../../../shared/trade-catalog/TradeCatalog.js';
+export { satisfactionOf, formatSatisfaction } from '../../../../shared/trade-catalog/satisfaction.js';
+
 /**
  * A trade relation's satisfaction is one number built from the factors its catalog entry declares
  * (`TradeCatalog.js` → `satisfaction`). Each factor is a pure function `(context, params) => points`
- * for one review. This policy sums the declared factors and clamps the result to 0..100.
+ * for one review. This policy sums the declared factors and clamps the result to SATISFACTION_RANGE (-100..100).
  *
  * Open to extension, closed to modification: a new factor is one entry in SATISFACTION_FACTORS, and
  * `reviewSatisfaction` never changes. A factor name the registry does not know throws, and so does a
@@ -18,10 +21,10 @@ export const SATISFACTION_FACTORS = Object.freeze({
 });
 
 /**
- * @param {number} current satisfaction before the review (0..100)
+ * @param {number} current satisfaction before the review (-100..100)
  * @param {ReadonlyArray<SatisfactionFactorSpec>} factorSpecs the entry's declared factors
  * @param {SatisfactionContext} context
- * @returns {number} the new satisfaction, 0..100
+ * @returns {number} the new satisfaction, -100..100
  */
 export function reviewSatisfaction(current, factorSpecs, context) {
   let points = 0;
@@ -36,5 +39,5 @@ export function reviewSatisfaction(current, factorSpecs, context) {
     }
     points += contribution;
   }
-  return Math.max(0, Math.min(100, current + points));
+  return Math.max(SATISFACTION_RANGE.min, Math.min(SATISFACTION_RANGE.max, current + points));
 }

@@ -65,7 +65,8 @@ export function setBuildingInfoGroupAccent(groupClass) {
   panel.classList.remove(
     'info-building-panel--merchants',
     'info-building-panel--artisans',
-    'info-building-panel--scholars'
+    'info-building-panel--scholars',
+    'info-building-panel--administrators'
   );
   if (groupClass) {
     panel.classList.add(`info-building-panel--${groupClass}`);
@@ -237,7 +238,17 @@ export function appendIconStatRow(container, items) {
     chip.className = 'building-info-icon-chip';
     chip.title = item.ariaLabel;
     chip.setAttribute('aria-label', item.ariaLabel);
-    chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span><span class="building-info-icon-chip__value">${item.value}</span><span class="building-info-icon-chip__label">${item.label}</span>`;
+    // A chip with a `pill` is not held yet: dimmed, with the house level that brings it in a colored pill under it.
+    const value = item.pill ? '' : `<span class="building-info-icon-chip__value">${item.value}</span>`;
+    chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span>${value}<span class="building-info-icon-chip__label">${item.label}</span>`;
+    if (item.pill) {
+      chip.classList.add('building-info-icon-chip--upcoming');
+      const pill = document.createElement('span');
+      pill.className = 'building-info-icon-chip__level-pill';
+      pill.style.setProperty('--level-color', item.pill.color);
+      pill.textContent = `niv. ${item.pill.tier}`;
+      chip.appendChild(pill);
+    }
     row.appendChild(chip);
   }
 
@@ -249,8 +260,8 @@ export function appendIconStatRow(container, items) {
  * @param {HTMLElement} container
  * @param {ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }>} skills
  */
-export function appendHouseholdSkills(container, skills) {
-  if (!skills?.length) return null;
+export function appendHouseholdSkills(container, skills, upcomingSkills = []) {
+  if (!skills?.length && !upcomingSkills.length) return null;
 
   const wrap = document.createElement('div');
   wrap.className = 'building-info-skills';
@@ -262,16 +273,156 @@ export function appendHouseholdSkills(container, skills) {
 
   appendIconStatRow(
     wrap,
-    skills.map((skill) => ({
-      emoji: skill.emoji,
-      value: skill.count,
-      label: skill.label,
-      ariaLabel: skill.ariaLabel,
-    })),
+    [
+      ...skills.map((skill) => ({
+        emoji: skill.emoji,
+        value: skill.count,
+        label: skill.label,
+        ariaLabel: skill.ariaLabel,
+      })),
+      ...upcomingSkills.map((skill) => ({
+        emoji: skill.emoji,
+        label: skill.label,
+        ariaLabel: skill.ariaLabel,
+        pill: { tier: skill.tier, color: skill.color },
+      })),
+    ],
   );
 
   container.appendChild(wrap);
   return wrap;
+}
+
+/**
+ * Where a household works: each employer category with its icon and how many of the household's people work there.
+ * `employers` is null when the city could not say (a note, never an empty row that would read as "nobody works").
+ * @param {HTMLElement} container
+ * @param {ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }> | null} employers
+ */
+export function appendHouseholdEmployers(container, employers) {
+  const wrap = document.createElement('div');
+  wrap.className = 'building-info-skills building-info-employers';
+
+  const title = document.createElement('h3');
+  title.className = 'building-info-section-label';
+  title.textContent = 'Employeurs';
+  wrap.appendChild(title);
+
+  if (employers === null) {
+    const note = document.createElement('p');
+    note.className = 'building-info-footnote';
+    note.textContent = "Les employeurs de cette maison ne sont pas disponibles.";
+    wrap.appendChild(note);
+  } else if (employers.length > 0) {
+    appendIconStatRow(
+      wrap,
+      employers.map((employer) => ({ emoji: employer.emoji, value: employer.count, label: employer.label, ariaLabel: employer.ariaLabel })),
+    );
+  } else {
+    // Nobody of the house works anywhere: the section says so rather than disappearing.
+    const note = document.createElement('p');
+    note.className = 'building-info-footnote';
+    note.textContent = "Aucun habitant n'a d'employeurs.";
+    wrap.appendChild(note);
+  }
+
+  container.appendChild(wrap);
+  return wrap;
+}
+
+/**
+ * The "Problèmes" block of a house: blocks of icon, number and word side by side. The first is the residents without a job, with under it, side by side
+ * and smaller, why (no skill, no post); then the hungry, the angry, the sick. Nothing is said when the residents could not be read for the first block.
+ * @param {HTMLElement} container
+ * @param {{
+ *   unemployed: { emoji: string, count: number, label: string, ariaLabel: string, causes: ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }> } | null,
+ *   others: ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }>,
+ * }} problems
+ */
+export function appendHouseholdProblems(container, problems) {
+  const wrap = document.createElement('div');
+  wrap.className = 'building-info-skills building-info-problems';
+
+  const title = document.createElement('h3');
+  title.className = 'building-info-section-label';
+  title.textContent = 'Problèmes';
+  wrap.appendChild(title);
+
+  const row = document.createElement('div');
+  row.className = 'building-info-problems__row';
+
+  const chipOf = (item) => {
+    const chip = document.createElement('span');
+    chip.className = 'building-info-icon-chip';
+    chip.title = item.ariaLabel;
+    chip.setAttribute('aria-label', item.ariaLabel);
+    chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span><span class="building-info-icon-chip__value">${item.count}</span><span class="building-info-icon-chip__label">${item.label}</span>`;
+    return chip;
+  };
+
+  if (problems.unemployed) {
+    const block = document.createElement('div');
+    block.className = 'building-info-problems__block';
+    block.appendChild(chipOf(problems.unemployed));
+    if (problems.unemployed.causes.length > 0) {
+      const causes = document.createElement('div');
+      causes.className = 'building-info-problems__causes';
+      for (const cause of problems.unemployed.causes) {
+        const mini = document.createElement('span');
+        mini.className = 'building-info-problems__cause';
+        mini.title = cause.ariaLabel;
+        mini.setAttribute('aria-label', cause.ariaLabel);
+        mini.innerHTML = `<span aria-hidden="true">${cause.emoji}</span><strong>${cause.count}</strong>`;
+        causes.appendChild(mini);
+      }
+      block.appendChild(causes);
+    }
+    row.appendChild(block);
+  }
+  for (const item of problems.others) {
+    const block = document.createElement('div');
+    block.className = 'building-info-problems__block';
+    block.appendChild(chipOf(item));
+    row.appendChild(block);
+  }
+
+  wrap.appendChild(row);
+  container.appendChild(wrap);
+  return wrap;
+}
+
+/**
+ * One metric card's DOM element — the card shape any icon+value fact uses (a resource's have/need, a tier
+ * requirement's current/target, an activity's material/step/product...): {icon, label, met, valueText,
+ * ariaLabel, detailText?, keywords?}. Shared by `appendMetricCards` (one even grid) and
+ * `appendMetricCardGroups` (several tight clusters in one row) so both read the exact same markup.
+ * @param {{ icon: string, label: string, met: boolean, valueText: string, ariaLabel: string, detailText?: string, keywords?: Array<{ kind: string, label: string, units: number }> }} card
+ * @param {{ onSelect?: (card: object, element: HTMLElement, scope: HTMLElement) => void, scope?: HTMLElement }} [options]
+ */
+function createMetricCardElement(card, { onSelect, scope } = {}) {
+  // A card that can be picked (to open its detail) is a button; a plain one is only a figure.
+  const el = document.createElement(onSelect ? 'button' : 'div');
+  el.className = `building-info-metric-card${card.met ? ' building-info-metric-card--met' : ''}`;
+  if (onSelect) {
+    el.type = 'button';
+    el.setAttribute('aria-pressed', 'false');
+    el.addEventListener('click', () => onSelect(card, el, scope));
+  }
+  el.title = card.ariaLabel;
+  el.setAttribute('aria-label', card.ariaLabel);
+  el.innerHTML = `<span class="building-info-metric-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-metric-card__label">${card.label}</span><span class="building-info-metric-card__value">${card.valueText}</span>${card.detailText ? `<span class="building-info-metric-card__detail">${card.detailText}</span>` : ''}`;
+  if (card.keywords?.length) {
+    const keywords = document.createElement('span');
+    keywords.className = 'building-info-metric-card__keywords';
+    for (const keyword of card.keywords) {
+      const chip = document.createElement('span');
+      chip.className = `building-info-metric-card__keyword building-info-metric-card__keyword--${keyword.kind}`;
+      chip.textContent = `${keyword.label} : ${keyword.units}`;
+      keywords.appendChild(chip);
+    }
+    el.appendChild(keywords);
+  }
+  return el;
 }
 
 /**
@@ -290,22 +441,40 @@ export function appendMetricCards(container, cards, { onSelect } = {}) {
   grid.className = 'building-info-metrics';
 
   for (const card of cards) {
-    // A card that can be picked (to open its detail) is a button; a plain one is only a figure.
-    const el = document.createElement(onSelect ? 'button' : 'div');
-    el.className = `building-info-metric-card${card.met ? ' building-info-metric-card--met' : ''}`;
-    if (onSelect) {
-      el.type = 'button';
-      el.setAttribute('aria-pressed', 'false');
-      el.addEventListener('click', () => onSelect(card, el, grid));
-    }
-    el.title = card.ariaLabel;
-    el.setAttribute('aria-label', card.ariaLabel);
-    el.innerHTML = `<span class="building-info-metric-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-metric-card__label">${card.label}</span><span class="building-info-metric-card__value">${card.valueText}</span>${card.detailText ? `<span class="building-info-metric-card__detail">${card.detailText}</span>` : ''}`;
-    grid.appendChild(el);
+    grid.appendChild(createMetricCardElement(card, { onSelect, scope: grid }));
   }
 
   container.appendChild(grid);
   return grid;
+}
+
+/**
+ * One row, several tight clusters — an activity's raw material, its steps, its finished product, what was
+ * collected: each a small group of cards close together, with normal spacing BETWEEN groups so the player
+ * reads the phases apart at a glance, unlike `appendMetricCards`' one even grid. Each entry in `groups` is
+ * itself a plain card array (1 card is still its own, single-card group); an empty or missing group is
+ * skipped, never an empty cluster.
+ * @param {HTMLElement} container
+ * @param {ReadonlyArray<ReadonlyArray<{ icon: string, label: string, met: boolean, valueText: string, ariaLabel: string }>>} groups
+ */
+export function appendMetricCardGroups(container, groups) {
+  const nonEmpty = (groups ?? []).filter((group) => group?.length);
+  if (nonEmpty.length === 0) return null;
+
+  const row = document.createElement('div');
+  row.className = 'building-info-activity-row';
+
+  for (const group of nonEmpty) {
+    const cluster = document.createElement('div');
+    cluster.className = 'building-info-activity-group';
+    for (const card of group) {
+      cluster.appendChild(createMetricCardElement(card));
+    }
+    row.appendChild(cluster);
+  }
+
+  container.appendChild(row);
+  return row;
 }
 
 /**
@@ -320,9 +489,7 @@ export function appendStockIconRow(container, stocks, footnote = null) {
 /**
  * @param {HTMLElement} container
  * @param {{
- *   subsistence?: ReadonlyArray<{ emoji: string, value: string | number, ariaLabel: string }>,
  *   farms?: ReadonlyArray<{ emoji: string, value: string | number, ariaLabel: string }>,
- *   showSubsistence?: boolean,
  * }} groups
  * @param {{ footnote?: string | null }} [options]
  */
@@ -337,11 +504,6 @@ export function appendGroupedStockSections(container, groups, options = {}) {
 
   const groupsRow = document.createElement('div');
   groupsRow.className = 'building-info-stock-groups';
-
-  const showSubsistence = groups.showSubsistence !== false && groups.subsistence?.length;
-  if (showSubsistence) {
-    groupsRow.appendChild(buildStockGroup('Chasse-cueillette', groups.subsistence));
-  }
 
   if (groups.farms?.length) {
     groupsRow.appendChild(buildStockGroup('Produits des fermes', groups.farms));
@@ -439,7 +601,7 @@ export function renderNeighborsTab(container, neighbors) {
 
 /**
  * @param {HTMLElement} container
- * @param {{ complaints: ReadonlyArray<string> }} [model]
+ * @param {{ complaints: ReadonlyArray<string | { text: string, detail: string }> }} [model]
  */
 export function renderMessagesTab(container, model) {
   const complaints = model?.complaints ?? [];
@@ -455,10 +617,16 @@ export function renderMessagesTab(container, model) {
   if (!hasComplaints) return;
 
   const list = container.querySelector('.building-info-messages-list');
-  for (const text of complaints) {
+  for (const complaint of complaints) {
     const li = document.createElement('li');
     li.className = 'building-info-messages-item';
-    li.textContent = text;
+    // A short text, its detail in a tooltip (see the departures of a house); a plain sentence has none.
+    if (typeof complaint === 'string') {
+      li.textContent = complaint;
+    } else {
+      li.textContent = complaint.text;
+      li.title = complaint.detail;
+    }
     list.appendChild(li);
   }
 }

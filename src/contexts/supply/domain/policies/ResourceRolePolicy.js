@@ -220,7 +220,7 @@ export function getConsumptionModeForRole(buildingType, role, category) {
  * Resolves which stock field aggregates this role's categories.
  *
  * Explicit in the catalog when the role spans more than one category (e.g.
- * a house consuming wheat/carrot/cabbage/fruit/game under one 'food' total)
+ * a house consuming wheat/carrot/cabbage under one 'food' total)
  * — required in that case, since nothing safe can be inferred. A role with
  * zero or exactly one category needs no `totalKey` at all: it's its own
  * total (or there's nothing to total), so a catalog author can't get this

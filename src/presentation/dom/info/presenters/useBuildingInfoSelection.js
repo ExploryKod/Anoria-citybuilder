@@ -9,7 +9,8 @@
  * (services / neighbors / messages) resolve via buildingInfoSharedTabs.
  */
 
-import { getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getResourceRoles, getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { houseEnterprises } from '../../../../shared/population/workforceQueries.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { supplyTimeContextAhead } from '../../../../composition/supplyTimeLabels.js';
 import { buildingsObjects } from '../../../../shared/building-catalog/index.js';
@@ -41,6 +42,18 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
   /** @type {Record<string, unknown>} */
   const extra = {};
 
+  // The Shelf-life tab of a stock reads what the stock has left to live.
+  if ((groupId === BUILDING_INFO_GROUPS.farm || groupId === BUILDING_INFO_GROUPS.hubStorage) && vm.uniqueId) {
+    // What the stock has left to live; the turn is the game's now unless the caller already knows it (the live bars are told it each turn).
+    extra.loadShelfLife = async (turn) =>
+      vm.supply.describeShelfLife({ buildingId: vm.uniqueId, turn: turn ?? (await vm.accounting.getTreasurySnapshot())?.turn });
+  }
+
+  // A company that cannot pay what it owes says so in its problems (the Messages tab); null for a building that is no company.
+  if (vm.uniqueId && vm.accounting.hasBuildingAccount(vm.buildingType)) {
+    extra.insolvency = await vm.accounting.getInsolvency(vm.uniqueId);
+  }
+
   if (groupId === BUILDING_INFO_GROUPS.nature && vm.uniqueId) {
     if (!vm.stocks && vm.buildingRow?.stocks == null) {
       extra.stocks = await vm.construction.getBuildingField(vm.uniqueId, 'stocks');
@@ -63,14 +76,36 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
       x: vm.anchorX,
       y: vm.anchorY,
     });
+    // The year ahead of the city's farms against its citizens' meals and its granaries' room: the Messages tab's complaints.
+    extra.foodForecast = await vm.supply.describeFoodForecast();
   }
 
   if (groupId === BUILDING_INFO_GROUPS.house) {
+    // Who works where, for the Savoirs tab's employers (the same reading as the Habitants tab).
+    try {
+      extra.residents = await vm.accounting.getHouseResidents(vm.uniqueId);
+    } catch (error) {
+      console.error('[BuildingInfo] getHouseResidents failed:', error);
+      extra.residents = null;
+    }
+    // A house that runs a property company (its category's `rental` enterprise) shows what it lets and collects (the Enterprises tab).
+    if (houseEnterprises(vm.buildingType).enterprises.some((enterprise) => enterprise.activity === 'rental')) {
+      extra.rentalBoard = await vm.accounting.getRentalBoard(vm.uniqueId);
+    }
+    // The posts left vacant by the last distribution of workers (null before any): they tell why a resident is out of work (the Savoirs tab).
+    extra.labourVacancies = vm.employment.getLabourMarket()?.rows.filter((row) => row.vacancies > 0) ?? null;
     // Needed to tell "served THIS period" from a stale flag — see
     // HouseTierRequirementPolicy.js's serviceCoverage descriptor and
     // HouseLevelPolicy.describeRelevantServiceCoverage, the Services tab's
-    // Chapel/Doctor/... chips.
+    // Doctor/Fire/... chips.
     extra.servedFlags = vm.buildingRow?.servedFlags ?? null;
+    // The needs served as ordinary quantities (water, energy, the retail goods) are covered when their own record says
+    // so: one field per need, named by its consumer role in the catalog — see HouseTierRequirementPolicy.js.
+    extra.outcomes = Object.fromEntries(
+      getResourceRoles(vm.buildingType)
+        .filter((entry) => entry.role === 'consumer' && entry.outcomeField)
+        .map((entry) => [entry.outcomeField, vm.buildingRow?.[entry.outcomeField] ?? null]),
+    );
     const budget = await vm.accounting.getTreasurySnapshot();
     extra.periodKey = budget?.turn !== undefined
       ? (TimeManager.getTimeInfo(budget.turn)?.monthIndex ?? null)
@@ -82,6 +117,8 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
       x: vm.anchorX,
       y: vm.anchorY,
     });
+    // A level needing a warehouse within reach of the house's business is met when no recipe lacks a hub.
+    extra.activityAccess = !extra.activitySupplyGaps.some((gap) => gap.status === 'no-hub');
   }
 
   if (groupId === BUILDING_INFO_GROUPS.hubStorage) {
@@ -184,10 +221,10 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
     const supplyView = uniqueId ? await supply.getBuildingSupplyView(uniqueId) : null;
     // The persisted building's own `type` (the catalog/economy id every
     // format reads via getBuildingDefinition/residentialGroupForType/etc.,
-    // e.g. "PublicBath") — NOT `selectedObject.userData.id`, which is the
+    // e.g. "Hospital") — NOT `selectedObject.userData.id`, which is the
     // 3D scene object's VISUAL/mesh id and can differ from the logical type
     // for any building borrowing a Kenney mesh under a different id (every
-    // service building — Doctor, PublicBath, School, ... — see
+    // service building — Doctor, Hospital, School, ... — see
     // buildingAssets.js's building-id/mesh-id bridge). Falls back to the
     // scene object's id only when there's no tracked building row at all
     // (decorative/nature objects with no economic identity).
@@ -224,6 +261,13 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
       accounting,
       construction,
     });
+
+    // What the labour market pays one worker of this building a month (null for a building that pays no wage): its Personnel tab says it.
+    vm = {
+      ...vm,
+      wagePerWorker: buildingRow ? await accounting.getWagePerWorkerOf(buildingType) : null,
+      employerContributionRate: (await accounting.getSalarySettings()).employerContributionRate,
+    };
 
     const groupId = resolveBuildingInfoGroup({ buildingRow, supplyView });
     vm = await enrichBuildingInfoViewModel(groupId, vm);

@@ -39,6 +39,7 @@ import {
   formatHubStorageRenderParams,
   formatHubStorageLayoutHeader,
   formatHubStorageLayoutOptions,
+  formatShelfLifeTabModel,
 } from './formats/hubStorageInfoFormat.js';
 import {
   formatMarketOverviewModel,
@@ -61,8 +62,23 @@ import {
 import { renderHouseSkillsView, renderHouseResourcesView, renderHouseActivityView } from '../views/houseInfoView.js';
 import { renderHubStorageFoyerView } from '../views/hub/hubStorageFoyerView.js';
 import { renderKvPanelView } from '../views/kvPanelView.js';
+import { renderShelfLifeTab } from '../views/shelfLifeTabView.js';
+import { renderBuildingFinanceTab } from '../views/buildingFinanceInfoView.js';
+import { renderHouseResidentsTab } from '../views/houseResidentsInfoView.js';
 
 /** @typedef {import('../buildingInfoTypes.js').BuildingInfoGroupDefinition} BuildingInfoGroupDefinition */
+
+/**
+ * The Finances tab: a house always has one (its wages); a company only when it holds an account, that is when it is a
+ * producer, a hub or a seller of goods. Other buildings do not get the tab at all.
+ * @type {import('../buildingInfoTypes.js').BuildingInfoTabSpec}
+ */
+const FINANCE_TAB_SPEC = Object.freeze({
+  id: BUILDING_INFO_TAB_IDS.finance,
+  isVisible: (vm) => vm.uniqueId != null && vm.accounting.hasBuildingAccount(vm.buildingType),
+  format: (vm) => (vm.uniqueId ? { accounting: vm.accounting, buildingId: vm.uniqueId, buildingType: vm.buildingType } : null),
+  render: (container, model) => renderBuildingFinanceTab(container, model),
+});
 
 /** @type {Readonly<Record<string, BuildingInfoGroupDefinition>>} */
 export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
@@ -87,7 +103,13 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         format: formatHouseActivityModel,
         render: (container, model) => renderHouseActivityView(container, model),
       },
+      {
+        id: BUILDING_INFO_TAB_IDS.residents,
+        format: (vm) => (vm.uniqueId ? { accounting: vm.accounting, buildingId: vm.uniqueId } : null),
+        render: (container, model) => renderHouseResidentsTab(container, model),
+      },
       ...COMMON_BUILDING_INFO_TAB_SPECS,
+      FINANCE_TAB_SPEC,
     ],
   },
   [BUILDING_INFO_GROUPS.nature]: {
@@ -114,11 +136,17 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         render: (container, model) => renderHubStorageFoyerView(container, model),
       },
       {
+        id: BUILDING_INFO_TAB_IDS.shelfLife,
+        format: formatShelfLifeTabModel,
+        render: (container, model) => renderShelfLifeTab(container, model),
+      },
+      {
         id: BUILDING_INFO_TAB_IDS.staff,
         format: formatHubStorageStaffModel,
         render: (container, model) => renderKvPanelView(container, model),
       },
       ...COMMON_BUILDING_INFO_TAB_SPECS,
+      FINANCE_TAB_SPEC,
     ],
   },
   [BUILDING_INFO_GROUPS.farm]: {
@@ -137,6 +165,11 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         render: (container, model) => renderKvPanelView(container, model),
       },
       {
+        id: BUILDING_INFO_TAB_IDS.shelfLife,
+        format: formatShelfLifeTabModel,
+        render: (container, model) => renderShelfLifeTab(container, model),
+      },
+      {
         id: BUILDING_INFO_TAB_IDS.trade,
         format: formatFarmTradeModel,
         render: (container, model) => renderKvPanelView(container, model),
@@ -147,6 +180,7 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         render: (container, model) => renderKvPanelView(container, model),
       },
       ...COMMON_BUILDING_INFO_TAB_SPECS,
+      FINANCE_TAB_SPEC,
     ],
   },
   [BUILDING_INFO_GROUPS.market]: {
@@ -170,6 +204,7 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         render: (container, model) => renderKvPanelView(container, model),
       },
       ...COMMON_BUILDING_INFO_TAB_SPECS,
+      FINANCE_TAB_SPEC,
     ],
   },
   [BUILDING_INFO_GROUPS.service]: {
@@ -188,6 +223,7 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         render: (container, model) => renderKvPanelView(container, model),
       },
       ...COMMON_BUILDING_INFO_TAB_SPECS,
+      FINANCE_TAB_SPEC,
     ],
   },
   [BUILDING_INFO_GROUPS.generic]: {
@@ -200,6 +236,7 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         render: (container, model) => renderKvPanelView(container, model),
       },
       ...COMMON_BUILDING_INFO_TAB_SPECS,
+      FINANCE_TAB_SPEC,
     ],
   },
 });

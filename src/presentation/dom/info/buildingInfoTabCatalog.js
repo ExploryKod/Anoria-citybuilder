@@ -8,6 +8,7 @@
 export const BUILDING_INFO_TAB_IDS = Object.freeze({
   foyer: 'foyer',
   stocks: 'stocks',
+  shelfLife: 'shelfLife',
   activity: 'activity',
   trade: 'trade',
   staff: 'staff',
@@ -15,25 +16,31 @@ export const BUILDING_INFO_TAB_IDS = Object.freeze({
   clients: 'clients',
   neighbors: 'neighbors',
   messages: 'messages',
+  finance: 'finance',
+  residents: 'residents',
 });
 
 /** Default labels — groups may override per tab. */
 export const BUILDING_INFO_TAB_LABELS = Object.freeze({
   [BUILDING_INFO_TAB_IDS.foyer]: '🏠 Bâtiment',
   [BUILDING_INFO_TAB_IDS.stocks]: '📦 Stocks',
-  [BUILDING_INFO_TAB_IDS.activity]: '🛠️ Activité',
+  [BUILDING_INFO_TAB_IDS.shelfLife]: '⏳ Durée de vie',
+  [BUILDING_INFO_TAB_IDS.activity]: '🛠️ Entreprises',
   [BUILDING_INFO_TAB_IDS.trade]: '💰 Ventes',
   [BUILDING_INFO_TAB_IDS.staff]: '👷 Personnel',
   [BUILDING_INFO_TAB_IDS.services]: '🔧 Services',
   [BUILDING_INFO_TAB_IDS.clients]: '🤝 Clients',
   [BUILDING_INFO_TAB_IDS.neighbors]: '🏘️ Voisins',
   [BUILDING_INFO_TAB_IDS.messages]: '💬 Messages',
+  [BUILDING_INFO_TAB_IDS.finance]: '💰 Finances',
+  [BUILDING_INFO_TAB_IDS.residents]: '👥 Habitants',
 });
 
 /** All known tab ids (stable order for DOM sync). */
 export const BUILDING_INFO_TAB_ORDER = Object.freeze([
   BUILDING_INFO_TAB_IDS.foyer,
   BUILDING_INFO_TAB_IDS.stocks,
+  BUILDING_INFO_TAB_IDS.shelfLife,
   BUILDING_INFO_TAB_IDS.activity,
   BUILDING_INFO_TAB_IDS.trade,
   BUILDING_INFO_TAB_IDS.staff,
@@ -41,6 +48,8 @@ export const BUILDING_INFO_TAB_ORDER = Object.freeze([
   BUILDING_INFO_TAB_IDS.clients,
   BUILDING_INFO_TAB_IDS.neighbors,
   BUILDING_INFO_TAB_IDS.messages,
+  BUILDING_INFO_TAB_IDS.finance,
+  BUILDING_INFO_TAB_IDS.residents,
 ]);
 
 /**

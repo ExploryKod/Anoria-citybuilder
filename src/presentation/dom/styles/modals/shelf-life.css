@@ -1,0 +1,109 @@
+/* Shelf-life tab of a stock (farm, granary, warehouse): the bars of what the stock has left to live, and the reference table of how long each good keeps. */
+
+.shelf-life-section {
+  padding: 4px 0;
+}
+
+.shelf-life-section + .shelf-life-section {
+  margin-top: 18px;
+}
+
+.shelf-life-section__title {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+/* The whole life of a good is the pale green track; the part its oldest batch has used is the red fill. */
+.shelf-life-bar {
+  height: 8px;
+  background: #cfe8d3;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.shelf-life-bar__fill {
+  height: 100%;
+  border-radius: 4px;
+  background: #cf3d2e;
+  transition: width 0.3s ease;
+}
+
+.shelf-life-live {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* A good is one group: its two bars sit close, and the groups sit apart. */
+.shelf-life-live__row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* What the good lost to spoilage over its delivery cycle: the same track, an orange fill. */
+.shelf-life-bar--spoilage .shelf-life-bar__fill {
+  background: #e08a1e;
+}
+
+.shelf-life-live__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+  font-size: 0.85rem;
+}
+
+.shelf-life-live__name {
+  font-weight: 600;
+}
+
+.shelf-life-live__remaining {
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: #555;
+  text-align: right;
+}
+
+.shelf-life-pill {
+  padding: 3px 12px;
+  border: 1px solid #cfd8dc;
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.shelf-life-pill[aria-expanded="true"] {
+  background: #424242;
+  border-color: #424242;
+  color: #fff;
+}
+
+.shelf-life-reference {
+  margin-top: 10px;
+}
+
+.shelf-life-reference[hidden] {
+  display: none;
+}
+
+.shelf-life-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.shelf-life-table th,
+.shelf-life-table td {
+  text-align: left;
+  padding: 5px 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.shelf-life-note {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: #555;
+}

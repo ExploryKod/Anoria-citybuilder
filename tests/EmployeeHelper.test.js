@@ -36,13 +36,13 @@ describe('getBuildingSector', () => {
 
     describe('Secteur 2 : Commerces (Marchés)', () => {
         test('Market-Stall appartient au secteur 2', () => {
-            expect(getBuildingSector('Market-Stall')).toBe(2);
+            expect(getBuildingSector('Market-Stall-Red')).toBe(2);
         });
     });
 
     describe('Secteur 4 : Stockage', () => {
-        test('Windmill-001 appartient au secteur 4 (stockage, pas production)', () => {
-            expect(getBuildingSector('Windmill-001')).toBe(4);
+        test('Windmill-001 appartient au secteur 2 (commerce : les commerçants le tiennent)', () => {
+            expect(getBuildingSector('Windmill-001')).toBe(2);
         });
     });
 
@@ -107,7 +107,7 @@ describe('getDefaultEmployees', () => {
 
     describe('Marchés - Besoins en travailleurs', () => {
         test('Market-Stall nécessite 2 travailleurs', () => {
-            const employees = getDefaultEmployees('Market-Stall');
+            const employees = getDefaultEmployees('Market-Stall-Red');
             
             expect(employees.worker_need).toBe(2);
             expect(employees.sector).toBe(2);
@@ -119,7 +119,7 @@ describe('getDefaultEmployees', () => {
             const employees = getDefaultEmployees('Windmill-001');
             
             expect(employees.worker_need).toBe(4);
-            expect(employees.sector).toBe(4);
+            expect(employees.sector).toBe(2);
         });
     });
 

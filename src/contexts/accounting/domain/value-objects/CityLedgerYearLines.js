@@ -6,7 +6,13 @@
  * @property {number} initialFunds
  * @property {number} incomeTax
  * @property {number} payrollTax
+ * @property {number} vat
+ * @property {number} corporateTaxRevenue
+ * @property {number} companySubsidy
+ * @property {number} housingSubsidy
  * @property {number} exports
+ * @property {number} customsImport
+ * @property {number} socialContributions
  * @property {number} loanCapital
  * @property {number} carryForwardIncome
  * @property {number} totalIncome
@@ -14,6 +20,7 @@
  * @property {number} maintenance
  * @property {number} salary
  * @property {number} unemploymentBenefit
+ * @property {number} serviceSubsidy
  * @property {number} repairs
  * @property {number} commercialRoutes
  * @property {number} contributions
@@ -35,7 +42,10 @@ export function createEmptyCityLedgerYearLines(year = 0) {
     initialFunds: 0,
     incomeTax: 0,
     payrollTax: 0,
+    vat: 0,
     exports: 0,
+    customsImport: 0,
+    socialContributions: 0,
     loanCapital: 0,
     carryForwardIncome: 0,
     totalIncome: 0,
@@ -43,6 +53,10 @@ export function createEmptyCityLedgerYearLines(year = 0) {
     maintenance: 0,
     salary: 0,
     unemploymentBenefit: 0,
+    serviceSubsidy: 0,
+    corporateTaxRevenue: 0,
+    companySubsidy: 0,
+    housingSubsidy: 0,
     repairs: 0,
     commercialRoutes: 0,
     contributions: 0,

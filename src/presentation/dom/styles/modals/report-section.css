@@ -37,7 +37,6 @@
 .report-period-info {
     margin: 15px 0;
     padding: 10px 12px;
-    background: rgba(23, 162, 184, 0.1);
     border-radius: var(--border-radius-small);
     font-size: 13px;
     color: var(--primary);
@@ -59,6 +58,7 @@
     background: white;
     border-radius: var(--border-radius-small);
     transition: background-color 0.2s ease;
+    box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
 }
 
 .report-item:hover {
@@ -172,6 +172,7 @@
 
     .report-item {
         padding: 10px;
+        box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
     }
 
     .report-item-label,

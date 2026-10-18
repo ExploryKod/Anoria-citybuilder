@@ -57,6 +57,9 @@ class InMemoryRepository {
 const ids = (...names) => Object.fromEntries(names.map((name) => [name, createBuildingInstanceId()]));
 const month = (monthIndex) => ({ monthIndex, year: 1, dayInMonth: 1, month: 'x', season: 'spring', turn: monthIndex });
 
+/** What each recipe drew from a hub and so bought (see ProduceResource's recordInputPurchase). */
+const purchases = [];
+
 describe('Supply — a house running its own business', () => {
   test('the decorating business waits when the warehouse holds no pots, and resumes once one arrives', async () => {
     const id = ids('house', 'wh');
@@ -64,7 +67,7 @@ describe('Supply — a house running its own business', () => {
       { id: id.house, type: 'House-Red', x: 0, y: 0, pop: 4, stocks: {} },
       { id: id.wh, type: 'Warehouse', x: 3, y: 0, stocks: {} },
     ]);
-    const produce = new ProduceResource(repo, { hubServing: new HubServing(repo) });
+    const produce = new ProduceResource(repo, { hubServing: new HubServing(repo), recordInputPurchase: async (purchase) => { purchases.push(purchase); } });
 
     await produce.execute({ buildingId: id.house, period: month(0) });
     expect((await repo.findById(id.house)).activityShortfall?.decoratedPot).toBe(true);
@@ -84,7 +87,7 @@ describe('Supply — a house running its own business', () => {
       { id: id.mill, type: 'Windmill-001', x: 3, y: 0, stocks: { wheat: 20, carrot: 20, food: 40 } },
       { id: id.wh, type: 'Warehouse', x: 6, y: 0, stocks: {} },
     ]);
-    const produce = new ProduceResource(repo, { hubServing: new HubServing(repo) });
+    const produce = new ProduceResource(repo, { hubServing: new HubServing(repo), recordInputPurchase: async (purchase) => { purchases.push(purchase); } });
 
     await produce.execute({ buildingId: id.house, period: month(0) });
     expect((await repo.findById(id.mill)).stocks.wheat).toBe(20); // nothing taken: the oil was missing
@@ -101,7 +104,7 @@ describe('Supply — a house running its own business', () => {
   test('households eat and light their homes first: the artisan business only ranks after the markets', () => {
     for (const producerType of ['Farm-Wheat', 'Farm-Carrot', 'Factory-Pot', 'Factory-Oil']) {
       const { order } = resolveClientPriorities(producerType);
-      expect(order.indexOf('House-Red')).toBeGreaterThan(order.indexOf('Market-Stall'));
+      expect(order.indexOf('House-Red')).toBeGreaterThan(order.indexOf('Market-Stall-Red'));
     }
   });
 

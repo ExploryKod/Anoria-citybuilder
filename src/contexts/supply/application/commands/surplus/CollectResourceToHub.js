@@ -18,6 +18,7 @@ import {
 import { isWithinRange } from '../../../domain/policies/ResourceRangePolicy.js';
 import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { getHubProductRemainingInbound, normalizeHubStorageOrders } from '../../../domain/policies/HubStorageOrdersPolicy.js';
+import { movedAgeBooks } from '../../../domain/policies/StockAgingPolicy.js';
 
 /**
  * Command: a hub building collects resource units from a list of source
@@ -86,6 +87,8 @@ export class CollectResourceToHub {
     const running = { ...hub.stocks };
 
     const transfers = [];
+    // Each unit keeps its age on the way (see StockAgingPolicy.js): what was taken, from whom, out of how much.
+    const ageMoves = [];
 
     for (const ref of sourceRefs) {
       if (capacity <= 0) break;
@@ -140,6 +143,7 @@ export class CollectResourceToHub {
         sourceStocks = takeCategoryAmount(sourceStocks, category, amount, categories, totalKey);
         capacity -= amount;
         transfers.push({ sourceId, category, amount });
+        ageMoves.push({ source, category, amount, sourceStock: available });
         tookAny = true;
       }
       if (tookAny) {
@@ -163,6 +167,7 @@ export class CollectResourceToHub {
       totalKey,
     );
     await this.supplyBuildingRepository.saveStocks(hubId, finalStock);
+    await this.#carryAges({ hub, ageMoves, turn: period?.turn });
 
     // What came in is filed under the producer instance that delivered it, so the hub can serve its
     // clients in the order that instance's own priority setting asks for.
@@ -182,5 +187,32 @@ export class CollectResourceToHub {
 
     const totalUnits = transfers.reduce((sum, transfer) => sum + transfer.amount, 0);
     return { collected: true, transfers, totalUnits };
+  }
+
+  /**
+   * The age of what the hub took goes with it: the oldest units of each source go first, and the hub's batches take them in.
+   * @param {{ hub: object, ageMoves: Array<{ source: object, category: string, amount: number, sourceStock: number }>, turn: number }} params
+   */
+  async #carryAges({ hub, ageMoves, turn }) {
+    let hubBook = hub.stockAges;
+    const hubStock = { ...hub.stocks };
+    const sourceBooks = new Map();
+    for (const move of ageMoves) {
+      const moved = movedAgeBooks({
+        category: move.category,
+        amount: move.amount,
+        turn,
+        from: { book: sourceBooks.get(move.source.id) ?? move.source.stockAges, stock: move.sourceStock },
+        to: { book: hubBook, stock: hubStock[move.category] ?? 0 },
+      });
+      sourceBooks.set(move.source.id, moved.from);
+      hubBook = moved.to;
+      hubStock[move.category] = (hubStock[move.category] ?? 0) + move.amount;
+    }
+    for (const [sourceId, book] of sourceBooks) {
+      const original = ageMoves.find((move) => move.source.id === sourceId).source.stockAges;
+      if (book !== original) await this.supplyBuildingRepository.updateBuildingFields(sourceId, { stockAges: book });
+    }
+    if (hubBook !== hub.stockAges) await this.supplyBuildingRepository.updateBuildingFields(hub.id, { stockAges: hubBook });
   }
 }

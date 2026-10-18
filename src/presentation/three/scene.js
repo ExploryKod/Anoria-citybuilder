@@ -11,7 +11,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
 import {applyHoverColor, resetHoveredObject, resetObjectColor} from './meshs/meshUtils.js';
 import { resolveIconAppearance, STATUS_ICON_DEFAULTS } from './meshs/statusIconAnchors.js';
-import {  textures  } from './meshs/data.js'
+import { textures, whenTexturesLoaded } from './meshs/data.js'
 import {
     bulldozeSelected,
     delayBox,
@@ -25,7 +25,6 @@ import {
 import { houses } from './assets/buildingCategories.js';
 import { applyRoleStatusSprites, isQuantityDistributor } from './meshs/roleStatusSprites.js';
 import { setupRoadAccessIcons } from '../../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
-import { TimeManager } from '../../shared/time/TimeManager.js';
 import { LightingManager } from './managers/LightingManager.js';
 import { BackdropManager } from './managers/BackdropManager.js';
 import { ResourceManager } from './managers/ResourceManager.js';
@@ -395,10 +394,16 @@ export function createScene(_gameStore, assetManager, deps) {
     let buildings = [];
     /** @type {Map<string, import('three').Object3D>} */
     const editorStackMeshes = new Map();
-    let loadingPromises = [];
     let currentCitySize = 16; // Store current city size for citizen pathfinding
     let currentCity = null; // Store current city object for citizen updates
     let lastSceneUpdateTime = 0;
+    /**
+     * What an update already wrote for each building, so it does not write it again: the day stamped on its row (`worldTime`) and whether its
+     * employees schema was checked. Without it every tile of every building cost several database operations at every update (placements update
+     * the scene twice), which is what made a placement take seconds.
+     */
+    const stampedWorldTime = new Map();
+    const employeesSchemaChecked = new Set();
     
     // Note: per-turn budget orchestration lives in ProcessTurnBudget (accounting BC) via scene.update
     // Note: Citizen-related variables and CitizenData class moved to CitizenManager
@@ -461,7 +466,6 @@ export function createScene(_gameStore, assetManager, deps) {
         if (isEditorMode()) {
             resetEditorNatureLayout();
         }
-        loadingPromises = [];
         
         // Store city object and size for citizen pathfinding and World platform scaling
         currentCity = city;
@@ -611,10 +615,7 @@ export function createScene(_gameStore, assetManager, deps) {
             setTimeout(() => gameUI.resetInitialHud?.(), 0);
         }
         
-        // Wait for any remaining promises to complete
-        if (loadingPromises.length > 0) {
-            await Promise.all(loadingPromises);
-        }
+        await whenTexturesLoaded();
 
         await syncEditorStackFromLayout();
         
@@ -696,6 +697,16 @@ export function createScene(_gameStore, assetManager, deps) {
         lastSceneUpdateTime = time;
 
         /**
+         * The residential house on a tile, from ONE read of the houses of the hamlet per update: asking the database tile by tile read the
+         * whole table for every tile of every house, which is what made each update (and so each placement) take seconds.
+         */
+        let residentialTileIndex = null;
+        async function residentialHouseAt(x, y) {
+            residentialTileIndex ??= await housing.getResidentialHouseTileIndex();
+            return residentialTileIndex.get(`${x},${y}`) ?? null;
+        }
+
+        /**
          * Housing ECS may rename persisted id/type (Blue→Red, etc.) while the mesh
          * still carries the old userData. Resolve by tile before existence checks.
          */
@@ -707,7 +718,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 return { buildingId: meshBuildingId, instanceId: null, synced: false };
             }
 
-            const tileHouse = await housing.getResidentialHouseAt({ x, y });
+            const tileHouse = await residentialHouseAt(x, y);
             if (!tileHouse || !buildings[x]?.[y]) {
                 return {
                     buildingId: meshBuildingId,
@@ -1096,7 +1107,7 @@ export function createScene(_gameStore, assetManager, deps) {
                         tileBuildingId &&
                         houses.includes(currentBuildingId)
                     ) {
-                        const tileHouse = await housing.getResidentialHouseAt({ x, y });
+                        const tileHouse = await residentialHouseAt(x, y);
                         if (tileHouse) {
                             currentInstanceId = tileHouse.id;
                             currentBuildingId = tileHouse.type;
@@ -1128,17 +1139,30 @@ export function createScene(_gameStore, assetManager, deps) {
                 }
                 
                 // Update building data in database
+                // Once per building and day, and its employees schema once per session (a building spans several tiles, and the scene is
+                // updated more than once a day).
                 if (!isRoad) {
-                    await updateBuildingFields(currentInstanceId, { worldTime: time });
-                    await ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId);
+                    if (stampedWorldTime.get(currentInstanceId) !== time) {
+                        await updateBuildingFields(currentInstanceId, { worldTime: time });
+                        stampedWorldTime.set(currentInstanceId, time);
+                    }
+                    if (!employeesSchemaChecked.has(currentInstanceId)) {
+                        await ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId);
+                        employeesSchemaChecked.add(currentInstanceId);
+                    }
                 } else {
                     try {
-                        await updateBuildingFields(currentInstanceId, { worldTime: time });
-                        if (buildings[x][y]?.userData) {
-                            await updateBuildingFields(currentInstanceId, {});
+                        if (stampedWorldTime.get(currentInstanceId) !== time) {
+                            await updateBuildingFields(currentInstanceId, { worldTime: time });
+                            if (buildings[x][y]?.userData) {
+                                await updateBuildingFields(currentInstanceId, {});
+                            }
+                            stampedWorldTime.set(currentInstanceId, time);
                         }
-
-                        await ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId);
+                        if (!employeesSchemaChecked.has(currentInstanceId)) {
+                            await ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId);
+                            employeesSchemaChecked.add(currentInstanceId);
+                        }
                     } catch (_err) {
                         // Route peut ne pas exister encore dans la DB, c'est normal lors de la création
                     }
@@ -1265,51 +1289,12 @@ export function createScene(_gameStore, assetManager, deps) {
                     // Read stocks from Supply BC
                     const houseSupply = await supply.getBuildingSupplyView(currentInstanceId);
                     const houseFoodStocks = houseSupply?.stocks || null;
-                    let houseNeighbors = await getBuildingField(currentInstanceId, 'neighbors');
-                    const currentPop = await getBuildingField(currentInstanceId, 'pop');
-                    const worldTime = await getBuildingField(currentInstanceId, 'worldTime');
-                    
+
                     // Sync Supply stocks to userData for visual display
                     if (houseFoodStocks && buildings[x][y] && buildings[x][y].userData) {
                         buildings[x][y].userData.stocks = { ...createEmptyStocks(), ...houseFoodStocks };
                     }
-                    
-                    const houseData = await getBuildingById(currentInstanceId);
-                    const foodAffluence = housing.evaluateHouseFoodAffluence({
-                        stocks: houseFoodStocks || {},
-                        population: currentPop,
-                    });
-                    const { hasFood, isInsufficient } = foodAffluence;
-                    // Road icon refreshed after neighbor pass (see refresh loop below)
-                    // Use unified time system for decay check (worldTime is source of truth)
-                    const buildingAge = TimeManager.getBuildingAge(time, worldTime);
-                    const decay = buildingAge > 3 && isInsufficient;
-
-                    // Set food status sprite based on module result
-                    // Show "no-food" icon when !hasFood (sprite shown when condition is true)
-                    // hasFood is computed above from IndexedDB stocks (source of truth)
-                    if(buildings[x][y]) {
-                        const showNoFoodIcon = !hasFood; // Show icon when NO food
-                        const houseNoFoodIcon = resolveIconAppearance(
-                            buildings[x][y], 'no-food', statutsIconsMeta.food.position, statutsIconsMeta.food.scale
-                        );
-                        assetManager.setStatusSprite(
-                            buildings[x][y],
-                            textures['nofood'],
-                            'no-food',
-                            houseNoFoodIcon.scale,
-                            houseNoFoodIcon.position,
-                            productionSpriteVisible(showNoFoodIcon)
-                        );
-                    }
-                    
-                  
-                    // DISABLED: Don't change building material color on decay
-                    // This was causing unwanted color changes when opening info panel
-                    // if(decay) {
-                    //     assetManager.changeMeshColor(buildings[x][y],  0X404040)
-                    // }
-
+                    // A house's hunger is no longer drawn on its mesh: the player reads it (disette / pénurie) in its panel and messages.
 
                 }
 
@@ -2350,8 +2335,8 @@ function onTouchEnd(event) {
         if (objectToSelect) {
             updateSelectedObject.call(this, objectToSelect);
             event.preventDefault();
-            // Touch has no mouseup paint trail — close Cesar road-paint session after each gesture.
-            if (placementDrag && typeof this.onRoadPaintEnd === 'function') {
+            // Touch has no mouseup paint trail — close the paint session (road, house or demolition) after each gesture.
+            if (typeof this.onRoadPaintEnd === 'function') {
                 Promise.resolve(this.onRoadPaintEnd()).catch((error) => {
                     console.error('[scene.js] onRoadPaintEnd (touch) failed:', error);
                 });

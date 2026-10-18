@@ -19,6 +19,12 @@ let deps = null;
 let journalFocusSession = null;
 
 /**
+ * The tab of the journal: 'city' is the city's books (the Hameau), 'private' the flows of the buildings' accounts.
+ * @type {'city' | 'private'}
+ */
+let accountScope = 'city';
+
+/**
  * @param {{
  *   accounting: object,
  *   popupManager?: object | null,
@@ -79,6 +85,21 @@ export function initJournalPopup(panelDeps) {
     loadJournalEntries(activeFilterBtn ? activeFilterBtn.dataset.period : 'all', typeFilter);
   });
 
+  document.querySelectorAll('.journal-scope-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      accountScope = tab.dataset.scope === 'private' ? 'private' : 'city';
+      document.querySelectorAll('.journal-scope-tab').forEach((other) => {
+        const active = other === tab;
+        other.classList.toggle('active', active);
+        other.setAttribute('aria-selected', String(active));
+      });
+      const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
+      const activePill = document.querySelector('.journal-filter-pill.active');
+      const typeFilter = activePill ? JSON.parse(activePill.dataset.types || '[]') : null;
+      loadJournalEntries(activeFilterBtn ? activeFilterBtn.dataset.period : 'all', typeFilter);
+    });
+  });
+
   journalRefreshBtn.addEventListener('click', () => {
     const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
     const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
@@ -119,7 +140,14 @@ export function initJournalPopup(panelDeps) {
 
   if (exportJsonBtn) {
     exportJsonBtn.addEventListener('click', async () => {
-      await exportJournalToJSON();
+      await exportJournalToJSON('city');
+    });
+  }
+
+  const exportPrivateJsonBtn = document.getElementById('journal-export-private-json-btn');
+  if (exportPrivateJsonBtn) {
+    exportPrivateJsonBtn.addEventListener('click', async () => {
+      await exportJournalToJSON('private');
     });
   }
 
@@ -183,6 +211,7 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
       periodDays: parsePeriodDays(period),
       types: typeFilter,
       hamletId,
+      accountScope,
     });
     const hamletNames = new Map((await listHamlets()).map((hamlet) => [hamlet.id, hamlet.name]));
     const scopeLabel = hamletId === null ? 'Tous les hameaux' : hamletNames.get(hamletId);
@@ -217,15 +246,20 @@ function exportStamp() {
   return `${now.toISOString().split('T')[0]}-${now.toTimeString().slice(0, 8).replace(/:/g, '')}`;
 }
 
-export async function exportJournalToJSON() {
+/**
+ * Downloads the journal as JSON: the hamlet's own account ('city'), or the flux of the companies' and the houses' accounts
+ * ('private'), each in its own file so they can be read apart.
+ * @param {'city' | 'private'} [accountScope]
+ */
+export async function exportJournalToJSON(accountScope = 'city') {
   if (!deps?.accounting) return;
   try {
-    const jsonString = await deps.accounting.exportJournalJson();
+    const jsonString = await deps.accounting.exportJournalJson({ accountScope });
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `journal-${exportStamp()}.json`;
+    a.download = `${accountScope === 'private' ? 'flux-prives' : 'journal'}-${exportStamp()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

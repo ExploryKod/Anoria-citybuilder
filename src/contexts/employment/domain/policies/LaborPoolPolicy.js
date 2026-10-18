@@ -9,6 +9,8 @@
  * it doesn't gate who's employable.
  */
 
+import { residentsSeekingWork } from '../../../../shared/population/workforceQueries.js';
+
 /** Max citizen slots per house. */
 export const HOUSE_CITIZEN_CAP = 6;
 
@@ -38,7 +40,7 @@ function clampPop(pop) {
  * tier grant the job's required skill, at the required level? — see
  * GroupSkillPolicy.js / socialCategoryCatalog.js), never gated here by
  * house level: a level-1 (hunter-gatherer) house's citizens do hold a
- * skill — `spiritual` — so they must be countable as headcount just like
+ * skill — so they must be countable as headcount just like
  * any other house; DistributeCityWorkers only ever calls this for houses
  * that already passed its own per-skill filter, so no separate blanket
  * "is this level employable at all" flag is needed (or read) here.
@@ -61,5 +63,6 @@ export function citizenPopFromHouse(_type, pop) {
  * @returns {number}
  */
 export function workerPopFromHouse(type, pop) {
-  return citizenPopFromHouse(type, pop);
+  // The administrators do not look for a job (catalog `seeksWork`): they are no part of the pool.
+  return residentsSeekingWork(type, citizenPopFromHouse(type, pop));
 }

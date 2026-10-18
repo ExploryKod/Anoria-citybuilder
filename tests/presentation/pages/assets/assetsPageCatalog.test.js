@@ -71,9 +71,10 @@ describe('buildAssetsPageCatalog', () => {
     const items = buildAssetsPageSections().flatMap((section) => section.items);
     const byId = (id) => items.find((item) => item.id === id);
 
-    // Reassigned to Kenney city kits
-    expect(byId('Windmill-001')?.source).toBe('kenney-city');
-    expect(byId('Windmill-001')?.usesKenneyId).toMatch(/^Kenney-/);
+    // A building worn on a Kenney city kit model has no card of its own: the model's card says who wears it
+    expect(byId('Windmill-001')).toBeUndefined();
+    const windmillModel = items.find((item) => item.usedBy?.some(({ name }) => name === 'Grenier'));
+    expect(windmillModel?.source).toBe('kenney-city');
     // The wheat field is assembled from a ground GLB + one wheat GLB per growth stage
     expect(byId('Farm-Wheat')?.source).toBe('kenney-farm');
     expect(byId('Farm-Wheat')?.cropGlbFile).toBe('crops_wheatStageA.glb, crops_wheatStageB.glb');

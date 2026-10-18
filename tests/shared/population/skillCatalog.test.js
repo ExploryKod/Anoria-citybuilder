@@ -3,7 +3,7 @@ import { SKILL_CATALOG, getSkillDisplay } from '../../../src/shared/population/s
 
 describe('skillCatalog — single source of truth for skill display', () => {
   test('getSkillDisplay returns the curated entry for a known skill', () => {
-    expect(getSkillDisplay('spiritual')).toEqual({ label: 'Spiritualité', emoji: '🙏' });
+    expect(getSkillDisplay('hydraulique')).toEqual({ label: 'Hydraulique', emoji: '💧' });
   });
 
   test('getSkillDisplay shows the "…" marker for a skill the catalog does not name', () => {

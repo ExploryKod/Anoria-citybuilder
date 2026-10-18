@@ -78,6 +78,9 @@ function cycleOver(repo) {
 
 const ids = (...names) => Object.fromEntries(names.map((name) => [name, createBuildingInstanceId()]));
 
+/** What each recipe drew from a hub and so bought (see ProduceResource's recordInputPurchase). */
+const purchases = [];
+
 describe('Supply — goods warehouse', () => {
   test('collects the goods of producers in range all year, while the windmill waits for its own month', async () => {
     const id = ids('wh', 'near', 'far', 'mill', 'farm');
@@ -107,11 +110,14 @@ describe('Supply — goods warehouse', () => {
       { id: id.shop, type: 'Factory-Furniture', x: 3, y: 3, stocks: {} },
       { id: id.lonely, type: 'Factory-Furniture', x: 50, y: 50, stocks: {} },
     ]);
-    const produce = new ProduceResource(repo, { hubServing: new HubServing(repo) });
+    const produce = new ProduceResource(repo, { hubServing: new HubServing(repo), recordInputPurchase: async (purchase) => { purchases.push(purchase); } });
     const day = (monthIndex) => ({ season: 'spring', month: 'january', monthIndex, year: 1, dayInMonth: 1 });
 
+    purchases.length = 0;
     await produce.execute({ buildingId: id.shop, period: day(0) });
     expect(repo.raw.get(id.wh).stocks.wood).toBe(15);
+    // What the workshop drew is bought from the warehouse: the draw is logged as a purchase, never free.
+    expect(purchases).toEqual([expect.objectContaining({ buyerId: id.shop, hubId: id.wh, category: 'wood', quantity: 10 })]);
 
     const made = await produce.execute({ buildingId: id.shop, period: day(1) });
     expect(made.produced).toBe(true);
@@ -151,7 +157,7 @@ describe('Supply — goods warehouse', () => {
       { id: id.wh, type: 'Warehouse', x: 0, y: 0, stocks: { olive: 20, goods: 20 } },
       { id: id.press, type: 'Factory-Oil', x: 3, y: 3, stocks: {} },
     ]);
-    const produce = new ProduceResource(repo, { hubServing: new HubServing(repo) });
+    const produce = new ProduceResource(repo, { hubServing: new HubServing(repo), recordInputPurchase: async (purchase) => { purchases.push(purchase); } });
     const month = (monthIndex) => ({ season: 'spring', month: 'january', monthIndex, year: 1, dayInMonth: 1 });
     const run = async (from, to) => {
       for (let monthIndex = from; monthIndex <= to; monthIndex += 1) {

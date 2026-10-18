@@ -4,7 +4,10 @@
  */
 
 import { buildingName, goodLabel } from '../../shell/CatalogVocabulary.js';
+import { getWorldCityById } from '../../../../composition/worldCityCatalog.js';
 import { listHamlets, requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { getSessionGameTime } from '../../../../composition/sessionRuntime.js';
+import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import {
     buildingStockKey,
     createFarmMarketSectionHTML,
@@ -154,9 +157,15 @@ export function initializeSupplyTraceabilityTabs() {
     tabsInitialized = true;
 }
 
-/** The name the catalog gives a building type — what the player reads, whatever the origin (market, chapel, windmill…). */
+/** The name the catalog gives a building type — what the player reads, whatever the origin (market, tank, windmill…). */
 function buildingLabelOf(type) {
     return type ? buildingName(type) : '—';
+}
+
+/** One end of a transaction: a building, a trade city (a sale to another city names the city), or nothing ("—"). */
+function endpointLabelOf(type, id) {
+    if (type !== 'city') return buildingLabelOf(type);
+    return getWorldCityById(id)?.name ?? buildingName(type);
 }
 
 /**
@@ -183,7 +192,7 @@ async function renderTransactionLog() {
     const hamletsById = new Map(hamlets.map((hamlet) => [hamlet.id, hamlet]));
     const rows = [...transactions]
         .filter((transaction) => !STATE_TRANSACTION_TYPES.has(transaction.transactionType))
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .sort((a, b) => b.id - a.id)
         .map((transaction) => {
             const hamlet = hamletsById.get(transaction.hamletId);
             if (!hamlet) {
@@ -193,10 +202,10 @@ async function renderTransactionLog() {
             row.className = 'supply-traceability-log-row';
             const cells = [
                 ['supply-traceability-log-hamlet', hamlet.name],
-                ['supply-traceability-log-date', new Date(transaction.date).toLocaleString('fr-FR')],
-                ['supply-traceability-log-good', goodLabel(transaction.foodType) || transaction.foodType || ''],
+                ['supply-traceability-log-date', TimeManager.formatGameDate(transaction.turn)],
+                ['supply-traceability-log-good', transaction.foodType ? goodLabel(transaction.foodType) : ''],
                 ['supply-traceability-log-quantity', String(transaction.quantity ?? '')],
-                ['supply-traceability-log-route', `${buildingName(transaction.fromType)} → ${buildingName(transaction.toType)}`],
+                ['supply-traceability-log-route', `${endpointLabelOf(transaction.fromType, transaction.fromId)} → ${endpointLabelOf(transaction.toType, transaction.toId)}`],
             ];
             for (const [className, text] of cells) {
                 const cell = document.createElement('span');
@@ -234,15 +243,13 @@ export async function loadSupplyTraceabilityEntries(period = 'all') {
             pair.hamletColor = hamlet.color;
             return pair;
         };
-        let transactions = await deps.supply.getAllSupplyTraceabilityTransactions(null, requireActiveHamletId());
+        let transactions = await deps.supply.getAllSupplyTraceabilityTransactions(requireActiveHamletId());
 
         // Filter by period
         if (period !== 'all') {
-            const now = new Date();
-            const periodMs = parseInt(period) * 24 * 60 * 60 * 1000;
-            const cutoffDate = new Date(now.getTime() - periodMs);
-
-            transactions = transactions.filter(transaction => new Date(transaction.date) >= cutoffDate);
+            // A turn is a day: the period, in days, is a number of turns back from the current turn.
+            const firstTurn = getSessionGameTime() - parseInt(period);
+            transactions = transactions.filter(transaction => transaction.turn > firstTurn);
         }
 
         // All categories present in the log, in insertion order
@@ -797,7 +804,7 @@ export function computeMonthlyDietStats(transactions, allHouses) {
         
         // Oldest turn first, so "last tick of the month" really is the last
         const chronological = [...transactions].sort(
-            (a, b) => (a.turn - b.turn) || (new Date(a.date) - new Date(b.date))
+            (a, b) => (a.turn - b.turn) || (a.id - b.id)
         );
 
         // Second pass: calculate fed/unfed for each month
@@ -922,7 +929,7 @@ function nextExportStamp() {
  */
 export async function exportTransactionsToJSON() {
     try {
-        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions(null, requireActiveHamletId());
+        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions(requireActiveHamletId());
         const blob = new Blob([JSON.stringify(transactions, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -943,7 +950,7 @@ export async function exportTransactionsToJSON() {
  */
 export async function exportSupplyTraceabilityToJSON() {
     try {
-        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions(null, requireActiveHamletId());
+        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions(requireActiveHamletId());
         const allHouses = (await deps.supply.listSupplyStockSnapshots()).filter(
             (b) => b.kind === 'house' || (b.type && (b.type.includes('House') || b.type.includes('Maison')))
         );
@@ -976,7 +983,7 @@ export async function exportSupplyTraceabilityToJSON() {
 export function computeMonthlyNeedStats(transactions, needTotalKey, needAmount) {
     const dataByYearMonth = {};
     const years = new Set();
-    const chronological = [...transactions].sort((a, b) => (a.turn - b.turn) || (new Date(a.date) - new Date(b.date)));
+    const chronological = [...transactions].sort((a, b) => (a.turn - b.turn) || (a.id - b.id));
 
     transactions.forEach(t => { if (t.year !== undefined) years.add(t.year); });
 
@@ -1228,7 +1235,7 @@ export async function loadSatisfactionCharts() {
     `;
 
     try {
-        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions(null, requireActiveHamletId());
+        const transactions = await deps.supply.getAllSupplyTraceabilityTransactions(requireActiveHamletId());
         satisfactionCache = { transactions };
 
         // Categories that have any transaction in the log

@@ -47,7 +47,7 @@ export const SPEED_LEVEL_MAX = SPEED_LEVELS_MS.length;
 export const DEFAULT_TICK_MS = SPEED_LEVELS_MS[DEFAULT_SPEED_LEVEL - 1];
 export const TICK_MS_MIN = SPEED_LEVELS_MS[SPEED_LEVEL_MAX - 1];
 export const TICK_MS_MAX = SPEED_LEVELS_MS[0];
-export const DEFAULT_CITY_SIZE = 12;
+export const DEFAULT_CITY_SIZE = 16;
 
 /**
  * @param {number} level 1-based speed level
