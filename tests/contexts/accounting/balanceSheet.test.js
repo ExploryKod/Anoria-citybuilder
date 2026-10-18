@@ -2,7 +2,9 @@ import { describe, test, expect } from '@jest/globals';
 import { balanceSheetOf } from '../../../src/contexts/accounting/domain/policies/BalanceSheetPolicy.js';
 import { buildYearClosingLine, isFoldedIntoClosing } from '../../../src/contexts/accounting/domain/policies/YearClosingPolicy.js';
 
-const line = (type, amount, extra = {}) => ({ type, amount, turn: 1, year: 0, month: 1, accountBuildingId: 'b1', accountKind: null, ...extra });
+import { booked } from '../../helpers/booked.js';
+
+const line = (type, amount, extra = {}) => booked({ type, amount, turn: 1, year: 0, month: 1, accountBuildingId: 'b1', accountKind: null, ...extra });
 
 describe('balance sheet of a company (derived from its journal)', () => {
   // 100 of purchases (60 still on the shelf), 70 of sales: the cash is -30, the result -30, the stock +60.

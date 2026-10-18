@@ -15,8 +15,9 @@
 
 import { accountKeyOf } from './AccountKeyPolicy.js';
 import { expandYearClosings } from './YearClosingPolicy.js';
-import { moneyDirectionOf } from './TreasuryFromJournalPolicy.js';
-import { INCOME_STATEMENT, goodOfJournalType, isOperationDiverse, isVariableChargeAccount, pcgOfJournalType, statementAmountOfOd, statementLineOfAccount } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
+import { postingsOf } from './AccountLedgerPolicy.js';
+import { isEcriture } from './EntryLegsPolicy.js';
+import { INCOME_STATEMENT, goodOfJournalType, isVariableChargeAccount, pcgOfJournalType, statementLineOfAccount } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 
 const toCentimes = (amount) => Math.round(amount * 100);
 const fromCentimes = (centimes) => centimes / 100;
@@ -39,7 +40,6 @@ const MARGIN_COST_ACCOUNTS = Object.freeze(['607', '608', '6241']);
 export function incomeStatementOf(entries, buildingId, { year, month = null, accountKind = null, salesNature }) {
   if (!buildingId) throw new Error('[finance] a compte de résultat needs its building');
   if (salesNature === undefined) throw new Error(`[finance] the compte de résultat of ${buildingId} must be told its sales nature (merchandise, production, services, or null when the catalog gives none)`);
-  const SALES_ACCOUNT = { merchandise: '707', production: '701', services: '706' };
   const accountKey = accountKeyOf({ accountBuildingId: buildingId, accountKind });
   // A purged year is read from its closing's totals per type, as its lines would have been (a year view only: they carry no month).
   entries = expandYearClosings(entries);
@@ -49,28 +49,29 @@ export function incomeStatementOf(entries, buildingId, { year, month = null, acc
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey || entry.year !== year) continue;
     if (month !== null && entry.month !== month) continue;
+    if (!isEcriture(entry.type)) continue;
     const pcg = pcgOfJournalType(entry.type);
     if (!pcg || pcg.household) continue;
-    let account = pcg.account;
-    if (account === '707') {
-      account = SALES_ACCOUNT[salesNature];
-      if (!account) throw new Error(`[finance] a sale ("${entry.type}") is booked on ${buildingId}, whose catalog entry does not say whether it sells goods, its production or services`);
+    // The result is read off the legs the journal booked: a charge (class 6) counts what is debited less what is credited, a product (class 7) the other way
+    // round, so a stock that grows (a credit to 6037) lowers the cost of the purchases and a refund lowers what it refunds.
+    for (const leg of postingsOf(entry, { salesNature })) {
+      const account = leg.account;
+      if (account[0] !== '6' && account[0] !== '7') continue;
+      if (account === '707' && salesNature === null) throw new Error(`[finance] a sale ("${entry.type}") is booked on ${buildingId}, whose catalog entry does not say whether it sells goods, its production or services`);
+      const placed = statementLineOfAccount(account);
+      if (!placed) throw new Error(`[finance] the account ${account} of "${entry.type}" has no line in the compte de résultat`);
+      const amount = account[0] === '6' ? leg.debit - leg.credit : leg.credit - leg.debit;
+      byLine.set(placed.line.id, (byLine.get(placed.line.id) ?? 0) + amount);
+      byAccount.set(account, (byAccount.get(account) ?? 0) + amount);
+      // What the line is made of: the journal's own kinds of movement, merged when they read the same (an account, a meaning, a good).
+      const good = goodOfJournalType(entry.type);
+      const itemKey = [account, pcg.label, pcg.detail ?? '', good ?? ''].join('|');
+      const items = byItem.get(placed.line.id) ?? new Map();
+      const item = items.get(itemKey) ?? { account, label: pcg.label, detail: pcg.detail ?? null, good, tone: pcg.tone, centimes: 0 };
+      item.centimes += amount;
+      items.set(itemKey, item);
+      byItem.set(placed.line.id, items);
     }
-    if (account[0] !== '6' && account[0] !== '7') continue;
-    const placed = statementLineOfAccount(account);
-    if (!placed) throw new Error(`[finance] the account ${account} of "${entry.type}" has no line in the compte de résultat`);
-    // An opération diverse can take off (a stock that grows lowers the cost of the purchases): its amount is signed for the line it feeds.
-    const amount = toCentimes(isOperationDiverse(entry.type) ? statementAmountOfOd(entry.type, entry.amount) : entry.amount);
-    byLine.set(placed.line.id, (byLine.get(placed.line.id) ?? 0) + amount);
-    byAccount.set(account, (byAccount.get(account) ?? 0) + amount);
-    // What the line is made of: the journal's own kinds of movement, merged when they read the same (an account, a meaning, a good).
-    const good = goodOfJournalType(entry.type);
-    const itemKey = [account, pcg.label, pcg.detail ?? '', good ?? ''].join('|');
-    const items = byItem.get(placed.line.id) ?? new Map();
-    const item = items.get(itemKey) ?? { account, label: pcg.label, detail: pcg.detail ?? null, good, tone: pcg.tone, centimes: 0 };
-    item.centimes += amount;
-    items.set(itemKey, item);
-    byItem.set(placed.line.id, items);
   }
 
   const sections = INCOME_STATEMENT.map((section) => {
@@ -126,18 +127,18 @@ export function cashMovementsOf(entries, buildingId, { accountKind = null } = {}
   const groups = new Map();
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey) continue;
-    const direction = moneyDirectionOf(entry);
-    if (!direction) continue;
+    if (!isEcriture(entry.type)) continue;
+    // What moved the cash is the leg on the bank (512): debited is money in, credited is money out. A line with no leg on it (an opération diverse) moved none.
+    const cashLeg = postingsOf(entry).find((leg) => leg.account === '512');
+    if (!cashLeg) continue;
+    const signed = cashLeg.debit - cashLeg.credit;
     let item;
-    let signed;
-    if (direction === 'closing') {
+    if (entry.type === 'year_closing') {
       item = { account: null, label: 'Années clôturées (résultat net)', detail: null, good: null, tone: 'treasury' };
-      signed = toCentimes(entry.closing.net);
     } else {
       const pcg = pcgOfJournalType(entry.type);
       if (!pcg) throw new Error(`[finance] the money line "${entry.type}" has no account in the chart of accounts`);
       item = { account: pcg.account, label: pcg.label, detail: pcg.detail ?? null, good: goodOfJournalType(entry.type), tone: pcg.tone };
-      signed = direction === 'credit' ? toCentimes(entry.amount) : -toCentimes(entry.amount);
     }
     const key = [item.account, item.label, item.detail ?? '', item.good ?? ''].join('|');
     const group = groups.get(key) ?? { ...item, centimes: 0 };

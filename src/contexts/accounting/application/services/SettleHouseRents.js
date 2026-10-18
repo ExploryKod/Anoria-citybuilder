@@ -78,6 +78,7 @@ export class SettleHouseRents {
           accountBuildingId: tenantId,
           accountKind: PERSONAL_ACCOUNT,
           counterpartyBuildingId: ownerId,
+          transactionId: `${timeInfo.year}:${timeInfo.monthIndex}:rent:${tenantId}:${ownerId}`,
         });
         await this.#record({
           turn: time,
@@ -88,6 +89,7 @@ export class SettleHouseRents {
           accountBuildingId: ownerId,
           accountKind: ownerBusinessAccount,
           counterpartyBuildingId: tenantId,
+          transactionId: `${timeInfo.year}:${timeInfo.monthIndex}:rent:${tenantId}:${ownerId}`,
         });
       }
 
@@ -115,18 +117,20 @@ export class SettleHouseRents {
       charges: [{ id: 'rent', rank, amount: Math.round(rent * 100) }],
     });
     const names = `${tenant.name} · ${business.label} → ${rentals.ownerName}`;
+    // The tenant pays and the owner receives: two écritures, one flow.
     const pay = async (paidType, receivedType, centimes, label) => {
       if (centimes <= 0) return;
       const key = (type) => buildRentBusinessKey(type, tenant.id, ownerId, timeInfo.year, timeInfo.monthIndex);
-      await this.#record({ turn: time, type: paidType, amount: centimes / 100, description: `${label} payé ${names} - ${monthLabel}`, businessKey: key(paidType), accountBuildingId: tenant.id, accountKind: businessAccount, counterpartyBuildingId: ownerId });
-      await this.#record({ turn: time, type: receivedType, amount: centimes / 100, description: `${label} perçu ${names} - ${monthLabel}`, businessKey: key(receivedType), accountBuildingId: ownerId, accountKind: ownerBusinessAccount, counterpartyBuildingId: tenant.id });
+      const transactionId = `${timeInfo.year}:${timeInfo.monthIndex}:${paidType}:${tenant.id}:${ownerId}`;
+      await this.#record({ turn: time, type: paidType, amount: centimes / 100, description: `${label} payé ${names} - ${monthLabel}`, businessKey: key(paidType), accountBuildingId: tenant.id, accountKind: businessAccount, counterpartyBuildingId: ownerId, transactionId });
+      await this.#record({ turn: time, type: receivedType, amount: centimes / 100, description: `${label} perçu ${names} - ${monthLabel}`, businessKey: key(receivedType), accountBuildingId: ownerId, accountKind: ownerBusinessAccount, counterpartyBuildingId: tenant.id, transactionId });
     };
     await pay(PAYABLE_KINDS.premises_rent.settlement, 'premises_rent_debt_received', plan.debtPaid.get('debt') ?? 0, 'Loyer du local impayé');
     await pay('premises_rent_paid', 'premises_rent_received', plan.chargePaid.get('rent') ?? 0, 'Loyer du local');
     const unpaid = plan.chargeUnpaid.get('rent') ?? 0;
     if (unpaid > 0) {
-      await this.#record({ turn: time, type: PAYABLE_KINDS.premises_rent.payable, amount: unpaid / 100, description: `[OD] Loyer du local non payé ${names} - ${monthLabel}`, businessKey: buildRentBusinessKey(PAYABLE_KINDS.premises_rent.payable, tenant.id, ownerId, timeInfo.year, timeInfo.monthIndex), buildingInstanceId: tenant.id, accountBuildingId: tenant.id, accountKind: businessAccount, counterpartyBuildingId: ownerId });
-      await this.#record({ turn: time, type: 'od_receivable_premises_rent', amount: unpaid / 100, description: `[OD] Loyer du local à encaisser ${names} - ${monthLabel}`, businessKey: buildRentBusinessKey('od_receivable_premises_rent', tenant.id, ownerId, timeInfo.year, timeInfo.monthIndex), buildingInstanceId: tenant.id, accountBuildingId: ownerId, accountKind: ownerBusinessAccount, counterpartyBuildingId: tenant.id });
+      await this.#record({ turn: time, type: PAYABLE_KINDS.premises_rent.payable, amount: unpaid / 100, description: `[OD] Loyer du local non payé ${names} - ${monthLabel}`, businessKey: buildRentBusinessKey(PAYABLE_KINDS.premises_rent.payable, tenant.id, ownerId, timeInfo.year, timeInfo.monthIndex), buildingInstanceId: tenant.id, accountBuildingId: tenant.id, accountKind: businessAccount, counterpartyBuildingId: ownerId, transactionId: `${timeInfo.year}:${timeInfo.monthIndex}:rent_due:${tenant.id}` });
+      await this.#record({ turn: time, type: 'od_receivable_premises_rent', amount: unpaid / 100, description: `[OD] Loyer du local à encaisser ${names} - ${monthLabel}`, businessKey: buildRentBusinessKey('od_receivable_premises_rent', tenant.id, ownerId, timeInfo.year, timeInfo.monthIndex), buildingInstanceId: tenant.id, accountBuildingId: ownerId, accountKind: ownerBusinessAccount, counterpartyBuildingId: tenant.id, transactionId: `${timeInfo.year}:${timeInfo.monthIndex}:rent_due:${tenant.id}` });
     }
   }
 

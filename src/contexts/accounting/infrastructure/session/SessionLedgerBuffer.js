@@ -7,6 +7,7 @@
  */
 
 import { inferBusinessKeyFromRow } from '../../domain/policies/LedgerBusinessKeys.js';
+import { LegsFold } from '../../domain/policies/LegsFold.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 let nextSessionId = 1;
@@ -21,6 +22,12 @@ export class SessionLedgerBuffer {
   /** @type {Array<SessionLedgerRecord & object>} */
   #entries = [];
   #hydrated = false;
+  /** The business keys of the lines held, so a second charge for the same key is found without reading the whole journal. */
+  #businessKeys = new Set();
+  /** The journal folded into the totals of each compte (see LegsFold), taking in the lines written since it was last read. */
+  #fold = new LegsFold();
+  /** How many of the lines held the fold has taken in: the journal only grows, so a read folds only the ones after it. */
+  #folded = 0;
   /** @type {() => string} */
   #getHamletId;
 
@@ -31,8 +38,27 @@ export class SessionLedgerBuffer {
 
   reset() {
     this.#entries = [];
+    this.#businessKeys.clear();
+    this.#fold.clear();
+    this.#folded = 0;
     this.#hydrated = false;
     nextSessionId = 1;
+  }
+
+  /**
+   * The journal folded into the totals of each compte: the one derivation of every balance. A line that cannot be folded (no legs, no stamp) throws, naming it,
+   * on this read and on every one after, until it is gone.
+   * @returns {LegsFold}
+   */
+  legsFold() {
+    for (; this.#folded < this.#entries.length; this.#folded++) this.#fold.add(this.#entries[this.#folded]);
+    return this.#fold;
+  }
+
+  /** @param {SessionLedgerRecord & object} record */
+  #hold(record) {
+    this.#entries.push(record);
+    if (record.businessKey) this.#businessKeys.add(record.businessKey);
   }
 
   isHydrated() {
@@ -47,7 +73,7 @@ export class SessionLedgerBuffer {
     this.reset();
     for (const row of idbEntries) {
       const businessKey = inferBusinessKeyFromRow(row);
-      this.#entries.push({
+      this.#hold({
         ...row,
         ...(businessKey ? { businessKey } : {}),
         sessionId: nextSessionId++,
@@ -68,7 +94,7 @@ export class SessionLedgerBuffer {
     if (!businessKey) {
       return false;
     }
-    return this.#entries.some((entry) => entry.businessKey === businessKey);
+    return this.#businessKeys.has(businessKey);
   }
 
   /**
@@ -100,7 +126,7 @@ export class SessionLedgerBuffer {
       persisted: false,
       persist,
     };
-    this.#entries.push(record);
+    this.#hold(record);
     return record;
   }
 
@@ -181,6 +207,13 @@ export class SessionLedgerBuffer {
   /** @param {Set<number>} sessionIds */
   removeSessionIds(sessionIds) {
     this.#entries = this.#entries.filter((entry) => !sessionIds.has(entry.sessionId));
+    // Lines left the journal (a purge, a write that failed): the keys are rebuilt from what is left, and the fold is refolded at its next read.
+    this.#businessKeys.clear();
+    for (const entry of this.#entries) {
+      if (entry.businessKey) this.#businessKeys.add(entry.businessKey);
+    }
+    this.#fold.clear();
+    this.#folded = 0;
   }
 
   /**
@@ -191,7 +224,7 @@ export class SessionLedgerBuffer {
    */
   appendPersisted(entry, id) {
     const record = { ...entry, id, sessionId: nextSessionId++, persisted: true, persist: true };
-    this.#entries.push(record);
+    this.#hold(record);
     return record;
   }
 

@@ -174,7 +174,7 @@ describe('JournalManager', () => {
 
     describe('clearAllEntries', () => {
         test('should clear all journal entries', async () => {
-            await journalManager.addJournalEntry(1, 'income', 1000, 'Test');
+            await journalManager.addJournalEntry(1, 'citizen_tax', 1000, 'Test');
             await journalManager.addJournalEntry(2, 'construction', 500, 'Test');
             
             const count = await journalManager.clearAllEntries();
@@ -313,6 +313,9 @@ describe('JournalManager', () => {
             description,
             year,
             hamletId: 'h1',
+            // A line on disk carries the legs it was booked with.
+            journal: 'BQ',
+            legs: [{ account: '512', debit: 10000, credit: 0 }, { account: '73111', debit: 0, credit: 10000 }],
         });
 
         test('closes only whole stamped years older than latest - keepYears, never inside a year', async () => {

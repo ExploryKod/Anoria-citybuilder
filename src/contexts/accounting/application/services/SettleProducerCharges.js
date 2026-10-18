@@ -20,6 +20,7 @@ import { houseEnterpriseOf, houseEnterprises, houseHoldsSkill } from '../../../.
 import { OWNER_SKILL } from '../../../../shared/population/socialCategoryCatalog.js';
 import { allocateEnterpriseResult, enterpriseLines } from '../../domain/policies/EnterpriseAllocationPolicy.js';
 import { legalFormOf } from '../../../../shared/accounting-catalog/LegalFormCatalog.js';
+import { hasCounterpart } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 import { serviceSubsidyShare } from '../../domain/policies/ServiceSubsidyPolicy.js';
 import { addVatTo } from '../../domain/policies/VatIncludedPolicy.js';
 import { payableServiceBills } from '../../domain/policies/ServiceSolvencyPolicy.js';
@@ -235,7 +236,7 @@ export class SettleProducerCharges {
       const name = nameOf(household.id);
       if (benefit > 0) {
         await this.#record(
-          { kind: 'unemployment_benefit', amount: benefit, holder: null, counterparty: household.id, accountKind: null },
+          { kind: 'unemployment_benefit', amount: benefit, holder: null, counterparty: household.id, accountKind: null, flow: `benefit:${household.id}` },
           {
             time,
             key: buildProducerLineBusinessKey('unemployment_benefit', household.id, timeInfo, hamletId),
@@ -245,7 +246,7 @@ export class SettleProducerCharges {
           },
         );
         await this.#record(
-          { kind: 'household_benefit', amount: benefit, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT },
+          { kind: 'household_benefit', amount: benefit, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT, flow: `benefit:${household.id}` },
           {
             time,
             key: buildProducerLineBusinessKey('household_benefit', household.id, timeInfo, hamletId),
@@ -269,7 +270,7 @@ export class SettleProducerCharges {
       if (stipend <= 0) continue;
       stipendByHouse.set(household.id, stipend);
       await this.#record(
-        { kind: 'salary', amount: stipend, holder: null, counterparty: household.id, accountKind: null },
+        { kind: 'salary', amount: stipend, holder: null, counterparty: household.id, accountKind: null, flow: `stipend:${household.id}` },
         {
           time,
           key: buildProducerLineBusinessKey('salary', household.id, timeInfo, hamletId),
@@ -279,7 +280,7 @@ export class SettleProducerCharges {
         },
       );
       await this.#record(
-        { kind: 'public_wage', amount: stipend, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT },
+        { kind: 'public_wage', amount: stipend, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT, flow: `stipend:${household.id}` },
         {
           time,
           key: buildProducerLineBusinessKey('public_wage', household.id, timeInfo, hamletId),
@@ -492,7 +493,7 @@ export class SettleProducerCharges {
       const { incomeTax } = withholdIncomeTax({ gross, ...taxRate });
       if (incomeTax <= 0) continue;
       await this.#record(
-        { kind: 'income_tax', amount: incomeTax, holder: houseId, counterparty: null, accountKind: PERSONAL_ACCOUNT },
+        { kind: 'income_tax', amount: incomeTax, holder: houseId, counterparty: null, accountKind: PERSONAL_ACCOUNT, flow: `income_tax:${houseId}` },
         {
           time,
           key: buildProducerLineBusinessKey('income_tax', houseId, timeInfo, hamletId),
@@ -502,7 +503,7 @@ export class SettleProducerCharges {
         },
       );
       await this.#record(
-        { kind: 'payroll_tax', amount: incomeTax, holder: null, counterparty: houseId, accountKind: null },
+        { kind: 'payroll_tax', amount: incomeTax, holder: null, counterparty: houseId, accountKind: null, flow: `income_tax:${houseId}` },
         {
           time,
           key: buildProducerLineBusinessKey('payroll_tax', houseId, timeInfo, hamletId),
@@ -553,7 +554,7 @@ export class SettleProducerCharges {
         const description = `du foyer ${nameOf(household.id)} - régularisation ${timeInfo.year}`;
         const [householdKind, cityKind] = refund ? ['income_tax_refund', 'payroll_tax_refund'] : ['income_tax', 'payroll_tax'];
         await this.#record(
-          { kind: householdKind, amount, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT },
+          { kind: householdKind, amount, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT, flow: `income_tax_annual:${household.id}` },
           {
             time: deliveredTime,
             key: buildProducerLineBusinessKey(householdKind, `${household.id}:annual`, timeInfo, hamletId),
@@ -563,7 +564,7 @@ export class SettleProducerCharges {
           },
         );
         await this.#record(
-          { kind: cityKind, amount, holder: null, counterparty: household.id, accountKind: null },
+          { kind: cityKind, amount, holder: null, counterparty: household.id, accountKind: null, flow: `income_tax_annual:${household.id}` },
           {
             time: deliveredTime,
             key: buildProducerLineBusinessKey(cityKind, `${household.id}:annual`, timeInfo, hamletId),
@@ -731,12 +732,14 @@ export class SettleProducerCharges {
       timeInfo,
     });
     const to = debt.creditorId ? ` → ${nameOf(debt.creditorId)}` : '';
-    await write({ kind: settlement, amount, holder: debt.debtorId, counterparty: debt.creditorId, accountKind: debt.accountKind }, `${LINE_LABELS[settlement]} ${nameOf(debt.debtorId)}${to} - ${monthLabel}`);
+    // The debtor pays and the creditor receives: two écritures, one flow.
+    const flow = `debt:${debt.kind}:${debt.debtorId}:${creditorKey}`;
+    await write({ kind: settlement, amount, holder: debt.debtorId, counterparty: debt.creditorId, accountKind: debt.accountKind, flow }, `${LINE_LABELS[settlement]} ${nameOf(debt.debtorId)}${to} - ${monthLabel}`);
     const credit = {
-      wage: { kind: 'household_wage', amount, holder: debt.creditorId, counterparty: debt.debtorId, accountKind: PERSONAL_ACCOUNT },
-      contribution: { kind: 'social_contribution', amount, holder: null, counterparty: debt.debtorId },
-      corporate_tax: { kind: 'corporate_tax_revenue', amount, holder: null, counterparty: null },
-      premises_rent: { kind: 'premises_rent_debt_received', amount, holder: debt.creditorId, counterparty: debt.debtorId, accountKind: owner?.businessAccount },
+      wage: { kind: 'household_wage', amount, holder: debt.creditorId, counterparty: debt.debtorId, accountKind: PERSONAL_ACCOUNT, flow },
+      contribution: { kind: 'social_contribution', amount, holder: null, counterparty: debt.debtorId, flow },
+      corporate_tax: { kind: 'corporate_tax_revenue', amount, holder: null, counterparty: null, flow },
+      premises_rent: { kind: 'premises_rent_debt_received', amount, holder: debt.creditorId, counterparty: debt.debtorId, accountKind: owner?.businessAccount, flow },
     }[debt.kind];
     await write(credit, `${LINE_LABELS[credit.kind]} de ${nameOf(debt.debtorId)} - ${monthLabel}`);
   }
@@ -757,8 +760,15 @@ export class SettleProducerCharges {
       accountBuildingId: debtorId,
       accountKind,
       counterpartyBuildingId: creditorId,
+      // The rent a company cannot pay is the owner's receivable: the two écritures are one flow.
+      ...(kind === 'premises_rent' ? { transactionId: this.#rentDueFlow(debtorId, timeInfo) } : {}),
     });
     if (!result.recorded && result.reason !== 'duplicate_business_key') throw new Error(`[producer] the ${type} line "${description}" was not recorded: ${result.reason}`);
+  }
+
+  /** @returns {string} the flow of the rent a company owes its owner for a month: its debt and the owner's receivable carry it */
+  #rentDueFlow(debtorId, timeInfo) {
+    return `${timeInfo.year}:${timeInfo.monthIndex}:rent_due:${debtorId}`;
   }
 
   /** The rent of the premises the owner is owed and has not received: an opération diverse on its account (an income against a receivable). */
@@ -773,6 +783,7 @@ export class SettleProducerCharges {
       accountBuildingId: ownerId,
       accountKind: businessAccount,
       counterpartyBuildingId: debtorId,
+      transactionId: this.#rentDueFlow(debtorId, timeInfo),
     });
     if (!result.recorded && result.reason !== 'duplicate_business_key') throw new Error(`[producer] the premises rent receivable "${description}" was not recorded: ${result.reason}`);
   }
@@ -796,6 +807,11 @@ export class SettleProducerCharges {
         businessKey: key,
       });
     }
+    // A line that is one side of a flow between accounts names the flow (null when the other side is booked elsewhere): the other account books its own écriture
+    // of it with the same transactionId, so the two can be set against one another. A writer that forgets is a defect.
+    if (line.flow === undefined && hasCounterpart(line.kind)) {
+      throw new Error(`[producer] the ${line.kind} line for ${description} is one side of a flow between accounts and names no flow (set \`flow\`, or null when its other side is booked elsewhere)`);
+    }
     const result = await this.deps.recordLedgerEntry({
       turn: time,
       type: line.kind,
@@ -807,6 +823,7 @@ export class SettleProducerCharges {
       accountKind: line.accountKind ?? null,
       counterpartyBuildingId: line.counterparty,
       resource: line.resource ?? null,
+      transactionId: line.flow ? `${timeInfo.year}:${timeInfo.monthIndex}:${line.flow}` : null,
     });
     // A month already settled is not charged again; any other refusal is a defect, not a skipped line.
     if (!result.recorded && result.reason !== 'duplicate_business_key') {

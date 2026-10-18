@@ -30,6 +30,11 @@ export class SessionJournalRepository extends JournalRepository {
     return this.sessionJournalStore.getJournalEntries();
   }
 
+  /** @returns {Promise<import('../../../../domain/policies/LegsFold.js').LegsFold>} */
+  async getLegsFold() {
+    return this.sessionJournalStore.getLegsFold();
+  }
+
   /**
    * @param {{ hamletId?: string|null }} [options] — only this hamlet's entries; null = every hamlet
    * @returns {Promise<Array<object>>}

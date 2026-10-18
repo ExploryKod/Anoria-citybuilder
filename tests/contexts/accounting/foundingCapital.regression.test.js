@@ -5,6 +5,8 @@ import { buildYearClosingLine } from '../../../src/contexts/accounting/domain/po
 import { balanceSheetOf } from '../../../src/contexts/accounting/domain/policies/BalanceSheetPolicy.js';
 import { moneyDirectionOf } from '../../../src/contexts/accounting/domain/policies/TreasuryFromJournalPolicy.js';
 import { deriveTreasuryFigures } from '../../../src/contexts/accounting/domain/policies/TreasuryFromJournalPolicy.js';
+import { LegsFold } from '../../../src/contexts/accounting/domain/policies/LegsFold.js';
+import { booked } from '../../helpers/booked.js';
 
 // The city pays a company its founding capital once, as the company's equity: the company starts with money, the city's treasury pays it as an investment.
 function fund(journal, needs) {
@@ -13,7 +15,7 @@ function fund(journal, needs) {
     listFoundingNeeds: async () => needs,
     getJournalEntries: async () => journal,
     recordLedgerEntry: async (line) => {
-      journal.push({ ...line, year: 1, month: 3 });
+      journal.push(booked({ ...line, year: 1, month: 3 }));
       return { recorded: true };
     },
   });
@@ -36,23 +38,26 @@ describe('the founding capital of a company', () => {
   });
 
   test('a company that already has its capital is not funded again, even once the year that paid it is purged', () => {
-    const lines = [{ type: 'company_capital_received', amount: 150, turn: 70, year: 1, month: 3, accountBuildingId: 'farm', accountKind: null }];
+    const lines = [booked({ type: 'company_capital_received', amount: 150, turn: 70, year: 1, month: 3, accountBuildingId: 'farm', accountKind: null })];
     expect(foundedAccountsOf(lines).has('farm')).toBe(true);
     const closing = buildYearClosingLine({ year: 1, hamletId: 'h', accountBuildingId: 'farm', accountKind: null, lines, getTimeInfo: () => ({ monthIndex: 2 }) });
     expect(foundedAccountsOf([closing]).has('farm')).toBe(true);
   });
 
   test('the company\'s capital is its equity and its cash; the city\'s payment is an investment, not a running expense', () => {
-    const lines = [{ type: 'company_capital_received', amount: 150, turn: 70, year: 1, month: 3, accountBuildingId: 'farm', accountKind: null }];
+    const lines = [booked({ type: 'company_capital_received', amount: 150, turn: 70, year: 1, month: 3, accountBuildingId: 'farm', accountKind: null })];
     const sheet = balanceSheetOf(lines, 'farm', { cash: 150, stock: [], currentYear: 1 });
     expect(sheet.liabilities.capital).toBe(150);
     expect(sheet.assets.cash).toBe(150);
-    expect(moneyDirectionOf({ type: 'company_capital_paid', turn: 70 })).toBe('debit');
-    const city = deriveTreasuryFigures([
-      { type: 'capital_funds', amount: 500, turn: 0 },
-      { type: 'company_capital_paid', amount: 150, turn: 70, description: 'Fonds propres' },
-    ], { currentTurn: 70 });
-    expect(city.funds).toBe(350);
+    expect(moneyDirectionOf(booked({ type: 'company_capital_paid', amount: 150, turn: 70, accountBuildingId: null }))).toBe('debit');
+    const cityLines = [
+      booked({ type: 'capital_funds', amount: 500, turn: 0, year: 0, month: 1, hamletId: 'h' }),
+      booked({ type: 'company_capital_paid', amount: 150, turn: 70, year: 1, month: 3, hamletId: 'h', description: 'Fonds propres' }),
+    ];
+    const city = deriveTreasuryFigures(cityLines, { currentTurn: 70 });
+    const fold = new LegsFold();
+    for (const line of cityLines) fold.add(line);
+    expect(fold.balanceOf('512', { accountKey: null })).toBe(35000);
     expect(city.expenses).toBe(0);
     expect(city.totalInvestments).toBe(150);
   });

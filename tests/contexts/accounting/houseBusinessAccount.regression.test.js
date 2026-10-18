@@ -3,6 +3,7 @@ import { SettleProducerCharges } from '../../../src/contexts/accounting/applicat
 import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 import { householdYearReaderOf } from '../../helpers/householdYearReader.js';
 import { buildingFinanceFigures } from '../../../src/contexts/accounting/domain/policies/BuildingFinancePolicy.js';
+import { booked } from '../../helpers/booked.js';
 
 // Regression: a house's own little business (an artisan's, a savant's, a merchant's — buildingEconomy.js's
 // activityRecipe) sells and buys through the same pairs a company does (sumGoodsFlowsByPair → tradeLines).
@@ -49,7 +50,7 @@ function settle(pairs) {
     recordLedgerEntry: async (line) => {
       // The real RecordLedgerEntry command stamps year/month from its own getTimeInfo(turn); this fake
       // does it directly, matching the fixed deliveredTime (year 1, monthIndex 0) settle() uses below.
-      journal.push({ ...line, year: 1, month: 1 });
+      journal.push(booked({ ...line, year: 1, month: 1 }));
       return { recorded: true };
     },
     recordEconomyMovement: async () => {},

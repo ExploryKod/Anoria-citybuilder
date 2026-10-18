@@ -44,6 +44,8 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
         dutyRate: entry.dutyRate ?? null,
         customsBase: entry.customsBase ?? null,
         resource: entry.resource ?? null,
+        legs: entry.legs ?? null,
+        transactionId: entry.transactionId ?? null,
         persist: options.persist,
       }
     );

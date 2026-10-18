@@ -84,13 +84,13 @@ its turn from that clock.
 ## Purge closes a year, it never changes the treasury
 
 A purge (keeping the last N full years) never moves the balance. The purge is a performance device, not an accounting
-act: it replaces the écritures of the years it drops with the real year-end entries of the plan comptable, and nothing else.
-For each full year and each account, the closing of the exercise is written as ordinary écritures: the charges (class 6) and
-the products (class 7) are closed against the result (12), then the result is allocated (110/119, dividends). The next year opens
-with *à-nouveaux* (journal `AN`): one écriture per account carrying the balance-sheet accounts' balances (capital, fixed assets,
-depreciation, stock, debts, receivables, loans) against nothing but themselves, balanced. A year's per-type totals (the
-sub-totals the yearly summary shows) and what each building cost are kept as the closing's `summary`, a read-only digest of the
-year dropped, never a leg. Loan écritures are kept whole, since a loan's schedule runs past the purge. A purge changes neither
+act: it replaces the écritures of the years it drops with the year-end entry of the plan comptable, and nothing else.
+For each full year and each account, the year closes into one *à-nouveaux* écriture (journal `AN`, the `year_closing` line): the
+balance-sheet accounts' balances (capital, fixed assets, depreciation, stock, debts, receivables, loans, cash) against the carried
+result (12), balanced, which the fold, the grand livre and the balance sheet read like any other écriture. A year's per-type totals
+(the sub-totals the yearly summary shows), what moved its cash by account (what the city's ledger reads) and what each building
+cost are kept in the line's `closing`, a read-only digest of the year dropped, never a leg. (The allocation of the result,
+110/119 and dividends, is not written: the dividends are already écritures of the year closed.) Loan écritures are kept whole, since a loan's schedule runs past the purge. A purge changes neither
 the treasury nor the balance sheet. Regression tests: `tests/contexts/accounting/yearClosing.regression.test.js` and
 `tests/contexts/accounting/balanceSheet.test.js`.
 
@@ -134,6 +134,10 @@ compares two balances. The city balance equals the sum of the hamlets' balances 
 inside a turn's hot path. A view that waits for the journal shows "…", never a stale or a zero figure.
 
 ## Two notions in the city ledger, two rows
+
+The ledger's lines are read from the fold of the journal's legs (what moved the city's cash in the year, by M57 account, see
+`CityLedgerLineMappingPolicy`): money that moved against an account no line takes throws. A new account the city books against
+needs its line there.
 
 "Trésorerie" is the cash in the till: at 31 December for a past year, now for the current one (the snapshot with
 `untilYear`). "Résultat de l'année" is the year's net flow, the figure the net columns carry forward. Never show one

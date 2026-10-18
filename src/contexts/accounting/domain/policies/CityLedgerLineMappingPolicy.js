@@ -1,131 +1,104 @@
 import {
   createCityLedgerYearLines,
-  createEmptyCityLedgerYearLines,
 } from '../value-objects/CityLedgerYearLines.js';
 
 /**
- * Domain policy — journal yearly summary → city-ledger line amounts.
- * Rules unchanged from legacy finances-section mapping.
+ * Domain policy — what moved the city's cash in a year, by account → city-ledger line amounts.
  *
- * @param {object|null|undefined} journalYearSummary
- * @param {number} balanceForYear
- * @param {number} previousNetFlow the year before's net flow: it is carried into this year (a gain on the income
+ * The city's ledger (the livret) is not a second reader of the journal: it reads the same fold of the journal's legs as the treasury, the grand livre and the
+ * balance (LegsFold), through the M57 accounts of the city's own account. Each line of the livret is the money that came from, or went to, some accounts of the
+ * M57 chart (PcgJournalCatalog): an account the city booked money against that no line takes throws, naming it, so no flow of the city is left out of the ledger.
+ */
+
+/** The M57 accounts of what came in, and of what went out, for each line. A line may also take off what went the other way (a refund). */
+const LINES = Object.freeze({
+  initialFunds: { in: ['1021'] },
+  incomeTax: { in: ['73111'] },
+  // The income tax the households paid, less what the city gave back at the year's close (an advance that was too high): a refund reduces the line it comes
+  // from, so the ledger's totals still agree with the treasury.
+  payrollTax: { in: ['738'], takeOff: ['7398'] },
+  vat: { in: ['735'] },
+  exports: { in: ['7348'] },
+  // The duty our merchants pay on what they import: the city's income.
+  customsImport: { in: ['73431'] },
+  // The social contributions, the employers' and the employees', held by the city's social security (it pays the unemployment benefit out of them).
+  socialContributions: { in: ['431'] },
+  loanCapital: { in: ['1641'] },
+  corporateTaxRevenue: { in: ['73118'] },
+  // The constructions, and the founding capital the city pays the companies: both are the city's investments, one line; a refund takes off.
+  construction: { out: ['2131', '261'], takeOff: ['2131'] },
+  // The upkeep of the buildings the hamlet does not run itself is the rent it pays their owner: one line, "Entretien".
+  maintenance: { out: ['6156', '613'] },
+  salary: { out: ['6411'] },
+  unemploymentBenefit: { out: ['431'] },
+  serviceSubsidy: { out: ['65738'] },
+  companySubsidy: { out: ['65742'] },
+  housingSubsidy: { out: ['65741'] },
+  repairs: { out: ['615221'] },
+  commercialRoutes: { out: ['622'] },
+  contributions: { out: ['6281'] },
+  imports: { out: ['607'] },
+  loanInterest: { out: ['66111'] },
+  loanRepayment: { out: ['1641'] },
+});
+
+const INCOME_LINES = ['initialFunds', 'incomeTax', 'payrollTax', 'vat', 'corporateTaxRevenue', 'exports', 'customsImport', 'socialContributions', 'loanCapital'];
+const EXPENSE_LINES = [
+  'construction', 'maintenance', 'salary', 'unemploymentBenefit', 'serviceSubsidy', 'companySubsidy', 'housingSubsidy', 'repairs', 'commercialRoutes',
+  'contributions', 'imports', 'loanInterest', 'loanRepayment',
+];
+
+/**
+ * @param {number} year the fiscal year
+ * @param {Map<string, { in: number, out: number }>} flows what moved the city's cash that year, by account, in centimes (LegsFold.cashFlowsOf)
+ * @param {{ balanceForYear: number, previousNetFlow: number }} figures
+ *   `balanceForYear`: the cash of the year-end (the treasury's); `previousNetFlow`: the year before's net flow, carried into this year (a gain on the income
  *   side, a loss on the expense side). It is not added to the totals: the year's totals are its own flows.
  * @returns {import('../value-objects/CityLedgerYearLines.js').CityLedgerYearLines}
  */
-export function cityLedgerYearLinesFromJournalSummary(
-  journalYearSummary,
-  balanceForYear,
-  previousNetFlow
-) {
-  if (
-    !journalYearSummary ||
-    !journalYearSummary.income ||
-    !journalYearSummary.expenses
-  ) {
-    return createEmptyCityLedgerYearLines(journalYearSummary?.year ?? 0);
+export function cityLedgerYearLinesFromCashFlows(year, flows, { balanceForYear, previousNetFlow }) {
+  const mapped = new Set(Object.values(LINES).flatMap((line) => [...(line.in ?? []), ...(line.out ?? []), ...(line.takeOff ?? [])]));
+  for (const account of flows.keys()) {
+    if (!mapped.has(account)) throw new Error(`[city-ledger] the city's cash moved against the account ${account}, which no line of its ledger takes`);
   }
-
-  // The city's ledger holds the city's own account: a company's sales, purchases and profit are its own (see
-  // ProducerChargePolicy), so they are not in it.
-  const cityOnly = (entry) => (entry.accountBuildingId ?? null) === null;
-  const incomeEntries = (journalYearSummary.income.entries || []).filter(cityOnly);
-  const expenseEntries = (journalYearSummary.expenses.entries || []).filter(cityOnly);
-
-  const sumByType = (entries, predicate) =>
-    entries.filter(predicate).reduce((sum, entry) => sum + entry.amount, 0);
-
-  const initialFunds = sumByType(incomeEntries, (e) => e.type === 'capital_funds');
-  const incomeTax = sumByType(incomeEntries, (e) => e.type === 'citizen_tax');
-  // The income tax the households paid, less what the city gave back at the year's close (an advance that was too high): a refund reduces the line
-  // it comes from, so the ledger's totals still agree with the treasury.
-  const payrollTax =
-    sumByType(incomeEntries, (e) => e.type === 'payroll_tax') - sumByType(expenseEntries, (e) => e.type === 'payroll_tax_refund');
-  const vat = sumByType(incomeEntries, (e) => e.type === 'vat');
-  const exports = sumByType(
-    incomeEntries,
-    (e) => e.type && e.type.startsWith('export_')
-  );
-  // The duty our merchants pay on what they import: the city's income (see TRADE_IMPORT).
-  const customsImport = sumByType(incomeEntries, (e) => e.type && e.type.startsWith('customs_import_'));
-  // The social contributions, the employers' and the employees', received by the city's social security (it pays the unemployment benefit).
-  const socialContributions = sumByType(incomeEntries, (e) => e.type === 'social_contribution');
-  const loanCapital = sumByType(incomeEntries, (e) => e.type === 'loan_capital');
+  const centimes = (line) => {
+    const rule = LINES[line];
+    const sum = (accounts, side) => (accounts ?? []).reduce((total, account) => total + (flows.get(account)?.[side] ?? 0), 0);
+    // A refund is money that came in against an account the line paid out (a construction refunded) or money that went out against one the line took in (a tax refunded).
+    return sum(rule.in, 'in') + sum(rule.out, 'out') - (rule.in ? sum(rule.takeOff, 'out') : sum(rule.takeOff, 'in'));
+  };
+  const euros = (line) => Math.round(centimes(line) / 100);
   const carryForwardIncome = previousNetFlow >= 0 ? previousNetFlow : 0;
-
-  // The constructions, and the founding capital the city pays the companies: both are the city's investments, one line.
-  const construction = sumByType(expenseEntries, (e) => e.type === 'construction' || e.type === 'company_capital_paid');
-  // The upkeep of the buildings the hamlet does not run itself is the rent it pays their owner: one line, "Entretien".
-  const maintenance = sumByType(expenseEntries, (e) => e.type === 'maintenance' || e.type === 'premises_rent_paid');
-  const salary = sumByType(expenseEntries, (e) => e.type === 'salary');
-  const unemploymentBenefit = sumByType(
-    expenseEntries,
-    (e) => e.type === 'unemployment_benefit'
-  );
-  const serviceSubsidy = sumByType(expenseEntries, (e) => e.type === 'service_subsidy');
-  const repairs = sumByType(expenseEntries, (e) => e.type === 'exceptional_expenses');
-  const commercialRoutes = sumByType(
-    expenseEntries,
-    (e) => e.type === 'commercial_route'
-  );
-  const contributions = sumByType(expenseEntries, (e) => e.type === 'contribution');
-  const imports = sumByType(
-    expenseEntries,
-    (e) => e.type && e.type.startsWith('import_')
-  );
-  const corporateTaxRevenue = sumByType(incomeEntries, (e) => e.type === 'corporate_tax_revenue');
-  const companySubsidy = sumByType(expenseEntries, (e) => e.type === 'subsidy_companies');
-  const housingSubsidy = sumByType(expenseEntries, (e) => e.type === 'subsidy_housing');
-  const loanInterest = sumByType(expenseEntries, (e) => e.type === 'loan_interest');
-  const loanRepayment = sumByType(
-    expenseEntries,
-    (e) => e.type === 'loan_repayment'
-  );
   const carryForwardExpense = previousNetFlow < 0 ? -previousNetFlow : 0;
-
-  const totalIncome =
-    initialFunds + incomeTax + payrollTax + vat + corporateTaxRevenue + exports + customsImport + socialContributions + loanCapital;
-  const totalExpenses =
-    construction +
-    maintenance +
-    salary +
-    unemploymentBenefit +
-    serviceSubsidy +
-    companySubsidy +
-    housingSubsidy +
-    repairs +
-    commercialRoutes +
-    contributions +
-    imports +
-    loanInterest +
-    loanRepayment;
+  const totalIncome = INCOME_LINES.reduce((sum, line) => sum + centimes(line), 0) / 100;
+  const totalExpenses = EXPENSE_LINES.reduce((sum, line) => sum + centimes(line), 0) / 100;
 
   return createCityLedgerYearLines({
-    year: journalYearSummary.year,
-    initialFunds: Math.round(initialFunds),
-    incomeTax: Math.round(incomeTax),
-    payrollTax: Math.round(payrollTax),
-    vat: Math.round(vat),
-    exports: Math.round(exports),
-    customsImport: Math.round(customsImport),
-    socialContributions: Math.round(socialContributions),
-    loanCapital: Math.round(loanCapital),
+    year,
+    initialFunds: euros('initialFunds'),
+    incomeTax: euros('incomeTax'),
+    payrollTax: euros('payrollTax'),
+    vat: euros('vat'),
+    exports: euros('exports'),
+    customsImport: euros('customsImport'),
+    socialContributions: euros('socialContributions'),
+    loanCapital: euros('loanCapital'),
     carryForwardIncome: Math.round(carryForwardIncome),
     totalIncome: Math.round(totalIncome),
-    construction: Math.round(construction),
-    maintenance: Math.round(maintenance),
-    salary: Math.round(salary),
-    unemploymentBenefit: Math.round(unemploymentBenefit),
-    serviceSubsidy: Math.round(serviceSubsidy),
-    corporateTaxRevenue: Math.round(corporateTaxRevenue),
-    companySubsidy: Math.round(companySubsidy),
-    housingSubsidy: Math.round(housingSubsidy),
-    repairs: Math.round(repairs),
-    commercialRoutes: Math.round(commercialRoutes),
-    contributions: Math.round(contributions),
-    imports: Math.round(imports),
-    loanInterest: Math.round(loanInterest),
-    loanRepayment: Math.round(loanRepayment),
+    construction: euros('construction'),
+    maintenance: euros('maintenance'),
+    salary: euros('salary'),
+    unemploymentBenefit: euros('unemploymentBenefit'),
+    serviceSubsidy: euros('serviceSubsidy'),
+    corporateTaxRevenue: euros('corporateTaxRevenue'),
+    companySubsidy: euros('companySubsidy'),
+    housingSubsidy: euros('housingSubsidy'),
+    repairs: euros('repairs'),
+    commercialRoutes: euros('commercialRoutes'),
+    contributions: euros('contributions'),
+    imports: euros('imports'),
+    loanInterest: euros('loanInterest'),
+    loanRepayment: euros('loanRepayment'),
     carryForwardExpense: Math.round(carryForwardExpense),
     totalExpenses: Math.round(totalExpenses),
     balance: Math.round(balanceForYear),

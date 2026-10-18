@@ -2,15 +2,13 @@
  * The grand livre and the balance of one account (a company's, a house's business, the city's), DERIVED from its journal lines: nothing is stored,
  * and no line is added to the journal.
  *
- * A line of the journal posts two legs of the same amount. A movement of money has the bank (512) as one and the account the line is about as the other
- * (its PCG account, see PcgJournalCatalog; a deposit says its other leg as `counter`): money in debits the bank and credits the account; money out
- * debits the account and credits the bank. An opération diverse (the month's closing: variation of stock, depreciation) moves no money and names both
- * legs itself. A year closed by a purge posts the balances it carried (à-nouveaux) against the carried result (12).
+ * An écriture carries its legs, written with it (see EntryLegsPolicy): the postings are those legs, read back as they were booked. A year closed by a
+ * purge posts the balances it carried (à-nouveaux) against the carried result (12). An informative line is no écriture and posts nothing.
  *
- * The balance of the bank equals the treasury because the opérations diverses never touch it. The other check is that no line goes unplaced: a line
- * whose type has no account throws, naming it.
+ * The balance of the bank equals the treasury because both read the same legs. The other check is that no écriture goes unplaced: a line with no legs
+ * throws, naming it.
  *
- * - `postingsOf(entry)`: the two legs of one line;
+ * - `postingsOf(entry)`: the legs of one line;
  * - `accountLedgerOf(...)`: the grand livre, each account with its postings in journal order and its running balance;
  * - `trialBalanceOf(...)`: the balance, each account with its debit and credit totals and its balance, and the totals of the two columns.
  *
@@ -18,57 +16,27 @@
  */
 
 import { accountKeyOf } from './AccountKeyPolicy.js';
-import { moneyDirectionOf } from './TreasuryFromJournalPolicy.js';
-import { accountLabelOf, isOperationDiverse, odLegsOf, pcgOfJournalType } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
+import { isEcriture } from './EntryLegsPolicy.js';
+import { accountLabelOf } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 
-const BANK = '512';
-const CARRIED_RESULT = '12';
 const SALES_ACCOUNT = Object.freeze({ merchandise: '707', production: '701', services: '706' });
 
 const toCentimes = (amount) => Math.round(amount * 100);
 const fromCentimes = (centimes) => centimes / 100;
 
 /**
- * @param {{ type: string, amount: number, closing?: { net: number }, turn?: number }} entry a journal line that moves money
+ * @param {{ type: string, legs?: Array<{ account: string, debit: number, credit: number }>, turn?: number }} entry an écriture (the à-nouveaux of a year closed by a purge are one)
  * @param {{ salesNature?: 'merchandise' | 'production' | 'services' | null }} [options] what the account's sales are, which says the account a sale posts to
- * @returns {Array<{ account: string, debit: number, credit: number }>} the legs, in centimes: two for a line, one per carried account for a year closing
+ * @returns {Array<{ account: string, debit: number, credit: number }>} the legs, in centimes: those the écriture was booked with
  */
 export function postingsOf(entry, { salesNature = null } = {}) {
-  // An opération diverse moves no money: its two legs are the ones the catalog names, the bank is not one of them.
-  if (isOperationDiverse(entry.type)) {
-    const { debit, credit } = odLegsOf(entry.type);
-    const amount = toCentimes(entry.amount);
-    return [{ account: debit, debit: amount, credit: 0 }, { account: credit, debit: 0, credit: amount }];
-  }
-  const direction = moneyDirectionOf(entry);
-  if (!direction) throw new Error(`[ledger] the line "${entry.type}" moves no money: it has no postings yet`);
-  if (direction === 'closing') {
-    // The year's carried balances (see YearClosingPolicy): each balance-sheet account with its net, the result of the year against account 12.
-    if (!entry.closing.balances) throw new Error(`[ledger] the closing of year ${entry.closing.year} carries no balances: it was written by an older purge`);
-    const legs = Object.entries(entry.closing.balances).map(([account, net]) => {
-      const centimes = toCentimes(net);
-      return { account, debit: centimes > 0 ? centimes : 0, credit: centimes < 0 ? -centimes : 0 };
-    });
-    // Account 12 takes what makes the legs even: a loss is its debit, a profit its credit.
-    const carried = -legs.reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
-    legs.push({ account: CARRIED_RESULT, debit: carried > 0 ? carried : 0, credit: carried < 0 ? -carried : 0 });
-    return legs;
-  }
-  const pcg = pcgOfJournalType(entry.type);
-  if (!pcg) throw new Error(`[ledger] the money line "${entry.type}" has no account in the chart of accounts`);
-  let other = pcg.account;
-  if (other === '707' && salesNature !== null) {
-    other = SALES_ACCOUNT[salesNature];
-    if (!other) throw new Error(`[ledger] the sale "${entry.type}" is booked on a building whose sales nature "${salesNature}" is unknown`);
-  }
-  if (other === BANK) {
-    if (!pcg.counter) throw new Error(`[ledger] the line "${entry.type}" posts to the bank and names no other leg (counter)`);
-    other = pcg.counter;
-  }
-  const amount = toCentimes(entry.amount);
-  return direction === 'credit'
-    ? [{ account: BANK, debit: amount, credit: 0 }, { account: other, debit: 0, credit: amount }]
-    : [{ account: other, debit: amount, credit: 0 }, { account: BANK, debit: 0, credit: amount }];
+  if (!isEcriture(entry.type)) throw new Error(`[ledger] the line "${entry.type}" is no écriture: it has no postings`);
+  if (!entry.legs) throw new Error(`[ledger] the écriture ${entry.id ?? ''} "${entry.type}" (turn ${entry.turn}) carries no legs: it was written before the entries carried them`);
+  // A sale is booked on 707; the account a building's sales really sit in (goods, its production, services) is told by the building.
+  if (salesNature === null) return entry.legs;
+  const salesAccount = SALES_ACCOUNT[salesNature];
+  if (!salesAccount) throw new Error(`[ledger] the sale "${entry.type}" is booked on a building whose sales nature "${salesNature}" is unknown`);
+  return entry.legs.map((leg) => (leg.account === '707' ? { ...leg, account: salesAccount } : leg));
 }
 
 /**
@@ -82,7 +50,7 @@ function postingsOfAccount(entries, buildingId, { accountKind = null, salesNatur
   const postings = [];
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey) continue;
-    if (!isOperationDiverse(entry.type) && !moneyDirectionOf(entry)) continue;
+    if (!isEcriture(entry.type)) continue;
     for (const leg of postingsOf(entry, { salesNature })) postings.push({ ...leg, entry });
   }
   return postings;
@@ -104,7 +72,7 @@ export function accountLedgerOf(entries, buildingId, options = {}) {
     ledger.lines.push({
       year: posting.entry.year ?? null,
       month: posting.entry.month ?? null,
-      description: posting.entry.closing ? 'Année clôturée (résultat net)' : posting.entry.description ?? posting.entry.type,
+      description: posting.entry.journal === 'AN' ? 'À-nouveaux de l’année clôturée' : posting.entry.description ?? posting.entry.type,
       debit: fromCentimes(posting.debit),
       credit: fromCentimes(posting.credit),
       balance: fromCentimes(ledger.debit - ledger.credit),

@@ -14,6 +14,7 @@ import { sessionLedgerBuffer, SessionLedgerBuffer, toPublicEntry } from './Sessi
 import { buildLedgerBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 import { buildYearClosingLine, isFoldedIntoClosing } from '../../domain/policies/YearClosingPolicy.js';
 import { accountKeyOf } from '../../domain/policies/AccountKeyPolicy.js';
+import { entryLegsOf, isEcriture } from '../../domain/policies/EntryLegsPolicy.js';
 import { isInformativeJournalType } from '../../domain/policies/JournalEntryClassificationPolicy.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
@@ -189,6 +190,18 @@ export class SessionJournalStore {
                 entry.resource = options.resource;
             }
 
+            // Every écriture is booked as it is written: its legs (the two the catalog gives its type in the chart of accounts of its account,
+            // or the ones the writer brings) and its journal code, which must balance. An informative line is no écriture and has none.
+            if (isEcriture(type)) {
+                const booked = entryLegsOf({ type, amount, accountBuildingId: options.accountBuildingId ?? null, legs: options.legs ?? null });
+                entry.legs = booked.legs;
+                entry.journal = booked.journal;
+            }
+
+            if (options.transactionId) {
+                entry.transactionId = options.transactionId;
+            }
+
             if (options.taxYear != null) {
                 entry.taxYear = options.taxYear;
             }
@@ -236,6 +249,17 @@ export class SessionJournalStore {
         return this.#queued(async () => {
             await this.ensureHydrated();
             return filterAndSortJournalEntries(this._buffer.getAllPublic());
+        });
+    }
+
+    /**
+     * The journal folded into the totals of each compte, up to date with every line written (see LegsFold): the one derivation of every balance.
+     * @returns {Promise<import('../../domain/policies/LegsFold.js').LegsFold>}
+     */
+    async getLegsFold() {
+        return this.#queued(async () => {
+            await this.ensureHydrated();
+            return this._buffer.legsFold();
         });
     }
 

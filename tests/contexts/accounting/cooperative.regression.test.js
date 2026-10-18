@@ -2,6 +2,7 @@ import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
 import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 import { householdYearReaderOf } from '../../helpers/householdYearReader.js';
+import { booked } from '../../helpers/booked.js';
 import { moneyDirectionOf } from '../../../src/contexts/accounting/domain/policies/TreasuryFromJournalPolicy.js';
 import { allocateEnterpriseResult } from '../../../src/contexts/accounting/domain/policies/EnterpriseAllocationPolicy.js';
 import { LEGAL_FORMS } from '../../../src/shared/accounting-catalog/LegalFormCatalog.js';
@@ -91,7 +92,7 @@ function settle({ pairs, businessCash, taxRate = { threshold1: 0, rate1: 0, thre
     readCompanyYear: companyYearReaderOf(journal),
     readHouseholdYear: householdYearReaderOf(journal),
     recordLedgerEntry: async (line) => {
-      journal.push({ ...line, year: 1, month: 1 });
+      journal.push(booked({ ...line, year: 1, month: 1 }));
       return { recorded: true };
     },
     recordEconomyMovement: async () => {},
@@ -167,7 +168,7 @@ describe('the year-end settlement of a house\'s cooperative', () => {
       // The year's income is 100 (a flat 10 % makes 10), but 30 was withheld over the year: 20 too much.
       readHouseholdYear: async () => ({ incomeYearToDate: 100, taxWithheldYearToDate: 30 }),
       recordLedgerEntry: async (line) => {
-        journal.push({ ...line, year: 1, month: 1 });
+        journal.push(booked({ ...line, year: 1, month: 1 }));
         return { recorded: true };
       },
       recordEconomyMovement: async () => {},
@@ -209,7 +210,7 @@ describe('the year-end settlement of a house\'s cooperative', () => {
       readCompanyYear: companyYearReaderOf(journal),
       readHouseholdYear: householdYearReaderOf(journal),
       recordLedgerEntry: async (line) => {
-        journal.push({ ...line, year: 1, month: 1 });
+        journal.push(booked({ ...line, year: 1, month: 1 }));
         return { recorded: true };
       },
       recordEconomyMovement: async () => {},

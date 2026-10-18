@@ -37,6 +37,7 @@ export class GetTreasurySnapshot {
     }
 
     const accountKey = accountKeyOf({ accountBuildingId, accountKind });
+    const funds = await this.cashOf({ hamletId, untilYear, untilMonth, accountBuildingId, accountKind });
     const inScope = (entry) =>
       (hamletId == null || hamletOf(entry) === hamletId) &&
       (untilYear == null || isUntil(entry, untilYear, untilMonth)) &&
@@ -52,12 +53,32 @@ export class GetTreasurySnapshot {
       turn: currentTurn,
       taxBreakdown: citizenTax.taxBreakdown,
       lastTaxYear: citizenTax.lastTaxYear,
+      funds,
       ...figures,
       loans: portfolio.loans,
       loanDebt: portfolio.loanDebt,
     };
   }
+
+  /**
+   * The cash alone, the balance of the bank account (512) in the fold of the journal's legs, without reading a line: what the HUD and every view of a balance ask.
+   * The scope is the one `execute` takes. A brand-new game has no journal yet: its treasury starts from the capital line, as in `execute`.
+   * @param {{ hamletId?: string|null, untilYear?: number|null, untilMonth?: number|null, accountBuildingId?: string|null, accountKind?: string|null }} [options]
+   * @returns {Promise<number>}
+   */
+  async cashOf({ hamletId = null, untilYear = null, untilMonth = null, accountBuildingId = null, accountKind = null } = {}) {
+    let fold = await this.journalRepository.getLegsFold();
+    if (fold.isEmpty()) {
+      await this.initializeTreasury.execute(null);
+      fold = await this.journalRepository.getLegsFold();
+    }
+    const centimes = fold.balanceOf(CASH, { hamletId, accountKey: accountKeyOf({ accountBuildingId, accountKind }), untilYear, untilMonth });
+    return centimes / 100;
+  }
 }
+
+/** The cash account of the chart of accounts: the treasury is its balance. */
+const CASH = '512';
 
 /**
  * The journal lines the treasury is folded from (money movements and the loan installments that move the schedule),

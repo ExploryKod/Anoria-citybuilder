@@ -13,14 +13,14 @@ import { buildingCatalog } from '../../../src/shared/building-catalog/buildingCa
 
 describe('trade lines — a sale and its purchase name each other, on each company account', () => {
   test('a sale between two companies is a revenue on the seller and a purchase on the buyer', () => {
-    expect(tradeLines({ sellerId: 'farm', buyerId: 'market', amountHT: 100 })).toEqual([
+    expect(tradeLines({ sellerId: 'farm', buyerId: 'market', amountHT: 100 })).toMatchObject([
       { kind: 'producer_revenue', amount: 100, holder: 'farm', counterparty: 'market' },
       { kind: 'producer_purchase', amount: 100, holder: 'market', counterparty: 'farm' },
     ]);
   });
 
   test('a sale to the houses has no buying company', () => {
-    expect(tradeLines({ sellerId: 'market', buyerId: null, amountHT: 50 })).toEqual([
+    expect(tradeLines({ sellerId: 'market', buyerId: null, amountHT: 50 })).toMatchObject([
       { kind: 'producer_revenue', amount: 50, holder: 'market', counterparty: null },
     ]);
   });
@@ -49,7 +49,7 @@ describe('wages — each worker is paid the same, and the house it comes from re
 
   test('the wages split by workers per house, and the total is exact to the centime', () => {
     const lines = wageSplitLines({ workplaceId: 'market', wagesHT: 10, sources: { houseA: 1, houseB: 2 } });
-    expect(lines.filter((line) => line.kind === 'household_wage')).toEqual([
+    expect(lines.filter((line) => line.kind === 'household_wage')).toMatchObject([
       { kind: 'household_wage', amount: 3.33, holder: 'houseA', counterparty: 'market', accountKind: 'particulier' },
       { kind: 'household_wage', amount: 6.67, holder: 'houseB', counterparty: 'market', accountKind: 'particulier' },
     ]);
@@ -62,32 +62,32 @@ describe('building lines — a company pays its upkeep; the upkeep of a house is
   const owner = { id: 'mayor', businessAccount: 'entreprise:sci' };
 
   test('a market stall books its upkeep on its account', () => {
-    expect(buildingChargeLines({ id: 'market', type: 'Market-Stall-Red', maintenanceCost: 2 })).toEqual([
+    expect(buildingChargeLines({ id: 'market', type: 'Market-Stall-Red', maintenanceCost: 2 })).toMatchObject([
       { kind: 'maintenance', amount: 2, holder: 'market', counterparty: null },
     ]);
   });
 
   test('the owner books the whole upkeep of a house on its property company, and the hamlet pays it the subsidy', () => {
     // Fully subsidised: the owner is made whole, the hamlet pays everything.
-    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 3, houseSubsidyRate: 1, owner })).toEqual([
+    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 3, houseSubsidyRate: 1, owner })).toMatchObject([
       { kind: 'maintenance', amount: 3, holder: 'mayor', counterparty: null, accountKind: 'entreprise:sci' },
       { kind: 'subsidy_housing_received', amount: 3, holder: 'mayor', counterparty: null, accountKind: 'entreprise:sci' },
       { kind: 'subsidy_housing', amount: 3, holder: null, counterparty: null },
     ]);
     // A quarter subsidised: the owner bears the rest, which the rent has to cover.
-    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 6, houseSubsidyRate: 0.25, owner })).toEqual([
+    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 6, houseSubsidyRate: 0.25, owner })).toMatchObject([
       { kind: 'maintenance', amount: 6, holder: 'mayor', counterparty: null, accountKind: 'entreprise:sci' },
       { kind: 'subsidy_housing_received', amount: 1.5, holder: 'mayor', counterparty: null, accountKind: 'entreprise:sci' },
       { kind: 'subsidy_housing', amount: 1.5, holder: null, counterparty: null },
     ]);
     // No subsidy: the whole upkeep is the owner's.
-    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 6, houseSubsidyRate: 0, owner })).toEqual([
+    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 6, houseSubsidyRate: 0, owner })).toMatchObject([
       { kind: 'maintenance', amount: 6, holder: 'mayor', counterparty: null, accountKind: 'entreprise:sci' },
     ]);
   });
 
   test('with no owner standing (its house was demolished) the hamlet bears the whole upkeep', () => {
-    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 6, houseSubsidyRate: 0.25, owner: null })).toEqual([
+    expect(buildingChargeLines({ id: 'house', type: 'House-Red', maintenanceCost: 6, houseSubsidyRate: 0.25, owner: null })).toMatchObject([
       { kind: 'subsidy_housing', amount: 6, holder: null, counterparty: null },
     ]);
   });
@@ -98,7 +98,7 @@ describe('building lines — a company pays its upkeep; the upkeep of a house is
   });
 
   test('a road, which is neither a house nor a company, stays at the city\'s expense', () => {
-    expect(buildingChargeLines({ id: 'road', type: 'StonePath-Tee-001', maintenanceCost: 3 })).toEqual([
+    expect(buildingChargeLines({ id: 'road', type: 'StonePath-Tee-001', maintenanceCost: 3 })).toMatchObject([
       { kind: 'subsidy_housing', amount: 3, holder: null, counterparty: null },
     ]);
   });
@@ -107,7 +107,7 @@ describe('building lines — a company pays its upkeep; the upkeep of a house is
 describe('corporate tax — the rate on the résultat courant avant impôts of the year, never more', () => {
   test('the tax is the rate of the RCAI of the year so far (25 %), and it reaches the city', () => {
     expect(corporateTaxDueOf({ rcaiYearToDate: 92.81, taxPaidYearToDate: 0, rate: 0.25 })).toBe(23.2);
-    expect(corporateTaxLines({ id: 'farm', amount: 23.2 })).toEqual([
+    expect(corporateTaxLines({ id: 'farm', amount: 23.2 })).toMatchObject([
       { kind: 'corporate_tax', amount: 23.2, holder: 'farm', counterparty: null },
       { kind: 'corporate_tax_revenue', amount: 23.2, holder: null, counterparty: null },
     ]);
@@ -127,6 +127,6 @@ describe('corporate tax — the rate on the résultat courant avant impôts of t
     expect(corporateTaxDueOf({ rcaiYearToDate: 400, taxPaidYearToDate: 100, rate: 0.25 })).toBe(0);
     // A rate of nothing (set by the player, or imposed while nobody collects the tax) levies nothing.
     expect(corporateTaxDueOf({ rcaiYearToDate: 400, taxPaidYearToDate: 0, rate: 0 })).toBe(0);
-    expect(corporateTaxLines({ id: 'farm', amount: 0 })).toEqual([]);
+    expect(corporateTaxLines({ id: 'farm', amount: 0 })).toMatchObject([]);
   });
 });

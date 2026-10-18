@@ -1,6 +1,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
 import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
+import { booked } from '../../helpers/booked.js';
 
 // Regression: a bank earns no sale, no service, no goods flow — its only income is the interest the journal
 // already holds for it (RecordLoanInterestExpense.js's lender mirror line, read via sumBankInterestByBuilding).
@@ -39,15 +40,15 @@ function settle(bankInterest, otherExpenses = []) {
     buildingMaintenanceCost: () => 0,
     readCompanyYear: companyYearReaderOf(journal),
     recordLedgerEntry: async (line) => {
-      journal.push(line);
+      journal.push(booked(line));
       return { recorded: true };
     },
     recordEconomyMovement: async () => {},
   });
   // The interest the bank earned and paid already is in the journal (another settlement wrote it): the company's statement reads it there.
   journal.push(
-    ...bankInterest.map((interest) => ({ type: 'loan_interest_received', amount: interest.amountHT, accountBuildingId: interest.buildingId })),
-    ...otherExpenses.map((expense) => ({ type: 'deposit_interest_paid', amount: expense.amountHT, accountBuildingId: expense.buildingId })),
+    ...bankInterest.map((interest) => booked({ type: 'loan_interest_received', amount: interest.amountHT, accountBuildingId: interest.buildingId })),
+    ...otherExpenses.map((expense) => booked({ type: 'deposit_interest_paid', amount: expense.amountHT, accountBuildingId: expense.buildingId })),
   );
   return service.execute({ time: 2, deliveredTime: 1 }).then(() => journal);
 }

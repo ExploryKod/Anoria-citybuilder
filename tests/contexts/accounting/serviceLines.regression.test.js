@@ -11,18 +11,18 @@ describe('service lines — the house pays the final price, the company gets the
     const share = serviceSubsidyShare({ units: 4, unitPrice: 2, subsidyPercent: 50 });
     const price = addVatTo({ ht: share.habitantShare, ratePercent: 10 });
 
-    expect(serviceSaleLines({ sellerId: 'chapel', buyerId: 'house-1', service: 'school', ttc: price.ttc, ht: price.ht, vat: price.vat })).toEqual([
+    expect(serviceSaleLines({ sellerId: 'chapel', buyerId: 'house-1', service: 'school', ttc: price.ttc, ht: price.ht, vat: price.vat })).toMatchObject([
       { kind: 'service_purchase', amount: 4.4, holder: 'house-1', counterparty: 'chapel', accountKind: 'particulier', resource: 'school' },
       { kind: 'service_sales', amount: 4, holder: 'chapel', counterparty: 'house-1' },
       { kind: 'vat', amount: 0.4, holder: null, counterparty: 'chapel' },
     ]);
-    expect(serviceSubsidyLines({ sellerId: 'chapel', citySubsidy: share.citySubsidy })).toEqual([
+    expect(serviceSubsidyLines({ sellerId: 'chapel', citySubsidy: share.citySubsidy })).toMatchObject([
       { kind: 'service_subsidy', amount: 4, holder: null, counterparty: 'chapel' },
       { kind: 'service_subsidy_received', amount: 4, holder: 'chapel', counterparty: null },
     ]);
   });
 
   test('a fully subsidised service costs the house nothing: no line on either side of the sale', () => {
-    expect(serviceSaleLines({ sellerId: 'chapel', buyerId: 'house-1', service: 'school', ttc: 0, ht: 0, vat: 0 })).toEqual([]);
+    expect(serviceSaleLines({ sellerId: 'chapel', buyerId: 'house-1', service: 'school', ttc: 0, ht: 0, vat: 0 })).toMatchObject([]);
   });
 });

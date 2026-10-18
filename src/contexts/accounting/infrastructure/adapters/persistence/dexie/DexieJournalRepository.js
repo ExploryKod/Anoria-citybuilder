@@ -1,5 +1,6 @@
 import db from '../../../../../../core/persistence/dexie/db.js';
 import { JournalRepository } from '../../../../application/ports/JournalRepository.js';
+import { LegsFold } from '../../../../domain/policies/LegsFold.js';
 import {
   buildMonthlyFinancialSummary,
   buildYearlyFinancialSummary,
@@ -30,6 +31,13 @@ export class DexieJournalRepository extends JournalRepository {
   async getJournalEntries() {
     const entries = await this.db.journal.toArray();
     return filterAndSortJournalEntries(entries);
+  }
+
+  /** Folds the whole table afresh (no cache: the session repository is the one the game runs on). @returns {Promise<LegsFold>} */
+  async getLegsFold() {
+    const fold = new LegsFold();
+    for (const entry of await this.getJournalEntries()) fold.add(entry);
+    return fold;
   }
 
   /**

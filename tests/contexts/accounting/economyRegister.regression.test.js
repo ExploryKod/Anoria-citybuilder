@@ -1,6 +1,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
 import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
+import { booked } from '../../helpers/booked.js';
 
 // Every private movement the journal books for a company or a house is also in the economy register, once, with the same
 // amount: the register is the source the journal is read from, so the two must never disagree.
@@ -36,7 +37,7 @@ function settle(pairs, buildings) {
     buildingMaintenanceCost: () => 10,
     readCompanyYear: companyYearReaderOf(journal),
     recordLedgerEntry: async (line) => {
-      journal.push(line);
+      journal.push(booked(line));
       return { recorded: true };
     },
     recordEconomyMovement: async (movement) => {

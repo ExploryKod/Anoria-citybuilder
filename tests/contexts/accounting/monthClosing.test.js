@@ -6,7 +6,9 @@ import { assetMovementsOf, monthlyDepreciationOf, postedAssetsOf, postedStockOf,
 import { isInformativeJournalType } from '../../../src/contexts/accounting/domain/policies/JournalEntryClassificationPolicy.js';
 import { moneyDirectionOf } from '../../../src/contexts/accounting/domain/policies/TreasuryFromJournalPolicy.js';
 
-const line = (type, amount, extra = {}) => ({ type, amount, turn: 1, year: 0, month: 1, accountBuildingId: 'b1', accountKind: null, ...extra });
+import { booked } from '../../helpers/booked.js';
+
+const line = (type, amount, extra = {}) => booked({ type, amount, turn: 1, year: 0, month: 1, accountBuildingId: 'b1', accountKind: null, ...extra });
 
 // The closing of the month writes lines that move no money: they must show in the books and never in the treasury.
 describe('the closing of the month (opérations diverses)', () => {

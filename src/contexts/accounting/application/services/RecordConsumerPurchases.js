@@ -41,7 +41,8 @@ export class RecordConsumerPurchases {
         ratePercent: ratesPercent[purchase.category],
       });
       const key = `${turn}:${distributorId}:${purchase.houseId}:${purchase.category}:${hamletId}`;
-      const common = { turn, businessKey: key };
+      // The house pays the price with VAT, the seller books it without, the city books the VAT: three écritures of one flow.
+      const common = { turn, transactionId: `consumer:${key}` };
 
       await this.#record({
         ...common,
@@ -78,13 +79,15 @@ export class RecordConsumerPurchases {
   }
 
   /**
-   * A line of zero is not written; a line the journal refuses for any other reason is a defect.
+   * A line of zero is not written; a line the journal refuses for any other reason is a defect. The three lines of a delivery have each their own business
+   * key (the delivery's, and the line's type): with one key for the three, the journal took the first and refused the other two as duplicates, so the seller's
+   * sale and the VAT were never written.
    * @param {object} line
-   * @param {string} key
+   * @param {string} key the delivery's key
    */
   async #record(line, key) {
     if (line.amount <= 0) return;
-    const result = await this.deps.recordLedgerEntry(line);
+    const result = await this.deps.recordLedgerEntry({ ...line, businessKey: `${key}:${line.type}` });
     if (!result.recorded && result.reason !== 'duplicate_business_key') {
       throw new Error(`[purchase] the ${line.type} line of ${key} was not recorded: ${result.reason}`);
     }

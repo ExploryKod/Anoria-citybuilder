@@ -10,14 +10,14 @@ import { accountKeyOf } from './AccountKeyPolicy.js';
 import { FOUNDING_CAPITAL_MONTHS } from '../catalogs/PayableCatalog.js';
 
 /**
- * @param {Array<{ type: string, accountBuildingId: string | null, accountKind?: string | null, closing?: { balances?: Record<string, number> } }>} entries the journal lines
+ * @param {Array<{ type: string, accountBuildingId: string | null, accountKind?: string | null, legs?: Array<{ account: string }> }>} entries the journal lines
  * @returns {Set<string>} the accounts (see `accountKeyOf`) that already received their founding capital
  */
 export function foundedAccountsOf(entries) {
   const founded = new Set();
   for (const entry of entries) {
     if (entry.type === 'company_capital_received') founded.add(accountKeyOf(entry));
-    else if (entry.type === 'year_closing' && entry.accountBuildingId && Math.abs(entry.closing?.balances?.['101'] ?? 0) > 0) founded.add(accountKeyOf(entry));
+    else if (entry.type === 'year_closing' && entry.accountBuildingId && entry.legs.some((leg) => leg.account === '101')) founded.add(accountKeyOf(entry));
   }
   return founded;
 }

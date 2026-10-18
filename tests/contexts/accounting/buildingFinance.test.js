@@ -1,11 +1,12 @@
 import { describe, test, expect } from '@jest/globals';
 import { buildingFinanceFigures, householdBudgetOf, householdLastMonthOf } from '../../../src/contexts/accounting/domain/policies/BuildingFinancePolicy.js';
+import { booked } from '../../helpers/booked.js';
 
 const lineOf = (statement, lineId) => statement.sections.flatMap((section) => section.lines).find((line) => line.id === lineId).amount;
 
 describe('building finance — a company account is a compte de résultat read from its own lines, by month and by year', () => {
   test('the result runs operating, current, then net: sales less purchases, wages, upkeep and corporate tax; other accounts are left out', () => {
-    const line = (type, amount, month, accountBuildingId = 'farm') => ({ type, amount, year: 2026, month, accountBuildingId });
+    const line = (type, amount, month, accountBuildingId = 'farm') => booked({ type, amount, year: 2026, month, accountBuildingId });
     const entries = [
       line('producer_revenue', 1000, 3),
       line('producer_purchase', 400, 3),
@@ -25,7 +26,7 @@ describe('building finance — a company account is a compte de résultat read f
   });
 
   test('a merchant house\'s account counts what an import cost: price, freight and duty are in the commercial margin', () => {
-    const line = (type, amount) => ({ type, amount, year: 3, month: 11, accountBuildingId: 'merchants', accountKind: 'entreprise:cooperative' });
+    const line = (type, amount) => booked({ type, amount, year: 3, month: 11, accountBuildingId: 'merchants', accountKind: 'entreprise:cooperative' });
     const entries = [
       line('import_coal', 16.2),
       line('freight_coal', 1.71),
@@ -41,7 +42,7 @@ describe('building finance — a company account is a compte de résultat read f
   });
 
   test('an export is a sale abroad, and its duty is an operating tax, not a cost of the goods', () => {
-    const line = (type, amount) => ({ type, amount, year: 3, month: 5, accountBuildingId: 'merchants', accountKind: 'entreprise:cooperative' });
+    const line = (type, amount) => booked({ type, amount, year: 3, month: 5, accountBuildingId: 'merchants', accountKind: 'entreprise:cooperative' });
     const entries = [
       line('producer_purchase', 100),
       line('abroad_sale_book', 160),
@@ -61,13 +62,13 @@ describe('building finance — a company account is a compte de résultat read f
       { type: 'producer_revenue', amount: 50, year: 1, month: 1, accountBuildingId: 'farm' },
       { type: 'capital_funds', amount: 500, year: 1, month: 1, accountBuildingId: 'farm' },
       { type: 'construction', amount: 200, year: 1, month: 1, accountBuildingId: 'farm' },
-    ];
+    ].map(booked);
 
     expect(buildingFinanceFigures(entries, 'farm', { year: 1, salesNature: 'production' }).statement.results.net).toBe(50);
   });
 
   test('the ratios read the statement: break-even is the fixed charges over the rate of margin on variable charges', () => {
-    const line = (type, amount) => ({ type, amount, year: 1, month: 1, accountBuildingId: 'shop' });
+    const line = (type, amount) => booked({ type, amount, year: 1, month: 1, accountBuildingId: 'shop' });
     const entries = [
       line('producer_revenue', 100), // sales
       line('producer_purchase', 60), // variable: what the goods cost
@@ -87,7 +88,7 @@ describe('building finance — a company account is a compte de résultat read f
   });
 
   test('the cost of a unit sets the month\'s operating charges against the units sold, and shows where a wage makes a unit lose money', () => {
-    const line = (type, amount) => ({ type, amount, year: 1, month: 1, accountBuildingId: 'farm' });
+    const line = (type, amount) => booked({ type, amount, year: 1, month: 1, accountBuildingId: 'farm' });
     const entries = [line('producer_revenue', 24), line('producer_wage', 72), line('maintenance', 2)];
 
     const { ratios } = buildingFinanceFigures(entries, 'farm', { year: 1, salesNature: 'production', unitsSold: 24 });
@@ -98,14 +99,14 @@ describe('building finance — a company account is a compte de résultat read f
   });
 
   test('units not read, or none sold, show no cost per unit rather than a zero', () => {
-    const entries = [{ type: 'maintenance', amount: 2, year: 1, month: 1, accountBuildingId: 'farm' }];
+    const entries = [booked({ type: 'maintenance', amount: 2, year: 1, month: 1, accountBuildingId: 'farm' })];
 
     expect(buildingFinanceFigures(entries, 'farm', { year: 1, salesNature: 'production' }).ratios.costPerUnit).toBeNull();
     expect(buildingFinanceFigures(entries, 'farm', { year: 1, salesNature: 'production', unitsSold: 0 }).ratios.costPerUnit).toBeNull();
   });
 
   test('with no sales there is no break-even, not a zero', () => {
-    const entries = [{ type: 'maintenance', amount: 2, year: 1, month: 1, accountBuildingId: 'plant' }];
+    const entries = [booked({ type: 'maintenance', amount: 2, year: 1, month: 1, accountBuildingId: 'plant' })];
 
     const { ratios } = buildingFinanceFigures(entries, 'plant', { year: 1, salesNature: 'services' });
 
@@ -115,12 +116,12 @@ describe('building finance — a company account is a compte de résultat read f
 
   test('a statement is never read without its sales nature, and a sale on an account whose nature the catalog does not give throws', () => {
     expect(() => buildingFinanceFigures([], 'farm', { year: 1 })).toThrow(/sales nature/);
-    const sale = [{ type: 'producer_revenue', amount: 10, year: 1, month: 1, accountBuildingId: 'bank' }];
+    const sale = [booked({ type: 'producer_revenue', amount: 10, year: 1, month: 1, accountBuildingId: 'bank' })];
     expect(() => buildingFinanceFigures(sale, 'bank', { year: 1, salesNature: null })).toThrow(/does not say/);
   });
 
   test('a service building\'s sales are services (706), not goods: they do not make a commercial margin', () => {
-    const sale = [{ type: 'producer_revenue', amount: 40, year: 1, month: 1, accountBuildingId: 'school' }];
+    const sale = [booked({ type: 'producer_revenue', amount: 40, year: 1, month: 1, accountBuildingId: 'school' })];
 
     const { statement } = buildingFinanceFigures(sale, 'school', { year: 1, salesNature: 'services' });
 
@@ -144,7 +145,7 @@ describe('building finance — a company account is a compte de résultat read f
     const entries = [
       { type: 'household_wage', amount: 60, year: 2026, month: 2, accountBuildingId: 'house-1', accountKind: 'particulier' },
       { type: 'producer_revenue', amount: 20, year: 2026, month: 2, accountBuildingId: 'house-1', accountKind: 'entreprise:cooperative' },
-    ];
+    ].map(booked);
 
     const personal = buildingFinanceFigures(entries, 'house-1', { year: 2026, month: 2, accountKind: 'particulier' });
     const business = buildingFinanceFigures(entries, 'house-1', { year: 2026, month: 2, accountKind: 'entreprise:cooperative', salesNature: 'production' });

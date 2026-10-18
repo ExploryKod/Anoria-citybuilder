@@ -6,7 +6,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { PREFABS } from '../../src/shared/prefabs/prefabCatalog.js';
 import { canonicalizeHouseRecord } from '../../src/shared/building-identity/index.js';
-import { deriveTreasuryFigures } from '../../src/contexts/accounting/domain/policies/TreasuryFromJournalPolicy.js';
+import { LegsFold } from '../../src/contexts/accounting/domain/policies/LegsFold.js';
 import { createEmploymentBuildingSnapshot } from '../../src/contexts/employment/domain/EmploymentBuildingSnapshot.js';
 import { computeCityEmploymentSummary } from '../../src/contexts/employment/domain/computeCityEmploymentSummary.js';
 
@@ -24,8 +24,9 @@ describe('prefab anoria-tour-116 — its state is the saved one', () => {
 
   test('its journal starts clean, at the same capital a new game starts with (no inherited deficit)', () => {
     // The city's own account: the founding capital it paid its companies is already in the journal, so it starts at the capital of a new game.
-    const figures = deriveTreasuryFigures(prefab.journal.filter((line) => !line.accountBuildingId), { currentTurn: prefab.turn });
-    expect(figures.funds).toBeCloseTo(2000, 2);
+    const fold = new LegsFold();
+    for (const line of prefab.journal) fold.add(line);
+    expect(fold.balanceOf('512', { accountKey: null }) / 100).toBeCloseTo(2000, 2);
   });
 
   test('its merchant and scholar housing is sized to the jobs actually built: no chronic mass unemployment', () => {

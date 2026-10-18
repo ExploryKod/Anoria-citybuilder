@@ -15,117 +15,166 @@
  *
  * @typedef {'capital' | 'loan' | 'loan-repayment' | 'fixed-asset' | 'tax-received' | 'tax-paid' | 'treasury' | 'purchase' | 'external'
  *   | 'personnel' | 'financial' | 'subsidy-given' | 'sales' | 'subsidy-received' | 'household'} JournalTone
- * @typedef {{ account: string, label: string, tone: JournalTone, household?: boolean, detail?: string, counter?: string }} PcgJournalEntry
+ * @typedef {{ debit: string, credit: string }} EntryLegs the two accounts of an écriture: the one debited and the one credited, for the same amount
+ * @typedef {{ legs: EntryLegs, account: string, label: string, detail?: string }} AccountingVariant one type of écriture as one chart of accounts books it
+ * @typedef {AccountingVariant & { tone: JournalTone, household?: boolean, journal: string, plans: { pcg?: AccountingVariant, m57?: AccountingVariant } }} PcgJournalEntry
  *
- * Every line of the journal moves money, so it is one leg on the bank (512) and one on `account`. A line whose own account IS the bank (a deposit, a
- * withdrawal) says the other leg in `counter`.
+ * Every type of écriture names both its legs, the bank (512) included: nothing is guessed afterwards. A type says them for each chart of accounts
+ * that books it: `pcg` (companies, the property company, the cooperatives, the households' mirror) and `m57` (the city and the hamlets, which follow
+ * the M57 chart of accounts, itself built on the PCG: their taxes are products of class 7, not debts to the taxpayer). The top-level `legs`,
+ * `account`, `label` and `detail` are those of the first chart that books the type (the PCG's when it has one): what the statements read.
+ * `account` is the leg that is not the bank. `journal` is the journal code (`BQ` bank, `OD` opérations diverses; the other codes come with the
+ * entries booked when due).
  */
+
+const BANK = '512';
+
+/** @param {string} account @returns {EntryLegs} money arriving: the bank is debited, `account` credited. */
+const inflow = (account) => Object.freeze({ debit: BANK, credit: account });
+/** @param {string} account @returns {EntryLegs} money leaving: `account` is debited, the bank credited. */
+const outflow = (account) => Object.freeze({ debit: account, credit: BANK });
+
+/** @param {EntryLegs} legs @returns {string} the leg that is not the bank */
+function otherThanBank(legs) {
+  if (legs.debit === BANK) return legs.credit;
+  if (legs.credit === BANK) return legs.debit;
+  throw new Error(`[PcgJournalCatalog] the legs ${legs.debit} / ${legs.credit} do not touch the bank: an opération diverse names its own legs`);
+}
+
+/** @returns {AccountingVariant} */
+const variant = (legs, label, detail = undefined) =>
+  Object.freeze({ legs, account: otherThanBank(legs), label, ...(detail ? { detail } : {}) });
+
+/**
+ * How the M57 chart books a type (the city and the hamlets). `detail` as in `entry`.
+ * @param {EntryLegs} legs @param {string} label @param {string} [detail]
+ */
+const publicVariant = (legs, label, detail = undefined) => variant(legs, label, detail);
 
 /**
  * `detail` says what the line is in the game, in the player's words, where the account's own title does not (it is what the compte de
- * résultat prints in small grey under a line, so the player sees what a "charge externe" really is).
- * @param {string} account @param {string} label @param {JournalTone} tone @param {boolean} [household] @param {string} [detail]
+ * résultat prints in small grey under a line, so the player sees what a "charge externe" really is). `m57` is the M57 variant, for a type the city
+ * writes too.
+ * @param {EntryLegs} legs @param {string} label @param {JournalTone} tone @param {boolean} [household] @param {string} [detail] @param {AccountingVariant} [m57]
  * @returns {PcgJournalEntry}
  */
-const entry = (account, label, tone, household = false, detail = undefined, counter = undefined) =>
-  Object.freeze({ account, label, tone, ...(household ? { household } : {}), ...(detail ? { detail } : {}), ...(counter ? { counter } : {}) });
+const entry = (legs, label, tone, household = false, detail = undefined, m57 = undefined) => {
+  const pcg = variant(legs, label, detail);
+  return Object.freeze({ ...pcg, tone, journal: 'BQ', plans: Object.freeze({ pcg, ...(m57 ? { m57 } : {}) }), ...(household ? { household } : {}) });
+};
+
+/**
+ * A type only the city and the hamlets write (a tax received, a benefit paid): it has no PCG variant, so a company that wrote it would throw.
+ * @param {EntryLegs} legs @param {string} label @param {JournalTone} tone @param {string} [detail]
+ * @returns {PcgJournalEntry}
+ */
+const publicEntry = (legs, label, tone, detail = undefined) => {
+  const m57 = publicVariant(legs, label, detail);
+  return Object.freeze({ ...m57, tone, journal: 'BQ', plans: Object.freeze({ m57 }) });
+};
 
 /** The lines whose type is exactly this. */
 const BY_TYPE = Object.freeze({
   // Classe 1 — capitaux et emprunts
-  capital_funds: entry('101', 'Capital', 'capital'),
+  // The city's starting funds are its dotations (1021) in the M57 chart; a company's capital is 101.
+  capital_funds: entry(inflow('101'), 'Capital', 'capital', false, undefined, publicVariant(inflow('1021'), 'Dotations')),
   // The founding capital the city pays a company or the business of a house: the city's holding in it (261), the company's capital (101). Never repaid.
-  company_capital_paid: entry('261', 'Titres de participation', 'capital', false, 'Fonds propres versés à une entreprise'),
-  company_capital_received: entry('101', 'Capital', 'capital', false, 'Fonds propres reçus de la ville'),
-  loan_capital: entry('164', 'Emprunts auprès des établissements de crédit', 'loan'),
-  loan_repayment: entry('164', 'Emprunts auprès des établissements de crédit', 'loan-repayment'),
+  company_capital_paid: entry(outflow('261'), 'Titres de participation', 'capital', false, 'Fonds propres versés à une entreprise', publicVariant(outflow('261'), 'Titres de participation', 'Fonds propres versés à une entreprise')),
+  company_capital_received: entry(inflow('101'), 'Capital', 'capital', false, 'Fonds propres reçus de la ville'),
+  loan_capital: entry(inflow('164'), 'Emprunts auprès des établissements de crédit', 'loan', false, undefined, publicVariant(inflow('1641'), 'Emprunts en euros')),
+  loan_repayment: entry(outflow('164'), 'Emprunts auprès des établissements de crédit', 'loan-repayment', false, undefined, publicVariant(outflow('1641'), 'Emprunts en euros')),
   // Classe 2 — immobilisations
-  construction: entry('213', 'Constructions', 'fixed-asset'),
-  construction_refund: entry('213', 'Constructions', 'fixed-asset'),
-  loan_capital_lent: entry('274', 'Prêts', 'loan'),
-  loan_repayment_received: entry('274', 'Prêts', 'loan-repayment'),
-  // Classe 4 — l'État
-  citizen_tax: entry('447', 'Autres impôts, taxes et versements assimilés', 'tax-received'),
-  payroll_tax: entry('4421', 'Prélèvements à la source (impôt sur le revenu)', 'tax-received'),
-  vat: entry('4457', 'Taxes sur le chiffre d’affaires collectées', 'tax-received'),
-  corporate_tax_revenue: entry('444', 'État - Impôts sur les bénéfices', 'tax-received'),
-  income_tax: entry('4421', 'Prélèvements à la source (impôt sur le revenu)', 'tax-paid'),
-  // An advance that turned out too high is given back at the year's close: the household receives it, the city pays it (the same account 4421).
-  income_tax_refund: entry('4421', 'Prélèvements à la source (impôt sur le revenu) — remboursement', 'tax-received'),
-  payroll_tax_refund: entry('4421', 'Prélèvements à la source (impôt sur le revenu) — remboursement', 'tax-paid'),
-  citizen_tax_paid: entry('447', 'Autres impôts, taxes et versements assimilés', 'tax-paid'),
-  corporate_tax: entry('695', 'Impôts sur les bénéfices', 'tax-paid'),
-  social_contribution: entry('431', 'Sécurité sociale — cotisations perçues', 'tax-received'),
-  employee_contribution: entry('431', 'Sécurité sociale — cotisations salariales', 'tax-paid', true),
+  construction: entry(outflow('213'), 'Constructions', 'fixed-asset', false, undefined, publicVariant(outflow('2131'), 'Bâtiments publics')),
+  construction_refund: entry(inflow('213'), 'Constructions', 'fixed-asset', false, undefined, publicVariant(inflow('2131'), 'Bâtiments publics')),
+  loan_capital_lent: entry(outflow('274'), 'Prêts', 'loan'),
+  loan_repayment_received: entry(inflow('274'), 'Prêts', 'loan-repayment'),
+  // Classe 4 — l'État. What the city receives is a product of class 7 in the M57 chart (73), not a debt to the taxpayer.
+  citizen_tax: publicEntry(inflow('73111'), 'Impôts directs locaux', 'tax-received'),
+  payroll_tax: publicEntry(inflow('738'), 'Autres impôts et taxes', 'tax-received', 'Prélèvement à la source sur les salaires'),
+  vat: publicEntry(inflow('735'), 'Fraction de TVA', 'tax-received'),
+  corporate_tax_revenue: publicEntry(inflow('73118'), 'Autres contributions directes', 'tax-received', 'Impôt sur les bénéfices des entreprises'),
+  income_tax: entry(outflow('4421'), 'Prélèvements à la source (impôt sur le revenu)', 'tax-paid'),
+  // An advance that turned out too high is given back at the year's close: the household receives it, the city pays it (7398, a restitution of tax).
+  income_tax_refund: entry(inflow('4421'), 'Prélèvements à la source (impôt sur le revenu) — remboursement', 'tax-received'),
+  payroll_tax_refund: publicEntry(outflow('7398'), 'Reversements, restitutions et prélèvements divers', 'tax-paid', 'Remboursement d’impôt sur le revenu'),
+  citizen_tax_paid: entry(outflow('447'), 'Autres impôts, taxes et versements assimilés', 'tax-paid'),
+  corporate_tax: entry(outflow('695'), 'Impôts sur les bénéfices', 'tax-paid'),
+  // The contributions the city collects are owed to the social body: class 4 in its books (431), not a product. The benefit is paid out of the same account.
+  social_contribution: publicEntry(inflow('431'), 'Sécurité sociale', 'tax-received', 'Cotisations perçues pour la sécurité sociale'),
+  employee_contribution: entry(outflow('431'), 'Sécurité sociale — cotisations salariales', 'tax-paid', true),
   // Classe 4 — ce que les ménages perçoivent (hors PCG: un ménage n'est pas une entité)
-  household_wage: entry('421', 'Personnel - Rémunérations dues', 'household', true),
-  public_wage: entry('421', 'Personnel - Rémunérations dues', 'household', true),
-  household_benefit: entry('437', 'Autres organismes sociaux', 'household', true),
+  household_wage: entry(inflow('421'), 'Personnel - Rémunérations dues', 'household', true),
+  public_wage: entry(inflow('421'), 'Personnel - Rémunérations dues', 'household', true),
+  household_benefit: entry(inflow('437'), 'Autres organismes sociaux', 'household', true),
   // Le loyer d'une maison à la maison du maire (le propriétaire) : une charge de logement du ménage, un produit locatif de la maison du maire.
-  rent_paid: entry('6132', 'Locations immobilières', 'purchase', true, 'Loyer versé au propriétaire'),
-  rent_received: entry('752', 'Revenus des immeubles', 'sales', false, 'Loyers des maisons'),
+  rent_paid: entry(outflow('6132'), 'Locations immobilières', 'purchase', true, 'Loyer versé au propriétaire'),
+  rent_received: entry(inflow('752'), 'Revenus des immeubles', 'sales', false, 'Loyers des maisons'),
   // What a business pays the owner for the premises it works in (a cooperative's share of its house, a company's building): a charge of the
-  // business, a rental income of the owner, apart from a household's rent.
-  premises_rent_paid: entry('6132', 'Locations immobilières', 'purchase', false, 'Loyer du local d’activité'),
-  premises_rent_received: entry('752', 'Revenus des immeubles', 'sales', false, 'Loyers des locaux d’activité'),
+  // business, a rental income of the owner, apart from a household's rent. A building with no operator is rented by the hamlet (613 in M57).
+  premises_rent_paid: entry(outflow('6132'), 'Locations immobilières', 'purchase', false, 'Loyer du local d’activité', publicVariant(outflow('613'), 'Locations', 'Loyer du local d’activité')),
+  premises_rent_received: entry(inflow('752'), 'Revenus des immeubles', 'sales', false, 'Loyers des locaux d’activité'),
   // The debts a company paid off once it had the money (see PayableCatalog): the line of money against the debt account, the charge having been
   // booked when it fell due (an opération diverse). A debt of wages is received by the house of the workers like any wage.
-  wage_debt_paid: entry('421', 'Personnel - Rémunérations dues', 'personnel', false, 'Salaires impayés réglés'),
-  contribution_debt_paid: entry('431', 'Sécurité sociale — cotisations dues', 'personnel', false, 'Cotisations impayées réglées'),
-  corporate_tax_debt_paid: entry('444', 'État - Impôts sur les bénéfices', 'tax-paid', false, 'Impôt impayé réglé'),
-  premises_rent_debt_paid: entry('401', 'Fournisseurs — loyers dus', 'purchase', false, 'Loyer du local impayé réglé'),
-  premises_rent_debt_received: entry('411', 'Clients — loyers dus', 'sales', false, 'Loyer du local impayé encaissé'),
+  wage_debt_paid: entry(outflow('421'), 'Personnel - Rémunérations dues', 'personnel', false, 'Salaires impayés réglés'),
+  contribution_debt_paid: entry(outflow('431'), 'Sécurité sociale — cotisations dues', 'personnel', false, 'Cotisations impayées réglées'),
+  corporate_tax_debt_paid: entry(outflow('444'), 'État - Impôts sur les bénéfices', 'tax-paid', false, 'Impôt impayé réglé'),
+  premises_rent_debt_paid: entry(outflow('401'), 'Fournisseurs — loyers dus', 'purchase', false, 'Loyer du local impayé réglé'),
+  premises_rent_debt_received: entry(inflow('411'), 'Clients — loyers dus', 'sales', false, 'Loyer du local impayé encaissé'),
   // Classe 5 — financiers
   // A deposit moves money from a house's account to the bank's, and the bank owes it back: 275 for the depositor, 165 for the bank.
-  deposit: entry('512', 'Banques', 'treasury', false, undefined, '275'),
-  withdrawal: entry('512', 'Banques', 'treasury', false, undefined, '275'),
-  deposit_received: entry('512', 'Banques', 'treasury', false, undefined, '165'),
-  withdrawal_paid: entry('512', 'Banques', 'treasury', false, undefined, '165'),
-  household_deposit_interest: entry('512', 'Banques', 'treasury', true, undefined, '768'),
+  deposit: entry(outflow('275'), 'Dépôts et cautionnements versés', 'treasury'),
+  withdrawal: entry(inflow('275'), 'Dépôts et cautionnements versés', 'treasury'),
+  deposit_received: entry(inflow('165'), 'Dépôts et cautionnements reçus', 'treasury'),
+  withdrawal_paid: entry(outflow('165'), 'Dépôts et cautionnements reçus', 'treasury'),
+  household_deposit_interest: entry(inflow('768'), 'Autres produits financiers', 'treasury', true),
   // Classe 6 — charges
-  producer_purchase: entry('607', 'Achats de marchandises', 'purchase', false, 'Biens achetés à un entrepôt'),
-  consumer_purchase: entry('607', 'Achats de marchandises', 'purchase', true),
-  service_purchase: entry('604', 'Achats d’études et prestations de services', 'purchase', false, 'Services payés (eau, énergie, soins…)'),
-  maintenance: entry('6156', 'Maintenance', 'external', false, 'Entretien mensuel du bâtiment'),
-  exceptional_expenses: entry('615', 'Entretien et réparation', 'external', false, 'Réparations exceptionnelles'),
-  commercial_route: entry('6222', 'Commissions et courtages sur ventes', 'external', false, 'Frais d’ouverture d’une route commerciale'),
-  contribution: entry('6281', 'Concours divers (cotisations)', 'external', false, 'Contribution pour révéler une dépêche'),
-  salary: entry('6411', 'Salaires, appointements', 'personnel'),
-  producer_wage: entry('6411', 'Salaires, appointements', 'personnel', false, 'Salaires des ouvriers du bâtiment'),
-  employer_contribution: entry('645', 'Charges de sécurité sociale et de prévoyance', 'personnel', false, 'Cotisations patronales'),
-  enterprise_participation: entry('691', 'Participation des salariés aux résultats', 'personnel', false, 'Part des résidents dans le résultat de l’entreprise'),
+  producer_purchase: entry(outflow('607'), 'Achats de marchandises', 'purchase', false, 'Biens achetés à un entrepôt'),
+  consumer_purchase: entry(outflow('607'), 'Achats de marchandises', 'purchase', true),
+  service_purchase: entry(outflow('604'), 'Achats d’études et prestations de services', 'purchase', false, 'Services payés (eau, énergie, soins…)'),
+  maintenance: entry(outflow('6156'), 'Maintenance', 'external', false, 'Entretien mensuel du bâtiment', publicVariant(outflow('6156'), 'Maintenance', 'Entretien mensuel du bâtiment')),
+  exceptional_expenses: entry(outflow('615'), 'Entretien et réparation', 'external', false, 'Réparations exceptionnelles', publicVariant(outflow('615221'), 'Entretien et réparations des bâtiments publics', 'Réparations exceptionnelles')),
+  commercial_route: entry(outflow('6222'), 'Commissions et courtages sur ventes', 'external', false, 'Frais d’ouverture d’une route commerciale', publicVariant(outflow('622'), 'Rémunérations d’intermédiaires et honoraires', 'Frais d’ouverture d’une route commerciale')),
+  contribution: entry(outflow('6281'), 'Concours divers (cotisations)', 'external', false, 'Contribution pour révéler une dépêche', publicVariant(outflow('6281'), 'Concours divers (cotisations...)', 'Contribution pour révéler une dépêche')),
+  salary: entry(outflow('6411'), 'Salaires, appointements', 'personnel', false, undefined, publicVariant(outflow('6411'), 'Personnel titulaire')),
+  producer_wage: entry(outflow('6411'), 'Salaires, appointements', 'personnel', false, 'Salaires des ouvriers du bâtiment'),
+  employer_contribution: entry(outflow('645'), 'Charges de sécurité sociale et de prévoyance', 'personnel', false, 'Cotisations patronales'),
+  enterprise_participation: entry(outflow('691'), 'Participation des salariés aux résultats', 'personnel', false, 'Part des résidents dans le résultat de l’entreprise'),
   // What the associates are paid is a share of the result paid out after the tax, not a charge: class 4, outside the compte de résultat.
-  enterprise_dividend: entry('457', 'Associés — dividendes à payer', 'financial', false, 'Part des associés dans le résultat'),
-  household_participation: entry('421', 'Personnel — participation aux résultats', 'household', true),
-  household_dividend: entry('457', 'Associés — dividendes reçus', 'household', true),
-  unemployment_benefit: entry('648', 'Autres charges de personnel', 'personnel', false, 'Allocation chômage'),
-  loan_interest: entry('6611', 'Intérêts des emprunts et dettes', 'financial'),
-  deposit_interest_paid: entry('6615', 'Intérêts des comptes courants et des dépôts créditeurs', 'financial'),
-  subsidy_housing: entry('658', 'Charges diverses de gestion courante', 'subsidy-given', false, 'Aide au logement'),
-  subsidy_companies: entry('658', 'Charges diverses de gestion courante', 'subsidy-given', false, 'Aide aux entreprises'),
-  service_subsidy: entry('658', 'Charges diverses de gestion courante', 'subsidy-given', false, 'Aide aux services publics'),
+  enterprise_dividend: entry(outflow('457'), 'Associés — dividendes à payer', 'financial', false, 'Part des associés dans le résultat'),
+  household_participation: entry(inflow('421'), 'Personnel — participation aux résultats', 'household', true),
+  household_dividend: entry(inflow('457'), 'Associés — dividendes reçus', 'household', true),
+  // The benefit is paid out of what the city holds for the social body (431): it does not touch the city's result.
+  unemployment_benefit: publicEntry(outflow('431'), 'Sécurité sociale', 'personnel', 'Allocation chômage'),
+  loan_interest: entry(outflow('6611'), 'Intérêts des emprunts et dettes', 'financial', false, undefined, publicVariant(outflow('66111'), 'Intérêts réglés à l’échéance')),
+  deposit_interest_paid: entry(outflow('6615'), 'Intérêts des comptes courants et des dépôts créditeurs', 'financial'),
+  subsidy_housing: publicEntry(outflow('65741'), 'Subventions de fonctionnement aux ménages', 'subsidy-given', 'Aide au logement'),
+  subsidy_companies: publicEntry(outflow('65742'), 'Subventions de fonctionnement aux entreprises', 'subsidy-given', 'Aide aux entreprises'),
+  service_subsidy: publicEntry(outflow('65738'), 'Subventions de fonctionnement aux autres établissements publics', 'subsidy-given', 'Aide aux services publics'),
   // Classe 7 — produits
-  producer_revenue: entry('707', 'Ventes de marchandises', 'sales', false, 'Ventes du bâtiment'),
-  service_sales: entry('706', 'Prestations de services', 'sales'),
-  subsidy_companies_received: entry('741', 'Subventions d’exploitation', 'subsidy-received', false, 'Aide à l’entretien reçue de la ville'),
+  producer_revenue: entry(inflow('707'), 'Ventes de marchandises', 'sales', false, 'Ventes du bâtiment'),
+  service_sales: entry(inflow('706'), 'Prestations de services', 'sales'),
+  subsidy_companies_received: entry(inflow('741'), 'Subventions d’exploitation', 'subsidy-received', false, 'Aide à l’entretien reçue de la ville'),
   // The share of the upkeep of the houses the hamlet pays their owner (the property company that bears it).
-  subsidy_housing_received: entry('741', 'Subventions d’exploitation', 'subsidy-received', false, 'Aide du hameau à l’entretien des maisons'),
-  service_subsidy_received: entry('741', 'Subventions d’exploitation', 'subsidy-received', false, 'Aide aux services publics reçue'),
-  loan_interest_received: entry('7626', 'Revenus des prêts', 'sales'),
+  subsidy_housing_received: entry(inflow('741'), 'Subventions d’exploitation', 'subsidy-received', false, 'Aide du hameau à l’entretien des maisons'),
+  service_subsidy_received: entry(inflow('741'), 'Subventions d’exploitation', 'subsidy-received', false, 'Aide aux services publics reçue'),
+  loan_interest_received: entry(inflow('7626'), 'Revenus des prêts', 'sales'),
 });
+
+/** @type {ReadonlyArray<string>} Every type of money line the catalog names exactly (a trade line is named by its prefix, below). */
+export const JOURNAL_TYPES = Object.freeze(Object.keys(BY_TYPE));
 
 /**
  * The lines whose type starts with this prefix (a trade line carries its good in its type: `import_coal`). The most specific prefix
  * is read first.
  */
 const BY_PREFIX = Object.freeze([
-  ['duty_paid_import_', entry('608', 'Frais accessoires incorporés aux achats (droits de douane)', 'tax-paid')],
-  ['duty_paid_export_', entry('6353', 'Impôts indirects (droits de douane)', 'tax-paid')],
-  ['customs_import_', entry('447', 'Autres impôts, taxes et versements assimilés (droits de douane)', 'tax-received')],
-  ['abroad_sale_', entry('707', 'Ventes de marchandises (à l’étranger)', 'sales')],
-  ['freight_', entry('6241', 'Transports sur achats', 'external')],
-  ['import_', entry('607', 'Achats de marchandises (à l’étranger)', 'purchase')],
-  ['export_', entry('447', 'Autres impôts, taxes et versements assimilés (droits de douane)', 'tax-received')],
+  ['duty_paid_import_', entry(outflow('608'), 'Frais accessoires incorporés aux achats (droits de douane)', 'tax-paid')],
+  ['duty_paid_export_', entry(outflow('6353'), 'Impôts indirects (droits de douane)', 'tax-paid')],
+  ['customs_import_', publicEntry(inflow('73431'), 'Octroi de mer (droits de douane à l’entrée)', 'tax-received')],
+  ['abroad_sale_', entry(inflow('707'), 'Ventes de marchandises (à l’étranger)', 'sales')],
+  ['freight_', entry(outflow('6241'), 'Transports sur achats', 'external')],
+  ['import_', entry(outflow('607'), 'Achats de marchandises (à l’étranger)', 'purchase', false, undefined, publicVariant(outflow('607'), 'Achats de marchandises (à l’étranger)'))],
+  ['export_', publicEntry(inflow('7348'), 'Autres impôts et taxes d’Outre-mer (droits de douane à l’export)', 'tax-received')],
 ]);
 
 /**
@@ -180,20 +229,6 @@ function resultLegOf(od) {
 }
 
 /**
- * What an opération diverse adds to the line of the compte de résultat its account feeds: a charge counts as positive when debited, a product when
- * credited, and the other way round takes off (a stock that grows lowers the cost of the purchases).
- * @param {string} type @param {number} amount
- * @returns {number} the signed amount
- */
-export function statementAmountOfOd(type, amount) {
-  const leg = resultLegOf(odLegsOf(type));
-  if (!leg) throw new Error(`[PcgJournalCatalog] "${type}" touches no charge or product: it has no place in the compte de résultat`);
-  const { account, side } = leg;
-  const isCharge = account[0] === '6';
-  return (isCharge ? side === 'debit' : side === 'credit') ? amount : -amount;
-}
-
-/**
  * @param {string} type A journal line's type.
  * @returns {PcgJournalEntry | null} Where the line sits in the chart of accounts, or null for a type with none (an informative line, a
  *   closing): the journal says so, it never invents an account.
@@ -204,9 +239,67 @@ export function pcgOfJournalType(type) {
   if (isOperationDiverse(type)) {
     const od = OPERATIONS_DIVERSES[type];
     const leg = resultLegOf(od);
-    return leg ? entry(leg.account, od.label, od.tone, false, od.detail) : null;
+    if (!leg) return null;
+    const legs = Object.freeze({ debit: od.debit, credit: od.credit });
+    const own = Object.freeze({ legs, account: leg.account, label: od.label, detail: od.detail });
+    return Object.freeze({ ...own, tone: od.tone, journal: 'OD', plans: Object.freeze({ pcg: own }) });
   }
   return BY_PREFIX.find(([prefix]) => type.startsWith(prefix))?.[1] ?? null;
+}
+
+/** The charts of accounts an écriture can be booked in: the PCG (companies, the property company, the cooperatives, the households' mirror) and the M57 (the city and the hamlets). */
+export const ACCOUNTING_PLANS = Object.freeze(['pcg', 'm57']);
+
+/**
+ * @param {string | null | undefined} accountBuildingId The account an écriture belongs to (null: the city's own).
+ * @returns {'pcg' | 'm57'} The chart of accounts that account follows.
+ */
+export function planOfAccount(accountBuildingId) {
+  return accountBuildingId ? 'pcg' : 'm57';
+}
+
+/**
+ * The two legs of one type of écriture in one chart of accounts: the account debited and the account credited, bank included.
+ * @param {string} type A journal line's type.
+ * @param {'pcg' | 'm57'} plan
+ * @returns {EntryLegs} Throws when the type is unknown or that chart does not book it: a city writing a company's type is a defect, never a guessed account.
+ */
+export function legsOfType(type, plan) {
+  if (!ACCOUNTING_PLANS.includes(plan)) throw new Error(`[PcgJournalCatalog] "${plan}" is not a chart of accounts (${ACCOUNTING_PLANS.join(', ')})`);
+  const catalogued = pcgOfJournalType(type);
+  if (!catalogued) throw new Error(`[PcgJournalCatalog] the type "${type}" has no legs in the chart of accounts`);
+  const booked = catalogued.plans[plan];
+  if (!booked) throw new Error(`[PcgJournalCatalog] the type "${type}" is not booked in the ${plan} chart of accounts`);
+  return booked.legs;
+}
+
+/**
+ * The types of écriture no other account books the other side of: the city's starting funds, what it builds and repairs, what a building bears of its own
+ * upkeep (the repairer is not an actor of the game), what a merchant buys and sells abroad. Every other type is one side of a flow between accounts: its
+ * écriture carries the `transactionId` of the flow, so the other side can be found.
+ */
+const NO_COUNTERPART_TYPES = Object.freeze(new Set(['capital_funds', 'construction', 'construction_refund', 'maintenance', 'exceptional_expenses', 'commercial_route', 'contribution']));
+const NO_COUNTERPART_PREFIXES = Object.freeze(['import_', 'freight_', 'abroad_sale_']);
+/** The opérations diverses that are one side of a flow: the rent a company owes its owner is the owner's receivable. */
+const PAIRED_OPERATIONS = Object.freeze(new Set(['od_payable_premises_rent', 'od_receivable_premises_rent']));
+
+/**
+ * @param {string} type A journal line's type.
+ * @returns {boolean} true when the type is one side of a flow between two accounts (the other side is booked by the other account, with the same `transactionId`).
+ */
+export function hasCounterpart(type) {
+  if (!pcgOfJournalType(type)) return false;
+  if (isOperationDiverse(type)) return PAIRED_OPERATIONS.has(type);
+  return !NO_COUNTERPART_TYPES.has(type) && !NO_COUNTERPART_PREFIXES.some((prefix) => type.startsWith(prefix));
+}
+
+/** @param {string} type @returns {string} The journal code of a type of écriture. */
+export function journalCodeOf(type) {
+  // An opération diverse with no charge or product (a contribution in kind, a disposal's depreciation) has no place in the result, but it is an OD all the same.
+  if (isOperationDiverse(type)) return 'OD';
+  const catalogued = pcgOfJournalType(type);
+  if (!catalogued) throw new Error(`[PcgJournalCatalog] the type "${type}" has no journal code: it is not in the chart of accounts`);
+  return catalogued.journal;
 }
 
 /** The accounts no line is "about" (the bank, a counter-account, the carried result of a purged year). */
@@ -237,7 +330,8 @@ const EXTRA_ACCOUNT_LABELS = Object.freeze({
  */
 export function accountLabelOf(account) {
   if (EXTRA_ACCOUNT_LABELS[account]) return EXTRA_ACCOUNT_LABELS[account];
-  const named = Object.values(BY_TYPE).find((candidate) => candidate.account === account) ?? BY_PREFIX.map(([, candidate]) => candidate).find((candidate) => candidate.account === account);
+  const everyVariant = [...Object.values(BY_TYPE), ...BY_PREFIX.map(([, candidate]) => candidate)].flatMap((candidate) => Object.values(candidate.plans));
+  const named = everyVariant.find((candidate) => candidate.account === account);
   if (!named) throw new Error(`[PcgJournalCatalog] the account ${account} has no title: no line type posts to it`);
   return named.label.replace(/ \(.*\)$/, '');
 }

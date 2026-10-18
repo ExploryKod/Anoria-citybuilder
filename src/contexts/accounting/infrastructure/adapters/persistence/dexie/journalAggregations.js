@@ -104,6 +104,10 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
         amount: entry.amount,
         description: entry.description,
         turn: entry.turn,
+        journal: entry.journal ?? null,
+        legs: entry.legs ?? null,
+        transactionId: entry.transactionId ?? null,
+        closed: entry.closed ?? false,
       });
     } else {
       grouped[key].expenses.total += entry.amount;
@@ -119,6 +123,10 @@ export function buildMonthlyFinancialSummary(entries, getTimeInfo) {
         amount: entry.amount,
         description: entry.description,
         turn: entry.turn,
+        journal: entry.journal ?? null,
+        legs: entry.legs ?? null,
+        transactionId: entry.transactionId ?? null,
+        closed: entry.closed ?? false,
       });
     }
 

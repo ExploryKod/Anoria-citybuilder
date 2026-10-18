@@ -408,6 +408,30 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* The legs of an écriture: account, title, debit, credit; the credit leg is indented as in a journal book. */
+.journal-entry-legs {
+    width: 100%;
+    margin-top: 6px;
+    border-collapse: collapse;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+.journal-entry-legs th,
+.journal-entry-legs td {
+    padding: 2px 6px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+.journal-entry-legs th {
+    font-weight: 600;
+    color: #6c757d;
+}
+.journal-entry-legs .journal-entry-leg-amount { text-align: right; white-space: nowrap; }
+.journal-entry-legs .journal-entry-leg-account { font-weight: 700; white-space: nowrap; }
+.journal-entry-legs .journal-entry-leg--credit .journal-entry-leg-label { padding-left: 18px; }
+.journal-entry-legs tfoot td { font-weight: 700; border-bottom: 0; }
+.journal-entry-legs-note { margin-top: 6px; font-size: 12px; color: #6c757d; }
+
 .journal-entry-type.carry_forward {
     background: #d1e7dd;
     color: #0f5132;

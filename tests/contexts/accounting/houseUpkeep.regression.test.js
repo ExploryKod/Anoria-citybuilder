@@ -4,6 +4,7 @@ import { buildingFinanceFigures } from '../../../src/contexts/accounting/domain/
 import { moneyDirectionOf } from '../../../src/contexts/accounting/domain/policies/TreasuryFromJournalPolicy.js';
 import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 import { householdYearReaderOf } from '../../helpers/householdYearReader.js';
+import { booked } from '../../helpers/booked.js';
 
 // The upkeep of a house is its owner's charge, as in real life: the property company of the mayor's house books it (its own house's included),
 // the hamlet pays it the subsidy the player sets, and the tenants pay only their rent.
@@ -36,7 +37,7 @@ function settle({ buildings, subsidyRate }) {
     readCompanyYear: companyYearReaderOf(journal),
     readHouseholdYear: householdYearReaderOf(journal),
     recordLedgerEntry: async (line) => {
-      journal.push({ ...line, year: 1, month: 4 });
+      journal.push(booked({ ...line, year: 1, month: 4 }));
       return { recorded: true };
     },
     recordEconomyMovement: async () => {},
@@ -75,6 +76,6 @@ describe('the upkeep of the houses is their owner\'s charge', () => {
   });
 
   test('the subsidy received is money in for its owner, and the line moves the owner\'s cash', () => {
-    expect(moneyDirectionOf({ type: 'subsidy_housing_received' })).toBe('credit');
+    expect(moneyDirectionOf(booked({ type: 'subsidy_housing_received', amount: 1, accountBuildingId: 'sci' }))).toBe('credit');
   });
 });

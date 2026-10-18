@@ -2,7 +2,9 @@ import { describe, test, expect } from '@jest/globals';
 import { postingsOf, accountLedgerOf, trialBalanceOf } from '../../../src/contexts/accounting/domain/policies/AccountLedgerPolicy.js';
 import { buildYearClosingLine } from '../../../src/contexts/accounting/domain/policies/YearClosingPolicy.js';
 
-const line = (type, amount, extra = {}) => ({ type, amount, turn: 1, year: 0, month: 1, accountBuildingId: 'b1', accountKind: null, ...extra });
+import { booked } from '../../helpers/booked.js';
+
+const line = (type, amount, extra = {}) => booked({ type, amount, turn: 1, year: 0, month: 1, accountBuildingId: 'b1', accountKind: null, ...extra });
 
 describe('the grand livre and the balance of an account (derived from its journal)', () => {
   const entries = [line('producer_purchase', 100), line('producer_revenue', 70), line('deposit', 20)];

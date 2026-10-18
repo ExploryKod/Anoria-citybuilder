@@ -7,7 +7,45 @@ import { formatJournalEntryDetails } from './formatJournalEntryDescription.js';
 import { goodLabel, unresolvedTerm } from '../../shell/CatalogVocabulary.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 import { tradeLineLabel } from '../../../../contexts/accounting/presentation/JournalExportViewModel.js';
-import { pcgOfJournalType } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
+import { accountLabelOf, pcgOfJournalType, planOfAccount } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
+
+/** The chart of accounts an entry is booked in, as the player reads it: M57 for the city and the hamlets, the PCG for the others. */
+const PLAN_NAMES = Object.freeze({ pcg: 'PCG', m57: 'M57' });
+
+/**
+ * The legs of an écriture as an accountant reads them: account, title, debit, credit, and the two totals, which are equal.
+ * A line with no legs that is not informative is a defect, not something to draw the old way.
+ * @param {object} entry
+ * @param {boolean} isInformative
+ * @returns {string}
+ */
+function renderEntryLegs(entry, isInformative) {
+  if (isInformative) return '';
+  // A year closed by a purge is shown from its totals per type: a digest of the year, not an écriture.
+  if (entry.closed) return '<div class="journal-entry-legs-note">Total de l’année close : ce n’est pas une écriture</div>';
+  if (!entry.legs) throw new Error(`[journal] the écriture ${entry.id} (${entry.type}) has no legs: it was written before the entries carried them`);
+  const money = (centimes) => (centimes > 0 ? formatEuro(centimes / 100) : '');
+  const totalDebit = entry.legs.reduce((sum, leg) => sum + leg.debit, 0);
+  const totalCredit = entry.legs.reduce((sum, leg) => sum + leg.credit, 0);
+  const plan = PLAN_NAMES[planOfAccount(entry.accountBuildingId)];
+  const rows = entry.legs
+    .map(
+      (leg) => `
+        <tr class="${leg.credit > 0 ? 'journal-entry-leg--credit' : ''}">
+            <td class="journal-entry-leg-account">${leg.account}</td>
+            <td class="journal-entry-leg-label">${accountLabelOf(leg.account)}</td>
+            <td class="journal-entry-leg-amount">${money(leg.debit)}</td>
+            <td class="journal-entry-leg-amount">${money(leg.credit)}</td>
+        </tr>`
+    )
+    .join('');
+  return `
+        <table class="journal-entry-legs" aria-label="Jambes de l’écriture (${plan})">
+            <thead><tr><th>Compte ${plan}</th><th>Libellé</th><th class="journal-entry-leg-amount">Débit</th><th class="journal-entry-leg-amount">Crédit</th></tr></thead>
+            <tbody>${rows}</tbody>
+            <tfoot><tr><td colspan="2">Total</td><td class="journal-entry-leg-amount">${formatEuro(totalDebit / 100)}</td><td class="journal-entry-leg-amount">${formatEuro(totalCredit / 100)}</td></tr></tfoot>
+        </table>`;
+}
 
 /** "Import Blé" / "Douane export perçue Bois": a trade line is named after what it is and the good the catalog names. */
 const tradeLabel = tradeLineLabel;
@@ -331,8 +369,9 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
   const pcg = pcgOfJournalType(entry.type);
   const isInformative = isInfoPseudoMovementType(entry.type) || Object.hasOwn(INFO_JOURNAL_TYPE_LABELS, entry.type) || entry.type.startsWith('loan_default_');
   if (!pcg && !isInformative) unresolvedTerm('journal account', entry.type);
-  const accountBadge = pcg
-    ? `<span class="journal-entry-account" title="${pcg.label}${pcg.household ? ' (hors PCG : un ménage n\'est pas une entité)' : ''}">${pcg.account}</span>`
+  // The journal code (BQ bank, OD opérations diverses…) the écriture is booked in; its accounts are in the legs below.
+  const accountBadge = entry.journal
+    ? `<span class="journal-entry-account" title="Code journal${pcg?.household ? ' (hors PCG : un ménage n\'est pas une entité)' : ''}">${entry.journal}</span>`
     : '';
 
   return `
@@ -346,6 +385,7 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
                     ${typeClass === 'positive' ? '+' : '-'}${Math.abs(entry.amount)}€
                 </span>
             </div>
+            ${renderEntryLegs(entry, isInformative)}
             <div class="journal-entry-details">
                 ${
                   entryDetails.length

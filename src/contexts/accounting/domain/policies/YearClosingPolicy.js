@@ -1,8 +1,10 @@
 /**
  * Year closing: when a full year is purged from the journal, its money lines are replaced by one `year_closing` line
- * per hamlet and year. The line keeps what the purge would otherwise lose:
- *   - the net flow of the year, which is the treasury's effect of the year (the balance stays exact);
- *   - the year's totals per journal type, i.e. the sub-totals the yearly summary and the city ledger show.
+ * per hamlet and year, which is an écriture of the plan comptable: the à-nouveaux (journal AN), the balance-sheet accounts the year ended with against the
+ * carried result (12). The line keeps what the purge would otherwise lose:
+ *   - the à-nouveaux, its legs: the treasury (the cash is the balance of 512), the balance sheet and the grand livre read them like any other écriture;
+ *   - the net flow of the year, which is the treasury's effect of the year;
+ *   - the year's totals per journal type, i.e. the sub-totals the yearly summary and the city ledger show (a digest, never a leg).
  *
  * Loan lines are kept as they are: a loan whose schedule runs past the purge still needs its contract and installments.
  */
@@ -10,10 +12,13 @@ import { moneyDirectionOf } from './TreasuryFromJournalPolicy.js';
 import { accountKeyOf } from './AccountKeyPolicy.js';
 import { postingsOf } from './AccountLedgerPolicy.js';
 import { buildingTypeOfConstruction } from './MonthClosingPolicy.js';
-import { isOperationDiverse } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
+import { OPENING_JOURNAL, assertBalanced, cashFlowsOfLegs, entryLegsOf, isEcriture } from './EntryLegsPolicy.js';
 import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
 
 export const YEAR_CLOSING_TYPE = 'year_closing';
+
+/** The account that carries the result of the years closed. */
+const CARRIED_RESULT = '12';
 
 /** Loan lines survive a purge: a contract and its schedule are not a year's total. */
 const KEPT_LOAN_TYPES = new Set([
@@ -56,6 +61,7 @@ export function buildYearClosingLine({ year, hamletId, accountBuildingId, accoun
   // What the balance sheet needs of the year (in centimes while it is summed): each balance-sheet account's net (debit minus credit), the year's result
   // (the charges and products, credit minus debit), and what each building cost to build (only the city's account holds the constructions).
   const accountNets = new Map();
+  const cashFlows = new Map();
   const assetNets = new Map();
   let resultCentimes = 0;
   const constructions = new Map();
@@ -64,8 +70,15 @@ export function buildYearClosingLine({ year, hamletId, accountBuildingId, accoun
     const direction = moneyDirectionOf(line);
     if (direction === 'credit') net += line.amount;
     else if (direction === 'debit') net -= line.amount;
-    if (direction !== null || isOperationDiverse(line.type)) {
+    if (isEcriture(line.type)) {
       byType[line.type] = (byType[line.type] ?? 0) + line.amount;
+      // What moved the cash, by the account the money came from or went to: the city's ledger reads a closed year from it.
+      for (const flow of cashFlowsOfLegs(postingsOf(line))) {
+        const kept = cashFlows.get(flow.account) ?? { in: 0, out: 0 };
+        kept.in += flow.in;
+        kept.out += flow.out;
+        cashFlows.set(flow.account, kept);
+      }
       for (const leg of postingsOf(line)) {
         const legNet = leg.debit - leg.credit;
         if (leg.account[0] === '6' || leg.account[0] === '7') resultCentimes -= legNet;
@@ -90,6 +103,13 @@ export function buildYearClosingLine({ year, hamletId, accountBuildingId, accoun
     months.add(timeInfo.monthIndex);
     lastTurn = Math.max(lastTurn, line.turn);
   }
+  // The à-nouveaux (journal AN): one écriture, each balance-sheet account with its net as it stood at the year's end, against the carried result (12), which takes
+  // what makes the legs even (a loss is its debit, a profit its credit). A purge keeps what the balance sheet reads, so it still balances once the lines are gone.
+  const legs = [...accountNets]
+    .filter(([, centimes]) => centimes !== 0)
+    .map(([account, centimes]) => ({ account, debit: centimes > 0 ? centimes : 0, credit: centimes < 0 ? -centimes : 0 }));
+  const carried = -legs.reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
+  if (carried !== 0) legs.push({ account: CARRIED_RESULT, debit: carried > 0 ? carried : 0, credit: carried < 0 ? -carried : 0 });
   return {
     type: YEAR_CLOSING_TYPE,
     turn: lastTurn,
@@ -101,14 +121,17 @@ export function buildYearClosingLine({ year, hamletId, accountBuildingId, accoun
     amount: Math.abs(net),
     description: `Clôture de l'année ${year} (${lines.length} lignes)`,
     businessKey: `${YEAR_CLOSING_TYPE}:${hamletId}:${year}:${accountKeyOf({ accountBuildingId, accountKind }) ?? 'city'}`,
+    journal: OPENING_JOURNAL,
+    legs: legs.length > 0 ? assertBalanced(legs, YEAR_CLOSING_TYPE) : legs,
+    // What the closing keeps beside its écriture: a digest of the year that is gone (read-only, never a leg).
     closing: {
       year,
       net,
       monthCount: months.size,
       lineCount: lines.length,
       byType,
-      // The carried balances (à-nouveaux): a purge keeps what the balance sheet reads, so it still balances once the lines are gone.
-      balances: Object.fromEntries([...accountNets].filter(([, centimes]) => centimes !== 0).map(([account, centimes]) => [account, centimes / 100])),
+      // What moved the cash in the year, by account (centimes): the city's ledger reads the year from it once its lines are gone.
+      cashFlows: Object.fromEntries([...cashFlows].map(([account, flow]) => [account, flow])),
       result: resultCentimes / 100,
       assets: Object.fromEntries([...assetNets].filter(([, centimes]) => centimes !== 0).map(([id, centimes]) => [id, centimes / 100])),
       constructions: Object.fromEntries(
@@ -136,9 +159,13 @@ export function expandYearClosings(entries) {
     }
     const { closing } = entry;
     for (const [type, total] of Object.entries(closing.byType)) {
+      // The year's total of a type is read as one entry of that type, booked as the journal books it: a view of a year that is gone, never written back.
+      const { journal, legs } = entryLegsOf({ type, amount: total, accountBuildingId: entry.accountBuildingId ?? null });
       expanded.push({
         turn: entry.turn,
         type,
+        journal,
+        legs,
         amount: total,
         description: `Total de l'année ${closing.year} (année close)`,
         year: closing.year,

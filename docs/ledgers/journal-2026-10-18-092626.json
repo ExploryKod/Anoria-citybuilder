@@ -1,0 +1,5177 @@
+{
+  "exportDate": "2026-10-18T07:26:26.517Z",
+  "entries": [
+    {
+      "turn": 40,
+      "type": "salary",
+      "amount": 48,
+      "description": "Traitement versé : 6 administrateur(s) pour Administrateurs - Août 0",
+      "month": 9,
+      "year": 0,
+      "businessKey": "salary:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:7",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "counterpartyBuildingId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "6411",
+          "debit": 4800,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 4800
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63213
+    },
+    {
+      "turn": 40,
+      "type": "unemployment_benefit",
+      "amount": 16.8,
+      "description": "Allocation chômage versée : 3 chôm. pour Artisans - Août 0",
+      "month": 9,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30:0:7",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "counterpartyBuildingId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 1680,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1680
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63211
+    },
+    {
+      "turn": 40,
+      "type": "unemployment_benefit",
+      "amount": 11.2,
+      "description": "Allocation chômage versée : 2 chôm. pour Commerçants - Août 0",
+      "month": 9,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:3f3f21aa-967d-4f65-87b5-f56c0de49a35:0:7",
+      "buildingInstanceId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "counterpartyBuildingId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 1120,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1120
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63209
+    },
+    {
+      "turn": 40,
+      "type": "company_capital_paid",
+      "amount": 3.6,
+      "description": "Fonds propres versés à Commerçants - Septembre 0",
+      "month": 9,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:02f1890f-abac-4766-b5db-7e801472758b/entreprise:cooperative",
+      "buildingInstanceId": "02f1890f-abac-4766-b5db-7e801472758b",
+      "counterpartyBuildingId": "02f1890f-abac-4766-b5db-7e801472758b",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 360,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 360
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63207
+    },
+    {
+      "turn": 39,
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue",
+      "month": 8,
+      "year": 0,
+      "buildingInstanceId": "02f1890f-abac-4766-b5db-7e801472758b",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 1000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63206
+    },
+    {
+      "turn": 37,
+      "type": "construction",
+      "amount": 60,
+      "description": "Building: WaterTank",
+      "month": 8,
+      "year": 0,
+      "buildingInstanceId": "1667101d-dcd0-4d40-99dd-a1ae67bc2413",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 6000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 6000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63205
+    },
+    {
+      "turn": 35,
+      "type": "salary",
+      "amount": 48,
+      "description": "Traitement versé : 6 administrateur(s) pour Administrateurs - Juillet 0",
+      "month": 8,
+      "year": 0,
+      "businessKey": "salary:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:6",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "counterpartyBuildingId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "6411",
+          "debit": 4800,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 4800
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63201
+    },
+    {
+      "turn": 35,
+      "type": "unemployment_benefit",
+      "amount": 16.8,
+      "description": "Allocation chômage versée : 3 chôm. pour Artisans - Juillet 0",
+      "month": 8,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30:0:6",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "counterpartyBuildingId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 1680,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1680
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63199
+    },
+    {
+      "turn": 35,
+      "type": "company_capital_paid",
+      "amount": 44,
+      "description": "Fonds propres versés à Citerne - Août 0",
+      "month": 8,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:0cf6eb17-a06f-4154-90a1-5d6e30ca99f9",
+      "buildingInstanceId": "0cf6eb17-a06f-4154-90a1-5d6e30ca99f9",
+      "counterpartyBuildingId": "0cf6eb17-a06f-4154-90a1-5d6e30ca99f9",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 4400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 4400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63197
+    },
+    {
+      "turn": 33,
+      "type": "construction",
+      "amount": 60,
+      "description": "Building: WaterTank",
+      "month": 7,
+      "year": 0,
+      "buildingInstanceId": "0cf6eb17-a06f-4154-90a1-5d6e30ca99f9",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 6000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 6000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63196
+    },
+    {
+      "turn": 30,
+      "type": "salary",
+      "amount": 48,
+      "description": "Traitement versé : 6 administrateur(s) pour Administrateurs - Juin 0",
+      "month": 7,
+      "year": 0,
+      "businessKey": "salary:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:5",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "counterpartyBuildingId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "6411",
+          "debit": 4800,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 4800
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63192
+    },
+    {
+      "turn": 30,
+      "type": "unemployment_benefit",
+      "amount": 11.2,
+      "description": "Allocation chômage versée : 2 chôm. pour Artisans - Juin 0",
+      "month": 7,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30:0:5",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "counterpartyBuildingId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 1120,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1120
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63190
+    },
+    {
+      "turn": 30,
+      "type": "unemployment_benefit",
+      "amount": 33.6,
+      "description": "Allocation chômage versée : 6 chôm. pour Savants - Juin 0",
+      "month": 7,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:b5f8a0a4-870e-4d5b-8bfc-af18c191160f:0:5",
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "counterpartyBuildingId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 3360,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 3360
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63188
+    },
+    {
+      "turn": 30,
+      "type": "unemployment_benefit",
+      "amount": 5.6,
+      "description": "Allocation chômage versée : 1 chôm. pour Savants - Juin 0",
+      "month": 7,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:037486ab-2637-4c8f-9c39-f89c49da4641:0:5",
+      "buildingInstanceId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "counterpartyBuildingId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 560,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 560
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63186
+    },
+    {
+      "turn": 25,
+      "type": "salary",
+      "amount": 48,
+      "description": "Traitement versé : 6 administrateur(s) pour Administrateurs - Mai 0",
+      "month": 6,
+      "year": 0,
+      "businessKey": "salary:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:4",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "counterpartyBuildingId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "6411",
+          "debit": 4800,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 4800
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63182
+    },
+    {
+      "turn": 25,
+      "type": "unemployment_benefit",
+      "amount": 28,
+      "description": "Allocation chômage versée : 5 chôm. pour Savants - Mai 0",
+      "month": 6,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:b5f8a0a4-870e-4d5b-8bfc-af18c191160f:0:4",
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "counterpartyBuildingId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 2800,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 2800
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63180
+    },
+    {
+      "turn": 25,
+      "type": "company_capital_paid",
+      "amount": 44,
+      "description": "Fonds propres versés à Citerne - Juin 0",
+      "month": 6,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:6e9198b1-642b-4131-83a7-525a88e7dc84",
+      "buildingInstanceId": "6e9198b1-642b-4131-83a7-525a88e7dc84",
+      "counterpartyBuildingId": "6e9198b1-642b-4131-83a7-525a88e7dc84",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 4400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 4400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63178
+    },
+    {
+      "turn": 25,
+      "type": "company_capital_paid",
+      "amount": 40,
+      "description": "Fonds propres versés à Cabinet médical - Juin 0",
+      "month": 6,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:0f369d15-aef0-491e-97ba-bfa88092972d",
+      "buildingInstanceId": "0f369d15-aef0-491e-97ba-bfa88092972d",
+      "counterpartyBuildingId": "0f369d15-aef0-491e-97ba-bfa88092972d",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 4000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 4000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63176
+    },
+    {
+      "turn": 22,
+      "type": "construction",
+      "amount": 55,
+      "description": "Building: Doctor",
+      "month": 5,
+      "year": 0,
+      "buildingInstanceId": "0f369d15-aef0-491e-97ba-bfa88092972d",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 5500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 5500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63175
+    },
+    {
+      "turn": 22,
+      "type": "construction",
+      "amount": 60,
+      "description": "Building: WaterTank",
+      "month": 5,
+      "year": 0,
+      "buildingInstanceId": "6e9198b1-642b-4131-83a7-525a88e7dc84",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 6000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 6000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63174
+    },
+    {
+      "turn": 20,
+      "type": "payroll_tax",
+      "amount": 1.88,
+      "description": "Impôt sur le revenu perçu du foyer Artisans - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30:0:3",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "counterpartyBuildingId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 188,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 188
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63173
+    },
+    {
+      "turn": 20,
+      "type": "payroll_tax",
+      "amount": 1.16,
+      "description": "Impôt sur le revenu perçu du foyer Commerçants - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:3f3f21aa-967d-4f65-87b5-f56c0de49a35:0:3",
+      "buildingInstanceId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "counterpartyBuildingId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 116,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 116
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63171
+    },
+    {
+      "turn": 20,
+      "type": "payroll_tax",
+      "amount": 1.88,
+      "description": "Impôt sur le revenu perçu du foyer Artisans - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:963ddc02-235f-449e-bbdb-78461cc5939e:0:3",
+      "buildingInstanceId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "counterpartyBuildingId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 188,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 188
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63169
+    },
+    {
+      "turn": 20,
+      "type": "payroll_tax",
+      "amount": 1.16,
+      "description": "Impôt sur le revenu perçu du foyer Artisans - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:1ab6f45f-f8e7-46ba-bee1-0448c9f495be:0:3",
+      "buildingInstanceId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "counterpartyBuildingId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 116,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 116
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63167
+    },
+    {
+      "turn": 20,
+      "type": "payroll_tax",
+      "amount": 4,
+      "description": "Impôt sur le revenu perçu du foyer Administrateurs - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:3",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "counterpartyBuildingId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63165
+    },
+    {
+      "turn": 20,
+      "type": "payroll_tax",
+      "amount": 1.24,
+      "description": "Impôt sur le revenu perçu du foyer Savants - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:b5f8a0a4-870e-4d5b-8bfc-af18c191160f:0:3",
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "counterpartyBuildingId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 124,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 124
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63163
+    },
+    {
+      "turn": 20,
+      "type": "payroll_tax",
+      "amount": 0.68,
+      "description": "Impôt sur le revenu perçu du foyer Savants - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:037486ab-2637-4c8f-9c39-f89c49da4641:0:3",
+      "buildingInstanceId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "counterpartyBuildingId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 68,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 68
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63161
+    },
+    {
+      "turn": 20,
+      "type": "social_contribution",
+      "amount": 3.2,
+      "description": "Cotisations sociales perçues du foyer Artisans - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30:0:3",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "counterpartyBuildingId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 320,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 320
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63159
+    },
+    {
+      "turn": 20,
+      "type": "social_contribution",
+      "amount": 2.4,
+      "description": "Cotisations sociales perçues du foyer Commerçants - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:3f3f21aa-967d-4f65-87b5-f56c0de49a35:0:3",
+      "buildingInstanceId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "counterpartyBuildingId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 240,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 240
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63157
+    },
+    {
+      "turn": 20,
+      "type": "social_contribution",
+      "amount": 3.2,
+      "description": "Cotisations sociales perçues du foyer Artisans - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:963ddc02-235f-449e-bbdb-78461cc5939e:0:3",
+      "buildingInstanceId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "counterpartyBuildingId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 320,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 320
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63155
+    },
+    {
+      "turn": 20,
+      "type": "social_contribution",
+      "amount": 2.4,
+      "description": "Cotisations sociales perçues du foyer Artisans - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:1ab6f45f-f8e7-46ba-bee1-0448c9f495be:0:3",
+      "buildingInstanceId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "counterpartyBuildingId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 240,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 240
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63153
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:f8f11c70-cd8a-4d44-ae4d-3fff4dc2ccee:0:3",
+      "buildingInstanceId": "f8f11c70-cd8a-4d44-ae4d-3fff4dc2ccee",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63151
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:ecd33b99-55ed-4618-bf77-910e44faf932:0:3",
+      "buildingInstanceId": "ecd33b99-55ed-4618-bf77-910e44faf932",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63147
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:e356da93-7332-43e6-b25c-0c2fed73ce96:0:3",
+      "buildingInstanceId": "e356da93-7332-43e6-b25c-0c2fed73ce96",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63146
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:dc9ab969-e735-4cd1-8023-c5de794b8593:0:3",
+      "buildingInstanceId": "dc9ab969-e735-4cd1-8023-c5de794b8593",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63145
+    },
+    {
+      "turn": 20,
+      "type": "social_contribution",
+      "amount": 4,
+      "description": "Cotisations sociales perçues de Champ de carottes - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:db70aee5-e0fc-4401-8b86-f9a5fff6a8a7:0:3",
+      "buildingInstanceId": "db70aee5-e0fc-4401-8b86-f9a5fff6a8a7",
+      "counterpartyBuildingId": "db70aee5-e0fc-4401-8b86-f9a5fff6a8a7",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63142
+    },
+    {
+      "turn": 20,
+      "type": "social_contribution",
+      "amount": 6,
+      "description": "Cotisations sociales perçues de Champ de carottes - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:c9c29715-3fc7-45d2-8621-b3d3441688b6:0:3",
+      "buildingInstanceId": "c9c29715-3fc7-45d2-8621-b3d3441688b6",
+      "counterpartyBuildingId": "c9c29715-3fc7-45d2-8621-b3d3441688b6",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63135
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Artisans - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30:0:3",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63128
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:c4a2739b-40c9-4099-8a0b-0c94639178af:0:3",
+      "buildingInstanceId": "c4a2739b-40c9-4099-8a0b-0c94639178af",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63125
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:c21dd3a2-e23e-4675-a89c-70e98ecdab1b:0:3",
+      "buildingInstanceId": "c21dd3a2-e23e-4675-a89c-70e98ecdab1b",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63124
+    },
+    {
+      "turn": 20,
+      "type": "social_contribution",
+      "amount": 6,
+      "description": "Cotisations sociales perçues de Grenier - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:c155cbbb-4964-416f-b4f0-68722d96956d:0:3",
+      "buildingInstanceId": "c155cbbb-4964-416f-b4f0-68722d96956d",
+      "counterpartyBuildingId": "c155cbbb-4964-416f-b4f0-68722d96956d",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63121
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:b642126a-876a-4274-b5cc-eda9c5c0bd08:0:3",
+      "buildingInstanceId": "b642126a-876a-4274-b5cc-eda9c5c0bd08",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63116
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Savants - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:b5f8a0a4-870e-4d5b-8bfc-af18c191160f:0:3",
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63115
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:adaaa9bd-1207-4505-852b-9285b5b2508e:0:3",
+      "buildingInstanceId": "adaaa9bd-1207-4505-852b-9285b5b2508e",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63112
+    },
+    {
+      "turn": 20,
+      "type": "social_contribution",
+      "amount": 6,
+      "description": "Cotisations sociales perçues de Champ de carottes - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:a7af0faf-c221-41b3-8c29-36d849f65673:0:3",
+      "buildingInstanceId": "a7af0faf-c221-41b3-8c29-36d849f65673",
+      "counterpartyBuildingId": "a7af0faf-c221-41b3-8c29-36d849f65673",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63109
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:9d99fde5-2ace-4a5d-8a00-01c36e2bea74:0:3",
+      "buildingInstanceId": "9d99fde5-2ace-4a5d-8a00-01c36e2bea74",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63104
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:9d4ba04a-ba53-4696-832e-f70c7619353d:0:3",
+      "buildingInstanceId": "9d4ba04a-ba53-4696-832e-f70c7619353d",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63103
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:9ce79f8b-02f8-4b06-b4ab-4dac35c814e4:0:3",
+      "buildingInstanceId": "9ce79f8b-02f8-4b06-b4ab-4dac35c814e4",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63102
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Artisans - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:963ddc02-235f-449e-bbdb-78461cc5939e:0:3",
+      "buildingInstanceId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63101
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:87af5d85-95bb-496e-93d3-e9ec0d0aad91:0:3",
+      "buildingInstanceId": "87af5d85-95bb-496e-93d3-e9ec0d0aad91",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63098
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Administrateurs - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:3",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63097
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:6e257a79-c8c8-4006-85d4-a7628eb371e0:0:3",
+      "buildingInstanceId": "6e257a79-c8c8-4006-85d4-a7628eb371e0",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63094
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:69676568-1a2b-4feb-b6fc-f22fbe8e9fca:0:3",
+      "buildingInstanceId": "69676568-1a2b-4feb-b6fc-f22fbe8e9fca",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63093
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:51d95f80-6255-4dae-bef5-f7915bd2783a:0:3",
+      "buildingInstanceId": "51d95f80-6255-4dae-bef5-f7915bd2783a",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63089
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:49909693-6b0e-45e9-bee4-f3af0895a88f:0:3",
+      "buildingInstanceId": "49909693-6b0e-45e9-bee4-f3af0895a88f",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63088
+    },
+    {
+      "turn": 20,
+      "type": "social_contribution",
+      "amount": 6,
+      "description": "Cotisations sociales perçues de Champ de carottes - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:491c1273-a42f-4da8-8f90-53483766ebcc:0:3",
+      "buildingInstanceId": "491c1273-a42f-4da8-8f90-53483766ebcc",
+      "counterpartyBuildingId": "491c1273-a42f-4da8-8f90-53483766ebcc",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63085
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:47a49d79-4f57-4814-9368-a14ed886e085:0:3",
+      "buildingInstanceId": "47a49d79-4f57-4814-9368-a14ed886e085",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63080
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Commerçants - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:3f3f21aa-967d-4f65-87b5-f56c0de49a35:0:3",
+      "buildingInstanceId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63079
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Artisans - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:1ab6f45f-f8e7-46ba-bee1-0448c9f495be:0:3",
+      "buildingInstanceId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63076
+    },
+    {
+      "turn": 20,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Savants - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:037486ab-2637-4c8f-9c39-f89c49da4641:0:3",
+      "buildingInstanceId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63073
+    },
+    {
+      "turn": 20,
+      "type": "salary",
+      "amount": 40,
+      "description": "Traitement versé : 5 administrateur(s) pour Administrateurs - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "salary:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:3",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "counterpartyBuildingId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "6411",
+          "debit": 4000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 4000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63069
+    },
+    {
+      "turn": 20,
+      "type": "unemployment_benefit",
+      "amount": 22.4,
+      "description": "Allocation chômage versée : 4 chôm. pour Savants - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:b5f8a0a4-870e-4d5b-8bfc-af18c191160f:0:3",
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "counterpartyBuildingId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 2240,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 2240
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63067
+    },
+    {
+      "turn": 20,
+      "type": "unemployment_benefit",
+      "amount": 16.8,
+      "description": "Allocation chômage versée : 3 chôm. pour Savants - Avril 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:037486ab-2637-4c8f-9c39-f89c49da4641:0:3",
+      "buildingInstanceId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "counterpartyBuildingId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 1680,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1680
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63065
+    },
+    {
+      "turn": 20,
+      "type": "company_capital_paid",
+      "amount": 88,
+      "description": "Fonds propres versés à Grenier - Mai 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:c155cbbb-4964-416f-b4f0-68722d96956d",
+      "buildingInstanceId": "c155cbbb-4964-416f-b4f0-68722d96956d",
+      "counterpartyBuildingId": "c155cbbb-4964-416f-b4f0-68722d96956d",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 8800,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 8800
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63063
+    },
+    {
+      "turn": 20,
+      "type": "company_capital_paid",
+      "amount": 44,
+      "description": "Fonds propres versés à Étal rouge - Mai 0",
+      "month": 5,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:5493b8b6-047c-4bee-a969-1e21440f6912",
+      "buildingInstanceId": "5493b8b6-047c-4bee-a969-1e21440f6912",
+      "counterpartyBuildingId": "5493b8b6-047c-4bee-a969-1e21440f6912",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 4400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 4400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63061
+    },
+    {
+      "turn": 17,
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: Market-Stall-Red",
+      "month": 4,
+      "year": 0,
+      "buildingInstanceId": "5493b8b6-047c-4bee-a969-1e21440f6912",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 1000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63060
+    },
+    {
+      "turn": 17,
+      "type": "construction",
+      "amount": 50,
+      "description": "Building: Windmill-001",
+      "month": 4,
+      "year": 0,
+      "buildingInstanceId": "c155cbbb-4964-416f-b4f0-68722d96956d",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 5000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 5000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63059
+    },
+    {
+      "turn": 15,
+      "type": "payroll_tax",
+      "amount": 1.16,
+      "description": "Impôt sur le revenu perçu du foyer Artisans - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30:0:2",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "counterpartyBuildingId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 116,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 116
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63058
+    },
+    {
+      "turn": 15,
+      "type": "payroll_tax",
+      "amount": 1.16,
+      "description": "Impôt sur le revenu perçu du foyer Artisans - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:963ddc02-235f-449e-bbdb-78461cc5939e:0:2",
+      "buildingInstanceId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "counterpartyBuildingId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 116,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 116
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63056
+    },
+    {
+      "turn": 15,
+      "type": "payroll_tax",
+      "amount": 0.44,
+      "description": "Impôt sur le revenu perçu du foyer Artisans - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:1ab6f45f-f8e7-46ba-bee1-0448c9f495be:0:2",
+      "buildingInstanceId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "counterpartyBuildingId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 44,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 44
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63054
+    },
+    {
+      "turn": 15,
+      "type": "payroll_tax",
+      "amount": 2.4,
+      "description": "Impôt sur le revenu perçu du foyer Administrateurs - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:2",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "counterpartyBuildingId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 240,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 240
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63052
+    },
+    {
+      "turn": 15,
+      "type": "payroll_tax",
+      "amount": 0.68,
+      "description": "Impôt sur le revenu perçu du foyer Savants - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:b5f8a0a4-870e-4d5b-8bfc-af18c191160f:0:2",
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "counterpartyBuildingId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 68,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 68
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63050
+    },
+    {
+      "turn": 15,
+      "type": "payroll_tax",
+      "amount": 0.12,
+      "description": "Impôt sur le revenu perçu du foyer Commerçants - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:3f3f21aa-967d-4f65-87b5-f56c0de49a35:0:2",
+      "buildingInstanceId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "counterpartyBuildingId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 12,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 12
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63048
+    },
+    {
+      "turn": 15,
+      "type": "payroll_tax",
+      "amount": 0.12,
+      "description": "Impôt sur le revenu perçu du foyer Savants - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:037486ab-2637-4c8f-9c39-f89c49da4641:0:2",
+      "buildingInstanceId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "counterpartyBuildingId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 12,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 12
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63046
+    },
+    {
+      "turn": 15,
+      "type": "social_contribution",
+      "amount": 2.4,
+      "description": "Cotisations sociales perçues du foyer Artisans - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30:0:2",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "counterpartyBuildingId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 240,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 240
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63044
+    },
+    {
+      "turn": 15,
+      "type": "social_contribution",
+      "amount": 2.4,
+      "description": "Cotisations sociales perçues du foyer Artisans - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:963ddc02-235f-449e-bbdb-78461cc5939e:0:2",
+      "buildingInstanceId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "counterpartyBuildingId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 240,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 240
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63042
+    },
+    {
+      "turn": 15,
+      "type": "social_contribution",
+      "amount": 1.6,
+      "description": "Cotisations sociales perçues du foyer Artisans - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:1ab6f45f-f8e7-46ba-bee1-0448c9f495be:0:2",
+      "buildingInstanceId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "counterpartyBuildingId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 160,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 160
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63040
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:f8f11c70-cd8a-4d44-ae4d-3fff4dc2ccee:0:2",
+      "buildingInstanceId": "f8f11c70-cd8a-4d44-ae4d-3fff4dc2ccee",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63038
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:ecd33b99-55ed-4618-bf77-910e44faf932:0:2",
+      "buildingInstanceId": "ecd33b99-55ed-4618-bf77-910e44faf932",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63034
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:e356da93-7332-43e6-b25c-0c2fed73ce96:0:2",
+      "buildingInstanceId": "e356da93-7332-43e6-b25c-0c2fed73ce96",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63033
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:dc9ab969-e735-4cd1-8023-c5de794b8593:0:2",
+      "buildingInstanceId": "dc9ab969-e735-4cd1-8023-c5de794b8593",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63032
+    },
+    {
+      "turn": 15,
+      "type": "social_contribution",
+      "amount": 4,
+      "description": "Cotisations sociales perçues de Champ de carottes - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:c9c29715-3fc7-45d2-8621-b3d3441688b6:0:2",
+      "buildingInstanceId": "c9c29715-3fc7-45d2-8621-b3d3441688b6",
+      "counterpartyBuildingId": "c9c29715-3fc7-45d2-8621-b3d3441688b6",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63026
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Artisans - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30:0:2",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63021
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:c4a2739b-40c9-4099-8a0b-0c94639178af:0:2",
+      "buildingInstanceId": "c4a2739b-40c9-4099-8a0b-0c94639178af",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63018
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:c21dd3a2-e23e-4675-a89c-70e98ecdab1b:0:2",
+      "buildingInstanceId": "c21dd3a2-e23e-4675-a89c-70e98ecdab1b",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63017
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:b642126a-876a-4274-b5cc-eda9c5c0bd08:0:2",
+      "buildingInstanceId": "b642126a-876a-4274-b5cc-eda9c5c0bd08",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63016
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Savants - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:b5f8a0a4-870e-4d5b-8bfc-af18c191160f:0:2",
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63015
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:adaaa9bd-1207-4505-852b-9285b5b2508e:0:2",
+      "buildingInstanceId": "adaaa9bd-1207-4505-852b-9285b5b2508e",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63012
+    },
+    {
+      "turn": 15,
+      "type": "social_contribution",
+      "amount": 6,
+      "description": "Cotisations sociales perçues de Champ de carottes - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:a7af0faf-c221-41b3-8c29-36d849f65673:0:2",
+      "buildingInstanceId": "a7af0faf-c221-41b3-8c29-36d849f65673",
+      "counterpartyBuildingId": "a7af0faf-c221-41b3-8c29-36d849f65673",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63009
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:9d99fde5-2ace-4a5d-8a00-01c36e2bea74:0:2",
+      "buildingInstanceId": "9d99fde5-2ace-4a5d-8a00-01c36e2bea74",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63002
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:9d4ba04a-ba53-4696-832e-f70c7619353d:0:2",
+      "buildingInstanceId": "9d4ba04a-ba53-4696-832e-f70c7619353d",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63001
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:9ce79f8b-02f8-4b06-b4ab-4dac35c814e4:0:2",
+      "buildingInstanceId": "9ce79f8b-02f8-4b06-b4ab-4dac35c814e4",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 63000
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Artisans - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:963ddc02-235f-449e-bbdb-78461cc5939e:0:2",
+      "buildingInstanceId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62999
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:87af5d85-95bb-496e-93d3-e9ec0d0aad91:0:2",
+      "buildingInstanceId": "87af5d85-95bb-496e-93d3-e9ec0d0aad91",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62996
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Administrateurs - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:2",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62995
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:6e257a79-c8c8-4006-85d4-a7628eb371e0:0:2",
+      "buildingInstanceId": "6e257a79-c8c8-4006-85d4-a7628eb371e0",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62992
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:69676568-1a2b-4feb-b6fc-f22fbe8e9fca:0:2",
+      "buildingInstanceId": "69676568-1a2b-4feb-b6fc-f22fbe8e9fca",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62991
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:51d95f80-6255-4dae-bef5-f7915bd2783a:0:2",
+      "buildingInstanceId": "51d95f80-6255-4dae-bef5-f7915bd2783a",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62990
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:49909693-6b0e-45e9-bee4-f3af0895a88f:0:2",
+      "buildingInstanceId": "49909693-6b0e-45e9-bee4-f3af0895a88f",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62989
+    },
+    {
+      "turn": 15,
+      "type": "social_contribution",
+      "amount": 6,
+      "description": "Cotisations sociales perçues de Champ de carottes - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "social_contribution:1b1ece12-a113-4690-b160-21ce5a9c27d0:491c1273-a42f-4da8-8f90-53483766ebcc:0:2",
+      "buildingInstanceId": "491c1273-a42f-4da8-8f90-53483766ebcc",
+      "counterpartyBuildingId": "491c1273-a42f-4da8-8f90-53483766ebcc",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "431",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62986
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:47a49d79-4f57-4814-9368-a14ed886e085:0:2",
+      "buildingInstanceId": "47a49d79-4f57-4814-9368-a14ed886e085",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62979
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Commerçants - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:3f3f21aa-967d-4f65-87b5-f56c0de49a35:0:2",
+      "buildingInstanceId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62978
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Artisans - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:1ab6f45f-f8e7-46ba-bee1-0448c9f495be:0:2",
+      "buildingInstanceId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62975
+    },
+    {
+      "turn": 15,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Savants - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:037486ab-2637-4c8f-9c39-f89c49da4641:0:2",
+      "buildingInstanceId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62972
+    },
+    {
+      "turn": 15,
+      "type": "salary",
+      "amount": 32,
+      "description": "Traitement versé : 4 administrateur(s) pour Administrateurs - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "salary:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:2",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "counterpartyBuildingId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "6411",
+          "debit": 3200,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 3200
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62968
+    },
+    {
+      "turn": 15,
+      "type": "unemployment_benefit",
+      "amount": 16.8,
+      "description": "Allocation chômage versée : 3 chôm. pour Savants - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:b5f8a0a4-870e-4d5b-8bfc-af18c191160f:0:2",
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "counterpartyBuildingId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 1680,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1680
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62966
+    },
+    {
+      "turn": 15,
+      "type": "unemployment_benefit",
+      "amount": 11.2,
+      "description": "Allocation chômage versée : 2 chôm. pour Commerçants - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:3f3f21aa-967d-4f65-87b5-f56c0de49a35:0:2",
+      "buildingInstanceId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "counterpartyBuildingId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 1120,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1120
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62964
+    },
+    {
+      "turn": 15,
+      "type": "unemployment_benefit",
+      "amount": 11.2,
+      "description": "Allocation chômage versée : 2 chôm. pour Savants - Mars 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:037486ab-2637-4c8f-9c39-f89c49da4641:0:2",
+      "buildingInstanceId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "counterpartyBuildingId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 1120,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1120
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62962
+    },
+    {
+      "turn": 15,
+      "type": "company_capital_paid",
+      "amount": 64,
+      "description": "Fonds propres versés à Champ de carottes - Avril 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:f8c133e4-911e-4ab8-a0d1-e25d741c796b",
+      "buildingInstanceId": "f8c133e4-911e-4ab8-a0d1-e25d741c796b",
+      "counterpartyBuildingId": "f8c133e4-911e-4ab8-a0d1-e25d741c796b",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 6400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 6400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62960
+    },
+    {
+      "turn": 15,
+      "type": "company_capital_paid",
+      "amount": 64,
+      "description": "Fonds propres versés à Champ de carottes - Avril 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:db70aee5-e0fc-4401-8b86-f9a5fff6a8a7",
+      "buildingInstanceId": "db70aee5-e0fc-4401-8b86-f9a5fff6a8a7",
+      "counterpartyBuildingId": "db70aee5-e0fc-4401-8b86-f9a5fff6a8a7",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 6400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 6400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62958
+    },
+    {
+      "turn": 15,
+      "type": "company_capital_paid",
+      "amount": 64,
+      "description": "Fonds propres versés à Champ de carottes - Avril 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:c9c29715-3fc7-45d2-8621-b3d3441688b6",
+      "buildingInstanceId": "c9c29715-3fc7-45d2-8621-b3d3441688b6",
+      "counterpartyBuildingId": "c9c29715-3fc7-45d2-8621-b3d3441688b6",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 6400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 6400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62956
+    },
+    {
+      "turn": 15,
+      "type": "company_capital_paid",
+      "amount": 64,
+      "description": "Fonds propres versés à Champ de carottes - Avril 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:a7af0faf-c221-41b3-8c29-36d849f65673",
+      "buildingInstanceId": "a7af0faf-c221-41b3-8c29-36d849f65673",
+      "counterpartyBuildingId": "a7af0faf-c221-41b3-8c29-36d849f65673",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 6400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 6400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62954
+    },
+    {
+      "turn": 15,
+      "type": "company_capital_paid",
+      "amount": 64,
+      "description": "Fonds propres versés à Champ de carottes - Avril 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:491c1273-a42f-4da8-8f90-53483766ebcc",
+      "buildingInstanceId": "491c1273-a42f-4da8-8f90-53483766ebcc",
+      "counterpartyBuildingId": "491c1273-a42f-4da8-8f90-53483766ebcc",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 6400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 6400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62952
+    },
+    {
+      "turn": 15,
+      "type": "company_capital_paid",
+      "amount": 3.6,
+      "description": "Fonds propres versés à Commerçants - Avril 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:3f3f21aa-967d-4f65-87b5-f56c0de49a35/entreprise:cooperative",
+      "buildingInstanceId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "counterpartyBuildingId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 360,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 360
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62950
+    },
+    {
+      "turn": 15,
+      "type": "company_capital_paid",
+      "amount": 3.6,
+      "description": "Fonds propres versés à Artisans - Avril 0",
+      "month": 4,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:1ab6f45f-f8e7-46ba-bee1-0448c9f495be/entreprise:cooperative",
+      "buildingInstanceId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "counterpartyBuildingId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 360,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 360
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62948
+    },
+    {
+      "turn": 15,
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot",
+      "month": 4,
+      "year": 0,
+      "buildingInstanceId": "a7af0faf-c221-41b3-8c29-36d849f65673",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 2000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 2000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62947
+    },
+    {
+      "turn": 14,
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot",
+      "month": 3,
+      "year": 0,
+      "buildingInstanceId": "491c1273-a42f-4da8-8f90-53483766ebcc",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 2000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 2000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62946
+    },
+    {
+      "turn": 14,
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot",
+      "month": 3,
+      "year": 0,
+      "buildingInstanceId": "db70aee5-e0fc-4401-8b86-f9a5fff6a8a7",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 2000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 2000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62945
+    },
+    {
+      "turn": 14,
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot",
+      "month": 3,
+      "year": 0,
+      "buildingInstanceId": "c9c29715-3fc7-45d2-8621-b3d3441688b6",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 2000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 2000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62944
+    },
+    {
+      "turn": 14,
+      "type": "construction",
+      "amount": 20,
+      "description": "Building: Farm-Carrot",
+      "month": 3,
+      "year": 0,
+      "buildingInstanceId": "f8c133e4-911e-4ab8-a0d1-e25d741c796b",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 2000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 2000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62943
+    },
+    {
+      "turn": 13,
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Red",
+      "month": 3,
+      "year": 0,
+      "buildingInstanceId": "1ab6f45f-f8e7-46ba-bee1-0448c9f495be",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 1000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62942
+    },
+    {
+      "turn": 12,
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Blue",
+      "month": 3,
+      "year": 0,
+      "buildingInstanceId": "3f3f21aa-967d-4f65-87b5-f56c0de49a35",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 1000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62941
+    },
+    {
+      "turn": 10,
+      "type": "payroll_tax",
+      "amount": 1.4,
+      "description": "Impôt sur le revenu perçu du foyer Administrateurs - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:1",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "counterpartyBuildingId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 140,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 140
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62940
+    },
+    {
+      "turn": 10,
+      "type": "payroll_tax",
+      "amount": 0.12,
+      "description": "Impôt sur le revenu perçu du foyer Artisans - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30:0:1",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "counterpartyBuildingId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 12,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 12
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62938
+    },
+    {
+      "turn": 10,
+      "type": "payroll_tax",
+      "amount": 0.12,
+      "description": "Impôt sur le revenu perçu du foyer Savants - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:b5f8a0a4-870e-4d5b-8bfc-af18c191160f:0:1",
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "counterpartyBuildingId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 12,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 12
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62936
+    },
+    {
+      "turn": 10,
+      "type": "payroll_tax",
+      "amount": 0.12,
+      "description": "Impôt sur le revenu perçu du foyer Artisans - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:963ddc02-235f-449e-bbdb-78461cc5939e:0:1",
+      "buildingInstanceId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "counterpartyBuildingId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 12,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 12
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62934
+    },
+    {
+      "turn": 10,
+      "type": "payroll_tax",
+      "amount": 0.12,
+      "description": "Impôt sur le revenu perçu du foyer Savants - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:4c5f6fd7-5435-4dc9-a5fb-f81425cb2aa1:0:1",
+      "buildingInstanceId": "4c5f6fd7-5435-4dc9-a5fb-f81425cb2aa1",
+      "counterpartyBuildingId": "4c5f6fd7-5435-4dc9-a5fb-f81425cb2aa1",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 12,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 12
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62932
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:f8f11c70-cd8a-4d44-ae4d-3fff4dc2ccee:0:1",
+      "buildingInstanceId": "f8f11c70-cd8a-4d44-ae4d-3fff4dc2ccee",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62930
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:ecd33b99-55ed-4618-bf77-910e44faf932:0:1",
+      "buildingInstanceId": "ecd33b99-55ed-4618-bf77-910e44faf932",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62929
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:e356da93-7332-43e6-b25c-0c2fed73ce96:0:1",
+      "buildingInstanceId": "e356da93-7332-43e6-b25c-0c2fed73ce96",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62928
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:dc9ab969-e735-4cd1-8023-c5de794b8593:0:1",
+      "buildingInstanceId": "dc9ab969-e735-4cd1-8023-c5de794b8593",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62927
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Artisans - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30:0:1",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62926
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:c4a2739b-40c9-4099-8a0b-0c94639178af:0:1",
+      "buildingInstanceId": "c4a2739b-40c9-4099-8a0b-0c94639178af",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62923
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:c21dd3a2-e23e-4675-a89c-70e98ecdab1b:0:1",
+      "buildingInstanceId": "c21dd3a2-e23e-4675-a89c-70e98ecdab1b",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62922
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:b642126a-876a-4274-b5cc-eda9c5c0bd08:0:1",
+      "buildingInstanceId": "b642126a-876a-4274-b5cc-eda9c5c0bd08",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62921
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Savants - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:b5f8a0a4-870e-4d5b-8bfc-af18c191160f:0:1",
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62920
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:adaaa9bd-1207-4505-852b-9285b5b2508e:0:1",
+      "buildingInstanceId": "adaaa9bd-1207-4505-852b-9285b5b2508e",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62917
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:9d99fde5-2ace-4a5d-8a00-01c36e2bea74:0:1",
+      "buildingInstanceId": "9d99fde5-2ace-4a5d-8a00-01c36e2bea74",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62916
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:9d4ba04a-ba53-4696-832e-f70c7619353d:0:1",
+      "buildingInstanceId": "9d4ba04a-ba53-4696-832e-f70c7619353d",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62915
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:9ce79f8b-02f8-4b06-b4ab-4dac35c814e4:0:1",
+      "buildingInstanceId": "9ce79f8b-02f8-4b06-b4ab-4dac35c814e4",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62914
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Artisans - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:963ddc02-235f-449e-bbdb-78461cc5939e:0:1",
+      "buildingInstanceId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62913
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:87af5d85-95bb-496e-93d3-e9ec0d0aad91:0:1",
+      "buildingInstanceId": "87af5d85-95bb-496e-93d3-e9ec0d0aad91",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62910
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Administrateurs - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:1",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62909
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:6e257a79-c8c8-4006-85d4-a7628eb371e0:0:1",
+      "buildingInstanceId": "6e257a79-c8c8-4006-85d4-a7628eb371e0",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62906
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:69676568-1a2b-4feb-b6fc-f22fbe8e9fca:0:1",
+      "buildingInstanceId": "69676568-1a2b-4feb-b6fc-f22fbe8e9fca",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62905
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:51d95f80-6255-4dae-bef5-f7915bd2783a:0:1",
+      "buildingInstanceId": "51d95f80-6255-4dae-bef5-f7915bd2783a",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62904
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Savants - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:4c5f6fd7-5435-4dc9-a5fb-f81425cb2aa1:0:1",
+      "buildingInstanceId": "4c5f6fd7-5435-4dc9-a5fb-f81425cb2aa1",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62903
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:49909693-6b0e-45e9-bee4-f3af0895a88f:0:1",
+      "buildingInstanceId": "49909693-6b0e-45e9-bee4-f3af0895a88f",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62900
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:47a49d79-4f57-4814-9368-a14ed886e085:0:1",
+      "buildingInstanceId": "47a49d79-4f57-4814-9368-a14ed886e085",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62899
+    },
+    {
+      "turn": 10,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Savants - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:037486ab-2637-4c8f-9c39-f89c49da4641:0:1",
+      "buildingInstanceId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62898
+    },
+    {
+      "turn": 10,
+      "type": "salary",
+      "amount": 24,
+      "description": "Traitement versé : 3 administrateur(s) pour Administrateurs - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "salary:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:1",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "counterpartyBuildingId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "6411",
+          "debit": 2400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 2400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62894
+    },
+    {
+      "turn": 10,
+      "type": "unemployment_benefit",
+      "amount": 11.2,
+      "description": "Allocation chômage versée : 2 chôm. pour Artisans - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30:0:1",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "counterpartyBuildingId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 1120,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1120
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62892
+    },
+    {
+      "turn": 10,
+      "type": "unemployment_benefit",
+      "amount": 11.2,
+      "description": "Allocation chômage versée : 2 chôm. pour Savants - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:b5f8a0a4-870e-4d5b-8bfc-af18c191160f:0:1",
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "counterpartyBuildingId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 1120,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1120
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62890
+    },
+    {
+      "turn": 10,
+      "type": "unemployment_benefit",
+      "amount": 11.2,
+      "description": "Allocation chômage versée : 2 chôm. pour Artisans - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:963ddc02-235f-449e-bbdb-78461cc5939e:0:1",
+      "buildingInstanceId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "counterpartyBuildingId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 1120,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1120
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62888
+    },
+    {
+      "turn": 10,
+      "type": "unemployment_benefit",
+      "amount": 11.2,
+      "description": "Allocation chômage versée : 2 chôm. pour Savants - Février 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "unemployment_benefit:1b1ece12-a113-4690-b160-21ce5a9c27d0:4c5f6fd7-5435-4dc9-a5fb-f81425cb2aa1:0:1",
+      "buildingInstanceId": "4c5f6fd7-5435-4dc9-a5fb-f81425cb2aa1",
+      "counterpartyBuildingId": "4c5f6fd7-5435-4dc9-a5fb-f81425cb2aa1",
+      "legs": [
+        {
+          "account": "431",
+          "debit": 1120,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1120
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62886
+    },
+    {
+      "turn": 10,
+      "type": "company_capital_paid",
+      "amount": 3.6,
+      "description": "Fonds propres versés à Artisans - Mars 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30/entreprise:cooperative",
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "counterpartyBuildingId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 360,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 360
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62884
+    },
+    {
+      "turn": 10,
+      "type": "company_capital_paid",
+      "amount": 3.6,
+      "description": "Fonds propres versés à Savants - Mars 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:b5f8a0a4-870e-4d5b-8bfc-af18c191160f/entreprise:cooperative",
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "counterpartyBuildingId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 360,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 360
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62882
+    },
+    {
+      "turn": 10,
+      "type": "company_capital_paid",
+      "amount": 3.6,
+      "description": "Fonds propres versés à Artisans - Mars 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:963ddc02-235f-449e-bbdb-78461cc5939e/entreprise:cooperative",
+      "buildingInstanceId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "counterpartyBuildingId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 360,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 360
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62880
+    },
+    {
+      "turn": 10,
+      "type": "company_capital_paid",
+      "amount": 3.6,
+      "description": "Fonds propres versés à Savants - Mars 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:4c5f6fd7-5435-4dc9-a5fb-f81425cb2aa1/entreprise:cooperative",
+      "buildingInstanceId": "4c5f6fd7-5435-4dc9-a5fb-f81425cb2aa1",
+      "counterpartyBuildingId": "4c5f6fd7-5435-4dc9-a5fb-f81425cb2aa1",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 360,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 360
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62878
+    },
+    {
+      "turn": 10,
+      "type": "company_capital_paid",
+      "amount": 3.6,
+      "description": "Fonds propres versés à Savants - Mars 0",
+      "month": 3,
+      "year": 0,
+      "businessKey": "company_capital_paid:1b1ece12-a113-4690-b160-21ce5a9c27d0:037486ab-2637-4c8f-9c39-f89c49da4641/entreprise:cooperative",
+      "buildingInstanceId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "counterpartyBuildingId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "legs": [
+        {
+          "account": "261",
+          "debit": 360,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 360
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62876
+    },
+    {
+      "turn": 10,
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Purple",
+      "month": 3,
+      "year": 0,
+      "buildingInstanceId": "037486ab-2637-4c8f-9c39-f89c49da4641",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 1000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62875
+    },
+    {
+      "turn": 9,
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Purple",
+      "month": 2,
+      "year": 0,
+      "buildingInstanceId": "4c5f6fd7-5435-4dc9-a5fb-f81425cb2aa1",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 1000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62874
+    },
+    {
+      "turn": 8,
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Purple",
+      "month": 2,
+      "year": 0,
+      "buildingInstanceId": "b5f8a0a4-870e-4d5b-8bfc-af18c191160f",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 1000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62873
+    },
+    {
+      "turn": 7,
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Red",
+      "month": 2,
+      "year": 0,
+      "buildingInstanceId": "963ddc02-235f-449e-bbdb-78461cc5939e",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 1000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62872
+    },
+    {
+      "turn": 6,
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Red",
+      "month": 2,
+      "year": 0,
+      "buildingInstanceId": "c78a1bd6-9c75-4a3a-8e13-6e7ebe0f4d30",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 1000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62871
+    },
+    {
+      "turn": 5,
+      "type": "payroll_tax",
+      "amount": 0.6,
+      "description": "Impôt sur le revenu perçu du foyer Administrateurs - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "payroll_tax:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:0",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "counterpartyBuildingId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 60,
+          "credit": 0
+        },
+        {
+          "account": "738",
+          "debit": 0,
+          "credit": 60
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62870
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:f8f11c70-cd8a-4d44-ae4d-3fff4dc2ccee:0:0",
+      "buildingInstanceId": "f8f11c70-cd8a-4d44-ae4d-3fff4dc2ccee",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62868
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:ecd33b99-55ed-4618-bf77-910e44faf932:0:0",
+      "buildingInstanceId": "ecd33b99-55ed-4618-bf77-910e44faf932",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62867
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:e356da93-7332-43e6-b25c-0c2fed73ce96:0:0",
+      "buildingInstanceId": "e356da93-7332-43e6-b25c-0c2fed73ce96",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62866
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:dc9ab969-e735-4cd1-8023-c5de794b8593:0:0",
+      "buildingInstanceId": "dc9ab969-e735-4cd1-8023-c5de794b8593",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62865
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:c4a2739b-40c9-4099-8a0b-0c94639178af:0:0",
+      "buildingInstanceId": "c4a2739b-40c9-4099-8a0b-0c94639178af",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62864
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:c21dd3a2-e23e-4675-a89c-70e98ecdab1b:0:0",
+      "buildingInstanceId": "c21dd3a2-e23e-4675-a89c-70e98ecdab1b",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62863
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:b642126a-876a-4274-b5cc-eda9c5c0bd08:0:0",
+      "buildingInstanceId": "b642126a-876a-4274-b5cc-eda9c5c0bd08",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62862
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:adaaa9bd-1207-4505-852b-9285b5b2508e:0:0",
+      "buildingInstanceId": "adaaa9bd-1207-4505-852b-9285b5b2508e",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62861
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:9d99fde5-2ace-4a5d-8a00-01c36e2bea74:0:0",
+      "buildingInstanceId": "9d99fde5-2ace-4a5d-8a00-01c36e2bea74",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62860
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:9d4ba04a-ba53-4696-832e-f70c7619353d:0:0",
+      "buildingInstanceId": "9d4ba04a-ba53-4696-832e-f70c7619353d",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62859
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:9ce79f8b-02f8-4b06-b4ab-4dac35c814e4:0:0",
+      "buildingInstanceId": "9ce79f8b-02f8-4b06-b4ab-4dac35c814e4",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62858
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:87af5d85-95bb-496e-93d3-e9ec0d0aad91:0:0",
+      "buildingInstanceId": "87af5d85-95bb-496e-93d3-e9ec0d0aad91",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62857
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 6,
+      "description": "Subvention entretien habitation Administrateurs - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:0",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62856
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:6e257a79-c8c8-4006-85d4-a7628eb371e0:0:0",
+      "buildingInstanceId": "6e257a79-c8c8-4006-85d4-a7628eb371e0",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62853
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:69676568-1a2b-4feb-b6fc-f22fbe8e9fca:0:0",
+      "buildingInstanceId": "69676568-1a2b-4feb-b6fc-f22fbe8e9fca",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62852
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:51d95f80-6255-4dae-bef5-f7915bd2783a:0:0",
+      "buildingInstanceId": "51d95f80-6255-4dae-bef5-f7915bd2783a",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62851
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:49909693-6b0e-45e9-bee4-f3af0895a88f:0:0",
+      "buildingInstanceId": "49909693-6b0e-45e9-bee4-f3af0895a88f",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62850
+    },
+    {
+      "turn": 5,
+      "type": "subsidy_housing",
+      "amount": 4,
+      "description": "Subvention entretien habitation Chemin de pierre - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "subsidy_housing:1b1ece12-a113-4690-b160-21ce5a9c27d0:47a49d79-4f57-4814-9368-a14ed886e085:0:0",
+      "buildingInstanceId": "47a49d79-4f57-4814-9368-a14ed886e085",
+      "legs": [
+        {
+          "account": "65742",
+          "debit": 400,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 400
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62849
+    },
+    {
+      "turn": 5,
+      "type": "salary",
+      "amount": 16,
+      "description": "Traitement versé : 2 administrateur(s) pour Administrateurs - Janvier 0",
+      "month": 2,
+      "year": 0,
+      "businessKey": "salary:1b1ece12-a113-4690-b160-21ce5a9c27d0:7079655b-ede5-47a8-815e-e97da0516438:0:0",
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "counterpartyBuildingId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "6411",
+          "debit": 1600,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1600
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62847
+    },
+    {
+      "turn": 4,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "e356da93-7332-43e6-b25c-0c2fed73ce96",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62846
+    },
+    {
+      "turn": 4,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "9d4ba04a-ba53-4696-832e-f70c7619353d",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62845
+    },
+    {
+      "turn": 4,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "c4a2739b-40c9-4099-8a0b-0c94639178af",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62844
+    },
+    {
+      "turn": 4,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "f8f11c70-cd8a-4d44-ae4d-3fff4dc2ccee",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62843
+    },
+    {
+      "turn": 4,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "adaaa9bd-1207-4505-852b-9285b5b2508e",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62842
+    },
+    {
+      "turn": 4,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "9ce79f8b-02f8-4b06-b4ab-4dac35c814e4",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62841
+    },
+    {
+      "turn": 4,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-Tee-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "dc9ab969-e735-4cd1-8023-c5de794b8593",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62840
+    },
+    {
+      "turn": 3,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "2b4b5382-2dcf-44b5-b928-56dfe3f63942",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62839
+    },
+    {
+      "turn": 3,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "47a49d79-4f57-4814-9368-a14ed886e085",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62838
+    },
+    {
+      "turn": 3,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "c21dd3a2-e23e-4675-a89c-70e98ecdab1b",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62837
+    },
+    {
+      "turn": 3,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "51d95f80-6255-4dae-bef5-f7915bd2783a",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62836
+    },
+    {
+      "turn": 3,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "69676568-1a2b-4feb-b6fc-f22fbe8e9fca",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62835
+    },
+    {
+      "turn": 3,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "b642126a-876a-4274-b5cc-eda9c5c0bd08",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62834
+    },
+    {
+      "turn": 3,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "ecd33b99-55ed-4618-bf77-910e44faf932",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62833
+    },
+    {
+      "turn": 3,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "9d99fde5-2ace-4a5d-8a00-01c36e2bea74",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62832
+    },
+    {
+      "turn": 3,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "87af5d85-95bb-496e-93d3-e9ec0d0aad91",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62831
+    },
+    {
+      "turn": 3,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "49909693-6b0e-45e9-bee4-f3af0895a88f",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62830
+    },
+    {
+      "turn": 3,
+      "type": "construction",
+      "amount": 5,
+      "description": "Building: StonePath-001",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "6e257a79-c8c8-4006-85d4-a7628eb371e0",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 500,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 500
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62829
+    },
+    {
+      "turn": 1,
+      "type": "construction",
+      "amount": 10,
+      "description": "Building: House-Mayor",
+      "month": 1,
+      "year": 0,
+      "buildingInstanceId": "7079655b-ede5-47a8-815e-e97da0516438",
+      "legs": [
+        {
+          "account": "2131",
+          "debit": 1000,
+          "credit": 0
+        },
+        {
+          "account": "512",
+          "debit": 0,
+          "credit": 1000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62828
+    },
+    {
+      "turn": 0,
+      "type": "capital_funds",
+      "amount": 2000,
+      "description": "Capital de départ: 2000€",
+      "month": 1,
+      "year": 0,
+      "businessKey": "capital_funds:0",
+      "legs": [
+        {
+          "account": "512",
+          "debit": 200000,
+          "credit": 0
+        },
+        {
+          "account": "1021",
+          "debit": 0,
+          "credit": 200000
+        }
+      ],
+      "journal": "BQ",
+      "hamletId": "1b1ece12-a113-4690-b160-21ce5a9c27d0",
+      "id": 62827
+    }
+  ],
+  "yearlySummary": [
+    {
+      "year": 0,
+      "income": 2082.16,
+      "expenses": 2132.2000000000003,
+      "netFlow": -50.04000000000042,
+      "monthCount": 9
+    }
+  ]
+}

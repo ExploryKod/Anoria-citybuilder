@@ -9,7 +9,8 @@
  *   - the opérations diverses of the month's closing (they move no money): the variation of stock (37, 35), the depreciation (281), the buildings the
  *     city contributed (213 against the capital 101) and their sortie d'actif when demolished (281 released, the rest a loss in 675); a leg on a charge or
  *     a product joins the result;
- *   - a year closed by a purge (`year_closing`): its net, which joins the accumulated result (its detail is gone).
+ *   - a year closed by a purge (`year_closing`): its à-nouveaux, an écriture like the others (the balance-sheet accounts it carried against the carried result,
+ *     12, which joins the accumulated result: the detail of the year is gone).
  * The cash is the treasury's (a second derivation of the same lines) and the stock is valued by the supply. The balance sheet therefore balances only
  * if every line of the journal was placed: a gap between the two sides is an error that names the figure, never a plug.
  *
@@ -23,9 +24,14 @@
  */
 
 import { accountKeyOf } from './AccountKeyPolicy.js';
-import { moneyDirectionOf } from './TreasuryFromJournalPolicy.js';
 import { postingsOf } from './AccountLedgerPolicy.js';
-import { isOperationDiverse, pcgOfJournalType } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
+import { isEcriture } from './EntryLegsPolicy.js';
+
+/** The cash account: the treasury's, read apart, so the balance sheet takes the cash it is given. */
+const CASH = '512';
+
+/** The account that carries the result of the years closed (see YearClosingPolicy). */
+const CARRIED_RESULT = '12';
 
 /** The debt accounts of PayableCatalog: wages (421), social contributions (431), tax (444), rent of the premises (401). */
 const PAYABLE_ACCOUNTS = new Set(['421', '431', '444', '401']);
@@ -73,57 +79,28 @@ export function balanceSheetOf(entries, buildingId, { accountKind = null, cash, 
   let receivables = 0;
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey) continue;
-    if (isOperationDiverse(entry.type)) {
-      for (const leg of postingsOf(entry)) {
-        const net = leg.debit - leg.credit;
-        if (leg.account[0] === '6' || leg.account[0] === '7') addResult(-net, entry.year);
-        else if (leg.account === '281') accumulatedDepreciation -= net;
-        else if (leg.account === '213') fixedAssets += net;
-        else if (leg.account === '101') capital -= net;
-        else if (PAYABLE_ACCOUNTS.has(leg.account)) addPayable(leg.account, -net);
-        else if (leg.account === '411') receivables += net;
-        else if (leg.account === '37' || leg.account === '35') postedStock += net;
-        else throw new Error(`[balance-sheet] the closing line "${entry.type}" (account ${leg.account}) of ${buildingId} has no place in the balance sheet`);
-      }
-      continue;
+    if (!isEcriture(entry.type)) continue;
+    // Each leg lands on its side through its account: debit minus credit is the account's net. The cash is the treasury's, read apart.
+    for (const leg of postingsOf(entry)) {
+      const net = leg.debit - leg.credit;
+      const { account } = leg;
+      if (account === CASH) continue;
+      if (account[0] === '6' || account[0] === '7') addResult(-net, entry.year);
+      else if (account === CARRIED_RESULT) {
+        // The result of the years a purge closed, carried by their à-nouveaux: it is the report à nouveau, whatever the year it is read in.
+        result -= net;
+        previousResult -= net;
+      } else if (account === '101') capital -= net;
+      else if (account === '164') loans -= net;
+      else if (account === '213') fixedAssets += net;
+      else if (account === '274') loansLent += net;
+      else if (account === '457') distributions -= net;
+      else if (account === '281') accumulatedDepreciation -= net;
+      else if (account === '37' || account === '35') postedStock += net;
+      else if (PAYABLE_ACCOUNTS.has(account)) addPayable(account, -net);
+      else if (account === '411') receivables += net;
+      else throw new Error(`[balance-sheet] the écriture "${entry.type}" (account ${account}) of ${buildingId} has no place in the balance sheet`);
     }
-    const direction = moneyDirectionOf(entry);
-    if (!direction) continue;
-    if (direction === 'closing') {
-      // A purged year: its result, and the balances it carried (the accounts' nets, debit minus credit) put back where the lines would have put them.
-      if (!entry.closing.balances) throw new Error(`[balance-sheet] the closing of year ${entry.closing.year} of ${buildingId} carries no balances: it was written by an older purge`);
-      const carried = toCentimes(entry.closing.result);
-      result += carried;
-      previousResult += carried;
-      for (const [account, amount] of Object.entries(entry.closing.balances)) {
-        const net = toCentimes(amount);
-        if (account === '512') continue;
-        if (account === '101') capital -= net;
-        else if (account === '164') loans -= net;
-        else if (account === '213') fixedAssets += net;
-        else if (account === '274') loansLent += net;
-        else if (account === '457') distributions -= net;
-        else if (account === '281') accumulatedDepreciation -= net;
-        else if (account === '37' || account === '35') postedStock += net;
-        else if (PAYABLE_ACCOUNTS.has(account)) addPayable(account, -net);
-        else if (account === '411') receivables += net;
-        else throw new Error(`[balance-sheet] the closing of year ${entry.closing.year} of ${buildingId} carries the account ${account}, which has no place in the balance sheet`);
-      }
-      continue;
-    }
-    const pcg = pcgOfJournalType(entry.type);
-    if (!pcg) throw new Error(`[balance-sheet] the money line "${entry.type}" has no account in the chart of accounts`);
-    const signed = direction === 'credit' ? toCentimes(entry.amount) : -toCentimes(entry.amount);
-    const { account } = pcg;
-    if (account[0] === '6' || account[0] === '7') addResult(signed, entry.year);
-    else if (account === '101') capital += signed;
-    else if (account === '164') loans += signed;
-    else if (account === '213') fixedAssets -= signed;
-    else if (account === '274') loansLent -= signed;
-    else if (account === '457') distributions += signed;
-    else if (PAYABLE_ACCOUNTS.has(account)) addPayable(account, signed);
-    else if (account === '411') receivables -= signed;
-    else throw new Error(`[balance-sheet] the line "${entry.type}" (account ${account}) of ${buildingId} has no place in the balance sheet`);
   }
 
   const stockTotal = stock.reduce((sum, item) => sum + toCentimes(item.value), 0);

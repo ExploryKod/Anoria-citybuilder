@@ -1,11 +1,14 @@
 /**
- * The treasury is derived from the journal, the single record of money. Every figure the game shows (balance,
- * income, expenses, totals, daily flows, loans) is folded from the journal lines here, in journal order.
+ * The treasury is derived from the journal, the single record of money. The balance is the balance of the cash account (512) in the
+ * fold of the journal's legs (LegsFold). The other figures the game shows (income, expenses, totals, daily flows, loans) are folded from
+ * the journal lines here, in journal order: they say what the money was for, which the cash account does not.
  *
- * The rules are the ones the treasury mutations applied before: a credit raises the balance, a debit lowers it.
  * An unknown money type throws: a line the policy does not know must never be silently counted or skipped.
  */
-import { isInformativeJournalType } from './JournalEntryClassificationPolicy.js';
+import { isEcriture } from './EntryLegsPolicy.js';
+
+/** The cash account of the chart of accounts. */
+const CASH = '512';
 
 const BUILDING_INVESTMENT_MARKERS = ['Building:', 'building'];
 const REFUND_INVESTMENT_MARKERS = [...BUILDING_INVESTMENT_MARKERS, 'Refund for'];
@@ -21,59 +24,26 @@ function productOf(type, prefix) {
 }
 
 /**
+ * Which way the money of a line went, read from the legs the journal booked: the cash account (512) debited is money in, credited is money out. A line with no
+ * leg on the cash (an opération diverse, an informative line) moves no money.
  * @param {object} entry
  * @returns {'credit' | 'debit' | 'closing' | null} null for a line that moves no money; 'closing' is a year's net.
  */
 export function moneyDirectionOf(entry) {
-  const { type } = entry;
-  if (type === 'year_closing') return 'closing';
-  if (isInformativeJournalType(type)) return null;
-  if (
-    type === 'capital_funds' || type === 'company_capital_received' || type === 'payroll_tax' || type === 'income_tax_refund' || type === 'citizen_tax' || type === 'vat' || type === 'public_wage' || type === 'household_benefit' ||
-    type === 'producer_revenue' || type === 'corporate_tax_revenue' || type === 'service_sales' || type === 'service_subsidy_received' || type === 'subsidy_companies_received' || type === 'subsidy_housing_received' || type === 'social_contribution' || type === 'household_participation' || type === 'household_dividend' || type === 'household_wage' || type === 'loan_capital' || type === 'construction_refund' || type.startsWith('export_') || type.startsWith('customs_import_') || type.startsWith('abroad_sale_') ||
-    // The lender's own mirror of a loan (see RecordLoanCapitalIncome.js etc.): interest and principal arriving at
-    // its account, distinct types from the city's own loan_interest/loan_repayment so deriveLoanPortfolio (which
-    // scans every entry, unfiltered by account) never double-counts one loan's installment from both sides.
-    type === 'loan_interest_received' || type === 'loan_repayment_received' ||
-    // A house taking its savings back, or the interest the bank credited it — both arrive at the house's account.
-    type === 'withdrawal' || type === 'household_deposit_interest' ||
-    // The bank's own mirror of a deposit arriving.
-    type === 'deposit_received' ||
-    // The rent a house pays to the mayor's house: it arrives at the mayor's house's business account.
-    type === 'rent_received' || type === 'premises_rent_received' || type === 'premises_rent_debt_received'
-  ) {
-    return 'credit';
-  }
-  if (
-    type === 'maintenance' || type === 'construction' || type === 'company_capital_paid' || type === 'salary' ||
-    type === 'unemployment_benefit' || type === 'loan_interest' || type === 'loan_repayment' ||
-    type === 'exceptional_expenses' || type === 'commercial_route' || type === 'contribution' ||
-    type === 'service_subsidy' ||
-    type === 'producer_purchase' || type === 'service_purchase' || type === 'consumer_purchase' || type === 'income_tax' || type === 'payroll_tax_refund' || type === 'citizen_tax_paid' || type === 'corporate_tax' || type === 'producer_wage' || type === 'employer_contribution' || type === 'employee_contribution' || type === 'enterprise_participation' || type === 'enterprise_dividend' ||
-    type === 'subsidy_companies' || type === 'subsidy_housing' ||
-    // The lender's own capital leaving its account when a loan is drawn — the city's mirror of this is 'loan_capital' (credit, its own account).
-    type === 'loan_capital_lent' ||
-    // A house moving money into the bank — the bank's own mirror of the same event is 'deposit_received' (credit, its account).
-    type === 'deposit' ||
-    // The bank's own mirror of a withdrawal/interest payment leaving its account.
-    type === 'withdrawal_paid' || type === 'deposit_interest_paid' ||
-    // The rent leaving a house's personal account.
-    type === 'rent_paid' || type === 'premises_rent_paid' ||
-    // The debts a company paid off: wages, contributions, tax, rent of its premises.
-    type === 'wage_debt_paid' || type === 'contribution_debt_paid' || type === 'corporate_tax_debt_paid' || type === 'premises_rent_debt_paid' ||
-    type.startsWith('import_') || type.startsWith('freight_') || type.startsWith('duty_paid_')
-  ) {
-    return 'debit';
-  }
-  if (type.startsWith('info_')) return null;
-  throw new Error(`[treasury] journal line of unknown money type "${type}" (turn ${entry.turn})`);
+  if (entry.type === 'year_closing') return 'closing';
+  if (!isEcriture(entry.type)) return null;
+  if (!entry.legs) throw new Error(`[treasury] journal line ${entry.type} (turn ${entry.turn}) carries no legs: it was never booked`);
+  const net = entry.legs.filter((leg) => leg.account === CASH).reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
+  if (net > 0) return 'credit';
+  if (net < 0) return 'debit';
+  return null;
 }
 
 /**
  * @param {Array<object>} entries journal lines, in journal order
  * @param {{ currentTurn: number }} options
  * @returns {{
- *   funds: number, initialFunds: number, income: number, expenses: number, netFlow: number,
+ *   initialFunds: number, income: number, expenses: number, netFlow: number,
  *   dailyIncome: number, dailyExpenses: number, totalTaxes: number, totalSalaries: number,
  *   totalBuildingMaintenance: number, totalInvestments: number, totalUnemploymentBenefits: number,
  *   totalLoanInterest: number, totalLoanInterestExpenses: number, totalLoanRepayments: number,
@@ -82,7 +52,6 @@ export function moneyDirectionOf(entry) {
  */
 export function deriveTreasuryFigures(entries, { currentTurn }) {
   const figures = {
-    funds: 0,
     initialFunds: 0,
     income: 0,
     expenses: 0,
@@ -104,17 +73,13 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
   for (const entry of entries) {
     const direction = moneyDirectionOf(entry);
     if (!direction) continue;
-    if (direction === 'closing') {
-      // A closed year: only its net reaches the funds. Its sub-totals are views, not flows of the treasury.
-      figures.funds += entry.closing.net;
-      continue;
-    }
+    // A closed year carries its balances (the cash among them, read from the fold): its sub-totals are views, not flows of the treasury.
+    if (direction === 'closing') continue;
     const amount = entry.amount;
     const today = entry.turn === currentTurn;
     const { type, description = '' } = entry;
 
     if (direction === 'credit') {
-      figures.funds += amount;
       if (type === 'construction_refund') {
         if (isBuildingInvestment(description, REFUND_INVESTMENT_MARKERS)) {
           figures.totalInvestments = Math.max(0, figures.totalInvestments - amount);
@@ -138,7 +103,6 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
       continue;
     }
 
-    figures.funds -= amount;
     // The capital the city pays a company is an investment of the city, like a construction: it is not a running expense.
     if (type === 'company_capital_paid') {
       figures.totalInvestments += amount;

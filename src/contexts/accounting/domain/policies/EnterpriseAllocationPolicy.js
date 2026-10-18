@@ -36,17 +36,21 @@ export function allocateEnterpriseResult({ result, businessCash, shares, corpora
 export function enterpriseLines({ houseId, businessAccount, participation, corporateTax, dividend }) {
   if (typeof businessAccount !== 'string') throw new Error(`[enterprise] the sharing of ${houseId} needs the business account of the enterprise that shares`);
   const lines = [];
+  // The enterprise and the household are two accounts of the same house: each books its own écriture of a sharing, tied by the flow.
   if (participation > 0) {
-    lines.push({ kind: 'enterprise_participation', amount: participation, holder: houseId, counterparty: houseId, accountKind: businessAccount });
-    lines.push({ kind: 'household_participation', amount: participation, holder: houseId, counterparty: houseId, accountKind: PERSONAL_ACCOUNT });
+    const flow = `participation:${houseId}:${businessAccount}`;
+    lines.push({ kind: 'enterprise_participation', amount: participation, holder: houseId, counterparty: houseId, accountKind: businessAccount, flow });
+    lines.push({ kind: 'household_participation', amount: participation, holder: houseId, counterparty: houseId, accountKind: PERSONAL_ACCOUNT, flow });
   }
   if (corporateTax > 0) {
-    lines.push({ kind: 'corporate_tax', amount: corporateTax, holder: houseId, counterparty: null, accountKind: businessAccount });
-    lines.push({ kind: 'corporate_tax_revenue', amount: corporateTax, holder: null, counterparty: houseId, accountKind: null });
+    const flow = `corporate_tax:${houseId}:${businessAccount}`;
+    lines.push({ kind: 'corporate_tax', amount: corporateTax, holder: houseId, counterparty: null, accountKind: businessAccount, flow });
+    lines.push({ kind: 'corporate_tax_revenue', amount: corporateTax, holder: null, counterparty: houseId, accountKind: null, flow });
   }
   if (dividend > 0) {
-    lines.push({ kind: 'enterprise_dividend', amount: dividend, holder: houseId, counterparty: houseId, accountKind: businessAccount });
-    lines.push({ kind: 'household_dividend', amount: dividend, holder: houseId, counterparty: houseId, accountKind: PERSONAL_ACCOUNT });
+    const flow = `dividend:${houseId}:${businessAccount}`;
+    lines.push({ kind: 'enterprise_dividend', amount: dividend, holder: houseId, counterparty: houseId, accountKind: businessAccount, flow });
+    lines.push({ kind: 'household_dividend', amount: dividend, holder: houseId, counterparty: houseId, accountKind: PERSONAL_ACCOUNT, flow });
   }
   return lines;
 }

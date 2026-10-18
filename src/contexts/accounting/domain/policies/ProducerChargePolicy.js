@@ -48,8 +48,10 @@ export function wagePerWorkerOf({ type, wageRateOf }) {
  *   company and the houses (a sale): it names its counterparty, so the company's trace shows who paid whom;
  * - a building line moves a company's own money (wages, its upkeep share, its corporate tax) or the city's (the corporate
  *   tax received, the upkeep the city subsidises, a house's upkeep).
- * Every line says whose account it moves: `holder` is the company, null for the city.
- * @typedef {{ kind: string, amount: number, holder: string | null, counterparty: string | null }} ChargeLine
+ * Every line says whose account it moves: `holder` is the company, null for the city. A line of a flow between two accounts names the flow
+ * (`flow`): each actor books its own écriture, and the écritures of one flow carry the same `transactionId` (the month and the flow), so the
+ * consolidation can set them against one another. A line with no counterpart in the game (the upkeep a company bears itself) names none.
+ * @typedef {{ kind: string, amount: number, holder: string | null, counterparty: string | null, flow?: string }} ChargeLine
  */
 
 const centimes = (amount) => Math.round(amount * 100) / 100;
@@ -63,8 +65,10 @@ const centimes = (amount) => Math.round(amount * 100) / 100;
 export function tradeLines({ sellerId, buyerId, amountHT }) {
   const amount = centimes(amountHT);
   if (amount <= 0) return [];
-  const lines = [{ kind: 'producer_revenue', amount, holder: sellerId, counterparty: buyerId }];
-  if (buyerId) lines.push({ kind: 'producer_purchase', amount, holder: buyerId, counterparty: sellerId });
+  // A sale with no company buyer has no counterpart in this flow (`flow: null`): the houses' own side is booked with the sale itself (RecordConsumerPurchases).
+  const flow = `trade:${sellerId}:${buyerId}`;
+  const lines = [{ kind: 'producer_revenue', amount, holder: sellerId, counterparty: buyerId, flow: buyerId ? flow : null }];
+  if (buyerId) lines.push({ kind: 'producer_purchase', amount, holder: buyerId, counterparty: sellerId, flow });
   return lines;
 }
 
@@ -91,10 +95,12 @@ export function payrollOf({ type, workers, wageRateOf }) {
 export function serviceSaleLines({ sellerId, buyerId, service, ttc, ht, vat }) {
   if (!service) throw new Error(`[producer] a service sold by ${sellerId} to ${buyerId} must name the service: its purchase line cannot be grouped otherwise`);
   if (centimes(ttc) <= 0) return [];
+  // Three actors, one flow: the house pays the price with VAT, the company books it without, the city books the VAT.
+  const flow = `service:${service}:${sellerId}:${buyerId}`;
   return [
-    { kind: 'service_purchase', amount: centimes(ttc), holder: buyerId, counterparty: sellerId, accountKind: PERSONAL_ACCOUNT, resource: service },
-    { kind: 'service_sales', amount: centimes(ht), holder: sellerId, counterparty: buyerId },
-    { kind: 'vat', amount: centimes(vat), holder: null, counterparty: sellerId },
+    { kind: 'service_purchase', amount: centimes(ttc), holder: buyerId, counterparty: sellerId, accountKind: PERSONAL_ACCOUNT, resource: service, flow },
+    { kind: 'service_sales', amount: centimes(ht), holder: sellerId, counterparty: buyerId, flow },
+    { kind: 'vat', amount: centimes(vat), holder: null, counterparty: sellerId, flow },
   ];
 }
 
@@ -107,9 +113,10 @@ export function serviceSaleLines({ sellerId, buyerId, service, ttc, ht, vat }) {
 export function serviceSubsidyLines({ sellerId, citySubsidy }) {
   const amount = centimes(citySubsidy);
   if (amount <= 0) return [];
+  const flow = `service_subsidy:${sellerId}`;
   return [
-    { kind: 'service_subsidy', amount, holder: null, counterparty: sellerId },
-    { kind: 'service_subsidy_received', amount, holder: sellerId, counterparty: null },
+    { kind: 'service_subsidy', amount, holder: null, counterparty: sellerId, flow },
+    { kind: 'service_subsidy_received', amount, holder: sellerId, counterparty: null, flow },
   ];
 }
 
@@ -130,8 +137,9 @@ export function wageSplitLines({ workplaceId, wagesHT, sources }) {
     const amount = index === houses.length - 1 ? centimes(wagesHT - paid) : centimes((wagesHT * workers) / totalWorkers);
     paid = centimes(paid + amount);
     if (amount <= 0) return;
-    lines.push({ kind: 'producer_wage', amount, holder: workplaceId, counterparty: houseId });
-    lines.push({ kind: 'household_wage', amount, holder: houseId, counterparty: workplaceId, accountKind: PERSONAL_ACCOUNT });
+    const flow = `wage:${workplaceId}:${houseId}`;
+    lines.push({ kind: 'producer_wage', amount, holder: workplaceId, counterparty: houseId, flow });
+    lines.push({ kind: 'household_wage', amount, holder: houseId, counterparty: workplaceId, accountKind: PERSONAL_ACCOUNT, flow });
   });
   return lines;
 }
@@ -145,9 +153,10 @@ export function wageSplitLines({ workplaceId, wagesHT, sources }) {
 export function employerContributionLines({ workplaceId, wagesHT, rate }) {
   const amount = centimes(wagesHT * rate);
   if (amount <= 0) return [];
+  const flow = `employer_contribution:${workplaceId}`;
   return [
-    { kind: 'employer_contribution', amount, holder: workplaceId, counterparty: null },
-    { kind: 'social_contribution', amount, holder: null, counterparty: workplaceId },
+    { kind: 'employer_contribution', amount, holder: workplaceId, counterparty: null, flow },
+    { kind: 'social_contribution', amount, holder: null, counterparty: workplaceId, flow },
   ];
 }
 
@@ -160,9 +169,10 @@ export function employerContributionLines({ workplaceId, wagesHT, rate }) {
 export function employeeContributionLines({ houseId, wagesReceived, rate }) {
   const amount = centimes(wagesReceived * rate);
   if (amount <= 0) return [];
+  const flow = `employee_contribution:${houseId}`;
   return [
-    { kind: 'employee_contribution', amount, holder: houseId, counterparty: null, accountKind: PERSONAL_ACCOUNT },
-    { kind: 'social_contribution', amount, holder: null, counterparty: houseId },
+    { kind: 'employee_contribution', amount, holder: houseId, counterparty: null, accountKind: PERSONAL_ACCOUNT, flow },
+    { kind: 'social_contribution', amount, holder: null, counterparty: houseId, flow },
   ];
 }
 
@@ -182,22 +192,25 @@ export function employeeContributionLines({ houseId, wagesReceived, rate }) {
 export function buildingChargeLines({ id, type, maintenanceCost, houseSubsidyRate, owner }) {
   const lucrative = isLucrativeBuilding(type);
   const lines = [];
-  const add = (kind, amount, holder, accountKind) => {
+  // `flow`: the flow the line belongs to when another account books its other side; null for a charge with no counterpart in the game (an upkeep a building bears itself).
+  const add = (kind, amount, holder, accountKind, flow = null) => {
     const rounded = centimes(amount);
-    if (rounded > 0) lines.push({ kind, amount: rounded, holder, counterparty: null, ...(accountKind ? { accountKind } : {}) });
+    if (rounded > 0) lines.push({ kind, amount: rounded, holder, counterparty: null, flow, ...(accountKind ? { accountKind } : {}) });
   };
 
   if (resolveBuildingKind(type) === BUILDING_KIND_HOUSE) {
     if (!(houseSubsidyRate >= 0 && houseSubsidyRate <= 1)) throw new Error(`[maintenance] the upkeep of house ${id} needs the hamlet's subsidy rate (a fraction), got ${houseSubsidyRate}`);
     if (owner === undefined) throw new Error(`[maintenance] the upkeep of house ${id} needs its owner (or null when none stands)`);
     if (owner === null) {
+      // No owner stands: the hamlet bears the whole upkeep itself (the line has no counterpart).
       add('subsidy_housing', maintenanceCost, null);
       return lines;
     }
     const houseSubsidy = centimes(maintenanceCost * houseSubsidyRate);
+    const subsidyFlow = `subsidy_housing:${id}`;
     add('maintenance', maintenanceCost, owner.id, owner.businessAccount);
-    add('subsidy_housing_received', houseSubsidy, owner.id, owner.businessAccount);
-    add('subsidy_housing', houseSubsidy, null);
+    add('subsidy_housing_received', houseSubsidy, owner.id, owner.businessAccount, subsidyFlow);
+    add('subsidy_housing', houseSubsidy, null, undefined, subsidyFlow);
     return lines;
   }
 
@@ -212,12 +225,14 @@ export function buildingChargeLines({ id, type, maintenanceCost, houseSubsidyRat
     if (!(owner.rentMargin >= 0)) throw new Error(`[maintenance] the owner of building ${id} must give its rent margin, got ${owner.rentMargin}`);
     const rent = centimes(maintenanceCost * (1 + owner.rentMargin));
     const operatorId = lucrative ? id : null;
-    add('premises_rent_paid', rent, operatorId);
-    add('premises_rent_received', rent, owner.id, owner.businessAccount);
+    const rentFlow = `rent:${id}`;
+    add('premises_rent_paid', rent, operatorId, undefined, rentFlow);
+    add('premises_rent_received', rent, owner.id, owner.businessAccount, rentFlow);
     add('maintenance', maintenanceCost, owner.id, owner.businessAccount);
     if (lucrative) {
-      add('subsidy_companies_received', subsidy, id);
-      add('subsidy_companies', subsidy, null);
+      const subsidyFlow = `subsidy_companies:${id}`;
+      add('subsidy_companies_received', subsidy, id, undefined, subsidyFlow);
+      add('subsidy_companies', subsidy, null, undefined, subsidyFlow);
     }
     return lines;
   }
@@ -225,9 +240,10 @@ export function buildingChargeLines({ id, type, maintenanceCost, houseSubsidyRat
   if (lucrative) {
     // The company books its whole upkeep and, apart, the share the city pays it back: its statement shows what the building really
     // costs and what the city carries. Its cash is the same as paying only the net upkeep.
+    const subsidyFlow = `subsidy_companies:${id}`;
     add('maintenance', maintenanceCost, id);
-    add('subsidy_companies_received', subsidy, id);
-    add('subsidy_companies', subsidy, null);
+    add('subsidy_companies_received', subsidy, id, undefined, subsidyFlow);
+    add('subsidy_companies', subsidy, null, undefined, subsidyFlow);
   } else {
     add('maintenance', ownUpkeep, null);
     add('subsidy_housing', subsidy, null);
@@ -257,9 +273,10 @@ export function corporateTaxDueOf({ rcaiYearToDate, taxPaidYearToDate, rate }) {
 export function corporateTaxLines({ id, amount }) {
   const rounded = centimes(amount);
   if (rounded <= 0) return [];
+  const flow = `corporate_tax:${id}`;
   return [
-    { kind: 'corporate_tax', amount: rounded, holder: id, counterparty: null },
-    { kind: 'corporate_tax_revenue', amount: rounded, holder: null, counterparty: null },
+    { kind: 'corporate_tax', amount: rounded, holder: id, counterparty: null, flow },
+    { kind: 'corporate_tax_revenue', amount: rounded, holder: null, counterparty: null, flow },
   ];
 }
 

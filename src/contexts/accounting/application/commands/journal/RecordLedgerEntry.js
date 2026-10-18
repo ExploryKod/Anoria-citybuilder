@@ -37,6 +37,8 @@ export class RecordLedgerEntry {
    * @param {number|null} [params.dutyRate] a customs line: the duty rate that was applied (stamped when written, never recomputed)
    * @param {number|null} [params.customsBase] a customs line: the value the rate was applied to
    * @param {string|null} [params.resource] a household's purchase line: the catalog category it bought (a good or a service), to group its budget by use
+   * @param {Array<{ account: string, debit: number, credit: number }>|null} [params.legs] the legs of an écriture with more than two (centimes, balanced); null takes the two the catalog gives the type (the journal books every écriture when it writes it)
+   * @param {string|null} [params.transactionId] ties the écritures of one flow between actors (each actor books its own)
    * @param {boolean} [params.persist]
    * @returns {Promise<RecordLedgerEntryResult>}
    */
@@ -58,6 +60,8 @@ export class RecordLedgerEntry {
     dutyRate = null,
     customsBase = null,
     resource = null,
+    legs = null,
+    transactionId = null,
     persist,
   }) {
     if (typeof turn !== 'number' || Number.isNaN(turn)) {
@@ -95,6 +99,8 @@ export class RecordLedgerEntry {
         dutyRate,
         customsBase,
         resource,
+        legs,
+        transactionId,
         month:
           timeInfo?.monthIndex != null ? timeInfo.monthIndex + 1 : null,
         year: timeInfo?.year ?? null,
