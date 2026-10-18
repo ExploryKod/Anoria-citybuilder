@@ -8,6 +8,8 @@ import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import { getOrCreateConstructionContext } from './createConstructionContext.js';
 import { getOrCreateIntelligenceContext } from './createIntelligenceContext.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
+import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
+import { getOrCreateSupplyContext } from './createSupplyContext.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { MONTHS_PER_YEAR } from '../shared/time/TimeCalendar.js';
 import { getCumulativeDeaths } from './gameplayMortalityState.js';
@@ -65,6 +67,11 @@ export async function processGameTurnBudget({ city, buildings, time, totalPop })
   });
   // The month's accounts are closed: inhabitants leave the houses whose distress the catalog names (a rent they cannot pay, ...).
   if (result?.monthSettled === true) {
+    // The companies liquidated this month close: they let their workers go and their stock is gone (the journal has already sold it).
+    for (const companyId of result.liquidated ?? []) {
+      await getOrCreateEmploymentContext().closeWorkplace(companyId, time);
+      await getOrCreateSupplyContext().clearStock(companyId);
+    }
     const timeInfo = resolveGetTimeInfo()(time);
     await getOrCreateHousingContext().runMonthlyDepartures({
       monthKey: timeInfo.year * MONTHS_PER_YEAR + timeInfo.monthIndex,

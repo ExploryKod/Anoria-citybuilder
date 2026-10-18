@@ -7,6 +7,7 @@ import { initFinancesSection } from './finances/initFinancesSection.js';
 import { initHealthSection } from './health/initHealthSection.js';
 import { initWorkSection } from './work/initWorkSection.js';
 import { initStorageSection } from './storage/initStorageSection.js';
+import { initActivitiesSection } from './activities/initActivitiesSection.js';
 import { initReportSection } from './report/initReportSection.js';
 import { initArchivesSection } from './archives/initArchivesSection.js';
 import { initCommerceSection } from './commerce/initCommerceSection.js';
@@ -37,6 +38,7 @@ export async function initAdminSections(deps) {
   initHealthSection(deps);
   initWorkSection(deps);
   initStorageSection(deps);
+  initActivitiesSection(deps);
   initReportSection(deps);
   initArchivesSection(deps);
   if (deps.trade) initCommerceSection(deps);

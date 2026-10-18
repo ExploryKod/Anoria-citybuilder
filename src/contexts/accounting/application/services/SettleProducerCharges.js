@@ -14,6 +14,7 @@ import {
 } from '../../domain/policies/ProducerChargePolicy.js';
 import { PERSONAL_ACCOUNT, businessAccountOf } from '../../domain/policies/AccountKeyPolicy.js';
 import { payablesOf, planCompanyPayments } from '../../domain/policies/DebtPolicy.js';
+import { liquidatedIdsOf } from '../../domain/policies/LiquidationPolicy.js';
 import { PAYABLE_KINDS } from '../../domain/catalogs/PayableCatalog.js';
 import { houseEnterpriseOf, houseEnterprises, houseHoldsSkill } from '../../../../shared/population/workforceQueries.js';
 import { OWNER_SKILL } from '../../../../shared/population/socialCategoryCatalog.js';
@@ -162,7 +163,9 @@ export class SettleProducerCharges {
     const serviceFlows = await this.deps.sumServiceFlows(timeInfo.year, timeInfo.monthIndex);
     const subsidies = await this.deps.getServiceSubsidies();
     const ratesPercent = await this.deps.getVatRates();
-    const buildings = await this.deps.listBuildings();
+    // A liquidated company is closed (the journal says so): nobody works in it any more, whatever the building still lists, and it is charged nothing new.
+    const liquidated = liquidatedIdsOf(await this.deps.getJournalEntries());
+    const buildings = (await this.deps.listBuildings()).map((building) => (liquidated.has(building.id) ? { ...building, workerSources: {}, closed: true } : building));
     const monthLabel = `${timeInfo.month} ${timeInfo.year}`;
     const nameOf = (buildingId) => {
       const building = buildings.find((candidate) => candidate.id === buildingId);
@@ -398,7 +401,7 @@ export class SettleProducerCharges {
       // The corporate tax is a yearly one, settled when the fiscal year closes: this settlement opens a new year, so the lines of the year
       // that ended are all written. It is read off the company's statement of that year, so it is based on the same résultat courant avant
       // impôts the player reads, not on a second computation of it, and it is dated in the year it taxes (its last turn).
-      if (timeInfo.monthIndex === MONTHS_PER_YEAR - 1 && isLucrativeBuilding(building.type)) {
+      if (timeInfo.monthIndex === MONTHS_PER_YEAR - 1 && isLucrativeBuilding(building.type) && !building.closed) {
         const { rcaiYearToDate, taxPaidYearToDate } = await this.deps.readCompanyYear(building.id, timeInfo.year);
         const taxLines = corporateTaxLines({ id: building.id, amount: corporateTaxDueOf({ rcaiYearToDate, taxPaidYearToDate, rate: corporateTaxRate }) });
         // The tax is paid with what the company holds once its charges of the month are paid; what it cannot pay is a debt to the city.
@@ -589,7 +592,8 @@ export class SettleProducerCharges {
     for (const line of serviceSubsidyLines({ sellerId: id, citySubsidy: subsidyHT })) {
       await write(line, `${LINE_LABELS[line.kind]} ${nameOf(id)} - ${monthLabel}`, buildProducerLineBusinessKey(line.kind, id, timeInfo, hamletId));
     }
-    const chargeLines = buildingChargeLines({ id, type: building.type, maintenanceCost: this.deps.buildingMaintenanceCost(building.type), houseSubsidyRate, owner });
+    // A liquidated company is closed: its upkeep and its rent are no longer charged (it only pays its old debts).
+    const chargeLines = building.closed ? [] : buildingChargeLines({ id, type: building.type, maintenanceCost: this.deps.buildingMaintenanceCost(building.type), houseSubsidyRate, owner });
     const isRentLine = (line) => line.kind === 'premises_rent_paid' || line.kind === 'premises_rent_received';
     for (const line of chargeLines.filter((candidate) => !isRentLine(candidate))) {
       await write(line, `${LINE_LABELS[line.kind]} ${nameOf(id)} - ${monthLabel}`, buildProducerLineBusinessKey(line.kind, id, timeInfo, hamletId));

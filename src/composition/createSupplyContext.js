@@ -567,6 +567,14 @@ export function createSupplyContext({
     },
 
     /**
+     * A liquidated company's stock is gone (it was sold at the liquidation, see LiquidateCompanies).
+     * @param {string} buildingId
+     */
+    async clearStock(buildingId) {
+      await supplyBuildingRepositoryImpl.clearStocks(buildingId);
+    },
+
+    /**
      * What a building's stock is worth at cost, good by good (a service is not a stock): the units it holds times what a unit cost it (see PriceBook.stockUnitCost).
      * @param {string} buildingId
      * @param {{ year?: number, monthIndex?: number }} period

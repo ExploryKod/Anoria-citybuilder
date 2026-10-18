@@ -1398,6 +1398,8 @@ export function createScene(_gameStore, assetManager, deps) {
         } catch (error) {
             console.warn('[scene.js] Error reading no-resource buildings:', error);
         }
+        // A liquidated company is closed for good: the padlock is its only status.
+        const closedIds = new Set(await employment.listClosedBuildingIds());
         const noWorkSpriteColor = 0xFF0000;
         const noWorkBackgroundColor = 0xFFE8E8;
 
@@ -1418,7 +1420,8 @@ export function createScene(_gameStore, assetManager, deps) {
 
                 // Assembled meshes (e.g. a planted field) react to having workers or not —
                 // same rule as the no-work icon below: understaffed = no worker at all.
-                mesh.userData.isUnderstaffed = understaffed.has(instanceId);
+                // A closed company has no staff and takes none: it shows no activity (the role sprites wait for a staffed building).
+                mesh.userData.isUnderstaffed = understaffed.has(instanceId) || closedIds.has(instanceId);
                 mesh.userData.applyStaffing?.(!mesh.userData.isUnderstaffed);
 
                 // Every workplace (a building the catalog gives staff to hire) follows the same status rules —
@@ -1440,6 +1443,15 @@ export function createScene(_gameStore, assetManager, deps) {
                 // Status layers are exclusive, in this order: no road → only no-road; no worker → only
                 // no-work; only a road-connected, staffed building shows that it has no resource left in
                 // range. The sprite is created once and only shown/hidden after, so it never flickers.
+                if (closedIds.has(instanceId)) {
+                    ['no-resource', 'no-work', 'no-work-bg'].forEach((name) => assetManager.removeStatusSprite(mesh, name));
+                    const closedIcon = resolveIconAppearance(
+                        mesh, 'liquidated', STATUS_ICON_DEFAULTS.liquidated.position, STATUS_ICON_DEFAULTS.liquidated.scale
+                    );
+                    assetManager.setStatusSprite(mesh, textures.liquidated, 'liquidated', closedIcon.scale, closedIcon.position, true);
+                    continue;
+                }
+                assetManager.removeStatusSprite(mesh, 'liquidated');
                 const hasNoResource = noResourceBuildingIds.has(instanceId)
                     && mesh.userData.hasRoadAccess !== false
                     && !understaffed.has(instanceId);

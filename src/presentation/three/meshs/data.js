@@ -53,7 +53,9 @@ export const textures = Object.freeze({
     // No worker sprite (black) - shown when building has no employees
     'no-work': loadTextures(`/resources/textures/status/no-work.png`, true),
     // No natural resource left in range of a raw-material producer (see the catalog's `source` fact)
-    'no-resource': loadTextures(`/resources/textures/status/no-resource.svg`, true)
+    'no-resource': loadTextures(`/resources/textures/status/no-resource.svg`, true),
+    // A liquidated company: closed for good (see the accounting liquidation)
+    'liquidated': loadTextures(`/resources/textures/status/liquidated.svg`, true)
 })
 
 /** Resolves once every texture of the game has loaded: the scene must not show before its sprites exist. */

@@ -67,6 +67,7 @@ export function journalEntryTypeLabel(entry) {
     corporate_tax_debt_paid: 'Impôt impayé réglé',    premises_rent_debt_paid: 'Loyer du local impayé réglé',
     corporate_tax_debt_received: 'Impôt sur les sociétés impayé encaissé', contribution_debt_received: 'Cotisations impayées encaissées',
     premises_rent_debt_received: 'Loyer du local impayé encaissé',
+    liquidation_stock_sale: 'Stock vendu à la liquidation',    wage_guarantee_paid: 'Garantie des salaires versée',
     social_contribution: 'Cotisations sociales perçues',
     enterprise_participation: 'Participation aux résultats versée',
     enterprise_dividend: 'Dividendes versés',

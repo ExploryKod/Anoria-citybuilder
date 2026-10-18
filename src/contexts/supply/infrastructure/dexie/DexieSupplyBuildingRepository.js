@@ -37,8 +37,9 @@ export class DexieSupplyBuildingRepository {
       stocks: house.stocks || {},
       // The catalog is the only source of a stock ceiling — a stored row value never overrides it.
       maxStock: getMaxStockForBuilding(type),
-      worker: employees.worker ?? 0,
-      workerNeed: employees.worker_need ?? 0,
+      // A liquidated company is closed: it can never be staffed again, so it neither buys nor sells.
+      worker: house.liquidatedAt != null ? 0 : employees.worker ?? 0,
+      workerNeed: house.liquidatedAt != null ? Math.max(1, employees.worker_need ?? 0) : employees.worker_need ?? 0,
       neighbors: house.neighbors || [],
       lastProductionYear: house.lastProductionYear ?? null,
       lastConsumptionMonth: house.lastConsumptionMonth ?? null,
@@ -134,6 +135,13 @@ export class DexieSupplyBuildingRepository {
   async saveStocks(buildingId, stocks) {
     const row = await db.houses.get(buildingId);
     await this.#putFields(buildingId, { stocks: createSupplyStock({ ...(row?.stocks ?? {}), ...stocks }) });
+  }
+
+  /** Empties a building's stock: every good it held is gone (a liquidated company sold it). */
+  async clearStocks(buildingId) {
+    const row = await db.houses.get(buildingId);
+    if (!row) throw new Error(`[supply] building ${buildingId} is not in the hamlet: its stock cannot be cleared`);
+    await this.saveStocks(buildingId, Object.fromEntries(Object.keys(row.stocks ?? {}).map((category) => [category, 0])));
   }
 
   async saveHubLastCollection(hubId, lastCollection) {

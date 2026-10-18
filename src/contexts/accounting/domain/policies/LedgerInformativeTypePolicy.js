@@ -74,6 +74,13 @@ export const INFO_JOURNAL_TYPE_LABELS = {
   od_payable_corporate_tax: 'Impôt dû non payé (OD)',
   od_payable_premises_rent: 'Loyer du local dû non payé (OD)',
   od_receivable_premises_rent: 'Loyer du local à encaisser (OD)',
+  od_forgiven_wage: 'Salaires dus abandonnés à la liquidation (OD)',
+  od_forgiven_contribution: 'Cotisations dues abandonnées à la liquidation (OD)',
+  od_forgiven_corporate_tax: 'Impôt dû abandonné à la liquidation (OD)',
+  od_forgiven_premises_rent: 'Loyer du local dû abandonné à la liquidation (OD)',
+  od_bad_debt_contribution: 'Cotisations irrécouvrables (OD)',
+  od_bad_debt_corporate_tax: 'Impôt irrécouvrable (OD)',
+  od_bad_debt_premises_rent: 'Loyer du local irrécouvrable (OD)',
   od_asset_contribution: 'Apport de constructions par la ville (OD)',
   od_asset_disposal_amortization: 'Sortie d’actif : amortissement soldé (OD)',
   od_asset_disposal_loss: 'Sortie d’actif : valeur nette perdue (OD)',
@@ -81,6 +88,8 @@ export const INFO_JOURNAL_TYPE_LABELS = {
   info_rent_written_off: 'Loyer impayé abandonné (informatif)',
   // What a building's spoiled goods would have sold for: a loss of opportunity, never a charge, so it moves no money.
   info_goods_spoiled: 'Avarie — manque à gagner (informatif)',
+  // The day a company was liquidated: from then on it is closed (see LiquidationPolicy).
+  info_company_liquidated: 'Entreprise liquidée (informatif)',
 };
 
 /**

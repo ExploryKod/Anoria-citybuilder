@@ -44,6 +44,8 @@ import {
 import { CollectCitizenTaxes } from '../contexts/accounting/application/services/game/CollectCitizenTaxes.js';
 import { GameTreasuryRecording } from '../contexts/accounting/application/services/game/GameTreasuryRecording.js';
 import { ProcessTurnBudget } from '../contexts/accounting/application/services/ProcessTurnBudget.js';
+import { liquidatedIdsOf } from '../contexts/accounting/domain/policies/LiquidationPolicy.js';
+import { LiquidateCompanies } from '../contexts/accounting/application/services/LiquidateCompanies.js';
 import { RecordConsumerPurchases } from '../contexts/accounting/application/services/RecordConsumerPurchases.js';
 import { GetProducerRevenues } from '../contexts/accounting/application/queries/GetProducerRevenues.js';
 import { buildingAccountTrace } from '../contexts/accounting/domain/policies/BuildingAccountTracePolicy.js';
@@ -80,7 +82,7 @@ import { buildingMaintenanceCost, maintenanceCategoryOf } from '../contexts/acco
 import { CloseMonthAccounts } from '../contexts/accounting/application/services/CloseMonthAccounts.js';
 import { FundNewCompanies } from '../contexts/accounting/application/services/FundNewCompanies.js';
 import { difficultyMonthsOf, payablesOf } from '../contexts/accounting/domain/policies/DebtPolicy.js';
-import { INSOLVENCY_DISPLAY, INSOLVENCY_GRACE_MONTHS, PAYABLE_KINDS } from '../contexts/accounting/domain/catalogs/PayableCatalog.js';
+import { INSOLVENCY_DISPLAY, INSOLVENCY_GRACE_MONTHS, LIQUIDATION_DISPLAY, PAYABLE_KINDS } from '../contexts/accounting/domain/catalogs/PayableCatalog.js';
 import { buildingTypeOfConstruction } from '../contexts/accounting/domain/policies/MonthClosingPolicy.js';
 import { SettleProducerCharges } from '../contexts/accounting/application/services/SettleProducerCharges.js';
 import { RecordHouseholdDeposit } from '../contexts/accounting/application/services/RecordHouseholdDeposit.js';
@@ -690,12 +692,29 @@ export function createAccountingContext(deps = {}) {
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
 
+  const liquidateCompanies = new LiquidateCompanies({
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    listCompanies: async () =>
+      (await dexieDb.houses.toArray()).filter(isActiveHamletRow).filter((row) => isLucrativeBuilding(row.type)).map((row) => ({ id: row.id, type: row.type })),
+    getJournalEntries: () => journalRepository.getJournalEntries(),
+    valueStock: (buildingId, period) => {
+      if (typeof deps.valueStock !== 'function') throw new Error('[accounting] the stock valuation was not wired (deps.valueStock): a company could not be liquidated');
+      return deps.valueStock(buildingId, period);
+    },
+    getOwner: async () => {
+      const rentals = await getRentalHouses();
+      return rentals ? { id: rentals.ownerId, businessAccount: businessAccountOf(houseEnterpriseOf(rentals.ownerType, 'rental').id) } : null;
+    },
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
   const processTurnBudget = new ProcessTurnBudget({
     collectCitizenTaxes: (time) => collectCitizenTaxes.execute({ time }),
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
     // The month's settlement is written in one go: hundreds of lines, one transaction (see SessionJournalStore.batch).
     inJournalBatch: (work) => sessionJournalStoreInstance.batch(work),
     settleProducerCharges: (params) => settleProducerCharges.execute(params),
+    beginLiquidations: (params) => liquidateCompanies.begin(params),
+    endLiquidations: (params) => liquidateCompanies.end(params),
     settleHouseRents: (params) => settleHouseRents.execute(params),
     fundNewCompanies: (params) => fundNewCompanies.execute(params),
     closeMonthAccounts: (params) => closeMonthAccounts.execute(params),
@@ -1208,8 +1227,10 @@ export function createAccountingContext(deps = {}) {
       }
       return {
         months,
+        liquidated: accountKind === null && liquidatedIdsOf(entries).has(buildingId),
         graceMonths: INSOLVENCY_GRACE_MONTHS,
         display: INSOLVENCY_DISPLAY,
+        liquidatedDisplay: LIQUIDATION_DISPLAY,
         debts: [...totals].map(([kind, centimes]) => ({ label: PAYABLE_KINDS[kind].label, amount: centimes / 100 })),
       };
     },

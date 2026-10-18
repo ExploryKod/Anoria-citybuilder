@@ -48,6 +48,20 @@ export function createEmploymentContext({ employmentBuildingRepository, citizenP
     distributeCityWorkersCommand,
     getCityEmploymentSummaryQuery,
 
+    /** @returns {Promise<string[]>} the liquidated companies, closed for good (the map shows a padlock on them) */
+    async listClosedBuildingIds() {
+      return employmentBuildingRepositoryImpl.listClosedIds();
+    },
+
+    /**
+     * A company is liquidated: it closes and lets its workers go.
+     * @param {string} buildingId
+     * @param {number} turn
+     */
+    async closeWorkplace(buildingId, turn) {
+      await employmentBuildingRepositoryImpl.closeWorkplace(buildingId, turn);
+    },
+
     /**
      * Priority-tab structure: one per social group (`allSocialGroups()`,
      * catalog-driven) plus the shared-skill tab — see

@@ -116,6 +116,19 @@ Le compte d'une entreprise sous zéro (à cause des achats ou de l'entretien san
 
 **Après** : le bâtiment vacant peut être reloué à un nouvel exploitant (nouvelle entreprise, nouveau compte) ; l'ancien compte reste fermé. Une coopérative liquidée laisse sa maison, qui peut ouvrir une nouvelle entreprise.
 
+### Étape 4b — Liquidation d'une entreprise (FAIT)
+
+Ce qui est codé (faillite de la SCI et du hameau, notation et crédit : pas encore) :
+- **État « liquidée »** : une ligne informative `info_company_liquidated`, écrite une fois ; il se lit dans le journal (`liquidatedIdsOf`). La ligne du bâtiment reçoit `liquidatedAt` (le tour) pour que l'emploi et l'approvisionnement la lisent sans interroger la comptabilité.
+- **Déclencheur** : `LiquidateCompanies.begin`, avant le règlement du mois, liquide une entreprise dont `difficultyMonthsOf` atteint `INSOLVENCY_GRACE_MONTHS`.
+- **Vente du stock** : `liquidation_stock_sale` (775), à `LIQUIDATION_RECOVERY_RATE` du coût ; l'argent paie les créanciers par rang dans le règlement du mois (`SettleProducerCharges`, qui ne facture plus rien à une entreprise fermée : ni salaires, ni entretien, ni loyer, ni impôt).
+- **Le reste est abandonné** : `LiquidateCompanies.end` écrit, par dette ouverte, une OD d'abandon de créance chez l'entreprise (`od_forgiven_*`, 771) ; chez le créancier une perte sur créance (`od_bad_debt_*`, 654) pour les cotisations, l'impôt et le loyer ; les salaires sont garantis par la ville (`wage_guarantee_paid`, flux avec le `household_wage` du ménage, net, sans retenue).
+- **Arrêt de l'activité** (après le lot du mois, `runGameTurnEconomy`) : les ouvriers sont renvoyés (`closeWorkplace`), le stock physique est vidé (`clearStock`), le bâtiment ne peut plus ouvrir (poste requis ≥ 1, aucun ouvrier). La clôture du mois suivant constate la baisse du stock (OD de variation).
+- **Message** : problème « 🔒 liquidée » dans l'onglet messages du bâtiment.
+- Test de non-régression : `tests/contexts/accounting/liquidation.regression.test.js`.
+
+Limites connues : le bâtiment reste vacant (pas de reprise par un nouvel exploitant : le joueur le démolit et le reconstruit) ; l'argent qui reste dans la caisse d'une entreprise liquidée après paiement de tout y reste ; une coopérative (maison) n'est pas liquidée ; la purge d'une année ne reporte pas encore les dettes ouvertes d'une entreprise liquidée (toutes soldées par l'abandon, donc sans effet tant que la liquidation les solde le même mois).
+
 ## Où cela s'insère dans le code
 
 - `PcgJournalCatalog` : les OD de charge à payer, de règlement de dette, de liquidation et de perte sur créance.

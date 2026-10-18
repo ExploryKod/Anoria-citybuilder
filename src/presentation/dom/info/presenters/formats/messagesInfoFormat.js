@@ -159,6 +159,12 @@ function departureComplaints(vm) {
  */
 function insolvencyComplaints(vm) {
   const insolvency = vm.insolvency;
+  if (insolvency?.liquidated) {
+    return [{
+      text: `${insolvency.liquidatedDisplay.icon} ${insolvency.liquidatedDisplay.label}`,
+      detail: 'Elle est restée trop longtemps sans payer ses dettes : son stock a été vendu, ses salariés sont partis, ses dettes sont abandonnées (la ville garantit les salaires). Elle ne reprendra pas.',
+    }];
+  }
   if (!insolvency || insolvency.months <= 0) return [];
   const owed = insolvency.debts.map((debt) => `${debt.label.toLowerCase()} ${formatEuro(debt.amount)}`).join(', ');
   return [{

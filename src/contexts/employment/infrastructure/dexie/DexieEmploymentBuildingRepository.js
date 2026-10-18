@@ -15,6 +15,8 @@ import {
 export class DexieEmploymentBuildingRepository {
   #toSnapshot(house) {
     const employees = house.employees || {};
+    // A liquidated company is closed: it employs nobody and asks for nobody.
+    const closed = house.liquidatedAt != null;
     return createEmploymentBuildingSnapshot({
       id: instanceIdFromHouseRow(house),
       type: house.type || '',
@@ -23,11 +25,23 @@ export class DexieEmploymentBuildingRepository {
       roadCount: house.roads ?? 0,
       pop: house.pop ?? 0,
       level: house.level ?? 1,
-      worker: employees.worker ?? 0,
-      workerNeed: employees.worker_need ?? 0,
+      worker: closed ? 0 : employees.worker ?? 0,
+      workerNeed: closed ? 0 : employees.worker_need ?? 0,
       sector: employees.sector ?? 0,
-      workerSources: employees.workerSources ?? {},
+      workerSources: closed ? {} : employees.workerSources ?? {},
     });
+  }
+
+  /**
+   * A company is liquidated: the row remembers the turn it closed, and its workers are let go.
+   * @param {string} buildingId
+   * @param {number} turn
+   */
+  async closeWorkplace(buildingId, turn) {
+    const row = await db.houses.get(buildingId);
+    if (!row) throw new Error(`[employment] building ${buildingId} is not in the hamlet: it cannot be closed`);
+    const employees = row.employees || { worker: 0, worker_need: 0 };
+    await this.#putFields(buildingId, { liquidatedAt: turn, employees: { ...employees, worker: 0, workerSources: {} } });
   }
 
   /**
@@ -58,6 +72,12 @@ export class DexieEmploymentBuildingRepository {
   async listWorkplaces() {
     const rows = await db.houses.toArray();
     return rows.filter(isActiveHamletRow).map((row) => this.#toSnapshot(row)).filter((snapshot) => isWorkplace(snapshot));
+  }
+
+  /** @returns {Promise<string[]>} the ids of the liquidated companies of the hamlet (closed for good) */
+  async listClosedIds() {
+    const rows = await db.houses.toArray();
+    return rows.filter((row) => isActiveHamletRow(row) && row.liquidatedAt != null).map((row) => instanceIdFromHouseRow(row));
   }
 
   async listAllSnapshots() {

@@ -61,7 +61,11 @@ export class ProcessTurnBudget {
         if (this.deps.settleBankDepositInterest) {
           await this.deps.settleBankDepositInterest({ time, deliveredTime: time - 1 });
         }
+        // A company that went the whole grace period unable to pay is liquidated before its month is settled: its stock is sold, so its creditors are paid by rank.
+        if (this.deps.beginLiquidations) result.liquidated = await this.deps.beginLiquidations({ time, deliveredTime: time - 1 });
         await this.deps.settleProducerCharges({ time, deliveredTime: time - 1 });
+        // What a liquidated company still owes once it has paid all it could is forgiven (the wages are guaranteed by the city).
+        if (this.deps.endLiquidations) await this.deps.endLiquidations({ time, deliveredTime: time - 1 });
         // The rents come last of the month's charges: a house pays what is left of its month, and what it cannot pay stays a debt.
         if (this.deps.settleHouseRents) {
           await this.deps.settleHouseRents({ time, deliveredTime: time - 1 });

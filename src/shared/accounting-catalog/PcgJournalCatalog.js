@@ -162,6 +162,10 @@ const BY_TYPE = Object.freeze({
   subsidy_housing_received: entry(inflow('741'), 'Subventions d’exploitation', 'subsidy-received', false, 'Aide du hameau à l’entretien des maisons'),
   service_subsidy_received: entry(inflow('741'), 'Subventions d’exploitation', 'subsidy-received', false, 'Aide aux services publics reçue'),
   loan_interest_received: entry(inflow('7626'), 'Revenus des prêts', 'sales'),
+  // A liquidated company sells what it holds in stock to the market: a disposal of assets, not a sale of its trade.
+  liquidation_stock_sale: entry(inflow('775'), 'Produits des cessions d’éléments d’actif', 'sales', false, 'Stock vendu à la liquidation'),
+  // The city pays the wages a liquidated company left unpaid (the guarantee of the wages): its charge, the household's pay.
+  wage_guarantee_paid: publicEntry(outflow('6588'), 'Autres charges diverses de gestion courante', 'personnel', 'Garantie des salaires d’une entreprise liquidée'),
 });
 
 /** @type {ReadonlyArray<string>} Every type of money line the catalog names exactly (a trade line is named by its prefix, below). */
@@ -206,6 +210,15 @@ const OPERATIONS_DIVERSES = Object.freeze({
   // owed to the social body, so the city holds a receivable on the company (4387) against what it owes that body (431), no product.
   od_receivable_corporate_tax: Object.freeze({ debit: '411', credit: '73118', label: 'Autres contributions directes', tone: 'tax-received', detail: 'Impôt sur les bénéfices dû à la ville, pas encore encaissé' }),
   od_receivable_contribution: Object.freeze({ debit: '4387', credit: '431', label: 'Sécurité sociale', tone: 'tax-received', detail: 'Cotisations dues à la sécurité sociale, pas encore encaissées' }),
+  // A liquidated company's debts that nothing can pay are forgiven (an abandon de créance, 771) and the creditor writes the claim off (a loss on an irrecoverable
+  // claim, 654). The workers' wages are not lost: the city's guarantee pays them (wage_guarantee_paid), so the company is released of that debt the same way.
+  od_forgiven_wage: Object.freeze({ debit: '421', credit: '771', label: 'Produits exceptionnels', tone: 'sales', detail: 'Salaires dus abandonnés à la liquidation (la ville les garantit)' }),
+  od_forgiven_contribution: Object.freeze({ debit: '431', credit: '771', label: 'Produits exceptionnels', tone: 'sales', detail: 'Cotisations dues abandonnées à la liquidation' }),
+  od_forgiven_corporate_tax: Object.freeze({ debit: '444', credit: '771', label: 'Produits exceptionnels', tone: 'sales', detail: 'Impôt dû abandonné à la liquidation' }),
+  od_forgiven_premises_rent: Object.freeze({ debit: '401', credit: '771', label: 'Produits exceptionnels', tone: 'sales', detail: 'Loyer du local dû abandonné à la liquidation' }),
+  od_bad_debt_contribution: Object.freeze({ debit: '654', credit: '4387', label: 'Pertes sur créances irrécouvrables', tone: 'external', detail: 'Cotisations d’une entreprise liquidée, jamais payées' }),
+  od_bad_debt_corporate_tax: Object.freeze({ debit: '654', credit: '411', label: 'Pertes sur créances irrécouvrables', tone: 'external', detail: 'Impôt d’une entreprise liquidée, jamais payé' }),
+  od_bad_debt_premises_rent: Object.freeze({ debit: '654', credit: '411', label: 'Pertes sur créances irrécouvrables', tone: 'external', detail: 'Loyer du local d’une entreprise liquidée, jamais payé' }),
   // The owner holds the buildings the city paid for: they enter its books as fixed assets (213) against the city's contribution in kind (capital, 101).
   od_asset_contribution: Object.freeze({ debit: '213', credit: '101', label: 'Constructions apportées par la ville', tone: 'fixed-asset', detail: 'Un bâtiment payé par la ville entre dans le patrimoine de la SCI' }),
   // A building that is gone leaves the owner's books: its depreciation so far is released, and what it was still worth is a loss (675).
@@ -286,7 +299,7 @@ export function legsOfType(type, plan) {
  * upkeep (the repairer is not an actor of the game), what a merchant buys and sells abroad. Every other type is one side of a flow between accounts: its
  * écriture carries the `transactionId` of the flow, so the other side can be found.
  */
-const NO_COUNTERPART_TYPES = Object.freeze(new Set(['capital_funds', 'construction', 'construction_refund', 'maintenance', 'exceptional_expenses', 'commercial_route', 'contribution']));
+const NO_COUNTERPART_TYPES = Object.freeze(new Set(['capital_funds', 'construction', 'construction_refund', 'maintenance', 'exceptional_expenses', 'commercial_route', 'contribution', 'liquidation_stock_sale']));
 const NO_COUNTERPART_PREFIXES = Object.freeze(['import_', 'freight_', 'abroad_sale_']);
 /** The opérations diverses that are one side of a flow: the rent a company owes its owner is the owner's receivable. */
 const PAIRED_OPERATIONS = Object.freeze(new Set([
@@ -326,6 +339,8 @@ const EXTRA_ACCOUNT_LABELS = Object.freeze({
   '713': 'Variation des stocks de produits',
   '6811': 'Dotations aux amortissements des immobilisations',
   '675': 'Valeurs comptables des éléments d’actif cédés',
+  '771': 'Produits exceptionnels sur opérations de gestion',
+  '654': 'Pertes sur créances irrécouvrables',
   '431': 'Sécurité sociale',
   '6411': 'Salaires, appointements',
   '645': 'Charges de sécurité sociale et de prévoyance',

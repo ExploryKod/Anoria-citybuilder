@@ -1,0 +1,152 @@
+/* Activités économiques : la liste des activités, les liquidations et l'écran d'une liquidation. */
+.activities-tab {
+    padding: 12px 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6c757d;
+    margin-bottom: -2px;
+}
+
+.activities-tab:hover {
+    background: #f8f9fa;
+}
+
+.activities-tab.active {
+    color: #28a745;
+    font-weight: 700;
+    border-bottom-color: #28a745;
+    background: #f0fff4;
+}
+
+.activities-tab-content {
+    display: none;
+}
+
+.activities-tab-content.active {
+    display: block;
+}
+
+/* `display: flex` on the list would otherwise win over the `hidden` attribute. */
+.activities-board [hidden] {
+    display: none;
+}
+
+.activities-hint {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.activities-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.activities-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.activities-line-closed {
+    opacity: 0.6;
+}
+
+.activities-line-clickable {
+    cursor: pointer;
+}
+
+.activities-line-clickable:hover {
+    background: #f8f9fa;
+}
+
+.activities-name {
+    flex: 1;
+    font-weight: 600;
+}
+
+.activities-pill {
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.activities-pill-insolvent {
+    background: #fff3cd;
+    color: #8a6d00;
+}
+
+.activities-pill-no-workers {
+    background: #fde2e2;
+    color: #a12b2b;
+}
+
+.activities-pill-liquidated {
+    background: #e2e5ea;
+    color: #3a3f47;
+}
+
+.activities-closure-btn,
+.activities-back,
+.activities-offer-btn {
+    padding: 6px 14px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.activities-closure-btn[aria-pressed="true"] {
+    background: #3a3f47;
+    color: #fff;
+    border-color: #3a3f47;
+}
+
+.activities-closure-btn:disabled,
+.activities-offer-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.activities-liquidation-title {
+    margin: 12px 0 4px;
+}
+
+.activities-liquidation-state {
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+.activities-offers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.activities-offer {
+    padding: 12px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+}
+
+.activities-offer h4 {
+    margin: 0 0 6px;
+}
+
+.activities-offer p {
+    margin: 0 0 10px;
+    font-size: 13px;
+    color: #6c757d;
+}

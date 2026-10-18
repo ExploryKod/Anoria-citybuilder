@@ -19,7 +19,8 @@ import { PAYABLE_KINDS } from '../catalogs/PayableCatalog.js';
 const toCentimes = (amount) => Math.round(amount * 100);
 
 const KIND_OF_PAYABLE = new Map(Object.entries(PAYABLE_KINDS).map(([kind, facts]) => [facts.payable, kind]));
-const KIND_OF_SETTLEMENT = new Map(Object.entries(PAYABLE_KINDS).map(([kind, facts]) => [facts.settlement, kind]));
+// A debt forgiven at the liquidation closes the debt like a payment does, without money.
+const KIND_OF_SETTLEMENT = new Map(Object.entries(PAYABLE_KINDS).flatMap(([kind, facts]) => [[facts.settlement, kind], [facts.forgiven, kind]]));
 
 /** @param {string} type @returns {boolean} true for the opération diverse that records a debt. */
 export function isPayableType(type) {
