@@ -169,8 +169,16 @@ export function formatHouseSkillsModel(vm) {
     };
   });
 
+  // Each skill the house holds says at which level it holds it ("niv. 1"), in the colour of that level.
+  const heldSkills = skills.map((skill) => {
+    const level = houseSkillLevel(vm.buildingType, vm.houseLevel, skill.skillKey);
+    const color = STAFF_LEVEL_COLORS[level];
+    if (!color) throw new Error(`[houseInfoFormat] the skill "${skill.skillKey}" is held at level ${level}, which STAFF_LEVEL_COLORS (buildingAssets.js) gives no color`);
+    return { ...skill, level, color };
+  });
+
   return {
-    skills,
+    skills: heldSkills,
     upcomingSkills: upcoming,
     employers: employersOf(vm.residents),
     problems: problemsOf(vm),

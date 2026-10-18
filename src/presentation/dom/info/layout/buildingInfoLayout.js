@@ -90,6 +90,8 @@ export function activateBuildingInfoTab(tabId) {
       tab.hidden = !isVisible;
       tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
       tab.tabIndex = isActive ? 0 : -1;
+      // The tabs scroll sideways on a phone: the one chosen comes into view (without moving the panel itself).
+      if (isActive && isVisible) tab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     }
     if (panel) {
       panel.classList.toggle('is-active', isActive);
@@ -249,6 +251,14 @@ export function appendIconStatRow(container, items) {
       pill.textContent = `niv. ${item.pill.tier}`;
       chip.appendChild(pill);
     }
+    // A chip that is held (not dimmed) can still say its level, under it.
+    if (item.levelPill) {
+      const pill = document.createElement('span');
+      pill.className = 'building-info-icon-chip__level-pill';
+      pill.style.setProperty('--level-color', item.levelPill.color);
+      pill.textContent = `niv. ${item.levelPill.level}`;
+      chip.appendChild(pill);
+    }
     row.appendChild(chip);
   }
 
@@ -279,6 +289,7 @@ export function appendHouseholdSkills(container, skills, upcomingSkills = []) {
         value: skill.count,
         label: skill.label,
         ariaLabel: skill.ariaLabel,
+        levelPill: { level: skill.level, color: skill.color },
       })),
       ...upcomingSkills.map((skill) => ({
         emoji: skill.emoji,

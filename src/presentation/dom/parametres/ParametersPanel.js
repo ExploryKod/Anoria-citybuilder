@@ -174,6 +174,17 @@ class ParametersPanel {
             });
         }
 
+        const cookiesBtn = document.getElementById('parameters-cookies-btn');
+        if (cookiesBtn) {
+            cookiesBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (!window.cookieBanner?.open) throw new Error('[parameters] the cookie banner is not loaded: its settings cannot be opened');
+                // The banner opens over the game: the panel gives its place first.
+                this.hide();
+                window.cookieBanner.open();
+            });
+        }
+
         if (this.pwaUpdateInstallBtn) {
             this.pwaUpdateInstallBtn.addEventListener('click', (event) => {
                 event.preventDefault();

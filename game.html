@@ -54,6 +54,8 @@
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/administrator-panel-flat.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/modals/taxes-section.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/src/presentation/dom/styles/multiplayer.css" media="print" onload="this.media='all'">
+    <!-- Last of the game's sheets (the order of the links is the order of the cascade): the phone-portrait rules must win over every sheet above -->
+    <link rel="stylesheet" href="/src/presentation/dom/styles/game-mobile-portrait.css">
     <noscript>
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/loans-panel.css">
         <link rel="stylesheet" href="/src/presentation/dom/styles/modals/city-map.css">
@@ -3309,6 +3311,19 @@
                         <p id="camera-dpad-hint" class="parameters-shortcut-label" style="margin: 6px 0 0; padding-left: 0;">
                             Affiche un bouton flottant pour ouvrir le D-pad de déplacement de la caméra.
                         </p>
+                    </div>
+                </div>
+
+                <!-- Phone in portrait only: the floating cookie button is hidden there (game-mobile-portrait.css) and this takes its place -->
+                <div class="parameters-section parameters-section--cookies">
+                    <h4 class="parameters-section-title">Cookies</h4>
+                    <div class="parameters-control-group">
+                        <div class="parameters-control-label" style="cursor: default;">
+                            <span class="parameters-control-text">Consentement</span>
+                            <button type="button" id="parameters-cookies-btn" class="parameters-action-btn">
+                                Gérer les cookies
+                            </button>
+                        </div>
                     </div>
                 </div>
 

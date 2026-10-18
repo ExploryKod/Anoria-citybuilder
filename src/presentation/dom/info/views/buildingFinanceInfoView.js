@@ -1,5 +1,6 @@
 import { balanceSheetView } from './balanceSheetView.js';
 import { accountLedgerView, trialBalanceView } from './accountLedgerView.js';
+import { labelCells } from './stackableTable.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../../../../shared/building-identity/index.js';
 import { INCOME_STATEMENT } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
@@ -569,6 +570,7 @@ function statementTable(rows, finance, onOpenDetail = null) {
   fill();
 
   table.append(head, body);
+  labelCells(table);
   // A statement that hides lines offers to show them all, and back: the choice is kept while the player moves between buildings.
   if (!rows.some((row) => row.optional)) return table;
   const toggle = el('button', 'building-finance-toggle', showAllLines ? 'Voir moins' : 'Voir tout');
@@ -577,6 +579,7 @@ function statementTable(rows, finance, onOpenDetail = null) {
     showAllLines = !showAllLines;
     toggle.textContent = showAllLines ? 'Voir moins' : 'Voir tout';
     fill();
+    labelCells(table);
   });
   wrapper.append(toggle, table);
   return wrapper;
@@ -674,6 +677,7 @@ function detailTable(detail, finance, back) {
   body.append(totalRow);
 
   table.append(head, body);
+  labelCells(table);
   wrapper.append(backButton, table);
   return wrapper;
 }

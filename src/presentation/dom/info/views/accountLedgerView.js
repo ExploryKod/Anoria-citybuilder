@@ -1,4 +1,5 @@
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
+import { labelCells } from './stackableTable.js';
 
 /**
  * The grand livre and the balance of an account (the accounting context derives them from the journal): the balance is one table of the accounts with
@@ -59,6 +60,7 @@ export function trialBalanceView(balance) {
   );
   body.append(total);
   table.append(body);
+  labelCells(table);
   wrapper.append(
     table,
     el('p', 'building-finance-note', 'Chaque ligne du journal est écrite deux fois : au compte qu’elle concerne et à la banque (512). Les totaux débit et crédit sont donc égaux.'),
@@ -91,6 +93,7 @@ export function accountLedgerView(ledger) {
       body.append(row);
     }
     table.append(body);
+    labelCells(table);
     details.append(summary, table);
     wrapper.append(details);
   }
