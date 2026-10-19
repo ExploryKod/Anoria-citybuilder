@@ -606,7 +606,7 @@ export function createScene(_gameStore, assetManager, deps) {
         }
 
         // Visual tile grid (indication only — rebuilt after scene.clear())
-        tileGridOverlay.rebuild(scene, city.size);
+        tileGridOverlay.rebuild(scene, city.size, isEditorMode());
         
         // HUD placeholders — GameUI owns DOM (Barre D)
         if (typeof requestIdleCallback !== 'undefined') {

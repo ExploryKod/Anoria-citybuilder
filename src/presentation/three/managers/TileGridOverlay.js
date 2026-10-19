@@ -14,14 +14,21 @@ export class TileGridOverlay {
     /** @type {THREE.Scene | null} */
     this.scene = null;
     this.citySize = 0;
-    this.visible = readStoredVisibility();
+    /** @type {boolean | null} what the player chose in the settings; `null` = never chose */
+    this.playerChoice = readStoredChoice();
+    this.visible = false;
   }
 
   /**
    * @param {THREE.Scene} scene
    * @param {number} citySize
+   * @param {boolean} visibleUnlessChosen shown by default when the player never chose (the editor wants it on)
    */
-  rebuild(scene, citySize) {
+  rebuild(scene, citySize, visibleUnlessChosen) {
+    if (typeof visibleUnlessChosen !== 'boolean') {
+      throw new Error('[TileGridOverlay] rebuild needs visibleUnlessChosen (boolean): the default shown when the player never chose');
+    }
+    this.visible = this.playerChoice ?? visibleUnlessChosen;
     this.dispose();
     this.scene = scene;
     this.citySize = Math.max(1, Math.floor(citySize) || 16);
@@ -73,6 +80,7 @@ export class TileGridOverlay {
   /** @param {boolean} visible */
   setVisible(visible) {
     this.visible = !!visible;
+    this.playerChoice = this.visible;
     if (this.group) {
       this.group.visible = this.visible;
     }
@@ -109,13 +117,15 @@ export class TileGridOverlay {
 }
 
 export function readStoredTileGridVisibility() {
-  return readStoredVisibility();
+  return readStoredChoice() === true;
 }
 
-function readStoredVisibility() {
+/** @returns {boolean | null} `null` when the player never chose (or storage is unavailable) */
+function readStoredChoice() {
   try {
-    return localStorage.getItem(STORAGE_KEY) === '1';
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored === null ? null : stored === '1';
   } catch {
-    return false;
+    return null;
   }
 }

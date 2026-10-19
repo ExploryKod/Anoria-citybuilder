@@ -160,6 +160,43 @@ export function createMapsApiPlugin(mapsDir) {
 }
 
 /**
+ * Production has no /api/maps (nginx serves static files): the build writes `maps/index.json`, the list of the
+ * maps of public/maps, which StaticEditorMapRepositoryAdapter reads. An invalid map file fails the build, named.
+ *
+ * @param {string} mapsDir
+ */
+export function createMapsIndexPlugin(mapsDir) {
+  return {
+    name: 'anoria-maps-index',
+    apply: 'build',
+    generateBundle() {
+      const maps = readdirSync(mapsDir)
+        .filter((name) => name.endsWith('.json'))
+        .map((name) => {
+          const filePath = join(mapsDir, name);
+          let layout;
+          try {
+            layout = parseEditorMapLayout(JSON.parse(readFileSync(filePath, 'utf8')));
+          } catch (error) {
+            throw new Error(`[maps index] ${name} is not a valid editor map: ${error instanceof Error ? error.message : error}`);
+          }
+          if (name !== `${layout.id}.json`) {
+            throw new Error(`[maps index] ${name} must be named after its id: ${layout.id}.json`);
+          }
+          return { id: layout.id, name: layout.name, citySize: layout.citySize };
+        })
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      this.emitFile({
+        type: 'asset',
+        fileName: 'maps/index.json',
+        source: JSON.stringify({ maps }),
+      });
+    },
+  };
+}
+
+/**
  * @param {string} projectRoot
  */
 export function resolveMapsDirectory(projectRoot) {
