@@ -20,6 +20,7 @@ import { BUILDING_ASSETS, BUILDING_THEME_COLORS } from '../../three/assets/build
 import { NATURE_ASSETS } from '../../three/assets/natureAssets.js';
 import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
 import { getDirectToolForCategory, toolbarGroupOf } from '../../three/assets/buildingCategories.js';
+import { EDITOR_TOOLS_BY_CATEGORY } from '../../../shared/editor-catalog/editorKenneyCatalog.js';
 
 export { getDirectToolForCategory };
 
@@ -335,7 +336,9 @@ export function getToolButtonInfosForCategory(categoryKey) {
     ];
   }
 
-  const ids = getToolIdsForCategory(categoryKey);
+  // A map-editor category (terrain / nature pills): its meshes are the editor catalog's, in carousel order
+  const editorToolIds = EDITOR_TOOLS_BY_CATEGORY[categoryKey];
+  const ids = editorToolIds ?? getToolIdsForCategory(categoryKey);
   const seen = new Set();
   /** @type {{ text: string, tool: string, group: string }[]} */
   const infos = [];
