@@ -1,0 +1,90 @@
+/**
+ * Composant BEM : site-welcome
+ * Message d'arrivée de l'accueil, montré une seule fois (<dialog> natif : focus piégé, Échap ferme).
+ */
+
+.site-welcome {
+  width: min(600px, calc(100% - 2 * var(--site-page-gutter)));
+  max-height: calc(100dvh - 2 * var(--site-page-gutter));
+  margin: auto;
+  padding: 0;
+  border: 3px solid var(--site-border);
+  border-radius: var(--border-radius);
+  background: var(--site-surface);
+  color: var(--site-text);
+  overflow: hidden;
+}
+
+.site-welcome[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.site-welcome::backdrop {
+  background: rgba(29, 34, 40, 0.55);
+}
+
+.site-welcome__title {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 16px 20px 12px;
+  border-bottom: 2px solid var(--site-border);
+  background: var(--site-surface-header);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.site-welcome__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16px 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  line-height: 1.55;
+}
+
+.site-welcome__body p {
+  margin: 0 0 0.75rem;
+}
+
+.site-welcome__body p:last-child {
+  margin-bottom: 0;
+}
+
+.site-welcome__actions {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 20px max(16px, env(safe-area-inset-bottom, 0px));
+  border-top: 2px solid var(--site-border-light);
+}
+
+@media (max-width: 480px) {
+  .site-welcome__title,
+  .site-welcome__body,
+  .site-welcome__actions {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .site-welcome__actions .site-btn {
+    width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .site-welcome__title {
+    padding: 20px 28px 14px;
+    font-size: 1.2rem;
+  }
+
+  .site-welcome__body {
+    padding: 20px 28px;
+    font-size: 15px;
+  }
+
+  .site-welcome__actions {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+}

@@ -13,6 +13,9 @@ overrides:
   sharp-ico: 0.1.5
   semver: '^7.6.0'
   workbox-window: '^7.4.1'
+  'brace-expansion@>=2 <3': 2.1.7
+  'brace-expansion@>=4 <6': 5.0.12
+  source-map-js: 1.2.2
 
 minimumReleaseAge: 10080
 minimumReleaseAgeStrict: true

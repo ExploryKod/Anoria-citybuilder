@@ -11,10 +11,18 @@ export const LEGAL_URL = '/legal';
 /** URL des crédits (assets, licences). */
 export const CREDITS_URL = '/credits';
 
+/** Accueil avec le message d'arrivée rouvert (le texte n'existe qu'une fois, dans index.html). */
+export const ABOUT_PARAM = 'a-propos';
+export const ABOUT_URL = `/?${ABOUT_PARAM}`;
+
 export const SITE_LEGAL_LINKS = [
   {
     label: 'GitHub',
     href: 'https://github.com/ExploryKod/Anoria-citybuilder',
+  },
+  {
+    label: 'À propos',
+    href: ABOUT_URL,
   },
   {
     label: 'Mentions légales',
