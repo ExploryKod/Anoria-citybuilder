@@ -6,7 +6,7 @@ set -euo pipefail
 
 HOST=anoria-deploy   # the Host alias of ~/.ssh/config: the deployment user (anideploy) and its own key
 RELEASE=$(date +%Y-%m-%d-%H%M)
-KEEP=5
+KEEP=2
 
 pnpm install --frozen-lockfile
 pnpm run build
