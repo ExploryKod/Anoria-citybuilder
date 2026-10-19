@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
-import { createMapsApiPlugin, resolveMapsDirectory } from './scripts/dev/mapsApiPlugin.mjs'
+import { createMapsApiPlugin, createMapsIndexPlugin, resolveMapsDirectory } from './scripts/dev/mapsApiPlugin.mjs'
 import { createDevLogPlugin } from './scripts/dev/devLogPlugin.mjs'
 
 const mapsDir = resolveMapsDirectory(__dirname)
@@ -51,6 +51,7 @@ export default defineConfig({
   },
   plugins: [
     createMapsApiPlugin(mapsDir),
+    createMapsIndexPlugin(mapsDir),
     createDevLogPlugin(__dirname),
     {
       name: 'rewrite-clean-routes',
