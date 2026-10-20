@@ -33,6 +33,9 @@ models
 /public/ios
 /public/windows11
 
+# Capacitor (Android app wrapper)
+/android
+
 
 # Editor directories and files
 .vscode/*

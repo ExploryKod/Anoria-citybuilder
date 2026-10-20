@@ -1,6 +1,6 @@
 ## Crédits
 
-> **Page site :** [/credits](https://anoria.vercel.app/credits) — contact : eklati@protonmail.com
+> **Page site :** [/credits](https://anoria.vercel.app/credits) — contact : amauryproject.slum874@passinbox.com
 
 
 ### Modèles 3D utilisés aujourd'hui — packs Kenney
