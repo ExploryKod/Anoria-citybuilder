@@ -22,7 +22,7 @@ Report it privately by either:
 
 1. Using GitHub's private reporting: the **Security** tab of the repository, then **Report a vulnerability**
    (if it is enabled), or
-2. Emailing **eklati@protonmail.com** with the subject `[SECURITY] Anoria: <short summary>`.
+2. Emailing **amauryproject.slum874@passinbox.com** with the subject `[SECURITY] Anoria: <short summary>`.
 
 Please include, as far as you can:
 

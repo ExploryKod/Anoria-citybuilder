@@ -11,7 +11,7 @@ La présente politique de confidentialité décrit la manière dont **Eraanurbs*
 
 Le responsable du traitement des données personnelles est Eraanurbs, éditeur du Site accessible à l'adresse : [https://anoria.vercel.app/](https://anoria.vercel.app/)
 
-**Contact :** eklati@protonmail.com
+**Contact :** amauryproject.slum874@passinbox.com
 
 ## 2. Données collectées
 
@@ -63,7 +63,7 @@ Conformément au Règlement Général sur la Protection des Données (RGPD), vou
 - **Droit à la portabilité** : vous pouvez demander la récupération de vos données
 - **Droit d'opposition** : vous pouvez vous opposer au traitement de vos données
 
-Pour exercer ces droits, vous pouvez nous contacter à l'adresse suivante : ** eklati@protonmail.com**
+Pour exercer ces droits, vous pouvez nous contacter à l'adresse suivante : ** amauryproject.slum874@passinbox.com**
 
 ## 7. Cookies et technologies similaires
 
@@ -123,7 +123,7 @@ Nous vous encourageons à consulter régulièrement cette page pour prendre conn
 
 Pour toute question concernant cette politique de confidentialité ou pour exercer vos droits, vous pouvez nous contacter à l'adresse suivante :
 
-**Email :** eklati@protonmail.com
+**Email :** amauryproject.slum874@passinbox.com
 
 ## 14. Autorité de contrôle
 
