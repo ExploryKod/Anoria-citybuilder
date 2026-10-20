@@ -1,4 +1,5 @@
 import { isInfoPseudoMovementType } from './LedgerInformativeTypePolicy.js';
+import { isOperationDiverse } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 
 /** Legacy info types (renamed to `info_*`). */
 const LEGACY_INFO_PSEUDO_MOVEMENT_TYPES = new Set([
@@ -6,22 +7,17 @@ const LEGACY_INFO_PSEUDO_MOVEMENT_TYPES = new Set([
   'loan_default_repayment',
 ]);
 
-/** @param {string} type */
+/**
+ * A line that moves no money: an informative one, or an opération diverse (the month's closing: variation of stock, depreciation). Neither is
+ * a flow of the treasury, of the monthly summaries or of the city's ledger.
+ * @param {string} type
+ */
 export function isInformativeJournalType(type) {
-  if (isInfoPseudoMovementType(type) || LEGACY_INFO_PSEUDO_MOVEMENT_TYPES.has(type)) {
+  if (isInfoPseudoMovementType(type) || LEGACY_INFO_PSEUDO_MOVEMENT_TYPES.has(type) || isOperationDiverse(type)) {
     return true;
   }
 
-  return (
-    type === 'cumul_maintenance' ||
-    type === 'cumul_construction' ||
-    type === 'cumul_salary' ||
-    type === 'cumul_exceptional_expenses' ||
-    type === 'cumul_loan_interest' ||
-    type === 'cumul_loan_repayment' ||
-    type === 'carry_forward' ||
-    type === 'balance'
-  );
+  return false;
 }
 
 /**
@@ -35,11 +31,32 @@ export function isJournalEntryIncomeForMonthlySummary(entry, allEntries, getTime
   let isIncome =
     entry.type === 'citizen_tax' ||
     entry.type === 'payroll_tax' ||
+    entry.type === 'vat' ||
+    entry.type === 'producer_revenue' ||
+    entry.type === 'corporate_tax_revenue' ||
+    entry.type === 'corporate_tax_debt_received' ||
+    entry.type === 'contribution_debt_received' ||
+    entry.type === 'service_sales' ||
+    entry.type === 'service_subsidy_received' ||
+    entry.type === 'subsidy_companies_received' ||
+    entry.type === 'subsidy_housing_received' ||
+    entry.type === 'social_contribution' ||
+    entry.type === 'household_participation' ||
+    entry.type === 'household_dividend' ||
+    entry.type === 'income_tax_refund' ||
+    entry.type === 'rent_received' ||
+    entry.type === 'premises_rent_received' ||
+    entry.type === 'premises_rent_debt_received' ||
+    entry.type === 'company_capital_received' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital';
 
-  if (entry.type.startsWith('import_')) {
+  if (entry.type.startsWith('import_') || entry.type.startsWith('freight_') || entry.type.startsWith('duty_paid_')) {
     isIncome = false;
+  }
+
+  if (entry.type.startsWith('customs_import_') || entry.type.startsWith('abroad_sale_')) {
+    isIncome = true;
   }
 
   if (entry.type.startsWith('export_')) {
@@ -63,63 +80,6 @@ export function isJournalEntryIncomeForMonthlySummary(entry, allEntries, getTime
     isIncome = false;
   }
 
-  if (entry.type === 'carry_forward') {
-    const signMatch = entry.description?.match(/\(([+-])\)/);
-    if (signMatch) {
-      isIncome = signMatch[1] === '+';
-    } else {
-      const timeInfo = getTimeInfo(entry.turn);
-      const previousYear = timeInfo.year - 1;
-      if (previousYear >= 0) {
-        let prevYearIncome = 0;
-        let prevYearExpenses = 0;
-
-        allEntries.forEach((e) => {
-          if (e.type === 'carry_forward') return;
-
-          const eTimeInfo = getTimeInfo(e.turn);
-
-          if (eTimeInfo.year === previousYear) {
-            let isEIncome =
-              e.type === 'citizen_tax' ||
-              e.type === 'payroll_tax' ||
-              e.type === 'capital_funds' ||
-              e.type === 'loan_capital';
-            if (e.type.startsWith('import_')) {
-              isEIncome = false;
-            }
-            if (e.type.startsWith('export_')) {
-              isEIncome = true;
-            }
-            if (e.type === 'loan_interest' || e.type === 'loan_repayment') {
-              isEIncome = false;
-            }
-            if (
-              e.type === 'construction' ||
-              e.type === 'maintenance' ||
-              e.type === 'salary' ||
-              e.type === 'unemployment_benefit' ||
-              e.type === 'exceptional_expenses' ||
-              e.type === 'commercial_route' ||
-              e.type === 'contribution'
-            ) {
-              isEIncome = false;
-            }
-            if (isEIncome) {
-              prevYearIncome += e.amount;
-            } else {
-              prevYearExpenses += e.amount;
-            }
-          }
-        });
-
-        const prevYearNetFlow = prevYearIncome - prevYearExpenses;
-        isIncome = prevYearNetFlow >= 0;
-      } else {
-        isIncome = true;
-      }
-    }
-  }
 
   return isIncome;
 }

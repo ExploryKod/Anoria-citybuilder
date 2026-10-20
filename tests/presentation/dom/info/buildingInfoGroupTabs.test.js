@@ -8,23 +8,30 @@ function tabIds(groupId) {
 }
 
 describe('buildingInfoGroupRegistry tabs', () => {
-  test('house exposes foyer, resources (stocks) and common context tabs (no more Régime — see messagesInfoFormat.js)', () => {
+  test('house exposes foyer, resources (stocks), its own business (activity) and common context tabs (no more Régime — see messagesInfoFormat.js)', () => {
     expect(tabIds(BUILDING_INFO_GROUPS.house)).toEqual([
       BUILDING_INFO_TAB_IDS.foyer,
       BUILDING_INFO_TAB_IDS.stocks,
+      BUILDING_INFO_TAB_IDS.activity,
+      BUILDING_INFO_TAB_IDS.residents,
       BUILDING_INFO_TAB_IDS.services,
+      BUILDING_INFO_TAB_IDS.clients,
       BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
+      BUILDING_INFO_TAB_IDS.finance,
     ]);
   });
 
-  test('hub storage exposes foyer, staff and common context tabs', () => {
+  test('hub storage exposes foyer, shelf life, staff, common context tabs and finance', () => {
     expect(tabIds(BUILDING_INFO_GROUPS.hubStorage)).toEqual([
       BUILDING_INFO_TAB_IDS.foyer,
+      BUILDING_INFO_TAB_IDS.shelfLife,
       BUILDING_INFO_TAB_IDS.staff,
       BUILDING_INFO_TAB_IDS.services,
+      BUILDING_INFO_TAB_IDS.clients,
       BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
+      BUILDING_INFO_TAB_IDS.finance,
     ]);
   });
 
@@ -32,15 +39,18 @@ describe('buildingInfoGroupRegistry tabs', () => {
     expect(tabIds(BUILDING_INFO_GROUPS.farm)).toEqual([
       BUILDING_INFO_TAB_IDS.foyer,
       BUILDING_INFO_TAB_IDS.stocks,
+      BUILDING_INFO_TAB_IDS.shelfLife,
       BUILDING_INFO_TAB_IDS.trade,
       BUILDING_INFO_TAB_IDS.staff,
       BUILDING_INFO_TAB_IDS.services,
+      BUILDING_INFO_TAB_IDS.clients,
       BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
+      BUILDING_INFO_TAB_IDS.finance,
     ]);
   });
 
-  test('service (Chapel, School, Doctor, ...) exposes état + staff + common context tabs, not market tabs', () => {
+  test('service (FireStation, School, Doctor, ...) exposes état + staff + common context tabs and its finance, not market tabs', () => {
     const ids = tabIds(BUILDING_INFO_GROUPS.service);
     expect(ids).not.toContain(BUILDING_INFO_TAB_IDS.stocks);
     expect(ids).not.toContain(BUILDING_INFO_TAB_IDS.trade);
@@ -48,8 +58,10 @@ describe('buildingInfoGroupRegistry tabs', () => {
       BUILDING_INFO_TAB_IDS.foyer,
       BUILDING_INFO_TAB_IDS.staff,
       BUILDING_INFO_TAB_IDS.services,
+      BUILDING_INFO_TAB_IDS.clients,
       BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
+      BUILDING_INFO_TAB_IDS.finance,
     ]);
   });
 

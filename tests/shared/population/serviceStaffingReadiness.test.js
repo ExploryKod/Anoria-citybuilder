@@ -14,12 +14,20 @@ import { describe, expect, test } from '@jest/globals';
 import { SOCIAL_CATEGORY } from '../../../src/shared/population/socialCategoryCatalog.js';
 import { buildingCatalog } from '../../../src/shared/building-catalog/buildingCatalog.js';
 
-/** Earliest tier (any group) whose requirements read this service category. */
+/**
+ * Earliest tier (any group) whose requirements read this service category — 'serviceCoverage' (flag mode)
+ * or 'serviceDemandMet' (a service turned into an ordinary resource, e.g. Chapel's faith since 2026-10-10):
+ * the deadlock this guards against is about STAFFING the distributor, which both mechanisms share.
+ */
 function earliestTierRequiring(category) {
   let earliest = Infinity;
   for (const group of Object.values(SOCIAL_CATEGORY)) {
     for (const [tier, def] of Object.entries(group.tiers)) {
-      if (def.requirements.some((r) => r.kind === 'serviceCoverage' && r.category === category)) {
+      if (
+        def.requirements.some(
+          (r) => (r.kind === 'serviceCoverage' || r.kind === 'serviceDemandMet') && r.category === category
+        )
+      ) {
         earliest = Math.min(earliest, Number(tier));
       }
     }
@@ -40,7 +48,9 @@ function earliestTierGranting(skill, level) {
 
 describe('service staffing readiness (no tier-gate deadlock)', () => {
   const gatedServices = Object.entries(buildingCatalog).flatMap(([id, def]) => {
-    const role = def.resourceRoles?.find((r) => r.role === 'distributor' && r.consumption === 'flag');
+    // Any distributor, flag or quantity: the staffing deadlock this guards against doesn't care which
+    // mechanism moves the good, only that a human has to be on duty for either to run at all.
+    const role = def.resourceRoles?.find((r) => r.role === 'distributor');
     if (!role || !def.employment?.requiredSkill) return [];
     return role.categories
       .filter((category) => Number.isFinite(earliestTierRequiring(category)))
@@ -48,15 +58,22 @@ describe('service staffing readiness (no tier-gate deadlock)', () => {
   });
 
   test('the check actually covers the gating services', () => {
-    expect(gatedServices.map(({ id }) => id)).toEqual(expect.arrayContaining(['Chapel', 'Doctor', 'School', 'Cinema']));
+    expect(gatedServices.map(({ id }) => id)).toEqual(expect.arrayContaining(['WaterTank', 'Doctor', 'FireStation', 'PoliceStation', 'CoalPlant', 'School', 'Cinema']));
   });
 
-  test.each(gatedServices.map((s) => [s.id, s]))(
-    '%s can be staffed before the tier that requires its coverage',
-    (_id, { category, employment }) => {
+  // A category several buildings provide (the energy plants) only needs ONE of them staffable in time: a later, bigger
+  // alternative (the nuclear plant, a level-2 crew) is no deadlock as long as another one opens the category.
+  const categories = [...new Set(gatedServices.map((service) => service.category))];
+
+  test.each(categories.map((category) => [category]))(
+    'the "%s" coverage can be staffed before the tier that requires it',
+    (category) => {
       const needsTier = earliestTierRequiring(category);
-      const level = employment.requiredSkillLevel ?? 1;
-      const grantedAt = earliestTierGranting(employment.requiredSkill, level);
+      const grantedAt = Math.min(
+        ...gatedServices
+          .filter((service) => service.category === category)
+          .map(({ employment }) => earliestTierGranting(employment.requiredSkill, employment.requiredSkillLevel ?? 1)),
+      );
       // Houses at tier needsTier-1 (the ones trying to advance) must already provide the skill.
       expect(grantedAt).toBeLessThanOrEqual(needsTier - 1);
     },

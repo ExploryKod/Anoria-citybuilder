@@ -1,13 +1,18 @@
 import { HAMLET_ACCESS } from '../../../core/persistence/hamlet/hamletAccess.js';
+import { satisfactionOf, formatSatisfaction } from '../../../shared/trade-catalog/satisfaction.js';
 import {
   WORLD_CITY_CATEGORY_LABELS,
   getWorldCityById,
 } from '../../../composition/worldCityCatalog.js';
 
+const RELATION_STATUS_LABEL = { active: 'Commerce actif', suspended: 'Suspendu', expired: 'Expiré' };
+const RELATION_STATUS_CLASS = { active: 'open', suspended: 'closed', expired: 'closed' };
+
 /**
  * @param {string} cityId
+ * @param {object|null} [tradeInfo]
  */
-function renderCityPanel(cityId) {
+function renderCityPanel(cityId, tradeInfo = null) {
   const city = getWorldCityById(cityId);
   if (!city) {
     return `
@@ -17,6 +22,7 @@ function renderCityPanel(cityId) {
   }
 
   const categoryLabel = WORLD_CITY_CATEGORY_LABELS[city.category] ?? '';
+  const tradeBlock = tradeInfo ? renderTradeBlock(tradeInfo) : '';
 
   return `
     <div class="trade-map-panel-inner" data-city-id="${city.id}">
@@ -27,7 +33,49 @@ function renderCityPanel(cityId) {
         ${categoryLabel ? `<span class="trade-map-panel-category">${categoryLabel}</span>` : ''}
       </div>
       ${city.description ? `<p class="trade-map-panel-desc">${city.description}</p>` : ''}
+      ${tradeBlock}
     </div>`;
+}
+
+/**
+ * @param {{ relation: object|null, entry: object|null, sales: object[] }} tradeInfo
+ */
+function renderTradeBlock({ relation, entry, sales }) {
+  if (!entry) return '';
+
+  const status = relation?.status ?? null;
+  const statusLabel = status ? (RELATION_STATUS_LABEL[status] ?? status) : 'Pas de relation';
+  const statusClass = status ? (RELATION_STATUS_CLASS[status] ?? 'closed') : 'closed';
+
+  const wantsLine = entry.wants
+    .map((w) => w.good)
+    .join(', ');
+
+  // Last-month sales summary — quick glance only; the full log lives in the exchange modal.
+  const lastMonthSales = sales.slice(0, entry.wants.length * 2);
+  const salesLines = lastMonthSales.length > 0
+    ? lastMonthSales.map((s) => {
+        const qty = s.quantity ?? 0;
+        const customs = s.customsCollected ?? 0;
+        return `<li>${s.good ?? s.foodType} — ${qty} unités · douane <strong>${customs} €</strong></li>`;
+      }).join('')
+    : '<li>Aucune vente récente</li>';
+
+  return `
+    <div class="trade-map-trade-block">
+      <div class="trade-map-trade-header">
+        <span class="trade-map-panel-route ${statusClass}">${statusLabel}</span>
+      </div>
+      ${status === 'active' ? `
+        <p class="trade-map-trade-wants">Demande : <strong>${wantsLine}</strong></p>
+        <p class="trade-map-trade-satisfaction">Satisfaction : <strong>${formatSatisfaction(satisfactionOf(relation))}</strong></p>
+        <div class="trade-map-trade-recent">
+          <p class="trade-map-trade-recent-label">Dernières ventes :</p>
+          <ul class="trade-map-trade-sales-list">${salesLines}</ul>
+        </div>` : ''}
+      <button type="button" class="trade-map-exchanges-btn" data-action="open-city-exchange">Échanges</button>
+    </div>`
+;
 }
 
 /**
@@ -51,6 +99,9 @@ export function renderWorldMapShell(view, selection = {}) {
     </div>`;
 }
 
+/** Shown where a hamlet could be entered: the map is read-only, the carousel in the game switches hamlet. */
+const CHANGE_HAMLET_IN_GAME_NOTE = '<p class="trade-map-panel-active-note">Pour changer de hameau, utilisez le carrousel dans le jeu.</p>';
+
 /**
  * @param {Awaited<ReturnType<import('../../../contexts/geography/application/queries/buildWorldMapView.js').buildWorldMapView>>} view
  * @param {string | null} hamletId
@@ -68,20 +119,15 @@ export function renderWorldHamletPanel(view, hamletId) {
   let statusClass = 'closed';
   let actionHtml = '<p class="trade-map-panel-active-note">Ce hameau n’est pas encore accessible.</p>';
 
+  // The map only shows; changing hamlet happens in the game, with the hamlet carousel (no page load).
   if (hamlet.access === HAMLET_ACCESS.active) {
     statusText = 'Hameau actif';
     statusClass = 'open';
-    actionHtml = `
-      <a href="/game" class="site-btn site-btn--primary site-btn--inline world-map-enter-btn" title="Entrer dans le hameau">
-        Entrer
-      </a>`;
+    actionHtml = CHANGE_HAMLET_IN_GAME_NOTE;
   } else if (hamlet.access === HAMLET_ACCESS.unlocked) {
     statusText = 'Accessible';
     statusClass = 'open';
-    actionHtml = `
-      <button type="button" class="site-btn site-btn--primary site-btn--inline world-map-travel-btn" data-hamlet-id="${hamlet.id}" title="Voyager vers ce hameau">
-        Voyager
-      </button>`;
+    actionHtml = CHANGE_HAMLET_IN_GAME_NOTE;
   }
 
   return `
@@ -102,24 +148,21 @@ export function renderWorldHamletPanel(view, hamletId) {
 /**
  * @param {Awaited<ReturnType<import('../../../contexts/geography/application/queries/buildWorldMapView.js').buildWorldMapView>>} view
  * @param {{ cityId?: string | null, hamletId?: string | null }} selection
+ * @param {object|null} [tradeInfo]
  */
-export function renderWorldMapPanel(view, selection = {}) {
+export function renderWorldMapPanel(view, selection = {}, tradeInfo = null) {
   if (selection.hamletId) {
     return renderWorldHamletPanel(view, selection.hamletId);
   }
 
   const cityId = selection.cityId ?? 'anoria';
-  const cityPanel = renderCityPanel(cityId);
+  const cityPanel = renderCityPanel(cityId, tradeInfo);
 
   if (cityId !== 'anoria') {
     return cityPanel;
   }
 
-  return `
-    ${cityPanel}
-    <a href="/game" class="site-btn site-btn--primary site-btn--inline world-map-enter-btn" title="Entrer dans le hameau actif">
-      Entrer
-    </a>`;
+  return cityPanel;
 }
 
 /**

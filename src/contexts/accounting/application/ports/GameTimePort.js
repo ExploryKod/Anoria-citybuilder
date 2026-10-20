@@ -1,5 +1,5 @@
 /**
- * Port: resolve game calendar from turn number.
+ * Port: the game's calendar and clock. The calendar resolves a turn into a date; the clock is the current turn.
  */
 export class GameTimePort {
   /**
@@ -7,6 +7,11 @@ export class GameTimePort {
    * @returns {{ year: number, month?: string, monthIndex?: number }}
    */
   getTimeInfo(_turn) {
+    throw new Error('GameTimePort: port not implemented');
+  }
+
+  /** @returns {number} The turn the running game is on. */
+  currentTurn() {
     throw new Error('GameTimePort: port not implemented');
   }
 }

@@ -11,11 +11,6 @@ export function registerSceneBuildingTypeListing(fn) {
   listSceneBuildingTypesFn = fn;
 }
 
-/** @returns {string[]} */
-export function listSceneBuildingTypesForMaintenance() {
-  return listSceneBuildingTypesFn ? listSceneBuildingTypesFn() : [];
-}
-
 /** @internal Tests only */
 export function resetSceneBuildingInventoryBridgeForTests() {
   listSceneBuildingTypesFn = null;

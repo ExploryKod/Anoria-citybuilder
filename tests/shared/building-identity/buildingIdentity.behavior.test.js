@@ -38,7 +38,7 @@ describe('Shared Kernel — building identity', () => {
       const instanceId = createBuildingInstanceId();
       const row = canonicalizeHouseRecord({
         instanceId,
-        type: 'House-2Story',
+        type: 'House-Blue',
         x: 3,
         y: 7,
         pop: 7,
@@ -46,7 +46,7 @@ describe('Shared Kernel — building identity', () => {
 
       expect(row.instanceId).toBe(instanceId);
       expect(row.id).toBe(instanceId);
-      expect(row.type).toBe('House-2Story');
+      expect(row.type).toBe('House-Blue');
       expect(row.x).toBe(3);
       expect(row.y).toBe(7);
       expect(row.anchorX).toBe(3);
@@ -54,7 +54,7 @@ describe('Shared Kernel — building identity', () => {
     });
 
     test('instanceIdFromHouseRow reads canonical row', () => {
-      const record = makeHouseRecord({ type: 'Market-Stall', x: 4, y: 5 });
+      const record = makeHouseRecord({ type: 'Market-Stall-Red', x: 4, y: 5 });
       expect(instanceIdFromHouseRow(record)).toBe(record.instanceId);
     });
 

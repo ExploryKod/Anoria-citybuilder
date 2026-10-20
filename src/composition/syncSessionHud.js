@@ -29,9 +29,10 @@ function workerCountsFromGroups(groups) {
  * Sync population rail: country totals + active hamlet (dual column).
  *
  * @param {{
- *   updateFamishedPopulation?: (country: number, hamlet?: number) => void,
+ *   updateFamishedPopulation?: (country: { disette: number, penurie: number }, hamlet?: { disette: number, penurie: number }) => void,
+ *   updateHungerRisk?: (country: { disette: number, penurie: number }, hamlet?: { disette: number, penurie: number }) => void,
  *   updateDeaths?: (n: number) => void,
- *   updatePopulationBreakdown?: Function,
+ *   updatePopulationTotals?: Function,
  *   updateGroupHud?: Function,
  * }} gameUI
  */
@@ -45,24 +46,11 @@ export async function syncPopRailHud(gameUI) {
     ]);
 
     gameUI.updateFamishedPopulation?.(
-      country.famishedPopulation || 0,
-      hamlet.famishedPopulation || 0
+      { disette: country.disettePopulation || 0, penurie: country.penuriePopulation || 0 },
+      { disette: hamlet.disettePopulation || 0, penurie: hamlet.penuriePopulation || 0 }
     );
 
-    gameUI.updatePopulationBreakdown?.(
-      country.totalPop ?? 0,
-      country.employment.activeCitizenCount ?? 0,
-      country.employment.elitePool ?? 0,
-      country.employment.civilServantCount ?? 0,
-      country.employment.activePopulationCount ?? 0,
-      {
-        totalPop: hamlet.totalPop ?? 0,
-        activeCitizenCount: hamlet.employment.activeCitizenCount ?? 0,
-        elitePool: hamlet.employment.elitePool ?? 0,
-        civilServantCount: hamlet.employment.civilServantCount ?? 0,
-        activePopulationCount: hamlet.employment.activePopulationCount ?? 0,
-      }
-    );
+    gameUI.updateHungerRisk?.(country.hungerRisk, hamlet.hungerRisk);
 
     const countryGroups = mapEmploymentGroupsForHud(
       country.employment.byGroup,
@@ -72,6 +60,13 @@ export async function syncPopRailHud(gameUI) {
       hamlet.employment.byGroup,
       hamlet.employment.bySector
     );
+
+    // The workers' head figure is what the per-class worker rows below it add up to, never a count of its own.
+    const sumOf = (counts) => Object.values(counts).reduce((sum, count) => sum + count, 0);
+    gameUI.updatePopulationTotals?.(country.totalPop ?? 0, sumOf(workerCountsFromGroups(countryGroups)), {
+      totalPop: hamlet.totalPop ?? 0,
+      workersCount: sumOf(workerCountsFromGroups(hamletGroups)),
+    });
 
     gameUI.updateGroupHud?.({
       popCountry: country.popByGroup,
@@ -90,6 +85,8 @@ export async function syncPopRailHud(gameUI) {
       },
       groupsCountry: countryGroups,
       groupsHamlet: hamletGroups,
+      causesCountry: country.employmentCauses,
+      causesHamlet: hamlet.employmentCauses,
     });
   } catch (err) {
     console.warn('[syncPopRailHud] population:', err);

@@ -2,10 +2,8 @@ import {
   HAMLET_ACCESS,
   listHamletsWithAccess,
 } from '../../../../core/persistence/hamlet/hamletAccess.js';
-import {
-  getActiveHamletId,
-  PROTO_HAMLETS,
-} from '../../../../core/persistence/hamlet/hamletSession.js';
+import { getActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { HAMLET_CATALOG } from '../../../../shared/hamlet-catalog/hamletCatalog.js';
 import { getHamletMapSite } from '../../domain/catalogs/HamletMapCatalog.js';
 
 /**
@@ -15,6 +13,7 @@ import { getHamletMapSite } from '../../domain/catalogs/HamletMapCatalog.js';
  *   unlockedCount: number,
  *   hamlets: Array<{
  *     id: string,
+ *     slug: string,
  *     name: string,
  *     access: 'active' | 'unlocked' | 'locked',
  *     natureSeeded?: boolean,
@@ -28,9 +27,10 @@ export async function buildHamletsMapView() {
   const activeHamletId = getActiveHamletId();
 
   const hamlets = hamletsWithAccess.map((hamlet) => {
-    const site = getHamletMapSite(hamlet.id);
+    const site = getHamletMapSite(hamlet.slug);
     return {
       id: hamlet.id,
+      slug: hamlet.slug,
       name: hamlet.name,
       access: hamlet.access,
       natureSeeded: hamlet.natureSeeded,
@@ -47,7 +47,7 @@ export async function buildHamletsMapView() {
 
   return {
     activeHamletId,
-    totalHamlets: PROTO_HAMLETS.length,
+    totalHamlets: HAMLET_CATALOG.length,
     unlockedCount,
     hamlets,
   };

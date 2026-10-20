@@ -90,7 +90,7 @@ describe('Supply — house consumption', () => {
       repo = new InMemorySupplyBuildingRepository([
         house('House-Blue-1-2', {
           pop: 4,
-          stocks: { fruit: 4, game: 4, food: 8 },
+          stocks: { carrot: 4, cabbage: 4, food: 8 },
         }),
       ]);
       useCase = new ConsumeResource(repo);
@@ -195,12 +195,12 @@ describe('Supply — house consumption', () => {
       const repo = new InMemorySupplyBuildingRepository([
         house('House-Blue-1-2', {
           pop: 2,
-          stocks: { fruit: 2, game: 2, food: 4 },
+          stocks: { carrot: 2, cabbage: 2, food: 4 },
         }),
         house('House-Purple-3-4', {
           type: 'House-Purple',
           pop: 1,
-          stocks: { fruit: 1, game: 1, food: 2 },
+          stocks: { carrot: 1, cabbage: 1, food: 2 },
         }),
         house('House-Blue-5-6', { pop: 0, stocks: { wheat: 5, food: 5 } }),
       ]);

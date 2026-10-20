@@ -11,12 +11,13 @@ import {
   renderActiveLoansErrorHtml,
 } from './PretsPresenter.js';
 import { createModalFocusSession } from '../../shell/modalFocus.js';
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 
 /**
  * @type {{
  *   accounting: object,
  *   popupManager?: object | null,
- *   updateBudgetDisplay?: () => Promise<void> | void,
+ *   updateTreasuryDisplay: () => Promise<void>,
  * } | null}
  */
 let deps = null;
@@ -28,7 +29,7 @@ let loansFocusSession = null;
  * @param {{
  *   accounting: object,
  *   popupManager?: object | null,
- *   updateBudgetDisplay?: () => Promise<void> | void,
+ *   updateTreasuryDisplay: () => Promise<void>,
  * }} panelDeps
  */
 export function initLoansPopup(panelDeps) {
@@ -216,16 +217,16 @@ function updateLoanSummary() {
     const interest = accounting.computeLoanInterestAmount(amount, interestRate);
     const total = amount + interest;
 
-    updateLoansElement('loan-principal-display', `${amount}€`);
+    updateLoansElement('loan-principal-display', formatEuro(amount));
     updateLoansElement('loan-rate-display', `${interestRate}%`);
-    updateLoansElement('loan-interest-display', `${interest}€`);
-    updateLoansElement('loan-total-display', `${total}€`);
+    updateLoansElement('loan-interest-display', formatEuro(interest));
+    updateLoansElement('loan-total-display', formatEuro(total));
   });
 }
 
 export async function contractLoan() {
   if (!deps?.accounting) return;
-  const { accounting, updateBudgetDisplay } = deps;
+  const { accounting, updateTreasuryDisplay } = deps;
 
   const loanAmountInput = document.getElementById('loan-amount-input');
   const loanDurationInput = document.getElementById('loan-duration-input');
@@ -243,6 +244,19 @@ export async function contractLoan() {
   }
 
   try {
+    // No bank, no real lender: a loan is now a bank's own money, not a city-level abstraction (see
+    // RecordLoanCapitalIncome.js). The bank must also actually hold the amount it is about to lend out.
+    const lenderBuildingId = await accounting.findBankBuildingId();
+    if (!lenderBuildingId) {
+      alert('Aucune banque construite : impossible de contracter un prêt.');
+      return;
+    }
+    const lenderFunds = (await accounting.getTreasurySnapshot({ accountBuildingId: lenderBuildingId })).funds;
+    if (lenderFunds < amount) {
+      alert(`La banque n'a pas les fonds pour ce prêt (${formatEuro(lenderFunds)} disponibles).`);
+      return;
+    }
+
     const financialHealth = await accounting.getFinancialHealth();
     const interestRate = accounting.computeLoanRate({
       loanType,
@@ -261,12 +275,12 @@ export async function contractLoan() {
       interestRate,
       duration,
       remainingTurns: duration,
-      contractedAt: new Date().toISOString(),
+      lenderBuildingId,
     };
 
-    await accounting.recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan);
+    await accounting.recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan, lenderBuildingId);
 
-    await updateBudgetDisplay?.();
+    await updateTreasuryDisplay();
 
     alert(
       `Prêt ${loanType} de ${amount}€ contracté ! Total à rembourser : ${total}€ sur ${duration} tours.`
@@ -300,7 +314,7 @@ export async function loadActiveLoans() {
  */
 export async function processLoanPayments() {
   if (!deps?.accounting) return;
-  const { accounting, updateBudgetDisplay } = deps;
+  const { accounting, updateTreasuryDisplay } = deps;
 
   try {
     const activeLoans = await accounting.getActiveLoans();
@@ -319,13 +333,15 @@ export async function processLoanPayments() {
         await accounting.recordLoanInterest(
           interestPayment,
           `Intérêts prêt ${loan.type} (${loan.id})`,
-          loan.id
+          loan.id,
+          loan.lenderBuildingId
         );
 
         await accounting.recordLoanRepayment(
           principalPayment,
           `Remboursement prêt ${loan.type} (${loan.id})`,
-          loan.id
+          loan.id,
+          loan.lenderBuildingId
         );
         continue;
       }
@@ -334,7 +350,8 @@ export async function processLoanPayments() {
         await accounting.recordLoanInterest(
           interestPayment,
           `Intérêts prêt ${loan.type} (${loan.id})`,
-          loan.id
+          loan.id,
+          loan.lenderBuildingId
         );
 
         if (principalPayment > 0) {
@@ -346,7 +363,6 @@ export async function processLoanPayments() {
           });
         }
 
-        await accounting.advanceLoanInstallmentWithoutPayment(loan.id);
         console.warn(
           `[Loans] Échéance partielle — intérêts payés, capital impayé (${principalPayment}€) pour ${loan.id}`
         );
@@ -360,13 +376,12 @@ export async function processLoanPayments() {
         loanType: loan.type,
       });
 
-      await accounting.advanceLoanInstallmentWithoutPayment(loan.id);
       console.warn(
         `[Loans] Défaut de paiement — échéance journalisée (info) pour ${loan.id}`
       );
     }
 
-    await updateBudgetDisplay?.();
+    await updateTreasuryDisplay();
   } catch (error) {
     console.error('Error processing loan payments:', error);
   }

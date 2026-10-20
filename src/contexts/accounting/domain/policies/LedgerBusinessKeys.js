@@ -63,6 +63,79 @@ export function buildLoanCapitalBusinessKey(loanId) {
   return `loan_capital:${loanId}`;
 }
 
+const LOAN_LENDER_TYPES = new Set(['loan_capital_lent', 'loan_interest_received', 'loan_repayment_received']);
+
+/**
+ * Idempotence key for the lender's own mirror of a loan movement — a different key from the city's own
+ * (buildLoanCapitalBusinessKey/buildLoanInstallmentBusinessKey) so the two accounts' lines of the same event are
+ * two distinct, independently-deduped rows, never one refusing the other as a duplicate.
+ * @param {'loan_capital_lent' | 'loan_interest_received' | 'loan_repayment_received'} type
+ * @param {string} loanId
+ * @param {number} [turn] required for the per-turn installment types, not for the once-only capital draw
+ * @returns {string | null}
+ */
+export function buildLoanLenderBusinessKey(type, loanId, turn) {
+  if (!LOAN_LENDER_TYPES.has(type) || !loanId) {
+    return null;
+  }
+  if (type === 'loan_capital_lent') {
+    return `${type}:${loanId}`;
+  }
+  if (typeof turn !== 'number' || Number.isNaN(turn)) {
+    return null;
+  }
+  return `${type}:${loanId}:${turn}`;
+}
+
+/**
+ * Idempotence key for one house's own citizen tax payment (`citizen_tax_paid`, its personal account's debit mirror
+ * of the city's lump `citizen_tax` credit), per civil year.
+ * @param {string} houseId
+ * @param {number} year
+ * @param {string} hamletId
+ * @returns {string | null}
+ */
+export function buildCitizenTaxPaymentBusinessKey(houseId, year, hamletId) {
+  if (!houseId || !hamletId || typeof year !== 'number') {
+    return null;
+  }
+  return `citizen_tax_paid:${hamletId}:${houseId}:${year}`;
+}
+
+/**
+ * Idempotence key for one house's deposit interest at one bank, per civil month — the household side and the
+ * bank's own mirror share the same pair and month, so each gets its own key (the `side` suffix) rather than one
+ * refusing the other as a duplicate.
+ * @param {'household_deposit_interest' | 'deposit_interest_paid'} type
+ * @param {string} houseId
+ * @param {string} bankId
+ * @param {number} year
+ * @param {number} monthIndex
+ * @returns {string | null}
+ */
+export function buildDepositInterestBusinessKey(type, houseId, bankId, year, monthIndex) {
+  if (!houseId || !bankId || typeof year !== 'number' || typeof monthIndex !== 'number') {
+    return null;
+  }
+  return `${type}:${houseId}:${bankId}:${year}:${monthIndex}`;
+}
+
+/**
+ * Idempotence key for one house's rent in one month: the due line and the payment (and its mirror at the owner's) each get their own.
+ * @param {'info_rent_due' | 'info_rent_written_off' | 'rent_paid' | 'rent_received' | 'premises_rent_paid' | 'premises_rent_received' | 'premises_rent_debt_paid' | 'premises_rent_debt_received' | 'od_payable_premises_rent' | 'od_receivable_premises_rent'} type
+ * @param {string} tenantId
+ * @param {string} landlordId
+ * @param {number} year
+ * @param {number} monthIndex
+ * @returns {string | null}
+ */
+export function buildRentBusinessKey(type, tenantId, landlordId, year, monthIndex) {
+  if (!tenantId || !landlordId || typeof year !== 'number' || typeof monthIndex !== 'number') {
+    return null;
+  }
+  return `${type}:${tenantId}:${landlordId}:${year}:${monthIndex}`;
+}
+
 /**
  * Idempotence key for initial capital journal line (turn 0).
  * @returns {string}
@@ -84,6 +157,56 @@ export function buildCommercialRouteBusinessKey(partnerId) {
 }
 
 /**
+ * One service line of a month: a house's share (service_purchase) or a company's sale (service_sales), per service and
+ * per pair of company and house. The line names its holder and its counterparty, so the pair is keyed once.
+ * @param {string} kind
+ * @param {string} holderId
+ * @param {string} counterpartyId
+ * @param {string} service
+ * @param {{ year: number, monthIndex: number }} timeInfo
+ * @param {string} hamletId
+ * @returns {string}
+ */
+export function buildServiceLineBusinessKey(kind, holderId, counterpartyId, service, timeInfo, hamletId) {
+  if (!kind || !counterpartyId || !service || !hamletId || typeof timeInfo?.year !== 'number') {
+    throw new Error('[journal] a service line needs its kind, both parties, its service, its month and its hamlet');
+  }
+  return `${kind}:${hamletId}:${timeInfo.year}:${timeInfo.monthIndex}:${service}:${holderId ?? 'city'}:${counterpartyId}`;
+}
+
+/**
+ * Idempotence key for one monthly line of one building (its sales, purchases, charges, upkeep or subsidy): once per month.
+ * @param {string} kind a producer line kind (see ProducerChargePolicy)
+ * @param {string} buildingId
+ * @param {{ year: number, monthIndex: number }} timeInfo the month that was delivered
+ * @param {string} hamletId
+ * @returns {string}
+ */
+export function buildProducerLineBusinessKey(kind, buildingId, timeInfo, hamletId) {
+  if (!kind || !buildingId || !hamletId || typeof timeInfo?.year !== 'number') {
+    throw new Error('[journal] a producer line needs its kind, its building, its month and its hamlet');
+  }
+  return `${kind}:${hamletId}:${buildingId}:${timeInfo.year}:${timeInfo.monthIndex}`;
+}
+
+/**
+ * Idempotence key for one trade line of one pair of the chain for one month: the seller's sale (`producer_revenue`) and the
+ * buyer's purchase (`producer_purchase`) are each written once per month and per counterparty.
+ * @param {string} kind
+ * @param {string} holderId the company whose account the line moves
+ * @param {string | null} counterpartyId the other company, or null for the houses
+ * @param {{ year: number, monthIndex: number }} timeInfo
+ * @param {string} hamletId
+ * @returns {string}
+ */
+export function buildTradeLineBusinessKey(kind, holderId, counterpartyId, timeInfo, hamletId) {
+  if (!kind || !holderId || !hamletId || typeof timeInfo?.year !== 'number') {
+    throw new Error('[journal] a trade line needs its kind, its company, its month and its hamlet');
+  }
+  return `${kind}:${hamletId}:${holderId}:${counterpartyId ?? 'houses'}:${timeInfo.year}:${timeInfo.monthIndex}`;
+}
+
+/**
  * Idempotence key for one contribution payment per news item.
  * @param {string} newsItemId
  * @returns {string | null}
@@ -95,45 +218,31 @@ export function buildContributionBusinessKey(newsItemId) {
   return `contribution:news:${newsItemId}`;
 }
 
-/** @param {number} year */
-export function buildCarryForwardBusinessKey(year) {
-  if (typeof year !== 'number' || Number.isNaN(year)) {
-    return null;
-  }
-  return `carry_forward:${year}`;
-}
 
-/** @param {string} cumulType @param {number} year */
-export function buildCumulBusinessKey(cumulType, year) {
-  if (!cumulType || typeof year !== 'number' || Number.isNaN(year)) {
-    return null;
-  }
-  return `${cumulType}:${year}`;
-}
 
-const CUMUL_TYPES = new Set([
-  'cumul_maintenance',
-  'cumul_construction',
-  'cumul_salary',
-  'cumul_exceptional_expenses',
-  'cumul_loan_interest',
-  'cumul_loan_repayment',
-]);
 
 /**
  * @param {string} type
  * @param {{ year: number, monthIndex: number }} timeInfo
  * @returns {string | null}
  */
-export function buildLedgerBusinessKey(type, timeInfo) {
+export function buildLedgerBusinessKey(type, timeInfo, hamletId) {
   if (!timeInfo || typeof timeInfo.year !== 'number') {
     return null;
   }
   if (MONTHLY_IDEMPOTENT_TYPES.has(type)) {
-    return `${type}:${timeInfo.year}:${timeInfo.monthIndex}`;
+    // A monthly charge is per hamlet: each hamlet pays its own maintenance and salaries for the same month.
+    if (!hamletId) {
+      throw new Error(`[journal] monthly ${type} needs the hamlet it is charged to`);
+    }
+    return `${type}:${hamletId}:${timeInfo.year}:${timeInfo.monthIndex}`;
   }
   if (YEARLY_IDEMPOTENT_TYPES.has(type)) {
-    return `${type}:${timeInfo.year}`;
+    // A yearly charge is per hamlet too: its base is that hamlet's houses.
+    if (!hamletId) {
+      throw new Error(`[journal] yearly ${type} needs the hamlet it is charged to`);
+    }
+    return `${type}:${hamletId}:${timeInfo.year}`;
   }
   return null;
 }
@@ -158,16 +267,10 @@ export function inferBusinessKeyFromRow(row) {
         : null;
 
   if (MONTHLY_IDEMPOTENT_TYPES.has(row.type) && monthIndex != null) {
-    return `${row.type}:${row.year}:${monthIndex}`;
+    return `${row.type}:${row.hamletId}:${row.year}:${monthIndex}`;
   }
   if (YEARLY_IDEMPOTENT_TYPES.has(row.type)) {
-    return `${row.type}:${row.year}`;
-  }
-  if (row.type === 'carry_forward') {
-    return buildCarryForwardBusinessKey(row.year);
-  }
-  if (CUMUL_TYPES.has(row.type)) {
-    return buildCumulBusinessKey(row.type, row.year);
+    return `${row.type}:${row.hamletId}:${row.year}`;
   }
   return null;
 }

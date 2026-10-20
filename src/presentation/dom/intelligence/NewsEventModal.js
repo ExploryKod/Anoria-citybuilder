@@ -1,12 +1,67 @@
 import { labelForNewsSource, labelForNewsCategory } from '../../../composition/intelligenceCatalog.js';
+import { listHamlets } from '../../../core/persistence/hamlet/hamletSession.js';
+
+async function hamletNameOf(hamletId) {
+  const hamlet = (await listHamlets()).find((candidate) => candidate.id === hamletId);
+  if (!hamlet) throw new Error(`[news] item belongs to an unknown hamlet ${hamletId}`);
+  return hamlet.name;
+}
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
+import { formatEuro } from '../../../contexts/accounting/presentation/formatMoney.js';
+import { buildingIconHtml, buildingName } from '../shell/CatalogVocabulary.js';
+
+/**
+ * The buttons a dépêche can carry (its `action`): what each looks like and what it does. A new kind is one more entry; a dépêche that names a kind
+ * not listed here fails loudly.
+ * @type {Readonly<Record<string, { relevant: (action: object, deps: object) => boolean, iconHtml: (action: object) => string, label: (action: object) => string, run: (action: object, deps: object) => void }>>}
+ */
+const NEWS_ACTIONS = Object.freeze({
+  // Pick a building to place: the button wears its picture, a click closes the dépêche and puts the tool in hand. Once the building stands the
+  // button has nothing left to offer: the dépêche is only a confirmation, and shows no button.
+  buildTool: {
+    relevant: (action, deps) => {
+      if (typeof deps.isBuilt !== 'function') throw new Error('[news] a dépêche offers a building to place, but the modal was not given isBuilt');
+      return !deps.isBuilt(action.toolId);
+    },
+    iconHtml: (action) => buildingIconHtml(action.toolId),
+    label: (action) => `Placer : ${buildingName(action.toolId)}`,
+    run: (action, deps) => {
+      if (typeof deps.activateBuildTool !== 'function') throw new Error('[news] a dépêche offers a building to place, but the modal was not given activateBuildTool');
+      deps.activateBuildTool(action.toolId);
+    },
+  },
+});
+
+/** @param {{ kind: string }} action */
+function newsActionOf(action) {
+  const known = NEWS_ACTIONS[action.kind];
+  if (!known) throw new Error(`[news] a dépêche carries an action of kind "${action.kind}", which the modal does not know`);
+  return known;
+}
 
 /** @type {null | (() => Promise<void>)} */
 let presentIncomingHandler = null;
 
 /** @type {ReturnType<typeof createModalFocusSession> | null} */
 let newsFocusSession = null;
+
+/** @type {Array<() => void>} */
+let closeWaiters = [];
+
+/** True while the dépêche modal is open (set when it opens, cleared when it closes). */
+let newsModalOpen = false;
+
+/**
+ * Résolu quand la modale des dépêches est refermée (tout de suite si elle est fermée).
+ * @returns {Promise<void>}
+ */
+export function waitForNewsModalClosed() {
+  if (!newsModalOpen) return Promise.resolve();
+  return new Promise((resolve) => {
+    closeWaiters.push(resolve);
+  });
+}
 
 /**
  * Ouvre la file des dépêches incoming après un tick (si non vide).
@@ -39,6 +94,11 @@ export function initNewsEventModal(deps) {
   const skipBtn = document.getElementById('news-event-skip-btn');
   const fundsHintEl = document.getElementById('news-event-funds-hint');
   const nextBtn = document.getElementById('news-event-next-btn');
+  const closeBtn = document.getElementById('news-event-close-btn');
+  const actionEl = document.getElementById('news-event-action');
+  const actionBtn = document.getElementById('news-event-action-btn');
+  const actionIconEl = document.getElementById('news-event-action-icon');
+  const actionLabelEl = document.getElementById('news-event-action-label');
 
   /** @type {import('../../../contexts/intelligence/domain/NewsItem.js').NewsItem[]} */
   let queue = [];
@@ -65,9 +125,14 @@ export function initNewsEventModal(deps) {
     queue = [];
     index = 0;
     bodyRevealed = false;
+    newsModalOpen = false;
+    const waiters = closeWaiters;
+    closeWaiters = [];
+    for (const resolve of waiters) resolve();
   }
 
   function setModalOpen() {
+    newsModalOpen = true;
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
     modal.removeAttribute('inert');
@@ -101,12 +166,17 @@ export function initNewsEventModal(deps) {
     }
 
     const needsPay = item.revelation === 'unpaid' && !bodyRevealed;
+    const hasNext = index < queue.length - 1;
     const showBody = item.revelation === 'free' || item.revelation === 'revealed' || bodyRevealed;
     const price = item.access?.price ?? 10;
 
     if (titleEl) titleEl.textContent = item.title;
     if (metaEl) {
-      metaEl.textContent = `${labelForNewsSource(item.sourceId)} · ${labelForNewsCategory(item.categoryId)} · ${formatTurnLabel(item.turn)}`;
+      const metaLine = `${labelForNewsSource(item.sourceId)} · ${labelForNewsCategory(item.categoryId)} · ${formatTurnLabel(item.turn)}`;
+      metaEl.textContent = metaLine;
+      hamletNameOf(item.hamletId).then((name) => {
+        metaEl.textContent = `${metaLine} · ${name}`;
+      });
     }
     if (bodyEl) {
       bodyEl.textContent = showBody
@@ -118,15 +188,29 @@ export function initNewsEventModal(deps) {
       paywallEl.hidden = !needsPay;
     }
     if (payBtn) {
-      payBtn.textContent = `Payer ${price} €`;
+      payBtn.textContent = `Payer ${formatEuro(price)}`;
       payBtn.hidden = !needsPay;
     }
     if (skipBtn) {
       skipBtn.hidden = !needsPay;
+      skipBtn.textContent = hasNext ? 'Lire d’autres nouvelles' : 'Ignorer';
     }
+    // What the dépêche offers to do (a building to place), once it can be read.
+    const action = showBody && item.action && newsActionOf(item.action).relevant(item.action, deps) ? item.action : null;
+    if (actionEl) actionEl.hidden = !action;
+    if (action) {
+      const kind = newsActionOf(action);
+      if (actionIconEl) actionIconEl.innerHTML = kind.iconHtml(action);
+      if (actionLabelEl) actionLabelEl.textContent = kind.label(action);
+    }
+    // Two buttons at most: an unpaid dépêche offers to pay or to leave it; a readable one offers to close, and to read the next only if there is one.
+    // With a button of its own on it, the dépêche shows only one of those two: the next one when there is one, to close it otherwise.
     if (nextBtn) {
-      nextBtn.hidden = needsPay;
+      nextBtn.hidden = needsPay || !hasNext;
       nextBtn.textContent = 'Lire le suivant';
+    }
+    if (closeBtn) {
+      closeBtn.hidden = needsPay || (Boolean(action) && hasNext);
     }
 
     if (needsPay) {
@@ -153,9 +237,20 @@ export function initNewsEventModal(deps) {
 
   function focusNewsPrimaryAction() {
     if (nextBtn instanceof HTMLElement && !nextBtn.hidden) return nextBtn;
+    if (closeBtn instanceof HTMLElement && !closeBtn.hidden) return closeBtn;
     if (payBtn instanceof HTMLElement && !payBtn.hidden && !payBtn.disabled) return payBtn;
     if (skipBtn instanceof HTMLElement && !skipBtn.hidden) return skipBtn;
     return nextBtn ?? payBtn ?? skipBtn ?? modal;
+  }
+
+  /** Read and done: the dépêche is archived and the modal closes (the ones not yet read come back at the next presentation). */
+  async function archiveCurrentAndClose() {
+    const item = currentItem();
+    if (item && !(item.revelation === 'unpaid' && !bodyRevealed)) {
+      const turn = deps.getGameTime?.() ?? item.turn;
+      await deps.intelligence.archiveNewsItem({ newsItemId: item.id, turn });
+    }
+    closeModal();
   }
 
   async function archiveCurrentAndAdvance() {
@@ -221,6 +316,15 @@ export function initNewsEventModal(deps) {
   nextBtn?.addEventListener('click', () => {
     void archiveCurrentAndAdvance();
   });
+  closeBtn?.addEventListener('click', () => {
+    void archiveCurrentAndClose();
+  });
+  actionBtn?.addEventListener('click', () => {
+    const action = currentItem()?.action;
+    if (!action) return;
+    // The dépêche is read: it is archived and closed, then its button does what it says.
+    void archiveCurrentAndClose().then(() => newsActionOf(action).run(action, deps));
+  });
   skipBtn?.addEventListener('click', () => {
     void skipUnpaidAndAdvance();
   });
@@ -245,7 +349,9 @@ export function initNewsEventModal(deps) {
     newsFocusSession?.release({ restoreFocus: false });
     newsFocusSession = createModalFocusSession({
       panel: modal,
-      onEscape: closeModal,
+      onEscape: () => {
+        void archiveCurrentAndClose();
+      },
       initialFocus: focusNewsPrimaryAction,
       ensureDialogAttributes: false,
     });

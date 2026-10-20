@@ -1,17 +1,14 @@
 /**
  * Behavior tests — Supply: pottery workshop production
  *
- * Second independent quantity-good chain (after food) — proves the
- * 'producer' role, ProduceResource, and getResourceStockShape() are truly
- * goods-agnostic, not secretly food-shaped. Same generic engine as
- * Farm-Wheat/Carrot/Cabbage, just a different category set (plate/pot/
- * amphora, no shared totalKey since nothing collects across them yet).
+ * Second independent quantity-good chain (after food), declared as a production CYCLE
+ * (see ProduceResource `cycle`): 2 in the first month, x5 in the second, credited when complete.
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
+import { describe, test, expect } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
-import { getAmountForRole, hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { ProduceResource } from '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js';
 import { RunResourceCommandForRole } from '../../../src/contexts/supply/application/commands/RunResourceCommandForRole.js';
 
@@ -67,99 +64,63 @@ function workshop(id, type, extras = {}) {
   });
 }
 
-describe('Supply — pottery workshop production', () => {
-  test('each workshop produces 5 units of its own category per month', () => {
-    expect(getAmountForRole('Factory-Plate', 'producer')).toBe(5);
-    expect(getAmountForRole('Factory-Pot', 'producer')).toBe(5);
-    expect(getAmountForRole('Factory-Amphora', 'producer')).toBe(5);
+const day = (monthIndex) => ({ season: 'spring', month: 'january', monthIndex, year: 1, dayInMonth: 1 });
+
+describe('Supply — a workshop is a cycle: a base, then a multiplier, credited when complete', () => {
+  test('pottery makes 2 in the first month, x5 in the second, and credits 10 only then', async () => {
+    const repo = new InMemorySupplyBuildingRepository([workshop('plate', 'Factory-Plate')]);
+    const produce = new ProduceResource(repo);
+
+    const first = await produce.execute({ buildingId: 'plate', period: day(0) });
+    expect(first.produced).toBe(false);
+    expect((await repo.findById('plate')).stocks.plate).toBe(0);
+
+    // Same month, later tick: the second step is not open yet — no shortcut through the cycle.
+    await produce.execute({ buildingId: 'plate', period: day(0) });
+    expect((await repo.findById('plate')).stocks.plate).toBe(0);
+
+    const second = await produce.execute({ buildingId: 'plate', period: day(1) });
+    expect(second).toEqual({ produced: true, buildingId: 'plate', category: 'plate', amount: 10 });
+    expect((await repo.findById('plate')).stocks.plate).toBe(10);
+
+    // The next cycle starts by itself the month after: 10 more two months on.
+    await produce.execute({ buildingId: 'plate', period: day(2) });
+    await produce.execute({ buildingId: 'plate', period: day(3) });
+    expect((await repo.findById('plate')).stocks.plate).toBe(20);
   });
 
-  describe('ProduceResource (workshop production circuit)', () => {
-    let repo;
-    let useCase;
+  test('goods stay independent, and an unstaffed workshop makes no progress', async () => {
+    const repo = new InMemorySupplyBuildingRepository([
+      workshop('pot', 'Factory-Pot'),
+      workshop('idle', 'Factory-Amphora', { worker: 0 }),
+    ]);
+    const produce = new ProduceResource(repo);
+    const runProducers = new RunResourceCommandForRole(repo, produce);
 
-    beforeEach(() => {
-      repo = new InMemorySupplyBuildingRepository([
-        workshop('Factory-Plate-2-3', 'Factory-Plate'),
-        workshop('Factory-Pot-4-5', 'Factory-Pot'),
-        workshop('Factory-Amphora-6-7', 'Factory-Amphora'),
-      ]);
-      useCase = new ProduceResource(repo);
-    });
-
-    test('adds 5 plates and survives a stock round-trip without vanishing', async () => {
-      const outcome = await useCase.execute({
-        buildingId: 'Factory-Plate-2-3',
-        period: { monthIndex: 3, year: 1 },
-      });
-
-      expect(outcome).toEqual({
-        produced: true,
-        buildingId: 'Factory-Plate-2-3',
-        category: 'plate',
-        amount: 5,
-      });
-
-      const updated = await repo.findById('Factory-Plate-2-3');
-      expect(updated.stocks.plate).toBe(5);
-      expect(updated.lastProductionMonth).toBe(3);
-    });
-
-    test('plate, pot, and amphora stay independent categories — no cross-contamination', async () => {
-      await useCase.execute({ buildingId: 'Factory-Plate-2-3', period: { monthIndex: 1 } });
-      await useCase.execute({ buildingId: 'Factory-Pot-4-5', period: { monthIndex: 1 } });
-      await useCase.execute({ buildingId: 'Factory-Amphora-6-7', period: { monthIndex: 1 } });
-
-      expect((await repo.findById('Factory-Plate-2-3')).stocks.plate).toBe(5);
-      expect((await repo.findById('Factory-Plate-2-3')).stocks.pot).toBe(0);
-      expect((await repo.findById('Factory-Pot-4-5')).stocks.pot).toBe(5);
-      expect((await repo.findById('Factory-Pot-4-5')).stocks.plate).toBe(0);
-      expect((await repo.findById('Factory-Amphora-6-7')).stocks.amphora).toBe(5);
-    });
-
-    test('refuses second production in the same month, allows again next month', async () => {
-      await useCase.execute({ buildingId: 'Factory-Plate-2-3', period: { monthIndex: 3 } });
-      const second = await useCase.execute({ buildingId: 'Factory-Plate-2-3', period: { monthIndex: 3 } });
-      expect(second.produced).toBe(false);
-      expect(second.reason).toBe('already_produced_this_period');
-
-      await useCase.execute({ buildingId: 'Factory-Plate-2-3', period: { monthIndex: 4 } });
-      expect((await repo.findById('Factory-Plate-2-3')).stocks.plate).toBe(10);
-    });
-
-    test('refuses without road access or workers', async () => {
-      repo = new InMemorySupplyBuildingRepository([
-        workshop('Factory-Plate-2-3', 'Factory-Plate', { roadCount: 0 }),
-      ]);
-      useCase = new ProduceResource(repo);
-
-      const outcome = await useCase.execute({ buildingId: 'Factory-Plate-2-3', period: { monthIndex: 1 } });
-      expect(outcome.reason).toBe('not_operational');
-    });
-  });
-
-  describe('RunResourceCommandForRole (producer)', () => {
-    test('produces for every operational pottery workshop alongside farms, unaffected by either', async () => {
-      const repo = new InMemorySupplyBuildingRepository([
-        workshop('Factory-Plate-2-3', 'Factory-Plate'),
-        workshop('Factory-Pot-4-5', 'Factory-Pot'),
-      ]);
-      const produceResource = new ProduceResource(repo);
-      const runProducerCommand = new RunResourceCommandForRole(repo, produceResource);
-
-      const { count, results } = await runProducerCommand.execute({
+    for (const monthIndex of [0, 1]) {
+      await runProducers.execute({
         role: 'producer',
-        buildParams: (b) => ({ buildingId: b.id, period: { monthIndex: 5 } }),
+        buildParams: (b) => ({ buildingId: b.id, period: day(monthIndex) }),
         successKey: 'produced',
       });
+    }
 
-      expect(count).toBe(2);
-      expect(results).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ buildingId: 'Factory-Plate-2-3', category: 'plate', amount: 5 }),
-          expect.objectContaining({ buildingId: 'Factory-Pot-4-5', category: 'pot', amount: 5 }),
-        ])
-      );
-    });
+    expect((await repo.findById('pot')).stocks.pot).toBe(10);
+    expect((await repo.findById('pot')).stocks.plate).toBe(0);
+    expect((await repo.findById('idle')).stocks.amphora).toBe(0);
+  });
+
+  test('a first step that comes late is still done (wait), and the cycle goes on', async () => {
+    const repo = new InMemorySupplyBuildingRepository([workshop('plate', 'Factory-Plate')]);
+    const produce = new ProduceResource(repo);
+
+    // Unstaffed while its first window is open...
+    await repo.updateBuildingFields('plate', { worker: 0 });
+    await produce.execute({ buildingId: 'plate', period: day(0) });
+    // ...staffed only in the next month: the first step is done late, the second is open right away.
+    await repo.updateBuildingFields('plate', { worker: 2 });
+    const done = await produce.execute({ buildingId: 'plate', period: day(1) });
+
+    expect(done.amount).toBe(10);
   });
 });

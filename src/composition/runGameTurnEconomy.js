@@ -6,6 +6,10 @@
 import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import { getOrCreateConstructionContext } from './createConstructionContext.js';
+import { getOrCreateIntelligenceContext } from './createIntelligenceContext.js';
+import { getOrCreateHousingContext } from './createHousingContext.js';
+import { resolveGetTimeInfo } from './gameTimeBridge.js';
+import { MONTHS_PER_YEAR } from '../shared/time/TimeCalendar.js';
 import { getCumulativeDeaths } from './gameplayMortalityState.js';
 
 /**
@@ -55,8 +59,27 @@ export async function persistGameplayTurn({ gameStore, housing, time }) {
  */
 export async function processGameTurnBudget({ city, buildings, time, totalPop }) {
   getOrCreateConstructionContext().bindSceneBuildingGrid({ city, buildings });
-  return getOrCreateAccountingContext().processTurnBudget({
+  const result = await getOrCreateAccountingContext().processTurnBudget({
     time,
     totalPop,
   });
+  // The month's accounts are closed: inhabitants leave the houses whose distress the catalog names (a rent they cannot pay, ...).
+  if (result?.monthSettled === true) {
+    const timeInfo = resolveGetTimeInfo()(time);
+    await getOrCreateHousingContext().runMonthlyDepartures({
+      monthKey: timeInfo.year * MONTHS_PER_YEAR + timeInfo.monthIndex,
+      signals: { rentUnpaid: await getOrCreateAccountingContext().getRentArrearsMonths() },
+    });
+    // The houses left empty owe nothing any more: the owner knows it will not be paid (no prosecution in the game).
+    await getOrCreateAccountingContext().writeOffVacantRentDebts({ time });
+  }
+  // November without a tax collector: a dépêche says so, once for the year (the modal shows it at the end of the tick).
+  if (result?.citizenTaxUncollectedYear != null) {
+    await getOrCreateIntelligenceContext().announceMilestone({
+      milestoneId: 'tax-uncollected',
+      turn: time,
+      occurrence: result.citizenTaxUncollectedYear,
+    });
+  }
+  return result;
 }

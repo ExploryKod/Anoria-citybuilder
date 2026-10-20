@@ -11,11 +11,13 @@ const adapters = new Map();
 
 /**
  * @typedef {object} BuildingSourceAdapter
- * @property {(x: number, y: number, options: { catalogEntry: object, buildingId: string, rotationStep: number, assetManager: object }) => (import('three').Object3D | null | Promise<import('three').Object3D | null>)} createMesh
+ * @property {(x: number, y: number, options: { catalogEntry: object, buildingId: string, plotBuildingId: string, rotationStep: number, assetManager: object, showPlot?: boolean }) => (import('three').Object3D | null | Promise<import('three').Object3D | null>)} createMesh
  *   Builds a fully positioned/rotated mesh for one catalog entry at tile
  *   (x,y) — "fully positioned" includes multi-tile footprint centering; no
  *   caller ever adjusts the returned mesh's position afterward. `buildingId`
- *   is the resolved placeable id (for adapters that derive their own
+ *   is the resolved placeable id (the model that renders); `plotBuildingId` is the game's own id of the
+ *   building, whose declared footprint is the plot the mesh is centred on; `showPlot` asks for a highlight of
+ *   that plot (placement ghost). (For adapters that derive their own
  *   footprint via shared/asset-footprint/resolveFootprint.js instead of a
  *   source-specific prefab catalog). May return synchronously or a Promise —
  *   callers must handle both, since sources genuinely differ here (a local

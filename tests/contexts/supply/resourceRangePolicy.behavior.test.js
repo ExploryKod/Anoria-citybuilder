@@ -10,7 +10,7 @@ import {
 } from '../../../src/contexts/supply/domain/policies/ResourceRangePolicy.js';
 
 describe('Supply — findBuildingsWithRoleInRange', () => {
-  const market = { id: 'Market-Stall-5-5', type: 'Market-Stall', x: 5, y: 5 };
+  const market = { id: 'Market-Stall-5-5', type: 'Market-Stall-Red', x: 5, y: 5 };
 
   test('manhattanDistance matches legacy formula', () => {
     expect(manhattanDistance({ x: 5, y: 3 }, { x: 2, y: 1 })).toBe(5);
@@ -56,6 +56,6 @@ describe('Supply — findBuildingsWithRoleInRange', () => {
   });
 
   test('returns empty when the origin has no coordinates', () => {
-    expect(findBuildingsWithRoleInRange({ type: 'Market-Stall' }, [], { role: 'consumer', maxDistance: 5 })).toEqual([]);
+    expect(findBuildingsWithRoleInRange({ type: 'Market-Stall-Red' }, [], { role: 'consumer', maxDistance: 5 })).toEqual([]);
   });
 });

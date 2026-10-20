@@ -61,7 +61,6 @@
     --house-red-color:var(--red-300);
     --house-purple-color: #a90aa9;
     --house-blue-color: #191EA6FF;
-    --house-big-color: #ffc107;
 
     /* Taille des textes */
     --pre-title-size: 30px;
@@ -175,8 +174,6 @@
 }
 
 /* Réactiver les scrollbars pour les popups */
-.bilan-panel,
-.compte-de-resultat-panel,
 .loans-panel {
     scrollbar-width: thin;
 }
@@ -468,21 +465,6 @@ canvas.pointer-events-disabled {
 
 .toolbar .toolbar-btn svg, .panel-layout .panel-btn svg {
     pointer-events: none;
-}
-
-.toolbar .toolbar-btn .tool-icon-img,
-.panel-layout .panel-btn .tool-icon-img {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
-    pointer-events: none;
-    /* Silhouette noire → suit la couleur du bouton (blanc sur fond coloré) */
-    filter: brightness(0) invert(1);
-}
-
-.toolbar .toolbar-btn.selected .tool-icon-img,
-.panel-layout .panel-btn.selected .tool-icon-img {
-    filter: brightness(0) invert(1);
 }
 
 .toolbar .toolbar-btn .tool-emoji,
@@ -898,6 +880,14 @@ canvas.pointer-events-disabled {
     height: 75%;
 }
 
+/* Road tool: same fixed size as the other monochrome icons (.tool-icon-img),
+   not the 75%-of-button relative sizing above, which made it look oversized
+   next to Kenney previews and other icon buttons in the same panel. */
+.panel-layout .panel-btn#StonePath-001 svg {
+    width: 24px;
+    height: 24px;
+}
+
 /* Kenney city-kit — official preview PNG on soft charcoal (no border/shadow) */
 .panel-layout .panel-btn.panel-btn--kenney-preview {
     padding: 6px;
@@ -973,19 +963,6 @@ canvas.pointer-events-disabled {
 .panel-layout .panel-inner #House-Blue.selected {
     box-shadow: none;
     background: var(--house-blue-color);
-    color: #fafafa;
-}
-
-.panel-layout .panel-inner #House-2Story {
-    background-color: #fafafa;
-    color: var(--house-big-color);
-    box-shadow: rgba(0, 0, 0, 0.12) 0px 1px 3px, rgba(0, 0, 0, 0.24) 0px 1px 2px;
-}
-
-.panel-layout .panel-inner #House-2Story:hover,
-.panel-layout .panel-inner #House-2Story.selected {
-    box-shadow: none;
-    background: var(--house-big-color);
     color: #fafafa;
 }
 
@@ -1401,6 +1378,10 @@ footer .footer-links a:hover {
     background: linear-gradient(135deg, #6a1b9a, #ab47bc);
 }
 
+.info-building-panel--administrators .info-building__header {
+    background: linear-gradient(135deg, #8d6e00, #f9a825);
+}
+
 .info-building__tabs {
     display: flex;
     gap: 0;
@@ -1505,6 +1486,35 @@ footer .footer-links a:hover {
     margin-bottom: 0;
 }
 
+/* "Problèmes" of a house: blocks side by side, the first with its two causes under it, smaller and side by side. */
+.building-info-problems__row {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+}
+
+.building-info-problems__block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.building-info-problems__causes {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+}
+
+.building-info-problems__cause {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: default;
+}
+
 .building-info-icon-chip {
     display: inline-flex;
     flex-direction: column;
@@ -1534,6 +1544,31 @@ footer .footer-links a:hover {
     text-transform: lowercase;
 }
 
+.building-info-icon-chip__emoji svg,
+.building-info-icon-chip__emoji .building-info-building-icon {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    color: #455a64;
+}
+
+.building-info-icon-chip--upcoming .building-info-icon-chip__emoji,
+.building-info-icon-chip--upcoming .building-info-icon-chip__label {
+    opacity: 0.6;
+}
+
+.building-info-icon-chip__level-pill {
+    margin-top: 4px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--level-color);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
 .building-info-icon-chip--compact .building-info-icon-chip__emoji {
     font-size: 24px;
 }
@@ -1554,6 +1589,10 @@ footer .footer-links a:hover {
     gap: 10px;
 }
 
+.building-info-metrics + .building-info-metrics {
+    margin-top: 10px;
+}
+
 .building-info-metric-card {
     display: flex;
     flex-direction: column;
@@ -1563,6 +1602,78 @@ footer .footer-links a:hover {
     border-radius: var(--border-radius-small);
     background: rgba(120, 144, 156, 0.08);
     text-align: center;
+}
+
+.building-info-metrics-detail {
+    margin-top: 12px;
+}
+
+/* The Enterprises tab of a house: one pill per business (its legal form), the panel of the picked one under them. */
+.enterprise-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.enterprise-pill {
+    padding: 4px 14px;
+    border: 1px solid rgba(120, 144, 156, 0.5);
+    border-radius: 999px;
+    background: transparent;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.enterprise-pill.is-active {
+    background: rgba(120, 144, 156, 0.2);
+    font-weight: 600;
+}
+
+.enterprise-tenant--owing .kv-value {
+    color: #cf3d2e;
+    font-weight: 600;
+}
+
+.building-info-activity-recipe {
+    margin-bottom: 24px;
+}
+
+.building-info-activity-recipe + .building-info-activity-recipe {
+    padding-top: 16px;
+    border-top: 1px solid rgba(120, 144, 156, 0.2);
+}
+
+.building-info-activity-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 24px;
+    margin-top: 12px;
+}
+
+/* One phase of the recipe (material, a step, the product, what was collected): its own cards sit close
+   together; it's the gap on .building-info-activity-row, between groups, that reads as "a different phase". */
+.building-info-activity-group {
+    display: flex;
+    gap: 6px;
+}
+
+.building-info-gap-warning {
+    color: #e6a817;
+    margin-bottom: 8px;
+}
+
+button.building-info-metric-card {
+    border: 2px solid transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+button.building-info-metric-card[aria-pressed="true"] {
+    border-color: var(--cta);
 }
 
 .building-info-metric-card--met {
@@ -1585,6 +1696,13 @@ footer .footer-links a:hover {
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     color: #1b1b1b;
+}
+
+.building-info-metric-card__detail {
+    font-size: 10px;
+    line-height: 1.2;
+    color: #78909c;
+    font-variant-numeric: tabular-nums;
 }
 
 .building-info-metric-card--met .building-info-metric-card__value {
@@ -1640,6 +1758,10 @@ footer .footer-links a:hover {
     justify-content: center;
     flex-wrap: wrap;
     gap: 28px 40px;
+}
+
+.building-info-services-row + .building-info-stock-group-label {
+    margin-top: 20px;
 }
 
 .building-info-service-item {
@@ -1722,6 +1844,763 @@ footer .footer-links a:hover {
     color: #78909c;
 }
 
+/* Flash keywords under an unmet need: why it was not met, and how many units (see houseInfoFormat.js). */
+.building-info-metric-card__keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.building-info-metric-card__keyword {
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.building-info-metric-card__keyword--shortage {
+    background: #fdecea;
+    color: #b71c1c;
+}
+
+.building-info-metric-card__keyword--unpaid {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+/* Products and receipts are green, payments and charges red: the sign alone is not enough to read a statement. */
+.building-finance-flow--income,
+.building-finance-flow--income th,
+.building-finance-flow--income td {
+    background: #e8f5e9;
+}
+
+.building-finance-flow--charge,
+.building-finance-flow--charge th,
+.building-finance-flow--charge td {
+    background: #fdecea;
+}
+
+.building-finance-table th.building-finance-flow--income {
+    color: #1b5e20;
+}
+
+.building-finance-table th.building-finance-flow--charge {
+    color: #8e2424;
+}
+
+/*
+ * The statement wears the journal's colours (the --pcg… tokens of journal.css, the families PcgJournalCatalog gives each account):
+ * a line is tinted by its family, with a stronger edge, and the small rows under it carry the family of their own movement, so a
+ * tax reads blue, a wage orange, a purchase red and a sale green wherever the player meets them.
+ */
+.building-finance-row[data-tone="capital"], .building-finance-row[data-tone="loan"] { --tone-bg: var(--pcg1-bg); --tone-fg: var(--pcg1-fg); }
+.building-finance-row[data-tone="tax-received"] { --tone-bg: var(--pcg4-bg); --tone-fg: var(--pcg4-fg); }
+.building-finance-row[data-tone="tax-paid"] { --tone-bg: var(--pcg4-bg); --tone-fg: var(--pcg4-paid-fg); }
+.building-finance-row[data-tone="purchase"] { --tone-bg: var(--pcg60-bg); --tone-fg: var(--pcg60-fg); }
+.building-finance-row[data-tone="external"] { --tone-bg: var(--pcg6x-bg); --tone-fg: var(--pcg6x-fg); }
+.building-finance-row[data-tone="personnel"] { --tone-bg: var(--pcg64-bg); --tone-fg: var(--pcg64-fg); }
+.building-finance-row[data-tone="financial"], .building-finance-row[data-tone="subsidy-given"] { --tone-bg: var(--pcg65-bg); --tone-fg: var(--pcg65-fg); }
+.building-finance-row[data-tone="sales"] { --tone-bg: var(--pcg70-bg); --tone-fg: var(--pcg70-fg); }
+.building-finance-row[data-tone="subsidy-received"] { --tone-bg: var(--pcg74-bg); --tone-fg: var(--pcg74-fg); }
+
+/* The family shows as a small pill (the account numbers), never as a coloured row: the rows stay white, the pill carries the colour. */
+.building-finance-pill {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 9px;
+    border-radius: 999px;
+    background: var(--tone-bg);
+    color: var(--tone-fg);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* Habitants tab: one line per citizen, in a list that scrolls. */
+.house-residents-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+    font-size: 14px;
+}
+
+.house-residents-item {
+    padding: 6px 8px;
+    border-bottom: 1px solid #eceff1;
+    color: #424242;
+}
+
+.house-residents-name {
+    font-weight: 700;
+    color: #111;
+}
+
+.house-residents-item--civil_servant .house-residents-place {
+    color: #1565c0;
+}
+
+.house-residents-item--unemployed .house-residents-place {
+    color: #8e2424;
+}
+
+/* Finances tab: one analytical statement per account (see buildingFinanceInfoView.js); a house has two accounts. */
+.building-finance-accounts {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.building-finance-account-tab {
+    padding: 6px 12px;
+    border: 1px solid #ff9800;
+    background: #fff;
+    color: #e65100;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.building-finance-account-tab.active {
+    background: #ff9800;
+    color: #fff;
+}
+
+.building-finance-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+}
+
+.building-finance-table th,
+.building-finance-table td {
+    padding: 8px;
+    border-bottom: 1px solid #eceff1;
+}
+
+.building-finance-table thead th {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #78909c;
+    text-align: right;
+}
+
+.building-finance-table thead th:first-child,
+.building-finance-table tbody th {
+    text-align: left;
+}
+
+.building-finance-table tbody th {
+    font-weight: 600;
+    color: #424242;
+}
+
+.building-finance-table td {
+    text-align: right;
+    white-space: nowrap;
+    font-weight: 600;
+    color: #111;
+}
+
+.building-finance-table td.is-negative {
+    color: #c62828;
+}
+
+.building-finance-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.building-finance-pills {
+    display: flex;
+    gap: 6px;
+}
+
+/* The Finances board of the administrator: its views (budget, compte de résultat, bilan, balance) are switched by pills; a hidden view takes no room. */
+#finances-board [data-finances-view][hidden] {
+    display: none !important;
+}
+
+.finances-toolbar .building-finance-pills {
+    flex-wrap: wrap;
+}
+
+.city-statements-heading {
+    margin: 12px 0 6px;
+    font-size: 14px;
+}
+
+/* The months of the year so far, above the account: one pill each, the open one lit. */
+.building-finance-months {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.building-finance-months .building-finance-pill-tab {
+    min-width: 28px;
+    padding: 3px 8px;
+}
+
+.building-finance-pill-tab,
+.building-finance-download {
+    padding: 4px 14px;
+    border: 1px solid #ced4da;
+    border-radius: 999px;
+    background: #f1f3f5;
+    color: #495057;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* The year pill is told apart from the month pills by its colour. */
+.building-finance-pill-year {
+    background: #e8f0fe;
+    border-color: #90a4d4;
+    color: #1a3a8a;
+}
+
+.building-finance-pill-tab.building-finance-pill-year.is-active {
+    background: #dbe7ff;
+    border-color: #1a56db;
+    color: #0b2a6f;
+}
+
+.building-finance-pill-tab:hover,
+.building-finance-download:hover {
+    background: #e3e7ea;
+}
+
+.building-finance-pill-tab.is-active {
+    background: #fff3e0;
+    border-color: #fb8c00;
+    color: #e65100;
+}
+
+.building-finance-hint {
+    display: block;
+    margin-top: 1px;
+    font-size: 10.5px;
+    font-weight: 400;
+    color: #90a4ae;
+}
+
+.building-finance-toggle {
+    display: block;
+    margin: 0 0 6px auto;
+    padding: 3px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 999px;
+    background: #f1f3f5;
+    color: #495057;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.building-finance-toggle:hover {
+    background: #e3e7ea;
+}
+
+/* A household's purchase line opens the table of its purchases; the table has a way back. */
+.building-finance-detail-link,
+.building-finance-back {
+    padding: 0;
+    border: none;
+    background: none;
+    color: #1a56db;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.building-finance-detail-link:hover,
+.building-finance-back:hover {
+    text-decoration: underline;
+}
+
+.building-finance-back {
+    display: block;
+    margin: 0 0 6px;
+    font-size: 12px;
+}
+
+/* What a line is made of: small grey rows under it, indented. */
+.building-finance-row--item th,
+.building-finance-row--item td {
+    padding-top: 0;
+    padding-bottom: 2px;
+    font-size: 10px;
+    font-weight: 400;
+    color: #868e96;
+}
+
+.building-finance-row--item th {
+    padding-left: 22px;
+}
+
+.building-finance-row--subtotal th,
+.building-finance-row--subtotal td {
+    font-weight: 700;
+    border-top: 1px solid #90a4ae;
+}
+
+.building-finance-row--total th,
+.building-finance-row--total td {
+    font-weight: 800;
+    border-top: 2px solid #ff9800;
+}
+
+.building-finance-row--rate th,
+.building-finance-row--rate td {
+    font-size: 12px;
+    font-style: italic;
+    font-weight: 500;
+    color: #78909c;
+}
+
+.building-finance-row--section th {
+    padding-top: 14px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #546e7a;
+    border-bottom: 1px solid #cfd8dc;
+}
+
+.building-finance-row--section:first-child th {
+    padding-top: 8px;
+}
+
+.building-finance-row--indicator th,
+.building-finance-row--indicator td {
+    font-size: 12px;
+    font-style: italic;
+    font-weight: 500;
+    color: #78909c;
+    border-top: 1px dashed #cfd8dc;
+}
+
+/*
+ * Reading order of the statement, less is more: white rows on one calm surface (Material-style card), generous spacing instead of
+ * rules, one hairline between lines, colour only in the pills and in the section captions. These come last so they win over the plain
+ * row rules above (which also tint the income/charge rows: switched off here).
+ */
+.building-finance-statement {
+    padding: 8px 16px 12px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.building-finance-table .building-finance-row,
+.building-finance-table .building-finance-row th,
+.building-finance-table .building-finance-row td {
+    background: transparent;
+    border-bottom: none;
+}
+
+/* A category caption: small, spaced capitals, in the colour of its side (products green, charges red), no rule. */
+.building-finance-table .building-finance-row--section th {
+    padding: 26px 8px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #78909c;
+}
+
+.building-finance-table .building-finance-row--section.building-finance-flow--income th { color: #2e7d32; }
+.building-finance-table .building-finance-row--section.building-finance-flow--charge th { color: #c62828; }
+
+/* A line: regular weight label with its pill, a medium amount; a hairline separates it from the next group. */
+.building-finance-table .building-finance-row--line th,
+.building-finance-table .building-finance-row--line td {
+    padding-top: 10px;
+    padding-bottom: 4px;
+    color: #263238;
+    font-weight: 600;
+}
+
+.building-finance-table .building-finance-row--line th { font-weight: 500; }
+
+/* What it is made of: light and tight under its line, the family only as a thin tick before the words. */
+.building-finance-table .building-finance-row--item th,
+.building-finance-table .building-finance-row--item td {
+    padding-top: 0;
+    padding-bottom: 3px;
+    font-size: 11px;
+    font-weight: 400;
+    color: #78909c;
+}
+
+.building-finance-table .building-finance-row--item th {
+    padding-left: 24px;
+    border-left: 2px solid var(--tone-fg);
+}
+
+.building-finance-table .building-finance-row--item + .building-finance-row--line th,
+.building-finance-table .building-finance-row--item + .building-finance-row--line td,
+.building-finance-table .building-finance-row--line + .building-finance-row--line th,
+.building-finance-table .building-finance-row--line + .building-finance-row--line td {
+    border-top: 1px solid #eceff1;
+}
+
+/* Subtotals and results: weight and a single rule, no fill; the net result is the one large figure. */
+.building-finance-table .building-finance-row--subtotal th,
+.building-finance-table .building-finance-row--subtotal td {
+    padding-top: 12px;
+    padding-bottom: 8px;
+    font-weight: 700;
+    color: #37474f;
+    border-top: 1px solid #cfd8dc;
+}
+
+.building-finance-table .building-finance-row--total th,
+.building-finance-table .building-finance-row--total td {
+    padding-top: 14px;
+    padding-bottom: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #263238;
+    border-top: 1px solid #cfd8dc;
+}
+
+.building-finance-table .building-finance-row--total td.is-negative { color: #c62828; }
+
+/* Prices section: a card per good, a bar of what each step adds, and the steps in a table (colours = the journal's families). */
+.price-card {
+    margin: 0 0 14px;
+    padding: 12px 16px 10px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.price-card-title {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #263238;
+}
+
+.price-card-origin {
+    margin-left: 10px;
+    background: #e3f2fd;
+    color: #0d47a1;
+}
+
+.price-bar {
+    display: flex;
+    gap: 2px;
+    height: 12px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.price-bar-segment {
+    flex-basis: 0;
+    min-width: 3px;
+}
+
+.price-bar-segment[data-step="neutral"] { background: #b0bec5; }
+.price-bar-segment[data-step="sales"] { background: var(--pcg70-fg); }
+.price-bar-segment[data-step="external"] { background: var(--pcg6x-fg); }
+.price-bar-segment[data-step="tax-paid"] { background: var(--pcg4-paid-fg); }
+.price-bar-segment[data-step="personnel"] { background: var(--pcg64-fg); }
+.price-bar-segment[data-step="purchase"] { background: var(--pcg60-fg); }
+
+/* Wages section: a row per skill and level, the market's pill in the colour family of what it says. */
+.wage-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+.wage-table th,
+.wage-table td {
+    padding: 6px 8px;
+    text-align: right;
+    font-weight: 500;
+    color: #37474f;
+    white-space: nowrap;
+}
+
+.wage-table thead th {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #78909c;
+}
+
+.wage-table th:first-child,
+.wage-table td:first-child {
+    text-align: left;
+}
+
+.wage-table tbody tr + tr th,
+.wage-table tbody tr + tr td {
+    border-top: 1px solid #eceff1;
+}
+
+.wage-table td.wage-amount {
+    font-weight: 700;
+}
+
+.wage-table tr[data-tone="external"] td:last-child .building-finance-pill { background: var(--pcg6x-bg); color: var(--pcg6x-fg); }
+.wage-table tr[data-tone="tax-paid"] td:last-child .building-finance-pill { background: var(--pcg4-bg); color: var(--pcg4-paid-fg); }
+.wage-table tr[data-tone="sales"] td:last-child .building-finance-pill { background: var(--pcg70-bg); color: var(--pcg70-fg); }
+
+.wage-level {
+    background: #eceff1;
+    color: #546e7a;
+}
+
+.wage-trend.is-up { color: var(--pcg70-fg); font-weight: 600; }
+.wage-trend.is-down { color: var(--pcg60-fg); font-weight: 600; }
+
+.price-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+}
+
+.price-table th,
+.price-table td {
+    padding: 3px 8px;
+    font-weight: 500;
+    color: #37474f;
+    text-align: left;
+}
+
+.price-table td {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.price-table td.price-amount {
+    color: #78909c;
+}
+
+.price-table td.price-total {
+    font-weight: 700;
+}
+
+.price-table tr[data-step="tax-paid"] th,
+.price-table tr[data-step="tax-paid"] td.price-amount {
+    color: var(--pcg4-paid-fg);
+}
+
+.building-finance-cash-details {
+    margin: 2px 8px 10px;
+    font-size: 12px;
+    color: #78909c;
+}
+
+.building-finance-cash-details summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.building-finance-cash-list {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+}
+
+.building-finance-cash-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 3px 0 3px 10px;
+    border-left: 2px solid var(--tone-fg);
+}
+
+.building-finance-cash-list strong {
+    font-weight: 600;
+    color: #37474f;
+}
+
+.building-finance-cash-list strong.is-negative {
+    color: #c62828;
+}
+
+.building-finance-cash {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 8px;
+    font-size: 14px;
+    color: #424242;
+    font-weight: 600;
+}
+
+.building-finance-cash strong {
+    color: #111;
+    font-weight: 700;
+}
+
+.building-finance-note {
+    margin: 8px 8px 0;
+    font-size: 12px;
+    font-style: italic;
+    color: #78909c;
+}
+
+.account-ledger-table {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.account-ledger-amount {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.account-ledger-row--total td {
+    font-weight: 700;
+    border-top: 2px solid #cfd8dc;
+}
+
+.account-ledger-account {
+    margin-bottom: 8px;
+}
+
+.account-ledger-account summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.account-ledger-balance {
+    margin-left: 12px;
+    font-weight: 400;
+    color: #78909c;
+}
+
+.balance-sheet-table {
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.balance-sheet-table th[scope="row"] {
+    font-weight: 400;
+    text-align: left;
+}
+
+/* The title of a table (Actif, Passif, Charges, Produits): darker and larger than the column heads of the other statements, so each side reads as one block. */
+.balance-sheet-table thead th {
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    color: #263238;
+}
+
+/* A big section (a family of the balance sheet, a section of the compte de résultat): bold, set apart by a little room above it. */
+.balance-sheet-table .balance-sheet-row--section th[scope="row"],
+.balance-sheet-table .balance-sheet-row--section td {
+    padding-top: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #263238;
+}
+
+.balance-sheet-amount {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The accounts wear the journal's colours (the --pcg… tokens, the families PcgJournalCatalog gives each account): their number is a small pill in the colour of its
+ * family (.building-finance-pill, which reads --tone-bg and --tone-fg from the row). The rows stay white and the figures stay dark, so the colour tells the accounts
+ * apart without weighing on the reading.
+ */
+.balance-sheet-row[data-tone="capital"], .balance-sheet-row[data-tone="loan"] { --tone-bg: var(--pcg1-bg); --tone-fg: var(--pcg1-fg); }
+.balance-sheet-row[data-tone="loan-repayment"] { --tone-bg: var(--pcg1-alt-bg); --tone-fg: var(--pcg1-alt-fg); }
+.balance-sheet-row[data-tone="fixed-asset"] { --tone-bg: var(--pcg2-bg); --tone-fg: var(--pcg2-fg); }
+.balance-sheet-row[data-tone="tax-received"] { --tone-bg: var(--pcg4-bg); --tone-fg: var(--pcg4-fg); }
+.balance-sheet-row[data-tone="tax-paid"] { --tone-bg: var(--pcg4-paid-bg); --tone-fg: var(--pcg4-paid-fg); }
+.balance-sheet-row[data-tone="treasury"] { --tone-bg: var(--pcg5-bg); --tone-fg: var(--pcg5-fg); }
+.balance-sheet-row[data-tone="purchase"] { --tone-bg: var(--pcg60-bg); --tone-fg: var(--pcg60-fg); }
+.balance-sheet-row[data-tone="external"] { --tone-bg: var(--pcg6x-bg); --tone-fg: var(--pcg6x-fg); }
+.balance-sheet-row[data-tone="personnel"] { --tone-bg: var(--pcg64-bg); --tone-fg: var(--pcg64-fg); }
+.balance-sheet-row[data-tone="financial"], .balance-sheet-row[data-tone="subsidy-given"] { --tone-bg: var(--pcg65-bg); --tone-fg: var(--pcg65-fg); }
+.balance-sheet-row[data-tone="sales"] { --tone-bg: var(--pcg70-bg); --tone-fg: var(--pcg70-fg); }
+.balance-sheet-row[data-tone="subsidy-received"] { --tone-bg: var(--pcg74-bg); --tone-fg: var(--pcg74-fg); }
+
+.balance-sheet-row--detail th {
+    padding-left: 24px;
+    font-size: 12px;
+    color: #78909c;
+}
+
+.balance-sheet-row--detail .balance-sheet-amount {
+    font-size: 12px;
+    color: #78909c;
+}
+
+.balance-sheet-row--subtotal th,
+.balance-sheet-row--subtotal td,
+.balance-sheet-row--total th,
+.balance-sheet-row--total td {
+    font-weight: 700;
+}
+
+.balance-sheet-row--total {
+    border-top: 2px solid #cfd8dc;
+}
+
+.building-finance-deposit-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 6px 8px;
+}
+
+.building-finance-deposit-amount {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 8px;
+    border: 1px solid #cfd8dc;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.building-finance-deposit-btn {
+    padding: 6px 12px;
+    border: 1px solid #ff9800;
+    background: #fff;
+    color: #e65100;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.building-finance-deposit-btn:hover {
+    background: #ff9800;
+    color: #fff;
+}
+
 .building-info-messages-empty {
     margin: 0;
     font-size: 14px;
@@ -1751,7 +2630,7 @@ footer .footer-links a:hover {
 
 /* Hub storage panel (barn / windmill) */
 .info-building-overlay--hub-barn .info-building-panel,
-.info-building-overlay--hub-windmill .info-building-panel {
+.info-building-overlay--hub .info-building-panel {
     max-height: min(78vh, 780px);
 }
 
@@ -1781,65 +2660,11 @@ footer .footer-links a:hover {
     color: #495057;
 }
 
-.hub-stock-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-}
-
-.hub-stock-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 72px;
-    padding: 8px 6px;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    background: #fff;
-    text-align: center;
-}
-
-.hub-stock-item--empty {
-    opacity: 0.55;
-}
-
-.hub-stock-item--refused {
-    border-color: #ffc9c9;
-    background: #fff5f5;
-}
-
-.hub-stock-emoji {
-    font-size: 22px;
-    line-height: 1.1;
-}
-
-.hub-stock-qty {
-    font-weight: 700;
-    font-size: 14px;
-    margin-top: 4px;
-}
-
-.hub-stock-label {
-    font-size: 11px;
-    color: #6c757d;
-    margin-top: 2px;
-}
-
-.hub-info-actions {
-    display: flex;
-    justify-content: center;
-}
-
 .hub-orders-panel {
     border: 1px solid #e9ecef;
     border-radius: 8px;
     padding: 10px 12px;
     background: #fafafa;
-}
-
-.hub-orders-panel.hidden {
-    display: none;
 }
 
 .hub-orders-title {
@@ -1851,16 +2676,6 @@ footer .footer-links a:hover {
     margin: 0 0 10px;
     font-size: 12px;
     color: #6c757d;
-}
-
-.hub-orders-toggle-btn {
-    background: linear-gradient(135deg, #ff9800, #ffb74d);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 18px;
-    font-weight: 600;
-    cursor: pointer;
 }
 
 .hub-orders-c3-list {
@@ -1916,6 +2731,18 @@ footer .footer-links a:hover {
     color: #c62828;
 }
 
+.hub-order-mode-btn--empty {
+    background: #fff3e0;
+    border-color: #ffcc80;
+    color: #e65100;
+}
+
+.hub-order-emptying {
+    margin-left: 6px;
+    font-size: 14px;
+    cursor: help;
+}
+
 .hub-order-mode-btn--fetch {
     background: #e3f2fd;
     border-color: #90caf9;
@@ -1947,11 +2774,6 @@ footer .footer-links a:hover {
     font-variant-numeric: tabular-nums;
 }
 
-.hub-stock-item--fetch {
-    border-color: #90caf9;
-    background: #f3f9ff;
-}
-
 .hub-storage-chart-section {
     border: 1px solid #e9ecef;
     border-radius: 8px;
@@ -1964,6 +2786,70 @@ footer .footer-links a:hover {
     font-size: 14px;
     font-weight: 600;
     text-align: center;
+}
+
+.hub-flow-tabs {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+.hub-flow-tab {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-weight: 600;
+    background: #f1f3f5;
+    color: #495057;
+    cursor: pointer;
+}
+
+.hub-flow-tab:hover:not(.is-active) {
+    background: #e3e7ea;
+    border-color: #ced4da;
+}
+
+.hub-flow-tab:focus-visible {
+    outline: 2px solid #495057;
+    outline-offset: 2px;
+}
+
+.hub-flow-tab--export.is-active {
+    background: #fff3e0;
+    border-color: #fb8c00;
+    color: #e65100;
+}
+
+.hub-flow-tab--importDeals.is-active {
+    background: #e3f2fd;
+    border-color: #1e88e5;
+    color: #0d47a1;
+}
+
+.hub-flow-tab--import.is-active {
+    background: #e0f2f1;
+    border-color: #00897b;
+    color: #00695c;
+}
+
+/* The two flows of a trade warehouse read apart: the chart's frame takes its flow's colour. */
+.hub-storage-chart-section--export {
+    border-top: 3px solid #fb8c00;
+    padding-top: 8px;
+}
+
+.hub-storage-chart-section--importDeals {
+    border-top: 3px solid #1e88e5;
+    padding-top: 8px;
+}
+
+.hub-storage-chart-section--import {
+    border-top: 3px solid #00897b;
+    padding-top: 8px;
+}
+
+.hub-pie-legend-item--elsewhere {
+    color: #78909c;
 }
 
 .hub-pie-chart {
@@ -2003,6 +2889,12 @@ footer .footer-links a:hover {
     align-items: center;
     gap: 8px;
     font-size: 12px;
+}
+
+.hub-pie-legend-item--origin {
+    padding-left: 18px;
+    font-size: 12px;
+    opacity: 0.85;
 }
 
 .hub-pie-legend-item--over {
@@ -2251,8 +3143,6 @@ footer .footer-links a:hover {
     /* HUD layout overrides live in hud.css */
 
     /* Ajuster les modales pour mobile */
-    .bilan-panel,
-    .compte-de-resultat-panel,
     .loans-panel,
     .journal-panel,
     .tutorial-panel,

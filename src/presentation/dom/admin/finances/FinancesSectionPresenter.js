@@ -1,4 +1,13 @@
-import { renderCityLedger } from '../../compta/livret/CityLedgerPresenter.js';
+import { listHamlets } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { renderCityLedger, renderCityLedgerMessage } from '../../compta/livret/CityLedgerPresenter.js';
+import { renderBalanceSheet, renderIncomeStatement, renderTrialBalance } from '../../compta/cityStatements/CityStatementsPresenter.js';
+import { getSessionGameTime } from '../../../../composition/sessionRuntime.js';
+import { TimeManager } from '../../../../shared/time/TimeManager.js';
+import { buildingName } from '../../shell/CatalogVocabulary.js';
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
+
+
+const ALL_HAMLETS_VALUE = 'all';
 
 export class FinancesSectionPresenter {
   /**
@@ -6,82 +15,199 @@ export class FinancesSectionPresenter {
    */
   constructor(deps) {
     this.accounting = deps.accounting;
-    this.citizenTaxAmount = this.accounting?.getCitizenTaxPerCapita?.() ?? 0;
     this.financialData = null;
   }
 
+  /** The hamlet chosen in the budget dropdown, or null for the whole city. */
+  selectedHamletId() {
+    const value = document.getElementById('finances-hamlet-filter').value;
+    return value === ALL_HAMLETS_VALUE ? null : value;
+  }
+
+  async populateHamletFilter() {
+    const select = document.getElementById('finances-hamlet-filter');
+    const hamlets = await listHamlets();
+    const previous = select.value;
+    // Rebuilt only when the hamlets change: the board refreshes every turn, and a rebuilt list would close the menu.
+    const expected = [ALL_HAMLETS_VALUE, ...hamlets.map((hamlet) => hamlet.id)];
+    const current = [...select.options].map((option) => option.value);
+    if (current.length !== expected.length || current.some((value, index) => value !== expected[index])) {
+      select.replaceChildren(
+        new Option('Tous les hameaux', ALL_HAMLETS_VALUE),
+        ...hamlets.map((hamlet) => new Option(hamlet.name, hamlet.id))
+      );
+    }
+    select.value = hamlets.some((hamlet) => hamlet.id === previous) ? previous : ALL_HAMLETS_VALUE;
+
+    if (!this._hamletFilterBound) {
+      select.addEventListener('change', () => this.loadFinancialData());
+      this._hamletFilterBound = true;
+    }
+  }
+
   init() {
-    this.setupEventListeners();
     this.loadFinancialData();
   }
 
-  setupEventListeners() {
-    const taxDecreaseBtn = document.getElementById('tax-decrease-btn');
-    const taxIncreaseBtn = document.getElementById('tax-increase-btn');
-
-    const handleTaxDecrease = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.adjustCitizenTaxAmount(-10);
-    };
-
-    const handleTaxIncrease = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      this.adjustCitizenTaxAmount(10);
-    };
-
-    if (taxDecreaseBtn) {
-      taxDecreaseBtn.removeEventListener('click', this._handleTaxDecrease);
-      this._handleTaxDecrease = handleTaxDecrease;
-      taxDecreaseBtn.addEventListener('click', this._handleTaxDecrease);
+  /** The pills that switch the view of the board, and the button that downloads every view in one JSON file. Bound once. */
+  bindToolbar() {
+    if (this._toolbarBound) return;
+    this._toolbarBound = true;
+    this.view = 'budget';
+    for (const pill of document.querySelectorAll('#finances-board [data-finances-pill]')) {
+      pill.addEventListener('click', () => this.showView(pill.dataset.financesPill));
     }
+    document.getElementById('finances-download')?.addEventListener('click', () => this.downloadAllViews());
+    this.showView(this.view);
+  }
 
-    if (taxIncreaseBtn) {
-      taxIncreaseBtn.removeEventListener('click', this._handleTaxIncrease);
-      this._handleTaxIncrease = handleTaxIncrease;
-      taxIncreaseBtn.addEventListener('click', this._handleTaxIncrease);
+  /**
+   * Shows one view of the board (the Caesar-style budget, the compte de résultat, the balance sheet, the balance) and hides the others.
+   * @param {'budget' | 'result' | 'balance' | 'trial'} view
+   */
+  showView(view) {
+    this.view = view;
+    for (const pill of document.querySelectorAll('#finances-board [data-finances-pill]')) {
+      pill.classList.toggle('is-active', pill.dataset.financesPill === view);
     }
+    for (const part of document.querySelectorAll('#finances-board [data-finances-view]')) {
+      part.hidden = part.dataset.financesView !== view;
+    }
+  }
 
-    this.updateTaxDisplay();
+  /**
+   * Downloads every view of the board (budget, compte de résultat, bilan, balance) of the chosen hamlet, or of the whole city, as one JSON file. The real date only
+   * stamps the file name, so two downloads never collide (the game's own dates are turns).
+   */
+  async downloadAllViews() {
+    try {
+      const data = await this.accounting.exportCityFinances({ hamletId: this.selectedHamletId() });
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `finances-${this.selectedHamletId() === null ? 'ville' : 'hameau'}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error('[FinancesSection] export failed:', error);
+      alert(`Export impossible : ${error.message}`);
+    }
   }
 
   async loadFinancialData() {
-    this.setupEventListeners();
+    this.bindToolbar();
+    // Loads can overlap (a turn while the hamlet changes): only the latest one may render.
+    const load = (this._latestLoad = (this._latestLoad ?? 0) + 1);
+    this.showLoading();
+
+    await this.populateHamletFilter();
 
     try {
-      this.financialData = await this.accounting.getCityLedgerYearComparison();
+      const financialData = await this.accounting.getCityLedgerYearComparison({
+        hamletId: this.selectedHamletId(),
+      });
+      if (load !== this._latestLoad) return;
+      this.financialData = financialData;
       this.render();
+      await this.loadCityStatements(load);
     } catch (error) {
       console.error('[FinancesSection] Error loading financial data:', error);
-      this.renderStaticData();
+      this.showError(`Budget indisponible : ${error.message}`);
+      throw error;
+    }
+
+    await this.loadProducerRanking();
+  }
+
+  /**
+   * The city's compte de résultat, balance sheet and balance (M57), read from the same journal, each in its own view of the board. A failure is shown in the views
+   * themselves, never as figures of zero.
+   * @param {number} load the load this belongs to: only the latest one may render
+   */
+  async loadCityStatements(load) {
+    const views = {
+      result: [document.getElementById('finances-view-result'), renderIncomeStatement],
+      balance: [document.getElementById('finances-view-balance'), renderBalanceSheet],
+      trial: [document.getElementById('finances-view-trial'), renderTrialBalance],
+    };
+    try {
+      const statements = await this.accounting.getCityStatements({ hamletId: this.selectedHamletId() });
+      if (load !== this._latestLoad) return;
+      for (const [container, render] of Object.values(views)) container?.replaceChildren(...render(statements));
+    } catch (error) {
+      console.error('[FinancesSection] Error loading the city statements:', error);
+      for (const [container] of Object.values(views)) {
+        const message = document.createElement('p');
+        message.textContent = `Comptes de la ville indisponibles : ${error.message}`;
+        container?.replaceChildren(message);
+      }
     }
   }
+
+  /**
+   * The last fully settled month's producer ranking: goods sold to houses (dated by delivery) and services sold to
+   * houses (dated by their settlement, the 1st of this same month, for the month before). See the panel's own note
+   * for why a service's sale lags a good's by one extra month under the same label.
+   */
+  async loadProducerRanking() {
+    const period = this.#lastSettledMonth();
+    const periodLabel = document.getElementById('producer-ranking-period');
+    const body = document.getElementById('producer-ranking-body');
+    if (!body) return;
+
+    if (!period) {
+      // The very first month of the game: no month has closed yet, so there is nothing to rank.
+      if (periodLabel) periodLabel.textContent = '';
+      body.replaceChildren(emptyRankingRow('Pas encore de mois révolu.'));
+      return;
+    }
+
+    if (periodLabel) periodLabel.textContent = `${TimeManager.MONTHS[period.monthIndex]} ${period.year}`;
+    body.replaceChildren(emptyRankingRow('…'));
+
+    try {
+      const rankings = await this.accounting.getProducerRevenues(period.year, period.monthIndex);
+      if (rankings.length === 0) {
+        body.replaceChildren(emptyRankingRow('Aucune vente aux maisons ce mois-là.'));
+      } else {
+        body.replaceChildren(...rankings.map((entry, index) => rankingRow(index + 1, entry)));
+      }
+    } catch (error) {
+      console.error('[FinancesSection] Error loading the producer ranking:', error);
+      body.replaceChildren(emptyRankingRow(`Classement indisponible : ${error.message}`));
+    }
+  }
+
+  /**
+   * The month before the current one — the current month's own lines are still open (see loadProducerRanking).
+   * Null in the game's very first month (year 0, January): there is no earlier month to show.
+   */
+  #lastSettledMonth() {
+    const now = TimeManager.getTimeInfo(getSessionGameTime());
+    if (now.year === 0 && now.monthIndex === 0) return null;
+    return now.monthIndex === 0
+      ? { year: now.year - 1, monthIndex: TimeManager.MONTHS.length - 1 }
+      : { year: now.year, monthIndex: now.monthIndex - 1 };
+  }
+
+  /** Until the journal is read, no figure is shown: each one reads "…", never a stale or a zero value. */
+  showLoading() {
+    for (const cell of document.querySelectorAll('#finances-board [data-field]')) {
+      cell.textContent = '…';
+    }
+    renderCityLedgerMessage({ text: 'Chargement du budget…', type: 'info' });
+  }
+
+  /** Loud, visible error in the budget panel itself (the table is left untouched, never blanked to zeros). */
+  showError(text) {
+    renderCityLedgerMessage({ text, type: 'danger' });
+  }
+
 
   getEmptyYearData(year) {
     return this.accounting.createEmptyCityLedgerYearLines(year);
-  }
-
-  adjustCitizenTaxAmount(delta) {
-    const newAmount = Math.max(0, Math.min(1000, this.citizenTaxAmount + delta));
-
-    if (newAmount !== this.citizenTaxAmount) {
-      this.citizenTaxAmount = this.accounting.setCitizenTaxPerCapita(newAmount);
-      this.updateTaxDisplay();
-    }
-  }
-
-  updateTaxDisplay() {
-    const taxRateDisplay = document.getElementById('tax-rate-display');
-    const taxEstimate = document.getElementById('tax-estimate');
-
-    if (taxRateDisplay) {
-      taxRateDisplay.textContent = this.citizenTaxAmount;
-    }
-
-    if (taxEstimate) {
-      taxEstimate.textContent = `${this.citizenTaxAmount}€ par citoyen`;
-    }
   }
 
   render() {
@@ -91,7 +217,6 @@ export class FinancesSectionPresenter {
     }
 
     renderCityLedger(this.financialData);
-    this.updateTaxDisplay();
   }
 
   renderStaticData() {
@@ -109,4 +234,31 @@ export class FinancesSectionPresenter {
     this.financialData = staticData;
     this.render();
   }
+}
+
+/** @param {number} rank @param {{ buildingType: string, revenueHT: number }} entry */
+function rankingRow(rank, entry) {
+  const row = document.createElement('tr');
+  const rankCell = document.createElement('td');
+  rankCell.className = 'producer-ranking-rank-col';
+  rankCell.textContent = String(rank);
+  const nameCell = document.createElement('td');
+  nameCell.className = 'producer-ranking-name-col';
+  nameCell.textContent = buildingName(entry.buildingType);
+  const revenueCell = document.createElement('td');
+  revenueCell.className = 'producer-ranking-revenue-col';
+  revenueCell.textContent = formatEuro(entry.revenueHT);
+  row.append(rankCell, nameCell, revenueCell);
+  return row;
+}
+
+/** @param {string} text */
+function emptyRankingRow(text) {
+  const row = document.createElement('tr');
+  const cell = document.createElement('td');
+  cell.colSpan = 3;
+  cell.className = 'producer-ranking-empty';
+  cell.textContent = text;
+  row.append(cell);
+  return row;
 }

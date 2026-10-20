@@ -21,7 +21,7 @@
  * @typedef {object} BuildingInfoLayoutOptions
  * @property {BuildingInfoPanelLayoutMode} [layout]
  * @property {string | null} [accent]
- * @property {'barn' | 'windmill' | null} [hubOverlayMode]
+ * @property {'barn' | 'hub' | null} [hubOverlayMode]
  */
 
 /**
@@ -75,14 +75,24 @@
  * @property {number} houseLevel
  * @property {object | null} lastConsumption
  * @property {object} employment
+ * @property {object | null} [employmentSummary] The city's employment, fetched only for an understaffed workplace: it says why the post stays empty.
  * @property {object} supply
  * @property {object} accounting
  * @property {object} construction
  * @property {number} [currentYear]
- * @property {'windmill' | null} [hubKind]
+ * @property {'hub' | null} [hubKind]
  * @property {object | null} [hubView]
+ * @property {((monthsAhead: number) => object) | null} [hubTimeContextAhead] Calendar from now (Supply time context per month), to date the hub's next harvest
  * @property {Record<string, number> | null} [servedFlags] House group only — see HouseLevelPolicy.describeRelevantServiceCoverage.
  * @property {number | null} [periodKey] House group only — current month index, paired with servedFlags.
+ * @property {Record<string, object | null>} [outcomes] House group only — the latest record of each need the house consumes, by its outcomeField (water, energy, goods).
+ * @property {boolean} [activityAccess] House group only — a warehouse is within reach of the house's business.
+ * @property {ReadonlyArray<{ status: string, workplaceType: string | null }> | null} [residents] House group only — who works where (accounting.getHouseResidents); null when it could not be read.
+ * @property {ReadonlyArray<{ skill: string, level: number, vacancies: number }> | null} [labourVacancies] House group only — the vacant posts of the last distribution of workers; null before any.
+ * @property {{ months: number, graceMonths: number, display: { icon: string, label: string }, debts: ReadonlyArray<{ label: string, amount: number }> } | null} [insolvency]
+ *   A company (or a house's business): what it owes and has not paid, and for how many months in a row — see accounting.getInsolvency; null for a building that is no company.
+ * @property {ReadonlyArray<{ category: string, inputCategory: string, role: string, status: 'no-hub' | 'no-supplier' }>} [activitySupplyGaps]
+ *   House and farm groups only — see DescribeActivitySupplyAccess.js.
  */
 
 /**
@@ -111,6 +121,7 @@ export function createBuildingInfoViewModel(params) {
     supplyView,
     stocks,
     employment,
+    employmentSummary = null,
     supply,
     accounting,
     construction,
@@ -132,6 +143,7 @@ export function createBuildingInfoViewModel(params) {
     houseLevel: Number.isFinite(buildingRow?.level) && buildingRow.level >= 1 ? Math.floor(buildingRow.level) : 1,
     lastConsumption: buildingRow?.lastConsumption ?? null,
     employment,
+    employmentSummary,
     supply,
     accounting,
     construction,

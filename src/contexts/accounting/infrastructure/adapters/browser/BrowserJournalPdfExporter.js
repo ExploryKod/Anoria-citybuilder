@@ -1,8 +1,9 @@
 import {
-  filterJournalEntriesForPdfExport,
   isJournalIncomeType,
 } from '../../../domain/policies/JournalExportFilterPolicy.js';
 import { journalEntryTypeLabel } from '../../../presentation/JournalExportViewModel.js';
+import { TimeManager } from '../../../../../shared/time/TimeManager.js';
+import { formatEuro } from '../../../presentation/formatMoney.js';
 
 /**
  * Browser infrastructure — renders journal export PDF via jsPDF (CDN).
@@ -83,14 +84,14 @@ export class BrowserJournalPdfExporter {
       yPosition += lineHeight;
 
       doc.setFont(undefined, 'normal');
-      doc.text(`Revenus: ${yearData.income.total}€`, margin + 5, yPosition);
+      doc.text(`Revenus: ${formatEuro(yearData.income.total)}`, margin + 5, yPosition);
       yPosition += lineHeight;
-      doc.text(`Dépenses: ${yearData.expenses.total}€`, margin + 5, yPosition);
+      doc.text(`Dépenses: ${formatEuro(yearData.expenses.total)}`, margin + 5, yPosition);
       yPosition += lineHeight;
 
       const netFlowColor = yearData.netFlow >= 0 ? [0, 128, 0] : [255, 0, 0];
       doc.setTextColor(...netFlowColor);
-      doc.text(`Solde: ${yearData.netFlow >= 0 ? '+' : ''}${yearData.netFlow}€`, margin + 5, yPosition);
+      doc.text(`Solde: ${yearData.netFlow >= 0 ? '+' : ''}${formatEuro(yearData.netFlow)}`, margin + 5, yPosition);
       doc.setTextColor(0, 0, 0);
       yPosition += lineHeight + 3;
     });
@@ -101,7 +102,7 @@ export class BrowserJournalPdfExporter {
     yPosition += 10;
 
     doc.setFontSize(8);
-    const entriesToExport = filterJournalEntriesForPdfExport(entries);
+    const entriesToExport = entries;
     const maxEntries = Math.min(entriesToExport.length, 100);
 
     for (let i = 0; i < maxEntries; i += 1) {
@@ -112,9 +113,9 @@ export class BrowserJournalPdfExporter {
         yPosition = margin;
       }
 
-      const date = new Date(entry.date).toLocaleDateString('fr-FR');
+      const date = TimeManager.formatGameDate(entry.turn);
       const typeLabel = journalEntryTypeLabel(entry);
-      const amountText = isJournalIncomeType(entry) ? `+${entry.amount}€` : `-${entry.amount}€`;
+      const amountText = isJournalIncomeType(entry) ? `+${formatEuro(entry.amount)}` : `-${formatEuro(entry.amount)}`;
 
       doc.text(`${date} - ${typeLabel}: ${amountText}`, margin, yPosition);
       yPosition += lineHeight;

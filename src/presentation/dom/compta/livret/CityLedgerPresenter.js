@@ -17,7 +17,9 @@ function updateField(fieldId, value, type = 'balance') {
 
   const numValue = Math.round(value || 0);
   const absValue = Math.abs(numValue);
-  element.textContent = absValue.toLocaleString('fr-FR');
+  // A signed figure shows its sign, so a red figure reads as a loss even without its colour.
+  const signed = type === 'balance' || type === 'netflow';
+  element.textContent = `${signed && numValue < 0 ? '−' : ''}${absValue.toLocaleString('fr-FR')}`;
 
   if (type === 'balance') {
     const isNegative = numValue < 0;
@@ -85,7 +87,11 @@ export function renderCityLedgerTable(comparison) {
     { key: 'initialFunds', thisYear: 'initialFundsThisYear', lastYear: 'initialFundsLastYear' },
     { key: 'incomeTax', thisYear: 'incomeTaxThisYear', lastYear: 'incomeTaxLastYear' },
     { key: 'payrollTax', thisYear: 'payrollTaxThisYear', lastYear: 'payrollTaxLastYear' },
+    { key: 'vat', thisYear: 'vatThisYear', lastYear: 'vatLastYear' },
+    { key: 'corporateTaxRevenue', thisYear: 'corporateTaxRevenueThisYear', lastYear: 'corporateTaxRevenueLastYear' },
     { key: 'exports', thisYear: 'exportsThisYear', lastYear: 'exportsLastYear' },
+    { key: 'customsImport', thisYear: 'customsImportThisYear', lastYear: 'customsImportLastYear' },
+    { key: 'socialContributions', thisYear: 'socialContributionsThisYear', lastYear: 'socialContributionsLastYear' },
     { key: 'loanCapital', thisYear: 'loanCapitalThisYear', lastYear: 'loanCapitalLastYear' },
   ];
 
@@ -98,6 +104,9 @@ export function renderCityLedgerTable(comparison) {
       thisYear: 'unemploymentBenefitThisYear',
       lastYear: 'unemploymentBenefitLastYear',
     },
+    { key: 'serviceSubsidy', thisYear: 'serviceSubsidyThisYear', lastYear: 'serviceSubsidyLastYear' },
+    { key: 'companySubsidy', thisYear: 'companySubsidyThisYear', lastYear: 'companySubsidyLastYear' },
+    { key: 'housingSubsidy', thisYear: 'housingSubsidyThisYear', lastYear: 'housingSubsidyLastYear' },
     { key: 'repairs', thisYear: 'repairsThisYear', lastYear: 'repairsLastYear' },
     { key: 'imports', thisYear: 'importsThisYear', lastYear: 'importsLastYear' },
     { key: 'loanInterest', thisYear: 'loanInterestThisYear', lastYear: 'loanInterestLastYear' },

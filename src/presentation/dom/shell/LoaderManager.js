@@ -8,7 +8,8 @@ class LoaderManager {
     this.isVisible = false;
   }
 
-  show() {
+  /** @param {string} [step] what is loading now, shown under the spinner */
+  show(step = null) {
     if (!this.el) {
       console.warn('Game loader not found');
       return;
@@ -16,6 +17,14 @@ class LoaderManager {
     this.el.classList.remove('hidden');
     this.el.setAttribute('aria-busy', 'true');
     this.isVisible = true;
+    if (step !== null) this.setStep(step);
+  }
+
+  /** @param {string} step what is loading now (a sentence the player reads) */
+  setStep(step) {
+    const stepEl = document.getElementById('game-loader-step');
+    if (!stepEl) throw new Error('[loader] #game-loader-step is missing from the page');
+    stepEl.textContent = step;
   }
 
   /**

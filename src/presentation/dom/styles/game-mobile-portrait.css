@@ -1,0 +1,271 @@
+/*
+ * /game on a phone held in portrait — nothing here applies to the other pages, to landscape or to a tablet.
+ * (This sheet is linked by game.html only; the other pages never load it.)
+ */
+
+/* The cookie button of Paramètres only exists for the phone: elsewhere the floating one does the job. */
+.parameters-section--cookies {
+  display: none;
+}
+
+@media screen and (max-width: 600px) and (orientation: portrait) {
+  .parameters-section--cookies {
+    display: block;
+  }
+
+  /* The floating cookie button (it lives in Paramètres here) and the performance overlay (a development tool) no longer sit over the bottom buttons. */
+  .hud-fab-dock #cookieConsentFab,
+  .hud-fab-dock #stats-js {
+    display: none !important;
+  }
+
+  /*
+   * The bottom row of buttons (world map, construction, hamlets, erase, ...) is a carousel: one row, dragged sideways,
+   * the buttons keep their size. Its right edge fades out to say that there is more.
+   */
+  .legend-btns-container--mobile {
+    left: 0;
+    right: 0;
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 0 28px 0 12px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+
+  .legend-btns-container--mobile::-webkit-scrollbar {
+    display: none;
+  }
+
+  .legend-btns-container--mobile > * {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  /*
+   * Top of the screen, in three places instead of one crowded row:
+   *   - the exit door stays at the top left;
+   *   - the name of the hamlet is a small discreet pill, centered, above every button;
+   *   - the season/time and the budget sit one under the other, at the right (the camera buttons stay under them).
+   */
+  .hud-bar {
+    position: relative;
+    padding-top: 26px;
+  }
+
+  .game-active-hamlet {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 20px;
+    min-height: 20px;
+    max-width: 44vw;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.9;
+  }
+
+  .hud-bar__end {
+    flex: 0 0 auto;
+    max-width: none;
+  }
+
+  .hud-bar__end .hud-bar__row--status {
+    flex-direction: column;
+    align-items: flex-end;
+    width: auto;
+    gap: 4px;
+  }
+
+  .hud-bar__end .info-panel > .info-box.infos-time,
+  .hud-bar__end .info-panel > .info-box.infos-budget {
+    flex: 0 0 auto;
+    width: auto;
+    height: var(--hud-chip-height, 40px);
+  }
+
+  /*
+   * Building panel: its tabs (Bâtiment, Stocks, ..., Messages, Finance) do not all fit in the width: the strip is dragged sideways,
+   * so that the last ones (Finance) and the first ones can be reached.
+   */
+  .info-building__tabs {
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    padding: 0 8px;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .info-building__tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .info-building__tabs [role="tab"] {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  /*
+   * Financial statements: a table with several figure columns does not fit a phone, so each row becomes a small card — its label on a line, its figures side by side
+   * under it, each named by its column (the data-label that stackableTable.js gives the cells; the head row is kept for screen readers only). A figure that is nil
+   * (an empty cell) is left out. The balance sheet and the compte de résultat (two columns: a label and an amount) are not concerned: they already read as lines.
+   */
+  .building-finance-table:not(.balance-sheet-table) thead,
+  .finances-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .building-finance-table:not(.balance-sheet-table),
+  .building-finance-table:not(.balance-sheet-table) tbody,
+  .building-finance-table:not(.balance-sheet-table) tfoot,
+  .finances-table,
+  .finances-table tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .building-finance-table:not(.balance-sheet-table) tr,
+  .finances-table tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid #eceff1;
+  }
+
+  .building-finance-table:not(.balance-sheet-table) tbody th,
+  .building-finance-table:not(.balance-sheet-table) tbody td,
+  .finances-table td {
+    display: block;
+    padding: 2px 0;
+    border: none;
+    min-width: 0;
+    width: auto;
+  }
+
+  /* The label of a row takes its own line; a section caption (a header cell over every column) too. */
+  .building-finance-table:not(.balance-sheet-table) tbody th {
+    flex: 1 0 100%;
+    text-align: left;
+  }
+
+  /* A row without a label cell (the balance, the grand livre): its first two cells are the number or month and the label, the others are figures. */
+  .account-ledger-table tr > td:nth-child(-n + 2) {
+    flex: 0 0 auto;
+    text-align: left;
+    white-space: normal;
+  }
+
+  .account-ledger-table tr > td:nth-child(2) {
+    flex: 1 1 70%;
+  }
+
+  .building-finance-table:not(.balance-sheet-table) tbody td:not(:nth-child(-n + 2)),
+  .building-finance-table:not(.balance-sheet-table) tbody th ~ td {
+    flex: 1 1 0;
+    text-align: right;
+    white-space: normal;
+  }
+
+  .account-ledger-table tr > td:nth-child(n + 3) {
+    flex: 1 1 22%;
+  }
+
+  .building-finance-table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #78909c;
+  }
+
+  .building-finance-table:not(.balance-sheet-table) tbody td:empty {
+    display: none;
+  }
+
+  /* The city's ledger (Finances): icon + label, then the two years. */
+  .finances-table td.indicator-col {
+    flex: 0 0 auto;
+  }
+
+  .finances-table td.label-col {
+    flex: 1 1 70%;
+    text-align: left;
+  }
+
+  .finances-table td.last-year-col,
+  .finances-table td.this-year-col {
+    flex: 1 1 40%;
+    text-align: right;
+  }
+
+  .finances-table td.last-year-col::before,
+  .finances-table td.this-year-col::before {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #78909c;
+  }
+
+  .finances-table td.last-year-col::before {
+    content: "Année dernière";
+  }
+
+  .finances-table td.this-year-col::before {
+    content: "Cette année";
+  }
+
+  .finances-table .finances-section-header td {
+    flex: 1 0 100%;
+  }
+
+  /* The journal: the legs of an entry stay a table (account, label, debit, credit); the label may wrap, and the table slides sideways rather than overflowing the card. */
+  .journal-entry-legs {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    font-size: 12px;
+  }
+
+  .journal-entry-legs .journal-entry-leg-label {
+    white-space: normal;
+    min-width: 90px;
+  }
+
+  /* The pill and the door take more room at the top left: the population panel starts lower. */
+  :root {
+    --hud-pop-rail-top-reserve-touch: calc(
+      var(--progress-bar-h, 2vh)
+      + var(--hud-chip-height, 40px)
+      + 50px
+    );
+  }
+}

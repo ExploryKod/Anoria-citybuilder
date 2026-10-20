@@ -2,8 +2,22 @@ import * as THREE from "three";
 
 const loader = new THREE.TextureLoader();
 
+/** One promise per texture file: resolved when its image is decoded, rejected when the file cannot be read. */
+const pendingTextures = [];
+
 export function loadTextures(path, flipY = false) {
-    const texture = loader.load(path)
+    let resolveLoaded;
+    let rejectLoaded;
+    pendingTextures.push(new Promise((resolve, reject) => {
+        resolveLoaded = resolve;
+        rejectLoaded = reject;
+    }));
+    const texture = loader.load(
+        path,
+        () => resolveLoaded(),
+        undefined,
+        (error) => rejectLoaded(new Error(`[texture] ${path} could not be loaded`, { cause: error }))
+    );
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(1,1);
@@ -20,7 +34,8 @@ export const textures = Object.freeze({
     'base' : loadTextures(`/resources/textures/maps/base.png`),
     'specular' : loadTextures(`/resources/textures/maps/specular.png`),
     'grid': loadTextures(`/resources/textures/maps/grid.png`),
-    'nofood': loadTextures(`/resources/textures/status/nofood.png`, true),
+    // A farm left fallow for the season
+    'fallow': loadTextures(`/resources/textures/status/fallow.png`, true),
     // Farm season sprites
     'grow-food': loadTextures(`/resources/textures/status/grow_food.png`, true),
     'harvest': loadTextures(`/resources/textures/status/harvest.png`, true),
@@ -29,8 +44,21 @@ export const textures = Object.freeze({
     'isBuying': loadTextures(`/resources/textures/status/isBuying.png`, true),
     // Windmill collecting sprite (reuse isBuying icon)
     'isCollecting': loadTextures(`/resources/textures/status/isBuying.png`, true),
+    // A hub that has reached its ceiling
+    'hub-full': loadTextures(`/resources/textures/status/hub-full.svg`, true),
+    // A sale window closed with goods unsold (no room in the hub, none in range…)
+    'failed-sell': loadTextures(`/resources/textures/status/failed-sell.svg`, true),
+    // A recipe is stuck waiting for an input it could not get (a raw-material shortage on its own business)
+    'input-shortage': loadTextures(`/resources/textures/status/input-shortage.svg`, true),
     // No worker sprite (black) - shown when building has no employees
-    'no-work': loadTextures(`/resources/textures/status/no-work.png`, true)
+    'no-work': loadTextures(`/resources/textures/status/no-work.png`, true),
+    // No natural resource left in range of a raw-material producer (see the catalog's `source` fact)
+    'no-resource': loadTextures(`/resources/textures/status/no-resource.svg`, true)
 })
+
+/** Resolves once every texture of the game has loaded: the scene must not show before its sprites exist. */
+export function whenTexturesLoaded() {
+    return Promise.all(pendingTextures);
+}
 
 // Economy catalog (buildingPlacementCatalog, type lists) → src/shared/building-catalog/

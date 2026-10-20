@@ -4,8 +4,10 @@
  */
 
 import db from '../core/persistence/dexie/db.js';
+import { createEmptyStocks } from '../shared/building-catalog/resourceRoleQueries.js';
 import { hamletIdOf, getActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
-import { computeCityFamishedPopulation } from '../contexts/housing/domain/policies/FamishedPopulationPolicy.js';
+import { sumShortfallCauses } from '../contexts/employment/domain/policies/EmploymentShortfallPolicy.js';
+import { computeCityFamishedPopulation, computeCityHungerRisk } from '../contexts/housing/domain/policies/FamishedPopulationPolicy.js';
 import { computeCityEmploymentSummary } from '../contexts/employment/domain/computeCityEmploymentSummary.js';
 import { createHousingBuildingSnapshot } from '../contexts/housing/domain/HousingBuildingSnapshot.js';
 import { createEmploymentBuildingSnapshot } from '../contexts/employment/domain/EmploymentBuildingSnapshot.js';
@@ -19,21 +21,24 @@ import {
 } from '../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 
 /**
- * Lack replaces unemployment in the HUD on the same scope: they cannot both
- * be the visible problem. A group may still have unemployment while another
- * has lack.
+ * What a labour cell of the HUD says: the unemployment (a percentage) and the vacant posts (a count), both when both exist. They are not
+ * exclusive: citizens out of work and posts left empty at the same time is a mismatch of skills, which the player must see, so showing only the
+ * vacancies hid the unemployed.
  *
  * @param {{ lack?: number, unemployed?: number, unemploymentPercentage?: number }} [stats]
- * @returns {{ mode: 'lack' | 'unemployment', display: string, count: number }}
+ * @returns {{ mode: 'lack' | 'unemployment' | 'both', display: string, count: number, unemployed: number, lack: number }}
  */
 export function laborSlotFromStats(stats = {}) {
   const lack = Math.max(0, Math.floor(stats.lack) || 0);
-  if (lack > 0) {
-    return { mode: 'lack', display: String(lack), count: lack };
-  }
   const unemployed = Math.max(0, Math.floor(stats.unemployed) || 0);
   const pct = Math.max(0, Math.floor(stats.unemploymentPercentage) || 0);
-  return { mode: 'unemployment', display: `${pct}%`, count: unemployed };
+  if (lack > 0 && unemployed > 0) {
+    return { mode: 'both', display: `${pct}% · ${lack}`, count: lack, unemployed, lack };
+  }
+  if (lack > 0) {
+    return { mode: 'lack', display: String(lack), count: lack, unemployed, lack };
+  }
+  return { mode: 'unemployment', display: `${pct}%`, count: unemployed, unemployed, lack };
 }
 
 /**
@@ -101,7 +106,8 @@ function toHousingSnapshot(row) {
     lastPopulationGrowthMonth: row.lastPopulationGrowthMonth ?? null,
     lastFamineDeathMonth: row.lastFamineDeathMonth ?? null,
     lastConsumption: row.lastConsumption ?? null,
-    stocks: row.stocks || { food: 0, wheat: 0, carrot: 0, cabbage: 0 },
+    supplyShortfall: row.supplyShortfall ?? null,
+    stocks: row.stocks || createEmptyStocks(),
     price: row.price ?? 0,
     neighbors: row.neighbors || [],
   });
@@ -124,6 +130,7 @@ function toEmploymentSnapshot(row) {
     worker: employees.worker ?? 0,
     workerNeed: employees.worker_need ?? 0,
     sector: employees.sector ?? 0,
+    workerSources: employees.workerSources ?? {},
   });
 }
 
@@ -143,6 +150,9 @@ function rowMatchesScope(row, scope) {
  *   totalPop: number,
  *   popByGroup: Record<string, number>,
  *   famishedPopulation: number,
+ *   disettePopulation: number,
+ *   penuriePopulation: number,
+ *   hungerRisk: { disette: number, penurie: number },
  *   employment: ReturnType<typeof computeCityEmploymentSummary>,
  * }>}
  */
@@ -154,13 +164,31 @@ export async function getHudPopulationScopeSnapshot(scope = 'active') {
     .map(toHousingSnapshot);
 
   const totalPop = residential.reduce((sum, house) => sum + (house.pop || 0), 0);
-  const { famishedPopulation } = computeCityFamishedPopulation(residential);
+  const { famishedPopulation, disettePopulation, penuriePopulation } = computeCityFamishedPopulation(residential);
+  const hungerRisk = computeCityHungerRisk(residential);
   const employment = computeCityEmploymentSummary(rows.map(toEmploymentSnapshot));
+
+  // Why people are out of work and posts empty is worked out hamlet by hamlet (workers do not commute): the country is the sum of its hamlets.
+  let employmentCauses = employment.causes;
+  if (scope === 'country') {
+    const rowsByHamlet = new Map();
+    for (const row of rows) {
+      const hamletId = hamletIdOf(row);
+      rowsByHamlet.set(hamletId, [...(rowsByHamlet.get(hamletId) ?? []), row]);
+    }
+    employmentCauses = sumShortfallCauses(
+      [...rowsByHamlet.values()].map((hamletRows) => computeCityEmploymentSummary(hamletRows.map(toEmploymentSnapshot)).causes)
+    );
+  }
 
   return {
     totalPop,
     popByGroup: popByGroupFromHouses(residential),
     famishedPopulation,
+    disettePopulation,
+    penuriePopulation,
+    hungerRisk,
     employment,
+    employmentCauses,
   };
 }

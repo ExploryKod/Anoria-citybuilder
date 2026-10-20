@@ -4,6 +4,7 @@ import {
   closeModal,
   toggleModal,
 } from '../tools/ToolPanel.js';
+import { RANGE_TOOL_ID } from '../../../shared/gameplay/behaviorMode.js';
 import { syncMobileClickStateFab } from '../tools/MobileClickStateFab.js';
 
 /**
@@ -41,7 +42,7 @@ export function registerActiveToolHandler(deps) {
     }
 
     selectedControl = e.currentTarget;
-    if (toolId === 'bulldoze' || toolId === 'select-object') {
+    if (toolId === 'bulldoze' || toolId === 'select-object' || toolId === RANGE_TOOL_ID) {
       syncMobileClickStateFab(toolId);
     } else {
       selectedControl?.classList?.add('selected');

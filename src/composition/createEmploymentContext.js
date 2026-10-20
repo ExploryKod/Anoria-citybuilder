@@ -10,10 +10,16 @@ import {
 import { getEmploymentSectorName } from '../contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
 import {
   allPriorityTabs,
+  allSocialGroups,
+  groupsProvidingSkill,
   skillsForTab,
   tabForSkill,
   SHARED_SKILL_TAB_ID,
 } from '../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
+import {
+  getRequiredSkillForBuilding,
+  getRequiredSkillLevelForBuilding,
+} from '../contexts/employment/domain/policies/WorkplaceSkillRequirementPolicy.js';
 
 /**
  * Composition root — Employment bounded context.
@@ -33,6 +39,8 @@ export function createEmploymentContext({ employmentBuildingRepository, citizenP
   const getCityEmploymentSummaryQuery = new GetCityEmploymentSummary(
     employmentBuildingRepositoryImpl
   );
+  /** The reading of the last worker distribution, kept for the wage settlement and the wages panel (a reading, not a store: the next pass replaces it). */
+  let lastLabourMarket = null;
 
   return {
     employmentBuildingRepository: employmentBuildingRepositoryImpl,
@@ -104,10 +112,34 @@ export function createEmploymentContext({ employmentBuildingRepository, citizenP
     },
 
     /**
+     * The social groups that can staff a workplace, and from which house tier, read from the catalog: the
+     * building's required skill (and level) against what each group's tiers grant. `groups` is empty for a
+     * building that needs no skill; `openToAll` says every social group can staff it. Labels are presentation's job.
+     * @param {string} buildingType
+     * @returns {{ groups: Array<{ group: string, tier: number }>, openToAll: boolean }}
+     */
+    getStaffingGroups(buildingType) {
+      const skillId = getRequiredSkillForBuilding(buildingType);
+      const groups = skillId ? [...groupsProvidingSkill(skillId, getRequiredSkillLevelForBuilding(buildingType))] : [];
+      return { groups, openToAll: groups.length > 0 && groups.length === allSocialGroups().length };
+    },
+
+    /**
      * @param {{ skillPriorities?: Record<string, number> }} [params]
      */
     async distributeCityWorkers(params = {}) {
-      return distributeCityWorkersCommand.execute(params);
+      const result = await distributeCityWorkersCommand.execute(params);
+      lastLabourMarket = { rows: result.labourMarket };
+      return result;
+    },
+
+    /**
+     * The labour market the last worker distribution left: for each (skill, level) the workplaces ask for, the jobs, the ones filled, the
+     * vacancies and the qualified citizens still idle. Null until a distribution has run (nothing is guessed before).
+     * @returns {{ rows: Array<{ skill: string, level: number, jobs: number, filled: number, vacancies: number, idle: number }> } | null}
+     */
+    getLabourMarket() {
+      return lastLabourMarket;
     },
 
     /** @returns {Promise<import('../contexts/employment/domain/computeCityEmploymentSummary.js').ReturnType<typeof import('../contexts/employment/domain/computeCityEmploymentSummary.js').computeCityEmploymentSummary>>} */

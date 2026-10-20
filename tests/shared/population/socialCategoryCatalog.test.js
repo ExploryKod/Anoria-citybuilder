@@ -1,97 +1,36 @@
 import { describe, test, expect } from '@jest/globals';
 import { SOCIAL_CATEGORY } from '../../../src/shared/population/socialCategoryCatalog.js';
 
-const CUMULATIVE_REQUIREMENTS = (min) => {
-  const base = [
-    { kind: 'roadAccess' },
-    { kind: 'population', min },
-    { kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 },
-  ];
-  if (min < 4) return base;
-  const withDoctor = [
-    ...base,
-    { kind: 'demandMet' },
-    { kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 },
-  ];
-  if (min < 8) return withDoctor;
-  const withBathAndPub = [
-    ...withDoctor,
-    { kind: 'serviceCoverage', category: 'publicBath', coveragePeriods: 2 },
-    { kind: 'serviceCoverage', category: 'pub', coveragePeriods: 2 },
-  ];
-  if (min < 12) return withBathAndPub;
-  return [
-    ...withBathAndPub,
-    { kind: 'serviceCoverage', category: 'school', coveragePeriods: 2 },
-    { kind: 'serviceCoverage', category: 'cinema', coveragePeriods: 2 },
-    { kind: 'goodsVariety', min: 2 },
-  ];
-};
+const TIERS = [1, 2, 3, 4, 5, 6];
+const kindsOf = (tier) => tier.requirements.map((requirement) => requirement.kind);
+const namesOf = (tier) => tier.requirements.map((requirement) => requirement.category).filter(Boolean);
 
-describe('SOCIAL_CATEGORY — single source for the 3 social categories', () => {
-  test('declares exactly artisans, merchants, scholars', () => {
-    expect(Object.keys(SOCIAL_CATEGORY).sort()).toEqual(['artisans', 'merchants', 'scholars']);
-  });
+/** Every category but the administrators (the mayor's house, a ladder of its own), which share the 6-tier ladder. */
+const WORKING_CLASSES = Object.entries(SOCIAL_CATEGORY).filter(([id]) => id !== 'administrators').map(([, facts]) => facts);
 
-  test('each category declares eligible sectors and a 5-tier ladder with skills', () => {
-    expect(SOCIAL_CATEGORY.artisans).toEqual({
-      eligibleSectors: [1, 3, 4],
-      tiers: {
-        1: { requirements: [], skills: { 'subsistence-forager': 1, spiritual: 1 } },
-        2: { requirements: CUMULATIVE_REQUIREMENTS(1), skills: { fermier: 1, artisanat: 1 } },
-        3: { requirements: CUMULATIVE_REQUIREMENTS(4), skills: {} },
-        4: { requirements: CUMULATIVE_REQUIREMENTS(8), skills: {} },
-        5: { requirements: CUMULATIVE_REQUIREMENTS(12), skills: {} },
-      },
-    });
-    expect(SOCIAL_CATEGORY.merchants).toEqual({
-      eligibleSectors: [2],
-      tiers: {
-        1: { requirements: [], skills: { 'subsistence-forager': 1, spiritual: 1 } },
-        2: { requirements: CUMULATIVE_REQUIREMENTS(1), skills: { 'vente-alimentaire': 1 } },
-        3: { requirements: CUMULATIVE_REQUIREMENTS(4), skills: {} },
-        4: { requirements: CUMULATIVE_REQUIREMENTS(8), skills: {} },
-        5: { requirements: CUMULATIVE_REQUIREMENTS(12), skills: {} },
-      },
-    });
-  });
-
-  test('all 3 categories share the exact same tier ladder (identical requirements shape; skills diverge per group)', () => {
-    const scholars = SOCIAL_CATEGORY.scholars;
-    expect(scholars.eligibleSectors).toEqual([6]);
-    expect(scholars.tiers[1]).toEqual({
-      requirements: [],
-      skills: { 'subsistence-forager': 1, spiritual: 1 },
-    });
-    for (const tier of [2, 3, 4, 5]) {
-      expect(scholars.tiers[tier].requirements).toEqual(
-        CUMULATIVE_REQUIREMENTS([1, 4, 8, 12][tier - 2])
-      );
+describe('SOCIAL_CATEGORY — single source for the social categories', () => {
+  test('declares artisans, merchants, scholars (a 6-tier ladder each) and the administrators (3 tiers)', () => {
+    expect(Object.keys(SOCIAL_CATEGORY).sort()).toEqual(['administrators', 'artisans', 'merchants', 'scholars']);
+    for (const facts of WORKING_CLASSES) {
+      expect(Object.keys(facts.tiers).map(Number)).toEqual(TIERS);
     }
-    expect(scholars.tiers[2].skills).toEqual({ 'stockage-alimentaire': 1, medical: 1 });
-    expect(scholars.tiers[3].skills).toEqual({ hygiene: 1, hospitality: 1 });
-    expect(scholars.tiers[4].skills).toEqual({ education: 1, entertainment: 1 });
-    expect(scholars.tiers[5].skills).toEqual({ medical: 2, entertainment: 2 });
+    expect(Object.keys(SOCIAL_CATEGORY.administrators.tiers).map(Number)).toEqual([1, 2, 3]);
   });
 
-  test('each requirement kind from an earlier tier is repeated in every later tier (cumulative, not inherited)', () => {
-    for (const category of Object.values(SOCIAL_CATEGORY)) {
-      const tier2Kinds = category.tiers[2].requirements.map((r) => r.kind);
-      for (const tier of [3, 4, 5]) {
-        const laterKinds = category.tiers[tier].requirements.map((r) => r.kind);
-        for (const kind of tier2Kinds) {
-          expect(laterKinds).toContain(kind);
-        }
-      }
+  test('the administrators are six at most whatever the tier, and hold their two skills by right from the first tier', () => {
+    const { administrators } = SOCIAL_CATEGORY;
+    for (const tier of Object.values(administrators.tiers)) expect(tier.maxPopulation).toBe(6);
+    expect(administrators.tiers[1].requirements).toEqual([]);
+    expect(administrators.tiers[1].skills).toEqual({ proprietaire: 1, perception_ic: 1, perception_ir: 1, perception_tva: 1 });
+    expect(administrators.tiers[2].skills).toEqual({ perception_is: 1, perception_douane: 1 });
+  });
+
+  test('the ladder is the same for the 3 categories: only the skills they hold differ', () => {
+    const { artisans, merchants, scholars } = SOCIAL_CATEGORY;
+    for (const tier of TIERS) {
+      expect(merchants.tiers[tier].requirements).toEqual(artisans.tiers[tier].requirements);
+      expect(scholars.tiers[tier].requirements).toEqual(artisans.tiers[tier].requirements);
     }
-  });
-
-  test('each category owns its own requirements list, so one can diverge without touching the others', () => {
-    const [artisans, merchants, scholars] = ['artisans', 'merchants', 'scholars'].map(
-      (key) => SOCIAL_CATEGORY[key]
-    );
-    expect(artisans.tiers[2].requirements).not.toBe(merchants.tiers[2].requirements);
-    expect(merchants.tiers[2].requirements).not.toBe(scholars.tiers[2].requirements);
   });
 
   test('tier 1 never requires anything — it is the starting tier', () => {
@@ -100,9 +39,46 @@ describe('SOCIAL_CATEGORY — single source for the 3 social categories', () => 
     }
   });
 
-  test('tier 5 requires 2 distinct food categories in the same period (goodsVariety)', () => {
-    for (const facts of Object.values(SOCIAL_CATEGORY)) {
-      expect(facts.tiers[5].requirements).toContainEqual({ kind: 'goodsVariety', min: 2 });
+  test('what a house needs to evolve, level by level: water, food and a dispensary; then goods, fire, a warehouse and energy; then a hospital, the police and a café-restaurant', () => {
+    const { artisans } = SOCIAL_CATEGORY;
+    // Level 1 → 2
+    expect(namesOf(artisans.tiers[2])).toEqual(['water', 'doctor']);
+    expect(kindsOf(artisans.tiers[2])).toContain('demandMet');
+    // Level 2 → 3
+    expect(namesOf(artisans.tiers[3])).toEqual(['water', 'doctor', 'fire', 'energy']);
+    expect(kindsOf(artisans.tiers[3])).toEqual(expect.arrayContaining(['goodsVariety', 'activityAccess']));
+    expect(artisans.tiers[3].requirements).toContainEqual({ kind: 'goodsVariety', min: 1, outcomeField: 'lastGoodsConsumption' });
+    // Level 3 → 4
+    expect(namesOf(artisans.tiers[4])).toEqual(expect.arrayContaining(['hospital', 'police', 'pub']));
+    expect(artisans.tiers[4].requirements).toContainEqual({ kind: 'goodsVariety', min: 2, outcomeField: 'lastGoodsConsumption' });
+  });
+
+  test('the skills of a level staff the buildings its list names: water and the dispensary from the start, then fire, then police', () => {
+    const { scholars, artisans, merchants } = SOCIAL_CATEGORY;
+    expect(scholars.tiers[1].skills).toEqual({ hydraulique: 1, medical: 1 });
+    expect(scholars.tiers[2].skills).toEqual({ incendie: 1 });
+    expect(scholars.tiers[3].skills).toEqual({ medical: 2, securite: 1 });
+    expect(artisans.tiers[2].skills).toEqual({ artisanat: 1, energie: 1 });
+    expect(artisans.tiers[3].skills).toEqual({ artisanat: 2, telecoms: 1, energie: 2 });
+    expect(merchants.tiers[2].skills).toMatchObject({ manutention: 1 });
+    expect(merchants.tiers[3].skills).toEqual({ hospitality: 1 });
+  });
+
+  test('each requirement from an earlier tier is repeated in every later tier (cumulative, not inherited)', () => {
+    for (const category of WORKING_CLASSES) {
+      for (const tier of [3, 4, 5, 6]) {
+        for (const earlier of category.tiers[tier - 1].requirements.filter((requirement) => requirement.kind !== 'population' && requirement.kind !== 'goodsVariety')) {
+          expect(category.tiers[tier].requirements).toContainEqual(earlier);
+        }
+      }
+    }
+  });
+
+  test('every tier declares a growing population ceiling, defined once and shared by default', () => {
+    for (const facts of WORKING_CLASSES) {
+      const caps = TIERS.map((level) => facts.tiers[level].maxPopulation);
+      expect(caps.every((cap) => Number.isInteger(cap) && cap > 0)).toBe(true);
+      expect([...caps].sort((a, b) => a - b)).toEqual(caps);
     }
   });
 });

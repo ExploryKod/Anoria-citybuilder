@@ -30,9 +30,9 @@ describe('Housing — HouseTierRequirementPolicy', () => {
 
   describe('serviceCoverage — generic, no service name baked in here', () => {
     test('met when servedFlags has this exact category served for the current period', () => {
-      const requirements = [{ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }];
+      const requirements = [{ kind: 'serviceCoverage', category: 'fire', coveragePeriods: 2 }];
       expect(
-        meetsTierRequirements(requirements, { servedFlags: { faith: 7 }, periodKey: 7 })
+        meetsTierRequirements(requirements, { servedFlags: { fire: 7 }, periodKey: 7 })
       ).toBe(true);
     });
 
@@ -40,13 +40,13 @@ describe('Housing — HouseTierRequirementPolicy', () => {
       // coveragePeriods: 2 means a visit at period 6 still covers period 7
       // (7 - 6 = 1 < 2) — the "true interruption" only happens once the gap
       // reaches coveragePeriods.
-      const requirements = [{ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }];
-      expect(meetsTierRequirements(requirements, { servedFlags: { faith: 6 }, periodKey: 7 })).toBe(true);
+      const requirements = [{ kind: 'serviceCoverage', category: 'fire', coveragePeriods: 2 }];
+      expect(meetsTierRequirements(requirements, { servedFlags: { fire: 6 }, periodKey: 7 })).toBe(true);
     });
 
     test('not met once the gap since the last visit reaches coveragePeriods, or servedFlags is missing/absent', () => {
-      const requirements = [{ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }];
-      expect(meetsTierRequirements(requirements, { servedFlags: { faith: 5 }, periodKey: 7 })).toBe(false);
+      const requirements = [{ kind: 'serviceCoverage', category: 'fire', coveragePeriods: 2 }];
+      expect(meetsTierRequirements(requirements, { servedFlags: { fire: 5 }, periodKey: 7 })).toBe(false);
       expect(meetsTierRequirements(requirements, { servedFlags: {}, periodKey: 7 })).toBe(false);
       expect(meetsTierRequirements(requirements, { periodKey: 7 })).toBe(false);
     });
@@ -54,23 +54,23 @@ describe('Housing — HouseTierRequirementPolicy', () => {
     test('two different categories are independent — one served does not satisfy the other', () => {
       const requirements = [{ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 }];
       expect(
-        meetsTierRequirements(requirements, { servedFlags: { faith: 7 }, periodKey: 7 })
+        meetsTierRequirements(requirements, { servedFlags: { fire: 7 }, periodKey: 7 })
       ).toBe(false);
     });
 
     test('not met when periodKey itself is missing, even if servedFlags happens to also be absent', () => {
       // Regression guard: servedFlags?.[category] === periodKey must not
       // vacuously pass just because both sides are undefined.
-      const requirements = [{ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }];
+      const requirements = [{ kind: 'serviceCoverage', category: 'fire', coveragePeriods: 2 }];
       expect(meetsTierRequirements(requirements, {})).toBe(false);
     });
 
     test('a missing or invalid coveragePeriods is a catalog authoring error — fails closed and logs it', () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       try {
-        const withoutIt = [{ kind: 'serviceCoverage', category: 'faith' }];
-        expect(meetsTierRequirements(withoutIt, { servedFlags: { faith: 7 }, periodKey: 7 })).toBe(false);
-        expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('"faith"'));
+        const withoutIt = [{ kind: 'serviceCoverage', category: 'fire' }];
+        expect(meetsTierRequirements(withoutIt, { servedFlags: { fire: 7 }, periodKey: 7 })).toBe(false);
+        expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('"fire"'));
 
         consoleErrorSpy.mockClear();
         const zeroed = [{ kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 0 }];
@@ -103,32 +103,66 @@ describe('Housing — HouseTierRequirementPolicy', () => {
     });
   });
 
-  describe('goodsVariety — N distinct categories of that good drawn from this period (food today)', () => {
-    test('met when at least the declared minimum of distinct categories were taken this period', () => {
-      const requirements = [{ kind: 'goodsVariety', min: 2 }];
+  describe('goodsVariety — N distinct goods of one need drawn from this period (the retail goods)', () => {
+    const requirements = [{ kind: 'goodsVariety', min: 2, outcomeField: 'lastGoodsConsumption' }];
+
+    test('met when at least the declared minimum of distinct goods were taken this period', () => {
       expect(
         meetsTierRequirements(requirements, {
-          lastConsumption: { month: 7, categoriesTaken: ['wheat', 'carrot'] },
+          outcomes: { lastGoodsConsumption: { month: 7, categoriesTaken: ['pot', 'plate'] } },
           periodKey: 7,
         })
       ).toBe(true);
     });
 
-    test('not met with fewer distinct categories, a stale period, or missing lastConsumption', () => {
-      const requirements = [{ kind: 'goodsVariety', min: 2 }];
+    test('not met with fewer distinct goods, a stale period, or no record of the need', () => {
       expect(
         meetsTierRequirements(requirements, {
-          lastConsumption: { month: 7, categoriesTaken: ['wheat'] },
+          outcomes: { lastGoodsConsumption: { month: 7, categoriesTaken: ['pot'] } },
           periodKey: 7,
         })
       ).toBe(false);
       expect(
         meetsTierRequirements(requirements, {
-          lastConsumption: { month: 6, categoriesTaken: ['wheat', 'carrot'] },
+          outcomes: { lastGoodsConsumption: { month: 6, categoriesTaken: ['pot', 'plate'] } },
           periodKey: 7,
         })
       ).toBe(false);
       expect(meetsTierRequirements(requirements, { periodKey: 7 })).toBe(false);
+    });
+
+    test('a requirement that names no outcomeField is a catalog authoring error — fails closed and logs it', () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        const withoutIt = [{ kind: 'goodsVariety', min: 1 }];
+        expect(meetsTierRequirements(withoutIt, { outcomes: { lastGoodsConsumption: { month: 7, categoriesTaken: ['pot'] } }, periodKey: 7 })).toBe(false);
+        expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('outcomeField'));
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
+    });
+  });
+
+  describe('serviceDemandMet — a need served as a quantity (water, energy), read off its own record', () => {
+    const requirements = [{ kind: 'serviceDemandMet', category: 'water', outcomeField: 'lastWaterConsumption' }];
+
+    test('met when its record is fresh and nothing went unserved', () => {
+      expect(meetsTierRequirements(requirements, { outcomes: { lastWaterConsumption: { month: 7, totalUnfed: 0 } }, periodKey: 7 })).toBe(true);
+    });
+
+    test('not met when short, stale, or without a record', () => {
+      expect(meetsTierRequirements(requirements, { outcomes: { lastWaterConsumption: { month: 7, totalUnfed: 3 } }, periodKey: 7 })).toBe(false);
+      expect(meetsTierRequirements(requirements, { outcomes: { lastWaterConsumption: { month: 6, totalUnfed: 0 } }, periodKey: 7 })).toBe(false);
+      expect(meetsTierRequirements(requirements, { periodKey: 7 })).toBe(false);
+    });
+  });
+
+  describe('activityAccess — a warehouse within reach of the house\'s business', () => {
+    test('met only when the caller says so', () => {
+      const requirements = [{ kind: 'activityAccess' }];
+      expect(meetsTierRequirements(requirements, { activityAccess: true })).toBe(true);
+      expect(meetsTierRequirements(requirements, { activityAccess: false })).toBe(false);
+      expect(meetsTierRequirements(requirements, {})).toBe(false);
     });
   });
 });

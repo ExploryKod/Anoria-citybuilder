@@ -1,20 +1,21 @@
 import { describe, expect, test, beforeEach } from '@jest/globals';
 import 'fake-indexeddb/auto';
 import db from '../../src/core/persistence/dexie/db.js';
-import { setActiveHamletId, DEFAULT_HAMLET_ID } from '../../src/core/persistence/hamlet/hamletSession.js';
+import { setActiveHamletId } from '../../src/core/persistence/hamlet/hamletSession.js';
 import {
   getHudResourceScopeSnapshot,
   getHudNatureResourceScopeSnapshot,
   sumCityStocksFromRows,
   sumNatureStocksFromRows,
-  countClayTiles,
+  countDepositTiles,
 } from '../../src/composition/hudResourceAggregates.js';
+import { H, setupHamlets } from '../helpers/hamletIds.js';
 
 describe('hudResourceAggregates', () => {
   beforeEach(async () => {
     await db.delete();
     await db.open();
-    setActiveHamletId(DEFAULT_HAMLET_ID);
+    await setupHamlets();
   });
 
   test('city food comes from windmill stocks only', () => {
@@ -40,7 +41,7 @@ describe('hudResourceAggregates', () => {
     await db.houses.bulkPut([
       {
         instanceId: '11111111-1111-4111-8111-111111111111',
-        hamletId: 'eraanurbs',
+        hamletId: H['eraanurbs'],
         type: 'Windmill-001',
         x: 1,
         y: 1,
@@ -48,7 +49,7 @@ describe('hudResourceAggregates', () => {
       },
       {
         instanceId: '22222222-2222-4222-8222-222222222222',
-        hamletId: 'clairiere',
+        hamletId: H['clairiere'],
         type: 'Windmill-001',
         x: 2,
         y: 2,
@@ -85,18 +86,18 @@ describe('hudResourceAggregates', () => {
     const city = {
       size: 2,
       tiles: [
-        [{ hasClay: true }, { hasClay: false }],
-        [{ hasClay: true }, { hasClay: true }],
+        [{ deposits: { clay: true } }, { deposits: {} }],
+        [{ deposits: { clay: true } }, { deposits: { clay: true } }],
       ],
     };
-    expect(countClayTiles(city)).toBe(3);
+    expect(countDepositTiles(city, 'clay')).toBe(3);
   });
 
   test('nature scope splits tree/boulder stocks by hamlet; clay is map-global', async () => {
     await db.houses.bulkPut([
       {
         instanceId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-        hamletId: 'eraanurbs',
+        hamletId: H['eraanurbs'],
         category: 'nature',
         type: 'Tree-Sapin',
         x: 1,
@@ -105,7 +106,7 @@ describe('hudResourceAggregates', () => {
       },
       {
         instanceId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
-        hamletId: 'clairiere',
+        hamletId: H['clairiere'],
         category: 'nature',
         type: 'Tree-Sapin',
         x: 2,
@@ -114,7 +115,7 @@ describe('hudResourceAggregates', () => {
       },
       {
         instanceId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-        hamletId: 'eraanurbs',
+        hamletId: H['eraanurbs'],
         category: 'nature',
         type: 'Boulder-001',
         x: 3,
@@ -125,7 +126,7 @@ describe('hudResourceAggregates', () => {
 
     const city = {
       size: 1,
-      tiles: [[{ hasClay: true }]],
+      tiles: [[{ deposits: { clay: true } }]],
     };
 
     const country = await getHudNatureResourceScopeSnapshot('country', { city });

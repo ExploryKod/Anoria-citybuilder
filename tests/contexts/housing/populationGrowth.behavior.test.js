@@ -63,17 +63,15 @@ function house(id, type, extras = {}) {
 
 describe('Housing — population growth', () => {
   describe('domain policies', () => {
-    test('residential house types include blue/red/purple/palace', () => {
+    test('residential house types include blue/red/purple', () => {
       expect(isResidentialHouseType('House-Blue')).toBe(true);
       expect(isResidentialHouseType('House-Red')).toBe(true);
       expect(isResidentialHouseType('House-Purple')).toBe(true);
-      expect(isResidentialHouseType('House-2Story')).toBe(true);
       expect(isResidentialHouseType('Farm-Wheat')).toBe(false);
     });
 
-    test('regular house cap is 6, palace cap is 7', () => {
+    test('house cap is 6', () => {
       expect(maxPopulationForHouseType('House-Red')).toBe(6);
-      expect(maxPopulationForHouseType('House-2Story')).toBe(7);
     });
 
     test('grows by 1 per month up to cap when road connected', () => {
@@ -141,21 +139,6 @@ describe('Housing — population growth', () => {
         changed: true,
         lastPopulationGrowthMonth: 4,
         reason: 'monthly_growth',
-      });
-    });
-
-    test('Palace (frozen legacy path) still hard-resets to 0 without road access', () => {
-      expect(
-        computePopulationAfterGrowth({
-          type: 'House-2Story',
-          currentPop: 4,
-          roadCount: 0,
-          monthIndex: 4,
-        })
-      ).toEqual({
-        pop: 0,
-        changed: true,
-        reason: 'no_road_access',
       });
     });
   });

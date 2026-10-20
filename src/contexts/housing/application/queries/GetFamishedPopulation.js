@@ -19,6 +19,8 @@ export class GetFamishedPopulation {
    *   totalPopulation: number,
    *   fedPopulation: number,
    *   famishedPopulation: number,
+   *   disettePopulation: number,
+   *   penuriePopulation: number,
    * }>}
    */
   async execute() {

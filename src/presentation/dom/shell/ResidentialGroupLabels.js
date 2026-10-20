@@ -7,6 +7,7 @@
  */
 
 import { buildingCatalog } from '../../../shared/building-catalog/buildingCatalog.js';
+import { unresolvedTerm } from './CatalogVocabulary.js';
 
 const RESIDENTIAL_GROUP_BY_TYPE = Object.fromEntries(
     Object.entries(buildingCatalog)
@@ -14,19 +15,18 @@ const RESIDENTIAL_GROUP_BY_TYPE = Object.fromEntries(
         .map(([id, def]) => [id, def.residentialGroup])
 );
 
-/** @type {Readonly<Record<string, string>>} */
-const GROUP_LABELS = Object.freeze({
-    artisans: 'Artisans-ouvriers',
-    merchants: 'Commerçants',
-    scholars: 'Savants',
-});
-
-/** @type {Readonly<Record<string, string>>} */
-const GROUP_TITLES = Object.freeze({
-    artisans: 'Groupe des artisans',
-    merchants: 'Groupe des commerçants',
-    scholars: 'Groupe des savants',
-});
+/**
+ * A group's label is the name the catalog gives its house (one house type per
+ * social group) — the single place that name is written.
+ * @type {Readonly<Record<string, string>>}
+ */
+const GROUP_LABELS = Object.freeze(
+    Object.fromEntries(
+        Object.values(buildingCatalog)
+            .filter((def) => def.residentialGroup && def.displayName)
+            .map((def) => [def.residentialGroup, def.displayName])
+    )
+);
 
 const LEVEL_1_LABEL = 'Chasseurs-cueilleurs';
 
@@ -46,12 +46,12 @@ export function residentialGroupForType(buildingType) {
 
 /** @param {string} group @returns {string} */
 export function getResidentialGroupTitle(group) {
-    return GROUP_TITLES[group] || `Groupe des ${getResidentialGroupLabel(group).toLowerCase()}`;
+    return `Groupe des ${getResidentialGroupLabel(group).toLowerCase()}`;
 }
 
 /** @param {string} group @returns {string} */
 export function getResidentialGroupLabel(group) {
-    return GROUP_LABELS[group] || group;
+    return GROUP_LABELS[group] ?? unresolvedTerm('social category name', group);
 }
 
 /**

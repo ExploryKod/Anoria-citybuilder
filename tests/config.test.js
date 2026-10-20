@@ -47,13 +47,11 @@ describe('config.simulation', () => {
     });
 
     test('définit la taille de la ville', () => {
-        expect(config.simulation.citySize).toBe(12);
+        expect(config.simulation.citySize).toBe(16);
     });
 
-    test('définit la distance de distribution de nourriture', () => {
-        // Distance en tuiles (Manhattan) pour la distribution marché → maisons
-        expect(config.simulation.foodDistributionDistance).toBeDefined();
-        expect(config.simulation.foodDistributionDistance).toBeGreaterThan(0);
+    test('ne porte plus de distance de distribution : la portée vit dans le catalogue économique', () => {
+        expect(config.simulation.foodDistributionDistance).toBeUndefined();
     });
 });
 
@@ -123,11 +121,11 @@ describe('config.employment', () => {
         });
 
         test('les marchés sont dans le secteur 2 (Commerces)', () => {
-            expect(sectorMap['Market-Stall']).toBe(2);
+            expect(sectorMap['Market-Stall-Red']).toBe(2);
         });
 
-        test('les moulins sont dans le secteur 4 (Stockage)', () => {
-            expect(sectorMap['Windmill-001']).toBe(4);
+        test('les moulins sont dans le secteur 2 (Commerce)', () => {
+            expect(sectorMap['Windmill-001']).toBe(2);
         });
 
         test('les routes sont dans le secteur 5 (Infrastructure)', () => {
@@ -144,23 +142,20 @@ describe('config.employment', () => {
             expect(buildingNeeds['Farm-Cabbage'].worker_need).toBe(3);
         });
 
-        test('les fermes ne nécessitent pas d\'élites', () => {
-            expect(buildingNeeds['Farm-Wheat'].elite_need).toBe(0);
+        test('les besoins ne comptent que des travailleurs', () => {
+            expect(buildingNeeds['Farm-Wheat']).toEqual({ worker_need: 3 });
         });
 
-        test('les marchés nécessitent des travailleurs ET des élites', () => {
-            expect(buildingNeeds['Market-Stall'].worker_need).toBe(2);
-            expect(buildingNeeds['Market-Stall'].elite_need).toBe(1);
+        test('les marchés nécessitent des travailleurs', () => {
+            expect(buildingNeeds['Market-Stall-Red'].worker_need).toBe(2);
         });
 
         test('les moulins ont les plus gros besoins', () => {
             expect(buildingNeeds['Windmill-001'].worker_need).toBe(4);
-            expect(buildingNeeds['Windmill-001'].elite_need).toBe(2);
         });
 
         test('les routes ne nécessitent pas d\'employés', () => {
             expect(buildingNeeds['roads'].worker_need).toBe(0);
-            expect(buildingNeeds['roads'].elite_need).toBe(0);
         });
     });
 });

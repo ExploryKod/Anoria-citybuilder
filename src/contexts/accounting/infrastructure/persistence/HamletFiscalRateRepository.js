@@ -1,0 +1,305 @@
+import db from '../../../../core/persistence/dexie/db.js';
+import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { getServiceCategories } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { getVatCategories, getVatCategoryOf, getVatItems } from '../../../../shared/resource-catalog/VatCategoryCatalog.js';
+import {
+  DEFAULT_HAMLET_FISCAL_RATES,
+  DEFAULT_MINIMUM_WAGE_MODE,
+  DEFAULT_RENT_CONTROL_ENABLED,
+  DEFAULT_SERVICE_SUBSIDY_PERCENT,
+  DEFAULT_VAT_GENERAL_RATE_PERCENT,
+  DEFAULT_VAT_RATE_PERCENT,
+  DEFAULT_VAT_UNIFORM,
+  HAMLET_FISCAL_RATE_BOUNDS,
+  MINIMUM_WAGE_MODES,
+  SERVICE_SUBSIDY_BOUNDS,
+  VAT_RATE_BOUNDS,
+} from '../../domain/catalogs/FiscalRateCatalog.js';
+
+/**
+ * The fiscal rates of the active hamlet, stored on its own row in the game database: the rates are part of the
+ * game, emptied and imported with it. Every read is asynchronous and strict: a hamlet without a rate, or a value out
+ * of its bounds, throws. Nothing stands in for a missing rate.
+ */
+export class HamletFiscalRateRepository {
+  /** @param {import('dexie').Dexie} [database] */
+  constructor(database = db) {
+    this.db = database;
+  }
+
+  /** @returns {Promise<number>} */
+  async getCitizenTaxPerCapita() {
+    return this.#read('citizenTaxPerCapita');
+  }
+
+  /** @param {number} amount @returns {Promise<number>} */
+  async setCitizenTaxPerCapita(amount) {
+    await this.#write({ citizenTaxPerCapita: amount });
+    return amount;
+  }
+
+  /** @returns {Promise<number>} the share of a house's upkeep the hamlet pays, a fraction */
+  async getHouseMaintenanceSubsidyRate() {
+    return this.#read('houseMaintenanceSubsidyRate');
+  }
+
+  /** @param {number} rate a fraction @returns {Promise<number>} */
+  async setHouseMaintenanceSubsidyRate(rate) {
+    await this.#write({ houseMaintenanceSubsidyRate: rate });
+    return rate;
+  }
+
+  /** @returns {Promise<number>} the corporate tax rate the player set, a fraction */
+  async getCorporateTaxRate() {
+    return this.#read('corporateTaxRate');
+  }
+
+  /** @param {number} rate a fraction @returns {Promise<number>} */
+  async setCorporateTaxRate(rate) {
+    await this.#write({ corporateTaxRate: rate });
+    return rate;
+  }
+
+  /** @returns {Promise<{ minimumWageMode: string, minimumWage: number, minimumWageBasketRatio: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number, unemploymentBenefitRate: number, employerContributionRate: number, employeeContributionRate: number }>} */
+  async getSalarySettings() {
+    const [
+      minimumWageMode, minimumWage, minimumWageBasketRatio, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
+      employerContributionRate, employeeContributionRate, rentCapPerHouse, administratorStipend,
+    ] = await Promise.all([
+      this.#readMinimumWageMode(),
+      this.#read('minimumWage'),
+      this.#read('minimumWageBasketRatio'),
+      this.#read('salaryTaxThreshold1'),
+      this.#read('salaryTaxRate1'),
+      this.#read('salaryTaxThreshold2'),
+      this.#read('salaryTaxRate2'),
+      this.#read('unemploymentBenefitRate'),
+      this.#read('employerContributionRate'),
+      this.#read('employeeContributionRate'),
+      this.#read('rentCapPerHouse'),
+      this.#read('administratorStipend'),
+    ]);
+    return {
+      minimumWageMode, minimumWage, minimumWageBasketRatio, salaryTaxThreshold1, salaryTaxRate1, salaryTaxThreshold2, salaryTaxRate2, unemploymentBenefitRate,
+      employerContributionRate, employeeContributionRate, rentCapPerHouse, administratorStipend,
+    };
+  }
+
+  /** @returns {Promise<{ enabled: boolean, cap: number }>} the hamlet's rent control: whether the owner's rent is capped, and the ceiling (whole euros a month per house) */
+  async getRentControl() {
+    const hamletId = requireActiveHamletId();
+    const row = await this.db.hamlets.get(hamletId);
+    if (!row) throw new Error(`[fiscal] hamlet ${hamletId} has no row`);
+    if (typeof row.rentControlEnabled !== 'boolean') throw new Error(`[fiscal] hamlet ${hamletId} has no rent control switch: its rates are written when it is created`);
+    return { enabled: row.rentControlEnabled, cap: await this.#read('rentCapPerHouse') };
+  }
+
+  /** @param {boolean} enabled @returns {Promise<boolean>} */
+  async setRentControlEnabled(enabled) {
+    if (typeof enabled !== 'boolean') throw new Error(`[fiscal] the rent control switch must be a boolean, got ${enabled}`);
+    await this.db.hamlets.update(requireActiveHamletId(), { rentControlEnabled: enabled });
+    return enabled;
+  }
+
+  /** @returns {Promise<Record<string, number>>} the active hamlet's subsidy, in percent, for every service. */
+  async getServiceSubsidies() {
+    const hamletId = requireActiveHamletId();
+    const row = await this.db.hamlets.get(hamletId);
+    if (!row) throw new Error(`[fiscal] hamlet ${hamletId} has no row`);
+    if (!row.serviceSubsidy) throw new Error(`[fiscal] hamlet ${hamletId} has no service subsidies`);
+    return Object.fromEntries(
+      getServiceCategories().map((service) => {
+        const percent = row.serviceSubsidy[service];
+        if (!Number.isInteger(percent)) throw new Error(`[fiscal] hamlet ${hamletId} has no subsidy for ${service}`);
+        return [service, percent];
+      })
+    );
+  }
+
+  /**
+   * The active hamlet's VAT: the uniform switch, the general rate, the rate of each VAT category, and the items exempt
+   * from VAT (a good or a service, by its catalog id).
+   * @returns {Promise<{ uniform: boolean, generalRatePercent: number, categoryRatesPercent: Record<string, number>, exempt: Record<string, boolean> }>}
+   */
+  async getVatSettings() {
+    const hamletId = requireActiveHamletId();
+    const row = await this.db.hamlets.get(hamletId);
+    if (!row) throw new Error(`[fiscal] hamlet ${hamletId} has no row`);
+    if (typeof row.vatUniform !== 'boolean') throw new Error(`[fiscal] hamlet ${hamletId} has no VAT uniform switch`);
+    if (!Number.isInteger(row.vatGeneralRatePercent)) throw new Error(`[fiscal] hamlet ${hamletId} has no general VAT rate`);
+    if (!row.vatRatePercent) throw new Error(`[fiscal] hamlet ${hamletId} has no VAT rates`);
+    if (!row.vatExempt) throw new Error(`[fiscal] hamlet ${hamletId} has no VAT exemptions`);
+    const exempt = Object.fromEntries(
+      getVatItems().map((item) => {
+        if (typeof row.vatExempt[item] !== 'boolean') throw new Error(`[fiscal] hamlet ${hamletId} has no VAT exemption flag for ${item}`);
+        return [item, row.vatExempt[item]];
+      })
+    );
+    const categoryRatesPercent = Object.fromEntries(
+      getVatCategories().map((category) => {
+        const percent = row.vatRatePercent[category];
+        if (!Number.isInteger(percent)) throw new Error(`[fiscal] hamlet ${hamletId} has no VAT rate for ${category}`);
+        return [category, percent];
+      })
+    );
+    return { uniform: row.vatUniform, generalRatePercent: row.vatGeneralRatePercent, categoryRatesPercent, exempt };
+  }
+
+  /**
+   * The VAT rate of every taxed item (a good or a service): its category's rate, or 0 when it is exempt. This is what the
+   * settlement taxes each sale at.
+   * @returns {Promise<Record<string, number>>}
+   */
+  async getVatRates() {
+    const { categoryRatesPercent, exempt } = await this.getVatSettings();
+    return Object.fromEntries(
+      getVatItems().map((item) => [item, exempt[item] ? 0 : categoryRatesPercent[getVatCategoryOf(item)]])
+    );
+  }
+
+  /** @param {string} item a good or a service @param {boolean} exempt */
+  async setVatExempt(item, exempt) {
+    if (!getVatItems().includes(item)) throw new Error(`[fiscal] "${item}" is not an item the VAT taxes`);
+    if (typeof exempt !== 'boolean') throw new Error(`[fiscal] the VAT exemption of ${item} must be a boolean, got ${exempt}`);
+    const hamletId = requireActiveHamletId();
+    const current = await this.getVatSettings();
+    await this.db.hamlets.update(hamletId, { vatExempt: { ...current.exempt, [item]: exempt } });
+    return exempt;
+  }
+
+  /** @param {boolean} uniform When on, every VAT category takes the general rate. */
+  async setVatUniform(uniform) {
+    if (typeof uniform !== 'boolean') throw new Error(`[fiscal] the VAT uniform switch must be a boolean, got ${uniform}`);
+    const hamletId = requireActiveHamletId();
+    const { generalRatePercent } = await this.getVatSettings();
+    const patch = { vatUniform: uniform };
+    if (uniform) patch.vatRatePercent = uniformVatRates(generalRatePercent);
+    await this.db.hamlets.update(hamletId, patch);
+    return uniform;
+  }
+
+  /** @param {number} percent When the switch is on, every VAT category follows it. @returns {Promise<number>} */
+  async setVatGeneralRate(percent) {
+    assertInBounds('vatRate', percent);
+    const hamletId = requireActiveHamletId();
+    const { uniform } = await this.getVatSettings();
+    const patch = { vatGeneralRatePercent: percent };
+    if (uniform) patch.vatRatePercent = uniformVatRates(percent);
+    await this.db.hamlets.update(hamletId, patch);
+    return percent;
+  }
+
+  /** @param {string} category @param {number} percent @returns {Promise<number>} */
+  async setVatCategoryRate(category, percent) {
+    if (!getVatCategories().includes(category)) throw new Error(`[fiscal] "${category}" is not a VAT category`);
+    assertInBounds('vatRate', percent);
+    const hamletId = requireActiveHamletId();
+    const { uniform, categoryRatesPercent } = await this.getVatSettings();
+    if (uniform) throw new Error('[fiscal] the VAT is uniform: the general rate sets every category');
+    await this.db.hamlets.update(hamletId, { vatRatePercent: { ...categoryRatesPercent, [category]: percent } });
+    return percent;
+  }
+
+  /** @param {string} service @param {number} percent @returns {Promise<number>} */
+  async setServiceSubsidy(service, percent) {
+    if (!getServiceCategories().includes(service)) throw new Error(`[fiscal] "${service}" is not a service`);
+    assertInBounds('serviceSubsidy', percent);
+    const hamletId = requireActiveHamletId();
+    const current = await this.getServiceSubsidies();
+    await this.db.hamlets.update(hamletId, { serviceSubsidy: { ...current, [service]: percent } });
+    return percent;
+  }
+
+  /**
+   * @param {{ minimumWageMode?: string, minimumWage?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number, unemploymentBenefitRate?: number, employerContributionRate?: number, employeeContributionRate?: number }} partial
+   * @returns {Promise<Awaited<ReturnType<HamletFiscalRateRepository['getSalarySettings']>>>}
+   */
+  async setSalarySettings(partial = {}) {
+    const { minimumWageMode, ...rates } = partial;
+    if (minimumWageMode !== undefined) {
+      if (!MINIMUM_WAGE_MODES.includes(minimumWageMode)) throw new Error(`[fiscal] unknown minimum wage mode "${minimumWageMode}"`);
+      await this.db.hamlets.update(requireActiveHamletId(), { minimumWageMode });
+    }
+    await this.#write(rates);
+    return this.getSalarySettings();
+  }
+
+  /**
+   * Writes the default rates on a hamlet that has none yet: done once, when the hamlet is created.
+   * @param {string} hamletId
+   * @returns {Promise<void>}
+   */
+  async ensureRates(hamletId) {
+    const row = await this.db.hamlets.get(hamletId);
+    if (!row) throw new Error(`[fiscal] hamlet ${hamletId} has no row to hold its rates`);
+    const missing = Object.keys(DEFAULT_HAMLET_FISCAL_RATES).filter((field) => typeof row[field] !== 'number');
+    const defaults = Object.fromEntries(missing.map((field) => [field, DEFAULT_HAMLET_FISCAL_RATES[field]]));
+    if (!row.minimumWageMode) defaults.minimumWageMode = DEFAULT_MINIMUM_WAGE_MODE;
+    if (typeof row.rentControlEnabled !== 'boolean') defaults.rentControlEnabled = DEFAULT_RENT_CONTROL_ENABLED;
+    if (!row.serviceSubsidy) {
+      defaults.serviceSubsidy = Object.fromEntries(getServiceCategories().map((service) => [service, DEFAULT_SERVICE_SUBSIDY_PERCENT]));
+    }
+    if (!row.vatRatePercent) {
+      defaults.vatRatePercent = Object.fromEntries(getVatCategories().map((category) => [category, DEFAULT_VAT_RATE_PERCENT]));
+      defaults.vatUniform = DEFAULT_VAT_UNIFORM;
+      defaults.vatGeneralRatePercent = DEFAULT_VAT_GENERAL_RATE_PERCENT;
+      defaults.vatExempt = Object.fromEntries(getVatItems().map((item) => [item, false]));
+    }
+    if (Object.keys(defaults).length > 0) await this.db.hamlets.update(hamletId, defaults);
+  }
+
+  /** @returns {Promise<string>} the hamlet's way of treating the minimum wage (see MINIMUM_WAGE_MODES) */
+  async #readMinimumWageMode() {
+    const hamletId = requireActiveHamletId();
+    const row = await this.db.hamlets.get(hamletId);
+    if (!row) throw new Error(`[fiscal] hamlet ${hamletId} has no row`);
+    if (!MINIMUM_WAGE_MODES.includes(row.minimumWageMode)) {
+      throw new Error(`[fiscal] hamlet ${hamletId} has no valid minimum wage mode (${row.minimumWageMode}): its rates are written when it is created`);
+    }
+    return row.minimumWageMode;
+  }
+
+  /** @param {keyof typeof DEFAULT_HAMLET_FISCAL_RATES} field */
+  async #read(field) {
+    const hamletId = requireActiveHamletId();
+    const row = await this.db.hamlets.get(hamletId);
+    if (!row) throw new Error(`[fiscal] hamlet ${hamletId} has no row`);
+    const value = row[field];
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      throw new Error(`[fiscal] hamlet ${hamletId} has no ${field}: its rates are written when it is created`);
+    }
+    return value;
+  }
+
+  /** @param {Partial<typeof DEFAULT_HAMLET_FISCAL_RATES>} partial */
+  async #write(partial) {
+    const hamletId = requireActiveHamletId();
+    for (const [field, value] of Object.entries(partial)) {
+      assertInBounds(field, value);
+    }
+    await this.db.hamlets.update(hamletId, partial);
+  }
+}
+
+/**
+ * @param {string} field
+ * @param {unknown} value
+ */
+function assertInBounds(field, value) {
+  const bounds =
+    HAMLET_FISCAL_RATE_BOUNDS[field] ??
+    (field === 'serviceSubsidy' ? SERVICE_SUBSIDY_BOUNDS : field === 'vatRate' ? VAT_RATE_BOUNDS : null);
+  if (!bounds) throw new Error(`[fiscal] "${field}" is not a hamlet fiscal rate`);
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new Error(`[fiscal] ${field} must be a number, got ${value}`);
+  }
+  if (bounds.integer && !Number.isInteger(value)) throw new Error(`[fiscal] ${field} must be an integer, got ${value}`);
+  if (value < bounds.min || value > bounds.max) {
+    throw new Error(`[fiscal] ${field} must be between ${bounds.min} and ${bounds.max}, got ${value}`);
+  }
+}
+
+/** @param {number} percent @returns {Record<string, number>} the same rate for every VAT category. */
+function uniformVatRates(percent) {
+  return Object.fromEntries(getVatCategories().map((category) => [category, percent]));
+}

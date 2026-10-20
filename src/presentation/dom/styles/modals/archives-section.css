@@ -20,16 +20,15 @@
 }
 
 .archives-empty {
-  margin: 0;
-  padding: 16px;
-  background: rgba(0, 0, 0, 0.04);
-  border-radius: var(--border-radius-small);
+    margin: 0;
+    padding: 16px;
+    border-radius: var(--border-radius-small);
 }
 
 .archives-news-item {
-  padding: 12px 14px;
-  border-left: 3px solid var(--cta);
-  background: rgba(255, 255, 255, 0.7);
+    padding: 12px 14px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
 }
 
 .archives-news-item-header {

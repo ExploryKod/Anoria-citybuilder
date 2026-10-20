@@ -1,14 +1,15 @@
+import { buildLedgerBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
+import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
+
 /**
- * Application service — yearly citizen tax income (journal + treasury).
+ * Application service — yearly citizen tax income (journal + treasury), charged to the active hamlet.
  */
 export class RecordCitizenTaxIncome {
   /**
    * @param {import('../commands/journal/RecordLedgerEntry.js').RecordLedgerEntry} recordLedgerEntry
-   * @param {import('../commands/treasury/ApplyTreasuryMovement.js').ApplyTreasuryMovement} applyTreasuryMovement
    */
-  constructor(recordLedgerEntry, applyTreasuryMovement) {
+  constructor(recordLedgerEntry) {
     this.recordLedgerEntry = recordLedgerEntry;
-    this.applyTreasuryMovement = applyTreasuryMovement;
   }
 
   /**
@@ -18,7 +19,7 @@ export class RecordCitizenTaxIncome {
    * @param {string} params.description
    * @param {number} params.taxYear Civil year of collection (for treasury + businessKey)
    * @param {object|null} [params.taxBreakdown]
-   * @returns {Promise<{ recorded: boolean, skipped: boolean, treasuryApplied: boolean, reason?: string }>}
+   * @returns {Promise<{ recorded: boolean, skipped: boolean, reason?: string }>}
    */
   async execute({ turn, amount, description, taxYear, taxBreakdown = null }) {
     const roundedAmount = Math.round(amount);
@@ -27,7 +28,6 @@ export class RecordCitizenTaxIncome {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'zero_amount',
       };
     }
@@ -36,7 +36,6 @@ export class RecordCitizenTaxIncome {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'invalid_tax_year',
       };
     }
@@ -46,29 +45,22 @@ export class RecordCitizenTaxIncome {
       type: 'citizen_tax',
       amount: roundedAmount,
       description,
-      businessKey: `citizen_tax:${taxYear}`,
+      businessKey: buildLedgerBusinessKey('citizen_tax', { year: taxYear }, requireActiveHamletId()),
+      taxYear,
+      taxBreakdown,
     });
 
     if (!ledgerResult.recorded) {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: ledgerResult.reason,
       };
     }
 
-    await this.applyTreasuryMovement.execute({
-      category: 'citizen_tax',
-      amount: roundedAmount,
-      taxBreakdown,
-      taxYear,
-    });
-
     return {
       recorded: true,
       skipped: false,
-      treasuryApplied: true,
     };
   }
 }

@@ -1,7 +1,8 @@
 /**
- * Behavior tests — Housing: HouseLevelPolicy's service-coverage helpers
- * (2026-09-11) — back the house info panel's Services tab "Chapel/Doctor/...
- * reached or not" chips, the same way road/market reach already show.
+ * Behavior tests — Housing: HouseLevelPolicy's evolution-requirement helpers — back the house info panel's Services tab
+ * "Besoins pour l'évolution" section: EVERY requirement the tier ladder declares (population, food, water, a named
+ * service's coverage, goods, energy, a warehouse within reach), each a plain met/unmet fact, except `roadAccess`
+ * (Route already has its own, building-type-agnostic chip — see servicesInfoFormat.js).
  */
 import { describe, test, expect } from '@jest/globals';
 import {
@@ -9,75 +10,91 @@ import {
   describeRelevantServiceCoverage,
 } from '../../../src/contexts/housing/domain/policies/HouseLevelPolicy.js';
 
-describe('HouseLevelPolicy — relevantServiceCoverageRequirements', () => {
-  test('a tier-1 house shows only the next tier\'s services (Chapel/faith)', () => {
-    const requirements = relevantServiceCoverageRequirements({ level: 1, residentialGroup: 'artisans' });
-    expect(requirements).toEqual([{ kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 }]);
-  });
+const WATER = { kind: 'serviceDemandMet', category: 'water', outcomeField: 'lastWaterConsumption' };
 
-  test('a tier-2 house shows what unlocks tier 3 (faith is already behind it, doctor is next)', () => {
-    const requirements = relevantServiceCoverageRequirements({ level: 2, residentialGroup: 'artisans' });
+describe('HouseLevelPolicy — relevantServiceCoverageRequirements', () => {
+  test('a tier-1 house shows what unlocks tier 2: population, food, water and a dispensary, road excluded', () => {
+    const requirements = relevantServiceCoverageRequirements({ level: 1, residentialGroup: 'artisans' });
     expect(requirements).toEqual([
-      { kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2 },
+      { kind: 'population', min: 1 },
+      { kind: 'demandMet' },
+      WATER,
       { kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 },
     ]);
   });
 
-  test('a maxed-out house (tier 5) shows its own final tier\'s full service list', () => {
-    const requirements = relevantServiceCoverageRequirements({ level: 5, residentialGroup: 'artisans' });
-    expect(requirements.map((r) => r.category)).toEqual([
-      'faith', 'doctor', 'publicBath', 'pub', 'school', 'cinema',
+  test('a tier-2 house shows what unlocks tier 3: goods, fire, a warehouse and energy join the earlier needs', () => {
+    const requirements = relevantServiceCoverageRequirements({ level: 2, residentialGroup: 'artisans' });
+    expect(requirements.map((r) => r.category ?? r.kind)).toEqual([
+      'population', 'demandMet', 'water', 'doctor', 'goodsVariety', 'fire', 'activityAccess', 'energy',
     ]);
   });
 
-  test('no residential group (e.g. a palace) has no service requirements to show', () => {
+  test('a maxed-out house (tier 6) shows its own final tier\'s full requirement list, road excluded', () => {
+    const requirements = relevantServiceCoverageRequirements({ level: 6, residentialGroup: 'artisans' });
+    expect(requirements.some((r) => r.kind === 'roadAccess')).toBe(false);
+    expect(requirements.map((r) => r.category).filter(Boolean)).toEqual(expect.arrayContaining(['water', 'doctor', 'fire', 'energy', 'hospital', 'police', 'pub', 'school', 'theatre', 'cinema', 'library']));
+  });
+
+  test('no residential group has no requirements to show', () => {
     expect(relevantServiceCoverageRequirements({ level: 2, residentialGroup: null })).toEqual([]);
   });
 });
 
 describe('HouseLevelPolicy — describeRelevantServiceCoverage', () => {
-  test('marks a service met when servedFlags matches the CURRENT period', () => {
+  // Water is an ordinary quantity-consumed need: read off its own record (ConsumeResource's outcome), no coverage-window
+  // slack, met only for the CURRENT period and only once fully served (`totalUnfed: 0`).
+  test('marks population and water met when both hold THIS period', () => {
     const described = describeRelevantServiceCoverage({
       level: 1,
       residentialGroup: 'merchants',
-      servedFlags: { faith: 4 },
+      pop: 1,
+      outcomes: { lastWaterConsumption: { month: 4, totalUnfed: 0 } },
       periodKey: 4,
     });
-    expect(described).toEqual([
-      { kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2, current: 1, target: 1, met: true },
-    ]);
+    expect(described.find((r) => r.kind === 'population')).toMatchObject({ met: true });
+    expect(described.find((r) => r.category === 'water')).toMatchObject({ current: 1, target: 1, met: true });
   });
 
-  test('still met within the coverage window (faith\'s coveragePeriods: 2) even one period stale', () => {
+  test('water reads as not met once the record is stale (a different period)', () => {
     const described = describeRelevantServiceCoverage({
       level: 1,
       residentialGroup: 'merchants',
-      servedFlags: { faith: 3 },
+      pop: 1,
+      outcomes: { lastWaterConsumption: { month: 3, totalUnfed: 0 } },
       periodKey: 4,
     });
-    expect(described[0].met).toBe(true);
+    expect(described.find((r) => r.category === 'water').met).toBe(false);
   });
 
-  test('reads as not met once the gap reaches coveragePeriods — a true interruption of service', () => {
+  test('water reads as not met when the tank ran short this period (totalUnfed > 0)', () => {
     const described = describeRelevantServiceCoverage({
       level: 1,
       residentialGroup: 'merchants',
-      servedFlags: { faith: 2 },
+      pop: 1,
+      outcomes: { lastWaterConsumption: { month: 4, totalUnfed: 1 } },
       periodKey: 4,
     });
-    expect(described[0].met).toBe(false);
+    expect(described.find((r) => r.category === 'water').met).toBe(false);
   });
 
-  test('a tier-2 house sees BOTH an already-met service and an unmet one side by side', () => {
+  test('food (demandMet) reads met once fully served this period, next to an unmet dispensary', () => {
     const described = describeRelevantServiceCoverage({
-      level: 2,
+      level: 1,
       residentialGroup: 'scholars',
-      servedFlags: { faith: 9 },
+      pop: 4,
+      lastConsumption: { month: 9, totalUnfed: 0 },
+      outcomes: { lastWaterConsumption: { month: 9, totalUnfed: 0 } },
       periodKey: 9,
     });
-    expect(described).toEqual([
-      { kind: 'serviceCoverage', category: 'faith', coveragePeriods: 2, current: 1, target: 1, met: true },
-      { kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2, current: 0, target: 1, met: false },
-    ]);
+    expect(described.find((r) => r.kind === 'demandMet')).toMatchObject({ met: true, current: 1, target: 1 });
+    expect(described.find((r) => r.category === 'doctor')).toMatchObject({ met: false });
+  });
+
+  test('a warehouse within reach of the house\'s business is a requirement of the second level, met only when told so', () => {
+    const base = { level: 2, residentialGroup: 'scholars', pop: 4, periodKey: 9 };
+    expect(describeRelevantServiceCoverage({ ...base, activityAccess: true }).find((r) => r.kind === 'activityAccess').met).toBe(true);
+    expect(describeRelevantServiceCoverage({ ...base, activityAccess: false }).find((r) => r.kind === 'activityAccess').met).toBe(false);
+    expect(describeRelevantServiceCoverage(base).find((r) => r.kind === 'activityAccess').met).toBe(false);
   });
 });

@@ -19,6 +19,8 @@ export class BackdropManager {
         this.scene = scene;
         /** @type {THREE.MeshBasicMaterial | null} */
         this._groundFillMaterial = null;
+        /** @type {THREE.Mesh | null} */
+        this._groundFill = null;
     }
 
     applyAtmosphere() {
@@ -34,10 +36,11 @@ export class BackdropManager {
     }
 
     _removeGroundFill() {
-        const groundFill = this.scene.getObjectByName('kenney-ground-fill');
+        const groundFill = this._groundFill;
         if (!groundFill) return;
-        groundFill.geometry?.dispose();
+        groundFill.geometry.dispose();
         this.scene.remove(groundFill);
+        this._groundFill = null;
     }
 
     /**
@@ -65,7 +68,12 @@ export class BackdropManager {
             this._groundFillMaterial.color.setHex(fillColor);
         }
 
-        let groundFill = this.scene.getObjectByName('kenney-ground-fill');
+        let groundFill = this._groundFill;
+        if (groundFill && groundFill.parent !== this.scene) {
+            // scene.clear() detaches the mesh without disposing its geometry
+            groundFill.geometry.dispose();
+            groundFill = null;
+        }
         if (!groundFill) {
             const geometry = new THREE.PlaneGeometry(planeSize, planeSize, 1, 1);
             groundFill = new THREE.Mesh(geometry, this._groundFillMaterial);
@@ -76,6 +84,7 @@ export class BackdropManager {
             groundFill.frustumCulled = false;
             groundFill.userData = { nonInteractive: true, isGroundFill: true };
             this.scene.add(groundFill);
+            this._groundFill = groundFill;
         } else {
             groundFill.geometry.dispose();
             groundFill.geometry = new THREE.PlaneGeometry(planeSize, planeSize, 1, 1);

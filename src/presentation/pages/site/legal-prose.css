@@ -1,8 +1,64 @@
 @import './site.css';
 
-/* Contenu légal — pleine largeur du site-page, aligné avec le header */
-.legal-prose {
+/* Contenu légal — colonne de lecture qui suit la largeur de l'écran (le plafond 400px de .site-panel est
+   fait pour les menus, pas pour de la prose) */
+.site-panel.legal-prose {
   width: 100%;
+  min-width: 0;
+  max-width: 860px;
+  padding: 16px;
+  overflow-wrap: anywhere;
+}
+
+.legal-page .site-header,
+.privacy-page .site-header,
+.terms-page .site-header,
+.credits-page .site-header {
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.legal-page .site-header h1,
+.privacy-page .site-header h1,
+.terms-page .site-header h1,
+.credits-page .site-header h1 {
+  font-size: clamp(1.1rem, 4.5vw, 1.35rem);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 480px) {
+  .site-panel.legal-prose {
+    padding: 20px 24px;
+  }
+}
+
+@media (min-width: 768px) {
+  .site-panel.legal-prose {
+    padding: 28px 36px;
+    font-size: 15px;
+  }
+
+  .legal-prose h2 {
+    font-size: 1rem;
+  }
+
+  .legal-prose h3 {
+    font-size: 0.95rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .site-panel.legal-prose,
+  .legal-page .site-header,
+  .privacy-page .site-header,
+  .terms-page .site-header,
+  .credits-page .site-header {
+    max-width: 960px;
+  }
 }
 
 .legal-intro {
@@ -76,7 +132,7 @@
 
 .legal-prose ul {
   margin: 0 0 0.5rem;
-  padding-left: 1.2rem;
+  padding-left: 1.1rem;
   line-height: 1.5;
 }
 
@@ -113,6 +169,8 @@
   font-size: 0.8rem;
 }
 
+.legal-page,
+.credits-page,
 .privacy-page,
 .terms-page {
   padding-bottom: 32px;

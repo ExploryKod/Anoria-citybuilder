@@ -1,22 +1,39 @@
 import { getBuildingInfoBody, setBuildingInfoTitle } from '../../layout/buildingInfoLayout.js';
 import { patchHubStoragePieChart, renderHubStoragePieChart } from './hubStoragePieChart.js';
-
+import { getResourceRoles, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { buildingName, goodLabel, scheduleLabel } from '../../../shell/CatalogVocabulary.js';
+import { formatHubStockSummary } from '../../presenters/formats/hubStorageInfoFormat.js';
 /**
- * @param {object} line
+ * The view the chart draws: a hub that holds several flows of goods (see `storageViews`) draws one flow at a time,
+ * the one the player picked; any other hub draws all it holds.
+ * @param {object} view
+ * @param {string | null} flowId
  */
-function renderStockGridItem(line) {
-  const capHint = line.maxCap > 0 ? ` / ${line.maxCap}` : '';
-  const refused = line.mode === 'refuse' ? ' hub-stock-item--refused' : '';
-  const fetch = line.mode === 'fetch' ? ' hub-stock-item--fetch' : '';
-  const empty = line.amount <= 0 ? ' hub-stock-item--empty' : '';
+function chartViewOf(view, flowId) {
+  const flow = view.storageViews?.find((candidate) => candidate.id === flowId);
+  return flow ? { ...view, pieSegments: flow.pieSegments, currentTotal: flow.total } : view;
+}
 
-  return `
-    <div class="hub-stock-item${refused}${fetch}${empty}" data-product="${line.productId}">
-      <span class="hub-stock-emoji">${line.emoji}</span>
-      <span class="hub-stock-qty">${line.amount}${capHint}</span>
-      <span class="hub-stock-label">${line.label}</span>
-    </div>
-  `;
+/** The orders listed under the selected pill: only the goods of that flow (the whole list for a hub that holds one flow). */
+function ordersViewOf(view, flowId) {
+  const flow = view.storageViews?.find((candidate) => candidate.id === flowId);
+  return flow ? { ...view, lines: flow.lines } : view;
+}
+
+/** The title over the chart: the flow's own name when the hub has several, else "Stock". */
+function chartTitleOf(view, flowId) {
+  return view.storageViews?.find((candidate) => candidate.id === flowId)?.label ?? 'Stock';
+}
+
+/** The buttons that switch the chart from one flow to another (none when the hub holds a single flow). */
+function renderFlowTabs(view, flowId) {
+  if (!(view.storageViews?.length > 1)) return '';
+  return `<div class="hub-flow-tabs" role="tablist">${view.storageViews
+    .map(
+      (flow) =>
+        `<button type="button" role="tab" class="hub-flow-tab hub-flow-tab--${flow.id}${flow.id === flowId ? ' is-active' : ''}" data-flow="${flow.id}" aria-selected="${flow.id === flowId}">${flow.label}</button>`
+    )
+    .join('')}</div>`;
 }
 
 /**
@@ -42,6 +59,20 @@ function setOrderWarning(ordersPanel, message) {
 /** @param {HTMLElement} ordersPanel */
 function clearOrderWarnings(ordersPanel) {
   ordersPanel.querySelectorAll('.hub-orders-warning').forEach((el) => el.remove());
+}
+
+/**
+ * What the line says of an order to empty: goods are leaving, nothing can take them, or there is nothing left.
+ * @param {{ mode: string, amount: number, emptying: 'moving' | 'blocked' | null }} line
+ * @returns {{ icon: string, title: string } | null}
+ */
+function emptyingStatus(line) {
+  if (line.mode !== 'empty') return null;
+  if (line.emptying === 'blocked') {
+    return { icon: '⚠️', title: 'Vidage bloqué : aucun autre entrepôt ne peut prendre ce bien (plein, refusé ou hors service).' };
+  }
+  if (line.amount <= 0) return { icon: '✓', title: 'Vidé : plus rien à déplacer.' };
+  return { icon: '🚚', title: 'Vidage en cours : le stock part vers les autres entrepôts.' };
 }
 
 /**
@@ -79,6 +110,14 @@ function patchOrdersPanelRows(ordersPanel, view, orderWarning) {
       modeBtn.className = `hub-order-mode-btn hub-order-mode-btn--${line.mode}`;
     }
 
+    const status = row.querySelector('[data-role="emptying"]');
+    if (status) {
+      const emptying = emptyingStatus(line);
+      status.textContent = emptying?.icon ?? '';
+      status.title = emptying?.title ?? '';
+      status.hidden = !emptying;
+    }
+
     const display = row.querySelector('.hub-order-share-display');
     if (display) {
       display.textContent = line.percentLabel;
@@ -99,30 +138,20 @@ async function softRefreshHubPanel(ctx, orderWarning = null) {
   if (!body) return null;
 
   const freshRow = await supply.getSupplyBuildingRow(buildingId);
-  const freshView = supply.getHubStorageInfoView(hubKind, freshRow ?? buildingRow, {
+  const freshView = await supply.getHubStorageInfoView(hubKind, freshRow ?? buildingRow, {
     stocks: freshRow?.stocks,
     maxStock: supplyView?.maxStock,
+    timeContextAhead: ctx.timeContextAhead,
   });
 
   ctx.buildingRow = freshRow ?? buildingRow;
   ctx.view = freshView;
 
-  const capacityEl = body.querySelector('.hub-info-capacity');
-  if (capacityEl) {
-    capacityEl.textContent = `📦 ${freshView.currentTotal} / ${freshView.totalCapacity} unités`;
-  }
-
-  const grid = body.querySelector('.hub-stock-grid');
-  if (grid) {
-    grid.innerHTML = freshView.lines.map(renderStockGridItem).join('');
-  }
-
-  patchHubStoragePieChart(body, freshView);
+  const chartView = chartViewOf(freshView, ctx.flowId);
+  patchHubStoragePieChart(body, chartView, formatHubStockSummary(chartView), chartTitleOf(freshView, ctx.flowId));
 
   const ordersPanel = body.querySelector('.hub-orders-panel');
-  if (ordersPanel && !ordersPanel.classList.contains('hidden')) {
-    patchOrdersPanelRows(ordersPanel, freshView, orderWarning);
-  }
+  if (ordersPanel) patchOrdersPanelRows(ordersPanel, ordersViewOf(freshView, ctx.flowId), orderWarning);
 
   return freshView;
 }
@@ -136,7 +165,7 @@ export async function renderHubStorageInfoPanel({
   supply,
   buildingRow,
   supplyView = null,
-  ordersOpen = false,
+  timeContextAhead = null,
 }) {
   const body = getBuildingInfoBody();
   if (!body || !view) return;
@@ -151,19 +180,23 @@ export async function renderHubStorageInfoPanel({
     supply,
     buildingRow,
     supplyView,
+    timeContextAhead,
+    // The flow whose chart is drawn, for a hub that holds several (null when it holds a single one).
+    flowId: view.storageViews?.[0]?.id ?? null,
   };
 
   const workerLine = `${view.workers} / ${view.workerNeed} requis`;
-  const capacityLine = `${view.currentTotal} / ${view.totalCapacity} unités`;
 
   let statusMessage = '';
-  if (view.hubKind === 'windmill' && supplyView) {
-    if ((buildingRow.roads ?? 0) <= 0) {
-      statusMessage = '⚠️ Sans route le moulin ne peut pas stocker.';
+  if (view.hubKind === 'hub' && supplyView) {
+    // When this hub collects is the one its catalog entry declares, in words.
+    const collectsWhen = scheduleLabel(getResourceRoles(buildingRow.type).find((entry) => entry.role === 'collector')?.schedule);
+    if (!isRoadNeedMet(buildingRow.type, buildingRow.roads)) {
+      statusMessage = `⚠️ Sans route, ${buildingName(buildingRow.type)} ne peut pas stocker.`;
     } else if (supplyView.isCollecting) {
-      statusMessage = '🟢 Collecte active (décembre).';
+      statusMessage = `🟢 Collecte active (${collectsWhen}).`;
     } else {
-      statusMessage = '⏸️ En attente — collecte en décembre.';
+      statusMessage = `⏸️ En attente — collecte : ${collectsWhen}.`;
     }
   }
 
@@ -171,31 +204,39 @@ export async function renderHubStorageInfoPanel({
     <div class="hub-info-panel">
       <div class="hub-info-summary">
         <div class="hub-info-workers">👷 ${workerLine}</div>
-        <div class="hub-info-capacity">📦 ${capacityLine}</div>
         ${statusMessage ? `<p class="hub-info-status">${statusMessage}</p>` : ''}
       </div>
-      <div class="hub-stock-grid">
-        ${view.lines.map(renderStockGridItem).join('')}
-      </div>
-      <section class="hub-storage-chart-section">
-        <h3 class="hub-storage-chart-title">Répartition de l'entrepôt</h3>
-        ${renderHubStoragePieChart(view)}
+      ${renderFlowTabs(view, ctx.flowId)}
+      <section class="hub-storage-chart-section${ctx.flowId ? ` hub-storage-chart-section--${ctx.flowId}` : ''}">
+        <h3 class="hub-storage-chart-title">${chartTitleOf(view, ctx.flowId)}</h3>
+        ${renderHubStoragePieChart(chartViewOf(view, ctx.flowId), formatHubStockSummary(chartViewOf(view, ctx.flowId)))}
       </section>
-      <div class="hub-info-actions">
-        <button type="button" class="hub-orders-toggle-btn">${ordersOpen ? 'Masquer ordres' : 'Ordres'}</button>
-      </div>
-      <div class="hub-orders-panel ${ordersOpen ? '' : 'hidden'}" aria-hidden="${ordersOpen ? 'false' : 'true'}"></div>
+      <div class="hub-orders-panel"></div>
     </div>
   `;
 
-  const ordersBtn = body.querySelector('.hub-orders-toggle-btn');
+  // The storage orders are always there, under the chart: the panel scrolls.
   const ordersPanel = body.querySelector('.hub-orders-panel');
+  renderHubOrdersPanelShell(ordersPanel, ordersViewOf(ctx.view, ctx.flowId));
 
-  if (ordersOpen && ordersPanel) {
-    renderHubOrdersPanelShell(ordersPanel, ctx.view);
-  }
+  body.querySelector('.hub-flow-tabs')?.addEventListener('click', (event) => {
+    const tab = /** @type {HTMLElement} */ (event.target).closest('[data-flow]');
+    if (!tab || tab.dataset.flow === ctx.flowId) return;
+    ctx.flowId = tab.dataset.flow;
+    body.querySelectorAll('.hub-flow-tab').forEach((button) => {
+      const active = button.dataset.flow === ctx.flowId;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    const section = body.querySelector('.hub-storage-chart-section');
+    if (section) section.className = `hub-storage-chart-section hub-storage-chart-section--${ctx.flowId}`;
+    const chartView = chartViewOf(ctx.view, ctx.flowId);
+    patchHubStoragePieChart(body, chartView, formatHubStockSummary(chartView), chartTitleOf(ctx.view, ctx.flowId));
+    // The orders follow the pill, like the chart.
+    renderHubOrdersPanelShell(ordersPanel, ordersViewOf(ctx.view, ctx.flowId));
+  });
 
-  ordersPanel?.addEventListener('click', async (event) => {
+  ordersPanel.addEventListener('click', async (event) => {
     const target = /** @type {HTMLElement} */ (event.target);
     const btn = target.closest('[data-action]');
     if (!btn || !ordersPanel.contains(btn)) return;
@@ -216,7 +257,7 @@ export async function renderHubStorageInfoPanel({
     if (action === 'percent-dec') {
       const result = await supply.adjustHubStorageOrderShare(ctx.hubKind, buildingId, productId, -1);
       if (result?.ok === false && result.reason === 'stock_exceeds_new_max') {
-        const label = line?.label ?? productId;
+        const label = line?.label ?? goodLabel(productId);
         const message = `${line?.emoji ?? ''} ${label} : impossible de réduire à ${result.newPercent ?? '?'} % (${result.newMaxCap} unités) — ${result.currentAmount} déjà en stock. Videz d'abord l'espace.`;
         await softRefreshHubPanel(ctx, message);
         return;
@@ -231,22 +272,6 @@ export async function renderHubStorageInfoPanel({
     }
   });
 
-  ordersBtn?.addEventListener('click', async () => {
-    if (!ordersPanel) return;
-    const willOpen = ordersPanel.classList.contains('hidden');
-    if (willOpen) {
-      await softRefreshHubPanel(ctx);
-      ordersPanel.classList.remove('hidden');
-      ordersPanel.setAttribute('aria-hidden', 'false');
-      ordersBtn.textContent = 'Masquer ordres';
-      renderHubOrdersPanelShell(ordersPanel, ctx.view);
-    } else {
-      ordersPanel.classList.add('hidden');
-      ordersPanel.setAttribute('aria-hidden', 'true');
-      ordersPanel.innerHTML = '';
-      ordersBtn.textContent = 'Ordres';
-    }
-  });
 }
 
 /**
@@ -257,8 +282,10 @@ function renderHubOrdersPanelShell(ordersPanel, view) {
   ordersPanel.innerHTML = `
     <h3 class="hub-orders-title">Ordres de stockage</h3>
     <p class="hub-orders-help">
-      Mode : Accepter → Refuser → Amener.
-      <strong>Amener</strong> tire le stock ailleurs.
+      Mode : Accepter → Refuser → Amener → Vider.
+      <strong>Amener</strong> : les producteurs qui vendent ce bien viennent d'abord ici, avant l'entrepôt le plus proche.
+      <strong>Vider</strong> : cet entrepôt donne ce bien aux autres, un peu à chaque jour (d'abord ceux en « Amener », puis
+      les plus proches), et n'en reçoit plus.
       Le <strong>%</strong> est le plafond de remplissage (comme les m² de César III).
       Si plusieurs denrées sont à 100&nbsp;% (ou se chevauchent), la place libre va au
       <strong>premier arrivé</strong>.
@@ -269,7 +296,7 @@ function renderHubOrdersPanelShell(ordersPanel, view) {
           (line) => `
         <div class="hub-order-c3-row${line.amount > line.maxCap ? ' hub-order-c3-row--overflow' : ''}" data-product="${line.productId}">
           <span class="hub-order-c3-icon">${line.emoji}</span>
-          <span class="hub-order-c3-label">${line.label}</span>
+          <span class="hub-order-c3-label">${line.label} <span class="hub-order-emptying" data-role="emptying" hidden></span></span>
           <button type="button" class="hub-order-mode-btn hub-order-mode-btn--${line.mode}" data-action="mode">
             ${line.modeLabel}
           </button>

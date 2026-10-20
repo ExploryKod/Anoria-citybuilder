@@ -3,7 +3,10 @@
  */
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
+import { getResourceRoles, getResourceStockShape, getTotalKeyForCategory } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { buildingName, goodLabel, goodUnit, scheduleLabel } from '../../../shell/CatalogVocabulary.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
+import { staffingStatusLine } from './staffingReasonFormat.js';
 
 /**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
@@ -11,7 +14,7 @@ import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
 export function formatMarketLayoutHeader(vm) {
   const def = getBuildingDefinition(vm.buildingType);
   return {
-    title: def?.displayName ?? vm.buildingType,
+    title: buildingName(vm.buildingType),
     meta: `📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
     accent: null,
   };
@@ -21,48 +24,85 @@ export function formatMarketLayoutOptions() {
   return { layout: 'centered', hubOverlayMode: null };
 }
 
+/** The goods of one thing a market distributes, in the catalog's words ("Assiette, Pot, …"). */
+const goodsNames = (categories) => categories.map(goodLabel).join(', ');
+
+/** Every thing the market's catalog entries have it distribute: its diet, the goods it also stocks... */
+const distributorEntries = (vm) => getResourceRoles(vm.buildingType).filter((entry) => entry.role === 'distributor');
+
+/** The 'producer' role matching a distributor entry's own category — this building makes its own supply. */
+const producerEntryFor = (vm, category) =>
+  getResourceRoles(vm.buildingType).find((entry) => entry.role === 'producer' && entry.categories.includes(category));
+
 /**
- * Overview — reference fact only (which season the market buys in).
- * Operational/supply-chain status (inactive, no farms nearby, no houses
- * nearby) is a Messages-tab complaint now — see messagesInfoFormat.js's
- * personnelComplaint (staffing/road) and marketSupplyComplaints (fermes/
- * maisons). Repeating those here would just be the same fact said twice.
+ * Overview — reference facts, one set per thing the market distributes: when it buys and which hub it
+ * draws from now. Operational/supply-chain status (inactive, no farms nearby, no houses nearby) is a
+ * Messages-tab complaint now — see messagesInfoFormat.js's personnelComplaint (staffing/road) and
+ * marketSupplyComplaints (fermes/maisons). Repeating those here would just be the same fact said twice.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
 export function formatMarketOverviewModel(vm) {
   const { supplyView, stocks } = vm;
-  if (!supplyView || !Object.hasOwn(stocks || {}, 'food')) return null;
+  if (!supplyView || !Object.hasOwn(stocks || {}, getResourceStockShape().totalKey)) return null;
 
-  return {
-    sections: [{
-      title: 'État du marché',
-      rows: [{ label: 'Période d\'achat', value: 'Automne' }],
-    }],
-  };
+  const entries = distributorEntries(vm);
+  const rows = entries.flatMap((entry) => {
+    const goods = goodsNames(entry.categories);
+    if (!entry.hubLink) {
+      // No hub leg at all (see buildingCatalog.js's `hubLink` doc): "buying" means nothing here — this
+      // building makes its own supply (the water tank's water producer role) rather than restocking from one.
+      const producer = producerEntryFor(vm, entry.categories[0]);
+      return producer ? [{ label: `Produit sur place · ${goods}`, value: scheduleLabel(producer.schedule) }] : [];
+    }
+    const link = (supplyView.hubLinks ?? []).find((candidate) => candidate.categories.join() === entry.categories.join());
+    return [
+      { label: `Période d'achat · ${goods}`, value: scheduleLabel(entry.schedule) },
+      { label: `Approvisionné par · ${goods}`, value: link?.hubType ? buildingName(link.hubType) : 'aucun à portée' },
+    ];
+  });
+
+  return { sections: [{ title: `État · ${buildingName(vm.buildingType)}`, rows }] };
 }
 
 /**
- * Stocks tab.
+ * Stocks tab — one section per thing the market distributes, each with its own goods and ceiling.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
 export function formatMarketStocksModel(vm) {
   const { supplyView, stocks } = vm;
-  if (!supplyView || !Object.hasOwn(stocks || {}, 'food')) return null;
+  if (!supplyView) return null;
 
-  const maxStock = supplyView.maxStock || 500;
-  return {
-    sections: [{
-      title: 'Stock marché',
-      rows: [
-        { label: 'Blé', value: `${stocks.wheat || 0}/${maxStock} paniers` },
-        { label: 'Légumes verts', value: `${stocks.cabbage || 0}/${maxStock} paniers` },
-        { label: 'Autres légumes', value: `${stocks.carrot || 0}/${maxStock} paniers` },
-        { label: 'Total', value: `${stocks.food || 0}/${maxStock} paniers disponibles` },
-      ],
-    }],
-  };
+  const sections = distributorEntries(vm)
+    // A single-category entry legally omits `totalKey` (it's its own total — see buildingCatalog.js's
+    // doc and ResourceRolePolicy.getTotalKeyForRole); resolve it the same way instead of assuming it is
+    // always explicit, or a quantity-mode entry with one good (e.g. the water tank's water) never shows here.
+    .map((entry) => ({ entry, totalKey: entry.totalKey ?? getTotalKeyForCategory(entry.categories[0]) }))
+    .filter(({ totalKey }) => Object.hasOwn(stocks || {}, totalKey))
+    .map(({ entry, totalKey }, index) => {
+      // Goods, aggregate and ceiling all come from the market's own catalog entry.
+      const ceiling = Number.isFinite(entry.maxStock) ? entry.maxStock : supplyView.maxStock;
+      const cap = Number.isFinite(ceiling) ? `/${ceiling}` : '';
+      return {
+        title: index === 0 ? `Stock · ${buildingName(vm.buildingType)}` : `Stock · ${goodsNames(entry.categories)}`,
+        rows: [
+          ...entry.categories.map((category) => ({
+            label: goodLabel(category),
+            value: `${stocks[category] || 0}${cap} ${goodUnit(category, stocks[category] || 0)}`,
+          })),
+          // A single-category entry's total is the same figure as its one good's row above — redundant.
+          ...(entry.categories.length > 1
+            ? [{
+                label: 'Total disponible',
+                value: `${stocks[totalKey] || 0}${cap} ${goodUnit(totalKey, stocks[totalKey] || 0)}`,
+              }]
+            : []),
+        ],
+      };
+    });
+
+  return sections.length > 0 ? { sections } : null;
 }
 
 /**
@@ -71,7 +111,7 @@ export function formatMarketStocksModel(vm) {
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
 export function formatMarketStaffModel(vm) {
-  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment);
+  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment, staffingStatusLine(vm), vm.wagePerWorker, vm.employerContributionRate);
 }
 
 /** @deprecated Prefer thematic tab formatters */

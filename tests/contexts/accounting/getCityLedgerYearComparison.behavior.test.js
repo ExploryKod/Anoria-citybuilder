@@ -1,92 +1,47 @@
 /**
- * Behavior tests — Accounting Phase 1: city ledger comparison
+ * Behavior tests — the city ledger (livret) is read from the fold of the journal's legs: the money that moved the city's cash in a year, by M57 account.
  */
 
-import { describe, test, expect, beforeEach } from '@jest/globals';
-import { cityLedgerYearLinesFromJournalSummary } from '../../../src/contexts/accounting/domain/policies/CityLedgerLineMappingPolicy.js';
-import {
-  cityLedgerBalanceForYear,
-  financialStatusMessageForCityLedger,
-} from '../../../src/contexts/accounting/domain/policies/CityLedgerFinancialStatusPolicy.js';
+import { describe, test, expect } from '@jest/globals';
+import { cityLedgerYearLinesFromCashFlows } from '../../../src/contexts/accounting/domain/policies/CityLedgerLineMappingPolicy.js';
+import { financialStatusMessageForCityLedger } from '../../../src/contexts/accounting/domain/policies/CityLedgerFinancialStatusPolicy.js';
 import { createEmptyCityLedgerYearLines } from '../../../src/contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
 import { GetCityLedgerYearComparison } from '../../../src/contexts/accounting/application/queries/city-ledger/GetCityLedgerYearComparison.js';
 import { GetTreasuryBalance } from '../../../src/contexts/accounting/application/queries/treasury/GetTreasuryBalance.js';
-import { createAccountingContext } from '../../../src/composition/createAccountingContext.js';
-import { resetAccountingContextForTests } from '../../../src/composition/accountingOps.js';
+import { LegsFold } from '../../../src/contexts/accounting/domain/policies/LegsFold.js';
+import { booked } from '../../helpers/booked.js';
 
-class FakeJournalRepository {
-  constructor({ entries = [], yearlyData = [], currentBalance = 0 } = {}) {
-    this.entries = entries;
-    this.yearlyData = yearlyData;
-    this.currentBalance = currentBalance;
-  }
+/** What moved the city's cash, by account, in centimes: the shape the fold gives. */
+const flowsOf = (flows) => new Map(Object.entries(flows));
 
-  async getJournalEntries() {
-    return this.entries;
-  }
+const line = (hamletId, year, type, amount) => booked({ hamletId, year, month: 1, turn: year * 12, type, amount, accountBuildingId: null });
 
-  async getYearlyFinancialSummary() {
-    return this.yearlyData;
-  }
-
-  async getCurrentBalance() {
-    return this.currentBalance;
-  }
-}
-
-class FakeTreasuryRepository {
-  constructor(funds = 0) {
-    this.funds = funds;
-  }
-
-  async getTreasuryBalance() {
-    return this.funds;
-  }
-}
-
-class FakeGameTimePort {
-  constructor(year = 0) {
-    this.year = year;
-  }
-
-  getTimeInfo(_turn) {
-    return { year: this.year };
-  }
-}
-
-function yearSummary(year, incomeEntries, expenseEntries, netFlow = 0) {
-  const incomeTotal = incomeEntries.reduce((s, e) => s + e.amount, 0);
-  const expenseTotal = expenseEntries.reduce((s, e) => s + e.amount, 0);
+/** The ports over a fold built from journal lines: the repository gives the fold, the treasury the cash of the same scope. */
+function portsOf(lines, currentYear) {
+  const fold = new LegsFold();
+  for (const entry of lines) fold.add(entry);
   return {
-    year,
-    netFlow,
-    income: { total: incomeTotal, entries: incomeEntries },
-    expenses: { total: expenseTotal, entries: expenseEntries },
+    journal: { getLegsFold: async () => fold },
+    treasury: {
+      cashOf: async ({ hamletId = null, untilYear = null } = {}) => fold.balanceOf('512', { hamletId, accountKey: null, untilYear }) / 100,
+    },
+    time: { getTimeInfo: () => ({ year: currentYear }), currentTurn: () => currentYear * 12 },
   };
 }
 
-describe('Accounting — city ledger (Phase 1)', () => {
-  beforeEach(() => {
-    resetAccountingContextForTests();
-  });
-
+describe('Accounting — city ledger', () => {
   describe('CityLedgerLineMappingPolicy', () => {
-    test('aggregates journal types into city-ledger year lines', () => {
-      const summary = yearSummary(
-        1,
-        [
-          { type: 'capital_funds', amount: 200 },
-          { type: 'citizen_tax', amount: 50 },
-          { type: 'export_wheat', amount: 15 },
-        ],
-        [
-          { type: 'construction', amount: 30 },
-          { type: 'import_carrot', amount: 5 },
-          { type: 'maintenance', amount: 10 },
-        ]
-      );
+    test('aggregates what moved the city\'s cash, by M57 account, into the lines of the ledger', () => {
+      const flows = flowsOf({
+        1021: { in: 20000, out: 0 },
+        73111: { in: 5000, out: 0 },
+        7348: { in: 1500, out: 0 },
+        2131: { in: 0, out: 3000 },
+        607: { in: 0, out: 500 },
+        6156: { in: 0, out: 1000 },
+      });
 
-      const lines = cityLedgerYearLinesFromJournalSummary(summary, 220);
+      const lines = cityLedgerYearLinesFromCashFlows(1, flows, { balanceForYear: 220, previousNetFlow: 0 });
 
       expect(lines.initialFunds).toBe(200);
       expect(lines.incomeTax).toBe(50);
@@ -99,96 +54,96 @@ describe('Accounting — city ledger (Phase 1)', () => {
       expect(lines.balance).toBe(220);
     });
 
-    test('aggregates unemployment benefits into city-ledger year lines', () => {
-      const summary = yearSummary(
-        1,
-        [{ type: 'citizen_tax', amount: 50 }],
-        [
-          { type: 'salary', amount: 100 },
-          { type: 'unemployment_benefit', amount: 40 },
-        ]
-      );
+    test('the unemployment benefit is paid out of what the city holds for the social body, and the contributions are what comes in on it', () => {
+      const flows = flowsOf({ 73111: { in: 5000, out: 0 }, 6411: { in: 0, out: 10000 }, 431: { in: 2000, out: 4000 } });
 
-      const lines = cityLedgerYearLinesFromJournalSummary(summary, 10);
+      const lines = cityLedgerYearLinesFromCashFlows(1, flows, { balanceForYear: 10, previousNetFlow: 0 });
 
       expect(lines.salary).toBe(100);
+      expect(lines.socialContributions).toBe(20);
       expect(lines.unemploymentBenefit).toBe(40);
       expect(lines.totalExpenses).toBe(140);
+    });
+
+    // Regression: the city giving back an income-tax advance leaves its treasury; the ledger shows it as a smaller income tax, so its totals agree with the treasury.
+    test('an income tax refund reduces the income tax line, and a construction refund the constructions, so the ledger agrees with the treasury', () => {
+      const flows = flowsOf({ 738: { in: 10000, out: 0 }, 7398: { in: 0, out: 2000 }, 2131: { in: 500, out: 3000 } });
+
+      const lines = cityLedgerYearLinesFromCashFlows(1, flows, { balanceForYear: 80, previousNetFlow: 0 });
+
+      expect(lines.payrollTax).toBe(80);
+      expect(lines.totalIncome).toBe(80);
+      expect(lines.construction).toBe(25);
+    });
+
+    test('money that moved against an account no line of the ledger takes is an error, never left out', () => {
+      expect(() => cityLedgerYearLinesFromCashFlows(1, flowsOf({ 9999: { in: 100, out: 0 } }), { balanceForYear: 0, previousNetFlow: 0 })).toThrow(/9999/);
     });
   });
 
   describe('CityLedgerFinancialStatusPolicy', () => {
-    test('treasury balance for current year, netFlow for past years', () => {
-      const past = yearSummary(0, [{ type: 'citizen_tax', amount: 100 }], [], 60);
-
-      expect(cityLedgerBalanceForYear(past, 350, false)).toBe(60);
-      expect(cityLedgerBalanceForYear(past, 350, true)).toBe(350);
-    });
-
     test('financial status message from year line balances', () => {
       const thisYear = { ...createEmptyCityLedgerYearLines(1), balance: 100 };
       const lastYear = { ...createEmptyCityLedgerYearLines(0), balance: 50 };
 
-      expect(financialStatusMessageForCityLedger(thisYear, lastYear).type).toBe(
-        'success'
-      );
+      expect(financialStatusMessageForCityLedger(thisYear, lastYear).type).toBe('success');
     });
   });
 
   describe('GetCityLedgerYearComparison', () => {
-    test('assembles CityLedgerComparison from ports', async () => {
-      const journal = new FakeJournalRepository({
-        entries: [{ turn: 42, type: 'citizen_tax', amount: 10 }],
-        yearlyData: [
-          yearSummary(2, [{ type: 'citizen_tax', amount: 25 }], [], 25),
-        ],
-      });
-      const treasury = new FakeTreasuryRepository(500);
-      const time = new FakeGameTimePort(2);
+    test('assembles the comparison from the fold: the lines of each year, its cash, the result carried from the year before', async () => {
+      const { journal, treasury, time } = portsOf(
+        [line('h1', 0, 'capital_funds', 475), line('h1', 1, 'citizen_tax', 10), line('h1', 2, 'citizen_tax', 25)],
+        2
+      );
 
-      const query = new GetCityLedgerYearComparison(journal, treasury, time);
-      const result = await query.execute();
+      const result = await new GetCityLedgerYearComparison(journal, treasury, time).execute();
 
-      expect(result.thisYear.balance).toBe(500);
+      expect(result.thisYear.balance).toBe(510);
       expect(result.thisYear.incomeTax).toBe(25);
+      expect(result.lastYear.incomeTax).toBe(10);
+      expect(result.lastYear.balance).toBe(485);
+      expect(result.thisYear.carryForwardIncome).toBe(10);
       expect(result.debt).toBe(0);
     });
 
-    test('debt on comparison when treasury is negative', async () => {
-      const journal = new FakeJournalRepository({ entries: [{ turn: 1 }] });
-      const query = new GetCityLedgerYearComparison(
-        journal,
-        new FakeTreasuryRepository(-50),
-        new FakeGameTimePort(0)
-      );
-      const result = await query.execute();
+    test('debt on comparison when the cash is negative', async () => {
+      const { journal, treasury, time } = portsOf([line('h1', 0, 'construction', 50)], 0);
+
+      const result = await new GetCityLedgerYearComparison(journal, treasury, time).execute();
 
       expect(result.debt).toBe(50);
+    });
+
+    test('each hamlet shows only its own lines and cash; hamlets add up to the whole city', async () => {
+      const { journal, treasury, time } = portsOf(
+        [line('h1', 0, 'citizen_tax', 100), line('h1', 0, 'construction', 30), line('h2', 0, 'citizen_tax', 40), line('h2', 0, 'maintenance', 10)],
+        0
+      );
+      const query = new GetCityLedgerYearComparison(journal, treasury, time);
+
+      const h1 = await query.execute({ hamletId: 'h1' });
+      const h2 = await query.execute({ hamletId: 'h2' });
+      const city = await query.execute();
+
+      expect(h1.thisYear.incomeTax).toBe(100);
+      expect(h1.thisYear.construction).toBe(30);
+      expect(h1.thisYear.balance).toBe(70);
+      expect(h2.thisYear.incomeTax).toBe(40);
+      expect(h2.thisYear.maintenance).toBe(10);
+      expect(h2.thisYear.balance).toBe(30);
+
+      for (const field of ['incomeTax', 'construction', 'maintenance', 'totalIncome', 'totalExpenses', 'netFlow']) {
+        expect(h1.thisYear[field] + h2.thisYear[field]).toBe(city.thisYear[field]);
+      }
+      expect(h1.thisYear.balance + h2.thisYear.balance).toBe(city.thisYear.balance);
     });
   });
 
   describe('GetTreasuryBalance', () => {
-    test('returns funds from treasury port', async () => {
-      const query = new GetTreasuryBalance(new FakeTreasuryRepository(1234));
+    test('returns the cash of the fold', async () => {
+      const query = new GetTreasuryBalance({ cashOf: async () => 1234 });
       expect(await query.execute()).toBe(1234);
-    });
-  });
-
-  describe('createAccountingContext with fakes', () => {
-    test('wires injected ports for tests', async () => {
-      const ctx = createAccountingContext({
-        journalRepository: new FakeJournalRepository({
-          entries: [{ turn: 1 }],
-          yearlyData: [yearSummary(0, [{ type: 'capital_funds', amount: 200 }], [])],
-        }),
-        treasuryRepository: new FakeTreasuryRepository(200),
-        gameTimePort: new FakeGameTimePort(0),
-      });
-
-      expect(await ctx.getTreasuryBalance()).toBe(200);
-      const comparison = await ctx.getCityLedgerYearComparison();
-      expect(comparison.thisYear.initialFunds).toBe(200);
-      expect(comparison.thisYear.balance).toBe(200);
     });
   });
 });

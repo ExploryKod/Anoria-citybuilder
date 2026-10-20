@@ -98,10 +98,6 @@ export function getInputManagerMouse() {
   return getInputManager()?.mouse ?? null;
 }
 
-export function getUpdateBudgetDisplayHandler() {
-  return getSessionService('updateBudgetDisplay');
-}
-
 export async function invokeUpdateBudgetDisplay() {
   const handler = getUpdateBudgetDisplayHandler();
   if (typeof handler === 'function') {

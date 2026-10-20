@@ -7,14 +7,9 @@ This directory contains modularized CSS files for all modal components in the ap
 ### Core Modal Files
 - `global.css` - Common styles and utilities shared across all modals
 - `realtime-budget.css` - Real-time budget popup styles
-- `compte-de-resultat-panel.css` - Compte de résultat panel styles
-- `bilan-panel.css` - Bilan comptable (balance sheet) panel styles
 - `loans-panel.css` - Loans panel styles
 
 ### Content-Specific Files
-- `bilan-panel-content.css` - Bilan panel content styles
-- `compte-de-resultat-panel-content.css` - Compte de résultat content styles
-- `balance-sheet.css` - Balance sheet styles
 
 ## Anti-FOUC / anti-blocage canvas (obligatoire)
 
@@ -37,14 +32,9 @@ Each modal file should be imported in the main HTML file or through a CSS bundle
 <!-- Core modal styles -->
 <link rel="stylesheet" href="./src/presentation/dom/styles/modals/global.css">
 <link rel="stylesheet" href="./src/presentation/dom/styles/modals/realtime-budget.css">
-<link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel.css">
-<link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel.css">
 <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loans-panel.css">
 
 <!-- Content-specific styles -->
-<link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel-content.css">
-<link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel-content.css">
-<link rel="stylesheet" href="./src/presentation/dom/styles/modals/balance-sheet.css">
 ```
 
 ## Global Styles

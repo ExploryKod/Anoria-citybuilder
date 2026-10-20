@@ -47,6 +47,30 @@
     text-align: left;
 }
 
+.tutorial-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.tutorial-panel-header .tutorial-rules-btn {
+    flex-shrink: 0;
+    padding: 4px 12px;
+    border: 2px solid var(--cta);
+    border-radius: var(--border-radius-small);
+    background: transparent;
+    color: var(--cta);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+
+.tutorial-panel-header .tutorial-rules-btn:hover {
+    background-color: rgba(251, 129, 24, 0.1);
+}
+
 .tutorial-panel-header h3 {
     margin: 0;
     font-size: 18px;

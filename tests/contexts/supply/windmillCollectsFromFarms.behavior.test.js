@@ -27,6 +27,11 @@ class InMemorySupplyBuildingRepository {
   }
 
   async saveSupplyFlags() {}
+
+  async updateBuildingFields(id, fields) {
+    const b = this.raw.get(id);
+    if (b) Object.assign(b, fields);
+  }
 }
 
 function windmill(id, stocks, extras = {}) {
@@ -89,7 +94,7 @@ describe('Supply — windmill collection', () => {
     test('collects from all farms in december', async () => {
       const outcome = await useCase.execute({
         hubId: windmillId,
-        period: { month: 'december' },
+        period: { month: 'december', turn: 1 },
         sourceRefs: [
           { instanceId: wheatFarmId },
           { instanceId: carrotFarmId },
@@ -123,7 +128,7 @@ describe('Supply — windmill collection', () => {
       expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
     });
 
-    test('skips farms without road access', async () => {
+    test('collects from a farm without road access (the catalog says fields need none)', async () => {
       repo = new InMemorySupplyBuildingRepository([
         windmill(windmillId, { food: 0 }),
         farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }, 0),
@@ -132,13 +137,13 @@ describe('Supply — windmill collection', () => {
 
       const outcome = await useCase.execute({
         hubId: windmillId,
-        period: { month: 'december' },
+        period: { month: 'december', turn: 1 },
         sourceRefs: [{ instanceId: wheatFarmId }],
       });
 
-      expect(outcome.collected).toBe(false);
-      expect(outcome.reason).toBe('nothing_to_collect');
-      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
+      expect(outcome.collected).toBe(true);
+      expect(outcome.totalUnits).toBe(10);
+      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(0);
     });
 
     test('refuses when windmill has no road access', async () => {
@@ -150,7 +155,7 @@ describe('Supply — windmill collection', () => {
 
       const outcome = await useCase.execute({
         hubId: windmillId,
-        period: { month: 'december' },
+        period: { month: 'december', turn: 1 },
         sourceRefs: [{ instanceId: wheatFarmId }],
       });
 
@@ -160,7 +165,7 @@ describe('Supply — windmill collection', () => {
 
     test('respects windmill capacity', async () => {
       repo = new InMemorySupplyBuildingRepository([
-        windmill(windmillId, { wheat: 0, food: 0 }, { maxStock: 4 }),
+        windmill(windmillId, { wheat: 0, food: 0 }, { maxStock: 4, hubStorageOrders: { wheat: { mode: 'accept', maxPercent: 100 } } }),
         farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
         farm(carrotFarmId, 'Farm-Carrot', { carrot: 5, food: 5 }),
       ]);
@@ -168,7 +173,7 @@ describe('Supply — windmill collection', () => {
 
       const outcome = await useCase.execute({
         hubId: windmillId,
-        period: { month: 'december' },
+        period: { month: 'december', turn: 1 },
         sourceRefs: [{ instanceId: wheatFarmId }, { instanceId: carrotFarmId }],
       });
 

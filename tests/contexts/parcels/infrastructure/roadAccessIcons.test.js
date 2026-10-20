@@ -47,7 +47,7 @@ describe('roadAccessIcons', () => {
   test('mémorise l\'accès routier sur le mesh (ordre des couches de statut)', async () => {
     const events = new InMemoryDomainEventPublisher();
     const instanceId = createBuildingInstanceId();
-    const mesh = { name: 'Market-Stall', userData: {} };
+    const mesh = { name: 'Market-Stall-Red', userData: {} };
     const assetManager = { setStatusSprite: () => {} };
     const textures = { 'no-roads': 'tex-no-road' };
 

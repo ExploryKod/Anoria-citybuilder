@@ -7,11 +7,28 @@
     text-align: left;
 }
 
+.finances-hamlet-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.finances-hamlet-filter-label {
+    font-weight: 600;
+}
+
+.finances-hamlet-filter {
+    padding: 6px 10px;
+    border-radius: var(--border-radius-small);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: #fff;
+    font: inherit;
+}
 
 .finances-debt-info {
     margin: 15px 0;
     padding: 12px;
-    background: rgba(251, 129, 34, 0.1);
     border-radius: var(--border-radius-small);
 }
 
@@ -33,7 +50,6 @@
     gap: 10px;
     margin: 15px 0;
     padding: 12px;
-    background: rgba(251, 129, 34, 0.05);
     border-radius: var(--border-radius-small);
     max-width: 300px;
 }
@@ -116,11 +132,12 @@
     background: white;
     border-radius: var(--border-radius-small);
     overflow: hidden;
+    box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
 }
 
 .finances-table thead {
-    background: var(--cta);
-    color: white;
+    background: transparent;
+    color: #5b6470;
 }
 
 .finances-table th {
@@ -128,7 +145,6 @@
     text-align: left;
     font-weight: 600;
     font-size: 14px;
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .finances-table th:last-child {
@@ -157,7 +173,7 @@
 }
 
 .finances-table tbody tr {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+
 }
 
 .finances-table tbody tr:last-child {
@@ -199,8 +215,6 @@
 
 .finances-table .finances-row-total {
     font-weight: 700;
-    background: rgba(251, 129, 34, 0.1);
-    border-top: 2px solid var(--cta);
 }
 
 .finances-table .finances-row-total .finances-row-label {
@@ -220,19 +234,15 @@
 
 .finances-table .finances-row-net {
     font-weight: 600;
-    background: rgba(0, 153, 153, 0.1);
 }
 
 .finances-table .finances-row-netflow {
     font-weight: 700;
-    background: rgba(23, 162, 184, 0.15);
-    border-top: 2px solid #17a2b8;
 }
 
 .finances-table .finances-row-balance {
     font-weight: 700;
     background: rgba(40, 167, 69, 0.1);
-    border-top: 2px solid var(--lightgreen);
 }
 
 .finances-table .finances-row-balance.negative {
@@ -249,7 +259,7 @@
 }
 
 .finances-table .finances-value-netflow {
-    color: #17a2b8;
+    /* the colour comes from the sign (positive / negative), not from the row */
     font-weight: 700;
 }
 
@@ -283,8 +293,6 @@
     margin-top: 20px;
     padding: 15px;
     border-radius: var(--border-radius-small);
-    background: rgba(251, 129, 34, 0.05);
-    border-left: 4px solid var(--cta);
     min-height: 60px;
 }
 
@@ -310,6 +318,86 @@
     line-height: 1.6;
 }
 
+.producer-ranking {
+    margin-top: 20px;
+}
+
+.producer-ranking-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.producer-ranking-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.producer-ranking-period {
+    font-size: 13px;
+    font-weight: 500;
+    color: #5b6470;
+}
+
+.producer-ranking-note {
+    margin: 6px 0 12px;
+    font-size: 12px;
+    font-style: italic;
+    color: #888;
+    line-height: 1.4;
+}
+
+.producer-ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: var(--border-radius-small);
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
+}
+
+.producer-ranking-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 13px;
+    color: #5b6470;
+}
+
+.producer-ranking-table td {
+    padding: 8px 12px;
+    font-size: 14px;
+    color: var(--primary);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.producer-ranking-table .producer-ranking-rank-col {
+    width: 40px;
+    text-align: center;
+    font-weight: 600;
+    color: #5b6470;
+}
+
+.producer-ranking-table .producer-ranking-revenue-col {
+    width: 160px;
+    text-align: right;
+    font-weight: 600;
+}
+
+.producer-ranking-table th.producer-ranking-revenue-col {
+    text-align: right;
+}
+
+.producer-ranking-table .producer-ranking-empty {
+    text-align: center;
+    color: #888;
+    font-style: italic;
+    padding: 16px;
+}
+
 /* Mobile Responsive */
 @media screen and (max-width: 1024px) {
     .finances-board {
@@ -324,6 +412,7 @@
 
     .finances-table {
         font-size: 12px;
+        box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
     }
 
     .finances-table th,

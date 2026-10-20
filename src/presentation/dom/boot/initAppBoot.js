@@ -23,7 +23,9 @@ import { initHudPopRailScope } from '../shell/hudPopRailScope.js';
 import { adoptHudFabDockChildren } from '../shell/hudFabDock.js';
 import { initHudShellMenus } from '../shell/HudShellMenus.js';
 import { initCheatCodePrompt } from '../shell/CheatCodePrompt.js';
-import { initMobileCompactToolbar } from '../tools/MobileCompactToolbar.js';
+import { initCompactToolbar } from '../tools/CompactToolbar.js';
+import { initHamletSwitcher } from '../hamlets/hamletSwitcher.js';
+import { initBottomModeRadio } from '../tools/BottomModeRadio.js';
 import { initBuildToolHoverPreview } from '../tools/BuildToolHoverPreview.js';
 import { initEditorNatureToolbar } from '../editor/EditorNatureToolbar.js';
 import { initMobileClickStateFab } from '../tools/MobileClickStateFab.js';
@@ -34,7 +36,6 @@ import { buttonStateManager } from '../shell/ButtonStateManager.js';
 import '../shell/EventBlocker.js';
 import { initParametersPanel } from '../parametres/ParametersPanel.js';
 import { initMapFiltersPanel } from '../filters/MapFiltersPanel.js';
-import { loadBudgetStates } from '../compta/compte-de-resultat/CompteDeResultatPanel.js';
 import { mountCookieConsent } from '../../pages/site/mountCookieBanner.js';
 
 export async function initAppBoot() {
@@ -67,10 +68,12 @@ export async function initAppBoot() {
     buttonStateManager,
     invokeSetActiveTool,
   });
-  initMobileCompactToolbar({
+  initCompactToolbar({
     invokeSetActiveTool,
     buttonStateManager,
   });
+  initHamletSwitcher({ getGame: getSessionGame });
+  initBottomModeRadio({ getGame: getSessionGame });
   initBuildToolHoverPreview();
   initEditorNatureToolbar({ invokeSetActiveTool });
   initMobileClickStateFab({ invokeSetActiveTool });
@@ -84,13 +87,11 @@ export async function initAppBoot() {
     playGame,
     registerAppService,
     getTimeManager,
+    getGame: getSessionGame,
     getScene: getSessionScene,
   });
   // After ParametersPanel (it rebinds #parameters-btn).
   initHudShellMenus();
-  registerAppFunction('loadBudgetStates', (period = '3', showLoading = true) =>
-    loadBudgetStates(period, showLoading)
-  );
   await bootstrapGameSession(assetManager);
   initCheatCodePrompt();
   initMapFiltersPanel({

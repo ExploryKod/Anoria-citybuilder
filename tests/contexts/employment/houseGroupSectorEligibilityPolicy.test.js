@@ -8,10 +8,10 @@ import {
   allPriorityTabs,
   exclusiveSkillsForGroup,
   groupsForSkill,
+  groupsProvidingSkill,
   sharedWorkplaceSkills,
   skillsForTab,
   tabForSkill,
-  SHARED_SKILL_TAB_ID,
 } from '../../../src/contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 import { allWorkplaceEmploymentSkills } from '../../../src/contexts/employment/domain/policies/WorkplaceSkillRequirementPolicy.js';
 
@@ -20,40 +20,41 @@ describe('Employment — HouseGroupSectorEligibilityPolicy (skill/tab derivation
     test('a group-exclusive skill resolves to exactly its one owning group', () => {
       expect(groupsForSkill('fermier')).toEqual(['artisans']);
       expect(groupsForSkill('vente-alimentaire')).toEqual(['merchants']);
-      expect(groupsForSkill('stockage-alimentaire')).toEqual(['scholars']);
+      expect(groupsForSkill('stockage-alimentaire')).toEqual(['merchants']);
     });
 
-    test('spiritual (Chapel) is granted by every group — the cold-start bootstrap skill', () => {
-      expect(groupsForSkill('spiritual').sort()).toEqual(['artisans', 'merchants', 'scholars']);
+    test('each trade of the new ladder belongs to one group: water and fire to the scholars, energy to the artisans', () => {
+      expect(groupsForSkill('hydraulique')).toEqual(['scholars']);
+      expect(groupsForSkill('incendie')).toEqual(['scholars']);
+      expect(groupsForSkill('energie')).toEqual(['artisans']);
+      expect(groupsForSkill('hospitality')).toEqual(['merchants']);
     });
   });
 
   describe('exclusiveSkillsForGroup', () => {
-    test('artisans get fermier + artisanat, never a shared or another group\'s skill', () => {
+    test('artisans get fermier + artisanat + energie, never another group\'s skill', () => {
       const skills = exclusiveSkillsForGroup('artisans');
-      expect(skills).toEqual(expect.arrayContaining(['fermier', 'artisanat']));
-      expect(skills).not.toContain('spiritual');
+      expect(skills).toEqual(expect.arrayContaining(['fermier', 'artisanat', 'energie']));
       expect(skills).not.toContain('vente-alimentaire');
     });
 
-    test('scholars own every public-service skill except the shared one', () => {
+    test('scholars own every public-service skill', () => {
       const skills = exclusiveSkillsForGroup('scholars');
-      for (const skill of ['stockage-alimentaire', 'medical', 'education', 'hygiene', 'entertainment', 'hospitality']) {
+      for (const skill of ['hydraulique', 'medical', 'incendie', 'securite', 'education', 'entertainment']) {
         expect(skills).toContain(skill);
       }
-      expect(skills).not.toContain('spiritual');
     });
   });
 
   describe('sharedWorkplaceSkills', () => {
-    test('is exactly the skills more than one group grants (today: spiritual only)', () => {
-      expect(sharedWorkplaceSkills()).toEqual(['spiritual']);
+    test('is exactly the skills more than one group grants (none today: each trade has one group)', () => {
+      expect(sharedWorkplaceSkills()).toEqual([]);
     });
   });
 
   describe('allPriorityTabs / skillsForTab', () => {
-    test('one tab per social group plus the shared tab', () => {
-      expect(allPriorityTabs().sort()).toEqual(['artisans', 'merchants', 'scholars', SHARED_SKILL_TAB_ID].sort());
+    test('one tab per social group, and no shared tab while no skill is shared', () => {
+      expect(allPriorityTabs().sort()).toEqual(['administrators', 'artisans', 'merchants', 'scholars']);
     });
 
     test('every workplace-relevant skill appears in exactly one tab', () => {
@@ -69,9 +70,6 @@ describe('Employment — HouseGroupSectorEligibilityPolicy (skill/tab derivation
       }
     });
 
-    test('the shared tab holds exactly the shared skills', () => {
-      expect(skillsForTab(SHARED_SKILL_TAB_ID)).toEqual(sharedWorkplaceSkills());
-    });
   });
 
   describe('tabForSkill', () => {
@@ -80,15 +78,31 @@ describe('Employment — HouseGroupSectorEligibilityPolicy (skill/tab derivation
       expect(tabForSkill('vente-alimentaire')).toBe('merchants');
     });
 
-    test('resolves a shared skill to the shared tab', () => {
-      expect(tabForSkill('spiritual')).toBe(SHARED_SKILL_TAB_ID);
-    });
-
     test('is the exact inverse of skillsForTab', () => {
       for (const tabId of allPriorityTabs()) {
         for (const skillId of skillsForTab(tabId)) {
           expect(tabForSkill(skillId)).toBe(tabId);
         }
+      }
+    });
+  });
+
+  describe('groupsProvidingSkill — which kind of house fills a workplace', () => {
+    test('an exclusive skill names its one group and the house tier that starts providing it', () => {
+      expect(groupsProvidingSkill('stockage-alimentaire')).toEqual([{ group: 'merchants', tier: 1 }]);
+      expect(groupsProvidingSkill('fermier')).toEqual([{ group: 'artisans', tier: 1 }]);
+    });
+
+    test('a higher level is only provided by the groups that reach it, and later', () => {
+      const level1 = groupsProvidingSkill('medical', 1);
+      const level2 = groupsProvidingSkill('medical', 2);
+      expect(level2.length).toBeGreaterThan(0);
+      expect(level2[0].tier).toBeGreaterThan(level1[0].tier);
+    });
+
+    test('every skill a workplace needs is provided by at least one group', () => {
+      for (const skillId of allWorkplaceEmploymentSkills()) {
+        expect(groupsProvidingSkill(skillId).length).toBeGreaterThan(0);
       }
     });
   });

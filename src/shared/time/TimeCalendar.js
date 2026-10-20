@@ -1,3 +1,34 @@
+/** Nombre de mois par an : fixe pour tout le jeu (seul le nombre de jours par mois est un paramètre). */
+export const MONTHS_PER_YEAR = 12;
+
+/**
+ * A turn count (days since the game began): a finite number, never negative.
+ * @param {unknown} days
+ * @param {string} what
+ */
+export function assertTurnCount(days, what = 'days') {
+  if (typeof days !== 'number' || !Number.isFinite(days) || days < 0) {
+    throw new Error(`[TimeCalendar] ${what} must be a finite number >= 0, got ${days}`);
+  }
+}
+
+/** @param {unknown} daysPerMonth */
+export function assertDaysPerMonth(daysPerMonth) {
+  if (!Number.isInteger(daysPerMonth) || daysPerMonth < 1) {
+    throw new Error(`[TimeCalendar] daysPerMonth must be a positive integer, got ${daysPerMonth}`);
+  }
+}
+
+/**
+ * Nombre de tours (jours) que dure une année pour un nombre de jours par mois donné.
+ *
+ * @param {number} daysPerMonth
+ */
+export function turnsPerYear(daysPerMonth) {
+  assertDaysPerMonth(daysPerMonth);
+  return daysPerMonth * MONTHS_PER_YEAR;
+}
+
 /** Nombre de mois par saison (calendrier civil du jeu). */
 export const MONTHS_PER_SEASON = 3;
 
@@ -21,12 +52,14 @@ export const SEASON_KEYS = Object.freeze(['printemps', 'ete', 'automne', 'hiver'
  */
 export function getSeasonDisplay(season) {
   const index = SEASONS.indexOf(season);
-  const safeIndex = index >= 0 ? index : 0;
-  const label = SEASONS[safeIndex];
+  if (index < 0) {
+    throw new Error(`[TimeCalendar] unknown season "${season}", expected one of ${SEASONS.join(', ')}`);
+  }
+  const label = SEASONS[index];
   return {
     season: label,
-    seasonKey: SEASON_KEYS[safeIndex],
-    emoji: SEASON_EMOJI[label] ?? '🌸',
+    seasonKey: SEASON_KEYS[index],
+    emoji: SEASON_EMOJI[label],
     title: label,
     ariaLabel: `Saison : ${label}`,
   };
@@ -71,17 +104,15 @@ export const MONTH_ABBREVS = Object.freeze([
  * @param {number} daysPerMonth
  */
 export function getTimeInfo(days, daysPerMonth) {
-  if (days === undefined || days === null || isNaN(days) || typeof days !== 'number') {
-    days = 0;
-  }
-
-  days = Math.max(0, Math.floor(days));
+  assertTurnCount(days);
+  assertDaysPerMonth(daysPerMonth);
+  days = Math.floor(days);
 
   const adjustedDays = days;
   const dayInMonth = (adjustedDays % daysPerMonth) + 1;
-  const monthIndexAdjusted = Math.floor(adjustedDays / daysPerMonth) % 12;
+  const monthIndexAdjusted = Math.floor(adjustedDays / daysPerMonth) % MONTHS_PER_YEAR;
   const monthNumber = Math.floor(adjustedDays / daysPerMonth) + 1;
-  const year = Math.floor(adjustedDays / (daysPerMonth * 12));
+  const year = Math.floor(adjustedDays / turnsPerYear(daysPerMonth));
 
   let seasonIndex;
   if (monthIndexAdjusted >= 8 && monthIndexAdjusted <= 10) {
@@ -94,32 +125,17 @@ export function getTimeInfo(days, daysPerMonth) {
     seasonIndex = 1;
   }
 
-  const safeMonthIndex = Math.max(0, Math.min(11, monthIndexAdjusted));
-  const safeSeasonIndex = Math.max(0, Math.min(3, seasonIndex));
-  const month = MONTHS[safeMonthIndex];
-  const season = SEASONS[safeSeasonIndex];
-
-  if (!month || !season) {
-    return {
-      days,
-      dayInMonth: 1,
-      month: MONTHS[0],
-      monthIndex: 0,
-      monthNumber: 1,
-      season: SEASONS[0],
-      seasonIndex: 0,
-      year: 0,
-    };
-  }
+  const month = MONTHS[monthIndexAdjusted];
+  const season = SEASONS[seasonIndex];
 
   return {
     days,
     dayInMonth,
     month,
-    monthIndex: safeMonthIndex,
+    monthIndex: monthIndexAdjusted,
     monthNumber,
     season,
-    seasonIndex: safeSeasonIndex,
+    seasonIndex,
     year,
   };
 }
@@ -130,15 +146,7 @@ export function getTimeInfo(days, daysPerMonth) {
  * @param {{ abbreviated?: boolean }} [options]
  */
 export function formatTime(days, daysPerMonth, options = {}) {
-  if (days === undefined || days === null || isNaN(days) || typeof days !== 'number') {
-    return 'Chargement...';
-  }
-
   const timeInfo = getTimeInfo(days, daysPerMonth);
-
-  if (!timeInfo.month || !timeInfo.season) {
-    return 'Chargement...';
-  }
 
   let yearDisplay;
   if (timeInfo.year === 0) {
@@ -150,7 +158,7 @@ export function formatTime(days, daysPerMonth, options = {}) {
   const abbreviated = options.abbreviated !== false;
   const showDay = daysPerMonth > 1;
   const monthLabel = abbreviated
-    ? (MONTH_ABBREVS[timeInfo.monthIndex] ?? timeInfo.month)
+    ? MONTH_ABBREVS[timeInfo.monthIndex]
     : timeInfo.month;
   const dateLabel = showDay
     ? `${timeInfo.dayInMonth} ${monthLabel}`
@@ -183,23 +191,12 @@ export function formatTimeShort(days, daysPerMonth) {
 
 /** @param {number} currentTime @param {number} worldTime */
 export function getBuildingAge(currentTime, worldTime) {
-  if (
-    worldTime === undefined ||
-    worldTime === null ||
-    isNaN(worldTime) ||
-    typeof worldTime !== 'number'
-  ) {
-    return 0;
+  assertTurnCount(currentTime, 'currentTime');
+  assertTurnCount(worldTime, 'the building worldTime');
+  if (worldTime > currentTime) {
+    throw new Error(`[TimeCalendar] building worldTime ${worldTime} is after the current time ${currentTime}`);
   }
-  if (
-    currentTime === undefined ||
-    currentTime === null ||
-    isNaN(currentTime) ||
-    typeof currentTime !== 'number'
-  ) {
-    return 0;
-  }
-  return Math.max(0, currentTime - worldTime);
+  return currentTime - worldTime;
 }
 
 /** @param {number} currentTime @param {number} worldTime @param {number} [requiredAgeDays=3] */

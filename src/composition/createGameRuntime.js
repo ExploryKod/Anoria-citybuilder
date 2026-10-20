@@ -7,9 +7,13 @@ import { createHousingEvolutionSystem } from '../contexts/housing/infrastructure
 import { createEmploymentRedistributeSystem } from '../contexts/employment/infrastructure/runtime/employmentRedistributeSystem.js';
 import { createRandomEventsSystem } from '../contexts/gameplay/infrastructure/runtime/randomEventsSystem.js';
 import { createIntelligenceMonthlyNewsSystem } from '../contexts/intelligence/infrastructure/runtime/intelligenceMonthlyNewsSystem.js';
+import { createCityTradeMonthlySystem } from '../contexts/geography/infrastructure/runtime/cityTradeMonthlySystem.js';
+import { createCityTradeRelationsSystem } from '../contexts/geography/infrastructure/runtime/cityTradeRelationsSystem.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { isLoseMode } from '../config/loseMode.js';
 import { recordDeaths } from './gameplayMortalityState.js';
+import { getSharedEventBus } from './sharedEventBus.js';
+import { TimeManager } from '../shared/time/TimeManager.js';
 
 /**
  * Composition root du runtime ECS (engine + systèmes minces).
@@ -22,11 +26,11 @@ import { recordDeaths } from './gameplayMortalityState.js';
  * @param {ReturnType<import('./createEmploymentContext.js').createEmploymentContext>} deps.employment
  * @param {ReturnType<import('./createGameplayContext.js').createGameplayContext>} deps.gameplay
  * @param {ReturnType<import('./createIntelligenceContext.js').createIntelligenceContext>} deps.intelligence
+ * @param {object} deps.trade
  * @param {(time: number) => object} [deps.getTimeInfo]
  * @param {Function} deps.toSupplySeason
  * @param {Function} deps.toSupplyMonth
  * @param {() => Record<string, number>} deps.getSkillPriorities
- * @param {number} [deps.foodDistributionDistance=5]
  */
 export function createGameRuntime({
   parcels,
@@ -35,11 +39,11 @@ export function createGameRuntime({
   employment,
   gameplay,
   intelligence,
+  trade,
   getTimeInfo: getTimeInfoDep,
   toSupplySeason,
   toSupplyMonth,
   getSkillPriorities,
-  foodDistributionDistance = 5,
 }) {
   if (!parcels) {
     throw new Error('createGameRuntime: parcels context required');
@@ -59,6 +63,9 @@ export function createGameRuntime({
   if (!intelligence) {
     throw new Error('createGameRuntime: intelligence context required');
   }
+  if (!trade) {
+    throw new Error('createGameRuntime: trade context required');
+  }
   if (typeof getSkillPriorities !== 'function') {
     throw new Error('createGameRuntime: getSkillPriorities required');
   }
@@ -73,19 +80,34 @@ export function createGameRuntime({
     getTimeInfo,
     toSupplySeason,
     toSupplyMonth,
-    resourceDistributionDistance: foodDistributionDistance,
   });
   const housingPopulationGrowth = createHousingPopulationGrowthSystem({
     housing,
     getTimeInfo,
     areFamineLimitsEnabled: isLoseMode,
-    onFamineDeaths: recordDeaths,
+    onFamineDeaths: (deaths, timeInfo) => {
+      recordDeaths(deaths);
+      void supply.recordFamineDeaths(timeInfo, deaths);
+    },
   });
-  const housingEvolution = createHousingEvolutionSystem({ housing, getTimeInfo });
+  const housingEvolution = createHousingEvolutionSystem({
+    housing,
+    getTimeInfo,
+    onChanges: (changes, timeInfo) => supply.recordHouseChanges(timeInfo, changes),
+    // The player is told, with the reason, when inhabitants leave (see BuildingNotifications.js)
+    onPopulationDeparted: (departure) =>
+      getSharedEventBus().publish({ type: 'housing.populationDeparted', ...departure }),
+  });
   const employmentRedistribute = createEmploymentRedistributeSystem({
     employment,
     getSkillPriorities,
   });
+  // The city's employment at each month's end, for its history (the log keeps a row only on change)
+  const historyEmploymentSummary = async (_world, context = {}) => {
+    const timeInfo = getTimeInfo(context.time ?? 0);
+    if (timeInfo.dayInMonth !== TimeManager.DAYS_PER_MONTH) return;
+    await supply.recordEmploymentSummary(timeInfo, await employment.getCityEmploymentSummary());
+  };
   pipeline
     .group('simulation')
     .register('parcels.roadAccess', createParcelsRoadAccessSystem(parcels))
@@ -93,10 +115,19 @@ export function createGameRuntime({
     .register('housing.populationGrowth', housingPopulationGrowth)
     .register('housing.evolution', housingEvolution)
     .register('employment.redistribute', employmentRedistribute)
+    .register('history.employmentSummary', historyEmploymentSummary)
     .register('gameplay.randomEvents', createRandomEventsSystem({ gameplay }))
     .register(
       'intelligence.monthlyNews',
       createIntelligenceMonthlyNewsSystem({ intelligence, getTimeInfo })
+    )
+    .register(
+      'commerce.checkNewRelations',
+      createCityTradeRelationsSystem({ trade, getTimeInfo })
+    )
+    .register(
+      'commerce.monthlyCityTrade',
+      createCityTradeMonthlySystem({ trade, getTimeInfo })
     );
 
   return {

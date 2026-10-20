@@ -15,6 +15,7 @@ export const NEWS_CATEGORIES = Object.freeze({
   random_event: { id: 'random_event', labelFr: 'Événement' },
   advice: { id: 'advice', labelFr: 'Conseil' },
   situation_report: { id: 'situation_report', labelFr: 'Rapport' },
+  announcement: { id: 'announcement', labelFr: 'Annonce' },
 });
 
 /**

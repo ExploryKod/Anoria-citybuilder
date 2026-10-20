@@ -1,0 +1,213 @@
+/* Taxes and Services tabs: one card per tax or subsidy, on the board tone of the other administrator sections. */
+
+.taxes-board {
+    background: #fafafa;
+    border-radius: var(--border-radius-small);
+    padding: 20px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.taxes-board #state-board,
+.taxes-board #vat-board,
+.taxes-board #customs-import-list,
+.taxes-board #customs-export-list,
+.taxes-board #prices-list,
+.taxes-board #wages-levers,
+.taxes-board #wages-social,
+.taxes-board #wages-cost-of-living,
+.taxes-board #wages-board,
+.taxes-board .services-board {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.taxes-board .services-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.taxes-board .commerce-customs-hint {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #5b6470;
+}
+
+/* A card: white on the board tone, a hairline shadow, the same inner rhythm for every row. */
+.taxes-board .taxes-row {
+    background: #fff;
+    border-radius: var(--border-radius-small);
+    box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.taxes-board .taxes-row--future {
+    opacity: 0.55;
+}
+
+.taxes-board .taxes-row-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.taxes-board .taxes-row-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* The scope is a small pill: where the rate applies (this hamlet, the whole city, a missing building). */
+.taxes-board .taxes-row-scope {
+    font-size: 12px;
+    font-weight: 500;
+    color: #5b6470;
+    background: rgba(29, 34, 40, 0.06);
+    border-radius: 999px;
+    padding: 2px 10px;
+    white-space: nowrap;
+}
+
+.taxes-board .commerce-customs-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    max-width: none;
+}
+
+.taxes-board .commerce-customs-slider {
+    flex: 1;
+    min-width: 120px;
+    accent-color: var(--cta);
+    cursor: pointer;
+}
+
+.taxes-board .commerce-customs-slider:disabled {
+    cursor: not-allowed;
+}
+
+.taxes-board .commerce-customs-value {
+    min-width: 72px;
+    text-align: right;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+}
+
+/* The Taxes section's sub-tabs: "Impôts" and "TVA". A panel's own display:flex must not undo its `hidden`. */
+.taxes-board[hidden] {
+    display: none;
+}
+
+.taxes-subtabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.taxes-subtabs [role="tab"] {
+    padding: 6px 14px;
+    border: 1px solid #d0d0d0;
+    border-radius: var(--border-radius-small);
+    background: #ffffff;
+    color: #424242;
+    font: inherit;
+    cursor: pointer;
+}
+
+.taxes-subtabs [role="tab"][aria-selected="true"] {
+    background: #424242;
+    border-color: #424242;
+    color: #ffffff;
+}
+
+.taxes-board .taxes-uniform {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* The income tax card: one title, two tranche groups (a threshold and its rate), a gap between groups. */
+.taxes-board .ir-brackets {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.taxes-board .ir-bracket-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.taxes-board .ir-bracket-line {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.taxes-board .ir-bracket-line-label {
+    flex: 0 0 180px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.taxes-board .ir-bracket-line .commerce-customs-controls {
+    flex: 1;
+}
+
+/* A VAT category: its rate, then the exemption box of each item it holds. */
+.taxes-board .vat-category {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.taxes-board .vat-items-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #616161;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.taxes-board .vat-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    padding-left: 4px;
+    font-size: 13px;
+}
+
+.taxes-board .vat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+/* Customs: the two lists of duties, what comes in and what goes out. */
+.customs-group-title {
+    margin: 16px 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+}

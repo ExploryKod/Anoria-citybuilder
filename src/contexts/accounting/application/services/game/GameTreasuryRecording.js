@@ -12,99 +12,6 @@ export class GameTreasuryRecording {
     this.commands = commands;
   }
 
-  async recordSalaries(amount, description = null, turn = null) {
-    const budget = await this.getTreasurySnapshot.execute();
-    const effectiveTurn = turn ?? budget.turn;
-
-    if (
-      typeof amount !== 'number' ||
-      Number.isNaN(amount) ||
-      !Number.isFinite(amount) ||
-      amount < 0
-    ) {
-      console.error(`Invalid civil servant salary amount: ${amount}`);
-      return budget;
-    }
-
-    const totalSalary = Math.round(amount);
-    if (totalSalary <= 0) {
-      return budget;
-    }
-
-    await this.commands.recordSalaryExpense({
-      turn: effectiveTurn,
-      amount: totalSalary,
-      description: description || 'Salaires fonctionnaires',
-    });
-
-    return this.getTreasurySnapshot.execute();
-  }
-
-  async recordUnemploymentBenefits(amount, description = null, turn = null) {
-    const budget = await this.getTreasurySnapshot.execute();
-    const effectiveTurn = turn ?? budget.turn;
-
-    if (
-      typeof amount !== 'number' ||
-      Number.isNaN(amount) ||
-      !Number.isFinite(amount) ||
-      amount < 0
-    ) {
-      console.error(`Invalid unemployment benefit amount: ${amount}`);
-      return budget;
-    }
-
-    const totalBenefit = Math.round(amount);
-    if (totalBenefit <= 0) {
-      return budget;
-    }
-
-    await this.commands.recordUnemploymentBenefitExpense({
-      turn: effectiveTurn,
-      amount: totalBenefit,
-      description: description || 'Salaires chômeurs',
-    });
-
-    return this.getTreasurySnapshot.execute();
-  }
-
-  async recordPayrollTax(salaryAmount, taxRate, description = null, turn = null) {
-    const budget = await this.getTreasurySnapshot.execute();
-    const effectiveTurn = turn ?? budget.turn;
-
-    if (
-      typeof salaryAmount !== 'number' ||
-      Number.isNaN(salaryAmount) ||
-      !Number.isFinite(salaryAmount) ||
-      salaryAmount < 0
-    ) {
-      return budget;
-    }
-
-    if (
-      typeof taxRate !== 'number' ||
-      Number.isNaN(taxRate) ||
-      !Number.isFinite(taxRate) ||
-      taxRate < 0 ||
-      taxRate > 1
-    ) {
-      return budget;
-    }
-
-    const taxAmount = Math.round(salaryAmount * taxRate);
-    if (taxAmount <= 0) {
-      return budget;
-    }
-
-    await this.commands.recordPayrollTaxIncome({
-      turn: effectiveTurn,
-      amount: taxAmount,
-      description: description || `Impôt sur les salaires (${Math.round(taxRate * 100)}%)`,
-    });
-
-    return this.getTreasurySnapshot.execute();
-  }
-
   async recordExceptionalRepairExpense(amount, description) {
     const budget = await this.getTreasurySnapshot.execute();
     const roundedAmount = Math.round(amount);
@@ -131,7 +38,6 @@ export class GameTreasuryRecording {
         budget,
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'zero_amount',
       };
     }
@@ -147,7 +53,6 @@ export class GameTreasuryRecording {
       budget: result.recorded ? await this.getTreasurySnapshot.execute() : budget,
       recorded: result.recorded,
       skipped: result.skipped,
-      treasuryApplied: result.treasuryApplied,
       reason: result.reason,
     };
   }
@@ -200,7 +105,7 @@ export class GameTreasuryRecording {
     return this.getTreasurySnapshot.execute();
   }
 
-  async recordLoanCapital(amount, description = 'Loan', loanData = null) {
+  async recordLoanCapital(amount, description = 'Loan', loanData = null, lenderBuildingId = null) {
     const budget = await this.getTreasurySnapshot.execute();
     const roundedAmount = Math.round(amount);
 
@@ -208,25 +113,19 @@ export class GameTreasuryRecording {
       return budget;
     }
 
-    const result = await this.commands.recordLoanCapitalIncome({
+    await this.commands.recordLoanCapitalIncome({
       turn: budget.turn,
       amount: roundedAmount,
       description,
       loanId: loanData?.id ?? null,
+      loan: loanData,
+      lenderBuildingId,
     });
-
-    if (!result.recorded) {
-      return this.getTreasurySnapshot.execute();
-    }
-
-    if (loanData) {
-      return this.commands.addLoanToPortfolio(loanData);
-    }
 
     return this.getTreasurySnapshot.execute();
   }
 
-  async recordLoanInterest(amount, description = 'Loan Interest', loanId = null) {
+  async recordLoanInterest(amount, description = 'Loan Interest', loanId = null, lenderBuildingId = null) {
     const budget = await this.getTreasurySnapshot.execute();
     const roundedAmount = Math.round(amount);
 
@@ -239,12 +138,13 @@ export class GameTreasuryRecording {
       amount: roundedAmount,
       description,
       loanId,
+      lenderBuildingId,
     });
 
     return this.getTreasurySnapshot.execute();
   }
 
-  async recordLoanRepayment(amount, description = 'Loan Repayment', loanId = null) {
+  async recordLoanRepayment(amount, description = 'Loan Repayment', loanId = null, lenderBuildingId = null) {
     const budget = await this.getTreasurySnapshot.execute();
     const roundedAmount = Math.round(amount);
 
@@ -252,20 +152,13 @@ export class GameTreasuryRecording {
       return budget;
     }
 
-    const result = await this.commands.recordLoanRepaymentExpense({
+    await this.commands.recordLoanRepaymentExpense({
       turn: budget.turn,
       amount: roundedAmount,
       description,
       loanId,
+      lenderBuildingId,
     });
-
-    if (!result.recorded) {
-      return this.getTreasurySnapshot.execute();
-    }
-
-    if (loanId) {
-      return this.commands.applyRepaymentToPortfolio(loanId, amount);
-    }
 
     return this.getTreasurySnapshot.execute();
   }

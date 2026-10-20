@@ -7,7 +7,6 @@ import {
   canonicalizeHouseRecord,
   createBuildingInstanceId,
   instanceIdFromHouseRow,
-  residentialTierPatch,
 } from '../../../src/shared/building-identity/index.js';
 
 describe('HouseRecordPolicy — canonicalizeHouseRecord', () => {
@@ -26,31 +25,6 @@ describe('HouseRecordPolicy — canonicalizeHouseRecord', () => {
     expect(row.type).toBe('House-Blue');
     expect(row.x).toBe(3);
     expect(row.y).toBe(7);
-  });
-
-  test('evolution patch updates type/tier without changing instanceId', () => {
-    const instanceId = createBuildingInstanceId();
-    const row = canonicalizeHouseRecord({
-      instanceId,
-      type: 'House-Blue',
-      x: 3,
-      y: 7,
-      pop: 7,
-    });
-
-    const patch = residentialTierPatch({
-      instanceId,
-      targetType: 'House-Red',
-    });
-
-    const evolved = canonicalizeHouseRecord({
-      ...row,
-      ...patch,
-    });
-
-    expect(instanceIdFromHouseRow(evolved)).toBe(instanceId);
-    expect(evolved.type).toBe('House-Red');
-    expect(evolved.tier).toBe(2);
   });
 
   test('rejects row without UUID instanceId', () => {

@@ -4,13 +4,11 @@ import db from '../../../../src/core/persistence/dexie/db.js';
 import { recordCheatActivation } from '../../../../src/core/persistence/cheat/cheatCodeRepository.js';
 import { reconcileHamletUnlockFlags } from '../../../../src/core/persistence/hamlet/hamletUnlockMigration.js';
 import { canTravelToHamlet } from '../../../../src/core/persistence/hamlet/hamletAccess.js';
-import { setActiveHamletId, DEFAULT_HAMLET_ID } from '../../../../src/core/persistence/hamlet/hamletSession.js';
 
 describe('hamletUnlockMigration', () => {
   beforeEach(async () => {
     await db.delete();
     await db.open();
-    setActiveHamletId(DEFAULT_HAMLET_ID);
   });
 
   test('clears mistaken unlocks from natureSeeded-only visits', async () => {

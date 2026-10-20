@@ -15,7 +15,7 @@ const stores = {
   budget: 'name',
   objectives: 'name',
   journal: '++id, turn, date, type, amount, description',
-  foodTraceability:
+  supplyTraceability:
     '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price',
   productionJournal:
     '++id, turn, month, year, date, factoryId, eventType, resourceType, quantity, price, remainingStocks, logsConsumed, productionTurns',
@@ -31,11 +31,8 @@ db.version(3).stores({
   houses: 'instanceId, kind, type, hamletId, [anchorX+anchorY], [kind+type]',
   hamlets: 'id',
 }).upgrade(async (tx) => {
-  await tx.table('houses').toCollection().modify((row) => {
-    if (!row.hamletId) {
-      row.hamletId = 'eraanurbs';
-    }
-  });
+  // Houses without a hamletId cannot be attributed to a hamlet: dropped (development data only).
+  await tx.table('houses').clear();
 });
 
 db.version(4).stores({
@@ -43,7 +40,7 @@ db.version(4).stores({
 }).upgrade(async (tx) => {
   await tx.table('hamlets').toCollection().modify((row) => {
     if (row.unlocked === undefined) {
-      row.unlocked = row.id === 'eraanurbs' || Boolean(row.natureSeeded);
+      throw new Error(`[db v4] hamlet row ${row.id} has no unlocked flag`);
     }
   });
 });
@@ -110,6 +107,83 @@ db.version(8).stores({}).upgrade(async (tx) => {
   await tx.table('houses').where('type').anyOf(RETIRED_PROP_TYPES).delete();
 });
 
+// v9: the village-era crate and wheat silo are retired: a saved row of either would throw on scene render.
+const RETIRED_BUILDING_TYPES = ['Crate-001', 'Cylinder'];
+db.version(9).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').anyOf(RETIRED_BUILDING_TYPES).delete();
+});
+
+// v10: the hay bale, cart and pile are retired as well (village-era props, nothing to do in this game).
+const RETIRED_HAY_TYPES = ['Hay-Bale', 'Hay-Cart', 'Hay-Pile'];
+db.version(10).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').anyOf(RETIRED_HAY_TYPES).delete();
+});
+
+// v11: the bookshop is retired (the library does its job).
+db.version(11).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').equals('BookShop-001').delete();
+});
+
+// v12: the palace (House-2Story, the last of the elite mechanism) is retired.
+db.version(12).stores({}).upgrade(async (tx) => {
+  await tx.table('houses').where('type').equals('House-2Story').delete();
+});
+
+// v13: rename foodTraceability → supplyTraceability (table covers all resource categories, not food only).
+db.version(13).stores({ supplyTraceability: '++id, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price', foodTraceability: null });
+
+// v14: city trade relations — one row per partner city, keyed by cityId.
+db.version(14).stores({ cityRelations: 'cityId, status, contractEndMonth, lastOrderMonth' });
+
+// v15: hamlets are identified by a UUID allocated at creation (the slug is only the definition).
+// Development data only: the houses, hamlets and active-hamlet row from earlier versions are dropped.
+db.version(15).stores({ hamlets: 'id, slug' }).upgrade(async (tx) => {
+  await tx.table('houses').clear();
+  await tx.table('hamlets').clear();
+  await tx.table('game').where('name').equals('hamlet-session').delete();
+});
+
+// v16: economy and news rows carry the UUID of the hamlet they belong to, so every reading screen can
+// filter by hamlet. Development data only: these tables are emptied, as in v15.
+db.version(16).stores({
+  journal: '++id, hamletId, turn, date, type, amount, description',
+  productionJournal:
+    '++id, hamletId, turn, month, year, date, factoryId, eventType, resourceType, quantity, price, remainingStocks, logsConsumed, productionTurns',
+  supplyTraceability:
+    '++id, hamletId, turn, month, year, date, transactionType, fromInstanceId, fromCoords, toInstanceId, toCoords, foodType, quantity, price',
+  newsItems: 'id, hamletId, turn, lifecycle, sourceId, revelation, [turn+sourceId]',
+}).upgrade(async (tx) => {
+  for (const name of ['journal', 'productionJournal', 'supplyTraceability', 'newsItems']) {
+    await tx.table(name).clear();
+  }
+});
+
+// v17: settings frozen when a game is created (the calendar's days per month: it must never change in a game).
+db.version(17).stores({ gameSettings: 'name' });
+
+// v18: the traceability rows are dated by their turn (no wall-clock date), and indexed on the fields they are written with
+// (fromId, toId: the buildings; fromInstanceId, toInstanceId and the date were never written).
+db.version(18).stores({
+  supplyTraceability: '++id, hamletId, turn, month, year, transactionType, fromId, toId, foodType',
+});
+
+// v19: journal lines are dated by their turn too: the wall-clock date is no longer written, so it is no longer indexed.
+db.version(19).stores({
+  journal: '++id, hamletId, turn, type, amount, description',
+});
+
+// v20: customs policy events — every change of a duty, dated by its turn and appended, never edited: who set which duty on
+// which good, from what to what, and why (cause). The trace a trade war is told with.
+db.version(20).stores({
+  tradePolicyEvents: '++id, turn, authority, flow, good',
+});
+
+// v21: the wage the labour market gives each (skill, level) — appended on each move, never edited, so the history of a wage reads back
+// with the shortage or the slack that moved it.
+db.version(21).stores({
+  wageRates: '++id, hamletId, turn, skill, level',
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 
@@ -124,6 +198,24 @@ function clearLegacyLocalStorage() {
   } catch (error) {
     console.warn('[core/persistence/dexie/db] Error clearing localStorage:', error);
   }
+}
+
+/** Tables that outlive a game: the cheat codes the player has activated, not the game's data. */
+const TABLES_KEPT_ACROSS_GAMES = Object.freeze(['cheatCodes']);
+
+/**
+ * A new game starts from nothing: every table of the game is emptied (buildings, hamlets, journal,
+ * traceability, news, trade relations, objectives, clock, calendar), so the next boot creates them afresh.
+ * Called only for a boot that follows a menu choice of a new game — never on a plain reload.
+ * @returns {Promise<void>}
+ */
+export async function clearGameTablesForNewGame() {
+  const tables = db.tables.filter((table) => !TABLES_KEPT_ACROSS_GAMES.includes(table.name));
+  await db.transaction('rw', tables, async () => {
+    for (const table of tables) {
+      await table.clear();
+    }
+  });
 }
 
 /**

@@ -5,6 +5,7 @@
 
 import { renderJournalList } from './JournalPresenter.js';
 import { createModalFocusSession } from '../../shell/modalFocus.js';
+import { listHamlets } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
  * @type {{
@@ -16,6 +17,12 @@ let deps = null;
 
 /** @type {ReturnType<typeof createModalFocusSession> | null} */
 let journalFocusSession = null;
+
+/**
+ * The tab of the journal: 'city' is the city's books (the Hameau), 'private' the flows of the buildings' accounts.
+ * @type {'city' | 'private'}
+ */
+let accountScope = 'city';
 
 /**
  * @param {{
@@ -45,7 +52,7 @@ export function initJournalPopup(panelDeps) {
   function openJournal() {
     journalPanel.classList.add('active');
     popupManager?.forceOpenPopup('journal-panel');
-    loadJournalEntries('all');
+    populateHamletFilter().then(() => loadJournalEntries('all'));
     journalFocusSession?.release({ restoreFocus: false });
     journalFocusSession = createModalFocusSession({
       panel: journalPanel,
@@ -69,6 +76,28 @@ export function initJournalPopup(panelDeps) {
     if (e.target === journalPanel) {
       closeJournal();
     }
+  });
+
+  document.getElementById('journal-hamlet-filter').addEventListener('change', () => {
+    const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
+    const activePill = document.querySelector('.journal-filter-pill.active');
+    const typeFilter = activePill ? JSON.parse(activePill.dataset.types || '[]') : null;
+    loadJournalEntries(activeFilterBtn ? activeFilterBtn.dataset.period : 'all', typeFilter);
+  });
+
+  document.querySelectorAll('.journal-scope-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      accountScope = tab.dataset.scope === 'private' ? 'private' : 'city';
+      document.querySelectorAll('.journal-scope-tab').forEach((other) => {
+        const active = other === tab;
+        other.classList.toggle('active', active);
+        other.setAttribute('aria-selected', String(active));
+      });
+      const activeFilterBtn = document.querySelector('.journal-filter-btn.active');
+      const activePill = document.querySelector('.journal-filter-pill.active');
+      const typeFilter = activePill ? JSON.parse(activePill.dataset.types || '[]') : null;
+      loadJournalEntries(activeFilterBtn ? activeFilterBtn.dataset.period : 'all', typeFilter);
+    });
   });
 
   journalRefreshBtn.addEventListener('click', () => {
@@ -111,7 +140,14 @@ export function initJournalPopup(panelDeps) {
 
   if (exportJsonBtn) {
     exportJsonBtn.addEventListener('click', async () => {
-      await exportJournalToJSON();
+      await exportJournalToJSON('city');
+    });
+  }
+
+  const exportPrivateJsonBtn = document.getElementById('journal-export-private-json-btn');
+  if (exportPrivateJsonBtn) {
+    exportPrivateJsonBtn.addEventListener('click', async () => {
+      await exportJournalToJSON('private');
     });
   }
 
@@ -120,6 +156,23 @@ export function initJournalPopup(panelDeps) {
       await exportJournalToPDF();
     });
   }
+}
+
+/** The hamlet selected in the journal filter, or null for every hamlet. */
+function selectedHamletId() {
+  const value = document.getElementById('journal-hamlet-filter').value;
+  return value === '' ? null : value;
+}
+
+async function populateHamletFilter() {
+  const select = document.getElementById('journal-hamlet-filter');
+  const hamlets = await listHamlets();
+  const previous = select.value;
+  select.replaceChildren(
+    new Option('Tous les hameaux', ''),
+    ...hamlets.map((hamlet) => new Option(hamlet.name, hamlet.id))
+  );
+  select.value = hamlets.some((hamlet) => hamlet.id === previous) ? previous : '';
 }
 
 /** @param {string} period */
@@ -153,10 +206,18 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
     `;
 
   try {
+    const hamletId = selectedHamletId();
     const ledger = await accounting.getGeneralLedger({
       periodDays: parsePeriodDays(period),
       types: typeFilter,
+      hamletId,
+      accountScope,
     });
+    const hamletNames = new Map((await listHamlets()).map((hamlet) => [hamlet.id, hamlet.name]));
+    const scopeLabel = hamletId === null ? 'Tous les hameaux' : hamletNames.get(hamletId);
+    if (scopeLabel === undefined) {
+      throw new Error(`[JournalPanel] selected hamlet ${hamletId} is not in the hamlet list`);
+    }
 
     if (ledger.years.length === 0) {
       journalList.innerHTML = `
@@ -168,7 +229,7 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
       return;
     }
 
-    journalList.innerHTML = renderJournalList(ledger, accounting);
+    journalList.innerHTML = renderJournalList(ledger, accounting, hamletNames, scopeLabel);
   } catch (error) {
     console.error('Error loading journal entries:', error);
     journalList.innerHTML = `
@@ -179,15 +240,26 @@ export async function loadJournalEntries(period = 'all', typeFilter = null) {
   }
 }
 
-export async function exportJournalToJSON() {
+/** Day plus time of day (2026-09-20-163045), so several exports never overwrite each other. */
+function exportStamp() {
+  const now = new Date();
+  return `${now.toISOString().split('T')[0]}-${now.toTimeString().slice(0, 8).replace(/:/g, '')}`;
+}
+
+/**
+ * Downloads the journal as JSON: the hamlet's own account ('city'), or the flux of the companies' and the houses' accounts
+ * ('private'), each in its own file so they can be read apart.
+ * @param {'city' | 'private'} [accountScope]
+ */
+export async function exportJournalToJSON(accountScope = 'city') {
   if (!deps?.accounting) return;
   try {
-    const jsonString = await deps.accounting.exportJournalJson();
+    const jsonString = await deps.accounting.exportJournalJson({ accountScope });
     const blob = new Blob([jsonString], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `journal-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `${accountScope === 'private' ? 'flux-prives' : 'journal'}-${exportStamp()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -211,7 +283,7 @@ export async function exportJournalToPDF() {
     const url = URL.createObjectURL(pdfBlob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `journal-${new Date().toISOString().split('T')[0]}.pdf`;
+    a.download = `journal-${exportStamp()}.pdf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

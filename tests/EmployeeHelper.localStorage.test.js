@@ -71,7 +71,7 @@ describe('Employment skill priorities — localStorage', () => {
             expect(priorities.fermier).toBeDefined();
             expect(priorities['vente-alimentaire']).toBeDefined();
             expect(priorities['stockage-alimentaire']).toBeDefined();
-            expect(priorities.spiritual).toBeDefined();
+            expect(priorities.hydraulique).toBeDefined();
         });
 
         test('reflète les priorités personnalisées stockées', () => {

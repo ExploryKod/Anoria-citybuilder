@@ -1,3 +1,4 @@
+import { listTileDeposits } from '../../../shared/building-catalog/depositQueries.js';
 import { resolveAndCreateBuildingMesh } from '../meshs/resolveBuildingMesh.js';
 
 export class ResourceManager {
@@ -23,7 +24,7 @@ export class ResourceManager {
         await this.placeRandomBoulders(
           city, assetManager, buildings, zoneGroups, boulderCount, constructionApi
         );
-        this.markClayTiles(city);
+        this.markDepositTiles(city);
         await this.markIronBoulders(city, supplyApi);
         await this.markGoldBoulders(city, supplyApi);
     }
@@ -184,16 +185,19 @@ export class ResourceManager {
         }
     }
 
-    markClayTiles(city) {
-        const clayCount = Math.floor(city.size * city.size * 0.08);
+    /** Scatter the deposits the catalog says the ground carries (each on its declared share of its terrain's tiles). */
+    markDepositTiles(city) {
+        for (const { terrain, kind, share } of listTileDeposits()) {
+            const count = Math.floor(city.size * city.size * share);
 
-        for (let i = 0; i < clayCount; i++) {
-            const x = Math.floor(Math.random() * city.size);
-            const y = Math.floor(Math.random() * city.size);
-            const tile = city.tiles[x]?.[y];
+            for (let i = 0; i < count; i++) {
+                const x = Math.floor(Math.random() * city.size);
+                const y = Math.floor(Math.random() * city.size);
+                const tile = city.tiles[x]?.[y];
 
-            if (tile && tile.terrainId === 'grass') {
-                tile.hasClay = true;
+                if (tile && tile.terrainId === terrain) {
+                    tile.deposits = { ...(tile.deposits ?? {}), [kind]: true };
+                }
             }
         }
     }

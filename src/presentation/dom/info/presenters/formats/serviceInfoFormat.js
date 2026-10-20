@@ -3,8 +3,8 @@
  *
  * Covers every building whose sole 'distributor' role is 'flag'-mode (marks
  * a nearby consumer "served this period", no stock at all — see
- * ResourceRolePolicy.js / DistributeResourceToConsumers.js): Chapel,
- * School, Library, Doctor, Hospital, PublicBath, Theatre, Cinema, Pub,
+ * ResourceRolePolicy.js / DistributeResourceToConsumers.js): the water tank,
+ * School, Library, Doctor, Hospital, Theatre, Cinema, Pub,
  * and any future building shaped the same way. Deliberately ONE format,
  * driven entirely by the building's own catalog facts (displayName,
  * resourceRoles, employment) — a new service building needs a catalog
@@ -13,7 +13,9 @@
  */
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
+import { buildingName } from '../../../shell/CatalogVocabulary.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
+import { staffingStatusLine } from './staffingReasonFormat.js';
 import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
 
 /**
@@ -33,7 +35,7 @@ function resolveServiceRole(buildingType) {
 export function formatServiceLayoutHeader(vm) {
   const def = getBuildingDefinition(vm.buildingType);
   return {
-    title: def?.displayName ?? vm.buildingType,
+    title: buildingName(vm.buildingType),
     meta: `📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
     accent: null,
   };
@@ -61,7 +63,7 @@ export function formatServiceOverviewModel(vm) {
 
   return {
     sections: [{
-      title: `État — ${def?.displayName ?? buildingType}`,
+      title: `État — ${buildingName(buildingType)}`,
       rows: [
         ...(category
           ? [{ label: 'Service rendu', value: getServiceCategoryDisplay(category).label }]
@@ -80,5 +82,5 @@ export function formatServiceOverviewModel(vm) {
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
 export function formatServiceStaffModel(vm) {
-  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment);
+  return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment, staffingStatusLine(vm), vm.wagePerWorker, vm.employerContributionRate);
 }

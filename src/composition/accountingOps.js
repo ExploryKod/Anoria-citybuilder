@@ -22,7 +22,6 @@ export {
 
 export {
   LocalStorageFiscalSettingsRepository,
-  DEFAULT_FISCAL_SETTINGS,
   FISCAL_STORAGE_KEYS,
 } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 
@@ -39,25 +38,25 @@ export function getCommercialRouteFee() {
 
 /** @returns {number} */
 export function getCitizenTaxPerCapita() {
-  return getOrCreateAccountingContext().fiscalSettingsRepository.getCitizenTaxPerCapita();
+  return getOrCreateAccountingContext().getCitizenTaxPerCapita();
 }
 
 /** @param {number} amount @returns {number} */
 export function setCitizenTaxPerCapita(amount) {
-  return getOrCreateAccountingContext().fiscalSettingsRepository.setCitizenTaxPerCapita(amount);
+  return getOrCreateAccountingContext().setCitizenTaxPerCapita(amount);
 }
 
-/** @returns {{ salaryPerMonth: number, salaryTaxRate: number }} */
+/** @returns {{ minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number }} */
 export function getSalarySettings() {
-  return getOrCreateAccountingContext().fiscalSettingsRepository.getSalarySettings();
+  return getOrCreateAccountingContext().getSalarySettings();
 }
 
 /**
- * @param {{ salaryPerMonth?: number, salaryTaxRate?: number }} partial
- * @returns {{ salaryPerMonth: number, salaryTaxRate: number }}
+ * @param {{ minimumWage?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number }} partial
+ * @returns {{ minimumWage: number, salaryTaxThreshold1: number, salaryTaxRate1: number, salaryTaxThreshold2: number, salaryTaxRate2: number }}
  */
 export function setSalarySettings(partial) {
-  return getOrCreateAccountingContext().fiscalSettingsRepository.setSalarySettings(partial);
+  return getOrCreateAccountingContext().setSalarySettings(partial);
 }
 
 /** Clear persisted fiscal settings (new game / reset). */
@@ -65,14 +64,15 @@ export function clearFiscalSettings() {
   return getOrCreateAccountingContext().fiscalSettingsRepository.clear();
 }
 
-/** @returns {Promise<number>} Treasury balance (budget_current.funds) */
+/** @returns {Promise<number>} Treasury balance, derived from the journal */
 export async function getTreasuryBalance() {
   return getOrCreateAccountingContext().getTreasuryBalance();
 }
 
-/** @returns {Promise<object>} Full treasury row (budget_current) */
-export async function getTreasurySnapshot() {
-  return getOrCreateAccountingContext().getTreasurySnapshot();
+/** @returns {Promise<object>} Treasury snapshot (balance, turn, flows, loans), derived from the journal */
+/** @param {{ hamletId?: string|null }} [options] the hamlet's treasury, or the city's when null */
+export async function getTreasurySnapshot(options) {
+  return getOrCreateAccountingContext().getTreasurySnapshot(options);
 }
 
 /** @returns {Promise<{ status: string, message: string, budget: object, netFlow: number }>} */
@@ -90,38 +90,14 @@ export async function forceReinitializeTreasury(startingFunds = null) {
   return getOrCreateAccountingContext().forceReinitializeTreasury(startingFunds);
 }
 
-/** @param {number} turn */
-export async function updateTreasuryTurn(turn) {
-  return getOrCreateAccountingContext().updateTreasuryTurn(turn);
-}
-
 /** @returns {Promise<Array>} */
 export async function getActiveLoans() {
   return getOrCreateAccountingContext().getActiveLoans();
 }
 
-/** @param {object} loanData */
-export async function addLoanToPortfolio(loanData) {
-  return getOrCreateAccountingContext().addLoanToPortfolio(loanData);
-}
-
-/** @param {string} loanId @param {number} repaymentAmount */
-export async function applyRepaymentToPortfolio(loanId, repaymentAmount) {
-  return getOrCreateAccountingContext().applyRepaymentToPortfolio(loanId, repaymentAmount);
-}
-
-/** @param {string} loanId */
-export async function advanceLoanInstallmentWithoutPayment(loanId) {
-  return getOrCreateAccountingContext().advanceLoanInstallmentWithoutPayment(loanId);
-}
-
-export async function recalculateLoanTotals() {
-  return getOrCreateAccountingContext().recalculateLoanTotals();
-}
-
 /** @returns {Promise<object>} Admin César 3 livret — N vs N-1 comparison */
-export async function getCityLedgerYearComparison() {
-  return getOrCreateAccountingContext().getCityLedgerYearComparison();
+export async function getCityLedgerYearComparison(options) {
+  return getOrCreateAccountingContext().getCityLedgerYearComparison(options);
 }
 
 export { createEmptyCityLedgerYearLines } from '../contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
@@ -134,55 +110,16 @@ export async function getGeneralLedger(filters) {
   return getOrCreateAccountingContext().getGeneralLedger(filters);
 }
 
-/** @param {{ fiscalYear?: number|null }} [options] */
-export async function getIncomeStatement(options) {
-  return getOrCreateAccountingContext().getIncomeStatement(options);
-}
-
-export async function getBalanceSheet() {
-  return getOrCreateAccountingContext().getBalanceSheet();
-}
-
-/** @param {number} atTurn */
-export async function getFinancialStatementsAtTurn(atTurn) {
-  return getOrCreateAccountingContext().getFinancialStatementsAtTurn(atTurn);
-}
-
-/** @param {{ everyNTurns?: number, turns?: number[]|null, filterTurn?: number|null }} [options] */
-export async function getFinancialStatementsHistory(options) {
-  return getOrCreateAccountingContext().getFinancialStatementsHistory(options);
-}
-
-/**
- * @param {number} turn
- * @param {{ population?: number, buildingCounts?: object }} [additionalData]
- */
-export async function saveBudgetTurnEnrichment(turn, additionalData = {}) {
-  return getOrCreateAccountingContext().saveBudgetTurnEnrichment({ turn, additionalData });
-}
-
 export async function flushJournalSessionToDexie() {
   return getOrCreateAccountingContext().flushJournalSessionToDexie();
 }
 
-export async function exportJournalJson() {
-  return getOrCreateAccountingContext().exportJournalJson();
+export async function exportJournalJson(filters) {
+  return getOrCreateAccountingContext().exportJournalJson(filters);
 }
 
 export async function exportJournalPdf() {
   return getOrCreateAccountingContext().exportJournalPdf();
-}
-
-/** @returns {Promise<{ treasuryFunds: number, journalBalance: number, delta: number, aligned: boolean }>} */
-export async function getTreasuryJournalReconciliation(options) {
-  return getOrCreateAccountingContext().getTreasuryJournalReconciliation(options);
-}
-
-/**
- * @param {Parameters<ReturnType<typeof createAccountingContext>['syncTurnInformativeEntries']>[0]} params
- */
-export async function syncTurnInformativeEntries(params) {
-  return getOrCreateAccountingContext().syncTurnInformativeEntries(params);
 }
 
 /**
@@ -197,20 +134,6 @@ export async function recordMaintenanceExpense(params) {
  */
 export async function recordConstructionExpense(params) {
   return getOrCreateAccountingContext().recordConstructionExpense(params);
-}
-
-/**
- * @param {Parameters<ReturnType<typeof createAccountingContext>['recordSalaryExpense']>[0]} params
- */
-export async function recordSalaryExpense(params) {
-  return getOrCreateAccountingContext().recordSalaryExpense(params);
-}
-
-/**
- * @param {Parameters<ReturnType<typeof createAccountingContext>['recordPayrollTaxIncome']>[0]} params
- */
-export async function recordPayrollTaxIncome(params) {
-  return getOrCreateAccountingContext().recordPayrollTaxIncome(params);
 }
 
 /**
@@ -304,18 +227,6 @@ export async function recordLedgerEntry(params) {
 
 // --- Game loop façade (legacy signatures; logic lives in BC application/services/game) ---
 
-export async function getBudgetSummary() {
-  return getOrCreateAccountingContext().getBudgetSummary();
-}
-
-export async function getIncomeBreakdown() {
-  return getOrCreateAccountingContext().getIncomeBreakdown();
-}
-
-export async function getExpenseBreakdown() {
-  return getOrCreateAccountingContext().getExpenseBreakdown();
-}
-
 export async function canAfford(amount) {
   return getOrCreateAccountingContext().canAfford(amount);
 }
@@ -324,35 +235,6 @@ export async function canAfford(amount) {
 export async function collectCitizenTaxes(time = 0, options = {}) {
   const ctx = options.db ? createAccountingContext({ db: options.db }) : getOrCreateAccountingContext();
   return ctx.collectCitizenTaxes({ time });
-}
-
-export async function recordSalaries(amount, description = null, turn = null) {
-  return getOrCreateAccountingContext().recordSalaries(amount, description, turn);
-}
-
-export async function recordUnemploymentBenefits(amount, description = null, turn = null) {
-  return getOrCreateAccountingContext().recordUnemploymentBenefits(amount, description, turn);
-}
-
-export async function recordPayrollTax(salaryAmount, taxRate, description = null, turn = null) {
-  return getOrCreateAccountingContext().recordPayrollTax(
-    salaryAmount,
-    taxRate,
-    description,
-    turn
-  );
-}
-
-export async function recordBuildingMaintenance(
-  amount,
-  description = 'Maintenance bâtiments',
-  turn = null
-) {
-  return getOrCreateAccountingContext().recordBuildingMaintenanceForCity({
-    amount,
-    description,
-    turn,
-  });
 }
 
 export async function recordExceptionalRepairExpense(amount, description) {
@@ -416,15 +298,8 @@ export async function recordInfoLoanInstallmentForGame(params) {
   return getOrCreateAccountingContext().recordInfoLoanInstallmentFromGame(params);
 }
 
-export async function cleanupOldBudgetTurnSnapshotsByAge(options = {}) {
-  if (options.db) {
-    return createAccountingContext({ db: options.db }).cleanupOldBudgetTurnSnapshotsByAge();
-  }
-  return getOrCreateAccountingContext().cleanupOldBudgetTurnSnapshotsByAge();
-}
-
-export async function cleanupOldJournalEntries(maxAge = 60) {
-  return getOrCreateAccountingContext().cleanupOldJournalEntries(maxAge);
+export async function cleanupOldJournalYears(keepYears) {
+  return getOrCreateAccountingContext().cleanupOldJournalYears(keepYears);
 }
 
 /** @param {Parameters<ReturnType<typeof createAccountingContext>['processTurnBudget']>[0]} params */

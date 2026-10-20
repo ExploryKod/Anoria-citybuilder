@@ -1,0 +1,73 @@
+.mobile-build-bar.hamlet-switcher {
+  width: 300px;
+  max-width: calc(100vw - 24px);
+}
+
+.hamlet-switcher .hamlet-switcher__carousel {
+  width: auto;
+}
+
+.hamlet-switcher .splide__track {
+  padding: 8px 0;
+}
+
+.hamlet-switcher__list {
+  display: flex;
+  align-items: flex-start;
+}
+
+.hamlet-switcher__slide {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.hamlet-switcher__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.hamlet-card {
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  border: 2px solid var(--hamlet-color);
+  border-radius: var(--border-radius-small);
+  background: color-mix(in srgb, var(--hamlet-color) 30%, #1d2228);
+  color: #fff;
+  cursor: pointer;
+  transition: filter 0.15s ease, background-color 0.15s ease;
+}
+
+.hamlet-card:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+
+.hamlet-card.is-active {
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.hamlet-card.is-locked,
+.hamlet-card:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(1);
+}
+
+.hamlet-switcher__name {
+  font-size: 13px;
+  line-height: 1.1;
+  text-align: center;
+  max-width: 84px;
+  color: #1d2228;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

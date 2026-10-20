@@ -46,7 +46,7 @@ export class SupplyBuildingRepository {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
-  async saveDistributorHubId(_distributorId, _hubId) {
+  async saveDistributorHubId(_distributorId, _hubId, _linkField) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 
@@ -63,6 +63,14 @@ export class SupplyBuildingRepository {
    * @param {string | string[]} [_categories]
    */
   async findByResourceRole(_role, _categories) {
+    throw new Error('SupplyBuildingRepository: port not implemented');
+  }
+
+  /**
+   * Every placed natural resource (a tree, ...) as `{ id, type, x, y }` —
+   * what a raw-material producer draws on (see the `source` catalog fact).
+   */
+  async listNaturalResources() {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }
 

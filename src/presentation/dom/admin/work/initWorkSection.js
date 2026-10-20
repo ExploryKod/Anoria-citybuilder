@@ -2,9 +2,7 @@ import { WorkSectionPresenter } from './WorkSectionPresenter.js';
 
 /**
  * @param {{
- *   accounting: object,
  *   employment: object,
- *   housing: object,
  *   registerAppService?: (name: string, instance: *) => void,
  * }} deps
  */

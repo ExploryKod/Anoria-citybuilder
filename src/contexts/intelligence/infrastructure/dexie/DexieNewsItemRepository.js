@@ -1,5 +1,6 @@
 import db from '../../../../core/persistence/dexie/db.js';
 import { createNewsItem } from '../../domain/NewsItem.js';
+import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
  * Dexie adapter — table `newsItems`.
@@ -9,7 +10,7 @@ export class DexieNewsItemRepository {
    * @param {import('../../domain/NewsItem.js').NewsItem} item
    */
   async save(item) {
-    await db.newsItems.put(createNewsItem(item));
+    await db.newsItems.put({ ...createNewsItem(item), hamletId: requireActiveHamletId() });
   }
 
   /**

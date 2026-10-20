@@ -25,8 +25,14 @@ export class GameLoop {
 
   #lastTickAt = null;
 
+  /** @type {number} Last time a skipped-tick warning was logged (throttled to at most 1/s). */
+  #lastSkipWarnAt = 0;
+
   /** @param {number} intervalMs */
   setIntervalMs(intervalMs) {
+    // Visible on purpose: the only way to tell, from outside, whether a speed change actually
+    // reached the running loop (vs. being silently lost somewhere in the chain above it).
+    console.info(`[GameLoop] interval ${this.intervalMs}ms -> ${intervalMs}ms (running: ${this.#running})`);
     this.intervalMs = intervalMs;
     if (this.#running) {
       this.stop();
@@ -36,6 +42,14 @@ export class GameLoop {
 
   async #runTick(deltaMs) {
     if (this.#tickInFlight) {
+      // A tick is still running past the next one's scheduled fire time — the interval you asked
+      // for is not the interval you are getting; the simulation is compute-bound, not clock-bound.
+      // Throttled to at most once/second so a genuinely overloaded tick doesn't flood the console.
+      const now = performance.now();
+      if (now - this.#lastSkipWarnAt > 1000) {
+        this.#lastSkipWarnAt = now;
+        console.warn(`[GameLoop] tick skipped: previous tick still running past ${this.intervalMs}ms interval`);
+      }
       return;
     }
     this.#tickInFlight = true;

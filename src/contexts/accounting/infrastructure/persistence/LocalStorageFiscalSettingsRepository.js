@@ -1,21 +1,17 @@
 /**
- * localStorage adapter — citizen tax + civil servant salary settings.
- * Source of truth for ProcessTurnBudget / CollectCitizenTaxes (not UI presenters).
+ * localStorage adapter — the customs duties only: one duty per traded good and per flow (import / export), for the
+ * whole city, kept apart from the hamlets' rates (see HamletFiscalRateRepository). Written from the catalog's defaults
+ * at boot (a good the stored table lacks gets its default; a duty already set is kept); a missing good or an
+ * out-of-bounds value throws, nothing is guessed at read time.
  */
 
+import { CUSTOMS_FLOWS, CUSTOMS_RATE_BOUNDS, defaultCustomsDuty } from '../../domain/catalogs/FiscalRateCatalog.js';
+
 export const FISCAL_STORAGE_KEYS = Object.freeze({
-  citizenTaxPerCapita: 'citizen_tax_amount',
-  salaryPerMonth: 'work_salary_per_month',
-  salaryTaxRate: 'work_salary_tax_rate',
-  unemploymentBenefitRate: 'work_unemployment_benefit_rate',
+  customsDuties: 'commerce_customs_duties',
 });
 
-export const DEFAULT_FISCAL_SETTINGS = Object.freeze({
-  citizenTaxPerCapita: 25,
-  salaryPerMonth: 100,
-  salaryTaxRate: 0.1,
-  unemploymentBenefitRate: 0.7,
-});
+/** @typedef {{ import: Record<string, number>, export: Record<string, number> }} CustomsDuties */
 
 export class LocalStorageFiscalSettingsRepository {
   /**
@@ -25,130 +21,93 @@ export class LocalStorageFiscalSettingsRepository {
     this.storage = storage;
   }
 
-  /** @returns {number} */
-  getCitizenTaxPerCapita() {
-    return this.#readNumber(
-      FISCAL_STORAGE_KEYS.citizenTaxPerCapita,
-      DEFAULT_FISCAL_SETTINGS.citizenTaxPerCapita,
-      { min: 0, max: 1000, integer: true }
-    );
-  }
-
-  /** @param {number} amount */
-  setCitizenTaxPerCapita(amount) {
-    const value = this.#clamp(amount, 0, 1000, true);
-    this.#write(FISCAL_STORAGE_KEYS.citizenTaxPerCapita, String(value));
-    return value;
+  /**
+   * Boot: gives every traded good the duty of each flow it takes, from the catalog, unless one is already stored.
+   * @param {ReadonlyArray<{ good: string, flows: ReadonlyArray<'import' | 'export'> }>} tradedGoods
+   */
+  ensureCustomsDuties(tradedGoods) {
+    const duties = this.#read() ?? { import: {}, export: {} };
+    for (const { good, flows } of tradedGoods) {
+      for (const flow of flows) {
+        if (duties[flow][good] === undefined) duties[flow][good] = defaultCustomsDuty(flow, good);
+      }
+    }
+    this.#write(duties);
   }
 
   /**
-   * @returns {{ salaryPerMonth: number, salaryTaxRate: number, unemploymentBenefitRate: number }}
+   * The duty a customs authority charges on one good for one flow, in force at a turn. Only Anoria's customs exist, and a
+   * duty has no history yet (its changes are logged as policy events, see createAccountingContext), so the turn is not read:
+   * both arguments are the hooks of the later trade-policy phase (other cities' tariffs, rates that change over time).
+   * @param {string} authority whose customs: 'anoria'
+   * @param {'import' | 'export'} flow
+   * @param {string} good
+   * @param {number} turn
+   * @returns {number} the duty, in [0, 1]
    */
-  getSalarySettings() {
-    return {
-      salaryPerMonth: this.#readNumber(
-        FISCAL_STORAGE_KEYS.salaryPerMonth,
-        DEFAULT_FISCAL_SETTINGS.salaryPerMonth,
-        { min: 10, max: 500, integer: true }
-      ),
-      salaryTaxRate: this.#readNumber(
-        FISCAL_STORAGE_KEYS.salaryTaxRate,
-        DEFAULT_FISCAL_SETTINGS.salaryTaxRate,
-        { min: 0, max: 1, integer: false }
-      ),
-      unemploymentBenefitRate: this.#readNumber(
-        FISCAL_STORAGE_KEYS.unemploymentBenefitRate,
-        DEFAULT_FISCAL_SETTINGS.unemploymentBenefitRate,
-        { min: 0, max: 1, integer: false }
-      ),
-    };
+  getCustomsDuty(authority, flow, good, turn) {
+    if (authority !== 'anoria') throw new Error(`[fiscal] the customs of "${authority}" are not modelled: only Anoria's are`);
+    if (!Number.isFinite(turn)) throw new Error(`[fiscal] the duty on ${good} is asked for no turn (${turn})`);
+    this.#requireFlow(flow);
+    const duties = this.#read();
+    if (!duties) throw new Error('[fiscal] the customs duties are not set: ensureCustomsDuties() must run at boot');
+    const duty = duties[flow][good];
+    if (duty === undefined) throw new Error(`[fiscal] no ${flow} duty for "${good}": it is not a good this city trades`);
+    return duty;
   }
 
   /**
-   * @param {{ salaryPerMonth?: number, salaryTaxRate?: number, unemploymentBenefitRate?: number }} partial
-   * @returns {{ salaryPerMonth: number, salaryTaxRate: number, unemploymentBenefitRate: number }}
+   * @param {'import' | 'export'} flow
+   * @param {string} good
+   * @param {number} rate
+   * @returns {number} the duty, once stored
    */
-  setSalarySettings(partial = {}) {
-    const current = this.getSalarySettings();
-    const next = {
-      salaryPerMonth:
-        partial.salaryPerMonth !== undefined
-          ? this.#clamp(partial.salaryPerMonth, 10, 500, true)
-          : current.salaryPerMonth,
-      salaryTaxRate:
-        partial.salaryTaxRate !== undefined
-          ? this.#clamp(partial.salaryTaxRate, 0, 1, false)
-          : current.salaryTaxRate,
-      unemploymentBenefitRate:
-        partial.unemploymentBenefitRate !== undefined
-          ? this.#clamp(partial.unemploymentBenefitRate, 0, 1, false)
-          : current.unemploymentBenefitRate,
-    };
-    this.#write(FISCAL_STORAGE_KEYS.salaryPerMonth, String(next.salaryPerMonth));
-    this.#write(FISCAL_STORAGE_KEYS.salaryTaxRate, String(next.salaryTaxRate));
-    this.#write(
-      FISCAL_STORAGE_KEYS.unemploymentBenefitRate,
-      String(next.unemploymentBenefitRate)
-    );
-    return next;
+  setCustomsDuty(flow, good, rate) {
+    this.#requireFlow(flow);
+    if (typeof rate !== 'number' || !Number.isFinite(rate) || rate < CUSTOMS_RATE_BOUNDS.min || rate > CUSTOMS_RATE_BOUNDS.max) {
+      throw new Error(`[fiscal] a customs duty must be between ${CUSTOMS_RATE_BOUNDS.min} and ${CUSTOMS_RATE_BOUNDS.max}, got ${rate}`);
+    }
+    const duties = this.#read();
+    if (!duties) throw new Error('[fiscal] the customs duties are not set: ensureCustomsDuties() must run at boot');
+    if (duties[flow][good] === undefined) throw new Error(`[fiscal] no ${flow} duty for "${good}": it is not a good this city trades`);
+    duties[flow][good] = rate;
+    this.#write(duties);
+    return rate;
+  }
+
+  /** @returns {CustomsDuties} every duty, a copy */
+  listCustomsDuties() {
+    const duties = this.#read();
+    if (!duties) throw new Error('[fiscal] the customs duties are not set: ensureCustomsDuties() must run at boot');
+    return { import: { ...duties.import }, export: { ...duties.export } };
   }
 
   clear() {
-    try {
-      this.storage?.removeItem(FISCAL_STORAGE_KEYS.citizenTaxPerCapita);
-      this.storage?.removeItem(FISCAL_STORAGE_KEYS.salaryPerMonth);
-      this.storage?.removeItem(FISCAL_STORAGE_KEYS.salaryTaxRate);
-      this.storage?.removeItem(FISCAL_STORAGE_KEYS.unemploymentBenefitRate);
-    } catch (error) {
-      console.warn('[FiscalSettings] Error clearing:', error);
-    }
+    this.storage?.removeItem(FISCAL_STORAGE_KEYS.customsDuties);
   }
 
-  /**
-   * @param {string} key
-   * @param {number} fallback
-   * @param {{ min: number, max: number, integer: boolean }} bounds
-   */
-  #readNumber(key, fallback, bounds) {
-    try {
-      const stored = this.storage?.getItem(key);
-      if (stored === null || stored === undefined) {
-        return fallback;
-      }
-      const parsed = bounds.integer ? parseInt(stored, 10) : parseFloat(stored);
-      if (Number.isNaN(parsed)) {
-        return fallback;
-      }
-      return this.#clamp(parsed, bounds.min, bounds.max, bounds.integer);
-    } catch (error) {
-      console.warn(`[FiscalSettings] Error reading ${key}:`, error);
-      return fallback;
-    }
+  /** @param {string} flow */
+  #requireFlow(flow) {
+    if (!CUSTOMS_FLOWS.includes(flow)) throw new Error(`[fiscal] unknown customs flow "${flow}"`);
   }
 
-  /** @param {string} key @param {string} value */
-  #write(key, value) {
+  /** @returns {CustomsDuties | null} */
+  #read() {
+    const raw = this.storage?.getItem(FISCAL_STORAGE_KEYS.customsDuties) ?? null;
+    if (raw === null) return null;
+    let parsed;
     try {
-      this.storage?.setItem(key, value);
-    } catch (error) {
-      console.warn(`[FiscalSettings] Error writing ${key}:`, error);
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new Error(`[fiscal] the stored customs duties are not JSON: "${raw}"`);
     }
+    if (!parsed?.import || !parsed?.export) throw new Error('[fiscal] the stored customs duties lack their import or export table');
+    return parsed;
   }
 
-  /**
-   * @param {number} value
-   * @param {number} min
-   * @param {number} max
-   * @param {boolean} integer
-   */
-  #clamp(value, min, max, integer) {
-    let n = Number(value);
-    if (Number.isNaN(n)) {
-      return min;
-    }
-    if (integer) {
-      n = Math.round(n);
-    }
-    return Math.max(min, Math.min(max, n));
+  /** @param {CustomsDuties} duties */
+  #write(duties) {
+    if (!this.storage) throw new Error('[fiscal] no storage to keep the customs duties in');
+    this.storage.setItem(FISCAL_STORAGE_KEYS.customsDuties, JSON.stringify(duties));
   }
 }

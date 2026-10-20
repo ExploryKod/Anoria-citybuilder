@@ -22,48 +22,63 @@ export const BUILDING_FOOTPRINT = Object.freeze({
       Object.freeze({ width: entry.construction.footprintWidth, depth: entry.construction.footprintDepth }),
     ])
   ),
-  'BookShop-001': Object.freeze({ width: 1, depth: 1 }),
-  'Church-002': Object.freeze({ width: 1, depth: 1 }),
   // Service layers reassign their geometry to Kenney commercial/industrial
   // meshes (see buildingAssets.js) — footprint must match that prefab's real
   // size, same reasoning as House-Blue/Purple/Red below.
-  'Chapel': Object.freeze({ width: 3, depth: 2 }),
+  'WaterTank': Object.freeze({ width: 2, depth: 2 }),
+  'FireStation': Object.freeze({ width: 3, depth: 1 }), // industrial building-s
+  'PoliceStation': Object.freeze({ width: 1, depth: 1 }),
+  'CoalPlant': Object.freeze({ width: 3, depth: 2 }), // industrial building-l
+  'PetrolPlant': Object.freeze({ width: 2, depth: 3 }), // industrial building-c
+  // The nuclear plant is several Kenney meshes on one plot (see its `geometry.parts` in buildingAssets.js).
+  'NuclearPlant': Object.freeze({ width: 5, depth: 4 }),
   'Cinema': Object.freeze({ width: 2, depth: 2 }),
   'Doctor': Object.freeze({ width: 1, depth: 1 }),
   'Hospital': Object.freeze({ width: 3, depth: 2 }),
   'Library': Object.freeze({ width: 1, depth: 1 }),
   'Pub': Object.freeze({ width: 2, depth: 1 }),
-  'PublicBath': Object.freeze({ width: 2, depth: 2 }),
   'School': Object.freeze({ width: 2, depth: 2 }),
   'Theatre': Object.freeze({ width: 3, depth: 2 }),
-  'Crate-001': Object.freeze({ width: 1, depth: 1 }),
-  'Cylinder': Object.freeze({ width: 1, depth: 1 }),
   'Farm-Cabbage': Object.freeze({ width: 1, depth: 1 }),
   'Farm-Carrot': Object.freeze({ width: 1, depth: 1 }),
   'Farm-Wheat': Object.freeze({ width: 1, depth: 1 }),
+  'Farm-Olive': Object.freeze({ width: 1, depth: 1 }),
   // Pottery workshops reassign their geometry to Kenney industrial meshes
   // (see buildingAssets.js) — footprint must match that prefab's real size.
   'Factory-Amphora': Object.freeze({ width: 2, depth: 2 }),
   'Factory-Plate': Object.freeze({ width: 1, depth: 2 }),
   'Factory-Pot': Object.freeze({ width: 2, depth: 2 }),
-  'Hay-Bale': Object.freeze({ width: 1, depth: 1 }),
-  'Hay-Cart': Object.freeze({ width: 1, depth: 1 }),
-  'Hay-Pile': Object.freeze({ width: 1, depth: 1 }),
-  'House-2Story': Object.freeze({ width: 1, depth: 1 }),
-  // House-Blue/Purple/Red reassign their geometry to Kenney suburban
-  // building-type-b/c/a (see buildingAssets.js) — footprint must match that
-  // prefab's real size, not the village-era 1x1 these ids used to be.
+  // Lighting workshops wear Kenney industrial building-i (1x2) and building-m (2x2).
+  'Factory-Oil': Object.freeze({ width: 1, depth: 2 }),
+  'Factory-Candle': Object.freeze({ width: 2, depth: 2 }),
+  // Network provider wears Kenney industrial building-n (1x2).
+  'Factory-Network': Object.freeze({ width: 1, depth: 2 }),
+  // Lumberjack reassigns its geometry to Kenney industrial building-o (see buildingAssets.js) — 1x2 there.
+  // Furniture workshop / Warehouse reassign to Kenney industrial building-f (2x2) / building-a (3x2).
+  'Factory-Furniture': Object.freeze({ width: 2, depth: 2 }),
+  'Warehouse': Object.freeze({ width: 3, depth: 2 }),
+  'TradeWarehouse': Object.freeze({ width: 2, depth: 2 }), // industrial building-h
+  // Bank reassigns its geometry to Kenney commercial building-skyscraper-a (see buildingAssets.js) — 2x2 there.
+  'Bank': Object.freeze({ width: 2, depth: 2 }),
+  'Lumberjack': Object.freeze({ width: 1, depth: 2 }),
+  'Lumberjack-Industry': Object.freeze({ width: 1, depth: 2 }),
+  // A house reserves one uniform 2x2 plot — the widest of the house models — whatever model it wears at its
+  // level: the plot is the house's land (it is what road access and collision read), and its model sits in the
+  // middle of it, so evolving never reaches past the plot.
+  'House-Mayor': Object.freeze({ width: 2, depth: 2 }),
   'House-Blue': Object.freeze({ width: 2, depth: 2 }),
-  'House-Purple': Object.freeze({ width: 2, depth: 1 }),
-  'House-Red': Object.freeze({ width: 2, depth: 1 }),
-  'Market-Stall': Object.freeze({ width: 1, depth: 1 }),
-  'Market-Stall-Blue': Object.freeze({ width: 1, depth: 1 }),
-  'Market-Stall-Red': Object.freeze({ width: 1, depth: 1 }),
+  'House-Purple': Object.freeze({ width: 2, depth: 2 }),
+  'House-Red': Object.freeze({ width: 2, depth: 2 }),
+  // Market-Stall-Red wears Kenney commercial building-c, whose real bounding box is 1x2 (a 1x1 footprint let a
+  // road sit under the far half of the mesh, and never counted a road beside it as touching the market).
+  'Market-Stall-Red': Object.freeze({ width: 1, depth: 2 }),
   'StonePath-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-Cross-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-Tee-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-End-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-Left-001': Object.freeze({ width: 1, depth: 1 }),
   'StonePath-Right-001': Object.freeze({ width: 1, depth: 1 }),
-  'Windmill-001': Object.freeze({ width: 1, depth: 1 }),
+  // Windmill-001 wears a Kenney industrial mesh whose real bounding box is 1x2: a mismatch here is what makes the
+  // mesh straddle its neighbour tile at placement time.
+  'Windmill-001': Object.freeze({ width: 1, depth: 2 }),
 });

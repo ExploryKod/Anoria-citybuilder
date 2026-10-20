@@ -1,3 +1,5 @@
+import db from '../core/persistence/dexie/db.js';
+
 /**
  * Configuration des événements aléatoires via localStorage
  * Permet de contrôler la probabilité et l'activation des événements
@@ -107,65 +109,142 @@ export function setEventProbability(probability) {
 }
 
 /**
- * Configuration du temps via localStorage
+ * Calendrier : nombre de jours (tours) par mois — UNE seule source de vérité par moment de vie :
+ *
+ *  - `.env` (VITE_DAYS_PER_MONTH) : la valeur par défaut, source de vérité des données transverses du jeu.
+ *  - Avant la partie : le joueur peut la changer dans les paramètres de la page racine
+ *    (`getPregameDaysPerMonth` / `setPregameDaysPerMonth`, localStorage). Sans choix du joueur, c'est `.env`.
+ *  - À la création de la partie (`initGameCalendar`, appelé quand les hameaux sont créés) la valeur est
+ *    FIGÉE dans IndexedDB (`gameSettings`/`calendar`). Pendant la partie, `getDaysPerMonth()` rend cette valeur
+ *    et rien ne peut la modifier : une année vaut `jours/mois × MONTHS_PER_YEAR` tours, et changer ce nombre
+ *    réinterpréterait tout l'historique (journal, saisons, échéances).
+ *  - Réinitialiser la partie efface IndexedDB et localStorage : on repart de `.env`.
  */
 const STORAGE_KEY_DAYS_PER_MONTH = 'days_per_month';
+export const CALENDAR_SETTING_NAME = 'calendar';
+
+export const DAYS_PER_MONTH_MIN = 1;
+export const DAYS_PER_MONTH_MAX = 30;
+
+/** @param {unknown} days @param {string} source */
+function assertDaysPerMonthInRange(days, source) {
+    if (!Number.isInteger(days) || days < DAYS_PER_MONTH_MIN || days > DAYS_PER_MONTH_MAX) {
+        throw new Error(
+            `[calendar] days per month from ${source} must be an integer in ${DAYS_PER_MONTH_MIN}..${DAYS_PER_MONTH_MAX}, got ${days}`
+        );
+    }
+    return days;
+}
+
+/** @type {number | null} */
+let envDaysPerMonthForTests = null;
 
 /**
- * Récupère la valeur par défaut de VITE_DAYS_PER_MONTH depuis les variables d'environnement
- * @returns {number} Nombre de jours par mois (par défaut 1)
+ * La valeur de `.env` (VITE_DAYS_PER_MONTH). Lève si elle manque ou est invalide : aucune valeur de repli.
+ * @returns {number}
  */
-function getDefaultDaysPerMonth() {
-    if (typeof import.meta !== 'undefined' && import.meta.env && Object.prototype.hasOwnProperty.call(import.meta.env, 'VITE_DAYS_PER_MONTH')) {
-        const envValue = import.meta.env.VITE_DAYS_PER_MONTH;
-        const parsed = parseInt(envValue, 10);
-        if (!isNaN(parsed) && parsed > 0) {
-            return parsed;
-        }
+export function getEnvDaysPerMonth() {
+    let raw;
+    if (envDaysPerMonthForTests !== null) {
+        raw = envDaysPerMonthForTests;
+    } else if (typeof import.meta !== 'undefined' && import.meta.env && Object.prototype.hasOwnProperty.call(import.meta.env, 'VITE_DAYS_PER_MONTH')) {
+        raw = import.meta.env.VITE_DAYS_PER_MONTH;
+    } else if (typeof window !== 'undefined' && window.__VITE_DAYS_PER_MONTH__ !== undefined) {
+        raw = window.__VITE_DAYS_PER_MONTH__;
     }
-    // Fallback
-    if (typeof window !== 'undefined' && window.__VITE_DAYS_PER_MONTH__ !== undefined) {
-        const parsed = parseInt(window.__VITE_DAYS_PER_MONTH__, 10);
-        if (!isNaN(parsed) && parsed > 0) {
-            return parsed;
-        }
+    if (raw === undefined || raw === '') {
+        throw new Error('[calendar] VITE_DAYS_PER_MONTH is not set: declare it in .env');
     }
-    // Par défaut, 1 jour par mois
-    return 1;
+    return assertDaysPerMonthInRange(Number(raw), 'VITE_DAYS_PER_MONTH');
 }
 
 /**
- * Récupère le nombre de jours par mois depuis localStorage
- * @returns {number} Nombre de jours par mois (1-30)
+ * La valeur choisie avant la partie (paramètres de la page racine), sinon celle de `.env`.
+ * @returns {number}
+ */
+export function getPregameDaysPerMonth() {
+    const stored = globalThis.localStorage?.getItem(STORAGE_KEY_DAYS_PER_MONTH) ?? null;
+    if (stored === null) {
+        return getEnvDaysPerMonth();
+    }
+    return assertDaysPerMonthInRange(Number(stored), `localStorage "${STORAGE_KEY_DAYS_PER_MONTH}"`);
+}
+
+/** @returns {Promise<boolean>} true once a game exists: the calendar is then frozen. */
+export async function isCalendarFrozen() {
+    return Boolean(await db.gameSettings.get(CALENDAR_SETTING_NAME));
+}
+
+/**
+ * Change the pre-game choice. Refused once the game exists.
+ * @param {number} days
+ */
+export async function setPregameDaysPerMonth(days) {
+    assertDaysPerMonthInRange(days, 'the settings form');
+    if (await isCalendarFrozen()) {
+        throw new Error('[calendar] days per month is frozen: a game is in progress, reset the game to change it');
+    }
+    globalThis.localStorage.setItem(STORAGE_KEY_DAYS_PER_MONTH, String(days));
+}
+
+/**
+ * What the settings screens show, without creating the game: the frozen value when a game exists,
+ * otherwise the value that will be frozen (the pre-game choice, `.env` by default).
+ * @returns {Promise<{ daysPerMonth: number, frozen: boolean }>}
+ */
+export async function describeCalendar() {
+    const row = await db.gameSettings.get(CALENDAR_SETTING_NAME);
+    if (row) {
+        return { daysPerMonth: assertDaysPerMonthInRange(row.daysPerMonth, 'the frozen game calendar'), frozen: true };
+    }
+    return { daysPerMonth: getPregameDaysPerMonth(), frozen: false };
+}
+
+/** @type {number | null} */
+let gameDaysPerMonth = null;
+
+/**
+ * Load the game's calendar; freeze it from the pre-game value when the game has none yet.
+ * @returns {Promise<number>}
+ */
+export async function initGameCalendar() {
+    const row = await db.gameSettings.get(CALENDAR_SETTING_NAME);
+    if (row) {
+        gameDaysPerMonth = assertDaysPerMonthInRange(row.daysPerMonth, 'the frozen game calendar');
+        return gameDaysPerMonth;
+    }
+    const days = getPregameDaysPerMonth();
+    await db.gameSettings.put({ name: CALENDAR_SETTING_NAME, daysPerMonth: days });
+    gameDaysPerMonth = days;
+    return days;
+}
+
+/**
+ * The game's days (turns) per month. Throws until `initGameCalendar()` has run: the game must not start
+ * with a guessed calendar.
+ * @returns {number}
  */
 export function getDaysPerMonth() {
-    if (typeof window === 'undefined' || !window.localStorage) {
-        return getDefaultDaysPerMonth();
+    if (gameDaysPerMonth === null) {
+        throw new Error('[calendar] the game calendar is not loaded: initGameCalendar() must run before the game reads the time');
     }
-    
-    const stored = localStorage.getItem(STORAGE_KEY_DAYS_PER_MONTH);
-    if (stored !== null) {
-        const parsed = parseInt(stored, 10);
-        if (!isNaN(parsed) && parsed >= 1 && parsed <= 30) {
-            return parsed;
-        }
-    }
-    
-    // Initialiser avec la valeur par défaut
-    const defaultValue = getDefaultDaysPerMonth();
-    localStorage.setItem(STORAGE_KEY_DAYS_PER_MONTH, String(defaultValue));
-    return defaultValue;
+    return gameDaysPerMonth;
 }
 
 /**
- * Définit le nombre de jours par mois
- * @param {number} days - Nombre de jours entre 1 et 30
+ * Test seam: stand in for the `.env` value (Jest has no Vite env).
+ * @param {number | null} days
  */
-export function setDaysPerMonth(days) {
-    const clamped = Math.max(1, Math.min(30, Math.floor(days)));
-    if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.setItem(STORAGE_KEY_DAYS_PER_MONTH, String(clamped));
-    }
+export function useEnvDaysPerMonthForTests(days) {
+    envDaysPerMonthForTests = days;
+}
+
+/**
+ * Test seam: set the game's calendar in memory, without the database (null = not loaded).
+ * @param {number | null} days
+ */
+export function useDaysPerMonthForTests(days) {
+    gameDaysPerMonth = days === null ? null : assertDaysPerMonthInRange(days, 'the test seam');
 }
 
 /**

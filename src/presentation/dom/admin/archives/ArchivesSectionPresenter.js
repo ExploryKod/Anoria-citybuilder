@@ -1,5 +1,6 @@
 import { labelForNewsSource, labelForNewsCategory } from '../../../../composition/intelligenceCatalog.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
+import { listHamlets } from '../../../../core/persistence/hamlet/hamletSession.js';
 
 const TRASH_ICON = `
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -70,8 +71,13 @@ export class ArchivesSectionPresenter {
       return;
     }
 
+    const hamletNames = new Map((await listHamlets()).map((hamlet) => [hamlet.id, hamlet.name]));
     this.listEl.innerHTML = items
       .map((item) => {
+        const hamletName = hamletNames.get(item.hamletId);
+        if (hamletName === undefined) {
+          throw new Error(`[archives] news ${item.id} belongs to an unknown hamlet ${item.hamletId}`);
+        }
         let when = `Tour ${item.turn}`;
         try {
           const info = TimeManager.getTimeInfo(item.turn);
@@ -86,7 +92,7 @@ export class ArchivesSectionPresenter {
           <article class="archives-news-item" data-news-id="${safeId}">
             <header class="archives-news-item-header">
               <div class="archives-news-item-heading">
-                <span class="archives-news-item-meta">${source} · ${category} · ${when}</span>
+                <span class="archives-news-item-meta">${source} · ${category} · ${when} · ${escapeHtml(hamletName)}</span>
                 <h4 class="archives-news-item-title">${escapeHtml(item.title)}</h4>
               </div>
               <button

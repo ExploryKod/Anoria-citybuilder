@@ -22,19 +22,19 @@ describe('canPlaceBuildingAt', () => {
     const result = canPlaceBuildingAt({
       x: 11,
       y: 10,
-      buildingType: 'Market-Stall',
+      buildingType: 'Market-Stall-Red',
       candidates: [windmillA, windmillB],
     });
     expect(result).toEqual({ ok: true, ownerId: 'windmill-a', role: 'hub' });
   });
 
   test('rejects when no hub exists at all', () => {
-    const result = canPlaceBuildingAt({ x: 5, y: 5, buildingType: 'Market-Stall', candidates: [] });
+    const result = canPlaceBuildingAt({ x: 5, y: 5, buildingType: 'Market-Stall-Red', candidates: [] });
     expect(result).toEqual({ ok: false, reason: 'hub_missing' });
   });
 
   test('rejects when the only hub is out of range', () => {
-    const result = canPlaceBuildingAt({ x: 30, y: 30, buildingType: 'Market-Stall', candidates: [windmillA] });
+    const result = canPlaceBuildingAt({ x: 30, y: 30, buildingType: 'Market-Stall-Red', candidates: [windmillA] });
     expect(result).toEqual({ ok: false, reason: 'hub_too_far' });
   });
 
@@ -47,7 +47,7 @@ describe('canPlaceBuildingAt', () => {
       ],
     };
 
-    const result = canPlaceBuildingAt({ x: 11, y: 10, buildingType: 'Market-Stall', candidates: [fullWindmill] });
+    const result = canPlaceBuildingAt({ x: 11, y: 10, buildingType: 'Market-Stall-Red', candidates: [fullWindmill] });
     expect(result).toEqual({ ok: false, reason: 'hub_full' });
   });
 

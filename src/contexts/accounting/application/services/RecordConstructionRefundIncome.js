@@ -1,3 +1,5 @@
+import { constructionAccountOf, constructionLegs } from '../../domain/policies/ConstructionAccountPolicy.js';
+
 /**
  * Application service — construction placement refund (journal + treasury).
  * Reverses a building investment debit without crediting operating income.
@@ -5,11 +7,12 @@
 export class RecordConstructionRefundIncome {
   /**
    * @param {import('../commands/journal/RecordLedgerEntry.js').RecordLedgerEntry} recordLedgerEntry
-   * @param {import('../commands/treasury/ApplyTreasuryMovement.js').ApplyTreasuryMovement} applyTreasuryMovement
+   * @param {() => Promise<boolean>} ownerStands whether the property company that owns the buildings exists (see ConstructionAccountPolicy)
    */
-  constructor(recordLedgerEntry, applyTreasuryMovement) {
+  constructor(recordLedgerEntry, ownerStands) {
+    if (typeof ownerStands !== 'function') throw new Error('[construction] RecordConstructionRefundIncome needs to know whether the owner of the buildings stands (ownerStands)');
     this.recordLedgerEntry = recordLedgerEntry;
-    this.applyTreasuryMovement = applyTreasuryMovement;
+    this.ownerStands = ownerStands;
   }
 
   /**
@@ -18,7 +21,7 @@ export class RecordConstructionRefundIncome {
    * @param {number} params.amount
    * @param {string} params.description
    * @param {string|null} [params.buildingInstanceId]
-   * @returns {Promise<{ recorded: boolean, skipped: boolean, treasuryApplied: boolean, reason?: string }>}
+   * @returns {Promise<{ recorded: boolean, skipped: boolean, reason?: string }>}
    */
   async execute({ turn, amount, description, buildingInstanceId = null }) {
     const roundedAmount = Math.round(amount);
@@ -27,38 +30,31 @@ export class RecordConstructionRefundIncome {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'zero_amount',
       };
     }
 
+    const account = constructionAccountOf({ description, refund: true, ownerStands: await this.ownerStands() });
     const ledgerResult = await this.recordLedgerEntry.execute({
       turn,
       type: 'construction_refund',
       amount: roundedAmount,
       description,
       buildingInstanceId,
+      legs: constructionLegs(account, roundedAmount, true),
     });
 
     if (!ledgerResult.recorded) {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: ledgerResult.reason,
       };
     }
 
-    await this.applyTreasuryMovement.execute({
-      category: 'construction_refund',
-      amount: roundedAmount,
-      description,
-    });
-
     return {
       recorded: true,
       skipped: false,
-      treasuryApplied: true,
     };
   }
 }

@@ -23,7 +23,7 @@ Buildings are classified into categories that determine their default employee r
 
 | Category | Value | Description | Examples |
 |----------|-------|-------------|----------|
-| RESIDENTIAL | 0 | Housing for citizens | House-Blue, House-Red, House-Purple, House-2Story |
+| RESIDENTIAL | 0 | Housing for citizens | House-Blue, House-Red, House-Purple |
 | COMMERCIAL | 1 | Trade and commerce | Market-Stall |
 | INDUSTRIAL | 2 | Production buildings | Farm-Wheat, Farm-Carrot, Farm-Cabbage, Windmill-001, Barn-001 |
 | INFRASTRUCTURE | 3 | City infrastructure | roads |

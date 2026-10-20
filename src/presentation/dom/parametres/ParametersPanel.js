@@ -5,12 +5,13 @@ import { isTouchModeEnabled, setTouchModeEnabled } from '../../../config/touchMo
 import { isCameraDpadEnabled, setCameraDpadEnabled } from '../../../config/cameraDpad.js';
 import { readStoredTileGridVisibility } from '../../three/managers/TileGridOverlay.js';
 import { getLastPwaUpdateAt, installLatestPwaUpdate } from '../../../pwa.js';
+import { DEFAULT_TICK_MS, TICK_MS_MIN, TICK_MS_MAX, clampTickMs } from '../../../shared/gameplay/SimulationDefaults.js';
 
 /** @type {{
  *   pauseGame?: () => void,
  *   playGame?: () => void,
  *   registerAppService?: (name: string, instance: unknown) => void,
- *   getTimeManager?: () => { refreshCache?: () => Promise<void> } | null,
+ *   getGame?: () => { startInterval?: () => void } | null,
  *   getScene?: () => {
  *     setTileGridVisible?: (visible: boolean) => void,
  *     isTileGridVisible?: () => boolean,
@@ -32,6 +33,7 @@ class ParametersPanel {
         this.eventsEnabledToggle = null;
         this.eventProbabilityInput = null;
         this.daysPerMonthInput = null;
+        this.tickSecondsInput = null;
         this.tileGridToggle = null;
         this.touchModeToggle = null;
         this.cameraDpadToggle = null;
@@ -67,6 +69,7 @@ class ParametersPanel {
         this.eventsEnabledToggle = this.panel.querySelector('#events-enabled-toggle');
         this.eventProbabilityInput = this.panel.querySelector('#event-probability-input');
         this.daysPerMonthInput = this.panel.querySelector('#days-per-month-input');
+        this.tickSecondsInput = this.panel.querySelector('#tick-seconds-input');
         this.tileGridToggle = this.panel.querySelector('#tile-grid-toggle');
         this.touchModeToggle = this.panel.querySelector('#touch-mode-toggle');
         this.cameraDpadToggle = this.panel.querySelector('#camera-dpad-toggle');
@@ -133,19 +136,21 @@ class ParametersPanel {
             });
         }
 
-        if (this.daysPerMonthInput) {
-            this.daysPerMonthInput.addEventListener('change', (e) => {
-                this.handleDaysPerMonthChange(parseInt(e.target.value, 10));
+        if (this.tickSecondsInput) {
+            const tickMsMinSeconds = TICK_MS_MIN / 1000;
+            const tickMsMaxSeconds = TICK_MS_MAX / 1000;
+            this.tickSecondsInput.addEventListener('change', (e) => {
+                this.handleTickSecondsChange(parseFloat(e.target.value));
             });
-            this.daysPerMonthInput.addEventListener('input', (e) => {
+            this.tickSecondsInput.addEventListener('input', (e) => {
                 const value = e.target.value;
                 if (value === '' || value === '-') return;
-                const numValue = parseInt(value, 10);
+                const numValue = parseFloat(value);
                 if (!isNaN(numValue)) {
-                    if (numValue < 1) {
-                        e.target.value = 1;
-                    } else if (numValue > 30) {
-                        e.target.value = 30;
+                    if (numValue < tickMsMinSeconds) {
+                        e.target.value = tickMsMinSeconds;
+                    } else if (numValue > tickMsMaxSeconds) {
+                        e.target.value = tickMsMaxSeconds;
                     }
                 }
             });
@@ -169,6 +174,17 @@ class ParametersPanel {
             });
         }
 
+        const cookiesBtn = document.getElementById('parameters-cookies-btn');
+        if (cookiesBtn) {
+            cookiesBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (!window.cookieBanner?.open) throw new Error('[parameters] the cookie banner is not loaded: its settings cannot be opened');
+                // The banner opens over the game: the panel gives its place first.
+                this.hide();
+                window.cookieBanner.open();
+            });
+        }
+
         if (this.pwaUpdateInstallBtn) {
             this.pwaUpdateInstallBtn.addEventListener('click', (event) => {
                 event.preventDefault();
@@ -189,7 +205,18 @@ class ParametersPanel {
             }
 
             if (this.daysPerMonthInput) {
-                this.daysPerMonthInput.value = eventsConfig.getDaysPerMonth();
+                // Frozen for the whole game (set before it starts, on the settings page): shown, never editable.
+                const calendar = await eventsConfig.describeCalendar();
+                this.daysPerMonthInput.min = eventsConfig.DAYS_PER_MONTH_MIN;
+                this.daysPerMonthInput.max = eventsConfig.DAYS_PER_MONTH_MAX;
+                this.daysPerMonthInput.value = calendar.daysPerMonth;
+                this.daysPerMonthInput.disabled = true;
+            }
+
+            if (this.tickSecondsInput) {
+                const rawMs = parseFloat(localStorage.getItem('speed'));
+                const ms = clampTickMs(Number.isFinite(rawMs) ? rawMs : DEFAULT_TICK_MS);
+                this.tickSecondsInput.value = String(Math.round((ms / 1000) * 100) / 100);
             }
 
             if (this.tileGridToggle) {
@@ -295,16 +322,20 @@ class ParametersPanel {
         }
     }
 
-    async handleDaysPerMonthChange(days) {
+    /** @param {number} seconds Real-time seconds between two turns (days) — the same 'speed'
+     *  localStorage key the HUD +/- buttons use, but a precise value instead of one of their 13
+     *  presets (see SimulationDefaults.clampTickMs). */
+    handleTickSecondsChange(seconds) {
         try {
-            eventsConfig.setDaysPerMonth(days);
-
-            const timeManager = deps?.getTimeManager?.();
-            if (timeManager && typeof timeManager.refreshCache === 'function') {
-                await timeManager.refreshCache();
+            if (!Number.isFinite(seconds)) return;
+            const ms = clampTickMs(seconds * 1000);
+            localStorage.setItem('speed', String(ms));
+            if (this.tickSecondsInput) {
+                this.tickSecondsInput.value = String(Math.round((ms / 1000) * 100) / 100);
             }
+            deps?.getGame?.()?.startInterval?.();
         } catch (error) {
-            console.error('[ParametersPanel] Error setting days per month:', error);
+            console.error('[ParametersPanel] Error setting seconds per turn:', error);
         }
     }
 
@@ -441,7 +472,7 @@ class ParametersPanel {
  *   pauseGame?: () => void,
  *   playGame?: () => void,
  *   registerAppService?: (name: string, instance: unknown) => void,
- *   getTimeManager?: () => { refreshCache?: () => Promise<void> } | null,
+ *   getGame?: () => { startInterval?: () => void } | null,
  *   getScene?: () => {
  *     setTileGridVisible?: (visible: boolean) => void,
  *     isTileGridVisible?: () => boolean,

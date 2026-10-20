@@ -1,3 +1,4 @@
+import { isRoadType } from '../../../../shared/building-catalog/roadQueries.js';
 /**
  * Footprint checks / tile mutations on the in-memory city grid.
  * Pure — no Dexie / Three / DOM.
@@ -8,12 +9,7 @@
  * @returns {boolean}
  */
 export function isRoadBuildingType(buildingType) {
-  if (!buildingType) return false;
-  return (
-    buildingType === 'roads'
-    || buildingType === 'Road'
-    || buildingType.startsWith('StonePath-')
-  );
+  return isRoadType(buildingType);
 }
 
 /**

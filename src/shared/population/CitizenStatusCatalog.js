@@ -16,9 +16,8 @@
  * - **Rights** (droits) → what you RECEIVE (income, protection)
  * - **Housing Metadata** (documentation) → typical housing relationship (NOT enforced)
  *
- * Skills are CUMULATIVE — higher statuses add to the base set:
- * - hunter-gatherer: subsistence-forager
- * - worker: subsistence-forager + employment-eligible
+ * What a resident can work at comes from the house's social category and tier (socialCategoryCatalog.js);
+ * the status says only what the citizen owes and receives.
  *
  * Housing metadata documents the status↔housing relationship but does NOT
  * grant housing access. Causality: house.level → status (not the reverse).
@@ -27,7 +26,6 @@
 /**
  * @typedef {object} CitizenSkill
  * @property {string} [description] - Human-readable description
- * @property {object} [produces] - Production output (e.g., { fruit: 1, game: 1 })
  * @property {'by-group' | 'none' | number[]} [eligibleSectors] - For employment skills
  * @property {boolean} [canBeAssigned] - Can be assigned to workplaces
  *
@@ -77,70 +75,10 @@
 /** @type {Readonly<Record<string, CitizenStatusProfile>>} */
 export const CITIZEN_STATUS_PROFILES = Object.freeze({
   /**
-   * Level 1 house residents (autarky / hunter-gatherer).
-   * Self-sufficient, outside formal economy.
-   */
-  'hunter-gatherer': Object.freeze({
-    // Skills: what you CAN do
-    skills: Object.freeze({
-      'subsistence-forager': Object.freeze({
-        description: 'Cueillette et chasse autonome',
-        produces: Object.freeze({ fruit: 1, game: 1 }), // per house per month (TOTAL)
-      }),
-    }),
-    
-    // Duties: what you MUST do
-    duties: Object.freeze({
-      taxpayer: false, // No taxes in autarky
-      payrollTax: false,
-    }),
-    
-    // Rights: what you RECEIVE
-    rights: Object.freeze({
-      income: Object.freeze({
-        receives: false,
-        source: 'self-sufficient',
-        multiplier: 0.0,
-      }),
-    }),
-    
-    // Housing metadata (descriptive, NOT enforced by this catalog)
-    housingMetadata: Object.freeze({
-      typicalLevel: 1, // Lives in cabane (level 1)
-      constraint: 'none',
-      description: 'Réside en cabane (niveau 1). Le niveau de la maison détermine ce statut.',
-    }),
-    
-    // Legacy projections (derived from above, kept for backward compatibility)
-    housing: Object.freeze({
-      contributesToGrowth: true,
-      consumesFood: true,
-    }),
-    employment: Object.freeze({
-      isEmployable: false,
-      eligibleSectors: 'none',
-      countsInLaborPool: false,
-    }),
-    accounting: Object.freeze({
-      paysCitizenTax: false,
-      paysPayrollTax: false,
-      receivesIncome: false,
-      incomeSource: 'self-sufficient',
-      incomeMultiplier: 0.0,
-    }),
-  }),
-
-  /**
-   * Level 2 house residents (integrated into city economy).
-   * CUMULATIVE SKILLS: keeps subsistence-forager + gains employment-eligible.
+   * House residents, from the first level (integrated into the city economy: they work, are paid and pay tax).
    */
   worker: Object.freeze({
-    // Skills: CUMULATIVE (hunter-gatherer skills + new ones)
     skills: Object.freeze({
-      'subsistence-forager': Object.freeze({
-        description: 'Cueillette et chasse (maintenue)',
-        produces: Object.freeze({ fruit: 1, game: 1 }), // per house per month - KEPT from level 1!
-      }),
       'employment-eligible': Object.freeze({
         description: 'Employable dans les secteurs du groupe résidentiel',
         eligibleSectors: 'by-group', // resolved via residentialGroup (farm/artisan/merchant/scholar)
@@ -196,10 +134,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
   unemployed: Object.freeze({
     // Skills: identical to worker
     skills: Object.freeze({
-      'subsistence-forager': Object.freeze({
-        description: 'Cueillette et chasse',
-        produces: Object.freeze({ fruit: 1, game: 1 }), // per house per month
-      }),
       'employment-eligible': Object.freeze({
         description: 'Cherche emploi',
         eligibleSectors: 'by-group',
@@ -254,12 +188,8 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
    * Public administration role, full city-paid salary.
    */
   'civil-servant': Object.freeze({
-    // Skills: subsistence + administration (not regular employment)
+    // Skills: administration (not regular employment)
     skills: Object.freeze({
-      'subsistence-forager': Object.freeze({
-        description: 'Cueillette et chasse',
-        produces: Object.freeze({ fruit: 1, game: 1 }), // per house per month
-      }),
       'administration': Object.freeze({
         description: 'Service public (gouvernance)',
         providesService: 'city-administration',
@@ -307,62 +237,6 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
       receivesIncome: true,
       incomeSource: 'city-paid',
       incomeMultiplier: 1.0,
-    }),
-  }),
-
-  /**
-   * Elite (palace resident beyond citizen cap).
-   * Leadership role, no subsistence production (palace luxury).
-   */
-  elite: Object.freeze({
-    // Skills: NO subsistence (palace provides), governance/leadership only
-    skills: Object.freeze({
-      'governance': Object.freeze({
-        description: 'Direction et gouvernance',
-        providesService: 'leadership',
-        influencesPolicy: true, // Future: policy decisions
-      }),
-    }),
-    
-    // Duties: pays taxes, leadership obligation
-    duties: Object.freeze({
-      taxpayer: true, // Future: higher rate?
-      payrollTax: true,
-      leadership: true, // Must govern
-    }),
-    
-    // Rights: double income
-    rights: Object.freeze({
-      income: Object.freeze({
-        receives: true,
-        source: 'employer-paid', // Or 'palace-revenue'
-        multiplier: 2.0, // Elite income bonus
-      }),
-    }),
-    
-    // Housing metadata (descriptive, NOT enforced by this catalog)
-    housingMetadata: Object.freeze({
-      typicalLevel: 2, // Lives in masure (level 2) - including palace
-      constraint: 'none',
-      description: 'Réside en masure (niveau 2). Dirigeants et élites de la ville.',
-    }),
-    
-    // Legacy projections
-    housing: Object.freeze({
-      contributesToGrowth: false, // additive slot, not growth
-      consumesFood: true,
-    }),
-    employment: Object.freeze({
-      isEmployable: false,
-      eligibleSectors: 'none',
-      countsInLaborPool: false,
-    }),
-    accounting: Object.freeze({
-      paysCitizenTax: true,
-      paysPayrollTax: true,
-      receivesIncome: true,
-      incomeSource: 'employer-paid',
-      incomeMultiplier: 2.0,
     }),
   }),
 
@@ -427,15 +301,11 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
 
   /**
    * Retired (future: age >= 65, not yet implemented).
-   * Former worker, reduced subsistence, pension income.
+   * Former worker, pension income.
    */
   retired: Object.freeze({
-    // Skills: reduced subsistence + wisdom
+    // Skills: wisdom
     skills: Object.freeze({
-      'subsistence-forager': Object.freeze({
-        description: 'Cueillette et chasse réduites',
-        produces: Object.freeze({ fruit: 0.5, game: 0.5 }), // per house per month (reduced)
-      }),
       'elder-wisdom': Object.freeze({
         description: 'Conseil des anciens',
         providesAdvice: true, // Future: bonus to certain buildings
@@ -490,13 +360,15 @@ export const CITIZEN_STATUS_PROFILES = Object.freeze({
 
 /**
  * Resolve citizen status from house level (current game state).
- * Palace élites are tracked separately via `elitePopFromHouse`.
  *
  * @param {number} level
  * @returns {keyof typeof CITIZEN_STATUS_PROFILES}
  */
 export function resolveCitizenStatusFromLevel(level) {
-  return level >= 2 ? 'worker' : 'hunter-gatherer';
+  if (!Number.isFinite(level) || level < 1) {
+    throw new Error(`[CitizenStatusCatalog] no citizen status for the house level "${level}"`);
+  }
+  return 'worker';
 }
 
 /**
@@ -506,7 +378,11 @@ export function resolveCitizenStatusFromLevel(level) {
  * @returns {CitizenStatusProfile}
  */
 export function getCitizenStatusProfile(statusKey) {
-  return CITIZEN_STATUS_PROFILES[statusKey] ?? CITIZEN_STATUS_PROFILES['hunter-gatherer'];
+  const profile = CITIZEN_STATUS_PROFILES[statusKey];
+  if (!profile) {
+    throw new Error(`[CitizenStatusCatalog] unknown citizen status "${statusKey}"`);
+  }
+  return profile;
 }
 
 // === Skills/Duties/Rights Accessors ===

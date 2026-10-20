@@ -19,6 +19,11 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
     return sessionLedgerBuffer.hasBusinessKey(businessKey);
   }
 
+  /** @inheritdoc */
+  async batch(work) {
+    return this.sessionJournalStore.batch(work);
+  }
+
   /**
    * @param {object} entry
    * @param {{ persist?: boolean }} [options]
@@ -34,6 +39,18 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
       {
         businessKey: entry.businessKey ?? null,
         buildingInstanceId: entry.buildingInstanceId ?? null,
+        accountBuildingId: entry.accountBuildingId ?? null,
+        accountKind: entry.accountKind ?? null,
+        counterpartyBuildingId: entry.counterpartyBuildingId ?? null,
+        loanId: entry.loanId ?? null,
+        loan: entry.loan ?? null,
+        taxYear: entry.taxYear ?? null,
+        taxBreakdown: entry.taxBreakdown ?? null,
+        dutyRate: entry.dutyRate ?? null,
+        customsBase: entry.customsBase ?? null,
+        resource: entry.resource ?? null,
+        legs: entry.legs ?? null,
+        transactionId: entry.transactionId ?? null,
         persist: options.persist,
       }
     );
@@ -43,10 +60,5 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
     }
 
     return { recorded: true, skipped: false };
-  }
-
-  /** @inheritdoc */
-  async upsertBalanceSnapshot(turn, amount) {
-    await this.sessionJournalStore.addBalanceEntry(turn, amount);
   }
 }

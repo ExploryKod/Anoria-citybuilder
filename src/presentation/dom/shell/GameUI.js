@@ -3,6 +3,7 @@
  * Inspired by simcity-threejs-clone's GameUI pattern
  */
 
+import { HUNGER_CAUSES, HUNGER_RISK } from '../../../shared/population/HungerCauseCatalog.js';
 import {
     displayTime,
     displaySeason,
@@ -10,25 +11,26 @@ import {
     infoPanelClockIcon,
     infoPanelNoClockIcon,
     gameWindow as gameWindowElement,
-    displayPop,
     displayPopTotal,
     displayPopTotalHamlet,
     displayPopActiveTotal,
     displayPopActiveTotalHamlet,
-    displayPopCitizens,
-    displayPopCitizensHamlet,
-    displayPopElites,
-    displayPopElitesHamlet,
-    displayPopServants,
-    displayPopServantsHamlet,
     displayHungerPop,
     displayHungerPopHamlet,
+    displayDisettePop,
+    displayDisettePopHamlet,
+    displayHungerRisk,
+    displayHungerRiskHamlet,
+    iconHungerRisk,
+    iconDisette,
+    iconPenurie,
     displayDeathsPop,
     displayLaborCountry,
     displayLaborHamlet,
     popGroupPopNodes,
     popGroupWorkerNodes,
     popGroupLaborNodes,
+    popLaborCauseNodes,
     popResourceCityNodes,
     popResourceNatureNodes,
     displayFunds,
@@ -38,6 +40,7 @@ import {
     overOverlayMessage,
     bulldozeSelected
 } from './nodes.js';
+import { formatEuroAmount } from '../../../contexts/accounting/presentation/formatMoney.js';
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { SEASON_KEYS } from '../../../shared/time/TimeCalendar.js';
 import { msToSpeedLevel, SPEED_LEVEL_MAX } from '../../../shared/gameplay/SimulationDefaults.js';
@@ -75,16 +78,21 @@ function setHudCount(el, value) {
 
 /**
  * @param {HTMLElement | null} el
- * @param {{ mode: 'lack' | 'unemployment', display: string, count: number }} slot
+ * @param {{ mode: 'lack' | 'unemployment' | 'both', display: string, count: number, unemployed: number, lack: number }} slot
  * @param {string} scopeLabel
  */
 function setLaborCell(el, slot, scopeLabel) {
     if (!(el instanceof HTMLElement)) return;
     el.textContent = slot.display;
-    el.classList.toggle('pop-detail-value--lack', slot.mode === 'lack');
-    const tooltip = slot.mode === 'lack'
-        ? `${scopeLabel} : manque de ${slot.count} travailleur${slot.count === 1 ? '' : 's'}`
-        : `${scopeLabel} : ${slot.count} chômeur${slot.count === 1 ? '' : 's'}`;
+    el.classList.toggle('pop-detail-value--lack', slot.mode !== 'unemployment');
+    const plural = (n) => (n === 1 ? '' : 's');
+    const unemployedWords = `${slot.unemployed} chômeur${plural(slot.unemployed)}`;
+    const lackWords = `${slot.lack} poste${plural(slot.lack)} vide${plural(slot.lack)}`;
+    const tooltip = slot.mode === 'both'
+        ? `${scopeLabel} : ${unemployedWords} (${slot.display.split(' · ')[0]}) et ${lackWords}`
+        : slot.mode === 'lack'
+            ? `${scopeLabel} : ${lackWords}`
+            : `${scopeLabel} : ${unemployedWords}`;
     el.title = tooltip;
     el.setAttribute('aria-label', tooltip);
 }
@@ -280,90 +288,54 @@ class GameUI {
     }
 
     /**
-     * Population totale résidentielle (Housing) + détail actifs (Employment).
-     * `totalPopulation` = tous les habitants des maisons (cabanes incluses).
+     * The population of the houses (all their residents, the huts and the administrators included) and the workers placed in a workplace
+     * (what the per-class worker rows add up to).
      * @param {number} totalPopulation
-     * @param {number} activeCitizenCount
-     * @param {number} elitePopulation
-     * @param {number} [civilServantCount=0]
-     * @param {number} [activePopulationCount] — si omis : actifs + élites + fonctionnaires
-     * @param {{
-     *   totalPop?: number,
-     *   activeCitizenCount?: number,
-     *   elitePool?: number,
-     *   civilServantCount?: number,
-     *   activePopulationCount?: number,
-     * } | null} [hamletBreakdown]
+     * @param {number} workersCount
+     * @param {{ totalPop: number, workersCount: number } | null} [hamlet] the active hamlet's own figures
      */
-    updatePopulationBreakdown(
-        totalPopulation,
-        activeCitizenCount,
-        elitePopulation,
-        civilServantCount = 0,
-        activePopulationCount = null,
-        hamletBreakdown = null
-    ) {
-        const total = Math.max(0, Math.floor(totalPopulation) || 0);
-        const activeCitizens = Math.max(0, Math.floor(activeCitizenCount) || 0);
-        const elites = Math.max(0, Math.floor(elitePopulation) || 0);
-        const servants = Math.max(0, Math.floor(civilServantCount) || 0);
-        const activeTotal = activePopulationCount != null
-            ? Math.max(0, Math.floor(activePopulationCount) || 0)
-            : activeCitizens + elites + servants;
-
-        setHudCount(displayPopTotal, total);
-        setHudCount(displayPopActiveTotal, activeTotal);
-        setHudCount(displayPopCitizens, activeCitizens);
-        setHudCount(displayPopElites, elites);
-        setHudCount(displayPopServants, servants);
-
-        if (hamletBreakdown) {
-            const hTotal = Math.max(0, Math.floor(hamletBreakdown.totalPop) || 0);
-            const hCitizens = Math.max(0, Math.floor(hamletBreakdown.activeCitizenCount) || 0);
-            const hElites = Math.max(0, Math.floor(hamletBreakdown.elitePool) || 0);
-            const hServants = Math.max(0, Math.floor(hamletBreakdown.civilServantCount) || 0);
-            const hActiveTotal = hamletBreakdown.activePopulationCount != null
-                ? Math.max(0, Math.floor(hamletBreakdown.activePopulationCount) || 0)
-                : hCitizens + hElites + hServants;
-
-            setHudCount(displayPopTotalHamlet, hTotal);
-            setHudCount(displayPopActiveTotalHamlet, hActiveTotal);
-            setHudCount(displayPopCitizensHamlet, hCitizens);
-            setHudCount(displayPopElitesHamlet, hElites);
-            setHudCount(displayPopServantsHamlet, hServants);
+    updatePopulationTotals(totalPopulation, workersCount, hamlet = null) {
+        setHudCount(displayPopTotal, totalPopulation);
+        setHudCount(displayPopActiveTotal, workersCount);
+        if (hamlet) {
+            setHudCount(displayPopTotalHamlet, hamlet.totalPop);
+            setHudCount(displayPopActiveTotalHamlet, hamlet.workersCount);
         }
-
-        // Fallback if markup is missing (e.g. tests)
-        if (displayPop && !displayPopTotal) {
-            displayPop.textContent = `${total} | ${activeTotal} (${activeCitizens}, ${elites}, ${servants})`;
-        }
-    }
-
-    /** @deprecated Use updatePopulationBreakdown */
-    updateCitizenPopulation(citizenPopulation) {
-        this.updatePopulationBreakdown(citizenPopulation, citizenPopulation, 0);
-    }
-
-    /** @deprecated Use updatePopulationBreakdown */
-    updatePopulation(population) {
-        this.updatePopulationBreakdown(population, population, 0);
-    }
-
-    /** @deprecated Use updatePopulationBreakdown */
-    updateElitePopulation(elitePopulation) {
-        this.updatePopulationBreakdown(elitePopulation, 0, elitePopulation);
     }
 
     /**
-     * Updates famished (hungry) population display
-     * @param {number} famishedPopulation - Country-wide famished count
-     * @param {number} [hamletFamishedPopulation] - Active hamlet famished count
+     * Updates the hunger displays, the two ways to go hungry told apart (see HungerCauseCatalog.js): the words and the disette icon come from the catalog.
+     * @param {{ disette: number, penurie: number }} country - Country-wide famished counts
+     * @param {{ disette: number, penurie: number }} [hamlet] - Active hamlet famished counts
      */
-    updateFamishedPopulation(famishedPopulation, hamletFamishedPopulation = null) {
-        setHudCount(displayHungerPop, famishedPopulation || 0);
-        if (hamletFamishedPopulation != null) {
-            setHudCount(displayHungerPopHamlet, hamletFamishedPopulation || 0);
+    updateFamishedPopulation(country, hamlet = null) {
+        if (iconDisette) {
+            iconDisette.textContent = HUNGER_CAUSES.disette.icon;
+            iconDisette.title = HUNGER_CAUSES.disette.label;
         }
+        if (iconPenurie) iconPenurie.title = HUNGER_CAUSES.penurie.label;
+        setHudCount(displayDisettePop, country.disette);
+        setHudCount(displayHungerPop, country.penurie);
+        if (hamlet != null) {
+            setHudCount(displayDisettePopHamlet, hamlet.disette);
+            setHudCount(displayHungerPopHamlet, hamlet.penurie);
+        }
+    }
+
+    /**
+     * Updates the early warning of hunger (see HUNGER_RISK): the inhabitants whose house still misses part of its ration today. It is a forecast that moves
+     * every day, apart from the famished counts (the month's consumption record); its tooltip tells the two causes apart.
+     * @param {{ disette: number, penurie: number }} country
+     * @param {{ disette: number, penurie: number }} [hamlet]
+     */
+    updateHungerRisk(country, hamlet = null) {
+        const total = (risk) => risk.disette + risk.penurie;
+        if (iconHungerRisk) {
+            iconHungerRisk.textContent = HUNGER_RISK.icon;
+            iconHungerRisk.title = `${HUNGER_RISK.label} : ${HUNGER_CAUSES.disette.label.toLowerCase()} ${country.disette}, ${HUNGER_CAUSES.penurie.label.toLowerCase()} ${country.penurie}`;
+        }
+        setHudCount(displayHungerRisk, total(country));
+        if (hamlet != null) setHudCount(displayHungerRiskHamlet, total(hamlet));
     }
 
     /**
@@ -389,6 +361,8 @@ class GameUI {
      *   laborHamlet?: { unemployed?: number, unemploymentPercentage?: number, lack?: number },
      *   groupsCountry?: Record<string, { workerPool?: number, assigned?: number, unemployed?: number, unemploymentPercentage?: number, lack?: number }>,
      *   groupsHamlet?: Record<string, { workerPool?: number, assigned?: number, unemployed?: number, unemploymentPercentage?: number, lack?: number }>,
+     *   causesCountry?: Record<string, number>,
+     *   causesHamlet?: Record<string, number>,
      * }} payload
      */
     updateGroupHud(payload = {}) {
@@ -408,6 +382,13 @@ class GameUI {
             const groupTitle = getResidentialGroupTitle(group);
             setLaborCell(nodes.country, laborSlotFromStats(country), `${groupTitle} — pays`);
             setLaborCell(nodes.hamlet, laborSlotFromStats(hamlet), `${groupTitle} — hameau visible`);
+        }
+
+        // Why people are out of work and why posts stay empty: a row each, dimmed while both scopes are at zero.
+        for (const [cause, nodes] of Object.entries(popLaborCauseNodes)) {
+            setHudCount(nodes.country, payload.causesCountry?.[cause] ?? 0);
+            setHudCount(nodes.hamlet, payload.causesHamlet?.[cause] ?? 0);
+            nodes.row?.classList.toggle('is-zero', !(payload.causesCountry?.[cause] > 0) && !(payload.causesHamlet?.[cause] > 0));
         }
     }
 
@@ -442,36 +423,19 @@ class GameUI {
      */
     updateFunds(funds) {
         if (displayFunds) {
-            displayFunds.textContent = funds?.toString() || '0';
+            displayFunds.textContent = formatEuroAmount(funds ?? 0);
         }
     }
 
     /** Initial HUD placeholders at city load (owned by GameUI, not scene). */
     resetInitialHud() {
-        this.updatePopulationBreakdown(0, 0, 0, 0);
+        this.updatePopulationTotals(0, 0);
         if (displayFunds) {
-            displayFunds.textContent = '0';
+            displayFunds.textContent = formatEuroAmount(0);
         }
         const debtBox = document.querySelector('.debt-box');
         if (debtBox) {
             debtBox.style.display = 'none';
-        }
-    }
-
-    /**
-     * Updates title bar with city information (population, funds, etc.)
-     * Similar to simcity's updateTitleBar pattern
-     * @param {Object} data - City data object
-     * @param {string} data.name - City name (optional)
-     * @param {number} data.population - Population count
-     * @param {number} data.funds - Current funds
-     */
-    updateTitleBar(data = {}) {
-        if (data.population !== undefined) {
-            this.updatePopulation(data.population);
-        }
-        if (data.funds !== undefined) {
-            this.updateFunds(data.funds);
         }
     }
 

@@ -43,7 +43,7 @@ class InMemorySupplyBuildingRepository {
 function market(id, x, y, roadCount = 1) {
   return createSupplyBuildingSnapshot({
     id,
-    type: 'Market-Stall',
+    type: 'Market-Stall-Red',
     x,
     y,
     roadCount,

@@ -1,3 +1,4 @@
+import { expandYearClosings } from '../../../domain/policies/YearClosingPolicy.js';
 import { createGeneralLedgerView } from '../../../domain/read-models/GeneralLedgerView.js';
 import { assembleGeneralLedgerView } from './assembleGeneralLedgerView.js';
 
@@ -5,6 +6,9 @@ import { assembleGeneralLedgerView } from './assembleGeneralLedgerView.js';
  * @typedef {object} GeneralLedgerFilters
  * @property {number|null} [periodDays] — max entry age in days; null = all history
  * @property {string[]|null} [types] — entry type filters (supports trailing `_` prefix)
+ * @property {string|null} [hamletId] — only entries of this hamlet; null = every hamlet
+ * @property {'city'|'private'|null} [accountScope] — 'city': the city's lines (no account), 'private': the lines of a building's
+ *   account; null = both. One journal, two views: the city's books and the private flows.
  */
 
 /**
@@ -16,12 +20,12 @@ import { assembleGeneralLedgerView } from './assembleGeneralLedgerView.js';
 export class GetGeneralLedger {
   /**
    * @param {import('../../ports/JournalRepository.js').JournalRepository} journalRepository
-   * @param {import('../../ports/TreasuryRepository.js').TreasuryRepository} treasuryRepository
+   * @param {{ execute: () => Promise<{ funds: number }> }} getTreasurySnapshot
    * @param {import('../../ports/GameTimePort.js').GameTimePort} gameTimePort
    */
-  constructor(journalRepository, treasuryRepository, gameTimePort) {
+  constructor(journalRepository, getTreasurySnapshot, gameTimePort) {
     this.journalRepository = journalRepository;
-    this.treasuryRepository = treasuryRepository;
+    this.getTreasurySnapshot = getTreasurySnapshot;
     this.gameTimePort = gameTimePort;
   }
 
@@ -32,18 +36,23 @@ export class GetGeneralLedger {
   async execute(filters = {}) {
     const periodDays = filters.periodDays ?? null;
     const types = filters.types ?? null;
+    const hamletId = filters.hamletId ?? null;
+    const accountScope = filters.accountScope ?? null;
 
-    const entries = await this.journalRepository.getJournalEntries(periodDays);
-    const currentTurn = entries.length > 0 ? entries[0].turn : 0;
-    const timeInfo = this.gameTimePort.getTimeInfo(currentTurn);
-    const currentYear = timeInfo?.year ?? 0;
+    // A turn is a day: a period of N days is the entries of the last N turns, counted from the running game's turn.
+    const now = this.gameTimePort.currentTurn();
+    const allEntries = await this.journalRepository.getJournalEntries();
+    const inPeriod = periodDays === null ? allEntries : allEntries.filter((entry) => entry.turn > now - periodDays);
+    // A closed year is listed as its per-type totals (its sub-totals), not as one net line.
+    const scopedEntries = expandYearClosings(
+      hamletId ? inPeriod.filter((entry) => entry.hamletId === hamletId) : inPeriod
+    );
+    const entries = accountScope === null
+      ? scopedEntries
+      : scopedEntries.filter((entry) => ((entry.accountBuildingId ?? null) === null) === (accountScope === 'city'));
+    const currentYear = this.gameTimePort.getTimeInfo(now).year;
 
-    let currentTreasuryBalance = 0;
-    try {
-      currentTreasuryBalance = await this.treasuryRepository.getTreasuryBalance();
-    } catch {
-      currentTreasuryBalance = await this.journalRepository.getCurrentBalance();
-    }
+    const currentTreasuryBalance = (await this.getTreasurySnapshot.execute()).funds;
 
     const view = assembleGeneralLedgerView({
       entries,

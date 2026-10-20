@@ -4,31 +4,36 @@ import {
 } from '../../../presentation/JournalExportViewModel.js';
 
 /**
- * Export journal data as JSON (entries + yearly summary + year-end balances).
+ * Export journal data as JSON (entries + yearly summary + year-end balances), for the whole journal or for one account scope:
+ * 'city' (the hamlet's own account) or 'private' (the flux of the companies' and the houses' accounts). The yearly summary is the
+ * city's figure, so a private export carries none: its lines are read on their own.
  */
 export class ExportJournalJson {
   /**
    * @param {import('../../ports/JournalRepository.js').JournalRepository} journalRepository
-   * @param {import('../../ports/YearEndBalancePort.js').YearEndBalancePort} yearEndBalancePort
    */
-  constructor(journalRepository, yearEndBalancePort) {
+  constructor(journalRepository) {
     this.journalRepository = journalRepository;
-    this.yearEndBalancePort = yearEndBalancePort;
   }
 
-  /** @returns {Promise<string>} */
-  async execute() {
-    const [entries, yearlySummary, yearEndBalances] = await Promise.all([
+  /**
+   * @param {{ accountScope?: 'city' | 'private' | null }} [filters] null: every line, city and private
+   * @returns {Promise<string>}
+   */
+  async execute({ accountScope = null } = {}) {
+    if (accountScope !== null && accountScope !== 'city' && accountScope !== 'private') {
+      throw new Error(`[journal] unknown export scope "${accountScope}": expected 'city', 'private' or none`);
+    }
+    const [allEntries, yearlySummary] = await Promise.all([
       this.journalRepository.getJournalEntries(),
       this.journalRepository.getYearlyFinancialSummary(),
-      this.yearEndBalancePort.listAllYearEndBalances(),
     ]);
+    // A line belongs to the city when it holds no account of a building (the same split as the journal's two tabs).
+    const entries = accountScope === null
+      ? allEntries
+      : allEntries.filter((entry) => ((entry.accountBuildingId ?? null) === null) === (accountScope === 'city'));
 
-    const payload = buildJournalExportPayload({
-      entries,
-      yearlySummary,
-      yearEndBalances,
-    });
+    const payload = buildJournalExportPayload({ entries, yearlySummary: accountScope === 'private' ? [] : yearlySummary });
 
     return serializeJournalExportPayload(payload);
   }

@@ -16,15 +16,23 @@ import { getOrCreateGameSessionContext } from '../../../composition/createGameSe
 import {
   bindSessionRuntime,
   getSessionApi,
+  getSessionCity,
   getSessionPopupManager,
+  getSessionService,
+  updateSessionDisplayedFunds,
 } from '../../../composition/sessionRuntime.js';
-import { waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
+import { clearGameTablesForNewGame, waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
+import { importPrefab } from '../../../core/persistence/prefab/importPrefab.js';
+import { getPrefab, START_PREFAB_ID } from '../../../shared/prefabs/prefabCatalog.js';
+import { ensureHamletCatalog, listHamlets, parseGameHamletPath } from '../../../core/persistence/hamlet/hamletSession.js';
+import { initGameCalendar } from '../../../config/events.js';
 import { createGame } from '../../three/game.js';
 import { DEFAULT_CITY_SIZE } from '../../../shared/gameplay/SimulationDefaults.js';
 import {
   clearMissionId,
   clearProfileName,
   consumeBootMode,
+  isFreshGameIntent,
   getMissionId,
   getProfileName,
   redirectToLandingUnlessEntryAllowed,
@@ -40,14 +48,6 @@ import {
 } from '../../../shared/gameplay/gameMode.js';
 import { applyEditorModeUi } from '../editor/applyEditorModeUi.js';
 import {
-  initBudgetStatesPopup,
-  refreshBudgetStatesModal,
-} from '../compta/compte-de-resultat/CompteDeResultatPanel.js';
-import {
-  initBilanPopup,
-  updateBudgetDisplay,
-} from '../compta/bilan/BilanPanel.js';
-import {
   initCarteVillePopup,
   generateCarteVille,
 } from '../carte-ville/CarteVillePanel.js';
@@ -56,13 +56,16 @@ import {
   initLoanPaymentSystem,
 } from '../compta/prets/PretsPanel.js';
 import { initJournalPopup } from '../compta/journal/JournalPanel.js';
-import { initFoodTraceabilityPopup } from '../admin/food-traceability/FoodTraceabilityPanel.js';
+import { initSupplyTraceabilityPopup } from '../admin/supply-traceability/SupplyTraceabilityPanel.js';
 import { initAdminSections } from '../admin/initAdminSections.js';
-import { initNewsEventModal } from '../intelligence/NewsEventModal.js';
+import { initNewsEventModal, presentIncomingNewsEvents, waitForNewsModalClosed } from '../intelligence/NewsEventModal.js';
+import { awaitTreasuryReady, endOpening, failOpening } from '../../../composition/budgetReadyGate.js';
+import { formatEuro } from '../../../contexts/accounting/presentation/formatMoney.js';
 import { bindObjectivesHistoryDeps } from '../onboarding/objectives-history.js';
 import { initObjectivesPanel } from '../onboarding/ObjectivesPanel.js';
 import loaderManager from '../shell/LoaderManager.js';
 import { initTutorialPanel } from '../onboarding/TutorialPanel.js';
+import { activateBuildToolButton } from '../tools/ToolPanel.js';
 
 function persistCitySize(size) {
   try {
@@ -76,11 +79,6 @@ function persistCitySize(size) {
 function resolveBootSelection(bootMode) {
   if (bootMode === 'tutorial') {
     clearMissionMapLayout();
-    try {
-      sessionStorage.setItem('anoria.startTutorial', '1');
-    } catch {
-      /* ignore */
-    }
     return {
       size: DEFAULT_CITY_SIZE,
       multiplayer: false,
@@ -104,6 +102,17 @@ function resolveBootSelection(bootMode) {
       action: 'mission',
       missionId: mission.id,
       mapLayoutId,
+    };
+  }
+
+  if (bootMode === 'prefab') {
+    clearMissionMapLayout();
+    return {
+      size: getPrefab(START_PREFAB_ID).citySize,
+      multiplayer: false,
+      pseudo: null,
+      roomId: null,
+      action: 'prefab',
     };
   }
 
@@ -136,18 +145,50 @@ export async function bootstrapGameSession(assetManager) {
     return;
   }
 
+  // Shown until the game is ready: the database reset, the hamlets and the scene all happen under it.
+  loaderManager.show('Préparation de la partie…');
   await waitForDatabaseReady();
-
-  loaderManager.show();
 
   // Map mode: session is runtime SoT. Write only on explicit menu entry (consumeBootMode).
   const bootMode = consumeBootMode();
+  // Any menu choice but a reload of a saved game starts from an empty database.
+  const startsFromScratch = bootMode !== null && bootMode !== 'load';
   if (bootMode !== null) {
     setGameMode(gameModeFromBootMode(bootMode));
   }
+  // A menu choice of a new game (new, tutorial, mission, editor, prefab) starts from an empty database.
+  if (startsFromScratch) {
+    loaderManager.setStep('Remise à zéro de la partie…');
+    await clearGameTablesForNewGame();
+  }
+  if (bootMode === 'prefab') {
+    loaderManager.setStep('Chargement de la sauvegarde…');
+    await importPrefab(getPrefab(START_PREFAB_ID));
+  }
+
+  // Before any context is built: the game's calendar is loaded here (frozen from the pre-game choice on a new game).
+  loaderManager.setStep('Chargement du calendrier…');
+  await initGameCalendar();
+  // The hamlets exist before any reader runs (the treasury and the panels file their rows under the active hamlet).
+  // A new game starts at the starting hamlet; a reload keeps the hamlet its URL names.
+  const isNewGame = isFreshGameIntent();
+  loaderManager.setStep('Création des hameaux…');
+  const activeHamletId = await ensureHamletCatalog({
+    requestedId: isNewGame ? null : parseGameHamletPath(window.location.pathname),
+  });
+  // The address names the active hamlet before the game exists: the game never starts on a bare /game.
+  if (parseGameHamletPath(window.location.pathname) !== activeHamletId) {
+    window.history.replaceState(null, '', `/game/${activeHamletId}`);
+  }
+  if (parseGameHamletPath(window.location.pathname) !== activeHamletId) {
+    throw new Error(`[bootstrap] the address does not name the active hamlet ${activeHamletId}: the game does not start`);
+  }
 
   const selectionResult = resolveBootSelection(bootMode ?? 'new');
-  let selectedCitySize = selectionResult.size || selectionResult;
+  if (!Number.isInteger(selectionResult.size) || selectionResult.size <= 0) {
+    throw new Error(`[bootstrap] the boot selection "${selectionResult.action}" gives no city size`);
+  }
+  let selectedCitySize = selectionResult.size;
 
   if (selectionResult.mapLayoutId) {
     setMissionMapLayoutId(selectionResult.mapLayoutId);
@@ -166,10 +207,18 @@ export async function bootstrapGameSession(assetManager) {
   const multiplayerEnabled = selectionResult.multiplayer || false;
   const playerPseudo = selectionResult.pseudo || null;
 
+  loaderManager.setStep('Mise en place de la ville…');
   const gameSession = getOrCreateGameSessionContext();
   const game = createGame(gameSession, assetManager, selectedCitySize);
 
   bindSessionRuntime({ game });
+
+  // Dev only: console commands that hand a diagnostic to the dev server (see composition/devDiagnostics.js).
+  if (import.meta.env.DEV) {
+    import('../../../composition/devDiagnostics.js').then(({ registerDevDiagnostics }) =>
+      registerDevDiagnostics({ getScene: () => game.scene })
+    );
+  }
 
   if (
     multiplayerEnabled &&
@@ -205,6 +254,11 @@ export async function bootstrapGameSession(assetManager) {
   if (!sessionApi) {
     throw new Error('sessionApi is not bound after createGame');
   }
+  sessionApi.accounting.ensureCustomsDuties();
+  // Every hamlet carries its fiscal rates (written once, at creation): a hamlet unlocked later already has them.
+  for (const hamlet of await listHamlets()) {
+    await sessionApi.accounting.ensureHamletFiscalRates(hamlet.id);
+  }
 
   const popupManager = getSessionPopupManager();
   const panelDeps = {
@@ -213,25 +267,29 @@ export async function bootstrapGameSession(assetManager) {
     housing: sessionApi.housing,
     supply: sessionApi.supply,
     parcels: sessionApi.parcels,
+    employment: sessionApi.employment,
+    intelligence: sessionApi.intelligence,
+    trade: getSessionService('trade') ?? null,
     popupManager,
     gameStore: gameSession,
     getCity: () => game.city ?? null,
   };
 
-  initBilanPopup(panelDeps);
-  initBudgetStatesPopup(panelDeps);
   initJournalPopup(panelDeps);
   initCarteVillePopup(panelDeps);
   initLoansPopup({
     accounting: sessionApi.accounting,
     popupManager,
-    updateBudgetDisplay,
+    updateTreasuryDisplay: async () => {
+      const { funds } = await sessionApi.accounting.getTreasurySnapshot();
+      updateSessionDisplayedFunds(funds);
+    },
   });
   initLoanPaymentSystem({
     bindProcessLoanPayments: (fn) => bindSessionRuntime({ processLoanPayments: fn }),
     registerHandler: registerAppFunction,
   });
-  initFoodTraceabilityPopup({ supply: sessionApi.supply });
+  initSupplyTraceabilityPopup({ supply: sessionApi.supply });
 
   if (sessionApi.intelligence) {
     initNewsEventModal({
@@ -239,7 +297,42 @@ export async function bootstrapGameSession(assetManager) {
       getGameTime,
       popupManager,
       registerAppService,
+      // A dépêche's button that offers a building to place: the tool is lit in the toolbar and put in hand.
+      activateBuildTool: (toolId) => {
+        activateBuildToolButton(toolId);
+        game.setActiveToolId(toolId);
+      },
+      // Whether the hamlet already has that building: a button offering to place it has nothing left to offer.
+      isBuilt: (toolId) => (getSessionCity()?.tiles ?? []).some((column) => (column ?? []).some((tile) => tile?.buildingId === toolId)),
     });
+  }
+
+  // A new game opens with a prelude at turn 0, before the first day: the founder's story (the tutorial's, when the player chose it), then the
+  // dépêche of the treasure found on the way, which is the city's starting funds. The game's clock and construction were held at boot
+  // (bootTreasuryHud); the funds show, and day 1 starts, once the player has read both. (A saved game or the starter city has funds of its
+  // own: no prelude.)
+  if (isNewGame) {
+    const announcesGift = bootMode !== 'prefab' && !isEditorMode() && Boolean(sessionApi.intelligence);
+    (async () => {
+      await awaitTreasuryReady();
+      await game.whenSceneReady();
+      const { funds } = await sessionApi.accounting.getTreasurySnapshot();
+      if (bootMode === 'tutorial') {
+        // The loader is fading out (see the scene's gate): the story opens once it is gone.
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        const tutorial = getTutorialManager();
+        if (!tutorial?.waitForClose || !invokeStartTutorial()) {
+          throw new Error('[prelude] the founder story could not be opened: the tutorial panel is not ready');
+        }
+        await tutorial.waitForClose();
+      }
+      if (announcesGift) {
+        await sessionApi.intelligence.announceMilestone({ milestoneId: 'starting-fortune', turn: getGameTime(), params: { amountLabel: formatEuro(funds) } });
+        await presentIncomingNewsEvents();
+        await waitForNewsModalClosed();
+      }
+      updateSessionDisplayedFunds(funds);
+    })().then(endOpening, failOpening);
   }
 
   await initAdminSections({
@@ -283,7 +376,5 @@ export async function bootstrapGameSession(assetManager) {
     pauseGame();
   }
 
-  registerAppFunction('updateBudgetDisplay', updateBudgetDisplay);
-  registerAppFunction('refreshBudgetStatesModal', refreshBudgetStatesModal);
   registerAppFunction('generateCarteVille', generateCarteVille);
 }

@@ -3,6 +3,24 @@ import { setRoadAccessIcon } from './roadAccessSprite.js';
 /** instanceId → { mesh, position, scale } — pour mettre à jour l'icône quand le bus publie un changement */
 const views = new Map();
 
+/** instanceId → last judgement logged, so a line is written only when it changes (dev only). */
+const logged = new Map();
+
+/**
+ * Dev only: one tagged line whenever a building's road judgement changes, so it can be followed from the
+ * terminal (`pnpm console:tag road-access --follow`) without typing anything in the browser console.
+ */
+function logRoadJudgement(source, instanceId, mesh, hasAccess, roadCount) {
+  if (!import.meta.env?.DEV) return;
+  const state = `${hasAccess}:${roadCount}`;
+  if (logged.get(instanceId) === state) return;
+  logged.set(instanceId, state);
+  const { catalogId, x, y } = mesh?.userData ?? {};
+  console.info(
+    `[road-access] ${catalogId ?? '?'}@${x},${y} roadCount=${roadCount} hasAccess=${hasAccess} icon=${hasAccess ? 'hidden' : 'shown'} via=${source}`
+  );
+}
+
 /**
  * Branche le rendu des icônes "no-road" sur le bus Parcels.
  * Retourne une fonction à appeler depuis scene.js à chaque tick.
@@ -12,6 +30,7 @@ export function setupRoadAccessIcons(parcels, { assetManager, textures }) {
     const view = views.get(event.instanceId);
     if (!view?.mesh) return;
 
+    logRoadJudgement('event', event.instanceId, view.mesh, event.hasAccess, event.newRoadCount);
     setRoadAccessIcon({
       assetManager,
       mesh: view.mesh,
@@ -30,6 +49,8 @@ export function setupRoadAccessIcons(parcels, { assetManager, textures }) {
     const result = await parcels.recalculateRoadAccessForBuilding.execute(instanceId);
     const hasAccess = result?.roadAccess?.hasAccess ?? false;
     const roadCount = result?.roadAccess?.roadCount ?? 0;
+
+    logRoadJudgement('sync', instanceId, mesh, hasAccess, roadCount);
 
     // Recorded even when the bus already updated the icon (`result.updated`).
     if (mesh?.userData) {

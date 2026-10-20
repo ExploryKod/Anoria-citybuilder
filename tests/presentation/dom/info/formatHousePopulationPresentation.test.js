@@ -22,14 +22,13 @@ describe('formatHousePopulationPresentation', () => {
       expect.objectContaining({ statusKey: 'worker', count: 12, label: 'citoyens artisans' }),
     ]);
     expect(skills).toEqual([
-      expect.objectContaining({ skillKey: 'subsistence-forager', count: 12, label: 'chasse-cueillette' }),
-      expect.objectContaining({ skillKey: 'spiritual', count: 12, label: 'spiritualité' }),
       expect.objectContaining({ skillKey: 'fermier', count: 12, label: 'fermier' }),
       expect.objectContaining({ skillKey: 'artisanat', count: 12, label: 'artisanat' }),
+      expect.objectContaining({ skillKey: 'energie', count: 12, label: 'énergie' }),
     ]);
   });
 
-  test('a level-1 (tier 1) house lists BOTH its skills, including spiritual — the exact bug this pins', () => {
+  test('a level-1 (tier 1) house lists ALL its skills, each with its own label — the exact bug this pins', () => {
     const composition = computeHouseCitizenComposition({
       level: 1,
       pop: 5,
@@ -40,18 +39,18 @@ describe('formatHousePopulationPresentation', () => {
     const { skills } = formatHousePopulationPresentation(composition, 'merchants');
 
     expect(skills).toEqual([
-      expect.objectContaining({ skillKey: 'subsistence-forager', count: 5 }),
-      expect.objectContaining({ skillKey: 'spiritual', count: 5, label: 'spiritualité' }),
+      expect.objectContaining({ skillKey: 'vente-alimentaire', count: 5 }),
+      expect.objectContaining({ skillKey: 'stockage-alimentaire', count: 5 }),
     ]);
   });
 
-  test('a skill the catalog grants but SKILL_CATALOG has no curated entry for still displays (humanized fallback)', () => {
+  test('a skill the catalog grants but SKILL_CATALOG has no curated entry for is shown as the "…" marker, not a label made up from its id', () => {
     const composition = { profiles: [], skills: { 'future-skill': 3 } };
 
     const { skills } = formatHousePopulationPresentation(composition, null);
 
     expect(skills).toEqual([
-      expect.objectContaining({ skillKey: 'future-skill', count: 3, label: 'future skill', emoji: '🔧' }),
+      expect.objectContaining({ skillKey: 'future-skill', count: 3, label: '…', emoji: '…' }),
     ]);
   });
 

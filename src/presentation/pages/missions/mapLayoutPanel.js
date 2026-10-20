@@ -49,10 +49,11 @@ export function renderMyMapSection(selectedMapLayoutId) {
         pour charger le terrain conçu.
       </p>
       <div class="mission-my-map-actions">
+        ${getEditorMapRepository().readOnly ? '' : `
         <label class="site-btn site-btn--inline mission-my-map-upload">
           Téléverser votre terrain
           <input type="file" id="mission-map-upload" accept="application/json,.json" hidden>
-        </label>
+        </label>`}
         <button
           type="button"
           id="mission-map-open-editor"
@@ -91,13 +92,13 @@ export function renderMapGrid(gridEl, summaries, selectedMapId, onSelect, onDele
       <button type="button" class="mission-map-card__body" data-action="select">
         <span class="mission-map-card__name">${escapeHtml(summary.name)}</span>
       </button>
-      <button
+      ${getEditorMapRepository().readOnly ? '' : `<button
         type="button"
         class="mission-map-card__delete"
         data-action="delete"
         aria-label="Supprimer ${escapeHtml(summary.name)}"
         title="Supprimer"
-      >×</button>
+      >×</button>`}
     </article>
   `).join('');
 

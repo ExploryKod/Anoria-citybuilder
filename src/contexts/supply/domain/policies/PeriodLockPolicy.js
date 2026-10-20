@@ -6,10 +6,10 @@
  *    `lastProductionYear`). Reserve this for a role that will only ever
  *    hold ONE such lock (today: quantity-mode food production/consumption).
  *  - `{ unit }` (no `field`) — the SHARED_FLAG_FIELD object, keyed by
- *    category (e.g. `servedFlags: { faith: 3, education: 4 }`). This is
+ *    category (e.g. `servedFlags: { doctor: 3, education: 4 }`). This is
  *    the same "one field, many keys" shape `stocks` already uses for
  *    quantity resources (`{ wheat, carrot, food }`) — applied here to
- *    flag-mode services so adding the Nth service (Chapel, a school, ...)
+ *    flag-mode services so adding the Nth service (a fire station, a school, ...)
  *    never needs a new top-level field name, only a new catalog entry.
  *
  * Either way this module has no notion of "producer", "consumer", or any

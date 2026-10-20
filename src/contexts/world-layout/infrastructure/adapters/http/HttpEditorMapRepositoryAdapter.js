@@ -15,6 +15,8 @@ import {
  */
 export function createHttpEditorMapRepository(apiBase = '/api/maps') {
   return {
+    readOnly: false,
+
     async listSummaries() {
       const response = await fetch(apiBase);
       if (!response.ok) {

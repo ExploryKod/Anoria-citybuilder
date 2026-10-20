@@ -16,13 +16,12 @@ export function createSupplyBuildingSnapshot({
   y = null,
   roadCount = 0,
   stocks = {},
-  maxStock = 500,
+  maxStock,
   worker = 0,
   workerNeed = 0,
   neighbors = [],
   lastProductionYear = null,
   lastConsumptionMonth = null,
-  lastSubsistenceMonth = null,
   lastConsumption = null,
   pop = 0,
   level = 1,
@@ -42,7 +41,8 @@ export function createSupplyBuildingSnapshot({
     y: typeof y === 'number' ? y : null,
     roadCount: Number.isInteger(roadCount) ? roadCount : 0,
     stocks: createSupplyStock(stocks),
-    maxStock: Number.isFinite(maxStock) && maxStock > 0 ? Math.floor(maxStock) : 500,
+    // Unbounded unless the catalog declared a ceiling (see getMaxStockForBuilding).
+    maxStock: Number.isFinite(maxStock) && maxStock > 0 ? Math.floor(maxStock) : Infinity,
     worker: Number.isFinite(worker) ? worker : 0,
     workerNeed: Number.isFinite(workerNeed) ? workerNeed : 0,
     neighbors: Object.freeze(Array.isArray(neighbors) ? [...neighbors] : []),
@@ -57,12 +57,6 @@ export function createSupplyBuildingSnapshot({
         ? null
         : Number.isFinite(lastConsumptionMonth)
           ? Math.floor(lastConsumptionMonth)
-          : null,
-    lastSubsistenceMonth:
-      lastSubsistenceMonth === null || lastSubsistenceMonth === undefined
-        ? null
-        : Number.isFinite(lastSubsistenceMonth)
-          ? Math.floor(lastSubsistenceMonth)
           : null,
     // `...lastConsumption` passthrough first — same fix as `servedFlags`
     // (see PeriodLockPolicy.js docs): a field this constructor doesn't name

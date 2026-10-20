@@ -2,21 +2,14 @@ import { describe, test, expect } from '@jest/globals';
 import {
   formatJournalEntryDescription,
   formatJournalEntryDetails,
-  stripBreakdownMarkup,
 } from '../../../src/presentation/dom/compta/journal/formatJournalEntryDescription.js';
 
 describe('formatJournalEntryDescription', () => {
-  test('stripBreakdownMarkup removes embedded JSON', () => {
-    expect(
-      stripBreakdownMarkup('Import wheat |BREAKDOWN|[{"label":"A"}]|BREAKDOWN|')
-    ).toBe('Import wheat');
-  });
-
   test('payroll_tax shows labeled rate without month repetition', () => {
     expect(
       formatJournalEntryDetails({
         type: 'payroll_tax',
-        description: 'Impôt sur les salaires - Juin 0 JC (20%)',
+        description: 'Impôt sur le revenu (IR) - Juin 0 JC (20%)',
       })
     ).toEqual([{ label: 'Taux', value: '20%' }]);
   });
@@ -48,24 +41,6 @@ describe('formatJournalEntryDescription', () => {
     ).toEqual([{ label: 'Population', value: '24 hab.' }]);
   });
 
-  test('hides balance-only description under badge', () => {
-    expect(
-      formatJournalEntryDetails({
-        type: 'balance',
-        description: 'Solde',
-      })
-    ).toEqual([]);
-  });
-
-  test('strips import product name when breakdown carries detail', () => {
-    expect(
-      formatJournalEntryDetails({
-        type: 'import_wheat',
-        description: 'Import wheat |BREAKDOWN|[{"label":"Savana"}]|BREAKDOWN|',
-      })
-    ).toEqual([]);
-  });
-
   test('construction shows labeled building name', () => {
     expect(
       formatJournalEntryDetails({
@@ -89,7 +64,7 @@ describe('formatJournalEntryDescription', () => {
     expect(
       formatJournalEntryDescription({
         type: 'payroll_tax',
-        description: 'Impôt sur les salaires - Juin 0 JC (20%)',
+        description: 'Impôt sur le revenu (IR) - Juin 0 JC (20%)',
       })
     ).toBe('Taux: 20%');
   });

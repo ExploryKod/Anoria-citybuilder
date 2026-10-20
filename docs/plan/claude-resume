@@ -1,0 +1,37 @@
+
+claude --resume 6ef3db5d-41cf-4fba-a003-920565b3c5a2
+
+  Corrections
+
+  1. Capital fantôme.
+     - Après une purge, le capital de départ est replié dans une clôture d'année et sa clé disparaît. ensureTreasury ré-enregistrait donc +500 à chaque démarrage, et la purge suivante le
+       re-clôturait. D'où les 10 clôtures d'année 0, soit environ +5 000 qui n'existaient pas.
+     - InitializeTreasury n'écrit plus le capital que dans un journal vide. Le test est capitalAfterPurge.regression.test.js.
+     - Dans ta partie actuelle, ces 10 lignes restent dans le journal. Un nouveau jeu repart propre.
+  2. Administrateurs sans revenu.
+     - La maison du maire ne recevait ni salaire ni allocation, donc ses services étaient coupés.
+     - La ville leur verse maintenant un traitement mensuel, égal au plus bas salaire qu'elle paie, par administrateur. Il est écrit en salary côté ville et en public_wage côté maison,
+       imposé comme un salaire.
+     - Le test est dans incomeTaxOnBenefit.regression.test.js.
+  3. yearlySummary incohérent.
+     - Il additionnait aussi les comptes des maisons et des entreprises, d'où −13 209 en année 4 contre −3 120 dans la clôture de la ville.
+     - Il ne lit plus que les lignes du compte de la ville, pour le JSON, le PDF et le livret.
+
+  Les 9 169 carottes : un défaut de conception, pas un bug de collecte
+
+  Le hub fonctionne comme prévu :
+  - Chaque bien a un plafond par défaut de 30 % du hub, soit 864 sur 2 880. Ton hub contient exactement 864 de carottes.
+  - Les 6 champs de carottes produisent 1 728 par an. Tes 66 habitants en mangent 792. Il ne reste donc de la place que pour ce qui a été mangé, et le reste s'empile dans les fermes.
+  - Ce surplus n'a aucun débouché : pas d'export ni de second acheteur, et il ne se périme pas.
+  - Le jeu ne signale jamais qu'on a trop de fermes. Il en faut environ 3 pour 66 habitants, et le joueur en a construit 6.
+
+  J'ai corrigé un défaut annexe. La cause d'invendu s'affichait « cause non enregistrée », alors que c'était ce plafond de 30 %. Elle s'appelle maintenant « plafond de ce bien atteint ». Si
+  aucune cause n'est trouvée, la vente lève une erreur au lieu d'un unknown.
+
+  Pistes pour le surplus, à toi de choisir :
+  - Rappel dans le bandeau, du type « 6 fermes pour 3 nécessaires », le plus léger.
+  - Péremption des récoltes non vendues, pour que le surplus ait un coût.
+  - Export du surplus par un marchand, ce qui rejoint le problème des relations commerciales expirées.
+
+  Je ne les ai pas faites, car ce sont des choix de gameplay.
+

@@ -7,9 +7,6 @@ import { createEmploymentBuildingSnapshot } from '../../../src/contexts/employme
 import {
   workerPopFromHouse,
   citizenPopFromHouse,
-  elitePopFromHouse,
-  popAfterPalaceEvolution,
-  popAfterPalaceRegression,
   maxTotalPopForHouse,
 } from '../../../src/contexts/employment/domain/policies/LaborPoolPolicy.js';
 import { computeCityEmploymentSummary } from '../../../src/contexts/employment/domain/computeCityEmploymentSummary.js';
@@ -39,7 +36,7 @@ function house(id, pop, roadCount = 1, type = 'House-Blue') {
   });
 }
 
-function workplace(id, { workerNeed, sector, roadCount = 1, worker = 0, type = 'Farm-Wheat' }) {
+function workplace(id, { workerNeed, sector, roadCount = 1, worker = 0, type = 'Farm-Wheat', workerSources = {} }) {
   return createEmploymentBuildingSnapshot({
     id,
     type,
@@ -47,30 +44,18 @@ function workplace(id, { workerNeed, sector, roadCount = 1, worker = 0, type = '
     worker,
     sector,
     roadCount,
+    workerSources,
   });
 }
 
 describe('Employment — GetCityEmploymentSummary', () => {
   describe('LaborPoolPolicy', () => {
-    test('regular houses: pop = citizens, no élites', () => {
+    test('regular houses: every resident is a citizen and a worker', () => {
       expect(citizenPopFromHouse('House-Blue', 5)).toBe(5);
-      expect(elitePopFromHouse('House-Blue', 5)).toBe(0);
       expect(workerPopFromHouse('House-Blue', 5)).toBe(5);
     });
 
-    test('palace pop=7: 6 citizens + 1 élite (élite excluded from worker pool)', () => {
-      expect(citizenPopFromHouse('House-2Story', 7)).toBe(6);
-      expect(elitePopFromHouse('House-2Story', 7)).toBe(1);
-      expect(workerPopFromHouse('House-2Story', 7)).toBe(6);
-    });
-
-    test('palace evolution adds +1 pop; regression removes élites', () => {
-      expect(popAfterPalaceEvolution(6)).toBe(7);
-      expect(popAfterPalaceRegression('House-2Story', 7)).toBe(6);
-    });
-
-    test('palace max total pop is 7 at this stage', () => {
-      expect(maxTotalPopForHouse('House-2Story')).toBe(7);
+    test('a house holds at most 6 residents', () => {
       expect(maxTotalPopForHouse('House-Blue')).toBe(6);
     });
 
@@ -87,7 +72,6 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(residentialGroupForType('House-Blue')).toBe('merchants');
       expect(residentialGroupForType('House-Red')).toBe('artisans');
       expect(residentialGroupForType('House-Purple')).toBe('scholars');
-      expect(residentialGroupForType('House-2Story')).toBeNull();
       expect(residentialGroupForType('Farm-Wheat')).toBeNull();
     });
 
@@ -98,26 +82,25 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(eligibleSectorsForGroup('unknown-group')).toEqual([]);
     });
 
-    test('exposes all three groups', () => {
-      expect(allSocialGroups().sort()).toEqual(['artisans', 'merchants', 'scholars']);
+    test('exposes every social group (the administrators work in no sector)', () => {
+      expect(allSocialGroups().sort()).toEqual(['administrators', 'artisans', 'merchants', 'scholars']);
+      expect(eligibleSectorsForGroup('administrators')).toEqual([]);
     });
   });
 
   describe('computeCityEmploymentSummary', () => {
-    test('worker pool excludes élites; totalPopulation = citizens + élites', () => {
+    test('worker pool excludes a house without a road, but the house still counts as population and unemployed', () => {
       const summary = computeCityEmploymentSummary([
         house('h1', 5, 1),
-        house('h2', 7, 1, 'House-2Story'),
-        house('h3', 4, 0), // no road
+        house('h2', 7, 1, 'House-Red'),
+        house('h3', 4, 0), // no road: absent from workerPool (job-matching), present in totalPopulation/unemployed
       ]);
 
-      expect(summary.workerPool).toBe(11); // 5 + 6
-      expect(summary.elitePool).toBe(1);
-      expect(summary.totalPopulation).toBe(12);
-      expect(summary.civilServantCount).toBe(1);
-      expect(summary.laborPool).toBe(10);
-      expect(summary.activeCitizenCount).toBe(0);
-      expect(summary.unemployed).toBe(10);
+      expect(summary.workerPool).toBe(12); // 5 + 7 — h3 is unreachable by a workplace
+      expect(summary).not.toHaveProperty('elitePool');
+      expect(summary.totalPopulation).toBe(16); // 5 + 7 + 4 — a foyer is a foyer, road or not
+      expect(summary.unemployed).toBe(16); // includes h3's 4 residents, unreachable by a job but still unemployed
+      expect(summary.workerPool).toBeLessThan(summary.totalPopulation);
     });
 
     test('lack and understaffed: farms without road count; other workplaces need road', () => {
@@ -146,15 +129,15 @@ describe('Employment — GetCityEmploymentSummary', () => {
     test('new farm without road absorbs unemployed workers', () => {
       const summary = computeCityEmploymentSummary([
         house('h1', 4, 1),
-        workplace('farm-a', { workerNeed: 3, sector: 1, worker: 3, roadCount: 0 }),
+        workplace('farm-a', { workerNeed: 3, sector: 1, worker: 3, roadCount: 0, workerSources: { h1: 3 } }),
       ]);
       expect(summary.unemployed).toBe(1);
       expect(summary.lack).toBe(0);
 
       const afterFarm = computeCityEmploymentSummary([
         house('h1', 4, 1),
-        workplace('farm-a', { workerNeed: 3, sector: 1, worker: 3, roadCount: 0 }),
-        workplace('farm-b', { workerNeed: 3, sector: 1, worker: 1, roadCount: 0 }),
+        workplace('farm-a', { workerNeed: 3, sector: 1, worker: 3, roadCount: 0, workerSources: { h1: 3 } }),
+        workplace('farm-b', { workerNeed: 3, sector: 1, worker: 1, roadCount: 0, workerSources: { h1: 1 } }),
       ]);
       expect(afterFarm.unemployed).toBe(0);
       expect(afterFarm.lack).toBe(2);
@@ -163,8 +146,8 @@ describe('Employment — GetCityEmploymentSummary', () => {
     test('unemployed = pool minus assigned on eligible workplaces', () => {
       const summary = computeCityEmploymentSummary([
         house('h1', 10, 1),
-        workplace('farm', { workerNeed: 3, sector: 1, worker: 2 }),
-        workplace('market', { workerNeed: 2, sector: 2, worker: 2, type: 'Market-Stall' }),
+        workplace('farm', { workerNeed: 3, sector: 1, worker: 2, workerSources: { h1: 2 } }),
+        workplace('market', { workerNeed: 2, sector: 2, worker: 2, type: 'Market-Stall-Red', workerSources: { h1: 2 } }),
       ]);
 
       expect(summary.totalAssigned).toBe(4);
@@ -180,7 +163,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
           sector: 2,
           roadCount: 0,
           worker: 0,
-          type: 'Market-Stall',
+          type: 'Market-Stall-Red',
         }),
       ]);
 
@@ -206,23 +189,26 @@ describe('Employment — GetCityEmploymentSummary', () => {
         house('red-house', 5, 1, 'House-Red'), // artisans
         house('blue-house', 3, 1, 'House-Blue'), // commerçants
         workplace('farm', { workerNeed: 3, sector: 1, worker: 3 }), // artisans sector
-        workplace('market', { workerNeed: 2, sector: 2, worker: 1, type: 'Market-Stall' }), // commerçants sector
+        workplace('market', { workerNeed: 2, sector: 2, worker: 1, type: 'Market-Stall-Red' }), // commerçants sector
       ]);
 
       expect(summary.byGroup['artisans']).toEqual({
         workerPool: 5,
         assigned: 3,
         unemployed: 2,
+        poolByLevel: { 2: 5 },
       });
       expect(summary.byGroup.merchants).toEqual({
         workerPool: 3,
         assigned: 1,
         unemployed: 2,
+        poolByLevel: { 2: 3 },
       });
       expect(summary.byGroup.scholars).toEqual({
         workerPool: 0,
         assigned: 0,
         unemployed: 0,
+        poolByLevel: {},
       });
 
       // Global aggregate stays the flat sum, semantics untouched by the breakdown.
@@ -233,7 +219,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
     test('level 1 (autarkic) houses now count toward their group pool (headcount is skill-agnostic here)', () => {
       // computeCityEmploymentSummary's byGroup is a coarse, skill-agnostic
       // pool/assigned breakdown (see its own docstring) — it doesn't know a
-      // level-1 house can only actually staff Chapel (sector 6), not this
+      // level-1 house can only actually staff the water tank (sector 6), not this
       // farm (sector 1); DistributeCityWorkers is what enforces that via
       // skill matching, and is covered separately.
       const summary = computeCityEmploymentSummary([
@@ -251,6 +237,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
         workerPool: 5,
         assigned: 0,
         unemployed: 5,
+        poolByLevel: { 1: 5 },
       });
       expect(summary.workerPool).toBe(5);
     });
@@ -263,7 +250,7 @@ describe('Employment — GetCityEmploymentSummary', () => {
     beforeEach(() => {
       repo = new InMemoryEmploymentBuildingRepository([
         house('House-Blue-1-1', 8, 1),
-        workplace('Farm-Wheat-2-2', { workerNeed: 3, sector: 1, worker: 1 }),
+        workplace('Farm-Wheat-2-2', { workerNeed: 3, sector: 1, worker: 1, workerSources: { 'House-Blue-1-1': 1 } }),
       ]);
       query = new GetCityEmploymentSummary(repo);
     });

@@ -1,3 +1,5 @@
+import { listRoadTypes, primaryRoadType } from '../../../shared/building-catalog/roadQueries.js';
+import { getBuildingDefinition } from '../../../shared/building-catalog/buildingCatalog.js';
 import {
   loaderButton,
   panelLayout,
@@ -14,9 +16,13 @@ import {
   attachBuildToolHoverPreview,
   hideBuildToolHoverPreview,
 } from './BuildToolHoverPreview.js';
-import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
+import { BUILDING_ASSETS, BUILDING_THEME_COLORS } from '../../three/assets/buildingAssets.js';
 import { NATURE_ASSETS } from '../../three/assets/natureAssets.js';
 import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
+import { getDirectToolForCategory, toolbarGroupOf } from '../../three/assets/buildingCategories.js';
+import { EDITOR_TOOLS_BY_CATEGORY } from '../../../shared/editor-catalog/editorKenneyCatalog.js';
+
+export { getDirectToolForCategory };
 
 /**
  * Single source of truth for every placeable id's carousel button (icon,
@@ -25,6 +31,15 @@ import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
  * catalog, not a case to silently paper over with a default icon.
  */
 const ASSET_CATALOG = { ...BUILDING_ASSETS, ...NATURE_ASSETS, ...TERRAIN_ASSETS };
+
+/**
+ * What a tool button says: a building is named as the catalog names it; an editor tool that is not a building
+ * has only the label of its mesh-catalog entry.
+ * @param {string} toolId
+ */
+function toolLabel(toolId) {
+  return getBuildingDefinition(toolId)?.displayName ?? catalogButton(toolId).label;
+}
 
 /**
  * @param {string} toolId
@@ -46,17 +61,41 @@ function catalogButton(toolId) {
 }
 
 /**
- * Every id whose catalog `button.group` matches — the catalog is the ONLY
- * source of category membership for the real gameplay carousel: add/remove/
- * regroup an entry in the three asset catalogs and the panel updates on the
- * next dev-server reload, no other file to touch.
+ * Every id whose catalog `button.group` matches, clustered into thematic sub-groups: entries
+ * sharing a `button.theme` (e.g. every pottery workshop) land in the same inner array, in the
+ * order their theme first appears; an id with no theme is its own cluster of one. Declarative:
+ * add/remove/regroup an entry (or give it a `theme`) in the three asset catalogs and the panel
+ * updates on the next dev-server reload, no other file to touch.
+ *
+ * The carousel renders one cluster per slide — a tight inner gap within it, a larger outer gap
+ * between slides (see CompactToolbar.js's renderCarousel) — so a category with no themed entries
+ * at all (houses) still comes out as one cluster per button, same as before this existed.
+ * @param {string} group
+ * @returns {string[][]}
+ */
+function catalogClustersByGroup(group) {
+  const ids = Object.entries(ASSET_CATALOG)
+    .filter(([id, entry]) => entry.button && (BUILDING_ASSETS[id] ? toolbarGroupOf(id) : entry.button.group) === group)
+    .map(([id]) => id);
+  const order = [];
+  const buckets = new Map();
+  ids.forEach((id, index) => {
+    const key = ASSET_CATALOG[id]?.button?.theme ?? `__solo:${index}`;
+    if (!buckets.has(key)) {
+      buckets.set(key, []);
+      order.push(key);
+    }
+    buckets.get(key).push(id);
+  });
+  return order.map((key) => buckets.get(key));
+}
+
+/**
  * @param {string} group
  * @returns {string[]}
  */
 function catalogIdsByGroup(group) {
-  return Object.entries(ASSET_CATALOG)
-    .filter(([, entry]) => entry.button?.group === group)
-    .map(([id]) => id);
+  return catalogClustersByGroup(group).flat();
 }
 
 /** @type {{
@@ -82,22 +121,13 @@ export function bindToolPanelDeps(panelDeps) {
 const GROUP_CREATORS = {
   houses: () => fillPanelFromToolIds('houses'),
   residential: () => fillPanelFromToolIds('houses'),
-  palaces: () => fillPanelFromToolIds('palaces'),
-  farms: () => fillPanelFromToolIds('farms'),
-  industry: () => fillPanelFromToolIds('industry'),
-  markets: () => fillPanelFromToolIds('markets', { exclude: ['Market-Stall'] }),
-  infrastructure: () =>
-    fillPanelFromToolIds('infrastructure', {
-      exclude: [
-        'StonePath-001',
-        'StonePath-Right-001',
-        'StonePath-Left-001',
-        'StonePath-Cross-001',
-        'StonePath-Tee-001',
-        'StonePath-End-001',
-      ],
-    }),
-  public: () => fillPanelFromToolIds('public'),
+  // The three social classes: each lists what its houses staff (farms, industries and energy for the artisans, markets and
+  // warehouses for the merchants, water, health and safety for the savants).
+  artisans: () => fillPanelFromToolIds('artisans'),
+  merchants: () => fillPanelFromToolIds('merchants'),
+  scholars: () => fillPanelFromToolIds('scholars'),
+  // The road tool and its variants have their own pill (Routes): not listed again here.
+  infrastructure: () => fillPanelFromToolIds('infrastructure', { exclude: listRoadTypes() }),
   nature: () => fillPanelFromToolIds('nature'),
   decoration: () => fillPanelFromToolIds('decoration'),
   tombs: () => fillPanelFromToolIds('tombs'),
@@ -126,6 +156,17 @@ export function activateSelectToolButton() {
   const selectBtn = document.getElementById('select-btn');
   selectBtn?.classList.add('selected');
   syncMobileClickStateFab('select-object');
+}
+
+/**
+ * Show a building tool as the one picked in the toolbar (visual only): its pill is lit, as if the player had opened its panel and clicked it.
+ * Pair with game.setActiveToolId(toolId).
+ * @param {string} toolId
+ */
+export function activateBuildToolButton(toolId) {
+  getButtonsUnactive();
+  const group = toolbarGroupOf(toolId);
+  document.querySelector(`.toolbar-btn[data-group="${group}"]`)?.classList.add('selected');
 }
 
 export function getButtonsDisabled() {
@@ -178,10 +219,6 @@ export function toggleModal(e) {
     return;
   }
 
-  if (group === 'palaces' && deps?.buttonStateManager && !deps.buttonStateManager.isEnabled('palace-btn')) {
-    return;
-  }
-
   getButtonsUnactive();
   getButtonsDisabled();
   panelLayoutInner.classList.add('loading-objects');
@@ -218,7 +255,7 @@ function fillPanelFromToolIds(category, opts = {}) {
 
   for (const toolId of ids) {
     const catalog = catalogButton(toolId);
-    const buttonInfo = { text: catalog.label, tool: toolId, group: category, title: catalog.tooltip };
+    const buttonInfo = { text: toolLabel(toolId), tool: toolId, group: category, title: toolLabel(toolId) };
     makeNewButton(buttonInfo, resolveIcon(toolId));
   }
 
@@ -235,11 +272,11 @@ function createRoadsButtons() {
   hint.innerHTML = '<kbd>R</kbd> = rotation du chemin';
   panelLayoutInner.appendChild(hint);
 
-  if (ASSET_CATALOG['StonePath-001']?.button) {
-    const catalog = catalogButton('StonePath-001');
+  if (ASSET_CATALOG[primaryRoadType()]?.button) {
+    const catalog = catalogButton(primaryRoadType());
     const btn = makeNewButton(
-      { text: catalog.label, tool: 'StonePath-001', group: catalog.group, title: catalog.tooltip },
-      resolveIcon('StonePath-001')
+      { text: toolLabel(primaryRoadType()), tool: primaryRoadType(), group: catalog.group, title: toolLabel(primaryRoadType()) },
+      resolveIcon(primaryRoadType())
     );
     if (btn) {
       btn.dataset.stonePathTool = '1';
@@ -254,21 +291,12 @@ function resolveIcon(toolId) {
   const icon = catalogButton(toolId).icon;
   if (icon.kind === 'svg') return icon.value;
   if (icon.kind === 'png') return kenneyPreviewIconHtml(icon.value);
-  if (icon.kind === 'icon') return monochromeIconHtml(icon.value);
   if (icon.kind === 'emoji') return icon.value;
   throw new Error(`[ToolPanel] Unknown icon kind "${icon?.kind}" for "${toolId}"`);
 }
 
 const CATEGORY_EXCLUDES = {
-  markets: ['Market-Stall'],
-  infrastructure: [
-    'StonePath-001',
-    'StonePath-Right-001',
-    'StonePath-Left-001',
-    'StonePath-Cross-001',
-    'StonePath-Tee-001',
-    'StonePath-End-001',
-  ],
+  infrastructure: listRoadTypes(),
 };
 
 /**
@@ -289,25 +317,28 @@ export function getToolButtonInfosForCategory(categoryKey) {
     return [
       { text: 'Démolir', tool: 'bulldoze', group: 'tools' },
       { text: 'Sélectionner', tool: 'select-object', group: 'tools' },
+      { text: 'Portée', tool: 'show-range', group: 'tools' },
     ];
   }
 
-  if (categoryKey === 'roads') {
-    const infos = [];
-    if (ASSET_CATALOG['StonePath-001']?.button) {
-      const catalog = catalogButton('StonePath-001');
-      infos.push({
-        text: catalog.label,
-        tool: 'StonePath-001',
+  // A category whose pill IS a tool (the catalog's button.pillCategory) lists just that tool
+  const directTool = getDirectToolForCategory(categoryKey);
+  if (directTool) {
+    const catalog = catalogButton(directTool);
+    return [
+      {
+        text: toolLabel(directTool),
+        tool: directTool,
         group: catalog.group,
-        title: catalog.tooltip,
-        stonePathTool: true,
-      });
-    }
-    return infos;
+        title: toolLabel(directTool),
+        stonePathTool: Boolean(ASSET_CATALOG[directTool]?.selectableMeshes),
+      },
+    ];
   }
 
-  const ids = getToolIdsForCategory(categoryKey);
+  // A map-editor category (terrain / nature pills): its meshes are the editor catalog's, in carousel order
+  const editorToolIds = EDITOR_TOOLS_BY_CATEGORY[categoryKey];
+  const ids = editorToolIds ?? getToolIdsForCategory(categoryKey);
   const seen = new Set();
   /** @type {{ text: string, tool: string, group: string }[]} */
   const infos = [];
@@ -315,11 +346,40 @@ export function getToolButtonInfosForCategory(categoryKey) {
   for (const toolId of ids) {
     if (seen.has(toolId)) continue;
     seen.add(toolId);
-    const catalog = catalogButton(toolId);
-    infos.push({ text: catalog.label, tool: toolId, group: categoryKey, title: catalog.tooltip });
+    infos.push({ text: toolLabel(toolId), tool: toolId, group: categoryKey, title: toolLabel(toolId) });
   }
 
   return infos;
+}
+
+/**
+ * Same button infos as getToolButtonInfosForCategory, but clustered exactly like
+ * catalogClustersByGroup — each inner array is one thematic sub-group to render together inside a
+ * single carousel slide. See CompactToolbar.js's renderCarousel for the double-flex layout this
+ * feeds (a small gap within a cluster, a larger one between clusters).
+ * @param {string} categoryKey
+ * @returns {Array<Array<{ text: string, tool: string, group: string, title?: string }>>}
+ */
+export function getToolButtonInfoClustersForCategory(categoryKey) {
+  if (categoryKey === 'tools' || getDirectToolForCategory(categoryKey)) {
+    return [getToolButtonInfosForCategory(categoryKey)];
+  }
+
+  const exclude = new Set(CATEGORY_EXCLUDES[categoryKey] || []);
+  const seen = new Set();
+  return catalogClustersByGroup(categoryKey)
+    .map((cluster) => cluster.filter((id) => {
+      if (exclude.has(id) || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    }))
+    .filter((cluster) => cluster.length > 0)
+    .map((cluster) => cluster.map((toolId) => ({
+      text: toolLabel(toolId),
+      tool: toolId,
+      group: categoryKey,
+      title: toolLabel(toolId),
+    })));
 }
 
 export { resolveIcon };
@@ -345,6 +405,15 @@ export function createToolButton(buttonInfo, icon = '', options = {}) {
 
   if (ASSET_CATALOG[buttonInfo.tool]?.button?.icon?.kind === 'png') {
     button.classList.add('panel-btn--kenney-preview');
+  }
+
+  // `[data-theme]` is what compact-toolbar.css keys its color rule on, so it is only ever set
+  // when the catalog actually gives that theme a color (BUILDING_THEME_COLORS) — a themed cluster
+  // with no color entry still gets its group-gap divider (see groupIdsByTheme), just no tinting.
+  const themeColor = BUILDING_THEME_COLORS[ASSET_CATALOG[buttonInfo.tool]?.button?.theme];
+  if (themeColor) {
+    button.dataset.theme = ASSET_CATALOG[buttonInfo.tool].button.theme;
+    button.style.setProperty('--theme-color', themeColor);
   }
 
   const isEmoji = typeof icon === 'string' && icon.length <= 4 && !icon.includes('<');
@@ -396,7 +465,3 @@ function kenneyPreviewIconHtml(previewUrl) {
   return `<img src="${previewUrl}" alt="" class="tool-kenney-preview" decoding="async" loading="lazy" />`;
 }
 
-/** A 24px monochrome silhouette icon, styled like the inline SVGs around it (see main.css). */
-function monochromeIconHtml(url) {
-  return `<img src="${url}" alt="" class="tool-icon-img" width="24" height="24" decoding="async" />`;
-}

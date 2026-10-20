@@ -14,19 +14,29 @@
  * src/presentation/three/meshs/statusIconAnchors.js).
  *
  * `button` is the carousel/toolbar entry (group/editorGroup/label/tooltip/
- * icon). ToolPanel.js's resolveIcon() reads it directly, with NO fallback: a
+ * icon). A WORKPLACE declares no `group`: its pill is the social class that staffs it (buildingCategories.js's
+ * `toolbarGroupOf`, from the skill it requires); `group` is only for what employs nobody (houses, roads). ToolPanel.js's resolveIcon() reads it directly, with NO fallback: a
  * missing entry or `button: null` throws rather than degrading to a default
  * icon — this file is the only place a building's icon/label/category is
  * decided. `button.group` is the REAL in-game gameplay category (one of
- * houses/farms/industry/markets/infrastructure/public — the exact keys
+ * houses/farms/factories/warehouses/infrastructure/public — the exact keys
  * ToolPanel.js's GROUP_CREATORS route on) and is what actually determines
- * which carousel panel an id appears in; `editorGroup` is always `null` here
+ * which carousel panel an id appears in; `button.theme` (optional) clusters
+ * entries within one group into a thematic sub-group (e.g. every pottery
+ * workshop) — same group, visually set apart by a gap (ToolPanel.js's
+ * groupIdsByTheme) and, when the theme has one, a color (BUILDING_THEME_COLORS
+ * above). `editorGroup` is always `null` here
  * because no building-layer asset is placed via the separate map-editor
  * toolbar (see natureAssets.js/terrainAssets.js, where it isn't). icon.kind
  * is one of 'svg' (inline markup), 'png' (Kenney-style full-color preview
  * tile), 'icon' (a 24px monochrome silhouette PNG, styled like the SVGs —
  * used only where a raster icon predates this catalog, e.g. Windmill-001),
- * or 'emoji'. `button` is `null` for StonePath-Right/Left/Cross-001
+ * or 'emoji'. `button.pillCategory` (optional) names the build-bar category pill
+ * this tool IS: the pill itself activates the tool and no carousel is shown
+ * under it (a road has nothing to choose from — see
+ * buildingCategories.js's getDirectToolForCategory). Omitted, the pill of
+ * `group` opens a carousel of the tools of that group as usual.
+ * `button` is `null` for StonePath-Right/Left/Cross-001
  * (rotation variants of StonePath-001, never a distinct carousel button) and
  * Church-002 (legacy save-compat id, not a placeable tool).
  *
@@ -47,6 +57,17 @@
  *    defaultStage, requiresStaff, idleStage, previewStage) — see
  *    kenneyFarmFieldAdapter.js. The game drives it through mesh.userData.applySeason(season)
  *    and mesh.userData.applyStaffing(staffed).
+ *  - statusIcons (optional): where and how big this building's status icons are (`{ [iconKey]: { position?, scale? } }`,
+ *    iconKey as in statusIconAnchors.js). An icon it does not list uses the generic default. Tuned per building,
+ *    because it depends on that building's mesh; the /placement.html tool prints the entry to paste.
+ *  - cycleGraphics (optional): what a producer shows at each point of its cycle, declared as
+ *    `[{ id, when | step, status }]` — `when` is a schedule on the game's time (seasons, months, ...),
+ *    `step` names a step of the building's own production cycle (see buildingEconomy.js `cycle`), `status` is a
+ *    key of statusIconAnchors.js. `id` is passed to the mesh's `applyPhase` hook, if it has one.
+ *    `saleStatus` (optional) picks the icon shown while a hub has collected its goods (default 'sold-to-hub');
+ *    `failedSaleStatus` (optional) the one shown right after its sale window closes with goods unsold (default 'failed-sell').
+ *  - roadSides (roads only): which tile sides (north/east/south/west) the asphalt reaches on the unturned mesh; the
+ *    adaptive road drag chooses each tile's piece and turn from it (roadPaintPlanner.js).
  *  - kenneyGlb entries: geometry.glb is the full public URL of a single-tile GLB (road piece,
  *    nature-kit tree/rock); transform.rotationDeg.y is the base yaw (R adds 90° steps on top).
  *  - kenneyCityKit entries: geometry.glb is intentionally null — the actual
@@ -65,106 +86,87 @@
  *    with a shared Lambert material, not cloned GLB meshes.
  */
 
+/**
+ * Color for a `button.theme` cluster's carousel buttons (idle/hover/selected) — the ONLY place a
+ * theme's color is decided. ToolPanel.js's createToolButton reads this and sets it as the
+ * `--theme-color` custom property on the button element itself; compact-toolbar.css never names a
+ * theme, it just consumes that variable. A theme with no entry here still clusters into its own
+ * slide (see ToolPanel.js's catalogClustersByGroup) — it simply keeps the default button look.
+ * @type {Readonly<Record<string, string>>}
+ */
+export const BUILDING_THEME_COLORS = Object.freeze({
+  pottery: '#c1440e',
+  wood: '#8b5a2b',
+  lighting: '#d4a017',
+  network: '#1a8a8a',
+  'food-hub': '#5a7d3a',
+  'goods-hub': '#5c5f66',
+  commerce: '#b23a6b',
+  crops: '#3f8f3f',
+  water: '#2f7fb8',
+  safety: '#8a2f2f',
+  energy: '#d4a017',
+  education: '#2f5fa8',
+  health: '#c0392b',
+  leisure: '#6a3fa0',
+});
+
+/**
+ * The color of the level pill under a building's card in the construction bar: one color per house tier (level) from which the building can be given
+ * workers (see workforceQueries.js `lowestHouseTierForWorkers`). A tier with no entry here throws where the pill is drawn (CompactToolbar.js).
+ * @type {Readonly<Record<number, string>>}
+ */
+export const STAFF_LEVEL_COLORS = Object.freeze({
+  1: '#3f8f3f',
+  2: '#2f7fb8',
+  3: '#8a2f6b',
+  4: '#c1440e',
+  5: '#d4a017',
+  6: '#5c5f66',
+});
+
+/** What a crop field shows through the year: one icon per season, the field's own look follows the same ids. */
+const CROP_CYCLE_GRAPHICS = Object.freeze([
+  { id: 'winter', when: { unit: 'season', values: ['winter'] }, status: 'fallow' },
+  { id: 'spring', when: { unit: 'season', values: ['spring'] }, status: 'grow-food' },
+  { id: 'summer', when: { unit: 'season', values: ['summer'] }, status: 'harvest' },
+  { id: 'autumn', when: { unit: 'season', values: ['autumn'] }, status: 'sell-food' },
+]);
+
+/** The lumberjack's mesh, shared by both lumberjacks (they differ only in the economy catalog). */
+const LUMBERJACK_MESH = {
+  source: 'kenneyCityKit',
+  geometry: {
+    glb: null,
+    sourceKey: null,
+    aliases: [],
+    kit: 'industrial',
+    buildingId: 'Kenney-Industrial-building-o',
+  },
+  transform: {
+    rotationDeg: null,
+    positionOffsetY: 0.2,
+    scale: null,
+  },
+  presentation: {
+    mode: 'lit',
+    castShadow: true,
+    receiveShadow: true,
+    renderOrder: null,
+    frustumCulled: true,
+    displayColor: null,
+  },
+  button: {
+    theme: 'wood',
+    editorGroup: null,
+    label: 'Bûcheron',
+    tooltip: 'Bûcheron',
+    icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-o.png' },
+  },
+  tags: ['industry', 'building'],
+};
+
 export const BUILDING_ASSETS = Object.freeze({
-  // Palais
-  'House-2Story': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'suburban',
-      buildingId: 'Kenney-Suburban-building-type-g',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-      instanceable: true,
-    },
-    button: {
-      group: 'houses',
-      editorGroup: null,
-      label: 'House 2Story',
-      tooltip: 'House 2Story',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 20v-9H2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2Z"/><path d="M18 11V4H6v7"/><path d="M15 22v-4a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3v4"/><path d="M22 11V9"/><path d="M2 11V9"/><path d="M6 4V2"/><path d="M18 4V2"/><path d="M10 4V2"/><path d="M14 4V2"/></svg>' },
-    },
-    tags: ['palaces', 'building'],
-  },
-  // Maison rouge
-  'House-Red-Legacy': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'suburban',
-      buildingId: 'Kenney-Suburban-building-type-h',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: null,
-    // button: {
-    //   group: 'houses',
-    //   editorGroup: null,
-    //   label: 'House Red',
-    //   tooltip: 'House Red',
-    //   icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
-    // },
-    tags: ['houses', 'building'],
-  },
-  // Maison violette
-  'House-Purple-Legacy': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'suburban',
-      buildingId: 'Kenney-Suburban-building-type-i',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: null,
-    // button: {
-    //   group: 'houses',
-    //   editorGroup: null,
-    //   label: 'House Purple',
-    //   tooltip: 'House Purple',
-    //   icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
-    // },
-    tags: ['houses', 'building'],
-  },
   // Champ de blé
   'Farm-Wheat': {
     source: 'kenneyFarmField',
@@ -183,6 +185,7 @@ export const BUILDING_ASSETS = Object.freeze({
       scale: 1,
     },
     // Assembled field: the ground above + one wheat model per growth stage (nature kit).
+    cycleGraphics: CROP_CYCLE_GRAPHICS,
     crop: {
       perTile: 2,
       stages: {
@@ -207,7 +210,7 @@ export const BUILDING_ASSETS = Object.freeze({
       instanceable: true,
     },
     button: {
-      group: 'farms',
+      theme: 'crops',
       editorGroup: null,
       label: 'Farm Wheat',
       tooltip: 'Farm Wheat',
@@ -233,6 +236,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     // Assembled field like Farm-Wheat. The nature kit has a single (mature) carrot model:
     // the young stage reuses it at half size.
+    cycleGraphics: CROP_CYCLE_GRAPHICS,
     crop: {
       perTile: 3,
       stages: {
@@ -256,7 +260,7 @@ export const BUILDING_ASSETS = Object.freeze({
       instanceable: true,
     },
     button: {
-      group: 'farms',
+      theme: 'crops',
       editorGroup: null,
       label: 'Farm Carrot',
       tooltip: 'Farm Carrot',
@@ -282,6 +286,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     // Assembled field like Farm-Wheat. The nature kit has no cabbage: the leafy-crop
     // models (2 growth stages) stand in for it.
+    cycleGraphics: CROP_CYCLE_GRAPHICS,
     crop: {
       perTile: 2,
       stages: {
@@ -305,7 +310,7 @@ export const BUILDING_ASSETS = Object.freeze({
       instanceable: true,
     },
     button: {
-      group: 'farms',
+      theme: 'crops',
       editorGroup: null,
       label: 'Farm Cabbage',
       tooltip: 'Farm Cabbage',
@@ -313,20 +318,34 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     tags: ['farms', 'building'],
   },
-  // Botte de foin
-  'Hay-Bale': {
-    source: 'kenneyCityKit',
+  // Champ d'oliviers — assembled like the crop fields, but with the nature kit's small trees planted on the dirt
+  // rows. No seasonal crop icons: those are the food icons of the crop fields.
+  'Farm-Olive': {
+    source: 'kenneyFarmField',
     geometry: {
-      glb: null,
+      glb: '/resources/kenney_nature-kit/Models/GLTF format/crops_dirtDoubleRow.glb',
       sourceKey: null,
       aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-b',
+      kit: null,
+      buildingId: null,
     },
     transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
+      rotationDeg: { x: 0, y: 0, z: 0 },
+      positionOffsetY: 0.05,
+      scale: 1,
+    },
+    crop: {
+      perTile: 1,
+      stages: {
+        fallow: null,
+        growing: { glb: '/resources/kenney_nature-kit/Models/GLTF format/tree_small.glb', scale: 0.5 },
+        ripe: { glb: '/resources/kenney_nature-kit/Models/GLTF format/tree_small.glb' },
+      },
+      stageBySeason: { Hiver: 'ripe', Printemps: 'growing', 'Été': 'ripe', Automne: 'ripe' },
+      defaultStage: 'ripe',
+      requiresStaff: true,
+      idleStage: 'fallow',
+      previewStage: 'ripe',
     },
     presentation: {
       mode: 'lit',
@@ -335,81 +354,18 @@ export const BUILDING_ASSETS = Object.freeze({
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
+      instanceable: true,
     },
     button: {
-      group: 'farms',
+      theme: 'crops',
       editorGroup: null,
-      label: 'Hay Bale',
-      tooltip: 'Hay Bale',
-      icon: { kind: 'emoji', value: '🌾' },
+      label: 'Champ d\'oliviers',
+      tooltip: 'Champ d\'oliviers',
+      icon: { kind: 'emoji', value: '🫒' },
     },
     tags: ['farms', 'building'],
   },
-  // Chariot de foin
-  'Hay-Cart': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-h',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'farms',
-      editorGroup: null,
-      label: 'Hay Cart',
-      tooltip: 'Hay Cart',
-      icon: { kind: 'emoji', value: '🛒' },
-    },
-    tags: ['farms', 'building'],
-  },
-  // Meule de foin
-  'Hay-Pile': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-i',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'farms',
-      editorGroup: null,
-      label: 'Hay Pile',
-      tooltip: 'Hay Pile',
-      icon: { kind: 'emoji', value: '📦' },
-    },
-    tags: ['farms', 'building'],
-  },
-  // Moulin (taille alignée sur houses, override explicite)
+  // Grenier (id Windmill-001; taille alignée sur houses, override explicite)
   'Windmill-001': {
     source: 'kenneyCityKit',
     geometry: {
@@ -433,144 +389,19 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      theme: 'food-hub',
       editorGroup: null,
-      label: 'Windmill 001',
-      tooltip: 'Windmill 001',
-      // 'icon' (not 'png'): a 24px monochrome silhouette icon like the SVGs
-      // around it, not a Kenney-style full-color preview tile — see
-      // ToolPanel.js resolveIcon().
-      icon: { kind: 'icon', value: '/icons/windmill.png' },
+      label: 'Grenier',
+      tooltip: 'Stocke les vivres',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-j.png' },
     },
     tags: ['industry', 'building'],
   },
-  // Caisse
-  'Crate-001': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-m',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'Crate 001',
-      tooltip: 'Crate 001',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>' },
-    },
-    tags: ['industry', 'building'],
-  },
-  // Silo à blé
-  'Cylinder': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-n',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'industry',
-      editorGroup: null,
-      label: 'Cylinder',
-      tooltip: 'Cylinder',
-      icon: { kind: 'emoji', value: '🛑' },
-    },
-    tags: ['industry', 'building'],
-  },
-  // Étal (alias legacy → mesh bleu)
-  'Market-Stall-Legacy': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'commercial',
-      buildingId: 'Kenney-Commercial-building-a',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: null,
-    // button: {
-    //   group: 'markets',
-    //   editorGroup: null,
-    //   label: 'Market Stall',
-    //   tooltip: 'Market Stall',
-    //   icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>' },
-    // },
-    tags: ['markets', 'building', 'legacy-alias'],
-  },
-  // Étal bleu
-  'Market-Stall-Blue': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'commercial',
-      buildingId: 'Kenney-Commercial-building-b',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-      instanceable: true,
-    },
-    button: null, // not a distinct carousel entry — Market-Stall-Red is the one placeable market, user request 2026-09-08 ("I need only one market in this game")
-    tags: ['markets', 'building'],
-  },
-  // Étal rouge
+  // Étal rouge — the one placeable market
   'Market-Stall-Red': {
     source: 'kenneyCityKit',
+    // The generic road icon is too big for a market stall's mesh (tune with /placement.html).
+    statusIcons: { road: { scale: { x: 0.35, y: 0.35, z: 1 } } },
     geometry: {
       glb: null,
       sourceKey: null,
@@ -593,11 +424,11 @@ export const BUILDING_ASSETS = Object.freeze({
       instanceable: true,
     },
     button: {
-      group: 'markets',
+      theme: 'commerce',
       editorGroup: null,
       label: 'Market Stall Red',
       tooltip: 'Market Stall Red',
-      icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>' },
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-c.png' },
     },
     tags: ['markets', 'building'],
   },
@@ -630,12 +461,18 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: {
       group: 'infrastructure',
+      // The 'roads' pill is this tool: one click on it activates the road tool, no carousel.
+      pillCategory: 'roads',
       editorGroup: null,
       label: 'Chemin de pierre',
-      tooltip: 'Chemin de pierre — R pour tourner, S pour changer de forme',
+      tooltip: 'Chemin de pierre — forme automatique en glissant ; S/R ne servent que pour une case isolée',
       icon: { kind: 'svg', value: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="16"/><line x1="16" y1="14" x2="16" y2="16"/></svg>' },
     },
     tags: ['infrastructure', 'building', 'road'],
+    // Which sides of its tile the asphalt reaches when the mesh is unturned (north = -y, east = +x, south = +y,
+    // west = -x), read off the GLB. Each R step turns them a quarter counter-clockwise (east → north → west → south);
+    // `transform.rotationDeg.y` turns them further. What the adaptive road drag picks pieces from.
+    roadSides: ['west', 'east'],
     // Ordered catalog ids the S key cycles through while this tool is active
     // (the first one is the default). Each id is a full catalog entry of its
     // own, so the placed tile keeps that id; R still rotates whichever mesh is
@@ -671,6 +508,10 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: null, // not a distinct carousel entry — right-turn variant of StonePath-001, selected via R-key rotation cycling, never placed directly by clicking a button
     tags: ['infrastructure', 'building', 'road'],
+    // Which sides of its tile the asphalt reaches when the mesh is unturned (north = -y, east = +x, south = +y,
+    // west = -x), read off the GLB. Each R step turns them a quarter counter-clockwise (east → north → west → south);
+    // `transform.rotationDeg.y` turns them further. What the adaptive road drag picks pieces from.
+    roadSides: ['west', 'south'],
   },
   // Chemin de pierre (virage gauche, réutilise le mesh StonePath-001)
   'StonePath-Left-001': {
@@ -701,6 +542,10 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: null, // not a distinct carousel entry — left-turn variant of StonePath-001, selected via R-key rotation cycling, never placed directly by clicking a button
     tags: ['infrastructure', 'building', 'road'],
+    // Which sides of its tile the asphalt reaches when the mesh is unturned (north = -y, east = +x, south = +y,
+    // west = -x), read off the GLB. Each R step turns them a quarter counter-clockwise (east → north → west → south);
+    // `transform.rotationDeg.y` turns them further. What the adaptive road drag picks pieces from.
+    roadSides: ['west', 'south'],
   },
   // Croisement (réutilise le mesh StonePath-001)
   'StonePath-Cross-001': {
@@ -731,6 +576,10 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: null, // not a distinct carousel entry — crossroad variant of StonePath-001, selected via R-key rotation cycling, never placed directly by clicking a button
     tags: ['infrastructure', 'building', 'road'],
+    // Which sides of its tile the asphalt reaches when the mesh is unturned (north = -y, east = +x, south = +y,
+    // west = -x), read off the GLB. Each R step turns them a quarter counter-clockwise (east → north → west → south);
+    // `transform.rotationDeg.y` turns them further. What the adaptive road drag picks pieces from.
+    roadSides: ['north', 'east', 'south', 'west'],
   },
   // Chemin de pierre en T (variante sélectionnable par S, jamais un bouton à part)
   'StonePath-Tee-001': {
@@ -760,6 +609,10 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: null, // not a distinct carousel entry — selected via the S key on StonePath-001
     tags: ['infrastructure', 'building', 'road'],
+    // Which sides of its tile the asphalt reaches when the mesh is unturned (north = -y, east = +x, south = +y,
+    // west = -x), read off the GLB. Each R step turns them a quarter counter-clockwise (east → north → west → south);
+    // `transform.rotationDeg.y` turns them further. What the adaptive road drag picks pieces from.
+    roadSides: ['west', 'east', 'south'],
   },
   // Bout de chemin (variante sélectionnable par S, jamais un bouton à part)
   'StonePath-End-001': {
@@ -789,20 +642,20 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: null, // not a distinct carousel entry — selected via the S key on StonePath-001
     tags: ['infrastructure', 'building', 'road'],
+    // Which sides of its tile the asphalt reaches when the mesh is unturned (north = -y, east = +x, south = +y,
+    // west = -x), read off the GLB. Each R step turns them a quarter counter-clockwise (east → north → west → south);
+    // `transform.rotationDeg.y` turns them further. What the adaptive road drag picks pieces from.
+    roadSides: ['east'],
   },
-  // Chapelle — RÉASSIGNÉ au kit Kenney Industrial building-l (geometry
-  // copied from Kenney-Industrial-building-l below; economy/footprint stay
-  // keyed to 'Chapel', untouched). Tower/chimney silhouette chosen as the
-  // least-mismatched available Kenney mesh for a spiritual-center reskin —
-  // no religious-themed Kenney asset exists in this project.
-  'Chapel': {
+  // Citerne — the Kenney Industrial detail-tank-large mesh (economy and footprint keyed to 'WaterTank').
+  'WaterTank': {
     source: 'kenneyCityKit',
     geometry: {
       glb: null,
       sourceKey: null,
       aliases: [],
       kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-l',
+      buildingId: 'Kenney-Industrial-detail-tank-large',
     },
     transform: {
       rotationDeg: null,
@@ -818,23 +671,54 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'public',
+      theme: 'water',
       editorGroup: null,
-      label: 'Chapel',
-      tooltip: 'Chapel',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-l.png' },
+      label: 'Citerne',
+      tooltip: 'Citerne',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/detail-tank-large.png' },
     },
     tags: ['public', 'building'],
   },
-  // Librairie — chargée depuis viking_carrot_farm_v1.glb (hors GLB partagé)
-  'BookShop-001': {
+  // Fire and police stations, the two power plants (2026-10-11): Kenney meshes borrowed like every service building.
+  'FireStation': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-s',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'safety',
+      editorGroup: null,
+      label: 'Caserne de pompiers',
+      tooltip: 'Caserne de pompiers',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-s.png' },
+    },
+    tags: ['public', 'building'],
+  },
+  'PoliceStation': {
     source: 'kenneyCityKit',
     geometry: {
       glb: null,
       sourceKey: null,
       aliases: [],
       kit: 'commercial',
-      buildingId: 'Kenney-Commercial-building-e',
+      buildingId: 'Kenney-Commercial-building-h',
     },
     transform: {
       rotationDeg: null,
@@ -850,16 +734,15 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'public',
+      theme: 'safety',
       editorGroup: null,
-      label: 'BookShop 001',
-      tooltip: 'BookShop 001',
-      icon: { kind: 'emoji', value: '📚' },
+      label: 'Poste de police',
+      tooltip: 'Poste de police',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-h.png' },
     },
-    tags: ['public', 'building', 'standalone-glb'],
+    tags: ['public', 'building'],
   },
-  // Chapelle (alias de sauvegarde legacy, réutilise le mesh Chapel — upright-ness non forcée par nom pour cet id, dépend de la détection runtime isLocalYUpMesh)
-  'Church-002': {
+  'CoalPlant': {
     source: 'kenneyCityKit',
     geometry: {
       glb: null,
@@ -875,14 +758,93 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     presentation: {
       mode: 'lit',
-      castShadow: null,
-      receiveShadow: null,
+      castShadow: true,
+      receiveShadow: true,
       renderOrder: null,
       frustumCulled: true,
       displayColor: null,
     },
-    button: null, // not a placeable tool — legacy save-compatibility id only (old saves referencing Church-002 render via the Chapel mesh), never exposed as a carousel button
-    tags: ['public', 'building', 'legacy-alias'],
+    button: {
+      theme: 'energy',
+      editorGroup: null,
+      label: 'Centrale à charbon',
+      tooltip: 'Centrale à charbon',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-l.png' },
+    },
+    tags: ['industrial', 'building'],
+  },
+  'PetrolPlant': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-c',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'energy',
+      editorGroup: null,
+      label: 'Centrale à pétrole',
+      tooltip: 'Centrale à pétrole',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-c.png' },
+    },
+    tags: ['industrial', 'building'],
+  },
+  // Centrale nucléaire — several Kenney meshes on one 5×4 plot (`geometry.parts`, offsets in tiles from the plot's centre):
+  // the main hall (building-b), two cooling stacks (chimney-large, chimney-small ×2) and the tanks (detail-tank-large, detail-tank ×2).
+  'NuclearPlant': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-b',
+      parts: [
+        { buildingId: 'Kenney-Industrial-building-b', x: -1, z: 1 },
+        { buildingId: 'Kenney-Industrial-detail-tank-large', x: -1.5, z: -1 },
+        { buildingId: 'Kenney-Industrial-chimney-large', x: 1.5, z: -1 },
+        { buildingId: 'Kenney-Industrial-chimney-small', x: 0, z: -1.5 },
+        { buildingId: 'Kenney-Industrial-detail-tank', x: 0, z: -0.5 },
+        { buildingId: 'Kenney-Industrial-chimney-small', x: 1, z: 0.5 },
+        { buildingId: 'Kenney-Industrial-detail-tank', x: 2, z: 1.5 },
+      ],
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'energy',
+      editorGroup: null,
+      label: 'Centrale nucléaire',
+      tooltip: 'Centrale nucléaire',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-b.png' },
+    },
+    tags: ['industrial', 'building'],
   },
   // ---- kenneyCityKit ----
   // Commerce — building-a — kept as its own entry (button: null) so its own
@@ -912,36 +874,6 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: null, // not a distinct carousel entry — no placeable id uses this mesh (Market-Stall-Red is the one placeable market)
-    tags: ['commercial', 'building'],
-  },
-  // Étal — RÉASSIGNÉ au kit Kenney Commercial building-a (geometry copied from
-  // Kenney-Commercial-building-a above; economy/footprint stay keyed to
-  // 'Market-Stall', untouched). Legacy save-compat id — Market-Stall-Red is
-  // the one placeable market (user request 2026-09-08).
-  'Market-Stall': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'commercial',
-      buildingId: 'Kenney-Commercial-building-a',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: true,
-      receiveShadow: true,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-      instanceable: true,
-    },
-    button: null, // not a distinct carousel entry — Market-Stall-Red is the one placeable market
     tags: ['commercial', 'building'],
   },
   // Commerce — building-b
@@ -1051,7 +983,7 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'public',
+      theme: 'education',
       editorGroup: null,
       label: 'Bibliothèque',
       tooltip: 'Bibliothèque',
@@ -1138,7 +1070,7 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'public',
+      theme: 'health',
       editorGroup: null,
       label: 'Cabinet médical',
       tooltip: 'Cabinet médical',
@@ -1251,7 +1183,7 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'public',
+      theme: 'education',
       editorGroup: null,
       label: 'École',
       tooltip: 'École',
@@ -1312,7 +1244,7 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'public',
+      theme: 'health',
       editorGroup: null,
       label: 'Hôpital',
       tooltip: 'Hôpital',
@@ -1425,7 +1357,7 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'public',
+      theme: 'leisure',
       editorGroup: null,
       label: 'Cinéma',
       tooltip: 'Cinéma',
@@ -1486,7 +1418,7 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'public',
+      theme: 'leisure',
       editorGroup: null,
       label: 'Théâtre',
       tooltip: 'Théâtre',
@@ -1517,8 +1449,43 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    button: null, // not a distinct carousel entry — Bank (below) is the placeable id for this mesh
     tags: ['commercial', 'building'],
+  },
+  // Banque — reassigned to Kenney Commercial building-skyscraper-a (geometry copied from
+  // Kenney-Commercial-building-skyscraper-a above; economy/footprint stay keyed to 'Bank'). A tower, not a
+  // shop front — the 5 skyscraper prefabs were all unused, so this one marks the bank apart from the
+  // low-rise shop shapes the other commerce buildings already wear.
+  'Bank': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-skyscraper-a',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'commerce',
+      editorGroup: null,
+      label: 'Banque',
+      tooltip: "Prête à la ville et reçoit l'épargne des habitants",
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-a.png' },
+    },
+    tags: ['markets', 'building'],
   },
   // Commerce — building-skyscraper-b
   'Kenney-Commercial-building-skyscraper-b': {
@@ -1623,6 +1590,578 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-a (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-a': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-a',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-b (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-b': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-b',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-c (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-c': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-c',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-d (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-d': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-d',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-e (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-e': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-e',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-f (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-f': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-f',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-g (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-g': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-g',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-h (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-h': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-h',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-i (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-i': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-i',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-j (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-j': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-j',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-k (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-k': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-k',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-l (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-l': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-l',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-m (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-m': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-m',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-n (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-n': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-n',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-wide-a (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-wide-a': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-wide-a',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce simplifié — low-detail-building-wide-b (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-low-detail-building-wide-b': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-low-detail-building-wide-b',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'building'],
+  },
+  // Commerce (détail) — detail-awning (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-detail-awning': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-detail-awning',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'prop'],
+  },
+  // Commerce (détail) — detail-awning-wide (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-detail-awning-wide': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-detail-awning-wide',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'prop'],
+  },
+  // Commerce (détail) — detail-overhang (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-detail-overhang': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-detail-overhang',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'prop'],
+  },
+  // Commerce (détail) — detail-overhang-wide (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-detail-overhang-wide': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-detail-overhang-wide',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'prop'],
+  },
+  // Commerce (détail) — detail-parasol-a (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-detail-parasol-a': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-detail-parasol-a',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'prop'],
+  },
+  // Commerce (détail) — detail-parasol-b (kit commercial — kept as its own entry, no gameplay role yet)
+  'Kenney-Commercial-detail-parasol-b': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-detail-parasol-b',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['commercial', 'prop'],
   },
   // Industrie — building-a
   'Kenney-Industrial-building-a': {
@@ -1757,17 +2296,122 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      theme: 'pottery',
       editorGroup: null,
       label: 'Atelier de plats',
       tooltip: 'Atelier de plats',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-d.png' },
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-d.png' },
     },
     tags: ['industry', 'building'],
   },
-  // Industrie — building-e
-  // Bains publics (below) réassigne cette geometry — plus d'entrée
-  // carousel "Industrie" distincte pour building-e, voir PublicBath.
+  // Bûcheron — RÉASSIGNÉ au kit Kenney Industrial building-o (geometry copied
+  // from Kenney-Industrial-building-o; economy/footprint keyed to 'Lumberjack').
+  // Raw-material producer, see buildingEconomy.js.
+  'Lumberjack': LUMBERJACK_MESH,
+  // Same mesh, another catalog entry (name and clients differ, see buildingEconomy.js).
+  'Lumberjack-Industry': {
+    ...LUMBERJACK_MESH,
+    button: { ...LUMBERJACK_MESH.button, label: 'Bûcheron industriel', tooltip: 'Bûcheron industriel' },
+  },
+  // Atelier de meubles — RÉASSIGNÉ au kit Kenney Industrial building-f (economy/footprint keyed to 'Factory-Furniture').
+  'Factory-Furniture': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-f',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'wood',
+      editorGroup: null,
+      label: 'Atelier de meubles',
+      tooltip: 'Atelier de meubles',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-f.png' },
+    },
+    tags: ['industry', 'building'],
+  },
+  // Entrepôt commercial — Kenney Industrial building-h (a 2×2 hangar, distinct from the regular
+  // warehouse building-a with its loading bays).
+  'TradeWarehouse': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-h',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'goods-hub',
+      editorGroup: null,
+      label: 'Entrepôt commercial',
+      tooltip: "Stocke les biens d'export des marchands",
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-h.png' },
+    },
+    tags: ['industry', 'building', 'trade'],
+  },
+
+  // Entrepôt — RÉASSIGNÉ au kit Kenney Industrial building-a (economy/footprint keyed to 'Warehouse').
+  'Warehouse': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-a',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'goods-hub',
+      editorGroup: null,
+      label: 'Entrepôt',
+      tooltip: 'Entrepôt',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-a.png' },
+    },
+    tags: ['industry', 'building'],
+  },
+  // Industrie — building-e (the mesh of the oil power plant, which declares it as its own geometry)
   'Kenney-Industrial-building-e': {
     source: 'kenneyCityKit',
     geometry: {
@@ -1790,43 +2434,8 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: null, // not a distinct carousel entry — PublicBath (below) is the placeable id for this mesh
+    button: null, // not a distinct carousel entry — PetrolPlant is the placeable id for this mesh
     tags: ['industrial', 'building'],
-  },
-  // Bains publics — RÉASSIGNÉ au kit Kenney Industrial building-e
-  // (geometry copied from Kenney-Industrial-building-e above; economy/
-  // footprint stay keyed to 'PublicBath', untouched). Medical-layer
-  // service (grouped with Doctor/Hospital — see buildingEconomy.js).
-  'PublicBath': {
-    source: 'kenneyCityKit',
-    geometry: {
-      glb: null,
-      sourceKey: null,
-      aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-e',
-    },
-    transform: {
-      rotationDeg: null,
-      positionOffsetY: 0.2,
-      scale: null,
-    },
-    presentation: {
-      mode: 'lit',
-      castShadow: true,
-      receiveShadow: true,
-      renderOrder: null,
-      frustumCulled: true,
-      displayColor: null,
-    },
-    button: {
-      group: 'public',
-      editorGroup: null,
-      label: 'Bains publics',
-      tooltip: 'Bains publics',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-e.png' },
-    },
-    tags: ['public', 'building'],
   },
   // Industrie — building-f
   'Kenney-Industrial-building-f': {
@@ -1907,11 +2516,74 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      theme: 'pottery',
       editorGroup: null,
       label: 'Atelier de pots',
       tooltip: 'Atelier de pots',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-g.png' },
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-g.png' },
+    },
+    tags: ['industry', 'building'],
+  },
+  // Huilerie / Chandellerie — kit Kenney Industrial building-i / building-m (economy/footprint keyed to their own ids).
+  'Factory-Oil': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-i',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'lighting',
+      editorGroup: null,
+      label: 'Huilerie',
+      tooltip: 'Huilerie',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-i.png' },
+    },
+    tags: ['industry', 'building'],
+  },
+  'Factory-Candle': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-m',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'lighting',
+      editorGroup: null,
+      label: 'Chandellerie',
+      tooltip: 'Chandellerie',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-m.png' },
     },
     tags: ['industry', 'building'],
   },
@@ -1952,7 +2624,7 @@ export const BUILDING_ASSETS = Object.freeze({
       sourceKey: null,
       aliases: [],
       kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-h',
+      buildingId: 'Kenney-Industrial-building-t',
     },
     transform: {
       rotationDeg: null,
@@ -1968,11 +2640,11 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'industry',
+      theme: 'pottery',
       editorGroup: null,
       label: 'Atelier d\'amphores',
       tooltip: 'Atelier d\'amphores',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-h.png' },
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-t.png' },
     },
     tags: ['industry', 'building'],
   },
@@ -1999,8 +2671,40 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    button: null, // not a distinct carousel entry — Factory-Network (below) is the placeable id for this mesh
     tags: ['industrial', 'building'],
+  },
+  // Fournisseur d'accès — ASSIGNÉ au kit Kenney Industrial building-i
+  'Factory-Network': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-n',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'network',
+      editorGroup: null,
+      label: 'Fournisseur d\'accès',
+      tooltip: 'Fournisseur d\'accès',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-n.png' },
+    },
+    tags: ['industry', 'building'],
   },
   // Industrie — building-j
   'Kenney-Industrial-building-j': {
@@ -2056,17 +2760,16 @@ export const BUILDING_ASSETS = Object.freeze({
     button: null, // not a distinct carousel entry — Pub (below) is the placeable id for this mesh
     tags: ['industrial', 'building'],
   },
-  // Taverne — RÉASSIGNÉ au kit Kenney Industrial building-k (geometry
-  // copied from Kenney-Industrial-building-k above; economy/footprint stay
-  // keyed to 'Pub', untouched). Entertainment-layer service.
+  // Taverne (café-restaurant) — wears Kenney Commercial building-e (a shop front, not a factory roof);
+  // economy/footprint stay keyed to 'Pub'. Entertainment-layer service.
   'Pub': {
     source: 'kenneyCityKit',
     geometry: {
       glb: null,
       sourceKey: null,
       aliases: [],
-      kit: 'industrial',
-      buildingId: 'Kenney-Industrial-building-k',
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-e',
     },
     transform: {
       rotationDeg: null,
@@ -2082,16 +2785,16 @@ export const BUILDING_ASSETS = Object.freeze({
       displayColor: null,
     },
     button: {
-      group: 'public',
+      theme: 'leisure',
       editorGroup: null,
       label: 'Taverne',
       tooltip: 'Taverne',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_1.0/Previews/building-k.png' },
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-e.png' },
     },
     tags: ['public', 'building'],
   },
   // Industrie — building-l
-  // not a distinct carousel entry — Chapel (above) is the placeable id for this mesh
+  // not a distinct carousel entry — WaterTank is the placeable id for this mesh
   'Kenney-Industrial-building-l': {
     source: 'kenneyCityKit',
     geometry: {
@@ -2114,7 +2817,7 @@ export const BUILDING_ASSETS = Object.freeze({
       frustumCulled: true,
       displayColor: null,
     },
-    button: null, // not a distinct carousel entry — Chapel (above) is the placeable id for this mesh
+    button: null, // not a distinct carousel entry
     tags: ['industrial', 'building'],
   },
   // Industrie — building-m
@@ -2325,6 +3028,448 @@ export const BUILDING_ASSETS = Object.freeze({
     button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['industrial', 'building'],
   },
+  // Industrie — chimney-basic (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-chimney-basic': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-chimney-basic',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — chimney-large (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-chimney-large': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-chimney-large',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — chimney-medium (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-chimney-medium': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-chimney-medium',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — chimney-small (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-chimney-small': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-chimney-small',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — detail-tank (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-detail-tank': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-detail-tank',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — detail-tank-large (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-detail-tank-large': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-detail-tank-large',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — shipping-container-a (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-shipping-container-a': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-shipping-container-a',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — shipping-container-b (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-shipping-container-b': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-shipping-container-b',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — shipping-container-c (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-shipping-container-c': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-shipping-container-c',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — solar-panel-flat (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-solar-panel-flat': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-solar-panel-flat',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — solar-panel-landscape (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-solar-panel-landscape': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-solar-panel-landscape',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — solar-panel-landscape-group (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-solar-panel-landscape-group': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-solar-panel-landscape-group',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — solar-panel-portrait (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-solar-panel-portrait': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-solar-panel-portrait',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — solar-panel-portrait-group (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-solar-panel-portrait-group': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-solar-panel-portrait-group',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — water-tower (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-water-tower': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-water-tower',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — windmill (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-windmill': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-windmill',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
+  // Industrie — windmill-low (kit industriel 2.0 — kept as its own entry, no gameplay role yet)
+  'Kenney-Industrial-windmill-low': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-windmill-low',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['industrial', 'prop'],
+  },
   // Maison — building-type-a — kept as its own entry (button: null) so its own
   // economy/footprint facts (auto-folded from kenneyCityKitRegistry.generated.js,
   // unrenameable) always have a renderer. House-Red below borrows its geometry
@@ -2364,7 +3509,7 @@ export const BUILDING_ASSETS = Object.freeze({
       sourceKey: null,
       aliases: [],
       kit: 'suburban',
-      buildingId: 'Kenney-Suburban-building-type-a',
+      buildingId: 'Kenney-Suburban-building-type-p',
     },
     transform: {
       rotationDeg: null,
@@ -2383,23 +3528,23 @@ export const BUILDING_ASSETS = Object.freeze({
     button: {
       group: 'houses',
       editorGroup: null,
-      label: 'type-a',
-      tooltip: 'Maison d\' artisants (2×1, 18€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-a.png' },
+      label: 'type-p',
+      tooltip: 'Maison d\' artisants (2×2, 18€)',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-p.png' },
     },
     tags: ['suburban', 'building'],
     // Visible tier evolution for artisans — see HouseLevelPolicy.js/
     // socialCategoryCatalog.js for the gameplay tiers this mirrors. Each
     // entry reuses an existing, otherwise-unused Kenney suburban geometry —
     // see resolveBuildingMesh.js's resolveVisualBuildingId.
-    // All 3 variants are 2×1 like the base (type-a) — a mismatched footprint
-    // (e.g. type-f is 2×2) shifts the mesh's centering at evolution time,
-    // since footprint size drives the placement offset. Keep any future
-    // level variant assignment footprint-matched to its base house.
+    // Every house reserves the same 2×2 plot (see buildingFootprint.js) and its model is centred in it, so any
+    // model can serve any level whatever its own size.
     levelVariants: {
-      2: 'Kenney-Suburban-building-type-d',
-      3: 'Kenney-Suburban-building-type-e',
-      4: 'Kenney-Suburban-building-type-o',
+      2: 'Kenney-Suburban-building-type-r',
+      3: 'Kenney-Suburban-building-type-h',
+      4: 'Kenney-Suburban-building-type-a',
+      5: 'Kenney-Suburban-building-type-e',
+      6: 'Kenney-Suburban-building-type-n',
     },
   },
   // Maison — building-type-b — kept as its own entry (button: null), same reason as type-a above.
@@ -2438,7 +3583,7 @@ export const BUILDING_ASSETS = Object.freeze({
       sourceKey: null,
       aliases: [],
       kit: 'suburban',
-      buildingId: 'Kenney-Suburban-building-type-b',
+      buildingId: 'Kenney-Suburban-building-type-q',
     },
     transform: {
       rotationDeg: null,
@@ -2457,17 +3602,18 @@ export const BUILDING_ASSETS = Object.freeze({
     button: {
       group: 'houses',
       editorGroup: null,
-      label: 'type-b',
+      label: 'type-q',
       tooltip: 'Maison de commerçant (2×2, 34€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-b.png' },
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-q.png' },
     },
     tags: ['suburban', 'building'],
-    // Visible tier evolution for merchants — all 3 variants are 2×2 like the
-    // base (type-b); see the footprint-matching note on House-Red above.
+    // Visible tier evolution for merchants; the models sit in the house's 2×2 plot (see House-Red above).
     levelVariants: {
-      2: 'Kenney-Suburban-building-type-f',
-      3: 'Kenney-Suburban-building-type-g',
+      2: 'Kenney-Suburban-building-type-k',
+      3: 'Kenney-Suburban-building-type-b',
       4: 'Kenney-Suburban-building-type-m',
+      5: 'Kenney-Suburban-building-type-o',
+      6: 'Kenney-Suburban-building-type-t',
     },
   },
   // Maison — building-type-c — kept as its own entry (button: null), same reason as type-a above.
@@ -2506,7 +3652,7 @@ export const BUILDING_ASSETS = Object.freeze({
       sourceKey: null,
       aliases: [],
       kit: 'suburban',
-      buildingId: 'Kenney-Suburban-building-type-c',
+      buildingId: 'Kenney-Suburban-building-type-l',
     },
     transform: {
       rotationDeg: null,
@@ -2525,17 +3671,57 @@ export const BUILDING_ASSETS = Object.freeze({
     button: {
       group: 'houses',
       editorGroup: null,
-      label: 'type-c',
-      tooltip: 'Maison de Savant (2×1, 18€)',
-      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-c.png' },
+      label: 'type-l',
+      tooltip: 'Maison de Savant (2×2, 18€)',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-l.png' },
     },
     tags: ['suburban', 'building'],
-    // Visible tier evolution for scholars — all 3 variants are 2×1 like the
-    // base (type-c); see the footprint-matching note on House-Red above.
+    // Visible tier evolution for scholars; the models sit in the house's 2×2 plot (see House-Red above).
     levelVariants: {
-      2: 'Kenney-Suburban-building-type-h',
-      3: 'Kenney-Suburban-building-type-i',
-      4: 'Kenney-Suburban-building-type-j',
+      2: 'Kenney-Suburban-building-type-s',
+      3: 'Kenney-Suburban-building-type-j',
+      4: 'Kenney-Suburban-building-type-i',
+      5: 'Kenney-Suburban-building-type-d',
+      6: 'Kenney-Suburban-building-type-f',
+    },
+  },
+  // Maison du maire — les administrateurs de la ville. Elle porte les trois modèles de banlieue que les autres maisons n'utilisent pas (g, c, u);
+  // économie et empreinte sont celles de 'House-Mayor'.
+  'House-Mayor': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-building-type-g',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+      instanceable: true,
+    },
+    button: {
+      group: 'houses',
+      editorGroup: null,
+      label: 'type-g',
+      tooltip: 'Maison du maire (2×2, 10€)',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-suburban_20/Previews/building-type-g.png' },
+    },
+    tags: ['suburban', 'building'],
+    // Visible tier evolution for the administrators (three tiers, see socialCategoryCatalog.js).
+    levelVariants: {
+      2: 'Kenney-Suburban-building-type-c',
+      3: 'Kenney-Suburban-building-type-u',
     },
   },
   // Maison — building-type-d
@@ -3005,5 +4191,499 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['suburban', 'building'],
+  },
+  // Jardin — driveway-long (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-driveway-long': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-driveway-long',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — driveway-short (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-driveway-short': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-driveway-short',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — fence (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-fence': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-fence',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — fence-1x2 (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-fence-1x2': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-fence-1x2',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — fence-1x3 (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-fence-1x3': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-fence-1x3',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — fence-1x4 (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-fence-1x4': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-fence-1x4',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — fence-2x2 (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-fence-2x2': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-fence-2x2',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — fence-2x3 (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-fence-2x3': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-fence-2x3',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — fence-3x2 (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-fence-3x2': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-fence-3x2',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — fence-3x3 (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-fence-3x3': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-fence-3x3',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — fence-low (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-fence-low': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-fence-low',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — path-long (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-path-long': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-path-long',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — path-short (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-path-short': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-path-short',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — path-stones-long (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-path-stones-long': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-path-stones-long',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — path-stones-messy (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-path-stones-messy': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-path-stones-messy',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — path-stones-short (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-path-stones-short': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-path-stones-short',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — planter (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-planter': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-planter',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — tree-large (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-tree-large': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-tree-large',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
+  },
+  // Jardin — tree-small (kit suburbain — kept as its own entry, no gameplay role yet)
+  'Kenney-Suburban-tree-small': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'suburban',
+      buildingId: 'Kenney-Suburban-tree-small',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
+    tags: ['suburban', 'prop'],
   },
 });

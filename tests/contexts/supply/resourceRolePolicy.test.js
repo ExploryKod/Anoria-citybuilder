@@ -16,8 +16,8 @@ describe('ResourceRolePolicy', () => {
   });
 
   test('a market is a distributor with an unlimited range (debugging aid, 2026-09-11)', () => {
-    expect(hasResourceRole('Market-Stall', 'distributor', 'wheat')).toBe(true);
-    expect(getRangeForRole('Market-Stall', 'distributor')).toBe(Infinity);
+    expect(hasResourceRole('Market-Stall-Red', 'distributor', 'wheat')).toBe(true);
+    expect(getRangeForRole('Market-Stall-Red', 'distributor')).toBe(Infinity);
   });
 
   test('a windmill holds both a collector and a hub role, with no range', () => {
@@ -27,7 +27,7 @@ describe('ResourceRolePolicy', () => {
   });
 
   test('a house is a consumer', () => {
-    expect(hasResourceRole('House-Blue', 'consumer', 'fruit')).toBe(true);
+    expect(hasResourceRole('House-Blue', 'consumer', 'carrot')).toBe(true);
   });
 
   test('a building with no resourceRoles fact has none', () => {
@@ -49,7 +49,7 @@ describe('ResourceRolePolicy', () => {
     test('still aggregates food under the one shared totalKey — pottery does not get one', () => {
       const { categories, totalKey } = getResourceStockShape();
       expect(totalKey).toBe('food');
-      expect(categories).toEqual(expect.arrayContaining(['wheat', 'carrot', 'cabbage', 'fruit', 'game']));
+      expect(categories).toEqual(expect.arrayContaining(['wheat', 'carrot', 'cabbage']));
     });
   });
 });

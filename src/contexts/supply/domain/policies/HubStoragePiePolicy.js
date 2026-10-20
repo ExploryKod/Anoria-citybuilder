@@ -1,24 +1,71 @@
-/** Pie slice colors per commodity (dark = current stock). */
-export const HUB_STORAGE_PIE_COLORS = Object.freeze({
-  wood: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }),
-  furniture: Object.freeze({ dark: '#5D4037', pale: '#BCAAA4' }),
-  figs: Object.freeze({ dark: '#6A1B9A', pale: '#CE93D8' }),
-  wheat: Object.freeze({ dark: '#F9A825', pale: '#FFF59D' }),
-  cabbage: Object.freeze({ dark: '#388E3C', pale: '#A5D6A7' }),
-  carrot: Object.freeze({ dark: '#EF6C00', pale: '#FFCC80' }),
-  dattes: Object.freeze({ dark: '#795548', pale: '#D7CCC8' }),
-});
+import { getResourceCategoryColors } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { reconcileLots, lotOrigin } from './HubLotsPolicy.js';
 
 /**
+ * Pie slice colors for a product — declared once, in ResourceCategoryCatalog.
  * @param {string} productId
  */
 export function getHubStoragePieColors(productId) {
-  return (
-    HUB_STORAGE_PIE_COLORS[productId] ?? {
-      dark: '#546E7A',
-      pale: '#B0BEC5',
-    }
-  );
+  return getResourceCategoryColors(productId);
+}
+
+/**
+ * A tone of a good's colour, to tell apart the same good from different producers: index 0 is the colour
+ * itself, the next ones alternate lighter and darker (same hue, so it stays recognisably that good).
+ * @param {string} hex `#RRGGBB`
+ * @param {number} index
+ * @returns {string} `#RRGGBB`
+ */
+export function toneVariant(hex, index) {
+  const deltas = [0, 0.14, -0.12, 0.26, -0.22];
+  const delta = deltas[index % deltas.length];
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  let h = 0;
+  if (d !== 0) {
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+  const nl = Math.min(0.92, Math.max(0.12, l + delta));
+  const c = (1 - Math.abs(2 * nl - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = nl - c / 2;
+  const [r1, g1, b1] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return `#${[r1, g1, b1].map((v) => Math.round((v + m) * 255).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/**
+ * What a good in the hub is made of, by who delivered it: one part per producer INSTANCE (in lot-key
+ * order), each with its own tone of the good's colour, sized in degrees of the good's dark wedge.
+ * A lot key is a producer instance id (see HubLotsPolicy.js), never a catalog type — the caller
+ * resolves it to one (a type is all `buildingName` needs to say who it was) since this domain policy
+ * has no repository to do that lookup itself.
+ * @param {ReadonlyArray<[string, number]>} lots `[lotKey, amount]`
+ * @param {number} startAngle
+ * @param {number} capacity
+ * @param {string} baseColor
+ * @param {(producerId: string) => string | null} resolveProducerType
+ * @param {(producerId: string) => string | null} resolveProducerName
+ */
+function buildParts(lots, startAngle, capacity, baseColor, resolveProducerType, resolveProducerName) {
+  let cursor = startAngle;
+  return lots.map(([lotKey, lotAmount], index) => {
+    const angle = (lotAmount / capacity) * 360;
+    const { producerId, via } = lotOrigin(lotKey);
+    const producerType = producerId ? resolveProducerType(producerId) ?? '' : '';
+    // An outside partner (a trade city) is not a building: it has a name, not a type.
+    const producerName = producerId ? resolveProducerName(producerId) ?? '' : '';
+    const part = Object.freeze({ producerId, producerName, producerType, via, amount: lotAmount, startAngle: cursor, angle, color: toneVariant(baseColor, index) });
+    cursor += angle;
+    return part;
+  });
 }
 
 /**
@@ -34,8 +81,17 @@ export function getHubStoragePieColors(productId) {
  * @param {object} params
  * @param {ReadonlyArray<object>} params.lines enriched with emoji/label
  * @param {number} params.totalCapacity
+ * @param {{ amount: number, label: string } | null} [params.elsewhere] What the hub holds that this chart leaves out
+ *   (another storage view of the same hub, see `storageViews`): drawn as one grey slice, named by `label`, so the
+ *   free space stays what is really free.
+ * @param {(producerId: string) => string | null} [params.resolveProducerName] Lot key of an outside partner (a trade
+ *   city, `city:<id>`) → its name; null for a building's instance id.
+ * @param {(producerId: string) => string | null} [params.resolveProducerType] Producer instance id →
+ *   catalog type, for the origin breakdown under each good (see buildParts). Omitted shows every
+ *   lot as "Origine inconnue" rather than guessing — the same visible-not-silent rule as everywhere
+ *   else a name is missing (CatalogVocabulary.js's "…").
  */
-export function buildHubStoragePieSegments({ lines, totalCapacity }) {
+export function buildHubStoragePieSegments({ lines, totalCapacity, elsewhere = null, resolveProducerType = () => null, resolveProducerName = () => null }) {
   const capacity = Math.max(1, Math.floor(Number(totalCapacity) || 0));
   let cursor = 0;
   /** @type {object[]} */
@@ -48,12 +104,17 @@ export function buildHubStoragePieSegments({ lines, totalCapacity }) {
     const darkAngle = (amount / capacity) * 360;
     const startAngle = cursor;
     cursor += darkAngle;
+    const colors = getHubStoragePieColors(line.productId);
+    // Where this good came from: one part per producer type, told apart by tone.
+    const lots = Object.entries(reconcileLots(line.lots, amount)).sort(([a], [b]) => a.localeCompare(b));
+    const parts = buildParts(lots, startAngle, capacity, colors.dark, resolveProducerType, resolveProducerName);
 
     segments.push(
       Object.freeze({
         productId: line.productId,
-        emoji: line.emoji ?? '',
-        label: line.label ?? line.productId,
+        // A good the catalog does not name is shown as the "…" marker, never as its id or an invented icon.
+        emoji: line.emoji ?? '…',
+        label: line.label ?? '…',
         amount,
         maxCap,
         maxPercent: line.maxPercent ?? 100,
@@ -64,11 +125,37 @@ export function buildHubStoragePieSegments({ lines, totalCapacity }) {
         paleStartAngle: cursor,
         segmentAngle: darkAngle,
         endAngle: cursor,
-        colors: getHubStoragePieColors(line.productId),
+        colors,
+        parts,
         overMax: amount > maxCap,
         kind: 'product',
       })
     );
+  }
+
+  const elsewhereAmount = Math.max(0, Math.floor(Number(elsewhere?.amount) || 0));
+  if (elsewhereAmount > 0) {
+    const angle = (elsewhereAmount / capacity) * 360;
+    segments.push(
+      Object.freeze({
+        productId: '__elsewhere__',
+        emoji: '',
+        label: elsewhere.label,
+        amount: elsewhereAmount,
+        maxCap: 0,
+        remainingInbound: 0,
+        startAngle: cursor,
+        darkAngle: 0,
+        paleAngle: 0,
+        idleAngle: angle,
+        segmentAngle: angle,
+        endAngle: cursor + angle,
+        colors: { dark: '#b0bec5', pale: '#cfd8dc' },
+        overMax: false,
+        kind: 'elsewhere',
+      })
+    );
+    cursor += angle;
   }
 
   const freeAngle = Math.max(0, 360 - cursor);

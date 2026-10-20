@@ -2,7 +2,7 @@ import {
   WORLD_CITIES,
   WORLD_CITY_CONNECTIONS,
 } from '../../domain/catalogs/WorldCityCatalog.js';
-import { DEFAULT_HAMLET_ID } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { DEFAULT_HAMLET_SLUG } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { WORLD_KINGDOM } from '../../domain/catalogs/WorldMapCatalog.js';
 import { getWorldCityHexSite } from '../../domain/catalogs/WorldCityHexCatalog.js';
 import { buildHamletsMapView } from './buildHamletsMapView.js';
@@ -15,7 +15,7 @@ export async function buildWorldMapView() {
 
   /** Satellite hamlets around Anoria (castle = eraanurbs at centre, not duplicated). */
   const hamlets = hamletsView.hamlets
-    .filter((hamlet) => hamlet.id !== DEFAULT_HAMLET_ID)
+    .filter((hamlet) => hamlet.slug !== DEFAULT_HAMLET_SLUG)
     .map((hamlet) => ({
       id: hamlet.id,
       name: hamlet.name,

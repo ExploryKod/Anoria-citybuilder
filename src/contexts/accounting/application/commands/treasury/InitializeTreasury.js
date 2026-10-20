@@ -2,64 +2,35 @@ import { resolveStartingFunds } from '../../../domain/policies/TreasuryInitializ
 import { DEFAULT_INITIAL_FUNDS } from '../../../domain/catalogs/TreasuryCatalog.js';
 
 /**
- * Initialize treasury row and capital_funds journal entry if needed.
- *
- * @param {object} [options]
- * @param {boolean} [options.clearExisting=true] — false = ensure-only (GetTreasurySnapshot race-safe)
+ * Record the starting capital, the first line of the journal. The treasury is derived from it, so there is no other
+ * record to create. Recording it twice is harmless: the capital's business key refuses the second line.
  */
 export class InitializeTreasury {
   /**
-   * @param {import('../../../infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js').DexieTreasuryRepository} treasuryRepository
-   * @param {import('../../../application/ports/JournalRepository.js').JournalRepository} journalRepository
    * @param {{ execute: Function }} recordCapitalFundsIncome
-   * @param {number} [defaultInitialFunds] Falls back to the canonical
-   *   TreasuryCatalog default — callers going through createAccountingContext
-   *   always pass the resolved (env-aware) value explicitly.
+   * @param {number} defaultInitialFunds the resolved (env-aware) starting capital
+   * @param {{ hasAnyEntry: () => Promise<boolean> }} journal Says whether the journal already holds a line (or a year closing).
    */
-  constructor(
-    treasuryRepository,
-    journalRepository,
-    recordCapitalFundsIncome,
-    defaultInitialFunds = DEFAULT_INITIAL_FUNDS
-  ) {
-    this.treasuryRepository = treasuryRepository;
-    this.journalRepository = journalRepository;
+  constructor(recordCapitalFundsIncome, defaultInitialFunds = DEFAULT_INITIAL_FUNDS, journal) {
+    if (!journal?.hasAnyEntry) throw new Error('[treasury] InitializeTreasury needs the journal port (hasAnyEntry)');
     this.recordCapitalFundsIncome = recordCapitalFundsIncome;
     this.defaultInitialFunds = defaultInitialFunds;
+    this.journal = journal;
   }
 
   /**
+   * The capital is recorded only into an empty journal: once a purge has folded it into a year closing its business key
+   * is gone, and a second capital line would be a phantom gift closed again at every purge.
    * @param {number|null} [startingFunds]
-   * @param {{ clearExisting?: boolean }} [options]
-   * @returns {Promise<object>}
+   * @returns {Promise<{ recorded: boolean }>}
    */
-  async execute(startingFunds = null, { clearExisting = true } = {}) {
+  async execute(startingFunds = null) {
+    if (await this.journal.hasAnyEntry()) return { recorded: false, skipped: true, reason: 'journal_not_empty' };
     const funds = resolveStartingFunds(startingFunds, this.defaultInitialFunds);
-
-    if (!clearExisting) {
-      const existing = await this.treasuryRepository.getNormalizedBudgetRow();
-      if (existing) {
-        return existing;
-      }
-    } else {
-      await this.treasuryRepository.clearCurrentBudget();
-    }
-
-    const initialBudget = await this.treasuryRepository.createInitialBudgetRow(funds);
-
-    const existingEntries = await this.journalRepository.getJournalEntries();
-    const hasCapitalFunds = existingEntries.some(
-      (entry) => entry.type === 'capital_funds' && entry.turn === 0
-    );
-
-    if (!hasCapitalFunds) {
-      await this.recordCapitalFundsIncome.execute({
-        turn: 0,
-        amount: funds,
-        description: `Capital de départ: ${funds}€`,
-      });
-    }
-
-    return initialBudget;
+    return this.recordCapitalFundsIncome.execute({
+      turn: 0,
+      amount: funds,
+      description: `Capital de départ: ${funds}€`,
+    });
   }
 }

@@ -30,19 +30,12 @@ export function filterLedgerEntriesByTypes(entries, types) {
 }
 
 /**
- * Chronological order within a month (game turn, then persisted id).
- * carry_forward stays first when the month/year opens.
+ * Chronological order within a month (game turn, then persisted id, then insertion order).
  *
  * @param {object} a
  * @param {object} b
  */
 export function compareJournalEntriesInMonth(a, b) {
-  const aCarry = a.type === 'carry_forward' ? 0 : 1;
-  const bCarry = b.type === 'carry_forward' ? 0 : 1;
-  if (aCarry !== bCarry) {
-    return aCarry - bCarry;
-  }
-
   const turnA = a.turn ?? 0;
   const turnB = b.turn ?? 0;
   if (turnA !== turnB) {
@@ -55,7 +48,8 @@ export function compareJournalEntriesInMonth(a, b) {
     return idA - idB;
   }
 
-  return new Date(a.date).getTime() - new Date(b.date).getTime();
+  // Neither is persisted yet: the insertion order (a stable sort) decides.
+  return 0;
 }
 
 /**

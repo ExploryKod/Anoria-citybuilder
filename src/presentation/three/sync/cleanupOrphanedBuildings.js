@@ -1,3 +1,4 @@
+import { isRoadType, ROAD_RUNTIME_MARKER } from '../../../shared/building-catalog/roadQueries.js';
 /**
  * Remove Dexie building rows that no longer match city.tiles / scene meshes.
  */
@@ -30,12 +31,9 @@ export function findOrphanedBuildingIds(rows, { city, buildings }) {
       const buildingType = buildingInScene?.userData?.type;
       const meshInstanceId = buildingInScene?.userData?.instanceId;
 
-      const isRoad =
-        house.type === 'roads'
-        || house.type === 'Road'
-        || (house.type && house.type.startsWith('StonePath-'));
+      const isRoad = isRoadType(house.type);
       const typeMatches = isRoad
-        ? buildingType === 'roads' || buildingType === house.type
+        ? buildingType === ROAD_RUNTIME_MARKER || buildingType === house.type
         : buildingType === house.type;
 
       if (!buildingInScene || (!typeMatches && meshInstanceId !== instanceId)) {

@@ -13,7 +13,6 @@ import {
   BUILDING_SECTOR_MAP,
   BUILDING_EMPLOYEE_NEEDS,
 } from '../contexts/employment/domain/catalogs/EmploymentSectorCatalog.js';
-import { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
 import {
   MIN_WORKING_AGE,
   RETIREMENT_AGE,
@@ -45,13 +44,6 @@ export function getLegacyCitizensConfigSection() {
     minWorkingAge: MIN_WORKING_AGE,
     retirementAge: RETIREMENT_AGE,
     defaultHouseholdSize: DEFAULT_HOUSEHOLD_SIZE,
-  };
-}
-
-/** @param {number} [foodDistributionDistance] */
-export function getLegacySimulationGameplaySection(foodDistributionDistance = DEFAULT_FOOD_DISTRIBUTION_DISTANCE) {
-  return {
-    foodDistributionDistance,
   };
 }
 

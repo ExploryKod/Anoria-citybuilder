@@ -1,9 +1,11 @@
 import db from '../../../../../../core/persistence/dexie/db.js';
 import { JournalRepository } from '../../../../application/ports/JournalRepository.js';
+import { LegsFold } from '../../../../domain/policies/LegsFold.js';
 import {
   buildMonthlyFinancialSummary,
   buildYearlyFinancialSummary,
-  computeJournalCurrentBalance,
+  filterCityAccountEntries,
+  filterJournalEntriesByHamlet,
   filterAndSortJournalEntries,
 } from './journalAggregations.js';
 
@@ -26,25 +28,27 @@ export class DexieJournalRepository extends JournalRepository {
   }
 
   /** @returns {Promise<Array<object>>} */
-  async getJournalEntries(maxAge = null) {
+  async getJournalEntries() {
     const entries = await this.db.journal.toArray();
-    return filterAndSortJournalEntries(entries, maxAge);
+    return filterAndSortJournalEntries(entries);
   }
 
-  /** @returns {Promise<Array<object>>} */
-  async getYearlyFinancialSummary() {
-    const entries = await this.getJournalEntries();
+  /** Folds the whole table afresh (no cache: the session repository is the one the game runs on). @returns {Promise<LegsFold>} */
+  async getLegsFold() {
+    const fold = new LegsFold();
+    for (const entry of await this.getJournalEntries()) fold.add(entry);
+    return fold;
+  }
+
+  /**
+   * @param {{ hamletId?: string|null }} [options] — only this hamlet's entries; null = every hamlet
+   * @returns {Promise<Array<object>>}
+   */
+  async getYearlyFinancialSummary({ hamletId = null } = {}) {
+    const entries = filterCityAccountEntries(filterJournalEntriesByHamlet(await this.getJournalEntries(), hamletId));
     const monthlyData = buildMonthlyFinancialSummary(entries, (turn) =>
       this.gameTimePort.getTimeInfo(turn)
     );
     return buildYearlyFinancialSummary(monthlyData);
-  }
-
-  /** @returns {Promise<number>} */
-  async getCurrentBalance() {
-    const entries = await this.getJournalEntries();
-    return computeJournalCurrentBalance(entries, (turn) =>
-      this.gameTimePort.getTimeInfo(turn)
-    );
   }
 }

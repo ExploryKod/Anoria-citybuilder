@@ -1,5 +1,6 @@
 import { findBuildingsWithRoleInRange } from '../../../domain/policies/ResourceRangePolicy.js';
-import { getRangeForRole } from '../../../domain/policies/ResourceRolePolicy.js';
+import { requireRangeForRole } from '../../../domain/policies/ResourceRolePolicy.js';
+import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Command: flag each target-role building (houses/'consumer' by default) as
@@ -19,13 +20,12 @@ export class UpdateConsumerDistributorReach {
 
   /**
    * @param {object} [params]
-   * @param {number} [params.maxDistance=5] Fallback when a source's own catalog range is undeclared.
    * @param {import('../../../domain/policies/ResourceRolePolicy.js').ResourceRoleKind} [params.sourceRole='distributor']
    * @param {import('../../../domain/policies/ResourceRolePolicy.js').ResourceRoleKind} [params.targetRole='consumer']
    * @param {string} [params.tooFarFlag='distributorTooFar']
    * @param {string | string[]} [params.category] Scopes both the source and
    *   target search to this category — required once more than one
-   *   'distributor'/'consumer' need exists (e.g. food vs. a chapel's faith
+   *   'distributor'/'consumer' need exists (e.g. food vs. a tank's water
    *   service), so this flag doesn't conflate "too far for food" with "too
    *   far for an unrelated service". Omitted keeps the old unscoped
    *   behavior (every source/target holding the role, regardless of need).
@@ -37,7 +37,6 @@ export class UpdateConsumerDistributorReach {
    * }>}
    */
   async execute({
-    maxDistance = 5,
     sourceRole = 'distributor',
     targetRole = 'consumer',
     tooFarFlag = 'distributorTooFar',
@@ -60,7 +59,7 @@ export class UpdateConsumerDistributorReach {
         {
           role: sourceRole,
           category,
-          maxDistance: (source) => getRangeForRole(source.type, sourceRole) ?? maxDistance,
+          maxDistance: (source) => requireRangeForRole(source.type, sourceRole, Array.isArray(category) ? category[0] : category),
         }
       );
 
@@ -73,7 +72,7 @@ export class UpdateConsumerDistributorReach {
 
     return {
       houses: tooFar + inRange,
-      marketsWithRoad: sources.filter((s) => (s.roads ?? s.roadCount ?? 0) > 0).length,
+      marketsWithRoad: sources.filter((s) => isRoadNeedMet(s.type, s.roads ?? s.roadCount ?? 0)).length,
       tooFar,
       inRange,
     };

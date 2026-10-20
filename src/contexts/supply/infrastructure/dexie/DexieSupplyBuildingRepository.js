@@ -7,19 +7,15 @@ import {
   canonicalizeHouseRecord,
   instanceIdFromHouseRow,
 } from '../../../../shared/building-identity/index.js';
+import { getNaturalResourceKind } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import {
-  getResourceRoles,
   hasResourceRole,
   getAllCategoriesForRole,
+  getMaxStockForBuilding,
 } from '../../domain/policies/ResourceRolePolicy.js';
 
 /** Supply port adapter — accès direct Dexie (table `houses`). */
 export class DexieSupplyBuildingRepository {
-  #defaultMaxStock(type) {
-    const hubEntry = getResourceRoles(type).find((entry) => entry.role === 'hub');
-    return hubEntry?.maxStock ?? 500;
-  }
-
   async #activeRows() {
     const rows = await db.houses.toArray();
     return rows.filter(isActiveHamletRow);
@@ -39,13 +35,13 @@ export class DexieSupplyBuildingRepository {
       y: house.y ?? null,
       roadCount: house.roads ?? 0,
       stocks: house.stocks || {},
-      maxStock: house.maxStock ?? this.#defaultMaxStock(type),
+      // The catalog is the only source of a stock ceiling — a stored row value never overrides it.
+      maxStock: getMaxStockForBuilding(type),
       worker: employees.worker ?? 0,
       workerNeed: employees.worker_need ?? 0,
       neighbors: house.neighbors || [],
       lastProductionYear: house.lastProductionYear ?? null,
       lastConsumptionMonth: house.lastConsumptionMonth ?? null,
-      lastSubsistenceMonth: house.lastSubsistenceMonth ?? null,
       lastConsumption: house.lastConsumption ?? null,
       pop: house.pop ?? 0,
       level: house.level ?? 1,
@@ -63,7 +59,8 @@ export class DexieSupplyBuildingRepository {
       y: house.y ?? null,
       roadCount: house.roads ?? 0,
       stocks: house.stocks || {},
-      maxStock: house.maxStock ?? this.#defaultMaxStock(type),
+      // The catalog is the only source of a stock ceiling — a stored row value never overrides it.
+      maxStock: getMaxStockForBuilding(type),
       neighbors: house.neighbors || [],
       pop: house.pop ?? 0,
       isBuying: house.isBuying === true,
@@ -72,6 +69,10 @@ export class DexieSupplyBuildingRepository {
       isCollecting: house.isCollecting === true,
       collectedByHub: house.collectedByHub === true,
       lastCollection: house.lastCollection ?? null,
+      lastTransaction: house.lastTransaction ?? null,
+      unmetDemand: house.unmetDemand ?? 0,
+      lastFailedSale: house.lastFailedSale ?? null,
+      activityShortfall: house.activityShortfall ?? null,
       lastImport: house.lastImport ?? null,
       lastImportDetails: house.lastImportDetails ?? null,
       salesToDistributor: house.salesToDistributor || [],
@@ -80,6 +81,7 @@ export class DexieSupplyBuildingRepository {
       commercializeEnabled: house.commercializeEnabled !== false,
       supplyHubId: house.supplyHubId ?? null,
       linkedDistributors: house.linkedDistributors ?? [],
+      cycleState: house.cycleState ?? null,
     });
   }
 
@@ -120,8 +122,18 @@ export class DexieSupplyBuildingRepository {
     return rows.map((row) => this.#toView(row));
   }
 
+  /** The raw house rows of the active hamlet, for the traceability log of building states. */
+  async listAllBuildingRows() {
+    return this.#activeRows();
+  }
+
+  /**
+   * A write names only the goods it moved: whatever else the row holds (the market's food while goods
+   * move, and the reverse) is kept as it was.
+   */
   async saveStocks(buildingId, stocks) {
-    await this.#putFields(buildingId, { stocks: createSupplyStock(stocks) });
+    const row = await db.houses.get(buildingId);
+    await this.#putFields(buildingId, { stocks: createSupplyStock({ ...(row?.stocks ?? {}), ...stocks }) });
   }
 
   async saveHubLastCollection(hubId, lastCollection) {
@@ -150,7 +162,6 @@ export class DexieSupplyBuildingRepository {
         quantity,
         count: 1,
         hubId,
-        date: new Date().toISOString(),
       });
     }
 
@@ -190,10 +201,14 @@ export class DexieSupplyBuildingRepository {
     await this.#putFields(buildingId, flags);
   }
 
-  async saveDistributorHubId(distributorId, hubId) {
-    await this.#putFields(distributorId, {
-      supplyHubId: hubId || null,
-    });
+  /**
+   * @param {string} distributorId
+   * @param {string | null} hubId
+   * @param {string} linkField The row field the catalog names for this link (`hubLink.sourceLinkField`).
+   */
+  async saveDistributorHubId(distributorId, hubId, linkField) {
+    if (!linkField) throw new Error('[saveDistributorHubId] the link field (hubLink.sourceLinkField) is required');
+    await this.#putFields(distributorId, { [linkField]: hubId || null });
   }
 
   async saveHubLinkedDistributors(hubId, linkedDistributors) {
@@ -236,6 +251,13 @@ export class DexieSupplyBuildingRepository {
     return rows.filter((row) => (row.category || '') === 'nature');
   }
 
+  async listNaturalResources() {
+    const rows = await this.#activeRows();
+    return rows
+      .filter((row) => getNaturalResourceKind(row.type) && row.x != null && row.y != null)
+      .map((row) => ({ id: instanceIdFromHouseRow(row), type: row.type, x: row.x, y: row.y }));
+  }
+
   async listAllBuildingRows() {
     return this.#activeRows();
   }
@@ -261,7 +283,6 @@ export class DexieSupplyBuildingRepository {
       productType: sale.productType,
       quantity: sale.quantity,
       distributorId: sale.distributorId,
-      date: new Date().toISOString(),
     });
 
     const filteredSales = salesToDistributor.filter((entry) => entry.year === currentYear);

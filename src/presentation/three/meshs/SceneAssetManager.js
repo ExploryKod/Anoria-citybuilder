@@ -33,6 +33,18 @@ class SceneAssetManager {
         return this.#getSharedTerrainMaterials();
     }
 
+    /**
+     * Everything this pool keeps alive for the whole page: a hamlet's scene must never free these.
+     * Lazily created parts (terrain materials) are read at call time, so call it when disposing.
+     */
+    getSharedResources() {
+        const shared = [this.#geometry, ...this.#sharedSpriteMaterials.values(), ...Object.values(textures)];
+        if (this.#sharedTerrainMaterials) {
+            for (const material of Object.values(this.#sharedTerrainMaterials)) shared.push(material);
+        }
+        return shared;
+    }
+
     changeMeshColor(mesh, color) {
 
         if(!Object.hasOwn(mesh, 'isObject3D')) {
@@ -134,7 +146,11 @@ class SceneAssetManager {
         return mesh;
     }
 
-    setSprite(texture = textures['no-roads'], name) {
+    setSprite(texture, name) {
+        // No default texture: a missing one used to be drawn as the "no road" icon, on the wrong building.
+        if (!texture) {
+            throw new Error(`[SceneAssetManager] no texture for the status sprite "${name}"`);
+        }
         // Use shared sprite materials to avoid texture unit limit
         // Create a key based on texture UUID to identify unique materials
         const textureKey = texture.uuid || 'default';
@@ -168,18 +184,17 @@ class SceneAssetManager {
         // If background color is specified, this is a farm season sprite
         // Remove ALL existing farm sprites to prevent overlapping between seasons
         if (backgroundColor !== null) {
-            const farmSpriteNames = ['grow-food', 'harvest', 'sell-food', 'no-work',
-                                     'grow-food-bg', 'harvest-bg', 'sell-food-bg', 'no-work-bg'];
+            const farmSpriteNames = ['grow-food', 'harvest', 'sell-food', 'fallow', 'no-work',
+                                     'grow-food-bg', 'harvest-bg', 'sell-food-bg', 'fallow-bg', 'no-work-bg'];
             farmSpriteNames.forEach(spriteName => {
                 this.removeStatusSprite(mesh, spriteName);
             });
         }
-        
-        // Also clean up farm sprites if this is a farm winter sprite (no-food with red color)
-        // or a no-work sprite (farm has no employees)
-        if ((name === 'no-food' && color === 0xff0000) || name === 'no-work') {
-            const farmSpriteNames = ['grow-food', 'harvest', 'sell-food', 'no-work',
-                                     'grow-food-bg', 'harvest-bg', 'sell-food-bg', 'no-work-bg'];
+
+        // Also clean up farm sprites if this is a no-work sprite (farm has no employees)
+        if (name === 'no-work') {
+            const farmSpriteNames = ['grow-food', 'harvest', 'sell-food', 'fallow', 'no-work',
+                                     'grow-food-bg', 'harvest-bg', 'sell-food-bg', 'fallow-bg', 'no-work-bg'];
             farmSpriteNames.forEach(spriteName => {
                 this.removeStatusSprite(mesh, spriteName);
             });
@@ -322,10 +337,6 @@ class SceneAssetManager {
 
     setNoRoadSprite(mesh, position, visible = false) {
         this.setStatusSprite(mesh, textures['no-roads'], 'no-road', {x: 0.6, y: 0.6, z: 1}, position, visible);
-    }
-
-    setNoFoodSprite(mesh, position, visible = false) {
-        this.setStatusSprite(mesh, textures['nofood'], 'no-food', {x: 0.6, y: 0.6, z: 1}, position, visible);
     }
 }
 

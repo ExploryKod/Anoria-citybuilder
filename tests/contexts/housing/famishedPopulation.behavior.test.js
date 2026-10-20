@@ -5,7 +5,6 @@
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createHousingBuildingSnapshot } from '../../../src/contexts/housing/domain/HousingBuildingSnapshot.js';
 import {
-  fedPopulationAtHouse,
   famishedPopulationAtHouse,
   computeCityFamishedPopulation,
 } from '../../../src/contexts/housing/domain/policies/FamishedPopulationPolicy.js';
@@ -37,30 +36,13 @@ function residential(id, type, extras = {}) {
 
 describe('Housing — famished population', () => {
   describe('FamishedPopulationPolicy', () => {
-    test('fed population uses edible category baskets', () => {
-      expect(fedPopulationAtHouse(6, { fruit: 2, game: 1, wheat: 0 })).toBe(3);
-      expect(famishedPopulationAtHouse(6, { fruit: 2, game: 1 })).toBe(3);
+    test('the famished are the unfed of the last consumption record (Régime parity)', () => {
+      expect(famishedPopulationAtHouse(6, { totalUnfed: 3 })).toBe(3);
+      expect(famishedPopulationAtHouse(6, { totalUnfed: 9 })).toBe(6);
     });
 
-    test('no famished when pantry covers pop (fallback without consumption)', () => {
-      expect(famishedPopulationAtHouse(3, { food: 5 })).toBe(0);
-    });
-
-    test('prefers lastConsumption.totalUnfed over pantry (Régime parity)', () => {
-      expect(
-        famishedPopulationAtHouse(
-          6,
-          { food: 6, wheat: 0, fruit: 0, game: 0 },
-          { totalUnfed: 3 },
-        ),
-      ).toBe(3);
-    });
-
-    test('stale stocks.food does not hide empty category shelves', () => {
-      // Categories empty → fallback may still use food; with lastConsumption it is clear
-      expect(
-        famishedPopulationAtHouse(6, { food: 10, wheat: 0, fruit: 0, game: 0 }, { totalUnfed: 3 }),
-      ).toBe(3);
+    test('a house with no consumption record is not counted famished, whatever its pantry holds', () => {
+      expect(famishedPopulationAtHouse(6, null)).toBe(0);
     });
 
     test('computeCityFamishedPopulation aggregates lastConsumption', () => {
@@ -101,6 +83,8 @@ describe('Housing — famished population', () => {
         totalPopulation: 3,
         fedPopulation: 3,
         famishedPopulation: 0,
+        disettePopulation: 0,
+        penuriePopulation: 0,
       });
     });
 
@@ -109,7 +93,7 @@ describe('Housing — famished population', () => {
         residential('House-Red-1', 'House-Red', {
           pop: 6,
           level: 2,
-          stocks: { food: 0, wheat: 0, carrot: 0, cabbage: 0, fruit: 0, game: 0 },
+          stocks: { food: 0, wheat: 0, carrot: 0, cabbage: 0 },
           lastConsumption: { month: 5, totalUnfed: 3 },
         }),
       ]);
@@ -119,7 +103,7 @@ describe('Housing — famished population', () => {
       expect(result.famishedPopulation).toBe(3);
     });
 
-    test('pantry fallback when no consumption record', async () => {
+    test('houses with no consumption record are not counted famished', async () => {
       repo = new InMemoryFamishedRepository([
         residential('House-Blue-1-1', 'House-Blue', {
           pop: 6,
@@ -133,7 +117,7 @@ describe('Housing — famished population', () => {
       query = new GetFamishedPopulation(repo);
 
       const result = await query.execute();
-      expect(result.famishedPopulation).toBe(5);
+      expect(result.famishedPopulation).toBe(0);
     });
 
     test('returns zeros when no residential houses', async () => {
@@ -143,6 +127,8 @@ describe('Housing — famished population', () => {
         totalPopulation: 0,
         fedPopulation: 0,
         famishedPopulation: 0,
+        disettePopulation: 0,
+        penuriePopulation: 0,
       });
     });
   });

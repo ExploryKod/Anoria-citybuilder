@@ -43,11 +43,10 @@ jest.unstable_mockModule('../../src/composition/hudPopulationAggregates.js', () 
         totalPop: 10,
         popByGroup: { artisans: 6, merchants: 4, scholars: 0 },
         famishedPopulation: 2,
+        disettePopulation: 1,
+        penuriePopulation: 1,
+        hungerRisk: { disette: 0, penurie: 2 },
         employment: {
-          activeCitizenCount: 4,
-          elitePool: 1,
-          civilServantCount: 0,
-          activePopulationCount: 5,
           unemployed: 3,
           unemploymentPercentage: 30,
           lack: 1,
@@ -67,11 +66,10 @@ jest.unstable_mockModule('../../src/composition/hudPopulationAggregates.js', () 
       totalPop: 4,
       popByGroup: { artisans: 3, merchants: 1, scholars: 0 },
       famishedPopulation: 1,
+      disettePopulation: 0,
+      penuriePopulation: 1,
+      hungerRisk: { disette: 1, penurie: 0 },
       employment: {
-        activeCitizenCount: 2,
-        elitePool: 0,
-        civilServantCount: 0,
-        activePopulationCount: 2,
         unemployed: 1,
         unemploymentPercentage: 25,
         lack: 0,
@@ -111,7 +109,7 @@ const { syncSessionHud } = await import('../../src/composition/syncSessionHud.js
 
 describe('syncSessionHud', () => {
   test('pop rail uses country totals with active hamlet breakdown', async () => {
-    const updatePopulationBreakdown = jest.fn();
+    const updatePopulationTotals = jest.fn();
     const updateFamishedPopulation = jest.fn();
     const updateGroupHud = jest.fn();
     const updateResourcesHud = jest.fn();
@@ -123,34 +121,22 @@ describe('syncSessionHud', () => {
         updateFamishedPopulation,
         updateDeaths: () => {},
         updateFunds: () => {},
-        updatePopulationBreakdown,
+        updatePopulationTotals,
         updateGroupHud,
         updateResourcesHud,
       },
       includeEmployment: true,
     });
 
-    expect(updateFamishedPopulation).toHaveBeenCalledWith(2, 1);
-    expect(updatePopulationBreakdown).toHaveBeenCalledWith(
-      10,
-      4,
-      1,
-      0,
-      5,
-      {
-        totalPop: 4,
-        activeCitizenCount: 2,
-        elitePool: 0,
-        civilServantCount: 0,
-        activePopulationCount: 2,
-      }
-    );
+    expect(updateFamishedPopulation).toHaveBeenCalledWith({ disette: 1, penurie: 1 }, { disette: 0, penurie: 1 });
+    // The workers' head figure is the sum of the per-class worker rows (6 + 4 + 0 for the country, 3 + 1 + 0 for the hamlet).
+    expect(updatePopulationTotals).toHaveBeenCalledWith(10, 10, { totalPop: 4, workersCount: 4 });
     expect(updateGroupHud).toHaveBeenCalledWith(
       expect.objectContaining({
         popCountry: { artisans: 6, merchants: 4, scholars: 0 },
         popHamlet: { artisans: 3, merchants: 1, scholars: 0 },
-        workersCountry: { artisans: 6, merchants: 4, scholars: 0 },
-        workersHamlet: { artisans: 3, merchants: 1, scholars: 0 },
+        workersCountry: { administrators: 0, artisans: 6, merchants: 4, scholars: 0 },
+        workersHamlet: { administrators: 0, artisans: 3, merchants: 1, scholars: 0 },
         laborCountry: { unemployed: 3, unemploymentPercentage: 30, lack: 1 },
         laborHamlet: { unemployed: 1, unemploymentPercentage: 25, lack: 0 },
       })

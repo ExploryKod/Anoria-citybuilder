@@ -10,70 +10,71 @@
     <meta name="keywords" content="city builder, jeu de construction, simulation, ville, 3D">
     <meta name="author" content="Eraanurbs">
 
-    <link rel="stylesheet" href="./src/presentation/dom/styles/main.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/btn.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/tooltip.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/tutorial.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/objectives.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/news-event-modal.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/parameters.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/legends.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/hud.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/hud-shell-menus.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/cheat-code-prompt.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/toolbar-panel.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/editor-mode.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/global.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loader-modal.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-controls.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/mobile-compact-toolbar.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/build-tool-hover-preview.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/editor-toolbar.css">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/placement-rotation-hud.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/main.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/btn.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/tooltip.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/tutorial.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/objectives.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/news-event-modal.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/shelf-life.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/parameters.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/legends.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/hud.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/hud-shell-menus.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/cheat-code-prompt.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/toolbar-panel.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/editor-mode.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/global.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/loader-modal.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/mobile-controls.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/compact-toolbar.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/hamlet-switcher.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/supply-traceability-log.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/build-tool-hover-preview.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/editor-toolbar.css">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/placement-rotation-hud.css">
     
     <!-- OPTIMIZATION: Load non-critical modal CSS asynchronously using media="print" trick -->
     <!-- These modals are not visible on initial load, so they can load non-blocking -->
     <!-- This saves ~140ms of render blocking time -->
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loans-panel.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel-content.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel-content.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/balance-sheet.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/city-map.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/journal.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/food-traceability.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/finances-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/report-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/work-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/storage-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/archives-section.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel-flat.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="./src/presentation/dom/styles/multiplayer.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/loans-panel.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/city-map.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/journal.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/supply-traceability.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/administrator-panel.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/finances-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/report-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/work-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/storage-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/clients-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/trade-map.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/health-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/archives-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/commerce-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/administrator-panel-flat.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/modals/taxes-section.css" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="/src/presentation/dom/styles/multiplayer.css" media="print" onload="this.media='all'">
+    <!-- Last of the game's sheets (the order of the links is the order of the cascade): the phone-portrait rules must win over every sheet above -->
+    <link rel="stylesheet" href="/src/presentation/dom/styles/game-mobile-portrait.css">
     <noscript>
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/loans-panel.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/bilan-panel-content.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/compte-de-resultat-panel-content.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/balance-sheet.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/city-map.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/journal.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/food-traceability.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/finances-section.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/report-section.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/work-section.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/storage-section.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/trade-map.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/health-section.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/archives-section.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/news-event-modal.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/modals/administrator-panel-flat.css">
-        <link rel="stylesheet" href="./src/presentation/dom/styles/multiplayer.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/loans-panel.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/city-map.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/journal.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/supply-traceability.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/administrator-panel.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/finances-section.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/report-section.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/work-section.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/storage-section.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/clients-section.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/trade-map.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/health-section.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/archives-section.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/commerce-section.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/news-event-modal.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/administrator-panel-flat.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/modals/taxes-section.css">
+        <link rel="stylesheet" href="/src/presentation/dom/styles/multiplayer.css">
     </noscript>
 
     <!-- ios support -->
@@ -94,6 +95,7 @@
             <div class="game-loader__track">
                 <span class="game-loader__spinner" aria-hidden="true"></span>
             </div>
+            <p class="game-loader__step" id="game-loader-step"></p>
             <span class="sr-only">Chargement</span>
         </div>
 
@@ -178,21 +180,29 @@
                     <button type="button" role="tab" id="tab-foyer" data-tab="foyer" aria-controls="panel-foyer" aria-selected="true" tabindex="0">🏠 Bâtiment</button>
                     <button type="button" role="tab" id="tab-diet" data-tab="diet" aria-controls="panel-diet" aria-selected="false" tabindex="-1" hidden>🍽️ Régime</button>
                     <button type="button" role="tab" id="tab-stocks" data-tab="stocks" aria-controls="panel-stocks" aria-selected="false" tabindex="-1" hidden>📦 Stocks</button>
+                    <button type="button" role="tab" id="tab-shelfLife" data-tab="shelfLife" aria-controls="panel-shelfLife" aria-selected="false" tabindex="-1" hidden>⏳ Durée de vie</button>
+                    <button type="button" role="tab" id="tab-activity" data-tab="activity" aria-controls="panel-activity" aria-selected="false" tabindex="-1" hidden>🛠️ Activité</button>
                     <button type="button" role="tab" id="tab-trade" data-tab="trade" aria-controls="panel-trade" aria-selected="false" tabindex="-1" hidden>💰 Ventes</button>
                     <button type="button" role="tab" id="tab-staff" data-tab="staff" aria-controls="panel-staff" aria-selected="false" tabindex="-1" hidden>👷 Personnel</button>
                     <button type="button" role="tab" id="tab-services" data-tab="services" aria-controls="panel-services" aria-selected="false" tabindex="-1" hidden>🔧 Services</button>
+                    <button type="button" role="tab" id="tab-clients" data-tab="clients" aria-controls="panel-clients" aria-selected="false" tabindex="-1" hidden>🤝 Clients</button>
                     <button type="button" role="tab" id="tab-neighbors" data-tab="neighbors" aria-controls="panel-neighbors" aria-selected="false" tabindex="-1" hidden>🏘️ Voisins</button>
                     <button type="button" role="tab" id="tab-messages" data-tab="messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1" hidden>💬 Messages</button>
+                    <button type="button" role="tab" id="tab-finance" data-tab="finance" aria-controls="panel-finance" aria-selected="false" tabindex="-1" hidden>💰 Finances</button>
                 </div>
                 <div class="info-building__body">
                     <div id="panel-foyer" role="tabpanel" class="info-building__tabpanel is-active" aria-labelledby="tab-foyer" tabindex="0"></div>
                     <div id="panel-diet" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-diet" tabindex="0" hidden></div>
                     <div id="panel-stocks" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-stocks" tabindex="0" hidden></div>
+                    <div id="panel-shelfLife" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-shelfLife" tabindex="0" hidden></div>
+                    <div id="panel-activity" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-activity" tabindex="0" hidden></div>
                     <div id="panel-trade" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-trade" tabindex="0" hidden></div>
                     <div id="panel-staff" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-staff" tabindex="0" hidden></div>
                     <div id="panel-services" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-services" tabindex="0" hidden></div>
+                    <div id="panel-clients" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-clients" tabindex="0" hidden></div>
                     <div id="panel-neighbors" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-neighbors" tabindex="0" hidden></div>
                     <div id="panel-messages" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-messages" tabindex="0" hidden></div>
+                    <div id="panel-finance" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-finance" tabindex="0" hidden></div>
                 </div>
             </div>
         </div>
@@ -228,6 +238,12 @@
                                     <path d="m12 12 4 10 1.7-4.3L22 16Z"/>
                                 </svg>
                             </button>
+                            <button type="button" id="range-btn" data-toolid="show-range" class="toolbar-btn" title="Portée" aria-label="Portée" tabindex="-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route">
+                                    <circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
+                                    <circle cx="18" cy="5" r="3"/>
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -240,35 +256,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house-plus-icon lucide-house-plus"><path d="M12.35 21H5a2 2 0 0 1-2-2v-9a2 2 0 0 1 .71-1.53l7-6a2 2 0 0 1 2.58 0l7 6A2 2 0 0 1 21 10v2.35"/><path d="M14.8 12.4A1 1 0 0 0 14 12h-4a1 1 0 0 0-1 1v8"/><path d="M15 18h6"/><path d="M18 15v6"/>
                         </svg>
                     </button>
-                    <button type="button" id="palace-btn" class="toolbar-btn" data-group="palaces" title="Palais" aria-label="Palais" hidden>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-castle-icon lucide-castle"><path d="M10 5V3"/><path d="M14 5V3"/><path d="M15 21v-3a3 3 0 0 0-6 0v3"/><path d="M18 3v8"/><path d="M18 5H6"/><path d="M22 11H2"/><path d="M22 9v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9"/><path d="M6 3v8"/></svg>
-                    </button>
                   
-                </div>
-            </div>
-        </div>
-
-        <div class="toolbar__container">
-            <div class="toolbar__sub-container">
-                <div class="toolbar__label">Agriculture</div>
-                <div class="toolbar__buttons">
-                    <button type="button" id="farm-btn" class="toolbar-btn" data-group="farms" title="Agriculture" aria-label="Agriculture">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
-                            <path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                            <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                            <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                            <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
-                            <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                            <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                            <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                        </svg>
-                    </button>
-                    <button type="button" id="industry-btn" data-toolid="industry" data-group="industry" class="toolbar-btn" title="Entrepôts et stockage" aria-label="Entrepôts et stockage">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                             stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-warehouse">
-                            <path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z"/>
-                            <path d="M6 18h12"/><path d="M6 14h12"/><rect width="12" height="12" x="6" y="10"/></svg>
-                    </button>
                 </div>
             </div>
         </div>
@@ -292,13 +280,16 @@
 
                 <div class="toolbar__container">
                     <div class="toolbar__sub-container">
-                        <div class="toolbar__label">Commerce</div>
+                        <div class="toolbar__label">Métiers</div>
                         <div class="toolbar__buttons">
-                            <button type="button" id="market-btn" class="toolbar-btn" data-group="markets" title="Commerce">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/>
-                                </svg>
+                            <!-- One pill per social class: what its houses staff, from the catalog (see toolbarGroupOf). The titles are set at boot from the house names. -->
+                            <button type="button" id="artisans-btn" class="toolbar-btn" data-group="artisans" data-social-group="artisans" title="Artisans">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hammer"><path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9"/><path d="m18 15 4-4"/><path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/></svg>
                             </button>
-                            <button type="button" id="public-btn" class="toolbar-btn" data-group="public" title="Services publics">
+                            <button type="button" id="merchants-btn" class="toolbar-btn" data-group="merchants" data-social-group="merchants" title="Commerçants">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-store"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></svg>
+                            </button>
+                            <button type="button" id="scholars-btn" class="toolbar-btn" data-group="scholars" data-social-group="scholars" title="Savants">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-graduation-cap"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                             </button>
                         </div>
@@ -388,6 +379,22 @@
                   </span>
                   <span class="sr-only">Carte du monde</span>
                 </a>
+              </div>
+              <div class="legend-btns hamlet-switcher-link">
+                <button
+                  type="button"
+                  id="hamlet-switcher-btn"
+                  class="toolbar-toggle-btn hamlet-switcher-link__btn"
+                  title="Changer de hameau"
+                  aria-label="Ouvrir la liste des hameaux"
+                  aria-haspopup="dialog"
+                  aria-expanded="false"
+                >
+                  <span class="toolbar-toggle-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22a1 1 0 0 1-1-1v-4a1 1 0 0 1 .445-.832l3-2a1 1 0 0 1 1.11 0l3 2A1 1 0 0 1 22 17v4a1 1 0 0 1-1 1z"/><path d="M18 10a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 .601.2"/><path d="M18 22v-3"/><circle cx="10" cy="10" r="3"/></svg>
+                  </span>
+                  <span class="sr-only">Changer de hameau</span>
+                </button>
               </div>
 
               <div class="legend-btns toolbar-mobile-toggle-btn">
@@ -488,6 +495,25 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eraser">
                       <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/>
                       <path d="M22 21H7"/><path d="m5 11 9 9"/>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+              <div class="legend-btns mobile-click-state-fab mobile-click-state-fab--range">
+                <button
+                  type="button"
+                  id="mobile-portrait-range-btn"
+                  class="toolbar-toggle-btn mobile-click-state-btn"
+                  data-toolid="show-range"
+                  title="Portée (clic sur un bâtiment)"
+                  aria-label="Portée"
+                  aria-pressed="false"
+                >
+                  <span class="toolbar-toggle-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route">
+                      <circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
+                      <circle cx="18" cy="5" r="3"/>
                     </svg>
                   </span>
                 </button>
@@ -719,13 +745,34 @@
                                 <span class="pop-detail-value pop-detail-value--hamlet">0</span>
                             </span>
                         </div>
+                        <div class="pop-detail-metric pop-group-row" data-metric="pop" data-social-group="administrators">
+                            <span class="pop-detail-emoji" title="Administrateurs" aria-hidden="true">🏛️</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
+                <div class="pop-detail-metric pop-detail-hunger-risk">
+                    <span class="pop-detail-icon pop-detail-icon--hunger-risk" aria-hidden="true"></span>
+                    <span class="pop-detail-values" aria-label="Citoyens menacés par la faim">
+                        <span class="pop-detail-value display-hunger-risk pop-detail-value--country">0</span>
+                        <span class="pop-detail-value display-hunger-risk--hamlet pop-detail-value--hamlet">0</span>
+                    </span>
+                </div>
+                <div class="pop-detail-metric pop-detail-disette">
+                    <span class="pop-detail-icon pop-detail-icon--disette" title="Disette" aria-hidden="true"></span>
+                    <span class="pop-detail-values" aria-label="Citoyens en disette">
+                        <span class="pop-detail-value display-disette-pop pop-detail-value--country">0</span>
+                        <span class="pop-detail-value display-disette-pop--hamlet pop-detail-value--hamlet">0</span>
+                    </span>
+                </div>
                 <div class="pop-detail-metric pop-detail-hunger">
-                    <span class="pop-detail-icon" title="Faim">
+                    <span class="pop-detail-icon" title="Pénurie">
                         <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
                     </span>
-                    <span class="pop-detail-values" aria-label="Citoyens affamés">
+                    <span class="pop-detail-values" aria-label="Citoyens en pénurie">
                         <span class="pop-detail-value display-hunger-pop pop-detail-value--country">0</span>
                         <span class="pop-detail-value display-hunger-pop--hamlet pop-detail-value--hamlet">0</span>
                     </span>
@@ -768,30 +815,6 @@
                         </div>
                     </div>
                 </div>
-                <div class="pop-detail-sep" role="separator" aria-hidden="true"></div>
-                <div class="pop-detail-block pop-breakdown" aria-label="Détail population active">
-                        <span class="pop-detail-metric pop-segment pop-segment--citizen">
-                            <span class="pop-detail-emoji pop-segment-emoji" title="Citoyens" aria-hidden="true">🔨</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
-                            </span>
-                        </span>
-                        <span class="pop-detail-metric pop-segment pop-segment--elite">
-                            <span class="pop-detail-emoji pop-segment-emoji" title="Élites" aria-hidden="true">👑</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
-                            </span>
-                        </span>
-                        <span class="pop-detail-metric pop-segment pop-segment--servant">
-                            <span class="pop-detail-emoji pop-segment-emoji" title="Fonctionnaires" aria-hidden="true">🏛</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-segment-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-segment-value--hamlet pop-detail-value--hamlet">0</span>
-                            </span>
-                        </span>
-                </div>
             </section>
             <section
                 id="hud-pop-panel-emploi"
@@ -833,6 +856,44 @@
                             </span>
                         </div>
                     </div>
+                    <!-- Why people are out of work and why posts stay empty (the title of each row says it in full). -->
+                    <div class="pop-detail-groups pop-detail-causes" aria-label="Causes du chômage et du manque de main-d'œuvre">
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoSkill" title="Chômeurs : il y a des postes libres, mais ils n'ont pas la compétence">
+                            <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoPosts" title="Chômeurs : il n'y a aucun poste libre">
+                            <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoRoad" title="Chômeurs : leur maison n'a pas de route">
+                            <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="lackNoSkill" title="Postes vides : il y a des chômeurs, mais sans la compétence">
+                            <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="lackNoHands" title="Postes vides : plus personne de disponible">
+                            <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
+                            <span class="pop-detail-values">
+                                <span class="pop-detail-value pop-detail-value--country">0</span>
+                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </section>
             <section
@@ -843,27 +904,6 @@
                 hidden
             >
                 <div class="pop-detail-groups" aria-label="Stocks réservés à la ville">
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="wheat">
-                        <span class="pop-detail-emoji" title="Blé" aria-hidden="true">🌾</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="cabbage">
-                        <span class="pop-detail-emoji" title="Choux" aria-hidden="true">🥬</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="city" data-product="carrot">
-                        <span class="pop-detail-emoji" title="Carottes" aria-hidden="true">🥕</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
                 </div>
             </section>
             <section
@@ -874,41 +914,6 @@
                 hidden
             >
                 <div class="pop-detail-groups" aria-label="Ressources naturelles sur la carte">
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="nature" data-product="wood">
-                        <span class="pop-detail-emoji" title="Bois" aria-hidden="true">🪵</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="nature" data-product="rock">
-                        <span class="pop-detail-emoji" title="Pierre" aria-hidden="true">🪨</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="nature" data-product="clay">
-                        <span class="pop-detail-emoji" title="Argile" aria-hidden="true">🧱</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="nature" data-product="iron">
-                        <span class="pop-detail-emoji" title="Fer" aria-hidden="true">⚙️</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-group-row" data-metric="resource" data-destination="nature" data-product="gold">
-                        <span class="pop-detail-emoji" title="Or" aria-hidden="true">🥇</span>
-                        <span class="pop-detail-values">
-                            <span class="pop-detail-value pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                        </span>
-                    </div>
                 </div>
             </section>
             </div>
@@ -1085,15 +1090,6 @@
                 </button>
             </header>
             <div class="gestion-rail__buttons" role="group" aria-label="Outils de gestion">
-                <button type="button" id="bilan-btn" data-toolid="bilan" class="gestion-rail__btn" title="Bilan comptable" aria-label="Ouvrir le bilan comptable">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-                        <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
-                        <path d="M7 21h10"/><path d="M12 3v18"/>
-                        <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
-                    </svg>
-                    <span>Bilan</span>
-                </button>
                 <button type="button" id="loans-btn" data-toolid="loans" class="gestion-rail__btn" title="Prêts bancaires" aria-label="Ouvrir les prêts bancaires">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
@@ -1102,13 +1098,6 @@
                         <circle cx="16" cy="9" r="2.9"/><circle cx="6" cy="5" r="3"/>
                     </svg>
                     <span>Prêts</span>
-                </button>
-                <button type="button" id="compte-de-resultat-btn" data-toolid="compte-de-resultat" class="gestion-rail__btn" title="Compte de Résultat" aria-label="Ouvrir le compte de résultat">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M3 3v18h18"/>
-                        <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
-                    </svg>
-                    <span>Résultat</span>
                 </button>
                 <button type="button" id="journal-btn" data-toolid="journal" class="gestion-rail__btn" title="Journal" aria-label="Ouvrir le journal">
                     <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1147,6 +1136,7 @@
                               </span>
                               <span class="sr-only">Retour à l'accueil</span>
                             </a>
+                            <span id="game-active-hamlet" class="game-active-hamlet" hidden></span>
                         </div>
                         <div class="hud-bar__row hud-bar__row--slot" aria-hidden="true"></div>
                     </div>
@@ -1276,6 +1266,7 @@
                     <div class="splide__track">
                         <ul class="splide__list"></ul>
                     </div>
+                    <p class="mobile-build-bar__direct-hint" aria-live="polite">Ajoutez la construction directement — <kbd>S</kbd> pour choisir</p>
                 </div>
             </section>
 
@@ -1399,6 +1390,13 @@
                 </div>
             </nav>
 
+            <!-- Short reminders under the HUD, one after the other (HudTicker.js); hidden while there is none. -->
+            <div id="hud-ticker" class="hud-ticker" role="status" aria-live="polite" aria-label="Rappels" hidden>
+                <div class="splide hud-ticker__splide">
+                    <div class="splide__track"><ul class="splide__list"></ul></div>
+                </div>
+            </div>
+
             <aside id="hud-fab-dock" class="hud-fab-dock" aria-label="Outils">
             </aside>
         </section>
@@ -1421,459 +1419,6 @@
 </div>
 
     <!-- Budget Panel -->
-    <div id="bilan-panel" class="bilan-panel" role="dialog" aria-modal="true" aria-label="Bilan comptable" aria-hidden="true" tabindex="-1">
-        <div class="bilan-panel-wrapper">
-            <div class="bilan-panel-header">
-                <div class="bilan-health-indicator" id="bilan-health-indicator">
-                    <span class="health-status">Finance saine</span>
-                </div>
-                <div class="bilan-panel-title-container">
-                    <h2>💰 Bilan Comptable</h2>
-                </div>
-                <button type="button" class="bilan-panel-close-btn" title="Fermer" aria-label="Fermer le bilan comptable">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="m15 9-6 6"/>
-                        <path d="m9 9 6 6"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="bilan-panel-content">
-                <!-- Bilan Comptable -->
-                <div class="balance-sheet">
-                    <div class="balance-sheet-header">
-                        <div class="balance-sheet-header-content">
-                            <div class="balance-sheet-date" id="balance-sheet-date">Tour 0 (état du passif et de l'actif au 0e tour)</div>
-                            
-                            <!-- Filtres de visualisation -->
-                            <div class="balance-sheet-filters">
-                                <button class="balance-filter-btn" data-filter="all">
-                                    <span class="filter-text">Tout</span>
-                                </button>
-                                <button class="balance-filter-btn active" data-filter="actif">
-                                    <span class="filter-text">Actif</span>
-                                </button>
-                                <button class="balance-filter-btn" data-filter="passif">
-                                    <span class="filter-text">Passif</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- ACTIF -->
-                    <div class="balance-sheet-section balance-sheet-actif" data-section="actif">
-                        <h4 class="balance-sheet-title">ACTIF</h4>
-                        
-                        <!-- Actif Immobilisé -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">ACTIF IMMOBILISÉ</h5>
-                            
-                            <!-- Immobilisations Incorporelles -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💻 Immobilisations incorporelles</div>
-                                <div class="balance-sheet-value" id="intangible-assets-value">0€</div>
-                            </div>
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Frais d'établissement</div>
-                                    <div class="balance-sheet-value" id="establishment-costs">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Frais de recherche et développement</div>
-                                    <div class="balance-sheet-value" id="rd-costs">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Concessions, brevets, licences</div>
-                                    <div class="balance-sheet-value" id="patents-licenses">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Fonds commercial</div>
-                                    <div class="balance-sheet-value" id="goodwill">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Logiciels, droits</div>
-                                    <div class="balance-sheet-value" id="software-rights">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Autres</div>
-                                    <div class="balance-sheet-value" id="other-intangible">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Immobilisations incorporelles en cours</div>
-                                    <div class="balance-sheet-value" id="intangible-in-progress">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Avances et acomptes</div>
-                                    <div class="balance-sheet-value" id="intangible-advances">0€</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Immobilisations Corporelles Brutes -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">🏗️ Immobilisations corporelles brutes</div>
-                                <div class="balance-sheet-value" id="total-buildings-gross-value">0€</div>
-                            </div>
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Terrains</div>
-                                    <div class="balance-sheet-value" id="land-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Constructions</div>
-                                    <div class="balance-sheet-value" id="constructions-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Installations techniques, matériels</div>
-                                    <div class="balance-sheet-value" id="technical-equipment">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Autres</div>
-                                    <div class="balance-sheet-value" id="other-tangible">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Immobilisations corporelles en cours</div>
-                                    <div class="balance-sheet-value" id="tangible-in-progress">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Avances et acomptes</div>
-                                    <div class="balance-sheet-value" id="tangible-advances">0€</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Amortissements -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📉 Amortissements</div>
-                                <div class="balance-sheet-value" id="total-depreciation-value">0€</div>
-                            </div>
-                            
-                            <!-- Immobilisations Corporelles Nettes -->
-                            <div class="balance-sheet-item balance-sheet-net">
-                                <div class="balance-sheet-label">🏗️ Immobilisations corporelles nettes</div>
-                                <div class="balance-sheet-value" id="total-buildings-net-value">0€</div>
-                            </div>
-                            
-                            <!-- Détail des Immobilisations Corporelles -->
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">🏠 Logements</div>
-                                    <div class="balance-sheet-value" id="total-houses-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Maisons populaires (rouge)</div>
-                                    <div class="balance-sheet-value" id="red-houses-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Maisons moyennes (bleu)</div>
-                                    <div class="balance-sheet-value" id="blue-houses-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Maisons aisées (violet)</div>
-                                    <div class="balance-sheet-value" id="purple-houses-value">0€</div>
-                                </div>
-                            </div>
-                            
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">🌾 Exploitations agricoles</div>
-                                    <div class="balance-sheet-value" id="total-farms-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Champs de choux</div>
-                                    <div class="balance-sheet-value" id="cabbage-fields-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Champs de blé</div>
-                                    <div class="balance-sheet-value" id="wheat-fields-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Champs de carottes</div>
-                                    <div class="balance-sheet-value" id="carrot-fields-value">0€</div>
-                                </div>
-                            </div>
-                            
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">🏪 Commerces</div>
-                                    <div class="balance-sheet-value" id="total-markets-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Marchés de nourriture</div>
-                                    <div class="balance-sheet-value" id="food-markets-value">0€</div>
-                                </div>
-                            </div>
-                            
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">🛣️ Infrastructures</div>
-                                    <div class="balance-sheet-value" id="total-roads-value">0€</div>
-                                </div>
-                                <div class="balance-sheet-subdetail">
-                                    <div class="balance-sheet-label">Réseau routier</div>
-                                    <div class="balance-sheet-value" id="roads-value">0€</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Immobilisations Financières -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📈 Immobilisations financières</div>
-                                <div class="balance-sheet-value" id="financial-assets-value">0€</div>
-                            </div>
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Participations</div>
-                                    <div class="balance-sheet-value" id="equity-interests">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Créances rattachées à des participations</div>
-                                    <div class="balance-sheet-value" id="participation-receivables">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Titres immobilisés de l'activité de portefeuille</div>
-                                    <div class="balance-sheet-value" id="portfolio-securities">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Autres titres immobilisés</div>
-                                    <div class="balance-sheet-value" id="other-securities">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Prêts</div>
-                                    <div class="balance-sheet-value" id="loans-granted">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Autres</div>
-                                    <div class="balance-sheet-value" id="other-financial">0€</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Actif Circulant -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">ACTIF CIRCULANT</h5>
-                            
-                            <!-- Stocks et en-cours -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📦 Stocks et en-cours</div>
-                                <div class="balance-sheet-value" id="stocks-work-in-progress">0€</div>
-                            </div>
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Matières premières et autres approvisionnements</div>
-                                    <div class="balance-sheet-value" id="raw-materials">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">En cours de production [biens et services]</div>
-                                    <div class="balance-sheet-value" id="work-in-progress">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Produits intermédiaires et finis</div>
-                                    <div class="balance-sheet-value" id="finished-products">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Marchandises</div>
-                                    <div class="balance-sheet-value" id="merchandise">0€</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Avances et acomptes versés sur commandes -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💰 Avances et acomptes versés sur commandes</div>
-                                <div class="balance-sheet-value" id="advances-on-orders">0€</div>
-                            </div>
-                            
-                            <!-- Créances -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📋 Créances</div>
-                                <div class="balance-sheet-value" id="total-receivables">0€</div>
-                            </div>
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Créances clients et comptes rattachés</div>
-                                    <div class="balance-sheet-value" id="client-receivables">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Autres</div>
-                                    <div class="balance-sheet-value" id="other-receivables">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Capital souscrit - appelé, non versé</div>
-                                    <div class="balance-sheet-value" id="called-unpaid-capital">0€</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Valeurs mobilières de placement -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📈 Valeurs mobilières de placement</div>
-                                <div class="balance-sheet-value" id="marketable-securities">0€</div>
-                            </div>
-                            <div class="balance-sheet-detail">
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Actions propres</div>
-                                    <div class="balance-sheet-value" id="own-shares">0€</div>
-                                </div>
-                                <div class="balance-sheet-subitem">
-                                    <div class="balance-sheet-label">Autres titres</div>
-                                    <div class="balance-sheet-value" id="other-securities">0€</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Instruments de trésorerie -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💳 Instruments de trésorerie</div>
-                                <div class="balance-sheet-value" id="treasury-instruments">0€</div>
-                            </div>
-                            
-                            <!-- Disponibilités -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💰 Disponibilités</div>
-                                <div class="balance-sheet-value" id="cash-value">0€</div>
-                            </div>
-                            
-                            <!-- Charges constatées d'avance -->
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📅 Charges constatées d'avance</div>
-                                <div class="balance-sheet-value" id="prepaid-expenses">0€</div>
-                            </div>
-                            
-                            <!-- Total Actif Circulant -->
-                            <div class="balance-sheet-item balance-sheet-subtotal">
-                                <div class="balance-sheet-label">TOTAL ACTIF CIRCULANT</div>
-                                <div class="balance-sheet-value" id="total-current-assets">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Charges à répartir sur plusieurs exercices -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">CHARGES À RÉPARTIR SUR PLUSIEURS EXERCICES</h5>
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">Charges à répartir</div>
-                                <div class="balance-sheet-value" id="deferred-charges">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Primes de remboursement des emprunts -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">PRIMES DE REMBOURSEMENT DES EMPRUNTS</h5>
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">🏦 Primes de remboursement</div>
-                                <div class="balance-sheet-value" id="loan-redemption-premiums">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Écarts de conversion Actif -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">ÉCARTS DE CONVERSION ACTIF</h5>
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💱 Écarts de conversion</div>
-                                <div class="balance-sheet-value" id="conversion-differences">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Total Actif -->
-                        <div class="balance-sheet-total balance-sheet-total-actif" data-section="totaux">
-                            <div class="balance-sheet-label">TOTAL ACTIF</div>
-                            <div class="balance-sheet-value" id="total-assets">0€</div>
-                        </div>
-                    </div>
-                    
-                    <!-- PASSIF -->
-                    <div class="balance-sheet-section balance-sheet-passif" data-section="passif">
-                        <h4 class="balance-sheet-title">PASSIF</h4>
-                        
-                        <!-- Capitaux Propres -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">CAPITAUX PROPRES</h5>
-                            
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">🏛️ Capital social</div>
-                                <div class="balance-sheet-value" id="share-capital">0€</div>
-                            </div>
-                            
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">📈 Réserves légales</div>
-                                <div class="balance-sheet-value" id="legal-reserves">0€</div>
-                            </div>
-                            
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">Report à nouveau</div>
-                                <div class="balance-sheet-value" id="carried-forward">0€</div>
-                            </div>
-                            
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">💰 Résultat de l'exercice</div>
-                                <div class="balance-sheet-value" id="net-result">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Provisions pour Risques et Charges -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">PROVISIONS POUR RISQUES ET CHARGES</h5>
-                            
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">⚠️ Provisions pour risques</div>
-                                <div class="balance-sheet-value" id="risk-provisions">0€</div>
-                            </div>
-                            
-                            <div class="balance-sheet-item">
-                                <div class="balance-sheet-label">🔧 Provisions pour charges</div>
-                                <div class="balance-sheet-value" id="charge-provisions">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Dettes -->
-                        <div class="balance-sheet-group">
-                            <h5 class="balance-sheet-subtitle">DETTES</h5>
-                            
-                            <!-- Dettes Financières -->
-                            <div class="balance-sheet-subitem">
-                                <div class="balance-sheet-label">🏦 Dettes financières</div>
-                                <div class="balance-sheet-value" id="financial-debts-total">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">Emprunts bancaires</div>
-                                <div class="balance-sheet-value" id="bank-loans-debt">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">Emprunts commerciaux</div>
-                                <div class="balance-sheet-value" id="commercial-loans-debt">0€</div>
-                            </div>
-                            
-                            <!-- Dettes d'Exploitation -->
-                            <div class="balance-sheet-subitem">
-                                <div class="balance-sheet-label">🏪 Dettes d'exploitation</div>
-                                <div class="balance-sheet-value" id="operating-debts-total">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">Dettes fournisseurs</div>
-                                <div class="balance-sheet-value" id="supplier-debts">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">Dettes fiscales et sociales</div>
-                                <div class="balance-sheet-value" id="social-fiscal-debts">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">Charges à payer</div>
-                                <div class="balance-sheet-value" id="accrued-expenses">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">  - Intérêts des dettes</div>
-                                <div class="balance-sheet-value" id="loan-interest-expenses">0€</div>
-                            </div>
-                            <div class="balance-sheet-subdetail">
-                                <div class="balance-sheet-label">  - Maintenance bâtiments</div>
-                                <div class="balance-sheet-value" id="building-maintenance-expenses">0€</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Total Passif -->
-                        <div class="balance-sheet-total balance-sheet-total-passif" data-section="totaux">
-                            <div class="balance-sheet-label">TOTAL PASSIF</div>
-                            <div class="balance-sheet-value" id="total-liabilities">0€</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Loans Panel -->
     <div id="loans-panel" class="loans-panel" role="dialog" aria-modal="true" aria-label="Prêts bancaires" aria-hidden="true" tabindex="-1">
@@ -2101,11 +1646,11 @@
                     </svg>
                     <span class="sr-only">Unités de Stock</span>
                 </button>
-                
+
                 <button
                     class="administrator-nav-btn"
-                    id="admin-nav-food-traceability"
-                    data-section="food-traceability"
+                    id="admin-nav-supply-traceability"
+                    data-section="supply-traceability"
                     title="Traçabilité Alimentaire"
                     aria-label="Ouvrir la section Traçabilité Alimentaire">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
@@ -2121,8 +1666,94 @@
                     <span class="sr-only">Traçabilité Alimentaire</span>
                 </button>
                 
-                <button 
-                    class="administrator-nav-btn" 
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-commerce"
+                    data-section="commerce"
+                    title="Commerce"
+                    aria-label="Ouvrir la section Commerce">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-handshake">
+                        <path d="m11 17 2 2a1 1 0 1 0 3-3"/>
+                        <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/>
+                        <path d="m21 3 1 11h-2"/>
+                        <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/>
+                        <path d="M3 4h8"/>
+                    </svg>
+                    <span class="sr-only">Commerce</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-taxes"
+                    data-section="taxes"
+                    title="Taxes"
+                    aria-label="Ouvrir la section Taxes">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-percent">
+                        <line x1="19" x2="5" y1="5" y2="19"/>
+                        <circle cx="6.5" cy="6.5" r="2.5"/>
+                        <circle cx="17.5" cy="17.5" r="2.5"/>
+                    </svg>
+                    <span class="sr-only">Taxes</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-customs"
+                    data-section="customs"
+                    title="Douanes"
+                    aria-label="Ouvrir la section Douanes">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-right">
+                        <path d="M8 3 4 7l4 4"/>
+                        <path d="M4 7h16"/>
+                        <path d="m16 21 4-4-4-4"/>
+                        <path d="M20 17H4"/>
+                    </svg>
+                    <span class="sr-only">Douanes</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-prices"
+                    data-section="prices"
+                    title="Prix"
+                    aria-label="Ouvrir la section Prix">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag">
+                        <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/>
+                        <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>
+                    </svg>
+                    <span class="sr-only">Prix</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-wages"
+                    data-section="wages"
+                    title="Salaires"
+                    aria-label="Ouvrir la section Salaires">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hand-coins">
+                        <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
+                        <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
+                        <path d="m2 16 6 6"/>
+                        <circle cx="16" cy="9" r="2.9"/>
+                        <circle cx="6" cy="5" r="3"/>
+                    </svg>
+                    <span class="sr-only">Salaires</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-services"
+                    data-section="services"
+                    title="Services"
+                    aria-label="Ouvrir la section Services">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake">
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                    </svg>
+                    <span class="sr-only">Services</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
                     id="admin-nav-archives"
                     data-section="archives"
                     title="Archives"
@@ -2168,40 +1799,33 @@
                     </div>
                     <div class="administrator-section-content">
                         <div class="finances-board" id="finances-board">
+                            <!-- The views of the board: the Caesar-style budget, then the city's statements (M57) read from the same journal. The JSON button downloads all of them in one file. -->
+                            <div class="building-finance-toolbar finances-toolbar">
+                                <div class="building-finance-pills" role="tablist" aria-label="Vue des finances">
+                                    <button type="button" class="building-finance-pill-tab is-active" data-finances-pill="budget" role="tab">Budget</button>
+                                    <button type="button" class="building-finance-pill-tab" data-finances-pill="result" role="tab">Compte de résultat</button>
+                                    <button type="button" class="building-finance-pill-tab" data-finances-pill="balance" role="tab">Bilan</button>
+                                    <button type="button" class="building-finance-pill-tab" data-finances-pill="trial" role="tab">Balance</button>
+                                </div>
+                                <button type="button" class="building-finance-download" id="finances-download" title="Télécharger toutes les vues (budget, compte de résultat, bilan, balance) en un fichier JSON">JSON</button>
+                            </div>
 
-                            <div class="finances-debt-info" id="finances-debt-info">
+                            <div class="finances-hamlet-filter-row">
+                                <label class="finances-hamlet-filter-label" for="finances-hamlet-filter">Budget de :</label>
+                                <select id="finances-hamlet-filter" class="finances-hamlet-filter" aria-label="Choisir le hameau dont afficher le budget"></select>
+                            </div>
+
+                            <div class="finances-debt-info" id="finances-debt-info" data-finances-view="budget">
                                 <p class="finances-debt-text">
                                     La ville a une dette envers les prêteurs de <span class="finances-debt-amount" id="finances-debt-amount">0</span> €
                                 </p>
                             </div>
 
-                            <div class="finances-tax-controls">
-                                <div class="finances-tax-controls-row">
-                                    <span class="finances-tax-label">Impôt par citoyen :</span>
-                                    <div class="finances-tax-buttons">
-                                        <button type="button" class="finances-tax-btn" id="tax-decrease-btn" aria-label="Diminuer l'impôt par citoyen">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                <path d="M5 12h14"/>
-                                            </svg>
-                                        </button>
-                                        <span class="finances-tax-rate" id="tax-rate-display">25</span>
-                                        <button type="button" class="finances-tax-btn" id="tax-increase-btn" aria-label="Augmenter l'impôt par citoyen">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                <path d="M5 12h14"/>
-                                                <path d="M12 5v14"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="finances-tax-estimate-wrapper">
-                                    <span class="finances-tax-estimate" id="tax-estimate">€ par citoyen</span>
-                                </div>
-                            </div>
-                            <div class="finances-tax-registration" id="tax-registration">
+                            <div class="finances-tax-registration" id="tax-registration" data-finances-view="budget">
                                 100% de la population est enregistrée pour les impôts
                             </div>
 
-                            <table class="finances-table">
+                            <table class="finances-table" data-finances-view="budget">
                                 <thead>
                                     <tr>
                                         <th class="indicator-col"></th>
@@ -2254,9 +1878,21 @@
                                                 <path d="M16 10h1v4"></path>
                                             </svg>
                                         </td>
-                                        <td class="label-col finances-row-label">Impôt sur les salaires (assiette citoyens)</td>
+                                        <td class="label-col finances-row-label">Impôt sur le revenu (IR)</td>
                                         <td class="last-year-col finances-value-positive" data-field="payrollTaxLastYear" id="payroll-tax-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="payrollTaxThisYear" id="payroll-tax-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">TVA ventes</td>
+                                        <td class="last-year-col finances-value-positive" data-field="vatLastYear" id="vat-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="vatThisYear" id="vat-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Impôt sur les sociétés perçu</td>
+                                        <td class="last-year-col finances-value-positive" data-field="corporateTaxRevenueLastYear" id="corporatetaxrevenue-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="corporateTaxRevenueThisYear" id="corporatetaxrevenue-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -2265,9 +1901,31 @@
                                                 <path d="M21 21V2l-9 6-9-6v19"></path>
                                             </svg>
                                         </td>
-                                        <td class="label-col finances-row-label">Exportations</td>
+                                        <td class="label-col finances-row-label">Douanes à l'exportation</td>
                                         <td class="last-year-col finances-value-positive" data-field="exportsLastYear" id="exports-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="exportsThisYear" id="exports-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ship">
+                                                <path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1 .6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"></path>
+                                                <path d="M21 21V2l-9 6-9-6v19"></path>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">Douanes à l'importation</td>
+                                        <td class="last-year-col finances-value-positive" data-field="customsImportLastYear" id="customs-import-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="customsImportThisYear" id="customs-import-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake">
+                                                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                                                <path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"/>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label">Cotisations sociales</td>
+                                        <td class="last-year-col finances-value-positive" data-field="socialContributionsLastYear" id="social-contributions-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="socialContributionsThisYear" id="social-contributions-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -2344,6 +2002,24 @@
                                         <td class="label-col finances-row-label">Salaires chômeurs</td>
                                         <td class="last-year-col finances-value-negative" data-field="unemploymentBenefitLastYear" id="unemployment-benefit-last-year">0</td>
                                         <td class="this-year-col finances-value-negative" data-field="unemploymentBenefitThisYear" id="unemployment-benefit-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Subventions des services</td>
+                                        <td class="last-year-col finances-value-negative" data-field="serviceSubsidyLastYear" id="service-subsidy-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="serviceSubsidyThisYear" id="service-subsidy-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Subvention entretien entreprise</td>
+                                        <td class="last-year-col finances-value-negative" data-field="companySubsidyLastYear" id="companysubsidy-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="companySubsidyThisYear" id="companysubsidy-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Subvention entretien habitation</td>
+                                        <td class="last-year-col finances-value-negative" data-field="housingSubsidyLastYear" id="housingsubsidy-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="housingSubsidyThisYear" id="housingsubsidy-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -2457,7 +2133,7 @@
                                     </tr>
 
                                     <!-- Flux net -->
-                                    <tr class="finances-row-netflow">
+                                    <tr class="finances-row-netflow" title="Le résultat de l'année : ce qu'elle a rapporté, moins ce qu'elle a coûté. Il ne dit pas combien d'argent reste dans les caisses.">
                                         <td class="indicator-col">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right-left">
                                                 <path d="m16 3 4 4-4 4"/>
@@ -2467,8 +2143,8 @@
                                             </svg>
                                         </td>
                                         <td class="label-col finances-row-label">
-                                            Flux net
-                                            <span class="finances-explanation">Revenus nets - Dépenses nettes</span>
+                                            Résultat de l'année
+                                            <span class="finances-explanation">Flux net : revenus nets − dépenses nettes</span>
                                         </td>
                                         <td class="last-year-col finances-value-netflow" data-field="netFlowLastYear" id="net-flow-last-year">-</td>
                                         <td class="this-year-col finances-value-netflow" data-field="netFlowThisYear" id="net-flow-this-year">0</td>
@@ -2480,11 +2156,11 @@
                                     </tr>
 
                                     <!-- Balance -->
-                                    <tr class="finances-row-balance">
+                                    <tr class="finances-row-balance" title="L'argent disponible dans les caisses de la ville. Pour une année passée : le montant au 31 décembre. Pour l'année en cours : le montant aujourd'hui. Ce n'est pas le résultat de l'année.">
                                         <td class="indicator-col"></td>
                                         <td class="label-col finances-row-label">
-                                            Balance
-                                            <span class="finances-explanation">Solde total actuel de la ville</span>
+                                            Trésorerie
+                                            <span class="finances-explanation">Argent disponible : au 31 décembre pour une année passée, aujourd'hui pour l'année en cours</span>
                                         </td>
                                         <td class="last-year-col finances-value-positive" data-field="balanceLastYear" id="balance-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="balanceThisYear" id="balance-this-year">0</td>
@@ -2492,10 +2168,37 @@
                                 </tbody>
                             </table>
 
-                            <div class="finances-message-area" id="finances-message-area">
+                            <div class="finances-message-area" id="finances-message-area" data-finances-view="budget">
                                 <p class="finances-message-text" id="finances-message-text">
                                     Analyse financière : La ville fonctionne avec un déficit cette année. Il est recommandé d'augmenter les revenus ou de réduire les dépenses.
                                 </p>
+                            </div>
+
+                            <!-- The city's statements in the M57 model, read from the same journal as the budget (see CityStatementsPresenter). -->
+                            <div class="city-statements-view" id="finances-view-result" data-finances-view="result" hidden></div>
+                            <div class="city-statements-view" id="finances-view-balance" data-finances-view="balance" hidden></div>
+                            <div class="city-statements-view" id="finances-view-trial" data-finances-view="trial" hidden></div>
+
+                            <div class="producer-ranking" id="producer-ranking" data-finances-view="budget">
+                                <div class="producer-ranking-header">
+                                    <h3 class="producer-ranking-title">Classement des producteurs</h3>
+                                    <span class="producer-ranking-period" id="producer-ranking-period">…</span>
+                                </div>
+                                <p class="producer-ranking-note">
+                                    Les biens sont datés du jour de leur livraison ; les services sont datés du jour de leur
+                                    règlement, le 1er du mois suivant leur consommation. Pour le mois affiché, les ventes de
+                                    services sont donc celles réglées ce mois-là — l'activité du mois précédent.
+                                </p>
+                                <table class="producer-ranking-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="producer-ranking-rank-col">#</th>
+                                            <th class="producer-ranking-name-col">Producteur</th>
+                                            <th class="producer-ranking-revenue-col">Ventes aux maisons (HT)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="producer-ranking-body"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -2551,7 +2254,7 @@
                                         <path d="m14.91 7.79-3.64-3.64a1.4 1.4 0 0 0-3.71 1.47l2.35 2.35"/>
                                     </svg>
                                 </div>
-                                <h3 class="work-header-title">Allocation de la Main-d'œuvre</h3>
+                                <h3 class="work-header-title">Allocation de la Main-d'œuvre <span id="work-hamlet-label" class="work-hamlet-label"></span></h3>
                             </div>
 
                             <div class="work-group-tabs" id="work-group-tabs" role="tablist" aria-label="Groupes sociaux">
@@ -2583,102 +2286,6 @@
                                 </div>
                             </div>
 
-                            <div class="work-controls">
-                                <div class="work-control-group">
-                                    <div class="work-control-label">Salaires des fonctionnaires</div>
-                                    <div class="work-control-input-wrapper">
-                                        <div class="work-control-buttons">
-                                            <button type="button" class="work-control-btn" id="salary-decrease-btn" aria-label="Diminuer le salaire">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                    <path d="M5 12h14"/>
-                                                </svg>
-                                            </button>
-                                            <span class="work-control-value" id="salary-display">100</span>
-                                            <button type="button" class="work-control-btn" id="salary-increase-btn" aria-label="Augmenter le salaire">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                    <path d="M5 12h14"/>
-                                                    <path d="M12 5v14"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <span class="work-control-info">
-                                            Salaire de référence (base de calcul interne) : <span class="work-control-info-value" id="salary-month-display">100</span> €/mois
-                                        </span>
-                                    </div>
-                                    <div class="work-control-info">
-                                        Salaire de référence annuel : <span class="work-control-info-value" id="salary-year-display">1200</span> €/an
-                                    </div>
-                                    <div class="work-control-info">
-                                        Fonctionnaires (<span class="work-control-info-value" id="civil-servant-count-display">0</span>, 1 pour 12 habitants) : charge mensuelle incluse ci-dessous
-                                    </div>
-                                    <div class="work-control-info">
-                                        Masse salariale citoyens actifs — hors fonctionnaires et chômeurs (informatif) : <span class="work-control-info-value" id="citizen-payroll-display">0</span> €/mois
-                                    </div>
-                                    <div class="work-control-info">
-                                        Charge mensuelle ville (fonctionnaires + chômeurs, population <span class="work-control-info-value" id="salary-population-display">0</span>) : voir détail ci-dessous
-                                    </div>
-                                    <div class="work-control-info">
-                                        Charge annuelle estimée — salaires ville : <span class="work-control-info-value" id="salary-annual-bill">0</span> €
-                                    </div>
-                                </div>
-
-                                <div class="work-control-group">
-                                    <div class="work-control-label">Impôt sur les salaires</div>
-                                    <div class="work-control-row">
-                                        <div class="work-control-buttons">
-                                            <button type="button" class="work-control-btn" id="salary-tax-decrease-btn" aria-label="Diminuer le taux d'imposition sur les salaires">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                    <path d="M5 12h14"></path>
-                                                </svg>
-                                            </button>
-                                            <span class="work-control-info">
-                                                Taux d'imposition : <span class="work-control-info-value" id="salary-tax-rate-display">10</span>%
-                                            </span>
-                                            <button type="button" class="work-control-btn" id="salary-tax-increase-btn" aria-label="Augmenter le taux d'imposition sur les salaires">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                    <path d="M5 12h14"></path>
-                                                    <path d="M12 5v14"></path>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <div class="work-control-info">
-                                            Assiette mensuelle estimée : <span class="work-control-info-value" id="payroll-tax-base-display">0</span> €
-                                        </div>
-                                        <div class="work-control-info">
-                                            Impôt mensuel estimé : <span class="work-control-info-value" id="salary-tax-amount-display">0</span> €/mois
-                                        </div>
-                                        <div class="work-control-info">
-                                            Impôt annuel estimé : <span class="work-control-info-value" id="salary-tax-annual-display">0</span> €/an
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="work-control-group">
-                                    <div class="work-control-label">Taux d'allocation chômage</div>
-                                    <div class="work-control-input-wrapper">
-                                        <div class="work-control-buttons">
-                                            <button type="button" class="work-control-btn" id="unemployment-decrease-btn" aria-label="Diminuer le taux d'allocation">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-minus">
-                                                    <path d="M5 12h14"/>
-                                                </svg>
-                                            </button>
-                                            <span class="work-control-value" id="unemployment-rate-display">70%</span>
-                                            <button type="button" class="work-control-btn" id="unemployment-increase-btn" aria-label="Augmenter le taux d'allocation">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus">
-                                                    <path d="M5 12h14"/>
-                                                    <path d="M12 5v14"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <span class="work-control-info">
-                                            Pourcentage du salaire de référence versé aux chômeurs
-                                        </span>
-                                    </div>
-                                    <div class="work-control-info">
-                                        Charge mensuelle estimée — salaires chômeurs (<span class="work-control-info-value" id="unemployment-count-display">0</span> chômeurs) : <span class="work-control-info-value" id="unemployment-benefit-display">0</span> €
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -2717,7 +2324,7 @@
             </div>
             
             <!-- Food Traceability Section -->
-            <div class="administrator-section" id="admin-section-food-traceability">
+            <div class="administrator-section" id="admin-section-supply-traceability">
                 <div class="administrator-section-title">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
                         <path d="M2 22 16 8"/>
@@ -2729,27 +2336,29 @@
                         <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
                         <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
                     </svg>
-                    Traçabilité Alimentaire
+                    Traçabilité Alimentaire <span class="supply-traceability-hamlet" data-hamlet-label></span>
                 </div>
                 <div class="administrator-section-content">
-                    <div class="food-traceability-content">
+                    <div class="supply-traceability-content">
                         <!-- Tabs -->
-                        <div class="food-traceability-tabs">
-                            <button class="food-traceability-tab active" data-tab="details">📋 Détails</button>
-                            <button class="food-traceability-tab" data-tab="charts">📊 Graphiques</button>
+                        <div class="supply-traceability-tabs">
+                            <button class="supply-traceability-tab active" data-tab="details">📋 Transactions</button>
+                            <button class="supply-traceability-tab" data-tab="charts">📊 Satisfaction</button>
                         </div>
                         
                         <!-- Details Tab -->
-                        <div class="food-traceability-tab-content active" id="food-traceability-details-tab">
-                            <div class="food-traceability-filters">
-                                <button class="food-traceability-filter-btn active" data-period="all">Tout l'historique</button>
-                                <button class="food-traceability-filter-btn" data-period="7">7 derniers jours</button>
-                                <button class="food-traceability-filter-btn" data-period="30">30 derniers jours</button>
-                                <button class="food-traceability-filter-btn" data-period="60">60 derniers jours</button>
+                        <div class="supply-traceability-tab-content active" id="supply-traceability-details-tab">
+                            <div class="supply-traceability-filters">
+                                <button class="supply-traceability-filter-btn active" data-period="all">Tout l'historique</button>
+                                <button class="supply-traceability-filter-btn" data-period="7">7 derniers jours</button>
+                                <button class="supply-traceability-filter-btn" data-period="30">30 derniers jours</button>
+                                <button class="supply-traceability-filter-btn" data-period="60">60 derniers jours</button>
                             </div>
-                            
-                            <div class="food-traceability-refresh-section">
-                                <button class="food-traceability-refresh-btn" id="food-traceability-refresh-btn">
+
+                            <div class="supply-traceability-category-pills" id="supply-traceability-category-pills"></div>
+
+                            <div class="supply-traceability-refresh-section">
+                                <button class="supply-traceability-refresh-btn" id="supply-traceability-refresh-btn">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
                                         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                                         <path d="M21 3v5h-5"/>
@@ -2758,23 +2367,28 @@
                                     </svg>
                                     Actualiser
                                 </button>
+                                <button class="supply-traceability-refresh-btn" id="supply-traceability-export-btn" title="Télécharger toutes les transactions en JSON">
+                                    Exporter en JSON
+                                </button>
                             </div>
-                            
-                            <div class="food-traceability-list" id="food-traceability-list">
-                                <div class="food-traceability-loading">
+
+                            <div class="supply-traceability-log" data-transaction-log></div>
+                        <div class="supply-traceability-list" id="supply-traceability-list">
+                                <div class="supply-traceability-loading">
                                     <div class="loading-spinner"></div>
                                     <p>Chargement de la traçabilité...</p>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Charts Tab -->
-                        <div class="food-traceability-tab-content" id="food-traceability-charts-tab">
-                            <div class="food-charts-controls">
-                                <select id="food-charts-year-select" class="food-charts-select">
+                        <div class="supply-traceability-tab-content" id="supply-traceability-charts-tab">
+                            <div class="supply-traceability-category-pills" id="supply-charts-category-pills"></div>
+                            <div class="supply-charts-controls">
+                                <select id="supply-charts-year-select" class="supply-charts-select">
                                     <option value="all">Toutes les années</option>
                                 </select>
-                                <button class="food-traceability-refresh-btn" id="food-charts-refresh-btn">
+                                <button class="supply-traceability-refresh-btn" id="supply-charts-refresh-btn">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
                                         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                                         <path d="M21 3v5h-5"/>
@@ -2783,9 +2397,12 @@
                                     </svg>
                                     Actualiser
                                 </button>
+                                <button class="supply-traceability-refresh-btn" id="supply-charts-export-btn" title="Télécharger la traçabilité en JSON">
+                                    Exporter en JSON
+                                </button>
                             </div>
-                            <div class="food-stats-container" id="food-stats-container">
-                                <div class="food-stats-loading">
+                            <div class="supply-stats-container" id="supply-stats-container">
+                                <div class="supply-stats-loading">
                                     <div class="loading-spinner"></div>
                                     <p>Chargement des statistiques...</p>
                                 </div>
@@ -2796,6 +2413,186 @@
             </div>
             
             <!-- Archives Section -->
+            <!-- Commerce Section -->
+            <div class="administrator-section" id="admin-section-commerce">
+                <div class="administrator-section-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-handshake">
+                        <path d="m11 17 2 2a1 1 0 1 0 3-3"/>
+                        <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/>
+                        <path d="m21 3 1 11h-2"/>
+                        <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/>
+                        <path d="M3 4h8"/>
+                    </svg>
+                    Commerce
+                </div>
+                <div class="administrator-section-content">
+                    <div class="commerce-board" id="commerce-board">
+                        <!-- Relations list -->
+                        <button type="button" class="commerce-relations-export" id="commerce-relations-export">Exporter les relations (JSON)</button>
+                        <div class="commerce-relations-list" id="commerce-relations-list">
+                            <p class="commerce-empty-state">Aucune relation commerciale active.</p>
+                        </div>
+
+                        <!-- Budget impact -->
+                        <div class="commerce-budget-impact" id="commerce-budget-impact">
+                            <span class="commerce-budget-impact-label">Recettes douanières ce mois :</span>
+                            <span class="commerce-budget-impact-value" id="commerce-export-this-month">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-taxes">
+                <div class="administrator-section-title">
+                    Taxes — <span class="admin-hamlet-label" data-hamlet-label></span>
+                </div>
+                <div class="administrator-section-content">
+                    <div class="taxes-subtabs" role="tablist" aria-label="Sections des taxes">
+                        <button type="button" role="tab" data-taxes-tab="general" aria-selected="true" tabindex="0">Impôts</button>
+                        <button type="button" role="tab" data-taxes-tab="vat" aria-selected="false" tabindex="-1">TVA</button>
+                    </div>
+                    <div class="taxes-board" id="taxes-board" role="tabpanel" data-taxes-panel="general">
+                        <p class="commerce-customs-hint" id="tax-citizen-notice" role="alert" hidden></p>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Impôt par citoyen</span>
+                                <span class="taxes-row-scope">Hameau</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="tax-citizen-slider" class="commerce-customs-slider" step="5" aria-label="Impôt par citoyen, en euros" />
+                                <span class="commerce-customs-value" id="tax-citizen-value">…</span>
+                            </div>
+                        </div>
+                        <p class="commerce-customs-hint" id="tax-corporate-notice" role="alert" hidden></p>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Impôt sur les sociétés</span>
+                                <span class="taxes-row-scope">Hameau</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="tax-corporate-slider" class="commerce-customs-slider" step="1" aria-label="Impôt sur les sociétés (IS), en pourcentage du résultat de l'année" />
+                                <span class="commerce-customs-value" id="tax-corporate-value">…</span>
+                            </div>
+                        </div>
+                        <p class="commerce-customs-hint" id="tax-income-notice" role="alert" hidden></p>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Impôt sur le revenu</span>
+                                <span class="taxes-row-scope">Hameau</span>
+                            </div>
+                            <div class="ir-brackets">
+                                <div class="ir-bracket-group">
+                                    <div class="ir-bracket-line">
+                                        <span class="ir-bracket-line-label">Seuil d'exonération</span>
+                                        <div class="commerce-customs-controls">
+                                            <input type="range" id="tax-threshold-1-slider" class="commerce-customs-slider" step="5" aria-label="Seuil d'exonération de l'IR, en euros par mois" />
+                                            <span class="commerce-customs-value" id="tax-threshold-1-value">…</span>
+                                        </div>
+                                    </div>
+                                    <div class="ir-bracket-line">
+                                        <span class="ir-bracket-line-label">Taux IR (1ère tranche)</span>
+                                        <div class="commerce-customs-controls">
+                                            <input type="range" id="tax-salary-1-slider" class="commerce-customs-slider" step="1" aria-label="Impôt sur le revenu (IR), 1ère tranche, en pourcentage" />
+                                            <span class="commerce-customs-value" id="tax-salary-1-value">…</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ir-bracket-group">
+                                    <div class="ir-bracket-line">
+                                        <span class="ir-bracket-line-label">Seuil 2ᵉ tranche</span>
+                                        <div class="commerce-customs-controls">
+                                            <input type="range" id="tax-threshold-2-slider" class="commerce-customs-slider" step="5" aria-label="Seuil de la 2ᵉ tranche de l'IR, en euros par mois" />
+                                            <span class="commerce-customs-value" id="tax-threshold-2-value">…</span>
+                                        </div>
+                                    </div>
+                                    <div class="ir-bracket-line">
+                                        <span class="ir-bracket-line-label">Taux IR (2e tranche)</span>
+                                        <div class="commerce-customs-controls">
+                                            <input type="range" id="tax-salary-2-slider" class="commerce-customs-slider" step="1" aria-label="Impôt sur le revenu (IR), 2ᵉ tranche, en pourcentage" />
+                                            <span class="commerce-customs-value" id="tax-salary-2-value">…</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="taxes-board" id="vat-panel" role="tabpanel" data-taxes-panel="vat" hidden>
+                        <p class="commerce-customs-hint" id="tax-vat-notice" role="alert" hidden></p>
+                        <div class="taxes-row">
+                            <label class="taxes-uniform">
+                                <input type="checkbox" id="tax-vat-uniform" />
+                                <span>Même taux pour tous les produits</span>
+                            </label>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Taux général</span>
+                                <span class="taxes-row-scope">Toutes les catégories</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="tax-vat-general-slider" class="commerce-customs-slider" step="1" aria-label="Taux général de TVA, en pourcentage du prix HT" />
+                                <span class="commerce-customs-value" id="tax-vat-general-value">…</span>
+                            </div>
+                        </div>
+                        <div class="services-group">
+                            <p class="commerce-customs-hint">La TVA porte sur la dernière vente de chaque bien ou prestation aux maisons, au prix HT ; elle s'ajoute au prix pour former le TTC. Cocher « exonéré » retire la TVA de ce bien ou de cette prestation. Base imposable : prix HT de la vente, y compris la part de la ville. Une subvention directement liée au prix d'une prestation fait partie de la base et ne la réduit pas.</p>
+                            <div id="vat-board"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-customs">
+                <div class="administrator-section-title">Douanes</div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board" id="customs-board">
+                        <p class="commerce-customs-hint" id="customs-notice" role="alert" hidden></p>
+                        <p class="commerce-customs-hint">Un droit par produit et par sens, sur la valeur des biens qui passent la frontière. L'export est payé à la ville par l'exportateur ; l'import l'est par l'importateur, au moment où il revend le bien.</p>
+                        <h3 class="customs-group-title">Importations</h3>
+                        <div id="customs-import-list"></div>
+                        <h3 class="customs-group-title">Exportations</h3>
+                        <div id="customs-export-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-prices">
+                <div class="administrator-section-title">Prix</div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board">
+                        <p class="commerce-customs-hint">Le prix d'une unité à chaque étape, de la référence à ce que paie la maison : ce qu'ajoutent le transport, les droits de douane, les marges et la TVA. Les prix de l'entrepôt et du marché sont ceux du mois, bâtis sur le coût de leur stock : un changement de droits de douane met un mois à s'y voir.</p>
+                        <div id="prices-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-wages">
+                <div class="administrator-section-title">Salaires</div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board">
+                        <p class="commerce-customs-hint">Le marché du travail fixe un salaire par métier et par niveau : il monte là où des emplois restent vacants, il baisse là où des citoyens qualifiés restent sans emploi. La ville ne fixe que le plancher (le salaire minimum), l'allocation chômage (une part de ce plancher) et les cotisations sociales : celles de l'entreprise s'ajoutent au salaire brut, celles du salarié en sont retenues, et toutes financent l'allocation chômage.</p>
+                        <div id="wages-levers"></div>
+                        <div id="wages-social"></div>
+                        <div id="wages-cost-of-living"></div>
+                        <div id="wages-board"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-services">
+                <div class="administrator-section-title">
+                    Services — <span class="admin-hamlet-label" data-hamlet-label></span>
+                </div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board">
+                        <div class="services-group">
+                            <p class="commerce-customs-hint">La subvention couvre ce pourcentage du prix de chaque prestation du service ; les habitants paient le reste. La base imposable à la TVA est le prix HT total : la subvention directement liée au prix d'une prestation y est incluse, elle ne la réduit pas.</p>
+                            <div class="services-board" id="services-board"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="administrator-section" id="admin-section-archives">
                 <div class="administrator-section-title">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-archive">
@@ -2947,61 +2744,6 @@
     </div>
 
     <!-- Budget States Popup -->
-<div id="compte-de-resultat-panel" class="compte-de-resultat-panel" role="dialog" aria-modal="true" aria-label="Compte de résultat" aria-hidden="true" tabindex="-1">
-    <div class="compte-de-resultat-wrapper">
-        <div class="compte-de-resultat-header">
-            <div class="compte-de-resultat-title-container">
-                <h3>Compte de Résultat</h3>
-            </div>
-            <button type="button" class="compte-de-resultat-close-btn" title="Fermer" aria-label="Fermer le compte de résultat">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="m15 9-6 6"/>
-                    <path d="m9 9 6 6"/>
-                </svg>
-            </button>
-        </div>
-        
-        <div class="compte-de-resultat-content">
-            <!-- Filter buttons for different periods -->
-            <div class="compte-de-resultat-filters">
-                <button class="budget-filter-btn active" data-period="3">3 jours</button>
-                <button class="budget-filter-btn" data-period="6">6 jours</button>
-                <button class="budget-filter-btn" data-period="9">9 jours</button>
-                <button class="budget-filter-btn" data-period="all">Tous</button>
-            </div>
-            
-            <!-- Global refresh button -->
-            <div class="compte-de-resultat-refresh-section">
-                <button type="button" class="budget-global-refresh-btn" title="Actualiser les données" aria-label="Actualiser les données">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
-                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                        <path d="M21 3v5h-5"/>
-                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                        <path d="M3 21v-5h5"/>
-                    </svg>
-                    Actualiser
-                </button>
-            </div>
-            
-            <!-- Budget states list -->
-            <div class="compte-de-resultat-list" id="compte-de-resultat-list">
-                <div class="budget-state-loading">
-                    <div class="loading-spinner"></div>
-                    <p>Chargement des états de budget...</p>
-                </div>
-            </div>
-            
-            <!-- Summary section -->
-            <div class="compte-de-resultat-summary" id="compte-de-resultat-summary">
-                <h4>Résumé de la période</h4>
-                <div class="summary-content" id="summary-content">
-                    <p>Aucune donnée disponible</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Journal des Écritures Panel -->
 <div id="journal-panel" class="journal-panel" role="dialog" aria-modal="true" aria-label="Journal comptable" aria-hidden="true" tabindex="-1">
@@ -3012,39 +2754,79 @@
                 <div class="journal-filter-pills">
                     <div class="journal-filter-pills-section">
                         <span class="journal-filter-pills-label">Revenus:</span>
-                        <button class="journal-filter-pill" data-filter="taxes" data-types='["citizen_tax","payroll_tax"]'>
-                            <span class="pill-color" style="background: #cfe2ff; color: #084298;"></span>
+                        <button class="journal-filter-pill" data-filter="taxes" data-types='["citizen_tax","payroll_tax","vat","corporate_tax_revenue","social_contribution"]'>
+                            <span class="pill-color" style="background: var(--pcg4-bg); color: var(--pcg4-fg);"></span>
                             <span class="pill-label">Impôts et taxes</span>
                         </button>
-                        <button class="journal-filter-pill" data-filter="exports" data-types='["export_"]'>
-                            <span class="pill-color" style="background: #d4edda; color: #155724;"></span>
-                            <span class="pill-label">Exports</span>
+                        <button class="journal-filter-pill" data-filter="export_duty" data-types='["export_"]'>
+                            <span class="pill-color" style="background: var(--pcg4-bg); color: var(--pcg4-fg);"></span>
+                            <span class="pill-label">Douane à l'export</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="import_duty" data-types='["customs_import_"]'>
+                            <span class="pill-color" style="background: var(--pcg4-bg); color: var(--pcg4-fg);"></span>
+                            <span class="pill-label">Douane à l'import</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="sales" data-types='["producer_revenue","service_sales","abroad_sale_"]'>
+                            <span class="pill-color" style="background: var(--pcg70-bg); color: var(--pcg70-fg);"></span>
+                            <span class="pill-label">Ventes</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="household_income" data-types='["household_wage","public_wage","household_benefit","household_participation","household_dividend"]'>
+                            <span class="pill-color" style="background: var(--pcg7h-bg); color: var(--pcg7h-fg);"></span>
+                            <span class="pill-label">Revenus des ménages</span>
                         </button>
                         <button class="journal-filter-pill" data-filter="loan_capital" data-types='["loan_capital"]'>
-                            <span class="pill-color" style="background: #e2d5f7; color: #6f42c1;"></span>
+                            <span class="pill-color" style="background: var(--pcg1-bg); color: var(--pcg1-fg);"></span>
                             <span class="pill-label">Revenus exceptionnels</span>
                         </button>
                     </div>
                     <div class="journal-filter-pills-section">
                         <span class="journal-filter-pills-label">Dépenses:</span>
+                        <button class="journal-filter-pill" data-filter="taxes_paid" data-types='["income_tax","citizen_tax_paid","corporate_tax","employee_contribution"]'>
+                            <span class="pill-color" style="background: var(--pcg4-paid-bg); color: var(--pcg4-paid-fg);"></span>
+                            <span class="pill-label">Impôts payés</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="tax_credit" data-types='["income_tax_refund","payroll_tax_refund"]'>
+                            <span class="pill-color" style="background: var(--pcg4-bg); color: var(--pcg4-fg);"></span>
+                            <span class="pill-label">Crédit d'impôt</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="duty_paid" data-types='["duty_paid_"]'>
+                            <span class="pill-color" style="background: var(--pcg4-paid-bg); color: var(--pcg4-paid-fg);"></span>
+                            <span class="pill-label">Douanes payées</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="purchases" data-types='["producer_purchase","service_purchase","consumer_purchase"]'>
+                            <span class="pill-color" style="background: var(--pcg60-bg); color: var(--pcg60-fg);"></span>
+                            <span class="pill-label">Achats</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="imports" data-types='["import_"]'>
+                            <span class="pill-color" style="background: var(--pcg60-bg); color: var(--pcg60-fg);"></span>
+                            <span class="pill-label">Achats à l'étranger</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="freight" data-types='["freight_"]'>
+                            <span class="pill-color" style="background: var(--pcg6x-bg); color: var(--pcg6x-fg);"></span>
+                            <span class="pill-label">Transports</span>
+                        </button>
                         <button class="journal-filter-pill" data-filter="loan_interest" data-types='["loan_interest"]'>
-                            <span class="pill-color" style="background: #ffe0b2; color: #e65100;"></span>
+                            <span class="pill-color" style="background: var(--pcg65-bg); color: var(--pcg65-fg);"></span>
                             <span class="pill-label">Intérêts</span>
                         </button>
                         <button class="journal-filter-pill" data-filter="salary" data-types='["salary"]'>
-                            <span class="pill-color" style="background: #ffe0b2; color: #e65100;"></span>
+                            <span class="pill-color" style="background: var(--pcg64-bg); color: var(--pcg64-fg);"></span>
                             <span class="pill-label">Salaires fonctionnaires</span>
                         </button>
                         <button class="journal-filter-pill" data-filter="unemployment_benefit" data-types='["unemployment_benefit"]'>
-                            <span class="pill-color" style="background: #ffe0b2; color: #e65100;"></span>
+                            <span class="pill-color" style="background: var(--pcg64-bg); color: var(--pcg64-fg);"></span>
                             <span class="pill-label">Salaires chômeurs</span>
                         </button>
-                        <button class="journal-filter-pill" data-filter="imports" data-types='["import_"]'>
-                            <span class="pill-color" style="background: #fff3cd; color: #856404;"></span>
-                            <span class="pill-label">Imports</span>
+                        <button class="journal-filter-pill" data-filter="employer_contribution" data-types='["employer_contribution"]'>
+                            <span class="pill-color" style="background: var(--pcg64-bg); color: var(--pcg64-fg);"></span>
+                            <span class="pill-label">Cotisations patronales</span>
+                        </button>
+                        <button class="journal-filter-pill" data-filter="cooperative_sharing" data-types='["enterprise_participation","enterprise_dividend"]'>
+                            <span class="pill-color" style="background: var(--pcg65-bg); color: var(--pcg65-fg);"></span>
+                            <span class="pill-label">Participation et distributions</span>
                         </button>
                         <button class="journal-filter-pill" data-filter="exceptional_expenses" data-types='["exceptional_expenses"]'>
-                            <span class="pill-color" style="background: #d7ccc8; color: #5d4037;"></span>
+                            <span class="pill-color" style="background: var(--pcg6x-bg); color: var(--pcg6x-fg);"></span>
                             <span class="pill-label">Dépenses exceptionnelles</span>
                         </button>
                     </div>
@@ -3059,11 +2841,16 @@
         </div>
         
         <div class="journal-content">
+            <div class="journal-scope-tabs" role="tablist" aria-label="Comptabilité">
+                <button class="journal-scope-tab active" type="button" role="tab" aria-selected="true" data-scope="city">🏛️ Hameau</button>
+                <button class="journal-scope-tab" type="button" role="tab" aria-selected="false" data-scope="private">🤝 Flux privés</button>
+            </div>
             <div class="journal-filters">
                 <button class="journal-filter-btn active" data-period="all">Tout l'historique</button>
                 <button class="journal-filter-btn" data-period="7">7 derniers jours</button>
                 <button class="journal-filter-btn" data-period="30">30 derniers jours</button>
                 <button class="journal-filter-btn" data-period="60">60 derniers jours</button>
+                <select id="journal-hamlet-filter" class="journal-hamlet-filter" aria-label="Filtrer par hameau"></select>
             </div>
             
             <div class="journal-refresh-section">
@@ -3077,13 +2864,21 @@
                     Actualiser le journal
                 </button>
                 <div class="journal-export-buttons">
-                    <button class="journal-export-btn" id="journal-export-json-btn" title="Télécharger en JSON">
+                    <button class="journal-export-btn" id="journal-export-json-btn" title="Télécharger le journal du hameau en JSON">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                             <polyline points="7 10 12 15 17 10"/>
                             <line x1="12" y1="15" x2="12" y2="3"/>
                         </svg>
-                        JSON
+                        JSON hameau
+                    </button>
+                    <button class="journal-export-btn" id="journal-export-private-json-btn" title="Télécharger les flux privés (entreprises et maisons) en JSON">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        JSON flux privés
                     </button>
                     <button class="journal-export-btn" id="journal-export-pdf-btn" title="Télécharger en PDF">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text">
@@ -3109,11 +2904,11 @@
 </div>
 
 <!-- Food Traceability Panel -->
-<div id="food-traceability-panel" class="food-traceability-panel">
-    <div class="food-traceability-wrapper">
-        <div class="food-traceability-header">
-            <h3>🌾 Traçabilité Alimentaire</h3>
-            <div class="food-traceability-close-btn" title="Fermer" aria-label="Fermer la traçabilité alimentaire">
+<div id="supply-traceability-panel" class="supply-traceability-panel">
+    <div class="supply-traceability-wrapper">
+        <div class="supply-traceability-header">
+            <h3>🌾 Traçabilité Alimentaire <span class="supply-traceability-hamlet" data-hamlet-label></span></h3>
+            <div class="supply-traceability-close-btn" title="Fermer" aria-label="Fermer la traçabilité alimentaire">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
                     <path d="M18 6L6 18"/>
                     <path d="M6 6l12 12"/>
@@ -3121,24 +2916,26 @@
             </div>
         </div>
         
-        <div class="food-traceability-content">
+        <div class="supply-traceability-content">
             <!-- Tabs -->
-            <div class="food-traceability-tabs">
-                <button class="food-traceability-tab active" data-tab="details">📋 Détails</button>
-                <button class="food-traceability-tab" data-tab="charts">📊 Graphiques</button>
+            <div class="supply-traceability-tabs">
+                <button class="supply-traceability-tab active" data-tab="details">📋 Transactions</button>
+                <button class="supply-traceability-tab" data-tab="charts">📊 Satisfaction</button>
             </div>
             
             <!-- Details Tab -->
-            <div class="food-traceability-tab-content active" id="food-traceability-details-tab">
-                <div class="food-traceability-filters">
-                    <button class="food-traceability-filter-btn active" data-period="all">Tout l'historique</button>
-                    <button class="food-traceability-filter-btn" data-period="7">7 derniers jours</button>
-                    <button class="food-traceability-filter-btn" data-period="30">30 derniers jours</button>
-                    <button class="food-traceability-filter-btn" data-period="60">60 derniers jours</button>
+            <div class="supply-traceability-tab-content active" id="supply-traceability-details-tab">
+                <div class="supply-traceability-filters">
+                    <button class="supply-traceability-filter-btn active" data-period="all">Tout l'historique</button>
+                    <button class="supply-traceability-filter-btn" data-period="7">7 derniers jours</button>
+                    <button class="supply-traceability-filter-btn" data-period="30">30 derniers jours</button>
+                    <button class="supply-traceability-filter-btn" data-period="60">60 derniers jours</button>
                 </div>
-                
-                <div class="food-traceability-refresh-section">
-                    <button class="food-traceability-refresh-btn" id="food-traceability-refresh-btn">
+
+                <div class="supply-traceability-category-pills" id="supply-traceability-category-pills"></div>
+
+                <div class="supply-traceability-refresh-section">
+                    <button class="supply-traceability-refresh-btn" id="supply-traceability-refresh-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
                             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                             <path d="M21 3v5h-5"/>
@@ -3147,23 +2944,28 @@
                         </svg>
                         Actualiser
                     </button>
+                    <button class="supply-traceability-refresh-btn" id="supply-traceability-export-btn" title="Télécharger toutes les transactions en JSON">
+                        Exporter en JSON
+                    </button>
                 </div>
-                
-                <div class="food-traceability-list" id="food-traceability-list">
-                    <div class="food-traceability-loading">
+
+                <div class="supply-traceability-log" data-transaction-log></div>
+                <div class="supply-traceability-list" id="supply-traceability-list">
+                    <div class="supply-traceability-loading">
                         <div class="loading-spinner"></div>
                         <p>Chargement de la traçabilité...</p>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Charts Tab -->
-            <div class="food-traceability-tab-content" id="food-traceability-charts-tab">
-                <div class="food-charts-controls">
-                    <select id="food-charts-year-select" class="food-charts-select">
+            <div class="supply-traceability-tab-content" id="supply-traceability-charts-tab">
+                <div class="supply-traceability-category-pills" id="supply-charts-category-pills"></div>
+                <div class="supply-charts-controls">
+                    <select id="supply-charts-year-select" class="supply-charts-select">
                         <option value="all">Toutes les années</option>
                     </select>
-                    <button class="food-traceability-refresh-btn" id="food-charts-refresh-btn">
+                    <button class="supply-traceability-refresh-btn" id="supply-charts-refresh-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
                             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                             <path d="M21 3v5h-5"/>
@@ -3172,9 +2974,12 @@
                         </svg>
                         Actualiser
                     </button>
+                    <button class="supply-traceability-refresh-btn" id="supply-charts-export-btn" title="Télécharger la traçabilité en JSON">
+                        Exporter en JSON
+                    </button>
                 </div>
-                <div class="food-stats-container" id="food-stats-container">
-                    <div class="food-stats-loading">
+                <div class="supply-stats-container" id="supply-stats-container">
+                    <div class="supply-stats-loading">
                         <div class="loading-spinner"></div>
                         <p>Chargement des statistiques...</p>
                     </div>
@@ -3189,12 +2994,15 @@
     <div class="city-map-wrapper">
         <div class="city-map-header">
             <h3>🗺️ Carte de la Ville</h3>
-            <button type="button" class="city-map-close-btn" title="Fermer" aria-label="Fermer le plan de la ville">
+            <div class="city-map-header-actions">
+                <button type="button" class="city-map-export-btn" id="city-map-export-btn" title="Télécharger l'état de la ville en JSON">Exporter la ville</button>
+                <button type="button" class="city-map-close-btn" title="Fermer" aria-label="Fermer le plan de la ville">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x" aria-hidden="true">
                     <path d="M18 6L6 18"/>
                     <path d="M6 6l12 12"/>
                 </svg>
             </button>
+            </div>
         </div>
         <div class="city-map-content">
             <div class="city-map-legend">
@@ -3220,7 +3028,7 @@
                         <span class="legend-label">Marché trop loin</span>
                     </div>
                 </div>
-                <div class="legend-items">
+                <div class="legend-items" id="city-map-legend-buildings">
                     <div class="legend-item">
                         <span class="legend-code legend-code-small hb">HB</span>
                         <span class="legend-label">Maison Bleue</span>
@@ -3232,10 +3040,6 @@
                     <div class="legend-item">
                         <span class="legend-code legend-code-small hp">HP</span>
                         <span class="legend-label">Maison Violette</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-code legend-code-small h2s">H2S</span>
-                        <span class="legend-label">Palace</span>
                     </div>
                     <div class="legend-item">
                         <span class="legend-code legend-code-small r">R</span>
@@ -3315,6 +3119,7 @@
     <div class="tutorial-panel-wrapper">
         <div class="tutorial-panel-header">
             <h3>🎓 Tutoriel</h3>
+            <button type="button" class="tutorial-rules-btn">Règles</button>
         </div>
         <div class="tutorial-panel-content">
             <div class="tutorial-content"></div>
@@ -3355,7 +3160,14 @@
                 <p class="news-event-funds-hint" id="news-event-funds-hint"></p>
             </div>
         </div>
+        <div class="news-event-modal-action" id="news-event-action" hidden>
+            <button type="button" class="news-event-action-btn" id="news-event-action-btn">
+                <span class="news-event-action-icon" id="news-event-action-icon" aria-hidden="true"></span>
+                <span class="news-event-action-label" id="news-event-action-label"></span>
+            </button>
+        </div>
         <div class="news-event-modal-footer">
+            <button type="button" class="modal-btn" id="news-event-close-btn">Fermer</button>
             <button type="button" class="modal-btn modal-btn-primary" id="news-event-next-btn">Lire le suivant</button>
         </div>
     </div>
@@ -3435,13 +3247,26 @@
                     <div class="parameters-control-group">
                         <label class="parameters-control-label" for="days-per-month-input">
                             <span class="parameters-control-text">Nombre de tours (jours) / mois</span>
-                            <input 
-                                type="number" 
-                                id="days-per-month-input" 
-                                class="parameters-number-input" 
-                                min="1" 
-                                max="30" 
-                                value="1"
+                            <input
+                                type="number"
+                                id="days-per-month-input"
+                                class="parameters-number-input"
+                                disabled
+                            >
+                        </label>
+                        <p class="parameters-control-note">Fixé au début de la partie (paramètres de la page d'accueil) : il ne peut plus changer ensuite.</p>
+                    </div>
+                    <div class="parameters-control-group">
+                        <label class="parameters-control-label" for="tick-seconds-input">
+                            <span class="parameters-control-text">Secondes entre chaque tour (jour)</span>
+                            <input
+                                type="number"
+                                id="tick-seconds-input"
+                                class="parameters-number-input"
+                                min="0.08"
+                                max="16"
+                                step="0.05"
+                                value="4"
                             >
                         </label>
                     </div>
@@ -3486,6 +3311,19 @@
                         <p id="camera-dpad-hint" class="parameters-shortcut-label" style="margin: 6px 0 0; padding-left: 0;">
                             Affiche un bouton flottant pour ouvrir le D-pad de déplacement de la caméra.
                         </p>
+                    </div>
+                </div>
+
+                <!-- Phone in portrait only: the floating cookie button is hidden there (game-mobile-portrait.css) and this takes its place -->
+                <div class="parameters-section parameters-section--cookies">
+                    <h4 class="parameters-section-title">Cookies</h4>
+                    <div class="parameters-control-group">
+                        <div class="parameters-control-label" style="cursor: default;">
+                            <span class="parameters-control-text">Consentement</span>
+                            <button type="button" id="parameters-cookies-btn" class="parameters-action-btn">
+                                Gérer les cookies
+                            </button>
+                        </div>
                     </div>
                 </div>
 

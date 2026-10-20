@@ -3,9 +3,9 @@
  */
 
 import { TimeManager } from '../shared/time/TimeManager.js';
-import { DEFAULT_FOOD_DISTRIBUTION_DISTANCE } from '../contexts/supply/domain/catalogs/SupplySimulationCatalog.js';
 import { getOrCreateParcelsContext } from './createParcelsContext.js';
 import { getOrCreateSupplyContext } from './createSupplyContext.js';
+import { createConsumerMoneyPort } from './consumerMoneyPort.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
 import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
 import { getOrCreateGameplayContext } from './createGameplayContext.js';
@@ -13,6 +13,7 @@ import { getOrCreateConstructionContext } from './createConstructionContext.js';
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
 import { getOrCreateIntelligenceContext } from './createIntelligenceContext.js';
+import { getOrCreateTradeContext } from './createTradeContext.js';
 import { toSupplySeason, toSupplyMonth } from './supplyTimeLabels.js';
 import { createGameRuntime } from './createGameRuntime.js';
 import { assembleSessionApi } from './sessionApi.js';
@@ -33,7 +34,6 @@ import { assembleSessionApi } from './sessionApi.js';
  */
 export function bootGameContexts() {
   const parcels = getOrCreateParcelsContext();
-  const supply = getOrCreateSupplyContext();
   const housing = getOrCreateHousingContext();
   const employment = getOrCreateEmploymentContext({
     citizenProvidesSkillAtLevel: (house, skillKey, requiredLevel) =>
@@ -42,8 +42,26 @@ export function bootGameContexts() {
   const gameplay = getOrCreateGameplayContext();
   const construction = getOrCreateConstructionContext();
   const cityAssets = getOrCreateCityAssetsContext();
-  const accounting = getOrCreateAccountingContext({ cityAssets });
+  const accounting = getOrCreateAccountingContext({
+    cityAssets,
+    getLabourMarket: () => employment.getLabourMarket(),
+    // A service is billed at the price its seller sold it at (the supply's price book, built after the accounting: read at call time).
+    getSellingPrice: (building, category, period) => supply.sellingPriceOf(building, category, period),
+    // What a company's stock is worth at cost, for its balance sheet.
+    valueStock: (buildingId, period) => supply.valueStockOf(buildingId, period),
+    // The shelves' prices, for the cost of living.
+    listSellingPrices: (period) => supply.listSellingPrices(period),
+    listServicePrices: (period) => supply.listServicePrices(period),
+  });
+  // The supply needs the consumers' money (their personal accounts), so the accounting exists first.
+  const supply = getOrCreateSupplyContext({ consumerMoney: createConsumerMoneyPort(accounting) });
+  // A house reaches level 3 only if its own business can reach a warehouse: no 'no-hub' gap in any of its recipes.
+  housing.setActivityAccessCheck(async (house) => {
+    const gaps = await supply.describeActivitySupplyAccess({ id: house.id, type: house.type, x: house.x, y: house.y });
+    return !gaps.some((gap) => gap.status === 'no-hub');
+  });
   const intelligence = getOrCreateIntelligenceContext();
+  const trade = getOrCreateTradeContext({ supply, accounting });
   const sessionApi = assembleSessionApi({
     construction,
     accounting,
@@ -61,11 +79,11 @@ export function bootGameContexts() {
     employment,
     gameplay,
     intelligence,
+    trade,
     getTimeInfo: (turn) => TimeManager.getTimeInfo(turn),
     toSupplySeason,
     toSupplyMonth,
     getSkillPriorities: () => employment.getAllSkillPriorities(),
-    foodDistributionDistance: DEFAULT_FOOD_DISTRIBUTION_DISTANCE,
   });
 
   return {
@@ -77,6 +95,7 @@ export function bootGameContexts() {
     construction,
     accounting,
     intelligence,
+    trade,
     sessionApi,
     runtime,
   };

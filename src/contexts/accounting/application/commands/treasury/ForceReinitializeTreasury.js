@@ -1,39 +1,24 @@
 import { resolveStartingFunds } from '../../../domain/policies/TreasuryInitializationPolicy.js';
 
 /**
- * Reset treasury + journal and reinitialize (new game / corrupted data).
+ * Reset the journal (the treasury's only record) and record a new starting capital. New game only.
  */
 export class ForceReinitializeTreasury {
   /**
-   * @param {import('../../../infrastructure/adapters/persistence/dexie/DexieTreasuryRepository.js').DexieTreasuryRepository} treasuryRepository
-   * @param {import('../../../application/ports/JournalRepository.js').JournalRepository} journalRepository
    * @param {import('./InitializeTreasury.js').InitializeTreasury} initializeTreasury
-   * @param {{ clear?: () => Promise<void> }} [journalClearPort]
+   * @param {{ clear: () => Promise<void> }} journalClearPort
+   * @param {number} defaultInitialFunds
    */
-  constructor(
-    treasuryRepository,
-    journalRepository,
-    initializeTreasury,
-    journalClearPort = null
-  ) {
-    this.treasuryRepository = treasuryRepository;
-    this.journalRepository = journalRepository;
+  constructor(initializeTreasury, journalClearPort, defaultInitialFunds) {
     this.initializeTreasury = initializeTreasury;
     this.journalClearPort = journalClearPort;
+    this.defaultInitialFunds = defaultInitialFunds;
   }
 
-  /**
-   * @param {number|null} [startingFunds]
-   * @returns {Promise<object>}
-   */
+  /** @param {number|null} [startingFunds] */
   async execute(startingFunds = null) {
-    resolveStartingFunds(startingFunds, this.initializeTreasury.defaultInitialFunds);
-
-    if (this.journalClearPort?.clear) {
-      await this.journalClearPort.clear();
-    }
-
-    await this.treasuryRepository.clearCurrentBudget();
+    resolveStartingFunds(startingFunds, this.defaultInitialFunds);
+    await this.journalClearPort.clear();
     return this.initializeTreasury.execute(startingFunds);
   }
 }

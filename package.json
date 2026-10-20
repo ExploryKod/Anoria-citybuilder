@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "console:tag": "node scripts/dev/consoleTag.mjs",
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "verify:kenney-hex": "node scripts/verifyKenneyHexAtlases.js",
     "classify:kenney-hex": "node scripts/classifyKenneyHexTiles.js",
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "@splidejs/splide": "^4.1.4",
+    "@splidejs/splide-extension-auto-scroll": "^0.5.3",
     "dexie": "^4.0.11",
     "gsap": "^3.13.0",
     "js-toast-notifier": "^1.0.14",
@@ -29,7 +31,9 @@
   "devDependencies": {
     "@gltf-transform/core": "^4.2.1",
     "@gltf-transform/extensions": "^4.2.1",
+    "@playwright/test": "^1.63.0",
     "@types/jest": "^30.0.0",
+    "@types/node": "^26.6.3",
     "baseline-browser-mapping": "^2.11.5",
     "caniuse-lite": "^1.0.30001806",
     "fake-indexeddb": "^6.2.5",
@@ -41,5 +45,5 @@
   "engines": {
     "node": "24.x"
   },
-  "packageManager": "pnpm@11.17.0"
+  "packageManager": "pnpm@12.7.0"
 }

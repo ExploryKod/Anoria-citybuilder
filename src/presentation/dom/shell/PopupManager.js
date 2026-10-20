@@ -53,15 +53,13 @@ class PopupManager {
 
         for (const id of [
             'pause-overlay',
-            'compte-de-resultat-panel',
             'info-building-overlay',
             'over-overlay',
             'loans-panel',
-            'bilan-panel',
             'administrator-panel',
             'city-map-panel',
             'journal-panel',
-            'food-traceability-panel',
+            'supply-traceability-panel',
             'news-event-modal',
         ]) {
             this.popupConfigs.set(id, { ...blocking });

@@ -10,7 +10,7 @@ export function createSupplyBuildingView({
   y = null,
   roadCount = 0,
   stocks = {},
-  maxStock = 500,
+  maxStock,
   neighbors = [],
   pop = 0,
   isBuying = false,
@@ -19,6 +19,10 @@ export function createSupplyBuildingView({
   isCollecting = false,
   collectedByHub = false,
   lastCollection = null,
+  lastTransaction = null,
+  lastFailedSale = null,
+  activityShortfall = null,
+  unmetDemand = 0,
   lastImport = null,
   lastImportDetails = null,
   salesToDistributor = [],
@@ -29,17 +33,15 @@ export function createSupplyBuildingView({
   commercializeEnabled = true,
   supplyHubId = null,
   linkedDistributors = [],
+  cycleState = null,
 } = {}) {
   if (!id || typeof id !== 'string') {
     throw new Error('SupplyBuildingView: id is required');
   }
 
   const stock = createSupplyStock(stocks);
-  const presentationStocks = Object.freeze({
-    ...stock,
-    dattes: nonNegInt(stocks?.dattes),
-    wood: nonNegInt(stocks?.wood),
-  });
+  // The catalog-derived shape only — no good is added by name here.
+  const presentationStocks = Object.freeze({ ...stock });
 
   return Object.freeze({
     id,
@@ -50,7 +52,7 @@ export function createSupplyBuildingView({
     pop: Number.isFinite(pop) ? Math.max(0, Math.floor(pop)) : 0,
     stocks: presentationStocks,
     maxStock:
-      Number.isFinite(maxStock) && maxStock > 0 ? Math.floor(maxStock) : 500,
+      Number.isFinite(maxStock) && maxStock > 0 ? Math.floor(maxStock) : Infinity,
     neighbors: Object.freeze(Array.isArray(neighbors) ? [...neighbors] : []),
     isBuying: isBuying === true,
     noSourcesNearby: noSourcesNearby === true,
@@ -58,6 +60,16 @@ export function createSupplyBuildingView({
     isCollecting: isCollecting === true,
     collectedByHub: collectedByHub === true,
     lastCollection: lastCollection ? Object.freeze({ ...lastCollection }) : null,
+    // When goods last REALLY changed hands through this building ({ year, monthIndex }): a pass that
+    // moved nothing leaves it as it was.
+    // Units the houses it serves still wanted after its last pass (0 = every house was served).
+    unmetDemand: Number.isFinite(unmetDemand) ? Math.max(0, unmetDemand) : 0,
+    // When its last sale window closed with goods unsold ({ year, monthIndex, units, cause }), else null.
+    lastFailedSale: lastFailedSale ? Object.freeze({ ...lastFailedSale }) : null,
+    // Per producer category, whether a recipe is CURRENTLY stuck waiting for its own input (see ProduceResource).
+    activityShortfall:
+      activityShortfall && typeof activityShortfall === 'object' ? Object.freeze({ ...activityShortfall }) : null,
+    lastTransaction: lastTransaction ? Object.freeze({ ...lastTransaction }) : null,
     lastImport: lastImport ? Object.freeze({ ...lastImport }) : null,
     lastImportDetails: lastImportDetails
       ? Object.freeze({ ...lastImportDetails })
@@ -88,6 +100,7 @@ export function createSupplyBuildingView({
           )
         : []
     ),
+    cycleState: cycleState && typeof cycleState === 'object' ? Object.freeze({ ...cycleState }) : null,
   });
 }
 

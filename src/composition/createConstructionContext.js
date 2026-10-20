@@ -1,4 +1,5 @@
 import { DexieConstructionBuildingRepository } from '../contexts/construction/infrastructure/dexie/DexieConstructionBuildingRepository.js';
+import { createEmptyStocks } from '../shared/building-catalog/resourceRoleQueries.js';
 import { GetBuildingAtTile } from '../contexts/construction/application/queries/GetBuildingAtTile.js';
 import { ListSceneBuildingTypes } from '../contexts/construction/application/queries/ListSceneBuildingTypes.js';
 import { PlaceBuildingWithPayment } from '../contexts/construction/application/services/PlaceBuildingWithPayment.js';
@@ -15,7 +16,6 @@ import {
   recordConstructionRefund,
 } from './constructionTreasuryBridge.js';
 import { awaitBudgetReady } from './budgetReadyGate.js';
-import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import { getOrCreateParcelsContext } from './createParcelsContext.js';
 import {
   registerSceneBuildingTypeListing,
@@ -34,7 +34,6 @@ import {
  * @param {Record<string, { price?: number, gridSize?: number }>} [deps.assetCatalog]
  * @param {(buildingType: string) => object} [deps.getDefaultEmployees]
  * @param {() => Promise<unknown>} [deps.awaitBudgetReady]
- * @param {() => Promise<{ funds?: number }>} [deps.getTreasurySnapshot]
  */
 export function createConstructionContext({
   buildingRepository,
@@ -45,7 +44,6 @@ export function createConstructionContext({
   assetCatalog,
   getDefaultEmployees: getDefaultEmployeesDep,
   awaitBudgetReady: awaitBudgetReadyDep,
-  getTreasurySnapshot: getTreasurySnapshotDep,
 } = {}) {
   const repository = buildingRepository ?? new DexieConstructionBuildingRepository();
   const sceneInventory = sceneBuildingInventory ?? new SceneBuildingInventoryAdapter();
@@ -63,9 +61,6 @@ export function createConstructionContext({
     reclaimStaleBuildingRecords: (params) => reclaimStaleBuildingRecords.execute(params),
     getDefaultEmployees: getDefaultEmployeesDep ?? getDefaultEmployees,
     awaitBudgetReady: awaitBudgetReadyDep ?? awaitBudgetReady,
-    getTreasurySnapshot:
-      getTreasurySnapshotDep
-      ?? (() => getOrCreateAccountingContext().getTreasurySnapshot()),
     assetCatalog: catalog,
     getAssetPrice: (buildingId, prices) => prices?.[buildingId]?.price,
     validatePlacement: canPlaceBuildingAtTileWithSupplyRules,
@@ -159,7 +154,7 @@ export function createConstructionContext({
       }
 
       const defaults = {
-        stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
+        stocks: createEmptyStocks(),
         neighbors: [],
         pop: 0,
         roads: 0,
@@ -194,8 +189,7 @@ export function createConstructionContext({
       const employees = buildingData.employees;
       const needsUpdate =
         employees.category !== undefined ||
-        employees.worker_need === undefined ||
-        employees.elite_need === undefined;
+        employees.worker_need === undefined;
 
       if (!needsUpdate) return;
 
@@ -205,9 +199,7 @@ export function createConstructionContext({
           priority:
             employees.priority !== undefined ? employees.priority : defaultEmployees.priority,
           worker_need: defaultEmployees.worker_need,
-          elite_need: defaultEmployees.elite_need,
           worker: employees.worker || 0,
-          elite: employees.elite || 0,
           sector:
             employees.category !== undefined
               ? employees.category

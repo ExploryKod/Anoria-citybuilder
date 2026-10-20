@@ -1,17 +1,12 @@
-/** Strip embedded breakdown JSON from legacy descriptions. */
-export function stripBreakdownMarkup(description) {
-  if (!description) {
-    return '';
-  }
-  return description.replace(/\|BREAKDOWN\|.*?\|BREAKDOWN\|/, '').trim();
-}
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 
 const MONTH_NAMES =
   'Janvier|Février|Mars|Avril|Mai|Juin|Juillet|Août|Septembre|Octobre|Novembre|Décembre';
 
 /** Remove type label prefix already shown in the entry badge. */
 const DESCRIPTION_PREFIX_BY_TYPE = {
-  payroll_tax: /^Impôt sur les salaires(?:\s*\(assiette citoyens\))?\s*-\s*/i,
+  payroll_tax: /^Impôt sur le revenu \(IR\)\s*-\s*/i,
+  vat: /^TVA ventes\s*-\s*/i,
   salary: /^Salaires fonctionnaires\s*-\s*/i,
   unemployment_benefit: /^Salaires chômeurs\s*-\s*/i,
   maintenance: /^Maintenance mensuelle\s*-\s*/i,
@@ -27,13 +22,6 @@ const DESCRIPTION_PREFIX_BY_TYPE = {
   loan_default_repayment: /^Capital prêt\s+\w+\s+impayé\s*\(/i,
   commercial_route: /^Commission\s*-\s*/i,
   exceptional_expenses: /^Réparation\s*-\s*/i,
-  carry_forward: /^Report à nouveau de l'année\s+/i,
-  cumul_maintenance: /^Cumul Maintenance\s*-\s*/i,
-  cumul_construction: /^Cumul Construction\s*-\s*/i,
-  cumul_salary: /^Cumul salaires fonctionnaires\s*-\s*/i,
-  cumul_exceptional_expenses: /^Cumul Réparations\s*-\s*/i,
-  cumul_loan_interest: /^Cumul Intérêts Prêt\s*-\s*/i,
-  cumul_loan_repayment: /^Cumul Remboursement Prêt\s*-\s*/i,
 };
 
 const PERIOD_LABEL_PATTERN = new RegExp(
@@ -78,12 +66,8 @@ function splitPeriodLabel(text) {
  * @returns {JournalEntryDetail[]} Labeled detail rows (month/year omitted — shown in section headers).
  */
 export function formatJournalEntryDetails(entry) {
-  const raw = stripBreakdownMarkup(entry.description || '');
+  const raw = (entry.description || '').trim();
   if (!raw) {
-    return [];
-  }
-
-  if (entry.type === 'balance' && /^Solde$/i.test(raw)) {
     return [];
   }
 
@@ -96,7 +80,7 @@ export function formatJournalEntryDetails(entry) {
       details.push({ label: 'Taux', value: `${rate[1]}%` });
     }
     if (assietteTotal) {
-      details.push({ label: 'Assiette', value: `${assietteTotal[1]}€` });
+      details.push({ label: 'Assiette', value: formatEuro(assietteTotal[1]) });
     }
     if (assietteDetail) {
       details.push({ label: 'Détail assiette', value: assietteDetail[1] });
@@ -127,7 +111,10 @@ export function formatJournalEntryDetails(entry) {
     entry.type === 'maintenance' ||
     entry.type?.startsWith('import_') ||
     entry.type?.startsWith('export_') ||
-    entry.type?.startsWith('cumul_')
+    entry.type?.startsWith('freight_') ||
+    entry.type?.startsWith('duty_paid_') ||
+    entry.type?.startsWith('customs_import_') ||
+    entry.type?.startsWith('abroad_sale_')
   ) {
     return [];
   }
@@ -135,11 +122,6 @@ export function formatJournalEntryDetails(entry) {
   if (entry.type === 'construction') {
     const building = raw.replace(/^Building:\s*/i, '').trim();
     return building ? [{ label: 'Bâtiment', value: building }] : [];
-  }
-
-  if (entry.type === 'carry_forward') {
-    const balance = raw.replace(/^Report à nouveau de l'année\s+/i, '').trim();
-    return balance ? [{ label: 'Solde antérieur', value: balance }] : [];
   }
 
   if (entry.type === 'capital_funds') {

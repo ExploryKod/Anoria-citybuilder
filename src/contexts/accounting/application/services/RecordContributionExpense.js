@@ -6,12 +6,10 @@ import { buildContributionBusinessKey } from '../../domain/policies/LedgerBusine
 export class RecordContributionExpense {
   /**
    * @param {import('../commands/journal/RecordLedgerEntry.js').RecordLedgerEntry} recordLedgerEntry
-   * @param {import('../commands/treasury/ApplyTreasuryMovement.js').ApplyTreasuryMovement} applyTreasuryMovement
    * @param {{ execute: () => Promise<object> }} getTreasurySnapshot
    */
-  constructor(recordLedgerEntry, applyTreasuryMovement, getTreasurySnapshot) {
+  constructor(recordLedgerEntry, getTreasurySnapshot) {
     this.recordLedgerEntry = recordLedgerEntry;
-    this.applyTreasuryMovement = applyTreasuryMovement;
     this.getTreasurySnapshot = getTreasurySnapshot;
   }
 
@@ -22,7 +20,7 @@ export class RecordContributionExpense {
    * @param {string} params.newsItemId
    * @param {string} [params.description]
    * @param {string} [params.channelId]
-   * @returns {Promise<{ recorded: boolean, skipped: boolean, treasuryApplied: boolean, reason?: string }>}
+   * @returns {Promise<{ recorded: boolean, skipped: boolean, reason?: string }>}
    */
   async execute({ turn, amount, newsItemId, description, channelId = 'caravan' }) {
     const roundedAmount = Math.round(amount);
@@ -31,7 +29,6 @@ export class RecordContributionExpense {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'zero_amount',
       };
     }
@@ -40,7 +37,6 @@ export class RecordContributionExpense {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'invalid_news_item_id',
       };
     }
@@ -50,7 +46,6 @@ export class RecordContributionExpense {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'insufficient_funds',
       };
     }
@@ -70,20 +65,13 @@ export class RecordContributionExpense {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: ledgerResult.reason,
       };
     }
 
-    await this.applyTreasuryMovement.execute({
-      category: 'contribution',
-      amount: roundedAmount,
-    });
-
     return {
       recorded: true,
       skipped: false,
-      treasuryApplied: true,
     };
   }
 }

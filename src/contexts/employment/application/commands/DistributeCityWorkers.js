@@ -80,11 +80,12 @@ export class DistributeCityWorkers {
       (b) => isEligibleWorkplace(b),
     );
 
+    // A house's whole worker pool is hireable — civil servants were removed (2026-10-10, "suppress it for
+    // now"): nothing is set aside before hiring anymore (see computeHouseholdEmploymentStatus).
+    const hireablePopOf = (building) => workerPopFromHouse(building.type, building.pop, building.level);
+
     const remainingPopById = new Map(
-      laborSources.map((building) => [
-        building.id,
-        workerPopFromHouse(building.type, building.pop, building.level),
-      ]),
+      laborSources.map((building) => [building.id, hireablePopOf(building)]),
     );
 
     const qualifyingSources = (skillKey, level) =>
@@ -96,8 +97,10 @@ export class DistributeCityWorkers {
         0,
       );
 
+    // Draws `amountNeeded` workers from the qualifying houses, in order, and returns how many came from each house.
     const spendFromQualifyingSources = (skillKey, level, amountNeeded) => {
       let remaining = amountNeeded;
+      const drawn = {};
       for (const building of qualifyingSources(skillKey, level)) {
         if (remaining <= 0) break;
         const available = remainingPopById.get(building.id) ?? 0;
@@ -105,17 +108,17 @@ export class DistributeCityWorkers {
         if (take <= 0) continue;
         remainingPopById.set(building.id, available - take);
         remaining -= take;
+        drawn[building.id] = take;
       }
+      return drawn;
     };
+    const sourcesById = new Map(workplaces.map((w) => [w.id, {}]));
 
     // Total headcount, once, independent of the per-skill loop below: a
     // house counts once here even if it holds several workplace skills at
     // once (see class docstring) — summing per-skill pool sizes instead
     // would double-count that same house once per skill it qualifies for.
-    const totalAvailableWorkers = laborSources.reduce(
-      (sum, building) => sum + workerPopFromHouse(building.type, building.pop, building.level),
-      0,
-    );
+    const totalAvailableWorkers = laborSources.reduce((sum, building) => sum + hireablePopOf(building), 0);
 
     const workerCountById = new Map(workplaces.map((w) => [w.id, 0]));
     const allAssignments = [];
@@ -144,20 +147,38 @@ export class DistributeCityWorkers {
 
         for (const { buildingId, workers } of assignments) {
           workerCountById.set(buildingId, (workerCountById.get(buildingId) ?? 0) + workers);
+          // Each workplace draws its own workers from the houses in the same order the pool is spent.
+          const drawn = spendFromQualifyingSources(skillKey, level, workers);
+          const sources = sourcesById.get(buildingId) ?? {};
+          for (const [houseId, count] of Object.entries(drawn)) {
+            sources[houseId] = (sources[houseId] ?? 0) + count;
+          }
+          sourcesById.set(buildingId, sources);
         }
         allAssignments.push(...assignments);
-
-        const totalSpent = assignments.reduce((sum, { workers }) => sum + workers, 0);
-        spendFromQualifyingSources(skillKey, level, totalSpent);
       }
     }
 
     for (const [buildingId, workers] of workerCountById) {
       if (workers > 0) {
         await this.employmentBuildingRepository.saveWorkers(buildingId, workers);
+        await this.employmentBuildingRepository.saveWorkerSources(buildingId, sourcesById.get(buildingId) ?? {});
       }
     }
 
-    return { availableWorkers: totalAvailableWorkers, assignments: allAssignments };
+    // The labour market this pass left, one reading per (skill, level) the workplaces ask for: the jobs they need, the ones filled, the
+    // vacancies, and the qualified citizens still without a job. The wages are settled on it (accounting's AdjustWageRates).
+    const labourMarket = [];
+    for (const skillKey of orderedSkillKeys) {
+      const skillWorkplaces = workplaces.filter((workplace) => getRequiredSkillForBuilding(workplace.type) === skillKey);
+      for (const level of new Set(skillWorkplaces.map((w) => getRequiredSkillLevelForBuilding(w.type)))) {
+        const atLevel = skillWorkplaces.filter((w) => getRequiredSkillLevelForBuilding(w.type) === level);
+        const jobs = atLevel.reduce((sum, w) => sum + w.workerNeed, 0);
+        const filled = atLevel.reduce((sum, w) => sum + (workerCountById.get(w.id) ?? 0), 0);
+        labourMarket.push({ skill: skillKey, level, jobs, filled, vacancies: Math.max(0, jobs - filled), idle: headcountAtLevel(skillKey, level) });
+      }
+    }
+
+    return { availableWorkers: totalAvailableWorkers, assignments: allAssignments, labourMarket };
   }
 }

@@ -4,13 +4,58 @@
 
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { formatJournalEntryDetails } from './formatJournalEntryDescription.js';
+import { goodLabel, unresolvedTerm } from '../../shell/CatalogVocabulary.js';
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
+import { tradeLineLabel } from '../../../../contexts/accounting/presentation/JournalExportViewModel.js';
+import { accountLabelOf, pcgOfJournalType, planOfAccount } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
+
+/** The chart of accounts an entry is booked in, as the player reads it: M57 for the city and the hamlets, the PCG for the others. */
+const PLAN_NAMES = Object.freeze({ pcg: 'PCG', m57: 'M57' });
+
+/**
+ * The legs of an écriture as an accountant reads them: account, title, debit, credit, and the two totals, which are equal.
+ * A line with no legs that is not informative is a defect, not something to draw the old way.
+ * @param {object} entry
+ * @param {boolean} isInformative
+ * @returns {string}
+ */
+function renderEntryLegs(entry, isInformative) {
+  if (isInformative) return '';
+  // A year closed by a purge is shown from its totals per type: a digest of the year, not an écriture.
+  if (entry.closed) return '<div class="journal-entry-legs-note">Total de l’année close : ce n’est pas une écriture</div>';
+  if (!entry.legs) throw new Error(`[journal] the écriture ${entry.id} (${entry.type}) has no legs: it was written before the entries carried them`);
+  const money = (centimes) => (centimes > 0 ? formatEuro(centimes / 100) : '');
+  const totalDebit = entry.legs.reduce((sum, leg) => sum + leg.debit, 0);
+  const totalCredit = entry.legs.reduce((sum, leg) => sum + leg.credit, 0);
+  const plan = PLAN_NAMES[planOfAccount(entry.accountBuildingId)];
+  const rows = entry.legs
+    .map(
+      (leg) => `
+        <tr class="${leg.credit > 0 ? 'journal-entry-leg--credit' : ''}">
+            <td class="journal-entry-leg-account">${leg.account}</td>
+            <td class="journal-entry-leg-label">${accountLabelOf(leg.account)}</td>
+            <td class="journal-entry-leg-amount">${money(leg.debit)}</td>
+            <td class="journal-entry-leg-amount">${money(leg.credit)}</td>
+        </tr>`
+    )
+    .join('');
+  return `
+        <table class="journal-entry-legs" aria-label="Jambes de l’écriture (${plan})">
+            <thead><tr><th>Compte ${plan}</th><th>Libellé</th><th class="journal-entry-leg-amount">Débit</th><th class="journal-entry-leg-amount">Crédit</th></tr></thead>
+            <tbody>${rows}</tbody>
+            <tfoot><tr><td colspan="2">Total</td><td class="journal-entry-leg-amount">${formatEuro(totalDebit / 100)}</td><td class="journal-entry-leg-amount">${formatEuro(totalCredit / 100)}</td></tr></tfoot>
+        </table>`;
+}
+
+/** "Import Blé" / "Douane export perçue Bois": a trade line is named after what it is and the good the catalog names. */
+const tradeLabel = tradeLineLabel;
 
 /**
  * @param {number} amount
  * @returns {string}
  */
 function formatSignedEuro(amount) {
-  return `${amount >= 0 ? '+' : ''}${amount}€`;
+  return `${amount >= 0 ? '+' : ''}${formatEuro(amount)}`;
 }
 
 /**
@@ -19,7 +64,7 @@ function formatSignedEuro(amount) {
  * @returns {string}
  */
 function formatPrefixedEuro(sign, amount) {
-  return `${sign}${amount}€`;
+  return `${sign}${formatEuro(amount)}`;
 }
 
 /**
@@ -121,9 +166,11 @@ function renderMonthSummary(monthData) {
  *   isInfoPseudoMovementType: (type: string) => boolean,
  *   labelForInfoJournalType: (type: string) => string,
  * }} accounting
+ * @param {Map<string, string>} hamletNames
+ * @param {string} scopeLabel The hamlet shown in each year header, or "Tous les hameaux".
  * @returns {string}
  */
-export function renderJournalList(ledger, accounting) {
+export function renderJournalList(ledger, accounting, hamletNames, scopeLabel) {
   const sortHint = `
         <p class="journal-sort-hint">Plus récent en haut — années et mois triés du plus récent au plus ancien.</p>
     `;
@@ -137,7 +184,7 @@ export function renderJournalList(ledger, accounting) {
         return `
             <div class="journal-year-group">
                 <div class="journal-year-header">
-                    <h3>Année ${yearDisplay}</h3>
+                    <h3>Année ${yearDisplay} <span class="journal-year-scope">${scopeLabel}</span></h3>
                     <div class="journal-year-summary">
                         ${renderYearSummary(yearData)}
                     </div>
@@ -157,7 +204,7 @@ export function renderJournalList(ledger, accounting) {
                                 </div>
                             </div>
                             <div class="journal-month-entries">
-                                ${monthData.entries.map((entry) => createJournalEntryHTML(entry, accounting)).join('')}
+                                ${monthData.entries.map((entry) => createJournalEntryHTML(entry, accounting, hamletNames)).join('')}
                             </div>
                         </div>
                     `;
@@ -179,53 +226,51 @@ export function renderJournalList(ledger, accounting) {
  * }} accounting
  * @returns {string}
  */
-function createJournalEntryHTML(entry, accounting) {
+function createJournalEntryHTML(entry, accounting, hamletNames) {
+  const hamletName = hamletNames.get(entry.hamletId);
+  if (hamletName === undefined) {
+    throw new Error(`[journal] entry ${entry.id} belongs to an unknown hamlet ${entry.hamletId}`);
+  }
   const {
     INFO_JOURNAL_TYPE_LABELS,
     isInfoPseudoMovementType,
     labelForInfoJournalType,
   } = accounting;
-  const date = new Date(entry.date);
-  const formattedDate = date.toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  let yearDisplay = '';
-  if (entry.turn !== undefined) {
-    const timeInfo = TimeManager.getTimeInfo(entry.turn);
-    yearDisplay = timeInfo.year === 0 ? '0 JC' : `${timeInfo.year} ap JC`;
-  }
+  // The date the player reads is the game's: a turn is a day, so the entry is dated by its turn in the calendar.
+  const gameDate = TimeManager.formatGameDate(entry.turn);
 
   let isIncome = false;
 
   if (
-    entry.type === 'cumul_maintenance' ||
-    entry.type === 'cumul_construction' ||
-    entry.type === 'cumul_salary' ||
-    entry.type === 'cumul_exceptional_expenses' ||
-    entry.type === 'cumul_loan_interest' ||
-    entry.type === 'cumul_loan_repayment' ||
     isInfoPseudoMovementType(entry.type) ||
     entry.type === 'loan_default_interest' ||
     entry.type === 'loan_default_repayment'
   ) {
     isIncome = false;
-  } else if (entry.type === 'balance') {
-    isIncome = entry.amount >= 0;
   } else if (
     entry.type === 'citizen_tax' ||
     entry.type === 'payroll_tax' ||
+    entry.type === 'vat' ||
+    entry.type === 'producer_revenue' ||
+    entry.type === 'corporate_tax_revenue' ||
+    entry.type === 'corporate_tax_debt_received' ||
+    entry.type === 'contribution_debt_received' ||
+    entry.type === 'service_sales' ||
+    entry.type === 'service_subsidy_received' ||
+    entry.type === 'subsidy_companies_received' ||
+    entry.type === 'subsidy_housing_received' ||
+    entry.type === 'social_contribution' ||
+    entry.type === 'household_participation' ||
+    entry.type === 'household_dividend' ||
+    entry.type === 'income_tax_refund' ||
+    entry.type === 'household_wage' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital'
   ) {
     isIncome = true;
-  } else if (entry.type.startsWith('export_')) {
+  } else if (entry.type.startsWith('export_') || entry.type.startsWith('customs_import_') || entry.type.startsWith('abroad_sale_')) {
     isIncome = true;
-  } else if (entry.type.startsWith('import_')) {
+  } else if (entry.type.startsWith('import_') || entry.type.startsWith('freight_') || entry.type.startsWith('duty_paid_')) {
     isIncome = false;
   } else if (
     entry.type === 'salary' ||
@@ -236,37 +281,55 @@ function createJournalEntryHTML(entry, accounting) {
     entry.type === 'commercial_route'
   ) {
     isIncome = false;
-  } else if (entry.type === 'carry_forward') {
-    isIncome = entry.isCarryForwardIncome !== undefined ? entry.isCarryForwardIncome : true;
   }
 
   const typeClass = isIncome ? 'positive' : 'negative';
 
   const typeLabels = {
     citizen_tax: 'Impôt Citoyen',
-    payroll_tax: 'Impôt sur les salaires (assiette citoyens)',
+    payroll_tax: 'Impôt sur le revenu (IR)',
+    vat: 'TVA ventes',
+    producer_revenue: 'Ventes HT',
+    producer_purchase: 'Achats HT',
+    producer_wage: 'Salaires des ouvriers',
+    household_wage: 'Salaire perçu',
+    corporate_tax: 'Impôt sur les sociétés',
+    corporate_tax_revenue: 'Impôt sur les sociétés perçu',
+    subsidy_companies: 'Subvention entretien entreprise',
+    subsidy_housing: 'Subvention entretien habitation',
     capital_funds: 'Capital de départ',
-    carry_forward: 'Report à nouveau',
     construction: 'Construction',
     construction_refund: 'Remboursement construction',
     exceptional_expenses: 'Réparation',
     maintenance: 'Maintenance mensuelle',
     salary: 'Salaires fonctionnaires',
     unemployment_benefit: 'Salaires chômeurs',
-    import_wood: 'Import Bois',
-    import_furniture: 'Import Meubles',
-    import_figs: 'Import Figues',
-    export_wood: 'Export Bois',
-    export_furniture: 'Export Meubles',
-    export_figs: 'Export Figues',
-    import_wheat: 'Import Blé',
-    import_carrot: 'Import Carotte',
-    import_cabbage: 'Import Chou',
-    import_dattes: 'Import Dattes',
-    export_wheat: 'Export Blé',
-    export_carrot: 'Export Carotte',
-    export_cabbage: 'Export Chou',
-    export_dattes: 'Export Dattes',
+    service_subsidy: 'Subventions des services',
+    service_sales: 'Ventes de services',
+    consumer_purchase: 'Achats des maisons',
+    income_tax: 'Impôt sur le revenu retenu',
+    income_tax_refund: 'Impôt sur le revenu remboursé',
+    payroll_tax_refund: 'Impôt sur le revenu remboursé aux foyers',
+    citizen_tax_paid: 'Impôt Citoyen retenu',
+    public_wage: 'Salaire de fonctionnaire perçu',
+    household_benefit: 'Allocation chômage perçue',
+    service_purchase: 'Achats de services',
+    service_subsidy_received: 'Subvention reçue',
+    subsidy_companies_received: 'Subvention entretien reçue',
+    subsidy_housing_received: 'Subvention entretien des maisons reçue',
+    employer_contribution: 'Cotisations patronales',
+    rent_paid: 'Loyer payé',    rent_received: 'Loyer perçu',
+    premises_rent_paid: 'Loyer du local payé',    premises_rent_received: 'Loyer du local perçu',
+    company_capital_paid: 'Fonds propres versés',    company_capital_received: 'Fonds propres reçus',
+    wage_debt_paid: 'Salaires impayés réglés',    contribution_debt_paid: 'Cotisations impayées réglées',
+    corporate_tax_debt_paid: 'Impôt impayé réglé',    premises_rent_debt_paid: 'Loyer du local impayé réglé',
+    corporate_tax_debt_received: 'Impôt sur les sociétés impayé encaissé', contribution_debt_received: 'Cotisations impayées encaissées',
+    premises_rent_debt_received: 'Loyer du local impayé encaissé',
+    social_contribution: 'Cotisations sociales perçues',
+    enterprise_participation: 'Participation aux résultats versée',
+    enterprise_dividend: 'Dividendes versés',
+    household_participation: 'Participation aux résultats perçue',
+    household_dividend: 'Dividendes perçus',
     commercial_route: 'Commission Négociants',
     contribution: 'Contribution',
     loan_capital: 'Capital Prêt',
@@ -275,31 +338,7 @@ function createJournalEntryHTML(entry, accounting) {
     ...INFO_JOURNAL_TYPE_LABELS,
     loan_default_interest: labelForInfoJournalType('info_loan_interest'),
     loan_default_repayment: labelForInfoJournalType('info_loan_repayment'),
-    cumul_maintenance: 'Cumul Maintenance',
-    cumul_construction: 'Cumul Construction',
-    cumul_salary: 'Cumul salaires fonctionnaires',
-    cumul_exceptional_expenses: 'Cumul Réparations',
-    cumul_loan_interest: 'Cumul Intérêts Prêt',
-    cumul_loan_repayment: 'Cumul Remboursement Prêt',
-    balance: 'Solde',
   };
-
-  const breakdownMatch = entry.description?.match(/\|BREAKDOWN\|(.*?)\|BREAKDOWN\|/);
-  let breakdownItems = null;
-
-  const supportsBreakdown =
-    entry.type === 'maintenance' ||
-    entry.type === 'commercial_route' ||
-    entry.type.startsWith('import_') ||
-    entry.type.startsWith('export_');
-
-  if (breakdownMatch && supportsBreakdown) {
-    try {
-      breakdownItems = JSON.parse(breakdownMatch[1]);
-    } catch (e) {
-      console.warn('Failed to parse breakdown:', e);
-    }
-  }
 
   const entryDetails = formatJournalEntryDetails(entry);
 
@@ -308,6 +347,10 @@ function createJournalEntryHTML(entry, accounting) {
     entry.partnerId &&
     (entry.type.startsWith('import_') ||
       entry.type.startsWith('export_') ||
+      entry.type.startsWith('freight_') ||
+      entry.type.startsWith('duty_paid_') ||
+      entry.type.startsWith('customs_import_') ||
+      entry.type.startsWith('abroad_sale_') ||
       entry.type === 'commercial_route')
   ) {
     try {
@@ -324,15 +367,27 @@ function createJournalEntryHTML(entry, accounting) {
     }
   }
 
+  // Where the line sits in the chart of accounts (PcgJournalCatalog.js): its account number, and the colour family that follows.
+  const pcg = pcgOfJournalType(entry.type);
+  const isInformative = isInfoPseudoMovementType(entry.type) || Object.hasOwn(INFO_JOURNAL_TYPE_LABELS, entry.type) || entry.type.startsWith('loan_default_');
+  if (!pcg && !isInformative) unresolvedTerm('journal account', entry.type);
+  // The journal code (BQ bank, OD opérations diverses…) the écriture is booked in; its accounts are in the legs below.
+  const accountBadge = entry.journal
+    ? `<span class="journal-entry-account" title="Code journal${pcg?.household ? ' (hors PCG : un ménage n\'est pas une entité)' : ''}">${entry.journal}</span>`
+    : '';
+
   return `
-        <div class="journal-entry">
+        <div class="journal-entry${isInformative ? ' journal-entry--informative' : ''}">
             <div class="journal-entry-header">
-                <span class="journal-entry-type ${entry.type}">${typeLabels[entry.type] || entry.type}</span>
+                ${isInformative ? '<span class="journal-entry-info" role="img" title="Informatif : cette ligne ne déplace aucun argent" aria-label="Informatif : aucun argent déplacé">ℹ️</span>' : ''}
+                <span class="journal-entry-type ${entry.type}"${pcg ? ` data-tone="${pcg.tone}"` : ''}>${accountBadge}${typeLabels[entry.type] ?? tradeLabel(entry.type) ?? unresolvedTerm('journal line label', entry.type)}</span>
+                <span class="journal-entry-hamlet">${hamletName}</span>
                 ${partnerName ? `<span class="journal-entry-partner">🤝 ${partnerName}</span>` : ''}
                 <span class="journal-entry-amount ${typeClass}">
                     ${typeClass === 'positive' ? '+' : '-'}${Math.abs(entry.amount)}€
                 </span>
             </div>
+            ${renderEntryLegs(entry, isInformative)}
             <div class="journal-entry-details">
                 ${
                   entryDetails.length
@@ -352,34 +407,11 @@ function createJournalEntryHTML(entry, accounting) {
                 `
                     : ''
                 }
-                ${
-                  breakdownItems
-                    ? `
-                <ul class="journal-maintenance-breakdown">
-                    ${breakdownItems
-                      .map(
-                        (item) => `
-                        <li class="journal-breakdown-item">
-                            <span class="breakdown-label">${item.label}:</span>
-                            <span class="breakdown-count">${item.quantity || item.count}</span>
-                            <span class="breakdown-multiply">×</span>
-                            <span class="breakdown-unit-cost">${item.unitCost}€</span>
-                            <span class="breakdown-equals">=</span>
-                            <span class="breakdown-total">${item.total}€</span>
-                        </li>
-                    `
-                      )
-                      .join('')}
-                </ul>
-                `
-                    : ''
-                }
                 <div class="journal-entry-meta">
                     ${entry.id != null ? `<span class="journal-entry-id">N° ${entry.id}</span>` : ''}
                     ${entry.buildingInstanceId ? `<span class="journal-entry-asset-id" title="${entry.buildingInstanceId}">Id bâtiment: ${entry.buildingInstanceId}</span>` : ''}
-                    ${yearDisplay ? `<span class="journal-entry-year">Année: ${yearDisplay}</span>` : ''}
                     ${entry.turn !== undefined ? `<span class="journal-entry-turn-number">Tour: ${entry.turn}</span>` : ''}
-                    <span class="journal-entry-date">${formattedDate}</span>
+                    <span class="journal-entry-date">${gameDate}</span>
                 </div>
             </div>
         </div>

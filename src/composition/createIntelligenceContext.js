@@ -1,6 +1,7 @@
 import { DexieNewsItemRepository } from '../contexts/intelligence/infrastructure/dexie/DexieNewsItemRepository.js';
 import { GenerateMonthlyCityNews } from '../contexts/intelligence/application/commands/GenerateMonthlyCityNews.js';
 import { GenerateMonthlyCaravanNews } from '../contexts/intelligence/application/commands/GenerateMonthlyCaravanNews.js';
+import { AnnounceMilestone } from '../contexts/intelligence/application/commands/AnnounceMilestone.js';
 import { PayForNewsItem } from '../contexts/intelligence/application/commands/PayForNewsItem.js';
 import { ArchiveNewsItem } from '../contexts/intelligence/application/commands/ArchiveNewsItem.js';
 import { DeleteNewsItem } from '../contexts/intelligence/application/commands/DeleteNewsItem.js';
@@ -73,6 +74,7 @@ export function createIntelligenceContext({
   const payForNewsItemCmd = new PayForNewsItem(repository, {
     settleContribution: resolveSettle,
   });
+  const announceMilestoneCmd = new AnnounceMilestone(repository);
   const archiveNewsItemCmd = new ArchiveNewsItem(repository);
   const deleteNewsItemCmd = new DeleteNewsItem(repository);
   const listIncomingNewsQuery = new ListIncomingNews(repository);
@@ -110,6 +112,14 @@ export function createIntelligenceContext({
       const city = await generateMonthlyCityNewsCmd.execute(params);
       const caravan = await generateMonthlyCaravanNewsCmd.execute(params);
       return [...city, ...caravan];
+    },
+
+    /**
+     * A dépêche that marks a moment of the game (the opening's treasure, the first mayor's house), written once per hamlet.
+     * @param {{ milestoneId: string, turn: number, occurrence?: string | number, params?: object }} params
+     */
+    async announceMilestone(params) {
+      return announceMilestoneCmd.execute(params);
     },
 
     /**

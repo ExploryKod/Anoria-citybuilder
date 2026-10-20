@@ -8,7 +8,7 @@
  * @param {{ growAllHousePopulation: Function }} deps.housing
  * @param {(time: number) => { monthIndex: number }} deps.getTimeInfo
  * @param {() => boolean} [deps.areFamineLimitsEnabled]
- * @param {(deaths: number) => void} [deps.onFamineDeaths]
+ * @param {(deaths: number, timeInfo: object) => void} [deps.onFamineDeaths]
  */
 export function createHousingPopulationGrowthSystem({
   housing,
@@ -27,7 +27,7 @@ export function createHousingPopulationGrowthSystem({
     });
 
     if (applyFamineLimits && result?.deaths > 0 && typeof onFamineDeaths === 'function') {
-      onFamineDeaths(result.deaths);
+      onFamineDeaths(result.deaths, timeInfo);
     }
   };
 }

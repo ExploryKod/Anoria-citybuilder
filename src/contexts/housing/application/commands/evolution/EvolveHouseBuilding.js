@@ -1,15 +1,12 @@
-import { resolveHouseEvolution } from '../../../domain/policies/HouseEvolutionPolicy.js';
 import { resolveHouseLevel } from '../../../domain/policies/HouseLevelPolicy.js';
-import { isPalaceHouseType } from '../../../domain/policies/HouseCapacityPolicy.js';
 import { residentialGroupForHouseType } from '../../../domain/policies/GroupSkillPolicy.js';
+import { getResourceRoles } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Command: evaluate and persist house progression for one residential building.
  *
- * - Palace (`House-2Story`): frozen legacy path — `resolveHouseEvolution`
- *   (color ladder), unchanged. // TODO(elites)
- * - Blue/Red/Purple: `HouseLevelPolicy` — color is permanent, only `level`
- *   (1 <-> 2) evolves.
+ * `HouseLevelPolicy` — the house's color (its social category) is permanent,
+ * only `level` evolves.
  */
 export class EvolveHouseBuilding {
   /**
@@ -17,6 +14,26 @@ export class EvolveHouseBuilding {
    */
   constructor(housingBuildingRepository) {
     this.repository = housingBuildingRepository;
+    /**
+     * Whether a warehouse is within reach of a house's activity — Supply's to say, and Supply is built after Housing, so the
+     * composition registers the answer (`setActivityAccessCheck`). Asked before that, it throws: never a quiet "no access".
+     * @type {((house: object) => Promise<boolean>) | null}
+     */
+    this.activityAccessCheck = null;
+  }
+
+  /** @param {(house: object) => Promise<boolean>} check */
+  setActivityAccessCheck(check) {
+    this.activityAccessCheck = check;
+  }
+
+  /**
+   * The latest record of every need the house consumes, by the field the catalog names it under (`outcomeField` of its
+   * consumer roles) — what the tiers' `serviceDemandMet` and `goodsVariety` requirements read.
+   */
+  #outcomesOf(house) {
+    const fields = getResourceRoles(house.type).filter((entry) => entry.role === 'consumer' && entry.outcomeField).map((entry) => entry.outcomeField);
+    return Object.fromEntries(fields.map((field) => [field, house[field]]));
   }
 
   /**
@@ -43,50 +60,12 @@ export class EvolveHouseBuilding {
       return { changed: false, reason: 'house_not_found' };
     }
 
-    if (isPalaceHouseType(house.type)) {
-      return this.#executePalaceEvolution(house);
-    }
-
     return this.#executeLevelResolution(house, periodKey);
   }
 
-  /** @param {import('../../../domain/HousingBuildingSnapshot.js').HousingBuildingSnapshot} house */
-  async #executePalaceEvolution(house) {
-    const resolution = resolveHouseEvolution({
-      type: house.type,
-      pop: house.pop,
-      roadCount: house.roadCount,
-      stocks: house.stocks,
-    });
-
-    if (!resolution.changed) {
-      return {
-        changed: false,
-        houseId: house.id,
-        previousType: resolution.previousType,
-        targetType: resolution.targetType,
-        previousPop: resolution.previousPop,
-        targetPop: resolution.targetPop,
-        reason: resolution.reason,
-      };
-    }
-
-    const { newId, previousId } = await this.repository.applyEvolution({
-      oldId: house.id,
-      targetType: resolution.targetType,
-      targetPop: resolution.targetPop,
-    });
-
-    return {
-      changed: true,
-      houseId: newId,
-      previousId,
-      previousType: resolution.previousType,
-      targetType: resolution.targetType,
-      previousPop: resolution.previousPop,
-      targetPop: resolution.targetPop,
-      reason: resolution.reason,
-    };
+  async #activityAccessOf(house) {
+    if (!this.activityAccessCheck) throw new Error('[housing] the activity-access check was never set: the composition must register it');
+    return this.activityAccessCheck(house);
   }
 
   /**
@@ -101,6 +80,8 @@ export class EvolveHouseBuilding {
       residentialGroup: residentialGroupForHouseType(house.type),
       servedFlags: house.servedFlags,
       lastConsumption: house.lastConsumption,
+      outcomes: this.#outcomesOf(house),
+      activityAccess: await this.#activityAccessOf(house),
       periodKey,
     });
 
@@ -135,6 +116,7 @@ export class EvolveHouseBuilding {
       previousPop: resolution.previousPop,
       targetPop: resolution.targetPop,
       reason: resolution.reason,
+      unmetRequirements: resolution.unmetRequirements,
     };
   }
 }

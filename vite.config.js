@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
-import { createMapsApiPlugin, resolveMapsDirectory } from './scripts/dev/mapsApiPlugin.mjs'
+import { createMapsApiPlugin, createMapsIndexPlugin, resolveMapsDirectory } from './scripts/dev/mapsApiPlugin.mjs'
+import { createDevLogPlugin } from './scripts/dev/devLogPlugin.mjs'
 
 const mapsDir = resolveMapsDirectory(__dirname)
 
@@ -50,6 +51,8 @@ export default defineConfig({
   },
   plugins: [
     createMapsApiPlugin(mapsDir),
+    createMapsIndexPlugin(mapsDir),
+    createDevLogPlugin(__dirname),
     {
       name: 'rewrite-clean-routes',
       configureServer(server) {
@@ -62,6 +65,8 @@ export default defineConfig({
           const match = cleanRoutes.find((r) => pathname === r.path || pathname === `${r.path}/`);
           if (match) {
             req.url = match.file;
+          } else if (/^\/game\/[0-9a-f-]{36}\/?$/i.test(pathname)) {
+            req.url = '/game.html';
           }
           next();
         });

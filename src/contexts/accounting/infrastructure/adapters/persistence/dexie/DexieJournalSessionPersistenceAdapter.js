@@ -37,21 +37,20 @@ export class DexieJournalSessionPersistenceAdapter extends JournalSessionPersist
       return { flushed: 0, failed: false };
     }
 
-    try {
-      await this.db.transaction('rw', this.db.journal, async () => {
-        for (const entry of pending) {
-          const id = await this.db.journal.add(toDexieRow(entry));
-          sessionLedgerBuffer.markPersisted([{ sessionId: entry.sessionId, id }]);
+    const written = [];
+    await this.db.transaction('rw', this.db.journal, async () => {
+      for (const entry of pending) {
+        if (entry.hamletId == null) {
+          throw new Error(
+            `[journal] ledger entry ${entry.type} (turn ${entry.turn}, session ${entry.sessionId}) has no hamletId`
+          );
         }
-      });
-      return { flushed: pending.length, failed: false };
-    } catch (error) {
-      console.error('[DexieJournalSessionPersistenceAdapter] flush failed:', error);
-      return {
-        flushed: 0,
-        failed: true,
-        pending: pending.length,
-      };
-    }
+        const id = await this.db.journal.add(toDexieRow(entry));
+        written.push({ sessionId: entry.sessionId, id });
+      }
+    });
+    // Only after the commit: a rolled-back transaction must not leave entries marked as persisted.
+    sessionLedgerBuffer.markPersisted(written);
+    return { flushed: pending.length, failed: false };
   }
 }

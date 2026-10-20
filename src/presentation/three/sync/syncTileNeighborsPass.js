@@ -2,6 +2,7 @@
  * Full-grid neighbor persist after the mesh tile loop.
  * Writes Parcels neighbors + markets + road access (not sprite painting).
  */
+import { isQuantityDistributorType } from '../../../shared/building-catalog/resourceRoleQueries.js';
 import {
   getBuildingsNamesInZone,
   updateBuildingNeighbors,
@@ -55,11 +56,8 @@ export async function persistTileNeighbors({
       time,
       { buildingTarget: '', zones: [1, 2] }
     );
-    const allMarketsInZone = getBuildingsNamesInZone(
-      buildingData,
-      time,
-      { buildingTarget: 'Market-Stall', zones: [1, 2] }
-    );
+    // The markets among them: the buildings that hand out a stock, by their role in the catalog.
+    const allMarketsInZone = (allNeighborsWithinZone ?? []).filter((entry) => isQuantityDistributorType(entry.type));
     await parcels.updateNeighbors(instanceId, allNeighborsWithinZone ?? []);
     await updateBuildingFields(instanceId, { markets: allMarketsInZone });
     await parcels.recalculateRoadAccessForBuilding.execute(instanceId);

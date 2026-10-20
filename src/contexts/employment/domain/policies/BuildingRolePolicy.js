@@ -1,20 +1,21 @@
+import { isRoadType as isRoadTypeInCatalog } from '../../../../shared/building-catalog/roadQueries.js';
+import { isRoadNeedMet } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../../../../shared/building-identity/index.js';
+
 /**
  * Classify buildings for employment roles.
  */
 
-/** @param {string} type */
-export function isFarmType(type) {
-  const t = type || '';
-  return t.includes('Farm') || t.includes('farm');
-}
-
 /**
+ * A house is what the catalog declares `residentialGroup` on (see BuildingKind.js), never a name guess: a
+ * building whose type merely contains "house" as a substring (TradeWarehouse, Warehouse — "ware**house**")
+ * is not one, and used to be misread as one here, which zeroed its catalog worker need (see
+ * BuildingEmploymentDefaults.js) and excluded it from `isWorkplace` below.
  * @param {string} type
  * @returns {boolean}
  */
 export function isHouseType(type) {
-  const t = type || '';
-  return t.includes('House') || t.includes('house');
+  return resolveBuildingKind(type) === BUILDING_KIND_HOUSE;
 }
 
 /**
@@ -22,8 +23,7 @@ export function isHouseType(type) {
  * @returns {boolean}
  */
 export function isRoadType(type) {
-  const t = type || '';
-  return t === 'roads' || t.includes('Road');
+  return isRoadTypeInCatalog(type);
 }
 
 /**
@@ -45,21 +45,20 @@ export function isWorkplace(building) {
 }
 
 /**
- * Building has road access (Parcels truth persisted as roadCount).
- * @param {{ roadCount?: number }} building
+ * The building's road need is met: it has a road (Parcels truth persisted as
+ * roadCount), or its type needs none — the catalog's `requiresRoad`.
+ * @param {{ type?: string, roadCount?: number }} building
  */
 export function hasRoadAccess(building) {
-  return (building?.roadCount || 0) > 0;
+  return isRoadNeedMet(building?.type, building?.roadCount);
 }
 
 /**
- * Workplace eligible for hiring / employment aggregates.
- * Farms employ without road access; other workplaces require roadCount > 0.
+ * Workplace eligible for hiring / employment aggregates: its road need is met
+ * (a type the catalog declares `requiresRoad: false` employs without a road).
  *
  * @param {{ type?: string, workerNeed?: number, roadCount?: number }} building
  */
 export function isEligibleWorkplace(building) {
-  if (!isWorkplace(building)) return false;
-  if (isFarmType(building.type)) return true;
-  return hasRoadAccess(building);
+  return isWorkplace(building) && hasRoadAccess(building);
 }

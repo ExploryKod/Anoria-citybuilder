@@ -1,14 +1,14 @@
 /**
- * Query: current treasury balance (HUD / co-maintained cache).
+ * Query: current treasury balance (HUD): the cash read from the fold of the journal's legs, without reading a line.
  */
 export class GetTreasuryBalance {
-  /** @param {import('../../ports/TreasuryRepository.js').TreasuryRepository} treasuryRepository */
-  constructor(treasuryRepository) {
-    this.treasuryRepository = treasuryRepository;
+  /** @param {{ cashOf: () => Promise<number> }} getTreasurySnapshot */
+  constructor(getTreasurySnapshot) {
+    this.getTreasurySnapshot = getTreasurySnapshot;
   }
 
   /** @returns {Promise<number>} */
   async execute() {
-    return this.treasuryRepository.getTreasuryBalance();
+    return this.getTreasurySnapshot.cashOf();
   }
 }

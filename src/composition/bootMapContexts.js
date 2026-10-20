@@ -4,6 +4,9 @@ import { getOrCreateAccountingContext } from './createAccountingContext.js';
 import { getOrCreateCityAssetsContext } from './createCityAssetsContext.js';
 import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
+import { getOrCreateSupplyContext } from './createSupplyContext.js';
+import { createConsumerMoneyPort } from './consumerMoneyPort.js';
+import { getOrCreateTradeContext } from './createTradeContext.js';
 import { createMapSessionApi } from './mapSessionApi.js';
 
 /**
@@ -21,12 +24,15 @@ export async function bootMapContexts() {
   });
   const cityAssets = getOrCreateCityAssetsContext();
   const accounting = getOrCreateAccountingContext({ cityAssets });
+  const supply = getOrCreateSupplyContext({ consumerMoney: createConsumerMoneyPort(accounting) });
+  const trade = getOrCreateTradeContext({ supply, accounting });
 
   const mapApi = createMapSessionApi({
     housing,
     employment,
     accounting,
     cityAssets,
+    trade,
   });
 
   return { mapApi };

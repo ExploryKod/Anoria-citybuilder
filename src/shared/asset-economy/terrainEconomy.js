@@ -7,6 +7,7 @@
  * `src/contexts/**` imports.
  */
 export const TERRAIN_ECONOMY = {
-  grass: { displayName: 'Herbe', construction: { price: 0, category: 'zones' } },
+  // The ground of this terrain carries clay on this share of its tiles.
+  grass: { displayName: 'Herbe', tileDeposits: { clay: { share: 0.08 } }, construction: { price: 0, category: 'zones' } },
   terrain: { construction: { price: 0, category: 'zones' } },
 };

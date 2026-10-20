@@ -1,5 +1,6 @@
 import { renderWorldMapPanel, renderWorldMapShell, renderWorldMapStats } from './renderWorldMap.js';
 import { bootstrapWorldMap } from '../../phaser/world/bootstrapWorldMap.js';
+import { CityExchangeModal } from './CityExchangeModal.js';
 
 /**
  * @param {HTMLElement} root
@@ -16,12 +17,15 @@ export class WorldMapController {
     this.view = null;
     this.selectedCityId = 'anoria';
     this.selectedHamletId = null;
-    this.clickHandler = null;
     this.messageTimeout = null;
     /** @type {ReturnType<typeof bootstrapWorldMap> | null} */
     this.phaserHandle = null;
     /** @type {HTMLElement | null} */
     this.phaserHost = null;
+    /** The last tradeInfo fetched for the selected city — the "Échanges" button reuses it rather
+     * than re-fetching (updatePanel already has it fresh every time the selection changes). */
+    this.currentTradeInfo = null;
+    this.exchangeModal = new CityExchangeModal();
   }
 
   async init() {
@@ -36,8 +40,8 @@ export class WorldMapController {
     }
     this.mountLayout();
     this.updateStats();
+    await this.updatePanel();
     this.mountPhaser();
-    this.bindEvents();
   }
 
   getSelection() {
@@ -69,10 +73,10 @@ export class WorldMapController {
   /**
    * @param {string} cityId
    */
-  handleCitySelected(cityId) {
+  async handleCitySelected(cityId) {
     this.selectedCityId = cityId;
     this.selectedHamletId = null;
-    this.updatePanel();
+    await this.updatePanel();
     this.phaserHandle?.refresh(this.view, this.getSelection());
   }
 
@@ -89,7 +93,7 @@ export class WorldMapController {
   async refresh() {
     this.view = await this.mapApi.getWorldMapView();
     this.updateStats();
-    this.updatePanel();
+    await this.updatePanel();
     this.phaserHandle?.refresh(this.view, this.getSelection());
   }
 
@@ -101,30 +105,33 @@ export class WorldMapController {
     }
   }
 
-  updatePanel() {
+  async updatePanel() {
     if (!this.view) return;
     const panel = this.root.querySelector('#world-map-panel');
-    if (panel) {
-      panel.innerHTML = renderWorldMapPanel(this.view, this.getSelection());
+    if (!panel) return;
+
+    const selection = this.getSelection();
+    let tradeInfo = null;
+    if (selection.cityId && selection.cityId !== 'anoria') {
+      tradeInfo = await this.mapApi.getCityTradeInfo(selection.cityId);
     }
+    this.currentTradeInfo = tradeInfo;
+    panel.innerHTML = renderWorldMapPanel(this.view, selection, tradeInfo);
+    this.#bindPanelEvents(panel);
   }
 
-  bindEvents() {
-    this.unbindEvents();
-    this.clickHandler = async (event) => {
-      const travelBtn = event.target.closest('.world-map-travel-btn');
-      if (travelBtn) {
-        event.preventDefault();
-        const hamletId = travelBtn.dataset.hamletId;
-        if (!hamletId) return;
-        const result = await this.mapApi.travelToHamlet(hamletId);
-        if (result.success) {
-          window.location.href = '/game';
-        }
-      }
-    };
-
-    this.root.addEventListener('click', this.clickHandler);
+  /** Bind the "Échanges" button inside the city panel after each render. */
+  #bindPanelEvents(panel) {
+    const exchangesBtn = panel.querySelector('[data-action="open-city-exchange"]');
+    if (!exchangesBtn) return;
+    exchangesBtn.addEventListener('click', () => {
+      const cityName = panel.querySelector('.trade-map-panel-city')?.textContent ?? '';
+      this.exchangeModal.open({
+        cityName,
+        sales: this.currentTradeInfo?.sales ?? [],
+        entry: this.currentTradeInfo?.entry ?? null,
+      });
+    });
   }
 
   showMessage(message, type = 'info') {
@@ -148,15 +155,9 @@ export class WorldMapController {
     }, 5000);
   }
 
-  unbindEvents() {
-    if (this.clickHandler) {
-      this.root.removeEventListener('click', this.clickHandler);
-      this.clickHandler = null;
-    }
-  }
 
   destroy() {
-    this.unbindEvents();
+    this.exchangeModal.close();
     this.phaserHandle?.destroy();
     this.phaserHandle = null;
     if (this.messageTimeout) {

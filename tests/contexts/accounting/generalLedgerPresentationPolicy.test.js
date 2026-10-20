@@ -2,7 +2,7 @@ import { describe, test, expect } from '@jest/globals';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { TimeManager } from '../../../src/shared/time/TimeManager.js';
+import * as TimeCalendar from '../../../src/shared/time/TimeCalendar.js';
 import {
   filterAndSortJournalEntries,
   buildMonthlyFinancialSummary,
@@ -14,9 +14,10 @@ import {
 } from '../../../src/contexts/accounting/domain/policies/GeneralLedgerPresentationPolicy.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// A real exported journal kept as a fixture: docs/ledgers is the player's export folder, not a test source
 const sampleLedgerPath = path.resolve(
   __dirname,
-  '../../../docs/ledgers/journal-2026-07-30 (1).json'
+  '../../fixtures/ledgers/journal-2026-07-30-sample.json'
 );
 
 describe('GeneralLedgerPresentationPolicy', () => {
@@ -51,7 +52,7 @@ describe('GeneralLedgerPresentationPolicy', () => {
   test('year months are chronological so game start appears first in year block', () => {
     const raw = JSON.parse(fs.readFileSync(sampleLedgerPath, 'utf8'));
     const entries = filterAndSortJournalEntries(raw.entries);
-    const getTimeInfo = (turn) => TimeManager.getTimeInfo(turn, 5);
+    const getTimeInfo = (turn) => TimeCalendar.getTimeInfo(turn, 5);
     const monthly = buildMonthlyFinancialSummary(entries, getTimeInfo);
     const yearly = buildYearlyFinancialSummary(monthly);
     const year0 = yearly.find((year) => year.year === 0);

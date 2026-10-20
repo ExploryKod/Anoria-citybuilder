@@ -100,9 +100,27 @@ export function getSessionScene() {
   return state.scene ?? getSessionGame()?.scene ?? null;
 }
 
+/**
+ * The current turn of the running game: its clock. Throws when no game is running: a turn is never guessed.
+ * @returns {number}
+ */
+let gameTurnForTests = null;
+
+/**
+ * Test seam: the turn the clock reads, without a running game. Pass null to read the game again.
+ * @param {number|null} turn
+ */
+export function useGameTurnForTests(turn) {
+  gameTurnForTests = turn;
+}
+
 export function getSessionGameTime() {
+  if (gameTurnForTests !== null) return gameTurnForTests;
   const game = getSessionGame();
-  return game?.city?.time ?? game?.time ?? 0;
+  if (!game || !Number.isInteger(game.time)) {
+    throw new Error('[clock] no running game: the current turn is unknown');
+  }
+  return game.time;
 }
 
 /** @returns {(() => Promise<void>) | null} */

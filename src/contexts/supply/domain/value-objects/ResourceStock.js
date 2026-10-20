@@ -67,7 +67,7 @@ export function addCategoryAmount(stock, category, amount, categories, totalKey 
  * categories have stock (in declared order) rather than a specific one —
  * for a need that only cares about the total (e.g. "fed or not"), not which
  * category satisfied it. Also reports which categories actually contributed
- * (`categoriesTaken`) — e.g. a house drawing from both `wheat` and `carrot`
+ * (`categoriesTaken`) and how much of each (`takenByCategory`) — e.g. a house drawing from both `wheat` and `carrot`
  * this period, for a "diet variety" need that DOES care how many distinct
  * categories were involved (see HouseTierRequirementPolicy.js's
  * `goodsVariety` kind).
@@ -82,6 +82,7 @@ export function takeAcrossCategories(stock, categories, totalKey, amount) {
   let remaining = nonNegInt(amount);
   let current = createResourceStock(stock, categories, totalKey);
   const categoriesTaken = [];
+  const takenByCategory = {};
   for (const category of categories) {
     if (remaining <= 0) break;
     const available = getCategoryAmount(current, category);
@@ -90,9 +91,10 @@ export function takeAcrossCategories(stock, categories, totalKey, amount) {
       current = takeCategoryAmount(current, category, taken, categories, totalKey);
       remaining -= taken;
       categoriesTaken.push(category);
+      takenByCategory[category] = taken;
     }
   }
-  return { nextStock: current, taken: nonNegInt(amount) - remaining, categoriesTaken };
+  return { nextStock: current, taken: nonNegInt(amount) - remaining, categoriesTaken, takenByCategory };
 }
 
 /**
@@ -121,7 +123,15 @@ export function capResourceStockAt(stock, maxTotal, categories, totalKey = 'tota
   return createResourceStock(next, categories, totalKey);
 }
 
-function nonNegInt(value) {
+/**
+ * A stock quantity as this mechanic stores one: a non-negative whole number,
+ * anything else read as 0. Exported so a caller normalizing a stock field
+ * this file doesn't own (a second good's aggregate — see SupplyStock.js)
+ * does it exactly the same way.
+ * @param {unknown} value
+ * @returns {number}
+ */
+export function nonNegInt(value) {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0) return 0;
   return Math.floor(n);

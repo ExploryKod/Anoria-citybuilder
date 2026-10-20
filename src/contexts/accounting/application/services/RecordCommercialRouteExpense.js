@@ -6,11 +6,9 @@ import { buildCommercialRouteBusinessKey } from '../../domain/policies/LedgerBus
 export class RecordCommercialRouteExpense {
   /**
    * @param {import('../commands/journal/RecordLedgerEntry.js').RecordLedgerEntry} recordLedgerEntry
-   * @param {import('../commands/treasury/ApplyTreasuryMovement.js').ApplyTreasuryMovement} applyTreasuryMovement
    */
-  constructor(recordLedgerEntry, applyTreasuryMovement) {
+  constructor(recordLedgerEntry) {
     this.recordLedgerEntry = recordLedgerEntry;
-    this.applyTreasuryMovement = applyTreasuryMovement;
   }
 
   /**
@@ -19,7 +17,7 @@ export class RecordCommercialRouteExpense {
    * @param {number} params.amount
    * @param {string} params.description
    * @param {string} params.partnerId
-   * @returns {Promise<{ recorded: boolean, skipped: boolean, treasuryApplied: boolean, reason?: string }>}
+   * @returns {Promise<{ recorded: boolean, skipped: boolean, reason?: string }>}
    */
   async execute({ turn, amount, description, partnerId }) {
     const roundedAmount = Math.round(amount);
@@ -28,7 +26,6 @@ export class RecordCommercialRouteExpense {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'zero_amount',
       };
     }
@@ -37,7 +34,6 @@ export class RecordCommercialRouteExpense {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: 'invalid_partner_id',
       };
     }
@@ -55,20 +51,13 @@ export class RecordCommercialRouteExpense {
       return {
         recorded: false,
         skipped: true,
-        treasuryApplied: false,
         reason: ledgerResult.reason,
       };
     }
 
-    await this.applyTreasuryMovement.execute({
-      category: 'commercial_route',
-      amount: roundedAmount,
-    });
-
     return {
       recorded: true,
       skipped: false,
-      treasuryApplied: true,
     };
   }
 }
