@@ -2,6 +2,7 @@ import { DexieNewsItemRepository } from '../contexts/intelligence/infrastructure
 import { GenerateMonthlyCityNews } from '../contexts/intelligence/application/commands/GenerateMonthlyCityNews.js';
 import { GenerateMonthlyCaravanNews } from '../contexts/intelligence/application/commands/GenerateMonthlyCaravanNews.js';
 import { AnnounceMilestone } from '../contexts/intelligence/application/commands/AnnounceMilestone.js';
+import { AnnounceGuidance } from '../contexts/intelligence/application/commands/AnnounceGuidance.js';
 import { PayForNewsItem } from '../contexts/intelligence/application/commands/PayForNewsItem.js';
 import { ArchiveNewsItem } from '../contexts/intelligence/application/commands/ArchiveNewsItem.js';
 import { DeleteNewsItem } from '../contexts/intelligence/application/commands/DeleteNewsItem.js';
@@ -75,6 +76,7 @@ export function createIntelligenceContext({
     settleContribution: resolveSettle,
   });
   const announceMilestoneCmd = new AnnounceMilestone(repository);
+  const announceGuidanceCmd = new AnnounceGuidance(repository);
   const archiveNewsItemCmd = new ArchiveNewsItem(repository);
   const deleteNewsItemCmd = new DeleteNewsItem(repository);
   const listIncomingNewsQuery = new ListIncomingNews(repository);
@@ -120,6 +122,14 @@ export function createIntelligenceContext({
      */
     async announceMilestone(params) {
       return announceMilestoneCmd.execute(params);
+    },
+
+    /**
+     * A dépêche another context wrote to guide the player (the tutorial's steps), filed once per guidance id and hamlet.
+     * @param {Parameters<AnnounceGuidance['execute']>[0]} params
+     */
+    async announceGuidance(params) {
+      return announceGuidanceCmd.execute(params);
     },
 
     /**

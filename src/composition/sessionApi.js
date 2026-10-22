@@ -251,6 +251,7 @@ export function createParcelsSessionApi(_parcels = null) {
  *   housing?: object,
  *   parcels?: object,
  *   intelligence?: object,
+ *   gameplay?: object,
  * }} contexts
  */
 export function assembleSessionApi({
@@ -262,6 +263,7 @@ export function assembleSessionApi({
   housing = null,
   parcels = null,
   intelligence = null,
+  gameplay = null,
 }) {
   const api = {
     construction: createConstructionSessionApi(construction),
@@ -292,6 +294,12 @@ export function assembleSessionApi({
       announceMilestone: (params) => intelligence.announceMilestone(params),
       payForNewsItem: (params) => intelligence.payForNewsItem(params),
       canAffordContribution: (amount) => intelligence.canAffordContribution(amount),
+    });
+  }
+  if (gameplay) {
+    api.gameplay = Object.freeze({
+      // Gives the player the tutorial's next instruction when the city has reached it: the dépêche written, or null (see AdvanceTutorial.js).
+      advanceTutorial: () => gameplay.advanceTutorial.execute(),
     });
   }
   return Object.freeze(api);

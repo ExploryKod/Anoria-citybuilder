@@ -3,6 +3,7 @@
  */
 
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
+import { getOrCreateGameplayContext } from './createGameplayContext.js';
 import {
   persistGameplayTurn,
   processGameTurnBudget,
@@ -110,6 +111,13 @@ export async function runGameTick({
 
   if (shouldAbort()) {
     return;
+  }
+
+  // The tutorial's next instruction, once the city has reached it (a no-op outside a tutorial game). A failure shows, it never stops the day.
+  try {
+    await getOrCreateGameplayContext().advanceTutorial.execute();
+  } catch (err) {
+    console.error('[Game] The tutorial could not advance:', err);
   }
 
   if (!silent && presentIncomingNewsEvents) {

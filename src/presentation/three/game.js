@@ -45,7 +45,7 @@ import {
 } from '../../core/persistence/hamlet/hamletSession.js';
 import { HAMLET_ACCESS_CHANGED_EVENT, canTravelToHamlet } from '../../core/persistence/hamlet/hamletAccess.js';
 import { runGameTick } from '../../composition/runGameTick.js';
-import { presentIncomingNewsEvents } from '../dom/intelligence/NewsEventModal.js';
+import { presentIncomingNewsEvents, waitForNewsModalClosed } from '../dom/intelligence/NewsEventModal.js';
 import { createHudTicker } from '../dom/shell/HudTicker.js';
 import { gatherReminderFacts, readRentDebts } from '../../composition/reminderFacts.js';
 import { remindersFor } from '../../shared/gameplay/reminderCatalog.js';
@@ -278,6 +278,20 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
   }
 
+  /**
+   * After a placement, the tutorial gives its next instruction if the city has reached it (nothing outside a tutorial game). It waits for the
+   * dépêche already open to be read, so two never stack, and it is not awaited by the placement. A failure shows, it never stops the game.
+   */
+  async function advanceTutorialAfterPlacement() {
+    try {
+      await waitForNewsModalClosed();
+      const announced = await sessionApi.gameplay.advanceTutorial();
+      if (announced) await presentIncomingNewsEvents();
+    } catch (error) {
+      console.error('[game] The tutorial could not advance:', error);
+    }
+  }
+
   async function finalizeBuildingPlacement(placeX, placeY, buildingType, rotationStep = 0) {
     const result = await constructionApi.placeBuildingAtTile({
       city,
@@ -305,6 +319,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
     await recordBuildingHistory('placed', { id: result.instanceId, type: buildingType, x: placeX, y: placeY });
     await announceFirstBuiltNews(buildingType);
+    void advanceTutorialAfterPlacement();
 
     await scene.update(city, time);
     await runSimulationPass(time);
