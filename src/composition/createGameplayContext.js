@@ -14,9 +14,12 @@ import {
 } from './sessionRuntime.js';
 import { getOrCreateIntelligenceContext } from './createIntelligenceContext.js';
 import { isTutorialMode } from '../shared/gameplay/gameMode.js';
+import { getTimeInfo } from '../shared/time/TimeCalendar.js';
+import { getAnnualHarvestSchedule } from '../shared/building-catalog/resourceRoleQueries.js';
+import { matchesSchedule, monthsUntilNextMatch } from '../contexts/supply/domain/policies/ResourceSchedulePolicy.js';
 import { RandomEventsSimulationService } from '../contexts/gameplay/application/services/RandomEventsSimulationService.js';
 import { AdvanceTutorial } from '../contexts/gameplay/application/services/AdvanceTutorial.js';
-import { TUTORIAL_STEPS } from '../contexts/gameplay/domain/catalogs/TutorialCatalog.js';
+import { TUTORIAL_DISPATCHES, TUTORIAL_STEPS, TUTORIAL_TOASTS } from '../contexts/gameplay/domain/catalogs/TutorialCatalog.js';
 
 /** @type {ReturnType<typeof createGameplayContext>|null} */
 let sharedGameplay = null;
@@ -30,7 +33,23 @@ function createTutorialPorts() {
     facts: {
       async read() {
         const rows = await getOrCreateConstructionContext().listAllBuildingRows();
+        const turn = getSessionGameTime();
+        const daysPerMonth = getDaysPerMonth();
+        const time = getTimeInfo(turn, daysPerMonth);
+        const harvestSchedule = getAnnualHarvestSchedule();
+        const harvesting = matchesSchedule(harvestSchedule, time);
         return {
+          calendar: {
+            turn,
+            season: time.season,
+            month: time.month,
+            // The harvest is when the catalog's annual-supply schedule names the current period, the same match the supply cycle makes.
+            harvesting,
+            // Months until it next comes (0 when it is on now), looking at the same day of the months ahead; null when it never does within a year.
+            monthsToHarvest: harvesting
+              ? 0
+              : monthsUntilNextMatch(harvestSchedule, (monthsAhead) => getTimeInfo(turn + monthsAhead * daysPerMonth, daysPerMonth)),
+          },
           buildings: rows.map((row) => ({
             type: row.type,
             pop: row.pop ?? 0,
@@ -43,6 +62,8 @@ function createTutorialPorts() {
     announcer: {
       announce: ({ stepId, ...guidance }) =>
         getOrCreateIntelligenceContext().announceGuidance({ guidanceId: `tutorial:${stepId}`, categoryId: 'tutorial', ...guidance }),
+      wasAnnounced: (stepId) => getOrCreateIntelligenceContext().isGuidanceAnnounced({ guidanceId: `tutorial:${stepId}` }),
+      wasRead: (stepId) => getOrCreateIntelligenceContext().isGuidanceRead({ guidanceId: `tutorial:${stepId}` }),
     },
   };
 }
@@ -75,6 +96,8 @@ export function createGameplayContext(deps = {}) {
     deps.advanceTutorial ??
     new AdvanceTutorial({
       steps: TUTORIAL_STEPS,
+      dispatches: TUTORIAL_DISPATCHES,
+      toasts: TUTORIAL_TOASTS,
       isActive: isTutorialMode,
       ...createTutorialPorts(),
       getGameTime: () => getSessionGameTime(),

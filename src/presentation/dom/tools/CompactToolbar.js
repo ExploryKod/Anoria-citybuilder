@@ -11,6 +11,7 @@ import {
 import { attachBuildToolHoverPreview, hideBuildToolHoverPreview } from './BuildToolHoverPreview.js';
 import { MOBILE_TOOLBAR_CATEGORIES } from './mobileToolbarCategories.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
+import { buildingIconHtml, buildingName } from '../shell/CatalogVocabulary.js';
 import { getSessionGame } from '../../../composition/sessionRuntime.js';
 import { getRequiredSkillForBuilding, getRequiredSkillLevelForBuilding } from '../../../composition/employmentCatalog.js';
 import { lowestHouseTierForWorkers } from '../../../shared/population/workforceQueries.js';
@@ -79,6 +80,8 @@ export function initCompactToolbar(toolbarDeps) {
   listEl = buildBarEl?.querySelector('.splide__list');
   closeBtn = document.getElementById('mobile-build-bar-close');
 
+  mountRoadButton();
+
   if (!buildBarEl || !pillsEl || !carouselEl || !listEl) {
     return { open, close, toggle, isOpen: () => isOpen };
   }
@@ -112,6 +115,32 @@ export function initCompactToolbar(toolbarDeps) {
     });
     fabResizeObserver.observe(fabsEl);
   }
+}
+
+/**
+ * The road tool has its own button next to the house button (roads are placed all the time): the tool is the one the catalog gives the 'roads'
+ * pill (`button.pillCategory`), its name and icon are the catalog's.
+ */
+function mountRoadButton() {
+  const button = document.getElementById('toolbar-road-btn');
+  if (!button) throw new Error('[CompactToolbar] #toolbar-road-btn is missing from game.html');
+  const toolId = getDirectToolForCategory('roads');
+  if (!toolId) throw new Error("[CompactToolbar] the catalog gives no tool to the 'roads' button (button.pillCategory)");
+  const name = buildingName(toolId);
+  button.dataset.toolid = toolId;
+  button.title = name;
+  button.setAttribute('aria-label', name);
+  button.querySelector('.toolbar-toggle-icon').innerHTML = buildingIconHtml(toolId);
+  button.querySelector('.sr-only').textContent = name;
+  button.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (deps?.buttonStateManager?.isEnabled && !deps.buttonStateManager.isEnabled(toolId)) return;
+    hideBuildToolHoverPreview();
+    getButtonsUnactive();
+    button.classList.add('selected');
+    deps?.invokeSetActiveTool?.(e);
+  });
+  deps?.buttonStateManager?.registerButton?.(toolId, button);
 }
 
 /** @deprecated Kept for callers; build bar is available at all breakpoints. */
@@ -574,7 +603,9 @@ function buildPills() {
       pill.classList.add('mobile-build-bar__pill--active');
     }
 
-    const iconHtml = getCategoryIconHtml(category.sourceBtnId);
+    // A pill that IS a tool wears that tool's own icon (the one the dépêches show for it), not a generic one that could be taken for another tool's
+    // (the range button wears the same route glyph).
+    const iconHtml = directTool ? buildingIconHtml(directTool) : getCategoryIconHtml(category.sourceBtnId);
     if (iconHtml) {
       const iconWrap = document.createElement('span');
       iconWrap.className = 'mobile-build-bar__pill-icon';

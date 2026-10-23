@@ -20,5 +20,5 @@ export const MOBILE_TOOLBAR_CATEGORIES = [
   socialClassCategory('artisans', 'artisans-btn'),
   socialClassCategory('merchants', 'merchants-btn'),
   socialClassCategory('scholars', 'scholars-btn'),
-  { id: 'roads', label: 'Routes', sourceBtnId: 'roads-btn' },
+  // Roads are not a pill: the road tool has its own button next to the one that opens this bar (CompactToolbar.js, mountRoadButton).
 ];

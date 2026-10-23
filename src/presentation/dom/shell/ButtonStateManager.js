@@ -15,6 +15,8 @@ class ButtonStateManager {
         this.stateMap = new Map(); // Map<buttonId, isEnabled>
         this.listeners = new Map(); // Map<buttonId, Set<callbacks>>
         this.buttonElements = new Map(); // Map<buttonId, HTMLElement>
+        /** @type {{ allowed: Set<string>, appliesTo: (buttonId: string) => boolean } | null} */
+        this.restriction = null;
     }
 
     /**
@@ -90,7 +92,27 @@ class ButtonStateManager {
      * @returns {boolean} - True if enabled, false if disabled or not registered
      */
     isEnabled(buttonId) {
-        return this.stateMap.get(buttonId) || false;
+        return this.#effectiveState(buttonId);
+    }
+
+    /**
+     * Restrict a family of buttons to a short list: every button for which `appliesTo(id)` holds is greyed out unless it is in `allowedIds` (the tutorial lets
+     * the player build only what its current step asks). The restriction rides over the buttons' own state and also reaches the ones created later (the build
+     * bar fills lazily). `null` lifts it.
+     * @param {string[] | null} allowedIds
+     * @param {(buttonId: string) => boolean} appliesTo which buttons the restriction concerns
+     */
+    restrict(allowedIds, appliesTo) {
+        this.restriction = allowedIds === null ? null : { allowed: new Set(allowedIds), appliesTo };
+        for (const buttonId of this.buttonElements.keys()) this.#applyState(buttonId);
+    }
+
+    /** The button's own state, unless a restriction greys it out. */
+    #effectiveState(buttonId) {
+        const own = this.stateMap.get(buttonId) || false;
+        const restriction = this.restriction;
+        if (restriction && restriction.appliesTo(buttonId) && !restriction.allowed.has(buttonId)) return false;
+        return own;
     }
 
     /**
@@ -231,7 +253,7 @@ class ButtonStateManager {
      */
     #applyState(buttonId) {
         const element = this.buttonElements.get(buttonId);
-        const isEnabled = this.stateMap.get(buttonId);
+        const isEnabled = this.#effectiveState(buttonId);
 
         if (!element) {
             // Element not registered yet, wait for registration

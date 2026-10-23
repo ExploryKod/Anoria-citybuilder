@@ -6,6 +6,7 @@ import { AnnounceGuidance } from '../contexts/intelligence/application/commands/
 import { PayForNewsItem } from '../contexts/intelligence/application/commands/PayForNewsItem.js';
 import { ArchiveNewsItem } from '../contexts/intelligence/application/commands/ArchiveNewsItem.js';
 import { DeleteNewsItem } from '../contexts/intelligence/application/commands/DeleteNewsItem.js';
+import { HideNewsItem } from '../contexts/intelligence/application/commands/HideNewsItem.js';
 import { ListIncomingNews } from '../contexts/intelligence/application/queries/ListIncomingNews.js';
 import { ListArchivedNews } from '../contexts/intelligence/application/queries/ListArchivedNews.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
@@ -79,6 +80,7 @@ export function createIntelligenceContext({
   const announceGuidanceCmd = new AnnounceGuidance(repository);
   const archiveNewsItemCmd = new ArchiveNewsItem(repository);
   const deleteNewsItemCmd = new DeleteNewsItem(repository);
+  const hideNewsItemCmd = new HideNewsItem(repository);
   const listIncomingNewsQuery = new ListIncomingNews(repository);
   const listArchivedNewsQuery = new ListArchivedNews(repository);
 
@@ -133,6 +135,22 @@ export function createIntelligenceContext({
     },
 
     /**
+     * Whether a guidance has been written for the active hamlet.
+     * @param {{ guidanceId: string }} params
+     */
+    async isGuidanceAnnounced({ guidanceId }) {
+      return announceGuidanceCmd.wasAnnounced(guidanceId);
+    },
+
+    /**
+     * Whether a guidance has been written and then read (the player got past it).
+     * @param {{ guidanceId: string }} params
+     */
+    async isGuidanceRead({ guidanceId }) {
+      return announceGuidanceCmd.wasRead(guidanceId);
+    },
+
+    /**
      * @param {{ newsItemId: string, turn: number }} params
      */
     async payForNewsItem(params) {
@@ -158,6 +176,14 @@ export function createIntelligenceContext({
      */
     async deleteNewsItem(params) {
       return deleteNewsItemCmd.execute(params);
+    },
+
+    /**
+     * Removes a read dépêche from the list the player keeps of it (the tutorial's history), without deleting it.
+     * @param {{ newsItemId: string }} params
+     */
+    async hideNewsItem(params) {
+      return hideNewsItemCmd.execute(params);
     },
 
     async listIncomingNews() {

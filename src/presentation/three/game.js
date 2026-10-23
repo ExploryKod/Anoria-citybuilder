@@ -41,11 +41,12 @@ import {
   parseGameHamletPath,
   getHamlet,
   markHamletNatureSeeded,
+  requireActiveHamletId,
   setActiveHamletId,
 } from '../../core/persistence/hamlet/hamletSession.js';
 import { HAMLET_ACCESS_CHANGED_EVENT, canTravelToHamlet } from '../../core/persistence/hamlet/hamletAccess.js';
 import { runGameTick } from '../../composition/runGameTick.js';
-import { presentIncomingNewsEvents, waitForNewsModalClosed } from '../dom/intelligence/NewsEventModal.js';
+import { onNewsModalClosed, presentIncomingNewsEvents, waitForNewsModalClosed } from '../dom/intelligence/NewsEventModal.js';
 import { createHudTicker } from '../dom/shell/HudTicker.js';
 import { gatherReminderFacts, readRentDebts } from '../../composition/reminderFacts.js';
 import { remindersFor } from '../../shared/gameplay/reminderCatalog.js';
@@ -55,7 +56,7 @@ import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
 import { computeBuildingReach, listPlacedBuildings } from '../../shared/building-catalog/buildingReach.js';
-import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
+import { buildingCatalog, getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
 import { BUILDING_ASSETS } from './assets/buildingAssets.js';
 import { planRoadPaint, plotsAlongPath, roadPathBetween, roadPiecesFrom, turnedSides } from './placement/roadPaintPlanner.js';
 import { resolveFootprint } from '../../shared/asset-footprint/resolveFootprint.js';
@@ -102,7 +103,7 @@ import {
   showPlacementNeedsNotification,
   showPopulationDepartureNotification,
 } from '../dom/shell/BuildingNotifications.js';
-import { showErrorToast } from '../dom/shell/ToastNotifier.js';
+import { hideToast, showErrorToast, showToast } from '../dom/shell/ToastNotifier.js';
 import { presentBuildingInfoSelection } from '../dom/info/presenters/useBuildingInfoSelection.js';
 import { buildingPlacementCatalog } from '../../shared/building-catalog/index.js';
 import {
@@ -131,6 +132,8 @@ import { isRoadBuildingType } from '../../composition/constructionCatalog.js';
 import { createPlacementRotationHud } from './placement/placementRotationHud.js';
 import { getSelectableMeshIds, resolveSelectedMeshId } from './meshs/resolveBuildingMesh.js';
 import { readGameClock, writeGameClock } from '../../core/persistence/game-clock/gameClock.js';
+import { showTutorialObjective } from '../dom/onboarding/TutorialObjective.js';
+import { clearHighlight, highlightTarget } from '../dom/onboarding/tutorialHighlight.js';
 
 /**
  * @param {object | null | undefined} object
@@ -279,18 +282,101 @@ export function createGame(gameStore, assetManager, citySize = null) {
   }
 
   /**
+   * A tutorial toast: short and non-blocking; it stays as long as the catalog says. A dépêche's modal dims the screen, so a toast waits for it to
+   * close (callers present the dépêche first), and its timer only starts then.
+   */
+  async function showTutorialToast({ id, kind, text, duration, highlight }) {
+    waitingTutorialToasts.add(id);
+    await waitForNewsModalClosed();
+    // Taken off while it waited (the player already did what it points at): it never shows.
+    if (!waitingTutorialToasts.delete(id)) return;
+    shownTutorialToasts.set(id, { shown: showToast(kind, text, { timeout: duration }), highlight });
+    if (highlight) highlightTarget(highlight);
+  }
+
+  /**
+   * The construction buttons the tutorial's current step lets work: the other construction buttons are greyed out (null: nothing is restricted). Every
+   * button the build bar creates later takes the same state.
+   */
+  function applyTutorialAllowedTools(allowed) {
+    getButtonStateManager().restrict(allowed, (buttonId) => Boolean(getBuildingDefinition(buttonId)));
+  }
+
+  /** Whether the catalog limits how many of that building a hamlet can hold (`maxPerHamlet`). */
+  function isLimitedBuilding(buildingType) {
+    return getBuildingDefinition(buildingType)?.maxPerHamlet !== undefined;
+  }
+
+  /**
+   * A building the catalog limits per hamlet (`maxPerHamlet`, the mayor's house: one) has its construction button greyed once the hamlet holds as many as it
+   * can, and lit again only when one is destroyed or the hamlet has none (another hamlet, a new game). This reads the city's tiles, every building counted
+   * once (a building covers several tiles): it runs only when one of those buildings is placed or demolished, and when the hamlet changes — never every turn.
+   */
+  function syncLimitedBuildingButtons() {
+    const limited = Object.entries(buildingCatalog).filter(([, definition]) => definition.maxPerHamlet !== undefined);
+    if (limited.length === 0) return;
+    const standing = new Map(limited.map(([type]) => [type, new Set()]));
+    for (const column of city?.tiles ?? []) {
+      for (const tile of column ?? []) {
+        const instances = standing.get(tile?.buildingId);
+        if (!instances) continue;
+        if (!tile.instanceId) throw new Error(`[game] a "${tile.buildingId}" stands on a tile with no instanceId: it cannot be counted against maxPerHamlet`);
+        instances.add(tile.instanceId);
+      }
+    }
+    const manager = getButtonStateManager();
+    for (const [type, definition] of limited) {
+      if (standing.get(type).size >= definition.maxPerHamlet) manager.disable(type);
+      else manager.enable(type);
+    }
+  }
+
+  let limitedButtonsHamletId = null;
+
+  /** A hamlet other than the one the buttons were last set for (the first look, a hamlet switch, a load): read what it holds. Otherwise one id comparison. */
+  function syncLimitedBuildingButtonsOnHamletChange() {
+    const hamletId = requireActiveHamletId();
+    if (hamletId === limitedButtonsHamletId) return;
+    limitedButtonsHamletId = hamletId;
+    syncLimitedBuildingButtons();
+  }
+
+  /** The tutorial toasts waiting for a dépêche to be closed, and the ones on screen (to take them off early). */
+  const waitingTutorialToasts = new Set();
+  const shownTutorialToasts = new Map();
+
+  /** The player did what a toast points at (or its moment is over): it leaves the screen, and its highlight with it. */
+  function hideTutorialToast(id) {
+    waitingTutorialToasts.delete(id);
+    const entry = shownTutorialToasts.get(id);
+    if (!entry) return;
+    shownTutorialToasts.delete(id);
+    void hideToast(entry.shown);
+    if (entry.highlight) clearHighlight();
+  }
+
+  /**
    * After a placement, the tutorial gives its next instruction if the city has reached it (nothing outside a tutorial game). It waits for the
    * dépêche already open to be read, so two never stack, and it is not awaited by the placement. A failure shows, it never stops the game.
    */
   async function advanceTutorialAfterPlacement() {
     try {
       await waitForNewsModalClosed();
-      const announced = await sessionApi.gameplay.advanceTutorial();
-      if (announced) await presentIncomingNewsEvents();
+      const { news, toasts, dismissed, allowed, progress, justCompleted } = await sessionApi.gameplay.advanceTutorial();
+      applyTutorialAllowedTools(allowed);
+      showTutorialObjective({ progress, justCompleted });
+      dismissed.forEach(hideTutorialToast);
+      if (news) await presentIncomingNewsEvents();
+      toasts.forEach(showTutorialToast);
     } catch (error) {
       console.error('[game] The tutorial could not advance:', error);
     }
   }
+
+  // Getting past a dépêche is itself progress (the step's counter shows from then on): look at the tutorial as soon as the modal has closed.
+  onNewsModalClosed('tutorial', () => {
+    void advanceTutorialAfterPlacement();
+  });
 
   async function finalizeBuildingPlacement(placeX, placeY, buildingType, rotationStep = 0) {
     const result = await constructionApi.placeBuildingAtTile({
@@ -322,6 +408,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     void advanceTutorialAfterPlacement();
 
     await scene.update(city, time);
+    if (isLimitedBuilding(buildingType)) syncLimitedBuildingButtons();
     await runSimulationPass(time);
     await syncEmploymentAfterBuildingChange(scene, city, buildingType);
     await syncSupplyLinksAfterBuildingChange({
@@ -1168,6 +1255,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   async function demolishTiles(targets) {
     let lastBuildingId = null;
     let demolished = 0;
+    let limitedDemolished = false;
     for (const target of targets) {
       const { x, y } = target;
       const tile = city.tiles[x][y];
@@ -1210,6 +1298,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       if (buildingId) {
         demolished += 1;
         lastBuildingId = buildingId;
+        if (isLimitedBuilding(buildingId)) limitedDemolished = true;
         await recordBuildingHistory('demolished', { id: removedInstanceId, type: buildingId, x, y });
       }
       if (cascadeOutcome?.destroyed?.length) {
@@ -1222,6 +1311,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
     playBulldozeSound();
     await scene.update(city, time);
+    if (limitedDemolished) syncLimitedBuildingButtons();
     await syncEmploymentAfterBuildingChange(scene, city, lastBuildingId);
     await refreshPlacementPresentation();
     await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
@@ -1739,6 +1829,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
           isOver = true;
         },
         presentIncomingNewsEvents,
+        showTutorialToast,
+        hideTutorialToast,
+        applyTutorialAllowedTools,
+        showTutorialObjective,
+        syncLimitedBuildingButtonsOnHamletChange,
         silent,
       });
       if (!silent) {

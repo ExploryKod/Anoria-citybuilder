@@ -27,6 +27,11 @@ import { isDeathGameOverReached } from './gameplayMortalityState.js';
  * @param {{ enabled?: boolean, checkObjectives: Function }} params.objectivesTracker
  * @param {() => void} [params.onGameOver]
  * @param {() => Promise<void>} [params.presentIncomingNewsEvents] — injected at the edge (presentation owns the modal)
+ * @param {(toast: { id: string, kind: string, duration: number, text: string }) => void} params.showTutorialToast — injected at the edge (presentation owns the toasts)
+ * @param {() => void} params.syncLimitedBuildingButtonsOnHamletChange — sets the buttons of the buildings limited per hamlet (`maxPerHamlet`) when the hamlet is not the one seen before
+ * @param {(state: { progress: object | null, justCompleted: object | null }) => void} params.showTutorialObjective — shows the objective counter of the tutorial's current step
+ * @param {(allowed: string[] | null) => void} params.applyTutorialAllowedTools — greys out the construction buttons the tutorial's current step does not allow
+ * @param {(toastId: string) => void} params.hideTutorialToast — takes a tutorial toast off the screen (the player did what it points at)
  * @param {boolean} [params.silent] — batch-advance interim day (see SPEED_LEVELS_DAYS): runs the
  *   simulation (ECS + economy) exactly as a normal day, but skips scene/HUD/notification
  *   presentation, which a fast-forward batch defers to its last (non-silent) day. Safe because
@@ -48,6 +53,11 @@ export async function runGameTick({
   objectivesTracker,
   onGameOver,
   presentIncomingNewsEvents,
+  showTutorialToast,
+  hideTutorialToast,
+  applyTutorialAllowedTools,
+  showTutorialObjective,
+  syncLimitedBuildingButtonsOnHamletChange,
   silent = false,
 }) {
   if (shouldAbort()) {
@@ -113,11 +123,23 @@ export async function runGameTick({
     return;
   }
 
-  // The tutorial's next instruction, once the city has reached it (a no-op outside a tutorial game). A failure shows, it never stops the day.
-  try {
-    await getOrCreateGameplayContext().advanceTutorial.execute();
-  } catch (err) {
-    console.error('[Game] The tutorial could not advance:', err);
+  // The tutorial's next instruction and its toasts, once the city has reached them (a no-op outside a tutorial game). Not on a silent day of a
+  // batch: its toasts would be spent unseen, and the batch's last day looks at the same city. A failure shows, it never stops the day.
+  // The buttons of the buildings a hamlet can hold only so many of are set for a hamlet the first time it is seen (a load, a hamlet switch); after that
+  // only a placement or a demolition changes them, so this is one comparison.
+  if (!silent) syncLimitedBuildingButtonsOnHamletChange();
+
+  let tutorialToasts = [];
+  if (!silent) {
+    try {
+      const tutorial = await getOrCreateGameplayContext().advanceTutorial.execute();
+      applyTutorialAllowedTools(tutorial.allowed);
+      showTutorialObjective(tutorial);
+      tutorial.dismissed.forEach(hideTutorialToast);
+      tutorialToasts = tutorial.toasts;
+    } catch (err) {
+      console.error('[Game] The tutorial could not advance:', err);
+    }
   }
 
   if (!silent && presentIncomingNewsEvents) {
@@ -127,6 +149,10 @@ export async function runGameTick({
       console.error('[Game] News event presentation error:', err?.message || err);
     }
   }
+
+  // The toasts come after the dépêche is presented: the modal dims the screen, and a toast shown under it would be spent unseen. The edge holds
+  // them back until the modal is closed.
+  tutorialToasts.forEach(showTutorialToast);
 
   if (isLoseMode() && isDeathGameOverReached()) {
     // Default overlay copy already covers famine; keep HTML structure.

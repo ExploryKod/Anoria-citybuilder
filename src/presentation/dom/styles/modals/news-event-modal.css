@@ -73,6 +73,152 @@
   white-space: pre-wrap;
 }
 
+/* The buildings a dépêche shows under its text, all in one row. */
+.news-event-illustrations {
+  display: flex;
+  justify-content: space-around;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.news-event-illustration {
+  margin: 0;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  font-size: 0.85em;
+}
+
+.news-event-illustration-picture {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+}
+
+.news-event-illustration-picture img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.news-event-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 14px auto 0;
+  border-radius: 10px;
+}
+
+.news-event-image[hidden] {
+  display: none;
+}
+
+/* The tutorial's history: a list of messages, each with its buttons (read, remove). */
+.tutorial-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(29, 34, 40, 0.15);
+}
+
+.tutorial-history-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tutorial-history-row__text span {
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+
+.tutorial-history-row__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tutorial-history-page {
+  margin-top: 10px;
+}
+
+/* Icons of the interface with a word each (a legend), in a row under the text. */
+.news-event-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.news-event-legend[hidden] {
+  display: none;
+}
+
+.news-event-legend-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85em;
+  text-align: center;
+}
+
+.news-event-legend-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(29, 34, 40, 0.08);
+}
+
+.news-event-legend-icon svg,
+.news-event-legend-icon img {
+  width: 20px;
+  height: 20px;
+}
+
+/* The buttons that open the rest of a dépêche (a choice, "Lire la suite"), one under the other. */
+.news-event-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.news-event-choices[hidden] {
+  display: none;
+}
+
+.news-event-choice-btn {
+  padding: 10px 14px;
+  border: 1px solid var(--cta);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--cta);
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+
+.news-event-choice-btn:hover,
+.news-event-choice-btn:focus-visible {
+  background: var(--cta);
+  color: #fff;
+}
+
 .news-event-paywall {
   margin-top: 16px;
   display: flex;
@@ -107,6 +253,8 @@
 .news-event-action-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: 12px;
   padding: 10px 18px;
   border: 2px solid var(--cta);

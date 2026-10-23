@@ -289,6 +289,7 @@ export function assembleSessionApi({
       listArchivedNews: () => intelligence.listArchivedNews(),
       archiveNewsItem: (params) => intelligence.archiveNewsItem(params),
       deleteNewsItem: (params) => intelligence.deleteNewsItem(params),
+      hideNewsItem: (params) => intelligence.hideNewsItem(params),
       generateMonthlyCityNews: (params) => intelligence.generateMonthlyCityNews(params),
       generateMonthlyNews: (params) => intelligence.generateMonthlyNews(params),
       announceMilestone: (params) => intelligence.announceMilestone(params),
@@ -298,7 +299,8 @@ export function assembleSessionApi({
   }
   if (gameplay) {
     api.gameplay = Object.freeze({
-      // Gives the player the tutorial's next instruction when the city has reached it: the dépêche written, or null (see AdvanceTutorial.js).
+      // Gives the player the tutorial's next instruction when the city has reached it: `{ news, toasts }`, the dépêche written (or null) and the
+      // toasts to show without blocking (see AdvanceTutorial.js).
       advanceTutorial: () => gameplay.advanceTutorial.execute(),
     });
   }

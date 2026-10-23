@@ -23,7 +23,7 @@ function getToast() {
  * @param {{ timeout?: number }} [options]
  */
 export function showInfoToast(message, options = {}) {
-  getToast().info(message, options);
+  return getToast().info(message, options);
 }
 
 /**
@@ -31,7 +31,7 @@ export function showInfoToast(message, options = {}) {
  * @param {{ timeout?: number }} [options]
  */
 export function showSuccessToast(message, options = {}) {
-  getToast().success(message, options);
+  return getToast().success(message, options);
 }
 
 /**
@@ -39,7 +39,7 @@ export function showSuccessToast(message, options = {}) {
  * @param {{ timeout?: number }} [options]
  */
 export function showWarningToast(message, options = {}) {
-  getToast().warning(message, options);
+  return getToast().warning(message, options);
 }
 
 /**
@@ -47,28 +47,35 @@ export function showWarningToast(message, options = {}) {
  * @param {{ timeout?: number }} [options]
  */
 export function showErrorToast(message, options = {}) {
-  getToast().error(message, options);
+  return getToast().error(message, options);
 }
 
 /**
  * @param {'info' | 'success' | 'warning' | 'error'} type
  * @param {string} message
  * @param {{ timeout?: number }} [options]
+ * @returns {Promise<HTMLElement>} the toast's element once it is on screen (to hide it with `hideToast`)
  */
 export function showToast(type, message, options = {}) {
   switch (type) {
     case 'success':
-      showSuccessToast(message, options);
-      break;
+      return showSuccessToast(message, options);
     case 'warning':
-      showWarningToast(message, options);
-      break;
+      return showWarningToast(message, options);
     case 'error':
-      showErrorToast(message, options);
-      break;
+      return showErrorToast(message, options);
     default:
-      showInfoToast(message, options);
+      return showInfoToast(message, options);
   }
+}
+
+/**
+ * Takes a toast off the screen before its time (a toast that has already gone is left alone).
+ * @param {Promise<HTMLElement>} shown what `showToast` returned
+ */
+export async function hideToast(shown) {
+  const element = await shown;
+  if (element?.isConnected) getToast().hide(element);
 }
 
 /**
