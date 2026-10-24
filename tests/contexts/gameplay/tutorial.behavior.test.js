@@ -39,12 +39,24 @@ describe('the tutorial script', () => {
   });
 
   test('a step without `news` is refused: a silent step says null', () => {
-    expect(() => validateTutorialSteps([{ id: 'x', done: [{ built: 'House-Mayor' }], allow: ['House-Mayor'] }])).toThrow(/news/);
+    expect(() => validateTutorialSteps([{ id: 'x', delay: 0, done: [{ built: 'House-Mayor' }], allow: ['House-Mayor'] }])).toThrow(/news/);
   });
 
   test('a step must say which construction buttons work on it', () => {
-    expect(() => validateTutorialSteps([{ id: 'x', done: [{ built: 'House-Mayor' }], news: null }])).toThrow(/allow/);
-    expect(() => validateTutorialSteps([{ id: 'x', done: [{ built: 'House-Mayor' }], allow: ['Castle-404'], news: null }])).toThrow(/Castle-404/);
+    expect(() => validateTutorialSteps([{ id: 'x', delay: 0, done: [{ built: 'House-Mayor' }], news: null }])).toThrow(/allow/);
+    expect(() => validateTutorialSteps([{ id: 'x', delay: 0, done: [{ built: 'House-Mayor' }], allow: ['Castle-404'], news: null }])).toThrow(/Castle-404/);
+  });
+
+  // Nothing is assumed when the catalog stays silent: a missing `delay`, `blocking` or counter `after` throws, naming the entry.
+  test('a step, a toast or a dépêche that does not say its `delay`, `blocking` or `after` is refused', () => {
+    expect(() => validateTutorialSteps([{ id: 'x', done: [{ built: 'House-Mayor' }], allow: ['House-Mayor'], news: null }])).toThrow(/"x".*delay/);
+    const toast = { id: 't', kind: 'info', duration: 3000, priority: 1, step: 'x', text: 'x' };
+    expect(() => validateTutorialToasts([toast], [{ id: 'x' }])).toThrow(/"t".*delay/);
+    expect(() => validateTutorialToasts([{ ...toast, delay: 0, priority: undefined }], [{ id: 'x' }])).toThrow(/"t".*priority/);
+    const news = { title: 'T', body: 'b', teaser: 't' };
+    expect(() => validateTutorialDispatches([{ id: 'd', delay: 0, when: [{ built: 'House-Red' }], news }], [])).toThrow(/"d".*blocking/);
+    const counter = { label: 'x', items: [{ type: 'House-Red', atLeast: 1 }] };
+    expect(() => validateTutorialSteps([{ id: 'c', delay: 0, allow: ['House-Red'], counter, done: [{ built: 'House-Red' }], news: null }])).toThrow(/"c".*after/);
   });
 
   test('the step the player is on is the first one not done, until the script is over', () => {
@@ -79,11 +91,11 @@ describe('the tutorial script', () => {
 
 describe('AdvanceTutorial', () => {
   const steps = [
-    { id: 'mayor', allow: ['House-Mayor'], done: [{ built: 'House-Mayor' }], news: null },
-    { id: 'artisans', allow: ['House-Red'], done: [{ built: 'House-Red' }], news: { title: 'Les bras', body: 'Bâtissez « {building:House-Red} ».', teaser: 't', action: { kind: 'buildTool', toolId: 'House-Red' } } },
+    { id: 'mayor', delay: 0, allow: ['House-Mayor'], done: [{ built: 'House-Mayor' }], news: null },
+    { id: 'artisans', delay: 0, allow: ['House-Red'], done: [{ built: 'House-Red' }], news: { title: 'Les bras', body: 'Bâtissez « {building:House-Red} ».', teaser: 't', blocking: false, action: { kind: 'buildTool', toolId: 'House-Red' } } },
   ];
   const toasts = [
-    { id: 'market-staffed', kind: 'success', duration: 5000, when: [{ staffed: 'Market-Stall-Red' }], text: '« {building:Market-Stall-Red} » est pourvu !' },
+    { id: 'market-staffed', kind: 'success', duration: 5000, delay: 0, priority: 1, when: [{ staffed: 'Market-Stall-Red' }], text: '« {building:Market-Stall-Red} » est pourvu !' },
   ];
 
   function service({ active = true, buildings = [], script = steps, dispatches = [] } = {}) {
@@ -107,15 +119,16 @@ describe('AdvanceTutorial', () => {
 
   test('the counter of a step goes 1/3, 2/3, then 3/3 is handed over as just completed when the step is done', async () => {
     const script = [
-      { id: 'mayor', allow: ['House-Mayor'], done: [{ built: 'House-Mayor' }], news: null },
+      { id: 'mayor', delay: 0, allow: ['House-Mayor'], done: [{ built: 'House-Mayor' }], news: null },
       {
         id: 'houses',
+        delay: 0,
         allow: ['House-Red'],
-        counter: { label: 'Maisons « {building:House-Red} »', items: [{ type: 'House-Red', atLeast: 3 }] },
+        counter: { after: null, label: 'Maisons « {building:House-Red} »', items: [{ type: 'House-Red', atLeast: 3 }] },
         done: [{ built: { type: 'House-Red', atLeast: 3 } }],
         news: null,
       },
-      { id: 'next', allow: ['House-Red'], done: [{ built: { type: 'House-Red', atLeast: 9 } }], news: null },
+      { id: 'next', delay: 0, allow: ['House-Red'], done: [{ built: { type: 'House-Red', atLeast: 9 } }], news: null },
     ];
     const { advance, state } = service({ buildings: [building('House-Mayor'), building('House-Red')], script });
     expect((await advance.execute()).progress).toEqual({ label: 'Maisons « Artisans »', have: 1, target: 3 });
@@ -131,10 +144,11 @@ describe('AdvanceTutorial', () => {
     const script = [
       {
         id: 'houses',
+        delay: 0,
         allow: ['House-Red'],
-        counter: { label: 'Maisons', items: [{ type: 'House-Red', atLeast: 3 }] },
+        counter: { after: null, label: 'Maisons', items: [{ type: 'House-Red', atLeast: 3 }] },
         done: [{ built: { type: 'House-Red', atLeast: 3 } }],
-        news: { title: 'T', body: 'b', teaser: 't' },
+        news: { title: 'T', body: 'b', teaser: 't', blocking: false },
       },
     ];
     const { advance, state } = service({ buildings: [building('House-Red')], script });
@@ -143,9 +157,34 @@ describe('AdvanceTutorial', () => {
     expect((await advance.execute()).progress).toEqual({ label: 'Maisons', have: 1, target: 3 });
   });
 
+  test('the counter of a step with an `after` shows only once the dépêche it names has been read', async () => {
+    const news = { title: 'T', body: 'b', teaser: 't', blocking: false };
+    const script = [
+      {
+        id: 'trade',
+        delay: 0,
+        allow: ['Market-Stall-Red'],
+        counter: { after: { news: 'chain' }, label: 'Marché', items: [{ type: 'Market-Stall-Red', atLeast: 1 }] },
+        done: [{ built: 'Market-Stall-Red' }],
+        news: null,
+      },
+    ];
+    const { advance, state } = service({ script, dispatches: [{ id: 'chain', step: 'trade', delay: 0, news }] });
+    expect((await advance.execute()).progress).toBeNull();
+    state.read.add('chain');
+    expect((await advance.execute()).progress).toEqual({ label: 'Marché', have: 0, target: 1 });
+  });
+
+  test('a counter whose `after` names a dépêche or a toast that does not exist throws, naming the step', () => {
+    const script = [
+      { id: 'trade', delay: 0, allow: ['House-Red'], counter: { after: { news: 'ghost' }, label: 'x', items: [{ type: 'House-Red', atLeast: 1 }] }, done: [{ built: 'House-Red' }], news: null },
+    ];
+    expect(() => service({ script })).toThrow(/trade.*ghost/);
+  });
+
   test('a button the step does not allow works from the moment the dépêche that unlocks it has been written', async () => {
-    const news = { title: 'T', body: 'b', teaser: 't' };
-    const dispatches = [{ id: 'needs-blue', when: [{ built: 'House-Mayor' }], unlocks: ['House-Blue'], news }];
+    const news = { title: 'T', body: 'b', teaser: 't', blocking: false };
+    const dispatches = [{ id: 'needs-blue', delay: 0, when: [{ built: 'House-Mayor' }], unlocks: ['House-Blue'], news }];
     const { advance, state } = service({ buildings: [], dispatches });
     expect((await advance.execute()).allowed).toEqual(['House-Mayor']);
     state.buildings = [building('House-Mayor')];
@@ -153,9 +192,9 @@ describe('AdvanceTutorial', () => {
   });
 
   test('a dispatch comes when its moment comes, whichever step the player is on, after its delay', async () => {
-    const news = { title: 'T', body: 'Un « {building:House-Red} ».', teaser: 't', illustrations: ['House-Red'] };
+    const news = { title: 'T', body: 'Un « {building:House-Red} ».', teaser: 't', blocking: false, illustrations: ['House-Red'] };
     const dispatches = [
-      { id: 'on-build', when: [{ built: 'House-Red' }], news },
+      { id: 'on-build', delay: 0, when: [{ built: 'House-Red' }], news },
       { id: 'later', step: 'artisans', delay: 2, news },
     ];
     const { advance, announced, state } = service({ buildings: [building('House-Mayor')], dispatches });
@@ -202,8 +241,8 @@ describe('AdvanceTutorial', () => {
 
   test('a step reminds the player what it asks after a while, again every so often, and the reminder goes with the step', async () => {
     const script = [
-      { id: 'mayor', allow: ['House-Mayor'], done: [{ built: 'House-Mayor' }], news: null },
-      { id: 'artisans', allow: ['House-Red'], done: [{ built: 'House-Red' }], news: null, reminder: { after: 5, every: 10, duration: 4000, text: 'Bâtissez « {building:House-Red} ».' } },
+      { id: 'mayor', delay: 0, allow: ['House-Mayor'], done: [{ built: 'House-Mayor' }], news: null },
+      { id: 'artisans', delay: 0, allow: ['House-Red'], done: [{ built: 'House-Red' }], news: null, reminder: { after: 5, every: 10, duration: 4000, text: 'Bâtissez « {building:House-Red} ».' } },
     ];
     const { advance, state } = service({ buildings: [building('House-Mayor')], script });
     const ids = async () => (await advance.execute()).toasts.map((t) => t.id);
@@ -223,11 +262,11 @@ describe('AdvanceTutorial', () => {
 
   test('a blocking dépêche without a button to leave by is refused', () => {
     const news = { title: 'T', body: 'b', teaser: 't', blocking: true };
-    expect(() => validateTutorialDispatches([{ id: 'x', when: [{ built: 'House-Red' }], news }], [])).toThrow(/action/);
+    expect(() => validateTutorialDispatches([{ id: 'x', delay: 0, when: [{ built: 'House-Red' }], news }], [])).toThrow(/action/);
   });
 
   test('a toast is taken off once the player did what it points at, and not shown at all if they already had', async () => {
-    const pointing = [{ id: 'build-it', kind: 'info', duration: 5000, step: 'artisans', until: [{ built: 'House-Red' }], text: 'x' }];
+    const pointing = [{ id: 'build-it', kind: 'info', duration: 5000, delay: 0, priority: 3, step: 'artisans', until: [{ built: 'House-Red' }], text: 'x' }];
     const make = (buildings) => {
       const state = { buildings, time: 1 };
       const advance = new AdvanceTutorial({
@@ -258,12 +297,12 @@ describe('AdvanceTutorial', () => {
   });
 
   test('a toast can be tied to a step and to the calendar, and a bad one throws naming it', () => {
-    const tied = { id: 't', kind: 'info', duration: 3000, step: 'artisans', when: [{ season: 'Automne' }, { turnAtLeast: 10 }], text: 'x' };
+    const tied = { id: 't', kind: 'info', duration: 3000, delay: 0, priority: 1, step: 'artisans', when: [{ season: 'Automne' }, { turnAtLeast: 10 }], text: 'x' };
     expect(() => validateTutorialToasts([tied], steps)).not.toThrow();
     expect(() => validateTutorialToasts([{ ...tied, step: 'nope' }], steps)).toThrow(/nope/);
     expect(() => validateTutorialToasts([{ ...tied, when: [{ season: 'Mousson' }] }], steps)).toThrow(/Mousson/);
     expect(() => validateTutorialToasts([{ ...tied, duration: undefined }], steps)).toThrow(/duration/);
-    expect(() => validateTutorialToasts([{ id: 't', kind: 'info', duration: 3000, text: 'x' }], steps)).toThrow(/step/);
+    expect(() => validateTutorialToasts([{ id: 't', kind: 'info', duration: 3000, delay: 0, priority: 1, text: 'x' }], steps)).toThrow(/step/);
   });
 
   test('a toast is due the moment its conditions come true, once; a game opened with it already true does not repeat it', async () => {
@@ -272,7 +311,7 @@ describe('AdvanceTutorial', () => {
 
     state.buildings = [building('House-Mayor'), building('Market-Stall-Red', { workerNeed: 2, workers: 2 })];
     const due = (await advance.execute()).toasts;
-    expect(due).toEqual([{ id: 'market-staffed', kind: 'success', duration: 5000, highlight: null, text: '« Marché » est pourvu !' }]);
+    expect(due).toEqual([{ id: 'market-staffed', kind: 'success', duration: 5000, priority: 1, highlight: null, text: '« Marché » est pourvu !' }]);
     expect((await advance.execute()).toasts).toEqual([]);
 
     const reopened = service({ buildings: [building('Market-Stall-Red', { workerNeed: 2, workers: 2 })] });

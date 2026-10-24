@@ -47,6 +47,7 @@ describe('getHudPopulationScopeSnapshot', () => {
 
   test('mapEmploymentGroupsForHud derives unemployment percentage and lack per group', async () => {
     const { mapEmploymentGroupsForHud, laborSlotFromStats } = await import('../../src/composition/hudPopulationAggregates.js');
+    const none = { unemployedNoSkill: 0, unemployedNoPosts: 0, unemployedNoRoad: 0, lackNoSkill: 0, lackNoHands: 0 };
 
     expect(
       mapEmploymentGroupsForHud(
@@ -66,13 +67,16 @@ describe('getHudPopulationScopeSnapshot', () => {
         unemployed: 0,
         unemploymentPercentage: 0,
         lack: 0,
+        causes: none,
       },
+      // 2 out of work while 4 posts are empty: the 2 do not match the posts (skill), and 2 posts are left with nobody to fill them.
       artisans: {
         workerPool: 5,
         assigned: 3,
         unemployed: 2,
         unemploymentPercentage: 40,
         lack: 4,
+        causes: { unemployedNoSkill: 2, unemployedNoPosts: 0, unemployedNoRoad: 0, lackNoSkill: 2, lackNoHands: 2 },
       },
       merchants: {
         workerPool: 0,
@@ -80,6 +84,7 @@ describe('getHudPopulationScopeSnapshot', () => {
         unemployed: 0,
         unemploymentPercentage: 0,
         lack: 0,
+        causes: none,
       },
       scholars: {
         workerPool: 0,
@@ -87,6 +92,7 @@ describe('getHudPopulationScopeSnapshot', () => {
         unemployed: 0,
         unemploymentPercentage: 0,
         lack: 0,
+        causes: none,
       },
     });
 

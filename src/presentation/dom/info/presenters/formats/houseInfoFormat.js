@@ -8,6 +8,7 @@ import {
   maxPopulationForLevel,
 } from '../../../../../contexts/housing/application/queries/HouseDwellingLevelPresentation.js';
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
+import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import {
   getResidentialGroupTitle,
   residentialGroupForType,
@@ -103,8 +104,10 @@ function problemsOf(vm) {
     // Once the labour market has been read, the unemployed are told apart: out of work for lack of the skill the vacant posts of their class
     // ask for, or because no post is free for them at all.
     if (vm.labourVacancies) {
+      // A house no road reaches has no way to a workplace: all its unemployed are out of work for that reason alone, like the city's own reading.
+      const noRoad = isRoadNeedMet(vm.buildingType, vm.roadAccess?.roadCount ?? 0) ? 0 : withoutJob;
       const { noSkill, noPost } = houseUnemploymentCauses({
-        unemployed: withoutJob,
+        unemployed: withoutJob - noRoad,
         vacancies: vm.labourVacancies,
         classGrants: (skill) => groupGrantsSkill(vm.buildingType, skill),
         houseHolds: (skill, level) => houseSkillLevel(vm.buildingType, vm.houseLevel, skill) >= level,
@@ -112,6 +115,7 @@ function problemsOf(vm) {
       causes = [
         { emoji: '🎓', count: noSkill, label: 'sans compétence', ariaLabel: `${noSkill} sans emploi : des postes sont libres, mais ils n'ont pas la compétence` },
         { emoji: '🪑', count: noPost, label: 'sans poste', ariaLabel: `${noPost} sans emploi : aucun poste libre pour eux` },
+        { emoji: '🛣️', count: noRoad, label: 'sans route', ariaLabel: `${noRoad} sans emploi : la maison n'est reliée à aucun lieu de travail` },
       ];
     }
     unemployed = { emoji: UNEMPLOYED_ICON_HTML, count: withoutJob, label: 'sans emploi', ariaLabel: `${withoutJob} de cette maison sont sans emploi`, causes };

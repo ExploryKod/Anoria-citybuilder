@@ -285,13 +285,42 @@ export function createGame(gameStore, assetManager, citySize = null) {
    * A tutorial toast: short and non-blocking; it stays as long as the catalog says. A dépêche's modal dims the screen, so a toast waits for it to
    * close (callers present the dépêche first), and its timer only starts then.
    */
-  async function showTutorialToast({ id, kind, text, duration, highlight }) {
+  async function showTutorialToast(toast) {
+    const { id, duration } = toast;
     waitingTutorialToasts.add(id);
     await waitForNewsModalClosed();
     // Taken off while it waited (the player already did what it points at): it never shows.
-    if (!waitingTutorialToasts.delete(id)) return;
-    shownTutorialToasts.set(id, { shown: showToast(kind, text, { timeout: duration }), highlight });
-    if (highlight) highlightTarget(highlight);
+    if (!waitingTutorialToasts.has(id)) return;
+    queuedTutorialToasts.push(toast);
+    // A toast that has waited as long as it would have stayed on screen is stale (a "Bravo" for something done long ago): it is dropped.
+    setTimeout(() => {
+      const at = queuedTutorialToasts.indexOf(toast);
+      if (at === -1) return;
+      queuedTutorialToasts.splice(at, 1);
+      waitingTutorialToasts.delete(id);
+    }, duration);
+    pumpTutorialToasts();
+  }
+
+  /** Fills the free places of the screen with the queued toasts: the highest priority first, the first come first within a priority. */
+  function pumpTutorialToasts() {
+    while (tutorialToastsOnScreen.size < MAX_TUTORIAL_TOASTS_ON_SCREEN && queuedTutorialToasts.length > 0) {
+      let best = 0;
+      queuedTutorialToasts.forEach((queued, at) => {
+        if (queued.priority > queuedTutorialToasts[best].priority) best = at;
+      });
+      const { id, kind, text, duration, highlight } = queuedTutorialToasts.splice(best, 1)[0];
+      if (!waitingTutorialToasts.delete(id)) continue;
+      shownTutorialToasts.set(id, { shown: showToast(kind, text, { timeout: duration }), highlight });
+      tutorialToastsOnScreen.add(id);
+      if (highlight) highlightTarget(highlight);
+      setTimeout(() => releaseTutorialToastPlace(id), duration);
+    }
+  }
+
+  /** A toast has left the screen (its time is over, or it was taken off): its place goes to the next in the queue. */
+  function releaseTutorialToastPlace(id) {
+    if (tutorialToastsOnScreen.delete(id)) pumpTutorialToasts();
   }
 
   /**
@@ -341,9 +370,13 @@ export function createGame(gameStore, assetManager, citySize = null) {
     syncLimitedBuildingButtons();
   }
 
-  /** The tutorial toasts waiting for a dépêche to be closed, and the ones on screen (to take them off early). */
+  /** The tutorial toasts waiting (for a dépêche to be closed, or for a free place on the screen), and the ones on screen (to take them off early). */
   const waitingTutorialToasts = new Set();
   const shownTutorialToasts = new Map();
+  /** How many tutorial toasts the screen holds at once: the others queue, the higher priority first (see TOAST_PRIORITIES). */
+  const MAX_TUTORIAL_TOASTS_ON_SCREEN = 2;
+  const queuedTutorialToasts = [];
+  const tutorialToastsOnScreen = new Set();
 
   /** The player did what a toast points at (or its moment is over): it leaves the screen, and its highlight with it. */
   function hideTutorialToast(id) {
@@ -353,6 +386,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     shownTutorialToasts.delete(id);
     void hideToast(entry.shown);
     if (entry.highlight) clearHighlight();
+    releaseTutorialToastPlace(id);
   }
 
   /**

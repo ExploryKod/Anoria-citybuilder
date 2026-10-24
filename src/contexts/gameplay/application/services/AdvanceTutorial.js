@@ -36,6 +36,23 @@ export class AdvanceTutorial {
     validateTutorialSteps(steps);
     validateTutorialDispatches(dispatches, steps);
     validateTutorialToasts(toasts, steps);
+    for (const step of steps) {
+      if (!step.counter || step.counter.after === null) continue;
+      const after = step.counter.after;
+      const kinds = Object.keys(after);
+      if (kinds.length !== 1 || !['news', 'toast', 'event'].includes(kinds[0])) {
+        throw new Error(`[tutorial] "${step.id}": its counter \`after\` is exactly one of { news }, { toast } or { event }, got ${JSON.stringify(after)}`);
+      }
+      if (after.news !== undefined && !dispatches.some((dispatch) => dispatch.id === after.news) && !steps.some((other) => other.id === after.news && other.news)) {
+        throw new Error(`[tutorial] "${step.id}": its counter \`after\` names the dépêche "${after.news}", which does not exist`);
+      }
+      if (after.toast !== undefined && !toasts.some((toast) => toast.id === after.toast)) {
+        throw new Error(`[tutorial] "${step.id}": its counter \`after\` names the toast "${after.toast}", which does not exist`);
+      }
+      if (after.event !== undefined && (!Array.isArray(after.event) || after.event.length === 0)) {
+        throw new Error(`[tutorial] "${step.id}": its counter \`after.event\` is a list of conditions, read like a toast's \`when\``);
+      }
+    }
     this.steps = steps;
     this.dispatches = dispatches;
     this.toasts = toasts;
@@ -88,7 +105,7 @@ export class AdvanceTutorial {
     }
     const reminder = this.#reminderDue(step, turn);
     if (reminder) toasts.push(reminder);
-    if (step?.news && turn - this.stepSince.since >= (step.delay ?? 0)) {
+    if (step?.news && turn - this.stepSince.since >= step.delay) {
       news = await this.announcer.announce({ stepId: step.id, turn, ...tutorialDraftOf(step) });
     }
 
@@ -109,7 +126,17 @@ export class AdvanceTutorial {
   async #progressOf(step, facts) {
     if (!step?.counter) return null;
     if (step.news && !(await this.announcer.wasRead(step.id))) return null;
+    if (!(await this.#counterAfterHolds(step, facts))) return null;
     return counterOf(step, facts);
+  }
+
+  /** The counter's `after`, when it has one: a dépêche closed (`news`), a toast shown (`toast`), or an event whose conditions hold (`event`). */
+  async #counterAfterHolds(step, facts) {
+    const after = step.counter.after;
+    if (after === null) return true;
+    if (after.news !== undefined) return this.announcer.wasRead(after.news);
+    if (after.toast !== undefined) return this.toastsState?.get(after.toast)?.shown === true;
+    return isTutorialMomentOn({ id: `counter:${step.id}`, when: after.event }, facts, this.steps);
   }
 
   /** The step's `allow`, plus what the dispatches already written `unlock`; null when nothing is restricted. */
@@ -141,7 +168,7 @@ export class AdvanceTutorial {
         continue;
       }
       if (!this.dispatchesSince.has(dispatch.id)) this.dispatchesSince.set(dispatch.id, turn);
-      if (turn - this.dispatchesSince.get(dispatch.id) >= (dispatch.delay ?? 0)) due.push(dispatch);
+      if (turn - this.dispatchesSince.get(dispatch.id) >= dispatch.delay) due.push(dispatch);
     }
     return due;
   }
@@ -170,7 +197,7 @@ export class AdvanceTutorial {
       if (state.shown && !state.closed && done) {
         state.closed = true;
         dismissed.push(toast.id);
-      } else if (!state.shown && !done && turn - state.since >= (toast.delay ?? 0)) {
+      } else if (!state.shown && !done && turn - state.since >= toast.delay) {
         state.shown = true;
         due.push(toast);
       }

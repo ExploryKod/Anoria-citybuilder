@@ -1,3 +1,5 @@
+import { TOAST_PRIORITIES } from '../policies/TutorialProgressPolicy.js';
+
 /** How long a reminder toast stays on screen, in milliseconds. */
 const REMINDER_MS = 8000;
 
@@ -19,21 +21,22 @@ const WAIT_FOR_HARVEST_TOOLS = Object.freeze([
  * - TUTORIAL_DISPATCHES: dépêches triggered like toasts, outside the sequence (when a step is reached, a building stands, a delay has passed).
  * - TUTORIAL_TOASTS: short, non-blocking messages that underline a moment.
  *
- * A step is `{ id, done, news, delay? }`:
+ * A step is `{ id, done, news, delay }`:
  * - `done`: the conditions that, all together, say the player has done what the step asks (the kinds are in TutorialProgressPolicy.js).
  * - `news`: the dépêche that gives the instruction, or `null` for a step that only waits because the game already guides that moment (the opening's
  *   dépêches lead to the mayor's house). Its `action` is a button on the dépêche that puts a building in hand; its `illustrations` are building ids
  *   shown as pictures under the text; its `image` is a file of public/. A dépêche is read a page at a time: `choices: [{ label, page }]` are buttons
  *   with their own sentence that open a page, and `next` is the page "Lire la suite" opens; a page is `{ body, action?, illustrations?, image?, choices?, next? }`.
- * - `counter` (optional): `{ label, items: [{ type, atLeast }] }`, the progress shown on screen under the season ("Maisons « Artisans » construites 2/3"),
+ * - `counter` (optional): `{ label, after, items: [{ type, atLeast }] }` (`after`, always said: `null` to show the counter at once, or what must have
+ *   happened before it shows, exactly one of `{ news: <dépêche id> }` closed, `{ toast: <toast id> }` shown, `{ event: [conditions] }` holding, read like a toast's `when`; a step's own dépêche always comes first), the progress shown on screen under the season ("Maisons « Artisans » construites 2/3"),
  *   pulsing; each item counts the buildings of its type up to `atLeast` (a number, or a token text such as `{farms:…}`). When the step is done the counter
  *   stays on screen full, marked done, for a moment (the congratulation toast comes with it).
  * - `allow`: the construction buttons (building ids) that work while the player is on the step; the other construction buttons are greyed out. Every step
  *   says it. The button of a building a dépêche or a toast of that step asks for must be in it. Once the script is over, nothing is greyed out.
- * - `delay` (optional): turns (days) to wait after the player reaches the step before its dépêche arrives; absent = at once.
+ * - `delay`: turns (days) to wait after the player reaches the step before its dépêche arrives; always said, 0 = at once (the same on dispatches and toasts).
  * - `reminder` (optional): `{ after, every?, duration, text }`, a warning toast that reminds the player what the step asks when they have not done it:
  *   after `after` turns on the step, then every `every` turns (once without `every`); it goes away when the step is done.
- * A dispatch's `news` may be `blocking: true`: the dépêche cannot be closed, its `action` button is the only way out, and it comes back until it is done.
+ * Every `news` says `blocking`: `true` and the dépêche cannot be closed (its `action` button is the only way out, and it comes back until it is done), `false` otherwise.
  *
  * Words the catalogs decide are tokens, never typed: `{building:<id>}` (a building's name), `{skill:<id>}` (a skill's label), `{skillicon:<id>}` (its
  * emoji), `{harvest:when}` (the season of the harvest), `{farms:3*House-Red/Farm-Wheat}` (the fields it takes to feed 3 such houses). A token never
@@ -45,6 +48,7 @@ const WAIT_FOR_HARVEST_TOOLS = Object.freeze([
 export const TUTORIAL_STEPS = Object.freeze([
   {
     id: 'mayor-house',
+    delay: 0,
     allow: ['House-Mayor'],
     done: [{ built: 'House-Mayor' }],
     news: null,
@@ -52,16 +56,18 @@ export const TUTORIAL_STEPS = Object.freeze([
   {
     // No dépêche: the toast that points at the road button says it all (see 'road-button').
     id: 'road',
+    delay: 0,
     allow: ['StonePath-001'],
-    counter: { label: 'Route tracée', items: [{ type: 'StonePath-001', atLeast: 1 }] },
+    counter: { after: null, label: 'Route tracée', items: [{ type: 'StonePath-001', atLeast: 1 }] },
     done: [{ roadBuilt: true }],
     reminder: { after: 15, every: 20, duration: REMINDER_MS, text: `Il faut tracer une route : cliquez sur le bouton de route, à côté du bouton en forme de maison.` },
     news: null,
   },
   {
     id: 'artisans',
+    delay: 0,
     allow: ['StonePath-001', 'House-Red'],
-    counter: { label: 'Maisons « {building:House-Red} » construites', items: [{ type: 'House-Red', atLeast: 3 }] },
+    counter: { after: null, label: 'Maisons « {building:House-Red} » construites', items: [{ type: 'House-Red', atLeast: 3 }] },
     done: [{ built: { type: 'House-Red', atLeast: 3 } }],
     reminder: { after: 20, every: 30, duration: REMINDER_MS, text: `Il vous reste à bâtir des maisons « {building:House-Red} » : trois en tout.` },
     news: {
@@ -69,6 +75,7 @@ export const TUTORIAL_STEPS = Object.freeze([
       body: `La maison « {building:House-Red} » abrite ceux qui savent travailler la terre : leur compétence « {skill:fermier} » fera tourner vos champs. `
         + `Une seule maison ne donne pas assez de bras : bâtissez-en trois.`,
       teaser: 'Des exilés cherchent un toit…',
+      blocking: false,
       action: { kind: 'buildTool', toolId: 'House-Red' },
     },
   },
@@ -76,8 +83,9 @@ export const TUTORIAL_STEPS = Object.freeze([
     // Its own step, not a page of the houses' dépêche: clicking the button of a building closes the modal, so what comes after must be a dépêche of its own.
     // Direct: the text, and the button that puts the field in hand. The screenshot of the build bar (public/tuto/artisans-farms.png) is not shown for now.
     id: 'farms',
+    delay: 0,
     allow: ['StonePath-001', 'House-Red', 'Farm-Wheat'],
-    counter: { label: 'Champs « {building:Farm-Wheat} » construits', items: [{ type: 'Farm-Wheat', atLeast: '{farms:3*House-Red/Farm-Wheat}' }] },
+    counter: { after: null, label: 'Champs « {building:Farm-Wheat} » construits', items: [{ type: 'Farm-Wheat', atLeast: '{farms:3*House-Red/Farm-Wheat}' }] },
     done: [{ built: 'Farm-Wheat' }, { foodCovered: 'built' }],
     reminder: { after: 20, every: 30, duration: REMINDER_MS, text: `Vos habitants ont besoin de champs : posez des « {building:Farm-Wheat} ».` },
     news: {
@@ -86,6 +94,7 @@ export const TUTORIAL_STEPS = Object.freeze([
         + `route, mais il lui faut des travailleurs ayant la compétence « {skill:fermier} » : les habitants de vos maisons « {building:House-Red} » `
         + `les fourniront. Il ne donne sa récolte qu'une fois l'an.`,
       teaser: 'Les habitants ont faim…',
+      blocking: false,
       action: { kind: 'buildTool', toolId: 'Farm-Wheat' },
     },
   },
@@ -93,10 +102,12 @@ export const TUTORIAL_STEPS = Object.freeze([
     // The wait for the harvest: a house of the artisans (a fourth), the market and the granary, recommended by a dispatch below and chosen from the build menu.
     // The merchants' house is not asked for: the player finds out they need it when the market and the granary lack workers ('merchants-needed').
     id: 'trade',
+    delay: 0,
     allow: WAIT_FOR_HARVEST_TOOLS,
     counter: {
-      label: 'Vente préparée',
-      items: [{ type: 'House-Red', atLeast: 4 }, { type: 'Market-Stall-Red', atLeast: 1 }, { type: 'Windmill-001', atLeast: 1 }],
+      after: { news: 'trade-chain' },
+      label: '{building:Market-Stall-Red} et {building:Windmill-001}',
+      items: [{ type: 'Market-Stall-Red', atLeast: 1 }, { type: 'Windmill-001', atLeast: 1 }],
     },
     done: [{ built: { type: 'House-Red', atLeast: 4 } }, { built: 'Market-Stall-Red' }, { built: 'Windmill-001' }],
     reminder: {
@@ -108,8 +119,9 @@ export const TUTORIAL_STEPS = Object.freeze([
     news: null,
   },
   {
-    // Nothing to say: the dépêche comes from the shortage itself ('merchants-needed'), the toasts tell when each building has its workers.
+    // Nothing to say: the dépêche comes from the shortage itself ('workers-needed', or 'merchants-needed' for the market and the granary), the toasts tell when each building has its workers.
     id: 'staff-the-chain',
+    delay: 0,
     allow: WAIT_FOR_HARVEST_TOOLS,
     reminder: { after: 40, every: 60, duration: REMINDER_MS, text: `Un bâtiment sans ses travailleurs reste muet : vérifiez que chacun est pourvu, sinon il manque des maisons.` },
     done: [{ foodCovered: 'staffed' }, { staffed: 'Windmill-001' }, { staffed: 'Market-Stall-Red' }],
@@ -129,6 +141,7 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
     // until a field stands. Without enough fields the harvest is missed, and the houses go hungry.
     id: 'famine-warning',
     step: 'farms',
+    delay: 0,
     when: [{ harvestWithin: 3 }],
     unless: [{ foodCovered: 'built' }],
     news: {
@@ -151,6 +164,7 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
       body: `Votre premier champ est posé. Profitez de l'attente de la récolte pour explorer le menu à gauche de l'écran : ses onglets vous renseignent `
         + `sur votre hameau, à tout moment. Passez la souris sur les icônes pour avoir une explication.`,
       teaser: 'Un messager vous montre un tableau…',
+      blocking: false,
       legend: [
         { icon: 'rail-population', word: 'Population' },
         { icon: 'rail-employment', word: 'Emploi' },
@@ -169,23 +183,49 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
       body: `La récolte doit être stockée puis vendue. Choisissez dans la barre de construction : une maison « {building:House-Red} » de plus, `
         + `« {building:Market-Stall-Red} » pour vendre et « {building:Windmill-001} » pour garder la récolte.`,
       teaser: 'Les négociants se préparent à la moisson…',
+      blocking: false,
       illustrations: ['House-Red', 'Market-Stall-Red', 'Windmill-001'],
     },
   },
   {
-    // At once, the moment the market or the granary shows the no-work sprite (a building that needs workers and has none): why, and who is missing.
-    // Only about the merchants. Tied to the 'trade' step: it is said once that step is reached.
+    // At once, the moment any building shows the no-work sprite (a building that needs workers and has none), whatever step the player is on: the rule of
+    // the groups of inhabitants. Not while the market or the granary is the one lacking hands: 'merchants-needed' says it, with the merchants' house.
+    id: 'workers-needed',
+    when: [{ noWork: 'any' }],
+    unless: [{ noWork: ['Market-Stall-Red', 'Windmill-001'] }],
+    delay: 0,
+    news: {
+      title: 'Il manque des bras',
+      body: `Un bâtiment qui affiche cette icône n'a pas de travailleurs : il reste à l'arrêt. Chaque bâtiment est relié à l'un des trois groupes `
+        + `d'habitants — « {building:House-Red} », « {building:House-Blue} » ou « {building:House-Purple} » — et n'embauche que dans son groupe, selon `
+        + `leurs compétences : « {building:Farm-Wheat} » demande des « {skill:fermier} », que seuls les « {building:House-Red} » ont. Quand un `
+        + `bâtiment attend ses travailleurs, il faut plus de maisons du groupe qui a les compétences voulues.`,
+      teaser: 'Des bâtiments restent sans bras…',
+      blocking: false,
+      illustrations: ['Farm-Wheat'],
+      // The sprite as the game draws it above a building (public/tuto/no-work-sprite.svg: the pink disc and the glyph of the no-work icon), at its own size.
+      image: { src: '/tuto/no-work-sprite.svg', alt: 'L’icône « sans travailleurs » qui s’affiche au-dessus d’un bâtiment' },
+      // A page carries one picture: the example in the game itself (a screenshot, public/tuto/no-work-farms.png) is the page "Lire la suite" opens.
+      next: {
+        body: `Voici à quoi cela ressemble : l'icône flotte au-dessus de chaque « {building:Farm-Wheat} » qui attend ses travailleurs.`,
+        image: { src: '/tuto/no-work-farms.png', alt: 'Des champs de blé, chacun avec l’icône « sans travailleurs » au-dessus' },
+      },
+    },
+  },
+  {
+    // At once, the moment the market or the granary shows the no-work sprite: who is missing, and the button that puts the merchants' house in hand.
+    // Tied to the 'trade' step: it is said once that step is reached. It unlocks the merchants' house, greyed out until now.
     id: 'merchants-needed',
     step: 'trade',
     when: [{ noWork: ['Market-Stall-Red', 'Windmill-001'] }],
+    delay: 0,
     unlocks: ['House-Blue'],
     news: {
-      title: 'Il manque des bras',
-      body: `« {building:Market-Stall-Red} » et « {building:Windmill-001} » attendent leurs travailleurs. Chaque bâtiment est relié à l'un des trois groupes `
-        + `d'habitants — « {building:House-Red} », « {building:House-Blue} » ou « {building:House-Purple} » — et n'embauche que dans son groupe : `
-        + `le marché et le grenier demandent des habitants ayant les compétences « {skill:vente-alimentaire} » et « {skill:stockage-alimentaire} », `
-        + `que seuls les « {building:House-Blue} » ont. Il vous faut plus de commerçants.`,
+      title: 'Il manque des commerçants',
+      body: `« {building:Market-Stall-Red} » et « {building:Windmill-001} » attendent leurs travailleurs : ils demandent des habitants ayant les compétences `
+        + `« {skill:vente-alimentaire} » et « {skill:stockage-alimentaire} », que seuls les « {building:House-Blue} » ont. Il vous faut plus de commerçants.`,
       teaser: 'Les étals restent vides…',
+      blocking: false,
       action: { kind: 'buildTool', toolId: 'House-Blue' },
     },
   },
@@ -200,6 +240,7 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
       body: `En attendant la moisson, appelez de nouveaux habitants : la maison « {building:House-Purple} » abrite les savants, qui font tourner les `
         + `services publics. Bâtissez-en une.`,
       teaser: 'Des lettrés cherchent une cité où s’établir…',
+      blocking: false,
       action: { kind: 'buildTool', toolId: 'House-Purple' },
     },
   },
@@ -208,13 +249,14 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
     // (public/tuto/construction-citerne.png): the scholars' pill selected, the water tank first under it.
     id: 'scholars-water',
     when: [{ built: 'House-Purple' }],
-    delay: 2,
+    delay: 0,
     news: {
       title: 'L’eau de la cité',
       body: `Les habitants de la maison « {building:House-Purple} » ont la compétence {skillicon:hydraulique} « {skill:hydraulique} » : ce sont eux qui feront `
         + `tourner la « {building:WaterTank} », qui puise l'eau du sol et la distribue aux maisons. Sans eau, une maison ne peut pas évoluer. `
         + `Cliquez sur la pastille « {building:House-Purple} » de la barre de construction (en orange ci-dessous), puis sur la « {building:WaterTank} ».`,
       teaser: 'Les savants parlent d’eau…',
+      blocking: false,
       image: { src: '/tuto/construction-citerne.png', alt: 'La barre de construction : la pastille des savants sélectionnée, et sous elle la citerne en premier' },
       action: { kind: 'buildTool', toolId: 'WaterTank' },
     },
@@ -230,6 +272,7 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
         + `pour le marché, {skillicon:stockage-alimentaire} « {skill:stockage-alimentaire} » pour le grenier, {skillicon:fermier} « {skill:fermier} » `
         + `pour les champs. Faites un clic droit sur la maison « {building:House-Blue} » : l'onglet « 🧠 Savoirs » de sa fiche montre ceux de ses habitants.`,
       teaser: 'Un messager parle de savoirs…',
+      blocking: false,
     },
   },
 ]);
@@ -247,9 +290,12 @@ const TOAST_LONG_MS = 10000;
  * - `when` / `unless`: conditions that must all hold / none of which may hold. The kinds include the city's facts (`built`, `housed`, `staffed`,
  *   `foodCovered`) and the game's clock: `turnAtLeast: N`, `season: 'Automne'`, `month: 'Septembre'`, `harvest: true` (the catalog's harvest month).
  * - `step`: a step id; the moment is on only once the player has reached that step (is on it or past it). Use it alone for "when this instruction arrives".
- * - `delay`: turns the moment must last before it shows (absent = at once).
+ * - `delay`: turns the moment must last before it shows (always said, 0 = at once).
  * - `until`: conditions that, once they all hold, take the toast off the screen (the player did what it points at) and clear its highlight; a toast
  *   whose `until` already holds is not shown. A toast is also taken off when its moment goes off (its `when` / `unless` no longer say so).
+ * - `priority`: `TOAST_PRIORITIES.instruction` (points the player at something to do), `.lack` (a building still misses something) or `.news` (a
+ *   congratulation, an arrival); always said. The screen shows only a few toasts at once: the higher priority shows first, the others wait their turn
+ *   and are dropped if they wait as long as they would have stayed on screen (see `showTutorialToast`, game.js). A step's reminder is an instruction.
  * - `highlight`: 'construction' (the house-shaped button that opens the build bar), 'road' (the road button beside it) or 'history' (the button that
  *   opens the tutorial's dépêches again) turns yellow and pulses until the player clicks it.
  * At least one of `when` / `step` is required.
@@ -260,6 +306,8 @@ const TOAST_LONG_MS = 10000;
 export const TUTORIAL_TOASTS = Object.freeze([
   {
     id: 'road-button',
+    priority: TOAST_PRIORITIES.instruction,
+    delay: 0,
     duration: TOAST_LONG_MS,
     kind: 'info',
     step: 'road',
@@ -268,12 +316,13 @@ export const TUTORIAL_TOASTS = Object.freeze([
     text: `Pour tracer une route, cliquez sur le bouton de route, à côté du bouton en forme de maison.`,
   },
   {
-    // While the fields grow, between the season's toast and the scholars' dépêche: every building is chosen from the build bar, opened by this button.
+    // The moment the first house (the mayor's does not count) stands: from now on every building is chosen from the build bar, opened by this button.
     id: 'houses-button',
+    priority: TOAST_PRIORITIES.instruction,
     duration: TOAST_LONG_MS,
     kind: 'info',
-    step: 'trade',
-    delay: 11,
+    when: [{ built: 'House-Red' }],
+    delay: 0,
     until: [{ built: 'Market-Stall-Red' }],
     highlight: 'construction',
     text: `Pour construire un bâtiment, cliquez sur le bouton en forme de maison de la barre du bas.`,
@@ -281,6 +330,7 @@ export const TUTORIAL_TOASTS = Object.freeze([
   {
     // As soon as the houses and the fields stand: the season of the sale, and the wait for it.
     id: 'harvest-season',
+    priority: TOAST_PRIORITIES.news,
     duration: TOAST_MS,
     kind: 'info',
     step: 'trade',
@@ -290,6 +340,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   {
     // Due with the first dépêche of the tutorial (the artisans'); a toast waits for the dépêche to be closed, so it comes right after it is read.
     id: 'history-button',
+    priority: TOAST_PRIORITIES.instruction,
+    delay: 0,
     duration: TOAST_LONG_MS,
     kind: 'info',
     step: 'artisans',
@@ -299,6 +351,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   // Congratulations: the moment an objective of the steps is reached, the toast says so (the same conditions as the step's `done`).
   {
     id: 'road-reached',
+    priority: TOAST_PRIORITIES.news,
+    delay: 0,
     duration: TOAST_MS,
     kind: 'success',
     when: [{ roadBuilt: true }],
@@ -306,6 +360,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'artisans-reached',
+    priority: TOAST_PRIORITIES.news,
+    delay: 0,
     duration: TOAST_MS,
     kind: 'success',
     when: [{ built: { type: 'House-Red', atLeast: 3 } }],
@@ -313,6 +369,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'trade-reached',
+    priority: TOAST_PRIORITIES.news,
+    delay: 0,
     duration: TOAST_MS,
     kind: 'success',
     when: [{ built: { type: 'House-Red', atLeast: 4 } }, { built: 'Market-Stall-Red' }, { built: 'Windmill-001' }],
@@ -320,6 +378,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'chain-reached',
+    priority: TOAST_PRIORITIES.news,
+    delay: 0,
     duration: TOAST_MS,
     kind: 'success',
     when: [{ foodCovered: 'staffed' }, { staffed: 'Windmill-001' }, { staffed: 'Market-Stall-Red' }],
@@ -327,6 +387,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'artisans-settled',
+    priority: TOAST_PRIORITIES.news,
+    delay: 0,
     duration: TOAST_MS,
     kind: 'info',
     when: [{ housed: 'House-Red' }],
@@ -334,6 +396,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'merchants-settled',
+    priority: TOAST_PRIORITIES.news,
+    delay: 0,
     duration: TOAST_MS,
     kind: 'info',
     when: [{ housed: 'House-Blue' }],
@@ -341,6 +405,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'field-not-enough',
+    priority: TOAST_PRIORITIES.lack,
+    delay: 0,
     duration: TOAST_MS,
     kind: 'warning',
     when: [{ built: 'Farm-Wheat' }],
@@ -349,6 +415,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'food-covered',
+    priority: TOAST_PRIORITIES.news,
+    delay: 0,
     duration: TOAST_MS,
     kind: 'success',
     when: [{ built: 'Farm-Wheat' }, { foodCovered: 'built' }],
@@ -356,6 +424,7 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'farm-waits-workers',
+    priority: TOAST_PRIORITIES.lack,
     duration: TOAST_MS,
     kind: 'warning',
     when: [{ built: 'Farm-Wheat' }],
@@ -365,6 +434,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'farm-staffed',
+    priority: TOAST_PRIORITIES.news,
+    delay: 0,
     duration: TOAST_MS,
     kind: 'success',
     when: [{ staffed: 'Farm-Wheat' }],
@@ -372,6 +443,7 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'granary-waits-workers',
+    priority: TOAST_PRIORITIES.lack,
     duration: TOAST_MS,
     kind: 'warning',
     when: [{ built: 'Windmill-001' }],
@@ -381,6 +453,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'granary-staffed',
+    priority: TOAST_PRIORITIES.news,
+    delay: 0,
     duration: TOAST_MS,
     kind: 'success',
     when: [{ staffed: 'Windmill-001' }],
@@ -388,6 +462,7 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'market-waits-workers',
+    priority: TOAST_PRIORITIES.lack,
     duration: TOAST_MS,
     kind: 'warning',
     when: [{ built: 'Market-Stall-Red' }],
@@ -397,6 +472,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'market-staffed',
+    priority: TOAST_PRIORITIES.news,
+    delay: 0,
     duration: TOAST_MS,
     kind: 'success',
     when: [{ staffed: 'Market-Stall-Red' }],
@@ -404,6 +481,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
   },
   {
     id: 'harvest-begins',
+    priority: TOAST_PRIORITIES.news,
+    delay: 0,
     duration: TOAST_MS,
     kind: 'info',
     when: [{ harvest: true }, { built: 'Farm-Wheat' }],

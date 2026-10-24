@@ -87,6 +87,8 @@ export async function syncPopRailHud(gameUI) {
       groupsHamlet: hamletGroups,
       causesCountry: country.employmentCauses,
       causesHamlet: hamlet.employmentCauses,
+      groupCausesCountry: country.employmentGroupCauses,
+      groupCausesHamlet: hamlet.employmentGroupCauses,
     });
   } catch (err) {
     console.warn('[syncPopRailHud] population:', err);

@@ -20,7 +20,7 @@ Changing the tutorial with the game means editing this list. The only code that 
 |---|---|
 | `built` / `housed` / `staffed` | at least one (or `{ type, atLeast: N }`) building of that type stands / has residents / has all its workers |
 | `roadBuilt` | a road stands, whichever its variant |
-| `noWork: [ids]` | a building of one of those types shows the no-work sprite: it needs workers and has none (the city's `understaffedBuildingIds` rule) |
+| `noWork: [ids]` or `'any'` | a building of one of those types (of any type for `'any'`) shows the no-work sprite: it needs workers and has none (the city's `understaffedBuildingIds` rule) |
 | `turnAtLeast` / `season` / `month` / `harvest` / `harvestWithin: N` | the game's clock: a turn reached, the season or month, the harvest month, the harvest at most N months away |
 | `foodCovered: 'built' \| 'staffed'` | the fields' yearly harvest covers what the houses placed eat when full |
 
@@ -31,7 +31,7 @@ the script.
 
 ## Dispatches
 
-`TUTORIAL_DISPATCHES` are dépêches that are not a step's: `{ id, news, when?, unless?, step?, delay? }`, triggered exactly like a toast, so a
+`TUTORIAL_DISPATCHES` are dépêches that are not a step's: `{ id, news, when?, unless?, step?, delay }`, triggered exactly like a toast, so a
 dépêche can come "when this building stands" or "N turns after this step was reached", whichever step the player is on. They are written once
 (Intelligence's once-only rule, keyed by the dispatch id). A `news` may carry `illustrations` (building ids shown as pictures in a row under the
 text, no button), an `image` (`{ src, alt }`, a file of `public/`, e.g. a screenshot of the interface) and, as before, an `action`. A dépêche
@@ -51,21 +51,25 @@ is a building of the catalog) are greyed out and do nothing; once the script is 
 list, or null), and the presentation applies it through `ButtonStateManager.restrict`, which also reaches the buttons the build bar creates later. A
 building that a dépêche or a toast of the step asks for must be in the step's `allow`, unless the dépêche itself unlocks it: a dispatch may carry
 `unlocks: [building ids]`, and those buttons work from the moment that dépêche has been written (`wasAnnounced`, read from what Intelligence filed). The
-merchants' house is unlocked that way by `merchants-needed`: it is greyed out until the shortage of hands is explained.
+merchants' house is unlocked that way by `merchants-needed` (the market or the granary shows the no-work sprite): it is greyed out until the shortage of hands is explained. `workers-needed` is the
+general rule of the groups of inhabitants, for a shortage of any other building (whatever the step); it unlocks nothing.
 
 ## Objective counter
 
-A step may carry `counter: { label, items: [{ type, atLeast }] }`. `AdvanceTutorial` answers `progress` (the current step's counter: label, have, target)
+A step may carry `counter: { label, after, items: [{ type, atLeast }] }`. `AdvanceTutorial` answers `progress` (the current step's counter: label, have, target)
 and `justCompleted` (the counter of the step the player has just finished, full). The HUD shows it as a pulsing line under the season and date
 (`#tutorial-objective`, `TutorialObjective.js`): "Maisons « Artisans » construites 2/3". The counter of a step that has a dépêche appears only once the player got past it (closed it, or left by its button: it is then archived, `wasRead`);
-the game looks at the tutorial as soon as the dépêche modal closes. A finished counter stays on screen, green, for a moment before the
+the game looks at the tutorial as soon as the dépêche modal closes. A counter always says `after`: `null` to show at once, or what must have happened before it shows,
+exactly one of `{ news: <dépêche id> }` (that dépêche, of the steps or of the dispatches, has been read), `{ toast: <toast id> }` (that toast has been
+shown) or `{ event: [conditions] }` (the conditions hold, read like a toast's `when`); the step's own dépêche still comes first. A bad `after` (several
+kinds, an unknown dépêche or toast, an empty event) throws when the contexts are built. A finished counter stays on screen, green, for a moment before the
 next step's takes over; the congratulation toast of the objective comes at the same time.
 
 ## Reminders, blocking dépêches, history
 
 - A step may carry `reminder: { after, every?, duration, text }`: a warning toast (id `reminder:<step id>`) when the player has stayed on the step
   `after` turns without doing it, again every `every` turns; it is taken off when the step is done.
-- A dépêche whose `news` is `blocking: true` (it needs an `action`) cannot be closed: no close button, no Escape, no "next". Its button puts the
+- Every `news` says `blocking` (`true` or `false`). A dépêche whose `news` is `blocking: true` (it needs an `action`) cannot be closed: no close button, no Escape, no "next". Its button puts the
   building in hand; the dépêche is not archived and comes back two turns later while the building is still missing, until it stands. The tutorial's
   `famine-warning` is one: the fields are missing as the harvest comes close (`harvestWithin: N` months, read from the harvest schedule).
 - Nothing comes before its time: a step is the first not done, and the dispatches tied to a `step` wait for that step to be reached, so the next
@@ -76,15 +80,15 @@ next step's takes over; the congratulation toast of the objective comes at the s
 
 ## Timing
 
-A step may carry `delay: N` — turns (days) between the player reaching the step (the previous one done) and its dépêche. A toast takes the same
-`delay`: turns its moment must last before it shows. Absent = at once. The turn the step was reached is session memory only (like the toasts'):
+A step carries `delay: N` — turns (days) between the player reaching the step (the previous one done) and its dépêche. A toast takes the same
+`delay`: turns its moment must last before it shows. `delay` is always said, on steps, dispatches and toasts: `0` = at once (no default is assumed, a missing one throws). The turn the step was reached is session memory only (like the toasts'):
 a game reopened mid-tutorial restarts the wait, and a dépêche already announced is never repeated. The wait is counted on the game clock, so it
 holds across a fast-forward batch.
 
 ## Toasts
 
 `TUTORIAL_TOASTS` (same file) are short, non-blocking messages that underline a moment while the player works ("« Marché » est maintenant
-pourvu en travailleurs !"). A toast is `{ id, kind, duration, text, when?, unless?, step?, delay? }` with the same conditions and tokens as a step. `duration` (ms on screen) is
+pourvu en travailleurs !"). A toast is `{ id, kind, duration, priority, text, when?, unless?, step?, delay }` with the same conditions and tokens as a step. `duration` (ms on screen) is
 required. `step` ties it to the script: it is on only once the player has reached that step; `when` and `step` can be used alone or together (one
 is required). Beyond the city's facts, conditions read the clock: `turnAtLeast: N`, `season`, `month`, and `harvest: true` (the month the
 catalog's harvest schedule names; the root matches it, Gameplay reads no supply). A toast is taken off the screen early — and its highlight cleared — when the player does what it points at (`until`: conditions that all hold; a toast
@@ -93,6 +97,11 @@ hides them (`hideTutorialToast`). It is **due the moment
 its conditions come true** (and none of its `unless` holds), and again only if that moment goes and comes back. `AdvanceTutorial` keeps, for the
 session only, which toasts were on at the last look; the first look only records, so a game reopened mid-tutorial does not repeat what was
 already true. Nothing is stored. Gameplay returns the toasts; the presentation shows them (`showToast`, injected into `runGameTick`).
+
+The screen holds only a few tutorial toasts at once (`MAX_TUTORIAL_TOASTS_ON_SCREEN`, `game.js`). A toast says its `priority` (required, one of
+`TOAST_PRIORITIES`): `instruction` (points the player at something to do; a step's reminder is one), `lack` (a building still misses something),
+`news` (a congratulation, an arrival). The toasts due beyond the limit queue; a free place goes to the highest priority, the first come first within a
+priority. A queued toast is dropped when its moment goes off, or when it has waited as long as its `duration` (it would be stale).
 
 ## The rule
 

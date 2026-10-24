@@ -985,14 +985,40 @@
   width: 100%;
 }
 
-/* Why people are out of work / why posts are empty: set apart from the groups, dimmed while a cause is at zero. */
-.hud-pop-rail .pop-detail-causes {
+/* The labour market, one block for the whole city and one per social category, each set apart from the next by a rule and some air. */
+.hud-pop-rail .pop-labor-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.hud-pop-rail .pop-labor-group + .pop-labor-group {
   margin-top: 8px;
-  padding-top: 6px;
+  padding-top: 8px;
   border-top: 1px solid rgba(0, 0, 0, 0.15);
 }
 
-.hud-pop-rail .pop-cause-row.is-zero {
+/* Why people are out of work / why posts are empty: icon + figure cells in a grid under the block's percentage, dimmed while at zero. */
+.hud-pop-rail .pop-labor-causes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 6px;
+  margin: 0;
+  padding: 0 0 0 4px;
+  list-style: none;
+}
+
+.hud-pop-rail .pop-labor-causes .pop-detail-value {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hud-pop-rail .pop-cause-cell {
+  cursor: help;
+}
+
+.hud-pop-rail .pop-cause-cell.is-zero {
   opacity: 0.45;
 }
 

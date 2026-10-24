@@ -829,16 +829,56 @@
                 hidden
             >
                 <div class="pop-detail-block pop-detail-labor">
-                    <div class="pop-detail-metric pop-detail-labor-head">
-                        <span class="pop-detail-labor-icon" title="Travail">
-                            <img src="/resources/textures/status/no-work_colored.png" alt="" class="unemployed-icon">
-                        </span>
-                        <span class="pop-detail-values" aria-label="Marché du travail">
-                            <span class="pop-detail-value pop-labor-value--country pop-detail-value--country">0%</span>
-                            <span class="pop-detail-value pop-labor-value--hamlet pop-detail-value--hamlet">0%</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-groups" aria-label="Marché du travail par groupe social">
+                    <!-- The whole city first: its unemployment, then why (road included), then one block per social category, each with its own percentage and the same four situations. The words of the tooltips are set by GameUI. -->
+                    <section class="pop-labor-group pop-labor-group--city" aria-label="Marché du travail, toutes catégories">
+                        <div class="pop-detail-metric pop-detail-labor-head">
+                            <span class="pop-detail-labor-icon" title="Travail">
+                                <img src="/resources/textures/status/no-work_colored.png" alt="" class="unemployed-icon">
+                            </span>
+                            <span class="pop-detail-values" aria-label="Marché du travail">
+                                <span class="pop-detail-value pop-labor-value--country pop-detail-value--country">0%</span>
+                                <span class="pop-detail-value pop-labor-value--hamlet pop-detail-value--hamlet">0%</span>
+                            </span>
+                        </div>
+                        <ul class="pop-labor-causes" aria-label="Causes du chômage et des postes vides — toutes catégories">
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoSkill">
+                                <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoPosts">
+                                <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoSkill">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoHands">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoRoad">
+                                <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </section>
+                    <section class="pop-labor-group" data-labor-group="artisans" aria-label="Artisans">
                         <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="artisans">
                             <span class="pop-detail-emoji" title="Artisans" aria-hidden="true">🔨</span>
                             <span class="pop-detail-values">
@@ -846,6 +886,45 @@
                                 <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
                             </span>
                         </div>
+                        <ul class="pop-labor-causes" aria-label="Causes du chômage et des postes vides — Artisans">
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoSkill" data-social-group="artisans">
+                                <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoPosts" data-social-group="artisans">
+                                <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoSkill" data-social-group="artisans">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoHands" data-social-group="artisans">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoRoad" data-social-group="artisans">
+                                <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </section>
+                    <section class="pop-labor-group" data-labor-group="merchants" aria-label="Commerçants">
                         <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="merchants">
                             <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">⚖️</span>
                             <span class="pop-detail-values">
@@ -853,6 +932,45 @@
                                 <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
                             </span>
                         </div>
+                        <ul class="pop-labor-causes" aria-label="Causes du chômage et des postes vides — Commerçants">
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoSkill" data-social-group="merchants">
+                                <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoPosts" data-social-group="merchants">
+                                <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoSkill" data-social-group="merchants">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoHands" data-social-group="merchants">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoRoad" data-social-group="merchants">
+                                <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </section>
+                    <section class="pop-labor-group" data-labor-group="scholars" aria-label="Savants">
                         <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="scholars">
                             <span class="pop-detail-emoji" title="Savants" aria-hidden="true">📚</span>
                             <span class="pop-detail-values">
@@ -860,45 +978,44 @@
                                 <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
                             </span>
                         </div>
-                    </div>
-                    <!-- Why people are out of work and why posts stay empty (the title of each row says it in full). -->
-                    <div class="pop-detail-groups pop-detail-causes" aria-label="Causes du chômage et du manque de main-d'œuvre">
-                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoSkill" title="Chômeurs : il y a des postes libres, mais ils n'ont pas la compétence">
-                            <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoPosts" title="Chômeurs : il n'y a aucun poste libre">
-                            <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoRoad" title="Chômeurs : leur maison n'a pas de route">
-                            <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="lackNoSkill" title="Postes vides : il y a des chômeurs, mais sans la compétence">
-                            <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="lackNoHands" title="Postes vides : plus personne de disponible">
-                            <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                    </div>
+                        <ul class="pop-labor-causes" aria-label="Causes du chômage et des postes vides — Savants">
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoSkill" data-social-group="scholars">
+                                <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoPosts" data-social-group="scholars">
+                                <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoSkill" data-social-group="scholars">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoHands" data-social-group="scholars">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoRoad" data-social-group="scholars">
+                                <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </section>
                 </div>
             </section>
             <section

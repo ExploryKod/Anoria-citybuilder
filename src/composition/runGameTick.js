@@ -27,7 +27,7 @@ import { isDeathGameOverReached } from './gameplayMortalityState.js';
  * @param {{ enabled?: boolean, checkObjectives: Function }} params.objectivesTracker
  * @param {() => void} [params.onGameOver]
  * @param {() => Promise<void>} [params.presentIncomingNewsEvents] — injected at the edge (presentation owns the modal)
- * @param {(toast: { id: string, kind: string, duration: number, text: string }) => void} params.showTutorialToast — injected at the edge (presentation owns the toasts)
+ * @param {(toast: { id: string, kind: string, duration: number, priority: number, text: string }) => void} params.showTutorialToast — injected at the edge (presentation owns the toasts)
  * @param {() => void} params.syncLimitedBuildingButtonsOnHamletChange — sets the buttons of the buildings limited per hamlet (`maxPerHamlet`) when the hamlet is not the one seen before
  * @param {(state: { progress: object | null, justCompleted: object | null }) => void} params.showTutorialObjective — shows the objective counter of the tutorial's current step
  * @param {(allowed: string[] | null) => void} params.applyTutorialAllowedTools — greys out the construction buttons the tutorial's current step does not allow

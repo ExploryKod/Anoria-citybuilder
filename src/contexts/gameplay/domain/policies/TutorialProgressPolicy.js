@@ -16,25 +16,25 @@ import { MONTHS, MONTHS_PER_YEAR, SEASONS } from '../../../../shared/time/TimeCa
  * A condition is one entry `{ <kind>: <argument> }`; the kinds are the keys of CONDITION_KINDS. A step is done when all its conditions hold.
  * @typedef {Record<string, unknown>} TutorialCondition
  *
- * `delay`: turns to wait, after the player reaches the step, before its dépêche is given (absent = at once).
+ * `delay`: turns to wait, after the player reaches the step, before its dépêche is given (required, 0 = at once).
  * `counter`: `{ label, items: [{ type, atLeast }] }`, the progress the screen shows while the player is on the step ("2/3"): each item counts the buildings of its
  * type up to `atLeast` (a number, or a token text such as `{farms:…}`).
  * `allow`: the construction buttons (building ids) that work while the player is on the step; the other construction buttons are greyed out.
  * `reminder`: a toast that reminds the player what the step asks when they have not done it: after `after` turns on the step, then every `every` turns
  * (absent = once), staying `duration` ms; it goes away with the step.
- * @typedef {{ id: string, done: TutorialCondition[], allow: string[], delay?: number, reminder?: { after: number, every?: number, duration: number, text: string }, news: null | { title: string, body: string, teaser: string, action?: { kind: 'buildTool', toolId: string } } }} TutorialStep
+ * @typedef {{ id: string, done: TutorialCondition[], allow: string[], delay: number, reminder?: { after: number, every?: number, duration: number, text: string }, news: null | { title: string, body: string, teaser: string, blocking: boolean, action?: { kind: 'buildTool', toolId: string } } }} TutorialStep
  *
  * A toast is a short, non-blocking message shown the moment its conditions come true (`when` all hold and none of `unless` does).
  * A toast's moment is on when its `when` conditions all hold, none of its `unless` does, and — if it names a `step` — the player has reached that step
- * (is on it or past it). At least one of `when` / `step` is required. `delay`: turns the moment must last before the toast shows (absent = at once).
+ * (is on it or past it). At least one of `when` / `step` is required. `delay`: turns the moment must last before the toast shows (required, 0 = at once).
  * `duration`: milliseconds it stays on screen, unless taken off earlier: when its moment goes off, or as soon as its `until` conditions hold (the player did
  * what it points at). `highlight`: a part of the interface it points at while it shows ('construction': the house-shaped button that opens the build bar).
- * @typedef {{ id: string, kind: 'info' | 'success' | 'warning', duration: number, when?: TutorialCondition[], unless?: TutorialCondition[], step?: string, delay?: number, until?: TutorialCondition[], highlight?: 'construction' | 'road' | 'history', text: string }} TutorialToast
+ * @typedef {{ id: string, kind: 'info' | 'success' | 'warning', duration: number, when?: TutorialCondition[], unless?: TutorialCondition[], step?: string, delay: number, priority: number, until?: TutorialCondition[], highlight?: 'construction' | 'road' | 'history', text: string }} TutorialToast
  *
  * A dispatch is a dépêche triggered like a toast (same `when` / `unless` / `step` / `delay`), outside the sequence of steps: it comes when its moment
  * comes, whichever step the player is on. Announced once (Intelligence's once-only rule).
  * `unlocks`: construction buttons (building ids) that work from the moment the dépêche has been written, on top of the step's `allow`.
- * @typedef {{ id: string, when?: TutorialCondition[], unless?: TutorialCondition[], step?: string, delay?: number, unlocks?: string[], news: { title: string, body: string, teaser: string, action?: { kind: 'buildTool', toolId: string }, illustrations?: string[], image?: { src: string, alt: string }, choices?: Array<{ label: string, page: object }>, next?: object } }} TutorialDispatch
+ * @typedef {{ id: string, when?: TutorialCondition[], unless?: TutorialCondition[], step?: string, delay: number, unlocks?: string[], news: { title: string, body: string, teaser: string, blocking: boolean, action?: { kind: 'buildTool', toolId: string }, illustrations?: string[], image?: { src: string, alt: string }, choices?: Array<{ label: string, page: object }>, next?: object } }} TutorialDispatch
  */
 
 function requireBuildingId(kind, argument) {
@@ -127,13 +127,14 @@ const CONDITION_KINDS = Object.freeze({
     },
   }),
   // At least one building of those types shows the no-work sprite: it needs workers and has none (the rule of the city's `understaffedBuildingIds`,
-  // computeCityEmploymentSummary.js). A list of building ids.
+  // computeCityEmploymentSummary.js). A list of building ids, or 'any' for a building of any type.
   noWork: Object.freeze({
     validate: (argument) => {
-      if (!Array.isArray(argument) || argument.length === 0) throw new Error(`[tutorial] the condition "noWork" takes a list of building ids, got ${JSON.stringify(argument)}`);
+      if (argument === 'any') return;
+      if (!Array.isArray(argument) || argument.length === 0) throw new Error(`[tutorial] the condition "noWork" takes 'any' or a list of building ids, got ${JSON.stringify(argument)}`);
       argument.forEach((type) => requireBuildingId('noWork', type));
     },
-    test: (argument, facts) => facts.buildings.some((building) => argument.includes(building.type) && building.workerNeed > 0 && building.workers === 0),
+    test: (argument, facts) => facts.buildings.some((building) => (argument === 'any' || argument.includes(building.type)) && building.workerNeed > 0 && building.workers === 0),
   }),
   // The fields feed every house placed: their yearly harvest covers what the houses eat when full. 'built' counts every field standing, 'staffed'
   // only those with their workers. The number of fields it takes comes from the catalog (a field's yield, a citizen's need, a house's capacity).
@@ -203,9 +204,8 @@ function validateConditions(ownerId, conditions) {
   }
 }
 
-/** `delay` is optional (absent = at once): a whole number of turns, 0 or more. */
+/** `delay` is required (0 = at once): a whole number of turns, 0 or more. */
 function validateDelay(ownerId, delay) {
-  if (delay === undefined) return;
   if (!Number.isInteger(delay) || delay < 0) {
     throw new Error(`[tutorial] "${ownerId}": \`delay\` is a whole number of turns (0 or more), got ${JSON.stringify(delay)}`);
   }
@@ -335,10 +335,11 @@ function validateReminder(ownerId, reminder) {
 /**
  * The toast of a step's reminder, its words resolved. Its id is `reminder:<step id>`.
  * @param {TutorialStep} step a step with a `reminder`
- * @returns {{ id: string, kind: 'warning', duration: number, highlight: null, text: string }}
+ * @returns {{ id: string, kind: 'warning', duration: number, priority: number, highlight: null, text: string }}
  */
 export function tutorialReminderOf(step) {
-  return { id: `reminder:${step.id}`, kind: 'warning', duration: step.reminder.duration, highlight: null, text: resolveTutorialText(step.reminder.text) };
+  // A reminder is by nature an instruction: what the step asks, said again.
+  return { id: `reminder:${step.id}`, kind: 'warning', duration: step.reminder.duration, priority: TOAST_PRIORITIES.instruction, highlight: null, text: resolveTutorialText(step.reminder.text) };
 }
 
 /** A dépêche's words, action and illustrations. */
@@ -351,7 +352,7 @@ function validateNews(ownerId, news) {
   }
   validatePage(ownerId, news);
   // A blocking dépêche cannot be closed: the only way out is its button, so it must have one.
-  if (news.blocking !== undefined && news.blocking !== true) throw new Error(`[tutorial] "${ownerId}": \`blocking\` is \`true\` or absent`);
+  if (typeof news.blocking !== 'boolean') throw new Error(`[tutorial] "${ownerId}": \`blocking\` is \`true\` or \`false\`, said on every dépêche, got ${JSON.stringify(news.blocking)}`);
   if (news.blocking && !news.action) throw new Error(`[tutorial] "${ownerId}": a blocking dépêche needs an \`action\` (its only way out)`);
 }
 
@@ -449,6 +450,13 @@ const HIGHLIGHT_TARGETS = Object.freeze(['construction', 'road', 'history']);
 const TOAST_KINDS = Object.freeze(['info', 'success', 'warning']);
 
 /**
+ * How much a toast matters when several are due at once and the screen holds only a few (the higher shows first, the others wait their turn):
+ * `instruction` points the player at something to do (a button to press, the reminder of a step), `lack` says a building is still missing something,
+ * `news` is everything else (a congratulation, an arrival).
+ */
+export const TOAST_PRIORITIES = Object.freeze({ news: 1, lack: 2, instruction: 3 });
+
+/**
  * Checks the toasts like the steps: ids, conditions, kind and words.
  * @param {ReadonlyArray<TutorialToast>} toasts
  * @param {ReadonlyArray<TutorialStep>} steps the script, for the steps a toast names
@@ -463,6 +471,10 @@ export function validateTutorialToasts(toasts, steps) {
     if (!TOAST_KINDS.includes(toast.kind)) throw new Error(`[tutorial] toast "${toast.id}": "${toast.kind}" is not a kind of toast (${TOAST_KINDS.join(', ')})`);
     if (!Number.isInteger(toast.duration) || toast.duration <= 0) {
       throw new Error(`[tutorial] toast "${toast.id}": \`duration\` is a number of milliseconds (more than 0), got ${JSON.stringify(toast.duration)}`);
+    }
+    // Said on every toast, never assumed: it decides which toast the screen shows first when several are due (see TOAST_PRIORITIES).
+    if (!Object.values(TOAST_PRIORITIES).includes(toast.priority)) {
+      throw new Error(`[tutorial] toast "${toast.id}": \`priority\` is one of ${Object.values(TOAST_PRIORITIES).join(', ')}, got ${JSON.stringify(toast.priority)}`);
     }
     validateMoment(toast.id, toast, steps);
     if (toast.until !== undefined) {
@@ -508,6 +520,8 @@ function validateCounter(ownerId, counter) {
   if (counter === undefined) return;
   if (typeof counter.label !== 'string' || counter.label === '') throw new Error(`[tutorial] "${ownerId}": its counter has no label`);
   resolveTutorialText(counter.label);
+  // `after` is said on every counter: null shows it at once (the shape of what it names is checked by AdvanceTutorial, which knows the dépêches and toasts).
+  if (counter.after === undefined) throw new Error(`[tutorial] "${ownerId}": its counter has no \`after\` (null to show at once)`);
   if (!Array.isArray(counter.items) || counter.items.length === 0) throw new Error(`[tutorial] "${ownerId}": its counter \`items\` is a list of { type, atLeast }`);
   for (const item of counter.items) {
     requireBuildingId('counter', item?.type);
@@ -554,7 +568,7 @@ export function tutorialDraftOf(step) {
   return {
     title: resolveTutorialText(step.news.title),
     teaser: resolveTutorialText(step.news.teaser),
-    blocking: step.news.blocking === true,
+    blocking: step.news.blocking,
     ...pageDraftOf(step.news),
   };
 }
@@ -601,8 +615,8 @@ export function isTutorialToastDone(toast, facts) {
 /**
  * The toast as the player reads it, its words resolved from the catalogs.
  * @param {TutorialToast} toast
- * @returns {{ id: string, kind: 'info' | 'success' | 'warning', duration: number, highlight: string | null, text: string }}
+ * @returns {{ id: string, kind: 'info' | 'success' | 'warning', duration: number, priority: number, highlight: string | null, text: string }}
  */
 export function tutorialToastOf(toast) {
-  return { id: toast.id, kind: toast.kind, duration: toast.duration, highlight: toast.highlight ?? null, text: resolveTutorialText(toast.text) };
+  return { id: toast.id, kind: toast.kind, duration: toast.duration, priority: toast.priority, highlight: toast.highlight ?? null, text: resolveTutorialText(toast.text) };
 }
