@@ -1546,19 +1546,6 @@ footer .footer-links a:hover {
     color: #1b1b1b;
 }
 
-.building-info-icon-chip__head {
-    position: relative;
-    display: inline-flex;
-}
-
-.building-info-icon-chip__head .building-info-icon-chip__value {
-    position: absolute;
-    left: 100%;
-    top: 50%;
-    margin: 0 0 0 4px;
-    transform: translateY(-50%);
-}
-
 .building-info-icon-chip__label {
     margin-top: 2px;
     font-size: 11px;

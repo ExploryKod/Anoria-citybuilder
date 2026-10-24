@@ -101,6 +101,26 @@
   border: 2px solid var(--cta);
 }
 
+/* A filter button is a switch of its own, not a radio: on = filled with the accent colour and ringed, off = pale and flat. Several can be on at once. */
+.map-filters-column .info-box.stats-buttons.filter-toggle {
+  background: #fff;
+  color: #78909c;
+  border: 2px solid transparent;
+}
+
+.map-filters-column .info-box.stats-buttons.filter-toggle:hover {
+  background: #fff;
+  color: var(--cta);
+}
+
+.map-filters-column .info-box.stats-buttons.filter-toggle.active,
+.map-filters-column .info-box.stats-buttons.filter-toggle.active:hover {
+  background: var(--cta);
+  color: #fff;
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--cta);
+}
+
 .map-filters-column .info-box.stats-buttons .budget-box,
 .map-filters-column .info-box.stats-buttons .budget-icon {
   display: flex;

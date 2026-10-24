@@ -11,6 +11,7 @@ import { MONTHS, MONTHS_PER_YEAR, SEASONS } from '../../../../shared/time/TimeCa
  * @typedef {{
  *   buildings: Array<{ type: string, pop: number, workers: number, workerNeed: number, understaffed: boolean, supplied: string[], sold: boolean }>,
  *   calendar?: { turn: number, season: string, month: string, harvesting: boolean, monthsToHarvest: number | null },
+ *   readNews?: string[],
  * }} TutorialFacts
  *
  * A condition is one entry `{ <kind>: <argument> }`; the kinds are the keys of CONDITION_KINDS. A step is done when all its conditions hold.
@@ -31,7 +32,7 @@ import { MONTHS, MONTHS_PER_YEAR, SEASONS } from '../../../../shared/time/TimeCa
  * (is on it or past it). At least one of `when` / `step` is required. `delay`: turns the moment must last before the toast shows (required, 0 = at once).
  * `duration`: milliseconds it stays on screen, unless taken off earlier: when its moment goes off, or as soon as its `until` conditions hold (the player did
  * what it points at). `highlight`: a part of the interface it points at while it shows ('construction': the house-shaped button that opens the build bar).
- * @typedef {{ id: string, kind: 'info' | 'success' | 'warning', duration: number, when?: TutorialCondition[], unless?: TutorialCondition[], step?: string, delay: number, priority: number, until?: TutorialCondition[], highlight?: 'construction' | 'road' | 'history' | 'pause', text: string }} TutorialToast
+ * @typedef {{ id: string, kind: 'info' | 'success' | 'warning', duration: number, when?: TutorialCondition[], unless?: TutorialCondition[], step?: string, delay: number, priority: number, until?: TutorialCondition[], highlight?: 'construction' | 'road' | 'history' | 'pause' | 'merchants' | Array<'construction' | 'road' | 'history' | 'pause' | 'merchants'>, text: string }} TutorialToast
  *
  * A dispatch is a dépêche triggered like a toast (same `when` / `unless` / `step` / `delay`), outside the sequence of steps: it comes when its moment
  * comes, whichever step the player is on. Announced once (Intelligence's once-only rule).
@@ -214,6 +215,17 @@ const CONDITION_KINDS = Object.freeze({
     },
     test: (_argument, facts) => calendarOf(facts).harvesting === true,
   }),
+  // That dépêche of the tutorial (a step's or a dispatch's id) has been got past by the player (closed, or left by its button). The service hands the ids it
+  // knows to be read in the facts (`readNews`).
+  newsRead: Object.freeze({
+    validate: (argument) => {
+      if (typeof argument !== 'string' || argument === '') throw new Error(`[tutorial] the condition "newsRead" takes the id of a dépêche, got ${JSON.stringify(argument)}`);
+    },
+    test: (argument, facts) => {
+      if (!Array.isArray(facts.readNews)) throw new Error('[tutorial] the facts hold no `readNews`, which a "newsRead" condition needs');
+      return facts.readNews.includes(argument);
+    },
+  }),
   // Conditions made of conditions: `all` holds when every one of its list holds, `any` when at least one does. They nest, so a moment can say
   // "(this OR that) AND the other" and `unless` can name a combination, not only single facts.
   all: Object.freeze({
@@ -225,6 +237,20 @@ const CONDITION_KINDS = Object.freeze({
     test: (argument, facts, ownerId) => argument.some((condition) => allHold(ownerId, [condition], facts)),
   }),
 });
+
+/**
+ * The ids of the dépêches a list of conditions asks to be read (`newsRead`, also inside `all` / `any`).
+ * @param {ReadonlyArray<TutorialCondition>} [conditions]
+ * @returns {string[]}
+ */
+export function newsReadIdsIn(conditions = []) {
+  return conditions.flatMap((condition) => {
+    const [kind] = Object.keys(condition ?? {});
+    if (kind === 'newsRead') return [condition.newsRead];
+    if (kind === 'all' || kind === 'any') return newsReadIdsIn(condition[kind]);
+    return [];
+  });
+}
 
 function validateConditionList(kind, ownerId, conditions) {
   if (!Array.isArray(conditions) || conditions.length < 2) {
@@ -471,7 +497,11 @@ function validatePageContent(ownerId, news) {
   }
   if (news.image !== undefined) {
     if (typeof news.image?.src !== 'string' || !news.image.src.startsWith('/') || typeof news.image.alt !== 'string' || news.image.alt === '') {
-      throw new Error(`[tutorial] "${ownerId}": \`image\` is { src: '/path/in/public.png', alt: '…' }, got ${JSON.stringify(news.image)}`);
+      throw new Error(`[tutorial] "${ownerId}": \`image\` is { src: '/path/in/public.png', alt: '…', caption?: '…' }, got ${JSON.stringify(news.image)}`);
+    }
+    if (news.image.caption !== undefined) {
+      if (typeof news.image.caption !== 'string' || news.image.caption === '') throw new Error(`[tutorial] "${ownerId}": the \`caption\` of its image is a text`);
+      resolveTutorialText(news.image.caption);
     }
   }
 }
@@ -512,7 +542,7 @@ export function validateTutorialDispatches(dispatches, steps) {
   }
 }
 
-const HIGHLIGHT_TARGETS = Object.freeze(['construction', 'road', 'history', 'pause']);
+const HIGHLIGHT_TARGETS = Object.freeze(['construction', 'road', 'history', 'pause', 'merchants']);
 
 const TOAST_KINDS = Object.freeze(['info', 'success', 'warning']);
 
@@ -548,8 +578,12 @@ export function validateTutorialToasts(toasts, steps) {
       if (!Array.isArray(toast.until) || toast.until.length === 0) throw new Error(`[tutorial] toast "${toast.id}": \`until\` is a list of conditions`);
       validateConditions(toast.id, toast.until);
     }
-    if (toast.highlight !== undefined && !HIGHLIGHT_TARGETS.includes(toast.highlight)) {
-      throw new Error(`[tutorial] toast "${toast.id}": \`highlight\` points at one of ${HIGHLIGHT_TARGETS.join(', ')}, got ${JSON.stringify(toast.highlight)}`);
+    // One target, or a list of them pointed at one after the other: the player clicks the first, then the next one lights up, and so on.
+    if (toast.highlight !== undefined) {
+      const targets = Array.isArray(toast.highlight) ? toast.highlight : [toast.highlight];
+      if (targets.length === 0 || !targets.every((target) => HIGHLIGHT_TARGETS.includes(target))) {
+        throw new Error(`[tutorial] toast "${toast.id}": \`highlight\` points at one of ${HIGHLIGHT_TARGETS.join(', ')} (or a list of them), got ${JSON.stringify(toast.highlight)}`);
+      }
     }
     if (typeof toast.text !== 'string' || toast.text === '') throw new Error(`[tutorial] toast "${toast.id}" has no text`);
     resolveTutorialText(toast.text);
@@ -638,7 +672,8 @@ function pageDraftOf(page) {
     body: resolveTutorialText(page.body),
     action: page.action ?? null,
     illustrations: page.illustrations ?? [],
-    image: page.image ?? null,
+    // The caption under the picture is a text of the catalog like any other: its tokens are resolved.
+    image: page.image ? { ...page.image, ...(page.image.caption ? { caption: resolveTutorialText(page.image.caption) } : {}) } : null,
     legend: page.legend ?? [],
     choices: (page.choices ?? []).map((choice) => ({ label: resolveTutorialText(choice.label), page: pageDraftOf(choice.page) })),
     next: page.next ? pageDraftOf(page.next) : null,

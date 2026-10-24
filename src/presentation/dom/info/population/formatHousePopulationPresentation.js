@@ -46,8 +46,7 @@ function toSkillDisplayItem(skillKey, count) {
     skillKey,
     label: meta.label.toLowerCase(),
     emoji: meta.emoji,
-    count,
-    ariaLabel: `${count} compétence${count > 1 ? 's' : ''} en ${meta.label.toLowerCase()}`,
+    ariaLabel: `Compétence : ${meta.label.toLowerCase()}`,
   };
 }
 

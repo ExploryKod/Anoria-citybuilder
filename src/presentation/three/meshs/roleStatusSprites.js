@@ -2,6 +2,7 @@ import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { toSupplySeason, toSupplyMonth, matchesSchedule } from '../../../composition/supplyTimeLabels.js';
 import { ASSET_CATALOG } from './resolveBuildingMesh.js';
 import { getResourceRoles } from '../../../shared/building-catalog/resourceRoleQueries.js';
+import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../../../shared/building-identity/index.js';
 
 /**
  * Activity sprites (what a building is doing) — decided by the ROLE a building holds in the
@@ -42,7 +43,7 @@ function isQuantityDistributorEntry(entry) {
  * @property {Record<string, import('three').Texture>} textures
  * @property {Record<string, { position: object, scale: object, spriteColor: number | null, backgroundColor: number | null }>} statusIcons
  * @property {(mesh: object, key: string, position: object, scale: object) => { position: object, scale: object }} resolveIconAppearance
- * @property {(condition: boolean) => boolean} productionSpriteVisible
+ * @property {(filterId: string) => boolean} mapFilterOn whether a map filter ('alerts', 'cycle', 'exchanges') is on: the sprites it governs show only then
  * @property {{ getBuildingSupplyView: (id: string) => Promise<object | null> }} supply
  * @property {number} time
  */
@@ -95,7 +96,7 @@ async function applyHubSprites(ctx, mesh, instanceId) {
   const full = Number.isFinite(view?.maxStock) && totalKey != null && (view.stocks?.[totalKey] ?? 0) >= view.maxStock;
   const fullMeta = ctx.statusIcons['hub-full'];
   setSprite(ctx, mesh, 'hub-full', {
-    visible: full ? ctx.productionSpriteVisible(true) : false,
+    visible: full ? ctx.mapFilterOn('alerts') : false,
     color: full ? fullMeta.spriteColor : null,
     backgroundColor: full ? fullMeta.backgroundColor : null,
   });
@@ -103,7 +104,7 @@ async function applyHubSprites(ctx, mesh, instanceId) {
   const meta = ctx.statusIcons.isCollecting;
   if (transactedThisMonth(view, ctx.time)) {
     setSprite(ctx, mesh, 'isCollecting', {
-      visible: ctx.productionSpriteVisible(true),
+      visible: ctx.mapFilterOn('exchanges'),
       color: meta.spriteColor,
       backgroundColor: meta.backgroundColor,
     });
@@ -123,7 +124,7 @@ async function applyDistributorSprites(ctx, mesh, instanceId) {
     // Orange when no source is near enough to buy from, green otherwise.
     const noSource = view?.noFarmsNearby === true;
     setSprite(ctx, mesh, 'isBuying', {
-      visible: ctx.productionSpriteVisible(true),
+      visible: ctx.mapFilterOn('exchanges'),
       color: noSource ? 0xff6600 : meta.spriteColor,
       backgroundColor: noSource ? 0xffcccc : meta.backgroundColor,
     });
@@ -157,7 +158,9 @@ function timeContextOf(time) {
  * shows each one on its own (a future "Activité" tab). Its own sprites are all cleared first, so one point of
  * the cycle never lingers into the next.
  */
-async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset) {
+async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset, { inHouse }) {
+  // The business of a house is not a general alert, a cycle or an exchange of the city: its icons answer to their own filter.
+  const filterOf = (general) => (inHouse ? 'activities' : general);
   const graphics = asset?.cycleGraphics ?? [];
   const saleStatus = asset?.saleStatus ?? 'sold-to-hub';
   const failedStatus = asset?.failedSaleStatus ?? 'failed-sell';
@@ -183,7 +186,7 @@ async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset
   if (current) {
     const meta = ctx.statusIcons[current.status];
     setSprite(ctx, mesh, current.status, {
-      visible: ctx.productionSpriteVisible(true),
+      visible: ctx.mapFilterOn(filterOf('cycle')),
       color: meta.spriteColor,
       backgroundColor: meta.backgroundColor,
     });
@@ -193,7 +196,7 @@ async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset
     const meta = ctx.statusIcons[saleStatus];
     const collected = view?.soldToHub === true;
     setSprite(ctx, mesh, saleStatus, {
-      visible: collected ? ctx.productionSpriteVisible(true) : false,
+      visible: collected ? ctx.mapFilterOn(filterOf('exchanges')) : false,
       color: collected ? meta.spriteColor : null,
       backgroundColor: collected ? meta.backgroundColor : null,
     });
@@ -203,7 +206,7 @@ async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset
     const failed = isThisMonth(view?.lastFailedSale, ctx.time);
     const failedMeta = ctx.statusIcons[failedStatus];
     setSprite(ctx, mesh, failedStatus, {
-      visible: failed ? ctx.productionSpriteVisible(true) : false,
+      visible: failed ? ctx.mapFilterOn(filterOf('alerts')) : false,
       color: failed ? failedMeta.spriteColor : null,
       backgroundColor: failed ? failedMeta.backgroundColor : null,
     });
@@ -212,7 +215,7 @@ async function applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset
     const shortage = view?.activityShortfall?.[saleEntry.categories[0]] === true;
     const shortfallMeta = ctx.statusIcons[shortfallStatus];
     setSprite(ctx, mesh, shortfallStatus, {
-      visible: shortage ? ctx.productionSpriteVisible(true) : false,
+      visible: shortage ? ctx.mapFilterOn(filterOf('alerts')) : false,
       color: shortage ? shortfallMeta.spriteColor : null,
       backgroundColor: shortage ? shortfallMeta.backgroundColor : null,
     });
@@ -239,7 +242,7 @@ export async function applyRoleStatusSprites(ctx, { mesh, type, instanceId }) {
   const asset = ASSET_CATALOG[type];
   const saleEntry = roles.find((entry) => entry.role === 'producer' && entry.sale);
   if (asset?.cycleGraphics || saleEntry) {
-    await applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset);
+    await applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset, { inHouse: resolveBuildingKind(type) === BUILDING_KIND_HOUSE });
   }
 }
 

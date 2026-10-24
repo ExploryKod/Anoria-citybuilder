@@ -138,6 +138,28 @@
   display: none;
 }
 
+/* The legend under a picture, and the picture that opens large when clicked. */
+.news-event-image-caption {
+  margin: 8px 0 0;
+  font-size: 0.85em;
+  line-height: 1.4;
+  opacity: 0.8;
+  text-align: center;
+}
+
+.news-event-image-caption[hidden] {
+  display: none;
+}
+
+.news-event-image--zoomable {
+  cursor: zoom-in;
+}
+
+/* The picture shown large is a native <dialog> (see openImageZoom): only its backdrop is styled here. */
+.news-image-zoom::backdrop {
+  background: rgba(10, 10, 10, 0.85);
+}
+
 /* The tutorial's history: a list of messages, each with its buttons (read, remove). */
 .tutorial-history-row {
   display: flex;

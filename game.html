@@ -1187,12 +1187,71 @@
             aria-hidden="true"
             hidden
         >
+            <!-- Each filter is its own switch (not a radio): any of them can be on at once, and one that is on is coloured. Ids and labels: MAP_FILTERS. -->
             <button
                 type="button"
-                id="filter-production-btn"
-                class="info-box filter-production-box stats-buttons filter-toggle active"
-                title="Icônes de production (chaîne alimentaire)"
-                aria-label="Afficher ou masquer les icônes de production"
+                id="filter-alerts-btn"
+                class="info-box stats-buttons filter-toggle active"
+                data-map-filter="alerts"
+                data-label="Alertes"
+                aria-label="Afficher ou masquer les alertes (sans travailleurs, sans ressource, matière manquante…)"
+                aria-pressed="true"
+            >
+                <article class="budget-box">
+                    <span class="budget-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
+                            <path d="M12 9v4"/>
+                            <path d="M12 17h.01"/>
+                        </svg>
+                    </span>
+                </article>
+            </button>
+            <button
+                type="button"
+                id="filter-activities-btn"
+                class="info-box stats-buttons filter-toggle"
+                data-map-filter="activities"
+                data-label="Activités des maisons"
+                aria-label="Afficher ou masquer les icônes des activités des maisons (matière manquante, vente, récolte…)"
+                aria-pressed="false"
+            >
+                <article class="budget-box">
+                    <span class="budget-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house">
+                            <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
+                            <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        </svg>
+                    </span>
+                </article>
+            </button>
+            <button
+                type="button"
+                id="filter-exchanges-btn"
+                class="info-box stats-buttons filter-toggle active"
+                data-map-filter="exchanges"
+                data-label="Échanges"
+                aria-label="Afficher ou masquer les icônes d'échanges (achat, collecte, vente à l'entrepôt)"
+                aria-pressed="true"
+            >
+                <article class="budget-box">
+                    <span class="budget-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-right">
+                            <path d="M8 3 4 7l4 4"/>
+                            <path d="M4 7h16"/>
+                            <path d="m16 21 4-4-4-4"/>
+                            <path d="M20 17H4"/>
+                        </svg>
+                    </span>
+                </article>
+            </button>
+            <button
+                type="button"
+                id="filter-cycle-btn"
+                class="info-box stats-buttons filter-toggle active"
+                data-map-filter="cycle"
+                data-label="Cycle de production"
+                aria-label="Afficher ou masquer les icônes du cycle de production (jachère, croissance, récolte, vente)"
                 aria-pressed="true"
             >
                 <article class="budget-box">
@@ -3329,6 +3388,7 @@
             <p class="news-event-modal-body" id="news-event-body"></p>
             <div class="news-event-illustrations" id="news-event-illustrations" hidden></div>
             <img class="news-event-image" id="news-event-image" alt="" hidden>
+            <p class="news-event-image-caption" id="news-event-image-caption" hidden></p>
             <div class="news-event-legend" id="news-event-legend" hidden></div>
             <div class="news-event-choices" id="news-event-choices" hidden></div>
             <div class="news-event-paywall" id="news-event-paywall" hidden>

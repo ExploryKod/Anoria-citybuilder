@@ -134,6 +134,7 @@ import { getSelectableMeshIds, resolveSelectedMeshId } from './meshs/resolveBuil
 import { readGameClock, writeGameClock } from '../../core/persistence/game-clock/gameClock.js';
 import { showTutorialObjective } from '../dom/onboarding/TutorialObjective.js';
 import { clearHighlight, highlightTarget } from '../dom/onboarding/tutorialHighlight.js';
+import { updateStatusIconTooltip } from '../dom/tools/StatusIconTooltip.js';
 
 /**
  * @param {object | null | undefined} object
@@ -1627,6 +1628,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
     }
   };
+
+  scene.onStatusHover = updateStatusIconTooltip;
 
   scene.onRoadPaintMove = async (focusedObject) => {
     if (erasePaint.active) {

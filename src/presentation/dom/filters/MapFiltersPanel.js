@@ -1,13 +1,14 @@
 /**
  * Map filters flyout — presentation toggles for map status overlays.
- * Opener on the right rail; selectable filter icons in a sibling column.
+ * Opener on the right rail; selectable filter icons in a sibling column. Each filter button (`data-map-filter="<id>"`, an id of MAP_FILTERS) is its own
+ * switch: any of them can be on at once, and one that is on is coloured.
  */
 
 /**
  * @param {{
  *   getScene?: () => {
- *     setProductionIconsVisible?: (visible: boolean) => void,
- *     isProductionIconsVisible?: () => boolean,
+ *     setMapFilterOn?: (filterId: string, on: boolean) => void,
+ *     isMapFilterOn?: (filterId: string) => boolean,
  *   } | null,
  * }} [deps]
  */
@@ -15,9 +16,9 @@ export function initMapFiltersPanel(deps = {}) {
   const { getScene = () => null } = deps;
   const openBtn = document.getElementById('map-filters-btn');
   const column = document.getElementById('map-filters-column');
-  const productionBtn = document.getElementById('filter-production-btn');
+  const filterButtons = [...(column?.querySelectorAll('[data-map-filter]') ?? [])];
 
-  if (!openBtn || !column || !productionBtn) return;
+  if (!openBtn || !column || filterButtons.length === 0) return;
 
   function isOpen() {
     return column.classList.contains('is-open');
@@ -36,7 +37,7 @@ export function initMapFiltersPanel(deps = {}) {
 
     if (open) {
       requestAnimationFrame(() => {
-        productionBtn.focus();
+        filterButtons[0].focus();
       });
       return;
     }
@@ -46,16 +47,15 @@ export function initMapFiltersPanel(deps = {}) {
     }
   }
 
-  function syncProductionButton() {
+  /** @param {HTMLElement} button */
+  function syncFilterButton(button) {
     const scene = getScene();
-    const visible = scene?.isProductionIconsVisible
-      ? scene.isProductionIconsVisible()
-      : true;
-    productionBtn.classList.toggle('active', visible);
-    productionBtn.setAttribute('aria-pressed', visible ? 'true' : 'false');
-    productionBtn.title = visible
-      ? 'Icônes de production : visibles (cliquer pour masquer)'
-      : 'Icônes de production : masquées (cliquer pour afficher)';
+    const filterId = button.dataset.mapFilter;
+    const on = scene?.isMapFilterOn ? scene.isMapFilterOn(filterId) : true;
+    const label = button.dataset.label;
+    button.classList.toggle('active', on);
+    button.setAttribute('aria-pressed', on ? 'true' : 'false');
+    button.title = on ? `${label} : affichées (cliquer pour masquer)` : `${label} : masquées (cliquer pour afficher)`;
   }
 
   openBtn.addEventListener('click', (event) => {
@@ -68,14 +68,16 @@ export function initMapFiltersPanel(deps = {}) {
     }
   });
 
-  productionBtn.addEventListener('click', (event) => {
-    event.stopPropagation();
-    const scene = getScene();
-    if (!scene?.setProductionIconsVisible) return;
-    const next = !(scene.isProductionIconsVisible?.() ?? true);
-    scene.setProductionIconsVisible(next);
-    syncProductionButton();
-  });
+  for (const button of filterButtons) {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const scene = getScene();
+      if (!scene?.setMapFilterOn) return;
+      const filterId = button.dataset.mapFilter;
+      scene.setMapFilterOn(filterId, !scene.isMapFilterOn(filterId));
+      syncFilterButton(button);
+    });
+  }
 
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !isOpen()) return;
@@ -91,5 +93,5 @@ export function initMapFiltersPanel(deps = {}) {
     setOpen(false);
   });
 
-  syncProductionButton();
+  filterButtons.forEach(syncFilterButton);
 }

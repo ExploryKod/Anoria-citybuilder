@@ -14,6 +14,28 @@
     --citytooltip-font-size: 14px;
 }
 
+/* What the status icons over the hovered building mean (StatusIconTooltip.js): follows the cursor, never takes a click. */
+.status-icon-tooltip {
+    position: fixed;
+    z-index: var(--z-index-notification, 10040);
+    max-width: 260px;
+    padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
+    border-radius: var(--tooltip-border-radius);
+    background: rgba(27, 27, 27, 0.92);
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.35;
+    pointer-events: none;
+}
+
+.status-icon-tooltip[hidden] {
+    display: none;
+}
+
+.status-icon-tooltip > div + div {
+    margin-top: 4px;
+}
+
 .tooltip {
     --citytooltip-zindex: var(--zindex-tooltip);
     --citytooltip-max-width: var(--tooltip-max-width);

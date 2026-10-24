@@ -1,7 +1,7 @@
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { isTutorialMode } from '../../../shared/gameplay/gameMode.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
-import { illustrationFigure, richTextHtml } from '../intelligence/NewsEventModal.js';
+import { illustrationFigure, makeImageZoomable, richTextHtml } from '../intelligence/NewsEventModal.js';
 
 const TUTORIAL_CATEGORY = 'tutorial';
 
@@ -37,7 +37,14 @@ function renderPage(page) {
     image.className = 'news-event-image';
     image.src = page.image.src;
     image.alt = page.image.alt;
+    makeImageZoomable(image, page.image);
     section.append(image);
+    if (page.image.caption) {
+      const caption = document.createElement('p');
+      caption.className = 'news-event-image-caption';
+      caption.textContent = page.image.caption;
+      section.append(caption);
+    }
   }
   return section;
 }

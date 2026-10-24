@@ -1,3 +1,4 @@
+import { primaryRoadType } from '../../../../shared/building-catalog/roadQueries.js';
 import { TOAST_PRIORITIES } from '../policies/TutorialProgressPolicy.js';
 
 /** How long a reminder toast stays on screen, in milliseconds. */
@@ -54,7 +55,7 @@ export const TUTORIAL_STEPS = Object.freeze([
     // The five pictures are the shapes the S key cycles through for a single tile (the `selectableMeshes` of the road): drawn from above, in public/tuto/roads/.
     id: 'road',
     delay: 0,
-    unlocks: ['StonePath-001'],
+    unlocks: [primaryRoadType()],
     counter: { after: null, label: 'Routes tracées', items: [{ roads: true, atLeast: 4 }] },
     done: [{ roadBuilt: 4 }],
     reminder: { after: 15, every: 20, duration: REMINDER_MS, text: `Il faut tracer quatre routes : cliquez sur le bouton de route, à côté du bouton en forme de maison, puis faites glisser la souris.` },
@@ -65,7 +66,7 @@ export const TUTORIAL_STEPS = Object.freeze([
         + `Pour poser **une seule case**, la touche **S** change sa forme, et la touche **R** la tourne. Voici les formes possibles :`,
       teaser: 'Les bâtisseurs réclament des chemins…',
       blocking: false,
-      action: { kind: 'buildTool', toolId: 'StonePath-001' },
+      action: { kind: 'buildTool', toolId: primaryRoadType() },
       illustrations: [
         { src: '/tuto/roads/straight.svg', label: 'Droite' },
         { src: '/tuto/roads/bend.svg', label: 'Virage' },
@@ -208,7 +209,11 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
       teaser: 'Les négociants se préparent à la moisson…',
       blocking: false,
       illustrations: ['Market-Stall-Red', 'Windmill-001'],
-      image: { src: '/tuto/messages.png', alt: 'L’onglet « Messages » d’un champ de blé : trop de champs, conservation insuffisante faute de grenier, impayés' },
+      image: {
+        src: '/tuto/messages.png',
+        alt: 'L’onglet « Messages » d’un champ de blé : trop de champs, conservation insuffisante faute de grenier, impayés',
+        caption: `L'onglet « Messages » d'un « {building:Farm-Wheat} » (clic droit sur le champ) : ici, trop de champs, aucun grenier en état de marche, et des impayés. Cliquez sur l'image pour l'agrandir.`,
+      },
     },
   },
   {
@@ -360,7 +365,9 @@ const TOAST_LONG_MS = 10000;
  *   congratulation, an arrival); always said. The screen shows only a few toasts at once: the higher priority shows first, the others wait their turn
  *   and are dropped if they wait as long as they would have stayed on screen (see `showTutorialToast`, game.js). A step's reminder is an instruction.
  * - `highlight`: 'construction' (the house-shaped button that opens the build bar), 'road' (the road button beside it) or 'history' (the button that
- *   opens the tutorial's dépêches again) or 'pause' (the button that stops the clock) turns yellow and pulses until the player clicks it.
+ *   opens the tutorial's dépêches again), 'pause' (the button that stops the clock) or 'merchants' (the merchants' pill of the build bar) turns yellow and
+ *   pulses until the player clicks it. A list points at several buttons one after the other (`['construction', 'merchants']`: the one that opens the build
+ *   bar, then the pill).
  * At least one of `when` / `step` is required.
  * Kinds: 'success' for something that works, 'info' for news, 'warning' for something still missing.
  *
@@ -389,6 +396,19 @@ export const TUTORIAL_TOASTS = Object.freeze([
     until: [{ built: 'Market-Stall-Red' }],
     highlight: 'construction',
     text: `Pour construire un bâtiment, cliquez sur le bouton en forme de maison de la barre du bas.`,
+  },
+  {
+    // As soon as the dépêche of the sale ('trade-chain') is closed: where to click to reach the market and the granary. The button that opens the build bar
+    // pulses, then the merchants' pill (the carousel of the market and the granary) once the player has clicked it. The toast waits for the dépêche to be closed.
+    id: 'trade-build-hint',
+    priority: TOAST_PRIORITIES.instruction,
+    duration: TOAST_LONG_MS,
+    kind: 'info',
+    when: [{ newsRead: 'trade-chain' }],
+    unless: [{ built: 'Market-Stall-Red' }],
+    delay: 0,
+    highlight: ['construction', 'merchants'],
+    text: `Pour les poser : cliquez sur le bouton en forme de maison, puis sur la pastille « {building:House-Blue} », où se trouvent « {building:Market-Stall-Red} » et « {building:Windmill-001} ».`,
   },
   {
     // A little before the dépêche of the sale ('trade-chain', 30 turns after the step is reached): the wait is a good time to stop the clock. It says only

@@ -3,6 +3,7 @@ import {
   currentTutorialStep,
   isTutorialMomentOn,
   isTutorialToastDone,
+  newsReadIdsIn,
   tutorialDraftOf,
   tutorialReminderOf,
   tutorialToastOf,
@@ -58,6 +59,17 @@ export class AdvanceTutorial {
         throw new Error(`[tutorial] "${step.id}": its counter \`after.event\` is a list of conditions, read like a toast's \`when\``);
       }
     }
+    // The dépêches some condition asks to be read (`newsRead`): each must be a step with a dépêche, or a dispatch.
+    this.newsReadIds = [...new Set([
+      ...steps.flatMap((step) => [...newsReadIdsIn(step.done), ...newsReadIdsIn(step.counter?.after?.event)]),
+      ...dispatches.flatMap((dispatch) => [...newsReadIdsIn(dispatch.when), ...newsReadIdsIn(dispatch.unless)]),
+      ...toasts.flatMap((toast) => [...newsReadIdsIn(toast.when), ...newsReadIdsIn(toast.unless), ...newsReadIdsIn(toast.until)]),
+    ])];
+    for (const id of this.newsReadIds) {
+      if (!dispatches.some((dispatch) => dispatch.id === id) && !steps.some((step) => step.id === id && step.news)) {
+        throw new Error(`[tutorial] a condition \`newsRead\` names "${id}", which is neither a dispatch nor a step with a dépêche`);
+      }
+    }
     this.steps = steps;
     this.dispatches = dispatches;
     this.toasts = toasts;
@@ -96,7 +108,7 @@ export class AdvanceTutorial {
    */
   async execute() {
     if (!this.isActive()) return { news: null, toasts: [], dismissed: [], allowed: null, progress: null, justCompleted: null };
-    const facts = await this.facts.read();
+    const facts = { ...(await this.facts.read()), readNews: await this.#readNews() };
     const turn = this.getGameTime();
     const { due: toasts, dismissed } = this.#toastsDue(facts, turn);
     let news = null;
@@ -130,6 +142,15 @@ export class AdvanceTutorial {
       progress: await this.#progressOf(step, facts),
       justCompleted,
     };
+  }
+
+  /** Of the dépêches a condition of the script asks about (`newsRead`), the ones the player has got past. Only those are looked up, not every dépêche. */
+  async #readNews() {
+    const read = [];
+    for (const id of this.newsReadIds) {
+      if (await this.announcer.wasRead(id)) read.push(id);
+    }
+    return read;
   }
 
   /** The step's counter, once its explanation has been got past (a step with no dépêche shows it at once); null before, and for a step with no counter. */

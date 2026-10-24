@@ -229,7 +229,7 @@ export function appendStatusMessage(container, text, variant = 'neutral') {
 
 /**
  * @param {HTMLElement} container
- * @param {ReadonlyArray<{ emoji: string, value: string | number, label: string, ariaLabel: string }>} items
+ * @param {ReadonlyArray<{ emoji: string, value?: string | number, label: string, ariaLabel: string }>} items
  */
 export function appendIconStatRow(container, items) {
   const row = document.createElement('div');
@@ -241,11 +241,9 @@ export function appendIconStatRow(container, items) {
     chip.title = item.ariaLabel;
     chip.setAttribute('aria-label', item.ariaLabel);
     // A chip with a `pill` is not held yet: dimmed, with the house level that brings it in a colored pill under it.
-    const value = item.pill ? '' : `<span class="building-info-icon-chip__value">${item.value}</span>`;
-    const emoji = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span>`;
-    // A held skill has a level pill under it: its count goes beside the icon, so it does not push the pill lower than the dimmed ones.
-    const head = item.levelPill ? `<span class="building-info-icon-chip__head">${emoji}${value}</span>` : `${emoji}${value}`;
-    chip.innerHTML = `${head}<span class="building-info-icon-chip__label">${item.label}</span>`;
+    // A chip with no `value` (a skill: the house has it or not, there is nothing to count) shows only its icon and its word.
+    const value = item.pill || item.value === undefined ? '' : `<span class="building-info-icon-chip__value">${item.value}</span>`;
+    chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span>${value}<span class="building-info-icon-chip__label">${item.label}</span>`;
     if (item.pill) {
       chip.classList.add('building-info-icon-chip--upcoming');
       const pill = document.createElement('span');
@@ -271,7 +269,7 @@ export function appendIconStatRow(container, items) {
 
 /**
  * @param {HTMLElement} container
- * @param {ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }>} skills
+ * @param {ReadonlyArray<{ emoji: string, label: string, ariaLabel: string, level: number, color: string }>} skills the skills the house holds: its people have them all or not at all, so no count
  */
 export function appendHouseholdSkills(container, skills, upcomingSkills = []) {
   if (!skills?.length && !upcomingSkills.length) return null;
@@ -289,7 +287,6 @@ export function appendHouseholdSkills(container, skills, upcomingSkills = []) {
     [
       ...skills.map((skill) => ({
         emoji: skill.emoji,
-        value: skill.count,
         label: skill.label,
         ariaLabel: skill.ariaLabel,
         levelPill: { level: skill.level, color: skill.color },

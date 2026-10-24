@@ -57,6 +57,68 @@ function legendIconOf(key) {
   return icon;
 }
 
+/**
+ * A picture of a dépêche shown large, over the dépêche: a click anywhere, or Escape, puts it away. Escape closes only this, not the dépêche behind it.
+ * @param {{ src: string, alt: string, caption?: string }} image
+ */
+export function openImageZoom(image) {
+  // A native modal <dialog>: it opens in the browser's top layer, above every other layer whatever their z-index or the state of the page behind it
+  // (the dépêche's modal, the inert game window). Its look is set here too, so it shows even before the stylesheet says anything.
+  const dialog = document.createElement('dialog');
+  dialog.className = 'news-image-zoom';
+  dialog.setAttribute('aria-label', image.alt);
+  Object.assign(dialog.style, { padding: '0', border: 'none', background: 'transparent', maxWidth: '100vw', maxHeight: '100vh', overflow: 'visible' });
+  const picture = document.createElement('img');
+  picture.src = image.src;
+  picture.alt = image.alt;
+  // Enlarged, not only allowed to grow: a screenshot is small, so it is given at least 640px (or the whole width of a phone), within what the screen holds.
+  Object.assign(picture.style, {
+    display: 'block',
+    width: 'auto',
+    height: 'auto',
+    minWidth: 'min(96vw, 640px)',
+    maxWidth: '96vw',
+    maxHeight: '92vh',
+    objectFit: 'contain',
+    borderRadius: '10px',
+    cursor: 'zoom-out',
+  });
+  dialog.append(picture);
+  const onKey = (event) => {
+    if (event.key !== 'Escape') return;
+    event.stopPropagation();
+    event.preventDefault();
+    dialog.close();
+  };
+  dialog.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('close', () => {
+    document.removeEventListener('keydown', onKey, true);
+    dialog.remove();
+  });
+  document.addEventListener('keydown', onKey, true);
+  document.body.append(dialog);
+  dialog.showModal();
+}
+
+/**
+ * Makes a picture of a dépêche open large when clicked (or Enter / Space on it): a screenshot is too small to read in the card.
+ * @param {HTMLElement} element the `<img>`
+ * @param {{ src: string, alt: string, caption?: string }} image
+ */
+export function makeImageZoomable(element, image) {
+  element.classList.add('news-event-image--zoomable');
+  element.setAttribute('role', 'button');
+  element.tabIndex = 0;
+  element.title = 'Cliquer pour agrandir';
+  // Properties, not listeners: the same element is drawn again for each dépêche, and must hold only the picture it shows now.
+  element.onclick = () => openImageZoom(image);
+  element.onkeydown = (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openImageZoom(image);
+  };
+}
+
 const HTML_ESCAPES = Object.freeze({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' });
 
 /**
@@ -176,6 +238,7 @@ export function initNewsEventModal(deps) {
   const bodyEl = document.getElementById('news-event-body');
   const illustrationsEl = document.getElementById('news-event-illustrations');
   const imageEl = document.getElementById('news-event-image');
+  const imageCaptionEl = document.getElementById('news-event-image-caption');
   const choicesEl = document.getElementById('news-event-choices');
   const legendEl = document.getElementById('news-event-legend');
   const paywallEl = document.getElementById('news-event-paywall');
@@ -332,8 +395,13 @@ export function initNewsEventModal(deps) {
       if (image) {
         imageEl.src = image.src;
         imageEl.alt = image.alt;
+        makeImageZoomable(imageEl, image);
       } else {
         imageEl.removeAttribute('src');
+      }
+      if (imageCaptionEl) {
+        imageCaptionEl.hidden = !image?.caption;
+        imageCaptionEl.textContent = image?.caption ?? '';
       }
     }
 

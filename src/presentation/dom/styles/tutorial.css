@@ -261,7 +261,8 @@
 body[data-tutorial-highlight="construction"] #toolbar-mobile-toggle,
 body[data-tutorial-highlight="road"] #toolbar-road-btn,
 body[data-tutorial-highlight="history"] #tutorial-history-btn,
-body[data-tutorial-highlight="pause"] #pause-btn {
+body[data-tutorial-highlight="pause"] #pause-btn,
+body[data-tutorial-highlight="merchants"] .mobile-build-bar__pill[data-category="merchants"] {
     background: #ffd43b;
     color: #3d2f00;
     border-color: #f59f00;
@@ -277,7 +278,8 @@ body[data-tutorial-highlight="pause"] #pause-btn {
     body[data-tutorial-highlight="construction"] #toolbar-mobile-toggle,
     body[data-tutorial-highlight="road"] #toolbar-road-btn,
     body[data-tutorial-highlight="history"] #tutorial-history-btn,
-    body[data-tutorial-highlight="pause"] #pause-btn {
+    body[data-tutorial-highlight="pause"] #pause-btn,
+    body[data-tutorial-highlight="merchants"] .mobile-build-bar__pill[data-category="merchants"] {
         animation: none;
         box-shadow: 0 0 0 3px rgba(255, 212, 59, 0.85);
     }

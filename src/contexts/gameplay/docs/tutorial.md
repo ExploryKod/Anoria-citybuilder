@@ -21,6 +21,7 @@ Changing the tutorial with the game means editing this list. The only code that 
 | `built` / `housed` / `staffed` | at least one (or `{ type, atLeast: N }`) building of that type stands / has residents / has all its workers |
 | `roadBuilt: N` | at least N road tiles stand, whichever their variant (a counter item `{ roads: true, atLeast }` counts them the same way) |
 | `all: [conditions]`, `any: [conditions]` | every one / at least one of the listed conditions holds; they nest, so `unless` can name a combination (`unless: [{ all: [...] }]`) |
+| `newsRead: <dépêche id>` | the player has got past that dépêche (a step's or a dispatch's; closed, or left by its button); `AdvanceTutorial` puts the ids a condition asks about in the facts (`readNews`) |
 | `sold: <building id>` | at least one building of that type has booked a sale of its production: a credit on the accounts of the "Production vendue" line of its income statement, read from the journal's fold (`hasBuildingSold`) |
 | `supplied: { type, category }` | a house of that type was supplied with that good or service (`'water'`, ...) in its last consumption: its need of the category, filed under the catalog's `outcomeField`, drew something |
 | `noWork: [ids]` or `'any'` | a building of one of those types (of any type for `'any'`) shows the no-work sprite: it is in the city's `understaffedBuildingIds` (the list the scene draws the sprite from, read from the employment summary into the facts) |
