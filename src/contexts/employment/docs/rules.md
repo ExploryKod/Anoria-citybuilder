@@ -181,6 +181,13 @@ pas au chômage.
   première embauche : il faudrait une règle « personne encore » (un repli, ou « … »). Plus de mécanique pour réparer ce qu'on peut éviter.
 - Un poste partagé brouille aussi les raisons de sous-effectif d'un bâtiment (« qui détient la compétence demandée ») et les onglets de priorité (`shared`).
 
+### 5.7 Les hameaux : un seul est vivant à la fois
+
+La répartition des travailleurs ne tourne que pour **le hameau affiché** (`isActiveHamletRow`, `DexieEmploymentBuildingRepository`) : un hameau non visité est **gelé** et garde les travailleurs de sa dernière visite. C'est voulu (une scène à la fois).
+
+- Le panneau d'admin « Allocation de la Main-d'œuvre » règle les priorités **du hameau où l'on est** (rangées sur la ligne du hameau, `employmentSkillPriorities`) ; pour un autre hameau, il faut s'y rendre. Une bannière nomme le hameau.
+- La vue « pays » du panneau Emploi additionne tous les hameaux : ceux qui ne sont pas visités y figurent **avec leurs chiffres gelés**, ce qui reste utile à lire. Ne pas la lire comme un état courant.
+
 **Règle :** ne pas créer de compétence accordée par deux catégories. Si un besoin de design l'exige vraiment, décider d'abord comment ses postes sont
 attribués, avant de toucher au catalogue. Aucune compétence n'est partagée aujourd'hui.
 

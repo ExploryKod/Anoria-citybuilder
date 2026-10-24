@@ -19,8 +19,11 @@ Changing the tutorial with the game means editing this list. The only code that 
 | Kind | Holds when |
 |---|---|
 | `built` / `housed` / `staffed` | at least one (or `{ type, atLeast: N }`) building of that type stands / has residents / has all its workers |
-| `roadBuilt` | a road stands, whichever its variant |
-| `noWork: [ids]` or `'any'` | a building of one of those types (of any type for `'any'`) shows the no-work sprite: it needs workers and has none (the city's `understaffedBuildingIds` rule) |
+| `roadBuilt: N` | at least N road tiles stand, whichever their variant (a counter item `{ roads: true, atLeast }` counts them the same way) |
+| `all: [conditions]`, `any: [conditions]` | every one / at least one of the listed conditions holds; they nest, so `unless` can name a combination (`unless: [{ all: [...] }]`) |
+| `sold: <building id>` | at least one building of that type has booked a sale of its production: a credit on the accounts of the "Production vendue" line of its income statement, read from the journal's fold (`hasBuildingSold`) |
+| `supplied: { type, category }` | a house of that type was supplied with that good or service (`'water'`, ...) in its last consumption: its need of the category, filed under the catalog's `outcomeField`, drew something |
+| `noWork: [ids]` or `'any'` | a building of one of those types (of any type for `'any'`) shows the no-work sprite: it is in the city's `understaffedBuildingIds` (the list the scene draws the sprite from, read from the employment summary into the facts) |
 | `turnAtLeast` / `season` / `month` / `harvest` / `harvestWithin: N` | the game's clock: a turn reached, the season or month, the harvest month, the harvest at most N months away |
 | `foodCovered: 'built' \| 'staffed'` | the fields' yearly harvest covers what the houses placed eat when full |
 
@@ -33,8 +36,9 @@ the script.
 
 `TUTORIAL_DISPATCHES` are dépêches that are not a step's: `{ id, news, when?, unless?, step?, delay }`, triggered exactly like a toast, so a
 dépêche can come "when this building stands" or "N turns after this step was reached", whichever step the player is on. They are written once
-(Intelligence's once-only rule, keyed by the dispatch id). A `news` may carry `illustrations` (building ids shown as pictures in a row under the
-text, no button), an `image` (`{ src, alt }`, a file of `public/`, e.g. a screenshot of the interface) and, as before, an `action`. A dépêche
+(Intelligence's once-only rule, keyed by the dispatch id). A `body` is written with a blank line (`\n\n`) between paragraphs, `**bold**` for what
+must stand out, and lines starting with `- ` for a list (left-aligned, under the sentence that introduces it); nothing else is interpreted. A `news` may carry `illustrations` (building ids, or `{ src, label }` for a picture of the tutorial's own,
+shown in a row under the text, no button), an `image` (`{ src, alt }`, a file of `public/`, e.g. a screenshot of the interface) and, as before, an `action`. A dépêche
 (a step's or a dispatch's) is read a page at a time inside the same modal: `choices` are buttons, each with a sentence of the catalog (`label`), that
 open a page; `next` is the page "Lire la suite" opens. A page has the same fields as the dépêche (`body`, `action`, `illustrations`, `image`,
 `choices`, `next`, and `legend`: icons of the interface with a word each, `[{ icon, word }]`, the icon being a key of `NEWS_LEGEND_ICONS` in
@@ -46,13 +50,15 @@ yellow and pulses until clicked (`presentation/dom/onboarding/tutorialHighlight.
 
 ## Construction buttons per step
 
-Every step carries `allow: [building ids]`: the construction buttons that work while the player is on it. The other construction buttons (every tool that
-is a building of the catalog) are greyed out and do nothing; once the script is over, none is. `AdvanceTutorial` answers `allowed` (the current step's
-list, or null), and the presentation applies it through `ButtonStateManager.restrict`, which also reaches the buttons the build bar creates later. A
-building that a dépêche or a toast of the step asks for must be in the step's `allow`, unless the dépêche itself unlocks it: a dispatch may carry
-`unlocks: [building ids]`, and those buttons work from the moment that dépêche has been written (`wasAnnounced`, read from what Intelligence filed). The
-merchants' house is unlocked that way by `merchants-needed` (the market or the granary shows the no-work sprite): it is greyed out until the shortage of hands is explained. `workers-needed` is the
-general rule of the groups of inhabitants, for a shortage of any other building (whatever the step); it unlocks nothing.
+Only `TUTORIAL_START_TOOLS` (the mayor's house, as at the start of any game) work at first. Every other construction button (every tool that is a building of
+the catalog) is greyed out and does nothing until a dépêche of the tutorial unlocks it: a step that has a dépêche, or a dispatch, may carry
+`unlocks: [building ids]`, and those buttons work from the moment that dépêche has been written, for good. Once the script is over, none is greyed. `AdvanceTutorial`
+answers `allowed` (the start tools plus what the dépêches written so far unlock, or null once the script is over); that set is read once from what Intelligence
+filed (`wasAnnounced`) and then grows as a dépêche is written, never recomputed at each look. The presentation applies it through
+`ButtonStateManager.restrict`, which also reaches the buttons the build bar creates later. Today: the road (step `road`), the artisans' house (`artisans`), the field
+(`farms`), the market and the granary (`trade-chain`), the scholars' house (`scholars-house`), the water tank (`scholars-water`), the merchants' house
+(`merchants-needed`, when the market or the granary shows the no-work sprite). `workers-needed` is the general rule of the groups of inhabitants, for a shortage of
+any other building (whatever the step); it unlocks nothing.
 
 ## Objective counter
 

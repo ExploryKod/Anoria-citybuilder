@@ -54,7 +54,7 @@ import { DexieWageRateRepository, wageKey } from '../contexts/accounting/infrast
 import { administratorPayStatusOf } from '../contexts/accounting/domain/policies/AdministratorPayPolicy.js';
 import { benefitBaseOf, flooredWage, readLabourMarket, startWageOf, wageFloorOf } from '../contexts/accounting/domain/policies/WageRatePolicy.js';
 import { wagePerWorkerOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
-import { pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
+import { INCOME_STATEMENT, pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
 import { buildingFinanceFigures, cashMovementsOf, householdBudgetOf, householdLastMonthOf, incomeStatementOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 import { residentsOfHouse } from '../contexts/accounting/domain/policies/HouseResidentsPolicy.js';
 import { residentPayBreakdownOf } from '../contexts/accounting/domain/policies/HouseResidentsPayPolicy.js';
@@ -1559,6 +1559,20 @@ export function createAccountingContext(deps = {}) {
 
     async getBuildingAccountBalance(buildingId, accountKind = null) {
       return getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId, accountKind });
+    },
+
+    /**
+     * Whether a company has booked a sale of its production: a credit on the accounts of the statement's "Production vendue" line, read from the fold of
+     * the journal (a sum over its months, not a pass over the journal), whichever year.
+     * @param {string} buildingId
+     * @returns {Promise<boolean>}
+     */
+    async hasBuildingSold(buildingId) {
+      const productionSold = INCOME_STATEMENT.flatMap((section) => section.lines).find((line) => line.id === 'productionSold');
+      if (!productionSold) throw new Error('[accounting] the income statement has no "productionSold" line');
+      const fold = await journalRepository.getLegsFold();
+      const totals = fold.totalsOf({ accountKey: buildingId });
+      return [...totals].some(([account, total]) => total.credit > 0 && productionSold.accounts.some((start) => account.startsWith(start)));
     },
 
     /**

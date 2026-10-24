@@ -1,7 +1,7 @@
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { isTutorialMode } from '../../../shared/gameplay/gameMode.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
-import { buildingIconHtml, buildingName } from '../shell/CatalogVocabulary.js';
+import { illustrationFigure, richTextHtml } from '../intelligence/NewsEventModal.js';
 
 const TUTORIAL_CATEGORY = 'tutorial';
 
@@ -23,24 +23,13 @@ function renderPage(page) {
   section.className = 'tutorial-history-page';
   const body = document.createElement('p');
   body.className = 'news-event-modal-body';
-  body.textContent = page.body;
+  body.innerHTML = richTextHtml(page.body);
   section.append(body);
 
   if (page.illustrations?.length) {
     const row = document.createElement('div');
     row.className = 'news-event-illustrations';
-    for (const buildingId of page.illustrations) {
-      const figure = document.createElement('figure');
-      figure.className = 'news-event-illustration';
-      const picture = document.createElement('span');
-      picture.className = 'news-event-illustration-picture';
-      picture.setAttribute('aria-hidden', 'true');
-      picture.innerHTML = buildingIconHtml(buildingId);
-      const caption = document.createElement('figcaption');
-      caption.textContent = buildingName(buildingId);
-      figure.append(picture, caption);
-      row.append(figure);
-    }
+    row.append(...page.illustrations.map(illustrationFigure));
     section.append(row);
   }
   if (page.image) {
@@ -128,7 +117,14 @@ export function initTutorialHistory({ intelligence, popupManager }) {
     list.replaceChildren(
       ...entries.map(({ item, read }) => {
         const row = document.createElement('div');
-        row.className = 'tutorial-history-row';
+        row.className = `tutorial-history-row ${read ? 'tutorial-history-row--read' : 'tutorial-history-row--unread'}`;
+        // Read or not, said by an icon (and by the dimming of the row, see the CSS): a closed envelope for a message waiting, an open book once read.
+        const status = document.createElement('span');
+        status.className = 'tutorial-history-row__status';
+        status.textContent = read ? '📖' : '✉️';
+        status.title = read ? 'Lue' : 'Non lue';
+        status.setAttribute('role', 'img');
+        status.setAttribute('aria-label', status.title);
         const text = document.createElement('div');
         text.className = 'tutorial-history-row__text';
         const title = document.createElement('strong');
@@ -148,7 +144,7 @@ export function initTutorialHistory({ intelligence, popupManager }) {
             })
           );
         }
-        row.append(text, actions);
+        row.append(status, text, actions);
         return row;
       })
     );

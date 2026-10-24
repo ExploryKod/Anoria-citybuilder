@@ -260,7 +260,8 @@
 /* The tutorial points at the house-shaped button that opens the build bar (tutorialHighlight.js): yellow, and pulsing until the player clicks it. */
 body[data-tutorial-highlight="construction"] #toolbar-mobile-toggle,
 body[data-tutorial-highlight="road"] #toolbar-road-btn,
-body[data-tutorial-highlight="history"] #tutorial-history-btn {
+body[data-tutorial-highlight="history"] #tutorial-history-btn,
+body[data-tutorial-highlight="pause"] #pause-btn {
     background: #ffd43b;
     color: #3d2f00;
     border-color: #f59f00;
@@ -275,7 +276,8 @@ body[data-tutorial-highlight="history"] #tutorial-history-btn {
 @media (prefers-reduced-motion: reduce) {
     body[data-tutorial-highlight="construction"] #toolbar-mobile-toggle,
     body[data-tutorial-highlight="road"] #toolbar-road-btn,
-    body[data-tutorial-highlight="history"] #tutorial-history-btn {
+    body[data-tutorial-highlight="history"] #tutorial-history-btn,
+    body[data-tutorial-highlight="pause"] #pause-btn {
         animation: none;
         box-shadow: 0 0 0 3px rgba(255, 212, 59, 0.85);
     }

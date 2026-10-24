@@ -1,5 +1,4 @@
 import {
-  allowedToolsOf,
   counterOf,
   currentTutorialStep,
   isTutorialMomentOn,
@@ -8,6 +7,7 @@ import {
   tutorialReminderOf,
   tutorialToastOf,
   validateTutorialDispatches,
+  validateTutorialStartTools,
   validateTutorialSteps,
   validateTutorialToasts,
 } from '../../domain/policies/TutorialProgressPolicy.js';
@@ -20,6 +20,9 @@ import {
  * It remembers two things, only for the session: which toast moments were on at the last look (a toast is due when its moment comes, after its
  * `delay`; the first look only records, so a game reopened mid-tutorial does not repeat what was already true), and since which turn the player is on
  * the current step or a dispatch's moment has lasted (for the `delay` of a step's dépêche and of a dispatch). Nothing is stored.
+ *
+ * The construction buttons that work are the start tools, plus what the dépêches already written `unlock`. That set is read once (from what Intelligence
+ * filed, so a game reopened mid-tutorial has its buttons back) and then grows as a dépêche is written; it is not recomputed at each look.
  */
 export class AdvanceTutorial {
   /**
@@ -27,15 +30,17 @@ export class AdvanceTutorial {
    * @param {ReadonlyArray<import('../../domain/policies/TutorialProgressPolicy.js').TutorialStep>} deps.steps
    * @param {ReadonlyArray<import('../../domain/policies/TutorialProgressPolicy.js').TutorialDispatch>} deps.dispatches
    * @param {ReadonlyArray<import('../../domain/policies/TutorialProgressPolicy.js').TutorialToast>} deps.toasts
+   * @param {ReadonlyArray<string>} deps.startTools the construction buttons that work before any dépêche has unlocked another
    * @param {() => boolean} deps.isActive whether this game runs the tutorial (the composition root decides; the domain reads no session)
    * @param {import('../ports/TutorialFactsPort.js').TutorialFactsPort} deps.facts
    * @param {import('../ports/TutorialAnnouncerPort.js').TutorialAnnouncerPort} deps.announcer
    * @param {() => number} deps.getGameTime
    */
-  constructor({ steps, dispatches, toasts, isActive, facts, announcer, getGameTime }) {
+  constructor({ steps, dispatches, toasts, startTools, isActive, facts, announcer, getGameTime }) {
     validateTutorialSteps(steps);
     validateTutorialDispatches(dispatches, steps);
     validateTutorialToasts(toasts, steps);
+    validateTutorialStartTools(startTools);
     for (const step of steps) {
       if (!step.counter || step.counter.after === null) continue;
       const after = step.counter.after;
@@ -56,6 +61,9 @@ export class AdvanceTutorial {
     this.steps = steps;
     this.dispatches = dispatches;
     this.toasts = toasts;
+    this.startTools = startTools;
+    /** @type {Set<string> | null} what the dépêches written so far unlock; null before the first look */
+    this.unlocked = null;
     this.isActive = isActive;
     this.facts = facts;
     this.announcer = announcer;
@@ -107,16 +115,18 @@ export class AdvanceTutorial {
     if (reminder) toasts.push(reminder);
     if (step?.news && turn - this.stepSince.since >= step.delay) {
       news = await this.announcer.announce({ stepId: step.id, turn, ...tutorialDraftOf(step) });
+      this.#unlock(step);
     }
 
     for (const dispatch of this.#dispatchesDue(facts, turn)) {
       news = (await this.announcer.announce({ stepId: dispatch.id, turn, ...tutorialDraftOf(dispatch) })) ?? news;
+      this.#unlock(dispatch);
     }
     return {
       news,
       toasts,
       dismissed,
-      allowed: await this.#allowedTools(facts),
+      allowed: await this.#allowedTools(step),
       progress: await this.#progressOf(step, facts),
       justCompleted,
     };
@@ -139,15 +149,25 @@ export class AdvanceTutorial {
     return isTutorialMomentOn({ id: `counter:${step.id}`, when: after.event }, facts, this.steps);
   }
 
-  /** The step's `allow`, plus what the dispatches already written `unlock`; null when nothing is restricted. */
-  async #allowedTools(facts) {
-    const allowed = allowedToolsOf(this.steps, facts);
-    if (allowed === null) return null;
-    const unlocked = [];
-    for (const dispatch of this.dispatches) {
-      if (dispatch.unlocks && (await this.announcer.wasAnnounced(dispatch.id))) unlocked.push(...dispatch.unlocks);
+  /** The start tools plus what the dépêches written so far unlock; null once the script is over (nothing is restricted any more). */
+  async #allowedTools(step) {
+    if (step === null) return null;
+    this.unlocked ??= await this.#readUnlocked();
+    return [...this.startTools, ...this.unlocked];
+  }
+
+  /** What every dépêche already filed (by a step or a dispatch) unlocks: read once, when the set is first needed. */
+  async #readUnlocked() {
+    const unlocked = new Set();
+    for (const source of [...this.steps.filter((step) => step.news), ...this.dispatches]) {
+      if (source.unlocks && (await this.announcer.wasAnnounced(source.id))) source.unlocks.forEach((type) => unlocked.add(type));
     }
-    return [...new Set([...allowed, ...unlocked])];
+    return unlocked;
+  }
+
+  /** A dépêche has been written: its buttons work from now on (before the set is first read, the filed dépêche is read with the others). */
+  #unlock(source) {
+    source.unlocks?.forEach((type) => this.unlocked?.add(type));
   }
 
   /** The step's reminder once the player has been on it `after` turns without doing it, then every `every` turns (once when it has no `every`). */

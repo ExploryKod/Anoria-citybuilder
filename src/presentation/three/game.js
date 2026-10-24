@@ -390,8 +390,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
   }
 
   /**
-   * After a placement, the tutorial gives its next instruction if the city has reached it (nothing outside a tutorial game). It waits for the
-   * dépêche already open to be read, so two never stack, and it is not awaited by the placement. A failure shows, it never stops the game.
+   * After a placement, the tutorial gives its next instruction if the city has reached it (nothing outside a tutorial game). It is called once employment
+   * has been redistributed and the no-work sprites refreshed: it then reads the city as the player sees it, not a new building before it was staffed.
+   * It waits for the dépêche already open to be read, so two never stack, and it is not awaited by the placement. A failure shows, it never stops the game.
    */
   async function advanceTutorialAfterPlacement() {
     try {
@@ -439,12 +440,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
     }
     await recordBuildingHistory('placed', { id: result.instanceId, type: buildingType, x: placeX, y: placeY });
     await announceFirstBuiltNews(buildingType);
-    void advanceTutorialAfterPlacement();
 
     await scene.update(city, time);
     if (isLimitedBuilding(buildingType)) syncLimitedBuildingButtons();
     await runSimulationPass(time);
     await syncEmploymentAfterBuildingChange(scene, city, buildingType);
+    void advanceTutorialAfterPlacement();
     await syncSupplyLinksAfterBuildingChange({
       supply,
       construction: constructionApi,
@@ -589,6 +590,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
     if (!getActiveHamletId()) {
       await ensureHamletCatalog({ requestedId: parseGameHamletPath(window.location.pathname) });
     }
+    // The skill priorities are the hamlet's own (set from the work panel while in it): read them in as the hamlet becomes the active one, boot or travel.
+    await employment.loadSkillPriorities(requireActiveHamletId());
     const activeChip = document.getElementById('game-active-hamlet');
     const activeHamlet = (await listHamlets()).find((h) => h.id === getActiveHamletId());
     if (activeChip && activeHamlet) {
@@ -1046,6 +1049,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       await scene.update(city, time);
       await runSimulationPass(time);
       await syncEmploymentAfterBuildingChange(scene, city, activeToolId);
+      void advanceTutorialAfterPlacement();
       await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
       if (game?.play) {
         game.play();
@@ -1225,6 +1229,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
       timer.step('simulation pass');
       await syncEmploymentAfterBuildingChange(scene, city, buildingType);
       timer.step('employment');
+      void advanceTutorialAfterPlacement();
       for (const { plot, instanceId } of placed) {
         await syncSupplyLinksAfterBuildingChange({
           supply,

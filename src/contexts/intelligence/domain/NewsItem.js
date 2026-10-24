@@ -17,7 +17,7 @@
  * @property {number | null} [readAtTurn]
  * @property {string | null} [hamletId] the hamlet it belongs to, written by the repository when it saves the item
  * @property {{ kind: 'buildTool', toolId: string } | null} [action] a button the dépêche carries (see NewsEventModal.js for the kinds it knows)
- * @property {string[]} [illustrations] building ids shown as pictures under the text
+ * @property {Array<string | { src: string, label: string }>} [illustrations] pictures under the text: a building id, or `{ src, label }` for a picture of the tutorial's own
  * @property {{ src: string, alt: string } | null} [image] a picture shown under the text
  */
 

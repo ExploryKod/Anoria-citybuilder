@@ -4,13 +4,10 @@ import { TOAST_PRIORITIES } from '../policies/TutorialProgressPolicy.js';
 const REMINDER_MS = 8000;
 
 /**
- * The construction buttons that work while the player waits for the harvest: everything the steps and dispatches of that time ask for (the road, the
- * artisans' houses and fields, the market, the granary, the scholars' house and the water tank). The merchants' house is not there: it works once the dépêche
- * that explains the shortage of hands has been written (`unlocks` of 'merchants-needed').
+ * The construction buttons that work at the very start of the game: the mayor's house, as in any new game. Every other building waits for a dépêche of the
+ * tutorial to unlock it (`unlocks` of a step's or a dispatch's dépêche): until then its button is greyed out.
  */
-const WAIT_FOR_HARVEST_TOOLS = Object.freeze([
-  'StonePath-001', 'House-Red', 'Farm-Wheat', 'Market-Stall-Red', 'Windmill-001', 'House-Purple', 'WaterTank',
-]);
+export const TUTORIAL_START_TOOLS = Object.freeze(['House-Mayor']);
 
 /**
  * The tutorial's script: the first steps of a solid economy, in the order a player should do them. Declarative: everything here is data, so the script
@@ -31,8 +28,8 @@ const WAIT_FOR_HARVEST_TOOLS = Object.freeze([
  *   happened before it shows, exactly one of `{ news: <dépêche id> }` closed, `{ toast: <toast id> }` shown, `{ event: [conditions] }` holding, read like a toast's `when`; a step's own dépêche always comes first), the progress shown on screen under the season ("Maisons « Artisans » construites 2/3"),
  *   pulsing; each item counts the buildings of its type up to `atLeast` (a number, or a token text such as `{farms:…}`). When the step is done the counter
  *   stays on screen full, marked done, for a moment (the congratulation toast comes with it).
- * - `allow`: the construction buttons (building ids) that work while the player is on the step; the other construction buttons are greyed out. Every step
- *   says it. The button of a building a dépêche or a toast of that step asks for must be in it. Once the script is over, nothing is greyed out.
+ * - `unlocks` (optional, on a step that has a dépêche, and on a dispatch): the construction buttons (building ids) that work from the moment that dépêche has
+ *   been written. Before, they are greyed out: only TUTORIAL_START_TOOLS work at the start. Once the script is over, nothing is greyed out.
  * - `delay`: turns (days) to wait after the player reaches the step before its dépêche arrives; always said, 0 = at once (the same on dispatches and toasts).
  * - `reminder` (optional): `{ after, every?, duration, text }`, a warning toast that reminds the player what the step asks when they have not done it:
  *   after `after` turns on the step, then every `every` turns (once without `every`); it goes away when the step is done.
@@ -49,24 +46,39 @@ export const TUTORIAL_STEPS = Object.freeze([
   {
     id: 'mayor-house',
     delay: 0,
-    allow: ['House-Mayor'],
     done: [{ built: 'House-Mayor' }],
     news: null,
   },
   {
-    // No dépêche: the toast that points at the road button says it all (see 'road-button').
+    // The road is unlocked by its dépêche, which also teaches the shape key. The toast that points at the road button comes after it (see 'road-button').
+    // The five pictures are the shapes the S key cycles through for a single tile (the `selectableMeshes` of the road): drawn from above, in public/tuto/roads/.
     id: 'road',
     delay: 0,
-    allow: ['StonePath-001'],
-    counter: { after: null, label: 'Route tracée', items: [{ type: 'StonePath-001', atLeast: 1 }] },
-    done: [{ roadBuilt: true }],
-    reminder: { after: 15, every: 20, duration: REMINDER_MS, text: `Il faut tracer une route : cliquez sur le bouton de route, à côté du bouton en forme de maison.` },
-    news: null,
+    unlocks: ['StonePath-001'],
+    counter: { after: null, label: 'Routes tracées', items: [{ roads: true, atLeast: 4 }] },
+    done: [{ roadBuilt: 4 }],
+    reminder: { after: 15, every: 20, duration: REMINDER_MS, text: `Il faut tracer quatre routes : cliquez sur le bouton de route, à côté du bouton en forme de maison, puis faites glisser la souris.` },
+    news: {
+      title: 'Des routes pour la cité',
+      body: `Vos bâtiments communiquent par les **routes** : **tracez-en quatre**. Cliquez sur le bouton de route, à côté du bouton en forme de maison, `
+        + `puis faites glisser la souris : la forme de chaque case se choisit toute seule.\n\n`
+        + `Pour poser **une seule case**, la touche **S** change sa forme, et la touche **R** la tourne. Voici les formes possibles :`,
+      teaser: 'Les bâtisseurs réclament des chemins…',
+      blocking: false,
+      action: { kind: 'buildTool', toolId: 'StonePath-001' },
+      illustrations: [
+        { src: '/tuto/roads/straight.svg', label: 'Droite' },
+        { src: '/tuto/roads/bend.svg', label: 'Virage' },
+        { src: '/tuto/roads/tee.svg', label: 'Intersection' },
+        { src: '/tuto/roads/cross.svg', label: 'Croisement' },
+        { src: '/tuto/roads/end.svg', label: 'Bout' },
+      ],
+    },
   },
   {
     id: 'artisans',
     delay: 0,
-    allow: ['StonePath-001', 'House-Red'],
+    unlocks: ['House-Red'],
     counter: { after: null, label: 'Maisons « {building:House-Red} » construites', items: [{ type: 'House-Red', atLeast: 3 }] },
     done: [{ built: { type: 'House-Red', atLeast: 3 } }],
     reminder: { after: 20, every: 30, duration: REMINDER_MS, text: `Il vous reste à bâtir des maisons « {building:House-Red} » : trois en tout.` },
@@ -84,7 +96,7 @@ export const TUTORIAL_STEPS = Object.freeze([
     // Direct: the text, and the button that puts the field in hand. The screenshot of the build bar (public/tuto/artisans-farms.png) is not shown for now.
     id: 'farms',
     delay: 0,
-    allow: ['StonePath-001', 'House-Red', 'Farm-Wheat'],
+    unlocks: ['Farm-Wheat'],
     counter: { after: null, label: 'Champs « {building:Farm-Wheat} » construits', items: [{ type: 'Farm-Wheat', atLeast: '{farms:3*House-Red/Farm-Wheat}' }] },
     done: [{ built: 'Farm-Wheat' }, { foodCovered: 'built' }],
     reminder: { after: 20, every: 30, duration: REMINDER_MS, text: `Vos habitants ont besoin de champs : posez des « {building:Farm-Wheat} ».` },
@@ -99,22 +111,21 @@ export const TUTORIAL_STEPS = Object.freeze([
     },
   },
   {
-    // The wait for the harvest: a house of the artisans (a fourth), the market and the granary, recommended by a dispatch below and chosen from the build menu.
-    // The merchants' house is not asked for: the player finds out they need it when the market and the granary lack workers ('merchants-needed').
+    // The wait for the harvest: the market and the granary, recommended by a dispatch below and chosen from the build menu.
+    // No house is asked for: the merchants' one is what they need, and the player finds out when the market and the granary lack workers ('merchants-needed').
     id: 'trade',
     delay: 0,
-    allow: WAIT_FOR_HARVEST_TOOLS,
     counter: {
       after: { news: 'trade-chain' },
       label: '{building:Market-Stall-Red} et {building:Windmill-001}',
       items: [{ type: 'Market-Stall-Red', atLeast: 1 }, { type: 'Windmill-001', atLeast: 1 }],
     },
-    done: [{ built: { type: 'House-Red', atLeast: 4 } }, { built: 'Market-Stall-Red' }, { built: 'Windmill-001' }],
+    done: [{ built: 'Market-Stall-Red' }, { built: 'Windmill-001' }],
     reminder: {
       after: 60,
       every: 40,
       duration: REMINDER_MS,
-      text: `Avant la vente, il vous reste à poser une maison « {building:House-Red} », « {building:Market-Stall-Red} » et « {building:Windmill-001} ».`,
+      text: `Avant la vente, il vous reste à poser « {building:Market-Stall-Red} » et « {building:Windmill-001} ».`,
     },
     news: null,
   },
@@ -122,11 +133,20 @@ export const TUTORIAL_STEPS = Object.freeze([
     // Nothing to say: the dépêche comes from the shortage itself ('workers-needed', or 'merchants-needed' for the market and the granary), the toasts tell when each building has its workers.
     id: 'staff-the-chain',
     delay: 0,
-    allow: WAIT_FOR_HARVEST_TOOLS,
     reminder: { after: 40, every: 60, duration: REMINDER_MS, text: `Un bâtiment sans ses travailleurs reste muet : vérifiez que chacun est pourvu, sinon il manque des maisons.` },
     done: [{ foodCovered: 'staffed' }, { staffed: 'Windmill-001' }, { staffed: 'Market-Stall-Red' }],
     news: null,
   },
+]);
+
+/**
+ * The sale's chain lacks hands: the market AND the granary stand, and one of them shows the no-work sprite. 'merchants-needed' says it, and
+ * 'workers-needed' leaves that case to it (a lone granary without workers is still the general case of 'workers-needed').
+ */
+const SALE_CHAIN_LACKS_HANDS = Object.freeze([
+  { built: 'Market-Stall-Red' },
+  { built: 'Windmill-001' },
+  { noWork: ['Market-Stall-Red', 'Windmill-001'] },
 ]);
 
 /**
@@ -178,52 +198,60 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
     id: 'trade-chain',
     step: 'trade',
     delay: 30,
+    unlocks: ['Market-Stall-Red', 'Windmill-001'],
     news: {
       title: 'Préparer la vente',
-      body: `La récolte doit être stockée puis vendue. Choisissez dans la barre de construction : une maison « {building:House-Red} » de plus, `
-        + `« {building:Market-Stall-Red} » pour vendre et « {building:Windmill-001} » pour garder la récolte.`,
+      body: `La récolte doit être stockée puis vendue. Choisissez dans la barre de construction : « {building:Market-Stall-Red} » pour vendre `
+        + `et « {building:Windmill-001} » pour garder la récolte.\n\n`
+        + `**Les fermiers vous ont peut-être déjà alerté** des risques : restez attentif. Faites un clic droit sur un « {building:Farm-Wheat} », `
+        + `puis ouvrez l'onglet **« Messages »**.`,
       teaser: 'Les négociants se préparent à la moisson…',
       blocking: false,
-      illustrations: ['House-Red', 'Market-Stall-Red', 'Windmill-001'],
+      illustrations: ['Market-Stall-Red', 'Windmill-001'],
+      image: { src: '/tuto/messages.png', alt: 'L’onglet « Messages » d’un champ de blé : trop de champs, conservation insuffisante faute de grenier, impayés' },
     },
   },
   {
-    // At once, the moment any building shows the no-work sprite (a building that needs workers and has none), whatever step the player is on: the rule of
-    // the groups of inhabitants. Not while the market or the granary is the one lacking hands: 'merchants-needed' says it, with the merchants' house.
+    // Once any building has shown the no-work sprite for a whole turn, whatever step the player is on: the rule of the groups of inhabitants. The tutorial
+    // looks at the city once employment has hired and the sprites are drawn (after a placement, at the end of a turn), so it sees what the player sees; the
+    // icon goes as soon as inhabitants arrive, so a lack that lasts a turn is a real one.
+    // Not when the sale's chain is the one lacking hands: 'merchants-needed' says it, with the merchants' house.
     id: 'workers-needed',
     when: [{ noWork: 'any' }],
-    unless: [{ noWork: ['Market-Stall-Red', 'Windmill-001'] }],
-    delay: 0,
+    unless: [{ all: SALE_CHAIN_LACKS_HANDS }],
+    delay: 1,
     news: {
       title: 'Il manque des bras',
-      body: `Un bâtiment qui affiche cette icône n'a pas de travailleurs : il reste à l'arrêt. Chaque bâtiment est relié à l'un des trois groupes `
-        + `d'habitants — « {building:House-Red} », « {building:House-Blue} » ou « {building:House-Purple} » — et n'embauche que dans son groupe, selon `
-        + `leurs compétences : « {building:Farm-Wheat} » demande des « {skill:fermier} », que seuls les « {building:House-Red} » ont. Quand un `
-        + `bâtiment attend ses travailleurs, il faut plus de maisons du groupe qui a les compétences voulues.`,
+      // A blank line starts a paragraph, `**…**` is bold.
+      body: `Un bâtiment qui affiche l'icône **« sans travailleurs »** n'a personne pour y travailler : il reste **à l'arrêt**.\n\n`
+        + `Chaque bâtiment est relié à l'un des trois groupes d'habitants — « {building:House-Red} », « {building:House-Blue} » ou `
+        + `« {building:House-Purple} » — et n'embauche que dans son groupe, selon leurs compétences.\n\n`
+        + `Par exemple, « {building:Farm-Wheat} » demande des « {skill:fermier} », que seuls les « {building:House-Red} » ont.\n\n`
+        + `**Quand un bâtiment attend ses travailleurs, bâtissez plus de maisons du groupe qui a les compétences voulues, ou attendez que plus d'habitants `
+        + `n'arrivent dans une de ces maisons.**`,
       teaser: 'Des bâtiments restent sans bras…',
       blocking: false,
-      illustrations: ['Farm-Wheat'],
-      // The sprite as the game draws it above a building (public/tuto/no-work-sprite.svg: the pink disc and the glyph of the no-work icon), at its own size.
-      image: { src: '/tuto/no-work-sprite.svg', alt: 'L’icône « sans travailleurs » qui s’affiche au-dessus d’un bâtiment' },
-      // A page carries one picture: the example in the game itself (a screenshot, public/tuto/no-work-farms.png) is the page "Lire la suite" opens.
-      next: {
-        body: `Voici à quoi cela ressemble : l'icône flotte au-dessus de chaque « {building:Farm-Wheat} » qui attend ses travailleurs.`,
-        image: { src: '/tuto/no-work-farms.png', alt: 'Des champs de blé, chacun avec l’icône « sans travailleurs » au-dessus' },
-      },
+      // The two small pictures, then the example in the game itself (a screenshot, public/tuto/no-work-farms.png). The sprite is the one the game draws above
+      // a building (public/tuto/no-work-sprite.svg).
+      illustrations: [{ src: '/tuto/no-work-sprite.svg', label: 'Sans travailleurs' }, 'Farm-Wheat'],
+      image: { src: '/tuto/no-work-farms.png', alt: 'Des champs de blé, chacun avec l’icône « sans travailleurs » au-dessus' },
     },
   },
   {
-    // At once, the moment the market or the granary shows the no-work sprite: who is missing, and the button that puts the merchants' house in hand.
-    // Tied to the 'trade' step: it is said once that step is reached. It unlocks the merchants' house, greyed out until now.
+    // Once the market and the granary both stand and one of them has shown the no-work sprite for a whole turn (see 'workers-needed'): who is missing, and
+    // the button that puts the merchants' house in hand. Tied to the 'trade' step: it is said once that step is reached. It unlocks the merchants' house, greyed out until now.
     id: 'merchants-needed',
     step: 'trade',
-    when: [{ noWork: ['Market-Stall-Red', 'Windmill-001'] }],
-    delay: 0,
+    when: SALE_CHAIN_LACKS_HANDS,
+    delay: 1,
     unlocks: ['House-Blue'],
     news: {
       title: 'Il manque des commerçants',
-      body: `« {building:Market-Stall-Red} » et « {building:Windmill-001} » attendent leurs travailleurs : ils demandent des habitants ayant les compétences `
-        + `« {skill:vente-alimentaire} » et « {skill:stockage-alimentaire} », que seuls les « {building:House-Blue} » ont. Il vous faut plus de commerçants.`,
+      // Either building can be the one lacking hands (the player may have placed only one): the text says what each asks, never that both wait.
+      body: `Un bâtiment du commerce attend ses travailleurs. « {building:Market-Stall-Red} » demande des habitants ayant la compétence `
+        + `{skillicon:vente-alimentaire} « {skill:vente-alimentaire} », « {building:Windmill-001} » la compétence {skillicon:stockage-alimentaire} `
+        + `« {skill:stockage-alimentaire} » : seuls les « {building:House-Blue} » les ont.\n\n`
+        + `**Il vous faut plus de commerçants.**`,
       teaser: 'Les étals restent vides…',
       blocking: false,
       action: { kind: 'buildTool', toolId: 'House-Blue' },
@@ -235,6 +263,7 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
     step: 'trade',
     delay: 15,
     unless: [{ built: 'House-Purple' }],
+    unlocks: ['House-Purple'],
     news: {
       title: 'Des savants pour la cité',
       body: `En attendant la moisson, appelez de nouveaux habitants : la maison « {building:House-Purple} » abrite les savants, qui font tourner les `
@@ -250,6 +279,7 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
     id: 'scholars-water',
     when: [{ built: 'House-Purple' }],
     delay: 0,
+    unlocks: ['WaterTank'],
     news: {
       title: 'L’eau de la cité',
       body: `Les habitants de la maison « {building:House-Purple} » ont la compétence {skillicon:hydraulique} « {skill:hydraulique} » : ce sont eux qui feront `
@@ -262,17 +292,50 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
     },
   },
   {
-    // The moment the merchants' house stands: what the skills are and where to read them.
-    id: 'merchants-skills',
-    when: [{ built: 'House-Blue' }],
-    delay: 2,
+    // The moment the water tank reaches both the scholars' and the artisans' houses: how a house evolves, taking the scholars' step from level 1 to 2 as
+    // the example. The two pictures above the screenshot are the previews of the house at each level (House-Purple's own button icon, and the model its
+    // `levelVariants[2]` names, in buildingAssets.js); the screenshot is the "Services" tab of a house, with the needs of its evolution.
+    id: 'house-evolution',
+    when: [{ supplied: { type: 'House-Purple', category: 'water' } }, { supplied: { type: 'House-Red', category: 'water' } }],
+    delay: 0,
     news: {
-      title: 'Des habitants, des savoirs',
-      body: `Chaque habitant a des savoirs, et un bâtiment n'embauche que ceux qu'il lui faut : {skillicon:vente-alimentaire} « {skill:vente-alimentaire} » `
-        + `pour le marché, {skillicon:stockage-alimentaire} « {skill:stockage-alimentaire} » pour le grenier, {skillicon:fermier} « {skill:fermier} » `
-        + `pour les champs. Faites un clic droit sur la maison « {building:House-Blue} » : l'onglet « 🧠 Savoirs » de sa fiche montre ceux de ses habitants.`,
-      teaser: 'Un messager parle de savoirs…',
+      title: 'Des maisons qui grandissent',
+      body: `L'eau coule enfin jusqu'à vos maisons « {building:House-Purple} » et « {building:House-Red} ». C'est un pas vers **l'évolution** : une maison `
+        + `dont les besoins sont comblés passe au niveau supérieur, abrite plus d'habitants et leur donne de **nouveaux savoirs**.\n\n`
+        + `Prenons une maison « {building:House-Purple} » : pour passer du **niveau 1 au niveau 2**, il lui faut :\n`
+        + `- une **route** ;\n`
+        + `- au moins un **habitant** ;\n`
+        + `- de la **nourriture** ;\n`
+        + `- de l'**eau** ;\n`
+        + `- des **soins médicaux**.\n\n`
+        + `Ces besoins se lisent dans l'onglet **« Services »** de sa fiche (clic droit sur la maison), sous « besoins pour l'évolution » :\n`
+        + `- une **coche** ✓ : le besoin est comblé ;\n`
+        + `- une **croix** : il manque encore ;\n`
+        + `- **« inexistant »** : aucun bâtiment ne fournit encore ce service à la maison, comme les soins médicaux ici.`,
+      teaser: 'Un messager parle d’avenir…',
       blocking: false,
+      illustrations: [
+        { src: '/resources/kenney_city-kit-suburban_20/Previews/building-type-l.png', label: 'Niveau 1' },
+        { src: '/resources/kenney_city-kit-suburban_20/Previews/building-type-s.png', label: 'Niveau 2' },
+      ],
+      image: { src: '/tuto/services.png', alt: 'L’onglet « Services » d’une maison : sa route, et ses besoins pour l’évolution (population, nourriture, eau, soins médicaux)' },
+    },
+  },
+  {
+    // The moment a field has booked its first sale: the sale worked, and the field earned money. The picture is the "Finances" tab of a field right after a
+    // sale (public/tuto/production_vendue_fermes.png): the income statement, with its "Production vendue" line.
+    id: 'harvest-sold',
+    when: [{ sold: 'Farm-Wheat' }],
+    delay: 0,
+    news: {
+      title: 'La vente a réussi',
+      body: `Votre récolte est vendue : **la vente a réussi**, et votre « {building:Farm-Wheat} » a **gagné de l'argent** grâce à elle.\n\n`
+        + `Ce gain figure dans les comptes du champ, parmi ses **produits d'exploitation** : la ligne « Production vendue » (et, dessous, « Ventes du `
+        + `bâtiment ») montre ce que la vente lui a rapporté cette année.\n\n`
+        + `Vous pouvez le vérifier sur **chaque bâtiment** : faites un clic droit dessus, ouvrez l'onglet **« Finances »**, puis **« Compte de résultat »**.`,
+      teaser: 'Les négociants font leurs comptes…',
+      blocking: false,
+      image: { src: '/tuto/production_vendue_fermes.png', alt: 'L’onglet « Finances » d’un champ de blé, compte de résultat : la production vendue et les ventes du bâtiment dans les produits d’exploitation' },
     },
   },
 ]);
@@ -297,7 +360,7 @@ const TOAST_LONG_MS = 10000;
  *   congratulation, an arrival); always said. The screen shows only a few toasts at once: the higher priority shows first, the others wait their turn
  *   and are dropped if they wait as long as they would have stayed on screen (see `showTutorialToast`, game.js). A step's reminder is an instruction.
  * - `highlight`: 'construction' (the house-shaped button that opens the build bar), 'road' (the road button beside it) or 'history' (the button that
- *   opens the tutorial's dépêches again) turns yellow and pulses until the player clicks it.
+ *   opens the tutorial's dépêches again) or 'pause' (the button that stops the clock) turns yellow and pulses until the player clicks it.
  * At least one of `when` / `step` is required.
  * Kinds: 'success' for something that works, 'info' for news, 'warning' for something still missing.
  *
@@ -311,7 +374,7 @@ export const TUTORIAL_TOASTS = Object.freeze([
     duration: TOAST_LONG_MS,
     kind: 'info',
     step: 'road',
-    until: [{ roadBuilt: true }],
+    until: [{ roadBuilt: 1 }],
     highlight: 'road',
     text: `Pour tracer une route, cliquez sur le bouton de route, à côté du bouton en forme de maison.`,
   },
@@ -326,6 +389,18 @@ export const TUTORIAL_TOASTS = Object.freeze([
     until: [{ built: 'Market-Stall-Red' }],
     highlight: 'construction',
     text: `Pour construire un bâtiment, cliquez sur le bouton en forme de maison de la barre du bas.`,
+  },
+  {
+    // A little before the dépêche of the sale ('trade-chain', 30 turns after the step is reached): the wait is a good time to stop the clock. It says only
+    // that the pause stops the game: building while paused is not possible yet.
+    id: 'pause-hint',
+    priority: TOAST_PRIORITIES.instruction,
+    duration: TOAST_LONG_MS,
+    kind: 'info',
+    step: 'trade',
+    delay: 20,
+    highlight: 'pause',
+    text: `Le temps file : le bouton pause, dans la barre du bas, arrête le jeu quand vous avez besoin de souffler.`,
   },
   {
     // As soon as the houses and the fields stand: the season of the sale, and the wait for it.
@@ -355,7 +430,7 @@ export const TUTORIAL_TOASTS = Object.freeze([
     delay: 0,
     duration: TOAST_MS,
     kind: 'success',
-    when: [{ roadBuilt: true }],
+    when: [{ roadBuilt: 1 }],
     text: `Bravo, votre première route est tracée !`,
   },
   {
@@ -373,8 +448,8 @@ export const TUTORIAL_TOASTS = Object.freeze([
     delay: 0,
     duration: TOAST_MS,
     kind: 'success',
-    when: [{ built: { type: 'House-Red', atLeast: 4 } }, { built: 'Market-Stall-Red' }, { built: 'Windmill-001' }],
-    text: `Bravo ! Une maison « {building:House-Red} » de plus, « {building:Market-Stall-Red} » et « {building:Windmill-001} » sont posés.`,
+    when: [{ built: 'Market-Stall-Red' }, { built: 'Windmill-001' }],
+    text: `Bravo ! « {building:Market-Stall-Red} » et « {building:Windmill-001} » sont posés.`,
   },
   {
     id: 'chain-reached',

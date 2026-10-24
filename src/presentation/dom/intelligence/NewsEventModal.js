@@ -57,6 +57,56 @@ function legendIconOf(key) {
   return icon;
 }
 
+const HTML_ESCAPES = Object.freeze({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' });
+
+/**
+ * A dépêche's text as the catalog writes it: a blank line starts a paragraph, `**…**` is bold, and lines starting with `- ` make a list (aligned left,
+ * under the line of the paragraph that introduces it). Everything else is plain text (escaped), so the result is safe to set as HTML.
+ * @param {string} text
+ * @returns {string}
+ */
+export function richTextHtml(text) {
+  const bold = (line) => line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  const escaped = String(text).replace(/[&<>"']/g, (character) => HTML_ESCAPES[character]);
+  return escaped
+    .split(/\n{2,}/)
+    .map((paragraph) => {
+      const lines = paragraph.split('\n');
+      const items = lines.filter((line) => line.startsWith('- '));
+      const sentences = lines.filter((line) => !line.startsWith('- '));
+      const sentence = sentences.length > 0 ? `<span class="news-event-paragraph">${bold(sentences.join('\n'))}</span>` : '';
+      const list = items.length > 0 ? `<ul class="news-event-list">${items.map((line) => `<li>${bold(line.slice(2))}</li>`).join('')}</ul>` : '';
+      return sentence + list;
+    })
+    .join('');
+}
+
+/**
+ * One picture of a dépêche's `illustrations`, with its caption: a building id (its icon and name from the catalog), or `{ src, label }` for a picture
+ * of the tutorial's own (the no-work sprite).
+ * @param {string | { src: string, label: string }} entry
+ * @returns {HTMLElement}
+ */
+export function illustrationFigure(entry) {
+  const figure = document.createElement('figure');
+  figure.className = 'news-event-illustration';
+  const picture = document.createElement('span');
+  picture.className = 'news-event-illustration-picture';
+  picture.setAttribute('aria-hidden', 'true');
+  const caption = document.createElement('figcaption');
+  if (typeof entry === 'string') {
+    picture.innerHTML = buildingIconHtml(entry);
+    caption.textContent = buildingName(entry);
+  } else {
+    const image = document.createElement('img');
+    image.src = entry.src;
+    picture.append(image);
+    caption.textContent = entry.label;
+  }
+  figure.append(picture, caption);
+  return figure;
+}
+
 /** @param {{ kind: string }} action */
 function newsActionOf(action) {
   const known = NEWS_ACTIONS[action.kind];
@@ -247,29 +297,16 @@ export function initNewsEventModal(deps) {
       });
     }
     if (bodyEl) {
-      bodyEl.textContent = showBody
+      bodyEl.innerHTML = richTextHtml(showBody
         ? view.body
-        : item.teaser || 'Une dépêche est disponible contre contribution.';
+        : item.teaser || 'Une dépêche est disponible contre contribution.');
     }
 
     // The buildings a dépêche shows, side by side under its text: their picture and their catalog name.
     if (illustrationsEl) {
       const shown = showBody ? view.illustrations ?? [] : [];
       illustrationsEl.hidden = shown.length === 0;
-      illustrationsEl.replaceChildren(
-        ...shown.map((buildingId) => {
-          const figure = document.createElement('figure');
-          figure.className = 'news-event-illustration';
-          const picture = document.createElement('span');
-          picture.className = 'news-event-illustration-picture';
-          picture.setAttribute('aria-hidden', 'true');
-          picture.innerHTML = buildingIconHtml(buildingId);
-          const caption = document.createElement('figcaption');
-          caption.textContent = buildingName(buildingId);
-          figure.append(picture, caption);
-          return figure;
-        })
-      );
+      illustrationsEl.replaceChildren(...shown.map(illustrationFigure));
     }
 
     // Icons of the interface, each with its word, in a row under the text.

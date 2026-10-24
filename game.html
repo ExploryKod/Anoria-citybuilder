@@ -2400,8 +2400,14 @@
                                         <path d="m14.91 7.79-3.64-3.64a1.4 1.4 0 0 0-3.71 1.47l2.35 2.35"/>
                                     </svg>
                                 </div>
-                                <h3 class="work-header-title">Allocation de la Main-d'œuvre <span id="work-hamlet-label" class="work-hamlet-label"></span></h3>
+                                <h3 class="work-header-title">Allocation de la Main-d'œuvre</h3>
                             </div>
+
+                            <!-- The priorities below are those of the hamlet the player is in: to set another hamlet's, go to that hamlet. -->
+                            <p class="work-hamlet-banner" role="status">
+                                Hameau : <strong id="work-hamlet-label" class="work-hamlet-label"></strong>
+                                <span class="work-hamlet-banner__hint">— ces priorités ne valent que pour ce hameau ; pour régler un autre hameau, rendez-vous dans ce hameau.</span>
+                            </p>
 
                             <div class="work-group-tabs" id="work-group-tabs" role="tablist" aria-label="Groupes sociaux">
                                 <!-- Tabs are generated dynamically, one per social group + "Commun" -->

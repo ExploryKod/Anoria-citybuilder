@@ -11,6 +11,8 @@ const TARGETS = Object.freeze({
   road: '#toolbar-road-btn',
   // The button that opens the tutorial's dépêches again.
   history: '#tutorial-history-btn',
+  // The button that stops the clock.
+  pause: '#pause-btn',
 });
 
 let stopWatching = null;

@@ -1,6 +1,6 @@
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { isRoadType } from '../../../../shared/building-catalog/roadQueries.js';
-import { getAnnualHarvestSchedule, getAnnualSupplyEntry, getPerCapitaDemand } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getAnnualHarvestSchedule, getAnnualSupplyEntry, getConsumerEntries, getPerCapitaDemand } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { getSkillDisplay } from '../../../../shared/population/skillCatalog.js';
 import { SOCIAL_CATEGORY } from '../../../../shared/population/socialCategoryCatalog.js';
 import { MONTHS, MONTHS_PER_YEAR, SEASONS } from '../../../../shared/time/TimeCalendar.js';
@@ -9,31 +9,33 @@ import { MONTHS, MONTHS_PER_YEAR, SEASONS } from '../../../../shared/time/TimeCa
  * What the tutorial reads of the city, handed over by the composition root (see TutorialFactsPort.js). `calendar` is the game's clock read as the
  * player knows it: the turn, its season and month, and whether the annual harvest is on (the catalog's harvest schedule, matched by the root).
  * @typedef {{
- *   buildings: Array<{ type: string, pop: number, workers: number, workerNeed: number }>,
+ *   buildings: Array<{ type: string, pop: number, workers: number, workerNeed: number, understaffed: boolean, supplied: string[], sold: boolean }>,
  *   calendar?: { turn: number, season: string, month: string, harvesting: boolean, monthsToHarvest: number | null },
  * }} TutorialFacts
  *
  * A condition is one entry `{ <kind>: <argument> }`; the kinds are the keys of CONDITION_KINDS. A step is done when all its conditions hold.
+ * `{ all: [...] }` and `{ any: [...] }` combine conditions (they nest).
  * @typedef {Record<string, unknown>} TutorialCondition
  *
  * `delay`: turns to wait, after the player reaches the step, before its dépêche is given (required, 0 = at once).
  * `counter`: `{ label, items: [{ type, atLeast }] }`, the progress the screen shows while the player is on the step ("2/3"): each item counts the buildings of its
  * type up to `atLeast` (a number, or a token text such as `{farms:…}`).
- * `allow`: the construction buttons (building ids) that work while the player is on the step; the other construction buttons are greyed out.
+ * `unlocks`: construction buttons (building ids) that work from the moment the step's dépêche has been written (so only on a step that has one). Only the
+ * tutorial's start tools work before; every other construction button is greyed out until a dépêche unlocks it.
  * `reminder`: a toast that reminds the player what the step asks when they have not done it: after `after` turns on the step, then every `every` turns
  * (absent = once), staying `duration` ms; it goes away with the step.
- * @typedef {{ id: string, done: TutorialCondition[], allow: string[], delay: number, reminder?: { after: number, every?: number, duration: number, text: string }, news: null | { title: string, body: string, teaser: string, blocking: boolean, action?: { kind: 'buildTool', toolId: string } } }} TutorialStep
+ * @typedef {{ id: string, done: TutorialCondition[], unlocks?: string[], delay: number, reminder?: { after: number, every?: number, duration: number, text: string }, news: null | { title: string, body: string, teaser: string, blocking: boolean, action?: { kind: 'buildTool', toolId: string } } }} TutorialStep
  *
  * A toast is a short, non-blocking message shown the moment its conditions come true (`when` all hold and none of `unless` does).
  * A toast's moment is on when its `when` conditions all hold, none of its `unless` does, and — if it names a `step` — the player has reached that step
  * (is on it or past it). At least one of `when` / `step` is required. `delay`: turns the moment must last before the toast shows (required, 0 = at once).
  * `duration`: milliseconds it stays on screen, unless taken off earlier: when its moment goes off, or as soon as its `until` conditions hold (the player did
  * what it points at). `highlight`: a part of the interface it points at while it shows ('construction': the house-shaped button that opens the build bar).
- * @typedef {{ id: string, kind: 'info' | 'success' | 'warning', duration: number, when?: TutorialCondition[], unless?: TutorialCondition[], step?: string, delay: number, priority: number, until?: TutorialCondition[], highlight?: 'construction' | 'road' | 'history', text: string }} TutorialToast
+ * @typedef {{ id: string, kind: 'info' | 'success' | 'warning', duration: number, when?: TutorialCondition[], unless?: TutorialCondition[], step?: string, delay: number, priority: number, until?: TutorialCondition[], highlight?: 'construction' | 'road' | 'history' | 'pause', text: string }} TutorialToast
  *
  * A dispatch is a dépêche triggered like a toast (same `when` / `unless` / `step` / `delay`), outside the sequence of steps: it comes when its moment
  * comes, whichever step the player is on. Announced once (Intelligence's once-only rule).
- * `unlocks`: construction buttons (building ids) that work from the moment the dépêche has been written, on top of the step's `allow`.
+ * `unlocks`: construction buttons (building ids) that work from the moment the dépêche has been written.
  * @typedef {{ id: string, when?: TutorialCondition[], unless?: TutorialCondition[], step?: string, delay: number, unlocks?: string[], news: { title: string, body: string, teaser: string, blocking: boolean, action?: { kind: 'buildTool', toolId: string }, illustrations?: string[], image?: { src: string, alt: string }, choices?: Array<{ label: string, page: object }>, next?: object } }} TutorialDispatch
  */
 
@@ -60,6 +62,7 @@ function validateCounted(kind) {
 }
 
 const ofType = (facts, type) => facts.buildings.filter((building) => building.type === type);
+const roadsOf = (facts) => facts.buildings.filter((building) => isRoadType(building.type));
 const isStaffed = (building) => building.workerNeed > 0 && building.workers >= building.workerNeed;
 
 /**
@@ -103,12 +106,12 @@ const CONDITION_KINDS = Object.freeze({
       return ofType(facts, type).length >= atLeast;
     },
   }),
-  // At least one road stands, whichever its variant.
+  // At least N road tiles stand, whichever their variant.
   roadBuilt: Object.freeze({
     validate: (argument) => {
-      if (argument !== true) throw new Error('[tutorial] the condition "roadBuilt" takes `true`');
+      if (!Number.isInteger(argument) || argument < 1) throw new Error(`[tutorial] the condition "roadBuilt" takes a number of roads (1 or more), got ${JSON.stringify(argument)}`);
     },
-    test: (_argument, facts) => facts.buildings.some((building) => isRoadType(building.type)),
+    test: (argument, facts) => roadsOf(facts).length >= argument,
   }),
   // At least N houses of that type have residents.
   housed: Object.freeze({
@@ -126,15 +129,44 @@ const CONDITION_KINDS = Object.freeze({
       return ofType(facts, type).filter(isStaffed).length >= atLeast;
     },
   }),
-  // At least one building of those types shows the no-work sprite: it needs workers and has none (the rule of the city's `understaffedBuildingIds`,
-  // computeCityEmploymentSummary.js). A list of building ids, or 'any' for a building of any type.
+  // At least one building of that type has booked a sale of its production (a credit on the "Production vendue" accounts of its income statement). The facts
+  // say, per building, whether it has (`sold`).
+  sold: Object.freeze({
+    validate: (argument) => requireBuildingId('sold', argument),
+    test: (argument, facts) => ofType(facts, argument).some((building) => {
+      if (typeof building.sold !== 'boolean') throw new Error(`[tutorial] the facts say nothing of whether "${building.type}" has sold its production`);
+      return building.sold;
+    }),
+  }),
+  // At least one house of that type was supplied with that good or service (`category`: 'water', ...) in its last consumption: the tank (or the market, ...)
+  // reaches it. The facts say, per building, which categories it was supplied with (`supplied`).
+  supplied: Object.freeze({
+    validate: (argument) => {
+      if (typeof argument?.type !== 'string' || typeof argument?.category !== 'string') {
+        throw new Error(`[tutorial] the condition "supplied" takes { type, category }, got ${JSON.stringify(argument)}`);
+      }
+      requireBuildingId('supplied', argument.type);
+      if (!getConsumerEntries(argument.type).some((entry) => entry.categories.includes(argument.category))) {
+        throw new Error(`[tutorial] the condition "supplied" names the category "${argument.category}", which "${argument.type}" does not consume`);
+      }
+    },
+    test: (argument, facts) => ofType(facts, argument.type).some((building) => {
+      if (!Array.isArray(building.supplied)) throw new Error(`[tutorial] the facts say nothing of what "${building.type}" was supplied with`);
+      return building.supplied.includes(argument.category);
+    }),
+  }),
+  // At least one building of those types shows the no-work sprite: it is in the city's `understaffedBuildingIds` (computeCityEmploymentSummary.js), the
+  // list the scene draws the sprite from, handed over in the facts as `understaffed`. A list of building ids, or 'any' for a building of any type.
   noWork: Object.freeze({
     validate: (argument) => {
       if (argument === 'any') return;
       if (!Array.isArray(argument) || argument.length === 0) throw new Error(`[tutorial] the condition "noWork" takes 'any' or a list of building ids, got ${JSON.stringify(argument)}`);
       argument.forEach((type) => requireBuildingId('noWork', type));
     },
-    test: (argument, facts) => facts.buildings.some((building) => (argument === 'any' || argument.includes(building.type)) && building.workerNeed > 0 && building.workers === 0),
+    test: (argument, facts) => facts.buildings.some((building) => {
+      if (typeof building.understaffed !== 'boolean') throw new Error(`[tutorial] the facts say nothing of whether "${building.type}" is understaffed`);
+      return building.understaffed && (argument === 'any' || argument.includes(building.type));
+    }),
   }),
   // The fields feed every house placed: their yearly harvest covers what the houses eat when full. 'built' counts every field standing, 'staffed'
   // only those with their workers. The number of fields it takes comes from the catalog (a field's yield, a citizen's need, a house's capacity).
@@ -182,7 +214,24 @@ const CONDITION_KINDS = Object.freeze({
     },
     test: (_argument, facts) => calendarOf(facts).harvesting === true,
   }),
+  // Conditions made of conditions: `all` holds when every one of its list holds, `any` when at least one does. They nest, so a moment can say
+  // "(this OR that) AND the other" and `unless` can name a combination, not only single facts.
+  all: Object.freeze({
+    validate: (argument, ownerId) => validateConditionList('all', ownerId, argument),
+    test: (argument, facts, ownerId) => argument.every((condition) => allHold(ownerId, [condition], facts)),
+  }),
+  any: Object.freeze({
+    validate: (argument, ownerId) => validateConditionList('any', ownerId, argument),
+    test: (argument, facts, ownerId) => argument.some((condition) => allHold(ownerId, [condition], facts)),
+  }),
 });
+
+function validateConditionList(kind, ownerId, conditions) {
+  if (!Array.isArray(conditions) || conditions.length < 2) {
+    throw new Error(`[tutorial] "${ownerId}": the condition "${kind}" takes a list of two conditions or more, got ${JSON.stringify(conditions)}`);
+  }
+  validateConditions(ownerId, conditions);
+}
 
 function conditionOf(ownerId, condition) {
   const kinds = Object.keys(condition ?? {});
@@ -200,7 +249,7 @@ function conditionOf(ownerId, condition) {
 function validateConditions(ownerId, conditions) {
   for (const condition of conditions) {
     const { definition, argument } = conditionOf(ownerId, condition);
-    definition.validate(argument);
+    definition.validate(argument, ownerId);
   }
 }
 
@@ -222,7 +271,7 @@ function factsOf(facts) {
 function allHold(ownerId, conditions, facts) {
   return conditions.every((condition) => {
     const { definition, argument } = conditionOf(ownerId, condition);
-    return definition.test(argument, factsOf(facts));
+    return definition.test(argument, factsOf(facts), ownerId);
   });
 }
 
@@ -309,16 +358,31 @@ export function validateTutorialSteps(steps) {
     validateDelay(step.id, step.delay);
     validateReminder(step.id, step.reminder);
     validateCounter(step.id, step.counter);
-    // Every step names the construction buttons that work while the player is on it; the others are greyed out. Said, never left out.
-    if (!Array.isArray(step.allow) || step.allow.length === 0) {
-      throw new Error(`[tutorial] step "${step.id}" has no \`allow\`: the list of construction buttons that work on that step`);
-    }
-    step.allow.forEach((type) => requireBuildingId('allow', type));
     // `news: null` is a step that only waits (the game already guides that moment); it must be said, not left out.
     if (step.news === undefined) throw new Error(`[tutorial] step "${step.id}" has no \`news\` (null for a step that says nothing)`);
-    if (step.news === null) continue;
+    if (step.news === null) {
+      // A button is unlocked by a dépêche being written: a step that says nothing cannot unlock one.
+      if (step.unlocks !== undefined) throw new Error(`[tutorial] step "${step.id}" says nothing (\`news: null\`), so it cannot \`unlocks\` a building`);
+      continue;
+    }
+    if (step.unlocks !== undefined) validateUnlocks(step.id, step.unlocks);
     validateNews(step.id, step.news);
   }
+}
+
+/** `unlocks` (a step's or a dispatch's): the construction buttons that work once its dépêche has been written, a list of building ids. */
+function validateUnlocks(ownerId, unlocks) {
+  if (!Array.isArray(unlocks) || unlocks.length === 0) throw new Error(`[tutorial] "${ownerId}": \`unlocks\` is a list of building ids`);
+  unlocks.forEach((type) => requireBuildingId('unlocks', type));
+}
+
+/**
+ * The construction buttons that work before any dépêche has unlocked another (the first steps of the game: the mayor's house).
+ * @param {ReadonlyArray<string>} startTools
+ */
+export function validateTutorialStartTools(startTools) {
+  if (!Array.isArray(startTools) || startTools.length === 0) throw new Error('[tutorial] the start tools are a list of building ids (the mayor\'s house)');
+  startTools.forEach((type) => requireBuildingId('start tools', type));
 }
 
 /** A step's `reminder` (optional): the toast that reminds the player what the step asks, once `after` turns have passed on it, then every `every` turns. */
@@ -386,9 +450,15 @@ function validatePageContent(ownerId, news) {
   }
   if (news.illustrations !== undefined) {
     if (!Array.isArray(news.illustrations) || news.illustrations.length === 0) {
-      throw new Error(`[tutorial] "${ownerId}": \`illustrations\` is a list of building ids`);
+      throw new Error(`[tutorial] "${ownerId}": \`illustrations\` is a list of building ids or { src, label }`);
     }
-    news.illustrations.forEach((buildingId) => requireBuildingId('illustrations', buildingId));
+    for (const entry of news.illustrations) {
+      if (typeof entry === 'string') {
+        requireBuildingId('illustrations', entry);
+      } else if (typeof entry?.src !== 'string' || !entry.src.startsWith('/') || typeof entry.label !== 'string' || entry.label === '') {
+        throw new Error(`[tutorial] "${ownerId}": an illustration is a building id or { src: '/path/in/public.svg', label: '…' }, got ${JSON.stringify(entry)}`);
+      }
+    }
   }
   if (news.legend !== undefined) {
     if (!Array.isArray(news.legend) || news.legend.length === 0) throw new Error(`[tutorial] "${ownerId}": \`legend\` is a list of { icon, word }`);
@@ -436,16 +506,13 @@ export function validateTutorialDispatches(dispatches, steps) {
     if (seen.has(dispatch.id) || steps.some((step) => step.id === dispatch.id)) throw new Error(`[tutorial] the id "${dispatch.id}" is used twice (steps and dispatches share the once-only ids)`);
     seen.add(dispatch.id);
     validateMoment(dispatch.id, dispatch, steps);
-    if (dispatch.unlocks !== undefined) {
-      if (!Array.isArray(dispatch.unlocks) || dispatch.unlocks.length === 0) throw new Error(`[tutorial] dispatch "${dispatch.id}": \`unlocks\` is a list of building ids`);
-      dispatch.unlocks.forEach((type) => requireBuildingId('unlocks', type));
-    }
+    if (dispatch.unlocks !== undefined) validateUnlocks(dispatch.id, dispatch.unlocks);
     if (!dispatch.news) throw new Error(`[tutorial] dispatch "${dispatch.id}" has no \`news\``);
     validateNews(dispatch.id, dispatch.news);
   }
 }
 
-const HIGHLIGHT_TARGETS = Object.freeze(['construction', 'road', 'history']);
+const HIGHLIGHT_TARGETS = Object.freeze(['construction', 'road', 'history', 'pause']);
 
 const TOAST_KINDS = Object.freeze(['info', 'success', 'warning']);
 
@@ -524,7 +591,8 @@ function validateCounter(ownerId, counter) {
   if (counter.after === undefined) throw new Error(`[tutorial] "${ownerId}": its counter has no \`after\` (null to show at once)`);
   if (!Array.isArray(counter.items) || counter.items.length === 0) throw new Error(`[tutorial] "${ownerId}": its counter \`items\` is a list of { type, atLeast }`);
   for (const item of counter.items) {
-    requireBuildingId('counter', item?.type);
+    // `{ roads: true, atLeast }` counts the road tiles, whichever their variant; otherwise the buildings of one type.
+    if (item?.roads !== true) requireBuildingId('counter', item?.type);
     counterTargetOf(item.atLeast);
   }
 }
@@ -542,20 +610,11 @@ export function counterOf(step, facts) {
   let target = 0;
   for (const item of step.counter.items) {
     const atLeast = counterTargetOf(item.atLeast);
-    have += Math.min(ofType(factsOf(facts), item.type).length, atLeast);
+    const standing = item.roads === true ? roadsOf(factsOf(facts)) : ofType(factsOf(facts), item.type);
+    have += Math.min(standing.length, atLeast);
     target += atLeast;
   }
   return { label: resolveTutorialText(step.counter.label), have, target };
-}
-
-/**
- * The construction buttons that work on the step the player is on; null once the script is over (nothing is greyed out any more).
- * @param {ReadonlyArray<TutorialStep>} steps
- * @param {TutorialFacts} facts
- * @returns {string[] | null}
- */
-export function allowedToolsOf(steps, facts) {
-  return currentTutorialStep(steps, facts)?.allow ?? null;
 }
 
 /**
