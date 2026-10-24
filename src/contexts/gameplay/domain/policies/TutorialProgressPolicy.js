@@ -223,18 +223,23 @@ const CONDITION_KINDS = Object.freeze({
       return building.fed;
     }),
   }),
-  // At least one house of that type has reached that level (its stored `level`: 1 at the start, more as it evolves).
+  // At least one house of that type has reached that level (its stored `level`: 1 at the start, more as it evolves); with `every: true`, every house of that
+  // type has (and at least one stands).
   leveled: Object.freeze({
     validate: (argument) => {
-      if (typeof argument?.type !== 'string' || !Number.isInteger(argument.level) || argument.level < 1) {
-        throw new Error(`[tutorial] the condition "leveled" takes { type, level } (a building id and a level of 1 or more), got ${JSON.stringify(argument)}`);
+      if (typeof argument?.type !== 'string' || !Number.isInteger(argument.level) || argument.level < 1 || (argument.every !== undefined && typeof argument.every !== 'boolean')) {
+        throw new Error(`[tutorial] the condition "leveled" takes { type, level, every? } (a building id, a level of 1 or more, \`every\` true or false), got ${JSON.stringify(argument)}`);
       }
       requireBuildingId('leveled', argument.type);
     },
-    test: (argument, facts) => ofType(facts, argument.type).some((building) => {
-      if (typeof building.level !== 'number') throw new Error(`[tutorial] the facts say nothing of the level of "${building.type}"`);
-      return building.level >= argument.level;
-    }),
+    test: (argument, facts) => {
+      const reached = (building) => {
+        if (typeof building.level !== 'number') throw new Error(`[tutorial] the facts say nothing of the level of "${building.type}"`);
+        return building.level >= argument.level;
+      };
+      const houses = ofType(facts, argument.type);
+      return argument.every === true ? houses.length > 0 && houses.every(reached) : houses.some(reached);
+    },
   }),
   // That dépêche of the tutorial (a step's or a dispatch's id) has been got past by the player (closed, or left by its button). The service hands the ids it
   // knows to be read in the facts (`readNews`).

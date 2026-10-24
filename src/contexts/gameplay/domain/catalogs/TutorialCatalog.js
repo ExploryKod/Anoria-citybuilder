@@ -353,16 +353,22 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
     },
   },
   {
-    // The first house that has evolved (any of the three groups): the end of the tutorial, what a level brings.
+    // The end of the tutorial, and not 'house-evolution' (which only explains how houses evolve, ahead of it): once EVERY house of the three groups has evolved to
+    // level 2 — and a few turns later, time to see it — the player is congratulated, told what the level brings, and sent on to the other tutorials.
     id: 'houses-evolved',
-    when: [{ any: [{ leveled: { type: 'House-Red', level: 2 } }, { leveled: { type: 'House-Blue', level: 2 } }, { leveled: { type: 'House-Purple', level: 2 } }] }],
-    delay: 0,
+    when: [
+      { leveled: { type: 'House-Red', level: 2, every: true } },
+      { leveled: { type: 'House-Blue', level: 2, every: true } },
+      { leveled: { type: 'House-Purple', level: 2, every: true } },
+    ],
+    delay: 5,
     news: {
-      title: 'Votre cité grandit',
-      body: `Bravo ! Une de vos maisons vient de **passer au niveau 2** : elle peut abriter **plus d'habitants**, et ses habitants ont de **nouveaux savoirs**, `
-        + `visibles dans l'onglet **« Savoirs »** de sa fiche.\n\n`
-        + `C'est ainsi que votre cité se développe : chaque niveau demande davantage de services à votre hameau.`,
-      teaser: 'Une maison s’agrandit…',
+      title: 'Bravo, votre cité grandit',
+      body: `**Bravo !** Vous avez fait passer vos maisons **au niveau 2** : elles abritent **plus d'habitants** et leur donnent de **nouvelles compétences**, `
+        + `qui vous permettent de faire évoluer la ville.\n\n`
+        + `Mais regardez vos finances : elles sont **dans le rouge**, et il reste de nombreux défis à relever.\n\n`
+        + `**Explorez d'autres tutoriels** pour apprendre à aller plus loin.`,
+      teaser: 'Le bilan de votre premier pas…',
       blocking: false,
     },
   },

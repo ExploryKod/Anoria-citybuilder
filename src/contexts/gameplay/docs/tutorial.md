@@ -22,7 +22,7 @@ Changing the tutorial with the game means editing this list. The only code that 
 | `roadBuilt: N` | at least N road tiles stand, whichever their variant (a counter item `{ roads: true, atLeast }` counts them the same way) |
 | `all: [conditions]`, `any: [conditions]` | every one / at least one of the listed conditions holds; they nest, so `unless` can name a combination (`unless: [{ all: [...] }]`) |
 | `fed: <house id>` | at least one house of that type has been fed: its diet (the need of the catalog's food stock) drew food in its last consumption, from the market |
-| `leveled: { type, level }` | at least one house of that type has reached that level (its stored `level`) |
+| `leveled: { type, level, every? }` | at least one house of that type has reached that level (its stored `level`); with `every: true`, every house of that type has, and at least one stands |
 | `newsRead: <dépêche id>` | the player has got past that dépêche (a step's or a dispatch's; closed, or left by its button); `AdvanceTutorial` puts the ids a condition asks about in the facts (`readNews`) |
 | `sold: <building id>` | at least one building of that type has booked a sale of its production: a credit on the accounts of the "Production vendue" line of its income statement, read from the journal's fold (`hasBuildingSold`) |
 | `supplied: { type, category }` | a house of that type was supplied with that good or service (`'water'`, ...) in its last consumption: its need of the category, filed under the catalog's `outcomeField`, drew something |
