@@ -12,17 +12,17 @@ jest.unstable_mockModule('../../src/composition/hudPopulationAggregates.js', () 
       count: stats.unemployed ?? 0,
     };
   },
-  mapEmploymentGroupsForHud: (byGroup = {}, bySector = {}) => {
+  mapEmploymentGroupsForHud: (byGroup = {}, bySkill = {}) => {
     const groups = ['artisans', 'merchants', 'scholars'];
-    const sectors = { artisans: [1, 3, 4], merchants: [2], scholars: [6] };
+    const skills = { artisans: ['fermier'], merchants: ['vente-alimentaire'], scholars: ['hydraulique'] };
     return Object.fromEntries(
       groups.map((group) => {
         const stats = byGroup[group] ?? { workerPool: 0, assigned: 0, unemployed: 0 };
         const workerPool = stats.workerPool ?? 0;
         const unemployed = stats.unemployed ?? 0;
         let lack = 0;
-        for (const sector of sectors[group]) {
-          lack += bySector[sector]?.need ?? 0;
+        for (const skill of skills[group]) {
+          lack += bySkill[skill]?.need ?? 0;
         }
         return [
           group,
@@ -55,9 +55,9 @@ jest.unstable_mockModule('../../src/composition/hudPopulationAggregates.js', () 
             merchants: { workerPool: 4, assigned: 2, unemployed: 2 },
             scholars: { workerPool: 0, assigned: 0, unemployed: 0 },
           },
-          bySector: {
-            1: { need: 1 },
-            2: { need: 0 },
+          bySkill: {
+            fermier: { need: 1 },
+            'vente-alimentaire': { need: 0 },
           },
         },
       };
@@ -78,7 +78,7 @@ jest.unstable_mockModule('../../src/composition/hudPopulationAggregates.js', () 
           merchants: { workerPool: 1, assigned: 0, unemployed: 1 },
           scholars: { workerPool: 0, assigned: 0, unemployed: 0 },
         },
-        bySector: {},
+        bySkill: {},
       },
     };
   }),

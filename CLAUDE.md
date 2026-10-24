@@ -144,6 +144,23 @@ needs its line there.
 `untilYear`). "Résultat de l'année" is the year's net flow, the figure the net columns carry forward. Never show one
 under the other's name, and never use the cash as a result.
 
+## A skill belongs to one social category: avoid shared posts
+
+A workplace's required skill is granted by exactly one social category (`groupsForSkill(skill)` has one entry). Do not add a skill that two
+categories grant, and do not propose it as a design shortcut. Why, if the user asks (explain it, do not just refuse):
+
+- The player reads who is out of work and which posts stay empty *per category* (the grid under each unemployment rate in the Emploi tab). A vacant
+  post is attributed to a category by the skill it asks. With one provider that is exact; with several, nobody can say whose post it is.
+- The only way left is a convention: `vacanciesShareOf` splits such a skill's vacant posts equally. The sum over the categories stays exact, but each
+  category's figure is not: one shows fewer posts than it could take, so its unemployed look "without a post" when they are in fact one hire away;
+  another shows more. The player is misled exactly where the screen is meant to explain.
+- The honest fix (share the vacant posts in proportion to who already holds the posts of that skill, from `workerSources`) needs data that does not
+  exist before the first hire, so it would need a "no one yet" rule: a fallback or a "…". It is more machinery, to repair something avoidable.
+- A shared skill also blurs the staffing reasons ("who holds the skill it asks for") and the priority tabs (`shared`).
+
+If a design truly needs a skill common to several categories, say so first and settle how its posts are attributed before touching the catalog.
+Details: `src/contexts/employment/docs/rules.md` §5.6.
+
 ## Keep the flow: no commands that make the user wait
 
 The user is often away while a task runs; a command that stops for approval freezes the work. Change files with the Edit

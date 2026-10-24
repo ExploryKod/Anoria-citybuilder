@@ -16,7 +16,7 @@ import { normalizeResidentialType } from '../contexts/housing/domain/HouseTypeCa
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
 import {
   allSocialGroups,
-  eligibleSectorsForGroup,
+  groupsForSkill,
   residentialGroupForType,
 } from '../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 
@@ -60,13 +60,36 @@ export function popByGroupFromHouses(houses) {
 }
 
 /**
+ * The vacant posts of one skill that fall to one class. A skill that several classes grant is shared out equally between them (the posts do not
+ * belong to anyone in particular): `need / providers` each, and when it does not divide, the extra posts go one each to the first classes in the
+ * catalog's order, so the shares always add up to `need`.
+ *
+ * Known limit: a share is a convention, not a forecast. The classes that grant the skill can fill the posts in any proportion, so one class may show
+ * fewer vacant posts than it could in fact take (and its out-of-work, matched against that smaller share, look more "without a post" than they are),
+ * while another shows more. Only the sum over the classes is exact. No skill is shared today; if one is, and this misleads the player, the posts would
+ * have to be attributed by who actually fills them (the last distribution of workers), not split by a rule. Better still, do not share a skill at all:
+ * see "A skill belongs to one social category" in CLAUDE.md and `employment/docs/rules.md` §5.6.
+ * @param {number} need the vacant posts asking that skill
+ * @param {ReadonlyArray<string>} providers the classes whose houses grant the skill, in the catalog's order
+ * @param {string} group
+ * @returns {number} 0 for a class that does not grant the skill
+ */
+export function vacanciesShareOf(need, providers, group) {
+  const at = providers.indexOf(group);
+  if (at === -1) return 0;
+  return Math.floor(need / providers.length) + (at < need % providers.length ? 1 : 0);
+}
+
+/**
  * The rate of a class is read like the city's own: its out-of-work residents over those of its residents who look for a job, the ones whose house no
  * road reaches included (told apart as a cause, `unemployedNoRoad`).
  * @param {Record<string, { workerPool?: number, assigned?: number, seeking?: number, unemployed?: number, unemployedNoRoad?: number }> | undefined} byGroup
- * @param {Record<number, { need?: number }> | undefined} [bySector]
+ * The vacant posts of a class are the ones asking a skill its social category grants (`groupsForSkill`), never a sector: what a post asks for is a skill,
+ * and only the skill says who can fill it. A skill several classes grant is shared out equally between them (`vacanciesShareOf`).
+ * @param {Record<string, { need?: number }> | undefined} [bySkill] the vacant posts by required skill (`computeCityEmploymentSummary`)
  * @returns {Record<string, { workerPool: number, assigned: number, unemployed: number, unemploymentPercentage: number, lack: number, causes: Readonly<import('../contexts/employment/domain/policies/EmploymentShortfallPolicy.js').ShortfallCauses> }>}
  */
-export function mapEmploymentGroupsForHud(byGroup, bySector) {
+export function mapEmploymentGroupsForHud(byGroup, bySkill) {
   /** @type {Record<string, { workerPool: number, assigned: number, unemployed: number, unemploymentPercentage: number, lack: number, causes: Readonly<import('../contexts/employment/domain/policies/EmploymentShortfallPolicy.js').ShortfallCauses> }>} */
   const mapped = {};
 
@@ -78,8 +101,8 @@ export function mapEmploymentGroupsForHud(byGroup, bySector) {
     const unemployed = Math.max(0, Math.floor(stats.unemployed) || 0);
     const unemployedNoRoad = Math.max(0, Math.floor(stats.unemployedNoRoad) || 0);
     let lack = 0;
-    for (const sector of eligibleSectorsForGroup(group)) {
-      lack += Math.max(0, Math.floor(bySector?.[sector]?.need) || 0);
+    for (const [skill, vacancies] of Object.entries(bySkill ?? {})) {
+      lack += vacanciesShareOf(Math.max(0, Math.floor(vacancies?.need) || 0), groupsForSkill(skill), group);
     }
 
     mapped[group] = {
@@ -102,7 +125,7 @@ export function mapEmploymentGroupsForHud(byGroup, bySector) {
  */
 function groupCausesOf(summary) {
   return Object.fromEntries(
-    Object.entries(mapEmploymentGroupsForHud(summary.byGroup, summary.bySector)).map(([group, stats]) => [group, stats.causes])
+    Object.entries(mapEmploymentGroupsForHud(summary.byGroup, summary.bySkill)).map(([group, stats]) => [group, stats.causes])
   );
 }
 
