@@ -16,7 +16,7 @@ import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
 import { getOrCreateIntelligenceContext } from './createIntelligenceContext.js';
 import { isTutorialMode } from '../shared/gameplay/gameMode.js';
 import { getTimeInfo } from '../shared/time/TimeCalendar.js';
-import { getAnnualHarvestSchedule, getConsumerEntries } from '../shared/building-catalog/resourceRoleQueries.js';
+import { getAnnualHarvestSchedule, getConsumerEntries, getResourceStockShape } from '../shared/building-catalog/resourceRoleQueries.js';
 import { matchesSchedule, monthsUntilNextMatch } from '../contexts/supply/domain/policies/ResourceSchedulePolicy.js';
 import { RandomEventsSimulationService } from '../contexts/gameplay/application/services/RandomEventsSimulationService.js';
 import { AdvanceTutorial } from '../contexts/gameplay/application/services/AdvanceTutorial.js';
@@ -33,6 +33,16 @@ function suppliedCategoriesOf(row) {
   return getConsumerEntries(row.type)
     .filter((entry) => entry.outcomeField && row[entry.outcomeField]?.taken > 0)
     .flatMap((entry) => entry.categories);
+}
+
+/**
+ * Whether a building drew food in its last consumption: its diet (the need whose stock is the catalog's food stock) filed an outcome that took something.
+ * What serves it is the market: the houses are fed from there.
+ */
+function isFed(row) {
+  const { totalKey } = getResourceStockShape();
+  const diet = getConsumerEntries(row.type).find((entry) => entry.totalKey === totalKey);
+  return Boolean(diet?.outcomeField && row[diet.outcomeField]?.taken > 0);
 }
 
 /** Whether a company (a building with an account of its own that is no house) has booked a sale of its production: read from the journal's fold. */
@@ -77,7 +87,10 @@ function createTutorialPorts() {
             workerNeed: row.employees?.worker_need ?? 0,
             understaffed: understaffed.has(instanceIdFromHouseRow(row)),
             supplied: suppliedCategoriesOf(row),
+            fed: isFed(row),
             sold: await hasSoldProduction(row),
+            // A house's stored level (what it has evolved to); a building that is no house has none, and no condition asks it.
+            level: Number.isFinite(row.level) ? row.level : 0,
           }))),
         };
       },

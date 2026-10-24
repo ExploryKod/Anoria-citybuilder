@@ -9,7 +9,7 @@ import { MONTHS, MONTHS_PER_YEAR, SEASONS } from '../../../../shared/time/TimeCa
  * What the tutorial reads of the city, handed over by the composition root (see TutorialFactsPort.js). `calendar` is the game's clock read as the
  * player knows it: the turn, its season and month, and whether the annual harvest is on (the catalog's harvest schedule, matched by the root).
  * @typedef {{
- *   buildings: Array<{ type: string, pop: number, workers: number, workerNeed: number, understaffed: boolean, supplied: string[], sold: boolean }>,
+ *   buildings: Array<{ type: string, pop: number, workers: number, workerNeed: number, understaffed: boolean, supplied: string[], fed: boolean, sold: boolean, level: number }>,
  *   calendar?: { turn: number, season: string, month: string, harvesting: boolean, monthsToHarvest: number | null },
  *   readNews?: string[],
  * }} TutorialFacts
@@ -214,6 +214,27 @@ const CONDITION_KINDS = Object.freeze({
       if (argument !== true) throw new Error('[tutorial] the condition "harvest" takes `true`');
     },
     test: (_argument, facts) => calendarOf(facts).harvesting === true,
+  }),
+  // At least one house of that type has been fed: its diet drew food in its last consumption (the market serves it). The facts say it per building (`fed`).
+  fed: Object.freeze({
+    validate: (argument) => requireBuildingId('fed', argument),
+    test: (argument, facts) => ofType(facts, argument).some((building) => {
+      if (typeof building.fed !== 'boolean') throw new Error(`[tutorial] the facts say nothing of whether "${building.type}" has been fed`);
+      return building.fed;
+    }),
+  }),
+  // At least one house of that type has reached that level (its stored `level`: 1 at the start, more as it evolves).
+  leveled: Object.freeze({
+    validate: (argument) => {
+      if (typeof argument?.type !== 'string' || !Number.isInteger(argument.level) || argument.level < 1) {
+        throw new Error(`[tutorial] the condition "leveled" takes { type, level } (a building id and a level of 1 or more), got ${JSON.stringify(argument)}`);
+      }
+      requireBuildingId('leveled', argument.type);
+    },
+    test: (argument, facts) => ofType(facts, argument.type).some((building) => {
+      if (typeof building.level !== 'number') throw new Error(`[tutorial] the facts say nothing of the level of "${building.type}"`);
+      return building.level >= argument.level;
+    }),
   }),
   // That dépêche of the tutorial (a step's or a dispatch's id) has been got past by the player (closed, or left by its button). The service hands the ids it
   // knows to be read in the facts (`readNews`).

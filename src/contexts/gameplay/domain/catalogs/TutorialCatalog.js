@@ -327,6 +327,46 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
     },
   },
   {
+    // The last one: once the market and the granary have been explained ('trade-chain' read, so they are unlocked) and the market has fed the houses, what the
+    // houses still lack to evolve — the medical care — and the building that gives it. It is staffed by scholars (the skill is theirs from their first level).
+    // It unlocks the doctor, whose button the dépêche offers: nothing before it can place one.
+    id: 'doctor-needed',
+    // The houses have water too (the tank, introduced by 'scholars-water', serves the scholars' and the artisans' houses, as 'house-evolution' waits for), so
+    // that dépêche comes before this one.
+    when: [
+      { newsRead: 'trade-chain' },
+      { fed: 'House-Red' },
+      { supplied: { type: 'House-Purple', category: 'water' } },
+      { supplied: { type: 'House-Red', category: 'water' } },
+    ],
+    delay: 0,
+    unlocks: ['Doctor'],
+    news: {
+      title: 'Des soins pour vos habitants',
+      body: `Le marché nourrit vos habitants. Pour qu'une maison évolue, il lui manque encore les **soins médicaux** : bâtissez un « {building:Doctor} ».\n\n`
+        + `Il embauche des habitants ayant la compétence {skillicon:medical} « {skill:medical} », que seuls les « {building:House-Purple} » ont : leur maison `
+        + `est donc indispensable.\n\n`
+        + `**Quand la route, l'eau, la nourriture et les soins sont réunis, vos maisons passent au niveau 2.** Suivez-le dans l'onglet **« Services »** de leur fiche.`,
+      teaser: 'Un messager réclame un médecin…',
+      blocking: false,
+      action: { kind: 'buildTool', toolId: 'Doctor' },
+    },
+  },
+  {
+    // The first house that has evolved (any of the three groups): the end of the tutorial, what a level brings.
+    id: 'houses-evolved',
+    when: [{ any: [{ leveled: { type: 'House-Red', level: 2 } }, { leveled: { type: 'House-Blue', level: 2 } }, { leveled: { type: 'House-Purple', level: 2 } }] }],
+    delay: 0,
+    news: {
+      title: 'Votre cité grandit',
+      body: `Bravo ! Une de vos maisons vient de **passer au niveau 2** : elle peut abriter **plus d'habitants**, et ses habitants ont de **nouveaux savoirs**, `
+        + `visibles dans l'onglet **« Savoirs »** de sa fiche.\n\n`
+        + `C'est ainsi que votre cité se développe : chaque niveau demande davantage de services à votre hameau.`,
+      teaser: 'Une maison s’agrandit…',
+      blocking: false,
+    },
+  },
+  {
     // The moment a field has booked its first sale: the sale worked, and the field earned money. The picture is the "Finances" tab of a field right after a
     // sale (public/tuto/production_vendue_fermes.png): the income statement, with its "Production vendue" line.
     id: 'harvest-sold',
