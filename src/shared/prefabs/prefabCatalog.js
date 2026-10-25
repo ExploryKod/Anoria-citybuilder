@@ -1,15 +1,17 @@
 /**
  * Prefabs: a city saved from a running game and started again from its own data, at the turn it was saved.
  *
- * The files in `anoria-tour-116/` are the game's exports of one moment: the city's buildings (with their
- * neighbours), the journal, the supply traceability, and the trade relations. IndexedDB itself cannot be
- * exported, so the export of each part is what a prefab is made of. Objectives are not part of a prefab.
+ * The files in `anoria-tour-107/` are the game's exports of one moment (the pause's "Tout télécharger"): the city's
+ * buildings (with their neighbours), the journal (the city's own account and the flux of the companies and the houses,
+ * two files that together are the whole journal), the supply traceability, and the trade relations. IndexedDB itself
+ * cannot be exported, so the export of each part is what a prefab is made of. Objectives are not part of a prefab.
  */
 
-import city from './anoria-tour-116/city-2026-10-04-172507.json' with { type: 'json' };
-import journalExport from './anoria-tour-116/journal-2026-10-04-172419.json' with { type: 'json' };
-import transactionsExport from './anoria-tour-116/transactions-2026-10-04-172442.json' with { type: 'json' };
-import relationsExport from './anoria-tour-116/relations-2026-10-04T15-24-56-054Z.json' with { type: 'json' };
+import city from './anoria-tour-107/city-2026-10-25-132501.json' with { type: 'json' };
+import journalCityExport from './anoria-tour-107/journal-2026-10-25-132501.json' with { type: 'json' };
+import journalPrivateExport from './anoria-tour-107/flux-prives-2026-10-25-132501.json' with { type: 'json' };
+import transactionsExport from './anoria-tour-107/transactions-2026-10-25-132501.json' with { type: 'json' };
+import relationsExport from './anoria-tour-107/relations-2026-10-25T12-25-01-522Z.json' with { type: 'json' };
 
 /**
  * @typedef {{
@@ -33,20 +35,20 @@ function turnOfCityExport(buildings) {
 
 /** @type {Readonly<Record<string, Prefab>>} */
 export const PREFABS = Object.freeze({
-  'anoria-tour-116': Object.freeze({
-    id: 'anoria-tour-116',
+  'anoria-tour-107': Object.freeze({
+    id: 'anoria-tour-107',
     turn: turnOfCityExport(city.buildings),
-    hamletId: '0f2deabd-6075-4fd9-b233-58535c90aade',
+    hamletId: '3b383d94-a2c4-4912-b359-967fde804409',
     citySize: city.config.citySize,
     city,
-    journal: journalExport.entries,
+    journal: [...journalCityExport.entries, ...journalPrivateExport.entries],
     transactions: transactionsExport,
     relations: Object.freeze(relationsExport.relations),
   }),
 });
 
 /** The prefab the menu's "Prefab" button starts. */
-export const START_PREFAB_ID = 'anoria-tour-116';
+export const START_PREFAB_ID = 'anoria-tour-107';
 
 /**
  * @param {string} prefabId

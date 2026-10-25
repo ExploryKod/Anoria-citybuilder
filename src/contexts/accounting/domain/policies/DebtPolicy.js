@@ -20,6 +20,11 @@ const toCentimes = (amount) => Math.round(amount * 100);
 
 const KIND_OF_PAYABLE = new Map(Object.entries(PAYABLE_KINDS).map(([kind, facts]) => [facts.payable, kind]));
 const KIND_OF_SETTLEMENT = new Map(Object.entries(PAYABLE_KINDS).map(([kind, facts]) => [facts.settlement, kind]));
+/** The opérations diverses that close a debt with no money (its creditor is gone): they lower the debt like a payment does. */
+const KIND_OF_ABANDONMENT = new Map(Object.entries(PAYABLE_KINDS).filter(([, facts]) => facts.abandonment).map(([kind, facts]) => [facts.abandonment, kind]));
+
+/** @param {string} type @returns {string | undefined} the kind of debt a line of this type raises, pays or abandons (undefined for any other line) */
+const debtKindOf = (type) => KIND_OF_PAYABLE.get(type) ?? KIND_OF_SETTLEMENT.get(type) ?? KIND_OF_ABANDONMENT.get(type);
 
 /** @param {string} type @returns {boolean} true for the opération diverse that records a debt. */
 export function isPayableType(type) {
@@ -80,7 +85,7 @@ export function planCompanyPayments({ cash, debts, charges }) {
 export function payablesOf(entries) {
   const debts = new Map();
   for (const entry of entries) {
-    const kind = KIND_OF_PAYABLE.get(entry.type) ?? KIND_OF_SETTLEMENT.get(entry.type);
+    const kind = debtKindOf(entry.type);
     if (!kind) continue;
     if (!entry.accountBuildingId) throw new Error(`[debt] the ${entry.type} line "${entry.description}" has no debtor account`);
     const key = `${accountKeyOf(entry)}|${entry.counterpartyBuildingId ?? ''}|${kind}`;
@@ -105,7 +110,7 @@ export function difficultyMonthsOf(entries, buildingId, accountKind, until, mont
   const accountKey = accountKeyOf({ accountBuildingId: buildingId, accountKind });
   const changes = new Map();
   for (const entry of entries) {
-    const kind = KIND_OF_PAYABLE.get(entry.type) ?? KIND_OF_SETTLEMENT.get(entry.type);
+    const kind = debtKindOf(entry.type);
     if (!kind || accountKeyOf(entry) !== accountKey) continue;
     if (!Number.isInteger(entry.year) || !Number.isInteger(entry.month)) throw new Error(`[debt] the ${entry.type} line of ${buildingId} has no year and month`);
     const ordinal = entry.year * monthsPerYear + (entry.month - 1);

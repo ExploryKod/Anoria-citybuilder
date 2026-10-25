@@ -117,17 +117,23 @@ function createHarness({ buildings = [], spatialByTile = new Map() } = {}) {
     updateNeighborsForBuilding: updateNeighbors,
     recalculateRoadAccessForNeighbors: recalcNeighbors,
   });
+  // What `liquidateBuilding` was asked, and whether the building still stood when it was (its books are closed before it goes).
+  const liquidated = [];
   const removeBuilding = new RemoveBuilding({
     buildingRepository: repository,
     spatialNeighborhood: spatial,
     updateNeighborsForBuilding: updateNeighbors,
     recalculateRoadAccessForNeighbors: recalcNeighbors,
+    liquidateBuilding: async ({ instanceId, buildingType }) => {
+      liquidated.push({ instanceId, buildingType, stillStood: (await repository.findById(instanceId)) !== null });
+    },
   });
   const getRoadAccess = new GetBuildingRoadAccess(repository);
 
   return {
     repository,
     spatial,
+    liquidated,
     async whenBuildingIsPlaced(params) {
       return placeBuilding.execute(params);
     },
@@ -290,6 +296,19 @@ describe('Place / remove et accès routier ciblé', () => {
       expect(await harness.repository.findById(roadId)).toBeNull();
       expect((await harness.roadAccessOf(houseId)).hasAccess).toBe(false);
       expect(await harness.neighborsOf(houseId)).toEqual([]);
+    });
+
+    // A disaster, the eraser, a hub taking its dependents down: every way a building leaves ends here, and its accounts are closed before it goes.
+    test('ferme les comptes du bâtiment avant de le retirer, quel que soit le chemin qui le retire', async () => {
+      const houseId = createBuildingInstanceId();
+      harness = createHarness({
+        buildings: [createBuildingSnapshot({ id: houseId, type: 'House-Blue', x: 3, y: 7, neighbors: [], roadCount: 0 })],
+      });
+
+      await harness.whenBuildingIsRemoved({ instanceId: houseId });
+
+      expect(harness.liquidated).toEqual([{ instanceId: houseId, buildingType: 'House-Blue', stillStood: true }]);
+      expect(await harness.repository.findById(houseId)).toBeNull();
     });
   });
 });

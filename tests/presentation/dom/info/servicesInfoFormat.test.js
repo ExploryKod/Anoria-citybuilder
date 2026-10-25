@@ -28,7 +28,7 @@ describe('servicesInfoFormat — informative chips (items)', () => {
 
   test('a house shows Route, Marché and its own business access as informative chips — no service in this row anymore', () => {
     const model = formatServicesModel(houseVm());
-    expect(model.items.map((i) => i.label)).toEqual(['Route', 'Étal rouge', 'Entrepôt (activité)']);
+    expect(model.items.map((i) => i.label)).toEqual(['Route', 'Marché', 'Entrepôt (activité)']);
   });
 
   test('a house running a business (House-Red) shows whether it can reach a hub for it', () => {

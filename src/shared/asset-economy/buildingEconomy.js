@@ -490,6 +490,8 @@ export const BUILDING_ECONOMY = {
     accounting: { maintenance: 6 },
     residentialGroup: 'administrators',
     maxPerHamlet: 1,
+    // It holds the property company that owns every other building: it cannot be demolished (to be moved one day, as in Anno).
+    undemolishable: true,
     // The first one built says what the house is for (the dépêche `mayor-house` of NewsDraftCatalog.js).
     firstBuiltNews: 'mayor-house',
     resourceRoles: [...HOUSE_RESOURCE_ROLES],
@@ -829,7 +831,7 @@ export const BUILDING_ECONOMY = {
   // Markets: one placeable market. requiredSkill: 'vente-alimentaire' (merchants' tier-1 skill).
   'Market-Stall-Red': {
     placementNotice: true,
-    displayName: 'Étal rouge',
+    displayName: 'Marché',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, requiredSkill: 'vente-alimentaire' },
     // Unlimited reach (2026-09-11, same reasoning as the water tank below) — a

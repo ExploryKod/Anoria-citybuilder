@@ -47,7 +47,7 @@ feature was removed, nor one per UI wording or per small change. A test is not a
 
 ## A catalog or default change that moves a building's stored fields updates the prefab too
 
-`src/shared/prefabs/anoria-tour-116/` is a real city exported at a turn, bundled as the game's starter prefab.
+`src/shared/prefabs/anoria-tour-107/` is a real city exported at a turn, bundled as the game's starter prefab.
 When a change to the catalog or to a building's default fields (`employment.workerNeed`, a default `employees`
 shape, a stat derived from the catalog, ...) means an existing building's *stored* data no longer matches what
 the game would now compute for it, check whether the prefab's `city-*.json` holds that building type and fix its
@@ -143,6 +143,23 @@ needs its line there.
 "Trésorerie" is the cash in the till: at 31 December for a past year, now for the current one (the snapshot with
 `untilYear`). "Résultat de l'année" is the year's net flow, the figure the net columns carry forward. Never show one
 under the other's name, and never use the cash as a result.
+
+## A skill belongs to one social category: avoid shared posts
+
+A workplace's required skill is granted by exactly one social category (`groupsForSkill(skill)` has one entry). Do not add a skill that two
+categories grant, and do not propose it as a design shortcut. Why, if the user asks (explain it, do not just refuse):
+
+- The player reads who is out of work and which posts stay empty *per category* (the grid under each unemployment rate in the Emploi tab). A vacant
+  post is attributed to a category by the skill it asks. With one provider that is exact; with several, nobody can say whose post it is.
+- The only way left is a convention: `vacanciesShareOf` splits such a skill's vacant posts equally. The sum over the categories stays exact, but each
+  category's figure is not: one shows fewer posts than it could take, so its unemployed look "without a post" when they are in fact one hire away;
+  another shows more. The player is misled exactly where the screen is meant to explain.
+- The honest fix (share the vacant posts in proportion to who already holds the posts of that skill, from `workerSources`) needs data that does not
+  exist before the first hire, so it would need a "no one yet" rule: a fallback or a "…". It is more machinery, to repair something avoidable.
+- A shared skill also blurs the staffing reasons ("who holds the skill it asks for") and the priority tabs (`shared`).
+
+If a design truly needs a skill common to several categories, say so first and settle how its posts are attributed before touching the catalog.
+Details: `src/contexts/employment/docs/rules.md` §5.6.
 
 ## Keep the flow: no commands that make the user wait
 

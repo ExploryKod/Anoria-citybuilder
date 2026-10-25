@@ -81,6 +81,12 @@ const BY_TYPE = Object.freeze({
   // The founding capital the city pays a company or the business of a house: the city's holding in it (261), the company's capital (101). Never repaid.
   company_capital_paid: entry(outflow('261'), 'Titres de participation', 'capital', false, 'Fonds propres versés à une entreprise', publicVariant(outflow('261'), 'Titres de participation', 'Fonds propres versés à une entreprise')),
   company_capital_received: entry(inflow('101'), 'Capital', 'capital', false, 'Fonds propres reçus de la ville'),
+  // A company the player demolishes is liquidated (see LiquidateDemolishedBuilding.js): its stock is sold off, what its creditors left of its cash goes back to the city
+  // as the return of the capital the city put in (the company's 101 out, the city's holding 261 back), and the wages it could not pay are advanced by the city.
+  liquidation_stock_sale: entry(inflow('707'), 'Ventes de marchandises', 'sales', false, 'Stock vendu en liquidation'),
+  liquidation_surplus_paid: entry(outflow('101'), 'Capital', 'capital', false, 'Caisse rendue à la ville à la liquidation'),
+  liquidation_surplus_received: publicEntry(inflow('261'), 'Titres de participation', 'capital', 'Capital rendu par une entreprise liquidée'),
+  wage_guarantee: publicEntry(outflow('65741'), 'Subventions de fonctionnement aux ménages', 'subsidy-given', 'Salaires impayés avancés par la ville (garantie des salaires)'),
   loan_capital: entry(inflow('164'), 'Emprunts auprès des établissements de crédit', 'loan', false, undefined, publicVariant(inflow('1641'), 'Emprunts en euros')),
   loan_repayment: entry(outflow('164'), 'Emprunts auprès des établissements de crédit', 'loan-repayment', false, undefined, publicVariant(outflow('1641'), 'Emprunts en euros')),
   // Classe 2 — immobilisations
@@ -201,6 +207,19 @@ const OPERATIONS_DIVERSES = Object.freeze({
   od_payable_contribution: Object.freeze({ debit: '645', credit: '431', label: 'Cotisations sociales', tone: 'personnel', detail: 'Cotisations dues, pas encore payées' }),
   od_payable_corporate_tax: Object.freeze({ debit: '695', credit: '444', label: 'Impôts sur les bénéfices', tone: 'tax-paid', detail: 'Impôt dû, pas encore payé' }),
   od_payable_premises_rent: Object.freeze({ debit: '6132', credit: '401', label: 'Locations immobilières', tone: 'purchase', detail: 'Loyer du local dû, pas encore payé' }),
+  // A debt owed to a building the player demolished: no one is left to be paid, so the debtor is released (an abandonment of the claim, an exceptional product, 7718)
+  // and the debt closes (see PayableCatalog `abandonment`). A household is no entity of the plan: nothing is booked on its side, and it is not prosecuted.
+  od_abandoned_wage: Object.freeze({ debit: '421', credit: '7718', label: 'Abandons de créances obtenus', tone: 'sales', detail: 'Les salaires dus ne seront jamais payés : la dette est abandonnée' }),
+  od_abandoned_contribution: Object.freeze({ debit: '431', credit: '7718', label: 'Abandons de créances obtenus', tone: 'sales', detail: 'Les cotisations dues ne seront jamais payées : la dette est abandonnée' }),
+  od_abandoned_corporate_tax: Object.freeze({ debit: '444', credit: '7718', label: 'Abandons de créances obtenus', tone: 'sales', detail: 'L’impôt dû ne sera jamais payé : la dette est abandonnée' }),
+  od_abandoned_premises_rent: Object.freeze({ debit: '401', credit: '7718', label: 'Abandons de créances obtenus', tone: 'sales', detail: 'Le loyer du local dû ne sera jamais payé : la dette est abandonnée' }),
+  // The creditor's side of a debt that will never be paid: a loss on the claim it had booked when the debt fell due (the city's, against the receivable 4387 or 411;
+  // the property company's, against 411).
+  od_bad_debt_contribution: Object.freeze({ debit: '6541', credit: '4387', label: 'Créances admises en non-valeur', tone: 'external', detail: 'Des cotisations dues à la ville ne seront jamais encaissées' }),
+  od_bad_debt_corporate_tax: Object.freeze({ debit: '6541', credit: '411', label: 'Créances admises en non-valeur', tone: 'external', detail: 'Un impôt dû à la ville ne sera jamais encaissé' }),
+  od_bad_debt_premises_rent: Object.freeze({ debit: '654', credit: '411', label: 'Pertes sur créances irrécouvrables', tone: 'external', detail: 'Un loyer de local dû à la SCI ne sera jamais encaissé' }),
+  // What the city held in a company that is liquidated and did not give back: its holding (261) leaves the books at a loss (675).
+  od_holding_written_off: Object.freeze({ debit: '675', credit: '261', label: 'Valeurs comptables des éléments d’actif cédés', tone: 'external', detail: 'Le capital que la ville avait mis dans une entreprise liquidée est perdu' }),
   od_receivable_premises_rent: Object.freeze({ debit: '411', credit: '752', label: 'Revenus des immeubles', tone: 'sales', detail: 'Loyer du local dû à la SCI, pas encore encaissé' }),
   // The city's side of what a company owes it (M57 chart): the tax is a product of the year it falls due, against a receivable (411, redevables); the contributions are
   // owed to the social body, so the city holds a receivable on the company (4387) against what it owes that body (431), no product.
@@ -286,7 +305,7 @@ export function legsOfType(type, plan) {
  * upkeep (the repairer is not an actor of the game), what a merchant buys and sells abroad. Every other type is one side of a flow between accounts: its
  * écriture carries the `transactionId` of the flow, so the other side can be found.
  */
-const NO_COUNTERPART_TYPES = Object.freeze(new Set(['capital_funds', 'construction', 'construction_refund', 'maintenance', 'exceptional_expenses', 'commercial_route', 'contribution']));
+const NO_COUNTERPART_TYPES = Object.freeze(new Set(['capital_funds', 'construction', 'construction_refund', 'maintenance', 'exceptional_expenses', 'commercial_route', 'contribution', 'liquidation_stock_sale']));
 const NO_COUNTERPART_PREFIXES = Object.freeze(['import_', 'freight_', 'abroad_sale_']);
 /** The opérations diverses that are one side of a flow: the rent a company owes its owner is the owner's receivable. */
 const PAIRED_OPERATIONS = Object.freeze(new Set([
@@ -326,6 +345,9 @@ const EXTRA_ACCOUNT_LABELS = Object.freeze({
   '713': 'Variation des stocks de produits',
   '6811': 'Dotations aux amortissements des immobilisations',
   '675': 'Valeurs comptables des éléments d’actif cédés',
+  '7718': 'Autres produits exceptionnels sur opérations de gestion',
+  '654': 'Pertes sur créances irrécouvrables',
+  '6541': 'Créances admises en non-valeur',
   '431': 'Sécurité sociale',
   '6411': 'Salaires, appointements',
   '645': 'Charges de sécurité sociale et de prévoyance',

@@ -12,6 +12,7 @@ import { buildingPlacementCatalog } from '../shared/building-catalog/index.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
 import { canPlaceBuildingAtTileWithSupplyRules } from './canPlaceBuildingAtTileWithSupplyRules.js';
 import {
+  liquidateDemolishedBuilding,
   recordConstructionExpense,
   recordConstructionRefund,
 } from './constructionTreasuryBridge.js';
@@ -31,6 +32,7 @@ import {
  * @param {(amount: number, reason: string, options?: { buildingInstanceId?: string }) => Promise<object>} [deps.recordExpense]
  * @param {(amount: number, reason: string) => Promise<object>} [deps.recordRefund]
  * @param {(params: { instanceId: string }) => Promise<unknown>} [deps.syncRemovedBuilding]
+ * @param {(params: { instanceId: string, buildingType: string }) => Promise<unknown>} [deps.liquidateBuilding] closes the accounts of a building the player demolishes (default: the accounting's)
  * @param {Record<string, { price?: number, gridSize?: number }>} [deps.assetCatalog]
  * @param {(buildingType: string) => object} [deps.getDefaultEmployees]
  * @param {() => Promise<unknown>} [deps.awaitBudgetReady]
@@ -41,6 +43,7 @@ export function createConstructionContext({
   recordExpense,
   recordRefund,
   syncRemovedBuilding,
+  liquidateBuilding,
   assetCatalog,
   getDefaultEmployees: getDefaultEmployeesDep,
   awaitBudgetReady: awaitBudgetReadyDep,
@@ -69,6 +72,7 @@ export function createConstructionContext({
     syncRemovedBuilding:
       syncRemovedBuilding
       ?? (({ instanceId }) => getOrCreateParcelsContext().syncRemovedBuilding({ instanceId })),
+    liquidateBuilding: liquidateBuilding ?? liquidateDemolishedBuilding,
     assetCatalog: catalog,
   });
 

@@ -40,7 +40,7 @@ import { getSharedEventBus } from '../../composition/sharedEventBus.js';
 import { TileGridOverlay } from './managers/TileGridOverlay.js';
 import {
   MapOverlayVisibility,
-  PRODUCTION_STATUS_SPRITE_NAMES,
+  spriteNamesOfFilter,
 } from './managers/MapOverlayVisibility.js';
 import { syncTileNeighborsPass } from './sync/syncTileNeighborsPass.js';
 import { cleanupOrphanedBuildings } from './sync/cleanupOrphanedBuildings.js';
@@ -153,18 +153,18 @@ export function createScene(_gameStore, assetManager, deps) {
     const syncRoadAccess = setupRoadAccessIcons(parcels, { assetManager, textures });
 
     /**
-     * Gate supply-chain status sprites by the Production filter.
-     * @param {boolean} condition
+     * Whether a map filter is on: a status sprite it governs is shown only then (the caller says whether the sprite has anything to say).
+     * @param {string} filterId one of MAP_FILTERS
      * @returns {boolean}
      */
-    function productionSpriteVisible(condition) {
-      return Boolean(condition) && mapOverlayVisibility.isProductionIconsVisible();
+    function mapFilterOn(filterId) {
+      return mapOverlayVisibility.isOn(filterId);
     }
 
-    /** Immediately hide production sprites (toggle off) without waiting for scene.update. */
-    function hideProductionSpritesNow() {
+    /** Immediately hide the sprites a filter governs (it was switched off) without waiting for scene.update. */
+    function hideFilteredSpritesNow(filterId) {
       if (!buildings) return;
-      const names = new Set(PRODUCTION_STATUS_SPRITE_NAMES);
+      const names = new Set(spriteNamesOfFilter(filterId));
       for (let x = 0; x < buildings.length; x++) {
         const row = buildings[x];
         if (!row) continue;
@@ -921,7 +921,7 @@ export function createScene(_gameStore, assetManager, deps) {
             textures,
             statusIcons: STATUS_ICON_DEFAULTS,
             resolveIconAppearance,
-            productionSpriteVisible,
+            mapFilterOn,
             supply,
             time,
         };
@@ -1446,7 +1446,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 const noResourceSprite = mesh.getObjectByName('no-resource');
                 if (hasNoResource) {
                     if (noResourceSprite) {
-                        noResourceSprite.visible = productionSpriteVisible(true);
+                        noResourceSprite.visible = mapFilterOn('alerts');
                     } else {
                         const noResourceIcon = resolveIconAppearance(
                             mesh, 'no-resource',
@@ -1459,7 +1459,7 @@ export function createScene(_gameStore, assetManager, deps) {
                             'no-resource',
                             noResourceIcon.scale,
                             noResourceIcon.position,
-                            productionSpriteVisible(true)
+                            mapFilterOn('alerts')
                         );
                     }
                 } else if (noResourceSprite) {
@@ -1485,7 +1485,7 @@ export function createScene(_gameStore, assetManager, deps) {
                         'no-work',
                         noWorkIcon.scale,
                         noWorkIcon.position,
-                        productionSpriteVisible(true),
+                        mapFilterOn('alerts'),
                         noWorkSpriteColor,
                         noWorkBackgroundColor
                     );
@@ -2128,6 +2128,18 @@ export function createScene(_gameStore, assetManager, deps) {
         }
     }
 
+/** The status icons showing on the building of a tile (their sprite names, without the backgrounds), so the interface can say what they mean. */
+function statusSpriteNamesAt(tile) {
+    const x = tile?.userData?.x;
+    const y = tile?.userData?.y;
+    if (typeof x !== 'number' || typeof y !== 'number') return [];
+    const mesh = buildings?.[x]?.[y];
+    if (!mesh?.children) return [];
+    return mesh.children
+        .filter((child) => child?.type === 'Sprite' && child.visible && !child.name.endsWith('-bg'))
+        .map((child) => child.name);
+}
+
 function onMouseMove(event) {
     // Block interaction if a popup is open or info modal is open
     if (popupManager?.getActivePopups?.()?.length > 0) {
@@ -2165,6 +2177,9 @@ function onMouseMove(event) {
 
     if (typeof this.onPlacementHover === 'function') {
         this.onPlacementHover(focusedObject);
+    }
+    if (typeof this.onStatusHover === 'function') {
+        this.onStatusHover(statusSpriteNamesAt(focusedObject), p.x, p.y);
     }
 
     // Cesar III style road paint: while LMB held, paint each hovered tile
@@ -2597,19 +2612,17 @@ function onTouchEnd(event) {
         isTileGridVisible() {
             return tileGridOverlay.isVisible();
         },
-        setProductionIconsVisible(visible) {
-            mapOverlayVisibility.setProductionIconsVisible(visible);
-            if (!mapOverlayVisibility.isProductionIconsVisible()) {
-                hideProductionSpritesNow();
-                return;
-            }
+        setMapFilterOn(filterId, on) {
+            mapOverlayVisibility.setOn(filterId, on);
+            if (!mapOverlayVisibility.isOn(filterId)) hideFilteredSpritesNow(filterId);
+            // Icons of one filter share a name with another's (a house's business and a producer's): the refresh puts back the ones another filter still shows.
             if (currentCity) {
                 void refreshEmploymentPresentation(currentCity);
                 void update(currentCity, lastSceneUpdateTime);
             }
         },
-        isProductionIconsVisible() {
-            return mapOverlayVisibility.isProductionIconsVisible();
+        isMapFilterOn(filterId) {
+            return mapOverlayVisibility.isOn(filterId);
         },
     }
 }

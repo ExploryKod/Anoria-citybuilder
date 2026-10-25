@@ -165,7 +165,7 @@ function exportStamp() {
  * Downloads the whole city state as JSON. A section that cannot be read is
  * reported in the file instead of failing the export.
  */
-async function exportCityToJSON() {
+export async function exportCityToJSON() {
   const errors = {};
   const read = async (name, load, fallback) => {
     try {

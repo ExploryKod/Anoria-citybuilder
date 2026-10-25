@@ -530,6 +530,17 @@
   stroke: #fff;
 }
 
+/* A tool with its own button beside the construction opener (the road): lit while it is the tool in hand */
+.toolbar-tool-fab.selected {
+  background: var(--cta);
+  border-color: var(--cta);
+  color: #fff;
+}
+
+.toolbar-tool-fab.selected svg {
+  stroke: #fff;
+}
+
 /* Floating camera D-pad FAB (shown only when Paramètres toggle is ON) */
 .camera-dpad-fab {
   display: none;

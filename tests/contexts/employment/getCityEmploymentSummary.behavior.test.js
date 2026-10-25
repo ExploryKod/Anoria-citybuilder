@@ -188,26 +188,32 @@ describe('Employment — GetCityEmploymentSummary', () => {
       const summary = computeCityEmploymentSummary([
         house('red-house', 5, 1, 'House-Red'), // artisans
         house('blue-house', 3, 1, 'House-Blue'), // commerçants
-        workplace('farm', { workerNeed: 3, sector: 1, worker: 3 }), // artisans sector
-        workplace('market', { workerNeed: 2, sector: 2, worker: 1, type: 'Market-Stall-Red' }), // commerçants sector
+        workplace('farm', { workerNeed: 3, sector: 1, worker: 3, workerSources: { 'red-house': 3 } }), // artisans sector
+        workplace('market', { workerNeed: 2, sector: 2, worker: 1, type: 'Market-Stall-Red', workerSources: { 'blue-house': 1 } }), // commerçants sector
       ]);
 
       expect(summary.byGroup['artisans']).toEqual({
         workerPool: 5,
         assigned: 3,
+        seeking: 5,
         unemployed: 2,
+        unemployedNoRoad: 0,
         poolByLevel: { 2: 5 },
       });
       expect(summary.byGroup.merchants).toEqual({
         workerPool: 3,
         assigned: 1,
+        seeking: 3,
         unemployed: 2,
+        unemployedNoRoad: 0,
         poolByLevel: { 2: 3 },
       });
       expect(summary.byGroup.scholars).toEqual({
         workerPool: 0,
         assigned: 0,
+        seeking: 0,
         unemployed: 0,
+        unemployedNoRoad: 0,
         poolByLevel: {},
       });
 
@@ -236,10 +242,29 @@ describe('Employment — GetCityEmploymentSummary', () => {
       expect(summary.byGroup['artisans']).toEqual({
         workerPool: 5,
         assigned: 0,
+        seeking: 5,
         unemployed: 5,
+        unemployedNoRoad: 0,
         poolByLevel: { 1: 5 },
       });
       expect(summary.workerPool).toBe(5);
+    });
+
+    // Regression: a class's rate used to leave out the houses no road reaches while the city's own counted them, so the figures did not agree.
+    test('a class counts the residents of its houses no road reaches as out of work, like the city does, and says why', () => {
+      const summary = computeCityEmploymentSummary([
+        house('red-connected', 4, 1, 'House-Red'),
+        house('red-cut-off', 3, 0, 'House-Red'),
+        house('blue-connected', 2, 1, 'House-Blue'),
+        workplace('farm', { workerNeed: 4, sector: 1, worker: 4, workerSources: { 'red-connected': 4 } }),
+      ]);
+
+      expect(summary.byGroup.artisans).toMatchObject({ workerPool: 4, seeking: 7, unemployed: 3, unemployedNoRoad: 3 });
+      expect(summary.byGroup.merchants).toMatchObject({ seeking: 2, unemployed: 2, unemployedNoRoad: 0 });
+      // The classes add up to the city.
+      expect(summary.unemployed).toBe(5);
+      expect(summary.unemployed).toBe(Object.values(summary.byGroup).reduce((sum, stats) => sum + stats.unemployed, 0));
+      expect(summary.causes.unemployedNoRoad).toBe(3);
     });
   });
 

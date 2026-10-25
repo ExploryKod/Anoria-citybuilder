@@ -6,7 +6,7 @@
 import db from '../core/persistence/dexie/db.js';
 import { createEmptyStocks } from '../shared/building-catalog/resourceRoleQueries.js';
 import { hamletIdOf, getActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
-import { sumShortfallCauses } from '../contexts/employment/domain/policies/EmploymentShortfallPolicy.js';
+import { employmentShortfallCauses, sumShortfallCauses } from '../contexts/employment/domain/policies/EmploymentShortfallPolicy.js';
 import { computeCityFamishedPopulation, computeCityHungerRisk } from '../contexts/housing/domain/policies/FamishedPopulationPolicy.js';
 import { computeCityEmploymentSummary } from '../contexts/employment/domain/computeCityEmploymentSummary.js';
 import { createHousingBuildingSnapshot } from '../contexts/housing/domain/HousingBuildingSnapshot.js';
@@ -16,7 +16,7 @@ import { normalizeResidentialType } from '../contexts/housing/domain/HouseTypeCa
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
 import {
   allSocialGroups,
-  eligibleSectorsForGroup,
+  groupsForSkill,
   residentialGroupForType,
 } from '../contexts/employment/domain/catalogs/HouseGroupSectorEligibilityPolicy.js';
 
@@ -60,34 +60,73 @@ export function popByGroupFromHouses(houses) {
 }
 
 /**
- * @param {Record<string, { workerPool?: number, assigned?: number, unemployed?: number }> | undefined} byGroup
- * @param {Record<number, { need?: number }> | undefined} [bySector]
- * @returns {Record<string, { workerPool: number, assigned: number, unemployed: number, unemploymentPercentage: number, lack: number }>}
+ * The vacant posts of one skill that fall to one class. A skill that several classes grant is shared out equally between them (the posts do not
+ * belong to anyone in particular): `need / providers` each, and when it does not divide, the extra posts go one each to the first classes in the
+ * catalog's order, so the shares always add up to `need`.
+ *
+ * Known limit: a share is a convention, not a forecast. The classes that grant the skill can fill the posts in any proportion, so one class may show
+ * fewer vacant posts than it could in fact take (and its out-of-work, matched against that smaller share, look more "without a post" than they are),
+ * while another shows more. Only the sum over the classes is exact. No skill is shared today; if one is, and this misleads the player, the posts would
+ * have to be attributed by who actually fills them (the last distribution of workers), not split by a rule. Better still, do not share a skill at all:
+ * see "A skill belongs to one social category" in CLAUDE.md and `employment/docs/rules.md` §5.6.
+ * @param {number} need the vacant posts asking that skill
+ * @param {ReadonlyArray<string>} providers the classes whose houses grant the skill, in the catalog's order
+ * @param {string} group
+ * @returns {number} 0 for a class that does not grant the skill
  */
-export function mapEmploymentGroupsForHud(byGroup, bySector) {
-  /** @type {Record<string, { workerPool: number, assigned: number, unemployed: number, unemploymentPercentage: number, lack: number }>} */
+export function vacanciesShareOf(need, providers, group) {
+  const at = providers.indexOf(group);
+  if (at === -1) return 0;
+  return Math.floor(need / providers.length) + (at < need % providers.length ? 1 : 0);
+}
+
+/**
+ * The rate of a class is read like the city's own: its out-of-work residents over those of its residents who look for a job, the ones whose house no
+ * road reaches included (told apart as a cause, `unemployedNoRoad`).
+ * @param {Record<string, { workerPool?: number, assigned?: number, seeking?: number, unemployed?: number, unemployedNoRoad?: number }> | undefined} byGroup
+ * The vacant posts of a class are the ones asking a skill its social category grants (`groupsForSkill`), never a sector: what a post asks for is a skill,
+ * and only the skill says who can fill it. A skill several classes grant is shared out equally between them (`vacanciesShareOf`).
+ * @param {Record<string, { need?: number }> | undefined} [bySkill] the vacant posts by required skill (`computeCityEmploymentSummary`)
+ * @returns {Record<string, { workerPool: number, assigned: number, unemployed: number, unemploymentPercentage: number, lack: number, causes: Readonly<import('../contexts/employment/domain/policies/EmploymentShortfallPolicy.js').ShortfallCauses> }>}
+ */
+export function mapEmploymentGroupsForHud(byGroup, bySkill) {
+  /** @type {Record<string, { workerPool: number, assigned: number, unemployed: number, unemploymentPercentage: number, lack: number, causes: Readonly<import('../contexts/employment/domain/policies/EmploymentShortfallPolicy.js').ShortfallCauses> }>} */
   const mapped = {};
 
   for (const group of allSocialGroups()) {
-    const stats = byGroup?.[group] ?? { workerPool: 0, assigned: 0, unemployed: 0 };
+    const stats = byGroup?.[group] ?? { workerPool: 0, assigned: 0, seeking: 0, unemployed: 0, unemployedNoRoad: 0 };
     const workerPool = Math.max(0, Math.floor(stats.workerPool) || 0);
     const assigned = Math.max(0, Math.floor(stats.assigned) || 0);
+    const seeking = Math.max(0, Math.floor(stats.seeking) || 0);
     const unemployed = Math.max(0, Math.floor(stats.unemployed) || 0);
+    const unemployedNoRoad = Math.max(0, Math.floor(stats.unemployedNoRoad) || 0);
     let lack = 0;
-    for (const sector of eligibleSectorsForGroup(group)) {
-      lack += Math.max(0, Math.floor(bySector?.[sector]?.need) || 0);
+    for (const [skill, vacancies] of Object.entries(bySkill ?? {})) {
+      lack += vacanciesShareOf(Math.max(0, Math.floor(vacancies?.need) || 0), groupsForSkill(skill), group);
     }
 
     mapped[group] = {
       workerPool,
       assigned,
       unemployed,
-      unemploymentPercentage: workerPool > 0 ? Math.round((unemployed / workerPool) * 100) : 0,
+      unemploymentPercentage: seeking > 0 ? Math.round((unemployed / seeking) * 100) : 0,
       lack,
+      causes: employmentShortfallCauses({ unemployed, unemployedNoRoad, lack }),
     };
   }
 
   return mapped;
+}
+
+/**
+ * Why each class is out of work and why the posts it could fill stay empty, in one hamlet.
+ * @param {ReturnType<typeof computeCityEmploymentSummary>} summary
+ * @returns {Record<string, Readonly<import('../contexts/employment/domain/policies/EmploymentShortfallPolicy.js').ShortfallCauses>>}
+ */
+function groupCausesOf(summary) {
+  return Object.fromEntries(
+    Object.entries(mapEmploymentGroupsForHud(summary.byGroup, summary.bySkill)).map(([group, stats]) => [group, stats.causes])
+  );
 }
 
 /**
@@ -170,14 +209,17 @@ export async function getHudPopulationScopeSnapshot(scope = 'active') {
 
   // Why people are out of work and posts empty is worked out hamlet by hamlet (workers do not commute): the country is the sum of its hamlets.
   let employmentCauses = employment.causes;
+  let employmentGroupCauses = groupCausesOf(employment);
   if (scope === 'country') {
     const rowsByHamlet = new Map();
     for (const row of rows) {
       const hamletId = hamletIdOf(row);
       rowsByHamlet.set(hamletId, [...(rowsByHamlet.get(hamletId) ?? []), row]);
     }
-    employmentCauses = sumShortfallCauses(
-      [...rowsByHamlet.values()].map((hamletRows) => computeCityEmploymentSummary(hamletRows.map(toEmploymentSnapshot)).causes)
+    const summaries = [...rowsByHamlet.values()].map((hamletRows) => computeCityEmploymentSummary(hamletRows.map(toEmploymentSnapshot)));
+    employmentCauses = sumShortfallCauses(summaries.map((summary) => summary.causes));
+    employmentGroupCauses = Object.fromEntries(
+      allSocialGroups().map((group) => [group, sumShortfallCauses(summaries.map((summary) => groupCausesOf(summary)[group]))])
     );
   }
 
@@ -190,5 +232,6 @@ export async function getHudPopulationScopeSnapshot(scope = 'active') {
     hungerRisk,
     employment,
     employmentCauses,
+    employmentGroupCauses,
   };
 }

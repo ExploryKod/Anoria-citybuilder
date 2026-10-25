@@ -158,6 +158,14 @@
                     <polygon points="6 3 20 12 6 21 6 3"/>
                 </svg>
             </button>
+            <button type="button" class="play-btn export-all-btn" id="export-all-btn" data-action="export-all" title="Télécharge la ville, le journal, les flux privés, les transactions et les relations, tous pris au tour où le jeu est en pause" aria-label="Tout télécharger : ville, journal, flux privés, transactions et relations">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" x2="12" y1="15" y2="3"/>
+                </svg>
+                <span>Tout télécharger</span>
+            </button>
         </div>
 
         <div id="info-building-overlay" class="info-building-overlay" role="dialog" aria-modal="true" aria-labelledby="info-building-title" aria-hidden="true" inert>
@@ -269,10 +277,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-utility-pole-icon lucide-utility-pole"><path d="M12 2v20"/><path d="M2 5h20"/><path d="M3 3v2"/><path d="M7 3v2"/><path d="M17 3v2"/><path d="M21 3v2"/><path d="m19 5-7 7-7-7"/></svg>
                     </button>
                     <button type="button" id="roads-btn" class="toolbar-btn" data-group="roads" title="Routes et chemins" aria-label="Routes et chemins">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route">
-                            <circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/>
-                            <circle cx="18" cy="5" r="3"/>
-                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><line x1="8" y1="8" x2="8" y2="10"/><line x1="16" y1="8" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="16"/><line x1="16" y1="14" x2="16" y2="16"/></svg>
                     </button>
                 </div>
             </div>
@@ -423,6 +428,14 @@
                     </svg>
                   </span>
                   <span class="sr-only">Ouvrir la barre de construction</span>
+                </button>
+              </div>
+
+              <!-- The road tool, one click next to the house button (filled from the catalog by CompactToolbar.js: its id, name and icon) -->
+              <div class="legend-btns toolbar-mobile-toggle-btn">
+                <button type="button" id="toolbar-road-btn" class="toolbar-toggle-btn toolbar-tool-fab">
+                  <span class="toolbar-toggle-icon" aria-hidden="true"></span>
+                  <span class="sr-only"></span>
                 </button>
               </div>
 
@@ -824,16 +837,56 @@
                 hidden
             >
                 <div class="pop-detail-block pop-detail-labor">
-                    <div class="pop-detail-metric pop-detail-labor-head">
-                        <span class="pop-detail-labor-icon" title="Travail">
-                            <img src="/resources/textures/status/no-work_colored.png" alt="" class="unemployed-icon">
-                        </span>
-                        <span class="pop-detail-values" aria-label="Marché du travail">
-                            <span class="pop-detail-value pop-labor-value--country pop-detail-value--country">0%</span>
-                            <span class="pop-detail-value pop-labor-value--hamlet pop-detail-value--hamlet">0%</span>
-                        </span>
-                    </div>
-                    <div class="pop-detail-groups" aria-label="Marché du travail par groupe social">
+                    <!-- The whole city first: its unemployment, then why (road included), then one block per social category, each with its own percentage and the same four situations. The words of the tooltips are set by GameUI. -->
+                    <section class="pop-labor-group pop-labor-group--city" aria-label="Marché du travail, toutes catégories">
+                        <div class="pop-detail-metric pop-detail-labor-head">
+                            <span class="pop-detail-labor-icon" title="Travail">
+                                <img src="/resources/textures/status/no-work_colored.png" alt="" class="unemployed-icon">
+                            </span>
+                            <span class="pop-detail-values" aria-label="Marché du travail">
+                                <span class="pop-detail-value pop-labor-value--country pop-detail-value--country">0%</span>
+                                <span class="pop-detail-value pop-labor-value--hamlet pop-detail-value--hamlet">0%</span>
+                            </span>
+                        </div>
+                        <ul class="pop-labor-causes" aria-label="Causes du chômage et des postes vides — toutes catégories">
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoSkill">
+                                <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoPosts">
+                                <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoSkill">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoHands">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoRoad">
+                                <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </section>
+                    <section class="pop-labor-group" data-labor-group="artisans" aria-label="Artisans">
                         <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="artisans">
                             <span class="pop-detail-emoji" title="Artisans" aria-hidden="true">🔨</span>
                             <span class="pop-detail-values">
@@ -841,6 +894,45 @@
                                 <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
                             </span>
                         </div>
+                        <ul class="pop-labor-causes" aria-label="Causes du chômage et des postes vides — Artisans">
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoSkill" data-social-group="artisans">
+                                <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoPosts" data-social-group="artisans">
+                                <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoSkill" data-social-group="artisans">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoHands" data-social-group="artisans">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoRoad" data-social-group="artisans">
+                                <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </section>
+                    <section class="pop-labor-group" data-labor-group="merchants" aria-label="Commerçants">
                         <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="merchants">
                             <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">⚖️</span>
                             <span class="pop-detail-values">
@@ -848,6 +940,45 @@
                                 <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
                             </span>
                         </div>
+                        <ul class="pop-labor-causes" aria-label="Causes du chômage et des postes vides — Commerçants">
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoSkill" data-social-group="merchants">
+                                <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoPosts" data-social-group="merchants">
+                                <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoSkill" data-social-group="merchants">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoHands" data-social-group="merchants">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoRoad" data-social-group="merchants">
+                                <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </section>
+                    <section class="pop-labor-group" data-labor-group="scholars" aria-label="Savants">
                         <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="scholars">
                             <span class="pop-detail-emoji" title="Savants" aria-hidden="true">📚</span>
                             <span class="pop-detail-values">
@@ -855,45 +986,44 @@
                                 <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
                             </span>
                         </div>
-                    </div>
-                    <!-- Why people are out of work and why posts stay empty (the title of each row says it in full). -->
-                    <div class="pop-detail-groups pop-detail-causes" aria-label="Causes du chômage et du manque de main-d'œuvre">
-                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoSkill" title="Chômeurs : il y a des postes libres, mais ils n'ont pas la compétence">
-                            <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoPosts" title="Chômeurs : il n'y a aucun poste libre">
-                            <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="unemployedNoRoad" title="Chômeurs : leur maison n'a pas de route">
-                            <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="lackNoSkill" title="Postes vides : il y a des chômeurs, mais sans la compétence">
-                            <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                        <div class="pop-detail-metric pop-cause-row" data-metric="cause" data-cause="lackNoHands" title="Postes vides : plus personne de disponible">
-                            <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
-                            <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
-                        </div>
-                    </div>
+                        <ul class="pop-labor-causes" aria-label="Causes du chômage et des postes vides — Savants">
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoSkill" data-social-group="scholars">
+                                <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoPosts" data-social-group="scholars">
+                                <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoSkill" data-social-group="scholars">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoHands" data-social-group="scholars">
+                                <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                            <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoRoad" data-social-group="scholars">
+                                <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
+                                <span class="pop-detail-values">
+                                    <span class="pop-detail-value pop-detail-value--country">0</span>
+                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+                                </span>
+                            </li>
+                        </ul>
+                    </section>
                 </div>
             </section>
             <section
@@ -1005,6 +1135,24 @@
             </button>
             <button
                 type="button"
+                id="tutorial-history-btn"
+                class="info-box tutorial-box stats-buttons"
+                title="Historique du tutoriel"
+                aria-label="Ouvrir l'historique du tutoriel"
+                hidden
+            >
+                <article class="budget-box">
+                    <span class="budget-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-scroll-text">
+                            <path d="M15 12h-5"/><path d="M15 8h-5"/>
+                            <path d="M19 17V5a2 2 0 0 0-2-2H4"/>
+                            <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>
+                        </svg>
+                    </span>
+                </article>
+            </button>
+            <button
+                type="button"
                 id="tutorial-btn"
                 data-toolid="tutorial"
                 class="info-box tutorial-box stats-buttons"
@@ -1047,12 +1195,71 @@
             aria-hidden="true"
             hidden
         >
+            <!-- Each filter is its own switch (not a radio): any of them can be on at once, and one that is on is coloured. Ids and labels: MAP_FILTERS. -->
             <button
                 type="button"
-                id="filter-production-btn"
-                class="info-box filter-production-box stats-buttons filter-toggle active"
-                title="Icônes de production (chaîne alimentaire)"
-                aria-label="Afficher ou masquer les icônes de production"
+                id="filter-alerts-btn"
+                class="info-box stats-buttons filter-toggle active"
+                data-map-filter="alerts"
+                data-label="Alertes"
+                aria-label="Afficher ou masquer les alertes (sans travailleurs, sans ressource, matière manquante…)"
+                aria-pressed="true"
+            >
+                <article class="budget-box">
+                    <span class="budget-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-triangle-alert">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/>
+                            <path d="M12 9v4"/>
+                            <path d="M12 17h.01"/>
+                        </svg>
+                    </span>
+                </article>
+            </button>
+            <button
+                type="button"
+                id="filter-activities-btn"
+                class="info-box stats-buttons filter-toggle"
+                data-map-filter="activities"
+                data-label="Activités des maisons"
+                aria-label="Afficher ou masquer les icônes des activités des maisons (matière manquante, vente, récolte…)"
+                aria-pressed="false"
+            >
+                <article class="budget-box">
+                    <span class="budget-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-house">
+                            <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
+                            <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        </svg>
+                    </span>
+                </article>
+            </button>
+            <button
+                type="button"
+                id="filter-exchanges-btn"
+                class="info-box stats-buttons filter-toggle active"
+                data-map-filter="exchanges"
+                data-label="Échanges"
+                aria-label="Afficher ou masquer les icônes d'échanges (achat, collecte, vente à l'entrepôt)"
+                aria-pressed="true"
+            >
+                <article class="budget-box">
+                    <span class="budget-icon" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-right">
+                            <path d="M8 3 4 7l4 4"/>
+                            <path d="M4 7h16"/>
+                            <path d="m16 21 4-4-4-4"/>
+                            <path d="M20 17H4"/>
+                        </svg>
+                    </span>
+                </article>
+            </button>
+            <button
+                type="button"
+                id="filter-cycle-btn"
+                class="info-box stats-buttons filter-toggle active"
+                data-map-filter="cycle"
+                data-label="Cycle de production"
+                aria-label="Afficher ou masquer les icônes du cycle de production (jachère, croissance, récolte, vente)"
                 aria-pressed="true"
             >
                 <article class="budget-box">
@@ -1171,6 +1378,12 @@
                                     <div class="display-funds"></div>
                                 </article>
                             </section>
+                        </div>
+
+                        <!-- The tutorial's objective counter, under the season and date (TutorialObjective.js): tutorial games only -->
+                        <div id="tutorial-objective" class="hud-bar__row tutorial-objective" role="status" aria-live="polite" hidden>
+                            <span class="tutorial-objective__label"></span>
+                            <strong class="tutorial-objective__count"></strong>
                         </div>
 
                         <div
@@ -2254,8 +2467,14 @@
                                         <path d="m14.91 7.79-3.64-3.64a1.4 1.4 0 0 0-3.71 1.47l2.35 2.35"/>
                                     </svg>
                                 </div>
-                                <h3 class="work-header-title">Allocation de la Main-d'œuvre <span id="work-hamlet-label" class="work-hamlet-label"></span></h3>
+                                <h3 class="work-header-title">Allocation de la Main-d'œuvre</h3>
                             </div>
+
+                            <!-- The priorities below are those of the hamlet the player is in: to set another hamlet's, go to that hamlet. -->
+                            <p class="work-hamlet-banner" role="status">
+                                Hameau : <strong id="work-hamlet-label" class="work-hamlet-label"></strong>
+                                <span class="work-hamlet-banner__hint">— ces priorités ne valent que pour ce hameau ; pour régler un autre hameau, rendez-vous dans ce hameau.</span>
+                            </p>
 
                             <div class="work-group-tabs" id="work-group-tabs" role="tablist" aria-label="Groupes sociaux">
                                 <!-- Tabs are generated dynamically, one per social group + "Commun" -->
@@ -3134,6 +3353,29 @@
     </div>
 </div>
 
+<!-- Tutorial history: the dépêches the tutorial has given, readable again (opened by #tutorial-history-btn, tutorial games only) -->
+<div
+    id="tutorial-history-modal"
+    class="news-event-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tutorial-history-title"
+    aria-hidden="true"
+    inert
+    hidden
+>
+    <div class="news-event-modal-card">
+        <div class="news-event-modal-header">
+            <h3 id="tutorial-history-title">Historique du tutoriel</h3>
+        </div>
+        <div class="news-event-modal-content" id="tutorial-history-list"></div>
+        <div class="news-event-modal-footer">
+            <button type="button" class="modal-btn" id="tutorial-history-back" hidden>Retour à la liste</button>
+            <button type="button" class="modal-btn modal-btn-primary" id="tutorial-history-close">Fermer</button>
+        </div>
+    </div>
+</div>
+
 <!-- News event modal (hidden until opened — avoids FOUC before CSS) -->
 <div
     id="news-event-modal"
@@ -3152,6 +3394,11 @@
         </div>
         <div class="news-event-modal-content">
             <p class="news-event-modal-body" id="news-event-body"></p>
+            <div class="news-event-illustrations" id="news-event-illustrations" hidden></div>
+            <img class="news-event-image" id="news-event-image" alt="" hidden>
+            <p class="news-event-image-caption" id="news-event-image-caption" hidden></p>
+            <div class="news-event-legend" id="news-event-legend" hidden></div>
+            <div class="news-event-choices" id="news-event-choices" hidden></div>
             <div class="news-event-paywall" id="news-event-paywall" hidden>
                 <div class="news-event-paywall-actions">
                     <button type="button" class="modal-btn modal-btn-primary" id="news-event-pay-btn" disabled>Payer</button>

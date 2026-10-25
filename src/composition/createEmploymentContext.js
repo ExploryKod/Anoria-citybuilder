@@ -1,7 +1,7 @@
 import { DexieEmploymentBuildingRepository } from '../contexts/employment/infrastructure/dexie/DexieEmploymentBuildingRepository.js';
 import { DistributeCityWorkers } from '../contexts/employment/application/commands/DistributeCityWorkers.js';
 import { GetCityEmploymentSummary } from '../contexts/employment/application/queries/GetCityEmploymentSummary.js';
-import { LocalStorageSkillPriorityRepository } from '../contexts/employment/infrastructure/browser/LocalStorageSkillPriorityRepository.js';
+import { DexieHamletSkillPriorityRepository } from '../contexts/employment/infrastructure/dexie/DexieHamletSkillPriorityRepository.js';
 import {
   mergeTabPriorities,
   resolveSkillPriorityValue,
@@ -27,11 +27,12 @@ import {
  * @param {object} [deps]
  * @param {import('../contexts/employment/application/ports/EmploymentBuildingRepository.js').EmploymentBuildingRepository} [deps.employmentBuildingRepository]
  * @param {(house: { type?: string, level?: number }, skillKey: string, requiredLevel: number) => boolean} [deps.citizenProvidesSkillAtLevel]
+ * @param {{ preload: (hamletId: string) => Promise<void>, loadUserPriorities: () => Record<string, number>, saveUserPriorities: (priorities: Record<string, number>) => void }} [deps.skillPriorityRepository]
  */
-export function createEmploymentContext({ employmentBuildingRepository, citizenProvidesSkillAtLevel } = {}) {
+export function createEmploymentContext({ employmentBuildingRepository, citizenProvidesSkillAtLevel, skillPriorityRepository: injectedSkillPriorityRepository } = {}) {
   const employmentBuildingRepositoryImpl =
     employmentBuildingRepository ?? new DexieEmploymentBuildingRepository();
-  const skillPriorityRepository = new LocalStorageSkillPriorityRepository();
+  const skillPriorityRepository = injectedSkillPriorityRepository ?? new DexieHamletSkillPriorityRepository();
   const distributeCityWorkersCommand = new DistributeCityWorkers(
     employmentBuildingRepositoryImpl,
     { citizenProvidesSkillAtLevel },
@@ -67,6 +68,15 @@ export function createEmploymentContext({ employmentBuildingRepository, citizenP
         kind: tabId === SHARED_SKILL_TAB_ID ? 'shared' : 'group',
         skillIds: [...skillsForTab(tabId)],
       }));
+    },
+
+    /**
+     * The skill priorities of a hamlet, read into memory: the player sets them hamlet by hamlet, so this runs when a hamlet becomes the active one
+     * (boot, travel) before anything asks for them.
+     * @param {string} hamletId
+     */
+    async loadSkillPriorities(hamletId) {
+      await skillPriorityRepository.preload(hamletId);
     },
 
     /** @param {string} skillId */
@@ -130,6 +140,13 @@ export function createEmploymentContext({ employmentBuildingRepository, citizenP
     async distributeCityWorkers(params = {}) {
       const result = await distributeCityWorkersCommand.execute(params);
       lastLabourMarket = { rows: result.labourMarket };
+      if (import.meta.env?.DEV) {
+        const { readMs, computeMs, writeMs, laborSources, workplaces, savedWorkplaces } = result.timings;
+        console.info(
+          `[tick-perf] employment.distribute read=${readMs.toFixed(1)}ms compute=${computeMs.toFixed(1)}ms write=${writeMs.toFixed(1)}ms`
+            + ` houses=${laborSources} workplaces=${workplaces} saved=${savedWorkplaces}`,
+        );
+      }
       return result;
     },
 

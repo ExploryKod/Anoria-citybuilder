@@ -16,6 +16,12 @@ export const BEHAVIOR_MODE = Object.freeze({
   RANGE: 'range',
 });
 
+/**
+ * The longest side, in tiles, of the square the eraser can draw while playing. The player is asked about what the square covers before it is demolished
+ * (see BuildingNotifications.js `confirmDemolition`): a bounded square keeps that question short and a stray drag from covering the city. First value, to tune by playing.
+ */
+export const ERASE_SQUARE_MAX_SIDE = 5;
+
 export const SELECT_TOOL_ID = 'select-object';
 export const ERASE_TOOL_ID = 'bulldoze';
 export const RANGE_TOOL_ID = 'show-range';

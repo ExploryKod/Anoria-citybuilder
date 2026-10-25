@@ -1,6 +1,7 @@
 import { labelForNewsSource, labelForNewsCategory } from '../../../../composition/intelligenceCatalog.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { listHamlets } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { richTextHtml } from '../../intelligence/NewsEventModal.js';
 
 const TRASH_ICON = `
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -103,7 +104,7 @@ export class ArchivesSectionPresenter {
                 aria-label="Supprimer la dépêche ${escapeHtml(item.title)}"
               >${TRASH_ICON}</button>
             </header>
-            <p class="archives-news-item-body">${escapeHtml(item.body)}</p>
+            <p class="archives-news-item-body">${richTextHtml(item.body)}</p>
           </article>
         `;
       })

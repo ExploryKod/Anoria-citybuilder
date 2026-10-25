@@ -65,6 +65,7 @@ import { bindObjectivesHistoryDeps } from '../onboarding/objectives-history.js';
 import { initObjectivesPanel } from '../onboarding/ObjectivesPanel.js';
 import loaderManager from '../shell/LoaderManager.js';
 import { initTutorialPanel } from '../onboarding/TutorialPanel.js';
+import { initTutorialHistory } from '../onboarding/TutorialHistory.js';
 import { activateBuildToolButton } from '../tools/ToolPanel.js';
 
 function persistCitySize(size) {
@@ -292,6 +293,7 @@ export async function bootstrapGameSession(assetManager) {
   initSupplyTraceabilityPopup({ supply: sessionApi.supply });
 
   if (sessionApi.intelligence) {
+    initTutorialHistory({ intelligence: sessionApi.intelligence, popupManager });
     initNewsEventModal({
       intelligence: sessionApi.intelligence,
       getGameTime,

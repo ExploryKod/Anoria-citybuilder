@@ -92,12 +92,30 @@ export class DexieSupplyTraceabilityRepository {
     return count > 0;
   }
 
+  /**
+   * The rows of the active hamlet for one month, of the given transaction types. They are read through the month's index: only that month's rows are touched, never the
+   * whole table, so a month's settlement does not slow down as the game grows old.
+   * @param {number} year
+   * @param {number} monthIndex
+   * @param {ReadonlyArray<string>} types
+   * @returns {Promise<Array<object>>}
+   */
+  async #rowsOfMonth(year, monthIndex, types) {
+    const hamletId = requireActiveHamletId();
+    return this.db.supplyTraceability
+      .where('[hamletId+year+month]')
+      .equals([hamletId, year, monthIndex])
+      .filter((row) => types.includes(row.transactionType))
+      .toArray();
+  }
+
   async recordEconomyMovement({ turn, monthIndex, year, kind, amount, buildingId, counterpartyId, businessKey }) {
     const hamletId = requireActiveHamletId();
+    // The business key is indexed: this check is a lookup, not a pass over every movement written so far (it runs for each movement of a month's settlement).
     const existing = await this.db.supplyTraceability
-      .where('transactionType')
-      .equals(kind)
-      .filter((row) => row.hamletId === hamletId && row.businessKey === businessKey)
+      .where('businessKey')
+      .equals(businessKey)
+      .filter((row) => row.hamletId === hamletId && row.transactionType === kind)
       .first();
     if (existing) return;
     await this.db.supplyTraceability.add({
@@ -129,13 +147,8 @@ export class DexieSupplyTraceabilityRepository {
    * @returns {Promise<Array<{ buildingId: string, houseId: string, service: string, units: number }>>}
    */
   async sumServiceFlows(year, monthIndex) {
-    const hamletId = requireActiveHamletId();
     const services = getServiceCategories();
-    const rows = await this.db.supplyTraceability
-      .where('transactionType')
-      .equals('distributor_to_consumer')
-      .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex && services.includes(row.foodType))
-      .toArray();
+    const rows = (await this.#rowsOfMonth(year, monthIndex, ['distributor_to_consumer'])).filter((row) => services.includes(row.foodType));
     const byFlow = new Map();
     for (const row of rows) {
       if (!row.fromId) throw new Error(`[traceability] service delivery ${row.id} names no company`);
@@ -160,14 +173,9 @@ export class DexieSupplyTraceabilityRepository {
    * @returns {Promise<Array<{ sellerId: string, buyerId: string | null, amountHT: number }>>}
    */
   async sumGoodsFlowsByPair(year, monthIndex) {
-    const hamletId = requireActiveHamletId();
     const goods = getGoodCategories();
     // The goods a distributor sells to the houses are not here: each delivery is paid when it is made (RecordConsumerPurchases).
-    const rows = await this.db.supplyTraceability
-      .where('transactionType')
-      .anyOf(['source_to_hub', 'source_to_distributor', 'hub_to_building'])
-      .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex && goods.includes(row.foodType))
-      .toArray();
+    const rows = (await this.#rowsOfMonth(year, monthIndex, ['source_to_hub', 'source_to_distributor', 'hub_to_building'])).filter((row) => goods.includes(row.foodType));
     const pairs = new Map();
     for (const row of rows) {
       if (!row.fromId) throw new Error(`[traceability] goods transfer ${row.id} names no seller`);
@@ -224,12 +232,7 @@ export class DexieSupplyTraceabilityRepository {
    * @returns {Promise<Map<string, number>>} seller id → units
    */
   async sumUnitsSoldBySeller(year, monthIndex) {
-    const hamletId = requireActiveHamletId();
-    const rows = await this.db.supplyTraceability
-      .where('transactionType')
-      .anyOf(['source_to_hub', 'source_to_distributor', 'hub_to_building', 'distributor_to_consumer'])
-      .filter((row) => row.hamletId === hamletId && row.year === year && row.month === monthIndex)
-      .toArray();
+    const rows = await this.#rowsOfMonth(year, monthIndex, ['source_to_hub', 'source_to_distributor', 'hub_to_building', 'distributor_to_consumer']);
     const units = new Map();
     for (const row of rows) {
       if (!row.fromId) throw new Error(`[traceability] transfer ${row.id} names no seller`);
@@ -298,12 +301,7 @@ export class DexieSupplyTraceabilityRepository {
    * @returns {Promise<Map<string, Record<string, number>>>} building id → good → units lost
    */
   async sumSpoilageByBuilding(year, monthIndex) {
-    const hamletId = requireActiveHamletId();
-    const rows = await this.db.supplyTraceability
-      .where('transactionType')
-      .equals('game_event')
-      .filter((row) => row.event === 'goods_spoiled' && row.hamletId === hamletId && row.year === year && row.month === monthIndex)
-      .toArray();
+    const rows = (await this.#rowsOfMonth(year, monthIndex, ['game_event'])).filter((row) => row.event === 'goods_spoiled');
     const lost = new Map();
     for (const row of rows) {
       if (!row.details?.good) throw new Error(`[traceability] spoilage ${row.id} names no good`);

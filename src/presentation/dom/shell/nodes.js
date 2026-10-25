@@ -88,21 +88,29 @@ export const popGroupPopNodes = queryGroupMetricNodes('pop');
 export const popGroupWorkerNodes = queryGroupMetricNodes('workers');
 export const popGroupLaborNodes = queryGroupMetricNodes('labor');
 
-const LABOR_CAUSES = ['unemployedNoSkill', 'unemployedNoPosts', 'unemployedNoRoad', 'lackNoSkill', 'lackNoHands'];
+// The situations the whole city and every class can be in: out of work for want of a skill, of a post or of a road, and posts empty for want of a skill or of hands.
+const LABOR_CAUSES = ['unemployedNoSkill', 'unemployedNoPosts', 'lackNoSkill', 'lackNoHands', 'unemployedNoRoad'];
 
-/** The rows that say why people are out of work and why posts are empty, by cause (see computeCityEmploymentSummary.js). */
-export const popLaborCauseNodes = Object.fromEntries(
-    LABOR_CAUSES.map((cause) => {
-        const row = document.querySelector(`${popHudRoot} [data-metric="cause"][data-cause="${cause}"]`);
-        return [
-            cause,
-            {
-                row,
-                country: row?.querySelector('.pop-detail-value--country') ?? null,
-                hamlet: row?.querySelector('.pop-detail-value--hamlet') ?? null,
-            },
-        ];
-    })
+/** @param {string} cause @param {string | null} group the social category, or null for the city's own figure */
+function queryCauseNodes(cause, group) {
+    const scope = group === null ? ':not([data-social-group])' : `[data-social-group="${group}"]`;
+    const row = document.querySelector(`${popHudRoot} [data-metric="cause"][data-cause="${cause}"]${scope}`);
+    return {
+        row,
+        country: row?.querySelector('.pop-detail-value--country') ?? null,
+        hamlet: row?.querySelector('.pop-detail-value--hamlet') ?? null,
+    };
+}
+
+/** The cells that say why people are out of work and why posts are empty, by cause, for the whole city (see computeCityEmploymentSummary.js). */
+export const popLaborCauseNodes = Object.fromEntries(LABOR_CAUSES.map((cause) => [cause, queryCauseNodes(cause, null)]));
+
+/** The same cells under each class's own percentage, by class then cause. */
+export const popGroupLaborCauseNodes = Object.fromEntries(
+    POP_SOCIAL_GROUPS.filter((group) => group !== 'administrators').map((group) => [
+        group,
+        Object.fromEntries(LABOR_CAUSES.map((cause) => [cause, queryCauseNodes(cause, group)])),
+    ])
 );
 
 // Goods the citizens eat that a hub stores, straight from the catalog — no good is named here.
@@ -173,6 +181,7 @@ export const pauseOverlay = document.querySelector('#pause-overlay');
 
 export const pauseButton = document.getElementById('pause-btn');
 export const playButton = document.getElementById('play-btn');
+export const exportAllButton = document.getElementById('export-all-btn');
 export const replayButton = document.getElementById('play-again-btn');
 export const resetButton = document.getElementById('replay-btn');
 

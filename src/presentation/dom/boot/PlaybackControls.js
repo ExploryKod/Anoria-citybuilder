@@ -1,4 +1,5 @@
 import {
+  exportAllButton,
   infoObjectCloseBtn,
   infoObjectOverlay,
   pauseButton,
@@ -9,6 +10,31 @@ import {
 } from '../shell/nodes.js';
 import { closeBuildingInfoOverlay } from '../info/layout/buildingInfoLayout.js';
 import { performReset } from './ResetGameFlow.js';
+import { exportCityToJSON } from '../carte-ville/CarteVillePanel.js';
+import { exportJournalToJSON } from '../compta/journal/JournalPanel.js';
+import { exportTransactionsToJSON } from '../admin/supply-traceability/SupplyTraceabilityPanel.js';
+import { exportRelationsToJSON } from '../admin/commerce/CommerceSectionPresenter.js';
+import { getSessionGameTime, getSessionService } from '../../../composition/sessionRuntime.js';
+
+/**
+ * Downloads, one after the other, the five files a starter city is made of (the city, the journal of the hamlet, the flux of the companies and
+ * the houses, the supply transactions, the trade relations), all read at the turn the game is paused on. If the turn moves while they are
+ * written (a day that was still running when the pause was pressed), the files do not belong together: the player is told, nothing is passed off as a set.
+ */
+async function downloadEveryExport() {
+  const trade = getSessionService('trade');
+  if (!trade) throw new Error('[export] the trade service is not bound: the relations cannot be exported');
+  const turnAtStart = getSessionGameTime();
+  await exportCityToJSON();
+  await exportJournalToJSON('city');
+  await exportJournalToJSON('private');
+  await exportTransactionsToJSON();
+  await exportRelationsToJSON(trade);
+  const turnAtEnd = getSessionGameTime();
+  if (turnAtEnd !== turnAtStart) {
+    throw new Error(`[export] the turn moved from ${turnAtStart} to ${turnAtEnd} while the files were written: they are not one moment of the game, download them again`);
+  }
+}
 
 /**
  * @param {{
@@ -63,6 +89,18 @@ export function initPlaybackControls(controlDeps = {}) {
     pauseOverlay.setAttribute('aria-hidden', 'false');
     popupManager?.forceOpenPopup?.('pause-overlay');
     pauseGame();
+  });
+
+  exportAllButton.addEventListener('click', () => {
+    exportAllButton.disabled = true;
+    downloadEveryExport()
+      .catch((error) => {
+        console.error('[export] the files could not all be downloaded:', error);
+        alert(error.message);
+      })
+      .finally(() => {
+        exportAllButton.disabled = false;
+      });
   });
 
   replayButton.addEventListener('click', () => {

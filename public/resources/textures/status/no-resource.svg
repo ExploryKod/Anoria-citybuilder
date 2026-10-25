@@ -1,5 +1,7 @@
 <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
-<rect width="64" height="64" rx="12" ry="12" fill="#6D4C2C"/>
-<path fill="#D4BC8C" d="M32 10 18 30h8L14 46h14v8h8v-8h14L38 30h8z"/>
-<path stroke="#e02020" stroke-width="7" stroke-linecap="round" d="M14 14 50 50M50 14 14 50"/>
+<!-- No natural resource left in range: a tree, and the red "missing" badge (the same badge as "raw material missing"). -->
+<rect width="64" height="64" rx="12" ry="12" fill="#3F5A2C"/>
+<path fill="#C7E0A0" transform="translate(-3 -3) scale(0.85)" d="M32 10 18 30h8L14 46h14v8h8v-8h14L38 30h8z"/>
+<circle cx="47" cy="47" r="15" fill="#e02020" stroke="#fff" stroke-width="3"/>
+<path stroke="#fff" stroke-width="4.5" stroke-linecap="round" d="M41 41l12 12M53 41L41 53"/>
 </svg>

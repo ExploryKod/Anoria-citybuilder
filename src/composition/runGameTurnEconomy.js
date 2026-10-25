@@ -65,13 +65,21 @@ export async function processGameTurnBudget({ city, buildings, time, totalPop })
   });
   // The month's accounts are closed: inhabitants leave the houses whose distress the catalog names (a rent they cannot pay, ...).
   if (result?.monthSettled === true) {
+    const afterMonthStartedAt = performance.now();
     const timeInfo = resolveGetTimeInfo()(time);
+    const rentArrearsMonths = await getOrCreateAccountingContext().getRentArrearsMonths();
+    const rentArrearsMs = performance.now() - afterMonthStartedAt;
     await getOrCreateHousingContext().runMonthlyDepartures({
       monthKey: timeInfo.year * MONTHS_PER_YEAR + timeInfo.monthIndex,
-      signals: { rentUnpaid: await getOrCreateAccountingContext().getRentArrearsMonths() },
+      signals: { rentUnpaid: rentArrearsMonths },
     });
+    const departuresMs = performance.now() - afterMonthStartedAt - rentArrearsMs;
     // The houses left empty owe nothing any more: the owner knows it will not be paid (no prosecution in the game).
     await getOrCreateAccountingContext().writeOffVacantRentDebts({ time });
+    if (import.meta.env?.DEV) {
+      const steps = { ...result.stepMs, rentArrears: rentArrearsMs, departures: departuresMs, writeOffRents: performance.now() - afterMonthStartedAt - rentArrearsMs - departuresMs };
+      console.info(`[tick-perf] month-end day=${time} ${Object.entries(steps).map(([step, ms]) => `${step}=${ms.toFixed(1)}`).join(' ')}`);
+    }
   }
   // November without a tax collector: a dépêche says so, once for the year (the modal shows it at the end of the tick).
   if (result?.citizenTaxUncollectedYear != null) {

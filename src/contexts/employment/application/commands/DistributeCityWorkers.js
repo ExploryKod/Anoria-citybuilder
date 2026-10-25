@@ -71,6 +71,7 @@ export class DistributeCityWorkers {
    * }>}
    */
   async execute({ skillPriorities = {} } = {}) {
+    const startedAt = performance.now();
     await this.employmentBuildingRepository.resetWorkplaceWorkers();
 
     const laborSources = (await this.employmentBuildingRepository.listLaborSources()).filter(
@@ -79,6 +80,8 @@ export class DistributeCityWorkers {
     const workplaces = (await this.employmentBuildingRepository.listWorkplaces()).filter(
       (b) => isEligibleWorkplace(b),
     );
+
+    const readDoneAt = performance.now();
 
     // A house's whole worker pool is hireable — civil servants were removed (2026-10-10, "suppress it for
     // now"): nothing is set aside before hiring anymore (see computeHouseholdEmploymentStatus).
@@ -159,12 +162,16 @@ export class DistributeCityWorkers {
       }
     }
 
+    const writeStartedAt = performance.now();
+    let savedWorkplaces = 0;
     for (const [buildingId, workers] of workerCountById) {
       if (workers > 0) {
         await this.employmentBuildingRepository.saveWorkers(buildingId, workers);
         await this.employmentBuildingRepository.saveWorkerSources(buildingId, sourcesById.get(buildingId) ?? {});
+        savedWorkplaces += 1;
       }
     }
+    const writeDoneAt = performance.now();
 
     // The labour market this pass left, one reading per (skill, level) the workplaces ask for: the jobs they need, the ones filled, the
     // vacancies, and the qualified citizens still without a job. The wages are settled on it (accounting's AdjustWageRates).
@@ -179,6 +186,19 @@ export class DistributeCityWorkers {
       }
     }
 
-    return { availableWorkers: totalAvailableWorkers, assignments: allAssignments, labourMarket };
+    const finishedAt = performance.now();
+
+    // Measurement only (milliseconds): what the pass spent reading the repository, computing, and writing it back, and on how much.
+    // `computeMs` is the allocation up to the writes plus the labour-market reading after them.
+    const timings = {
+      readMs: readDoneAt - startedAt,
+      computeMs: writeStartedAt - readDoneAt + (finishedAt - writeDoneAt),
+      writeMs: writeDoneAt - writeStartedAt,
+      laborSources: laborSources.length,
+      workplaces: workplaces.length,
+      savedWorkplaces,
+    };
+
+    return { availableWorkers: totalAvailableWorkers, assignments: allAssignments, labourMarket, timings };
   }
 }

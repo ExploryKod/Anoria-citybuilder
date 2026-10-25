@@ -33,6 +33,142 @@ const NEWS_ACTIONS = Object.freeze({
   },
 });
 
+/**
+ * The icons a dépêche's `legend` can show: each key names a button of the interface, whose own icon is copied (the dépêche shows what the player will
+ * find on screen, never a second drawing). A key not listed here fails loudly.
+ */
+const NEWS_LEGEND_ICONS = Object.freeze({
+  'rail-population': '#hud-pop-tab-details',
+  'rail-employment': '#hud-pop-tab-emploi',
+  'rail-city-stocks': '#hud-pop-tab-ressources-ville',
+  'rail-nature': '#hud-pop-tab-ressources-nature',
+});
+
+/** @param {string} key @returns {HTMLElement} a copy of the icon of the interface button the key names */
+function legendIconOf(key) {
+  const selector = NEWS_LEGEND_ICONS[key];
+  if (!selector) throw new Error(`[news] a dépêche's legend names the icon "${key}", which the modal does not know (${Object.keys(NEWS_LEGEND_ICONS).join(', ')})`);
+  const source = document.querySelector(selector);
+  if (!source) throw new Error(`[news] the legend icon "${key}" points at ${selector}, which is not on the page`);
+  const icon = document.createElement('span');
+  icon.className = 'news-event-legend-icon';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = source.innerHTML;
+  return icon;
+}
+
+/**
+ * A picture of a dépêche shown large, over the dépêche: a click anywhere, or Escape, puts it away. Escape closes only this, not the dépêche behind it.
+ * @param {{ src: string, alt: string, caption?: string }} image
+ */
+export function openImageZoom(image) {
+  // A native modal <dialog>: it opens in the browser's top layer, above every other layer whatever their z-index or the state of the page behind it
+  // (the dépêche's modal, the inert game window). Its look is set here too, so it shows even before the stylesheet says anything.
+  const dialog = document.createElement('dialog');
+  dialog.className = 'news-image-zoom';
+  dialog.setAttribute('aria-label', image.alt);
+  Object.assign(dialog.style, { padding: '0', border: 'none', background: 'transparent', maxWidth: '100vw', maxHeight: '100vh', overflow: 'visible' });
+  const picture = document.createElement('img');
+  picture.src = image.src;
+  picture.alt = image.alt;
+  // Enlarged, not only allowed to grow: a screenshot is small, so it is given at least 640px (or the whole width of a phone), within what the screen holds.
+  Object.assign(picture.style, {
+    display: 'block',
+    width: 'auto',
+    height: 'auto',
+    minWidth: 'min(96vw, 640px)',
+    maxWidth: '96vw',
+    maxHeight: '92vh',
+    objectFit: 'contain',
+    borderRadius: '10px',
+    cursor: 'zoom-out',
+  });
+  dialog.append(picture);
+  const onKey = (event) => {
+    if (event.key !== 'Escape') return;
+    event.stopPropagation();
+    event.preventDefault();
+    dialog.close();
+  };
+  dialog.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('close', () => {
+    document.removeEventListener('keydown', onKey, true);
+    dialog.remove();
+  });
+  document.addEventListener('keydown', onKey, true);
+  document.body.append(dialog);
+  dialog.showModal();
+}
+
+/**
+ * Makes a picture of a dépêche open large when clicked (or Enter / Space on it): a screenshot is too small to read in the card.
+ * @param {HTMLElement} element the `<img>`
+ * @param {{ src: string, alt: string, caption?: string }} image
+ */
+export function makeImageZoomable(element, image) {
+  element.classList.add('news-event-image--zoomable');
+  element.setAttribute('role', 'button');
+  element.tabIndex = 0;
+  element.title = 'Cliquer pour agrandir';
+  // Properties, not listeners: the same element is drawn again for each dépêche, and must hold only the picture it shows now.
+  element.onclick = () => openImageZoom(image);
+  element.onkeydown = (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openImageZoom(image);
+  };
+}
+
+const HTML_ESCAPES = Object.freeze({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' });
+
+/**
+ * A dépêche's text as the catalog writes it: a blank line starts a paragraph, `**…**` is bold, and lines starting with `- ` make a list (aligned left,
+ * under the line of the paragraph that introduces it). Everything else is plain text (escaped), so the result is safe to set as HTML.
+ * @param {string} text
+ * @returns {string}
+ */
+export function richTextHtml(text) {
+  const bold = (line) => line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  const escaped = String(text).replace(/[&<>"']/g, (character) => HTML_ESCAPES[character]);
+  return escaped
+    .split(/\n{2,}/)
+    .map((paragraph) => {
+      const lines = paragraph.split('\n');
+      const items = lines.filter((line) => line.startsWith('- '));
+      const sentences = lines.filter((line) => !line.startsWith('- '));
+      const sentence = sentences.length > 0 ? `<span class="news-event-paragraph">${bold(sentences.join('\n'))}</span>` : '';
+      const list = items.length > 0 ? `<ul class="news-event-list">${items.map((line) => `<li>${bold(line.slice(2))}</li>`).join('')}</ul>` : '';
+      return sentence + list;
+    })
+    .join('');
+}
+
+/**
+ * One picture of a dépêche's `illustrations`, with its caption: a building id (its icon and name from the catalog), or `{ src, label }` for a picture
+ * of the tutorial's own (the no-work sprite).
+ * @param {string | { src: string, label: string }} entry
+ * @returns {HTMLElement}
+ */
+export function illustrationFigure(entry) {
+  const figure = document.createElement('figure');
+  figure.className = 'news-event-illustration';
+  const picture = document.createElement('span');
+  picture.className = 'news-event-illustration-picture';
+  picture.setAttribute('aria-hidden', 'true');
+  const caption = document.createElement('figcaption');
+  if (typeof entry === 'string') {
+    picture.innerHTML = buildingIconHtml(entry);
+    caption.textContent = buildingName(entry);
+  } else {
+    const image = document.createElement('img');
+    image.src = entry.src;
+    picture.append(image);
+    caption.textContent = entry.label;
+  }
+  figure.append(picture, caption);
+  return figure;
+}
+
 /** @param {{ kind: string }} action */
 function newsActionOf(action) {
   const known = NEWS_ACTIONS[action.kind];
@@ -51,6 +187,17 @@ let closeWaiters = [];
 
 /** True while the dépêche modal is open (set when it opens, cleared when it closes). */
 let newsModalOpen = false;
+
+/** @type {Map<string, () => void>} */
+const closeListeners = new Map();
+
+/**
+ * Calls back each time the dépêche modal has been closed (what the player does next may depend on the dépêche they just got past). One listener per key:
+ * registering the same key again replaces it.
+ */
+export function onNewsModalClosed(key, listener) {
+  closeListeners.set(key, listener);
+}
 
 /**
  * Résolu quand la modale des dépêches est refermée (tout de suite si elle est fermée).
@@ -89,6 +236,11 @@ export function initNewsEventModal(deps) {
   const titleEl = document.getElementById('news-event-title');
   const metaEl = document.getElementById('news-event-meta');
   const bodyEl = document.getElementById('news-event-body');
+  const illustrationsEl = document.getElementById('news-event-illustrations');
+  const imageEl = document.getElementById('news-event-image');
+  const imageCaptionEl = document.getElementById('news-event-image-caption');
+  const choicesEl = document.getElementById('news-event-choices');
+  const legendEl = document.getElementById('news-event-legend');
   const paywallEl = document.getElementById('news-event-paywall');
   const payBtn = document.getElementById('news-event-pay-btn');
   const skipBtn = document.getElementById('news-event-skip-btn');
@@ -104,6 +256,9 @@ export function initNewsEventModal(deps) {
   let queue = [];
   let index = 0;
   let bodyRevealed = false;
+  /** The page of the dépêche being read, once the reader has opened one of its pages (null: the dépêche's own first page), and the dépêche it belongs to. */
+  let openedPage = null;
+  let openedPageOf = null;
 
   function blurModalFocus() {
     const active = document.activeElement;
@@ -125,10 +280,13 @@ export function initNewsEventModal(deps) {
     queue = [];
     index = 0;
     bodyRevealed = false;
+    openedPage = null;
+    openedPageOf = null;
     newsModalOpen = false;
     const waiters = closeWaiters;
     closeWaiters = [];
     for (const resolve of waiters) resolve();
+    for (const listener of closeListeners.values()) listener();
   }
 
   function setModalOpen() {
@@ -143,6 +301,28 @@ export function initNewsEventModal(deps) {
 
   function currentItem() {
     return queue[index] ?? null;
+  }
+
+  /** What is on screen: the dépêche's first page (itself) or the page the reader opened. Same shape: { body, action, illustrations, image, choices, next }. */
+  function currentView() {
+    const item = currentItem();
+    if (!item) return null;
+    return openedPageOf === item.id && openedPage ? openedPage : item;
+  }
+
+  /** A blocking dépêche whose button still has something to offer (what it asks is not done): it cannot be closed. */
+  function isBlocked(item, action) {
+    return item?.blocking === true && Boolean(action);
+  }
+
+  /** @type {Map<string, number>} per blocking dépêche, the turn its button was pressed: it comes back a couple of turns later if still not done. */
+  const blockingPressedAt = new Map();
+  const BLOCKING_COMES_BACK_AFTER_TURNS = 2;
+
+  function openPage(page) {
+    openedPage = page;
+    openedPageOf = currentItem()?.id ?? null;
+    void render();
   }
 
   function formatTurnLabel(turn) {
@@ -165,6 +345,7 @@ export function initNewsEventModal(deps) {
       return;
     }
 
+    const view = currentView();
     const needsPay = item.revelation === 'unpaid' && !bodyRevealed;
     const hasNext = index < queue.length - 1;
     const showBody = item.revelation === 'free' || item.revelation === 'revealed' || bodyRevealed;
@@ -179,9 +360,49 @@ export function initNewsEventModal(deps) {
       });
     }
     if (bodyEl) {
-      bodyEl.textContent = showBody
-        ? item.body
-        : item.teaser || 'Une dépêche est disponible contre contribution.';
+      bodyEl.innerHTML = richTextHtml(showBody
+        ? view.body
+        : item.teaser || 'Une dépêche est disponible contre contribution.');
+    }
+
+    // The buildings a dépêche shows, side by side under its text: their picture and their catalog name.
+    if (illustrationsEl) {
+      const shown = showBody ? view.illustrations ?? [] : [];
+      illustrationsEl.hidden = shown.length === 0;
+      illustrationsEl.replaceChildren(...shown.map(illustrationFigure));
+    }
+
+    // Icons of the interface, each with its word, in a row under the text.
+    if (legendEl) {
+      const entries = showBody ? view.legend ?? [] : [];
+      legendEl.hidden = entries.length === 0;
+      legendEl.replaceChildren(
+        ...entries.map(({ icon, word }) => {
+          const item = document.createElement('div');
+          item.className = 'news-event-legend-item';
+          const caption = document.createElement('span');
+          caption.textContent = word;
+          item.append(legendIconOf(icon), caption);
+          return item;
+        })
+      );
+    }
+
+    // A picture under the text (a screenshot of the interface the text points at).
+    if (imageEl) {
+      const image = showBody ? view.image : null;
+      imageEl.hidden = !image;
+      if (image) {
+        imageEl.src = image.src;
+        imageEl.alt = image.alt;
+        makeImageZoomable(imageEl, image);
+      } else {
+        imageEl.removeAttribute('src');
+      }
+      if (imageCaptionEl) {
+        imageCaptionEl.hidden = !image?.caption;
+        imageCaptionEl.textContent = image?.caption ?? '';
+      }
     }
 
     if (paywallEl) {
@@ -196,7 +417,27 @@ export function initNewsEventModal(deps) {
       skipBtn.textContent = hasNext ? 'Lire d’autres nouvelles' : 'Ignorer';
     }
     // What the dépêche offers to do (a building to place), once it can be read.
-    const action = showBody && item.action && newsActionOf(item.action).relevant(item.action, deps) ? item.action : null;
+    const action = showBody && view.action && newsActionOf(view.action).relevant(view.action, deps) ? view.action : null;
+
+    // The buttons that open the rest of the dépêche, a page at a time: one per choice (its own sentence, from the catalog), then "Lire la suite".
+    if (choicesEl) {
+      const buttons = [];
+      if (showBody) {
+        for (const choice of view.choices ?? []) buttons.push({ label: choice.label, page: choice.page });
+        if (view.next) buttons.push({ label: 'Lire la suite', page: view.next });
+      }
+      choicesEl.hidden = buttons.length === 0;
+      choicesEl.replaceChildren(
+        ...buttons.map(({ label, page }) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'news-event-choice-btn';
+          button.textContent = label;
+          button.addEventListener('click', () => openPage(page));
+          return button;
+        })
+      );
+    }
     if (actionEl) actionEl.hidden = !action;
     if (action) {
       const kind = newsActionOf(action);
@@ -205,12 +446,14 @@ export function initNewsEventModal(deps) {
     }
     // Two buttons at most: an unpaid dépêche offers to pay or to leave it; a readable one offers to close, and to read the next only if there is one.
     // With a button of its own on it, the dépêche shows only one of those two: the next one when there is one, to close it otherwise.
+    // A blocking dépêche has its button as the only way out: nothing to close, nothing next.
+    const blocked = isBlocked(item, action);
     if (nextBtn) {
-      nextBtn.hidden = needsPay || !hasNext;
+      nextBtn.hidden = needsPay || !hasNext || blocked;
       nextBtn.textContent = 'Lire le suivant';
     }
     if (closeBtn) {
-      closeBtn.hidden = needsPay || (Boolean(action) && hasNext);
+      closeBtn.hidden = needsPay || blocked || (Boolean(action) && hasNext);
     }
 
     if (needsPay) {
@@ -320,8 +563,16 @@ export function initNewsEventModal(deps) {
     void archiveCurrentAndClose();
   });
   actionBtn?.addEventListener('click', () => {
-    const action = currentItem()?.action;
+    const action = currentView()?.action;
     if (!action) return;
+    const item = currentItem();
+    if (item?.blocking === true) {
+      // Not read, not archived: the dépêche stays until what it asks is done (it comes back after a few turns, see presentIncomingHandler).
+      blockingPressedAt.set(item.id, deps.getGameTime?.() ?? item.turn);
+      closeModal();
+      newsActionOf(action).run(action, deps);
+      return;
+    }
     // The dépêche is read: it is archived and closed, then its button does what it says.
     void archiveCurrentAndClose().then(() => newsActionOf(action).run(action, deps));
   });
@@ -340,6 +591,20 @@ export function initNewsEventModal(deps) {
       return;
     }
     queue = await deps.intelligence.listIncomingNews();
+    // A blocking dépêche is done once its button has nothing left to offer (the building stands): it is archived without being shown. While it is not,
+    // it is shown again a couple of turns after its button was pressed, not before (the player is placing the building).
+    const now = deps.getGameTime?.() ?? 0;
+    const kept = [];
+    for (const item of queue) {
+      if (item.blocking !== true || !item.action) {
+        kept.push(item);
+      } else if (!newsActionOf(item.action).relevant(item.action, deps)) {
+        await deps.intelligence.archiveNewsItem({ newsItemId: item.id, turn: now });
+      } else if (!blockingPressedAt.has(item.id) || now - blockingPressedAt.get(item.id) >= BLOCKING_COMES_BACK_AFTER_TURNS) {
+        kept.push(item);
+      }
+    }
+    queue = kept;
     if (!queue.length) return;
     index = 0;
     bodyRevealed = false;
@@ -350,6 +615,8 @@ export function initNewsEventModal(deps) {
     newsFocusSession = createModalFocusSession({
       panel: modal,
       onEscape: () => {
+        const item = currentItem();
+        if (isBlocked(item, item?.action && newsActionOf(item.action).relevant(item.action, deps) ? item.action : null)) return;
         void archiveCurrentAndClose();
       },
       initialFocus: focusNewsPrimaryAction,

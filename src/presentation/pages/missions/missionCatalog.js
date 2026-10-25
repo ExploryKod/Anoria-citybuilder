@@ -13,7 +13,7 @@
  * @property {string} land
  * @property {string} combat
  * @property {string} difficulty
- * @property {number} citySize
+ * @property {number} citySize Side of the square map, in tiles (12 to 18: the playable range, see resolveCitySize.js). It follows `land`: a narrow land is 12, a medium one 16, a vast one 18.
  * @property {{ label: string, value: string | number }[]} winConditions
  * @property {string[]} buildings
  * @property {string} previewEmoji
@@ -30,7 +30,7 @@ export const STORY_MISSIONS = [
     land: 'Terre vaste',
     combat: 'Escarmouches mineures',
     difficulty: 'Mission très difficile',
-    citySize: 12,
+    citySize: 18,
     winConditions: [
       { label: 'Culture', value: 65 },
       { label: 'Prospérité', value: 75 },
@@ -51,7 +51,7 @@ export const STORY_MISSIONS = [
     land: 'Terre moyenne',
     combat: 'Pas de combat',
     difficulty: 'Mission normale',
-    citySize: 12,
+    citySize: 16,
     winConditions: [
       { label: 'Commerce', value: 50 },
       { label: 'Prospérité', value: 60 },
@@ -89,7 +89,7 @@ export const STORY_MISSIONS = [
     land: 'Terre vaste',
     combat: 'Pas de combat',
     difficulty: 'Mission facile',
-    citySize: 12,
+    citySize: 18,
     winConditions: [
       { label: 'Culture', value: 40 },
       { label: 'Ferveur', value: 50 },

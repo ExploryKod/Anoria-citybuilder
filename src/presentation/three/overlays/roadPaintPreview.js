@@ -3,11 +3,13 @@ import { WORLD_PLATFORM_Y } from '../../../shared/terrain-catalog/terrainWorldCo
 
 /**
  * The road being dragged, before it is laid: a flat tint on every tile it would cover — green where it can be
- * built, red where something stops it. Pure display of a plan; it knows no rule of the game.
+ * built, red where something stops it. The eraser uses it too: red is what it will take (the whole of each building it
+ * touches), amber the area the player drew. Pure display of a plan; it knows no rule of the game.
  */
 
 const VALID_COLOR = 0x35d07f;
 const BLOCKED_COLOR = 0xe5484d;
+const AREA_COLOR = 0xf0b429;
 const LIFT = 0.16;
 
 /**
@@ -46,10 +48,12 @@ export function createRoadPaintPreview({ scene }) {
   }
 
   /**
-   * @param {{ valid: Array<{ x: number, y: number }>, blocked: Array<{ x: number, y: number }> }} plan
+   * @param {{ valid: Array<{ x: number, y: number }>, blocked: Array<{ x: number, y: number }>, area?: Array<{ x: number, y: number }> }} plan
+   *   `area`: the tiles of a drawn area that hold nothing to take (the eraser's square); a tile is in one list only
    */
-  function show({ valid, blocked }) {
+  function show({ valid, blocked, area = [] }) {
     clear();
+    layer(area, AREA_COLOR);
     layer(valid, VALID_COLOR);
     layer(blocked, BLOCKED_COLOR);
   }

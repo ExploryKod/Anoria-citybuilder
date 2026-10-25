@@ -54,7 +54,7 @@ import { DexieWageRateRepository, wageKey } from '../contexts/accounting/infrast
 import { administratorPayStatusOf } from '../contexts/accounting/domain/policies/AdministratorPayPolicy.js';
 import { benefitBaseOf, flooredWage, readLabourMarket, startWageOf, wageFloorOf } from '../contexts/accounting/domain/policies/WageRatePolicy.js';
 import { wagePerWorkerOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
-import { pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
+import { INCOME_STATEMENT, pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
 import { buildingFinanceFigures, cashMovementsOf, householdBudgetOf, householdLastMonthOf, incomeStatementOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 import { residentsOfHouse } from '../contexts/accounting/domain/policies/HouseResidentsPolicy.js';
 import { residentPayBreakdownOf } from '../contexts/accounting/domain/policies/HouseResidentsPayPolicy.js';
@@ -70,6 +70,7 @@ import { premisesRentOf, rentArrearsMonthsByHouse, rentDebtsOf, rentQuoteOf } fr
 import { legalFormOf } from '../shared/accounting-catalog/LegalFormCatalog.js';
 import { SettleHouseRents } from '../contexts/accounting/application/services/SettleHouseRents.js';
 import { WriteOffVacantRentDebts } from '../contexts/accounting/application/services/WriteOffVacantRentDebts.js';
+import { LiquidateDemolishedBuilding } from '../contexts/accounting/application/services/LiquidateDemolishedBuilding.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
 import { getResourceBaseValue, getServiceCategories } from '../shared/resource-catalog/ResourceCategoryCatalog.js';
 import {
@@ -357,8 +358,17 @@ export function createAccountingContext(deps = {}) {
   };
   const getProducerRevenues = new GetProducerRevenues({
     getJournalEntries: () => journalRepository.getJournalEntries(),
-    getBuildingTypes: async () =>
-      new Map((await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => [row.id, row.type])),
+    // A building the player demolished keeps its sales in the journal: its type is the one its construction line names, while the ones that stand say their own.
+    getBuildingTypes: async () => {
+      const types = new Map();
+      for (const entry of await journalRepository.getJournalEntries()) {
+        if (entry.type !== 'construction' || !entry.buildingInstanceId || types.has(entry.buildingInstanceId)) continue;
+        const named = buildingTypeOfConstruction(entry);
+        if (named) types.set(entry.buildingInstanceId, named);
+      }
+      for (const row of (await dexieDb.houses.toArray()).filter(isActiveHamletRow)) types.set(row.id, row.type);
+      return types;
+    },
   });
   // The wage the labour market gives each (skill, level), never under the city's minimum wage when it has one (see WageRatePolicy.js).
   const wageRateRepository = new DexieWageRateRepository();
@@ -690,6 +700,42 @@ export function createAccountingContext(deps = {}) {
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
 
+  // The books of a building the player demolishes are closed as a liquidation would (see LiquidateDemolishedBuilding.js).
+  const liquidateDemolishedBuilding = new LiquidateDemolishedBuilding({
+    getJournalEntries: () => journalRepository.getJournalEntries(),
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+    recordEconomyMovement: (movement) => supplyTraceabilityRepository.recordEconomyMovement(movement),
+    // The liquidation is written in one go, like a month's settlement: all its lines or none.
+    inJournalBatch: (work) => sessionJournalStoreInstance.batch(work),
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    listBuildings: async () => (await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => ({ id: row.id, type: row.type })),
+    // The accounts a liquidation closes: a company's own, or a house's business (its cooperative); a household's personal account is left alone, and so is a public
+    // building's (it carries no debt). Each says the nature of the stock it carries, null when it carries none.
+    getAccountsOf: async (buildingId) => {
+      const row = await dexieDb.houses.get(buildingId);
+      if (!row || !isActiveHamletRow(row)) return null;
+      const nature = salesNatureOf(row.type);
+      const stockNature = nature === null ? null : nature === 'merchandise' ? 'merchandise' : 'production';
+      if (resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE) {
+        const business = houseEnterprises(row.type).enterprises.find((enterprise) => enterprise.activity === 'recipes');
+        return business ? [{ accountKind: businessAccountOf(business.id), stockNature }] : [];
+      }
+      return isLucrativeBuilding(row.type) ? [{ accountKind: null, stockNature }] : [];
+    },
+    cashOf: (buildingId, accountKind) => getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId, accountKind }),
+    valueStock: (buildingId, period) => {
+      if (typeof deps.valueStock !== 'function') throw new Error('[accounting] the stock valuation was not wired (deps.valueStock): a building could not be liquidated');
+      return deps.valueStock(buildingId, period);
+    },
+    // The property company that is owed the rents: the house that holds the owner skill, standing whether or not people live in it (as the settlement reads it).
+    getOwner: async () => {
+      const ownerHouse = (await dexieDb.houses.toArray())
+        .filter((row) => isActiveHamletRow(row) && resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE && houseHoldsSkill(row.type, 1, OWNER_SKILL))
+        .sort((a, b) => String(a.id).localeCompare(String(b.id)))[0];
+      return ownerHouse ? { id: ownerHouse.id, businessAccount: businessAccountOf(houseEnterpriseOf(ownerHouse.type, 'rental').id) } : null;
+    },
+  });
+
   const processTurnBudget = new ProcessTurnBudget({
     collectCitizenTaxes: (time) => collectCitizenTaxes.execute({ time }),
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
@@ -1011,6 +1057,24 @@ export function createAccountingContext(deps = {}) {
     /** Writes off the rent debts of the houses all of whose inhabitants have left (see WriteOffVacantRentDebts.js). */
     async writeOffVacantRentDebts(params) {
       return writeOffVacantRentDebts.execute(params);
+    },
+
+    /**
+     * Closes the books of a building the player is demolishing, in the turn it leaves (see LiquidateDemolishedBuilding.js).
+     * @param {{ buildingId: string, turn: number }} params
+     */
+    async liquidateDemolishedBuilding(params) {
+      return liquidateDemolishedBuilding.execute(params);
+    },
+
+    /**
+     * What the demolition of a building will do to the books, said before it is done and read by the same function that writes it.
+     * @param {{ buildingId: string }} params
+     * @param {{ buildingId: string, turn: number }} params
+     * @returns {ReturnType<LiquidateDemolishedBuilding['preview']>} the debts owed to it that are released, and per account what the liquidation does (see LiquidateDemolishedBuilding.preview)
+     */
+    async previewDemolitionLiquidation(params) {
+      return liquidateDemolishedBuilding.preview(params);
     },
 
     /** @returns {Promise<Map<string, number>>} each house's months in a row ending with a rent debt (a house without a debt is absent) */
@@ -1559,6 +1623,20 @@ export function createAccountingContext(deps = {}) {
 
     async getBuildingAccountBalance(buildingId, accountKind = null) {
       return getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId, accountKind });
+    },
+
+    /**
+     * Whether a company has booked a sale of its production: a credit on the accounts of the statement's "Production vendue" line, read from the fold of
+     * the journal (a sum over its months, not a pass over the journal), whichever year.
+     * @param {string} buildingId
+     * @returns {Promise<boolean>}
+     */
+    async hasBuildingSold(buildingId) {
+      const productionSold = INCOME_STATEMENT.flatMap((section) => section.lines).find((line) => line.id === 'productionSold');
+      if (!productionSold) throw new Error('[accounting] the income statement has no "productionSold" line');
+      const fold = await journalRepository.getLegsFold();
+      const totals = fold.totalsOf({ accountKey: buildingId });
+      return [...totals].some(([account, total]) => total.credit > 0 && productionSold.accounts.some((start) => account.startsWith(start)));
     },
 
     /**

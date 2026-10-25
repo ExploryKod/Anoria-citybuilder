@@ -233,6 +233,8 @@
  *   resourceRoleQueries.requiresRoad / isRoadNeedMet) instead of checking
  *   road counts or type names on its own.
  * @property {number} [maxPerHamlet] How many of this building a hamlet can hold (the mayor's house: one). Omitted means no limit.
+ * @property {boolean} [undemolishable] The player cannot demolish this building (the mayor's house: its owners hold every other building, so it cannot
+ *   leave; a "move" will come later). Omitted means it can be demolished.
  * @property {string} [firstBuiltNews] The milestone dépêche announced the first time the hamlet builds this one
  *   (a key of NewsDraftCatalog.js's milestones).
  * @property {string[]} [requiresPlaced] Building types that must already be placed in the hamlet before this one can be
@@ -278,4 +280,14 @@ export const buildingCatalog = deepFreeze({
  */
 export function getBuildingDefinition(id) {
   return id ? buildingCatalog[id] : undefined;
+}
+
+/**
+ * Whether the catalog forbids demolishing this building (the mayor's house: its owners hold every other building). Said once, here, so that the command that
+ * demolishes and the screen that offers to are never of two minds.
+ * @param {string | null | undefined} id
+ * @returns {boolean}
+ */
+export function isUndemolishable(id) {
+  return getBuildingDefinition(id)?.undemolishable === true;
 }

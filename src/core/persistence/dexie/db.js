@@ -184,6 +184,13 @@ db.version(21).stores({
   wageRates: '++id, hamletId, turn, skill, level',
 });
 
+// v22: the traceability is read by month (a month's settlement reads that month's flows) and written once per business key (an economy movement is never written twice).
+// Both went through `transactionType` and a filter over every row of that type, so they slowed down with the age of the game: `businessKey` is indexed for the second,
+// `[hamletId+year+month]` for the first.
+db.version(22).stores({
+  supplyTraceability: '++id, hamletId, turn, month, year, transactionType, fromId, toId, foodType, businessKey, [hamletId+year+month]',
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

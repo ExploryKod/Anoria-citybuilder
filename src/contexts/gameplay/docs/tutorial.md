@@ -1,0 +1,144 @@
+# Gameplay — the tutorial
+
+The tutorial teaches the first steps of a solid economy, one instruction at a time (road, houses, residents, field, granary, market, workers).
+It is **Gameplay's**: the script and the rule that advances it. The instruction reaches the player as a **dépêche of category `tutorial`**, filed by
+**Intelligence**.
+
+## The script is data
+
+`domain/catalogs/TutorialCatalog.js` is an ordered list of steps `{ id, done, news }`.
+
+- `done`: conditions that, all together, say the player has done what the step asks. A condition is `{ <kind>: <argument> }`.
+- `news`: the dépêche that gives the instruction, or `null` for a step that only waits (the opening's dépêches already lead to the mayor's house,
+  in every mode). Its `action` puts a building in hand, like the other dépêches' buttons.
+- Words the catalogs decide are tokens, never typed: `{building:<id>}`, `{skill:<id>}`. No figure in a sentence.
+
+Changing the tutorial with the game means editing this list. The only code that grows is the list of **kinds of condition**
+(`CONDITION_KINDS` in `domain/policies/TutorialProgressPolicy.js`):
+
+| Kind | Holds when |
+|---|---|
+| `built` / `housed` / `staffed` | at least one (or `{ type, atLeast: N }`) building of that type stands / has residents / has all its workers |
+| `roadBuilt: N` | at least N road tiles stand, whichever their variant (a counter item `{ roads: true, atLeast }` counts them the same way) |
+| `all: [conditions]`, `any: [conditions]` | every one / at least one of the listed conditions holds; they nest, so `unless` can name a combination (`unless: [{ all: [...] }]`) |
+| `fed: <house id>` | at least one house of that type has been fed: its diet (the need of the catalog's food stock) drew food in its last consumption, from the market |
+| `leveled: { type, level, every? }` | at least one house of that type has reached that level (its stored `level`); with `every: true`, every house of that type has, and at least one stands |
+| `newsRead: <dépêche id>` | the player has got past that dépêche (a step's or a dispatch's; closed, or left by its button); `AdvanceTutorial` puts the ids a condition asks about in the facts (`readNews`) |
+| `sold: <building id>` | at least one building of that type has booked a sale of its production: a credit on the accounts of the "Production vendue" line of its income statement, read from the journal's fold (`hasBuildingSold`) |
+| `supplied: { type, category }` | a house of that type was supplied with that good or service (`'water'`, ...) in its last consumption: its need of the category, filed under the catalog's `outcomeField`, drew something |
+| `noWork: [ids]` or `'any'` | a building of one of those types (of any type for `'any'`) shows the no-work sprite: it is in the city's `understaffedBuildingIds` (the list the scene draws the sprite from, read from the employment summary into the facts) |
+| `turnAtLeast` / `season` / `month` / `harvest` / `harvestWithin: N` | the game's clock: a turn reached, the season or month, the harvest month, the harvest at most N months away |
+| `foodCovered: 'built' \| 'staffed'` | the fields' yearly harvest covers what the houses placed eat when full |
+
+`foodCovered` is how "the right number of fields" is asked without writing a number: a field is recognised by `getAnnualSupplyEntry`, its
+yield and a citizen's need (`getPerCapitaDemand`) come from the economy catalog, and a house's capacity is its first tier in
+`socialCategoryCatalog.js`. Retune the economy and the tutorial asks for the new count by itself. The counts of houses are the only numbers in
+the script.
+
+## Dispatches
+
+`TUTORIAL_DISPATCHES` are dépêches that are not a step's: `{ id, news, when?, unless?, step?, delay }`, triggered exactly like a toast, so a
+dépêche can come "when this building stands" or "N turns after this step was reached", whichever step the player is on. They are written once
+(Intelligence's once-only rule, keyed by the dispatch id). A `body` is written with a blank line (`\n\n`) between paragraphs, `**bold**` for what
+must stand out, and lines starting with `- ` for a list (left-aligned, under the sentence that introduces it); nothing else is interpreted. A `news` may carry `illustrations` (building ids, or `{ src, label }` for a picture of the tutorial's own,
+shown in a row under the text, no button), an `image` (`{ src, alt }`, a file of `public/`, e.g. a screenshot of the interface) and, as before, an `action`. A dépêche
+(a step's or a dispatch's) is read a page at a time inside the same modal: `choices` are buttons, each with a sentence of the catalog (`label`), that
+open a page; `next` is the page "Lire la suite" opens. A page has the same fields as the dépêche (`body`, `action`, `illustrations`, `image`,
+`choices`, `next`, and `legend`: icons of the interface with a word each, `[{ icon, word }]`, the icon being a key of `NEWS_LEGEND_ICONS` in
+`NewsEventModal.js` whose button's own icon is copied), so a long explanation is cut into pages rather than spread over several dépêches.
+
+Tokens added: `{skillicon:<id>}` (a skill's emoji), `{harvest:when}` (the harvest schedule's season or month), `{farms:3*House-Red/Farm-Wheat}`
+(how many fields feed 3 such houses, from the catalog). A toast may `highlight: 'construction'` (the house-shaped button that opens the build bar) or `'road'` (the road button beside it): the button turns
+yellow and pulses until clicked (`presentation/dom/onboarding/tutorialHighlight.js`, `tutorial.css`).
+
+## Construction buttons per step
+
+Only `TUTORIAL_START_TOOLS` (the mayor's house, as at the start of any game) work at first. Every other construction button (every tool that is a building of
+the catalog) is greyed out and does nothing until a dépêche of the tutorial unlocks it: a step that has a dépêche, or a dispatch, may carry
+`unlocks: [building ids]`, and those buttons work from the moment that dépêche has been written, for good. Once the script is over, none is greyed. `AdvanceTutorial`
+answers `allowed` (the start tools plus what the dépêches written so far unlock, or null once the script is over); that set is read once from what Intelligence
+filed (`wasAnnounced`) and then grows as a dépêche is written, never recomputed at each look. The presentation applies it through
+`ButtonStateManager.restrict`, which also reaches the buttons the build bar creates later. Today: the road (step `road`), the artisans' house (`artisans`), the field
+(`farms`), the market and the granary (`trade-chain`), the scholars' house (`scholars-house`), the water tank (`scholars-water`), the merchants' house
+(`merchants-needed`, when the market or the granary shows the no-work sprite). `workers-needed` is the general rule of the groups of inhabitants, for a shortage of
+any other building (whatever the step); it unlocks nothing.
+
+## Objective counter
+
+A step may carry `counter: { label, after, items: [{ type, atLeast }] }`. `AdvanceTutorial` answers `progress` (the current step's counter: label, have, target)
+and `justCompleted` (the counter of the step the player has just finished, full). The HUD shows it as a pulsing line under the season and date
+(`#tutorial-objective`, `TutorialObjective.js`): "Maisons « Artisans » construites 2/3". The counter of a step that has a dépêche appears only once the player got past it (closed it, or left by its button: it is then archived, `wasRead`);
+the game looks at the tutorial as soon as the dépêche modal closes. A counter always says `after`: `null` to show at once, or what must have happened before it shows,
+exactly one of `{ news: <dépêche id> }` (that dépêche, of the steps or of the dispatches, has been read), `{ toast: <toast id> }` (that toast has been
+shown) or `{ event: [conditions] }` (the conditions hold, read like a toast's `when`); the step's own dépêche still comes first. A bad `after` (several
+kinds, an unknown dépêche or toast, an empty event) throws when the contexts are built. A finished counter stays on screen, green, for a moment before the
+next step's takes over; the congratulation toast of the objective comes at the same time.
+
+## Reminders, blocking dépêches, history
+
+- A step may carry `reminder: { after, every?, duration, text }`: a warning toast (id `reminder:<step id>`) when the player has stayed on the step
+  `after` turns without doing it, again every `every` turns; it is taken off when the step is done.
+- Every `news` says `blocking` (`true` or `false`). A dépêche whose `news` is `blocking: true` (it needs an `action`) cannot be closed: no close button, no Escape, no "next". Its button puts the
+  building in hand; the dépêche is not archived and comes back two turns later while the building is still missing, until it stands. The tutorial's
+  `famine-warning` is one: the fields are missing as the harvest comes close (`harvestWithin: N` months, read from the harvest schedule).
+- Nothing comes before its time: a step is the first not done, and the dispatches tied to a `step` wait for that step to be reached, so the next
+  dépêche of the sequence does not arrive before the player did what the current one asks.
+- The history button (`#tutorial-history-btn`, tutorial games only) opens a list of the dépêches of category `tutorial`, newest first. Each row has
+  "Lire" (the dépêche's pages and pictures, "Retour à la liste" to leave) and, once the dépêche is read, "Supprimer". Removing is `hideNewsItem`: the
+  dépêche stays filed with `hidden: true` (deleting it would let the once-only rule write it again), and only this list stops showing it.
+
+## Timing
+
+A step carries `delay: N` — turns (days) between the player reaching the step (the previous one done) and its dépêche. A toast takes the same
+`delay`: turns its moment must last before it shows. `delay` is always said, on steps, dispatches and toasts: `0` = at once (no default is assumed, a missing one throws). The turn the step was reached is session memory only (like the toasts'):
+a game reopened mid-tutorial restarts the wait, and a dépêche already announced is never repeated. The wait is counted on the game clock, so it
+holds across a fast-forward batch.
+
+## Toasts
+
+`TUTORIAL_TOASTS` (same file) are short, non-blocking messages that underline a moment while the player works ("« Marché » est maintenant
+pourvu en travailleurs !"). A toast is `{ id, kind, duration, priority, text, when?, unless?, step?, delay }` with the same conditions and tokens as a step. `duration` (ms on screen) is
+required. `step` ties it to the script: it is on only once the player has reached that step; `when` and `step` can be used alone or together (one
+is required). Beyond the city's facts, conditions read the clock: `turnAtLeast: N`, `season`, `month`, and `harvest: true` (the month the
+catalog's harvest schedule names; the root matches it, Gameplay reads no supply). A toast is taken off the screen early — and its highlight cleared — when the player does what it points at (`until`: conditions that all hold; a toast
+whose `until` already holds is not shown) or when its moment goes off. `AdvanceTutorial` answers the ids to hide (`dismissed`); the presentation
+hides them (`hideTutorialToast`). It is **due the moment
+its conditions come true** (and none of its `unless` holds), and again only if that moment goes and comes back. `AdvanceTutorial` keeps, for the
+session only, which toasts were on at the last look; the first look only records, so a game reopened mid-tutorial does not repeat what was
+already true. Nothing is stored. Gameplay returns the toasts; the presentation shows them (`showToast`, injected into `runGameTick`).
+
+The screen holds only a few tutorial toasts at once (`MAX_TUTORIAL_TOASTS_ON_SCREEN`, `game.js`). A toast says its `priority` (required, one of
+`TOAST_PRIORITIES`): `instruction` (points the player at something to do; a step's reminder is one), `lack` (a building still misses something),
+`news` (a congratulation, an arrival). The toasts due beyond the limit queue; a free place goes to the highest priority, the first come first within a
+priority. A queued toast is dropped when its moment goes off, or when it has waited as long as its `duration` (it would be stale).
+
+## The rule
+
+The step the player is on is the **first one not done**, in the catalog's order. Progress is derived from the city's facts each time, never stored.
+The only memory is Intelligence's once-only announcement (`tutorial:<step id>:<hamlet>`). A catalog mistake (unknown building, skill, kind of
+condition, missing `news`) throws when the contexts are built and names the step (`validateTutorialSteps`).
+
+## Boundaries
+
+| | Owner | How |
+|---|---|---|
+| The script, the progress rule, `AdvanceTutorial` | Gameplay | `domain/`, `application/` |
+| The city's facts (building rows: type, residents, workers) | Construction rows | `TutorialFactsPort`, implemented in `composition/createGameplayContext.js` |
+| The dépêche, its category `tutorial`, the once-only rule | Intelligence | `TutorialAnnouncerPort` → `announceGuidance` → `AnnounceGuidance` |
+| Whether this game is a tutorial | the session (`isTutorialMode`) | injected as `isActive`; the domain reads no session |
+
+Gameplay never imports Intelligence (or any context): it hands a finished text to a port, and the composition root connects them.
+
+## When it runs
+
+- After a placement (`presentation/three/game.js`, through `sessionApi.gameplay.advanceTutorial()`), once the open dépêche has been read.
+- At the end of each turn (`composition/runGameTick.js`), before the news is presented; not on the silent days of a fast-forward batch (the
+  toasts would be spent unseen, and the batch's last day looks at the same city).
+
+`advanceTutorial()` answers `{ news, toasts }`: the dépêche just written (or null) and the toasts due. Outside a tutorial game it is a no-op.
+
+## Open points
+
+- Farms harvest once a year, in autumn: the last step ("staff the chain") says to wait for the harvest. A tutorial that starts late in the year
+  would let the player see it sooner (a boot-config choice, not a change of the farm's schedule).
+- Once the script is over, the end-of-turn check still reads the building rows in a tutorial game.

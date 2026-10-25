@@ -397,7 +397,7 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     tags: ['industry', 'building'],
   },
-  // Étal rouge — the one placeable market
+  // Marché (red stall) — the one placeable market
   'Market-Stall-Red': {
     source: 'kenneyCityKit',
     // The generic road icon is too big for a market stall's mesh (tune with /placement.html).

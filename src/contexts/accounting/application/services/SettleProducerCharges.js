@@ -19,7 +19,7 @@ import { houseEnterpriseOf, houseEnterprises, houseHoldsSkill } from '../../../.
 import { OWNER_SKILL } from '../../../../shared/population/socialCategoryCatalog.js';
 import { allocateEnterpriseResult, enterpriseLines } from '../../domain/policies/EnterpriseAllocationPolicy.js';
 import { legalFormOf } from '../../../../shared/accounting-catalog/LegalFormCatalog.js';
-import { hasCounterpart } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
+import { LINE_LABELS, recordDebtPayment, recordLine } from './DebtLines.js';
 import { serviceSubsidyShare } from '../../domain/policies/ServiceSubsidyPolicy.js';
 import { addVatTo } from '../../domain/policies/VatIncludedPolicy.js';
 import { payableServiceBills } from '../../domain/policies/ServiceSolvencyPolicy.js';
@@ -29,61 +29,6 @@ import { payslipLegs, planWithholding } from '../../domain/policies/WithholdingP
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { getResourceCategoryPresentation } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
-
-/**
- * The private movements the economy register keeps, each under the building it concerns. Goods sales and purchases
- * (producer_revenue, producer_purchase) are already in the register as goods flows. The city's receipt of the corporate
- * tax (corporate_tax_revenue) repeats the company's corporate_tax, so it is not written twice.
- */
-const ECONOMY_REGISTER_KINDS = new Set([
-  'producer_wage',
-  'household_wage',
-  'maintenance',
-  'subsidy_housing_received',
-  'subsidy_companies',
-  'subsidy_companies_received',
-  'subsidy_housing',
-  'corporate_tax',
-]);
-
-/** The journal words of each line kind; the company's name is added in front. */
-const LINE_LABELS = Object.freeze({
-  producer_revenue: 'Ventes HT',
-  producer_purchase: 'Achats HT',
-  producer_wage: 'Salaires des ouvriers',
-  household_wage: 'Salaire perçu',
-  employer_contribution: 'Cotisations patronales',
-  social_contribution: 'Cotisations sociales perçues',
-  maintenance: 'Entretien',
-  premises_rent_paid: 'Loyer du local',
-  premises_rent_received: 'Loyer du local perçu',
-  wage_debt_paid: 'Salaires impayés réglés',
-  contribution_debt_paid: 'Cotisations impayées réglées',
-  corporate_tax_debt_paid: 'Impôt sur les sociétés impayé réglé',
-  corporate_tax_debt_received: 'Impôt sur les sociétés impayé encaissé',
-  contribution_debt_received: 'Cotisations impayées encaissées',
-  premises_rent_debt_paid: 'Loyer du local impayé réglé',
-  premises_rent_debt_received: 'Loyer du local impayé encaissé',
-  subsidy_housing_received: 'Subvention entretien des maisons reçue',
-  subsidy_companies: 'Subvention entretien entreprise',
-  subsidy_housing: 'Subvention entretien habitation',
-  corporate_tax: 'Impôt sur les sociétés',
-  corporate_tax_revenue: 'Impôt sur les sociétés perçu',
-  service_sales: 'Ventes de services',
-  service_purchase: 'Achats de services',
-  service_subsidy: 'Subvention versée',
-  service_subsidy_received: 'Subvention reçue',
-  subsidy_companies_received: 'Subvention entretien reçue',
-  vat: 'TVA sur les services',
-  income_tax: 'Impôt sur le revenu retenu',
-  payroll_tax: 'Impôt sur le revenu perçu',
-  income_tax_refund: 'Impôt sur le revenu remboursé',
-  payroll_tax_refund: 'Impôt sur le revenu remboursé aux foyers',
-  unemployment_benefit: 'Allocation chômage versée',
-  household_benefit: 'Allocation chômage perçue',
-  salary: 'Traitement versé',
-  public_wage: 'Traitement perçu',
-});
 
 /** What a company owes the city when it cannot pay: the receivable the city books on its own account (an opération diverse), by kind of debt. */
 const CITY_RECEIVABLES = Object.freeze({ corporate_tax: 'od_receivable_corporate_tax', contribution: 'od_receivable_contribution' });
@@ -158,11 +103,22 @@ export class SettleProducerCharges {
     const timeInfo = this.deps.getTimeInfo(deliveredTime);
     const settledAt = this.deps.getTimeInfo(time);
     const hamletId = requireActiveHamletId();
-    const pairs = await this.deps.sumGoodsFlowsByPair(timeInfo.year, timeInfo.monthIndex);
-    const serviceFlows = await this.deps.sumServiceFlows(timeInfo.year, timeInfo.monthIndex);
+    const listed = await this.deps.listBuildings();
+    // A building that no longer stands (the player demolished it, a disaster took it) has no account left to book on: what it sold, bought or served during
+    // the month is not settled — the goods it traded with another company are written on neither side, the services it supplied or received are not billed,
+    // and the workers a company drew from a house that is gone are not paid (the employment is redistributed each day, but a disaster can strike after it).
+    // The rest of the month, and the other party's own charges, are settled as usual; the movements stay in the supply traceability.
+    const standing = new Set(listed.map((building) => building.id));
+    const buildings = listed.map((building) => ({
+      ...building,
+      workerSources: Object.fromEntries(Object.entries(building.workerSources ?? {}).filter(([houseId]) => standing.has(houseId))),
+    }));
+    const pairs = (await this.deps.sumGoodsFlowsByPair(timeInfo.year, timeInfo.monthIndex))
+      .filter((pair) => standing.has(pair.sellerId) && (pair.buyerId === null || standing.has(pair.buyerId)));
+    const serviceFlows = (await this.deps.sumServiceFlows(timeInfo.year, timeInfo.monthIndex))
+      .filter((flow) => standing.has(flow.buildingId) && standing.has(flow.houseId));
     const subsidies = await this.deps.getServiceSubsidies();
     const ratesPercent = await this.deps.getVatRates();
-    const buildings = await this.deps.listBuildings();
     const monthLabel = `${timeInfo.month} ${timeInfo.year}`;
     const nameOf = (buildingId) => {
       const building = buildings.find((candidate) => candidate.id === buildingId);
@@ -461,7 +417,8 @@ export class SettleProducerCharges {
     // What the buildings lost to spoilage in the month: an informative line each (the manque à gagner), on the account of the building or of its
     // enterprise. It moves no money, it only tells the player what the loss would have sold for.
     for (const loss of await this.deps.listSpoilage(timeInfo.year, timeInfo.monthIndex)) {
-      if (!(loss.lostRevenue > 0)) continue;
+      // The loss of a building that is gone is not told: there is no account of it left to tell it on.
+      if (!(loss.lostRevenue > 0) || !standing.has(loss.buildingId)) continue;
       const accountKind = houseIds.has(loss.buildingId) ? businessAccountOf(houseEnterpriseOf(typeOfBuilding.get(loss.buildingId), 'recipes').id) : null;
       await this.#record(
         { kind: 'info_goods_spoiled', amount: loss.lostRevenue, holder: loss.buildingId, counterparty: null, accountKind },
@@ -671,28 +628,8 @@ export class SettleProducerCharges {
    * A company's debt paid off, in whole or in part: the line of money against the debt account, and what the creditor receives (the house of the workers,
    * the city's social security or treasury, the owner).
    */
-  async #recordDebtPayment({ debt, amount, owner, time, timeInfo, hamletId, monthLabel, nameOf }) {
-    const settlement = PAYABLE_KINDS[debt.kind].settlement;
-    const creditorKey = debt.creditorId ?? 'city';
-    const write = (line, description) => this.#record(line, {
-      time,
-      key: buildProducerLineBusinessKey(line.kind, `${debt.debtorId}:${creditorKey}`, timeInfo, hamletId),
-      description,
-      buildingInstanceId: debt.debtorId,
-      timeInfo,
-    });
-    const to = debt.creditorId ? ` → ${nameOf(debt.creditorId)}` : '';
-    // The debtor pays and the creditor receives: two écritures, one flow.
-    const flow = `debt:${debt.kind}:${debt.debtorId}:${creditorKey}`;
-    await write({ kind: settlement, amount, holder: debt.debtorId, counterparty: debt.creditorId, accountKind: debt.accountKind, flow }, `${LINE_LABELS[settlement]} ${nameOf(debt.debtorId)}${to} - ${monthLabel}`);
-    const credit = {
-      wage: { kind: 'household_wage', amount, holder: debt.creditorId, counterparty: debt.debtorId, accountKind: PERSONAL_ACCOUNT, flow },
-      // The city collects what it had booked as a receivable: not a product a second time.
-      contribution: { kind: 'contribution_debt_received', amount, holder: null, counterparty: debt.debtorId, flow },
-      corporate_tax: { kind: 'corporate_tax_debt_received', amount, holder: null, counterparty: debt.debtorId, flow },
-      premises_rent: { kind: 'premises_rent_debt_received', amount, holder: debt.creditorId, counterparty: debt.debtorId, accountKind: owner?.businessAccount, flow },
-    }[debt.kind];
-    await write(credit, `${LINE_LABELS[credit.kind]} de ${nameOf(debt.debtorId)} - ${monthLabel}`);
+  async #recordDebtPayment(params) {
+    await recordDebtPayment(this.deps, params);
   }
 
   /**
@@ -805,43 +742,8 @@ export class SettleProducerCharges {
    * @param {{ kind: string, amount: number, holder: string | null, counterparty: string | null, accountKind?: string | null }} line
    * @param {{ time: number, key: string, description: string, buildingInstanceId: string, timeInfo: { year: number, monthIndex: number } }} written
    */
-  async #record(line, { time, key, description, buildingInstanceId, timeInfo }) {
-    if (ECONOMY_REGISTER_KINDS.has(line.kind)) {
-      await this.deps.recordEconomyMovement({
-        turn: time,
-        monthIndex: timeInfo.monthIndex,
-        year: timeInfo.year,
-        kind: line.kind,
-        amount: line.amount,
-        buildingId: buildingInstanceId,
-        counterpartyId: line.counterparty,
-        businessKey: key,
-      });
-    }
-    // A line that is one side of a flow between accounts names the flow (null when the other side is booked elsewhere): the other account books its own écriture
-    // of it with the same transactionId, so the two can be set against one another. A writer that forgets is a defect.
-    if (line.flow === undefined && hasCounterpart(line.kind)) {
-      throw new Error(`[producer] the ${line.kind} line for ${description} is one side of a flow between accounts and names no flow (set \`flow\`, or null when its other side is booked elsewhere)`);
-    }
-    const result = await this.deps.recordLedgerEntry({
-      turn: time,
-      type: line.kind,
-      amount: line.amount,
-      description,
-      businessKey: key,
-      buildingInstanceId,
-      accountBuildingId: line.holder,
-      accountKind: line.accountKind ?? null,
-      counterpartyBuildingId: line.counterparty,
-      resource: line.resource ?? null,
-      // The legs of an écriture with more than two (a payslip that withholds); the journal gives the others their two.
-      legs: line.legs ?? null,
-      transactionId: line.flow ? `${timeInfo.year}:${timeInfo.monthIndex}:${line.flow}` : null,
-    });
-    // A month already settled is not charged again; any other refusal is a defect, not a skipped line.
-    if (!result.recorded && result.reason !== 'duplicate_business_key') {
-      throw new Error(`[producer] the ${line.kind} line for ${description} was not recorded: ${result.reason}`);
-    }
+  async #record(line, written) {
+    await recordLine(this.deps, line, written);
   }
 }
 

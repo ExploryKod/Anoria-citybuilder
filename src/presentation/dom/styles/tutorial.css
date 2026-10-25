@@ -212,6 +212,79 @@
     border: 3px solid #c82333;
 }
 
+/* The objective counter under the season and date: a pill that pulses softly; green and still once the objective is reached. */
+.tutorial-objective {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #ffd43b;
+    color: #3d2f00;
+    font-size: 13px;
+    font-weight: 600;
+    animation: tutorial-objective-pulse 1.6s ease-in-out infinite;
+}
+
+.tutorial-objective[hidden] {
+    display: none !important;
+}
+
+.tutorial-objective__count {
+    font-size: 15px;
+}
+
+.tutorial-objective--done {
+    background: #8ce99a;
+    color: #0b3d16;
+    animation: none;
+}
+
+@keyframes tutorial-objective-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 212, 59, 0.7); }
+    50% { box-shadow: 0 0 0 8px rgba(255, 212, 59, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tutorial-objective {
+        animation: none;
+    }
+}
+
+/* The history button is there in tutorial games only: [hidden] must win over the HUD buttons' display */
+#tutorial-history-btn[hidden] {
+    display: none !important;
+}
+
+/* The tutorial points at the house-shaped button that opens the build bar (tutorialHighlight.js): yellow, and pulsing until the player clicks it. */
+body[data-tutorial-highlight="construction"] #toolbar-mobile-toggle,
+body[data-tutorial-highlight="road"] #toolbar-road-btn,
+body[data-tutorial-highlight="history"] #tutorial-history-btn,
+body[data-tutorial-highlight="pause"] #pause-btn,
+body[data-tutorial-highlight="merchants"] .mobile-build-bar__pill[data-category="merchants"] {
+    background: #ffd43b;
+    color: #3d2f00;
+    border-color: #f59f00;
+    animation: tutorial-highlight-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes tutorial-highlight-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 212, 59, 0.85); transform: scale(1); }
+    50% { box-shadow: 0 0 0 10px rgba(255, 212, 59, 0); transform: scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body[data-tutorial-highlight="construction"] #toolbar-mobile-toggle,
+    body[data-tutorial-highlight="road"] #toolbar-road-btn,
+    body[data-tutorial-highlight="history"] #tutorial-history-btn,
+    body[data-tutorial-highlight="pause"] #pause-btn,
+    body[data-tutorial-highlight="merchants"] .mobile-build-bar__pill[data-category="merchants"] {
+        animation: none;
+        box-shadow: 0 0 0 3px rgba(255, 212, 59, 0.85);
+    }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .tutorial-panel {

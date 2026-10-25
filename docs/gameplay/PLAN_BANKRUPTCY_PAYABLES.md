@@ -87,7 +87,7 @@ Le compte d'une entreprise sous zéro (à cause des achats ou de l'entretien san
 - Les salaires d'un mois pris en dette ne sont pas pris en compte pour le calcul des factures de services des ménages du même mois (le plan du mois suppose les salaires versés) : un ménage peut payer un service avec un salaire qu'il reçoit plus tard.
 - Un salaire arriéré versé plus tard ne subit ni cotisation salariale ni impôt sur le revenu (ils ne sont retenus que sur les salaires du mois).
 - La créance de la ville (cotisations, impôt) n'est pas écrite côté ville (l'étape 5 traite la comptabilité publique) ; seule la SCI écrit sa créance.
-- Un loyer de local dû à un propriétaire qui n'existe plus (maison-mairie démolie) reste une dette non payable.
+- ~~Un loyer de local dû à un propriétaire qui n'existe plus (maison-mairie démolie) reste une dette non payable.~~ Réglé autrement : la maison du maire ne peut plus être démolie (`undemolishable`), et les dettes dues à tout autre bâtiment démoli sont abandonnées à sa démolition (voir `PLAN_DEMOLITION_LIQUIDATION.md`).
 - Les achats de marchandises et l'entretien sans propriétaire ne sont pas des dettes : ils n'ont pas de créancier dans le jeu, la caisse peut descendre sous zéro à cause d'eux ; c'est le découvert.
 - Les ménages, la SCI et le hameau n'ont pas de dette ici ; la liquidation et la fin de partie sont l'étape 4b.
 

@@ -7,7 +7,8 @@ import { createModalFocusSession } from './modalFocus.js';
  * @param {object} options
  * @param {string} options.title
  * @param {string} options.message
- * @param {string[]} [options.items] One line each, listed under the message.
+ * @param {Array<string | { label: string, text: string }>} [options.items] One entry each, listed under the message with no bullet and aligned left like the
+ *   message: a plain line, or a line with a bold `label` above its `text` (a line break in `text` is kept).
  * @param {string} options.confirmLabel
  * @param {string} options.cancelLabel
  * @returns {Promise<boolean>} true when the player confirms.
@@ -15,7 +16,7 @@ import { createModalFocusSession } from './modalFocus.js';
 export function confirmModal({ title, message, items = [], confirmLabel, cancelLabel }) {
   return new Promise((resolve) => {
     const modal = document.createElement('div');
-    modal.className = 'news-event-modal active';
+    modal.className = 'news-event-modal confirm-modal active';
     modal.setAttribute('role', 'alertdialog');
     modal.setAttribute('aria-modal', 'true');
 
@@ -36,9 +37,21 @@ export function confirmModal({ title, message, items = [], confirmLabel, cancelL
     content.appendChild(body);
     if (items.length > 0) {
       const list = document.createElement('ul');
+      list.className = 'confirm-modal-list';
       for (const item of items) {
         const line = document.createElement('li');
-        line.textContent = item;
+        line.className = 'confirm-modal-item';
+        if (typeof item === 'string') {
+          line.textContent = item;
+        } else {
+          const label = document.createElement('span');
+          label.className = 'confirm-modal-item-label';
+          label.textContent = item.label;
+          const text = document.createElement('span');
+          text.className = 'confirm-modal-item-text';
+          text.textContent = item.text;
+          line.append(label, text);
+        }
         list.appendChild(line);
       }
       content.appendChild(list);

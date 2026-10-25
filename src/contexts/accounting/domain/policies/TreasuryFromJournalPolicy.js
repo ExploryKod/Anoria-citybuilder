@@ -89,6 +89,11 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
         }
         continue;
       }
+      // The capital a liquidated company gives back is the city taking its investment back, like a refund of a construction: it lowers the investments, it is no income.
+      if (type === 'liquidation_surplus_received') {
+        figures.totalInvestments = Math.max(0, figures.totalInvestments - amount);
+        continue;
+      }
       figures.income += amount;
       if (type === 'capital_funds') figures.initialFunds += amount;
       if (type === 'citizen_tax') {

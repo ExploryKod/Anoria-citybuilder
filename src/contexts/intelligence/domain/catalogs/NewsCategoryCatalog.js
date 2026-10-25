@@ -2,7 +2,7 @@
  * Catalogue des catégories de dépêches (MVP ville + stubs).
  */
 
-/** @typedef {'complaint' | 'revelation' | 'scholar_idea' | 'trade_rumor' | 'partner_news' | 'foreign_market' | 'random_event' | 'advice' | 'situation_report'} NewsCategoryId */
+/** @typedef {'complaint' | 'revelation' | 'scholar_idea' | 'trade_rumor' | 'partner_news' | 'foreign_market' | 'random_event' | 'advice' | 'situation_report' | 'announcement' | 'tutorial'} NewsCategoryId */
 
 /** @type {Record<string, { id: string, labelFr: string }>} */
 export const NEWS_CATEGORIES = Object.freeze({
@@ -16,6 +16,8 @@ export const NEWS_CATEGORIES = Object.freeze({
   advice: { id: 'advice', labelFr: 'Conseil' },
   situation_report: { id: 'situation_report', labelFr: 'Rapport' },
   announcement: { id: 'announcement', labelFr: 'Annonce' },
+  // The tutorial's instructions (written by Gameplay's script, filed by AnnounceGuidance).
+  tutorial: { id: 'tutorial', labelFr: 'Tutoriel' },
 });
 
 /**
@@ -23,5 +25,7 @@ export const NEWS_CATEGORIES = Object.freeze({
  * @returns {string}
  */
 export function labelForNewsCategory(categoryId) {
-  return NEWS_CATEGORIES[categoryId]?.labelFr ?? categoryId;
+  const category = NEWS_CATEGORIES[categoryId];
+  if (!category) throw new Error(`[news] "${categoryId}" is not a category of NewsCategoryCatalog.js`);
+  return category.labelFr;
 }

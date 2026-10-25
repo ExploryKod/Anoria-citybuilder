@@ -36,13 +36,14 @@ export class Pipeline {
    * @param {string} groupName
    * @param {import('../ecs/World.js').World} world
    * @param {object} [context]
+   * @returns {Promise<Array<{ name: string, ms: number }>>} the milliseconds each system of the group took
    */
   async runGroup(groupName, world, context = {}) {
     const runner = this.#groups.get(groupName);
     if (!runner) {
       throw new Error(`Pipeline: unknown group "${groupName}"`);
     }
-    await runner.run(world, context);
+    return runner.run(world, context);
   }
 
   getGroupNames() {
