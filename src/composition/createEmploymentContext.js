@@ -130,6 +130,13 @@ export function createEmploymentContext({ employmentBuildingRepository, citizenP
     async distributeCityWorkers(params = {}) {
       const result = await distributeCityWorkersCommand.execute(params);
       lastLabourMarket = { rows: result.labourMarket };
+      if (import.meta.env?.DEV) {
+        const { readMs, computeMs, writeMs, laborSources, workplaces, savedWorkplaces } = result.timings;
+        console.info(
+          `[tick-perf] employment.distribute read=${readMs.toFixed(1)}ms compute=${computeMs.toFixed(1)}ms write=${writeMs.toFixed(1)}ms`
+            + ` houses=${laborSources} workplaces=${workplaces} saved=${savedWorkplaces}`,
+        );
+      }
       return result;
     },
 

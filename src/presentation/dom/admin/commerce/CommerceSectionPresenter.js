@@ -8,6 +8,27 @@ import { formatEuro } from '../../../../contexts/accounting/presentation/formatM
 const STATUS_LABEL = { active: 'Actif', suspended: 'Suspendu', expired: 'Expiré' };
 
 /**
+ * Downloads the whole relation rows, as stored: status, satisfaction, contract dates, last order.
+ * @param {{ getAllRelations: () => Promise<object[]> }} trade
+ */
+export async function exportRelationsToJSON(trade) {
+  const relations = await trade.getAllRelations();
+  const payload = {
+    exportDate: new Date().toISOString(),
+    relations: [...relations].sort((a, b) => a.cityId.localeCompare(b.cityId)),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `relations-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/**
  * Renders the commerce admin section: active city
  * relations with satisfaction scores, and last-month export revenue.
  */
@@ -40,20 +61,7 @@ export class CommerceSectionPresenter {
   }
 
   async #exportRelationsJson() {
-    const relations = await this.trade.getAllRelations();
-    const payload = {
-      exportDate: new Date().toISOString(),
-      relations: [...relations].sort((a, b) => a.cityId.localeCompare(b.cityId)),
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `relations-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    await exportRelationsToJSON(this.trade);
   }
 
   async refresh() {

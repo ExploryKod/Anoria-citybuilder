@@ -43,9 +43,18 @@ export class ProcessTurnBudget {
 
     this.#processBudgetInFlight = true;
     const result = {};
+    // Measurement only: the milliseconds each step of this turn's budget took, in the order they ran (the caller reports it, nothing decides on it).
+    const stepMs = {};
+    let stepStartedAt = performance.now();
+    const stepDone = (step) => {
+      const now = performance.now();
+      stepMs[step] = now - stepStartedAt;
+      stepStartedAt = now;
+    };
 
     try {
       const taxCollection = await this.deps.collectCitizenTaxes(time);
+      stepDone('citizenTaxes');
       // November without a tax collector: the caller says so to the player (see runGameTurnEconomy.js).
       if (taxCollection?.citizenTaxUncollectedYear != null) result.citizenTaxUncollectedYear = taxCollection.citizenTaxUncollectedYear;
 
@@ -55,37 +64,50 @@ export class ProcessTurnBudget {
 
       const settleMonth = async () => {
         // A company created since the last month receives its founding capital from the city before its first month is settled.
+        stepStartedAt = performance.now();
         if (this.deps.fundNewCompanies) await this.deps.fundNewCompanies({ time });
+        stepDone('fundNewCompanies');
         // The bank's own interest expense must exist in the journal before settleProducerCharges reads it (its
         // otherExpensesHT) to compute the bank's taxable profit for the same month — see SettleBankDepositInterest.js.
         if (this.deps.settleBankDepositInterest) {
           await this.deps.settleBankDepositInterest({ time, deliveredTime: time - 1 });
         }
+        stepDone('bankInterest');
         await this.deps.settleProducerCharges({ time, deliveredTime: time - 1 });
+        stepDone('producerCharges');
         // The rents come last of the month's charges: a house pays what is left of its month, and what it cannot pay stays a debt.
         if (this.deps.settleHouseRents) {
           await this.deps.settleHouseRents({ time, deliveredTime: time - 1 });
         }
+        stepDone('houseRents');
         // The month is settled: the closing writes what the books need and no money moves (the variation of stock, the depreciation).
         if (this.deps.closeMonthAccounts) {
           await this.deps.closeMonthAccounts({ time, deliveredTime: time - 1 });
         }
+        stepDone('closeMonth');
         // Every January an indexed minimum wage is revalued on the cost of living, before the market moves the wages above it.
         if (this.deps.revalueMinimumWage && timeInfo.monthIndex === 0) await this.deps.revalueMinimumWage();
         // The month was paid at the wages in force: only now does the labour market move them for the month that opens.
         if (this.deps.adjustWageRates) await this.deps.adjustWageRates({ time });
+        stepDone('wages');
         // The month's accounts are closed: the caller may judge what they show (the departures, see runGameTurnEconomy.js).
         result.monthSettled = true;
       };
       if (isFirstTurnOfMonth && time > 0) {
         // The month is written in one go: hundreds of lines, one transaction, all or none (see SessionJournalStore.batch).
+        const settleStartedAt = performance.now();
         if (this.deps.inJournalBatch) await this.deps.inJournalBatch(settleMonth);
         else await settleMonth();
+        // `settleMonth` times its own steps; what is left of the whole is the batch's own cost (opening it, writing its lines to disk at the end).
+        const stepsMs = Object.entries(stepMs).filter(([step]) => step !== 'citizenTaxes').reduce((sum, [, ms]) => sum + ms, 0);
+        stepMs.monthBatchOverhead = performance.now() - settleStartedAt - stepsMs;
+        stepStartedAt = performance.now();
       }
 
       if (this.deps.processLoanPayments) {
         await this.deps.processLoanPayments();
       }
+      stepDone('loanPayments');
 
       if (time % 3 === 0 && time > 0) {
         try {
@@ -94,8 +116,11 @@ export class ProcessTurnBudget {
           throw new Error(`[ProcessTurnBudget] failed to save the turn ${time} budget state: ${error.message}`, { cause: error });
         }
       }
+      stepDone('purgeOldYears');
 
       await this.deps.flushJournalSessionToDexie();
+      stepDone('flushJournal');
+      result.stepMs = stepMs;
     } catch (error) {
       throw new Error(`[ProcessTurnBudget] budget operations failed at turn ${time}: ${error.message}`, { cause: error });
     } finally {

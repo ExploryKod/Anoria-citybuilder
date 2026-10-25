@@ -55,6 +55,11 @@ export class GameLoop {
     this.#tickInFlight = true;
     try {
       await this.onTick(deltaMs);
+    } catch (error) {
+      // A day that throws used to vanish as an unhandled rejection with no tag: the game went on to the next day and nobody knew a month had not been settled.
+      // The tag makes it reach the dev log; the error is thrown on as before.
+      console.error('[GameLoop] A day failed and was not completed:', error);
+      throw error;
     } finally {
       this.#tickInFlight = false;
     }

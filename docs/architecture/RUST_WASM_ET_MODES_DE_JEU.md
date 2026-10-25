@@ -69,6 +69,11 @@ Mais gain de performance probablement faible :
 À réserver à Rust : moteur de flux du `supply`, pathfinding, fold du journal. `DistributeCityWorkers` ne vaut que comme
 pilote pour apprendre la chaîne (build WASM avec Vite, worker, tableaux typés, test de parité JS/Rust).
 
+**Mesuré le 2026-10-25** (détails : `../plan/upgrade_perf_oct25.md`, section 2 bis) : le calcul de `DistributeCityWorkers`
+prend 0,1 à 0,4 ms, la lecture et l'écriture 20 à 40 ms chacune. La couture est écartée. Sur une ville de 57 bâtiments, le jour
+coûte ~1,4 s, dont `supply.monthlyResourceCycle` à 325 ms par tick : c'est lui, et les deux `scene.update`, qu'il faut regarder
+d'abord, en JS, avant toute question de Rust.
+
 ## 7. Ce qui existe ailleurs (recherche)
 
 Aucun projet trouvé ne reproduit exactement « simulation locale en Rust/WASM dans un worker + Three.js ».
@@ -113,7 +118,7 @@ navigateur. Rust viendrait ensuite, seulement si la mesure le justifie, comme no
 
 Le joueur doit pouvoir passer d'un mode à l'autre avec sa partie. Il faut une **archive portable**, indépendante de la
 base : le journal d'écritures, les prêts, l'horloge (`gameSettings`/`clock`, avec `daysPerMonth` figé à la création),
-l'état des bâtiments et des hameaux. L'export du prefab `anoria-tour-116` en couvre déjà une partie : à vérifier.
+l'état des bâtiments et des hameaux. Le prefab `anoria-tour-144` (cinq exports pris ensemble par « Tout télécharger » en pause) en couvre l'essentiel : la ville, les deux journaux, les transactions et les relations.
 
 Règle du projet : aucune sauvegarde ancienne à migrer. Les deux modes tournent sur la même version du cœur ; une archive
 d'une version inconnue est refusée explicitement, jamais réparée à la volée. L'archive doit donc être versionnée.
@@ -140,7 +145,7 @@ Contrainte : projet de loisir, budget serré. Un serveur de jeu qui simule toute
 ## 11. Prochaines étapes (ordre recommandé)
 
 1. Instrumenter le tick (`performance.now()` autour de la lecture, du calcul et de l'écriture ; ECS, économie, HUD) sur le
-   prefab `anoria-tour-116`, pour savoir où part le temps.
+   prefab `anoria-tour-144`, pour savoir où part le temps.
 2. Corrections JS évidentes : mémoïser les sources qualifiantes, regrouper les écritures en un lot.
 3. Définir l'archive de sauvegarde portable et vérifier ce que l'export du prefab couvre déjà.
 4. Valider le mode en ligne en faisant tourner le cœur sous Node avec un adaptateur SQL minimal.

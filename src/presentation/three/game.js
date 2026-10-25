@@ -23,6 +23,7 @@ import { createScene } from './scene.js';
 import { createCity, clearCityTiles, initializeEditorCityTiles } from './city.js';
 import { syncEmploymentAfterBuildingChange } from '../../composition/syncEmploymentAfterBuildingChange.js';
 import { syncSupplyLinksAfterBuildingChange } from '../../composition/syncSupplyLinksAfterBuildingChange.js';
+import { isConfirmedBeforeDemolition, previewDemolitionLiquidation } from '../../composition/constructionTreasuryBridge.js';
 import { resolveGetTimeInfo } from '../../composition/gameTimeBridge.js';
 import { getSharedEventBus } from '../../composition/sharedEventBus.js';
 import { refreshSupplyPlacementIndex } from '../../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
@@ -55,12 +56,13 @@ import { bindSessionRuntime } from '../../composition/sessionRuntime.js';
 import { syncSessionHud } from '../../composition/syncSessionHud.js';
 import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.js';
 import { computeBuildingReach, listPlacedBuildings } from '../../shared/building-catalog/buildingReach.js';
-import { getBuildingDefinition } from '../../shared/building-catalog/buildingCatalog.js';
+import { getBuildingDefinition, isUndemolishable } from '../../shared/building-catalog/buildingCatalog.js';
 import { BUILDING_ASSETS } from './assets/buildingAssets.js';
 import { planRoadPaint, plotsAlongPath, roadPathBetween, roadPiecesFrom, turnedSides } from './placement/roadPaintPlanner.js';
 import { resolveFootprint } from '../../shared/asset-footprint/resolveFootprint.js';
 import {
   BEHAVIOR_MODE,
+  ERASE_SQUARE_MAX_SIDE,
   resolveBehaviorMode,
   shouldReturnToSelectOnEscape,
 } from '../../shared/gameplay/behaviorMode.js';
@@ -97,7 +99,8 @@ import {
   showInsufficientFundsNotification,
   showGenericErrorNotification,
   showHubCascadeNotification,
-  confirmHubCascadeDemolition,
+  confirmDemolition,
+  showDemolitionRefusedNotification,
   showClientPriorityNotification,
   showPlacementNeedsNotification,
   showPopulationDepartureNotification,
@@ -1128,8 +1131,60 @@ export function createGame(gameStore, assetManager, citySize = null) {
     return tiles;
   }
 
+  /** Every tile the building on this one covers (the tiles of its instance); a tile with no instance covers only itself. */
+  function tilesOfBuildingAt(x, y) {
+    const instanceId = city.tiles[x]?.[y]?.instanceId;
+    if (!instanceId) {
+      return [{ x, y }];
+    }
+    const covered = [];
+    for (let cx = 0; cx < city.size; cx += 1) {
+      for (let cy = 0; cy < city.size; cy += 1) {
+        if (city.tiles[cx]?.[cy]?.instanceId === instanceId) covered.push({ x: cx, y: cy });
+      }
+    }
+    return covered;
+  }
+
+  /**
+   * The eraser's plan: red is what it will take (the WHOLE of each building the square touches: a building goes down whole, not by the part under the square), amber
+   * the area drawn where there is nothing to take. A building the catalog forbids to demolish is not tinted: it stays.
+   * @param {Array<{ x: number, y: number }>} squareTiles
+   * @returns {{ blocked: Array<{ x: number, y: number }>, area: Array<{ x: number, y: number }> }}
+   */
+  function eraserPlanOf(squareTiles) {
+    const taken = new Map();
+    const area = [];
+    for (const { x, y } of squareTiles) {
+      const buildingId = city.tiles[x]?.[y]?.buildingId;
+      if (!buildingId) {
+        area.push({ x, y });
+      } else if (!isUndemolishable(buildingId)) {
+        for (const tile of tilesOfBuildingAt(x, y)) taken.set(`${tile.x},${tile.y}`, tile);
+      }
+    }
+    return { blocked: [...taken.values()], area };
+  }
+
   function showEraseDragPreview() {
-    scene.roadPaintPreview.show({ valid: [], blocked: eraseSquareTiles() });
+    const { blocked, area } = eraserPlanOf(eraseSquareTiles());
+    scene.roadPaintPreview.show({ valid: [], blocked, area });
+  }
+
+  /** The eraser is over a tile, not pressed: the building under it is lit whole, so the player sees what a click would take. */
+  function showEraseHoverPreview(focusedObject) {
+    const x = focusedObject?.userData?.x;
+    const y = focusedObject?.userData?.y;
+    if (typeof x !== 'number' || typeof y !== 'number') {
+      scene.roadPaintPreview.clear();
+      return;
+    }
+    const { blocked } = eraserPlanOf([{ x, y }]);
+    if (blocked.length === 0) {
+      scene.roadPaintPreview.clear();
+      return;
+    }
+    scene.roadPaintPreview.show({ valid: [], blocked });
   }
 
   function cancelErasePaint() {
@@ -1139,36 +1194,95 @@ export function createGame(gameStore, assetManager, citySize = null) {
     scene.roadPaintPreview.clear();
   }
 
-  /** The cursor moved: the square is redrawn from where the player pressed. */
+  /** The cursor moved: the square is redrawn from where the player pressed, and stops growing at the longest side the eraser allows (the preview shows it). */
   function dragEraseToward(x, y) {
-    erasePaint.end = { x, y };
+    const { anchor } = erasePaint;
+    const reach = ERASE_SQUARE_MAX_SIDE - 1;
+    erasePaint.end = {
+      x: Math.max(anchor.x - reach, Math.min(anchor.x + reach, x)),
+      y: Math.max(anchor.y - reach, Math.min(anchor.y + reach, y)),
+    };
     showEraseDragPreview();
   }
 
   /**
+   * What demolishing this building brings down, for the question the player is asked first: the people who leave or lose their place, the buildings that cannot work
+   * without it, the debts released and the ones nothing pays. Read, nothing is changed.
+   * @param {{ type: string, instanceId: string | null }} building
+   * @returns {Promise<import('../dom/shell/BuildingNotifications.js').DemolitionConsequences>}
+   */
+  async function consequencesOfDemolition({ type, instanceId }) {
+    if (!instanceId) {
+      return { residents: 0, workers: 0, dependents: [], abandoned: [], unpaid: [] };
+    }
+    const row = await constructionApi.getBuildingById(instanceId);
+    const isHouse = Boolean(getBuildingDefinition(type)?.residentialGroup);
+    const dependents = supply.hasResourceRole(type, 'hub') ? await supply.previewHubCascade({ hubId: instanceId }) : [];
+    const books = await previewDemolitionLiquidation({ instanceId, buildingType: type });
+    const placed = listPlacedBuildings(city).buildings;
+    return {
+      residents: isHouse ? (row?.pop ?? 0) : 0,
+      workers: row?.employees?.worker ?? 0,
+      dependents: dependents.map(({ type: dependentType, x, y }) => ({ type: dependentType, x, y })),
+      abandoned: books.abandoned.map((debt) => ({
+        debtorType: placed.find((candidate) => candidate.instanceId === debt.debtorId)?.type ?? null,
+        label: debt.label,
+        amount: debt.amount,
+      })),
+      unpaid: books.owed.map(({ label, amount }) => ({ label, amount })),
+    };
+  }
+
+  /**
    * Demolish the building on each tile (one that already went down with a neighbour is skipped), then bring the city
-   * up to date once. A hub that takes buildings down with it asks first, and a "no" spares that hub only.
+   * up to date once. Before anything goes, the player is asked once for the whole selection, with what each building brings
+   * down (or that it brings down nothing); the roads and the nature, which bring down nothing, are not asked about. "No"
+   * spares the whole selection.
    * @param {Array<{ x: number, y: number, instanceId?: string | null }>} targets
    */
   async function demolishTiles(targets) {
-    let lastBuildingId = null;
-    let demolished = 0;
+    // The buildings the targets stand for, each once (a large one covers several tiles); the ones the catalog forbids to demolish are refused here, before anything is touched.
+    const buildings = [];
+    const seen = new Set();
     for (const target of targets) {
-      const { x, y } = target;
-      const tile = city.tiles[x][y];
+      const tile = city.tiles[target.x][target.y];
       if (!tile?.buildingId) {
         continue;
       }
-      const removedInstanceId = target.instanceId ?? tile.instanceId ?? null;
+      const instanceId = target.instanceId ?? tile.instanceId ?? null;
+      const key = instanceId ?? `${target.x},${target.y}`;
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      if (isUndemolishable(tile.buildingId)) {
+        showDemolitionRefusedNotification(tile.buildingId);
+        continue;
+      }
+      buildings.push({ x: target.x, y: target.y, instanceId, type: tile.buildingId });
+    }
+
+    const asked = buildings.filter((building) => isConfirmedBeforeDemolition(building.type));
+    if (asked.length > 0) {
+      const entries = [];
+      for (const building of asked) {
+        entries.push({ type: building.type, x: building.x, y: building.y, ...(await consequencesOfDemolition(building)) });
+      }
+      if (!(await confirmDemolition(entries))) {
+        return;
+      }
+    }
+
+    let lastBuildingId = null;
+    let demolished = 0;
+    for (const { x, y, instanceId: removedInstanceId } of buildings) {
+      const tile = city.tiles[x][y];
+      if (!tile?.buildingId) {
+        // It already went down with a neighbour.
+        continue;
+      }
       const isHub = supply.hasResourceRole(tile.buildingId, 'hub');
       const hasPlacementRequirements = supply.getPlacementRequirements(tile.buildingId).length > 0;
-
-      if (isHub && removedInstanceId) {
-        const dependents = await supply.previewHubCascade({ hubId: removedInstanceId });
-        if (dependents.length > 0 && !(await confirmHubCascadeDemolition(tile.buildingId, dependents))) {
-          continue;
-        }
-      }
 
       const removedType = tile.buildingId;
       let cascadeOutcome = null;
@@ -1185,12 +1299,25 @@ export function createGame(gameStore, assetManager, citySize = null) {
         });
       }
 
-      const { buildingId } = await constructionApi.bulldozeBuildingAtTile({
-        city,
-        x,
-        y,
-        meshInstanceId: removedInstanceId,
-      });
+      let outcome;
+      try {
+        outcome = await constructionApi.bulldozeBuildingAtTile({
+          city,
+          x,
+          y,
+          meshInstanceId: removedInstanceId,
+        });
+      } catch (error) {
+        // The accounts of the building could not be closed: it stays, and the player is told why (the tag reaches the dev log).
+        console.error('[Construction] The demolition failed, the building stays:', error);
+        showErrorToast(`Démolition impossible : ${error.message}`);
+        continue;
+      }
+      if (outcome.refused) {
+        showDemolitionRefusedNotification(removedType);
+        continue;
+      }
+      const { buildingId } = outcome;
 
       if (buildingId) {
         demolished += 1;
@@ -1518,6 +1645,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
   };
 
   scene.onPlacementHover = (focusedObject) => {
+    // The eraser (playing): the building under the cursor is lit whole before any click. While the square is being drawn, its own preview is shown instead.
+    if (resolveActiveBehaviorMode() === BEHAVIOR_MODE.ERASE && !isEditorMode() && !erasePaint.active) {
+      showEraseHoverPreview(focusedObject);
+    }
     discardTouchPendingIfDisabled();
     if (touchPendingPlacement) {
       return;
@@ -1802,6 +1933,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
       if (erasePaint.active) {
         cancelErasePaint();
+      }
+      // The eraser's hover light must not stay on the map once another tool is in hand (a paint in progress keeps its own preview).
+      if (!roadPaint.active && !housePaint.active && !erasePaint.active) {
+        scene.roadPaintPreview.clear();
       }
     },
 

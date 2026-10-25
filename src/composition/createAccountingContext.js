@@ -70,6 +70,7 @@ import { premisesRentOf, rentArrearsMonthsByHouse, rentDebtsOf, rentQuoteOf } fr
 import { legalFormOf } from '../shared/accounting-catalog/LegalFormCatalog.js';
 import { SettleHouseRents } from '../contexts/accounting/application/services/SettleHouseRents.js';
 import { WriteOffVacantRentDebts } from '../contexts/accounting/application/services/WriteOffVacantRentDebts.js';
+import { LiquidateDemolishedBuilding } from '../contexts/accounting/application/services/LiquidateDemolishedBuilding.js';
 import { DexieSupplyTraceabilityRepository } from '../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js';
 import { getResourceBaseValue, getServiceCategories } from '../shared/resource-catalog/ResourceCategoryCatalog.js';
 import {
@@ -357,8 +358,17 @@ export function createAccountingContext(deps = {}) {
   };
   const getProducerRevenues = new GetProducerRevenues({
     getJournalEntries: () => journalRepository.getJournalEntries(),
-    getBuildingTypes: async () =>
-      new Map((await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => [row.id, row.type])),
+    // A building the player demolished keeps its sales in the journal: its type is the one its construction line names, while the ones that stand say their own.
+    getBuildingTypes: async () => {
+      const types = new Map();
+      for (const entry of await journalRepository.getJournalEntries()) {
+        if (entry.type !== 'construction' || !entry.buildingInstanceId || types.has(entry.buildingInstanceId)) continue;
+        const named = buildingTypeOfConstruction(entry);
+        if (named) types.set(entry.buildingInstanceId, named);
+      }
+      for (const row of (await dexieDb.houses.toArray()).filter(isActiveHamletRow)) types.set(row.id, row.type);
+      return types;
+    },
   });
   // The wage the labour market gives each (skill, level), never under the city's minimum wage when it has one (see WageRatePolicy.js).
   const wageRateRepository = new DexieWageRateRepository();
@@ -690,6 +700,12 @@ export function createAccountingContext(deps = {}) {
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
 
+  // The books of a building the player demolishes are closed as a liquidation would (see LiquidateDemolishedBuilding.js).
+  const liquidateDemolishedBuilding = new LiquidateDemolishedBuilding({
+    getJournalEntries: () => journalRepository.getJournalEntries(),
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
+
   const processTurnBudget = new ProcessTurnBudget({
     collectCitizenTaxes: (time) => collectCitizenTaxes.execute({ time }),
     getTimeInfo: (time) => gameTimePort.getTimeInfo(time),
@@ -1011,6 +1027,23 @@ export function createAccountingContext(deps = {}) {
     /** Writes off the rent debts of the houses all of whose inhabitants have left (see WriteOffVacantRentDebts.js). */
     async writeOffVacantRentDebts(params) {
       return writeOffVacantRentDebts.execute(params);
+    },
+
+    /**
+     * Closes the books of a building the player is demolishing, in the turn it leaves (see LiquidateDemolishedBuilding.js).
+     * @param {{ buildingId: string, turn: number }} params
+     */
+    async liquidateDemolishedBuilding(params) {
+      return liquidateDemolishedBuilding.execute(params);
+    },
+
+    /**
+     * What the demolition of a building will do to the books, said before it is done and read by the same function that writes it.
+     * @param {{ buildingId: string }} params
+     * @returns {Promise<{ abandoned: Array<{ debtorId: string, kind: string, label: string, amount: number }>, owed: Array<{ kind: string, label: string, amount: number }> }>}
+     */
+    async previewDemolitionLiquidation(params) {
+      return liquidateDemolishedBuilding.preview(params);
     },
 
     /** @returns {Promise<Map<string, number>>} each house's months in a row ending with a rent debt (a house without a debt is absent) */

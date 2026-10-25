@@ -21,11 +21,16 @@ export class SystemRunner {
   /**
    * @param {import('./World.js').World} world
    * @param {object} [context]
+   * @returns {Promise<Array<{ name: string, ms: number }>>} the milliseconds each system took, in the order they ran (a measurement, nothing reads it to decide)
    */
   async run(world, context = {}) {
+    const timings = [];
     for (const system of this.#systems) {
+      const startedAt = performance.now();
       await system.run(world, context);
+      timings.push({ name: system.name, ms: performance.now() - startedAt });
     }
+    return timings;
   }
 
   get names() {

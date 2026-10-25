@@ -3,6 +3,38 @@
  */
 
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
+import { getSessionGameTime } from './sessionRuntime.js';
+import { getBuildingDefinition } from '../shared/building-catalog/buildingCatalog.js';
+import { isRoadType } from '../shared/building-catalog/roadQueries.js';
+
+/** A road is the hamlet's and a plant or a rock has no account: they have no books to close, and a large erase would otherwise read the whole journal for each of them. */
+const hasBooks = (buildingType) => !isRoadType(buildingType) && getBuildingDefinition(buildingType)?.construction?.category !== 'nature';
+
+/**
+ * Whether the player is asked before this building is demolished: every building but the roads and the nature, which have no books and no consequences.
+ * @param {string} buildingType
+ * @returns {boolean}
+ */
+export const isConfirmedBeforeDemolition = hasBooks;
+
+/**
+ * The building the player demolishes leaves with its books closed (a liquidation, see LiquidateDemolishedBuilding.js), in the turn it leaves.
+ * @param {{ instanceId: string, buildingType: string }} params
+ */
+export async function liquidateDemolishedBuilding({ instanceId, buildingType }) {
+  if (!hasBooks(buildingType)) return;
+  await getOrCreateAccountingContext().liquidateDemolishedBuilding({ buildingId: instanceId, turn: getSessionGameTime() });
+}
+
+/**
+ * What the demolition of a building will do to the books, for the player to read before he confirms (nothing is written).
+ * @param {{ instanceId: string, buildingType: string }} params
+ * @returns {Promise<{ abandoned: Array<{ debtorId: string, kind: string, label: string, amount: number }>, owed: Array<{ kind: string, label: string, amount: number }> }>}
+ */
+export async function previewDemolitionLiquidation({ instanceId, buildingType }) {
+  if (!hasBooks(buildingType)) return { abandoned: [], owed: [] };
+  return getOrCreateAccountingContext().previewDemolitionLiquidation({ buildingId: instanceId });
+}
 
 /**
  * @param {number} amount

@@ -201,6 +201,9 @@ const OPERATIONS_DIVERSES = Object.freeze({
   od_payable_contribution: Object.freeze({ debit: '645', credit: '431', label: 'Cotisations sociales', tone: 'personnel', detail: 'Cotisations dues, pas encore payées' }),
   od_payable_corporate_tax: Object.freeze({ debit: '695', credit: '444', label: 'Impôts sur les bénéfices', tone: 'tax-paid', detail: 'Impôt dû, pas encore payé' }),
   od_payable_premises_rent: Object.freeze({ debit: '6132', credit: '401', label: 'Locations immobilières', tone: 'purchase', detail: 'Loyer du local dû, pas encore payé' }),
+  // A debt owed to a building the player demolished: no one is left to be paid, so the debtor is released (an abandonment of the claim, an exceptional product, 7718)
+  // and the debt closes (see PayableCatalog `abandonment`). A household is no entity of the plan: nothing is booked on its side, and it is not prosecuted.
+  od_abandoned_wage: Object.freeze({ debit: '421', credit: '7718', label: 'Abandons de créances obtenus', tone: 'sales', detail: 'Les salaires dus à une maison démolie ne seront jamais payés : la dette est abandonnée' }),
   od_receivable_premises_rent: Object.freeze({ debit: '411', credit: '752', label: 'Revenus des immeubles', tone: 'sales', detail: 'Loyer du local dû à la SCI, pas encore encaissé' }),
   // The city's side of what a company owes it (M57 chart): the tax is a product of the year it falls due, against a receivable (411, redevables); the contributions are
   // owed to the social body, so the city holds a receivable on the company (4387) against what it owes that body (431), no product.
@@ -326,6 +329,7 @@ const EXTRA_ACCOUNT_LABELS = Object.freeze({
   '713': 'Variation des stocks de produits',
   '6811': 'Dotations aux amortissements des immobilisations',
   '675': 'Valeurs comptables des éléments d’actif cédés',
+  '7718': 'Autres produits exceptionnels sur opérations de gestion',
   '431': 'Sécurité sociale',
   '6411': 'Salaires, appointements',
   '645': 'Charges de sécurité sociale et de prévoyance',

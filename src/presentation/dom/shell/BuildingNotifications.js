@@ -18,7 +18,6 @@ import {
 import {
   UNRESOLVED_TERM,
   buildingName,
-  buildingNameInSentence,
   goodLabel,
   namesOfBuildings,
   namesOfDependents,
@@ -27,6 +26,7 @@ import {
   unresolvedTerm,
 } from './CatalogVocabulary.js';
 import { confirmModal } from './ConfirmModal.js';
+import { formatEuro } from '../../../contexts/accounting/presentation/formatMoney.js';
 
 /**
  * Legacy aliases that aren't a real building type id in `buildingCatalog`
@@ -213,19 +213,70 @@ export function showClientPriorityNotification(producerType) {
 }
 
 /**
- * Asked before the demolition: which buildings go down with the hub. Names come from the catalog.
- * @param {string} hubType The hub about to be demolished (a catalog id).
- * @param {Array<{ type: string, x: number, y: number }>} dependents What would be destroyed with it.
+ * What the demolition of one building does, in the player's words: the people who lose their place, the buildings that go down with it, the debts that are released
+ * and the ones nothing pays. An empty list means none of these concerns it. Names and labels come from the catalog, amounts from the money format.
+ * @param {DemolitionConsequences} consequences
+ * @returns {string[]}
+ */
+function demolitionConsequenceLines({ residents, workers, dependents, abandoned, unpaid }) {
+  const lines = [];
+  if (residents > 0) lines.push(residents === 1 ? '1 habitant part.' : `${residents} habitants partent.`);
+  if (workers > 0) lines.push(workers === 1 ? '1 ouvrier perd son poste.' : `${workers} ouvriers perdent leur poste.`);
+  for (const dependent of dependents) lines.push(`Détruit avec lui : ${buildingName(dependent.type)} (${dependent.x}, ${dependent.y}).`);
+  for (const debt of abandoned) {
+    lines.push(`${debt.debtorType ? buildingName(debt.debtorType) : 'Un bâtiment déjà démoli'} lui devait ${formatEuro(debt.amount)} (${debt.label.toLowerCase()}) : dette abandonnée, sans poursuite.`);
+  }
+  for (const debt of unpaid) lines.push(`${formatEuro(debt.amount)} de ${debt.label.toLowerCase()} qu'il doit resteront impayés.`);
+  return lines;
+}
+
+/**
+ * @typedef {object} DemolitionConsequences
+ * @property {number} residents Inhabitants who leave (a house).
+ * @property {number} workers Workers who lose their place (a workplace).
+ * @property {Array<{ type: string, x: number, y: number }>} dependents Buildings that cannot work without it and go down with it (a hub).
+ * @property {Array<{ debtorType: string | null, label: string, amount: number }>} abandoned Debts owed to it, released (`debtorType` is null when that building is gone too).
+ * @property {Array<{ label: string, amount: number }>} unpaid Debts it owes itself, which nothing pays yet.
+ */
+
+/**
+ * Asked before the buildings of a selection are demolished, one question for all of them: for each, what it brings down, or that it brings down nothing. The
+ * accounting part is the accounting's own preview of what the demolition writes, so the player reads what will really be done. "No" spares the whole selection
+ * (the player can draw it again, more carefully).
+ * @param {Array<{ type: string, x: number, y: number } & DemolitionConsequences>} entries The buildings about to go, with what each brings down.
  * @returns {Promise<boolean>} true when the player confirms.
  */
-export function confirmHubCascadeDemolition(hubType, dependents) {
+export function confirmDemolition(entries) {
+  const linesOf = entries.map(demolitionConsequenceLines);
+  const single = entries.length === 1;
+  const none = 'aucune conséquence pour l\'emploi, la population ni les dettes';
   return confirmModal({
-    title: `Démolir ${buildingNameInSentence(hubType)} ?`,
-    message: `${buildingName(hubType)} alimente ${dependents.length} bâtiment(s) qui ne peuvent pas fonctionner sans lui : ils seront détruits avec lui.`,
-    items: dependents.map((building) => `${buildingName(building.type)} (${building.x}, ${building.y})`),
+    title: single ? `Démolir « ${buildingName(entries[0].type)} » ?` : `Démolir ${entries.length} bâtiments ?`,
+    message: linesOf.some((lines) => lines.length > 0)
+      ? 'Voici ce que cette démolition provoque :'
+      : `Cette démolition n'a ${none}.`,
+    // One building: each consequence is a line. Several: each building is a line with its name in bold, then what it brings down, one consequence per line.
+    items: single
+      ? linesOf[0]
+      : entries.map((entry, index) => ({
+        label: `${buildingName(entry.type)} (${entry.x}, ${entry.y})`,
+        text: linesOf[index].join('\n') || `${none.charAt(0).toUpperCase()}${none.slice(1)}.`,
+      })),
     confirmLabel: 'Démolir',
     cancelLabel: 'Annuler',
   });
+}
+
+/**
+ * Said when the player tries to demolish a building the catalog forbids to demolish (`undemolishable`: the mayor's house). The words say what it holds for the
+ * player, from the catalog (the building's name, the owner skill's name), as the refusals of a placement do.
+ * @param {string} buildingType The refused building's catalog id.
+ */
+export function showDemolitionRefusedNotification(buildingType) {
+  showWarningToast(
+    `« ${getBuildingDisplayName(buildingType)} » ne peut pas être démolie : c'est elle qui fait de vous un ${getSkillDisplay(OWNER_SKILL).label.toLowerCase()} et qui ouvre la construction de toutes les autres maisons.`,
+    { timeout: 7000 }
+  );
 }
 
 /**

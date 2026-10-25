@@ -47,7 +47,7 @@ feature was removed, nor one per UI wording or per small change. A test is not a
 
 ## A catalog or default change that moves a building's stored fields updates the prefab too
 
-`src/shared/prefabs/anoria-tour-116/` is a real city exported at a turn, bundled as the game's starter prefab.
+`src/shared/prefabs/anoria-tour-144/` is a real city exported at a turn, bundled as the game's starter prefab.
 When a change to the catalog or to a building's default fields (`employment.workerNeed`, a default `employees`
 shape, a stat derived from the catalog, ...) means an existing building's *stored* data no longer matches what
 the game would now compute for it, check whether the prefab's `city-*.json` holds that building type and fix its

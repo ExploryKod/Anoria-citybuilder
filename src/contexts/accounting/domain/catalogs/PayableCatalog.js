@@ -4,12 +4,14 @@
  *   - `rank`: who is paid first when the money does not cover everyone (the lowest rank first; the creditors of one rank share what is left in
  *     proportion to what they are owed): the workers' wages, then the city (social contributions, taxes), then the owner (the rent of the premises);
  *   - `payable`: the opération diverse that records the debt (the charge to pay, against the debt account);
- *   - `settlement`: the line of money that pays it off (see PcgJournalCatalog).
+ *   - `settlement`: the line of money that pays it off (see PcgJournalCatalog);
+ *   - `abandonment` (optional): the opération diverse that closes the debt without money when its creditor is gone (a house the player demolished). A kind with
+ *     none cannot be abandoned: the demolition of its creditor is refused, never papered over.
  *
  * A debt is derived from these lines (see DebtPolicy), never stored.
  */
 export const PAYABLE_KINDS = Object.freeze({
-  wage: Object.freeze({ rank: 1, payable: 'od_payable_wage', settlement: 'wage_debt_paid', label: 'Salaires' }),
+  wage: Object.freeze({ rank: 1, payable: 'od_payable_wage', settlement: 'wage_debt_paid', abandonment: 'od_abandoned_wage', label: 'Salaires' }),
   contribution: Object.freeze({ rank: 2, payable: 'od_payable_contribution', settlement: 'contribution_debt_paid', label: 'Cotisations sociales' }),
   corporate_tax: Object.freeze({ rank: 2, payable: 'od_payable_corporate_tax', settlement: 'corporate_tax_debt_paid', label: 'Impôt sur les sociétés' }),
   premises_rent: Object.freeze({ rank: 3, payable: 'od_payable_premises_rent', settlement: 'premises_rent_debt_paid', label: 'Loyer du local' }),

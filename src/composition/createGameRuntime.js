@@ -139,7 +139,10 @@ export function createGameRuntime({
      * @param {{ city?: object, time?: number }} [context]
      */
     async runSimulation(context = {}) {
-      await pipeline.runGroup('simulation', world, context);
+      const timings = await pipeline.runGroup('simulation', world, context);
+      if (import.meta.env?.DEV) {
+        console.info(`[tick-perf] ecs systems ${timings.map(({ name, ms }) => `${name}=${ms.toFixed(1)}`).join(' ')}`);
+      }
     },
   };
 }

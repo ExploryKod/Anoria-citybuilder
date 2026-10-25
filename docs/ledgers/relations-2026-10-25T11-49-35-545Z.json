@@ -1,30 +1,20 @@
 {
-  "exportDate": "2026-10-17T11:30:40.561Z",
+  "exportDate": "2026-10-25T11:49:35.543Z",
   "relations": [
     {
       "cityId": "briga",
-      "status": "expired",
-      "satisfactionScore": -64,
+      "status": "active",
+      "satisfactionScore": -41,
       "contractStartMonth": 1,
       "contractEndMonth": null,
-      "lastOrderMonth": 114,
-      "ceased": {
-        "reason": "satisfaction_too_low",
-        "by": "city",
-        "turn": 574
-      },
-      "importCeased": {
-        "coal": {
-          "reason": "warehouse_full",
-          "by": "merchants",
-          "turn": 419
-        }
-      },
+      "lastOrderMonth": 33,
+      "ceased": null,
+      "importCeased": {},
       "importFailures": {
         "coal": {
           "no_merchants": 0,
           "no_warehouse": 0,
-          "warehouse_full": 13
+          "warehouse_full": 0
         }
       },
       "exportCeased": {},
@@ -36,11 +26,11 @@
       "satisfactionScore": -70,
       "contractStartMonth": 1,
       "contractEndMonth": null,
-      "lastOrderMonth": 16,
+      "lastOrderMonth": 15,
       "ceased": {
         "reason": "satisfaction_too_low",
         "by": "city",
-        "turn": 84
+        "turn": 79
       },
       "importCeased": {
         "petrol": {
@@ -72,56 +62,42 @@
     },
     {
       "cityId": "olivea",
-      "status": "expired",
-      "satisfactionScore": -80,
+      "status": "active",
+      "satisfactionScore": -62,
       "contractStartMonth": 1,
       "contractEndMonth": null,
-      "lastOrderMonth": 43,
-      "ceased": {
-        "reason": "satisfaction_too_low",
-        "by": "city",
-        "turn": 219
-      },
+      "lastOrderMonth": 34,
+      "ceased": null,
       "importCeased": {},
       "importFailures": {},
       "exportCeased": {
         "wood": {
           "reason": "export_no_merchants",
           "by": "merchants",
-          "turn": 129
+          "turn": 154
         }
       },
       "exportFailures": {
         "wood": {
-          "export_no_merchants": 20,
+          "export_no_merchants": 6,
           "export_no_warehouse": 0
         }
       }
     },
     {
       "cityId": "piceta",
-      "status": "expired",
-      "satisfactionScore": -60,
+      "status": "active",
+      "satisfactionScore": -32,
       "contractStartMonth": 1,
       "contractEndMonth": null,
-      "lastOrderMonth": 126,
-      "ceased": {
-        "reason": "satisfaction_too_low",
-        "by": "city",
-        "turn": 634
-      },
-      "importCeased": {
-        "uranium": {
-          "reason": "warehouse_full",
-          "by": "merchants",
-          "turn": 419
-        }
-      },
+      "lastOrderMonth": 33,
+      "ceased": null,
+      "importCeased": {},
       "importFailures": {
         "uranium": {
           "no_merchants": 0,
           "no_warehouse": 0,
-          "warehouse_full": 17
+          "warehouse_full": 0
         }
       },
       "exportCeased": {},

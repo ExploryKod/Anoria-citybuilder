@@ -733,6 +733,18 @@ canvas.pointer-events-disabled {
     cursor: pointer;
 }
 
+/* The download of every export is the pause's second button: smaller than Resume, same look. */
+.game-window .pause-overlay .export-all-btn {
+    font-size: 16px;
+    padding: 12px 18px;
+    gap: 10px;
+}
+
+.game-window .pause-overlay .export-all-btn:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
 .game-window .panel-layout .panel-close-btn:hover {
     background-color: var(--cta);
     color: #fff;

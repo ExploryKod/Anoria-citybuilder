@@ -73,6 +73,7 @@ export const INFO_JOURNAL_TYPE_LABELS = {
   od_payable_contribution: 'Cotisations dues non payées (OD)',
   od_payable_corporate_tax: 'Impôt dû non payé (OD)',
   od_payable_premises_rent: 'Loyer du local dû non payé (OD)',
+  od_abandoned_wage: 'Salaires dus à un bâtiment démoli : dette abandonnée (OD)',
   od_receivable_premises_rent: 'Loyer du local à encaisser (OD)',
   od_asset_contribution: 'Apport de constructions par la ville (OD)',
   od_asset_disposal_amortization: 'Sortie d’actif : amortissement soldé (OD)',

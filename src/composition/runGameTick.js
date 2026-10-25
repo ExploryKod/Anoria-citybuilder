@@ -53,10 +53,20 @@ export async function runGameTick({
     return;
   }
 
+  // Measurement only: the milliseconds each stage of the day took, reported once at the end of a complete tick (dev builds).
+  const stageMs = {};
+  let lapStartedAt = performance.now();
+  const lap = (stage) => {
+    const now = performance.now();
+    stageMs[stage] = (stageMs[stage] ?? 0) + (now - lapStartedAt);
+    lapStartedAt = now;
+  };
+
   if (!silent) {
     gameUI.updateTimeDisplay(time);
   }
   city.update();
+  lap('city');
 
   if (shouldAbort()) {
     return;
@@ -64,6 +74,7 @@ export async function runGameTick({
 
   if (!silent) {
     await scene.update(city, time);
+    lap('sceneBefore');
     if (shouldAbort()) {
       return;
     }
@@ -71,6 +82,7 @@ export async function runGameTick({
 
   try {
     await runtime.runSimulation({ city, time });
+    lap('ecs');
   } catch (err) {
     // The Error object itself, not just its message — `err.stack` is the one thing that says
     // WHERE inside the ECS pipeline this threw (which system, which file/line), and a plain
@@ -83,18 +95,22 @@ export async function runGameTick({
 
   if (!silent) {
     await scene.update(city, time);
+    lap('sceneAfter');
     if (shouldAbort()) {
       return;
     }
   }
 
+  lapStartedAt = performance.now();
   const { totalPop } = await persistGameplayTurn({ gameStore, housing, time });
+  lap('persist');
   await processGameTurnBudget({
     city,
     buildings: scene.buildings,
     time,
     totalPop,
   });
+  lap('budget');
   if (shouldAbort()) {
     return;
   }
@@ -102,14 +118,22 @@ export async function runGameTick({
   if (!silent) {
     await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
     await refreshEmploymentPresentation();
+    lap('hud');
   }
 
   if (objectivesTracker.enabled) {
     await objectivesTracker.checkObjectives(time);
+    lap('objectives');
   }
 
   if (shouldAbort()) {
     return;
+  }
+
+  if (import.meta.env?.DEV) {
+    const total = Object.values(stageMs).reduce((sum, ms) => sum + ms, 0);
+    const stages = Object.entries(stageMs).map(([stage, ms]) => `${stage}=${ms.toFixed(1)}`).join(' ');
+    console.info(`[tick-perf] day=${time}${silent ? ' (silent)' : ''} total=${total.toFixed(1)}ms ${stages}`);
   }
 
   if (!silent && presentIncomingNewsEvents) {
