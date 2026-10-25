@@ -47,4 +47,20 @@ describe('a hub that cannot pay still collects what costs nothing', () => {
     expect(outcome.collected).toBe(true);
     expect(repo.raw.get(hubId).stocks.dealCoal).toBe(20);
   });
+
+  test('a hub that can pay only part of what a farm offers tells the farm, so that the failed sale is explained by it', async () => {
+    const hubId = createBuildingInstanceId();
+    const farmId = createBuildingInstanceId();
+    const repo = new Repo([
+      createSupplyBuildingSnapshot({ id: hubId, type: 'Windmill-001', roadCount: 1, worker: 1, workerNeed: 1, stocks: { wheat: 0, food: 0 }, maxStock: 1000 }),
+      createSupplyBuildingSnapshot({ id: farmId, type: 'Farm-Wheat', roadCount: 1, stocks: { wheat: 10, food: 10 }, maxStock: 100 }),
+    ]);
+    // A unit costs 1 and the hub can pay 4.
+    const collect = new CollectResourceToHub(repo, null, { priceBook: { ensure: async () => {}, sellingPrice: () => 1 }, purchasingPower: async () => 4 });
+
+    const outcome = await collect.execute({ hubId, sourceRefs: [{ instanceId: farmId }], period: { month: 'december', turn: 1 } });
+
+    expect(outcome.totalUnits).toBe(4);
+    expect(repo.raw.get(farmId).unpaidByHub).toBe(true);
+  });
 });

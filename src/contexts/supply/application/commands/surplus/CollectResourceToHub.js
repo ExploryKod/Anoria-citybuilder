@@ -92,6 +92,8 @@ export class CollectResourceToHub {
     await this.pricing.priceBook.ensure(period);
     let budget = await this.pricing.purchasingPower({ buyerId: hubId, period });
     let shortOfMoney = false;
+    /** The producers the hub could not pay in full: each is told, so that a sale that fails for it is explained by it (see MarkFailedSales). */
+    const unpaidSourceIds = new Set();
 
     const transfers = [];
     // Each unit keeps its age on the way (see StockAgingPolicy.js): what was taken, from whom, out of how much.
@@ -150,7 +152,10 @@ export class CollectResourceToHub {
         const wanted = Math.min(available, capacity, room);
         // An agreement (a trade deal) is no good yet and costs nothing: it is always affordable.
         const amount = price === 0 ? wanted : Math.min(wanted, Math.floor(Math.round(budget * 100) / Math.round(price * 100)));
-        if (amount < wanted) shortOfMoney = true;
+        if (amount < wanted) {
+          shortOfMoney = true;
+          unpaidSourceIds.add(sourceId);
+        }
         if (amount <= 0) continue;
         budget = Math.round((budget - amount * price) * 100) / 100;
         running[category] = (running[category] ?? 0) + amount;
@@ -164,6 +169,8 @@ export class CollectResourceToHub {
         await this.supplyBuildingRepository.saveStocks(sourceId, sourceStocks);
       }
     }
+
+    for (const sourceId of unpaidSourceIds) await this.supplyBuildingRepository.updateBuildingFields(sourceId, { unpaidByHub: true });
 
     if (transfers.length === 0) {
       return { collected: false, reason: shortOfMoney ? 'no_budget' : 'nothing_to_collect', transfers: [], totalUnits: 0 };

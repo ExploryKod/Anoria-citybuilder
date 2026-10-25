@@ -21,11 +21,9 @@ import {
 export class MarkFailedSales {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
-   * @param {{ priceBook: object, purchasingPower: (params: { buyerId: string, period: object }) => Promise<number> }} pricing what a hub pays a producer, and what it can still spend (the same as CollectResourceToHub's)
    */
-  constructor(supplyBuildingRepository, pricing) {
+  constructor(supplyBuildingRepository) {
     this.supplyBuildingRepository = supplyBuildingRepository;
-    this.pricing = pricing;
   }
 
   /**
@@ -63,14 +61,15 @@ export class MarkFailedSales {
         ...new Set(entries.flatMap((entry) => entry.categories.filter((c) => collected.includes(c)))),
       ].filter((category) => (producer.stocks?.[category] ?? 0) > 0);
 
-      const fields = { saleWindowOpen: false };
+      // `unpaidByHub` (set by CollectResourceToHub when a hub could not pay for what a producer offered) is the window's own: it ends with it.
+      const fields = { saleWindowOpen: false, unpaidByHub: false };
       if (unsoldCategories.length > 0) {
         const units = unsoldCategories.reduce((sum, category) => sum + (producer.stocks?.[category] ?? 0), 0);
         fields.lastFailedSale = {
           year: period.year ?? 0,
           monthIndex: period.monthIndex ?? null,
           units,
-          cause: await this.#cause(producer, unsoldCategories[0], period),
+          cause: await this.#cause(producer, unsoldCategories[0]),
         };
         failed += 1;
       }
@@ -81,7 +80,7 @@ export class MarkFailedSales {
   }
 
   /** Why nothing took it: no hub of its goods within reach, one that was not working, one that was full, or one that could not pay for it. */
-  async #cause(producer, category, period) {
+  async #cause(producer, category) {
     const hubs = await this.supplyBuildingRepository.findByResourceRole('collector', [category]);
     const inReach = hubs.filter((hub) => isWithinRange(hub, producer, getRangeForRole(hub.type, 'collector') ?? Infinity));
     if (inReach.length === 0) return 'no_hub';
@@ -107,11 +106,9 @@ export class MarkFailedSales {
     });
     if (withRoomForGood.length === 0) return 'good_ceiling';
 
-    // A hub buys what it can pay with its money and its suppliers' credit (see CollectResourceToHub): none of them can pay one unit.
-    await this.pricing.priceBook.ensure(period);
-    const price = this.pricing.priceBook.sellingPrice(producer, category, period);
-    const powers = await Promise.all(withRoomForGood.map((hub) => this.pricing.purchasingPower({ buyerId: hub.id, period })));
-    if (powers.every((power) => power < price)) return 'hub_no_money';
+    // A hub that had room and a road took only what it could pay (see CollectResourceToHub): it said so on the producer when it left some of its goods. What it could pay is read then, not
+    // now: by the time the window has closed the month's settlement has paid its purchases and its money is back.
+    if (producer.unpaidByHub === true) return 'hub_no_money';
 
     throw new Error(`[sales] ${producer.type} ${producer.id} could not sell its ${category}: a working hub in reach has room for it, yet it was not collected`);
   }

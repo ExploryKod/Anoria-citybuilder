@@ -217,7 +217,7 @@ export function createSupplyContext({
         return rebalanceHubAllocations.execute({ hubId, categories: getCategoriesForRole(hub?.type, 'hub') });
       },
     },
-    new MarkFailedSales(supplyBuildingRepositoryImpl, { priceBook, purchasingPower: purchasingPowerOf }),
+    new MarkFailedSales(supplyBuildingRepositoryImpl),
     new EmptyHubGoods(supplyBuildingRepositoryImpl, hubServing)
   );
   const traceability = new SupplyTraceability({

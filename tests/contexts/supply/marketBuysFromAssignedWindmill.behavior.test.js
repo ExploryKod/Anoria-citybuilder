@@ -122,6 +122,16 @@ describe('Supply — market buys from assigned windmill', () => {
     expect((await repo.findById(marketId)).stocks.food).toBe(6);
   });
 
+  test('a market with no money to spend buys nothing and says so: a shortfall of the game is not a failure', async () => {
+    repo.raw.get(windmillId).stocks = { wheat: 10, carrot: 10, cabbage: 0, food: 20 };
+    const broke = new TransferHubToHub(repo, new HubServing(repo), referencePriceBook, async () => 0);
+
+    const outcome = await broke.execute({ targetId: marketId, period: { turn: 1 }, demand: 10 });
+
+    expect(outcome).toMatchObject({ transferred: false, totalUnits: 0 });
+    expect((await repo.findById(windmillId)).stocks.food).toBe(20);
+  });
+
   test('takes no more than the market has room for', async () => {
     // The ceiling is the catalog's: leave the stall three units below it.
     const ceiling = getMaxStockForRole('Market-Stall-Red', 'distributor', 'wheat');
