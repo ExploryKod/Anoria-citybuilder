@@ -54,11 +54,11 @@ export async function syncPopRailHud(gameUI) {
 
     const countryGroups = mapEmploymentGroupsForHud(
       country.employment.byGroup,
-      country.employment.bySector
+      country.employment.bySkill
     );
     const hamletGroups = mapEmploymentGroupsForHud(
       hamlet.employment.byGroup,
-      hamlet.employment.bySector
+      hamlet.employment.bySkill
     );
 
     // The workers' head figure is what the per-class worker rows below it add up to, never a count of its own.
@@ -87,6 +87,8 @@ export async function syncPopRailHud(gameUI) {
       groupsHamlet: hamletGroups,
       causesCountry: country.employmentCauses,
       causesHamlet: hamlet.employmentCauses,
+      groupCausesCountry: country.employmentGroupCauses,
+      groupCausesHamlet: hamlet.employmentGroupCauses,
     });
   } catch (err) {
     console.warn('[syncPopRailHud] population:', err);

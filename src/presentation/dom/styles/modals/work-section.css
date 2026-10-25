@@ -34,6 +34,28 @@
     text-align: left;
 }
 
+/* Which hamlet the priorities are for: set apart under the title, since they only hold for that hamlet. */
+.work-hamlet-banner {
+    margin: 10px 0 16px;
+    padding: 8px 12px;
+    border-left: 4px solid var(--cta);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--primary);
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.work-hamlet-label {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.work-hamlet-banner__hint {
+    opacity: 0.8;
+}
+
 /* Group tabs — one per social group + "Commun" (shared skills), rendered
    dynamically by WorkSectionPresenter.js from the catalog (never a fixed
    count here): each tab's table only ever lists what that group can

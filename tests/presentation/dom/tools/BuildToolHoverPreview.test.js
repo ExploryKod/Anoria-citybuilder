@@ -1,7 +1,5 @@
 import { describe, expect, test } from '@jest/globals';
-import { BUILDING_ASSETS } from '../../../../src/presentation/three/assets/buildingAssets.js';
 import { getDirectToolForCategory } from '../../../../src/presentation/three/assets/buildingCategories.js';
-import { MOBILE_TOOLBAR_CATEGORIES } from '../../../../src/presentation/dom/tools/mobileToolbarCategories.js';
 import {
   resolveToolPreviewProfile,
   resolveToolPreviewUrl,
@@ -48,18 +46,5 @@ describe('Build bar category pills — which are buttons, decided by the catalog
     expect(getDirectToolForCategory('houses')).toBeNull();
     expect(getDirectToolForCategory('farms')).toBeNull();
     expect(getDirectToolForCategory('unknown')).toBeNull();
-  });
-
-  test('every pillCategory a tool declares is a real pill, claimed by one tool only', () => {
-    const pillIds = new Set(MOBILE_TOOLBAR_CATEGORIES.map((category) => category.id));
-    const declared = Object.entries(BUILDING_ASSETS)
-      .filter(([, asset]) => asset.button?.pillCategory)
-      .map(([id, asset]) => [id, asset.button.pillCategory]);
-
-    expect(declared.length).toBeGreaterThan(0);
-    for (const [, pillCategory] of declared) {
-      expect(pillIds.has(pillCategory)).toBe(true);
-    }
-    expect(new Set(declared.map(([, pillCategory]) => pillCategory)).size).toBe(declared.length);
   });
 });

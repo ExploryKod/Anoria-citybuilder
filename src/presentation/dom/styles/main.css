@@ -1297,7 +1297,7 @@ footer .footer-links a:hover {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px 16px;
+    padding: max(24px, env(safe-area-inset-top, 0px)) 16px max(24px, env(safe-area-inset-bottom, 0px));
     pointer-events: none;
     background: transparent;
 }
@@ -1314,8 +1314,11 @@ footer .footer-links a:hover {
     position: relative;
     z-index: 1;
     width: min(960px, 92vw);
-    min-width: 800px;
-    max-height: min(72vh, 720px);
+    /* Never wider than the screen (a phone), or the close button would be pushed out of sight. */
+    min-width: min(800px, 100%);
+    /* The same height on every tab: 780px, or all the room there is on a smaller screen (a phone: 100%); the tab's content scrolls inside. */
+    height: min(780px, 100%);
+    max-height: 100%;
     display: flex;
     flex-direction: column;
     background: #fff;
@@ -1330,7 +1333,8 @@ footer .footer-links a:hover {
 
 .info-building-overlay.active {
     pointer-events: auto;
-    z-index: 1200;
+    /* A modal: above the HUD chrome (10010–10025), which would otherwise cover the header and its close button at the top of a full-height panel. */
+    z-index: var(--z-index-modal, 10030);
 }
 
 .info-building-overlay.active .info-building-backdrop {
@@ -1347,6 +1351,10 @@ footer .footer-links a:hover {
 }
 
 .info-building__header {
+    /* Above the tab's content and never squeezed: the close button it holds stays visible whatever the panel's height. */
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -1395,6 +1403,7 @@ footer .footer-links a:hover {
 }
 
 .info-building__tabs {
+    flex-shrink: 0;
     display: flex;
     gap: 0;
     padding: 0 20px;
@@ -2640,12 +2649,7 @@ button.building-info-metric-card[aria-pressed="true"] {
     margin-top: 8px;
 }
 
-/* Hub storage panel (barn / windmill) */
-.info-building-overlay--hub-barn .info-building-panel,
-.info-building-overlay--hub .info-building-panel {
-    max-height: min(78vh, 780px);
-}
-
+/* Hub storage panel (barn / windmill): the panel has the same height as any other (see .info-building-panel) */
 .hub-info-panel {
     display: flex;
     flex-direction: column;
@@ -3173,7 +3177,9 @@ button.building-info-metric-card[aria-pressed="true"] {
     .info-building-panel {
         min-width: 0;
         width: min(100%, 96vw);
-        max-height: 85vh;
+        /* A phone: all the room there is. The header, with its close button, stays on top (see .info-building__header). */
+        height: 100%;
+        max-height: 100%;
     }
 
     .info-building__tabs [role="tab"] {

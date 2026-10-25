@@ -31,6 +31,7 @@ import {
     popGroupWorkerNodes,
     popGroupLaborNodes,
     popLaborCauseNodes,
+    popGroupLaborCauseNodes,
     popResourceCityNodes,
     popResourceNatureNodes,
     displayFunds,
@@ -77,24 +78,68 @@ function setHudCount(el, value) {
 }
 
 /**
+ * A percentage of the labour market. It carries no tooltip of its own: the whole row speaks (see `setLaborRowWords`).
  * @param {HTMLElement | null} el
  * @param {{ mode: 'lack' | 'unemployment' | 'both', display: string, count: number, unemployed: number, lack: number }} slot
- * @param {string} scopeLabel
  */
-function setLaborCell(el, slot, scopeLabel) {
+function setLaborCell(el, slot) {
     if (!(el instanceof HTMLElement)) return;
     el.textContent = slot.display;
     el.classList.toggle('pop-detail-value--lack', slot.mode !== 'unemployment');
+    el.removeAttribute('title');
+}
+
+/** What a labour figure counts, in words: the people out of work (and their share), the posts left empty, or both. */
+function laborFigures(slot) {
     const plural = (n) => (n === 1 ? '' : 's');
     const unemployedWords = `${slot.unemployed} chômeur${plural(slot.unemployed)}`;
     const lackWords = `${slot.lack} poste${plural(slot.lack)} vide${plural(slot.lack)}`;
-    const tooltip = slot.mode === 'both'
-        ? `${scopeLabel} : ${unemployedWords} (${slot.display.split(' · ')[0]}) et ${lackWords}`
-        : slot.mode === 'lack'
-            ? `${scopeLabel} : ${lackWords}`
-            : `${scopeLabel} : ${unemployedWords}`;
-    el.title = tooltip;
-    el.setAttribute('aria-label', tooltip);
+    if (slot.mode === 'both') return `${unemployedWords} (${slot.display.split(' · ')[0]}) et ${lackWords}`;
+    return slot.mode === 'lack' ? lackWords : `${unemployedWords} (${slot.display})`;
+}
+
+/**
+ * The tooltip of a labour block's first row (the whole city's, or a class's): what the percentage is, then what it comes to in the country and in the
+ * visible hamlet. The row's own icon says nothing else, so its own title goes.
+ * @param {Element | null} row
+ * @param {{ heading: string, definition: string, country: object, hamlet: object }} words the two slots are `laborSlotFromStats` answers
+ */
+function setLaborRowWords(row, { heading, definition, country, hamlet }) {
+    if (!row) return;
+    row.querySelector('.pop-detail-emoji, .pop-detail-labor-icon')?.removeAttribute('title');
+    const lines = [heading, definition, `Pays : ${laborFigures(country)}`, `Hameau visible : ${laborFigures(hamlet)}`];
+    row.setAttribute('title', lines.join('\n'));
+    row.setAttribute('aria-label', lines.join('. '));
+}
+
+/**
+ * What each cell under a labour percentage counts (the head count of people, or of posts), in full, for its tooltip. The two "unemployed" causes and the
+ * two "posts" causes are the same counts read from the other side: the same people out of work are the same posts left empty when their skills do not match.
+ */
+const LABOR_CAUSE_WORDS = Object.freeze({
+    unemployedNoSkill: { unit: 'chômeur', what: 'sans la compétence', hint: 'des postes sont vacants, mais ces chômeurs n\'ont pas la compétence demandée' },
+    unemployedNoPosts: { unit: 'chômeur', what: 'sans poste libre', hint: 'aucun poste n\'est libre pour eux, même avec la compétence' },
+    lackNoSkill: { unit: 'poste', what: 'vide faute de compétence', whatMany: 'vides faute de compétence', hint: 'des chômeurs sont disponibles, mais sans la compétence que ces postes demandent' },
+    lackNoHands: { unit: 'poste', what: 'vide faute de bras', whatMany: 'vides faute de bras', hint: 'plus personne n\'est disponible pour occuper ces postes' },
+    unemployedNoRoad: { unit: 'chômeur', what: 'sans route', hint: 'leur maison n\'est reliée à aucun lieu de travail' },
+});
+
+/**
+ * @param {{ row: Element | null, country: Element | null, hamlet: Element | null }} nodes
+ * @param {string} cause
+ * @param {number} countryCount
+ * @param {number} hamletCount
+ * @param {string} scopeTitle who the cell is about: the whole city, or a social category
+ */
+function setLaborCauseCell(nodes, cause, countryCount, hamletCount, scopeTitle) {
+    if (!nodes.row) return;
+    setHudCount(nodes.country, countryCount);
+    setHudCount(nodes.hamlet, hamletCount);
+    nodes.row.classList.toggle('is-zero', !(countryCount > 0) && !(hamletCount > 0));
+    const { unit, what, whatMany = what, hint } = LABOR_CAUSE_WORDS[cause];
+    const count = (n) => `${n} ${unit}${n === 1 ? '' : 's'} ${n === 1 ? what : whatMany}`;
+    nodes.row.title = `${scopeTitle} : ${unit}s ${whatMany} — ${hint}`;
+    nodes.row.setAttribute('aria-label', `${scopeTitle} — pays : ${count(countryCount)} ; hameau visible : ${count(hamletCount)}. ${hint}`);
 }
 
 /**
@@ -363,6 +408,8 @@ class GameUI {
      *   groupsHamlet?: Record<string, { workerPool?: number, assigned?: number, unemployed?: number, unemploymentPercentage?: number, lack?: number }>,
      *   causesCountry?: Record<string, number>,
      *   causesHamlet?: Record<string, number>,
+     *   groupCausesCountry?: Record<string, Record<string, number>>,
+     *   groupCausesHamlet?: Record<string, Record<string, number>>,
      * }} payload
      */
     updateGroupHud(payload = {}) {
@@ -371,8 +418,14 @@ class GameUI {
 
         const countrySlot = laborSlotFromStats(payload.laborCountry);
         const hamletSlot = laborSlotFromStats(payload.laborHamlet);
-        setLaborCell(displayLaborCountry, countrySlot, 'Pays');
-        setLaborCell(displayLaborHamlet, hamletSlot, 'Hameau visible');
+        setLaborCell(displayLaborCountry, countrySlot);
+        setLaborCell(displayLaborHamlet, hamletSlot);
+        setLaborRowWords(displayLaborCountry?.closest('.pop-detail-labor-head'), {
+            heading: 'Travail et chômage — toutes catégories',
+            definition: 'Part des habitants qui cherchent un travail et n\'en ont pas, toutes catégories confondues. Le détail de ses causes est dessous.',
+            country: countrySlot,
+            hamlet: hamletSlot,
+        });
 
         for (const group of allSocialGroups()) {
             const nodes = popGroupLaborNodes[group];
@@ -380,15 +433,35 @@ class GameUI {
             const country = payload.groupsCountry?.[group] ?? {};
             const hamlet = payload.groupsHamlet?.[group] ?? {};
             const groupTitle = getResidentialGroupTitle(group);
-            setLaborCell(nodes.country, laborSlotFromStats(country), `${groupTitle} — pays`);
-            setLaborCell(nodes.hamlet, laborSlotFromStats(hamlet), `${groupTitle} — hameau visible`);
+            const countrySlotOfGroup = laborSlotFromStats(country);
+            const hamletSlotOfGroup = laborSlotFromStats(hamlet);
+            setLaborCell(nodes.country, countrySlotOfGroup);
+            setLaborCell(nodes.hamlet, hamletSlotOfGroup);
+            setLaborRowWords(nodes.row, {
+                heading: `Travail et chômage — ${groupTitle}`,
+                definition: 'Part des habitants de cette catégorie qui cherchent un travail et n\'en ont pas. Le détail de ses causes est dessous.',
+                country: countrySlotOfGroup,
+                hamlet: hamletSlotOfGroup,
+            });
+
+            // The same four situations under the class's own percentage, dimmed while both scopes are at zero. The block is named as the catalog names the class.
+            nodes.row?.closest('.pop-labor-group')?.setAttribute('aria-label', groupTitle);
+            nodes.row?.closest('.pop-labor-group')?.querySelector('.pop-labor-causes')
+                ?.setAttribute('aria-label', `Causes du chômage et des postes vides — ${groupTitle}`);
+            for (const [cause, causeNodes] of Object.entries(popGroupLaborCauseNodes[group] ?? {})) {
+                setLaborCauseCell(
+                    causeNodes,
+                    cause,
+                    payload.groupCausesCountry?.[group]?.[cause] ?? 0,
+                    payload.groupCausesHamlet?.[group]?.[cause] ?? 0,
+                    groupTitle
+                );
+            }
         }
 
-        // Why people are out of work and why posts stay empty: a row each, dimmed while both scopes are at zero.
+        // Why people are out of work and why posts stay empty, the whole city's.
         for (const [cause, nodes] of Object.entries(popLaborCauseNodes)) {
-            setHudCount(nodes.country, payload.causesCountry?.[cause] ?? 0);
-            setHudCount(nodes.hamlet, payload.causesHamlet?.[cause] ?? 0);
-            nodes.row?.classList.toggle('is-zero', !(payload.causesCountry?.[cause] > 0) && !(payload.causesHamlet?.[cause] > 0));
+            setLaborCauseCell(nodes, cause, payload.causesCountry?.[cause] ?? 0, payload.causesHamlet?.[cause] ?? 0, 'Toutes catégories');
         }
     }
 

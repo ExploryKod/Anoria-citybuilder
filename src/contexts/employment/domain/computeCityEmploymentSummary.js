@@ -31,7 +31,7 @@ import { residentsSeekingWork } from '../../../shared/population/workforceQuerie
  *   understaffedBuildingIds: ReadonlyArray<string>,
  *   bySector: Readonly<Record<number, { workerNeed: number, workers: number, need: number }>>,
  *   bySkill: Readonly<Record<string, { workerNeed: number, workers: number, need: number }>>,
- *   byGroup: Readonly<Record<string, { workerPool: number, assigned: number, unemployed: number, poolByLevel: Readonly<Record<number, number>> }>>,
+ *   byGroup: Readonly<Record<string, { workerPool: number, assigned: number, seeking: number, unemployed: number, unemployedNoRoad: number, poolByLevel: Readonly<Record<number, number>> }>>,
  * }}
  */
 export function computeCityEmploymentSummary(buildings) {
@@ -118,7 +118,7 @@ export function computeCityEmploymentSummary(buildings) {
   // The rate of unemployment is over the residents who look for a job, not the whole population: the administrators would dilute it (the classes' own rates are over their workers).
   const unemploymentPercentage = seekingWork > 0 ? Math.round((unemployed / seekingWork) * 100) : 0;
 
-  const byGroup = computeEmploymentByGroup(buildings);
+  const byGroup = computeEmploymentByGroup(buildings, workersByHouseId);
 
   return Object.freeze({
     workerPool,
@@ -138,15 +138,19 @@ export function computeCityEmploymentSummary(buildings) {
 }
 
 /**
- * Per-group breakdown (pool / assigned / unemployed), additive to the global
- * aggregate above — the global formula/semantics stay unchanged.
+ * Per-group breakdown, additive to the global aggregate above — the global formula/semantics stay unchanged.
+ * - `workerPool` / `assigned` / `poolByLevel`: the group's pool (the houses a road reaches) and the workers of the sectors open to it; `poolByLevel`
+ *   splits the pool by the level of the house it comes from, a house grants a skill from its tier on. They say who could staff a post.
+ * - `seeking` / `unemployed` / `unemployedNoRoad`: the group's residents who look for a job, those of them out of work and those whose house no road
+ *   connects — tallied house by house exactly like the city's own (`workersByHouseId`), so the classes add up to the city and the rate has the same
+ *   denominator.
  *
  * @param {ReadonlyArray<import('./EmploymentBuildingSnapshot.js').EmploymentBuildingSnapshot>} buildings
- * `poolByLevel` splits the group's pool by the level of the house it comes from: a house grants a skill from its tier on.
- * @returns {Readonly<Record<string, { workerPool: number, assigned: number, unemployed: number, poolByLevel: Readonly<Record<number, number>> }>>}
+ * @param {ReadonlyMap<string, number>} workersByHouseId every house's workers, wherever they work
+ * @returns {Readonly<Record<string, { workerPool: number, assigned: number, seeking: number, unemployed: number, unemployedNoRoad: number, poolByLevel: Readonly<Record<number, number>> }>>}
  */
-function computeEmploymentByGroup(buildings) {
-  /** @type {Record<string, { workerPool: number, assigned: number, unemployed: number, poolByLevel: Record<number, number> }>} */
+function computeEmploymentByGroup(buildings, workersByHouseId) {
+  /** @type {Record<string, { workerPool: number, assigned: number, seeking: number, unemployed: number, unemployedNoRoad: number, poolByLevel: Record<number, number> }>} */
   const byGroup = {};
 
   for (const group of allSocialGroups()) {
@@ -154,10 +158,24 @@ function computeEmploymentByGroup(buildings) {
 
     let groupWorkerPool = 0;
     let groupAssigned = 0;
+    let seeking = 0;
+    let unemployed = 0;
+    let unemployedNoRoad = 0;
     /** @type {Record<number, number>} */
     const poolByLevel = {};
 
     for (const building of buildings) {
+      if (isLaborSource(building) && residentialGroupForType(building.type) === group) {
+        const seekingHere = residentsSeekingWork(building.type, building.pop);
+        const { unemployed: unemployedHere } = computeHouseholdEmploymentStatus({
+          pop: seekingHere,
+          workers: workersByHouseId.get(building.id) ?? 0,
+        });
+        seeking += seekingHere;
+        unemployed += unemployedHere;
+        if (!hasRoadAccess(building)) unemployedNoRoad += unemployedHere;
+      }
+
       if (
         isLaborSource(building) &&
         hasRoadAccess(building) &&
@@ -176,7 +194,9 @@ function computeEmploymentByGroup(buildings) {
     byGroup[group] = {
       workerPool: groupWorkerPool,
       assigned: groupAssigned,
-      unemployed: Math.max(0, groupWorkerPool - groupAssigned),
+      seeking,
+      unemployed,
+      unemployedNoRoad,
       poolByLevel: Object.freeze(poolByLevel),
     };
   }

@@ -1,7 +1,10 @@
 <svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+<!-- A sale failed, goods are left unsold: a market stall, and the orange "problem" badge. -->
 <rect width="64" height="64" rx="12" ry="12" fill="#5A2A2A"/>
-<path fill="#F2D6A2" d="M11 25 16 11h32l5 14z"/>
-<path fill="#F2D6A2" d="M14 28h36v23H14z"/>
-<rect x="26" y="36" width="12" height="15" fill="#5A2A2A"/>
-<path stroke="#e02020" stroke-width="7" stroke-linecap="round" d="M14 14 50 50M50 14 14 50"/>
+<path fill="#F2D6A2" d="M7 22 11 9h34l4 13z"/>
+<path fill="#F2D6A2" d="M10 25h36v22H10z"/>
+<rect x="22" y="33" width="12" height="14" fill="#5A2A2A"/>
+<circle cx="47" cy="47" r="15" fill="#f08c00" stroke="#fff" stroke-width="3"/>
+<path stroke="#fff" stroke-width="4.5" stroke-linecap="round" d="M47 39v8"/>
+<circle cx="47" cy="54" r="2.6" fill="#fff"/>
 </svg>

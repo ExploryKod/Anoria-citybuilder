@@ -145,6 +145,7 @@ export function getButtonsUnactive() {
     button.classList.remove('active');
     button.setAttribute('aria-pressed', 'false');
   });
+  document.querySelectorAll('.toolbar-tool-fab').forEach((button) => button.classList.remove('selected'));
 }
 
 /**
@@ -167,6 +168,7 @@ export function activateBuildToolButton(toolId) {
   getButtonsUnactive();
   const group = toolbarGroupOf(toolId);
   document.querySelector(`.toolbar-btn[data-group="${group}"]`)?.classList.add('selected');
+  document.querySelector(`.toolbar-tool-fab[data-toolid="${toolId}"]`)?.classList.add('selected');
 }
 
 export function getButtonsDisabled() {

@@ -71,6 +71,7 @@ export function bootGameContexts() {
     housing,
     parcels,
     intelligence,
+    gameplay,
   });
   const runtime = createGameRuntime({
     parcels,

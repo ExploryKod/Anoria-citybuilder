@@ -831,7 +831,7 @@ export const BUILDING_ECONOMY = {
   // Markets: one placeable market. requiredSkill: 'vente-alimentaire' (merchants' tier-1 skill).
   'Market-Stall-Red': {
     placementNotice: true,
-    displayName: 'Étal rouge',
+    displayName: 'Marché',
     construction: { price: 10, category: 'markets' },
     employment: { sector: 2, workerNeed: 2, requiredSkill: 'vente-alimentaire' },
     // Unlimited reach (2026-09-11, same reasoning as the water tank below) — a

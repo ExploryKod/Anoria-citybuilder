@@ -229,7 +229,7 @@ export function appendStatusMessage(container, text, variant = 'neutral') {
 
 /**
  * @param {HTMLElement} container
- * @param {ReadonlyArray<{ emoji: string, value: string | number, label: string, ariaLabel: string }>} items
+ * @param {ReadonlyArray<{ emoji: string, value?: string | number, label: string, ariaLabel: string }>} items
  */
 export function appendIconStatRow(container, items) {
   const row = document.createElement('div');
@@ -241,7 +241,8 @@ export function appendIconStatRow(container, items) {
     chip.title = item.ariaLabel;
     chip.setAttribute('aria-label', item.ariaLabel);
     // A chip with a `pill` is not held yet: dimmed, with the house level that brings it in a colored pill under it.
-    const value = item.pill ? '' : `<span class="building-info-icon-chip__value">${item.value}</span>`;
+    // A chip with no `value` (a skill: the house has it or not, there is nothing to count) shows only its icon and its word.
+    const value = item.pill || item.value === undefined ? '' : `<span class="building-info-icon-chip__value">${item.value}</span>`;
     chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span>${value}<span class="building-info-icon-chip__label">${item.label}</span>`;
     if (item.pill) {
       chip.classList.add('building-info-icon-chip--upcoming');
@@ -268,7 +269,7 @@ export function appendIconStatRow(container, items) {
 
 /**
  * @param {HTMLElement} container
- * @param {ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }>} skills
+ * @param {ReadonlyArray<{ emoji: string, label: string, ariaLabel: string, level: number, color: string }>} skills the skills the house holds: its people have them all or not at all, so no count
  */
 export function appendHouseholdSkills(container, skills, upcomingSkills = []) {
   if (!skills?.length && !upcomingSkills.length) return null;
@@ -286,7 +287,6 @@ export function appendHouseholdSkills(container, skills, upcomingSkills = []) {
     [
       ...skills.map((skill) => ({
         emoji: skill.emoji,
-        value: skill.count,
         label: skill.label,
         ariaLabel: skill.ariaLabel,
         levelPill: { level: skill.level, color: skill.color },
@@ -342,8 +342,9 @@ export function appendHouseholdEmployers(container, employers) {
 }
 
 /**
- * The "Problèmes" block of a house: blocks of icon, number and word side by side. The first is the residents without a job, with under it, side by side
- * and smaller, why (no skill, no post); then the hungry, the angry, the sick. Nothing is said when the residents could not be read for the first block.
+ * The "Problèmes" block of a house: blocks of icon, number and word side by side. The first is the residents without a job: icon and word, then under it,
+ * side by side and smaller, why (no skill, no post, no road) — those are its figures, with no total; the total shows only while the causes are not read.
+ * Then the hungry, the angry, the sick. Nothing is said when the residents could not be read for the first block.
  * @param {HTMLElement} container
  * @param {{
  *   unemployed: { emoji: string, count: number, label: string, ariaLabel: string, causes: ReadonlyArray<{ emoji: string, count: number, label: string, ariaLabel: string }> } | null,
@@ -362,19 +363,21 @@ export function appendHouseholdProblems(container, problems) {
   const row = document.createElement('div');
   row.className = 'building-info-problems__row';
 
-  const chipOf = (item) => {
+  const chipOf = (item, { withCount = true } = {}) => {
     const chip = document.createElement('span');
     chip.className = 'building-info-icon-chip';
     chip.title = item.ariaLabel;
     chip.setAttribute('aria-label', item.ariaLabel);
-    chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span><span class="building-info-icon-chip__value">${item.count}</span><span class="building-info-icon-chip__label">${item.label}</span>`;
+    const count = withCount ? `<span class="building-info-icon-chip__value">${item.count}</span>` : '';
+    chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span>${count}<span class="building-info-icon-chip__label">${item.label}</span>`;
     return chip;
   };
 
   if (problems.unemployed) {
     const block = document.createElement('div');
     block.className = 'building-info-problems__block';
-    block.appendChild(chipOf(problems.unemployed));
+    // The total says nothing by itself: once the causes are known, they are the figures and the big number goes.
+    block.appendChild(chipOf(problems.unemployed, { withCount: problems.unemployed.causes.length === 0 }));
     if (problems.unemployed.causes.length > 0) {
       const causes = document.createElement('div');
       causes.className = 'building-info-problems__causes';

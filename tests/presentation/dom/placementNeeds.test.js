@@ -5,7 +5,7 @@ import { describePlacementNeeds, describeActivitySupplyGap } from '../../../src/
 describe('describePlacementNeeds', () => {
   test('a building that needs another in reach says which, how far, and that it needs room', () => {
     expect(describePlacementNeeds('Market-Stall-Red')).toBe(
-      'Étal rouge requiert : Grenier à moins de 5 cases (avec de la place libre).'
+      'Marché requiert : Grenier à moins de 5 cases (avec de la place libre).'
     );
   });
 

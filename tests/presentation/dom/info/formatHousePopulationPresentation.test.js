@@ -22,9 +22,9 @@ describe('formatHousePopulationPresentation', () => {
       expect.objectContaining({ statusKey: 'worker', count: 12, label: 'citoyens artisans' }),
     ]);
     expect(skills).toEqual([
-      expect.objectContaining({ skillKey: 'fermier', count: 12, label: 'fermier' }),
-      expect.objectContaining({ skillKey: 'artisanat', count: 12, label: 'artisanat' }),
-      expect.objectContaining({ skillKey: 'energie', count: 12, label: 'énergie' }),
+      expect.objectContaining({ skillKey: 'fermier', label: 'fermier' }),
+      expect.objectContaining({ skillKey: 'artisanat', label: 'artisanat' }),
+      expect.objectContaining({ skillKey: 'energie', label: 'énergie' }),
     ]);
   });
 
@@ -39,8 +39,8 @@ describe('formatHousePopulationPresentation', () => {
     const { skills } = formatHousePopulationPresentation(composition, 'merchants');
 
     expect(skills).toEqual([
-      expect.objectContaining({ skillKey: 'vente-alimentaire', count: 5 }),
-      expect.objectContaining({ skillKey: 'stockage-alimentaire', count: 5 }),
+      expect.objectContaining({ skillKey: 'vente-alimentaire' }),
+      expect.objectContaining({ skillKey: 'stockage-alimentaire' }),
     ]);
   });
 
@@ -50,7 +50,7 @@ describe('formatHousePopulationPresentation', () => {
     const { skills } = formatHousePopulationPresentation(composition, null);
 
     expect(skills).toEqual([
-      expect.objectContaining({ skillKey: 'future-skill', count: 3, label: '…', emoji: '…' }),
+      expect.objectContaining({ skillKey: 'future-skill', label: '…', emoji: '…' }),
     ]);
   });
 

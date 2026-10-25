@@ -142,7 +142,8 @@ describe('Declared facts the city map and every context read from the catalog', 
     expect(getMapCode('Farm-Cabbage')).toBe('CH'); // Champ de choux
     expect(getMapCode('Windmill-001')).toBe('GR'); // Grenier
     expect(getMapCode('WaterTank')).toBe('CI'); // Citerne
-    expect(getMapCode('Market-Stall-Red')).toBe('ET'); // Étal — accent dropped
+    expect(getMapCode('Market-Stall-Red')).toBe('MA'); // Marché
+    expect(getMapCode('School')).toBe('EC'); // École — accent dropped
     expect(getMapCode('')).toBe('');
   });
 
