@@ -29,11 +29,11 @@ export async function liquidateDemolishedBuilding({ instanceId, buildingType }) 
 /**
  * What the demolition of a building will do to the books, for the player to read before he confirms (nothing is written).
  * @param {{ instanceId: string, buildingType: string }} params
- * @returns {Promise<{ abandoned: Array<{ debtorId: string, kind: string, label: string, amount: number }>, owed: Array<{ kind: string, label: string, amount: number }> }>}
+ * @returns {ReturnType<import('../contexts/accounting/application/services/LiquidateDemolishedBuilding.js').LiquidateDemolishedBuilding['preview']>}
  */
 export async function previewDemolitionLiquidation({ instanceId, buildingType }) {
-  if (!hasBooks(buildingType)) return { abandoned: [], owed: [] };
-  return getOrCreateAccountingContext().previewDemolitionLiquidation({ buildingId: instanceId });
+  if (!hasBooks(buildingType)) return { abandoned: [], accounts: [] };
+  return getOrCreateAccountingContext().previewDemolitionLiquidation({ buildingId: instanceId, turn: getSessionGameTime() });
 }
 
 /**

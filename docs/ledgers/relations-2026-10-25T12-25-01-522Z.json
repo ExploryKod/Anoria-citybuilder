@@ -1,18 +1,18 @@
 {
-  "exportDate": "2026-10-25T10:20:17.704Z",
+  "exportDate": "2026-10-25T12:25:01.521Z",
   "relations": [
     {
       "cityId": "briga",
       "status": "active",
-      "satisfactionScore": -15,
+      "satisfactionScore": -14,
       "contractStartMonth": 1,
       "contractEndMonth": null,
-      "lastOrderMonth": 29,
+      "lastOrderMonth": 20,
       "ceased": null,
       "importCeased": {},
       "importFailures": {
         "coal": {
-          "no_merchants": 1,
+          "no_merchants": 0,
           "no_warehouse": 0,
           "warehouse_full": 0
         }
@@ -22,16 +22,12 @@
     },
     {
       "cityId": "maris",
-      "status": "expired",
-      "satisfactionScore": -72,
+      "status": "active",
+      "satisfactionScore": -65,
       "contractStartMonth": 1,
       "contractEndMonth": null,
       "lastOrderMonth": 21,
-      "ceased": {
-        "reason": "satisfaction_too_low",
-        "by": "city",
-        "turn": 109
-      },
+      "ceased": null,
       "importCeased": {},
       "importFailures": {
         "petrol": {
@@ -44,12 +40,12 @@
         "carrotCake": {
           "reason": "export_no_merchants",
           "by": "merchants",
-          "turn": 69
+          "turn": 64
         }
       },
       "exportFailures": {
         "carrotCake": {
-          "export_no_merchants": 10,
+          "export_no_merchants": 11,
           "export_no_warehouse": 0
         }
       }
@@ -57,10 +53,10 @@
     {
       "cityId": "olivea",
       "status": "active",
-      "satisfactionScore": -56,
+      "satisfactionScore": -40,
       "contractStartMonth": 1,
       "contractEndMonth": null,
-      "lastOrderMonth": 29,
+      "lastOrderMonth": 21,
       "ceased": null,
       "importCeased": {},
       "importFailures": {},
@@ -68,12 +64,12 @@
         "wood": {
           "reason": "export_no_merchants",
           "by": "merchants",
-          "turn": 69
+          "turn": 64
         }
       },
       "exportFailures": {
         "wood": {
-          "export_no_merchants": 18,
+          "export_no_merchants": 11,
           "export_no_warehouse": 0
         }
       }
@@ -84,12 +80,12 @@
       "satisfactionScore": -10,
       "contractStartMonth": 1,
       "contractEndMonth": null,
-      "lastOrderMonth": 29,
+      "lastOrderMonth": 20,
       "ceased": null,
       "importCeased": {},
       "importFailures": {
         "uranium": {
-          "no_merchants": 1,
+          "no_merchants": 0,
           "no_warehouse": 0,
           "warehouse_full": 0
         }
@@ -100,15 +96,15 @@
     {
       "cityId": "silvania",
       "status": "active",
-      "satisfactionScore": -30,
+      "satisfactionScore": -15,
       "contractStartMonth": 1,
       "contractEndMonth": null,
-      "lastOrderMonth": 28,
+      "lastOrderMonth": 20,
       "ceased": null,
       "importCeased": {},
       "importFailures": {
         "exoticWood": {
-          "no_merchants": 2,
+          "no_merchants": 0,
           "no_warehouse": 0,
           "warehouse_full": 0
         }
@@ -122,16 +118,16 @@
         "decoratedPot": {
           "reason": "export_no_merchants",
           "by": "merchants",
-          "turn": 139
+          "turn": 79
         }
       },
       "exportFailures": {
         "book": {
-          "export_no_merchants": 9,
+          "export_no_merchants": 5,
           "export_no_warehouse": 0
         },
         "decoratedPot": {
-          "export_no_merchants": 3,
+          "export_no_merchants": 5,
           "export_no_warehouse": 0
         }
       }

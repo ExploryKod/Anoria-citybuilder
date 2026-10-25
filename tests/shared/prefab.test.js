@@ -1,5 +1,5 @@
 /**
- * Regression guard for the prefab "anoria-tour-144": its exported buildings keep their positions, and its journal is the
+ * Regression guard for the prefab "anoria-tour-107": its exported buildings keep their positions, and its journal is the
  * whole journal of the hamlet (the city's own account and the flux of the companies and the houses, two exports).
  */
 
@@ -7,9 +7,9 @@ import { describe, test, expect } from '@jest/globals';
 import { PREFABS } from '../../src/shared/prefabs/prefabCatalog.js';
 import { canonicalizeHouseRecord } from '../../src/shared/building-identity/index.js';
 
-const prefab = PREFABS['anoria-tour-144'];
+const prefab = PREFABS['anoria-tour-107'];
 
-describe('prefab anoria-tour-144 — its state is the saved one', () => {
+describe('prefab anoria-tour-107 — its state is the saved one', () => {
   test('every exported building keeps the anchor it was saved at, in its hamlet', () => {
     for (const building of prefab.city.buildings) {
       const record = canonicalizeHouseRecord(building);

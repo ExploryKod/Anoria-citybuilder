@@ -32,9 +32,9 @@ effaçait seulement l'emplacement et la ligne de base ; aucune écriture n'étai
   bâtiment avec un message (`showDemolitionRefusedNotification`).
 - **Confirmation avant toute démolition** (`confirmDemolition`, remplace l'ancienne question propre aux entrepôts) : **pour tous les bâtiments sauf les routes et
   la nature**, une seule question pour toute la sélection (une gomme en carré en pose une seule), qui dit pour chaque bâtiment ce qu'il entraîne **ou qu'il n'entraîne rien**.
-  Aujourd'hui elle annonce : les habitants qui partent, les ouvriers qui perdent leur poste, les bâtiments qui tombent avec lui (entrepôt), les dettes qui lui sont dues
-  (abandonnées, sans poursuite) et celles qu'il doit lui-même (qui resteront impayées, tant que la tranche 2 n'existe pas). « Aucune conséquence » ne dit que ce qui est vérifié :
-  l'emploi, la population et les dettes (la caisse et le stock viendront avec les tranches suivantes). « Annuler » épargne toute la sélection : le joueur peut redessiner son
+  Elle annonce : les habitants qui partent, les ouvriers qui perdent leur poste, les bâtiments qui tombent avec lui (entrepôt), les dettes qui lui sont dues (abandonnées, sans
+  poursuite) et toute la liquidation de ses comptes (voir plus bas : stock vendu, dettes payées avec sa caisse, salaires avancés par la ville, pertes des créanciers, caisse rendue à la
+  ville, capital perdu). « Aucune conséquence » dit : pour l'emploi, la population et les comptes. « Annuler » épargne toute la sélection : le joueur peut redessiner son
   carré. Les noms et libellés viennent du catalogue, les montants du format monétaire. Perdu au passage : refuser un entrepôt seul au milieu d'une sélection.
 - `GetProducerRevenues` : un vendeur ou un acheteur démoli est lu par le type que nomme sa ligne de construction, au lieu de lever une erreur dans l'écran Finances.
 - `GameLoop` trace l'échec d'un jour (`[GameLoop] A day failed…`, tag relayé au journal de dev) puis relance l'erreur comme avant.
@@ -47,26 +47,49 @@ effaçait seulement l'emplacement et la ligne de base ; aucune écriture n'étai
   se figeait de nouveau chaque mois (jour 175 et suivants). La gomme garde sa fermeture en amont (stricte : si les comptes ne se ferment pas, le bâtiment reste) ; la seconde passe
   ne trouve plus de dette et n'écrit rien. Test : `placeRemove.behavior.test.js`.
 
-## Point ouvert : les flux du mois d'un bâtiment démoli
+## Les flux du mois d'un bâtiment démoli (fait)
 
-Un bâtiment qui disparaît en cours de mois a pu vendre un service ou échanger des biens pendant ce mois. Au règlement suivant, ces flux désignent un vendeur ou un acheteur
-introuvable, et **tout le mois est annulé une fois** (observé au jour 150 : `building … sold a service but is not in the hamlet`). Ce n'est pas persistant (le mois d'après passe),
-mais un mois de salaires est perdu. À décider : ne pas facturer un service dont le fournisseur n'existe plus, et écrire les échanges de biens avec lui sous le nom que donne
-sa ligne de construction (comme `getBuildingTypes` le fait déjà pour le classement des producteurs).
+Un bâtiment qui disparaît en cours de mois a pu vendre un service ou échanger des biens pendant ce mois. Au règlement suivant, ces flux désignaient un vendeur ou un acheteur
+introuvable, et **tout le mois était annulé une fois** (observé au jour 150 : `building … sold a service but is not in the hamlet`) : un mois de salaires perdu.
 
-## À faire (tranches suivantes)
+Règle retenue, appliquée à l'entrée de `SettleProducerCharges` : **un bâtiment qui n'existe plus n'a plus de compte sur lequel écrire.** Ce qu'il a vendu, acheté ou servi pendant le
+mois n'est pas réglé — un échange de biens avec lui n'est écrit d'aucun côté, un service qu'il fournissait ou recevait n'est pas facturé, sa perte par avarie n'est pas dite. Le reste
+du mois, et les charges de l'autre partie, se règlent comme d'habitude ; les mouvements restent dans la traçabilité de l'approvisionnement. Test :
+`demolitionLiquidation.regression.test.js`. Conséquence assumée : une maison qui utilisait le service d'un bâtiment démoli en cours de mois ne le paie pas ce mois-là.
 
-Chacune ajoute des conséquences que le pop-up listera aussi (avec les mêmes fonctions d'aperçu et d'écriture).
+## Fait (tranches 2 à 6) : la liquidation complète d'un compte
 
-2. **Les dettes que le bâtiment démoli doit lui-même** : payées par rang avec sa caisse (`payByRank`), puis le reste est abandonné ; les salaires non couverts sont
-   avancés par le fonds de garantie de la ville ; les cotisations et impôts non payés sont une perte pour la ville ; un loyer non payé, une perte pour la SCI.
-   Nouveaux types : abandon chez le débiteur (421/431/444/401 contre 7718), créance irrécouvrable chez le créancier (654), avance de la ville.
-   À vérifier : le rattachement des lignes de la ville au livret (`CityLedgerLineMappingPolicy`), qui lève une erreur pour un compte sans ligne.
-3. **Le stock** vendu à un taux de liquidation (`LIQUIDATION_RECOVERY_RATE`, au catalogue), le produit dans la caisse de l'entreprise ; le stock soldé par la variation de stock.
-4. **Le solde** : la caisse restante revient à la ville (retour du capital de fondation, 261) ou la ville constate sa perte ; une écriture solde les comptes de l'entreprise
-   (le grand livre et le bilan restent lisibles en archive).
-5. **Les ouvriers et les habitants** : le pop-up annonce les ouvriers licenciés et les habitants qui partent (système de départs existant).
-6. Les effets sur la **coopérative d'une maison** : seule son entreprise est liquidée.
+`LiquidateDemolishedBuilding` établit **un seul plan** par compte (`LiquidationPlanPolicy.planLiquidation`, pur, en centimes) que `preview` annonce et `execute` écrit, dans un
+lot atomique (`inJournalBatch`). Un bâtiment est liquidé une fois : ses lignes portent la clé `liquidation:<hameau>:<bâtiment>:` et un second appel ne fait rien (la gomme ferme
+les comptes en amont, le point de passage commun `RemoveBuilding` les referme ensuite). Les comptes liquidés sont ceux d'une entreprise, ou l'entreprise d'une maison (sa coopérative) ;
+le compte personnel d'un ménage et celui d'un bâtiment public ne sont pas touchés.
+
+Dans l'ordre, pour chaque compte :
+1. **Le stock** sort des livres par la variation de stock (`od_stock_down_*`, clé propre à la liquidation) et est vendu à `LIQUIDATION_RECOVERY_RATE` (0,5, au catalogue,
+   premier réglage) de sa valeur au coût : `liquidation_stock_sale` (707) dans la caisse.
+2. **Les créanciers sont payés par rang** avec la caisse et ce produit (`planCompanyPayments` : salaires, puis ville, puis propriétaire, au prorata dans un même rang), avec
+   les mêmes écritures que le règlement mensuel (module partagé `DebtLines.js`, extrait de `SettleProducerCharges`), à clé distincte.
+3. **Ce qui reste d'une dette est abandonné** : le débiteur est libéré (`od_abandoned_*`, 7718) et le créancier supporte la perte. Les **salaires** sont avancés par la ville
+   (`wage_guarantee`, 65741, que le livret range déjà sous les aides au logement) et reçus par la maison des ouvriers ; les cotisations et l'impôt sont une perte pour la ville
+   (`od_bad_debt_*`, 6541) ; un loyer, une perte pour la SCI (654).
+4. **Le solde de la caisse revient à la ville, au plus le capital qu'elle y avait mis** (`liquidation_surplus_paid` / `_received`, 101 contre 261 : le livret y voit un
+   remboursement d'investissement, comme une construction remboursée) ; **le reste du capital est perdu** (`od_holding_written_off`, 675). Les bénéfices accumulés au-delà du
+   capital restent dans le compte de l'entreprise liquidée (pas de dividendes avant le futur système de propriétaire).
+5. Les dettes dues AU bâtiment sont abandonnées par leurs débiteurs (tranche 1).
+
+Le pop-up annonce tout cela. Une maison ou un bâtiment disparu par une catastrophe passe par le même chemin (`RemoveBuilding`). Le règlement mensuel écarte, en plus des flux d'un bâtiment
+disparu, les ouvriers qu'une entreprise tirait encore d'une maison détruite après l'étape d'emploi du jour.
+
+Vérifié sur le vrai prefab (`anoria-tour-107`) avec le câblage réel : une caserne endettée et une maison créancière liquidées (9 lignes équilibrées, aucune dette ouverte, seconde passe
+sans écriture), puis le mois suivant réglé.
+
+## Reste
+
+- **La clôture formelle des comptes** (une écriture qui solderait toutes les soldes de l'entreprise) n'est pas écrite : le compte reste lisible en archive, le grand livre et la
+  balance le lisent comme avant. Utile seulement si l'on veut une balance à zéro pour un compte disparu.
+- **Les bénéfices au-delà du capital** ne reviennent pas à la ville (voir 4) : à reprendre avec le système de dividendes.
+- Une **purge** d'années qui repliait la caisse ou le capital d'un compte liquidé : le capital de la ville se lit sur les lignes `company_capital_received` ; un compte dont le capital
+  ne serait que dans la clôture d'une année purgée aurait un capital de 0 pour la liquidation (rien n'est rendu ni perdu). À traiter avec la purge.
 
 ## Hors périmètre
 
@@ -83,5 +106,6 @@ Chacune ajoute des conséquences que le pop-up listera aussi (avec les mêmes fo
 
 ## Conséquence pour le prefab
 
-Le prefab `anoria-tour-144` a été exporté dans l'état gelé (14 mois sans règlement, et la dette orpheline du château d'eau envers la maison démolie). Une sauvegarde
-ne se répare pas au chargement (règle : pas de migration) : il faut **rejouer et ré-exporter** avec « Tout télécharger ».
+Le prefab du tour 144 avait été exporté dans l'état gelé (14 mois sans règlement, et la dette orpheline du château d'eau envers la maison démolie). Une sauvegarde
+ne se répare pas au chargement (règle : pas de migration) : il a été **rejoué et ré-exporté** avec « Tout télécharger » après les correctifs. Le prefab actuel est
+`anoria-tour-107` : 107 jours, 21 fins de mois toutes réglées, aucune dette orpheline. Sa trésorerie est de −3 796,85 € (la ville s'endette régulièrement).

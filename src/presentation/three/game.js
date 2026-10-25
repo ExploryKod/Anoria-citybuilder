@@ -1213,7 +1213,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
    */
   async function consequencesOfDemolition({ type, instanceId }) {
     if (!instanceId) {
-      return { residents: 0, workers: 0, dependents: [], abandoned: [], unpaid: [] };
+      return { residents: 0, workers: 0, dependents: [], abandoned: [], accounts: [] };
     }
     const row = await constructionApi.getBuildingById(instanceId);
     const isHouse = Boolean(getBuildingDefinition(type)?.residentialGroup);
@@ -1229,7 +1229,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         label: debt.label,
         amount: debt.amount,
       })),
-      unpaid: books.owed.map(({ label, amount }) => ({ label, amount })),
+      accounts: books.accounts,
     };
   }
 

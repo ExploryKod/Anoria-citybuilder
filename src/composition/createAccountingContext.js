@@ -704,6 +704,36 @@ export function createAccountingContext(deps = {}) {
   const liquidateDemolishedBuilding = new LiquidateDemolishedBuilding({
     getJournalEntries: () => journalRepository.getJournalEntries(),
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+    recordEconomyMovement: (movement) => supplyTraceabilityRepository.recordEconomyMovement(movement),
+    // The liquidation is written in one go, like a month's settlement: all its lines or none.
+    inJournalBatch: (work) => sessionJournalStoreInstance.batch(work),
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    listBuildings: async () => (await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => ({ id: row.id, type: row.type })),
+    // The accounts a liquidation closes: a company's own, or a house's business (its cooperative); a household's personal account is left alone, and so is a public
+    // building's (it carries no debt). Each says the nature of the stock it carries, null when it carries none.
+    getAccountsOf: async (buildingId) => {
+      const row = await dexieDb.houses.get(buildingId);
+      if (!row || !isActiveHamletRow(row)) return null;
+      const nature = salesNatureOf(row.type);
+      const stockNature = nature === null ? null : nature === 'merchandise' ? 'merchandise' : 'production';
+      if (resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE) {
+        const business = houseEnterprises(row.type).enterprises.find((enterprise) => enterprise.activity === 'recipes');
+        return business ? [{ accountKind: businessAccountOf(business.id), stockNature }] : [];
+      }
+      return isLucrativeBuilding(row.type) ? [{ accountKind: null, stockNature }] : [];
+    },
+    cashOf: (buildingId, accountKind) => getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId, accountKind }),
+    valueStock: (buildingId, period) => {
+      if (typeof deps.valueStock !== 'function') throw new Error('[accounting] the stock valuation was not wired (deps.valueStock): a building could not be liquidated');
+      return deps.valueStock(buildingId, period);
+    },
+    // The property company that is owed the rents: the house that holds the owner skill, standing whether or not people live in it (as the settlement reads it).
+    getOwner: async () => {
+      const ownerHouse = (await dexieDb.houses.toArray())
+        .filter((row) => isActiveHamletRow(row) && resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE && houseHoldsSkill(row.type, 1, OWNER_SKILL))
+        .sort((a, b) => String(a.id).localeCompare(String(b.id)))[0];
+      return ownerHouse ? { id: ownerHouse.id, businessAccount: businessAccountOf(houseEnterpriseOf(ownerHouse.type, 'rental').id) } : null;
+    },
   });
 
   const processTurnBudget = new ProcessTurnBudget({
@@ -1040,7 +1070,8 @@ export function createAccountingContext(deps = {}) {
     /**
      * What the demolition of a building will do to the books, said before it is done and read by the same function that writes it.
      * @param {{ buildingId: string }} params
-     * @returns {Promise<{ abandoned: Array<{ debtorId: string, kind: string, label: string, amount: number }>, owed: Array<{ kind: string, label: string, amount: number }> }>}
+     * @param {{ buildingId: string, turn: number }} params
+     * @returns {ReturnType<LiquidateDemolishedBuilding['preview']>} the debts owed to it that are released, and per account what the liquidation does (see LiquidateDemolishedBuilding.preview)
      */
     async previewDemolitionLiquidation(params) {
       return liquidateDemolishedBuilding.preview(params);

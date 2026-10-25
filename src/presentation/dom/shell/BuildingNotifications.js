@@ -218,7 +218,7 @@ export function showClientPriorityNotification(producerType) {
  * @param {DemolitionConsequences} consequences
  * @returns {string[]}
  */
-function demolitionConsequenceLines({ residents, workers, dependents, abandoned, unpaid }) {
+function demolitionConsequenceLines({ residents, workers, dependents, abandoned, accounts }) {
   const lines = [];
   if (residents > 0) lines.push(residents === 1 ? '1 habitant part.' : `${residents} habitants partent.`);
   if (workers > 0) lines.push(workers === 1 ? '1 ouvrier perd son poste.' : `${workers} ouvriers perdent leur poste.`);
@@ -226,7 +226,18 @@ function demolitionConsequenceLines({ residents, workers, dependents, abandoned,
   for (const debt of abandoned) {
     lines.push(`${debt.debtorType ? buildingName(debt.debtorType) : 'Un bâtiment déjà démoli'} lui devait ${formatEuro(debt.amount)} (${debt.label.toLowerCase()}) : dette abandonnée, sans poursuite.`);
   }
-  for (const debt of unpaid) lines.push(`${formatEuro(debt.amount)} de ${debt.label.toLowerCase()} qu'il doit resteront impayés.`);
+  // What the liquidation of its accounts does: the stock sold, the creditors paid with its cash by rank, what is left of a debt, the cash given back to the city.
+  for (const { stockProceeds, paid, unpaid, surplusToCity, holdingLoss } of accounts) {
+    if (stockProceeds > 0) lines.push(`Son stock est vendu : ${formatEuro(stockProceeds)}.`);
+    for (const debt of paid) lines.push(`${formatEuro(debt.amount)} de ${debt.label.toLowerCase()} dus sont payés avec sa caisse.`);
+    for (const debt of unpaid) {
+      lines.push(debt.advancedByCity
+        ? `La ville avance ${formatEuro(debt.amount)} de ${debt.label.toLowerCase()} que sa caisse ne couvre pas.`
+        : `${formatEuro(debt.amount)} de ${debt.label.toLowerCase()} dus ne seront jamais payés : le créancier perd cet argent.`);
+    }
+    if (surplusToCity > 0) lines.push(`${formatEuro(surplusToCity)} de sa caisse reviennent à la ville.`);
+    if (holdingLoss > 0) lines.push(`${formatEuro(holdingLoss)} du capital que la ville y avait mis sont perdus.`);
+  }
   return lines;
 }
 
@@ -236,7 +247,8 @@ function demolitionConsequenceLines({ residents, workers, dependents, abandoned,
  * @property {number} workers Workers who lose their place (a workplace).
  * @property {Array<{ type: string, x: number, y: number }>} dependents Buildings that cannot work without it and go down with it (a hub).
  * @property {Array<{ debtorType: string | null, label: string, amount: number }>} abandoned Debts owed to it, released (`debtorType` is null when that building is gone too).
- * @property {Array<{ label: string, amount: number }>} unpaid Debts it owes itself, which nothing pays yet.
+ * @property {Array<{ stockProceeds: number, surplusToCity: number, holdingLoss: number, paid: Array<{ label: string, amount: number }>,
+ *   unpaid: Array<{ label: string, amount: number, advancedByCity: boolean }> }>} accounts What the liquidation of each of its accounts does (see LiquidateDemolishedBuilding.preview).
  */
 
 /**
@@ -249,7 +261,7 @@ function demolitionConsequenceLines({ residents, workers, dependents, abandoned,
 export function confirmDemolition(entries) {
   const linesOf = entries.map(demolitionConsequenceLines);
   const single = entries.length === 1;
-  const none = 'aucune conséquence pour l\'emploi, la population ni les dettes';
+  const none = 'aucune conséquence pour l\'emploi, la population ni les comptes';
   return confirmModal({
     title: single ? `Démolir « ${buildingName(entries[0].type)} » ?` : `Démolir ${entries.length} bâtiments ?`,
     message: linesOf.some((lines) => lines.length > 0)

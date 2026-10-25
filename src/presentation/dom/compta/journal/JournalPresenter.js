@@ -321,6 +321,8 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     rent_paid: 'Loyer payé',    rent_received: 'Loyer perçu',
     premises_rent_paid: 'Loyer du local payé',    premises_rent_received: 'Loyer du local perçu',
     company_capital_paid: 'Fonds propres versés',    company_capital_received: 'Fonds propres reçus',
+    liquidation_stock_sale: 'Stock vendu en liquidation',    liquidation_surplus_paid: 'Caisse rendue à la ville',
+    liquidation_surplus_received: 'Capital rendu par une entreprise liquidée',    wage_guarantee: 'Salaires avancés par la ville',
     wage_debt_paid: 'Salaires impayés réglés',    contribution_debt_paid: 'Cotisations impayées réglées',
     corporate_tax_debt_paid: 'Impôt impayé réglé',    premises_rent_debt_paid: 'Loyer du local impayé réglé',
     corporate_tax_debt_received: 'Impôt sur les sociétés impayé encaissé', contribution_debt_received: 'Cotisations impayées encaissées',

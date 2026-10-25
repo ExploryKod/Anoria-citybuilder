@@ -118,7 +118,7 @@ navigateur. Rust viendrait ensuite, seulement si la mesure le justifie, comme no
 
 Le joueur doit pouvoir passer d'un mode à l'autre avec sa partie. Il faut une **archive portable**, indépendante de la
 base : le journal d'écritures, les prêts, l'horloge (`gameSettings`/`clock`, avec `daysPerMonth` figé à la création),
-l'état des bâtiments et des hameaux. Le prefab `anoria-tour-144` (cinq exports pris ensemble par « Tout télécharger » en pause) en couvre l'essentiel : la ville, les deux journaux, les transactions et les relations.
+l'état des bâtiments et des hameaux. Le prefab `anoria-tour-107` (cinq exports pris ensemble par « Tout télécharger » en pause) en couvre l'essentiel : la ville, les deux journaux, les transactions et les relations.
 
 Règle du projet : aucune sauvegarde ancienne à migrer. Les deux modes tournent sur la même version du cœur ; une archive
 d'une version inconnue est refusée explicitement, jamais réparée à la volée. L'archive doit donc être versionnée.
@@ -145,7 +145,7 @@ Contrainte : projet de loisir, budget serré. Un serveur de jeu qui simule toute
 ## 11. Prochaines étapes (ordre recommandé)
 
 1. Instrumenter le tick (`performance.now()` autour de la lecture, du calcul et de l'écriture ; ECS, économie, HUD) sur le
-   prefab `anoria-tour-144`, pour savoir où part le temps.
+   prefab `anoria-tour-107`, pour savoir où part le temps.
 2. Corrections JS évidentes : mémoïser les sources qualifiantes, regrouper les écritures en un lot.
 3. Définir l'archive de sauvegarde portable et vérifier ce que l'export du prefab couvre déjà.
 4. Valider le mode en ligne en faisant tourner le cœur sous Node avec un adaptateur SQL minimal.

@@ -5,7 +5,7 @@ import { describe, test, expect } from '@jest/globals';
 import { PREFABS } from '../../../src/shared/prefabs/prefabCatalog.js';
 import { assertBalanced } from '../../../src/contexts/accounting/domain/policies/EntryLegsPolicy.js';
 
-const { journal: entries } = PREFABS['anoria-tour-144'];
+const { journal: entries } = PREFABS['anoria-tour-107'];
 
 describe('the starter prefab journal', () => {
   test('every écriture carries its journal code and balanced legs', () => {
