@@ -130,12 +130,12 @@ export function tryResolveBuildingInstanceIdFromRef(ref) {
 }
 
 /**
- * Resolve neighbor / scan blob → UUID (ignores type-x-y labels).
+ * Resolve a building reference (a row found in range, a grid scan blob) → UUID (ignores type-x-y labels).
  *
  * @param {unknown} ref
  * @returns {string | null}
  */
-export function resolveInstanceIdFromNeighborRef(ref) {
+export function resolveInstanceIdFromBuildingRef(ref) {
   if (!ref || typeof ref !== 'object') return null;
 
   const candidates = [ref.instanceId, ref.id];

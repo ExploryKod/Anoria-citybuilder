@@ -31,10 +31,6 @@ export class SupplyTraceability {
     this.traceabilityRepository = supplyTraceabilityRepository;
     this.supplyBuildingRepository = supplyBuildingRepository;
     this.priceBook = priceBook;
-    /** Last logged state of each building, as text — a row is written only when it changes. */
-    this.lastLoggedStates = new Map();
-    this.lastLoggedTurn = -1;
-    this.lastLoggedEmployment = null;
   }
 
   /**
@@ -52,6 +48,7 @@ export class SupplyTraceability {
     for (const transfer of transfers) {
       const hubData = await this.supplyBuildingRepository.findRowById(transfer.hubId);
       if (!hubData) continue;
+      if (!Number.isFinite(transfer.unitPrice)) throw new Error(`[supply] the transfer of ${transfer.category} from ${transfer.hubId} to ${distributorId} carries no unit price`);
 
       await this.traceabilityRepository.recordSourceToDistributor(
         turnOf(timeInfo),
@@ -71,7 +68,7 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        this.priceBook.sellingPrice(hubData, transfer.category, timeInfo)
+        transfer.unitPrice
       );
     }
   }
@@ -151,7 +148,8 @@ export class SupplyTraceability {
         },
         transfer.category,
         transfer.amount,
-        this.priceBook.sellingPrice(distributorData, transfer.category, timeInfo)
+        // A good is traced at the price its house paid for that unit; a service (a flag, nothing to pay on the spot) at its seller's price.
+        transfer.unitPrice ?? this.priceBook.sellingPrice(distributorData, transfer.category, timeInfo)
       );
     }
   }
@@ -192,7 +190,7 @@ export class SupplyTraceability {
   /**
    * Logs whether each building of the harvest chain — the annual producers
    * (farms) and the hubs that buy from them — can work on this monthly tick.
-   * This is the state the traceability panel shows per month, faithful to the
+   * This is the state the supply panel shows per month, faithful to the
    * game: a building deleted later still shows as it was.
    * @param {object} timeInfo
    */
@@ -325,7 +323,9 @@ export class SupplyTraceability {
         ? 'hub_idle'
         : hubResults.some((hubResult) => hubResult.reason === 'hub_full')
           ? 'hub_full'
-          : 'unknown';
+          : hubResults.some((hubResult) => hubResult.reason === 'no_budget')
+            ? 'hub_no_money'
+            : 'unknown';
 
     const producers = await this.supplyBuildingRepository.findByResourceRole('producer');
     for (const building of producers) {
@@ -348,83 +348,6 @@ export class SupplyTraceability {
         cause
       );
     }
-  }
-
-  /**
-   * Logs the full state of every building that stocks, employs or houses — its goods, its
-   * staff, its level, its inhabitants — but only when it differs from the last state logged
-   * for that building. The panel and the exports rebuild any month from these rows.
-   * @param {object} timeInfo
-   */
-  async recordBuildingStates(timeInfo) {
-    const turn = turnOf(timeInfo);
-    if (turn < this.lastLoggedTurn) this.lastLoggedStates.clear(); // a new game began
-    this.lastLoggedTurn = turn;
-
-    const rows = await this.supplyBuildingRepository.listAllBuildingRows();
-    for (const row of rows) {
-      const definition = getBuildingDefinition(row.type);
-      const isTracked =
-        definition?.resourceRoles?.length > 0 ||
-        definition?.employment?.workerNeed > 0 ||
-        Boolean(definition?.residentialGroup);
-      if (!isTracked) continue;
-
-      const id = row.instanceId ?? row.id;
-      const state = {
-        pop: row.pop ?? 0,
-        level: row.level ?? null,
-        tier: row.tier ?? null,
-        roads: row.roads ?? 0,
-        stocks: Object.fromEntries(Object.entries(row.stocks ?? {}).filter(([, amount]) => amount > 0)),
-        workers: row.employees?.worker ?? null,
-        workerNeed: row.employees?.worker_need ?? null,
-        servedFlags: row.servedFlags ?? null,
-        lastConsumption: row.lastConsumption ?? null,
-      };
-      const signature = JSON.stringify(state);
-      if (this.lastLoggedStates.get(id) === signature) continue;
-      this.lastLoggedStates.set(id, signature);
-
-      await this.traceabilityRepository.recordBuildingState(
-        turn,
-        timeInfo.monthIndex || 0,
-        timeInfo.year || 0,
-        { id, x: row.x, y: row.y, type: row.type },
-        state
-      );
-    }
-  }
-
-  /**
-   * The city's employment (jobs, unemployed, by social group), logged when it changes.
-   * @param {object} timeInfo
-   * @param {object} summary What the employment context computes for the city.
-   */
-  async recordEmploymentSummary(timeInfo, summary) {
-    const compact = {
-      totalPopulation: summary.totalPopulation,
-      laborPool: summary.laborPool,
-      totalAssigned: summary.totalAssigned,
-      totalNeed: summary.totalNeed,
-      unemployed: summary.unemployed,
-      unemploymentPercentage: summary.unemploymentPercentage,
-      lack: summary.lack,
-      byGroup: summary.byGroup,
-      bySkill: summary.bySkill,
-    };
-    const signature = JSON.stringify(compact);
-    const turn = turnOf(timeInfo);
-    if (turn < this.lastLoggedTurn) this.lastLoggedEmployment = null; // a new game began
-    if (signature === this.lastLoggedEmployment) return;
-    this.lastLoggedEmployment = signature;
-
-    await this.traceabilityRepository.recordEmploymentSummary(
-      turn,
-      timeInfo.monthIndex || 0,
-      timeInfo.year || 0,
-      compact
-    );
   }
 
   /**

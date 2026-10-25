@@ -45,7 +45,6 @@ function settle({ employerContributionRate, employeeContributionRate }) {
       journal.push(booked(line));
       return { recorded: true };
     },
-    recordEconomyMovement: async () => {},
   });
   // The interest the bank earned is already in the journal (another settlement wrote it): the company's statement reads it there.
   journal.push(booked({ type: 'loan_interest_received', amount: 1000, accountBuildingId: 'bank-1' }));

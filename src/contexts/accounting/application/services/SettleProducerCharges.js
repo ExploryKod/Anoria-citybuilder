@@ -88,7 +88,6 @@ export class SettleProducerCharges {
    *   house's business account (`accountKind`)
    * @param {(type: string) => number} deps.buildingMaintenanceCost
    * @param {(params: object) => Promise<{ recorded: boolean, reason?: string }>} deps.recordLedgerEntry
-   * @param {(movement: object) => Promise<void>} deps.recordEconomyMovement the economy register
    */
   constructor(deps) {
     this.deps = deps;

@@ -9,6 +9,7 @@ import { createSupplyStock } from '../../../src/contexts/supply/domain/value-obj
 import { TransferHubToHub } from '../../../src/contexts/supply/application/commands/procurement/TransferHubToHub.js';
 import { getMaxStockForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
+import { referencePriceBook } from '../../helpers/referencePriceBook.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -88,10 +89,10 @@ describe('Supply — market buys from assigned windmill', () => {
       ]),
       market(marketId, { wheat: 0, carrot: 0, cabbage: 0, food: 0 }, windmillId),
     ]);
-    command = new TransferHubToHub(repo, new HubServing(repo));
+    command = new TransferHubToHub(repo, new HubServing(repo), referencePriceBook, async () => Infinity);
   });
 
-  const pull = (demand, targetId = marketId, period = {}) => command.execute({ targetId, period, demand });
+  const pull = (demand, targetId = marketId, period = { turn: 1 }) => command.execute({ targetId, period, demand });
 
   test('pulls what its houses need, not a fixed share', async () => {
     const outcome = await pull(6);
@@ -131,14 +132,20 @@ describe('Supply — market buys from assigned windmill', () => {
     expect(outcome.totalUnits).toBe(3);
   });
 
-  test('spreads what it takes over the goods the windmill holds', async () => {
+  test('spreads what it spends over the goods the windmill holds: the cheaper good comes in larger quantity', async () => {
     repo.raw.get(windmillId).stocks = { wheat: 10, carrot: 10, cabbage: 0, food: 20 };
+    const priceOf = (category) => referencePriceBook.sellingPrice({ type: 'Windmill-001' }, category);
 
-    await pull(10);
+    const outcome = await pull(10);
 
     const stall = await repo.findById(marketId);
-    expect(stall.stocks.wheat).toBe(5);
-    expect(stall.stocks.carrot).toBe(5);
+    expect(stall.stocks.wheat + stall.stocks.carrot).toBe(10);
+    expect(stall.stocks.wheat).toBeGreaterThan(0);
+    expect(stall.stocks.carrot).toBeGreaterThan(0);
+    const [cheaper, dearer] = priceOf('wheat') <= priceOf('carrot') ? ['wheat', 'carrot'] : ['carrot', 'wheat'];
+    expect(stall.stocks[cheaper]).toBeGreaterThanOrEqual(stall.stocks[dearer]);
+    // Each transfer carries the price paid per unit, for the books.
+    for (const transfer of outcome.transfers) expect(transfer.unitPrice).toBeCloseTo(priceOf(transfer.category), 2);
   });
 
   test('asks for nothing when its houses need nothing', async () => {

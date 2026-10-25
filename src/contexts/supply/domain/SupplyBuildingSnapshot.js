@@ -19,7 +19,6 @@ export function createSupplyBuildingSnapshot({
   maxStock,
   worker = 0,
   workerNeed = 0,
-  neighbors = [],
   lastProductionYear = null,
   lastConsumptionMonth = null,
   lastConsumption = null,
@@ -45,7 +44,6 @@ export function createSupplyBuildingSnapshot({
     maxStock: Number.isFinite(maxStock) && maxStock > 0 ? Math.floor(maxStock) : Infinity,
     worker: Number.isFinite(worker) ? worker : 0,
     workerNeed: Number.isFinite(workerNeed) ? workerNeed : 0,
-    neighbors: Object.freeze(Array.isArray(neighbors) ? [...neighbors] : []),
     lastProductionYear:
       lastProductionYear === null || lastProductionYear === undefined
         ? null

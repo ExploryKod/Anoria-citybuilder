@@ -1,11 +1,11 @@
-import { appendFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
  * Dev-only: lets the running game hand a diagnostic to the developer's tooling. The page POSTs
  * `{ label, data }` (a diagnostic) or `{ kind: 'console', tag, level, message }` (a tagged console line,
  * relayed by the page — see src/composition/devDiagnostics.js) to `/__dev-log`, and it is appended to
- * `dev-diagnostics.log` at the project root (git-ignored through `*.log`). Tagged console lines whose tag is
+ * `logs/dev-diagnostics.log` (the `logs` folder is git-ignored). Tagged console lines whose tag is
  * listed in `DEV_LOG_TAGS` (comma separated, or `all`) are also printed in the terminal running `vite dev`:
  *
  *   DEV_LOG_TAGS=road-access,cycle pnpm dev
@@ -15,7 +15,9 @@ import { join } from 'node:path';
  * @param {string} rootDir
  */
 export function createDevLogPlugin(rootDir) {
-  const file = join(rootDir, 'dev-diagnostics.log');
+  const folder = join(rootDir, 'logs');
+  const file = join(folder, 'dev-diagnostics.log');
+  mkdirSync(folder, { recursive: true });
   const shown = new Set((process.env.DEV_LOG_TAGS ?? '').split(',').map((tag) => tag.trim()).filter(Boolean));
 
   return {

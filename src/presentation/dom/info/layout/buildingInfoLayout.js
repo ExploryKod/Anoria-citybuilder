@@ -576,45 +576,6 @@ export function appendLocationFootnote(container, anchorX, anchorY) {
 
 /**
  * @param {HTMLElement} container
- * @param {ReadonlyArray<{ type?: string, instanceId?: string, x: number, y: number }>} neighbors
- */
-export function renderNeighborsTab(container, neighbors) {
-  container.innerHTML = '';
-
-  if (!neighbors?.length) {
-    appendStatusMessage(container, 'Aucun voisin adjacent.', 'neutral');
-    return;
-  }
-
-  const table = document.createElement('table');
-  table.className = 'building-info-neighbors-table';
-  table.innerHTML = `
-    <thead>
-      <tr><th scope="col">Type</th><th scope="col">Position</th></tr>
-    </thead>
-    <tbody></tbody>
-  `;
-  const tbody = table.querySelector('tbody');
-
-  for (const neighbor of neighbors) {
-    if (neighbor.x == null || neighbor.y == null) continue;
-    const tr = document.createElement('tr');
-    // French catalog name, not the raw building/type id — same
-    // displayName every other info-panel format already reads via
-    // getBuildingDefinition (see useBuildingInfoSelection.js).
-    const label = getBuildingDefinition(neighbor.type)?.displayName
-      ?? neighbor.type
-      ?? neighbor.instanceId
-      ?? '—';
-    tr.innerHTML = `<td>${label}</td><td>(${neighbor.x}, ${neighbor.y})</td>`;
-    tbody.appendChild(tr);
-  }
-
-  container.appendChild(table);
-}
-
-/**
- * @param {HTMLElement} container
  * @param {{ complaints: ReadonlyArray<string | { text: string, detail: string }> }} [model]
  */
 export function renderMessagesTab(container, model) {

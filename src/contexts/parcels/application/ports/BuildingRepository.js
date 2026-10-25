@@ -22,15 +22,6 @@ export class BuildingRepository {
     throw new Error('BuildingRepository: port not implemented');
   }
 
-  async saveNeighbors(_instanceId, _neighbors) {
-    throw new Error('BuildingRepository: port not implemented');
-  }
-
-  /** @returns {Promise<object[]>} voisins bruts (forme IndexedDB) */
-  async findNeighbors(_instanceId) {
-    throw new Error('BuildingRepository: port not implemented');
-  }
-
   async deleteById(_instanceId) {
     throw new Error('BuildingRepository: port not implemented');
   }

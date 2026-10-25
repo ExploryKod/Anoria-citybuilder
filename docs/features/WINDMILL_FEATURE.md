@@ -107,7 +107,7 @@ When clicking on a windmill, the info panel shows:
 - Total: X paniers collectés
 
 ### Functionality Section
-- Collecte: Chaque décembre
+- Collecte: chaque année en octobre (les choux, qui ne se gardent que deux mois) et en décembre (les autres cultures)
 - Source: Toutes les fermes du jeu
 - Condition: Accès routier requis
 

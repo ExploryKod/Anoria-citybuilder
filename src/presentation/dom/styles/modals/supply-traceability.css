@@ -71,40 +71,6 @@
     flex: 1;
 }
 
-.supply-traceability-filters {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-}
-
-.supply-traceability-filter-btn {
-    padding: 8px 16px;
-    border: 1px solid #28a745;
-    background: white;
-    color: #28a745;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: all 0.2s ease;
-}
-
-.supply-traceability-filter-btn:hover {
-    background: #f0f0f0;
-}
-
-.supply-traceability-filter-btn.active {
-    background: #28a745;
-    color: white;
-}
-
-.supply-traceability-refresh-section {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 20px;
-}
-
 .supply-traceability-refresh-btn {
     padding: 10px 20px;
     background: #28a745;
@@ -122,11 +88,6 @@
 
 .supply-traceability-refresh-btn:hover {
     background: #218838;
-}
-
-.supply-traceability-loading {
-    text-align: center;
-    padding: 40px;
 }
 
 .supply-need-demand-banner {
@@ -170,349 +131,17 @@
     border-color: #495057;
 }
 
-.supply-traceability-list {
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
 /* Month Group */
-.supply-traceability-month-group {
-    margin-bottom: 24px;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.supply-traceability-month-header {
-    margin: 0;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
-    font-size: 16px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.supply-traceability-month-content {
-    padding: 16px;
-}
 
 /* Building Section (Market, House, Farm) */
-.supply-traceability-building-section {
-    margin-bottom: 20px;
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border-left: 4px solid #28a745;
-}
-
-.supply-traceability-building-section:last-child {
-    margin-bottom: 0;
-}
-
-.supply-traceability-building-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-}
-
-.supply-traceability-building-type {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--primary);
-}
-
-.supply-traceability-coords-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 12px;
-    background: #28a745;
-    color: white;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    gap: 4px;
-}
-
-.supply-traceability-coords-pill.farm {
-    background: #ffc107;
-    color: #000;
-}
-
-.supply-traceability-coords-pill.market {
-    background: #17a2b8;
-    color: white;
-}
-
-.supply-traceability-coords-pill.house {
-    background: #6f42c1;
-    color: white;
-}
-
-.supply-traceability-coords-pill.hub {
-    background: #20c997;
-    color: #000;
-}
 
 /* Transaction List */
-.supply-traceability-transaction-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.supply-traceability-transaction {
-    padding: 12px;
-    background: white;
-    border-radius: 6px;
-    border: 1px solid #e9ecef;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.supply-traceability-transaction-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.supply-traceability-transaction-subtitle {
-    font-size: 11px;
-    color: #6c757d;
-    font-style: italic;
-    margin-top: -4px;
-    margin-bottom: 4px;
-}
-
-.supply-traceability-transaction-group {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.supply-traceability-transaction-type {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    gap: 4px;
-}
-
-.supply-traceability-transaction-type.farm-to-market {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.supply-traceability-transaction-type.market-to-house {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
-.supply-traceability-transaction-type.house-consumption {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.supply-traceability-food-type {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    gap: 4px;
-}
-
-.supply-traceability-food-type.wheat {
-    background: #ffd700;
-    color: #856404;
-}
-
-.supply-traceability-food-type.carrot {
-    background: #ff8c00;
-    color: #fff;
-}
-
-.supply-traceability-food-type.cabbage {
-    background: #90ee90;
-    color: #006400;
-}
-
-.supply-traceability-transaction-details {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 13px;
-    color: #495057;
-}
-
-.supply-traceability-transaction-detail {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.supply-traceability-transaction-detail-label {
-    font-weight: 600;
-    color: var(--primary);
-    min-width: 80px;
-}
-
-.supply-traceability-transaction-detail-value {
-    color: #495057;
-}
-
-.supply-traceability-arrow {
-    color: #6c757d;
-    margin: 0 4px;
-}
-
-.supply-traceability-price {
-    color: #28a745;
-    font-weight: 600;
-}
-
-.supply-traceability-quantity {
-    color: var(--primary);
-    font-weight: 600;
-}
 
 /* Empty State */
-.no-supply-traceability-entries {
-    text-align: center;
-    padding: 60px 20px;
-    color: #6c757d;
-}
-
-.no-supply-traceability-entries-icon {
-    font-size: 48px;
-    margin-bottom: 16px;
-}
-
-.no-supply-traceability-entries-text {
-    font-size: 16px;
-}
 
 /* Status Indicators */
-.supply-traceability-status {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    gap: 4px;
-}
-
-.supply-traceability-status.has-food {
-    background: #d4edda;
-    color: #155724;
-}
-
-.supply-traceability-status.no-food {
-    background: #f8d7da;
-    color: #721c24;
-}
 
 /* New Column-Based Transaction Section */
-.supply-traceability-transaction-section {
-    margin-bottom: 24px;
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-
-.supply-traceability-transaction-section-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #dee2e6;
-}
-
-.supply-traceability-transaction-table {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.supply-traceability-transaction-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-}
-
-.supply-traceability-transaction-cell {
-    background: white;
-    border-radius: 6px;
-    border: 1px solid #e9ecef;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.supply-traceability-cell-header {
-    font-weight: 600;
-    font-size: 13px;
-    color: var(--primary);
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #e9ecef;
-}
-
-.supply-traceability-stocks-column {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.supply-traceability-stocks-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.supply-traceability-stocks-label {
-    font-weight: 600;
-    font-size: 12px;
-    color: var(--primary);
-    text-transform: uppercase;
-}
-
-.supply-traceability-stocks-details {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 13px;
-    color: #495057;
-}
-
-.supply-traceability-stocks-details > div {
-    padding: 2px 0;
-}
-
-.supply-traceability-stocks-total {
-    font-weight: 600;
-    color: var(--primary);
-    margin-top: 4px;
-    padding-top: 4px;
-    border-top: 1px solid #e9ecef;
-}
 
 /* Mobile Responsive */
 @media screen and (max-width: 768px) {
@@ -524,32 +153,6 @@
 
     .supply-traceability-content {
         padding: 12px;
-    }
-
-    .supply-traceability-transaction-section {
-        padding: 12px;
-    }
-
-    .supply-traceability-transaction-row {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-
-    .supply-traceability-transaction-cell {
-        padding: 10px;
-    }
-
-    .supply-traceability-transaction-details {
-        font-size: 12px;
-    }
-
-    .supply-traceability-stocks-details {
-        font-size: 12px;
-    }
-
-    .supply-traceability-transaction-section-header {
-        font-size: 14px;
-        gap: 8px;
     }
 }
 
@@ -821,3 +424,524 @@
     }
 }
 
+/* Supply balance: one card per need of the citizens, its figures told apart by kind (theory, collected, spoiled, stock, sold, hunger) */
+.supply-balance-caveat {
+    margin: 12px 4px 0;
+    color: #546e7a;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    text-align: left;
+}
+
+.supply-balance-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 16px;
+    padding: 12px 4px 16px;
+    align-items: start;
+    text-align: left;
+}
+
+.supply-balance-list .supply-balance-caveat {
+    grid-column: 1 / -1;
+    margin: 0;
+}
+
+/* Balance: one surface per need; a status chip instead of a coloured border; sections told apart by space, not by boxes. Labels left, figures right, on one grid. */
+.bal-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    padding: 16px 24px 24px;
+    text-align: left;
+    grid-column: 1 / -1;
+}
+
+.bal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.bal-head h4 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.87);
+}
+
+.bal-chip {
+    padding: 0 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 24px;
+    white-space: nowrap;
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.bal-chip--ok { background: rgba(46, 125, 50, 0.12); color: #1b5e20; }
+.bal-chip--leaking { background: rgba(239, 108, 0, 0.14); color: #bf360c; }
+.bal-chip--missing { background: rgba(198, 40, 40, 0.12); color: #b71c1c; }
+
+.bal-verdict {
+    margin: 0 0 16px;
+    color: rgba(0, 0, 0, 0.6);
+    line-height: 1.5;
+}
+
+.bal-alerts {
+    margin: 0 0 16px;
+    padding: 8px 16px;
+    list-style: none;
+    background: rgba(239, 108, 0, 0.08);
+    border-radius: 8px;
+    color: #8d3b00;
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.bal-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px 32px;
+    margin-top: 8px;
+}
+
+.bal-section h5 {
+    margin: 0 0 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.bal-section dl {
+    margin: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.bal-section dl > div {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 16px;
+}
+
+.bal-section dt {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.9rem;
+}
+
+.bal-section dd {
+    margin: 0;
+    text-align: right;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: rgba(0, 0, 0, 0.87);
+}
+
+.bal-section dd.bal-tone-warn { color: #bf360c; }
+
+.bal-note {
+    margin: 8px 0 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+/* The calendar reads as sentences: the good on the left, what happens to it on the right, left-aligned, across the card */
+.bal-section--calendar {
+    grid-column: 1 / -1;
+    margin-top: 24px;
+}
+
+.bal-section--calendar dl > div {
+    grid-template-columns: minmax(96px, 12%) 1fr;
+}
+
+.bal-section--calendar dd {
+    text-align: left;
+    font-weight: 400;
+}
+
+.supply-balance-loading {
+    padding: 16px;
+    color: #78909c;
+}
+
+/* Header action: an icon button like the close one, pushed to the right of the title */
+.supply-balance-export-btn {
+    margin-left: auto;
+    margin-right: 8px;
+    padding: 8px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.supply-balance-export-btn:hover,
+.supply-balance-export-btn:focus-visible {
+    background: rgba(46, 125, 50, 0.12);
+    color: #2e7d32;
+}
+
+/* Purchasing power: one surface, one table, one row per kind of house */
+.power-card {
+    grid-column: 1 / -1;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    padding: 16px 24px 8px;
+    text-align: left;
+}
+
+.power-caption,
+.power-note {
+    margin: 0 0 8px;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+.power-note {
+    margin: 8px 0;
+}
+
+.power-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 2fr) repeat(4, minmax(88px, 1fr)) minmax(120px, 1.2fr);
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.power-head {
+    border-top: none;
+    padding: 8px 0;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.power-kind {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.power-kind span {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.8rem;
+}
+
+.power-kind .power-short {
+    color: #c62828;
+}
+
+.power-figure {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.power-strong {
+    font-weight: 700;
+}
+
+.power-cover {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+.power-chip {
+    padding: 0 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    line-height: 24px;
+    background: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.power-bar {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.power-bar span {
+    display: block;
+    height: 100%;
+    background: currentColor;
+}
+
+.power-cover--ok { color: #2e7d32; }
+.power-cover--ok .power-chip { background: rgba(46, 125, 50, 0.12); color: #1b5e20; }
+.power-cover--short { color: #c62828; }
+.power-cover--short .power-chip { background: rgba(198, 40, 40, 0.12); color: #b71c1c; }
+
+@media (max-width: 720px) {
+    .power-row {
+        grid-template-columns: minmax(120px, 2fr) repeat(2, minmax(72px, 1fr)) minmax(96px, 1.2fr);
+        gap: 8px;
+    }
+
+    .power-secondary {
+        display: none;
+    }
+}
+
+/* Phone: the same cards on one column, a chip under its title, touch targets of 40px, the calendar's lines stacked */
+@media (max-width: 600px) {
+    .supply-balance-list {
+        grid-template-columns: minmax(0, 1fr);
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .bal-card,
+    .power-card {
+        padding: 16px;
+    }
+
+    .bal-head {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .bal-sections {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 24px;
+    }
+
+    .bal-section--calendar dl > div {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 2px;
+    }
+
+    .supply-balance-export-btn,
+    .supply-traceability-close-btn {
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    .power-row {
+        padding: 12px 0;
+    }
+}
+
+/* A line's label can carry its working under it, small and muted (the economy panel) */
+.bal-section dt small {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: rgba(0, 0, 0, 0.45);
+}
+
+/* Economy: Material tabs (an underline on the active one) over cards of tables. Mobile first: the tables stack their figures under the label. */
+.eco-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    overflow-x: auto;
+}
+
+.eco-tab {
+    flex: 1 1 0;
+    min-height: 48px;
+    padding: 0 16px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.eco-tab:hover,
+.eco-tab:focus-visible {
+    background: rgba(46, 125, 50, 0.08);
+}
+
+.eco-tab.active {
+    color: #2e7d32;
+    border-bottom-color: #2e7d32;
+}
+
+.eco-tab-content {
+    display: none;
+    text-align: left;
+}
+
+.eco-tab-content.active {
+    display: grid;
+    gap: 16px;
+    padding: 8px 0 16px;
+}
+
+.eco-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    padding: 16px 24px 8px;
+}
+
+.eco-card h5 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.87);
+}
+
+.eco-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--eco-columns);
+    align-items: baseline;
+    gap: 16px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.eco-head {
+    border-top: none;
+    padding: 4px 0 8px;
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.eco-label small {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.eco-figure {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.eco-row--strong {
+    background: rgba(46, 125, 50, 0.06);
+    font-weight: 700;
+    margin: 0 -24px;
+    padding-left: 24px;
+    padding-right: 24px;
+}
+
+.eco-bar {
+    grid-column: 1 / -1;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.eco-bar span {
+    display: block;
+    height: 100%;
+    background: #2e7d32;
+}
+
+.eco-note {
+    margin: 8px 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 600px) {
+    .eco-card {
+        padding: 16px 16px 8px;
+    }
+
+    .eco-head {
+        display: none;
+    }
+
+    .eco-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 16px;
+    }
+
+    .eco-row .eco-label {
+        grid-column: 1 / -1;
+    }
+
+    .eco-figure {
+        text-align: left;
+    }
+
+    .eco-figure::before {
+        content: attr(data-label);
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: rgba(0, 0, 0, 0.5);
+    }
+
+    .eco-row--strong {
+        margin: 0 -16px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}
+
+/* An index that is not valid yet is greyed out; what it waits for is told in a warning under the table */
+.eco-row--muted,
+.eco-row--muted .eco-bar span {
+    color: rgba(0, 0, 0, 0.38);
+}
+
+.eco-row--muted {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.eco-row--muted .eco-bar span {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.eco-warning {
+    margin: 8px 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(239, 108, 0, 0.08);
+    color: #8d3b00;
+    font-size: 0.85rem;
+    line-height: 1.5;
+}

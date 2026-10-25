@@ -40,14 +40,10 @@ describe('TimeManager', () => {
             }
         });
 
-        test('formatTime, saison et âge d\'un bâtiment sont stricts eux aussi', () => {
+        test('formatTime et saison sont stricts eux aussi', () => {
             expect(() => TimeCalendar.formatTime(undefined, 1)).toThrow('days must be a finite number');
             expect(() => TimeCalendar.getSeasonDisplay('Mousson')).toThrow('unknown season');
             expect(() => TimeCalendar.getSeasonDisplay(undefined)).toThrow('unknown season');
-            expect(() => TimeCalendar.getBuildingAge(10, undefined)).toThrow('worldTime must be a finite number');
-            expect(() => TimeCalendar.getBuildingAge(undefined, 3)).toThrow('currentTime must be a finite number');
-            expect(() => TimeCalendar.getBuildingAge(3, 10)).toThrow('is after the current time');
-            expect(TimeCalendar.getBuildingAge(10, 4)).toBe(6);
         });
 
         // Tests des mois (utilisé pour savoir quand collecter les impôts)

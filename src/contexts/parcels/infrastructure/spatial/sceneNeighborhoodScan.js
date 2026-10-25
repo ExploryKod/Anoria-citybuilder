@@ -1,6 +1,6 @@
 import { isRoadType } from '../../../../shared/building-catalog/roadQueries.js';
 /**
- * Scan voisinage sur la grille Three.js (meshes + city.tiles).
+ * Scan de la grille Three.js (meshes + city.tiles) autour d'une tuile : ce que les marcheurs lisent pour trouver la route d'entrée d'un bâtiment.
  * Infrastructure Parcels — extrait de js/utils/utils.js (Lot P0).
  */
 
@@ -62,43 +62,3 @@ export const zoneBordersBuildings = (buildingData, time = 0) => {
   return [...new Set(meshs)];
 };
 
-export function getBuildingsNamesInZone(
-  buildingData,
-  time = 0,
-  targets = { buildingTarget: '', zones: [] }
-) {
-  if (!buildingData) {
-    console.warn('[getBuildingsInZone] buildingData must not be undefined');
-    return;
-  }
-
-  if (!Object.hasOwn(targets, 'buildingTarget') || !Object.hasOwn(targets, 'zones')) {
-    console.error('[getBuildingsInZone] ket buildingTarget or zones are missing from targets object third argument');
-    return;
-  }
-
-  const zoneBuildings = zoneBordersBuildings(buildingData, time);
-
-  if (targets.buildingTarget !== '' && targets.zones.length > 0) {
-    return zoneBuildings.filter(
-      (entry) =>
-        (entry.type === targets.buildingTarget ||
-          entry.type.startsWith(`${targets.buildingTarget}-`)) &&
-        targets.zones.includes(entry.zone)
-    );
-  }
-
-  if (targets.buildingTarget !== '') {
-    return zoneBuildings.filter(
-      (entry) =>
-        entry.type === targets.buildingTarget ||
-        entry.type.startsWith(`${targets.buildingTarget}-`)
-    );
-  }
-
-  if (targets.zones.length > 0) {
-    return zoneBuildings.filter((building) => targets.zones.includes(building.zone));
-  }
-
-  return zoneBuildings;
-}

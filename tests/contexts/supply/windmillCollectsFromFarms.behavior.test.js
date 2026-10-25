@@ -6,10 +6,11 @@ import { describe, test, expect, beforeEach } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { matchesSchedule } from '../../../src/contexts/supply/domain/policies/ResourceSchedulePolicy.js';
-import { getScheduleForRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { getCollectionSchedule } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { CollectResourceToHub } from '../../../src/contexts/supply/application/commands/surplus/CollectResourceToHub.js';
 import { toSupplyMonth } from '../../../src/composition/supplyOps.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
+import { referencePriceBook } from '../../helpers/referencePriceBook.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -59,10 +60,12 @@ function farm(id, type, stocks, roadCount = 1) {
 
 describe('Supply — windmill collection', () => {
   describe('domain policies', () => {
-    test('collecting month is december only', () => {
-      const schedule = getScheduleForRole('Windmill-001', 'collector');
+    test('the granary collects in the months its crops are sold in: october (the cabbage, which keeps two months) and december', () => {
+      const schedule = getCollectionSchedule('Windmill-001');
+      // Declared once, on each farm's sale window: the granary only follows them.
+      expect(schedule).toEqual({ unit: 'month', values: ['october', 'december'] });
       expect(matchesSchedule(schedule, { month: 'december' })).toBe(true);
-      expect(matchesSchedule(schedule, { month: 'october' })).toBe(false);
+      expect(matchesSchedule(schedule, { month: 'october' })).toBe(true);
       expect(matchesSchedule(schedule, { month: 'november' })).toBe(false);
       expect(toSupplyMonth('Décembre')).toBe('december');
       expect(toSupplyMonth('Octobre')).toBe('october');
@@ -88,10 +91,10 @@ describe('Supply — windmill collection', () => {
         farm(carrotFarmId, 'Farm-Carrot', { carrot: 5, food: 5 }),
         farm(cabbageFarmId, 'Farm-Cabbage', { cabbage: 3, food: 3 }),
       ]);
-      useCase = new CollectResourceToHub(repo);
+      useCase = new CollectResourceToHub(repo, null, { priceBook: referencePriceBook, purchasingPower: async () => Infinity });
     });
 
-    test('collects from all farms in december', async () => {
+    test('collects the wheat and carrot farms in december: the cabbage was sold in october', async () => {
       const outcome = await useCase.execute({
         hubId: windmillId,
         period: { month: 'december', turn: 1 },
@@ -103,20 +106,34 @@ describe('Supply — windmill collection', () => {
       });
 
       expect(outcome.collected).toBe(true);
-      expect(outcome.totalUnits).toBe(18);
-      expect(outcome.transfers).toHaveLength(3);
+      expect(outcome.totalUnits).toBe(15);
+      expect(outcome.transfers).toHaveLength(2);
 
       const mill = await repo.findById(windmillId);
       expect(mill.stocks.wheat).toBe(10);
       expect(mill.stocks.carrot).toBe(5);
-      expect(mill.stocks.cabbage).toBe(3);
-      expect(mill.stocks.food).toBe(18);
+      expect(mill.stocks.cabbage).toBe(0);
+      expect(mill.stocks.food).toBe(15);
+      expect((await repo.findById(cabbageFarmId)).stocks.cabbage).toBe(3);
 
       expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(0);
       expect((await repo.findById(carrotFarmId)).stocks.carrot).toBe(0);
     });
 
-    test('refuses outside december', async () => {
+    test('collects the cabbage in october, before it spoils, and leaves the other crops for december', async () => {
+      const outcome = await useCase.execute({
+        hubId: windmillId,
+        period: { month: 'october', turn: 1 },
+        sourceRefs: [{ instanceId: wheatFarmId }, { instanceId: carrotFarmId }, { instanceId: cabbageFarmId }],
+      });
+
+      expect(outcome.totalUnits).toBe(3);
+      expect(outcome.transfers).toHaveLength(1);
+      expect((await repo.findById(windmillId)).stocks.cabbage).toBe(3);
+      expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
+    });
+
+    test('refuses outside the collecting months', async () => {
       const outcome = await useCase.execute({
         hubId: windmillId,
         period: { month: 'november' },
@@ -133,7 +150,7 @@ describe('Supply — windmill collection', () => {
         windmill(windmillId, { food: 0 }),
         farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }, 0),
       ]);
-      useCase = new CollectResourceToHub(repo);
+      useCase = new CollectResourceToHub(repo, null, { priceBook: referencePriceBook, purchasingPower: async () => Infinity });
 
       const outcome = await useCase.execute({
         hubId: windmillId,
@@ -151,7 +168,7 @@ describe('Supply — windmill collection', () => {
         windmill(windmillId, { food: 0 }, { roadCount: 0 }),
         farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
       ]);
-      useCase = new CollectResourceToHub(repo);
+      useCase = new CollectResourceToHub(repo, null, { priceBook: referencePriceBook, purchasingPower: async () => Infinity });
 
       const outcome = await useCase.execute({
         hubId: windmillId,
@@ -169,7 +186,7 @@ describe('Supply — windmill collection', () => {
         farm(wheatFarmId, 'Farm-Wheat', { wheat: 10, food: 10 }),
         farm(carrotFarmId, 'Farm-Carrot', { carrot: 5, food: 5 }),
       ]);
-      useCase = new CollectResourceToHub(repo);
+      useCase = new CollectResourceToHub(repo, null, { priceBook: referencePriceBook, purchasingPower: async () => Infinity });
 
       const outcome = await useCase.execute({
         hubId: windmillId,

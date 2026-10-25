@@ -30,7 +30,6 @@ export class DexieHousingBuildingRepository {
       lastConsumption: house.lastConsumption ?? null,
       stocks: house.stocks || createEmptyStocks(),
       price: house.price ?? 0,
-      neighbors: house.neighbors || [],
     });
   }
 

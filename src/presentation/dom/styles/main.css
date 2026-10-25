@@ -1844,27 +1844,6 @@ button.building-info-metric-card[aria-pressed="true"] {
     text-transform: lowercase;
 }
 
-.building-info-neighbors-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-
-.building-info-neighbors-table th,
-.building-info-neighbors-table td {
-    text-align: left;
-    padding: 10px 8px;
-    border-bottom: 1px solid #eceff1;
-}
-
-.building-info-neighbors-table th {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #78909c;
-}
-
 /* Flash keywords under an unmet need: why it was not met, and how many units (see houseInfoFormat.js). */
 .building-info-metric-card__keywords {
     display: flex;
@@ -3067,9 +3046,8 @@ button.building-info-metric-card[aria-pressed="true"] {
     letter-spacing: 0.4px;
 }
 
-/* Key/Value responsive list — same flat-row language as
-   .building-info-neighbors-table (border-bottom rows, no per-row card),
-   so every plain list in the info panel (État/Personnel/Voisins) reads as
+/* Key/Value responsive list — flat rows (border-bottom, no per-row card),
+   so every plain list in the info panel (État/Personnel) reads as
    one unified presentation instead of each tab inventing its own. */
 .kv-row {
     display: grid;

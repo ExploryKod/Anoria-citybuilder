@@ -73,7 +73,8 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   energy: Object.freeze({ kind: 'service', vatCategory: 'other', emoji: '⚡', label: 'Énergie', unit: unitOf('MWh', 'MWh'), baseValue: 0.1 }),
   fire: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '🚒', label: 'Pompiers', unit: unitOf('intervention', 'interventions'), baseValue: 1 }),
   police: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '🚓', label: 'Police', unit: unitOf('patrouille', 'patrouilles'), baseValue: 1 }),
-  school: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '🎓', label: 'École', unit: unitOf('leçon', 'leçons'), baseValue: 1.5 }),
+  primarySchool: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '✏️', label: 'École primaire', unit: unitOf('leçon', 'leçons'), baseValue: 0.8 }),
+  school: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '🎓', label: 'Collège-Lycée', unit: unitOf('leçon', 'leçons'), baseValue: 1.5 }),
   library: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '📖', label: 'Bibliothèque', unit: unitOf('prêt', 'prêts'), baseValue: 1 }),
   doctor: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '🩺', label: 'Cabinet médical', unit: unitOf('consultation', 'consultations'), baseValue: 2 }),
   hospital: Object.freeze({ kind: 'service', vatCategory: 'service', emoji: '🏥', label: 'Hôpital', unit: unitOf('soin', 'soins'), baseValue: 3 }),
@@ -93,7 +94,7 @@ export const HOUSEHOLD_CONSUMPTION_GROUPS = Object.freeze([
   Object.freeze({ id: 'equipment', coicop: '05', label: 'Équipement du ménage', categories: Object.freeze(['furniture', 'plate', 'pot', 'amphora']) }),
   Object.freeze({ id: 'health', coicop: '06', label: 'Santé', categories: Object.freeze(['doctor', 'hospital']) }),
   Object.freeze({ id: 'leisure', coicop: '09', label: 'Loisirs et culture', categories: Object.freeze(['library', 'theatre', 'cinema']) }),
-  Object.freeze({ id: 'education', coicop: '10', label: 'Enseignement', categories: Object.freeze(['school']) }),
+  Object.freeze({ id: 'education', coicop: '10', label: 'Enseignement', categories: Object.freeze(['primarySchool', 'school']) }),
   Object.freeze({ id: 'restaurants', coicop: '11', label: 'Restauration', categories: Object.freeze(['pub']) }),
   Object.freeze({ id: 'other', coicop: '12', label: 'Autres biens et services', categories: Object.freeze(['fire', 'police']) }),
 ]);
@@ -179,6 +180,42 @@ const SHELF_LIFE_MONTHS = Object.freeze({
   // An agreement waiting for its import is not a good: it never goes bad.
   dealCoal: Infinity, dealPetrol: Infinity, dealUranium: Infinity, dealExoticWood: Infinity,
 });
+
+/**
+ * How the price of a unit follows its freshness: the full price while more than `fullPriceAboveLifeShare` of its life is left, then falling in a straight line to `floor` times the
+ * price on the day it goes bad. What is about to rot is sold off, so it is bought first by whoever has little to spend. First values, to tune with a play-through.
+ */
+const FRESHNESS_PRICE_DEFAULT = Object.freeze({ fullPriceAboveLifeShare: 0.5, floor: 0.4 });
+
+/** The goods whose curve is not the default (none yet). */
+const FRESHNESS_PRICE_BY_CATEGORY = Object.freeze({});
+
+/**
+ * @param {string} category
+ * @returns {{ fullPriceAboveLifeShare: number, floor: number }}
+ */
+export function getFreshnessPriceCurve(category) {
+  if (!hasResourceCategoryPresentation(category)) {
+    throw new Error(`[resource-catalog] "${category}" is not declared in ResourceCategoryCatalog: it has no freshness price curve`);
+  }
+  return FRESHNESS_PRICE_BY_CATEGORY[category] ?? FRESHNESS_PRICE_DEFAULT;
+}
+
+/**
+ * The risk of an unsold stock, as a cut in the seller's price: a seller whose stock keeps less than a year (`horizonMonths`, the span over which a harvest is sold) carries the risk that
+ * part of it goes bad before it is sold, and sells cheaper for it. The cut is `maxDiscount` for a stock that keeps no time and falls in a straight line to nothing at the horizon: it
+ * is derived from the shelf life, never declared per good. A good that keeps a year or more carries none. First values, to tune with a play-through.
+ */
+const UNSOLD_RISK = Object.freeze({ horizonMonths: 12, maxDiscount: 0.2 });
+
+/**
+ * @param {number} shelfLifeMonths how long the seller's stock keeps the good (`Infinity`: it never goes bad)
+ * @returns {number} the share cut from the price, 0 to `maxDiscount`
+ */
+export function unsoldRiskDiscount(shelfLifeMonths) {
+  if (!(shelfLifeMonths > 0)) throw new Error(`[resource-catalog] the unsold risk needs a shelf life of more than 0 months, got ${shelfLifeMonths}`);
+  return UNSOLD_RISK.maxDiscount * (1 - Math.min(1, shelfLifeMonths / UNSOLD_RISK.horizonMonths));
+}
 
 /**
  * @param {string} category

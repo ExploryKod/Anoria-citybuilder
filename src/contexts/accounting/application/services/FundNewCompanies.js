@@ -11,8 +11,8 @@ export class FundNewCompanies {
   /**
    * @param {object} deps
    * @param {(turn: number) => { year: number, monthIndex: number, month?: string }} deps.getTimeInfo
-   * @param {() => Promise<Array<{ buildingId: string, accountKind: string | null, monthlyNeed: number, name: string }>>} deps.listFoundingNeeds the companies and the businesses of
-   *   the houses, with what their month costs at full staffing (euros) and the name the journal calls them by
+   * @param {() => Promise<Array<{ buildingId: string, accountKind: string | null, monthlyNeed: number, stockValue: number, name: string }>>} deps.listFoundingNeeds the companies and the businesses of
+   *   the houses, with what their month costs at full staffing and what their stock is worth when full (euros) and the name the journal calls them by
    * @param {() => Promise<Array<object>>} deps.getJournalEntries
    * @param {(params: object) => Promise<{ recorded: boolean, reason?: string }>} deps.recordLedgerEntry
    */
@@ -26,10 +26,10 @@ export class FundNewCompanies {
     const monthLabel = `${timeInfo.month} ${timeInfo.year}`;
     const hamletId = requireActiveHamletId();
     const founded = foundedAccountsOf(await this.deps.getJournalEntries());
-    for (const { buildingId, accountKind, monthlyNeed, name } of await this.deps.listFoundingNeeds()) {
+    for (const { buildingId, accountKind, monthlyNeed, stockValue, name } of await this.deps.listFoundingNeeds()) {
       const accountKey = accountKeyOf({ accountBuildingId: buildingId, accountKind });
       if (founded.has(accountKey)) continue;
-      const capital = foundingCapitalOf(monthlyNeed);
+      const capital = foundingCapitalOf(monthlyNeed, stockValue);
       if (capital <= 0) continue;
       const common = { turn: time, amount: capital / 100, buildingInstanceId: buildingId };
       await this.#record({ ...common, type: 'company_capital_paid', description: `Fonds propres versés à ${name} - ${monthLabel}`, businessKey: `company_capital_paid:${hamletId}:${accountKey}`, accountBuildingId: null, counterpartyBuildingId: buildingId });

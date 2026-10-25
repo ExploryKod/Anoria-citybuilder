@@ -48,7 +48,7 @@ export {
   tryInstanceIdFromHouseRow,
   resolveBuildingInstanceIdFromRef,
   tryResolveBuildingInstanceIdFromRef,
-  resolveInstanceIdFromNeighborRef,
+  resolveInstanceIdFromBuildingRef,
   displayLabelFromHouseRow,
   toDisplayLabel,
 } from './BuildingRecord.js';

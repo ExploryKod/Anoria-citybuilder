@@ -59,6 +59,33 @@ export function unitPriceAtStage(sellerStage, category) {
 export const COST_WINDOW_MONTHS = 3;
 
 /**
+ * The credit a company's suppliers give it, in months of its own sales, by the stage it buys at: it can hold up to the sales of this many past
+ * months in purchases not yet paid, on top of the money it has. A market sells every day, so a month of its sales is its credit; a warehouse buys
+ * a harvest once and sells it over the year, so its credit is a year of its sales. First values, to tune with a play-through.
+ */
+export const SUPPLIER_CREDIT_MONTHS_BY_STAGE = Object.freeze({ hub: 12, distributor: 1 });
+
+/**
+ * What the stock a building holds is worth when it is full, at its opening cost: for each stock role (hub, distributor) with a ceiling, the
+ * ceiling times the average opening cost of the goods it holds. It is what a company that carries a stock has to finance.
+ * @param {string} buildingType
+ * @returns {number} in euros, 0 for a building that holds no stock bought from another stage
+ */
+export function stockValueAtCapacity(buildingType) {
+  const services = getServiceCategories();
+  let value = 0;
+  for (const entry of getResourceRoles(buildingType)) {
+    if (entry.role !== 'hub' && entry.role !== 'distributor') continue;
+    if (!Number.isFinite(entry.maxStock) || !(entry.maxStock > 0)) continue;
+    const goods = entry.categories.filter((category) => !services.includes(category) && getResourceBaseValue(category) > 0);
+    if (goods.length === 0) continue;
+    const average = goods.reduce((sum, category) => sum + openingUnitCost(entry.role, category), 0) / goods.length;
+    value += entry.maxStock * average;
+  }
+  return Math.round(value * 100) / 100;
+}
+
+/**
  * The cost of a unit a building held before any delivery was recorded (the starter city, a building just built with a stock): valued at
  * what the stage before it sells at in the reference chain. It is the opening valuation of the books, a rule, not a guess.
  * @param {'hub' | 'distributor'} stage the building's own stage

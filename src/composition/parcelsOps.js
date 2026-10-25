@@ -34,13 +34,12 @@ export {
 } from '../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
 
 export {
-  getBuildingsNamesInZone,
   zoneBordersBuildings,
 } from '../contexts/parcels/infrastructure/spatial/sceneNeighborhoodScan.js';
 
 import { getOrCreateParcelsContext } from './createParcelsContext.js';
 
-/** Delete building row + refresh neighbors / road access (Parcels BC). */
+/** Delete building row + refresh road access (Parcels BC). */
 export async function syncRemovedBuilding(params) {
   return getOrCreateParcelsContext().syncRemovedBuilding(params);
 }

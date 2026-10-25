@@ -16,8 +16,83 @@ import {
 
 /** Supply port adapter — accès direct Dexie (table `houses`). */
 export class DexieSupplyBuildingRepository {
+  /**
+   * The unit of work in progress (see `inUnitOfWork`), or null. While it lasts, a row is read from the database once and kept here, and what is written is kept
+   * as the fields that changed, to be written together at the end.
+   * @type {{ rows: Map<string, object | null>, allLoaded: boolean, pending: Map<string, Record<string, unknown>> } | null}
+   */
+  #session = null;
+
+  /**
+   * Runs `work` with the building rows read once and written once. A supply cycle reads and rewrites the same few dozen rows hundreds of times (each read a
+   * transaction, each write two): inside a unit of work they are read from memory and what changed is written in one go when `work` ends, even if it threw.
+   *
+   * The write is made on the row as it is THEN in the database, field by field: a building demolished meanwhile is not written back, and a field another context
+   * changed in the meantime is not overwritten. Reads hand out copies, as a read of the database does.
+   * @template T
+   * @param {() => Promise<T>} work
+   * @returns {Promise<T>}
+   */
+  async inUnitOfWork(work) {
+    if (this.#session) return work();
+    const session = { rows: new Map(), allLoaded: false, pending: new Map() };
+    this.#session = session;
+    try {
+      return await work();
+    } finally {
+      try {
+        // What `work` left, and what anything running alongside it wrote while the first batch was being written.
+        while (session.pending.size > 0) {
+          const batch = session.pending;
+          session.pending = new Map();
+          await this.#flush(batch);
+        }
+      } finally {
+        this.#session = null;
+      }
+    }
+  }
+
+  /** @param {Map<string, Record<string, unknown>>} pending the fields changed per building */
+  async #flush(pending) {
+    await db.transaction('rw', db.houses, async () => {
+      const ids = [...pending.keys()];
+      const current = await db.houses.bulkGet(ids);
+      const puts = [];
+      ids.forEach((id, index) => {
+        // Gone since (demolished, destroyed): not written back.
+        if (!current[index]) return;
+        puts.push(canonicalizeHouseRecord({ ...current[index], ...pending.get(id) }));
+      });
+      await db.houses.bulkPut(puts);
+    });
+  }
+
+  /** A copy of the stored row of a building (what a read of the database gives), or undefined when there is none. */
+  async #getRow(id) {
+    const session = this.#session;
+    if (!session) return db.houses.get(id);
+    if (!session.rows.has(id)) session.rows.set(id, (await db.houses.get(id)) ?? null);
+    const row = session.rows.get(id);
+    return row ? structuredClone(row) : undefined;
+  }
+
+  /** Copies of every stored row. */
+  async #allRows() {
+    const session = this.#session;
+    if (!session) return db.houses.toArray();
+    if (!session.allLoaded) {
+      for (const row of await db.houses.toArray()) {
+        // A row already held keeps what this unit of work has done to it.
+        if (!session.rows.has(row.instanceId)) session.rows.set(row.instanceId, row);
+      }
+      session.allLoaded = true;
+    }
+    return [...session.rows.values()].filter(Boolean).map((row) => structuredClone(row));
+  }
+
   async #activeRows() {
-    const rows = await db.houses.toArray();
+    const rows = await this.#allRows();
     return rows.filter(isActiveHamletRow);
   }
 
@@ -39,7 +114,6 @@ export class DexieSupplyBuildingRepository {
       maxStock: getMaxStockForBuilding(type),
       worker: employees.worker ?? 0,
       workerNeed: employees.worker_need ?? 0,
-      neighbors: house.neighbors || [],
       lastProductionYear: house.lastProductionYear ?? null,
       lastConsumptionMonth: house.lastConsumptionMonth ?? null,
       lastConsumption: house.lastConsumption ?? null,
@@ -61,7 +135,6 @@ export class DexieSupplyBuildingRepository {
       stocks: house.stocks || {},
       // The catalog is the only source of a stock ceiling — a stored row value never overrides it.
       maxStock: getMaxStockForBuilding(type),
-      neighbors: house.neighbors || [],
       pop: house.pop ?? 0,
       isBuying: house.isBuying === true,
       noSourcesNearby: house.noSourcesNearby === true,
@@ -90,6 +163,18 @@ export class DexieSupplyBuildingRepository {
    * @param {Record<string, unknown>} updates
    */
   async #putFields(instanceId, updates) {
+    const session = this.#session;
+    if (session) {
+      if (!session.rows.has(instanceId)) session.rows.set(instanceId, (await db.houses.get(instanceId)) ?? null);
+      const held = session.rows.get(instanceId);
+      if (!held) return;
+      // Copied: the caller may go on changing what it passed, and the write must be what it passed now.
+      const changed = structuredClone(Object.fromEntries(Object.entries(updates).filter(([, value]) => value !== undefined)));
+      session.rows.set(instanceId, { ...held, ...changed });
+      session.pending.set(instanceId, { ...(session.pending.get(instanceId) ?? {}), ...changed });
+      return;
+    }
+
     const row = await db.houses.get(instanceId);
     if (!row) return;
 
@@ -105,14 +190,14 @@ export class DexieSupplyBuildingRepository {
 
   async findById(buildingId) {
     if (!buildingId) return null;
-    const row = await db.houses.get(buildingId);
+    const row = await this.#getRow(buildingId);
     if (!row) return null;
     return this.#toSnapshot(row);
   }
 
   async findSupplyView(buildingId) {
     if (!buildingId) return null;
-    const row = await db.houses.get(buildingId);
+    const row = await this.#getRow(buildingId);
     if (!row) return null;
     return this.#toView(row);
   }
@@ -132,7 +217,7 @@ export class DexieSupplyBuildingRepository {
    * move, and the reverse) is kept as it was.
    */
   async saveStocks(buildingId, stocks) {
-    const row = await db.houses.get(buildingId);
+    const row = await this.#getRow(buildingId);
     await this.#putFields(buildingId, { stocks: createSupplyStock({ ...(row?.stocks ?? {}), ...stocks }) });
   }
 
@@ -141,7 +226,7 @@ export class DexieSupplyBuildingRepository {
   }
 
   async recordSourceSaleToHub(sourceId, { year, productType, quantity, hubId }) {
-    const sourceData = await db.houses.get(sourceId);
+    const sourceData = await this.#getRow(sourceId);
     if (!sourceData) return;
 
     const salesToDistributor = sourceData.salesToDistributor || [];
@@ -180,7 +265,7 @@ export class DexieSupplyBuildingRepository {
 
     for (const source of sources) {
       const sourceId = instanceIdFromHouseRow(source);
-      const sourceData = await db.houses.get(sourceId);
+      const sourceData = await this.#getRow(sourceId);
       if (!sourceData) continue;
 
       const salesToDistributor = (sourceData.salesToDistributor || []).filter(
@@ -232,7 +317,7 @@ export class DexieSupplyBuildingRepository {
 
   async findRowById(buildingId) {
     if (!buildingId) return null;
-    return db.houses.get(buildingId);
+    return this.#getRow(buildingId);
   }
 
   async updateBuildingFields(buildingId, fields) {
@@ -264,11 +349,11 @@ export class DexieSupplyBuildingRepository {
 
   async findBuildingRow(buildingId) {
     if (!buildingId) return null;
-    return db.houses.get(buildingId);
+    return this.#getRow(buildingId);
   }
 
   async recordSourceSaleToDistributor(sourceId, sale) {
-    const sourceData = await db.houses.get(sourceId);
+    const sourceData = await this.#getRow(sourceId);
     if (!sourceData) return;
 
     const salesToDistributor = sourceData.salesToDistributor || [];

@@ -8,7 +8,7 @@ import {
   computeConsumerDeficit,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
-import { resolveInstanceIdFromNeighborRef } from '../../../../../shared/building-identity/BuildingRecord.js';
+import { resolveInstanceIdFromBuildingRef } from '../../../../../shared/building-identity/BuildingRecord.js';
 
 /**
  * Orchestration: generic resource cycle. Every building holding the
@@ -211,7 +211,7 @@ export class RunCityResourceCycle {
    */
   async #demandOf(consumerRefs, category) {
     const ids = new Set(
-      consumerRefs.map(resolveInstanceIdFromNeighborRef).filter((id) => typeof id === 'string' && id.length > 0)
+      consumerRefs.map(resolveInstanceIdFromBuildingRef).filter((id) => typeof id === 'string' && id.length > 0)
     );
     let demand = 0;
     for (const id of ids) {

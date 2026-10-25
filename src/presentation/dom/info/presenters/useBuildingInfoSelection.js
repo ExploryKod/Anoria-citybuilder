@@ -6,7 +6,7 @@
  * appelle les formats purs, puis les vues DOM.
  *
  * Tabs: each group declares thematic tabs in the registry; shared tabs
- * (services / neighbors / messages) resolve via buildingInfoSharedTabs.
+ * (services / messages) resolve via buildingInfoSharedTabs.
  */
 
 import { getResourceRoles, getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
@@ -171,8 +171,7 @@ async function renderGroupTabs(groupDef, vm) {
 
     const model = typeof handler.format === 'function' ? handler.format(vm) : null;
     const alwaysRender = handler.alwaysRender === true
-      || tabSpec.id === BUILDING_INFO_TAB_IDS.messages
-      || tabSpec.id === BUILDING_INFO_TAB_IDS.neighbors;
+      || tabSpec.id === BUILDING_INFO_TAB_IDS.messages;
 
     if (model == null && !alwaysRender) continue;
     await handler.render(panel, model);
@@ -217,7 +216,6 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
     const { anchorX, anchorY, terrainLabel } = resolveTerrainDisplay(buildingRow, selX, selY);
     const buildingPop = buildingRow?.pop ?? 0;
     const roadAccess = await parcels.getRoadAccess(uniqueId);
-    const neighbors = uniqueId ? await parcels.getNeighbors(uniqueId) : [];
     const supplyView = uniqueId ? await supply.getBuildingSupplyView(uniqueId) : null;
     // The persisted building's own `type` (the catalog/economy id every
     // format reads via getBuildingDefinition/residentialGroupForType/etc.,
@@ -252,7 +250,6 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
       terrainLabel,
       buildingPop,
       roadAccess,
-      neighbors,
       supplyView,
       stocks: supplyView?.stocks ?? null,
       employment,

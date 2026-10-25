@@ -23,10 +23,8 @@ export function makeHouseRecord({ type, x, y, instanceId, extra = {} }) {
     y,
     price: 10,
     pop: 0,
-    neighbors: [],
     stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
     roads: 0,
-    worldTime: 0,
     ...extra,
   });
 }

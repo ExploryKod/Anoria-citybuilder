@@ -75,6 +75,7 @@ export const ASSET_IDS_BY_CATEGORY = Object.freeze({
   ]),
   public: Object.freeze([
     'WaterTank',
+    'PrimarySchool',
     'School',
     'Library',
     'Doctor',

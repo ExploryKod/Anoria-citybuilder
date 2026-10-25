@@ -2,19 +2,16 @@
  * Integration tests — DexieBuildingRepository (BC Parcels ↔ Dexie)
  *
  * Boundary tests: UUID PK in Dexie must survive #toSnapshot and round-trip
- * through saveNeighbors / saveRoadAccess. In-memory fakes do not exercise this path.
+ * through saveRoadAccess. In-memory fakes do not exercise this path.
  */
 
 import 'fake-indexeddb/auto';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { clearBuildingsTable, seedBuilding, getBuildingRow } from '../../../helpers/buildingDb.js';
 import { DexieBuildingRepository } from '../../../../src/contexts/parcels/infrastructure/dexie/DexieBuildingRepository.js';
-import { UpdateNeighborsForBuilding } from '../../../../src/contexts/parcels/application/commands/UpdateNeighborsForBuilding.js';
-import { GetBuildingNeighbors } from '../../../../src/contexts/parcels/application/queries/GetBuildingNeighbors.js';
 import { GetBuildingRoadAccess } from '../../../../src/contexts/parcels/application/queries/GetBuildingRoadAccess.js';
 import { RecalculateRoadAccessForBuilding } from '../../../../src/contexts/parcels/application/commands/RecalculateRoadAccessForBuilding.js';
 import { InMemoryDomainEventPublisher } from '../../../../src/contexts/parcels/infrastructure/events/InMemoryDomainEventPublisher.js';
-import { createBuildingInstanceId } from '../../../../src/shared/building-identity/index.js';
 import { makeHouseRecord } from '../../../fixtures/buildingRecord.js';
 
 async function clearHousesTable() {
@@ -48,52 +45,11 @@ describe('DexieBuildingRepository — boundary UUID ↔ Dexie', () => {
     expect(snapshot.y).toBe(10);
   });
 
-  test('saveNeighbors persiste sous la clé UUID Dexie, pas sous type-x-y', async () => {
-    const record = makeHouseRecord({ type: 'House-Blue', x: 8, y: 10 });
-    await seedBuilding(record);
-
-    const roadNeighborId = createBuildingInstanceId();
-    const neighbors = [
-      {
-        name: 'StonePath-001',
-        id: roadNeighborId,
-        type: 'StonePath-001',
-        x: 8,
-        y: 11,
-        zone: 1,
-        isRoad: true,
-      },
-    ];
-
-    const snapshot = await repository.findById(record.instanceId);
-    await repository.saveNeighbors(snapshot.id, neighbors);
-
-    const row = await getBuildingRow(record.instanceId);
-    expect(row.neighbors).toHaveLength(1);
-    expect(row.neighbors[0].isRoad).toBe(true);
-
-    const legacyRow = await getBuildingRow('House-Blue-8-10');
-    expect(legacyRow).toBeUndefined();
-  });
-
   test('saveRoadAccess persiste roads sous la clé UUID', async () => {
     const record = makeHouseRecord({
       type: 'House-Blue',
       x: 8,
       y: 10,
-      extra: {
-        neighbors: [
-          {
-            id: createBuildingInstanceId(),
-            name: 'roads',
-            type: 'roads',
-            x: 8,
-            y: 11,
-            zone: 1,
-            isRoad: true,
-          },
-        ],
-      },
     });
     await seedBuilding(record);
 
@@ -122,29 +78,6 @@ describe('DexieBuildingRepository — use cases bout-en-bout (UUID)', () => {
 
   afterEach(async () => {
     await clearHousesTable();
-  });
-
-  test('UpdateNeighborsForBuilding → voisins lisibles via GetBuildingNeighbors', async () => {
-    const updateNeighbors = new UpdateNeighborsForBuilding(repository, events);
-    const getNeighbors = new GetBuildingNeighbors(repository);
-
-    const outcome = await updateNeighbors.execute(houseInstanceId, [
-      {
-        name: 'StonePath-001',
-        id: createBuildingInstanceId(),
-        x: 8,
-        y: 11,
-        zone: 1,
-        isRoad: true,
-      },
-    ]);
-
-    expect(outcome?.updated).toBe(true);
-
-    const result = await getNeighbors.execute(houseInstanceId);
-    expect(result.neighbors).toHaveLength(1);
-    expect(result.neighbors[0].isRoad).toBe(true);
-    expect(result.instanceId).toBe(houseInstanceId);
   });
 
   test('une route posée contre la maison → RecalculateRoadAccess → GetBuildingRoadAccess.hasAccess', async () => {

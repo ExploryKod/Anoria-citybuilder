@@ -98,7 +98,7 @@ describe('formatHouseResourcesModel — needs first, goods in detail', () => {
 // sub-card is a number where the mechanism is a depleting stock (the tank's water, a plant's energy) and a
 // reached/not-reached flag otherwise (doctor, school, ...), under one "Services" aggregate.
 describe('formatHouseResourcesModel — the Services need (flag and quantity services alike)', () => {
-  test('the aggregate counts how many services (water, energy + 9 flag ones) were served this period', () => {
+  test('the aggregate counts how many services (water, energy + 10 flag ones) were served this period', () => {
     const model = formatHouseResourcesModel({
       buildingType: 'House-Red',
       buildingPop: 1,
@@ -107,7 +107,7 @@ describe('formatHouseResourcesModel — the Services need (flag and quantity ser
       periodKey: 4,
     });
     const services = needOf(model, 'services');
-    expect(services.card.valueText).toBe('3/11');
+    expect(services.card.valueText).toBe('3/12');
     expect(services.card.met).toBe(false);
   });
 

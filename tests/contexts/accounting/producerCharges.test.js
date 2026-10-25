@@ -28,15 +28,16 @@ describe('trade lines — a sale and its purchase name each other, on each compa
 
 describe('wages — each worker is paid the same, and the house it comes from receives it', () => {
   // The labour market's wage of a (skill, level): here a stand-in that pays 10 a level, so the test reads which pair a workplace asks for.
-  const wageRateOf = (skill, level) => 10 * level;
+  // A skill pays 10 a month, the advanced trade of the hospital 20.
+  const wageRateOf = (skill) => (skill === 'medecine-hospitaliere' ? 20 : 10);
 
   test('the payroll follows the staffing, not the sales: nothing without workers, the market wage of the skill and level for each worker with them', () => {
     expect(payrollOf({ type: 'Market-Stall-Red', workers: 0, wageRateOf })).toBe(0);
     expect(payrollOf({ type: 'Market-Stall-Red', workers: 3, wageRateOf })).toBe(30);
   });
 
-  test('a workplace asks the market for the skill and the level its catalog entry requires', () => {
-    // The hospital's workers need the medical skill at level 2.
+  test('a workplace asks the market for the skill its catalog entry requires', () => {
+    // The hospital's workers need hospital medicine, a skill of its own.
     expect(payrollOf({ type: 'Hospital', workers: 2, wageRateOf })).toBe(40);
   });
 

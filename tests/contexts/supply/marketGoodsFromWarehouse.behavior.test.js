@@ -12,6 +12,7 @@ import { AssignDistributorToHub } from '../../../src/contexts/supply/application
 import { RebalanceHubAllocations } from '../../../src/contexts/supply/application/commands/links/RebalanceHubAllocations.js';
 import { CascadeDestroyHubDistributors } from '../../../src/contexts/supply/application/commands/links/CascadeDestroyHubDistributors.js';
 import { TransferHubToHub } from '../../../src/contexts/supply/application/commands/procurement/TransferHubToHub.js';
+import { referencePriceBook } from '../../helpers/referencePriceBook.js';
 
 class InMemoryRepository {
   constructor(rows) {
@@ -70,7 +71,7 @@ describe('Supply — a market with two distributor entries', () => {
   test('a goods pull takes goods from the warehouse and leaves the diet of the stall untouched', async () => {
     await assign().execute({ distributorId: 'stall', distributorType: 'Market-Stall-Red', x: 6, y: 3 });
 
-    const outcome = await new TransferHubToHub(repo, new HubServing(repo)).execute({ targetId: 'stall', period: {}, demand: 8, category: 'plate' });
+    const outcome = await new TransferHubToHub(repo, new HubServing(repo), referencePriceBook, async () => Infinity).execute({ targetId: 'stall', period: { turn: 1 }, demand: 8, category: 'plate' });
 
     expect(outcome.transferred).toBe(true);
     expect(outcome.totalUnits).toBe(8);

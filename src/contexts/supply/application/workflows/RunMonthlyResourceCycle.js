@@ -1,8 +1,8 @@
 import { listQuantityConsumerNeeds } from '../../../../shared/building-catalog/resourceRoleQueries.js';
-import { getServiceCategories, getShelfLifeMonths } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { getServiceCategories } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
-import { getCategoriesForRole, getTotalKeyForRole, listRoleEntries } from '../../domain/policies/ResourceRolePolicy.js';
-import { expireAges, reconcileAges, shelfLifeTurnsOf } from '../../domain/policies/StockAgingPolicy.js';
+import { listRoleEntries, shelfLifeTurnsAt, stockShapeFor } from '../../domain/policies/ResourceRolePolicy.js';
+import { expireAges, reconcileAges } from '../../domain/policies/StockAgingPolicy.js';
 import { takeCategoryAmount } from '../../domain/value-objects/ResourceStock.js';
 
 /** The roles whose stock is a good that sits somewhere and can go bad (a consumer's stock is its meal of the month, eaten at once). */
@@ -29,7 +29,7 @@ export class RunMonthlyResourceCycle {
    * @param {import('../commands/distribution/UpdateConsumerDistributorReach.js').UpdateConsumerDistributorReach} updateDistributorReach
    * @param {import('../commands/surplus/RunHubSurplusCycle.js').RunHubSurplusCycle} runHubSurplusCycle
    * @param {import('../commands/RunResourceCommandForRole.js').RunResourceCommandForRole} runConsumerCommand
-   * @param {{ recordHouseConsumptions: Function, recordChainStates: Function, recordPopulationStates: Function, recordBuildingStates: Function, recordHarvestSales: Function, recordHubCollections: Function }} traceability
+   * @param {{ recordHouseConsumptions: Function, recordChainStates: Function, recordPopulationStates: Function, recordHarvestSales: Function, recordHubCollections: Function }} traceability
    * @param {{ supplyBuildingRepository: import('../ports/SupplyBuildingRepository.js').SupplyBuildingRepository, recordSpoilage: (loss: { period: object, building: object, category: string, quantity: number }) => Promise<void> }} aging
    *   what ages the stocks each tick: the buildings to read and write, and the trace of what goes bad
    * @param {object} config
@@ -82,8 +82,18 @@ export class RunMonthlyResourceCycle {
       turn: timeInfo.turn ?? timeInfo.days ?? 0,
     };
 
+    // Measurement only: the milliseconds each step of the tick took, reported at its end (dev builds).
+    const stageMs = {};
+    let stageStartedAt = performance.now();
+    const lap = (stage) => {
+      const now = performance.now();
+      stageMs[stage] = now - stageStartedAt;
+      stageStartedAt = now;
+    };
+
     // First, so what has outlived its shelf life is gone before this tick moves, sells or eats anything.
     await this.#ageStocks(timeContext);
+    lap('aging');
 
     // No season gate here — each producer's own 'producer' schedule (see
     // buildingEconomy.js) decides whether it's an active period; the
@@ -97,14 +107,17 @@ export class RunMonthlyResourceCycle {
       }),
       successKey: 'produced',
     });
+    lap('produce');
 
     await this.traceability.recordChainStates(timeInfo);
     await this.traceability.recordPopulationStates(timeInfo);
+    lap('states');
 
     const surplus = await this.runHubSurplusCycle.execute(timeContext);
 
     await this.traceability.recordHubCollections(timeInfo, surplus.hubs);
     await this.traceability.recordHarvestSales(timeInfo, surplus.hubs);
+    lap('hubCollection');
 
     await this.runCityResourceCycle.execute({
       categories: this.config.categories,
@@ -112,10 +125,12 @@ export class RunMonthlyResourceCycle {
       month,
       timeInfo,
     });
+    lap('marketCycle');
 
     await this.updateDistributorReach.execute({
       category: this.config.reachCategories ?? this.config.categories,
     });
+    lap('reach');
 
     // Every need citizens have is used up the same way, one pass each (the diet, the goods they wear
     // out...). Each need is traced individually so the panel can show demand vs. taken per need type.
@@ -136,10 +151,10 @@ export class RunMonthlyResourceCycle {
         need.totalKey
       );
     }
-
-    // Last, so the state is what the tick ended with — after collection, distribution and
-    // the meal — and not what it started from.
-    await this.traceability.recordBuildingStates(timeInfo);
+    lap('consumption');
+    if (import.meta.env?.DEV) {
+      console.info(`[tick-perf] supply.cycle ${Object.entries(stageMs).map(([stage, ms]) => `${stage}=${ms.toFixed(1)}`).join(' ')}`);
+    }
   }
 
   /**
@@ -171,10 +186,8 @@ export class RunMonthlyResourceCycle {
               if (done.has(category)) continue;
               done.add(category);
               if (services.has(category) || (!(category in ageBook) && !(stocks[category] > 0))) continue;
-              const shelfLifeMonths = getShelfLifeMonths(category);
-              if (shelfLifeMonths === Infinity) continue;
-              const factor = listRoleEntries(building.type, 'hub').find((hub) => hub.categories.includes(category))?.shelfLifeFactor ?? 1;
-              const lifeTurns = shelfLifeTurnsOf({ shelfLifeMonths, factor, daysPerMonth });
+              const lifeTurns = shelfLifeTurnsAt(building.type, category, daysPerMonth);
+              if (lifeTurns === Infinity) continue;
 
               const reconciled = reconcileAges(ageBook[category], stocks[category] ?? 0, timeContext.turn);
               const { kept, lost } = expireAges(reconciled, timeContext.turn, lifeTurns);
@@ -183,7 +196,9 @@ export class RunMonthlyResourceCycle {
                 changed = true;
               }
               if (lost > 0) {
-                stocks = { ...stocks, ...takeCategoryAmount(stocks, category, lost, getCategoriesForRole(building.type, keepingRole, category), getTotalKeyForRole(building.type, keepingRole, category)) };
+                // What spoils leaves its total as what was harvested put into it (see stockShapeFor), not a total of the role's own.
+                const shape = stockShapeFor(category, entry.totalKey);
+                stocks = { ...stocks, ...takeCategoryAmount(stocks, category, lost, shape.categories, shape.totalKey) };
                 lostByCategory.push({ category, quantity: lost });
               }
             }

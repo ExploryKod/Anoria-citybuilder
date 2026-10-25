@@ -167,6 +167,7 @@ const NON_SALE_CAUSES = {
   no_road: () => '🛣️ sans route',
   hub_full: (capacity, hub) => `📦 ${hub} plein${capacity ? ` (plafond ${goodAmount(chainTotalKey, capacity)})` : ''}`,
   good_ceiling: (_capacity, hub) => `📦 ${hub} : plafond de ce bien atteint`,
+  hub_no_money: (_capacity, hub) => `💸 ${hub} sans de quoi payer`,
   hub_idle: (_capacity, hub) => `🏚️ ${hub} sans travailleurs`,
   no_hub: (_capacity, hub) => `❌ pas de ${hub}`,
   demolished: () => '🚧 démolie avant la vente',
@@ -187,64 +188,14 @@ function nonSaleCausesHTML({ farms, hubCapacity, hubLabel }) {
   return `<span class="supply-stat-farms causes">Sans vente : ${items.join(' · ')}</span>`;
 }
 
-/** Goods the food supply chain carries — used only by the food-chain chart tab. */
-const chainGoods = getSuppliedCategories();
+
 export const chainTotalKey = getResourceStockShape().totalKey;
 
-/**
- * Whether a good belongs to a set of active categories.
- * Defaults to the food chain goods so callers that don't filter stay backward-compatible.
- * @param {string} good
- * @param {ReadonlyArray<string>} [categories]
- */
-export const isChainGood = (good, categories = chainGoods) => categories.includes(good);
 
-/**
- * A zeroed per-good tally over the given categories (defaults to food chain goods).
- * @param {ReadonlyArray<string>} [categories]
- * @returns {Record<string, number>}
- */
-export const emptyGoodsTally = (categories = chainGoods) =>
-  Object.fromEntries(categories.map((good) => [good, 0]));
 
-/**
- * Subtract a per-good tally from a stock, never below zero.
- * @param {Record<string, number>} stocks
- * @param {Record<string, number>} tally
- * @param {ReadonlyArray<string>} [categories]
- */
-export function deductGoods(stocks, tally, categories = chainGoods) {
-  for (const good of categories) {
-    stocks[good] = Math.max(0, (stocks[good] || 0) - (tally[good] || 0));
-  }
-}
 
-/**
- * Recompute a stock's aggregate from its goods.
- * @param {Record<string, number>} stocks
- * @param {ReadonlyArray<string>} [categories]
- * @param {string} [totalKey]
- */
-export function refreshChainTotal(stocks, categories = chainGoods, totalKey = chainTotalKey) {
-  stocks[totalKey] = categories.reduce((sum, good) => sum + (stocks[good] || 0), 0);
-}
 
-/** @param {Record<string, number> | null | undefined} stocks @param {ReadonlyArray<string>} [categories] */
-export const hasChainGoods = (stocks, categories = chainGoods) =>
-  categories.some((good) => (stocks?.[good] || 0) > 0);
 
-/**
- * One line per good present in the stock — labels from the catalog.
- * @param {Record<string, number> | null | undefined} stocks
- * @param {ReadonlyArray<string>} [categories] Defaults to all stock-bearing categories.
- * @returns {string}
- */
-function stockLines(stocks, categories = getSuppliedCategories()) {
-  return categories
-    .filter((category) => (stocks?.[category] ?? 0) > 0)
-    .map((category) => `<div>${goodLabel(category)}: ${stocks[category]}</div>`)
-    .join('');
-}
 
 /**
  * @param {object|null|undefined} building
@@ -254,278 +205,7 @@ export function buildingStockKey(building) {
   return tryResolveBuildingInstanceIdFromRef(building) ?? building?.id ?? null;
 }
 
-/** The hamlet a pair took place in: its coordinates only mean something inside that hamlet. */
-function hamletTagHTML(pair) {
-  if (!pair.hamletName) {
-    throw new Error(`[traceability] pair ${pair.fromLabel} → ${pair.toLabel} has no hamlet name`);
-  }
-  return `<span class="supply-traceability-hamlet-tag" style="--hamlet-color: ${pair.hamletColor}">${pair.hamletName}</span>`;
-}
 
-/**
- * @param {object} pair
- * @param {object} farmStocksBefore
- * @param {object} marketStocksBefore
- * @param {Record<string, number>} byFoodType
- * @param {object} farmStocksAfter
- * @param {object} marketStocksAfter
- * @param {{ categories?: ReadonlyArray<string>, totalKey?: string }} [opts]
- * @returns {string}
- */
-export function createFarmMarketSectionHTML(
-  pair,
-  farmStocksBefore,
-  marketStocksBefore,
-  byFoodType,
-  farmStocksAfter,
-  marketStocksAfter,
-  { categories, totalKey = chainTotalKey } = {}
-) {
-  const transactionDetails = Object.entries(byFoodType)
-    .map(([foodType, quantity]) => {
-      return `<div>${goodLabel(foodType)}: ${goodAmount(foodType, quantity)}</div>`;
-    })
-    .join('');
-
-  return `
-        <div class="supply-traceability-transaction-section">
-            <div class="supply-traceability-transaction-section-header">
-                <span class="supply-traceability-building-type">${pair.fromLabel}</span>
-                <span class="supply-traceability-coords-pill farm">${pair.farmCoords || 'N/A'}</span>
-                <span class="supply-traceability-arrow">→</span>
-                <span class="supply-traceability-building-type">${pair.toLabel}</span>
-                <span class="supply-traceability-coords-pill market">${pair.marketCoords || 'N/A'}</span>
-                ${hamletTagHTML(pair)}
-            </div>
-            <div class="supply-traceability-transaction-table">
-                <div class="supply-traceability-transaction-row">
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Stocks avant transaction</div>
-                        <div class="supply-traceability-stocks-column">
-                            <div class="supply-traceability-stocks-cell">
-                                <div class="supply-traceability-stocks-label">${pair.fromLabel}</div>
-                                <div class="supply-traceability-stocks-details">
-                                    ${stockLines(farmStocksBefore, categories)}
-                                    <div class="supply-traceability-stocks-total">Total: ${farmStocksBefore[totalKey] || 0}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Stocks avant transaction</div>
-                        <div class="supply-traceability-stocks-column">
-                            <div class="supply-traceability-stocks-cell">
-                                <div class="supply-traceability-stocks-label">${pair.toLabel}</div>
-                                <div class="supply-traceability-stocks-details">
-                                    ${stockLines(marketStocksBefore, categories)}
-                                    <div class="supply-traceability-stocks-total">Total: ${marketStocksBefore[totalKey] || 0}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="supply-traceability-transaction-row">
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Transaction</div>
-                        <div class="supply-traceability-transaction-details">
-                            <div class="supply-traceability-transaction-type farm-to-market">Vente</div>
-                            <div class="supply-traceability-transaction-subtitle">Vente à ${pair.toLabel}</div>
-                            ${transactionDetails}
-                        </div>
-                    </div>
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Transaction</div>
-                        <div class="supply-traceability-transaction-details">
-                            <div class="supply-traceability-transaction-type farm-to-market">Achat</div>
-                            <div class="supply-traceability-transaction-subtitle">Achat à ${pair.fromLabel}</div>
-                            ${transactionDetails}
-                        </div>
-                    </div>
-                </div>
-                <div class="supply-traceability-transaction-row">
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Stocks après transaction (prévision)</div>
-                        <div class="supply-traceability-stocks-column">
-                            <div class="supply-traceability-stocks-cell">
-                                <div class="supply-traceability-stocks-label">${pair.fromLabel}</div>
-                                <div class="supply-traceability-stocks-details">
-                                    ${stockLines(farmStocksAfter, categories)}
-                                    <div class="supply-traceability-stocks-total">Total: ${farmStocksAfter[totalKey] || 0}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Stocks après transaction (prévision)</div>
-                        <div class="supply-traceability-stocks-column">
-                            <div class="supply-traceability-stocks-cell">
-                                <div class="supply-traceability-stocks-label">${pair.toLabel}</div>
-                                <div class="supply-traceability-stocks-details">
-                                    ${stockLines(marketStocksAfter, categories)}
-                                    <div class="supply-traceability-stocks-total">Total: ${marketStocksAfter[totalKey] || 0}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-/**
- * @param {object} pair
- * @param {object} marketStocksBefore
- * @param {object} houseStocksBefore
- * @param {Record<string, number>} byFoodType
- * @param {object} marketStocksAfter
- * @param {object} houseStocksAfter
- * @param {{ categories?: ReadonlyArray<string>, totalKey?: string }} [opts]
- * @returns {string}
- */
-export function createMarketHouseSectionHTML(
-  pair,
-  marketStocksBefore,
-  houseStocksBefore,
-  byFoodType,
-  marketStocksAfter,
-  houseStocksAfter,
-  { categories, totalKey = chainTotalKey } = {}
-) {
-  const transactionDetails = Object.entries(byFoodType)
-    .map(([foodType, quantity]) => {
-      return `<div>${goodLabel(foodType)}: ${goodAmount(foodType, quantity)}</div>`;
-    })
-    .join('');
-
-  return `
-        <div class="supply-traceability-transaction-section">
-            <div class="supply-traceability-transaction-section-header">
-                <span class="supply-traceability-building-type">${pair.fromLabel}</span>
-                <span class="supply-traceability-coords-pill market">${pair.marketCoords || 'N/A'}</span>
-                <span class="supply-traceability-arrow">→</span>
-                <span class="supply-traceability-building-type">${pair.toLabel}</span>
-                <span class="supply-traceability-coords-pill house">${pair.houseCoords || 'N/A'}</span>
-                ${hamletTagHTML(pair)}
-            </div>
-            <div class="supply-traceability-transaction-table">
-                <div class="supply-traceability-transaction-row">
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Stocks avant transaction</div>
-                        <div class="supply-traceability-stocks-column">
-                            <div class="supply-traceability-stocks-cell">
-                                <div class="supply-traceability-stocks-label">${pair.fromLabel}</div>
-                                <div class="supply-traceability-stocks-details">
-                                    ${stockLines(marketStocksBefore, categories)}
-                                    <div class="supply-traceability-stocks-total">Total: ${marketStocksBefore[totalKey] || 0}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Stocks avant transaction</div>
-                        <div class="supply-traceability-stocks-column">
-                            <div class="supply-traceability-stocks-cell">
-                                <div class="supply-traceability-stocks-label">${pair.toLabel}</div>
-                                <div class="supply-traceability-stocks-details">
-                                    ${stockLines(houseStocksBefore, categories)}
-                                    <div class="supply-traceability-stocks-total">Total: ${houseStocksBefore[totalKey] || 0}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="supply-traceability-transaction-row">
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Transaction</div>
-                        <div class="supply-traceability-transaction-details">
-                            <div class="supply-traceability-transaction-type market-to-house">Vente</div>
-                            <div class="supply-traceability-transaction-subtitle">Vente à ${pair.toLabel}</div>
-                            ${transactionDetails}
-                        </div>
-                    </div>
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Transaction</div>
-                        <div class="supply-traceability-transaction-details">
-                            <div class="supply-traceability-transaction-type market-to-house">Achat</div>
-                            <div class="supply-traceability-transaction-subtitle">Achat à ${pair.fromLabel}</div>
-                            ${transactionDetails}
-                        </div>
-                    </div>
-                </div>
-                <div class="supply-traceability-transaction-row">
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Stocks après transaction (prévision)</div>
-                        <div class="supply-traceability-stocks-column">
-                            <div class="supply-traceability-stocks-cell">
-                                <div class="supply-traceability-stocks-label">${pair.fromLabel}</div>
-                                <div class="supply-traceability-stocks-details">
-                                    ${stockLines(marketStocksAfter, categories)}
-                                    <div class="supply-traceability-stocks-total">Total: ${marketStocksAfter[totalKey] || 0}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Stocks après transaction (prévision)</div>
-                        <div class="supply-traceability-stocks-column">
-                            <div class="supply-traceability-stocks-cell">
-                                <div class="supply-traceability-stocks-label">${pair.toLabel}</div>
-                                <div class="supply-traceability-stocks-details">
-                                    ${stockLines(houseStocksAfter, categories)}
-                                    <div class="supply-traceability-stocks-total">Total: ${houseStocksAfter[totalKey] || 0}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-/**
- * @param {string} buildingType
- * @param {string} coords
- * @param {object} stocks
- * @param {string} pillClass
- * @returns {string}
- */
-export function createBuildingStocksHTML(buildingType, coords, stocks, pillClass, { categories, totalKey = chainTotalKey } = {}) {
-  return `
-        <div class="supply-traceability-transaction-section">
-            <div class="supply-traceability-transaction-section-header">
-                <span class="supply-traceability-building-type">${buildingType}</span>
-                <span class="supply-traceability-coords-pill ${pillClass}">${coords || 'N/A'}</span>
-                <span class="supply-traceability-transaction-subtitle">(Stocks en fin de mois)</span>
-            </div>
-            <div class="supply-traceability-transaction-table">
-                <div class="supply-traceability-transaction-row">
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">Stocks en fin de mois</div>
-                        <div class="supply-traceability-stocks-column">
-                            <div class="supply-traceability-stocks-cell">
-                                <div class="supply-traceability-stocks-label">${buildingType}</div>
-                                <div class="supply-traceability-stocks-details">
-                                    ${stockLines(stocks, categories)}
-                                    <div class="supply-traceability-stocks-total">Total: ${stocks[totalKey] || 0}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="supply-traceability-transaction-cell">
-                        <div class="supply-traceability-cell-header">-</div>
-                        <div class="supply-traceability-stocks-column">
-                            <div class="supply-traceability-stocks-cell">
-                                <div class="supply-traceability-stocks-label">-</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
 
 /**
  * Farms a year would have needed for full coverage, with its detailed calculation:
@@ -639,112 +319,8 @@ export function renderDietStats(container, dataByYear) {
 
 /** Per-tick states are folded into the monthly figures; every other row is an event worth keeping. */
 /** Snapshot rows stored in the same table as the transactions: they are not exchanges. */
-export const STATE_TRANSACTION_TYPES = new Set(['chain_state', 'population_state', 'building_state', 'employment_summary', 'service_cutoff']);
+export const STATE_TRANSACTION_TYPES = new Set(['chain_state', 'population_state', 'service_cutoff']);
 
-/** What a building's stock counts as in the monthly figures, read from the catalog's roles. */
-function stockKindOf(type) {
-  if (getBuildingDefinition(type)?.residentialGroup) return 'houses';
-  if (getAnnualSupplyEntry(type)) return 'farms';
-  const roles = getResourceRoles(type);
-  if (roles.some((entry) => entry.role === 'hub')) return 'hubs';
-  if (roles.some((entry) => entry.role === 'distributor' && entry.consumption !== 'flag')) return 'distributors';
-  return null;
-}
-
-/** @param {Map<string, { type: string, state: object }>} current The last state of every standing building. */
-function aggregateBuildingStates(current) {
-  const { totalKey } = getResourceStockShape();
-  const out = {
-    stocks: { houses: 0, farms: 0, hubs: 0, distributors: 0 },
-    employment: { workers: 0, workerNeed: 0, understaffedBuildings: 0 },
-    houseLevels: {},
-  };
-  for (const { type, state } of current.values()) {
-    const kind = stockKindOf(type);
-    if (kind) out.stocks[kind] += state.stocks?.[totalKey] ?? 0;
-    if (state.workerNeed > 0) {
-      out.employment.workers += state.workers ?? 0;
-      out.employment.workerNeed += state.workerNeed;
-      if ((state.workers ?? 0) < state.workerNeed) out.employment.understaffedBuildings += 1;
-    }
-    if (kind === 'houses') {
-      const level = String(state.level ?? state.tier ?? '?');
-      out.houseLevels[level] = (out.houseLevels[level] ?? 0) + 1;
-    }
-  }
-  return out;
-}
-
-/**
- * The city's employment as of the end of each month, from the logged summaries: the last row
- * at or before that month, or null before the first.
- * @param {Array<object>} transactions
- * @param {number} year
- * @param {number[]} monthIndexes
- * @returns {Record<number, object | null>}
- */
-export function summarizeEmploymentHistory(transactions, year, monthIndexes) {
-  const rows = [...transactions]
-    .filter((t) => t.transactionType === 'employment_summary')
-    .sort((a, b) => a.turn - b.turn || a.id - b.id);
-
-  const byMonth = {};
-  let current = null;
-  let next = 0;
-  for (const month of [...monthIndexes].sort((a, b) => a - b)) {
-    while (
-      next < rows.length &&
-      (rows[next].year < year || (rows[next].year === year && rows[next].month <= month))
-    ) {
-      current = rows[next++].summary;
-    }
-    byMonth[month] = current;
-  }
-  return byMonth;
-}
-
-/**
- * The buildings' history of one year, rebuilt from the logged states: for each month with data
- * the goods held, the staff and the house levels as of that month's end, and the state of every
- * building standing at the end of the year. A demolished building leaves the picture.
- * @param {Array<object>} transactions
- * @param {number} year
- * @param {number[]} monthIndexes
- * @returns {{ byMonth: Record<number, object>, endOfYear: object[] } | null}
- */
-export function summarizeBuildingHistory(transactions, year, monthIndexes) {
-  const rows = [...transactions]
-    .filter(
-      (t) =>
-        t.transactionType === 'building_state' ||
-        (t.transactionType === 'game_event' && t.event === 'building_demolished')
-    )
-    .sort((a, b) => a.turn - b.turn || a.id - b.id);
-  if (!rows.some((t) => t.transactionType === 'building_state')) return null;
-
-  const current = new Map();
-  let next = 0;
-  const advanceTo = (isBefore) => {
-    while (next < rows.length && isBefore(rows[next])) {
-      const t = rows[next++];
-      const id = t.fromId || t.fromCoords;
-      if (t.transactionType === 'building_state') {
-        current.set(id, { type: t.fromType, x: t.fromCoords, id, state: t.state });
-      } else {
-        current.delete(id);
-      }
-    }
-  };
-
-  const byMonth = {};
-  for (const month of [...monthIndexes].sort((a, b) => a - b)) {
-    advanceTo((t) => t.year < year || (t.year === year && t.month <= month));
-    byMonth[month] = aggregateBuildingStates(current);
-  }
-  advanceTo((t) => t.year <= year);
-  const endOfYear = [...current.values()].map(({ id, type, x, state }) => ({ id, type, coords: x, ...state }));
-  return { byMonth, endOfYear };
-}
 
 /**
  * The traceability as one JSON document, to read a finished game: per year, the
@@ -764,8 +340,6 @@ export function buildSupplyTraceabilityExport(transactions, monthlyStats) {
     years: years.map((year) => {
       const months = monthlyStats.filter((month) => month.year === year).sort((a, b) => a.month - b.month);
       const chain = summarizeChain(transactions, year);
-      const history = summarizeBuildingHistory(transactions, year, months.map((month) => month.month));
-      const employmentHistory = summarizeEmploymentHistory(transactions, year, months.map((month) => month.month));
       const coverage = fullCoverageSummary(months);
       // The newest year, with a hub but no sale yet: its farm balance is not computable
       const inProgress = year === years[years.length - 1] && chain.hubs.total > 0 && !chain.collectionDone;
@@ -780,10 +354,7 @@ export function buildSupplyTraceabilityExport(transactions, monthlyStats) {
           total: month.fedPopulation + month.unfedPopulation,
           farms: chain.byMonth[month.month]?.farms ?? null,
           hubs: chain.byMonth[month.month]?.hubs ?? null,
-          buildings: history?.byMonth[month.month] ?? null,
-          unemployment: employmentHistory[month.month] ?? null,
         })),
-        endOfYearBuildings: history?.endOfYear ?? null,
         farms: inProgress ? { total: chain.farms.total } : chain.farms,
         hubs: { ...chain.hubs, label: chain.hubLabel, capacity: chain.hubCapacity ?? null },
         harvestSold: chain.collectionDone,

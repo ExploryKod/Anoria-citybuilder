@@ -29,7 +29,6 @@ export class LiquidateDemolishedBuilding {
    * @param {object} deps
    * @param {() => Promise<Array<object>>} deps.getJournalEntries
    * @param {(params: object) => Promise<{ recorded: boolean, reason?: string }>} deps.recordLedgerEntry
-   * @param {(movement: object) => Promise<void>} deps.recordEconomyMovement the economy register
    * @param {<T>(work: () => Promise<T>) => Promise<T>} deps.inJournalBatch runs the liquidation so that all its lines are written at once, or none
    * @param {(turn: number) => { year: number, monthIndex: number, month?: string }} deps.getTimeInfo
    * @param {() => Promise<Array<{ id: string, type: string }>>} deps.listBuildings the hamlet's buildings, for the names in the journal's descriptions

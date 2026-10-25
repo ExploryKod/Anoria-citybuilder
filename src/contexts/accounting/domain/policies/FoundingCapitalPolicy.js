@@ -7,7 +7,7 @@
  */
 
 import { accountKeyOf } from './AccountKeyPolicy.js';
-import { FOUNDING_CAPITAL_MONTHS } from '../catalogs/PayableCatalog.js';
+import { FOUNDING_CAPITAL_MONTHS, WORKING_CAPITAL_STOCK_SHARE } from '../catalogs/PayableCatalog.js';
 
 /**
  * @param {Array<{ type: string, accountBuildingId: string | null, accountKind?: string | null, legs?: Array<{ account: string }> }>} entries the journal lines
@@ -23,11 +23,14 @@ export function foundedAccountsOf(entries) {
 }
 
 /**
- * The capital the city pays a company: the months of its charges at full staffing the catalog sets.
+ * The capital the city pays a company: the months of its charges at full staffing the catalog sets, plus the share of the stock it carries
+ * (its value when full) that the catalog sets as working capital.
  * @param {number} monthlyNeed what the company's month costs at full staffing, in euros
+ * @param {number} stockValue what the stock it carries is worth when full, at cost, in euros (0 for a company that holds none)
  * @returns {number} in centimes
  */
-export function foundingCapitalOf(monthlyNeed) {
+export function foundingCapitalOf(monthlyNeed, stockValue) {
   if (!(monthlyNeed >= 0)) throw new Error(`[founding] the monthly need of a company is an amount of at least 0, got ${monthlyNeed}`);
-  return Math.round(monthlyNeed * FOUNDING_CAPITAL_MONTHS * 100);
+  if (!(stockValue >= 0)) throw new Error(`[founding] the stock a company carries is an amount of at least 0, got ${stockValue}`);
+  return Math.round((monthlyNeed * FOUNDING_CAPITAL_MONTHS + stockValue * WORKING_CAPITAL_STOCK_SHARE) * 100);
 }

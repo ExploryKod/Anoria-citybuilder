@@ -14,6 +14,7 @@ export class ProcessTurnBudget {
    * @param {({ time: number, deliveredTime: number }) => Promise<void>} [deps.settleBankDepositInterest] a bank's
    *   monthly interest to its depositors — run right before settleProducerCharges, same day, same month, so the
    *   expense it books already exists in the journal when the bank's own taxable profit is computed
+   * @param {({ time: number }) => Promise<unknown>} [deps.compactMonthFlows] the month just settled keeps one row per transfer of goods or services between two buildings, not one per delivery
    * @param {() => Promise<unknown>} [deps.revalueMinimumWage] an indexed minimum wage follows the cost of living, once a year (the first month of the year)
    * @param {({ time: number }) => Promise<unknown>} [deps.adjustWageRates] the labour market moves the wages, right after the month's payroll
    * @param {() => Promise<void>|void} [deps.processLoanPayments]
@@ -85,6 +86,9 @@ export class ProcessTurnBudget {
           await this.deps.closeMonthAccounts({ time, deliveredTime: time - 1 });
         }
         stepDone('closeMonth');
+        // Its transfers have been read by the settlement: the month keeps their sums (the month settled is the one before this turn).
+        if (this.deps.compactMonthFlows) await this.deps.compactMonthFlows({ time: time - 1 });
+        stepDone('compactFlows');
         // Every January an indexed minimum wage is revalued on the cost of living, before the market moves the wages above it.
         if (this.deps.revalueMinimumWage && timeInfo.monthIndex === 0) await this.deps.revalueMinimumWage();
         // The month was paid at the wages in force: only now does the labour market move them for the month that opens.

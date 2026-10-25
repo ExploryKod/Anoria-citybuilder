@@ -8,6 +8,7 @@ import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domai
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
 import { MarkFailedSales } from '../../../src/contexts/supply/application/commands/surplus/MarkFailedSales.js';
+import { referencePriceBook } from '../../helpers/referencePriceBook.js';
 
 class InMemoryRepository {
   constructor(rows) {
@@ -30,7 +31,7 @@ const month = (monthIndex) => ({ monthIndex, year: 1, dayInMonth: 1, month: 'x',
 describe('Supply — failed sales', () => {
   test('goods left when the sale window closes are reported, with the cause', async () => {
     const repo = new InMemoryRepository([{ id: 'pots', type: 'Factory-Pot', x: 0, y: 0, stocks: { pot: 10 } }]);
-    const command = new MarkFailedSales(repo);
+    const command = new MarkFailedSales(repo, { priceBook: referencePriceBook, purchasingPower: async () => 1e9 });
 
     await command.execute({ period: month(1) }); // window open: watched
     expect(repo.rows.get('pots').lastFailedSale).toBeUndefined();
@@ -44,15 +45,26 @@ describe('Supply — failed sales', () => {
       { id: 'pots', type: 'Factory-Pot', x: 0, y: 0, stocks: { pot: 10 } },
       { id: 'wh', type: 'Warehouse', x: 3, y: 0, maxStock: 500, stocks: { goods: 500, pot: 500 } },
     ]);
-    const command = new MarkFailedSales(repo);
+    const command = new MarkFailedSales(repo, { priceBook: referencePriceBook, purchasingPower: async () => 1e9 });
     await command.execute({ period: month(1) });
     await command.execute({ period: month(2) });
     expect(repo.rows.get('pots').lastFailedSale.cause).toBe('hub_full');
   });
 
+  test('a hub with room that cannot pay is the cause: no hub in reach has the money for one unit', async () => {
+    const repo = new InMemoryRepository([
+      { id: 'pots', type: 'Factory-Pot', x: 0, y: 0, stocks: { pot: 10 } },
+      { id: 'wh', type: 'Warehouse', x: 3, y: 0, maxStock: 500, stocks: { goods: 0, pot: 0 } },
+    ]);
+    const command = new MarkFailedSales(repo, { priceBook: referencePriceBook, purchasingPower: async () => 0 });
+    await command.execute({ period: month(1) });
+    await command.execute({ period: month(2) });
+    expect(repo.rows.get('pots').lastFailedSale.cause).toBe('hub_no_money');
+  });
+
   test('a producer that sold everything reports nothing, and is not reported twice', async () => {
     const repo = new InMemoryRepository([{ id: 'pots', type: 'Factory-Pot', x: 0, y: 0, stocks: { pot: 0 } }]);
-    const command = new MarkFailedSales(repo);
+    const command = new MarkFailedSales(repo, { priceBook: referencePriceBook, purchasingPower: async () => 1e9 });
     await command.execute({ period: month(1) });
     await command.execute({ period: month(2) });
     expect(repo.rows.get('pots').lastFailedSale).toBeUndefined();

@@ -43,7 +43,6 @@ function settle(bankInterest, otherExpenses = []) {
       journal.push(booked(line));
       return { recorded: true };
     },
-    recordEconomyMovement: async () => {},
   });
   // The interest the bank earned and paid already is in the journal (another settlement wrote it): the company's statement reads it there.
   journal.push(

@@ -1,6 +1,6 @@
 import { describe, test, expect } from '@jest/globals';
 import { benefitBaseOf, nextWageRate, startWageOf, wageFloorOf } from '../../../src/contexts/accounting/domain/policies/WageRatePolicy.js';
-import { START_WAGE_BY_SKILL_LEVEL, WAGE_ADJUSTMENT } from '../../../src/contexts/accounting/domain/catalogs/LabourMarketCatalog.js';
+import { START_WAGE_BASE, START_WAGE_BY_SKILL, WAGE_ADJUSTMENT } from '../../../src/contexts/accounting/domain/catalogs/LabourMarketCatalog.js';
 import { buildingCatalog } from '../../../src/shared/building-catalog/buildingCatalog.js';
 
 // The labour market settles the wages: a shortage raises them, slack lowers them, a few percent a month at most, never under the minimum wage.
@@ -68,17 +68,16 @@ describe('a hamlet with no minimum wage', () => {
 });
 
 describe('the starting wages', () => {
-  test('every skill level a workplace requires has a starting wage', () => {
+  test('every skill a workplace requires has a starting wage', () => {
     for (const definition of Object.values(buildingCatalog)) {
       if (!definition.employment?.requiredSkill) continue;
-      expect(startWageOf(definition.employment.requiredSkillLevel ?? 1)).toBeGreaterThan(0);
+      expect(startWageOf(definition.employment.requiredSkill, 1)).toBeGreaterThan(0);
     }
   });
 
-  test('a higher level starts higher', () => {
-    const levels = Object.keys(START_WAGE_BY_SKILL_LEVEL).map(Number).sort((a, b) => a - b);
-    for (let index = 1; index < levels.length; index += 1) {
-      expect(START_WAGE_BY_SKILL_LEVEL[levels[index]]).toBeGreaterThan(START_WAGE_BY_SKILL_LEVEL[levels[index - 1]]);
-    }
+  test('an advanced trade starts above the base, and a skill has one level: any other is refused', () => {
+    for (const skill of Object.keys(START_WAGE_BY_SKILL)) expect(startWageOf(skill, 1)).toBeGreaterThan(START_WAGE_BASE);
+    expect(startWageOf('fermier', 1)).toBe(START_WAGE_BASE);
+    expect(() => startWageOf('fermier', 2)).toThrow('one level');
   });
 });

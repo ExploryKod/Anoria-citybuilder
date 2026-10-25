@@ -11,7 +11,7 @@ import {
   isBuildingInstanceId,
   instanceIdFromHouseRow,
   resolveBuildingInstanceIdFromRef,
-  resolveInstanceIdFromNeighborRef,
+  resolveInstanceIdFromBuildingRef,
   displayLabelFromHouseRow,
   canonicalizeHouseRecord,
 } from '../../../src/shared/building-identity/index.js';
@@ -64,16 +64,16 @@ describe('Shared Kernel — building identity', () => {
       expect(resolveBuildingInstanceIdFromRef(record)).toBe(record.instanceId);
     });
 
-    test('resolveInstanceIdFromNeighborRef accepts UUID on neighbor blobs', () => {
+    test('resolveInstanceIdFromBuildingRef accepts UUID on building refs', () => {
       const instanceId = createBuildingInstanceId();
-      expect(resolveInstanceIdFromNeighborRef({ instanceId })).toBe(instanceId);
-      expect(resolveInstanceIdFromNeighborRef({ id: instanceId, type: 'Farm-Wheat', x: 2, y: 3 })).toBe(
+      expect(resolveInstanceIdFromBuildingRef({ instanceId })).toBe(instanceId);
+      expect(resolveInstanceIdFromBuildingRef({ id: instanceId, type: 'Farm-Wheat', x: 2, y: 3 })).toBe(
         instanceId
       );
     });
 
-    test('resolveInstanceIdFromNeighborRef rejects type-x-y labels', () => {
-      expect(resolveInstanceIdFromNeighborRef({ id: 'House-Blue-1-2', type: 'House-Blue', x: 1, y: 2 })).toBeNull();
+    test('resolveInstanceIdFromBuildingRef rejects type-x-y labels', () => {
+      expect(resolveInstanceIdFromBuildingRef({ id: 'House-Blue-1-2', type: 'House-Blue', x: 1, y: 2 })).toBeNull();
     });
   });
 });

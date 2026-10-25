@@ -79,11 +79,6 @@ export function getTimeInfo(turn) {
   return getTimeManager().getTimeInfo(turn);
 }
 
-/** @param {number} currentTime @param {number} worldTime */
-export function getBuildingAge(currentTime, worldTime) {
-  return getTimeManager().getBuildingAge(currentTime, worldTime);
-}
-
 /** @param {number} days */
 export function formatGameTime(days) {
   return getTimeManager().formatTime(days);

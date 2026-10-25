@@ -4,7 +4,7 @@
  * Architecture (presentation only):
  * - `tabs[]` = declarative list of tab specs for the group
  * - Custom tabs provide `format` + `render`
- * - Shared tabs (`services`, `neighbors`, `messages`) only need `{ id }` —
+ * - Shared tabs (`services`, `messages`) only need `{ id }` —
  *   handlers resolve via `buildingInfoSharedTabs.js`
  */
 
@@ -12,7 +12,7 @@ import { BUILDING_INFO_GROUPS } from '../resolveBuildingInfoGroup.js';
 import { BUILDING_INFO_TAB_IDS } from '../buildingInfoTabCatalog.js';
 import {
   COMMON_BUILDING_INFO_TAB_SPECS,
-  CONTEXT_NEIGHBORS_MESSAGES_TAB_SPECS,
+  CONTEXT_MESSAGES_TAB_SPECS,
 } from '../buildingInfoSharedTabs.js';
 import {
   formatFarmOverviewModel,
@@ -122,7 +122,7 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         format: formatNatureFoyerModel,
         render: (container, model) => renderKvPanelView(container, model),
       },
-      ...CONTEXT_NEIGHBORS_MESSAGES_TAB_SPECS,
+      ...CONTEXT_MESSAGES_TAB_SPECS,
     ],
   },
   [BUILDING_INFO_GROUPS.hubStorage]: {

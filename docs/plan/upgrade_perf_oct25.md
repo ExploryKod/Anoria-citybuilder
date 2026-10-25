@@ -15,7 +15,7 @@ Instrumentation en place (dev uniquement, tag `[tick-perf]`) :
   `objectives`).
 - `DistributeCityWorkers` renvoie `timings` ; `createEmploymentContext.js` affiche
   `employment.distribute read/compute/write`.
-- Lecture : `pnpm console:tag tick-perf --follow` (vider le journal : `: > dev-diagnostics.log`).
+- Lecture : `pnpm console:tag tick-perf --follow` (vider le journal : `: > logs/dev-diagnostics.log`).
 
 Ville de 9 à 10 maisons, 16 lieux de travail, jours 117 à 176, mode dev avec DevTools ouverts :
 
@@ -41,7 +41,7 @@ Réserves : mode dev de Vite, DevTools ouverts, relais de console. Les proportio
 
 ## 2 bis. Mesures sur une partie réelle (2026-10-25, 144 jours)
 
-Source : `dev-diagnostics.log` de la partie qui avait produit l'ancien prefab (tour 144, remplacé depuis par `anoria-tour-107`) (mode dev, DevTools ouverts, 57 bâtiments à
+Source : `logs/dev-diagnostics.log` de la partie qui avait produit l'ancien prefab (tour 144, remplacé depuis par `anoria-tour-107`) (mode dev, DevTools ouverts, 57 bâtiments à
 la fin). Tag `[tick-perf]`.
 
 **Coût d'un jour, moyenne par tranche de 24 jours (ms)**
@@ -160,6 +160,62 @@ dépôts (le nombre d'appels est exact même sur le banc émulé).
 261 `findById`, **145 `updateBuildingFields`** (une transaction chacune, 35 % du temps du cycle sur le banc), 74 écritures de traçabilité, 50 `saveStocks`, 43 `findByResourceRole` (un balayage des
 bâtiments chacun), 40 `findRowById`, 19 `listAllBuildingRows`. Pistes : regrouper les écritures d'un cycle en une écriture en lot, et lire les bâtiments une fois par cycle au lieu d'une fois
 par appel.
+
+## 2 sexies. Cycle d'approvisionnement : une unité de travail (2026-10-25)
+
+**Correctif** : `DexieSupplyBuildingRepository.inUnitOfWork(work)`, appelée par `runMonthlyResourceCycle` (`createSupplyContext`). Pendant le cycle, chaque bâtiment est lu **une fois** dans la base
+(et la table entière une fois pour les balayages `findByResourceRole` / `listAllBuildingRows`), les lectures rendent des copies, et les écritures sont gardées champ par champ puis écrites **en une
+transaction** à la fin (`bulkGet` de la ligne telle qu'elle est alors dans la base, fusion des champs changés, `bulkPut`). Deux garanties : un bâtiment démoli entre-temps n'est pas réécrit, et un
+champ changé ailleurs entre-temps n'est pas écrasé. Le dépôt qui n'a pas la capacité fait tourner le cycle comme avant.
+
+**Traçabilité regroupée** : `DexieSupplyTraceabilityRepository.inUnitOfWork` garde en mémoire les lignes ajoutées pendant le cycle et les écrit en un seul `bulkAdd` à la fin, dans l'ordre. Toute
+lecture du dépôt écrit d'abord ce qui attend, donc elle voit les lignes du cycle. **Mesure (banc, 3 jours) : 477 → 3 écritures de traçabilité** (une par jour, au lieu de ~159), état final identique
+(9 614 lignes, même ordre, 70 bâtiments identiques). Temps : sans rien 1 424 ms, avec les bâtiments seuls 598 ms, **avec la traçabilité 518 ms**. Le nombre de lignes ne baisse pas : réduire la
+maille à un enregistrement par mois pour `distributor_to_consumer` (5 289 lignes sur 107 jours) toucherait le journal daté et le filtre en jours du panneau `SupplyTraceabilityPanel` ; non fait.
+
+**Vérification** : sur le prefab `anoria-tour-107`, 3 jours de cycle depuis le tour 111 donnent **exactement le même état final** (les 70 bâtiments et les 9 614 lignes de traçabilité, comparés champ
+par champ) avec et sans l'unité de travail ; le cycle est déterministe, la comparaison est donc valable. **Temps du banc (`fake-indexeddb`) : 1 400 ms → 590 ms pour 3 jours** (rapport seulement).
+Test de non-régression : `tests/contexts/supply/supplyUnitOfWork.regression.test.js`.
+
+**Confirmé dans le navigateur** (prefab `anoria-tour-107`, jours 107 à 138, 34 jours mesurés) : `supply.monthlyResourceCycle` **177 ms en moyenne** (min 114, max 282) contre 325 à 357 ms avant, soit environ **−45 %**.
+`producerCharges` en fin de mois : 185 à 533 ms (jours 110 à 135) contre 1 418 ms avant, soit **−63 % au pire (jour 120, 533 ms), −87 % au mieux**. Un jour entier : 1 716 ms en moyenne sur 32 jours (la ville grandit
+pendant la partie). Aucune erreur de jour dans le log. Ce qui pèse maintenant par jour : `sceneBefore` ~400-590 ms, `ecs` ~400-550 ms, `sceneAfter` ~350-440 ms, `hud` ~255 ms ; en fin de mois, `budget` ~460 ms.
+
+## 2 septies. La passe de voisinage de la scène, puis la liste des voisins retirée (2026-10-25)
+
+**Mesure** (`scene.update`, prefab, jours 107 à 128, 49 mises à jour) : la passe de voisinage coûtait **335 ms en moyenne** par mise à jour, deux fois par jour. Elle recalculait pour chaque bâtiment ses voisins,
+écrivait `neighbors` et `markets`, et recalculait l'accès routier (un balayage de toutes les routes par bâtiment).
+
+**Constat** : l'accès routier se calcule par portée du catalogue (`roadRange`), sans les voisins ; le système `parcels.roadAccess` le recalcule chaque jour pour toute la ville en 3 à 12 ms. `markets` n'avait aucun
+lecteur. Les voisins ne servaient qu'à l'affichage (onglet « Voisins », colonne de la carte, surbrillance au survol) et, à la démolition, à retrouver les bâtiments à recalculer.
+
+**Étapes** : (1) signature de la disposition : la passe saute quand rien n'a changé ; (2) plus d'écriture de `markets`, plus de recalcul d'accès routier dans la passe : `neighbors` passe de 335 à **49 ms** en moyenne
+(mesure navigateur) ; (3) **la liste des voisins est retirée** : la passe, la table `neighbors` des bâtiments (prefab compris), l'onglet « Voisins », la colonne de la carte, la surbrillance au survol, les commandes et
+requêtes de Parcels qui la tenaient. `PlaceBuilding` et `RemoveBuilding` recalculent l'accès routier de toute la ville (`RecalculateAllRoadAccess`, une lecture des bâtiments et une des routes).
+
+**Mesure suivante** (navigateur, 18 mises à jour en régime établi ; la première, au chargement, crée les maillages : 1,2 s une fois) : `tiles` = **148 ms** par mise à jour, dont `getBuildingById` ~44 ms (une lecture par tuile bâtie, 1,07 ms),
+`roleSprites` ~35 ms, `stampWorldTime` ~16 ms (une écriture par bâtiment et par jour), `houseSupplyView` ~9 ms, `incrementTime` ~8 ms (le compteur `time` des marchés, incrémenté à chaque mise à jour, que personne ne lisait).
+
+**Étape suivante** : (1) l'existence des bâtiments vient d'une seule lecture de la table par mise à jour (`listAllBuildingRows`) ; (2) le compteur `time` des marchés est retiré ; (3) `worldTime`, copie de l'horloge stockée sur chaque bâtiment
+(contraire à « une horloge : le tour »), est retiré, ainsi que `getBuildingAge` / `isBuildingOldEnough` qui ne servaient à personne : le tour de l'export de la ville est maintenant écrit par l'exporteur dans `config.turn`, et le prefab le lit de là.
+Gain attendu, non mesuré : environ −60 ms par mise à jour (−120 ms par jour).
+
+**À mesurer** : `scene.update` avec ces trois changements, et le coût d'un recalcul complet de l'accès routier à la pose et à la démolition.
+
+## 2 octies. La traçabilité : un panneau d'approvisionnement, et une table qui ne grossit plus à chaque livraison (2026-10-25)
+
+**Constat** (log `[admin-perf]`) : seule la section « Traçabilité alimentaire » du panneau admin bloquait le jeu à l'ouverture : 1 111 ms de chargement, blocages du fil principal de 166, 352, 202 et 732 ms, reflows forcés de
+279 et 629 ms. Elle lisait toute la table de traçabilité (~10 000 lignes, deux fois) et construisait une ligne HTML par transaction.
+
+**Qui lit ces lignes** : les règles ne lisent que des **sommes par mois** (règlement mensuel, carnet de prix, avaries, durée de vie) ; les états et l'historique n'informent que le joueur ; les lignes d'entretien, de subventions et de
+salaires doublonnaient le journal comptable (aucun lecteur hors panneau et export).
+
+**Changements** : (1) le panneau « Approvisionnement » (bouton à droite) : équilibre par besoin (nourriture, biens, chauffage, lumière) : besoin annuel, production annuelle à pleine activité, nombre de bâtiments manquants ou à l'arrêt,
+tiré du catalogue et des bâtiments debout (`DescribeSupplyBalance`), plus l'historique de satisfaction ; il sort du panneau admin, l'onglet « Transactions » disparaît ; (2) la table : un mois réglé garde une ligne par
+(type de transfert, vendeur, acheteur, bien), les sommes ajoutées (`compactFlowsOfMonth`, appelée à la clôture du mois) ; plus d'écriture de `building_state`, `employment_summary` ni du registre d'entretien, subventions et salaires (déjà dans le journal) ;
+`chain_state`, `population_state`, `house_consumption`, `sale_missed` et `game_event` sont gardés : ils nourrissent ce que le joueur lit. Un bien sans valeur de référence n'a plus de prix listé (les sections Prix et Salaires ne lèvent plus d'erreur).
+
+**Mesure sur le prefab** : la table de traçabilité passe de **9 137 à 2 779 lignes** (−70 %), le fichier de 3,5 à 0,95 Mo. À mesurer dans le navigateur : l'ouverture du panneau, et le coût de la compaction à la clôture du mois.
 
 ## 3. Étapes
 

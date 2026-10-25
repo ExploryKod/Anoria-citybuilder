@@ -57,6 +57,8 @@ import {
 } from '../compta/prets/PretsPanel.js';
 import { initJournalPopup } from '../compta/journal/JournalPanel.js';
 import { initSupplyTraceabilityPopup } from '../admin/supply-traceability/SupplyTraceabilityPanel.js';
+import { initSupplyBalancePopup } from '../supply-balance/SupplyBalancePanel.js';
+import { initEconomyPopup } from '../economy/EconomyPanel.js';
 import { initAdminSections } from '../admin/initAdminSections.js';
 import { initNewsEventModal, presentIncomingNewsEvents, waitForNewsModalClosed } from '../intelligence/NewsEventModal.js';
 import { awaitTreasuryReady, endOpening, failOpening } from '../../../composition/budgetReadyGate.js';
@@ -291,6 +293,8 @@ export async function bootstrapGameSession(assetManager) {
     registerHandler: registerAppFunction,
   });
   initSupplyTraceabilityPopup({ supply: sessionApi.supply });
+  initSupplyBalancePopup({ supply: sessionApi.supply, housing: sessionApi.housing, popupManager });
+  initEconomyPopup({ supply: sessionApi.supply, popupManager });
 
   if (sessionApi.intelligence) {
     initTutorialHistory({ intelligence: sessionApi.intelligence, popupManager });

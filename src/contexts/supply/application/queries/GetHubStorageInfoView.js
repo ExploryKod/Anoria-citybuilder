@@ -3,7 +3,7 @@ import { getResourceRoles } from '../../../../shared/building-catalog/resourceRo
 import { getResourceCategoryPresentation } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { buildHubStorageLines } from '../../domain/policies/HubStorageOrdersPolicy.js';
 import { buildHubStoragePieSegments } from '../../domain/policies/HubStoragePiePolicy.js';
-import { getMaxStockForBuilding, getScheduleForRole } from '../../domain/policies/ResourceRolePolicy.js';
+import { getMaxStockForBuilding, getCollectionSchedule } from '../../domain/policies/ResourceRolePolicy.js';
 import { monthsUntilNextMatch } from '../../domain/policies/ResourceSchedulePolicy.js';
 import { computeCarryOver, computeAutonomyMonths } from '../../domain/policies/HubCapacityPolicy.js';
 
@@ -89,7 +89,7 @@ export class GetHubStorageInfoView {
       autonomyMonths: computeAutonomyMonths(storage.currentTotal, buildingRow.lastOutflow?.units),
       // Months until the hub's own collection schedule next fires (its harvest), when a calendar is given.
       harvestInMonths: timeContextAhead
-        ? monthsUntilNextMatch(getScheduleForRole(buildingRow.type, 'collector'), timeContextAhead)
+        ? monthsUntilNextMatch(getCollectionSchedule(buildingRow.type), timeContextAhead)
         : null,
       pieSegments: buildHubStoragePieSegments({
         lines,

@@ -51,7 +51,6 @@ describe('Supply — RunMonthlyResourceCycle', () => {
         y: 5,
         extra: {
           roads: 1,
-          neighbors: [{ name: 'roads', isRoad: true }],
           employees: { worker: 2, worker_need: 2 },
         },
       })
@@ -72,7 +71,6 @@ describe('Supply — RunMonthlyResourceCycle', () => {
         y: 5,
         extra: {
           roads: 1,
-          neighbors: [{ name: 'roads', isRoad: true }],
           employees: { worker: 2, worker_need: 2 },
         },
       })
@@ -81,21 +79,6 @@ describe('Supply — RunMonthlyResourceCycle', () => {
     await runAtTime(6);
 
     expect((await getBuildingRow(marketId)).noSourcesNearby).toBe(false);
-
-    const farmNeighborId = createBuildingInstanceId();
-    await updateBuildingFields(marketId, {
-      neighbors: [
-        { name: 'roads', isRoad: true },
-        {
-          name: 'Farm-Wheat',
-          type: 'Farm-Wheat',
-          id: farmNeighborId,
-          buildingId: farmNeighborId,
-          x: 5,
-          y: 4,
-        },
-      ],
-    });
 
     await runAtTime(7);
 
@@ -112,7 +95,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
         type,
         x,
         y: 1,
-        extra: { roads: 1, neighbors: [{ name: 'roads', isRoad: true }], employees },
+        extra: { roads: 1, employees },
       });
     await seedBuilding(build(staffedId, 'Farm-Wheat', 1, { worker: 3, worker_need: 3 }));
     await seedBuilding(build(idleId, 'Farm-Wheat', 3, { worker: 0, worker_need: 3 }));
@@ -148,7 +131,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
         type,
         x,
         y: 1,
-        extra: { roads: 1, neighbors: [{ name: 'roads', isRoad: true }], ...extra },
+        extra: { roads: 1, ...extra },
       });
     const farmStock = { food: 78, wheat: 78, carrot: 0, cabbage: 0 };
     const houseId = createBuildingInstanceId();
@@ -197,7 +180,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
         type,
         x,
         y: 1,
-        extra: { roads: 1, neighbors: [{ name: 'roads', isRoad: true }], ...extra },
+        extra: { roads: 1, ...extra },
       });
     await seedBuilding(
       row(roadlessId, 'Farm-Wheat', 2, {
@@ -226,7 +209,7 @@ describe('Supply — RunMonthlyResourceCycle', () => {
         type,
         x,
         y: 1,
-        extra: { roads: 1, neighbors: [{ name: 'roads', isRoad: true }], ...extra },
+        extra: { roads: 1, ...extra },
       });
 
     test('a market delivery keeps what the house already held, and the total is the sum of its goods', async () => {
@@ -292,51 +275,12 @@ describe('Supply — RunMonthlyResourceCycle', () => {
         type,
         x,
         y: 1,
-        extra: { roads: 1, neighbors: [{ name: 'roads', isRoad: true }], ...extra },
+        extra: { roads: 1, ...extra },
       });
     const stateRows = async (buildingId) =>
       (await supply.getAllSupplyTraceabilityTransactions()).filter(
         (t) => t.transactionType === 'building_state' && t.fromId === buildingId
       );
-
-    test('a building state is logged when it changes, and only then', async () => {
-      const houseId = createBuildingInstanceId();
-      const farmId = createBuildingInstanceId();
-      await seedBuilding(row(houseId, 'House-Red', 1, { pop: 12, level: 2 }));
-      await seedBuilding(row(farmId, 'Farm-Wheat', 3, { employees: { worker: 3, worker_need: 3 } }));
-
-      await runAtTime(0);
-      const first = await stateRows(farmId);
-      expect(first).toHaveLength(1);
-      expect(first[0].state).toMatchObject({ workers: 3, workerNeed: 3 });
-      expect((await stateRows(houseId))[0].state).toMatchObject({ pop: 12, level: 2 });
-
-      // Nothing moved on the farm: no new row. Its staff leaves: one new row.
-      await runAtTime(0);
-      expect(await stateRows(farmId)).toHaveLength(1);
-      await updateBuildingFields(farmId, { employees: { worker: 0, worker_need: 3 } });
-      await runAtTime(0);
-      const afterLoss = await stateRows(farmId);
-      expect(afterLoss).toHaveLength(2);
-      expect(afterLoss[1].state.workers).toBe(0);
-    });
-
-    test('a house state is taken at the end of the tick: the meal and the services are in it', async () => {
-      const houseId = createBuildingInstanceId();
-      await seedBuilding(row(houseId, 'House-Red', 1, { pop: 6, stocks: { wheat: 6, food: 6 } }));
-
-      await runAtTime(0);
-
-      const [first] = await stateRows(houseId);
-      // The meal happened during the tick, so this state already shows it
-      expect(first.state.lastConsumption).toMatchObject({ month: 0, demand: 6, taken: 6 });
-      expect(first.state).toHaveProperty('servedFlags');
-      // And the meal itself remembers how many sat at the table
-      const meals = (await supply.getAllSupplyTraceabilityTransactions()).filter(
-        (t) => t.transactionType === 'house_consumption' && t.fromId === houseId
-      );
-      expect(meals.map((t) => t.pop)).toEqual([6]);
-    });
 
     test('inhabitants born after the meal are not counted as unfed', () => {
       const at = { turn: 1, date: '2026-01-01', year: 0, month: 3 };
@@ -348,39 +292,6 @@ describe('Supply — RunMonthlyResourceCycle', () => {
         []
       );
       expect(dataByYearMonth['0-3']).toMatchObject({ fedPopulation: 12, unfedPopulation: 0 });
-    });
-
-    test('the city\'s employment is logged when it changes, and the export shows it month by month', async () => {
-      const summary = (unemployed) => ({
-        totalPopulation: 48,
-        laborPool: 44,
-        totalAssigned: 44 - unemployed,
-        totalNeed: 30,
-        unemployed,
-        unemploymentPercentage: Math.round((unemployed / 44) * 100),
-        lack: 0,
-        byGroup: { artisans: { workerPool: 24, assigned: 24 - unemployed, unemployed } },
-        bySkill: {},
-      });
-      // Isolate this test from the employment rows other tests left in the table
-      const start = TimeManager.getTimeInfo(0);
-      const months = [
-        { year: start.year, month: 0, fedPopulation: 1, unfedPopulation: 0 },
-        { year: start.year, month: 1, fedPopulation: 1, unfedPopulation: 0 },
-      ];
-
-      await supply.recordEmploymentSummary({ ...start, turn: 10, monthIndex: 0 }, summary(10));
-      await supply.recordEmploymentSummary({ ...start, turn: 11, monthIndex: 0 }, summary(10)); // unchanged: no row
-      await supply.recordEmploymentSummary({ ...start, turn: 20, monthIndex: 1 }, summary(4));
-
-      const rows = (await supply.getAllSupplyTraceabilityTransactions()).filter(
-        (t) => t.transactionType === 'employment_summary' && [10, 11, 20].includes(t.turn)
-      );
-      expect(rows.map((t) => t.turn).sort((a, b) => a - b)).toEqual([10, 20]);
-
-      const [year] = buildSupplyTraceabilityExport(rows, months).years;
-      expect(year.months.map((m) => m.unemployment.unemployed)).toEqual([10, 4]);
-      expect(year.months[1].unemployment.byGroup.artisans.unemployed).toBe(4);
     });
 
     test('a farm demolished before the harvest is sold says so, instead of "unknown"', () => {
@@ -448,38 +359,5 @@ describe('Supply — RunMonthlyResourceCycle', () => {
       });
     });
 
-    test('the export rebuilds each month\'s stocks, staff and house levels, and drops a demolished building', async () => {
-      const houseId = createBuildingInstanceId();
-      const farmId = createBuildingInstanceId();
-      await seedBuilding(
-        row(houseId, 'House-Red', 1, { pop: 12, level: 2, stocks: { wheat: 20, food: 20 } })
-      );
-      await seedBuilding(row(farmId, 'Farm-Wheat', 3, { employees: { worker: 3, worker_need: 3 } }));
-      await runAtTime(0);
-
-      // The table also holds the buildings of the other tests: keep this test's own
-      const mine = async () =>
-        (await supply.getAllSupplyTraceabilityTransactions()).filter(
-          (t) => [houseId, farmId].includes(t.fromId)
-        );
-      const monthly = [{ year: 0, month: 0, fedPopulation: 12, unfedPopulation: 0 }];
-      const [year] = buildSupplyTraceabilityExport(await mine(), monthly).years;
-
-      const january = year.months[0].buildings;
-      expect(january.employment).toEqual({ workers: 3, workerNeed: 3, understaffedBuildings: 0 });
-      expect(january.houseLevels).toEqual({ 2: 1 });
-      // 20 in the pantry - 12 eaten, all during the tick: the state is the end of it
-      expect(january.stocks.houses).toBe(8);
-      expect(year.endOfYearBuildings.map((b) => b.id).sort()).toEqual([farmId, houseId].sort());
-
-      await supply.recordBuildingEvent({
-        timeInfo: TimeManager.getTimeInfo(0),
-        event: 'demolished',
-        building: { id: farmId, type: 'Farm-Wheat', x: 3, y: 1 },
-      });
-      const after = buildSupplyTraceabilityExport(await mine(), monthly);
-      expect(after.years[0].endOfYearBuildings.map((b) => b.id)).toEqual([houseId]);
-      expect(after.events.some((e) => e.event === 'building_demolished')).toBe(true);
-    });
   });
 });

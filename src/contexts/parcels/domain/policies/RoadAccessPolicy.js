@@ -3,22 +3,6 @@ import { resolveFootprint } from '../../../../shared/asset-footprint/resolveFoot
 import { getRoadRange } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
- * Calcule l'accès routier à partir des voisins.
- * Règle métier : roadCount = nombre de voisins route ; hasAccess = roadCount > 0.
- *
- * @param {ReadonlyArray<{ isRoad: boolean }>} neighbors
- * @returns {Readonly<{ roadCount: number, hasAccess: boolean }>}
- */
-export function evaluateRoadAccess(neighbors) {
-  if (!neighbors || !Array.isArray(neighbors)) {
-    return createRoadAccess(0);
-  }
-
-  const roadCount = neighbors.filter((neighbor) => neighbor.isRoad).length;
-  return createRoadAccess(roadCount);
-}
-
-/**
  * The tiles a building covers: its footprint from its origin tile (the minimum corner), swapped on an odd
  * rotation. A type with no declared footprint is an error (`resolveFootprint` throws): it is never
  * guessed to be one tile.

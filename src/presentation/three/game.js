@@ -2106,6 +2106,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   gameLoop = new GameLoop({
     intervalMs: getTickIntervalMs(),
+    // The error is the real message (what failed), not a generic sentence: the cause has to be visible right away.
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : String(error);
+      showErrorToast(`Un jour a échoué et n'a pas été terminé : ${message}`, { timeout: 10000 });
+      // The books say it too: a failed day may leave them incomplete. If the journal itself is what is broken, that is logged (tagged), never hidden.
+      accounting.recordDayFailure({ turn: time, message }).catch((journalError) => {
+        console.error('[GameLoop] The failed day could not be written in the journal:', journalError);
+      });
+    },
     onTick: async () => {
       await awaitBudgetReady();
       if (isPause || isOver) {

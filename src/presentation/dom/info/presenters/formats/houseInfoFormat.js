@@ -25,7 +25,8 @@ import {
 import { getServiceCategories } from '../../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { getSkillDisplay } from '../../../../../shared/population/skillCatalog.js';
 import { STAFF_LEVEL_COLORS } from '../../../../three/assets/buildingAssets.js';
-import { groupGrantsSkill, houseEnterprises, houseSeeksWork, houseSkillLevel, houseUnemploymentCauses, upcomingHouseSkills } from '../../../../../shared/population/workforceQueries.js';
+import { groupGrantsSkill, houseEnterprises, houseSeeksWork, houseSkillLevel,
+  houseSkillTier, houseUnemploymentCauses, upcomingHouseSkills } from '../../../../../shared/population/workforceQueries.js';
 import { formatEuro } from '../../../../../contexts/accounting/presentation/formatMoney.js';
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
 import { describeActivitySupplyGap } from '../../../shell/BuildingNotifications.js';
@@ -173,9 +174,10 @@ export function formatHouseSkillsModel(vm) {
     };
   });
 
-  // Each skill the house holds says at which level it holds it ("niv. 1"), in the colour of that level.
+  // Each skill the house holds says at which house level it came ("niv. 2": the fire-fighting of a house of level 2), the same number the workplaces of that skill show on their card,
+  // in the colour of that level.
   const heldSkills = skills.map((skill) => {
-    const level = houseSkillLevel(vm.buildingType, vm.houseLevel, skill.skillKey);
+    const level = houseSkillTier(vm.buildingType, vm.houseLevel, skill.skillKey);
     const color = STAFF_LEVEL_COLORS[level];
     if (!color) throw new Error(`[houseInfoFormat] the skill "${skill.skillKey}" is held at level ${level}, which STAFF_LEVEL_COLORS (buildingAssets.js) gives no color`);
     return { ...skill, level, color };

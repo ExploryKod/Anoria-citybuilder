@@ -5,8 +5,9 @@ import {
   takeCategoryAmount,
   addCategoryAmount,
 } from '../../../domain/value-objects/ResourceStock.js';
-import { resolveInstanceIdFromNeighborRef } from '../../../../../shared/building-identity/BuildingRecord.js';
+import { resolveInstanceIdFromBuildingRef } from '../../../../../shared/building-identity/BuildingRecord.js';
 import { distributeRoundRobin } from '../../services/RoundRobinDistribution.js';
+import { freshUnitPricer } from '../../services/FreshUnitPricer.js';
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import { isLockedForPeriod, buildLockUpdate } from '../../../domain/policies/PeriodLockPolicy.js';
 import {
@@ -92,7 +93,7 @@ export class DistributeResourceToConsumers {
 
     const consumerIds = [
       ...new Set(
-        consumerRefs.map(resolveInstanceIdFromNeighborRef).filter((id) => typeof id === 'string' && id.length > 0),
+        consumerRefs.map(resolveInstanceIdFromBuildingRef).filter((id) => typeof id === 'string' && id.length > 0),
       ),
     ];
     if (consumerIds.length === 0) {
@@ -115,6 +116,9 @@ export class DistributeResourceToConsumers {
       (sum, category) => sum + getCategoryAmount(sourceStock, category),
       0,
     );
+    // A unit is priced by its freshness: the units of the stall are sold oldest first, and what is about to go bad is sold off (see FreshnessPricePolicy.js).
+    const unitPriceOf = freshUnitPricer({ seller: source, stock: sourceStock, priceBook: this.priceBook, period });
+
     // An empty source still reports every consumer's shortage: the round-robin hands out nothing and says what is missing.
     const { transfers, sourceStock: nextSourceStock, unmet } = await distributeRoundRobin({
       categories,
@@ -132,7 +136,7 @@ export class DistributeResourceToConsumers {
       getAmount: getCategoryAmount,
       money: {
         fundsOf: (consumerId) => this.consumerMoney.fundsOf(consumerId),
-        priceOf: (category) => this.priceBook.sellingPrice(source, category, period),
+        priceOf: unitPriceOf,
       },
     });
 

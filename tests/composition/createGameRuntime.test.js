@@ -21,15 +21,10 @@ function fakeParcels() {
 
 function fakeSupply() {
   let foodCalls = 0;
-  const employmentRecords = [];
   return {
     foodCalls: () => foodCalls,
-    employmentRecords: () => employmentRecords,
     runMonthlyResourceCycle: async () => {
       foodCalls += 1;
-    },
-    recordEmploymentSummary: async (_timeInfo, summary) => {
-      employmentRecords.push(summary);
     },
   };
 }
@@ -114,7 +109,6 @@ describe('createGameRuntime', () => {
       'housing.populationGrowth',
       'housing.evolution',
       'employment.redistribute',
-      'history.employmentSummary',
       'gameplay.randomEvents',
       'intelligence.monthlyNews',
       'commerce.checkNewRelations',
@@ -155,21 +149,6 @@ describe('createGameRuntime', () => {
     expect(employment.redistributeCalls()).toBe(1);
     expect(gameplay.eventCalls()).toBe(1);
     expect(intelligence.newsCalls()).toBe(1);
-    // The last day of the month (a one-day month here) puts the city's employment in its history
-    expect(supply.employmentRecords()).toEqual([{ unemployed: 3 }]);
-  });
-
-  test('history.employmentSummary ne tourne qu\'au dernier jour du mois', async () => {
-    const supply = fakeSupply();
-    const runtime = createGameRuntime(
-      baseRuntimeDeps({
-        supply,
-        getTimeInfo: () => ({ dayInMonth: TimeManager.DAYS_PER_MONTH + 1, monthIndex: 0 }),
-      })
-    );
-
-    await runtime.runSimulation({ time: 2, city: { size: 1, tiles: [[]] } });
-    expect(supply.employmentRecords()).toEqual([]);
   });
 
   test('intelligence.monthlyNews ne tourne pas hors 1er jour du mois', async () => {

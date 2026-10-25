@@ -16,7 +16,6 @@ describe('buildingInfoGroupRegistry tabs', () => {
       BUILDING_INFO_TAB_IDS.residents,
       BUILDING_INFO_TAB_IDS.services,
       BUILDING_INFO_TAB_IDS.clients,
-      BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
       BUILDING_INFO_TAB_IDS.finance,
     ]);
@@ -29,7 +28,6 @@ describe('buildingInfoGroupRegistry tabs', () => {
       BUILDING_INFO_TAB_IDS.staff,
       BUILDING_INFO_TAB_IDS.services,
       BUILDING_INFO_TAB_IDS.clients,
-      BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
       BUILDING_INFO_TAB_IDS.finance,
     ]);
@@ -44,7 +42,6 @@ describe('buildingInfoGroupRegistry tabs', () => {
       BUILDING_INFO_TAB_IDS.staff,
       BUILDING_INFO_TAB_IDS.services,
       BUILDING_INFO_TAB_IDS.clients,
-      BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
       BUILDING_INFO_TAB_IDS.finance,
     ]);
@@ -59,16 +56,14 @@ describe('buildingInfoGroupRegistry tabs', () => {
       BUILDING_INFO_TAB_IDS.staff,
       BUILDING_INFO_TAB_IDS.services,
       BUILDING_INFO_TAB_IDS.clients,
-      BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
       BUILDING_INFO_TAB_IDS.finance,
     ]);
   });
 
-  test('nature only exposes resource + neighbors + messages', () => {
+  test('nature only exposes resource + messages', () => {
     expect(tabIds(BUILDING_INFO_GROUPS.nature)).toEqual([
       BUILDING_INFO_TAB_IDS.foyer,
-      BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
     ]);
   });

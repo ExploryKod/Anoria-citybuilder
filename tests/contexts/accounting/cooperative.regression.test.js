@@ -95,7 +95,6 @@ function settle({ pairs, businessCash, taxRate = { threshold1: 0, rate1: 0, thre
       journal.push(booked({ ...line, year: 1, month: 1 }));
       return { recorded: true };
     },
-    recordEconomyMovement: async () => {},
   });
   return service.execute({ time: 2, deliveredTime: 1 }).then(() => journal);
 }
@@ -171,7 +170,6 @@ describe('the year-end settlement of a house\'s cooperative', () => {
         journal.push(booked({ ...line, year: 1, month: 1 }));
         return { recorded: true };
       },
-      recordEconomyMovement: async () => {},
     });
     await service.execute({ time: 2, deliveredTime: 1 });
 
@@ -213,7 +211,6 @@ describe('the year-end settlement of a house\'s cooperative', () => {
         journal.push(booked({ ...line, year: 1, month: 1 }));
         return { recorded: true };
       },
-      recordEconomyMovement: async () => {},
     });
     await service.execute({ time: 2, deliveredTime: 1 });
 

@@ -36,7 +36,6 @@ function settle({ pop, salaried = 0, minimumWage, administratorStipend = 0, unem
       journal.push(line);
       return { recorded: true };
     },
-    recordEconomyMovement: async () => {},
   });
   return service.execute({ time: 2, deliveredTime: 1 }).then(() => journal);
 }

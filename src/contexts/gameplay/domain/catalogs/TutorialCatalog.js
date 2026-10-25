@@ -344,7 +344,7 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
     news: {
       title: 'Des soins pour vos habitants',
       body: `Le marché nourrit vos habitants. Pour qu'une maison évolue, il lui manque encore les **soins médicaux** : bâtissez un « {building:Doctor} ».\n\n`
-        + `Il embauche des habitants ayant la compétence {skillicon:medical} « {skill:medical} », que seuls les « {building:House-Purple} » ont : leur maison `
+        + `Il embauche des habitants ayant la compétence {skillicon:medecine-proximite} « {skill:medecine-proximite} », que seuls les « {building:House-Purple} » ont : leur maison `
         + `est donc indispensable.\n\n`
         + `**Quand la route, l'eau, la nourriture et les soins sont réunis, vos maisons passent au niveau 2.** Suivez-le dans l'onglet **« Services »** de leur fiche.`,
       teaser: 'Un messager réclame un médecin…',

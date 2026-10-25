@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
  * Filters a console export saved from the browser's DevTools (`localhost-<number>.log`) down to the
  * lines that carry one tag, e.g. `[road-access]`, so only those reach the terminal.
  *
- *   node scripts/dev/consoleTag.mjs road-access            dev-diagnostics.log (fed live by `vite dev`), else the newest localhost-*.log
+ *   node scripts/dev/consoleTag.mjs road-access            logs/dev-diagnostics.log (fed live by `vite dev`), else the newest logs/consoles/localhost-*.log
  *   node scripts/dev/consoleTag.mjs road-access --follow   keep running and print each new tagged line as the game logs it
  *   node scripts/dev/consoleTag.mjs road-access some.log   a given export
  *   node scripts/dev/consoleTag.mjs road-access --raw      keep the source location prefix, no JSON pretty-print
@@ -50,13 +50,14 @@ export function filterConsoleTag(text, tag, { raw = false } = {}) {
   return found;
 }
 
-/** @param {string} dir The live dev log if there is one, else the newest `localhost-*.log` in it, or null. */
+/** @param {string} dir The live dev log if there is one, else the newest `localhost-*.log` saved in its `logs/consoles` folder, or null. */
 function defaultSource(dir) {
-  const live = join(dir, 'dev-diagnostics.log');
-  return existsSync(live) ? live : newestExport(dir);
+  const live = join(dir, 'logs', 'dev-diagnostics.log');
+  return existsSync(live) ? live : newestExport(join(dir, 'logs', 'consoles'));
 }
 
 function newestExport(dir) {
+  if (!existsSync(dir)) return null;
   const files = readdirSync(dir)
     .filter((name) => /^localhost-.*\.log$/.test(name))
     .map((name) => ({ name, mtime: statSync(join(dir, name)).mtimeMs }))
@@ -75,7 +76,7 @@ function main() {
   }
   const path = file ?? defaultSource(process.cwd());
   if (!path) {
-    console.error('no dev-diagnostics.log or localhost-*.log found in this directory');
+    console.error('no logs/dev-diagnostics.log or logs/consoles/localhost-*.log found in this directory');
     process.exit(1);
   }
   const lines = filterConsoleTag(readFileSync(path, 'utf8'), tag, { raw });

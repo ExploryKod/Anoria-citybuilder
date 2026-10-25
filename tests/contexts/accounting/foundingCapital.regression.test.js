@@ -22,19 +22,25 @@ function fund(journal, needs) {
   return service.execute({ time: 70 });
 }
 
-const NEEDS = [{ buildingId: 'farm', accountKind: null, monthlyNeed: 50, name: 'Ferme' }];
+const NEEDS = [{ buildingId: 'farm', accountKind: null, monthlyNeed: 50, stockValue: 0, name: 'Ferme' }];
 
 describe('the founding capital of a company', () => {
   test('the city pays the months of the company\'s charges once: the city\'s holding, the company\'s capital', async () => {
     const journal = [];
     await fund(journal, NEEDS);
-    expect(foundingCapitalOf(50)).toBe(10000);
+    expect(foundingCapitalOf(50, 0)).toBe(10000);
     const paid = journal.find((line) => line.type === 'company_capital_paid');
     const received = journal.find((line) => line.type === 'company_capital_received');
     expect([paid.amount, paid.accountBuildingId]).toEqual([100, null]);
     expect([received.amount, received.accountBuildingId]).toEqual([100, 'farm']);
     await fund(journal, NEEDS);
     expect(journal.filter((line) => line.type === 'company_capital_received')).toHaveLength(1);
+  });
+
+  test('a company that carries a stock is also given working capital: a share of the stock it holds when full', () => {
+    // 50 a month for 2 months, plus half of a stock worth 1000 when full.
+    expect(foundingCapitalOf(50, 1000)).toBe(60000);
+    expect(() => foundingCapitalOf(50, undefined)).toThrow('stock');
   });
 
   test('a company that already has its capital is not funded again, even once the year that paid it is purged', () => {

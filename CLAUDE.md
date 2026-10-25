@@ -161,6 +161,21 @@ categories grant, and do not propose it as a design shortcut. Why, if the user a
 If a design truly needs a skill common to several categories, say so first and settle how its posts are attributed before touching the catalog.
 Details: `src/contexts/employment/docs/rules.md` §5.6.
 
+## A skill has one level: an advanced trade is a skill of its own
+
+Every skill is granted by the houses and asked by the workplaces at level 1, never higher. A more advanced trade is another skill with its own name (local medicine
+`medecine-proximite` for the dispensary, hospital medicine `medecine-hospitaliere` for the hospital; thermal energy `energie`, nuclear energy `energie-nucleaire`; crafts `artisanat`,
+specialised crafts `artisanat-specialise`), granted by the house tier that opens it. Why: the "level" the player reads is the house level a skill comes with, the same number a workplace
+shows on its card (`houseSkillTier`, `lowestHouseTierForWorkers`); a second scale (the skill's own level 1, 2...) said "niv. 1" on the house for a fire-fighting that the fire station
+shows "niv. 2". A more advanced trade that pays more says so in `START_WAGE_BY_SKILL` (LabourMarketCatalog.js). Guarded by `tests/shared/population/socialCategoryCatalog.test.js`.
+
+## UI: think mobile every time
+
+Any screen, panel, table or card you add or change must work on a phone as well as on a desktop, and the change is not done until it does: design for the narrow
+width first, then widen. No horizontal page scroll; touch targets of at least 40 px; text that wraps instead of overflowing; a table that cannot fit drops its secondary
+columns (keep the essential ones) rather than shrinking everything. Add the `@media` rule in the same change as the markup, never "later". Style in the Material spirit,
+"less is more": one level of frame, space and a thin divider to tell sections apart, labels and figures aligned on one grid.
+
 ## Keep the flow: no commands that make the user wait
 
 The user is often away while a task runs; a command that stops for approval freezes the work. Change files with the Edit

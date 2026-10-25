@@ -53,7 +53,6 @@ function settle(pairs) {
       journal.push(booked({ ...line, year: 1, month: 1 }));
       return { recorded: true };
     },
-    recordEconomyMovement: async () => {},
   });
   return service.execute({ time: 2, deliveredTime: 1 }).then(() => journal);
 }

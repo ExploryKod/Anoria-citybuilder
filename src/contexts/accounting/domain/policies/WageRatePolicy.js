@@ -1,17 +1,17 @@
 import { MINIMUM_WAGE_MODES } from '../catalogs/FiscalRateCatalog.js';
-import { START_WAGE_BY_SKILL_LEVEL, WAGE_ADJUSTMENT } from '../catalogs/LabourMarketCatalog.js';
+import { START_WAGE_BASE, START_WAGE_BY_SKILL, WAGE_ADJUSTMENT } from '../catalogs/LabourMarketCatalog.js';
 
 const centimes = (amount) => Math.round(amount * 100) / 100;
 
 /**
- * The wage a skill level starts at, before the market has moved it.
+ * The wage a skill starts at, before the market has moved it. A skill has one level: a level above 1 is a defect (a more advanced trade is a skill of its own).
+ * @param {string} skill
  * @param {number} level
  * @returns {number}
  */
-export function startWageOf(level) {
-  const wage = START_WAGE_BY_SKILL_LEVEL[level];
-  if (wage === undefined) throw new Error(`[wages] no starting wage is declared for skill level ${level}`);
-  return wage;
+export function startWageOf(skill, level) {
+  if (level !== 1) throw new Error(`[wages] the skill "${skill}" is asked at level ${level}: a skill has one level, a more advanced trade is a skill of its own`);
+  return START_WAGE_BY_SKILL[skill] ?? START_WAGE_BASE;
 }
 
 /**

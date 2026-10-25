@@ -11,7 +11,6 @@ export function createSupplyBuildingView({
   roadCount = 0,
   stocks = {},
   maxStock,
-  neighbors = [],
   pop = 0,
   isBuying = false,
   noSourcesNearby = false,
@@ -53,7 +52,6 @@ export function createSupplyBuildingView({
     stocks: presentationStocks,
     maxStock:
       Number.isFinite(maxStock) && maxStock > 0 ? Math.floor(maxStock) : Infinity,
-    neighbors: Object.freeze(Array.isArray(neighbors) ? [...neighbors] : []),
     isBuying: isBuying === true,
     noSourcesNearby: noSourcesNearby === true,
     distributorTooFar: distributorTooFar === true,

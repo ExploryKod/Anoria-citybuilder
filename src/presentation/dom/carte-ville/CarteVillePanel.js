@@ -12,6 +12,7 @@ import {
   enrichMapBuildings,
 } from './CarteVillePresenter.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
+import { getSessionGameTime } from '../../../composition/sessionRuntime.js';
 
 /**
  * @type {{
@@ -67,23 +68,6 @@ function initCarteVilleFilters() {
   const activeBtn = filterBar.querySelector('.filter-btn.active');
   const current = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
   applyCityMapFilter(current);
-
-  const neighborsBtn = filterBar.querySelector('.neighbors-btn');
-  const grid = document.getElementById('city-map-grid');
-  if (neighborsBtn && grid) {
-    if (!neighborsBtn.classList.contains('active')) {
-      grid.classList.add('hide-neighbors');
-    }
-    neighborsBtn.addEventListener('click', () => {
-      const willBeActive = !neighborsBtn.classList.contains('active');
-      neighborsBtn.classList.toggle('active', willBeActive);
-      if (willBeActive) {
-        grid.classList.remove('hide-neighbors');
-      } else {
-        grid.classList.add('hide-neighbors');
-      }
-    });
-  }
 }
 
 export async function generateCarteVille() {
@@ -185,6 +169,7 @@ export async function exportCityToJSON() {
       archived: await read('archivedNews', () => deps.intelligence.listArchivedNews(), []),
     },
     citySize: deps.getCity?.()?.size ?? null,
+    turn: getSessionGameTime(),
     errors,
   });
 

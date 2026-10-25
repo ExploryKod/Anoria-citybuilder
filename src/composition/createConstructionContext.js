@@ -159,10 +159,8 @@ export function createConstructionContext({
 
       const defaults = {
         stocks: createEmptyStocks(),
-        neighbors: [],
         pop: 0,
         roads: 0,
-        worldTime: 0,
       };
 
       if (defaults[key] !== undefined) {

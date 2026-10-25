@@ -3,11 +3,31 @@
  * Categories: arrow keys / Home / End on the tablist; Tab enters the active tabpanel only.
  */
 
-import {
-  initializeSupplyTraceabilityTabs,
-  loadSupplyTraceabilityEntries,
-} from './supply-traceability/SupplyTraceabilityPanel.js';
 import { createModalFocusSession, getFocusableElements } from '../shell/modalFocus.js';
+
+/** A main-thread block shorter than this is not reported (measurement only). */
+const LONG_TASK_REPORT_MS = 150;
+
+/**
+ * Measurement only (dev builds): reports every block of the main thread of LONG_TASK_REPORT_MS or more, and which section of the panel was showing when it
+ * happened, so that what makes the game stall while the panel is open can be read in the dev log (`[admin-perf]`).
+ * @param {HTMLElement} panel
+ */
+function reportLongTasks(panel) {
+  try {
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (entry.duration < LONG_TASK_REPORT_MS) continue;
+        const where = panel.classList.contains('active')
+          ? (document.querySelector('.administrator-section.active')?.id ?? 'no section')
+          : 'panel closed';
+        console.info(`[admin-perf] long task ${entry.duration.toFixed(0)} ms (${where})`);
+      }
+    }).observe({ type: 'longtask' });
+  } catch (error) {
+    console.warn('[admin-perf] the long tasks cannot be observed in this browser:', error.message);
+  }
+}
 
 /**
  * @param {{
@@ -30,6 +50,8 @@ export function initAdministratorPanel(deps = {}) {
     console.warn('Administrator panel elements not found');
     return;
   }
+
+  if (import.meta.env?.DEV) reportLongTasks(administratorPanel);
 
   /** @type {ReturnType<typeof createModalFocusSession> | null} */
   let focusSession = null;
@@ -60,7 +82,7 @@ export function initAdministratorPanel(deps = {}) {
    * @param {string} sectionId
    * @param {{ focusTab?: boolean, focusPanel?: boolean }} [options]
    */
-  function showSection(sectionId, { focusTab = false, focusPanel = false } = {}) {
+  function showSectionNow(sectionId, { focusTab = false, focusPanel = false } = {}) {
     sections.forEach((section) => {
       const isActive = section.id === `admin-section-${sectionId}`;
       section.classList.toggle('active', isActive);
@@ -79,13 +101,6 @@ export function initAdministratorPanel(deps = {}) {
       btn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
       btn.tabIndex = isSelected ? 0 : -1;
     });
-
-    if (sectionId === 'supply-traceability') {
-      initializeSupplyTraceabilityTabs();
-      const activeFilterBtn = document.querySelector('.supply-traceability-filter-btn.active');
-      const currentPeriod = activeFilterBtn ? activeFilterBtn.dataset.period : 'all';
-      loadSupplyTraceabilityEntries(currentPeriod);
-    }
 
     const selectedTab = navButtons.find((btn) => btn.dataset.section === sectionId);
     const activePanel = document.getElementById(`admin-section-${sectionId}`);
@@ -107,6 +122,16 @@ export function initAdministratorPanel(deps = {}) {
       }
       activePanel.focus();
     }
+  }
+
+  /**
+   * @param {string} sectionId
+   * @param {{ focusTab?: boolean, focusPanel?: boolean }} [options]
+   */
+  function showSection(sectionId, options) {
+    const startedAt = performance.now();
+    showSectionNow(sectionId, options);
+    if (import.meta.env?.DEV) console.info(`[admin-perf] section ${sectionId} shown in ${(performance.now() - startedAt).toFixed(0)} ms (synchronous part)`);
   }
 
   /**

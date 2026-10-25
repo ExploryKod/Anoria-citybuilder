@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { textures } from './data.js';
 
 let hoveredObject = null;
-let neighborsHoveredObjects = [];
 let materialProps = {
     emissive: 0x00ff00,
     opacity: 0.5,
@@ -23,9 +22,8 @@ const types = [
  * @param {Array} intersections - The array of intersections from raycasting, containing the objects intersected by the ray at intersection[0].object.
  * @param data
  */
-export function coloredAbuildingOnHover(intersections, data={color: 0xff0000, defaultColor : 0x000000, areaKey:'area_1'}) {
+export function coloredAbuildingOnHover(intersections, data={color: 0xff0000, defaultColor : 0x000000}) {
 
-   const areaKey = data.areaKey
    if (intersections.length > 0) {
        const intersectedObject = intersections[0].object;
 
@@ -37,28 +35,6 @@ export function coloredAbuildingOnHover(intersections, data={color: 0xff0000, de
                    // Reset to the original emissive color stored in userData
                    hoveredObject.material = hoveredObject.userData.originalMaterial || hoveredObject.material;
                    hoveredObject.material.emissive.setHex(hoveredObject.userData.originalEmissive || data.defaultColor);
-
-                   if(Object.hasOwn(hoveredObject.userData, 'neighborsMeshs')) {
-                        neighborsHoveredObjects = hoveredObject.userData.neighborsMeshs
-                        // Processing neighbors mesh
-                        neighborsHoveredObjects.forEach((neighborsHoveredObject) => {
-                            // Processing neighbor object
-                            setColorOnMaterialArray(neighborsHoveredObject, 0x000000)
-                        })
-                  } 
-
-                //   if (Object.hasOwn(hoveredObject.userData, 'neighborZones')) {
-                //     if(Object.hasOwn(hoveredObject.userData.neighborZones, data.areaKey)) {
-                //         const area2 = hoveredObject.userData.neighborZones[data.areaKey]
-                //         if(Object.hasOwn(area2, 'allTerrainMeshInZone')) {
-                //             area2.allTerrainMeshInZone.forEach((terrain) => {
-                //                 console.log(" [coloredABuildingOnHover] a zone neighbor object", terrain)
-                //                 setColorOnMaterialArray(terrain, 0x000000)
-                //             })
-                //         }
-                        
-                //     }
-                //   }
                }
 
                if (hoveredObject && Array.isArray(hoveredObject.material)) {
@@ -70,27 +46,6 @@ export function coloredAbuildingOnHover(intersections, data={color: 0xff0000, de
                     
                             // Reset to the original emissive color stored in userData
                             material.emissive.setHex(0x3333CC)
-                            if(Object.hasOwn(hoveredObject.userData, 'neighborsMeshs')) {
-                                neighborsHoveredObjects = hoveredObject.userData.neighborsMeshs
-                                // Processing neighbors mesh
-                                neighborsHoveredObjects.forEach((neighborsHoveredObject) => {
-                                    // Processing neighbor object
-                                    setColorOnMaterialArray(neighborsHoveredObject, 0x000000)
-                                })
-                            } 
-
-                            // if (Object.hasOwn(hoveredObject.userData, 'neighborZones')) {
-                            //     if(Object.hasOwn(hoveredObject.userData.neighborZones, areaKey)) {
-                            //         const area2 = hoveredObject.userData.neighborZones[areaKey]
-                            //         if(Object.hasOwn(area2, 'allTerrainMeshInZone')) {
-                            //             area2.allTerrainMeshInZone.forEach((terrain) => {
-                            //                 console.log(" [coloredABuildingOnHover] a zone neighbor object", terrain)
-                            //                 setColorOnMaterialArray(terrain, 0x000000)
-                            //             })
-                            //         }
-                                    
-                            //     }
-                            // }
                         }
                     });
                 }
@@ -111,29 +66,6 @@ export function coloredAbuildingOnHover(intersections, data={color: 0xff0000, de
                 if (hoveredObject.material && hoveredObject.material.emissive) {
                     hoveredObject.material = hoveredObject.material.clone(); // Clone the material for manipulation
                     hoveredObject.material.emissive.setHex(data.color);
-
-                    if(Object.hasOwn(hoveredObject.userData, 'neighborsMeshs')) {
-                        neighborsHoveredObjects = hoveredObject.userData.neighborsMeshs
-                        // Processing neighbors mesh
-                        neighborsHoveredObjects.forEach((neighborsHoveredObject) => {
-                            // Processing neighbor object
-                            setColorOnMaterialArray(neighborsHoveredObject, 0x3333CC)
-                        })
-                    } 
-                    // Processing neighbor zones
-                    // if (Object.hasOwn(hoveredObject.userData, 'neighborZones')) {
-                    //     if(Object.hasOwn(hoveredObject.userData.neighborZones, areaKey)) {
-                    //         const area2 = hoveredObject.userData.neighborZones[areaKey]
-                    //         console.log(" [coloredABuildingOnHover] a zone neighbor area2", area2)
-                    //         if(Object.hasOwn(area2, 'allTerrainMeshInZone')) {
-                    //             area2.allTerrainMeshInZone.forEach((terrain) => {
-                    //                 console.log(" [coloredABuildingOnHover] emissive a zone neighbor object", terrain)
-                    //                 setColorOnMaterialArray(terrain, 0x3333CC)
-                    //             })
-                    //         }
-                            
-                    //     }
-                    // }
                 }
                
                 
@@ -149,69 +81,10 @@ export function coloredAbuildingOnHover(intersections, data={color: 0xff0000, de
        if (hoveredObject && hoveredObject.material && hoveredObject.material.emissive) {
            hoveredObject.material = hoveredObject.userData.originalMaterial || hoveredObject.material;
            hoveredObject.material.emissive.setHex(hoveredObject.userData.originalEmissive || data.defaultColor);
-
-           if(Object.hasOwn(hoveredObject.userData, 'neighborsMeshs')) {
-            neighborsHoveredObjects = hoveredObject.userData.neighborsMeshs
-                neighborsHoveredObjects.forEach((neighborsHoveredObject) => {
-                    setColorOnMaterialArray(neighborsHoveredObject, 0x000000)
-                })
-            } 
-
-            // if (Object.hasOwn(hoveredObject.userData, 'neighborZones')) {
-            //     if(Object.hasOwn(hoveredObject.userData.neighborZones, areaKey)) {
-            //         const area2 = hoveredObject.userData.neighborZones[areaKey]
-            //         if(Object.hasOwn(area2, 'allTerrainMeshInZone')) {
-            //             area2.allTerrainMeshInZone.forEach((terrain) => {
-            //                 console.log(" [coloredABuildingOnHover] a zone neighbor object", terrain)
-            //                 setColorOnMaterialArray(terrain, 0x000000)
-            //             })
-            //         }
-                    
-            //     }
-            // }
-
-           
        }
        hoveredObject = null; // Clear the hovered object
        return
    }
-}
-
-
-
-/**
- * @param {T} object3D
- * @param {*} color
- */
-function setColorOnMaterialArray(object3D, color) {
-        // Reset the emissive color of the previously hovered object
-        if (object3D && Array.isArray(object3D.material)) {
-            // Iterate over the array of MeshLambertMaterial objects
-            object3D.material.filter((material) => isMaterialTypeFound(material, types)).forEach((material) => {
-                if (material.emissive) {
-                    // Setting color on material
-                      // Reset to the original emissive color stored in userData
-                      material.emissive.setHex(color)
-                }
-            });
-        } else {
-            if(!object3D.material) {
-                console.warn("[coloredABuildingOnHover] [setColorOnMeshLambertMaterialArray] object3D has no material")
-                return
-            }
-
-            if(!object3D.material.emissive) {
-                console.warn("[coloredABuildingOnHover] [setColorOnMeshLambertMaterialArray] object3D.material has no emissive")
-                return
-            }
-
-            if(isMaterialTypeFound(object3D.material, types) ) {
-                // Setting color on mesh standard material
-                // Reset to the original emissive color stored in userData
-                object3D.material.emissive.setHex(color)
-            }
-           
-        }
 }
 
 
@@ -253,7 +126,6 @@ function setPropertiesOnMaterialArray(object3D, properties, instance = THREE.Mes
  * @param {number} [color=0x3333CC] - The color to set the emissive color to when the object is hovered. Defaults to red (`0xff0000`).
  */
 export function coloredAZoneOnHover(intersections, color = 0x3333CC) {
-   neighborsHoveredObjects
     if (intersections.length > 0) {
         // Zone hover processing
 

@@ -146,6 +146,9 @@
  * @property {number} [shelfLifeFactor] On a 'hub' entry: how many times longer the goods it holds keep than their own
  *   shelf life (ResourceCategoryCatalog.js), because the place is built to keep them (a granary, a warehouse). Omitted
  *   means 1. A good whose shelf life is infinite never goes bad, whatever the factor.
+ * @property {boolean} [unlimitedSupplierCredit] On a 'hub' entry: what the hub buys is not held back by its money and its suppliers' credit (see
+ *   SupplierCreditPolicy.js). For a hub whose trade is not measured by its sales in the journal (the trade warehouse buys the merchants' deals and the imports
+ *   to pass them on abroad). Omitted means the hub buys within its means.
  * @property {Array<{ id: string, when?: object, amount?: number, factor?: number, inputs?: object[], missed?: number, wait?: boolean }>} [cycle]
  *   On a 'producer' entry: a chain of steps instead of a single production. `when` is a schedule (see
  *   ResourceSchedulePolicy.js); the first step sets a base (`amount`), each next one multiplies the running

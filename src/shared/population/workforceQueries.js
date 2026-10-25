@@ -88,6 +88,26 @@ export function houseSkillLevel(houseType, level, skill) {
 }
 
 /**
+ * The house level at which the residents of a house came to hold a skill at the level they hold it now: the lowest tier, up to the house's own, whose grant reaches that level.
+ * It is the number the player reads on a skill ("niv. N"), the one a workplace of that skill shows on its card (see lowestHouseTierForWorkers): a skill of level N comes with a
+ * house of level N and staffs the workplaces of level N. It differs from `houseSkillLevel`, the skill's own scale (medicine 1, then 2), which the workplaces ask for.
+ * @param {string} houseType
+ * @param {number} level the house's tier
+ * @param {string} skill
+ * @returns {number} 0 when the house does not hold the skill
+ */
+export function houseSkillTier(houseType, level, skill) {
+  const held = houseSkillLevel(houseType, level, skill);
+  if (held < 1) return 0;
+  const group = getBuildingDefinition(houseType)?.residentialGroup;
+  const tiers = Object.entries(SOCIAL_CATEGORY[group].tiers)
+    .map(([tier, facts]) => ({ tier: Number(tier), reached: facts.skills[skill] ?? 0 }))
+    .filter((entry) => entry.tier <= level && entry.reached >= held)
+    .map((entry) => entry.tier);
+  return Math.min(...tiers);
+}
+
+/**
  * Whether the social category of a house grants a skill at some tier (the house may not have reached it yet).
  * @param {string} houseType
  * @param {string} skill

@@ -1,5 +1,6 @@
 import { getOrCreateGameSessionContext } from './createGameSessionContext.js';
 import { getQuantityConsumerEntries, salesNatureOf } from '../shared/building-catalog/resourceRoleQueries.js';
+import { domesticProductOf, externalInterestOf, privateDebtOf, publicDebtOf } from '../contexts/accounting/domain/policies/HamletEconomyPolicy.js';
 import { getSessionGameTime, getSessionProcessLoanPayments } from './sessionRuntime.js';
 import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 import { HamletFiscalRateRepository } from '../contexts/accounting/infrastructure/persistence/HamletFiscalRateRepository.js';
@@ -53,6 +54,7 @@ import { RevalueMinimumWage } from '../contexts/accounting/application/services/
 import { DexieWageRateRepository, wageKey } from '../contexts/accounting/infrastructure/persistence/DexieWageRateRepository.js';
 import { administratorPayStatusOf } from '../contexts/accounting/domain/policies/AdministratorPayPolicy.js';
 import { benefitBaseOf, flooredWage, readLabourMarket, startWageOf, wageFloorOf } from '../contexts/accounting/domain/policies/WageRatePolicy.js';
+import { START_WAGE_BASE } from '../contexts/accounting/domain/catalogs/LabourMarketCatalog.js';
 import { wagePerWorkerOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { INCOME_STATEMENT, pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
 import { buildingFinanceFigures, cashMovementsOf, householdBudgetOf, householdLastMonthOf, incomeStatementOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
@@ -76,7 +78,7 @@ import { getResourceBaseValue, getServiceCategories } from '../shared/resource-c
 import {
   canAffordFromBudget,
 } from '../contexts/accounting/application/queries/treasury/GameTreasuryProjections.js';
-import { isActiveHamletRow } from '../core/persistence/hamlet/hamletSession.js';
+import { isActiveHamletRow, requireActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
 import { buildingMaintenanceCost, maintenanceCategoryOf } from '../contexts/accounting/domain/policies/BuildingMaintenanceBreakdownPolicy.js';
 import { CloseMonthAccounts } from '../contexts/accounting/application/services/CloseMonthAccounts.js';
 import { FundNewCompanies } from '../contexts/accounting/application/services/FundNewCompanies.js';
@@ -96,6 +98,7 @@ import { COST_OF_LIVING_BASKET } from '../contexts/accounting/domain/catalogs/La
 import { costOfLivingOf } from '../contexts/accounting/domain/policies/CostOfLivingPolicy.js';
 import { serviceSubsidyShare } from '../contexts/accounting/domain/policies/ServiceSubsidyPolicy.js';
 import { addVatTo } from '../contexts/accounting/domain/policies/VatIncludedPolicy.js';
+import { stockValueAtCapacity } from '../shared/resource-catalog/ValueChainCatalog.js';
 
 /**
  * Composition root — Accounting bounded context.
@@ -375,12 +378,12 @@ export function createAccountingContext(deps = {}) {
   const marketWageRateOf = async () => {
     const [latest, settings] = await Promise.all([wageRateRepository.latestRows(), hamletFiscalRates.getSalarySettings()]);
     const floor = wageFloorOf(settings);
-    return (skill, level) => flooredWage(latest.get(wageKey(skill, level))?.amount ?? startWageOf(level), floor);
+    return (skill, level) => flooredWage(latest.get(wageKey(skill, level))?.amount ?? startWageOf(skill, level), floor);
   };
   // What the unemployment benefit is a share of: the lowest wage in force, so it exists with or without a minimum wage.
   const benefitBaseOfHamlet = async (settings) => {
     const latest = await wageRateRepository.latestRows();
-    return benefitBaseOf({ floor: wageFloorOf(settings), rates: [startWageOf(1), ...[...latest.values()].map((row) => row.amount)] });
+    return benefitBaseOf({ floor: wageFloorOf(settings), rates: [START_WAGE_BASE, ...[...latest.values()].map((row) => row.amount)] });
   };
   // An indexed minimum wage follows the cost of living (read lazily: the context's own reader, defined below, is called only when a month settles).
   const revalueMinimumWage = new RevalueMinimumWage({
@@ -505,7 +508,6 @@ export function createAccountingContext(deps = {}) {
     },
     buildingMaintenanceCost,
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
-    recordEconomyMovement: (movement) => supplyTraceabilityRepository.recordEconomyMovement(movement),
   });
   const recordConsumerPurchases = new RecordConsumerPurchases({
     getVatRates: () => vatRatesInForce(),
@@ -634,10 +636,10 @@ export function createAccountingContext(deps = {}) {
           const business = houseEnterprises(row.type).enterprises.find((enterprise) => enterprise.activity === 'recipes');
           const share = premisesShareOf(row.type);
           // The business of a house rents a share of it: its month is that rent.
-          if (business && share > 0) needs.push({ buildingId: row.id, accountKind: businessAccountOf(business.id), monthlyNeed: buildingMaintenanceCost(row.type) * share, name });
+          if (business && share > 0) needs.push({ buildingId: row.id, accountKind: businessAccountOf(business.id), monthlyNeed: buildingMaintenanceCost(row.type) * share, stockValue: 0, name });
         } else if (isLucrativeBuilding(row.type)) {
           const payroll = payrollOf({ type: row.type, workers: getBuildingDefinition(row.type)?.employment?.workerNeed ?? 0, wageRateOf });
-          needs.push({ buildingId: row.id, accountKind: null, monthlyNeed: payroll * (1 + employerContributionRate) + buildingMaintenanceCost(row.type), name });
+          needs.push({ buildingId: row.id, accountKind: null, monthlyNeed: payroll * (1 + employerContributionRate) + buildingMaintenanceCost(row.type), stockValue: stockValueAtCapacity(row.type), name });
         }
       }
       return needs;
@@ -704,7 +706,6 @@ export function createAccountingContext(deps = {}) {
   const liquidateDemolishedBuilding = new LiquidateDemolishedBuilding({
     getJournalEntries: () => journalRepository.getJournalEntries(),
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
-    recordEconomyMovement: (movement) => supplyTraceabilityRepository.recordEconomyMovement(movement),
     // The liquidation is written in one go, like a month's settlement: all its lines or none.
     inJournalBatch: (work) => sessionJournalStoreInstance.batch(work),
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
@@ -745,6 +746,10 @@ export function createAccountingContext(deps = {}) {
     settleHouseRents: (params) => settleHouseRents.execute(params),
     fundNewCompanies: (params) => fundNewCompanies.execute(params),
     closeMonthAccounts: (params) => closeMonthAccounts.execute(params),
+    compactMonthFlows: ({ time }) => {
+      const settled = gameTimePort.getTimeInfo(time);
+      return supplyTraceabilityRepository.compactFlowsOfMonth(settled.year, settled.monthIndex);
+    },
     settleBankDepositInterest: (params) => settleBankDepositInterest.execute(params),
     revalueMinimumWage: () => revalueMinimumWage.execute(),
     adjustWageRates: ({ time }) => {
@@ -983,6 +988,25 @@ export function createAccountingContext(deps = {}) {
       return recordLedgerEntryCommand.execute(params);
     },
 
+    /**
+     * A day that failed and was not completed may have left the books incomplete (a month not settled, a movement not written): the journal says so, with an
+     * informative line (`info_day_failed`, no legs, no money) dated by that turn, so the gap is read in the books and not only in the console. Once per turn.
+     * @param {{ turn: number, message: string }} params
+     */
+    async recordDayFailure({ turn, message }) {
+      const result = await recordLedgerEntryCommand.execute({
+        turn,
+        type: 'info_day_failed',
+        amount: 0,
+        description: `[Informatif] Jour non terminé, la comptabilité peut être incomplète - ${message}`,
+        businessKey: `info:day_failed:${requireActiveHamletId()}:${turn}`,
+      });
+      if (!result.recorded && result.reason !== 'duplicate_business_key') {
+        throw new Error(`[journal] the failure of day ${turn} was not recorded: ${result.reason}`);
+      }
+      return result;
+    },
+
     /** @param {{ time?: number }} [params] */
     async collectCitizenTaxes(params = {}) {
       return collectCitizenTaxes.execute(params);
@@ -1127,6 +1151,92 @@ export function createAccountingContext(deps = {}) {
      */
     hasBuildingAccount(buildingType) {
       return resolveBuildingKind(buildingType) === BUILDING_KIND_HOUSE || isLucrativeBuilding(buildingType);
+    },
+
+    /**
+     * The economy of the active hamlet, read from the fold of its journal (see HamletEconomyPolicy.js): the domestic product (value added of the companies, plus the administration at
+     * cost) and the national income, the public debt and what is set against it, the debt of the companies, and the savings of the households. The reference is the last full year, or
+     * the months already settled in the first year, brought to a year; none yet is `ready: false`. Euros; nothing is stored.
+     */
+    async getHamletEconomy() {
+      const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
+      const year = now.year > 0 ? now.year - 1 : now.year;
+      const months = now.year > 0 ? MONTHS_PER_YEAR : now.monthIndex;
+      if (months === 0) return { ready: false, year, months };
+      const hamletId = requireActiveHamletId();
+      const fold = await journalRepository.getLegsFold();
+      const toYear = (centimes) => Math.round((centimes * MONTHS_PER_YEAR) / months) / 100;
+      const toEuros = (centimes) => centimes / 100;
+      const product = domesticProductOf(fold.totalsByAccount({ hamletId, year }));
+      const upToNow = fold.totalsByAccount({ hamletId });
+      const cityTotals = upToNow.get(null) ?? new Map();
+      const portfolio = { loans: (await getTreasurySnapshotQuery.execute({ hamletId })).loans };
+      const debt = publicDebtOf(cityTotals, portfolio);
+      const external = externalInterestOf(fold.totalsByAccount({ hamletId, year }).get(null) ?? new Map(), debt);
+      const privateDebt = privateDebtOf(upToNow);
+      const population = (await dexieDb.houses.toArray()).filter((row) => isActiveHamletRow(row) && resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE).reduce((sum, row) => sum + (row.pop ?? 0), 0);
+      const gdp = toYear(product.gdp);
+      return {
+        ready: true,
+        year,
+        months,
+        population,
+        gdp,
+        valueAdded: toYear(product.valueAdded),
+        publicOutput: toYear(product.publicOutput),
+        externalInterest: toYear(external),
+        gni: gdp - toYear(external),
+        publicDebt: {
+          loans: toEuros(debt.loans),
+          overdraft: toEuros(debt.overdraft),
+          suppliers: toEuros(debt.suppliers),
+          gross: toEuros(debt.gross),
+          cash: toEuros(debt.cash),
+          receivables: toEuros(debt.receivables),
+          holdings: toEuros(debt.holdings),
+          net: toEuros(debt.net),
+          domesticLoans: toEuros(debt.domesticLoans),
+        },
+        privateDebt: {
+          loans: toEuros(privateDebt.loans),
+          overdrafts: toEuros(privateDebt.overdrafts),
+          unpaid: toEuros(privateDebt.unpaid),
+          total: toEuros(privateDebt.total),
+          indebted: privateDebt.indebted,
+          companies: privateDebt.companies,
+        },
+        householdSavings: toEuros(privateDebt.householdSavings),
+      };
+    },
+
+    /**
+     * What each house earned and had to pay in a month on average, to read its purchasing power: its income (pays, benefits, shares), its imposed spending
+     * (income tax, social contributions, citizen tax, services, rent), what it bought of goods, and its savings now. Read from the journal's lines of its
+     * personal account, nothing stored. The reference is the last full year, or the months already settled in the first year; none yet is `ready: false`.
+     * @returns {Promise<{ ready: boolean, year: number, months: number, households: Array<{ id: string, type: string, savings: number, income: number, mandatory: number, goodsBought: number }> }>}
+     */
+    async getHouseholdBudgets() {
+      const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
+      // The reference is the last full year (12 months); in the first year, the months already settled (a month's pay is settled on the first day of the next one).
+      const year = now.year > 0 ? now.year - 1 : now.year;
+      const months = now.year > 0 ? MONTHS_PER_YEAR : now.monthIndex;
+      if (months === 0) return { ready: false, year, months, households: [] };
+      const entries = await journalRepository.getJournalEntries();
+      const houses = (await dexieDb.houses.toArray()).filter((row) => isActiveHamletRow(row) && resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE);
+      const households = [];
+      for (const house of houses) {
+        const figures = buildingFinanceFigures(entries, house.id, { year, accountKind: 'particulier' });
+        const perMonth = (euros) => Math.round((euros * 100) / months) / 100;
+        households.push({
+          id: house.id,
+          type: house.type,
+          savings: await getTreasurySnapshotQuery.cashOf({ accountBuildingId: house.id, accountKind: 'particulier' }),
+          income: perMonth(figures.wagesReceived + figures.publicWageReceived + figures.benefitReceived + figures.participationReceived + figures.dividendReceived + figures.incomeTaxRefunded),
+          mandatory: perMonth(figures.incomeTax + figures.employeeContributionPaid + figures.citizenTax + figures.servicesPaid + figures.rentPaid),
+          goodsBought: perMonth(figures.goodsBought),
+        });
+      }
+      return { ready: true, year, months, households };
     },
 
     /**
@@ -1322,8 +1432,8 @@ export function createAccountingContext(deps = {}) {
       for (const row of marketRows) {
         const history = await wageRateRepository.history(row.skill, row.level);
         const last = history.at(-1) ?? null;
-        const amount = flooredWage(last ? last.amount : startWageOf(row.level), floor);
-        const previous = history.length >= 2 ? history.at(-2).amount : last ? startWageOf(row.level) : null;
+        const amount = flooredWage(last ? last.amount : startWageOf(row.skill, row.level), floor);
+        const previous = history.length >= 2 ? history.at(-2).amount : last ? startWageOf(row.skill, row.level) : null;
         wages.push({
           ...row,
           amount,

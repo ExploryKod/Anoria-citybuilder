@@ -7,7 +7,7 @@ import { formatServicesModel } from './presenters/formats/servicesInfoFormat.js'
 import { formatMessagesModel } from './presenters/formats/messagesInfoFormat.js';
 import { renderServicesTab } from './views/servicesInfoView.js';
 import { renderClientPriorityTab } from './views/clientPriorityInfoView.js';
-import { renderNeighborsTab, renderMessagesTab } from './layout/buildingInfoLayout.js';
+import { renderMessagesTab } from './layout/buildingInfoLayout.js';
 import { BUILDING_INFO_TAB_IDS } from './buildingInfoTabCatalog.js';
 import { producedCategories } from '../../../shared/building-catalog/clientQueries.js';
 
@@ -24,13 +24,11 @@ import { producedCategories } from '../../../shared/building-catalog/clientQueri
 export const COMMON_BUILDING_INFO_TAB_SPECS = Object.freeze([
   { id: BUILDING_INFO_TAB_IDS.services },
   { id: BUILDING_INFO_TAB_IDS.clients },
-  { id: BUILDING_INFO_TAB_IDS.neighbors },
   { id: BUILDING_INFO_TAB_IDS.messages },
 ]);
 
-/** Neighbors + messages only (e.g. nature resources). */
-export const CONTEXT_NEIGHBORS_MESSAGES_TAB_SPECS = Object.freeze([
-  { id: BUILDING_INFO_TAB_IDS.neighbors },
+/** Messages only (e.g. nature resources). */
+export const CONTEXT_MESSAGES_TAB_SPECS = Object.freeze([
   { id: BUILDING_INFO_TAB_IDS.messages },
 ]);
 
@@ -48,10 +46,6 @@ export const SHARED_BUILDING_INFO_TAB_HANDLERS = Object.freeze({
     // (see clientPriorityInfoView.js), never a silently empty panel.
     format: (vm) => (vm.uniqueId ? { supply: vm.supply, buildingId: vm.uniqueId, buildingType: vm.buildingType } : null),
     render: (container, model) => renderClientPriorityTab(container, model),
-  },
-  [BUILDING_INFO_TAB_IDS.neighbors]: {
-    format: (vm) => vm.neighborRows,
-    render: (container, model) => renderNeighborsTab(container, /** @type {ReadonlyArray<object>} */ (model ?? [])),
   },
   [BUILDING_INFO_TAB_IDS.messages]: {
     format: (vm) => formatMessagesModel(vm),
