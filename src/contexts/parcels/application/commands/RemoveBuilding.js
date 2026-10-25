@@ -11,13 +11,20 @@ export class RemoveBuilding {
    * @param {import('../ports/SpatialNeighborhoodPort.js').SpatialNeighborhoodPort} deps.spatialNeighborhood
    * @param {import('./UpdateNeighborsForBuilding.js').UpdateNeighborsForBuilding} deps.updateNeighborsForBuilding
    * @param {import('./RecalculateRoadAccessForNeighbors.js').RecalculateRoadAccessForNeighbors} deps.recalculateRoadAccessForNeighbors
+   * @param {(params: { instanceId: string, buildingType: string }) => Promise<unknown>} deps.liquidateBuilding closes the accounts of the building that leaves. Every
+   *   way a building leaves the map ends here (the eraser, a disaster, a hub that takes its dependents down), so none can leave debts pointing at what is gone.
    */
   constructor({
     buildingRepository,
     spatialNeighborhood,
     updateNeighborsForBuilding,
     recalculateRoadAccessForNeighbors,
+    liquidateBuilding,
   }) {
+    if (typeof liquidateBuilding !== 'function') {
+      throw new Error('[parcels] RemoveBuilding needs liquidateBuilding: a building that leaves the map without its accounts closed leaves the monthly settlement to fail');
+    }
+    this.liquidateBuilding = liquidateBuilding;
     this.buildingRepository = buildingRepository;
     this.spatialNeighborhood = spatialNeighborhood;
     this.updateNeighborsForBuilding = updateNeighborsForBuilding;
@@ -41,6 +48,8 @@ export class RemoveBuilding {
       formerNeighbors.map((n) => n.instanceId).filter(Boolean)
     );
 
+    // The books first: if they cannot be closed, the building is not removed (see BulldozeBuildingAtTile, which closes them earlier for the player's own demolition: idempotent).
+    await this.liquidateBuilding({ instanceId, buildingType: building.type });
     await this.buildingRepository.deleteById(instanceId);
 
     for (const adjId of [...affected]) {

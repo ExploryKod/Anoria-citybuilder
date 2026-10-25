@@ -9,6 +9,7 @@ import { PlaceBuilding } from '../contexts/parcels/application/commands/PlaceBui
 import { RemoveBuilding } from '../contexts/parcels/application/commands/RemoveBuilding.js';
 import { GetBuildingRoadAccess } from '../contexts/parcels/application/queries/GetBuildingRoadAccess.js';
 import { GetBuildingNeighbors } from '../contexts/parcels/application/queries/GetBuildingNeighbors.js';
+import { liquidateDemolishedBuilding } from './constructionTreasuryBridge.js';
 
 /**
  * Composition root du bounded context Parcels.
@@ -17,11 +18,13 @@ import { GetBuildingNeighbors } from '../contexts/parcels/application/queries/Ge
  * @param {import('../contexts/parcels/application/ports/BuildingRepository.js').BuildingRepository} [deps.buildingRepository]
  * @param {import('../contexts/parcels/application/ports/DomainEventPublisher.js').DomainEventPublisher} [deps.eventPublisher]
  * @param {import('../contexts/parcels/application/ports/SpatialNeighborhoodPort.js').SpatialNeighborhoodPort} [deps.spatialNeighborhood]
+ * @param {(params: { instanceId: string, buildingType: string }) => Promise<unknown>} [deps.liquidateBuilding] closes the accounts of a building that leaves the map (default: the accounting's)
  */
 export function createParcelsContext({
   buildingRepository,
   eventPublisher,
   spatialNeighborhood,
+  liquidateBuilding,
 } = {}) {
   const buildingRepositoryImpl =
     buildingRepository ?? new DexieBuildingRepository();
@@ -54,6 +57,7 @@ export function createParcelsContext({
     spatialNeighborhood: spatial,
     updateNeighborsForBuilding,
     recalculateRoadAccessForNeighbors,
+    liquidateBuilding: liquidateBuilding ?? liquidateDemolishedBuilding,
   });
   const getBuildingRoadAccess = new GetBuildingRoadAccess(buildingRepositoryImpl);
   const getBuildingNeighbors = new GetBuildingNeighbors(buildingRepositoryImpl);

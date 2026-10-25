@@ -41,6 +41,19 @@ effaçait seulement l'emplacement et la ligne de base ; aucune écriture n'étai
 - Test de non-régression : `tests/contexts/accounting/demolitionLiquidation.regression.test.js` (l'entreprise qui devait des salaires à la maison démolie ;
   son mois suivant se règle ; un type sans abandon est refusé ; la maison du maire ne se démolit pas ; les comptes se ferment avant que le bâtiment parte).
 
+- **Tous les chemins par lesquels un bâtiment quitte la carte** passent par la commande `RemoveBuilding` (contexte Parcels), qui ferme maintenant ses comptes juste avant de supprimer
+  sa ligne : la gomme, mais aussi une **catastrophe aléatoire** (`RandomEventsSimulationService.triggerEvent`, qui détruit une maison au hasard) et un entrepôt qui entraîne ses
+  dépendants. Découvert le 2026-10-25 grâce à la trace de `GameLoop` : une maison de 12 habitants à qui l'on devait 82,94 € a disparu hors du chemin du joueur, et le règlement
+  se figeait de nouveau chaque mois (jour 175 et suivants). La gomme garde sa fermeture en amont (stricte : si les comptes ne se ferment pas, le bâtiment reste) ; la seconde passe
+  ne trouve plus de dette et n'écrit rien. Test : `placeRemove.behavior.test.js`.
+
+## Point ouvert : les flux du mois d'un bâtiment démoli
+
+Un bâtiment qui disparaît en cours de mois a pu vendre un service ou échanger des biens pendant ce mois. Au règlement suivant, ces flux désignent un vendeur ou un acheteur
+introuvable, et **tout le mois est annulé une fois** (observé au jour 150 : `building … sold a service but is not in the hamlet`). Ce n'est pas persistant (le mois d'après passe),
+mais un mois de salaires est perdu. À décider : ne pas facturer un service dont le fournisseur n'existe plus, et écrire les échanges de biens avec lui sous le nom que donne
+sa ligne de construction (comme `getBuildingTypes` le fait déjà pour le classement des producteurs).
+
 ## À faire (tranches suivantes)
 
 Chacune ajoute des conséquences que le pop-up listera aussi (avec les mêmes fonctions d'aperçu et d'écriture).
