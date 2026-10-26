@@ -110,7 +110,7 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
     }
 
     // The capital the city pays a company is an investment of the city, like a construction: it is not a running expense.
-    if (type === 'company_capital_paid') {
+    if (type === 'company_capital_paid' || type === 'shareholder_capital_paid' || type === 'aid_loan_paid') {
       figures.totalInvestments += amount;
       continue;
     }

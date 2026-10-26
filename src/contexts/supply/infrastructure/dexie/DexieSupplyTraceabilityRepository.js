@@ -438,7 +438,7 @@ export class DexieSupplyTraceabilityRepository {
 
   /**
    * A producer whose harvest no hub bought on a collection turn, and why
-   * (`cause`: no_road, no_workers, hub_full, hub_idle, hub_no_money, unknown).
+   * (`cause`: no_road, no_workers, hub_full, hub_idle, hub_no_money, good_ceiling, no_hub, unknown).
    */
   async recordSaleMissed(turn, month, year, source, foodType, cause) {
     await this.addTransaction(turn, month, year, 'sale_missed', source, null, foodType, 0, 0, { cause });

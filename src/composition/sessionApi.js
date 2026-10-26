@@ -85,6 +85,10 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
 
     getHouseMaintenanceSubsidyRate: () => accounting.getHouseMaintenanceSubsidyRate(),
     setHouseMaintenanceSubsidyRate: (rate) => accounting.setHouseMaintenanceSubsidyRate(rate),
+    getCompanyAid: () => accounting.getCompanyAid(),
+    setCompanyAid: (policy) => accounting.setCompanyAid(policy),
+    describeAidCompanies: () => accounting.describeAidCompanies(),
+    injectCompanyAid: (params) => accounting.injectCompanyAid(params),
     getCorporateTaxRate: () => accounting.getCorporateTaxRate(),
     setCorporateTaxRate: (rate) => accounting.setCorporateTaxRate(rate),
     getCitizenTaxPerCapita: () => accounting.getCitizenTaxPerCapita(),

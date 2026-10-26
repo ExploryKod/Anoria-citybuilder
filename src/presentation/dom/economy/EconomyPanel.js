@@ -19,8 +19,9 @@ const PANEL_ID = 'economy-panel';
 
 const escapeHtml = (value) => String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const WAIT = '…';
-const euros = (amount) => (amount === null ? WAIT : `${Math.round(amount).toLocaleString('fr-FR')} €`.replace('-', '−'));
-const percent = (value) => (value === null ? WAIT : `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`);
+// `|| 0` turns a rounded -0 into 0: "−0 €" is not a figure.
+const euros = (amount) => (amount === null ? WAIT : `${(Math.round(amount) || 0).toLocaleString('fr-FR')} €`.replace('-', '−'));
+const percent = (value) => (value === null ? WAIT : `${(Math.round(value * 10) / 10 || 0).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`.replace('-', '−'));
 const shareOf = (share) => (share === null ? WAIT : percent(Math.round(share * 1000) / 10));
 const index = (value) => (value === null ? WAIT : value.toLocaleString('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }));
 const names = (services) => services.map((service) => goodLabel(service)).join(' ou ');
@@ -94,8 +95,9 @@ function debtsHtml(economy) {
       { cells: ['Dette brute', euros(debt.gross), percent(ratios.grossDebtOfGdp)], strong: true },
       { cells: ['Trésorerie', euros(-debt.cash), ofGdp(-debt.cash)] },
       { cells: ['Créances', euros(-debt.receivables), ofGdp(-debt.receivables)] },
-      { cells: ['Participations dans les entreprises', euros(-debt.holdings), ofGdp(-debt.holdings)], hint: 'le capital que la ville a investi' },
-      { cells: ['Dette nette', euros(debt.net), percent(ratios.netDebtOfGdp)], strong: true },
+      { cells: ['Prêts accordés aux entreprises', euros(-debt.loansGranted), ofGdp(-debt.loansGranted)], hint: 'ils reviennent à mesure des remboursements' },
+      { cells: ['Dette nette', euros(debt.net), percent(ratios.netDebtOfGdp)], strong: true, hint: debt.net < 0 ? 'négative : la ville détient plus qu\'elle ne doit, elle est créancière nette' : '' },
+      { cells: ['Participations dans les entreprises', euros(debt.holdings), ofGdp(debt.holdings)], hint: 'le capital que la ville a investi : non déduit de la dette, il n\'est pas liquide' },
     ],
   })}
   ${tableHtml({
@@ -105,6 +107,7 @@ function debtsHtml(economy) {
       { cells: ['Banques du jeu', euros(debt.domesticLoans), ofLoans(debt.domesticLoans)], hint: 'créanciers domestiques : les intérêts restent dans l\'économie' },
       { cells: ['Hors du jeu', euros(debt.loans - debt.domesticLoans), ofLoans(debt.loans - debt.domesticLoans)], hint: 'les intérêts quittent l\'économie' },
       { cells: ['Épargne des ménages', euros(economy.householdSavings), WAIT], hint: ratios.savingsCoverOfPublicDebt === null ? '' : `couvre ${percent(ratios.savingsCoverOfPublicDebt)} de la dette brute` },
+      { cells: ['Trésorerie des entreprises', euros(economy.companyCash), WAIT], hint: ratios.companyCashCoverOfPublicDebt === null ? 'celle des entreprises qui ont de l\'argent' : `couvre ${percent(ratios.companyCashCoverOfPublicDebt)} de la dette brute` },
     ],
   })}
   ${tableHtml({
@@ -174,7 +177,7 @@ export async function renderEconomy() {
     content.innerHTML = `<p class="supply-balance-loading">${WAIT}</p>`;
   });
   const economy = await deps.supply.describeEconomy();
-  const basis = economy.ready ? (economy.months === 12 ? `l'année ${economy.year}` : `les ${economy.months} premiers mois, ramenés à une année`) : '';
+  const basis = economy.ready ? (economy.months === 12 ? 'les 12 derniers mois' : `les ${economy.months} premiers mois, ramenés à une année`) : '';
   for (const tab of TABS) {
     const content = document.getElementById(`economy-${tab.id}-tab`);
     content.innerHTML = economy.ready

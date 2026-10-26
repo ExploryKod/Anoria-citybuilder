@@ -1,4 +1,5 @@
 import { balanceSheetView } from './balanceSheetView.js';
+import { companyAidSection } from './companyAidSection.js';
 import { accountLedgerView, trialBalanceView } from './accountLedgerView.js';
 import { labelCells } from './stackableTable.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
@@ -232,7 +233,16 @@ export async function renderBuildingFinanceTab(container, model) {
   openedDetail = null;
 
   if (resolveBuildingKind(model.buildingType) !== BUILDING_KIND_HOUSE) {
-    await renderAccount(container, model, null, COMPANY_ROWS);
+    // The account re-draws itself when a month is picked: the city's aid sits beside it, in its own element.
+    const account = el('div', 'building-finance-account');
+    container.append(account);
+    await renderAccount(account, model, null, COMPANY_ROWS);
+    try {
+      const aid = await companyAidSection(model);
+      if (aid) container.append(aid);
+    } catch (error) {
+      console.error('[BuildingFinanceTab] the city\'s aid could not be shown:', error);
+    }
     return;
   }
 

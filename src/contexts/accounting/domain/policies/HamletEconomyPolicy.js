@@ -5,7 +5,8 @@
  * - **Value added** of a company (or of a house's business): its production (sales 70x, the variation of its stock of production 71x) less what it consumed to make it (purchases 60x,
  *   the variation of the stock bought 6037, external services 61x and 62x). The sales between two companies cancel: only what is made at each step is counted. The administration's own
  *   output has no price: it is counted at its cost, the pay of its staff (64x). A household is not a producer here: what it buys is the final sale of a company, already counted.
- * - **Public debt**: what the city owes (its loans 164, its overdraft, its suppliers 401), against what it holds (cash, what it is owed 411, its holdings in companies 261).
+ * - **Public debt**: what the city owes (its loans 164, its overdraft, its suppliers 401). The net debt takes off what it holds that can be turned into money (its cash, what it is
+ *   owed 411, the loans of working capital it granted its companies 274, which come back), never its holdings in companies (261): that capital is not liquid, and the companies it was lent to may be in debt themselves. The holdings are told apart.
  * - **Debt of the companies**: their loans, overdrafts and unpaid charges (the payable accounts), in all their accounts.
  *
  * Sums are in centimes, so the figures are exact.
@@ -70,7 +71,8 @@ export function domesticProductOf(byAccount) {
  * The public debt of the hamlet's city account, and the assets set against it.
  * @param {AccountTotals} cityTotals the totals of the city's account up to now
  * @param {{ loans: Array<{ amount: number, lenderBuildingId?: string | null }> }} portfolio the loans still running (principal left, in euros)
- * @returns {{ loans: number, overdraft: number, suppliers: number, gross: number, cash: number, receivables: number, holdings: number, net: number, domesticLoans: number }} in centimes
+ * @returns {{ loans: number, overdraft: number, suppliers: number, gross: number, cash: number, receivables: number, loansGranted: number, holdings: number, net: number, domesticLoans: number }} in centimes;
+ *   `net` is negative when the city holds more than it owes (a net creditor, like a sovereign fund)
  */
 export function publicDebtOf(cityTotals, portfolio) {
   const cashBalance = net(cityTotals, '512', 'debit') + net(cityTotals, '53', 'debit');
@@ -81,14 +83,16 @@ export function publicDebtOf(cityTotals, portfolio) {
   const gross = loans + overdraft + suppliers;
   const cash = Math.max(0, cashBalance);
   const receivables = Math.max(0, net(cityTotals, '411', 'debit'));
+  const loansGranted = Math.max(0, net(cityTotals, '274', 'debit'));
   const holdings = Math.max(0, net(cityTotals, '261', 'debit'));
-  return { loans, overdraft, suppliers, gross, cash, receivables, holdings, net: gross - cash - receivables - holdings, domesticLoans };
+  return { loans, overdraft, suppliers, gross, cash, receivables, loansGranted, holdings, net: gross - cash - receivables - loansGranted, domesticLoans };
 }
 
 /**
- * What the companies owe, in all their accounts: loans, overdrafts and unpaid charges; and what the households hold on their personal accounts (their savings).
+ * What the companies owe, in all their accounts: loans, overdrafts and unpaid charges; and what the other sectors hold in cash: the households on their personal accounts (their
+ * savings) and the companies with money on theirs. The money of the game is one stock: what the city is short of is held by them, and it is what funds its debt.
  * @param {Map<string | null, AccountTotals>} byAccount the totals up to now, by account key
- * @returns {{ loans: number, overdrafts: number, unpaid: number, total: number, indebted: number, companies: number, householdSavings: number }} in centimes; `indebted` is how many companies are in overdraft
+ * @returns {{ loans: number, overdrafts: number, unpaid: number, total: number, indebted: number, companies: number, householdSavings: number, companyCash: number }} in centimes; `indebted` is how many companies are in overdraft
  */
 export function privateDebtOf(byAccount) {
   let loans = 0;
@@ -97,6 +101,7 @@ export function privateDebtOf(byAccount) {
   let indebted = 0;
   let companies = 0;
   let householdSavings = 0;
+  let companyCash = 0;
   for (const [accountKey, totals] of byAccount) {
     const sort = sortOfAccount(accountKey);
     const cash = net(totals, '512', 'debit') + net(totals, '53', 'debit');
@@ -106,6 +111,7 @@ export function privateDebtOf(byAccount) {
     }
     if (sort === 'city') continue;
     companies += 1;
+    companyCash += Math.max(0, cash);
     loans += Math.max(0, net(totals, '164', 'credit'));
     if (cash < 0) {
       overdrafts += -cash;
@@ -113,7 +119,7 @@ export function privateDebtOf(byAccount) {
     }
     for (const account of OPERATING_DEBT_ACCOUNTS) unpaid += Math.max(0, net(totals, account, 'credit'));
   }
-  return { loans, overdrafts, unpaid, total: loans + overdrafts + unpaid, indebted, companies, householdSavings };
+  return { loans, overdrafts, unpaid, total: loans + overdrafts + unpaid, indebted, companies, householdSavings, companyCash };
 }
 
 /**

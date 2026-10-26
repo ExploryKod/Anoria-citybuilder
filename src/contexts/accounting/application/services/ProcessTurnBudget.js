@@ -81,6 +81,9 @@ export class ProcessTurnBudget {
           await this.deps.settleHouseRents({ time, deliveredTime: time - 1 });
         }
         stepDone('houseRents');
+        // What the companies the city helped owe it back (the interest and the repayments of their loans, the dividends in January), once the month's charges are settled.
+        if (this.deps.settleCompanyAid) await this.deps.settleCompanyAid({ time });
+        stepDone('companyAid');
         // The month is settled: the closing writes what the books need and no money moves (the variation of stock, the depreciation).
         if (this.deps.closeMonthAccounts) {
           await this.deps.closeMonthAccounts({ time, deliveredTime: time - 1 });

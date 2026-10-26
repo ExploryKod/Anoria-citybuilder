@@ -3200,3 +3200,55 @@ button.building-info-metric-card[aria-pressed="true"] {
         justify-self: start;
     }
 }
+
+/* The city's aid to a company, on its sheet's Finances tab: one field per line, touch-sized, full width on a phone */
+.company-aid {
+    display: grid;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    text-align: left;
+}
+
+.company-aid-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.company-aid-field {
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid rgba(0, 0, 0, 0.23);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+}
+
+.company-aid-error {
+    color: #b71c1c;
+}
+
+.company-aid-apply {
+    min-height: 44px;
+    padding: 0 24px;
+    border: none;
+    border-radius: 8px;
+    background: #2e7d32;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.company-aid-apply:hover,
+.company-aid-apply:focus-visible {
+    background: #1b5e20;
+}
+
+@media (max-width: 600px) {
+    .company-aid-apply {
+        width: 100%;
+    }
+}

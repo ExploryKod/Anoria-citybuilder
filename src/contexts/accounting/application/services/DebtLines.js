@@ -49,6 +49,8 @@ export const LINE_LABELS = Object.freeze({
   wage_guarantee: 'Salaires impayés avancés par la ville',
   liquidation_surplus_paid: 'Caisse rendue à la ville',
   liquidation_surplus_received: 'Capital rendu par une entreprise liquidée',
+  aid_loan_repaid: 'Prêt de la ville remboursé',
+  aid_loan_repayment_received: 'Prêt à une entreprise remboursé',
 });
 
 /**

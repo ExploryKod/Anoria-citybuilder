@@ -14,6 +14,7 @@ function fund(journal, needs) {
     getTimeInfo: () => ({ year: 1, monthIndex: 2, month: 'Mars' }),
     listFoundingNeeds: async () => needs,
     getJournalEntries: async () => journal,
+    getCompanyAidPolicy: async () => ({ workingCapitalShare: 0.5, loanShare: 0, shareholderShare: 0 }),
     recordLedgerEntry: async (line) => {
       journal.push(booked({ ...line, year: 1, month: 3 }));
       return { recorded: true };
@@ -28,7 +29,7 @@ describe('the founding capital of a company', () => {
   test('the city pays the months of the company\'s charges once: the city\'s holding, the company\'s capital', async () => {
     const journal = [];
     await fund(journal, NEEDS);
-    expect(foundingCapitalOf(50, 0)).toBe(10000);
+    expect(foundingCapitalOf(50)).toBe(10000);
     const paid = journal.find((line) => line.type === 'company_capital_paid');
     const received = journal.find((line) => line.type === 'company_capital_received');
     expect([paid.amount, paid.accountBuildingId]).toEqual([100, null]);
@@ -37,10 +38,30 @@ describe('the founding capital of a company', () => {
     expect(journal.filter((line) => line.type === 'company_capital_received')).toHaveLength(1);
   });
 
-  test('a company that carries a stock is also given working capital: a share of the stock it holds when full', () => {
-    // 50 a month for 2 months, plus half of a stock worth 1000 when full.
-    expect(foundingCapitalOf(50, 1000)).toBe(60000);
-    expect(() => foundingCapitalOf(50, undefined)).toThrow('stock');
+  test('a company that carries a stock is also given working capital, in the forms the player\'s policy sets: participation, loan, shareholder', async () => {
+    // 50 a month for 2 months, plus 50 % of a stock worth 1000 when full = 500: 20 % lent, 30 % as a shareholder, the rest a participation.
+    const journal = [];
+    const service = new FundNewCompanies({
+      getTimeInfo: () => ({ year: 1, monthIndex: 2, month: 'Mars' }),
+      listFoundingNeeds: async () => [{ buildingId: 'mill', accountKind: null, monthlyNeed: 50, stockValue: 1000, name: 'Moulin' }],
+      getJournalEntries: async () => journal,
+      getCompanyAidPolicy: async () => ({ workingCapitalShare: 0.5, loanShare: 0.2, shareholderShare: 0.3 }),
+      recordLedgerEntry: async (line) => {
+        journal.push(booked({ ...line, year: 1, month: 3 }));
+        return { recorded: true };
+      },
+    });
+
+    await service.execute({ time: 70 });
+
+    const amountOf = (type) => journal.find((line) => line.type === type)?.amount;
+    // 100 of charges + 250 of participation, 150 as a shareholder, 100 lent; each is written on both accounts.
+    expect([amountOf('company_capital_received'), amountOf('shareholder_capital_received'), amountOf('aid_loan_received')]).toEqual([350, 150, 100]);
+    expect([amountOf('company_capital_paid'), amountOf('shareholder_capital_paid'), amountOf('aid_loan_paid')]).toEqual([350, 150, 100]);
+    // The three add up to what the city pays: nothing is lost in the split.
+    expect(350 + 150 + 100).toBe(100 + 500);
+    // A company funded by a loan alone is funded all the same: it is not funded again the month after.
+    expect(foundedAccountsOf([booked({ type: 'aid_loan_received', amount: 100, turn: 70, year: 1, month: 3, accountBuildingId: 'mill', accountKind: null })]).has('mill')).toBe(true);
   });
 
   test('a company that already has its capital is not funded again, even once the year that paid it is purged', () => {

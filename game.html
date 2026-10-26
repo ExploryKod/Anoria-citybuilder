@@ -1921,6 +1921,20 @@
 
                 <button
                     class="administrator-nav-btn"
+                    id="admin-nav-companyAid"
+                    data-section="companyAid"
+                    title="Aide aux entreprises"
+                    aria-label="Ouvrir la section Aide aux entreprises">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/>
+                        <path d="M16 10h.01"/>
+                        <path d="M2 8v1a2 2 0 0 0 2 2h1"/>
+                    </svg>
+                    <span class="sr-only">Aide aux entreprises</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
                     id="admin-nav-customs"
                     data-section="customs"
                     title="Douanes"
@@ -2578,6 +2592,66 @@
                             <span class="commerce-budget-impact-label">Recettes douanières ce mois :</span>
                             <span class="commerce-budget-impact-value" id="commerce-export-this-month">—</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-companyAid">
+                <div class="administrator-section-title">
+                    Aide aux entreprises — <span class="admin-hamlet-label" data-hamlet-label></span>
+                </div>
+                <div class="administrator-section-content">
+                    <p class="commerce-customs-hint" id="aid-commitment" role="status"></p>
+                    <p class="commerce-customs-hint">Limite : cette politique est la même pour toutes les entreprises du hameau. Dans la réalité, l'aide se décide par entreprise ou par secteur ; pour agir sur une entreprise précise, ouvrez sa fiche (onglet Finances, « Aide de la ville »), ou utilisez le formulaire « Mettre de l'argent dans une entreprise » plus bas, qui liste chacune avec sa position.</p>
+                    <div class="taxes-board aid-board" id="aid-board">
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Fonds de roulement financé</span><span class="taxes-row-scope">du stock plein</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-working-capital-slider" class="commerce-customs-slider" aria-label="Part du stock plein financée par la ville, en pourcentage" /><span class="commerce-customs-value" id="aid-working-capital-value">…</span></div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Forme : prêt</span><span class="taxes-row-scope">de ce financement</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-loan-slider" class="commerce-customs-slider" aria-label="Part du financement prêtée, en pourcentage" /><span class="commerce-customs-value" id="aid-loan-value">…</span></div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Forme : l'État actionnaire</span><span class="taxes-row-scope">de ce financement</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-shareholder-slider" class="commerce-customs-slider" aria-label="Part du financement apportée en tant qu'actionnaire, en pourcentage" /><span class="commerce-customs-value" id="aid-shareholder-value">…</span></div>
+                        </div>
+                        <p class="commerce-customs-hint" id="aid-participation" role="status"></p>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Intérêt du prêt</span><span class="taxes-row-scope">par an</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-interest-slider" class="commerce-customs-slider" aria-label="Intérêt annuel du prêt, en pourcentage" /><span class="commerce-customs-value" id="aid-interest-value">…</span></div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Intérêts dus après</span><span class="taxes-row-scope">mois</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-grace-slider" class="commerce-customs-slider" aria-label="Mois après le prêt avant que les intérêts soient dus" /><span class="commerce-customs-value" id="aid-grace-value">…</span></div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Dividendes de l'État actionnaire</span><span class="taxes-row-scope">du résultat distribuable</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-payout-slider" class="commerce-customs-slider" aria-label="Part du résultat distribuable versée à l'État actionnaire, en pourcentage" /><span class="commerce-customs-value" id="aid-payout-value">…</span></div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Durée de l'engagement</span><span class="taxes-row-scope">ans</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-commitment-slider" class="commerce-customs-slider" aria-label="Durée de l'engagement, en années" /><span class="commerce-customs-value" id="aid-commitment-value">…</span></div>
+                        </div>
+                        <p class="commerce-customs-hint" id="aid-error" role="alert" hidden></p>
+                        <button type="button" class="aid-apply-btn" id="aid-apply">Valider et s'engager</button>
+                        <div class="aid-inject" id="aid-inject">
+                            <h4 class="aid-inject-title">Mettre de l'argent dans une entreprise</h4>
+                            <p class="commerce-customs-hint">À tout moment, sans attendre une création : devenir actionnaire, prêter (aux conditions de la politique en vigueur) ou apporter du capital sans contrepartie.</p>
+                            <label class="aid-field"><span>Entreprise</span><select id="aid-company"></select></label>
+                            <label class="aid-field"><span>Forme</span>
+                                <select id="aid-form">
+                                    <option value="shareholder">L'État actionnaire (capital et dividendes)</option>
+                                    <option value="loan">Prêt</option>
+                                    <option value="participation">Participation (capital sans contrepartie)</option>
+                                </select>
+                            </label>
+                            <label class="aid-field"><span>Montant (€)</span><input type="number" id="aid-amount" min="1" step="1" inputmode="numeric" value="100" /></label>
+                            <p class="commerce-customs-hint" id="aid-preview" role="status"></p>
+                            <p class="commerce-customs-hint" id="aid-inject-error" role="alert" hidden></p>
+                            <button type="button" class="aid-apply-btn" id="aid-inject-apply">Verser</button>
+                        </div>
+                        <p class="commerce-customs-hint">Une fois validée, la politique vaut pour les entreprises créées à partir de maintenant et ne peut plus être changée avant la fin de l'engagement. Un prêt garde ses conditions jusqu'à son remboursement.</p>
                     </div>
                 </div>
             </div>

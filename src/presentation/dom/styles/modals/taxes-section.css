@@ -211,3 +211,68 @@
     font-size: 14px;
     font-weight: 600;
 }
+
+/* Aide aux entreprises: the apply button, one touch-sized control under the sliders (the rows are the taxes' own) */
+.aid-apply-btn {
+    min-height: 44px;
+    padding: 0 24px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 8px;
+    background: #2e7d32;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.aid-apply-btn:hover:not(:disabled),
+.aid-apply-btn:focus-visible {
+    background: #1b5e20;
+}
+
+.aid-apply-btn:disabled {
+    background: rgba(0, 0, 0, 0.12);
+    color: rgba(0, 0, 0, 0.38);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    .aid-apply-btn {
+        width: 100%;
+    }
+}
+
+/* Aide aux entreprises: the form that puts money into a company, one field per line, full width on a phone */
+.aid-inject {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.aid-inject-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.aid-field {
+    display: grid;
+    gap: 4px;
+    font-size: 0.85rem;
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.aid-field select,
+.aid-field input {
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid rgba(0, 0, 0, 0.23);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+}

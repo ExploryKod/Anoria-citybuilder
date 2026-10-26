@@ -38,13 +38,6 @@ export const LIQUIDATION_RECOVERY_RATE = 0.5;
  */
 export const FOUNDING_CAPITAL_MONTHS = 2;
 
-/**
- * The part of the stock a company carries, valued when full at its opening cost, that its founding capital finances on top of its charges: a
- * warehouse that buys a harvest at once and sells it over the year needs working capital, not only the money for its first wages. A company that
- * holds no stock (a farm) has none. First value, to tune with a play-through.
- */
-export const WORKING_CAPITAL_STOCK_SHARE = 0.5;
-
 /** How the building's problems say a company cannot pay what it owes: an icon and a short word (the detail goes in the tooltip). */
 export const INSOLVENCY_DISPLAY = Object.freeze({ icon: '💸', label: 'impayés' });
 

@@ -12,5 +12,9 @@ export const DEVELOPMENT_DIMENSIONS = Object.freeze({
   education: Object.freeze({ label: 'Éducation', fed: false, serviceGroups: Object.freeze([Object.freeze(['primarySchool']), Object.freeze(['school']), Object.freeze(['library'])]) }),
 });
 
-/** The income index runs from 0 at `min` to 1 at `max`, in euros per inhabitant and per year. */
-export const INCOME_GOALPOSTS = Object.freeze({ min: 20, max: 500 });
+/**
+ * The income index runs from 0 at `min` to 1 at `max`, in euros per inhabitant and per year, on a logarithmic scale. They are set on the economy's own scale (a citizen's needs cost about
+ * 70 a year, a worker is paid about 100 a year and only some of the inhabitants work): the lower goalpost is well under that, so that a hamlet that starts out is above it, as the United
+ * Nations' is under any real subsistence; the upper one is a prosperous hamlet. First values, to tune with a play-through.
+ */
+export const INCOME_GOALPOSTS = Object.freeze({ min: 3, max: 250 });

@@ -2,6 +2,8 @@ import db from '../../../../core/persistence/dexie/db.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { getServiceCategories } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { getVatCategories, getVatCategoryOf, getVatItems } from '../../../../shared/resource-catalog/VatCategoryCatalog.js';
+import { DEFAULT_COMPANY_AID } from '../../domain/catalogs/CompanyAidCatalog.js';
+import { assertCompanyAidPolicy } from '../../domain/policies/CompanyAidPolicy.js';
 import {
   DEFAULT_HAMLET_FISCAL_RATES,
   DEFAULT_MINIMUM_WAGE_MODE,
@@ -225,6 +227,36 @@ export class HamletFiscalRateRepository {
   }
 
   /**
+   * The hamlet's policy of aid to its companies (see CompanyAidCatalog.js), and until which year the player is committed to it (null: not yet committed, he may still set it).
+   * @returns {Promise<{ policy: Record<string, number>, committedUntilYear: number | null }>}
+   */
+  async getCompanyAid() {
+    const hamletId = requireActiveHamletId();
+    const row = await this.db.hamlets.get(hamletId);
+    if (!row) throw new Error(`[company-aid] hamlet ${hamletId} has no row`);
+    if (!row.companyAid) throw new Error(`[company-aid] hamlet ${hamletId} has no aid policy: it is written when the hamlet is created`);
+    return { policy: assertCompanyAidPolicy({ ...row.companyAid.policy }), committedUntilYear: row.companyAid.committedUntilYear };
+  }
+
+  /**
+   * Sets the policy and commits the player to it for its `commitmentYears`, from the year `currentYear`. Refused while a previous decision still binds him.
+   * @param {Record<string, number>} policy
+   * @param {number} currentYear the fiscal year the decision is taken in
+   * @returns {Promise<{ policy: Record<string, number>, committedUntilYear: number }>}
+   */
+  async setCompanyAid(policy, currentYear) {
+    assertCompanyAidPolicy(policy);
+    if (!Number.isInteger(currentYear)) throw new Error(`[company-aid] the year of the decision is needed, got ${currentYear}`);
+    const { committedUntilYear } = await this.getCompanyAid();
+    if (committedUntilYear !== null && currentYear < committedUntilYear) {
+      throw new Error(`[company-aid] the aid policy binds the hamlet until year ${committedUntilYear}: it cannot be changed in year ${currentYear}`);
+    }
+    const written = { policy: { ...policy }, committedUntilYear: currentYear + policy.commitmentYears };
+    await this.db.hamlets.update(requireActiveHamletId(), { companyAid: written });
+    return written;
+  }
+
+  /**
    * Writes the default rates on a hamlet that has none yet: done once, when the hamlet is created.
    * @param {string} hamletId
    * @returns {Promise<void>}
@@ -235,6 +267,7 @@ export class HamletFiscalRateRepository {
     const missing = Object.keys(DEFAULT_HAMLET_FISCAL_RATES).filter((field) => typeof row[field] !== 'number');
     const defaults = Object.fromEntries(missing.map((field) => [field, DEFAULT_HAMLET_FISCAL_RATES[field]]));
     if (!row.minimumWageMode) defaults.minimumWageMode = DEFAULT_MINIMUM_WAGE_MODE;
+    if (!row.companyAid) defaults.companyAid = { policy: { ...DEFAULT_COMPANY_AID }, committedUntilYear: null };
     if (typeof row.rentControlEnabled !== 'boolean') defaults.rentControlEnabled = DEFAULT_RENT_CONTROL_ENABLED;
     if (!row.serviceSubsidy) {
       defaults.serviceSubsidy = Object.fromEntries(getServiceCategories().map((service) => [service, DEFAULT_SERVICE_SUBSIDY_PERCENT]));

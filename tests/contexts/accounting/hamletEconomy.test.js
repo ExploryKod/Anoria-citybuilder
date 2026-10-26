@@ -21,9 +21,9 @@ describe('the economy of a hamlet, read from its fold', () => {
     expect(domesticProductOf(new Map([['farm', totals({ 707: [0, 100], 713: [0, 40], 6037: [10, 0] })]])).valueAdded).toBe(130);
   });
 
-  test('the public debt is the loans, the overdraft and the suppliers; the net debt takes off cash, what is owed and the holdings in companies', () => {
-    const debt = publicDebtOf(totals({ 512: [0, 500], 401: [0, 70], 411: [200, 0], 261: [300, 0] }), { loans: [{ amount: 1000, lenderBuildingId: 'bank' }, { amount: 250 }] });
-    expect(debt).toMatchObject({ loans: 125000, domesticLoans: 100000, overdraft: 500, suppliers: 70, gross: 125570, receivables: 200, holdings: 300, cash: 0, net: 125070 });
+  test('the public debt is the loans, the overdraft and the suppliers; the net debt takes off cash and what is owed, never the holdings in companies, but the loans it granted', () => {
+    const debt = publicDebtOf(totals({ 512: [0, 500], 401: [0, 70], 411: [200, 0], 261: [300, 0], 274: [100, 0] }), { loans: [{ amount: 1000, lenderBuildingId: 'bank' }, { amount: 250 }] });
+    expect(debt).toMatchObject({ loans: 125000, domesticLoans: 100000, overdraft: 500, suppliers: 70, gross: 125570, receivables: 200, holdings: 300, loansGranted: 100, cash: 0, net: 125270 });
   });
 
   test('the interest that leaves the economy is the share of the loans no bank of the game lent', () => {
@@ -37,7 +37,8 @@ describe('the economy of a hamlet, read from its fold', () => {
       ['mill', totals({ 512: [500, 0], 164: [0, 1000] })],
       ['house-1/particulier', totals({ 512: [250, 0] })],
     ]));
-    expect(debt).toMatchObject({ loans: 1000, overdrafts: 300, unpaid: 80, total: 1380, indebted: 1, companies: 2, householdSavings: 250 });
+    // The mill has 500 in cash, the farm owes 300: only what a company holds counts as its cash.
+    expect(debt).toMatchObject({ loans: 1000, overdrafts: 300, unpaid: 80, total: 1380, indebted: 1, companies: 2, householdSavings: 250, companyCash: 500 });
     expect([sortOfAccount(null), sortOfAccount('house-1/particulier'), sortOfAccount('house-1/entreprise:sci'), sortOfAccount('farm')]).toEqual(['city', 'household', 'business', 'company']);
   });
 
@@ -54,5 +55,22 @@ describe('the economy of a hamlet, read from its fold', () => {
     expect(read.ratios).toMatchObject({ grossDebtOfGdp: 25, netDebtOfGdp: 20, privateDebtOfGdp: 10, domesticShareOfLoans: 50, savingsCoverOfPublicDebt: 50 });
     // No market prices a need yet: there is nothing to compare, and nothing is made up.
     expect(economyOf({ economy, baskets: [{ needs: [{ unitPrice: null, cost: 0, referenceCost: 0 }] }] })).toMatchObject({ parity: null, gdpPpp: null });
+  });
+});
+
+describe('the product is read over the last twelve months, not over a calendar year', () => {
+  test('the fold sums the months of a range, both ends included, whatever the year they fall in', async () => {
+    const { LegsFold } = await import('../../../src/contexts/accounting/domain/policies/LegsFold.js');
+    const fold = new LegsFold();
+    const sale = (year, month, amount) => ({ type: 'producer_revenue', turn: year * 60 + month, year, month, hamletId: 'h', accountBuildingId: 'farm', accountKind: null, journal: 'BQ', legs: [{ account: '512', debit: amount, credit: 0 }, { account: '707', debit: 0, credit: amount }] });
+    // Sales of 100 in December of year 0 (key 11), 200 in January of year 1 (key 12), 400 in March of year 1 (key 14).
+    for (const line of [sale(0, 12, 100), sale(1, 1, 200), sale(1, 3, 400)]) fold.add(line);
+
+    const sales = (range) => fold.totalsByAccount({ hamletId: 'h', ...range }).get('farm')?.get('707')?.credit ?? 0;
+
+    expect(sales({ fromKey: 12, toKey: 14 })).toBe(600);
+    expect(sales({ fromKey: 11, toKey: 12 })).toBe(300);
+    expect(sales({ year: 1 })).toBe(600);
+    expect(sales({})).toBe(700);
   });
 });

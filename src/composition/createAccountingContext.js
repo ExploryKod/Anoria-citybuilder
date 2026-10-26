@@ -1,5 +1,8 @@
 import { getOrCreateGameSessionContext } from './createGameSessionContext.js';
 import { getQuantityConsumerEntries, salesNatureOf } from '../shared/building-catalog/resourceRoleQueries.js';
+import { InjectCompanyAid } from '../contexts/accounting/application/services/InjectCompanyAid.js';
+import { COMPANY_AID_BOUNDS, DEFAULT_COMPANY_AID } from '../contexts/accounting/domain/catalogs/CompanyAidCatalog.js';
+import { SettleCompanyAid } from '../contexts/accounting/application/services/SettleCompanyAid.js';
 import { domesticProductOf, externalInterestOf, privateDebtOf, publicDebtOf } from '../contexts/accounting/domain/policies/HamletEconomyPolicy.js';
 import { getSessionGameTime, getSessionProcessLoanPayments } from './sessionRuntime.js';
 import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
@@ -625,6 +628,7 @@ export function createAccountingContext(deps = {}) {
   const fundNewCompanies = new FundNewCompanies({
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
     getJournalEntries: () => journalRepository.getJournalEntries(),
+    getCompanyAidPolicy: async () => (await hamletFiscalRates.getCompanyAid()).policy,
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
     listFoundingNeeds: async () => {
       const wageRateOf = await marketWageRateOf();
@@ -683,6 +687,31 @@ export function createAccountingContext(deps = {}) {
       margin: legalFormOf(houseEnterpriseOf(rentals.ownerType, 'rental').id).regime.rentMargin,
     });
   };
+  // What the companies the city helped owe it back: the interest and the repayments of the loans each month, the dividends of its holdings each January.
+  const settleCompanyAid = new SettleCompanyAid({
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    listCompanies: async () =>
+      (await dexieDb.houses.toArray())
+        .filter((row) => isActiveHamletRow(row) && isLucrativeBuilding(row.type))
+        .map((row) => ({ buildingId: row.id, name: getBuildingDefinition(row.type)?.displayName, x: row.x, y: row.y })),
+    getJournalEntries: () => journalRepository.getJournalEntries(),
+    getLegsFold: () => journalRepository.getLegsFold(),
+    companyFundsOf: (buildingId) => getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId, accountKind: null }),
+    getCompanyAidPolicy: async () => (await hamletFiscalRates.getCompanyAid()).policy,
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
+  // The player puts money into a company that already lives (a shareholder, a loan, a participation), whenever he wants.
+  const injectCompanyAid = new InjectCompanyAid({
+    listCompanies: async () =>
+      (await dexieDb.houses.toArray())
+        .filter((row) => isActiveHamletRow(row) && isLucrativeBuilding(row.type))
+        .map((row) => ({ buildingId: row.id, name: getBuildingDefinition(row.type)?.displayName, x: row.x, y: row.y })),
+    getJournalEntries: () => journalRepository.getJournalEntries(),
+    getLegsFold: () => journalRepository.getLegsFold(),
+    getCompanyAidPolicy: async () => (await hamletFiscalRates.getCompanyAid()).policy,
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
   const settleHouseRents = new SettleHouseRents({
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
     getRentalHouses,
@@ -744,6 +773,7 @@ export function createAccountingContext(deps = {}) {
     inJournalBatch: (work) => sessionJournalStoreInstance.batch(work),
     settleProducerCharges: (params) => settleProducerCharges.execute(params),
     settleHouseRents: (params) => settleHouseRents.execute(params),
+    settleCompanyAid: (params) => settleCompanyAid.execute(params),
     fundNewCompanies: (params) => fundNewCompanies.execute(params),
     closeMonthAccounts: (params) => closeMonthAccounts.execute(params),
     compactMonthFlows: ({ time }) => {
@@ -1116,6 +1146,31 @@ export function createAccountingContext(deps = {}) {
       return hamletFiscalRates.getCorporateTaxRate();
     },
 
+    /**
+     * The hamlet's policy of aid to its companies (see CompanyAidCatalog.js), until which year the player is committed to it, the year it is now, and the catalog's defaults and
+     * bounds the admin panel offers.
+     */
+    async getCompanyAid() {
+      const { policy, committedUntilYear } = await hamletFiscalRates.getCompanyAid();
+      return { policy, committedUntilYear, year: gameTimePort.getTimeInfo(gameTimePort.currentTurn()).year, defaults: DEFAULT_COMPANY_AID, bounds: COMPANY_AID_BOUNDS };
+    },
+
+    /** Each company with what the city holds in it (capital, stake as a shareholder, loans owed): what the player chooses from to put money into one. */
+    describeAidCompanies() {
+      return injectCompanyAid.describe();
+    },
+
+    /** The player puts `amount` euros into a company that already lives, as a shareholder, a loan or a participation. */
+    injectCompanyAid({ buildingId, amount, form }) {
+      return injectCompanyAid.execute({ buildingId, amount, form, time: gameTimePort.currentTurn() });
+    },
+
+    /** Sets the policy and commits the hamlet to it for its `commitmentYears`; refused while a previous decision still binds it. */
+    async setCompanyAid(policy) {
+      const year = gameTimePort.getTimeInfo(gameTimePort.currentTurn()).year;
+      return hamletFiscalRates.setCompanyAid(policy, year);
+    },
+
     setCorporateTaxRate(rate) {
       return hamletFiscalRates.setCorporateTaxRate(rate);
     },
@@ -1160,25 +1215,28 @@ export function createAccountingContext(deps = {}) {
      */
     async getHamletEconomy() {
       const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
-      const year = now.year > 0 ? now.year - 1 : now.year;
-      const months = now.year > 0 ? MONTHS_PER_YEAR : now.monthIndex;
-      if (months === 0) return { ready: false, year, months };
+      // The reference is the twelve months ending with this one (the product of the last twelve months, as a debt is set against it): the lines of a month are stamped with the month
+      // they were settled in, the previous month's included. In the first year, the months there are, brought to a year; none yet is not ready.
+      const toKey = now.year * MONTHS_PER_YEAR + now.monthIndex;
+      const fromKey = Math.max(0, toKey - (MONTHS_PER_YEAR - 1));
+      const months = toKey - fromKey + 1;
+      if (toKey === 0) return { ready: false, months: 0 };
       const hamletId = requireActiveHamletId();
       const fold = await journalRepository.getLegsFold();
+      const window = { hamletId, fromKey, toKey };
       const toYear = (centimes) => Math.round((centimes * MONTHS_PER_YEAR) / months) / 100;
       const toEuros = (centimes) => centimes / 100;
-      const product = domesticProductOf(fold.totalsByAccount({ hamletId, year }));
+      const product = domesticProductOf(fold.totalsByAccount(window));
       const upToNow = fold.totalsByAccount({ hamletId });
       const cityTotals = upToNow.get(null) ?? new Map();
       const portfolio = { loans: (await getTreasurySnapshotQuery.execute({ hamletId })).loans };
       const debt = publicDebtOf(cityTotals, portfolio);
-      const external = externalInterestOf(fold.totalsByAccount({ hamletId, year }).get(null) ?? new Map(), debt);
+      const external = externalInterestOf(fold.totalsByAccount(window).get(null) ?? new Map(), debt);
       const privateDebt = privateDebtOf(upToNow);
       const population = (await dexieDb.houses.toArray()).filter((row) => isActiveHamletRow(row) && resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE).reduce((sum, row) => sum + (row.pop ?? 0), 0);
       const gdp = toYear(product.gdp);
       return {
         ready: true,
-        year,
         months,
         population,
         gdp,
@@ -1193,6 +1251,7 @@ export function createAccountingContext(deps = {}) {
           gross: toEuros(debt.gross),
           cash: toEuros(debt.cash),
           receivables: toEuros(debt.receivables),
+          loansGranted: toEuros(debt.loansGranted),
           holdings: toEuros(debt.holdings),
           net: toEuros(debt.net),
           domesticLoans: toEuros(debt.domesticLoans),
@@ -1206,6 +1265,7 @@ export function createAccountingContext(deps = {}) {
           companies: privateDebt.companies,
         },
         householdSavings: toEuros(privateDebt.householdSavings),
+        companyCash: toEuros(privateDebt.companyCash),
       };
     },
 

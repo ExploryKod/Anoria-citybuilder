@@ -46,6 +46,7 @@ export function economyOf({ economy, baskets }) {
       privateDebtOfGdp: share(economy.privateDebt.total),
       domesticShareOfLoans: debt.loans > 0 ? Math.round((debt.domesticLoans / debt.loans) * 1000) / 10 : null,
       savingsCoverOfPublicDebt: debt.gross > 0 ? Math.round((economy.householdSavings / debt.gross) * 1000) / 10 : null,
+      companyCashCoverOfPublicDebt: debt.gross > 0 ? Math.round((economy.companyCash / debt.gross) * 1000) / 10 : null,
     },
   };
 }

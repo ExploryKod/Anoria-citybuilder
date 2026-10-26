@@ -139,6 +139,15 @@ export function createSupplyContext({
     loadProducerCosting: () => consumerMoney.producerCosting(),
   });
   // What a company can still buy from its suppliers: its cash plus the credit its stage gets (sales of the past months), less this month's unpaid purchases.
+  // What a building sold in a month that is over does not change any more (the month's rows are only compacted, their sums are kept): it is read once, not on every purchase of every tick.
+  const soldInClosedMonth = new Map();
+  const closedMonthSales = async (buyerId, key) => {
+    const cacheKey = `${buyerId}|${key}`;
+    if (!soldInClosedMonth.has(cacheKey)) {
+      soldInClosedMonth.set(cacheKey, (await supplyTraceabilityRepositoryImpl.sumTradeOf(buyerId, Math.floor(key / MONTHS_PER_YEAR), key % MONTHS_PER_YEAR)).sold);
+    }
+    return soldInClosedMonth.get(cacheKey);
+  };
   const purchasingPowerOf = async ({ buyerId, period }) => {
     const buyer = await supplyBuildingRepositoryImpl.findRowById(buyerId);
     if (!buyer) throw new Error(`[supply] the purchasing power of ${buyerId} was asked, but no such building stands`);
@@ -146,15 +155,13 @@ export function createSupplyContext({
     const creditMonths = SUPPLIER_CREDIT_MONTHS_BY_STAGE[stageOfBuildingType(buyer.type)];
     if (!(creditMonths > 0)) throw new Error(`[supply] ${buyer.type} buys at a stage with no supplier credit declared (SUPPLIER_CREDIT_MONTHS_BY_STAGE)`);
     const monthKey = period.year * MONTHS_PER_YEAR + period.monthIndex;
+    // Only this month is read each time (its purchases grow as the day goes on); the months before it come from the cache.
     const [now, cash, ...past] = await Promise.all([
       supplyTraceabilityRepositoryImpl.sumTradeOf(buyerId, period.year, period.monthIndex),
       consumerMoney.companyFundsOf(buyerId),
-      ...Array.from({ length: creditMonths }, (_, back) => {
-        const key = monthKey - 1 - back;
-        return supplyTraceabilityRepositoryImpl.sumTradeOf(buyerId, Math.floor(key / MONTHS_PER_YEAR), key % MONTHS_PER_YEAR);
-      }),
+      ...Array.from({ length: creditMonths }, (_, back) => closedMonthSales(buyerId, monthKey - 1 - back)),
     ]);
-    return purchasingPower({ cash, creditLine: past.reduce((sum, month) => sum + month.sold, 0), committed: now.bought });
+    return purchasingPower({ cash, creditLine: past.reduce((sum, sold) => sum + sold, 0), committed: now.bought });
   };
   const transferHubToHub = new TransferHubToHub(supplyBuildingRepositoryImpl, hubServing, priceBook, purchasingPowerOf);
   const distributeResourceToConsumers = new DistributeResourceToConsumers(

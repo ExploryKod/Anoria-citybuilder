@@ -79,7 +79,7 @@ export class MarkFailedSales {
     return { failed };
   }
 
-  /** Why nothing took it: no hub of its goods within reach, one that was not working, one that was full, or one that could not pay for it. */
+  /** Why nothing took it: no hub of its goods within reach, one that was not working, one that was full, one that could not pay for it, or none of these (`unknown`). It never throws: a diagnosis cannot stop the economy. */
   async #cause(producer, category) {
     const hubs = await this.supplyBuildingRepository.findByResourceRole('collector', [category]);
     const inReach = hubs.filter((hub) => isWithinRange(hub, producer, getRangeForRole(hub.type, 'collector') ?? Infinity));
@@ -110,6 +110,10 @@ export class MarkFailedSales {
     // now: by the time the window has closed the month's settlement has paid its purchases and its money is back.
     if (producer.unpaidByHub === true) return 'hub_no_money';
 
-    throw new Error(`[sales] ${producer.type} ${producer.id} could not sell its ${category}: a working hub in reach has room for it, yet it was not collected`);
+    // Nothing above explains it: a hub in reach was working, had room, was paid and still did not take it (the goods came with the very tick the window closed, for instance, after the
+    // last collection). That is not a defect of the game to stop the day for: the sale is recorded as failed for a cause not known, and the panel says so (`unknown`). One warning in the
+    // console says which producer and good, once for each window that closes: it never blocks.
+    console.warn(`[sales] ${producer.type} ${producer.id} could not sell its ${category}: a working hub in reach has room for it and was paid, yet it was not collected (cause unknown, the day goes on)`);
+    return 'unknown';
   }
 }
