@@ -2,12 +2,15 @@
  * Nature — pure format.
  */
 
+import { depositKindsOf } from '../../../../../shared/building-catalog/depositQueries.js';
+import { buildingName, goodIcon, goodLabel } from '../../../shell/CatalogVocabulary.js';
+
 /**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
  */
 export function formatNatureLayoutHeader(vm) {
   return {
-    title: 'Ressource naturelle',
+    title: buildingName(vm.buildingType),
     meta: `📍 (${vm.anchorX}, ${vm.anchorY})`,
     accent: null,
   };
@@ -18,60 +21,32 @@ export function formatNatureLayoutOptions() {
 }
 
 /**
+ * Ressource tab — for each kind of deposit the resource holds (the catalog says which), what is left of it over what it started with.
+ * A kind it holds none of (a boulder with no gold) is not listed.
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
- * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
+ * @returns {{ terrain: string, resources: Array<{ kind: string, emoji: string, label: string, remaining: number, consumed: number, total: number }> }}
  */
-export function formatNatureFoyerModel(vm) {
-  const { buildingType, anchorX, anchorY, terrainLabel, buildingRow, stocks } = vm;
-  const resolvedStocks = stocks ?? buildingRow?.stocks ?? null;
-  const maxStocks = buildingRow?.maxStocks || {};
+export function formatNatureResourceModel(vm) {
+  const { buildingType, terrainLabel, buildingRow, stocks } = vm;
+  const remainingStocks = stocks ?? buildingRow?.stocks ?? {};
+  const totals = buildingRow?.maxStocks ?? {};
 
-  /** @type {import('../../buildingInfoTypes.js').InfoKvSection[]} */
-  const sections = [{
-    title: 'Ressource naturelle',
-    rows: [
-      { label: 'Type', value: buildingType },
-      { label: 'Adresse', value: `x: ${anchorX} | y: ${anchorY}` },
-      { label: 'Terrain', value: terrainLabel },
-    ],
-  }];
-
-  if (!resolvedStocks || Object.keys(resolvedStocks).length === 0) {
-    return { sections };
-  }
-
-  /** @type {import('../../buildingInfoTypes.js').InfoKvRow[]} */
-  const stockRows = [];
-  if (buildingType.includes('Tree')) {
-    stockRows.push({
-      label: 'Bois',
-      value: `${resolvedStocks.wood || 0} / ${maxStocks.wood || 0}`,
+  const resources = depositKindsOf(buildingType)
+    .filter((kind) => (totals[kind] ?? 0) > 0)
+    .map((kind) => {
+      const total = totals[kind];
+      const remaining = Math.min(total, Math.max(0, remainingStocks[kind] ?? 0));
+      return { kind, emoji: goodIcon(kind), label: goodLabel(kind), remaining, consumed: total - remaining, total };
     });
-  }
-  if (buildingType.includes('Boulder')) {
-    if ((maxStocks.rock || 0) > 0) {
-      stockRows.push({
-        label: 'Pierre',
-        value: `${resolvedStocks.rock || 0} / ${maxStocks.rock || 0}`,
-      });
-    }
-    if ((maxStocks.gold || 0) > 0) {
-      stockRows.push({
-        label: 'Or',
-        value: `${resolvedStocks.gold || 0} / ${maxStocks.gold || 0}`,
-      });
-    }
-    if ((maxStocks.iron || 0) > 0) {
-      stockRows.push({
-        label: 'Fer',
-        value: `${resolvedStocks.iron || 0} / ${maxStocks.iron || 0}`,
-      });
-    }
-  }
 
-  if (stockRows.length > 0) {
-    sections.push({ title: 'Stocks disponibles', rows: stockRows });
-  }
+  return { terrain: terrainLabel, resources };
+}
 
-  return { sections };
+/**
+ * Collecteurs tab — what is needed to read the buildings that draw on this resource.
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @returns {{ supply: object, buildingId: string } | null}
+ */
+export function formatNatureCollectorsModel(vm) {
+  return vm.uniqueId ? { supply: vm.supply, buildingId: vm.uniqueId } : null;
 }

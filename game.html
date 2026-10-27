@@ -8,7 +8,7 @@
     <meta name="googlebot" content="noindex, nofollow">
     <meta name="description" content="Site de city builder de démo - Construisez et gérez votre ville en 3D">
     <meta name="keywords" content="city builder, jeu de construction, simulation, ville, 3D">
-    <meta name="author" content="Eraanurbs">
+    <meta name="author" content="Urbanicompta">
 
     <link rel="stylesheet" href="/src/presentation/dom/styles/main.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/btn.css">
@@ -80,7 +80,7 @@
     <link rel="apple-touch-icon" href="public/icons/icon-512x512.png" />
     <meta name="apple-mobile-web-app-status-bar" content="#db4938" />
     <meta name="theme-color" content="#db4938" />
-    <title>Eraanurbs - Démo City Builder</title>
+    <title>Urbanicompta - Démo City Builder</title>
 </head>
 <body>
 <div class="no-game">
@@ -185,27 +185,33 @@
                 </header>
                 <div class="info-building__tabs" role="tablist" aria-label="Sections du bâtiment">
                     <button type="button" role="tab" id="tab-foyer" data-tab="foyer" aria-controls="panel-foyer" aria-selected="true" tabindex="0">🏠 Bâtiment</button>
+                    <button type="button" role="tab" id="tab-state" data-tab="state" aria-controls="panel-state" aria-selected="false" tabindex="-1" hidden>🧭 État</button>
                     <button type="button" role="tab" id="tab-diet" data-tab="diet" aria-controls="panel-diet" aria-selected="false" tabindex="-1" hidden>🍽️ Régime</button>
                     <button type="button" role="tab" id="tab-stocks" data-tab="stocks" aria-controls="panel-stocks" aria-selected="false" tabindex="-1" hidden>📦 Stocks</button>
                     <button type="button" role="tab" id="tab-shelfLife" data-tab="shelfLife" aria-controls="panel-shelfLife" aria-selected="false" tabindex="-1" hidden>⏳ Durée de vie</button>
+                    <button type="button" role="tab" id="tab-orders" data-tab="orders" aria-controls="panel-orders" aria-selected="false" tabindex="-1" hidden>📋 Ordres</button>
                     <button type="button" role="tab" id="tab-activity" data-tab="activity" aria-controls="panel-activity" aria-selected="false" tabindex="-1" hidden>🛠️ Activité</button>
                     <button type="button" role="tab" id="tab-trade" data-tab="trade" aria-controls="panel-trade" aria-selected="false" tabindex="-1" hidden>💰 Ventes</button>
                     <button type="button" role="tab" id="tab-staff" data-tab="staff" aria-controls="panel-staff" aria-selected="false" tabindex="-1" hidden>👷 Personnel</button>
                     <button type="button" role="tab" id="tab-services" data-tab="services" aria-controls="panel-services" aria-selected="false" tabindex="-1" hidden>🔧 Services</button>
                     <button type="button" role="tab" id="tab-clients" data-tab="clients" aria-controls="panel-clients" aria-selected="false" tabindex="-1" hidden>🤝 Clients</button>
+                    <button type="button" role="tab" id="tab-collectors" data-tab="collectors" aria-controls="panel-collectors" aria-selected="false" tabindex="-1" hidden>⛏️ Collecteurs</button>
                     <button type="button" role="tab" id="tab-messages" data-tab="messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1" hidden>💬 Messages</button>
                     <button type="button" role="tab" id="tab-finance" data-tab="finance" aria-controls="panel-finance" aria-selected="false" tabindex="-1" hidden>💰 Finances</button>
                 </div>
                 <div class="info-building__body">
                     <div id="panel-foyer" role="tabpanel" class="info-building__tabpanel is-active" aria-labelledby="tab-foyer" tabindex="0"></div>
+                    <div id="panel-state" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-state" tabindex="0" hidden></div>
                     <div id="panel-diet" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-diet" tabindex="0" hidden></div>
                     <div id="panel-stocks" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-stocks" tabindex="0" hidden></div>
                     <div id="panel-shelfLife" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-shelfLife" tabindex="0" hidden></div>
+                    <div id="panel-orders" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-orders" tabindex="0" hidden></div>
                     <div id="panel-activity" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-activity" tabindex="0" hidden></div>
                     <div id="panel-trade" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-trade" tabindex="0" hidden></div>
                     <div id="panel-staff" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-staff" tabindex="0" hidden></div>
                     <div id="panel-services" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-services" tabindex="0" hidden></div>
                     <div id="panel-clients" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-clients" tabindex="0" hidden></div>
+                    <div id="panel-collectors" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-collectors" tabindex="0" hidden></div>
                     <div id="panel-messages" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-messages" tabindex="0" hidden></div>
                     <div id="panel-finance" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-finance" tabindex="0" hidden></div>
                 </div>

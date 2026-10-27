@@ -438,7 +438,6 @@ function activityRecipeOf(entry, buildingRow, gaps = []) {
   const category = entry.categories[0];
   const recipeGaps = gaps.filter((gap) => gap.category === category);
   const gapMessages = recipeGaps.map((gap) => describeActivitySupplyGap(gap));
-  const shortfall = buildingRow?.activityShortfall?.[category] === true;
   const lastInputs = buildingRow?.activityInputs?.[category] ?? null;
   const cycleState = buildingRow?.cycleState?.[category] ?? null;
 
@@ -458,7 +457,7 @@ function activityRecipeOf(entry, buildingRow, gaps = []) {
 
   const collected = collectedCardOf(category, productLabel, buildingRow?.activityCollected?.[category]);
 
-  const steps = entry.cycle.map((step, index) => stepCardOf(step, index, entry.cycle.length, cycleState, shortfall));
+  const steps = entry.cycle.map((step, index) => stepCardOf(step, index, entry.cycle.length, cycleState));
 
   return { category, label: productLabel, material, product, collected, steps, gapMessages };
 }
@@ -528,20 +527,18 @@ function stepLabel(index, total) {
  * a lower index than the step's own means it is done for the cycle under way, the same index means it is the
  * one running now (or stuck on `activityShortfall`), a higher index means it has not started yet.
  */
-function stepCardOf(step, index, total, cycleState, shortfall) {
+function stepCardOf(step, index, total, cycleState) {
   const label = stepLabel(index, total);
   const currentIndex = cycleState?.index ?? 0;
   const isCurrent = currentIndex === index;
-  const stuck = isCurrent && shortfall && (step.inputs?.length ?? 0) > 0;
 
+  // A step waiting for material is not told apart here: the "Matières premières" card at the head of the chain already says
+  // there is none.
   let status;
   let met;
   if (currentIndex > index) {
     status = 'Terminée';
     met = true;
-  } else if (stuck) {
-    status = 'En attente de matière';
-    met = false;
   } else if (isCurrent) {
     status = 'En cours';
     met = false;
@@ -552,7 +549,7 @@ function stepCardOf(step, index, total, cycleState, shortfall) {
 
   return {
     kind: step.id,
-    icon: stuck ? '⛔' : met ? '✅' : '⏳',
+    icon: met ? '✅' : '⏳',
     label,
     met,
     valueText: status,

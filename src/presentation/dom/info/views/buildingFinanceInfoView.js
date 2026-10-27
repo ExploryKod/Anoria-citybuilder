@@ -233,16 +233,19 @@ export async function renderBuildingFinanceTab(container, model) {
   openedDetail = null;
 
   if (resolveBuildingKind(model.buildingType) !== BUILDING_KIND_HOUSE) {
-    // The account re-draws itself when a month is picked: the city's aid sits beside it, in its own element.
-    const account = el('div', 'building-finance-account');
-    container.append(account);
-    await renderAccount(account, model, null, COMPANY_ROWS);
+    // The city's aid is read once and opened from the "Se financer" pill of the account; the account re-draws itself when a month is picked.
+    // A building that is no company has no aid (no pill); one whose aid cannot be read shows why when the pill is opened.
+    let financing = null;
     try {
-      const aid = await companyAidSection(model);
-      if (aid) container.append(aid);
+      const section = await companyAidSection(model);
+      if (section) financing = { section, error: null };
     } catch (error) {
       console.error('[BuildingFinanceTab] the city\'s aid could not be shown:', error);
+      financing = { section: null, error };
     }
+    const account = el('div', 'building-finance-account');
+    container.append(account);
+    await renderAccount(account, model, null, COMPANY_ROWS, () => true, financing);
     return;
   }
 
@@ -278,9 +281,12 @@ export async function renderBuildingFinanceTab(container, model) {
  * @param {string | null} accountKind
  * @param {ReadonlyArray<StatementRow>} rows
  * @param {() => boolean} [stillCurrent] false once the user has moved to another sub-tab
+ * @param {{ section: HTMLElement | null, error: Error | null } | null} [financing] the city's aid to this company (null: the building is no company)
  */
-async function renderAccount(container, model, accountKind, rows, stillCurrent = () => true) {
+async function renderAccount(container, model, accountKind, rows, stillCurrent = () => true, financing = null) {
   container.replaceChildren(el('p', 'building-finance-note', '…'));
+  // The reading left open by another building may not exist here: the aid is for companies only.
+  if (financeView === 'financing' && !financing) financeView = 'statement';
   const isPersonal = accountKind === 'particulier';
   let finance;
   let bankId = null;
@@ -300,11 +306,19 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
     return;
   }
   if (!stillCurrent()) return;
-  const rerender = () => renderAccount(container, model, accountKind, rows, stillCurrent);
+  const rerender = () => renderAccount(container, model, accountKind, rows, stillCurrent, financing);
   const figures = withCarryForward(finance);
   // A company's account reads as its statement or as its ratios (a pill each); the JSON of the account is one click away.
   const content = el('div', 'building-finance-content');
+  // What speaks of a period (the month pills, the cash, the note): hidden while the city's aid is open, which depends on no month.
+  const periodElements = [];
   const showContent = () => {
+    const financingOpen = !isPersonal && financeView === 'financing';
+    for (const element of periodElements) element.style.display = financingOpen ? 'none' : '';
+    if (financingOpen) {
+      content.replaceChildren(financing.error ? el('p', 'building-finance-note', `L'aide de la ville n'est pas disponible : ${financing.error.message}`) : financing.section);
+      return;
+    }
     // A household's purchase line opened: the table of what it adds up, until the player goes back.
     if (isPersonal && openedDetail) {
       content.replaceChildren(detailTable(openedDetail, figures, () => {
@@ -334,24 +348,29 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
       if (stillCurrent()) content.replaceChildren(el('p', 'building-finance-note', `${DERIVED_READINGS[reading].label} n’est pas disponible : ${error.message}`));
     }
   };
+  const months = monthPills(finance, ({ month, year }) => {
+    viewedMonth = month;
+    viewedYear = year;
+    rerender();
+  });
+  const cash = cashLine(isPersonal ? 'Épargne privée' : 'Trésorerie du compte à ce jour', finance.cash);
+  const cashDetails = cashMovementsDetails(finance.cashMovements);
+  const periodNote = el('p', 'building-finance-note', finance.scope === 'year'
+    ? "L'année est la somme des lignes du journal de l'année ; la trésorerie ci-dessus est celle d'aujourd'hui."
+    : "Les ventes et les charges d'un mois sont réglées le premier jour du mois suivant : « Mois dernier » est donc l'activité du mois précédent.");
+  periodElements.push(months, cash, cashDetails, periodNote);
   showContent();
   container.replaceChildren(
     ...(administratorPay ? [administratorPayNotice(administratorPay)] : []),
-    monthPills(finance, ({ month, year }) => {
-      viewedMonth = month;
-      viewedYear = year;
-      rerender();
-    }),
-    financeToolbar(model, accountKind, isPersonal, showContent),
+    months,
+    financeToolbar(model, accountKind, isPersonal, showContent, financing),
     content,
-    cashLine(isPersonal ? 'Épargne privée' : 'Trésorerie du compte à ce jour', finance.cash),
-    cashMovementsDetails(finance.cashMovements),
+    cash,
+    cashDetails,
     ...(isPersonal ? [depositBalanceLine(depositBalance)] : []),
     ...(isPersonal && finance.rentDebt > 0 ? [cashLine('Dette de loyer', finance.rentDebt)] : []),
     ...(isPersonal && bankId ? depositControls(model, bankId, rerender) : []),
-    el('p', 'building-finance-note', finance.scope === 'year'
-      ? "L'année est la somme des lignes du journal de l'année ; la trésorerie ci-dessus est celle d'aujourd'hui."
-      : "Les ventes et les charges d'un mois sont réglées le premier jour du mois suivant : « Mois dernier » est donc l'activité du mois précédent."),
+    periodNote,
   );
 }
 
@@ -417,14 +436,19 @@ const DERIVED_READINGS = Object.freeze({
  * @param {string | null} accountKind
  * @param {boolean} isPersonal a household's budget has no ratios
  * @param {() => void} showContent redraws the open reading
+ * @param {{ section: HTMLElement | null, error: Error | null } | null} financing the city's aid to this company: its pill, apart from the readings (null: no pill)
  */
-function financeToolbar(model, accountKind, isPersonal, showContent) {
+function financeToolbar(model, accountKind, isPersonal, showContent, financing) {
   const bar = el('div', 'building-finance-toolbar');
   if (!isPersonal) {
     const pills = el('div', 'building-finance-pills');
-    const readings = [['statement', 'Compte de résultat'], ['ratios', 'Ratios'], ['balance', 'Bilan'], ['ledger', 'Grand livre'], ['trial', 'Balance']];
+    // The readings of the account, then — in a colour of its own — the way to put money into it, which is no reading.
+    const readings = [
+      ['statement', 'Compte de résultat'], ['ratios', 'Ratios'], ['balance', 'Bilan'], ['ledger', 'Grand livre'], ['trial', 'Balance'],
+      ...(financing ? [['financing', 'Se financer']] : []),
+    ];
     const buttons = readings.map(([id, label]) => {
-      const button = el('button', `building-finance-pill-tab${id === financeView ? ' is-active' : ''}`, label);
+      const button = el('button', `building-finance-pill-tab${id === 'financing' ? ' building-finance-pill-financing' : ''}${id === financeView ? ' is-active' : ''}`, label);
       button.type = 'button';
       button.addEventListener('click', () => {
         financeView = id;

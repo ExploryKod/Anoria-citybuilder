@@ -113,18 +113,3 @@ export function formatMarketStocksModel(vm) {
 export function formatMarketStaffModel(vm) {
   return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment, staffingStatusLine(vm), vm.wagePerWorker, vm.employerContributionRate);
 }
-
-/** @deprecated Prefer thematic tab formatters */
-export function formatMarketFoyerModel(vm) {
-  const overview = formatMarketOverviewModel(vm);
-  const stocks = formatMarketStocksModel(vm);
-  const staff = formatMarketStaffModel(vm);
-  if (!overview && !stocks) return null;
-  return {
-    sections: [
-      ...(stocks?.sections ?? []),
-      ...(overview?.sections ?? []),
-      ...(staff?.sections ?? []),
-    ],
-  };
-}

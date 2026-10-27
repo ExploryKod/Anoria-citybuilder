@@ -30,8 +30,8 @@ import { getWorldCityById } from '../contexts/geography/domain/catalogs/WorldCit
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { syncRemovedBuilding } from './parcelsOps.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
-import { getNaturalSources, getSuppliedCategories } from '../shared/building-catalog/resourceRoleQueries.js';
-import { findNaturalSourcesInRange } from '../contexts/supply/domain/policies/ResourceRangePolicy.js';
+import { getNaturalResourceKind, getNaturalSources, getSuppliedCategories } from '../shared/building-catalog/resourceRoleQueries.js';
+import { findNaturalSourcesInRange, isWithinRange } from '../contexts/supply/domain/policies/ResourceRangePolicy.js';
 import { SupplyTraceability } from '../contexts/supply/infrastructure/presentation/SupplyTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
 import { DescribeActivitySupplyAccess } from '../contexts/supply/application/queries/DescribeActivitySupplyAccess.js';
@@ -555,6 +555,26 @@ export function createSupplyContext({
           )
         )
         .map((row) => instanceIdFromHouseRow(row));
+    },
+
+    /**
+     * The buildings that draw on a natural resource: the raw-material producers whose `source` is this resource's kind and
+     * reaches it (the same range rule ProduceResource uses). Derived from the map every time, never stored.
+     * @param {string} natureBuildingId
+     * @returns {Promise<Array<{ id: string, type: string, x: number, y: number }>>}
+     */
+    async listNaturalCollectors(natureBuildingId) {
+      const node = await supplyBuildingRepositoryImpl.findRowById(natureBuildingId);
+      if (!node) throw new Error(`[supply] listNaturalCollectors: no building "${natureBuildingId}"`);
+      const kind = getNaturalResourceKind(node.type);
+      if (!kind) throw new Error(`[supply] listNaturalCollectors: "${node.type}" is not a natural resource`);
+      const rows = await supplyBuildingRepositoryImpl.listAllBuildingRows();
+      return rows
+        .filter((row) =>
+          row.x != null && row.y != null
+          && getNaturalSources(row.type).some((source) => source.resource === kind && isWithinRange(row, node, source.range))
+        )
+        .map((row) => ({ id: instanceIdFromHouseRow(row), type: row.type, x: row.x, y: row.y }));
     },
 
     async listNatureResources() {

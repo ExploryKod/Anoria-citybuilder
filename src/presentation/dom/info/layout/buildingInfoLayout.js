@@ -139,6 +139,15 @@ export function syncBuildingInfoTabs(tabSpecs) {
     }
   }
 
+  // The strip follows the order the group declares its tabs in (the buttons of the other groups' tabs stay hidden behind them).
+  const tablist = overlay.querySelector('.info-building__tabs');
+  if (tablist) {
+    for (const id of visibleTabIds) {
+      const tab = tablist.querySelector(`[role="tab"][data-tab="${id}"]`);
+      if (tab) tablist.append(tab);
+    }
+  }
+
   activateBuildingInfoTab(visibleTabIds[0]);
 }
 

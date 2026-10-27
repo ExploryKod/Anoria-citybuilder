@@ -4,9 +4,9 @@
 
 ## 1. Informations sur l'éditeur
 
-Le site web **Eraanurbs** (ci-après "le Site") est édité par :
+Le site web **Urbanicompta** (ci-après "le Site") est édité par :
 
-**Eraanurbs**  
+**Urbanicompta**  
 Site web de jeu de construction de ville  
 URL du site : [https://anoria.vercel.app/](https://anoria.vercel.app/)  
 **Contact :** amauryproject.slum874@passinbox.com
@@ -31,13 +31,13 @@ Pour consulter la politique de protection des données de Vercel, consultez : [h
 
 ## 4. Propriété intellectuelle
 
-L'ensemble du contenu du Site (textes, images, vidéos, logos, icônes, etc.) est la propriété exclusive d'Eraanurbs ou de ses partenaires, sauf mention contraire.
+L'ensemble du contenu du Site (textes, images, vidéos, logos, icônes, etc.) est la propriété exclusive d'Urbanicompta ou de ses partenaires, sauf mention contraire.
 
 Toute reproduction, représentation, modification, publication, adaptation de tout ou partie des éléments du Site, quel que soit le moyen ou le procédé utilisé, est interdite, sauf autorisation écrite préalable.
 
 ## 5. Responsabilité
 
-Eraanurbs s'efforce de fournir sur le Site des informations aussi précises que possible. Toutefois, il ne pourra être tenu responsable des omissions, des inexactitudes et des carences dans la mise à jour, qu'elles soient de son fait ou du fait des tiers partenaires qui lui fournissent ces informations.
+Urbanicompta s'efforce de fournir sur le Site des informations aussi précises que possible. Toutefois, il ne pourra être tenu responsable des omissions, des inexactitudes et des carences dans la mise à jour, qu'elles soient de son fait ou du fait des tiers partenaires qui lui fournissent ces informations.
 
 Toutes les informations indiquées sur le Site sont données à titre indicatif, et sont susceptibles d'évoluer. Par ailleurs, les renseignements figurant sur le Site ne sont pas exhaustifs.
 

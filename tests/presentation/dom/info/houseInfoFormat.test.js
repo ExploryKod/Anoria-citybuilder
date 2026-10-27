@@ -206,16 +206,4 @@ describe('formatHouseActivityModel — a house\'s own business, one block per re
     expect(pot.steps[1].valueText).toBe('En cours');
     expect(pot.steps[1].met).toBe(false);
   });
-
-  test('a step stuck on a missing input is called out, not just "in progress"', () => {
-    const buildingRow = {
-      activityShortfall: { carrotCake: true },
-      cycleState: { carrotCake: { index: 0, value: 0, opened: true } },
-    };
-    const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow });
-    const cake = model.recipes[1];
-    expect(cake.steps[0].valueText).toBe('En attente de matière');
-    expect(cake.steps[0].met).toBe(false);
-    expect(cake.steps[1].valueText).toBe('À venir');
-  });
 });

@@ -18,7 +18,7 @@ Soutien Kenney : [kenney.nl/donate](https://kenney.nl/donate)
 
 ### Historique — les modèles du village d'origine
 
-Les premières versions d'Eraanurbs ont été construites avec les modèles ci-dessous. Ils ont été remplacés par les packs Kenney, mais ils ont donné son premier visage au village et font partie de l'histoire du jeu. Un grand merci à leurs auteurs :
+Les premières versions d'Urbanicompta ont été construites avec les modèles ci-dessous. Ils ont été remplacés par les packs Kenney, mais ils ont donné son premier visage au village et font partie de l'histoire du jeu. Un grand merci à leurs auteurs :
 
 - [Village / Town Assets](https://skfb.ly/otGwo) by [imwolfgang](https://sketchfab.com/imwolfgang) on [Sketchfab](https://sketchfab.com) — les modèles principaux du village (maisons, fermes, marchés, chemins, arbres, décors) — [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
 - ["Game Art Village House: Ancient Greek Winery"](https://skfb.ly/6T7Dq) (usine) by Watse D'haene — [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
@@ -42,7 +42,7 @@ Auteurs :
 
 Licence : [ISC](https://lucide.dev/license)
 
-### Icônes originales Eraanurbs (HUD)
+### Icônes originales Urbanicompta (HUD)
 - Bateau à voile — onglet ressources commerce
 
 ### Moulin (HUD + construction)

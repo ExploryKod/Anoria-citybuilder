@@ -4,7 +4,8 @@
 
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
 import { staffingStatusLine } from './staffingReasonFormat.js';
-import { buildingName } from '../../../shell/CatalogVocabulary.js';
+import { buildingName, scheduleLabel } from '../../../shell/CatalogVocabulary.js';
+import { getResourceRoles, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 export function formatHubStorageLayoutHeader() {
   return null;
@@ -33,8 +34,27 @@ export function formatHubStorageStaffModel(vm) {
   return formatWorkplaceEmployeesPanel(buildingRow, employment, staffingStatusLine(vm), vm.wagePerWorker, vm.employerContributionRate);
 }
 
-/** @deprecated Prefer formatHubStorageStaffModel */
-export const formatHubStorageEmployeesModel = formatHubStorageStaffModel;
+/**
+ * État section — whether the hub can store and when it collects (the collection day is the one its catalog entry declares, in words).
+ *
+ * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
+ */
+export function formatHubStorageStateModel(vm) {
+  const { hubKind, supplyView, buildingRow } = vm;
+  if (hubKind !== 'hub' || !supplyView) return null;
+
+  const collectsWhen = scheduleLabel(getResourceRoles(buildingRow.type).find((entry) => entry.role === 'collector')?.schedule);
+  let status;
+  if (!isRoadNeedMet(buildingRow.type, buildingRow.roads)) {
+    status = `⚠️ Sans route, ${buildingName(buildingRow.type)} ne peut pas stocker.`;
+  } else if (supplyView.isCollecting) {
+    status = `🟢 Collecte active (${collectsWhen}).`;
+  } else {
+    status = `⏸️ En attente — collecte : ${collectsWhen}.`;
+  }
+  return { sections: [{ title: 'État', rows: [{ label: 'Collecte', value: status }] }] };
+}
 
 /**
  * Foyer tab — interactive hub storage params for the hub panel view.

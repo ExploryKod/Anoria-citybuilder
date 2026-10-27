@@ -17,7 +17,8 @@
 /* What the status icons over the hovered building mean (StatusIconTooltip.js): follows the cursor, never takes a click. */
 .status-icon-tooltip {
     position: fixed;
-    z-index: var(--z-index-notification, 10040);
+    /* Above the map's HUD, behind the building info modal and the other panels: it never covers a modal. */
+    z-index: var(--z-index-hud-menu-popover, 10016);
     max-width: 260px;
     padding: var(--tooltip-padding-y) var(--tooltip-padding-x);
     border-radius: var(--tooltip-border-radius);

@@ -27,6 +27,12 @@ export const COMMON_BUILDING_INFO_TAB_SPECS = Object.freeze([
   { id: BUILDING_INFO_TAB_IDS.messages },
 ]);
 
+/** Context tabs of a workplace whose services sit in its État tab: clients (a producer only), then messages. */
+export const WORKPLACE_CONTEXT_TAB_SPECS = Object.freeze([
+  { id: BUILDING_INFO_TAB_IDS.clients },
+  { id: BUILDING_INFO_TAB_IDS.messages },
+]);
+
 /** Messages only (e.g. nature resources). */
 export const CONTEXT_MESSAGES_TAB_SPECS = Object.freeze([
   { id: BUILDING_INFO_TAB_IDS.messages },
