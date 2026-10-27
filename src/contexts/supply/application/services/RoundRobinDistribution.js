@@ -25,7 +25,7 @@ export function fairShares(caps, available) {
  * source still holds, up to its cap (what it still needs).
  *
  * `money` makes the consumers pay: `fundsOf(consumerId)` is what the consumer can spend now, and `priceOf(category)` the
- * price of one unit. A unit is taken only when the consumer can pay it, so a consumer may get fewer units than it needs
+ * price of the next unit of that good (its n-th: the units of a stock are sold oldest first, a stale one costs less, see FreshnessPricePolicy.js). A unit is taken only when the consumer can pay it, so a consumer may get fewer units than it needs
  * (the rest is unpaid). Without `money` nothing is charged: a hub supplies a distributor, it does not pay for it.
  *
  * Every consumer is reported in `unmet` on every pass, with what it is still missing and why: `unpaidUnits` when its money
@@ -42,9 +42,9 @@ export function fairShares(caps, available) {
  * @param {(stock: object, category: string, amount: number) => object} params.addCategory
  * @param {(stock: object, category: string) => number} params.getAmount
  * @param {(consumer: object) => number} [params.getCap] Units the consumer can still take (default: no limit)
- * @param {{ fundsOf: (consumerId: string) => Promise<number>, priceOf: (category: string) => number } | null} [params.money]
+ * @param {{ fundsOf: (consumerId: string) => Promise<number>, priceOf: (category: string, nth: number) => number } | null} [params.money] `nth` counts the units of that good already handed out in this pass
  * @returns {Promise<{
- *   transfers: Array<{ consumerId: string, category: string, amount: number }>,
+ *   transfers: Array<{ consumerId: string, category: string, amount: number, unitPrice?: number }>, one per unit, with the price it was paid when the consumers pay
  *   sourceStock: object,
  *   unmet: Array<{ consumerId: string, cap: number, taken: number, unpaidUnits: number, shortageUnits: number }>,
  * }>}
@@ -81,6 +81,8 @@ export async function distributeRoundRobin({
   const transfers = [];
   const unmet = [];
   let source = sourceStock;
+  // The units of a good already handed out in this pass: the next one is the next oldest, so the next in line for its price.
+  const handedOut = {};
   for (const [index, taker] of takers.entries()) {
     let units = shares[index];
     let stock = taker.stock;
@@ -98,7 +100,7 @@ export async function distributeRoundRobin({
         misses += 1;
         continue;
       }
-      const price = money ? money.priceOf(category) : 0;
+      const price = money ? money.priceOf(category, handedOut[category] ?? 0) : 0;
       if (!Number.isFinite(price) || price < 0) throw new Error(`[supply] "${category}" has no price to be paid: got ${price}`);
       if (funds < price) {
         blockedByMoney = true;
@@ -109,7 +111,8 @@ export async function distributeRoundRobin({
       source = takeCategory(source, category, 1);
       stock = addCategory(stock, category, 1);
       funds -= price;
-      transfers.push({ consumerId: taker.consumerId, category, amount: 1 });
+      handedOut[category] = (handedOut[category] ?? 0) + 1;
+      transfers.push({ consumerId: taker.consumerId, category, amount: 1, ...(money ? { unitPrice: price } : {}) });
       units -= 1;
       taken += 1;
       changed = true;

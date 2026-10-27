@@ -143,7 +143,7 @@ describe('RunCityResourceCycle', () => {
       market({ stocks: { wheat: 10, food: 10 } }),
       house(HOUSE_ID),
     ]);
-    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook, async () => Infinity);
     const events = [];
     const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
 
@@ -175,7 +175,7 @@ describe('RunCityResourceCycle', () => {
       house(HOUSE_ID),
       house(HOUSE2_ID),
     ]);
-    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook, async () => Infinity);
     const events = [];
     const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
 
@@ -221,8 +221,8 @@ describe('RunCityResourceCycle', () => {
       market({ supplyHubId: WINDMILL_ID, stocks: { wheat: 0, food: 0 } }),
       house(HOUSE_ID),
     ]);
-    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
-    const transferHubToHub = new TransferHubToHub(repo, new HubServing(repo));
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook, async () => Infinity);
+    const transferHubToHub = new TransferHubToHub(repo, new HubServing(repo), referencePriceBook, async () => Infinity);
     let hubLinkResolved = null;
     const cycle = new RunCityResourceCycle(repo, distribute, undefined, {
       transferHubToHub,
@@ -262,8 +262,8 @@ describe('RunCityResourceCycle', () => {
       market({ supplyHubId: WINDMILL_ID, stocks: { wheat: 0, food: 0 } }),
       house(HOUSE_ID),
     ]);
-    const cycle = new RunCityResourceCycle(repo, new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook), undefined, {
-      transferHubToHub: new TransferHubToHub(repo, new HubServing(repo)),
+    const cycle = new RunCityResourceCycle(repo, new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook, async () => Infinity), undefined, {
+      transferHubToHub: new TransferHubToHub(repo, new HubServing(repo), referencePriceBook, async () => Infinity),
     });
 
     await cycle.execute({ categories: CATEGORIES, season: 'summer', month: 'January', timeInfo: { turn: 1 } });
@@ -280,7 +280,7 @@ describe('RunCityResourceCycle', () => {
 
   test('a hub-less flag distributor (school) marks houses served, no stock leg at all', async () => {
     const repo = new FakeSupplyBuildingRepository([school(), house(HOUSE_ID)]);
-    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook, async () => Infinity);
     const events = [];
     const cycle = new RunCityResourceCycle(repo, distribute, { publish: (e) => events.push(e) });
 
@@ -316,7 +316,7 @@ describe('RunCityResourceCycle', () => {
 
   test('the served flag tracks the REAL current month across cycles, not a stuck value', async () => {
     const repo = new FakeSupplyBuildingRepository([school(), house(HOUSE_ID)]);
-    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
+    const distribute = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook, async () => Infinity);
     const cycle = new RunCityResourceCycle(repo, distribute);
 
     await cycle.execute({

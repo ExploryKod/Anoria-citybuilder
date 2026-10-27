@@ -22,7 +22,6 @@ export class ListSupplyMapBuildings {
    *   hasFood: boolean,
    *   marketTooFar: boolean,
    *   roadCount: number,
-   *   neighbors: object[],
    *   pop: number,
    * }>>}
    */
@@ -42,7 +41,6 @@ export class ListSupplyMapBuildings {
         hasFood,
         marketTooFar: kind === 'house' ? view.distributorTooFar === true : false,
         roadCount: view.roadCount,
-        neighbors: [...(view.neighbors || [])],
         pop: view.pop || 0,
       };
     });

@@ -3,7 +3,7 @@
  * Real catalog (Factory-Pot sells in odd months, the Warehouse collects).
  */
 
-import { describe, test, expect } from '@jest/globals';
+import { describe, test, expect, jest } from '@jest/globals';
 import { createSupplyBuildingSnapshot } from '../../../src/contexts/supply/domain/SupplyBuildingSnapshot.js';
 import { createSupplyStock } from '../../../src/contexts/supply/domain/value-objects/SupplyStock.js';
 import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
@@ -48,6 +48,40 @@ describe('Supply — failed sales', () => {
     await command.execute({ period: month(1) });
     await command.execute({ period: month(2) });
     expect(repo.rows.get('pots').lastFailedSale.cause).toBe('hub_full');
+  });
+
+  test('a hub with room that took only what it could pay is the cause, even when its money is back by the time the window closes (regression: the tick failed every tick after)', async () => {
+    const repo = new InMemoryRepository([
+      { id: 'pots', type: 'Factory-Pot', x: 0, y: 0, stocks: { pot: 10 }, unpaidByHub: true },
+      { id: 'wh', type: 'Warehouse', x: 3, y: 0, maxStock: 500, stocks: { goods: 0, pot: 0 } },
+    ]);
+    const command = new MarkFailedSales(repo);
+    await command.execute({ period: month(1) });
+    await command.execute({ period: month(2) });
+    expect(repo.rows.get('pots').lastFailedSale.cause).toBe('hub_no_money');
+    // The mark belongs to the window: it ends with it.
+    expect(repo.rows.get('pots').unpaidByHub).toBe(false);
+  });
+
+  test('goods left with no known cause are recorded as failed for an unknown cause, never as an error that stops the day (regression: the supply cycle stalled every tick)', async () => {
+    const repo = new InMemoryRepository([
+      { id: 'pots', type: 'Factory-Pot', x: 0, y: 0, stocks: { pot: 10 } },
+      { id: 'wh', type: 'Warehouse', roadCount: 1, worker: 1, workerNeed: 1, x: 3, y: 0, maxStock: 500, stocks: { goods: 0, pot: 0 } },
+    ]);
+    const command = new MarkFailedSales(repo);
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    await command.execute({ period: month(1) });
+
+    await expect(command.execute({ period: month(2) })).resolves.toEqual({ failed: 1 });
+
+    // One warning, not an error; the window is closed, so it does not come back the tick after.
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('[sales] Factory-Pot pots could not sell its pot'));
+    await command.execute({ period: month(4) });
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+    expect(repo.rows.get('pots').lastFailedSale.cause).toBe('unknown');
+    expect(repo.rows.get('pots').saleWindowOpen).toBe(false);
   });
 
   test('a producer that sold everything reports nothing, and is not reported twice', async () => {

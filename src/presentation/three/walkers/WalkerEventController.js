@@ -23,9 +23,8 @@ let nextWalkerId = 0;
  * later step.
  *
  * "Does this building have road access, and through which tile" reuses
- * `zoneBordersBuildings` — the same scan that already backs the Housing
- * 'Voisins' panel and RecalculateRoadAccessForBuilding — so a walker's
- * road requirement agrees with what the game already tells the player.
+ * `zoneBordersBuildings`, a scan of the grid around the tile: a walker's
+ * entry road is the nearest road tile it finds.
  */
 export function createWalkerEventController({ scene, citizenManager, citizenPathfinding, buildings, city, eventPublisher }) {
   if (!eventPublisher) {

@@ -27,27 +27,6 @@ export function getBuildingCode(type) {
   return getMapCode(type);
 }
 
-/**
- * @param {Array<object>|null|undefined} neighbors
- * @returns {string}
- */
-export function getNeighborCodes(neighbors) {
-  if (!neighbors || !Array.isArray(neighbors) || neighbors.length === 0) {
-    return '';
-  }
-
-  return neighbors
-    .map((neighbor) => {
-      const typeLike = neighbor.type || neighbor.name || '';
-      const code = getBuildingCode(typeLike);
-      if (neighbor.x !== undefined && neighbor.y !== undefined) {
-        return `${code}(${neighbor.x},${neighbor.y})`;
-      }
-      return code;
-    })
-    .join(' ');
-}
-
 /** @param {unknown} value @returns {string} Safe inside an HTML attribute or text node. */
 function escapeHtml(value) {
   return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -208,8 +187,6 @@ export function renderCityMapGridHtml({ citySize, buildingMap, hasRoadAccessFrom
 
       if (building) {
         const code = getBuildingCode(building.type);
-        const neighbors = building.neighbors || [];
-        const neighborCodes = getNeighborCodes(neighbors);
 
         const isRoad = isRoadBuildingType(building.type);
         const needsRoadAccess = !isRoad && requiresRoad(building.type);
@@ -241,9 +218,6 @@ export function renderCityMapGridHtml({ citySize, buildingMap, hasRoadAccessFrom
         tableHTML += `</div>`;
 
         tableHTML += `<span class="building-code ${code.toLowerCase()}${styleClassOf(building.type)}">${code}</span>`;
-        if (neighborCodes) {
-          tableHTML += `<div class="neighbors-list">${neighborCodes}</div>`;
-        }
         if (category === 'houses') {
           const habitants = Number(building.pop || 0);
           tableHTML += `<div class="habitants-count" title="Habitants">${habitants}</div>`;
@@ -314,9 +288,13 @@ const EXPORT_OMITTED_FIELDS = ['id', 'anchorX', 'anchorY', 'name'];
  * @param {object|null} params.populationSummary
  * @param {{ incoming: Array<object>, archived: Array<object> }} params.news
  * @param {number|null} params.citySize
+ * @param {number} params.turn The game turn the export is taken at (the clock, read once: a building row does not carry it).
  * @param {Record<string, string>} params.errors Sections that could not be read, by name.
  */
-export function buildCityExport({ buildingRows, employmentSummary, populationSummary, news, citySize, errors }) {
+export function buildCityExport({ buildingRows, employmentSummary, populationSummary, news, citySize, turn, errors }) {
+  if (!Number.isInteger(turn) || turn < 0) {
+    throw new Error(`[export] the city export needs the turn it is taken at, got ${turn}`);
+  }
   const buildings = buildingRows
     .map((row) => {
       const kept = { ...row };
@@ -329,6 +307,7 @@ export function buildCityExport({ buildingRows, employmentSummary, populationSum
     exportDate: new Date().toISOString(),
     config: {
       citySize,
+      turn,
       daysPerMonth: TimeManager.DAYS_PER_MONTH,
       perCapitaDemand: getPerCapitaDemand(),
       annualYieldPerProducer: getAnnualYieldPerProducer(),

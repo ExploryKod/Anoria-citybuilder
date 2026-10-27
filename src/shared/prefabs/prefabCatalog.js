@@ -26,18 +26,18 @@ import relationsExport from './anoria-tour-107/relations-2026-10-25T12-25-01-522
  * }} Prefab
  */
 
-/** The turn of the city export: every building of one export is at the same turn, or the export is mixed. */
-function turnOfCityExport(buildings) {
-  const turns = new Set(buildings.map((building) => building.worldTime));
-  if (turns.size !== 1) throw new Error(`[prefab] the city export mixes turns: ${[...turns].join(', ')}`);
-  return [...turns][0];
+/** The turn of the city export: the export states it itself (`config.turn`), a building row does not carry the clock. */
+function turnOfCityExport(cityExport) {
+  const turn = cityExport.config?.turn;
+  if (!Number.isInteger(turn) || turn < 0) throw new Error(`[prefab] the city export states no turn (config.turn is ${turn})`);
+  return turn;
 }
 
 /** @type {Readonly<Record<string, Prefab>>} */
 export const PREFABS = Object.freeze({
   'anoria-tour-107': Object.freeze({
     id: 'anoria-tour-107',
-    turn: turnOfCityExport(city.buildings),
+    turn: turnOfCityExport(city),
     hamletId: '3b383d94-a2c4-4912-b359-967fde804409',
     citySize: city.config.citySize,
     city,

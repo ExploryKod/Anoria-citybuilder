@@ -902,6 +902,39 @@ export const BUILDING_ASSETS = Object.freeze({
     button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
+  // École primaire — la geometry de Kenney Commercial building-b (1×1, « no gameplay role yet » jusque-là); economy/footprint keyed to 'PrimarySchool'. Education-layer service,
+  // the first one of the savants.
+  'PrimarySchool': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-b',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'education',
+      editorGroup: null,
+      label: 'École primaire',
+      tooltip: 'École primaire',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-b.png' },
+    },
+    tags: ['public', 'building'],
+  },
   // Commerce — building-c
   'Kenney-Commercial-building-c': {
     source: 'kenneyCityKit',
@@ -1130,7 +1163,7 @@ export const BUILDING_ASSETS = Object.freeze({
     button: null, // not a distinct carousel entry — no gameplay role yet (raw Kenney prefab)
     tags: ['commercial', 'building'],
   },
-  // École (below) réassigne cette geometry — plus d'entrée carousel
+  // Collège-Lycée (below) réassigne cette geometry — plus d'entrée carousel
   // "Commerce" distincte pour building-i, voir School.
   'Kenney-Commercial-building-i': {
     source: 'kenneyCityKit',
@@ -1157,7 +1190,7 @@ export const BUILDING_ASSETS = Object.freeze({
     button: null, // not a distinct carousel entry — School (below) is the placeable id for this mesh
     tags: ['commercial', 'building'],
   },
-  // École — RÉASSIGNÉ au kit Kenney Commercial building-i (geometry copied
+  // Collège-Lycée (id 'School') — RÉASSIGNÉ au kit Kenney Commercial building-i (geometry copied
   // from Kenney-Commercial-building-i above; economy/footprint stay keyed
   // to 'School', untouched). Education-layer service.
   'School': {
@@ -1185,8 +1218,8 @@ export const BUILDING_ASSETS = Object.freeze({
     button: {
       theme: 'education',
       editorGroup: null,
-      label: 'École',
-      tooltip: 'École',
+      label: 'Collège-Lycée',
+      tooltip: 'Collège-Lycée',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-i.png' },
     },
     tags: ['public', 'building'],

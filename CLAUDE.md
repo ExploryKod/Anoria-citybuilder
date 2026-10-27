@@ -113,8 +113,13 @@ A company that cannot pay a charge that is due to a creditor (wages, social cont
 the same as an écriture against the debt it owes (the charge debited, the debt credited: 421, 431, 444, 401), and pays the debt,
 oldest first, when it has the money (`PayableCatalog`, `DebtPolicy`). The debt is derived from those lines, never stored. A company starts with a founding capital the city pays it
 once (`FOUNDING_CAPITAL_MONTHS` months of its charges at full staffing, `FundNewCompanies`): the company's equity (101) against the
-city's holding in it (261), never repaid, an investment of the city rather than a running expense. Whether a company is funded is
-read from the journal. A company already in a starter prefab carries its capital lines in the prefab's journal. An account below
+city's holding in it (261), never repaid, an investment of the city rather than a running expense. A company that carries a stock also
+gets a working capital, the share of its full stock the player's aid policy sets (`CompanyAidCatalog`, the admin panel's "Aide aux entreprises"), in three
+forms the player splits: **participation** (capital with no return, as the founding capital), **loan** (274 for the city, 164 for the company; interest from a
+date the player sets, repaid out of the month's profit by `SettleCompanyAid`; its terms stamped on the line when granted), **State shareholder** (capital that
+gives a stake, so a January dividend: stake × payout rate × distributable result). The policy binds the player for 2 to 8 years he chooses; the stake is
+computed (the shares it holds over all the shares), never set: capital put in later as a shareholder buys shares at the price of a share then (the company's book equity over its shares, `CompanyAidCatalog`), so a company that has grown costs more to enter, and a participation buys none. A liquidated company repays its loan from its cash before the capital goes back; the rest is abandoned
+and lost by the city. The policy is global to the hamlet (one for all the companies); an aid to one company is a one-off contribution (`InjectCompanyAid`), made from the company's own sheet (Finances tab, "Aide de la ville") or from the admin panel's list. A policy per company or per sector is a limit still to lift. Whether a company is funded is read from the journal. A company already in a starter prefab carries its capital lines in the prefab's journal. An account below
 nothing shows on the balance sheet as an overdraft (519), a debt.
 
 ## The balance sheet is derived, never written
@@ -160,6 +165,21 @@ categories grant, and do not propose it as a design shortcut. Why, if the user a
 
 If a design truly needs a skill common to several categories, say so first and settle how its posts are attributed before touching the catalog.
 Details: `src/contexts/employment/docs/rules.md` §5.6.
+
+## A skill has one level: an advanced trade is a skill of its own
+
+Every skill is granted by the houses and asked by the workplaces at level 1, never higher. A more advanced trade is another skill with its own name (local medicine
+`medecine-proximite` for the dispensary, hospital medicine `medecine-hospitaliere` for the hospital; thermal energy `energie`, nuclear energy `energie-nucleaire`; crafts `artisanat`,
+specialised crafts `artisanat-specialise`), granted by the house tier that opens it. Why: the "level" the player reads is the house level a skill comes with, the same number a workplace
+shows on its card (`houseSkillTier`, `lowestHouseTierForWorkers`); a second scale (the skill's own level 1, 2...) said "niv. 1" on the house for a fire-fighting that the fire station
+shows "niv. 2". A more advanced trade that pays more says so in `START_WAGE_BY_SKILL` (LabourMarketCatalog.js). Guarded by `tests/shared/population/socialCategoryCatalog.test.js`.
+
+## UI: think mobile every time
+
+Any screen, panel, table or card you add or change must work on a phone as well as on a desktop, and the change is not done until it does: design for the narrow
+width first, then widen. No horizontal page scroll; touch targets of at least 40 px; text that wraps instead of overflowing; a table that cannot fit drops its secondary
+columns (keep the essential ones) rather than shrinking everything. Add the `@media` rule in the same change as the markup, never "later". Style in the Material spirit,
+"less is more": one level of frame, space and a thin divider to tell sections apart, labels and figures aligned on one grid.
 
 ## Keep the flow: no commands that make the user wait
 

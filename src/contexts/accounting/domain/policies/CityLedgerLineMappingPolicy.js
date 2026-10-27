@@ -28,13 +28,15 @@ const LINES = Object.freeze({
   corporateTaxRevenue: { in: ['73118', '411'] },
   // The constructions, and the founding capital the city pays the companies: both are the city's investments, one line; a refund takes off.
   // A building the city holds through the owner (261), its own building (2131) or its roads (2151).
-  construction: { out: ['2131', '261', '2151'], takeOff: ['2131', '261', '2151'] },
+  // The loans of working capital the city grants its companies are investments too (274): what a company pays back takes off.
+  construction: { out: ['2131', '261', '2151', '274'], takeOff: ['2131', '261', '2151', '274'] },
   // The upkeep of the buildings the hamlet does not run itself is the rent it pays their owner: one line, "Entretien".
   maintenance: { out: ['6156', '613'] },
   salary: { out: ['6411'] },
   unemploymentBenefit: { out: ['431'] },
   serviceSubsidy: { out: ['65738'] },
-  companySubsidy: { out: ['65742'] },
+  // What the city gives its companies, less what comes back from them: the interest of its loans (7626) and the dividends of its holdings (761).
+  companySubsidy: { out: ['65742'], takeOff: ['7626', '761'] },
   housingSubsidy: { out: ['65741'] },
   repairs: { out: ['615221'] },
   commercialRoutes: { out: ['622'] },

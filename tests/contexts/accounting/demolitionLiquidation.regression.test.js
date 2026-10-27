@@ -39,7 +39,6 @@ function settleMonth(journal, { monthIndex, cash, buildings, pairs = [], service
       journal.push({ ...line, year: 1, month: monthIndex + 1 });
       return { recorded: true };
     },
-    recordEconomyMovement: async () => {},
   });
   return service.execute({ time: monthIndex, deliveredTime: monthIndex - 1 });
 }
@@ -58,7 +57,6 @@ function liquidatorOf(journal, { cash = 0, stock = 0, standing = ['farm', 'house
       journal.push({ ...line, year: 1, month: 5 });
       return { recorded: true };
     },
-    recordEconomyMovement: async () => {},
     inJournalBatch: async (work) => work(),
     getTimeInfo: () => ({ year: 1, monthIndex: 4, month: 'Mois 4' }),
     listBuildings: async () => standing.map((id) => ({ id, type: types[id] })),

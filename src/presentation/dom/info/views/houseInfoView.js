@@ -10,6 +10,7 @@ import {
   appendMetricCardGroups,
   appendMetricCards,
 } from '../layout/buildingInfoLayout.js';
+import { renderClientPriorityTab } from './clientPriorityInfoView.js';
 
 /**
  * @typedef {object} HouseSkillsDisplayItem
@@ -108,8 +109,58 @@ export function renderHouseResourcesView(container, model) {
  * @property {HouseRentalViewModel | null} rental What the `rental` activity shows
  */
 
+/** The view the Entreprises tab was left on (a per-viewer convenience, not game state). */
+let enterprisesView = 'productions';
+
 /**
- * The Enterprises tab: one pill per business the house runs (its legal form: a cooperative, a property company), the default one
+ * The Entreprises tab of a house: two pills, Productions (what its businesses make) and Clients (who they serve first).
+ * The Clients pill is there only when the house produces goods that have clients (`model.clients` is null otherwise).
+ * @param {HTMLElement} container
+ * @param {{ activity: HouseActivityViewModel, clients: object | null }} model
+ */
+export function renderHouseEnterprisesView(container, model) {
+  container.innerHTML = '';
+  const views = [
+    { id: 'productions', label: 'Productions', render: (target) => renderHouseActivityView(target, model.activity) },
+    ...(model.clients ? [{ id: 'clients', label: 'Clients', render: (target) => renderClientPriorityTab(target, model.clients) }] : []),
+  ];
+  if (views.length === 1) {
+    views[0].render(container);
+    return;
+  }
+
+  const pills = document.createElement('div');
+  pills.className = 'building-info-view-pills';
+  pills.setAttribute('role', 'tablist');
+  const panel = document.createElement('div');
+  panel.setAttribute('role', 'tabpanel');
+  container.append(pills, panel);
+
+  const buttons = new Map();
+  const show = (view) => {
+    enterprisesView = view.id;
+    for (const [id, button] of buttons) {
+      button.classList.toggle('is-active', id === view.id);
+      button.setAttribute('aria-selected', String(id === view.id));
+    }
+    panel.replaceChildren();
+    view.render(panel);
+  };
+  for (const view of views) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'building-info-view-pill';
+    button.setAttribute('role', 'tab');
+    button.textContent = view.label;
+    button.addEventListener('click', () => show(view));
+    buttons.set(view.id, button);
+    pills.append(button);
+  }
+  show(views.find((view) => view.id === enterprisesView) ?? views[0]);
+}
+
+/**
+ * The Productions view: one pill per business the house runs (its legal form: a cooperative, a property company), the default one
  * open. Each pill shows what its activity does: the recipes the house makes, or the rents it collects.
  * @param {HTMLElement} container
  * @param {HouseActivityViewModel} model
@@ -214,6 +265,28 @@ function renderRecipes(container, recipes) {
     return;
   }
 
+  // What blocks a recipe from reaching its inputs or its clients, said once up front in a table (good, then what is missing).
+  const gaps = recipes.flatMap((recipe) => (recipe.gapMessages ?? []).map((message) => ({ label: recipe.label, message })));
+  if (gaps.length > 0) {
+    const table = document.createElement('table');
+    table.className = 'building-info-gaps';
+    const caption = document.createElement('caption');
+    caption.textContent = '⚠️ À régler';
+    const body = document.createElement('tbody');
+    for (const gap of gaps) {
+      const row = document.createElement('tr');
+      const good = document.createElement('th');
+      good.scope = 'row';
+      good.textContent = gap.label;
+      const message = document.createElement('td');
+      message.textContent = gap.message;
+      row.append(good, message);
+      body.append(row);
+    }
+    table.append(caption, body);
+    container.appendChild(table);
+  }
+
   for (const recipe of recipes) {
     const block = document.createElement('div');
     block.className = 'building-info-activity-recipe';
@@ -222,13 +295,6 @@ function renderRecipes(container, recipes) {
     heading.className = 'building-info-section-label';
     heading.textContent = recipe.label;
     block.appendChild(heading);
-
-    for (const message of recipe.gapMessages ?? []) {
-      const warning = document.createElement('p');
-      warning.className = 'building-info-footnote building-info-gap-warning';
-      warning.textContent = `⚠️ ${message}`;
-      block.appendChild(warning);
-    }
 
     appendMetricCardGroups(block, [
       [recipe.material],

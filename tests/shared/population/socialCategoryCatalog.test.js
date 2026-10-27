@@ -39,13 +39,13 @@ describe('SOCIAL_CATEGORY — single source for the social categories', () => {
     }
   });
 
-  test('what a house needs to evolve, level by level: water, food and a dispensary; then goods, fire, a warehouse and energy; then a hospital, the police and a café-restaurant', () => {
+  test('what a house needs to evolve, level by level: water, food, a dispensary and a primary school; then goods, fire, a warehouse and energy; then a hospital, the police and a café-restaurant', () => {
     const { artisans } = SOCIAL_CATEGORY;
     // Level 1 → 2
-    expect(namesOf(artisans.tiers[2])).toEqual(['water', 'doctor']);
+    expect(namesOf(artisans.tiers[2])).toEqual(['water', 'doctor', 'primarySchool']);
     expect(kindsOf(artisans.tiers[2])).toContain('demandMet');
     // Level 2 → 3
-    expect(namesOf(artisans.tiers[3])).toEqual(['water', 'doctor', 'fire', 'energy']);
+    expect(namesOf(artisans.tiers[3])).toEqual(['water', 'doctor', 'primarySchool', 'fire', 'energy']);
     expect(kindsOf(artisans.tiers[3])).toEqual(expect.arrayContaining(['goodsVariety', 'activityAccess']));
     expect(artisans.tiers[3].requirements).toContainEqual({ kind: 'goodsVariety', min: 1, outcomeField: 'lastGoodsConsumption' });
     // Level 3 → 4
@@ -53,13 +53,13 @@ describe('SOCIAL_CATEGORY — single source for the social categories', () => {
     expect(artisans.tiers[4].requirements).toContainEqual({ kind: 'goodsVariety', min: 2, outcomeField: 'lastGoodsConsumption' });
   });
 
-  test('the skills of a level staff the buildings its list names: water and the dispensary from the start, then fire, then police', () => {
+  test('the skills of a level staff the buildings its list names: water, local medicine and teaching from the start, then fire, then hospital medicine and police', () => {
     const { scholars, artisans, merchants } = SOCIAL_CATEGORY;
-    expect(scholars.tiers[1].skills).toEqual({ hydraulique: 1, medical: 1 });
+    expect(scholars.tiers[1].skills).toEqual({ hydraulique: 1, 'medecine-proximite': 1, instruction: 1 });
     expect(scholars.tiers[2].skills).toEqual({ incendie: 1 });
-    expect(scholars.tiers[3].skills).toEqual({ medical: 2, securite: 1 });
+    expect(scholars.tiers[3].skills).toEqual({ 'medecine-hospitaliere': 1, securite: 1 });
     expect(artisans.tiers[2].skills).toEqual({ artisanat: 1, energie: 1 });
-    expect(artisans.tiers[3].skills).toEqual({ artisanat: 2, telecoms: 1, energie: 2 });
+    expect(artisans.tiers[3].skills).toEqual({ 'artisanat-specialise': 1, telecoms: 1, 'energie-nucleaire': 1 });
     expect(merchants.tiers[2].skills).toMatchObject({ manutention: 1 });
     expect(merchants.tiers[3].skills).toEqual({ hospitality: 1 });
   });
@@ -80,5 +80,13 @@ describe('SOCIAL_CATEGORY — single source for the social categories', () => {
       expect(caps.every((cap) => Number.isInteger(cap) && cap > 0)).toBe(true);
       expect([...caps].sort((a, b) => a - b)).toEqual(caps);
     }
+  });
+});
+
+describe('a skill has one level', () => {
+  test('every skill the houses grant is granted at level 1: a more advanced trade (hospital medicine, nuclear energy...) is a skill of its own', () => {
+    const levels = Object.values(SOCIAL_CATEGORY).flatMap((category) => Object.values(category.tiers).flatMap((tier) => Object.entries(tier.skills)));
+    expect(levels.length).toBeGreaterThan(0);
+    for (const [skill, level] of levels) expect({ skill, level }).toEqual({ skill, level: 1 });
   });
 });

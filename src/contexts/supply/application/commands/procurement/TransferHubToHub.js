@@ -9,6 +9,8 @@ import {
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import { movedAgeBooks } from '../../../domain/policies/StockAgingPolicy.js';
 import { fairShares } from '../../services/RoundRobinDistribution.js';
+import { freshUnitPricer } from '../../services/FreshUnitPricer.js';
+import { shareByExpenditure } from '../../../domain/policies/ExpenditureSharePolicy.js';
 import {
   getCategoriesForRole,
   getScheduleForRole,
@@ -23,7 +25,8 @@ import {
  * the source has and by the room left in the target. The source's stock is therefore drawn
  * down at the pace of real consumption instead of being handed out in shares (monthly
  * market-from-windmill restock today; resource-agnostic otherwise). The pull is spread over
- * the goods the source holds, so a variety of goods survives. WHAT/WHEN come from the target's own 'distributor' role in
+ * the goods the source holds by what the target SPENDS on each (ExpenditureSharePolicy), at the source's price of each
+ * unit by its freshness: a variety of goods survives, and what is about to go bad is bought in larger quantity. WHAT/WHEN come from the target's own 'distributor' role in
  * the catalog; hub-link storage field names come from each side's own
  * `hubLink` catalog fact (target's 'distributor' role, source's 'hub' role)
  * — see ResourceRolePolicy.getHubLinkForRole. This command never names a
@@ -33,9 +36,15 @@ export class TransferHubToHub {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
    */
-  constructor(supplyBuildingRepository, hubServing) {
+  /**
+   * @param {object} priceBook
+   * @param {(params: { buyerId: string, period: object }) => Promise<number>} purchasingPower euros the target may still spend with its suppliers (see SupplierCreditPolicy)
+   */
+  constructor(supplyBuildingRepository, hubServing, priceBook, purchasingPower) {
     this.supplyBuildingRepository = supplyBuildingRepository;
     this.hubServing = hubServing;
+    this.priceBook = priceBook;
+    this.purchasingPower = purchasingPower;
   }
 
   /**
@@ -47,7 +56,7 @@ export class TransferHubToHub {
    * @returns {Promise<{
    *   transferred: boolean,
    *   reason?: string,
-   *   transfers: Array<{ sourceId: string, category: string, amount: number }>,
+   *   transfers: Array<{ sourceId: string, category: string, amount: number, unitPrice: number }>,
    *   totalUnits: number,
    * }>}
    */
@@ -127,7 +136,10 @@ export class TransferHubToHub {
     const turn = period?.turn ?? 0;
     const asking = Math.min(wanted, targetCapacity);
     const available = await Promise.all(categories.map((category) => this.hubServing.availableTo(source, category, target.id, turn)));
-    const amounts = fairShares(available, asking);
+    await this.priceBook.ensure(period);
+    const unitPriceOf = freshUnitPricer({ seller: source, stock: sourceStock, priceBook: this.priceBook, period: { ...period, turn } });
+    const budget = await this.purchasingPower({ buyerId: target.id, period });
+    const { amounts, spent } = shareByExpenditure({ caps: available, units: asking, priceOf: (index, nth) => unitPriceOf(categories[index], nth), budget });
     // How its ask would split over the goods, unconstrained: what it leaves on the table for those ranked below.
     const desired = fairShares(categories.map((category) => getCategoryAmount(sourceStock, category)), asking);
 
@@ -149,7 +161,8 @@ export class TransferHubToHub {
       targetBook = moved.to;
       sourceStock = takeCategoryAmount(sourceStock, category, amount, sourceCategories, sourceTotalKey);
       targetStock = addCategoryAmount(targetStock, category, amount, categories, totalKey);
-      transfers.push({ sourceId, category, amount });
+      // What the target paid per unit on average (the units differ in freshness, so in price): the trace and the books read it.
+      transfers.push({ sourceId, category, amount, unitPrice: Math.round((spent[index] / amount) * 100) / 100 });
     });
 
     for (const [index, category] of categories.entries()) {

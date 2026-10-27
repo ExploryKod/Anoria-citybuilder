@@ -14,11 +14,13 @@ import { exportCityToJSON } from '../carte-ville/CarteVillePanel.js';
 import { exportJournalToJSON } from '../compta/journal/JournalPanel.js';
 import { exportTransactionsToJSON } from '../admin/supply-traceability/SupplyTraceabilityPanel.js';
 import { exportRelationsToJSON } from '../admin/commerce/CommerceSectionPresenter.js';
+import { exportSupplyBalanceToJSON } from '../supply-balance/SupplyBalancePanel.js';
 import { getSessionGameTime, getSessionService } from '../../../composition/sessionRuntime.js';
 
 /**
  * Downloads, one after the other, the five files a starter city is made of (the city, the journal of the hamlet, the flux of the companies and
- * the houses, the supply transactions, the trade relations), all read at the turn the game is paused on. If the turn moves while they are
+ * the houses, the supply transactions, the trade relations) and the supply balance with the purchasing power of the houses (to read, not part of a
+ * starter city), all read at the turn the game is paused on. If the turn moves while they are
  * written (a day that was still running when the pause was pressed), the files do not belong together: the player is told, nothing is passed off as a set.
  */
 async function downloadEveryExport() {
@@ -30,6 +32,7 @@ async function downloadEveryExport() {
   await exportJournalToJSON('private');
   await exportTransactionsToJSON();
   await exportRelationsToJSON(trade);
+  await exportSupplyBalanceToJSON();
   const turnAtEnd = getSessionGameTime();
   if (turnAtEnd !== turnAtStart) {
     throw new Error(`[export] the turn moved from ${turnAtStart} to ${turnAtEnd} while the files were written: they are not one moment of the game, download them again`);

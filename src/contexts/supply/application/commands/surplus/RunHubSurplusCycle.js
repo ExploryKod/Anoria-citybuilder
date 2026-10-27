@@ -4,7 +4,7 @@ import {
   getCategoriesForRole,
   getRangeForRole,
   getResourceRoles,
-  getScheduleForRole,
+  getCollectionSchedule,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 import { isWithinRange } from '../../../domain/policies/ResourceRangePolicy.js';
 import { rankHubDestinations } from '../../../domain/policies/HubDestinationPolicy.js';
@@ -64,7 +64,7 @@ export class RunHubSurplusCycle {
     await this.emptyHubGoods?.execute({ turn });
     const hubs = await this.supplyBuildingRepository.findByResourceRole('hub');
     const isCollectionPeriod = hubs.some((hub) =>
-      matchesSchedule(getScheduleForRole(hub.type, 'collector'), { month, monthIndex, year })
+      matchesSchedule(getCollectionSchedule(hub.type), { month, monthIndex, year })
     );
 
     if (!isCollectionPeriod) {
@@ -98,7 +98,7 @@ export class RunHubSurplusCycle {
 
     // The hubs collecting this tick. Hubs keep their own rhythm: the windmill collects in one month while a
     // warehouse collects all year, and one being due must not make the other run out of its period.
-    const collecting = hubs.filter((hub) => matchesSchedule(getScheduleForRole(hub.type, 'collector'), { month, monthIndex, year }));
+    const collecting = hubs.filter((hub) => matchesSchedule(getCollectionSchedule(hub.type), { month, monthIndex, year }));
 
     // Each producer sells to the best hub for its goods (one whose order is "fetch", then the nearest, see
     // HubDestinationPolicy); what that hub could not take goes on to the next best. Every collecting hub is
@@ -111,16 +111,10 @@ export class RunHubSurplusCycle {
       const collectingNow = fresh.filter((hub) => collecting.some((candidate) => candidate.id === hub.id));
       const assigned = new Map(collecting.map((hub) => [hub.id, []]));
 
-      // One source or one hub failing must never take the rest of the round down with it — a
-      // throw here used to abort every remaining source/hub for this tick silently.
+      // A source or a hub that fails stops the tick with its own error (the game loop shows it): hiding it here let a collection that threw look like one that
+      // had nothing to do, and the failure came out three steps later under another name.
       for (const ref of pending) {
-        let destination;
-        try {
-          destination = await this.#bestHubFor(ref, collectingNow, tried.get(ref.id), period);
-        } catch (error) {
-          console.error(`[RunHubSurplusCycle] #bestHubFor failed for source ${ref.id} (${ref.type}):`, error);
-          continue;
-        }
+        const destination = await this.#bestHubFor(ref, collectingNow, tried.get(ref.id), period);
         if (!destination) continue;
         assigned.get(destination.id).push(ref);
         tried.set(ref.id, new Set([...(tried.get(ref.id) ?? []), destination.id]));
@@ -130,15 +124,11 @@ export class RunHubSurplusCycle {
       for (const hub of collecting) {
         const group = assigned.get(hub.id);
         if (round > 0 && group.length === 0) continue;
-        try {
-          const outcome = await this.processHubCollection.execute({ hubId: hub.id, sourceRefs: group, month, year, period });
-          hubResults.push(outcome);
-          visited.push(hub.id);
-          if (outcome.collected && this.rebalanceHubDistributorAllocations) {
-            await this.rebalanceHubDistributorAllocations.execute({ hubId: hub.id });
-          }
-        } catch (error) {
-          console.error(`[RunHubSurplusCycle] Collection failed for hub ${hub.id} (${hub.type}):`, error);
+        const outcome = await this.processHubCollection.execute({ hubId: hub.id, sourceRefs: group, month, year, period });
+        hubResults.push(outcome);
+        visited.push(hub.id);
+        if (outcome.collected && this.rebalanceHubDistributorAllocations) {
+          await this.rebalanceHubDistributorAllocations.execute({ hubId: hub.id });
         }
       }
 

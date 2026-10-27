@@ -81,6 +81,18 @@ const BY_TYPE = Object.freeze({
   // The founding capital the city pays a company or the business of a house: the city's holding in it (261), the company's capital (101). Never repaid.
   company_capital_paid: entry(outflow('261'), 'Titres de participation', 'capital', false, 'Fonds propres versés à une entreprise', publicVariant(outflow('261'), 'Titres de participation', 'Fonds propres versés à une entreprise')),
   company_capital_received: entry(inflow('101'), 'Capital', 'capital', false, 'Fonds propres reçus de la ville'),
+  // The aid the city gives a company for its working capital (see CompanyAidCatalog.js): capital as a shareholder (it gives the city a stake and dividends, the participation above gives none),
+  // or a loan (274 for the city, 164 for the company) with its interest and its repayments, and the dividend the company pays its shareholder city.
+  shareholder_capital_paid: entry(outflow('261'), 'Titres de participation', 'capital', false, 'Fonds propres versés en tant qu’actionnaire', publicVariant(outflow('261'), 'Titres de participation', 'Fonds propres versés en tant qu’actionnaire')),
+  shareholder_capital_received: entry(inflow('101'), 'Capital', 'capital', false, 'Fonds propres reçus de la ville actionnaire'),
+  aid_loan_paid: entry(outflow('274'), 'Prêts', 'loan', false, 'Fonds de roulement prêté à une entreprise', publicVariant(outflow('274'), 'Prêts', 'Fonds de roulement prêté à une entreprise')),
+  aid_loan_received: entry(inflow('164'), 'Emprunts auprès des établissements de crédit', 'loan', false, 'Fonds de roulement prêté par la ville'),
+  aid_loan_repaid: entry(outflow('164'), 'Emprunts auprès des établissements de crédit', 'loan-repayment', false, 'Prêt de la ville remboursé'),
+  aid_loan_repayment_received: entry(inflow('274'), 'Prêts', 'loan-repayment', false, undefined, publicVariant(inflow('274'), 'Prêts', 'Prêt à une entreprise remboursé')),
+  aid_interest_paid: entry(outflow('6611'), 'Intérêts des emprunts et dettes', 'financial', false, 'Intérêts d’un prêt de la ville'),
+  aid_interest_received: entry(inflow('7626'), 'Revenus des prêts', 'sales', false, undefined, publicVariant(inflow('7626'), 'Revenus des prêts', 'Intérêts d’un prêt à une entreprise')),
+  state_dividend_paid: entry(outflow('457'), 'Associés — dividendes à payer', 'financial', false, 'Dividendes versés à la ville actionnaire'),
+  state_dividend_received: entry(inflow('761'), 'Produits des participations', 'sales', false, undefined, publicVariant(inflow('761'), 'Produits des participations', 'Dividendes d’une entreprise dont la ville est actionnaire')),
   // A company the player demolishes is liquidated (see LiquidateDemolishedBuilding.js): its stock is sold off, what its creditors left of its cash goes back to the city
   // as the return of the capital the city put in (the company's 101 out, the city's holding 261 back), and the wages it could not pay are advanced by the city.
   liquidation_stock_sale: entry(inflow('707'), 'Ventes de marchandises', 'sales', false, 'Stock vendu en liquidation'),
@@ -218,6 +230,9 @@ const OPERATIONS_DIVERSES = Object.freeze({
   od_bad_debt_contribution: Object.freeze({ debit: '6541', credit: '4387', label: 'Créances admises en non-valeur', tone: 'external', detail: 'Des cotisations dues à la ville ne seront jamais encaissées' }),
   od_bad_debt_corporate_tax: Object.freeze({ debit: '6541', credit: '411', label: 'Créances admises en non-valeur', tone: 'external', detail: 'Un impôt dû à la ville ne sera jamais encaissé' }),
   od_bad_debt_premises_rent: Object.freeze({ debit: '654', credit: '411', label: 'Pertes sur créances irrécouvrables', tone: 'external', detail: 'Un loyer de local dû à la SCI ne sera jamais encaissé' }),
+  // What a company that is liquidated still owes the city of a loan of working capital is abandoned (the debtor is released, 7718) and the city bears the loss (654).
+  od_aid_loan_abandoned: Object.freeze({ debit: '164', credit: '7718', label: 'Abandons de créances obtenus', tone: 'sales', detail: 'Le prêt de la ville ne sera jamais remboursé : la dette est abandonnée' }),
+  od_aid_loan_loss: Object.freeze({ debit: '654', credit: '274', label: 'Pertes sur créances irrécouvrables', tone: 'external', detail: 'Un prêt de la ville à une entreprise liquidée ne sera jamais remboursé' }),
   // What the city held in a company that is liquidated and did not give back: its holding (261) leaves the books at a loss (675).
   od_holding_written_off: Object.freeze({ debit: '675', credit: '261', label: 'Valeurs comptables des éléments d’actif cédés', tone: 'external', detail: 'Le capital que la ville avait mis dans une entreprise liquidée est perdu' }),
   od_receivable_premises_rent: Object.freeze({ debit: '411', credit: '752', label: 'Revenus des immeubles', tone: 'sales', detail: 'Loyer du local dû à la SCI, pas encore encaissé' }),

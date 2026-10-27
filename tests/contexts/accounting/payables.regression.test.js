@@ -41,7 +41,6 @@ function settleMonth(journal, { monthIndex, cash }) {
       journal.push({ ...line, year: 1, month: monthIndex + 1 });
       return { recorded: true };
     },
-    recordEconomyMovement: async () => {},
   });
   return service.execute({ time: monthIndex, deliveredTime: monthIndex - 1 });
 }

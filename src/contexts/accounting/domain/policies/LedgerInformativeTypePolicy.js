@@ -89,6 +89,8 @@ export const INFO_JOURNAL_TYPE_LABELS = {
   info_rent_written_off: 'Loyer impayé abandonné (informatif)',
   // What a building's spoiled goods would have sold for: a loss of opportunity, never a charge, so it moves no money.
   info_goods_spoiled: 'Avarie — manque à gagner (informatif)',
+  // A day that failed and was not completed: the books of that day (or of its month) may be incomplete. Moves no money.
+  info_day_failed: 'Jour non terminé — comptabilité peut-être incomplète (informatif)',
 };
 
 /**

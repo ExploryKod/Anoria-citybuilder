@@ -8,22 +8,6 @@ import { hasCounterpart } from '../../../../shared/accounting-catalog/PcgJournal
  * (LiquidateDemolishedBuilding): one way to write a line and to pay a debt, so the two never drift apart.
  */
 
-/**
- * The private movements the economy register keeps, each under the building it concerns. Goods sales and purchases
- * (producer_revenue, producer_purchase) are already in the register as goods flows. The city's receipt of the corporate
- * tax (corporate_tax_revenue) repeats the company's corporate_tax, so it is not written twice.
- */
-export const ECONOMY_REGISTER_KINDS = new Set([
-  'producer_wage',
-  'household_wage',
-  'maintenance',
-  'subsidy_housing_received',
-  'subsidy_companies',
-  'subsidy_companies_received',
-  'subsidy_housing',
-  'corporate_tax',
-]);
-
 /** The journal words of each line kind; the company's name is added in front. */
 export const LINE_LABELS = Object.freeze({
   producer_revenue: 'Ventes HT',
@@ -65,29 +49,18 @@ export const LINE_LABELS = Object.freeze({
   wage_guarantee: 'Salaires impayés avancés par la ville',
   liquidation_surplus_paid: 'Caisse rendue à la ville',
   liquidation_surplus_received: 'Capital rendu par une entreprise liquidée',
+  aid_loan_repaid: 'Prêt de la ville remboursé',
+  aid_loan_repayment_received: 'Prêt à une entreprise remboursé',
 });
 
 /**
- * A private movement is written to the economy register first (its business key makes that idempotent), then the
- * journal line is recorded. The goods flows are already in the register, written by the supply.
- * @param {{ recordEconomyMovement: Function, recordLedgerEntry: Function }} deps
+ * A private movement is one journal line: the journal is the only record of value, and its business key makes the write idempotent.
+ * @param {{ recordLedgerEntry: Function }} deps
  * @param {{ kind: string, amount: number, holder: string | null, counterparty: string | null, accountKind?: string | null, flow?: string | null, legs?: Array<object>, resource?: string }} line
  * @param {{ time: number, key: string, description: string, buildingInstanceId: string, timeInfo: { year: number, monthIndex: number } }} written
  * @param {{ refuseDuplicate?: boolean }} [options] `refuseDuplicate`: a line that was already written is a defect, not a month already settled (the liquidation, once)
  */
 export async function recordLine(deps, line, { time, key, description, buildingInstanceId, timeInfo }, { refuseDuplicate = false } = {}) {
-  if (ECONOMY_REGISTER_KINDS.has(line.kind)) {
-    await deps.recordEconomyMovement({
-      turn: time,
-      monthIndex: timeInfo.monthIndex,
-      year: timeInfo.year,
-      kind: line.kind,
-      amount: line.amount,
-      buildingId: buildingInstanceId,
-      counterpartyId: line.counterparty,
-      businessKey: key,
-    });
-  }
   // A line that is one side of a flow between accounts names the flow (null when the other side is booked elsewhere): the other account books its own écriture
   // of it with the same transactionId, so the two can be set against one another. A writer that forgets is a defect.
   if (line.flow === undefined && hasCounterpart(line.kind)) {
@@ -117,7 +90,7 @@ export async function recordLine(deps, line, { time, key, description, buildingI
 /**
  * A company's debt paid off, in whole or in part: the line of money against the debt account, and what the creditor receives (the house of the workers,
  * the city's social security or treasury, the owner).
- * @param {{ recordEconomyMovement: Function, recordLedgerEntry: Function }} deps
+ * @param {{ recordLedgerEntry: Function }} deps
  * @param {object} params
  * @param {{ kind: string, debtorId: string, creditorId: string | null, accountKind: string | null }} params.debt
  * @param {number} params.amount in euros

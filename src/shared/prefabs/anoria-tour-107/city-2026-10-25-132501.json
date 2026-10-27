@@ -2,6 +2,7 @@
   "exportDate": "2026-10-25T12:25:01.348Z",
   "config": {
     "citySize": 18,
+    "turn": 107,
     "daysPerMonth": 5,
     "perCapitaDemand": 1,
     "annualYieldPerProducer": 288,
@@ -19,40 +20,6 @@
       "instanceId": "8ebe8e8b-f883-4634-86cf-b63ff961522a",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "ce28b146-2e80-4368-8306-5998ba6984ca",
-          "type": "Tree-Chene",
-          "x": 5,
-          "y": 2,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "8a6cb275-28de-4a70-9199-0e4af66c8ffa",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 1,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "a1864cb3-35a5-43f9-be9d-42099c1378dc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 2,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "379be3e3-acae-4a97-914e-62646b4ac608",
-          "type": "Kenney-Industrial-building-l",
-          "x": 8,
-          "y": 0,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -90,14 +57,12 @@
         "light": 0
       },
       "gameTurn": 5,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 0,
       "gridSize": 1,
@@ -118,47 +83,12 @@
           7,
           0
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "379be3e3-acae-4a97-914e-62646b4ac608",
       "type": "CoalPlant",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "8ebe8e8b-f883-4634-86cf-b63ff961522a",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 0,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "8a6cb275-28de-4a70-9199-0e4af66c8ffa",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 1,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "a1864cb3-35a5-43f9-be9d-42099c1378dc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 2,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "379be3e3-acae-4a97-914e-62646b4ac608",
-          "type": "Kenney-Industrial-building-l",
-          "x": 8,
-          "y": 0,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -196,14 +126,12 @@
         "light": 0
       },
       "gameTurn": 77,
-      "time": 64,
       "isBuilding": true,
       "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 110,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 8,
       "y": 0,
       "gridSize": 3,
@@ -248,7 +176,6 @@
           1
         ]
       ],
-      "markets": [],
       "lastEnergyProductionMonth": 9,
       "unmetDemand": 6,
       "salesToDistributor": [],
@@ -259,24 +186,6 @@
       "category": "nature",
       "x": 12,
       "y": 0,
-      "neighbors": [
-        {
-          "instanceId": "4fc11876-3ffa-45cb-8e80-65681e0cd93b",
-          "type": "Tree-Arbuste",
-          "x": 12,
-          "y": 1,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ca2726ab-bbf4-41a0-aefd-7ccd0e90fa05",
-          "type": "Tree-Sapin",
-          "x": 14,
-          "y": 0,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wood": 120
@@ -285,7 +194,6 @@
         "wood": 120
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "05e8c322-cc19-49fc-9740-00672e6c1db9",
@@ -303,32 +211,13 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "type": "Tree-Sapin",
       "category": "nature",
       "x": 14,
       "y": 0,
-      "neighbors": [
-        {
-          "instanceId": "05e8c322-cc19-49fc-9740-00672e6c1db9",
-          "type": "Tree-Chene",
-          "x": 12,
-          "y": 0,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "4fc11876-3ffa-45cb-8e80-65681e0cd93b",
-          "type": "Tree-Arbuste",
-          "x": 12,
-          "y": 1,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wood": 100
@@ -337,7 +226,6 @@
         "wood": 100
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "ca2726ab-bbf4-41a0-aefd-7ccd0e90fa05",
@@ -355,15 +243,13 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "type": "Tree-Sapin",
       "category": "nature",
       "x": 1,
       "y": 1,
-      "neighbors": [],
       "pop": 0,
       "stocks": {
         "wood": 100
@@ -372,7 +258,6 @@
         "wood": 100
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "b003de49-f3a7-4ef2-9593-c0076e1b43db",
@@ -390,55 +275,12 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "instanceId": "8a6cb275-28de-4a70-9199-0e4af66c8ffa",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "ce28b146-2e80-4368-8306-5998ba6984ca",
-          "type": "Tree-Chene",
-          "x": 5,
-          "y": 2,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "8ebe8e8b-f883-4634-86cf-b63ff961522a",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 0,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "a1864cb3-35a5-43f9-be9d-42099c1378dc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 2,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "80e6ffe0-1610-44f6-ba12-323f8c290ab3",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 3,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "379be3e3-acae-4a97-914e-62646b4ac608",
-          "type": "Kenney-Industrial-building-l",
-          "x": 8,
-          "y": 0,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -476,14 +318,12 @@
         "light": 0
       },
       "gameTurn": 5,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 1,
       "gridSize": 1,
@@ -504,40 +344,13 @@
           7,
           1
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "type": "Tree-Arbuste",
       "category": "nature",
       "x": 12,
       "y": 1,
-      "neighbors": [
-        {
-          "instanceId": "05e8c322-cc19-49fc-9740-00672e6c1db9",
-          "type": "Tree-Chene",
-          "x": 12,
-          "y": 0,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "61b40417-5ee9-49d7-9f7d-75720cbd0628",
-          "type": "Tree-Chene",
-          "x": 13,
-          "y": 3,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ca2726ab-bbf4-41a0-aefd-7ccd0e90fa05",
-          "type": "Tree-Sapin",
-          "x": 14,
-          "y": 0,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wood": 80
@@ -546,7 +359,6 @@
         "wood": 80
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "4fc11876-3ffa-45cb-8e80-65681e0cd93b",
@@ -564,15 +376,13 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "type": "Boulder-001",
       "category": "nature",
       "x": 17,
       "y": 1,
-      "neighbors": [],
       "pop": 0,
       "stocks": {
         "rock": 61,
@@ -585,7 +395,6 @@
         "iron": 34
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "83032544-4621-47c7-b04b-86f63c401874",
@@ -603,56 +412,13 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "type": "Tree-Chene",
       "category": "nature",
       "x": 5,
       "y": 2,
-      "neighbors": [
-        {
-          "instanceId": "8ebe8e8b-f883-4634-86cf-b63ff961522a",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 0,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "8a6cb275-28de-4a70-9199-0e4af66c8ffa",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 1,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "a1864cb3-35a5-43f9-be9d-42099c1378dc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 2,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "80e6ffe0-1610-44f6-ba12-323f8c290ab3",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 3,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "9f54f5e2-bdb2-42dd-a769-d18f6337a690",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 4,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wood": 120
@@ -661,7 +427,6 @@
         "wood": 120
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "ce28b146-2e80-4368-8306-5998ba6984ca",
@@ -679,63 +444,12 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "instanceId": "a1864cb3-35a5-43f9-be9d-42099c1378dc",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "ce28b146-2e80-4368-8306-5998ba6984ca",
-          "type": "Tree-Chene",
-          "x": 5,
-          "y": 2,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "8ebe8e8b-f883-4634-86cf-b63ff961522a",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 0,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "8a6cb275-28de-4a70-9199-0e4af66c8ffa",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 1,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "80e6ffe0-1610-44f6-ba12-323f8c290ab3",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 3,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "9f54f5e2-bdb2-42dd-a769-d18f6337a690",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 4,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "379be3e3-acae-4a97-914e-62646b4ac608",
-          "type": "Kenney-Industrial-building-l",
-          "x": 8,
-          "y": 0,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -773,14 +487,12 @@
         "light": 0
       },
       "gameTurn": 5,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 2,
       "gridSize": 1,
@@ -801,55 +513,12 @@
           7,
           2
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "9e120d40-0e2f-4f1e-8f9a-58bc164b4cd5",
       "type": "Factory-Pot",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "8ebe8e8b-f883-4634-86cf-b63ff961522a",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 0,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "8a6cb275-28de-4a70-9199-0e4af66c8ffa",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 1,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "a1864cb3-35a5-43f9-be9d-42099c1378dc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 2,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "80e6ffe0-1610-44f6-ba12-323f8c290ab3",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 3,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "9f54f5e2-bdb2-42dd-a769-d18f6337a690",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 4,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -887,14 +556,12 @@
         "light": 0
       },
       "gameTurn": 81,
-      "time": 0,
       "isBuilding": true,
       "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 55,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 8,
       "y": 2,
       "gridSize": 2,
@@ -931,7 +598,6 @@
           3
         ]
       ],
-      "markets": [],
       "cycleState": {
         "pot": {
           "index": 0,
@@ -962,56 +628,6 @@
       "instanceId": "80e6ffe0-1610-44f6-ba12-323f8c290ab3",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
-          "type": "Kenney-Industrial-building-a",
-          "x": 4,
-          "y": 4,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ce28b146-2e80-4368-8306-5998ba6984ca",
-          "type": "Tree-Chene",
-          "x": 5,
-          "y": 2,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "8a6cb275-28de-4a70-9199-0e4af66c8ffa",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 1,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "a1864cb3-35a5-43f9-be9d-42099c1378dc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 2,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "9f54f5e2-bdb2-42dd-a769-d18f6337a690",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 4,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "14817b1b-8ebe-4d59-98d5-4af18bb22e9f",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 5,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -1049,14 +665,12 @@
         "light": 0
       },
       "gameTurn": 5,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 3,
       "gridSize": 1,
@@ -1077,32 +691,13 @@
           7,
           3
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "type": "Tree-Chene",
       "category": "nature",
       "x": 13,
       "y": 3,
-      "neighbors": [
-        {
-          "instanceId": "4fc11876-3ffa-45cb-8e80-65681e0cd93b",
-          "type": "Tree-Arbuste",
-          "x": 12,
-          "y": 1,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "8166f9e5-c571-46d1-8f2c-24b03770cd57",
-          "type": "Tree-Sapin",
-          "x": 15,
-          "y": 5,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wood": 120
@@ -1111,7 +706,6 @@
         "wood": 120
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "61b40417-5ee9-49d7-9f7d-75720cbd0628",
@@ -1129,15 +723,13 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "type": "Tree-Arbuste",
       "category": "nature",
       "x": 2,
       "y": 4,
-      "neighbors": [],
       "pop": 0,
       "stocks": {
         "wood": 80
@@ -1146,7 +738,6 @@
         "wood": 80
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "e6805657-1728-4d61-868d-285bf9415d14",
@@ -1164,39 +755,12 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "instanceId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
       "type": "Warehouse",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "e6805657-1728-4d61-868d-285bf9415d14",
-          "type": "Tree-Arbuste",
-          "x": 2,
-          "y": 4,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
-          "type": "Kenney-Industrial-building-a",
-          "x": 4,
-          "y": 4,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ce28b146-2e80-4368-8306-5998ba6984ca",
-          "type": "Tree-Chene",
-          "x": 5,
-          "y": 2,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -1234,14 +798,12 @@
         "light": 0
       },
       "gameTurn": 74,
-      "time": 0,
       "isBuilding": true,
       "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 80,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 4,
       "y": 4,
       "gridSize": 3,
@@ -1286,7 +848,6 @@
           5
         ]
       ],
-      "markets": [],
       "isCollecting": true,
       "linkedDistributors": [],
       "clientDemand": {
@@ -1453,56 +1014,6 @@
       "instanceId": "9f54f5e2-bdb2-42dd-a769-d18f6337a690",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
-          "type": "Kenney-Industrial-building-a",
-          "x": 4,
-          "y": 4,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ce28b146-2e80-4368-8306-5998ba6984ca",
-          "type": "Tree-Chene",
-          "x": 5,
-          "y": 2,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "a1864cb3-35a5-43f9-be9d-42099c1378dc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 2,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "80e6ffe0-1610-44f6-ba12-323f8c290ab3",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 3,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "14817b1b-8ebe-4d59-98d5-4af18bb22e9f",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 5,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "f6a0454a-ef58-4a62-9a47-a70bebedec9e",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 6,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -1540,14 +1051,12 @@
         "light": 0
       },
       "gameTurn": 5,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 4,
       "gridSize": 1,
@@ -1568,55 +1077,12 @@
           7,
           4
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "14817b1b-8ebe-4d59-98d5-4af18bb22e9f",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
-          "type": "Kenney-Industrial-building-a",
-          "x": 4,
-          "y": 4,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "80e6ffe0-1610-44f6-ba12-323f8c290ab3",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 3,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "9f54f5e2-bdb2-42dd-a769-d18f6337a690",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 4,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "f6a0454a-ef58-4a62-9a47-a70bebedec9e",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 6,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "88d9a40c-26b5-4902-83e1-154b2e37d02d",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 7,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -1654,14 +1120,12 @@
         "light": 0
       },
       "gameTurn": 5,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 5,
       "gridSize": 1,
@@ -1682,63 +1146,12 @@
           7,
           5
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "9101dc05-005a-40a8-b1b0-068907e24961",
       "type": "TradeWarehouse",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "810be22f-5b2c-4087-a0f8-fe55bd849d9a",
-          "type": "Kenney-Industrial-building-j",
-          "x": 6,
-          "y": 6,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "80e6ffe0-1610-44f6-ba12-323f8c290ab3",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 3,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "9f54f5e2-bdb2-42dd-a769-d18f6337a690",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 4,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "14817b1b-8ebe-4d59-98d5-4af18bb22e9f",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 5,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "f6a0454a-ef58-4a62-9a47-a70bebedec9e",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 6,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "88d9a40c-26b5-4902-83e1-154b2e37d02d",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 7,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -1776,14 +1189,12 @@
         "light": 0
       },
       "gameTurn": 50,
-      "time": 0,
       "isBuilding": true,
       "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 120,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 8,
       "y": 5,
       "gridSize": 2,
@@ -1820,7 +1231,6 @@
           6
         ]
       ],
-      "markets": [],
       "isCollecting": true,
       "linkedDistributors": [],
       "lots": {
@@ -1938,32 +1348,6 @@
       "category": "nature",
       "x": 15,
       "y": 5,
-      "neighbors": [
-        {
-          "instanceId": "61b40417-5ee9-49d7-9f7d-75720cbd0628",
-          "type": "Tree-Chene",
-          "x": 13,
-          "y": 3,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "f026dec9-6258-4df7-a22a-bda843c4a9c9",
-          "type": "Tree-Chene",
-          "x": 14,
-          "y": 7,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "e2c06c24-b74c-4609-8d3e-a2dbd5c42fa8",
-          "type": "Boulder-001",
-          "x": 16,
-          "y": 6,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wood": 100
@@ -1972,7 +1356,6 @@
         "wood": 100
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "8166f9e5-c571-46d1-8f2c-24b03770cd57",
@@ -1990,71 +1373,12 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "instanceId": "810be22f-5b2c-4087-a0f8-fe55bd849d9a",
       "type": "Windmill-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
-          "type": "House-Mayor",
-          "x": 5,
-          "y": 8,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "9f54f5e2-bdb2-42dd-a769-d18f6337a690",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 4,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "14817b1b-8ebe-4d59-98d5-4af18bb22e9f",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 5,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "f6a0454a-ef58-4a62-9a47-a70bebedec9e",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 6,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "88d9a40c-26b5-4902-83e1-154b2e37d02d",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 7,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2f4ca1d3-c4f6-450f-99de-0bb1ea8c33ba",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 8,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "a3f6b1b2-a108-4489-8d83-65619d408211",
-          "type": "Kenney-Commercial-building-c",
-          "x": 8,
-          "y": 7,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 42,
@@ -2092,14 +1416,12 @@
         "light": 0
       },
       "gameTurn": 22,
-      "time": 0,
       "isBuilding": true,
       "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 50,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 6,
       "y": 6,
       "gridSize": 2,
@@ -2128,7 +1450,6 @@
           7
         ]
       ],
-      "markets": [],
       "isCollecting": false,
       "linkedDistributors": [
         {
@@ -2268,64 +1589,6 @@
       "instanceId": "f6a0454a-ef58-4a62-9a47-a70bebedec9e",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
-          "type": "Kenney-Industrial-building-a",
-          "x": 4,
-          "y": 4,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
-          "type": "House-Mayor",
-          "x": 5,
-          "y": 8,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "810be22f-5b2c-4087-a0f8-fe55bd849d9a",
-          "type": "Kenney-Industrial-building-j",
-          "x": 6,
-          "y": 6,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "9f54f5e2-bdb2-42dd-a769-d18f6337a690",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 4,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "14817b1b-8ebe-4d59-98d5-4af18bb22e9f",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 5,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "88d9a40c-26b5-4902-83e1-154b2e37d02d",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 7,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2f4ca1d3-c4f6-450f-99de-0bb1ea8c33ba",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 8,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -2363,14 +1626,12 @@
         "light": 0
       },
       "gameTurn": 5,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 6,
       "gridSize": 1,
@@ -2391,32 +1652,13 @@
           7,
           6
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "type": "Boulder-001",
       "category": "nature",
       "x": 16,
       "y": 6,
-      "neighbors": [
-        {
-          "instanceId": "f026dec9-6258-4df7-a22a-bda843c4a9c9",
-          "type": "Tree-Chene",
-          "x": 14,
-          "y": 7,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "8166f9e5-c571-46d1-8f2c-24b03770cd57",
-          "type": "Tree-Sapin",
-          "x": 15,
-          "y": 5,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "rock": 143,
@@ -2429,7 +1671,6 @@
         "iron": 39
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "e2c06c24-b74c-4609-8d3e-a2dbd5c42fa8",
@@ -2447,63 +1688,12 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "instanceId": "88d9a40c-26b5-4902-83e1-154b2e37d02d",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "810be22f-5b2c-4087-a0f8-fe55bd849d9a",
-          "type": "Kenney-Industrial-building-j",
-          "x": 6,
-          "y": 6,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "14817b1b-8ebe-4d59-98d5-4af18bb22e9f",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 5,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "f6a0454a-ef58-4a62-9a47-a70bebedec9e",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 6,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2f4ca1d3-c4f6-450f-99de-0bb1ea8c33ba",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 8,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "7c238bba-472b-4dd3-afba-1aa2234c6088",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 9,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "a3f6b1b2-a108-4489-8d83-65619d408211",
-          "type": "Kenney-Commercial-building-c",
-          "x": 8,
-          "y": 7,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -2541,14 +1731,12 @@
         "light": 0
       },
       "gameTurn": 5,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 7,
       "gridSize": 1,
@@ -2569,63 +1757,12 @@
           7,
           7
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "a3f6b1b2-a108-4489-8d83-65619d408211",
       "type": "Market-Stall-Red",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "810be22f-5b2c-4087-a0f8-fe55bd849d9a",
-          "type": "Kenney-Industrial-building-j",
-          "x": 6,
-          "y": 6,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "14817b1b-8ebe-4d59-98d5-4af18bb22e9f",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 5,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "f6a0454a-ef58-4a62-9a47-a70bebedec9e",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 6,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "88d9a40c-26b5-4902-83e1-154b2e37d02d",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 7,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2f4ca1d3-c4f6-450f-99de-0bb1ea8c33ba",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 8,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "7c238bba-472b-4dd3-afba-1aa2234c6088",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 9,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 6,
@@ -2663,14 +1800,12 @@
         "light": 0
       },
       "gameTurn": 23,
-      "time": 186,
       "isBuilding": true,
       "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 8,
       "y": 7,
       "gridSize": 2,
@@ -2699,7 +1834,6 @@
           8
         ]
       ],
-      "markets": [],
       "supplyHubId": "810be22f-5b2c-4087-a0f8-fe55bd849d9a",
       "distributorTooFar": false,
       "noSourcesNearby": false,
@@ -2726,24 +1860,6 @@
       "category": "nature",
       "x": 14,
       "y": 7,
-      "neighbors": [
-        {
-          "instanceId": "8166f9e5-c571-46d1-8f2c-24b03770cd57",
-          "type": "Tree-Sapin",
-          "x": 15,
-          "y": 5,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "e2c06c24-b74c-4609-8d3e-a2dbd5c42fa8",
-          "type": "Boulder-001",
-          "x": 16,
-          "y": 6,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wood": 120
@@ -2752,7 +1868,6 @@
         "wood": 120
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "f026dec9-6258-4df7-a22a-bda843c4a9c9",
@@ -2770,64 +1885,13 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "type": "Tree-Arbuste",
       "category": "nature",
       "x": 3,
       "y": 8,
-      "neighbors": [
-        {
-          "instanceId": "e5014d4e-1b8a-4e04-997f-ba54db4ffced",
-          "type": "StonePath-001",
-          "x": 1,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "ae7a5563-2786-4f16-8712-5ca05c5f0eb4",
-          "type": "Tree-Sapin",
-          "x": 2,
-          "y": 9,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "6667bddd-93f9-4a9c-bc06-b70edfe6e224",
-          "type": "StonePath-001",
-          "x": 2,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "29f181f0-7886-4c45-8834-f6a83c5e422a",
-          "type": "StonePath-001",
-          "x": 3,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "324e0ea2-810e-4a94-9905-3d4e61da4e7b",
-          "type": "StonePath-001",
-          "x": 4,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
-          "type": "StonePath-001",
-          "x": 5,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wood": 80
@@ -2836,7 +1900,6 @@
         "wood": 80
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "5be08417-b4df-40dd-8113-f80c7c44f71e",
@@ -2854,95 +1917,12 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "instanceId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "type": "House-Mayor",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "5be08417-b4df-40dd-8113-f80c7c44f71e",
-          "type": "Tree-Arbuste",
-          "x": 3,
-          "y": 8,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "29f181f0-7886-4c45-8834-f6a83c5e422a",
-          "type": "StonePath-001",
-          "x": 3,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "324e0ea2-810e-4a94-9905-3d4e61da4e7b",
-          "type": "StonePath-001",
-          "x": 4,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
-          "type": "StonePath-001",
-          "x": 5,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "40cb6ab5-18e4-4e5b-b156-8c2919b4fae9",
-          "type": "StonePath-001",
-          "x": 6,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "f6a0454a-ef58-4a62-9a47-a70bebedec9e",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 6,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "88d9a40c-26b5-4902-83e1-154b2e37d02d",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 7,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2f4ca1d3-c4f6-450f-99de-0bb1ea8c33ba",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 8,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "7c238bba-472b-4dd3-afba-1aa2234c6088",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 9,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "6496141f-883d-4657-8322-c176c055487f",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 6,
       "stocks": {
         "wheat": 6,
@@ -2980,14 +1960,12 @@
         "light": 0
       },
       "gameTurn": 1,
-      "time": 0,
       "isBuilding": true,
       "roads": 4,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 5,
       "y": 8,
       "gridSize": 2,
@@ -3021,7 +1999,6 @@
           9
         ]
       ],
-      "markets": [],
       "distributorTooFar": false,
       "lastPopulationGrowthMonth": 5,
       "lastConsumptionMonth": 9,
@@ -3190,7 +2167,8 @@
       },
       "servedFlags": {
         "doctor": 9,
-        "fire": 9
+        "fire": 9,
+        "primarySchool": 9
       },
       "level": 2
     },
@@ -3198,64 +2176,6 @@
       "instanceId": "2f4ca1d3-c4f6-450f-99de-0bb1ea8c33ba",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
-          "type": "StonePath-001",
-          "x": 5,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "40cb6ab5-18e4-4e5b-b156-8c2919b4fae9",
-          "type": "StonePath-001",
-          "x": 6,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "f6a0454a-ef58-4a62-9a47-a70bebedec9e",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 6,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "88d9a40c-26b5-4902-83e1-154b2e37d02d",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 7,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "7c238bba-472b-4dd3-afba-1aa2234c6088",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 9,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "6496141f-883d-4657-8322-c176c055487f",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "a3f6b1b2-a108-4489-8d83-65619d408211",
-          "type": "Kenney-Commercial-building-c",
-          "x": 8,
-          "y": 7,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -3293,14 +2213,12 @@
         "light": 0
       },
       "gameTurn": 4,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 8,
       "gridSize": 1,
@@ -3321,64 +2239,13 @@
           7,
           8
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "type": "Tree-Sapin",
       "category": "nature",
       "x": 2,
       "y": 9,
-      "neighbors": [
-        {
-          "instanceId": "e5014d4e-1b8a-4e04-997f-ba54db4ffced",
-          "type": "StonePath-001",
-          "x": 1,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "6667bddd-93f9-4a9c-bc06-b70edfe6e224",
-          "type": "StonePath-001",
-          "x": 2,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "9a973967-fa0b-4c00-9853-d9352c206c8d",
-          "type": "Kenney-Commercial-building-f",
-          "x": 2,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "5be08417-b4df-40dd-8113-f80c7c44f71e",
-          "type": "Tree-Arbuste",
-          "x": 3,
-          "y": 8,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "29f181f0-7886-4c45-8834-f6a83c5e422a",
-          "type": "StonePath-001",
-          "x": 3,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "324e0ea2-810e-4a94-9905-3d4e61da4e7b",
-          "type": "StonePath-001",
-          "x": 4,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wood": 100
@@ -3387,7 +2254,6 @@
         "wood": 100
       },
       "roads": 1,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "ae7a5563-2786-4f16-8712-5ca05c5f0eb4",
@@ -3405,79 +2271,12 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "instanceId": "7c238bba-472b-4dd3-afba-1aa2234c6088",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
-          "type": "StonePath-001",
-          "x": 5,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
-          "type": "House-Blue",
-          "x": 5,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "40cb6ab5-18e4-4e5b-b156-8c2919b4fae9",
-          "type": "StonePath-001",
-          "x": 6,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "88d9a40c-26b5-4902-83e1-154b2e37d02d",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 7,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2f4ca1d3-c4f6-450f-99de-0bb1ea8c33ba",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 8,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "6496141f-883d-4657-8322-c176c055487f",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 11,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
-          "type": "House-Red",
-          "x": 8,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -3515,14 +2314,12 @@
         "light": 0
       },
       "gameTurn": 4,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 9,
       "gridSize": 1,
@@ -3543,55 +2340,12 @@
           7,
           9
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "e5014d4e-1b8a-4e04-997f-ba54db4ffced",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "ae7a5563-2786-4f16-8712-5ca05c5f0eb4",
-          "type": "Tree-Sapin",
-          "x": 2,
-          "y": 9,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "6667bddd-93f9-4a9c-bc06-b70edfe6e224",
-          "type": "StonePath-001",
-          "x": 2,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "9a973967-fa0b-4c00-9853-d9352c206c8d",
-          "type": "Kenney-Commercial-building-f",
-          "x": 2,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "5be08417-b4df-40dd-8113-f80c7c44f71e",
-          "type": "Tree-Arbuste",
-          "x": 3,
-          "y": 8,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "29f181f0-7886-4c45-8834-f6a83c5e422a",
-          "type": "StonePath-001",
-          "x": 3,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -3629,14 +2383,12 @@
         "light": 0
       },
       "gameTurn": 4,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 1,
       "y": 10,
       "gridSize": 1,
@@ -3657,63 +2409,12 @@
           1,
           10
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "6667bddd-93f9-4a9c-bc06-b70edfe6e224",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "e5014d4e-1b8a-4e04-997f-ba54db4ffced",
-          "type": "StonePath-001",
-          "x": 1,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "ae7a5563-2786-4f16-8712-5ca05c5f0eb4",
-          "type": "Tree-Sapin",
-          "x": 2,
-          "y": 9,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "9a973967-fa0b-4c00-9853-d9352c206c8d",
-          "type": "Kenney-Commercial-building-f",
-          "x": 2,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "5be08417-b4df-40dd-8113-f80c7c44f71e",
-          "type": "Tree-Arbuste",
-          "x": 3,
-          "y": 8,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "29f181f0-7886-4c45-8834-f6a83c5e422a",
-          "type": "StonePath-001",
-          "x": 3,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "324e0ea2-810e-4a94-9905-3d4e61da4e7b",
-          "type": "StonePath-001",
-          "x": 4,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -3751,14 +2452,12 @@
         "light": 0
       },
       "gameTurn": 4,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 2,
       "y": 10,
       "gridSize": 1,
@@ -3779,79 +2478,12 @@
           2,
           10
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "29f181f0-7886-4c45-8834-f6a83c5e422a",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "e5014d4e-1b8a-4e04-997f-ba54db4ffced",
-          "type": "StonePath-001",
-          "x": 1,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "ae7a5563-2786-4f16-8712-5ca05c5f0eb4",
-          "type": "Tree-Sapin",
-          "x": 2,
-          "y": 9,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "6667bddd-93f9-4a9c-bc06-b70edfe6e224",
-          "type": "StonePath-001",
-          "x": 2,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "9a973967-fa0b-4c00-9853-d9352c206c8d",
-          "type": "Kenney-Commercial-building-f",
-          "x": 2,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "5be08417-b4df-40dd-8113-f80c7c44f71e",
-          "type": "Tree-Arbuste",
-          "x": 3,
-          "y": 8,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "324e0ea2-810e-4a94-9905-3d4e61da4e7b",
-          "type": "StonePath-001",
-          "x": 4,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
-          "type": "StonePath-001",
-          "x": 5,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
-          "type": "House-Blue",
-          "x": 5,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -3889,14 +2521,12 @@
         "light": 0
       },
       "gameTurn": 4,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 3,
       "y": 10,
       "gridSize": 1,
@@ -3917,87 +2547,12 @@
           3,
           10
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "324e0ea2-810e-4a94-9905-3d4e61da4e7b",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "ae7a5563-2786-4f16-8712-5ca05c5f0eb4",
-          "type": "Tree-Sapin",
-          "x": 2,
-          "y": 9,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "6667bddd-93f9-4a9c-bc06-b70edfe6e224",
-          "type": "StonePath-001",
-          "x": 2,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "9a973967-fa0b-4c00-9853-d9352c206c8d",
-          "type": "Kenney-Commercial-building-f",
-          "x": 2,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "5be08417-b4df-40dd-8113-f80c7c44f71e",
-          "type": "Tree-Arbuste",
-          "x": 3,
-          "y": 8,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "29f181f0-7886-4c45-8834-f6a83c5e422a",
-          "type": "StonePath-001",
-          "x": 3,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
-          "type": "House-Mayor",
-          "x": 5,
-          "y": 8,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
-          "type": "StonePath-001",
-          "x": 5,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
-          "type": "House-Blue",
-          "x": 5,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "40cb6ab5-18e4-4e5b-b156-8c2919b4fae9",
-          "type": "StonePath-001",
-          "x": 6,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -4035,14 +2590,12 @@
         "light": 0
       },
       "gameTurn": 4,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 4,
       "y": 10,
       "gridSize": 1,
@@ -4063,103 +2616,12 @@
           4,
           10
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "5be08417-b4df-40dd-8113-f80c7c44f71e",
-          "type": "Tree-Arbuste",
-          "x": 3,
-          "y": 8,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "29f181f0-7886-4c45-8834-f6a83c5e422a",
-          "type": "StonePath-001",
-          "x": 3,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "324e0ea2-810e-4a94-9905-3d4e61da4e7b",
-          "type": "StonePath-001",
-          "x": 4,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
-          "type": "House-Mayor",
-          "x": 5,
-          "y": 8,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
-          "type": "House-Blue",
-          "x": 5,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "40cb6ab5-18e4-4e5b-b156-8c2919b4fae9",
-          "type": "StonePath-001",
-          "x": 6,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2f4ca1d3-c4f6-450f-99de-0bb1ea8c33ba",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 8,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "7c238bba-472b-4dd3-afba-1aa2234c6088",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 9,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "6496141f-883d-4657-8322-c176c055487f",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 11,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 12,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -4197,14 +2659,12 @@
         "light": 0
       },
       "gameTurn": 4,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 5,
       "y": 10,
       "gridSize": 1,
@@ -4225,95 +2685,12 @@
           5,
           10
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "40cb6ab5-18e4-4e5b-b156-8c2919b4fae9",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "324e0ea2-810e-4a94-9905-3d4e61da4e7b",
-          "type": "StonePath-001",
-          "x": 4,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
-          "type": "House-Mayor",
-          "x": 5,
-          "y": 8,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
-          "type": "StonePath-001",
-          "x": 5,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
-          "type": "House-Blue",
-          "x": 5,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2f4ca1d3-c4f6-450f-99de-0bb1ea8c33ba",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 8,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "7c238bba-472b-4dd3-afba-1aa2234c6088",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 9,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "6496141f-883d-4657-8322-c176c055487f",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 11,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 12,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
-          "type": "House-Red",
-          "x": 8,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -4351,14 +2728,12 @@
         "light": 0
       },
       "gameTurn": 4,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 6,
       "y": 10,
       "gridSize": 1,
@@ -4379,87 +2754,12 @@
           6,
           10
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "6496141f-883d-4657-8322-c176c055487f",
       "type": "StonePath-Tee-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
-          "type": "House-Mayor",
-          "x": 5,
-          "y": 8,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
-          "type": "StonePath-001",
-          "x": 5,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
-          "type": "House-Blue",
-          "x": 5,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "40cb6ab5-18e4-4e5b-b156-8c2919b4fae9",
-          "type": "StonePath-001",
-          "x": 6,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2f4ca1d3-c4f6-450f-99de-0bb1ea8c33ba",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 8,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "7c238bba-472b-4dd3-afba-1aa2234c6088",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 9,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 11,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 12,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
-          "type": "House-Red",
-          "x": 8,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -4497,14 +2797,12 @@
         "light": 0
       },
       "gameTurn": 6,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 10,
       "gridSize": 1,
@@ -4525,63 +2823,12 @@
           7,
           10
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "2030a157-3c86-4a47-9154-35517df1a236",
       "type": "Farm-Cabbage",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
-          "type": "House-Red",
-          "x": 8,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
-          "type": "Farm-Carrot",
-          "x": 10,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
-          "type": "Farm-Wheat",
-          "x": 10,
-          "y": 12,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "6e6f263a-81dc-4217-a081-93195a939f05",
-          "type": "Farm-Cabbage",
-          "x": 11,
-          "y": 10,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
-          "type": "Farm-Carrot",
-          "x": 11,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
-          "type": "Farm-Wheat",
-          "x": 11,
-          "y": 12,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -4613,20 +2860,18 @@
         "petrol": 0,
         "uranium": 0,
         "exoticWood": 0,
-        "food": 576,
+        "food": 288,
         "goods": 0,
         "heat": 0,
         "light": 0
       },
       "gameTurn": 20,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 30,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 10,
       "y": 10,
       "gridSize": 1,
@@ -4651,7 +2896,6 @@
           10
         ]
       ],
-      "markets": [],
       "lastProductionYear": 1,
       "stockAges": {
         "cabbage": [
@@ -4670,48 +2914,6 @@
       "instanceId": "6e6f263a-81dc-4217-a081-93195a939f05",
       "type": "Farm-Cabbage",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "2030a157-3c86-4a47-9154-35517df1a236",
-          "type": "Farm-Cabbage",
-          "x": 10,
-          "y": 10,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
-          "type": "Farm-Carrot",
-          "x": 10,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
-          "type": "Farm-Wheat",
-          "x": 10,
-          "y": 12,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
-          "type": "Farm-Carrot",
-          "x": 11,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
-          "type": "Farm-Wheat",
-          "x": 11,
-          "y": 12,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -4743,20 +2945,18 @@
         "petrol": 0,
         "uranium": 0,
         "exoticWood": 0,
-        "food": 576,
+        "food": 288,
         "goods": 0,
         "heat": 0,
         "light": 0
       },
       "gameTurn": 20,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 30,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 11,
       "y": 10,
       "gridSize": 1,
@@ -4781,7 +2981,6 @@
           10
         ]
       ],
-      "markets": [],
       "lastProductionYear": 1,
       "stockAges": {
         "cabbage": [
@@ -4800,48 +2999,6 @@
       "instanceId": "9a973967-fa0b-4c00-9853-d9352c206c8d",
       "type": "Doctor",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "e5014d4e-1b8a-4e04-997f-ba54db4ffced",
-          "type": "StonePath-001",
-          "x": 1,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "ae7a5563-2786-4f16-8712-5ca05c5f0eb4",
-          "type": "Tree-Sapin",
-          "x": 2,
-          "y": 9,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "6667bddd-93f9-4a9c-bc06-b70edfe6e224",
-          "type": "StonePath-001",
-          "x": 2,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "29f181f0-7886-4c45-8834-f6a83c5e422a",
-          "type": "StonePath-001",
-          "x": 3,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "324e0ea2-810e-4a94-9905-3d4e61da4e7b",
-          "type": "StonePath-001",
-          "x": 4,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -4879,14 +3036,12 @@
         "light": 0
       },
       "gameTurn": 26,
-      "time": 0,
       "isBuilding": true,
       "roads": 1,
       "stage": 0,
       "stageName": "",
       "price": 55,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 2,
       "y": 11,
       "gridSize": 1,
@@ -4910,79 +3065,84 @@
           2,
           11
         ]
-      ],
-      "markets": []
+      ]
+    },
+    {
+      "instanceId": "0af2f636-6910-4cd7-8f1a-15079df6b8a1",
+      "type": "PrimarySchool",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 26,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 45,
+      "maintenance": 0,
+      "x": 8,
+      "y": 9,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 2,
+        "worker": 2,
+        "sector": 6,
+        "salary": 20,
+        "workerSources": {
+          "4b7424ba-d5b3-457b-90bf-ffe800df176d": 2
+        }
+      },
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "kind": "other",
+      "tier": null,
+      "footprintTiles": [
+        [
+          8,
+          9
+        ]
+      ]
     },
     {
       "instanceId": "0c1a674e-5ac3-426b-8480-d011c3b46792",
       "type": "WaterTank",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "e5014d4e-1b8a-4e04-997f-ba54db4ffced",
-          "type": "StonePath-001",
-          "x": 1,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "ae7a5563-2786-4f16-8712-5ca05c5f0eb4",
-          "type": "Tree-Sapin",
-          "x": 2,
-          "y": 9,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "6667bddd-93f9-4a9c-bc06-b70edfe6e224",
-          "type": "StonePath-001",
-          "x": 2,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "9a973967-fa0b-4c00-9853-d9352c206c8d",
-          "type": "Kenney-Commercial-building-f",
-          "x": 2,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "29f181f0-7886-4c45-8834-f6a83c5e422a",
-          "type": "StonePath-001",
-          "x": 3,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "324e0ea2-810e-4a94-9905-3d4e61da4e7b",
-          "type": "StonePath-001",
-          "x": 4,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
-          "type": "StonePath-001",
-          "x": 5,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
-          "type": "House-Blue",
-          "x": 5,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -5020,14 +3180,12 @@
         "light": 0
       },
       "gameTurn": 24,
-      "time": 182,
       "isBuilding": true,
       "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 60,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 3,
       "y": 11,
       "gridSize": 2,
@@ -5064,7 +3222,6 @@
           12
         ]
       ],
-      "markets": [],
       "lastWaterProductionMonth": 9,
       "unmetDemand": 24,
       "salesToDistributor": [],
@@ -5074,80 +3231,6 @@
       "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "type": "House-Blue",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "29f181f0-7886-4c45-8834-f6a83c5e422a",
-          "type": "StonePath-001",
-          "x": 3,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "324e0ea2-810e-4a94-9905-3d4e61da4e7b",
-          "type": "StonePath-001",
-          "x": 4,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
-          "type": "StonePath-001",
-          "x": 5,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "40cb6ab5-18e4-4e5b-b156-8c2919b4fae9",
-          "type": "StonePath-001",
-          "x": 6,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "7c238bba-472b-4dd3-afba-1aa2234c6088",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 9,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "6496141f-883d-4657-8322-c176c055487f",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 11,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 12,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 13,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 12,
       "stocks": {
         "wheat": 12,
@@ -5185,14 +3268,12 @@
         "light": 0
       },
       "gameTurn": 15,
-      "time": 0,
       "isBuilding": true,
       "roads": 4,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 5,
       "y": 11,
       "gridSize": 2,
@@ -5226,7 +3307,6 @@
           12
         ]
       ],
-      "markets": [],
       "saleWindowOpen": true,
       "distributorTooFar": false,
       "lastPopulationGrowthMonth": 4,
@@ -5444,7 +3524,8 @@
       },
       "servedFlags": {
         "doctor": 9,
-        "fire": 9
+        "fire": 9,
+        "primarySchool": 9
       },
       "lastFailedSale": {
         "year": 0,
@@ -5508,80 +3589,6 @@
       "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
-          "type": "StonePath-001",
-          "x": 5,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
-          "type": "House-Blue",
-          "x": 5,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "40cb6ab5-18e4-4e5b-b156-8c2919b4fae9",
-          "type": "StonePath-001",
-          "x": 6,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "7c238bba-472b-4dd3-afba-1aa2234c6088",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 9,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "6496141f-883d-4657-8322-c176c055487f",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 12,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 13,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
-          "type": "House-Red",
-          "x": 8,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
-          "type": "House-Red",
-          "x": 8,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -5619,14 +3626,12 @@
         "light": 0
       },
       "gameTurn": 6,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 11,
       "gridSize": 1,
@@ -5647,103 +3652,12 @@
           7,
           11
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "type": "House-Red",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "40cb6ab5-18e4-4e5b-b156-8c2919b4fae9",
-          "type": "StonePath-001",
-          "x": 6,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "7c238bba-472b-4dd3-afba-1aa2234c6088",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 9,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "6496141f-883d-4657-8322-c176c055487f",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 10,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 11,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 12,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 13,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
-          "type": "House-Red",
-          "x": 8,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2030a157-3c86-4a47-9154-35517df1a236",
-          "type": "Farm-Cabbage",
-          "x": 10,
-          "y": 10,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
-          "type": "Farm-Carrot",
-          "x": 10,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
-          "type": "Farm-Wheat",
-          "x": 10,
-          "y": 12,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
-          "type": "House-Red",
-          "x": 10,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 12,
       "stocks": {
         "wheat": 12,
@@ -5781,14 +3695,12 @@
         "light": 0
       },
       "gameTurn": 14,
-      "time": 0,
       "isBuilding": true,
       "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 8,
       "y": 11,
       "gridSize": 2,
@@ -5822,7 +3734,6 @@
           12
         ]
       ],
-      "markets": [],
       "cycleState": {
         "decoratedPot": {
           "index": 0,
@@ -6008,7 +3919,8 @@
       },
       "servedFlags": {
         "doctor": 9,
-        "fire": 9
+        "fire": 9,
+        "primarySchool": 9
       },
       "salesToDistributor": [],
       "salesToHub": [],
@@ -6019,72 +3931,6 @@
       "instanceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
       "type": "Farm-Carrot",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
-          "type": "House-Red",
-          "x": 8,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
-          "type": "House-Red",
-          "x": 8,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2030a157-3c86-4a47-9154-35517df1a236",
-          "type": "Farm-Cabbage",
-          "x": 10,
-          "y": 10,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
-          "type": "Farm-Wheat",
-          "x": 10,
-          "y": 12,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
-          "type": "House-Red",
-          "x": 10,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "6e6f263a-81dc-4217-a081-93195a939f05",
-          "type": "Farm-Cabbage",
-          "x": 11,
-          "y": 10,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
-          "type": "Farm-Carrot",
-          "x": 11,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
-          "type": "Farm-Wheat",
-          "x": 11,
-          "y": 12,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -6122,14 +3968,12 @@
         "light": 0
       },
       "gameTurn": 20,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 20,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 10,
       "y": 11,
       "gridSize": 1,
@@ -6154,7 +3998,6 @@
           11
         ]
       ],
-      "markets": [],
       "lastProductionYear": 1,
       "stockAges": {
         "carrot": [
@@ -6179,56 +4022,6 @@
       "instanceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
       "type": "Farm-Carrot",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "2030a157-3c86-4a47-9154-35517df1a236",
-          "type": "Farm-Cabbage",
-          "x": 10,
-          "y": 10,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
-          "type": "Farm-Carrot",
-          "x": 10,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
-          "type": "Farm-Wheat",
-          "x": 10,
-          "y": 12,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
-          "type": "House-Red",
-          "x": 10,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "6e6f263a-81dc-4217-a081-93195a939f05",
-          "type": "Farm-Cabbage",
-          "x": 11,
-          "y": 10,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
-          "type": "Farm-Wheat",
-          "x": 11,
-          "y": 12,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -6266,14 +4059,12 @@
         "light": 0
       },
       "gameTurn": 19,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 20,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 11,
       "y": 11,
       "gridSize": 1,
@@ -6298,7 +4089,6 @@
           11
         ]
       ],
-      "markets": [],
       "lastProductionYear": 1,
       "stockAges": {
         "carrot": [
@@ -6323,80 +4113,6 @@
       "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
-          "type": "StonePath-001",
-          "x": 5,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
-          "type": "House-Blue",
-          "x": 5,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "40cb6ab5-18e4-4e5b-b156-8c2919b4fae9",
-          "type": "StonePath-001",
-          "x": 6,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "6496141f-883d-4657-8322-c176c055487f",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 10,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 11,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 13,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "61bf43fc-c173-4395-9071-46ba5671a619",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 14,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
-          "type": "House-Red",
-          "x": 8,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
-          "type": "House-Red",
-          "x": 8,
-          "y": 13,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -6434,14 +4150,12 @@
         "light": 0
       },
       "gameTurn": 6,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 12,
       "gridSize": 1,
@@ -6462,79 +4176,12 @@
           7,
           12
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
       "type": "Farm-Wheat",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
-          "type": "House-Red",
-          "x": 8,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
-          "type": "House-Red",
-          "x": 8,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2030a157-3c86-4a47-9154-35517df1a236",
-          "type": "Farm-Cabbage",
-          "x": 10,
-          "y": 10,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
-          "type": "Farm-Carrot",
-          "x": 10,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
-          "type": "House-Red",
-          "x": 10,
-          "y": 13,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "6e6f263a-81dc-4217-a081-93195a939f05",
-          "type": "Farm-Cabbage",
-          "x": 11,
-          "y": 10,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
-          "type": "Farm-Carrot",
-          "x": 11,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
-          "type": "Farm-Wheat",
-          "x": 11,
-          "y": 12,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 288,
@@ -6572,14 +4219,12 @@
         "light": 0
       },
       "gameTurn": 18,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 10,
       "y": 12,
       "gridSize": 1,
@@ -6604,7 +4249,6 @@
           12
         ]
       ],
-      "markets": [],
       "lastProductionYear": 1,
       "stockAges": {
         "wheat": [
@@ -6629,56 +4273,6 @@
       "instanceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
       "type": "Farm-Wheat",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "2030a157-3c86-4a47-9154-35517df1a236",
-          "type": "Farm-Cabbage",
-          "x": 10,
-          "y": 10,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
-          "type": "Farm-Carrot",
-          "x": 10,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
-          "type": "Farm-Wheat",
-          "x": 10,
-          "y": 12,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
-          "type": "House-Red",
-          "x": 10,
-          "y": 13,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "6e6f263a-81dc-4217-a081-93195a939f05",
-          "type": "Farm-Cabbage",
-          "x": 11,
-          "y": 10,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
-          "type": "Farm-Carrot",
-          "x": 11,
-          "y": 11,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 288,
@@ -6716,14 +4310,12 @@
         "light": 0
       },
       "gameTurn": 19,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 11,
       "y": 12,
       "gridSize": 1,
@@ -6748,7 +4340,6 @@
           12
         ]
       ],
-      "markets": [],
       "lastProductionYear": 1,
       "stockAges": {
         "wheat": [
@@ -6774,7 +4365,6 @@
       "category": "nature",
       "x": 16,
       "y": 12,
-      "neighbors": [],
       "pop": 0,
       "stocks": {
         "wood": 80
@@ -6783,7 +4373,6 @@
         "wood": 80
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "337bfcb9-50fe-4f1a-a345-a9da410104fa",
@@ -6801,63 +4390,12 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "instanceId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "type": "House-Blue",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
-          "type": "House-Blue",
-          "x": 5,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 11,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 12,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 13,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "61bf43fc-c173-4395-9071-46ba5671a619",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 14,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "07985189-f396-43af-bb61-16169bcc60d7",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 6,
       "stocks": {
         "wheat": 0,
@@ -6895,14 +4433,12 @@
         "light": 0
       },
       "gameTurn": 16,
-      "time": 0,
       "isBuilding": true,
       "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 5,
       "y": 13,
       "gridSize": 2,
@@ -6936,7 +4472,6 @@
           14
         ]
       ],
-      "markets": [],
       "saleWindowOpen": true,
       "distributorTooFar": false,
       "lastPopulationGrowthMonth": 4,
@@ -7142,7 +4677,8 @@
       },
       "servedFlags": {
         "doctor": 9,
-        "fire": 9
+        "fire": 9,
+        "primarySchool": 9
       },
       "lastFailedSale": {
         "year": 0,
@@ -7206,80 +4742,6 @@
       "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
-          "type": "House-Blue",
-          "x": 5,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 11,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 12,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "61bf43fc-c173-4395-9071-46ba5671a619",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 14,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "07985189-f396-43af-bb61-16169bcc60d7",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
-          "type": "House-Red",
-          "x": 8,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
-          "type": "House-Red",
-          "x": 8,
-          "y": 13,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "1d0c209a-9d96-4ff3-b7e7-2cf48a9f02a7",
-          "type": "StonePath-001",
-          "x": 8,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bc7f8d0f-3a92-484f-a3ab-877ef3f66462",
-          "type": "StonePath-001",
-          "x": 9,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -7317,14 +4779,12 @@
         "light": 0
       },
       "gameTurn": 6,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 13,
       "gridSize": 1,
@@ -7345,111 +4805,12 @@
           7,
           13
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "type": "House-Red",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 11,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 12,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 13,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "61bf43fc-c173-4395-9071-46ba5671a619",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 14,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "07985189-f396-43af-bb61-16169bcc60d7",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
-          "type": "House-Red",
-          "x": 8,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "1d0c209a-9d96-4ff3-b7e7-2cf48a9f02a7",
-          "type": "StonePath-001",
-          "x": 8,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bc7f8d0f-3a92-484f-a3ab-877ef3f66462",
-          "type": "StonePath-001",
-          "x": 9,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
-          "type": "Farm-Carrot",
-          "x": 10,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
-          "type": "Farm-Wheat",
-          "x": 10,
-          "y": 12,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
-          "type": "House-Red",
-          "x": 10,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "3e38d5d2-a44f-4873-bdd4-4deea693e87f",
-          "type": "StonePath-001",
-          "x": 10,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 12,
       "stocks": {
         "wheat": 12,
@@ -7487,14 +4848,12 @@
         "light": 0
       },
       "gameTurn": 13,
-      "time": 0,
       "isBuilding": true,
       "roads": 4,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 8,
       "y": 13,
       "gridSize": 2,
@@ -7528,7 +4887,6 @@
           14
         ]
       ],
-      "markets": [],
       "cycleState": {
         "decoratedPot": {
           "index": 0,
@@ -7714,7 +5072,8 @@
       },
       "servedFlags": {
         "doctor": 9,
-        "fire": 9
+        "fire": 9,
+        "primarySchool": 9
       },
       "salesToDistributor": [],
       "salesToHub": [],
@@ -7725,96 +5084,6 @@
       "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "type": "House-Red",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
-          "type": "House-Red",
-          "x": 8,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
-          "type": "House-Red",
-          "x": 8,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "1d0c209a-9d96-4ff3-b7e7-2cf48a9f02a7",
-          "type": "StonePath-001",
-          "x": 8,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bc7f8d0f-3a92-484f-a3ab-877ef3f66462",
-          "type": "StonePath-001",
-          "x": 9,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
-          "type": "Farm-Carrot",
-          "x": 10,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
-          "type": "Farm-Wheat",
-          "x": 10,
-          "y": 12,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "3e38d5d2-a44f-4873-bdd4-4deea693e87f",
-          "type": "StonePath-001",
-          "x": 10,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
-          "type": "Farm-Carrot",
-          "x": 11,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
-          "type": "Farm-Wheat",
-          "x": 11,
-          "y": 12,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "bb2c10c1-eeff-4de6-87c2-b34bca69d904",
-          "type": "StonePath-001",
-          "x": 11,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "91737cde-7d72-4a9f-b2f3-7c6b5b427afd",
-          "type": "StonePath-001",
-          "x": 12,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 12,
       "stocks": {
         "wheat": 12,
@@ -7852,14 +5121,12 @@
         "light": 0
       },
       "gameTurn": 13,
-      "time": 0,
       "isBuilding": true,
       "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 10,
       "y": 13,
       "gridSize": 2,
@@ -7893,7 +5160,6 @@
           14
         ]
       ],
-      "markets": [],
       "cycleState": {
         "decoratedPot": {
           "index": 0,
@@ -8079,7 +5345,8 @@
       },
       "servedFlags": {
         "doctor": 9,
-        "fire": 9
+        "fire": 9,
+        "primarySchool": 9
       },
       "salesToDistributor": [],
       "salesToHub": [],
@@ -8105,56 +5372,6 @@
       "instanceId": "5b6d0f8e-ec32-4826-8a43-8c5a40c8f86b",
       "type": "Bank",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
-          "type": "Farm-Carrot",
-          "x": 11,
-          "y": 11,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
-          "type": "Farm-Wheat",
-          "x": 11,
-          "y": 12,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "bb2c10c1-eeff-4de6-87c2-b34bca69d904",
-          "type": "StonePath-001",
-          "x": 11,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "91737cde-7d72-4a9f-b2f3-7c6b5b427afd",
-          "type": "StonePath-001",
-          "x": 12,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "dac9e01c-71c7-4390-aab5-13d5f6e35fec",
-          "type": "StonePath-001",
-          "x": 13,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "e7d386c4-120f-4773-b9fb-15da27a55770",
-          "type": "StonePath-001",
-          "x": 14,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -8192,14 +5409,12 @@
         "light": 0
       },
       "gameTurn": 73,
-      "time": 0,
       "isBuilding": true,
       "roads": 2,
       "stage": 0,
       "stageName": "",
       "price": 150,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 13,
       "y": 13,
       "gridSize": 2,
@@ -8235,71 +5450,12 @@
           14,
           14
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "61bf43fc-c173-4395-9071-46ba5671a619",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 12,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 13,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "07985189-f396-43af-bb61-16169bcc60d7",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
-          "type": "House-Red",
-          "x": 8,
-          "y": 13,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "1d0c209a-9d96-4ff3-b7e7-2cf48a9f02a7",
-          "type": "StonePath-001",
-          "x": 8,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "ab5ec386-380c-4a68-851b-3187697f707f",
-          "type": "Kenney-Industrial-building-s",
-          "x": 8,
-          "y": 16,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "bc7f8d0f-3a92-484f-a3ab-877ef3f66462",
-          "type": "StonePath-001",
-          "x": 9,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -8337,14 +5493,12 @@
         "light": 0
       },
       "gameTurn": 6,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 14,
       "gridSize": 1,
@@ -8365,15 +5519,13 @@
           7,
           14
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "type": "Boulder-001",
       "category": "nature",
       "x": 0,
       "y": 15,
-      "neighbors": [],
       "pop": 0,
       "stocks": {
         "rock": 84,
@@ -8386,7 +5538,6 @@
         "iron": 41
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "c7e92ef9-b5ec-4f06-8d44-e1b4cecfeec3",
@@ -8404,47 +5555,12 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "instanceId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "type": "House-Purple",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "6800f7fc-f77b-4d8b-8151-7d6394e096ed",
-          "type": "Tree-Sapin",
-          "x": 4,
-          "y": 17,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 13,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "61bf43fc-c173-4395-9071-46ba5671a619",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 14,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "07985189-f396-43af-bb61-16169bcc60d7",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 12,
       "stocks": {
         "wheat": 12,
@@ -8482,14 +5598,12 @@
         "light": 0
       },
       "gameTurn": 17,
-      "time": 0,
       "isBuilding": true,
       "roads": 1,
       "stage": 0,
       "stageName": "",
       "price": 10,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 5,
       "y": 15,
       "gridSize": 2,
@@ -8523,7 +5637,6 @@
           16
         ]
       ],
-      "markets": [],
       "saleWindowOpen": true,
       "distributorTooFar": false,
       "lastPopulationGrowthMonth": 4,
@@ -8703,7 +5816,8 @@
       },
       "servedFlags": {
         "doctor": 9,
-        "fire": 9
+        "fire": 9,
+        "primarySchool": 9
       },
       "salesToDistributor": [],
       "salesToHub": [],
@@ -8714,56 +5828,6 @@
       "instanceId": "07985189-f396-43af-bb61-16169bcc60d7",
       "type": "StonePath-Tee-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 13,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "61bf43fc-c173-4395-9071-46ba5671a619",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 14,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
-          "type": "House-Red",
-          "x": 8,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "1d0c209a-9d96-4ff3-b7e7-2cf48a9f02a7",
-          "type": "StonePath-001",
-          "x": 8,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "ab5ec386-380c-4a68-851b-3187697f707f",
-          "type": "Kenney-Industrial-building-s",
-          "x": 8,
-          "y": 16,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "bc7f8d0f-3a92-484f-a3ab-877ef3f66462",
-          "type": "StonePath-001",
-          "x": 9,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -8801,14 +5865,12 @@
         "light": 0
       },
       "gameTurn": 7,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 7,
       "y": 15,
       "gridSize": 1,
@@ -8829,79 +5891,12 @@
           7,
           15
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "1d0c209a-9d96-4ff3-b7e7-2cf48a9f02a7",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 13,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "61bf43fc-c173-4395-9071-46ba5671a619",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 14,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "07985189-f396-43af-bb61-16169bcc60d7",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
-          "type": "House-Red",
-          "x": 8,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "ab5ec386-380c-4a68-851b-3187697f707f",
-          "type": "Kenney-Industrial-building-s",
-          "x": 8,
-          "y": 16,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "bc7f8d0f-3a92-484f-a3ab-877ef3f66462",
-          "type": "StonePath-001",
-          "x": 9,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
-          "type": "House-Red",
-          "x": 10,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "3e38d5d2-a44f-4873-bdd4-4deea693e87f",
-          "type": "StonePath-001",
-          "x": 10,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -8939,14 +5934,12 @@
         "light": 0
       },
       "gameTurn": 7,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 8,
       "y": 15,
       "gridSize": 1,
@@ -8967,87 +5960,12 @@
           8,
           15
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "bc7f8d0f-3a92-484f-a3ab-877ef3f66462",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 13,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "61bf43fc-c173-4395-9071-46ba5671a619",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 14,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "07985189-f396-43af-bb61-16169bcc60d7",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
-          "type": "House-Red",
-          "x": 8,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "1d0c209a-9d96-4ff3-b7e7-2cf48a9f02a7",
-          "type": "StonePath-001",
-          "x": 8,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "ab5ec386-380c-4a68-851b-3187697f707f",
-          "type": "Kenney-Industrial-building-s",
-          "x": 8,
-          "y": 16,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
-          "type": "House-Red",
-          "x": 10,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "3e38d5d2-a44f-4873-bdd4-4deea693e87f",
-          "type": "StonePath-001",
-          "x": 10,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bb2c10c1-eeff-4de6-87c2-b34bca69d904",
-          "type": "StonePath-001",
-          "x": 11,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -9085,14 +6003,12 @@
         "light": 0
       },
       "gameTurn": 7,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 9,
       "y": 15,
       "gridSize": 1,
@@ -9113,71 +6029,12 @@
           9,
           15
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "3e38d5d2-a44f-4873-bdd4-4deea693e87f",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
-          "type": "House-Red",
-          "x": 8,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "1d0c209a-9d96-4ff3-b7e7-2cf48a9f02a7",
-          "type": "StonePath-001",
-          "x": 8,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "ab5ec386-380c-4a68-851b-3187697f707f",
-          "type": "Kenney-Industrial-building-s",
-          "x": 8,
-          "y": 16,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "bc7f8d0f-3a92-484f-a3ab-877ef3f66462",
-          "type": "StonePath-001",
-          "x": 9,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
-          "type": "House-Red",
-          "x": 10,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "bb2c10c1-eeff-4de6-87c2-b34bca69d904",
-          "type": "StonePath-001",
-          "x": 11,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "91737cde-7d72-4a9f-b2f3-7c6b5b427afd",
-          "type": "StonePath-001",
-          "x": 12,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -9215,14 +6072,12 @@
         "light": 0
       },
       "gameTurn": 7,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 10,
       "y": 15,
       "gridSize": 1,
@@ -9243,63 +6098,12 @@
           10,
           15
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "bb2c10c1-eeff-4de6-87c2-b34bca69d904",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "ab5ec386-380c-4a68-851b-3187697f707f",
-          "type": "Kenney-Industrial-building-s",
-          "x": 8,
-          "y": 16,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "bc7f8d0f-3a92-484f-a3ab-877ef3f66462",
-          "type": "StonePath-001",
-          "x": 9,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
-          "type": "House-Red",
-          "x": 10,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "3e38d5d2-a44f-4873-bdd4-4deea693e87f",
-          "type": "StonePath-001",
-          "x": 10,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "91737cde-7d72-4a9f-b2f3-7c6b5b427afd",
-          "type": "StonePath-001",
-          "x": 12,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "dac9e01c-71c7-4390-aab5-13d5f6e35fec",
-          "type": "StonePath-001",
-          "x": 13,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -9337,14 +6141,12 @@
         "light": 0
       },
       "gameTurn": 7,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 11,
       "y": 15,
       "gridSize": 1,
@@ -9365,55 +6167,12 @@
           11,
           15
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "91737cde-7d72-4a9f-b2f3-7c6b5b427afd",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
-          "type": "House-Red",
-          "x": 10,
-          "y": 13,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "3e38d5d2-a44f-4873-bdd4-4deea693e87f",
-          "type": "StonePath-001",
-          "x": 10,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "bb2c10c1-eeff-4de6-87c2-b34bca69d904",
-          "type": "StonePath-001",
-          "x": 11,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "dac9e01c-71c7-4390-aab5-13d5f6e35fec",
-          "type": "StonePath-001",
-          "x": 13,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "e7d386c4-120f-4773-b9fb-15da27a55770",
-          "type": "StonePath-001",
-          "x": 14,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -9451,14 +6210,12 @@
         "light": 0
       },
       "gameTurn": 7,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 12,
       "y": 15,
       "gridSize": 1,
@@ -9479,39 +6236,12 @@
           12,
           15
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "dac9e01c-71c7-4390-aab5-13d5f6e35fec",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "bb2c10c1-eeff-4de6-87c2-b34bca69d904",
-          "type": "StonePath-001",
-          "x": 11,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "91737cde-7d72-4a9f-b2f3-7c6b5b427afd",
-          "type": "StonePath-001",
-          "x": 12,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "e7d386c4-120f-4773-b9fb-15da27a55770",
-          "type": "StonePath-001",
-          "x": 14,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -9549,14 +6279,12 @@
         "light": 0
       },
       "gameTurn": 7,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 13,
       "y": 15,
       "gridSize": 1,
@@ -9577,47 +6305,12 @@
           13,
           15
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "e7d386c4-120f-4773-b9fb-15da27a55770",
       "type": "StonePath-001",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "91737cde-7d72-4a9f-b2f3-7c6b5b427afd",
-          "type": "StonePath-001",
-          "x": 12,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "dac9e01c-71c7-4390-aab5-13d5f6e35fec",
-          "type": "StonePath-001",
-          "x": 13,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "cb735373-a4e1-4bb6-90d1-d458790684a8",
-          "type": "Boulder-001",
-          "x": 16,
-          "y": 16,
-          "zone": 2,
-          "isRoad": false
-        },
-        {
-          "instanceId": "04d3ea58-60bc-4be5-a023-bf1b9a4b9019",
-          "type": "Tree-Sapin",
-          "x": 16,
-          "y": 17,
-          "zone": 2,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -9655,14 +6348,12 @@
         "light": 0
       },
       "gameTurn": 7,
-      "time": 0,
       "isBuilding": true,
       "roads": 0,
       "stage": 0,
       "stageName": "",
       "price": 5,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 14,
       "y": 15,
       "gridSize": 1,
@@ -9683,63 +6374,12 @@
           14,
           15
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "instanceId": "ab5ec386-380c-4a68-851b-3187697f707f",
       "type": "FireStation",
       "category": "construction",
-      "neighbors": [
-        {
-          "instanceId": "61bf43fc-c173-4395-9071-46ba5671a619",
-          "type": "StonePath-001",
-          "x": 7,
-          "y": 14,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "07985189-f396-43af-bb61-16169bcc60d7",
-          "type": "StonePath-Tee-001",
-          "x": 7,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "1d0c209a-9d96-4ff3-b7e7-2cf48a9f02a7",
-          "type": "StonePath-001",
-          "x": 8,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "ab5ec386-380c-4a68-851b-3187697f707f",
-          "type": "Kenney-Industrial-building-s",
-          "x": 8,
-          "y": 16,
-          "zone": 1,
-          "isRoad": false
-        },
-        {
-          "instanceId": "bc7f8d0f-3a92-484f-a3ab-877ef3f66462",
-          "type": "StonePath-001",
-          "x": 9,
-          "y": 15,
-          "zone": 1,
-          "isRoad": true
-        },
-        {
-          "instanceId": "3e38d5d2-a44f-4873-bdd4-4deea693e87f",
-          "type": "StonePath-001",
-          "x": 10,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wheat": 0,
@@ -9777,14 +6417,12 @@
         "light": 0
       },
       "gameTurn": 69,
-      "time": 0,
       "isBuilding": true,
       "roads": 3,
       "stage": 0,
       "stageName": "",
       "price": 100,
       "maintenance": 0,
-      "worldTime": 107,
       "x": 8,
       "y": 16,
       "gridSize": 3,
@@ -9816,32 +6454,13 @@
           10,
           16
         ]
-      ],
-      "markets": []
+      ]
     },
     {
       "type": "Boulder-001",
       "category": "nature",
       "x": 16,
       "y": 16,
-      "neighbors": [
-        {
-          "instanceId": "e7d386c4-120f-4773-b9fb-15da27a55770",
-          "type": "StonePath-001",
-          "x": 14,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "04d3ea58-60bc-4be5-a023-bf1b9a4b9019",
-          "type": "Tree-Sapin",
-          "x": 16,
-          "y": 17,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "rock": 141,
@@ -9854,7 +6473,6 @@
         "iron": 50
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "cb735373-a4e1-4bb6-90d1-d458790684a8",
@@ -9872,15 +6490,13 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "type": "Tree-Sapin",
       "category": "nature",
       "x": 4,
       "y": 17,
-      "neighbors": [],
       "pop": 0,
       "stocks": {
         "wood": 100
@@ -9889,7 +6505,6 @@
         "wood": 100
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "6800f7fc-f77b-4d8b-8151-7d6394e096ed",
@@ -9907,32 +6522,13 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     },
     {
       "type": "Tree-Sapin",
       "category": "nature",
       "x": 16,
       "y": 17,
-      "neighbors": [
-        {
-          "instanceId": "e7d386c4-120f-4773-b9fb-15da27a55770",
-          "type": "StonePath-001",
-          "x": 14,
-          "y": 15,
-          "zone": 2,
-          "isRoad": true
-        },
-        {
-          "instanceId": "cb735373-a4e1-4bb6-90d1-d458790684a8",
-          "type": "Boulder-001",
-          "x": 16,
-          "y": 16,
-          "zone": 1,
-          "isRoad": false
-        }
-      ],
       "pop": 0,
       "stocks": {
         "wood": 100
@@ -9941,7 +6537,6 @@
         "wood": 100
       },
       "roads": 0,
-      "worldTime": 107,
       "price": 0,
       "isBuilding": false,
       "instanceId": "04d3ea58-60bc-4be5-a023-bf1b9a4b9019",
@@ -9959,17 +6554,16 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
-      },
-      "markets": []
+      }
     }
   ],
   "employmentSummary": {
     "workerPool": 66,
     "totalPopulation": 72,
-    "totalAssigned": 47,
-    "totalNeed": 47,
-    "unemployed": 19,
-    "unemploymentPercentage": 29,
+    "totalAssigned": 49,
+    "totalNeed": 49,
+    "unemployed": 17,
+    "unemploymentPercentage": 26,
     "lack": 0,
     "causes": {
       "unemployedNoSkill": 0,
@@ -9996,8 +6590,8 @@
         "need": 0
       },
       "6": {
-        "workerNeed": 7,
-        "workers": 7,
+        "workerNeed": 9,
+        "workers": 9,
         "need": 0
       }
     },
@@ -10032,7 +6626,7 @@
         "workers": 4,
         "need": 0
       },
-      "medical": {
+      "medecine-proximite": {
         "workerNeed": 2,
         "workers": 2,
         "need": 0
@@ -10050,6 +6644,11 @@
       "incendie": {
         "workerNeed": 3,
         "workers": 3,
+        "need": 0
+      },
+      "instruction": {
+        "workerNeed": 2,
+        "workers": 2,
         "need": 0
       }
     },

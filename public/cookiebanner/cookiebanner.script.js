@@ -25,7 +25,7 @@ var config = {
   panelNextLabel: "Au suivant",
   panelConfirmLabel: "Confirmer",
   panelSelectAllLabel: "Tout cocher",
-  panelCertLabel: "Gestion des consentements — Eraanurbs",
+  panelCertLabel: "Gestion des consentements — Urbanicompta",
   cookieCategories: [
     {
       value: "necessary",

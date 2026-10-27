@@ -1,77 +1,30 @@
-import { normalizeNeighborList } from '../../domain/policies/NeighborListPolicy.js';
-
 /**
- * Après placement (ligne déjà en base) : voisins du bâtiment + adjacents, puis accès routier ciblé.
+ * Après placement (ligne déjà en base) : l'accès routier de la ville est recalculé (une pose peut en donner à d'autres bâtiments, si c'est une route, ou en avoir besoin).
  * Paiement / tuiles / meshes restent hors Parcels.
  */
 export class PlaceBuilding {
   /**
    * @param {object} deps
    * @param {import('../ports/BuildingRepository.js').BuildingRepository} deps.buildingRepository
-   * @param {import('../ports/SpatialNeighborhoodPort.js').SpatialNeighborhoodPort} deps.spatialNeighborhood
-   * @param {import('./UpdateNeighborsForBuilding.js').UpdateNeighborsForBuilding} deps.updateNeighborsForBuilding
-   * @param {import('./RecalculateRoadAccessForNeighbors.js').RecalculateRoadAccessForNeighbors} deps.recalculateRoadAccessForNeighbors
+   * @param {import('./RecalculateAllRoadAccess.js').RecalculateAllRoadAccess} deps.recalculateAllRoadAccess
    */
-  constructor({
-    buildingRepository,
-    spatialNeighborhood,
-    updateNeighborsForBuilding,
-    recalculateRoadAccessForNeighbors,
-  }) {
+  constructor({ buildingRepository, recalculateAllRoadAccess }) {
     this.buildingRepository = buildingRepository;
-    this.spatialNeighborhood = spatialNeighborhood;
-    this.updateNeighborsForBuilding = updateNeighborsForBuilding;
-    this.recalculateRoadAccessForNeighbors = recalculateRoadAccessForNeighbors;
+    this.recalculateAllRoadAccess = recalculateAllRoadAccess;
   }
 
   /**
-   * @param {{ instanceId: string, x: number, y: number, type: string, zones?: number[] }} params
-   * @returns {Promise<{ instanceId: string, affectedIds: string[], neighborCount: number } | null>}
+   * @param {{ instanceId: string }} params
+   * @returns {Promise<{ instanceId: string } | null>} null when the building is not in the repository
    */
-  async execute({ instanceId, x, y, type, zones = [1, 2] }) {
+  async execute({ instanceId }) {
     const building = await this.buildingRepository.findById(instanceId);
     if (!building) {
       return null;
     }
 
-    const tileX = x ?? building.x;
-    const tileY = y ?? building.y;
-    const buildingType = type || building.type;
+    await this.recalculateAllRoadAccess.execute();
 
-    const rawNeighbors = await this.spatialNeighborhood.discoverInZones({
-      x: tileX,
-      y: tileY,
-      type: buildingType,
-      zones,
-    });
-
-    await this.updateNeighborsForBuilding.execute(instanceId, rawNeighbors);
-
-    const affected = new Set([instanceId]);
-    for (const neighbor of normalizeNeighborList(rawNeighbors)) {
-      if (neighbor.instanceId) affected.add(neighbor.instanceId);
-    }
-
-    for (const adjId of [...affected]) {
-      if (adjId === instanceId) continue;
-      const adj = await this.buildingRepository.findById(adjId);
-      if (!adj || adj.x == null || adj.y == null) continue;
-
-      const adjNeighbors = await this.spatialNeighborhood.discoverInZones({
-        x: adj.x,
-        y: adj.y,
-        type: adj.type,
-        zones,
-      });
-      await this.updateNeighborsForBuilding.execute(adjId, adjNeighbors);
-    }
-
-    await this.recalculateRoadAccessForNeighbors.execute([...affected]);
-
-    return {
-      instanceId,
-      affectedIds: [...affected],
-      neighborCount: normalizeNeighborList(rawNeighbors).length,
-    };
+    return { instanceId };
   }
 }

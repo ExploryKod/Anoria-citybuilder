@@ -6,13 +6,13 @@ import {
   takeCategoryAmount,
   addCategoryAmount,
 } from '../../../domain/value-objects/ResourceStock.js';
-import { resolveInstanceIdFromNeighborRef } from '../../../../../shared/building-identity/BuildingRecord.js';
+import { resolveInstanceIdFromBuildingRef } from '../../../../../shared/building-identity/BuildingRecord.js';
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import {
   getCategoriesForRole,
   getRangeForRole,
   getResourceRoles,
-  getScheduleForRole,
+  getCollectionSchedule,
   getTotalKeyForRole,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 import { isWithinRange } from '../../../domain/policies/ResourceRangePolicy.js';
@@ -30,10 +30,13 @@ import { movedAgeBooks } from '../../../domain/policies/StockAgingPolicy.js';
 export class CollectResourceToHub {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
+   * @param {object | null} hubServing
+   * @param {{ priceBook: object, purchasingPower: (params: { buyerId: string, period: object }) => Promise<number> }} pricing the prices of the sellers, and the euros the hub may still spend with them
    */
-  constructor(supplyBuildingRepository, hubServing = null) {
+  constructor(supplyBuildingRepository, hubServing, pricing) {
     this.supplyBuildingRepository = supplyBuildingRepository;
     this.hubServing = hubServing;
+    this.pricing = pricing;
   }
 
   /**
@@ -54,7 +57,7 @@ export class CollectResourceToHub {
       return { collected: false, reason: 'hub_not_found', transfers: [], totalUnits: 0 };
     }
 
-    const schedule = getScheduleForRole(hub.type, 'collector');
+    const schedule = getCollectionSchedule(hub.type);
     if (!matchesSchedule(schedule, period)) {
       return { collected: false, reason: 'not_collection_period', transfers: [], totalUnits: 0 };
     }
@@ -86,6 +89,12 @@ export class CollectResourceToHub {
     const orders = normalizeHubStorageOrders(hub.hubStorageOrders, hubGoods);
     const running = { ...hub.stocks };
 
+    await this.pricing.priceBook.ensure(period);
+    let budget = await this.pricing.purchasingPower({ buyerId: hubId, period });
+    let shortOfMoney = false;
+    /** The producers the hub could not pay in full: each is told, so that a sale that fails for it is explained by it (see MarkFailedSales). */
+    const unpaidSourceIds = new Set();
+
     const transfers = [];
     // Each unit keeps its age on the way (see StockAgingPolicy.js): what was taken, from whom, out of how much.
     const ageMoves = [];
@@ -93,7 +102,7 @@ export class CollectResourceToHub {
     for (const ref of sourceRefs) {
       if (capacity <= 0) break;
 
-      const sourceId = resolveInstanceIdFromNeighborRef(ref);
+      const sourceId = resolveInstanceIdFromBuildingRef(ref);
       if (!sourceId) continue;
 
       const source = await this.supplyBuildingRepository.findById(sourceId);
@@ -137,8 +146,18 @@ export class CollectResourceToHub {
           stocks: running,
           totalCapacity: hub.maxStock,
         });
-        const amount = Math.min(available, capacity, room);
+        // The hub pays for what it takes, at the price it is traced at: it takes only what its money and its suppliers' credit cover.
+        const price = this.pricing.priceBook.sellingPrice(source, category, period);
+        if (!(price >= 0)) throw new Error(`[supply] ${source.type} sells ${category} at ${price}: the hub cannot buy it`);
+        const wanted = Math.min(available, capacity, room);
+        // An agreement (a trade deal) is no good yet and costs nothing: it is always affordable.
+        const amount = price === 0 ? wanted : Math.min(wanted, Math.floor(Math.round(budget * 100) / Math.round(price * 100)));
+        if (amount < wanted) {
+          shortOfMoney = true;
+          unpaidSourceIds.add(sourceId);
+        }
         if (amount <= 0) continue;
+        budget = Math.round((budget - amount * price) * 100) / 100;
         running[category] = (running[category] ?? 0) + amount;
         sourceStocks = takeCategoryAmount(sourceStocks, category, amount, categories, totalKey);
         capacity -= amount;
@@ -151,8 +170,10 @@ export class CollectResourceToHub {
       }
     }
 
+    for (const sourceId of unpaidSourceIds) await this.supplyBuildingRepository.updateBuildingFields(sourceId, { unpaidByHub: true });
+
     if (transfers.length === 0) {
-      return { collected: false, reason: 'nothing_to_collect', transfers: [], totalUnits: 0 };
+      return { collected: false, reason: shortOfMoney ? 'no_budget' : 'nothing_to_collect', transfers: [], totalUnits: 0 };
     }
 
     const freshHub = await this.supplyBuildingRepository.findById(hubId);

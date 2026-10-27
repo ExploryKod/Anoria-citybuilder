@@ -37,6 +37,7 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'Hospital': Object.freeze({ width: 3, depth: 2 }),
   'Library': Object.freeze({ width: 1, depth: 1 }),
   'Pub': Object.freeze({ width: 2, depth: 1 }),
+  'PrimarySchool': Object.freeze({ width: 1, depth: 1 }), // commercial building-b
   'School': Object.freeze({ width: 2, depth: 2 }),
   'Theatre': Object.freeze({ width: 3, depth: 2 }),
   'Farm-Cabbage': Object.freeze({ width: 1, depth: 1 }),

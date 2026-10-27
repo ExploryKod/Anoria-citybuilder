@@ -38,8 +38,11 @@ const FOOD = Object.freeze({ kind: 'demandMet' });
 const need = (category, outcomeField) => Object.freeze({ kind: 'serviceDemandMet', category, outcomeField });
 const WATER = need('water', 'lastWaterConsumption');
 const ENERGY = need('energy', 'lastEnergyConsumption');
+/** How many months a service building's coverage flag holds a house as served: the tiers' requirements and the development index read the same window. */
+export const SERVICE_COVERAGE_PERIODS = 2;
+
 /** A service building reaches the house (a coverage flag kept for `coveragePeriods` periods). */
-const covered = (category) => Object.freeze({ kind: 'serviceCoverage', category, coveragePeriods: 2 });
+const covered = (category) => Object.freeze({ kind: 'serviceCoverage', category, coveragePeriods: SERVICE_COVERAGE_PERIODS });
 /** At least `min` kinds of the retail goods (pot, plate, amphora, furniture) were drawn this period. */
 const goods = (min) => Object.freeze({ kind: 'goodsVariety', min, outcomeField: 'lastGoodsConsumption' });
 /** The house's own business can reach a warehouse. */
@@ -113,18 +116,18 @@ export const SOCIAL_CATEGORY = Object.freeze({
       }),
       2: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[2],
-        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor')]),
+        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor'), covered('primarySchool')]),
         skills: Object.freeze({ artisanat: 1, energie: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[3],
-        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
-        skills: Object.freeze({ artisanat: 2, telecoms: 1, energie: 2 }),
+        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
+        skills: Object.freeze({ 'artisanat-specialise': 1, telecoms: 1, 'energie-nucleaire': 1 }),
       }),
       4: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[4],
         requirements: Object.freeze([
-          ROAD, population(8), FOOD, WATER, covered('doctor'), goods(2), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          ROAD, population(8), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(2), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
           covered('hospital'), covered('police'), covered('pub'),
         ]),
         skills: Object.freeze({}),
@@ -132,7 +135,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
       5: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[5],
         requirements: Object.freeze([
-          ROAD, population(12), FOOD, WATER, covered('doctor'), goods(3), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          ROAD, population(12), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(3), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
           covered('hospital'), covered('police'), covered('pub'), covered('school'),
         ]),
         skills: Object.freeze({}),
@@ -140,7 +143,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
       6: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[6],
         requirements: Object.freeze([
-          ROAD, population(16), FOOD, WATER, covered('doctor'), goods(4), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          ROAD, population(16), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(4), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
           covered('hospital'), covered('police'), covered('pub'), covered('school'),
           covered('theatre'), covered('cinema'), covered('library'),
         ]),
@@ -159,19 +162,19 @@ export const SOCIAL_CATEGORY = Object.freeze({
       }),
       2: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[2],
-        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor')]),
+        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor'), covered('primarySchool')]),
         // 'manutention' (the warehouses, the trade warehouse) and 'finance' (the bank): the group's own Commerces sector.
         skills: Object.freeze({ finance: 1, manutention: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[3],
-        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
+        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
         skills: Object.freeze({ hospitality: 1 }),
       }),
       4: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[4],
         requirements: Object.freeze([
-          ROAD, population(8), FOOD, WATER, covered('doctor'), goods(2), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          ROAD, population(8), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(2), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
           covered('hospital'), covered('police'), covered('pub'),
         ]),
         skills: Object.freeze({}),
@@ -179,7 +182,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
       5: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[5],
         requirements: Object.freeze([
-          ROAD, population(12), FOOD, WATER, covered('doctor'), goods(3), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          ROAD, population(12), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(3), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
           covered('hospital'), covered('police'), covered('pub'), covered('school'),
         ]),
         skills: Object.freeze({}),
@@ -187,7 +190,7 @@ export const SOCIAL_CATEGORY = Object.freeze({
       6: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[6],
         requirements: Object.freeze([
-          ROAD, population(16), FOOD, WATER, covered('doctor'), goods(4), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          ROAD, population(16), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(4), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
           covered('hospital'), covered('police'), covered('pub'), covered('school'),
           covered('theatre'), covered('cinema'), covered('library'),
         ]),
@@ -202,24 +205,25 @@ export const SOCIAL_CATEGORY = Object.freeze({
       1: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[1],
         requirements: Object.freeze([]),
-        // The water tank and the dispensary (Doctor) the first tier needs are staffed from the start.
-        skills: Object.freeze({ hydraulique: 1, medical: 1 }),
+        // The water tank, the dispensary (Doctor) and the primary school the first tier needs are staffed from the start: with the six inhabitants of a house of the first tier,
+        // their 2 + 2 + 2 posts leave nobody out of work.
+        skills: Object.freeze({ hydraulique: 1, 'medecine-proximite': 1, instruction: 1 }),
       }),
       2: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[2],
-        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor')]),
+        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor'), covered('primarySchool')]),
         skills: Object.freeze({ incendie: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[3],
-        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
-        // The hospital (medical, level 2) and the police station gate tier 4: ready one tier ahead.
-        skills: Object.freeze({ medical: 2, securite: 1 }),
+        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
+        // The hospital (hospital medicine) and the police station gate tier 4: ready one tier ahead.
+        skills: Object.freeze({ 'medecine-hospitaliere': 1, securite: 1 }),
       }),
       4: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[4],
         requirements: Object.freeze([
-          ROAD, population(8), FOOD, WATER, covered('doctor'), goods(2), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          ROAD, population(8), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(2), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
           covered('hospital'), covered('police'), covered('pub'),
         ]),
         // Ready ahead of tier 5's school.
@@ -228,16 +232,16 @@ export const SOCIAL_CATEGORY = Object.freeze({
       5: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[5],
         requirements: Object.freeze([
-          ROAD, population(12), FOOD, WATER, covered('doctor'), goods(3), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          ROAD, population(12), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(3), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
           covered('hospital'), covered('police'), covered('pub'), covered('school'),
         ]),
-        // Ready ahead of tier 6's theatre (entertainment, level 2), cinema and library.
-        skills: Object.freeze({ entertainment: 2 }),
+        // Ready ahead of tier 6's theatre (the performing arts), cinema (entertainment) and library.
+        skills: Object.freeze({ entertainment: 1, 'arts-scene': 1 }),
       }),
       6: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[6],
         requirements: Object.freeze([
-          ROAD, population(16), FOOD, WATER, covered('doctor'), goods(4), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
+          ROAD, population(16), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(4), covered('fire'), WAREHOUSE_ACCESS, ENERGY,
           covered('hospital'), covered('police'), covered('pub'), covered('school'),
           covered('theatre'), covered('cinema'), covered('library'),
         ]),
@@ -268,12 +272,12 @@ export const SOCIAL_CATEGORY = Object.freeze({
       }),
       2: Object.freeze({
         maxPopulation: ADMINISTRATORS_MAX,
-        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor')]),
+        requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor'), covered('primarySchool')]),
         skills: Object.freeze({ [TAX_COLLECTION_SKILLS.corporate]: 1, [TAX_COLLECTION_SKILLS.customs]: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: ADMINISTRATORS_MAX,
-        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
+        requirements: Object.freeze([ROAD, population(4), FOOD, WATER, covered('doctor'), covered('primarySchool'), goods(1), covered('fire'), WAREHOUSE_ACCESS, ENERGY]),
         skills: Object.freeze({}),
       }),
     }),

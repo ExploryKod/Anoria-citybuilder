@@ -2,6 +2,17 @@
  * Port: persistence for supply-relevant building fields.
  */
 export class SupplyBuildingRepository {
+  /**
+   * Optional capability. Runs `work` with the buildings read once and what changed written in one go when it ends (the monthly cycle reads and rewrites the same rows
+   * hundreds of times a day). A repository that does not have it just runs the cycle as it always did (see createSupplyContext). Reads inside it are copies.
+   * @template T
+   * @param {() => Promise<T>} _work
+   * @returns {Promise<T>}
+   */
+  async inUnitOfWork(_work) {
+    throw new Error('SupplyBuildingRepository: port not implemented');
+  }
+
   async findById(_buildingId) {
     throw new Error('SupplyBuildingRepository: port not implemented');
   }

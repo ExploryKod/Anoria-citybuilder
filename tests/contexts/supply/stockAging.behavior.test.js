@@ -36,7 +36,7 @@ const tickAt = (turn) => ({ season: null, month: null, timeInfo: { monthIndex: 0
 
 describe('stock aging', () => {
   const rows = () => [
-    { id: 'field', type: 'Farm-Carrot', x: 0, y: 0, stocks: { carrot: 10 }, stockAges: { carrot: [[0, 10]] } },
+    { id: 'field', type: 'Farm-Carrot', x: 0, y: 0, stocks: { carrot: 10, food: 10 }, stockAges: { carrot: [[0, 10]] } },
     { id: 'granary', type: 'Windmill-001', x: 5, y: 0, stocks: { carrot: 10, food: 10 }, stockAges: { carrot: [[0, 10]] } },
   ];
 
@@ -46,12 +46,15 @@ describe('stock aging', () => {
     await cycleOver(repo, losses).execute(tickAt(3 * MONTH));
 
     expect(repo.raw.get('field').stocks.carrot).toBe(0);
+    // What spoils leaves the total the harvest put it in: a farm does not keep food that no longer exists.
+    expect(repo.raw.get('field').stocks.food).toBe(0);
     expect(repo.raw.get('granary').stocks.carrot).toBe(10);
     expect(losses).toHaveLength(1);
     expect(losses[0]).toMatchObject({ category: 'carrot', quantity: 10, building: { id: 'field' } });
 
     await cycleOver(repo, losses).execute(tickAt(12 * MONTH));
     expect(repo.raw.get('granary').stocks.carrot).toBe(0);
+    expect(repo.raw.get('granary').stocks.food).toBe(0);
     expect(losses.map((loss) => loss.building.id)).toEqual(['field', 'granary']);
   });
 

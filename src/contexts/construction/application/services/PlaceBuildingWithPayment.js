@@ -2,7 +2,7 @@ import { createBuildingInstanceId } from '../../../../shared/building-identity/i
 
 /**
  * Orchestration: budget debit → persist building row.
- * Spatial sync (neighbors, roads) stays in Parcels after mesh placement.
+ * Road access sync stays in Parcels after mesh placement.
  */
 export class PlaceBuildingWithPayment {
   /**

@@ -80,7 +80,7 @@ describe('Supply — market distribution to houses', () => {
   test('distributes round-robin outside autumn', async () => {
     const outcome = await useCase.execute({
       sourceId: marketId,
-      period: { season: 'winter' },
+      period: { season: 'winter', turn: 1 },
       consumerRefs: [{ instanceId: house1Id }, { instanceId: house2Id }],
     });
 
@@ -99,7 +99,7 @@ describe('Supply — market distribution to houses', () => {
   test('distributes in autumn as well', async () => {
     const outcome = await useCase.execute({
       sourceId: marketId,
-      period: { season: 'autumn' },
+      period: { season: 'autumn', turn: 1 },
       consumerRefs: [{ instanceId: house1Id }],
     });
     expect(outcome.distributed).toBe(true);
@@ -115,7 +115,7 @@ describe('Supply — market distribution to houses', () => {
 
     const outcome = await useCase.execute({
       sourceId: marketId,
-      period: { season: 'spring' },
+      period: { season: 'spring', turn: 1 },
       consumerRefs: [{ instanceId: house1Id }],
     });
 
@@ -126,7 +126,7 @@ describe('Supply — market distribution to houses', () => {
   test('returns transfers with house UUID', async () => {
     const outcome = await useCase.execute({
       sourceId: marketId,
-      period: { season: 'summer' },
+      period: { season: 'summer', turn: 1 },
       consumerRefs: [{ instanceId: house1Id }],
     });
 
@@ -137,7 +137,7 @@ describe('Supply — market distribution to houses', () => {
   test('ignore house refs without UUID', async () => {
     const outcome = await useCase.execute({
       sourceId: marketId,
-      period: { season: 'winter' },
+      period: { season: 'winter', turn: 1 },
       consumerRefs: [{ name: 'House-Purple-3-7', type: 'House-Purple', x: 3, y: 7 }],
     });
     expect(outcome.distributed).toBe(false);
@@ -176,7 +176,7 @@ describe('Supply — a market only fills what each house still needs', () => {
     const repo = new InMemorySupplyBuildingRepository(buildings);
     const outcome = await new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook).execute({
       sourceId: marketId,
-      period: { season: 'winter' },
+      period: { season: 'winter', turn: 1 },
       consumerRefs: houseIds.map((instanceId) => ({ instanceId })),
     });
     return { repo, outcome };

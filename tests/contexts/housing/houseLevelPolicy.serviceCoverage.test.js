@@ -13,27 +13,28 @@ import {
 const WATER = { kind: 'serviceDemandMet', category: 'water', outcomeField: 'lastWaterConsumption' };
 
 describe('HouseLevelPolicy — relevantServiceCoverageRequirements', () => {
-  test('a tier-1 house shows what unlocks tier 2: population, food, water and a dispensary, road excluded', () => {
+  test('a tier-1 house shows what unlocks tier 2: population, food, water, a dispensary and a primary school, road excluded', () => {
     const requirements = relevantServiceCoverageRequirements({ level: 1, residentialGroup: 'artisans' });
     expect(requirements).toEqual([
       { kind: 'population', min: 1 },
       { kind: 'demandMet' },
       WATER,
       { kind: 'serviceCoverage', category: 'doctor', coveragePeriods: 2 },
+      { kind: 'serviceCoverage', category: 'primarySchool', coveragePeriods: 2 },
     ]);
   });
 
   test('a tier-2 house shows what unlocks tier 3: goods, fire, a warehouse and energy join the earlier needs', () => {
     const requirements = relevantServiceCoverageRequirements({ level: 2, residentialGroup: 'artisans' });
     expect(requirements.map((r) => r.category ?? r.kind)).toEqual([
-      'population', 'demandMet', 'water', 'doctor', 'goodsVariety', 'fire', 'activityAccess', 'energy',
+      'population', 'demandMet', 'water', 'doctor', 'primarySchool', 'goodsVariety', 'fire', 'activityAccess', 'energy',
     ]);
   });
 
   test('a maxed-out house (tier 6) shows its own final tier\'s full requirement list, road excluded', () => {
     const requirements = relevantServiceCoverageRequirements({ level: 6, residentialGroup: 'artisans' });
     expect(requirements.some((r) => r.kind === 'roadAccess')).toBe(false);
-    expect(requirements.map((r) => r.category).filter(Boolean)).toEqual(expect.arrayContaining(['water', 'doctor', 'fire', 'energy', 'hospital', 'police', 'pub', 'school', 'theatre', 'cinema', 'library']));
+    expect(requirements.map((r) => r.category).filter(Boolean)).toEqual(expect.arrayContaining(['water', 'doctor', 'primarySchool', 'fire', 'energy', 'hospital', 'police', 'pub', 'school', 'theatre', 'cinema', 'library']));
   });
 
   test('no residential group has no requirements to show', () => {

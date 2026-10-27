@@ -7,7 +7,7 @@ import { getRoadRange, requiresRoad } from '../shared/building-catalog/resourceR
 
 /**
  * Dev-only diagnostics, triggered from the browser console by the developer (never called by the game).
- * The dev server appends what is sent to `dev-diagnostics.log` at the project root (see
+ * The dev server appends what is sent to `logs/dev-diagnostics.log` (see
  * scripts/dev/devLogPlugin.mjs), so it can be read without copying the console by hand.
  *
  * A console line that starts with a `[tag]` is relayed to the dev server too, and shown in the terminal
@@ -119,6 +119,6 @@ export function registerDevDiagnostics({ getScene }) {
   window.dumpRoadAccess = async () => {
     const data = await collectRoadAccess(getScene());
     await sendDevLog('road-access', data);
-    console.info(`[dev] road-access sent: ${data.buildings.length} buildings, ${data.roadTiles.length} road tiles → dev-diagnostics.log`);
+    console.info(`[dev] road-access sent: ${data.buildings.length} buildings, ${data.roadTiles.length} road tiles → logs/dev-diagnostics.log`);
   };
 }

@@ -89,6 +89,13 @@ const MARKET_LIGHT_MAX_STOCK = 60;
 
 /** When a crop is sold to its hub: the windmill's collection month, declared on the field it collects from. */
 const HARVEST_SALE = { schedule: { unit: 'month', values: ['december'] } };
+/**
+ * The cabbage keeps two months, the other crops three or more: harvested at the start of autumn, it would be gone before December. It is sold the month after its harvest,
+ * and the granary collects in that month too: it collects in the months its crops are sold in (see getCollectionSchedule).
+ */
+const CABBAGE_SALE = { schedule: { unit: 'month', values: ['october'] } };
+/** The olive keeps one month: it is sold in the month of its harvest, to the warehouse that feeds the oil press. */
+const OLIVE_SALE = { schedule: { unit: 'month', values: ['september'] } };
 
 /**
  * An industrial cycle of two steps, one a month: the first sets a base, the second multiplies it, and the
@@ -105,11 +112,11 @@ const twoMonthCycle = ({ first, second, base, factor, inputs }) => ({
 });
 
 /** A raw-material producer of wood from the trees around it; its name and who it serves first vary. */
-const lumberjack = ({ displayName, clients, requiredSkillLevel = 1 }) => ({
+const lumberjack = ({ displayName, clients, requiredSkill = 'artisanat' }) => ({
   displayName,
   placementNotice: true,
   construction: { price: 45, category: 'industry' },
-  employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat', requiredSkillLevel },
+  employment: { sector: 3, workerNeed: 2, requiredSkill },
   resourceRoles: [{
     role: 'producer',
     categories: ['wood'],
@@ -284,14 +291,13 @@ const ENERGY_CONSUMER = {
 
 /**
  * A power plant: burns `fuelPerMonth` of an imported fuel (drawn from a trade warehouse) into a month's energy, and distributes it.
- * `mwhPerMonth` is its monthly output (the fossil plants make the energy of 120 citizens), `requiredSkillLevel` the level of the
- * energy skill its workers need.
+`mwhPerMonth` is its monthly output (the fossil plants make the energy of 120 citizens), `requiredSkill` the energy skill its workers need (thermal energy, or nuclear for the nuclear plant).
  */
-const energyPlant = ({ displayName, fuel, fuelPerMonth, price, maintenance, mwhPerMonth = ENERGY_PLANT_MWH_PER_MONTH, workerNeed = 3, requiredSkillLevel = 1 }) => ({
+const energyPlant = ({ displayName, fuel, fuelPerMonth, price, maintenance, mwhPerMonth = ENERGY_PLANT_MWH_PER_MONTH, workerNeed = 3, requiredSkill = 'energie' }) => ({
   displayName,
   construction: { price, category: 'industry' },
   accounting: { maintenance },
-  employment: { sector: 3, workerNeed, requiredSkill: 'energie', requiredSkillLevel },
+  employment: { sector: 3, workerNeed, requiredSkill },
   resourceRoles: [
     {
       role: 'producer',
@@ -364,6 +370,7 @@ const HOUSE_RESOURCE_ROLES = [
   ENERGY_CONSUMER,
   serviceConsumer('fire'),
   serviceConsumer('police'),
+  serviceConsumer('primarySchool'),
   serviceConsumer('school'),
   serviceConsumer('library'),
   serviceConsumer('doctor'),
@@ -567,7 +574,7 @@ export const BUILDING_ECONOMY = {
       role: 'producer',
       categories: ['cabbage'],
       schedule: { unit: 'season', values: ['autumn'] },
-      sale: HARVEST_SALE,
+      sale: CABBAGE_SALE,
       amount: FARM_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
@@ -584,7 +591,7 @@ export const BUILDING_ECONOMY = {
       role: 'producer',
       categories: ['olive'],
       schedule: { unit: 'season', values: ['autumn'] },
-      sale: HARVEST_SALE,
+      sale: OLIVE_SALE,
       amount: OLIVE_ANNUAL_YIELD,
       periodLock: { field: 'lastProductionYear', unit: 'year' },
     }],
@@ -663,7 +670,7 @@ export const BUILDING_ECONOMY = {
   'Factory-Candle': {
     displayName: 'Chandellerie',
     construction: { price: 60, category: 'industry' },
-    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat', requiredSkillLevel: 2 /* a chain opened at level 3 */ },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat-specialise' /* a chain opened at level 3 */ },
     resourceRoles: [{
       role: 'producer',
       categories: ['candle'],
@@ -686,8 +693,8 @@ export const BUILDING_ECONOMY = {
   }),
   'Lumberjack-Industry': lumberjack({
     displayName: 'Bûcheron industriel',
-    // One of the chains opened at level 3 (artisanat, level 2).
-    requiredSkillLevel: 2,
+    // One of the chains opened at level 3 (specialised crafts).
+    requiredSkill: 'artisanat-specialise',
     clients: ['Factory-Furniture', 'Market-Stall-Red', 'House-Blue'],
   }),
 
@@ -766,6 +773,8 @@ export const BUILDING_ECONOMY = {
         maxStock: WAREHOUSE_MAX_STOCK,
         emptyRate: HUB_EMPTY_RATE,
         // No hubLink: nothing distributes deal goods onward to markets, so it takes no distributor link.
+        // It buys the merchants' deals and the imports to pass them on abroad: its sales are not in the journal's sales, so its credit is not measured by them.
+        unlimitedSupplierCredit: true,
       },
     ],
   },
@@ -813,7 +822,7 @@ export const BUILDING_ECONOMY = {
         role: 'collector',
         categories: [...SUPPLIED_GOODS],
         totalKey: DIET_TOTAL_KEY,
-        schedule: { unit: 'month', values: ['december'] },
+        // No `schedule`: the granary collects in the months the crops it collects are sold in (their `sale` windows, see getCollectionSchedule).
       },
       {
         role: 'hub',
@@ -924,8 +933,17 @@ export const BUILDING_ECONOMY = {
   // no house could reach tier 5 without a running School, and none could staff it
   // before tier 5. Only buildings that gate NO tier (Hospital, Theatre) take the
   // level-2 grant — see tests/shared/population/serviceStaffingReadiness.test.js.
+  // The primary school: the savants' first-tier service. No tier asks for it (nothing gates on it), but it gives the six inhabitants of a first-tier house their
+  // third workplace beside the water tank and the dispensary, and it counts for the education of the hamlet (see DevelopmentCatalog.js). Its skill, `instruction`,
+  // is granted by the savants' first tier alone.
+  PrimarySchool: {
+    displayName: 'École primaire',
+    construction: { price: 45, category: 'public' },
+    employment: { sector: 6, workerNeed: 2, requiredSkill: 'instruction' },
+    resourceRoles: [{ role: 'distributor', categories: ['primarySchool'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
+  },
   School: {
-    displayName: 'École',
+    displayName: 'Collège-Lycée',
     construction: { price: 90, category: 'public' },
     employment: { sector: 6, workerNeed: 3, requiredSkill: 'education' },
     resourceRoles: [{ role: 'distributor', categories: ['school'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
@@ -939,19 +957,19 @@ export const BUILDING_ECONOMY = {
   Doctor: {
     displayName: 'Cabinet médical',
     construction: { price: 55, category: 'public' },
-    employment: { sector: 6, workerNeed: 2, requiredSkill: 'medical' },
+    employment: { sector: 6, workerNeed: 2, requiredSkill: 'medecine-proximite' },
     resourceRoles: [{ role: 'distributor', categories: ['doctor'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Hospital: {
     displayName: 'Hôpital',
     construction: { price: 140, category: 'public' },
-    employment: { sector: 6, workerNeed: 4, requiredSkill: 'medical', requiredSkillLevel: 2 },
+    employment: { sector: 6, workerNeed: 4, requiredSkill: 'medecine-hospitaliere' },
     resourceRoles: [{ role: 'distributor', categories: ['hospital'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Theatre: {
     displayName: 'Théâtre',
     construction: { price: 130, category: 'public' },
-    employment: { sector: 6, workerNeed: 4, requiredSkill: 'entertainment', requiredSkillLevel: 2 },
+    employment: { sector: 6, workerNeed: 4, requiredSkill: 'arts-scene' },
     resourceRoles: [{ role: 'distributor', categories: ['theatre'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   Cinema: {
@@ -985,5 +1003,5 @@ export const BUILDING_ECONOMY = {
   PetrolPlant: energyPlant({ displayName: 'Centrale à pétrole', fuel: 'petrol', fuelPerMonth: 2, price: 120, maintenance: 5 }),
   // The nuclear plant: four times a fossil plant's output from two drums of imported uranium a month, at the price of a big
   // site and a trained crew (level 2 of the energy skill, which the level-3 houses grant).
-  NuclearPlant: energyPlant({ displayName: 'Centrale nucléaire', fuel: 'uranium', fuelPerMonth: 2, price: 600, maintenance: 25, mwhPerMonth: 480, workerNeed: 8, requiredSkillLevel: 2 }),
+  NuclearPlant: energyPlant({ displayName: 'Centrale nucléaire', fuel: 'uranium', fuelPerMonth: 2, price: 600, maintenance: 25, mwhPerMonth: 480, workerNeed: 8, requiredSkill: 'energie-nucleaire' }),
 };

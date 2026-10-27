@@ -162,19 +162,3 @@ export function formatFarmTradeModel(vm) {
 export function formatFarmStaffModel(vm) {
   return formatWorkplaceEmployeesPanel(vm.buildingRow, vm.employment, staffingStatusLine(vm), vm.wagePerWorker, vm.employerContributionRate);
 }
-
-/** @deprecated Prefer thematic tab formatters */
-export function formatFarmFoyerModel(vm) {
-  const overview = formatFarmOverviewModel(vm);
-  const stocks = formatFarmStocksModel(vm);
-  const trade = formatFarmTradeModel(vm);
-  const staff = formatFarmStaffModel(vm);
-  return {
-    sections: [
-      ...overview.sections,
-      ...stocks.sections,
-      ...trade.sections,
-      ...(staff?.sections ?? []),
-    ],
-  };
-}

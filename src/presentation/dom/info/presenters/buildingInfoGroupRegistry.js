@@ -4,7 +4,7 @@
  * Architecture (presentation only):
  * - `tabs[]` = declarative list of tab specs for the group
  * - Custom tabs provide `format` + `render`
- * - Shared tabs (`services`, `neighbors`, `messages`) only need `{ id }` —
+ * - Shared tabs (`services`, `messages`) only need `{ id }` —
  *   handlers resolve via `buildingInfoSharedTabs.js`
  */
 
@@ -12,8 +12,11 @@ import { BUILDING_INFO_GROUPS } from '../resolveBuildingInfoGroup.js';
 import { BUILDING_INFO_TAB_IDS } from '../buildingInfoTabCatalog.js';
 import {
   COMMON_BUILDING_INFO_TAB_SPECS,
-  CONTEXT_NEIGHBORS_MESSAGES_TAB_SPECS,
+  CONTEXT_MESSAGES_TAB_SPECS,
+  WORKPLACE_CONTEXT_TAB_SPECS,
 } from '../buildingInfoSharedTabs.js';
+import { formatServicesModel } from './formats/servicesInfoFormat.js';
+import { renderBuildingStateView } from '../views/buildingStateTabView.js';
 import {
   formatFarmOverviewModel,
   formatFarmStocksModel,
@@ -36,6 +39,7 @@ import {
 } from './formats/houseInfoFormat.js';
 import {
   formatHubStorageStaffModel,
+  formatHubStorageStateModel,
   formatHubStorageRenderParams,
   formatHubStorageLayoutHeader,
   formatHubStorageLayoutOptions,
@@ -48,8 +52,10 @@ import {
   formatMarketLayoutHeader,
   formatMarketLayoutOptions,
 } from './formats/marketInfoFormat.js';
+import { renderNatureResourceView, renderNatureCollectorsView } from '../views/natureResourceView.js';
 import {
-  formatNatureFoyerModel,
+  formatNatureResourceModel,
+  formatNatureCollectorsModel,
   formatNatureLayoutHeader,
   formatNatureLayoutOptions,
 } from './formats/natureInfoFormat.js';
@@ -59,8 +65,9 @@ import {
   formatServiceOverviewModel,
   formatServiceStaffModel,
 } from './formats/serviceInfoFormat.js';
-import { renderHouseSkillsView, renderHouseResourcesView, renderHouseActivityView } from '../views/houseInfoView.js';
-import { renderHubStorageFoyerView } from '../views/hub/hubStorageFoyerView.js';
+import { renderHouseSkillsView, renderHouseResourcesView, renderHouseEnterprisesView } from '../views/houseInfoView.js';
+import { producedCategories } from '../../../../shared/building-catalog/clientQueries.js';
+import { renderHubStorageFoyerView, renderHubStorageOrdersView } from '../views/hub/hubStorageFoyerView.js';
 import { renderKvPanelView } from '../views/kvPanelView.js';
 import { renderShelfLifeTab } from '../views/shelfLifeTabView.js';
 import { renderBuildingFinanceTab } from '../views/buildingFinanceInfoView.js';
@@ -78,6 +85,17 @@ const FINANCE_TAB_SPEC = Object.freeze({
   isVisible: (vm) => vm.uniqueId != null && vm.accounting.hasBuildingAccount(vm.buildingType),
   format: (vm) => (vm.uniqueId ? { accounting: vm.accounting, buildingId: vm.uniqueId, buildingType: vm.buildingType } : null),
   render: (container, model) => renderBuildingFinanceTab(container, model),
+});
+
+/**
+ * The État tab of a workplace: what the group says of its state, its staff, and its services row, on one page.
+ * @param {{ state: (vm: object) => object | null, staff: (vm: object) => object | null }} formats
+ * @returns {import('../buildingInfoTypes.js').BuildingInfoTabSpec}
+ */
+const stateTabSpec = ({ state, staff }) => ({
+  id: BUILDING_INFO_TAB_IDS.state,
+  format: (vm) => ({ state: state(vm), staff: staff(vm), services: formatServicesModel(vm) }),
+  render: (container, model) => renderBuildingStateView(container, model),
 });
 
 /** @type {Readonly<Record<string, BuildingInfoGroupDefinition>>} */
@@ -99,16 +117,24 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         render: (container, model) => renderHouseResourcesView(container, model),
       },
       {
+        // Two pills: what its businesses make (Productions) and who they serve first (Clients, only for a house that produces goods).
         id: BUILDING_INFO_TAB_IDS.activity,
-        format: formatHouseActivityModel,
-        render: (container, model) => renderHouseActivityView(container, model),
+        format: (vm) => ({
+          activity: formatHouseActivityModel(vm),
+          clients: producedCategories(vm.buildingType).length > 0 && vm.uniqueId
+            ? { supply: vm.supply, buildingId: vm.uniqueId, buildingType: vm.buildingType }
+            : null,
+        }),
+        render: (container, model) => renderHouseEnterprisesView(container, model),
       },
       {
         id: BUILDING_INFO_TAB_IDS.residents,
         format: (vm) => (vm.uniqueId ? { accounting: vm.accounting, buildingId: vm.uniqueId } : null),
         render: (container, model) => renderHouseResidentsTab(container, model),
       },
-      ...COMMON_BUILDING_INFO_TAB_SPECS,
+      // What the house needs to evolve to its next level.
+      { id: BUILDING_INFO_TAB_IDS.services, label: '🌱 Évolution' },
+      ...CONTEXT_MESSAGES_TAB_SPECS,
       FINANCE_TAB_SPEC,
     ],
   },
@@ -119,10 +145,15 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
       {
         id: BUILDING_INFO_TAB_IDS.foyer,
         label: '🌲 Ressource',
-        format: formatNatureFoyerModel,
-        render: (container, model) => renderKvPanelView(container, model),
+        format: formatNatureResourceModel,
+        render: (container, model) => renderNatureResourceView(container, model),
       },
-      ...CONTEXT_NEIGHBORS_MESSAGES_TAB_SPECS,
+      {
+        id: BUILDING_INFO_TAB_IDS.collectors,
+        format: formatNatureCollectorsModel,
+        render: (container, model) => renderNatureCollectorsView(container, model),
+      },
+      ...CONTEXT_MESSAGES_TAB_SPECS,
     ],
   },
   [BUILDING_INFO_GROUPS.hubStorage]: {
@@ -136,16 +167,17 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         render: (container, model) => renderHubStorageFoyerView(container, model),
       },
       {
+        id: BUILDING_INFO_TAB_IDS.orders,
+        format: formatHubStorageRenderParams,
+        render: (container, model) => renderHubStorageOrdersView(container, model),
+      },
+      {
         id: BUILDING_INFO_TAB_IDS.shelfLife,
         format: formatShelfLifeTabModel,
         render: (container, model) => renderShelfLifeTab(container, model),
       },
-      {
-        id: BUILDING_INFO_TAB_IDS.staff,
-        format: formatHubStorageStaffModel,
-        render: (container, model) => renderKvPanelView(container, model),
-      },
-      ...COMMON_BUILDING_INFO_TAB_SPECS,
+      stateTabSpec({ state: formatHubStorageStateModel, staff: formatHubStorageStaffModel }),
+      ...WORKPLACE_CONTEXT_TAB_SPECS,
       FINANCE_TAB_SPEC,
     ],
   },
@@ -153,12 +185,7 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
     formatLayoutOptions: formatFarmLayoutOptions,
     formatLayoutHeader: formatFarmLayoutHeader,
     tabs: [
-      {
-        id: BUILDING_INFO_TAB_IDS.foyer,
-        label: '🌾 Culture',
-        format: formatFarmOverviewModel,
-        render: (container, model) => renderKvPanelView(container, model),
-      },
+      stateTabSpec({ state: formatFarmOverviewModel, staff: formatFarmStaffModel }),
       {
         id: BUILDING_INFO_TAB_IDS.stocks,
         format: formatFarmStocksModel,
@@ -174,12 +201,7 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         format: formatFarmTradeModel,
         render: (container, model) => renderKvPanelView(container, model),
       },
-      {
-        id: BUILDING_INFO_TAB_IDS.staff,
-        format: formatFarmStaffModel,
-        render: (container, model) => renderKvPanelView(container, model),
-      },
-      ...COMMON_BUILDING_INFO_TAB_SPECS,
+      ...WORKPLACE_CONTEXT_TAB_SPECS,
       FINANCE_TAB_SPEC,
     ],
   },
@@ -187,23 +209,13 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
     formatLayoutOptions: formatMarketLayoutOptions,
     formatLayoutHeader: formatMarketLayoutHeader,
     tabs: [
-      {
-        id: BUILDING_INFO_TAB_IDS.foyer,
-        label: '🏪 État',
-        format: formatMarketOverviewModel,
-        render: (container, model) => renderKvPanelView(container, model),
-      },
+      stateTabSpec({ state: formatMarketOverviewModel, staff: formatMarketStaffModel }),
       {
         id: BUILDING_INFO_TAB_IDS.stocks,
         format: formatMarketStocksModel,
         render: (container, model) => renderKvPanelView(container, model),
       },
-      {
-        id: BUILDING_INFO_TAB_IDS.staff,
-        format: formatMarketStaffModel,
-        render: (container, model) => renderKvPanelView(container, model),
-      },
-      ...COMMON_BUILDING_INFO_TAB_SPECS,
+      ...WORKPLACE_CONTEXT_TAB_SPECS,
       FINANCE_TAB_SPEC,
     ],
   },
@@ -211,18 +223,8 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
     formatLayoutOptions: formatServiceLayoutOptions,
     formatLayoutHeader: formatServiceLayoutHeader,
     tabs: [
-      {
-        id: BUILDING_INFO_TAB_IDS.foyer,
-        label: '⛪ État',
-        format: formatServiceOverviewModel,
-        render: (container, model) => renderKvPanelView(container, model),
-      },
-      {
-        id: BUILDING_INFO_TAB_IDS.staff,
-        format: formatServiceStaffModel,
-        render: (container, model) => renderKvPanelView(container, model),
-      },
-      ...COMMON_BUILDING_INFO_TAB_SPECS,
+      stateTabSpec({ state: formatServiceOverviewModel, staff: formatServiceStaffModel }),
+      ...WORKPLACE_CONTEXT_TAB_SPECS,
       FINANCE_TAB_SPEC,
     ],
   },

@@ -14,7 +14,6 @@ export class DexieBuildingRepository {
     return createBuildingSnapshot({
       id: instanceIdFromHouseRow(house),
       type: house.type || '',
-      neighbors: house.neighbors || [],
       roadCount: house.roads ?? 0,
       x: house.x ?? null,
       y: house.y ?? null,
@@ -78,18 +77,6 @@ export class DexieBuildingRepository {
   async saveRoadAccess(instanceId, roadCount) {
     const id = assertBuildingInstanceId(instanceId);
     await this.#putFields(id, { roads: roadCount });
-  }
-
-  async saveNeighbors(instanceId, neighbors) {
-    const id = assertBuildingInstanceId(instanceId);
-    await this.#putFields(id, { neighbors });
-  }
-
-  async findNeighbors(instanceId) {
-    const id = assertBuildingInstanceId(instanceId);
-    const row = await db.houses.get(id);
-    if (!row) return [];
-    return Array.isArray(row.neighbors) ? row.neighbors : [];
   }
 
   async deleteById(instanceId) {

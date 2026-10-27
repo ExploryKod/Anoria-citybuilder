@@ -13,10 +13,13 @@ export function renderKvPanelView(container, model) {
   container.innerHTML = '';
 
   for (const section of model.sections) {
-    const title = document.createElement('h3');
-    title.className = 'info-section-title';
-    title.textContent = section.title;
-    container.appendChild(title);
+    // A section with no title is one the caller already headed (the sections of the State tab).
+    if (section.title) {
+      const title = document.createElement('h3');
+      title.className = 'info-section-title';
+      title.textContent = section.title;
+      container.appendChild(title);
+    }
 
     for (const row of section.rows) {
       const rowEl = document.createElement('div');

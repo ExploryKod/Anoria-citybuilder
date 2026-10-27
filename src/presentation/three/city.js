@@ -5,7 +5,6 @@ export function createTile(x, y) {
         x,
         y,
         terrainId: 'grass',
-        neighbors: [],
         buildingId: undefined,
         buildingCoord: undefined,
         tileLeft: x - 1,

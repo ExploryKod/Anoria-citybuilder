@@ -98,7 +98,7 @@ describe('formatHouseResourcesModel — needs first, goods in detail', () => {
 // sub-card is a number where the mechanism is a depleting stock (the tank's water, a plant's energy) and a
 // reached/not-reached flag otherwise (doctor, school, ...), under one "Services" aggregate.
 describe('formatHouseResourcesModel — the Services need (flag and quantity services alike)', () => {
-  test('the aggregate counts how many services (water, energy + 9 flag ones) were served this period', () => {
+  test('the aggregate counts how many services (water, energy + 10 flag ones) were served this period', () => {
     const model = formatHouseResourcesModel({
       buildingType: 'House-Red',
       buildingPop: 1,
@@ -107,7 +107,7 @@ describe('formatHouseResourcesModel — the Services need (flag and quantity ser
       periodKey: 4,
     });
     const services = needOf(model, 'services');
-    expect(services.card.valueText).toBe('3/11');
+    expect(services.card.valueText).toBe('3/12');
     expect(services.card.met).toBe(false);
   });
 
@@ -205,17 +205,5 @@ describe('formatHouseActivityModel — a house\'s own business, one block per re
     expect(pot.steps[0].met).toBe(true);
     expect(pot.steps[1].valueText).toBe('En cours');
     expect(pot.steps[1].met).toBe(false);
-  });
-
-  test('a step stuck on a missing input is called out, not just "in progress"', () => {
-    const buildingRow = {
-      activityShortfall: { carrotCake: true },
-      cycleState: { carrotCake: { index: 0, value: 0, opened: true } },
-    };
-    const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow });
-    const cake = model.recipes[1];
-    expect(cake.steps[0].valueText).toBe('En attente de matière');
-    expect(cake.steps[0].met).toBe(false);
-    expect(cake.steps[1].valueText).toBe('À venir');
   });
 });

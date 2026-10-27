@@ -1409,9 +1409,22 @@ footer .footer-links a:hover {
     padding: 0 20px;
     background: #fff;
     border-bottom: 1px solid #eceff1;
+    /* Too many tabs for the width: the strip slides sideways instead of breaking a label in two. */
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+}
+
+.info-building__tabs::-webkit-scrollbar {
+    display: none;
 }
 
 .info-building__tabs [role="tab"] {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    scroll-snap-align: start;
+    min-height: 40px;
     appearance: none;
     border: none;
     background: transparent;
@@ -1651,6 +1664,79 @@ footer .footer-links a:hover {
     font-weight: 600;
 }
 
+/* The views of a tab (Productions / Clients of a house's Entreprises tab): a row of pills that slide sideways rather than wrap a label. */
+.building-info-view-pills {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.building-info-view-pill {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 6px 18px;
+    border: 1px solid rgba(120, 144, 156, 0.5);
+    border-radius: 999px;
+    background: transparent;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.building-info-view-pill.is-active {
+    background: rgba(255, 152, 0, 0.14);
+    border-color: #ff9800;
+    color: #e65100;
+    font-weight: 600;
+}
+
+/* What a house's businesses still need, up front: the good on the left, what is missing beside it, all aligned left. */
+.building-info-gaps {
+    width: 100%;
+    margin-bottom: 20px;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.building-info-gaps caption {
+    padding-bottom: 6px;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #5f6368;
+}
+
+.building-info-gaps th,
+.building-info-gaps td {
+    padding: 6px 12px 6px 0;
+    border-top: 1px solid rgba(120, 144, 156, 0.2);
+    text-align: left;
+    vertical-align: top;
+    font-size: 0.85rem;
+}
+
+.building-info-gaps th {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+    .building-info-gaps th,
+    .building-info-gaps td {
+        display: block;
+        padding: 2px 0;
+        border-top: 0;
+    }
+
+    .building-info-gaps tr {
+        display: block;
+        padding: 6px 0;
+        border-top: 1px solid rgba(120, 144, 156, 0.2);
+    }
+}
+
 .enterprise-tenant--owing .kv-value {
     color: #cf3d2e;
     font-weight: 600;
@@ -1679,11 +1765,6 @@ footer .footer-links a:hover {
 .building-info-activity-group {
     display: flex;
     gap: 6px;
-}
-
-.building-info-gap-warning {
-    color: #e6a817;
-    margin-bottom: 8px;
 }
 
 button.building-info-metric-card {
@@ -1781,6 +1862,101 @@ button.building-info-metric-card[aria-pressed="true"] {
     gap: 28px 40px;
 }
 
+/* The État tab of a workplace: a bar of links to its sections (it stays on top while the page scrolls), then the sections one under the other. */
+.building-state-nav {
+    position: sticky;
+    top: -20px;
+    z-index: 2;
+    display: flex;
+    gap: 8px;
+    margin: -20px -24px 16px;
+    padding: 10px 24px;
+    background: #fff;
+    border-bottom: 1px solid #eceff1;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.building-state-nav__link {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid rgba(120, 144, 156, 0.5);
+    border-radius: 999px;
+    color: #37474f;
+    font-size: 0.9rem;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.building-state-nav__link.is-active {
+    background: rgba(255, 152, 0, 0.14);
+    border-color: #ff9800;
+    color: #e65100;
+    font-weight: 600;
+}
+
+.building-state-section {
+    scroll-margin-top: 72px;
+    margin-bottom: 28px;
+    text-align: left;
+}
+
+.building-state-section__title {
+    margin: 0 0 10px;
+    font-size: 15px;
+}
+
+/* One row of service chips, sliding sideways under two arrows when there are more than the width holds. */
+.building-state-section .building-info-services {
+    margin-bottom: 0;
+    text-align: left;
+}
+
+.building-state-section .building-info-services-row {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 28px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+}
+
+.building-state-section .building-info-service-item {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+}
+
+.building-state-carousel {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.building-state-carousel > .building-info-services-row {
+    flex: 1;
+    min-width: 0;
+}
+
+.building-state-carousel__arrow {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(120, 144, 156, 0.5);
+    border-radius: 50%;
+    background: #fff;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.building-state-carousel__arrow[hidden] {
+    display: none;
+}
+
 .building-info-services-row + .building-info-stock-group-label {
     margin-top: 20px;
 }
@@ -1842,27 +2018,6 @@ button.building-info-metric-card[aria-pressed="true"] {
     letter-spacing: 0.04em;
     color: #90a4ae;
     text-transform: lowercase;
-}
-
-.building-info-neighbors-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-
-.building-info-neighbors-table th,
-.building-info-neighbors-table td {
-    text-align: left;
-    padding: 10px 8px;
-    border-bottom: 1px solid #eceff1;
-}
-
-.building-info-neighbors-table th {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: #78909c;
 }
 
 /* Flash keywords under an unmet need: why it was not met, and how many units (see houseInfoFormat.js). */
@@ -2047,6 +2202,29 @@ button.building-info-metric-card[aria-pressed="true"] {
 .building-finance-pills {
     display: flex;
     gap: 6px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.building-finance-pills .building-finance-pill-tab {
+    flex: 0 0 auto;
+    min-height: 32px;
+    white-space: nowrap;
+}
+
+/* "Se financer" is not a reading of the account but a way to put money into it: its own colour, set apart from the readings. */
+.building-finance-pill-financing {
+    margin-left: 10px;
+    background: #e8f5e9;
+    border-color: #81c784;
+    color: #1b5e20;
+}
+
+.building-finance-pill-tab.building-finance-pill-financing.is-active {
+    background: #c8e6c9;
+    border-color: #2e7d32;
+    color: #1b5e20;
 }
 
 /* The Finances board of the administrator: its views (budget, compte de résultat, bilan, balance) are switched by pills; a hidden view takes no room. */
@@ -2688,18 +2866,63 @@ button.building-info-metric-card[aria-pressed="true"] {
     font-size: 15px;
 }
 
-.hub-orders-help {
-    margin: 0 0 10px;
-    font-size: 12px;
-    color: #6c757d;
-}
-
 .hub-orders-c3-list {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    max-height: 280px;
-    overflow-y: auto;
+}
+
+/* How the orders work: the cycle of the modes, then one term and its meaning per line, all aligned left. */
+.hub-orders-guide {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid #e9ecef;
+    text-align: left;
+    font-size: 13px;
+    color: #495057;
+}
+
+.hub-orders-guide-title {
+    margin: 0 0 6px;
+    font-size: 14px;
+    color: #343a40;
+}
+
+.hub-orders-cycle {
+    margin: 0 0 10px;
+    white-space: nowrap;
+    overflow-x: auto;
+}
+
+.hub-orders-modes {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 14px;
+    margin: 0 0 12px;
+}
+
+.hub-orders-modes dt {
+    font-weight: 700;
+    color: #343a40;
+}
+
+.hub-orders-modes dd {
+    margin: 0;
+}
+
+.hub-orders-note {
+    margin: 0 0 6px;
+}
+
+@media (max-width: 600px) {
+    .hub-orders-modes {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .hub-orders-modes dd {
+        margin-bottom: 8px;
+    }
 }
 
 .hub-order-c3-row {
@@ -2801,13 +3024,15 @@ button.building-info-metric-card[aria-pressed="true"] {
     margin: 0 0 10px;
     font-size: 14px;
     font-weight: 600;
-    text-align: center;
+    text-align: left;
 }
 
 .hub-flow-tabs {
     display: flex;
     gap: 6px;
-    justify-content: center;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
 }
 
 .hub-flow-tab {
@@ -2868,11 +3093,90 @@ button.building-info-metric-card[aria-pressed="true"] {
     color: #78909c;
 }
 
+/* A phone stacks everything, left aligned; a wide panel puts the pie in the left column (centred there, so it does not move when the
+   list grows) and the list of the stocks in the right one, with the summary (fill, autonomy, harvest) at its foot. */
+.hub-storage-chart-section {
+    container-type: inline-size;
+}
+
 .hub-pie-chart {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 10px;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.hub-pie-figure {
+    margin: 0;
+}
+
+.hub-pie-details {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+@container (min-width: 480px) {
+    .hub-pie-chart {
+        display: grid;
+        grid-template-columns: minmax(200px, 2fr) 3fr;
+        align-items: stretch;
+        column-gap: 24px;
+    }
+
+    .hub-pie-figure {
+        align-self: center;
+        justify-self: center;
+    }
+
+    .hub-pie-details {
+        justify-content: space-between;
+    }
+}
+
+/* A natural resource: the ring is the whole, the arc over it is what is left. */
+.nature-pie__consumed {
+    stroke: #cfd8dc;
+}
+
+.nature-pie__remaining {
+    stroke: #43a047;
+}
+
+.nature-swatch {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+.nature-swatch--remaining {
+    background: #43a047;
+}
+
+.nature-swatch--consumed {
+    background: #cfd8dc;
+}
+
+.nature-collectors {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.nature-collectors caption {
+    padding-bottom: 8px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.nature-collectors th,
+.nature-collectors td {
+    padding: 8px 12px 8px 0;
+    border-top: 1px solid rgba(120, 144, 156, 0.2);
+    text-align: left;
+    vertical-align: top;
 }
 
 .hub-pie-svg {
@@ -2940,10 +3244,14 @@ button.building-info-metric-card[aria-pressed="true"] {
 
 .hub-pie-caption {
     margin: 0;
-    font-size: 11px;
-    color: #6c757d;
-    text-align: center;
-    line-height: 1.4;
+    font-size: 13px;
+    color: #495057;
+    text-align: left;
+    line-height: 1.5;
+}
+
+.hub-pie-summary-line {
+    display: block;
 }
 
 .hub-orders-warning {
@@ -3067,9 +3375,8 @@ button.building-info-metric-card[aria-pressed="true"] {
     letter-spacing: 0.4px;
 }
 
-/* Key/Value responsive list — same flat-row language as
-   .building-info-neighbors-table (border-bottom rows, no per-row card),
-   so every plain list in the info panel (État/Personnel/Voisins) reads as
+/* Key/Value responsive list — flat rows (border-bottom, no per-row card),
+   so every plain list in the info panel (État/Personnel) reads as
    one unified presentation instead of each tab inventing its own. */
 .kv-row {
     display: grid;
@@ -3220,5 +3527,57 @@ button.building-info-metric-card[aria-pressed="true"] {
     }
     .kv-value {
         justify-self: start;
+    }
+}
+
+/* The city's aid to a company, on its sheet's Finances tab: one field per line, touch-sized, full width on a phone */
+.company-aid {
+    display: grid;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    text-align: left;
+}
+
+.company-aid-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.company-aid-field {
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid rgba(0, 0, 0, 0.23);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+}
+
+.company-aid-error {
+    color: #b71c1c;
+}
+
+.company-aid-apply {
+    min-height: 44px;
+    padding: 0 24px;
+    border: none;
+    border-radius: 8px;
+    background: #2e7d32;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.company-aid-apply:hover,
+.company-aid-apply:focus-visible {
+    background: #1b5e20;
+}
+
+@media (max-width: 600px) {
+    .company-aid-apply {
+        width: 100%;
     }
 }

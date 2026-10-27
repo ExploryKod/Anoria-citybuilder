@@ -8,7 +8,7 @@
     <meta name="googlebot" content="noindex, nofollow">
     <meta name="description" content="Site de city builder de démo - Construisez et gérez votre ville en 3D">
     <meta name="keywords" content="city builder, jeu de construction, simulation, ville, 3D">
-    <meta name="author" content="Eraanurbs">
+    <meta name="author" content="Urbanicompta">
 
     <link rel="stylesheet" href="/src/presentation/dom/styles/main.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/btn.css">
@@ -29,7 +29,6 @@
     <link rel="stylesheet" href="/src/presentation/dom/styles/mobile-controls.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/compact-toolbar.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/hamlet-switcher.css">
-    <link rel="stylesheet" href="/src/presentation/dom/styles/supply-traceability-log.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/build-tool-hover-preview.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/editor-toolbar.css">
     <link rel="stylesheet" href="/src/presentation/dom/styles/placement-rotation-hud.css">
@@ -81,7 +80,7 @@
     <link rel="apple-touch-icon" href="public/icons/icon-512x512.png" />
     <meta name="apple-mobile-web-app-status-bar" content="#db4938" />
     <meta name="theme-color" content="#db4938" />
-    <title>Eraanurbs - Démo City Builder</title>
+    <title>Urbanicompta - Démo City Builder</title>
 </head>
 <body>
 <div class="no-game">
@@ -186,29 +185,33 @@
                 </header>
                 <div class="info-building__tabs" role="tablist" aria-label="Sections du bâtiment">
                     <button type="button" role="tab" id="tab-foyer" data-tab="foyer" aria-controls="panel-foyer" aria-selected="true" tabindex="0">🏠 Bâtiment</button>
+                    <button type="button" role="tab" id="tab-state" data-tab="state" aria-controls="panel-state" aria-selected="false" tabindex="-1" hidden>🧭 État</button>
                     <button type="button" role="tab" id="tab-diet" data-tab="diet" aria-controls="panel-diet" aria-selected="false" tabindex="-1" hidden>🍽️ Régime</button>
                     <button type="button" role="tab" id="tab-stocks" data-tab="stocks" aria-controls="panel-stocks" aria-selected="false" tabindex="-1" hidden>📦 Stocks</button>
                     <button type="button" role="tab" id="tab-shelfLife" data-tab="shelfLife" aria-controls="panel-shelfLife" aria-selected="false" tabindex="-1" hidden>⏳ Durée de vie</button>
+                    <button type="button" role="tab" id="tab-orders" data-tab="orders" aria-controls="panel-orders" aria-selected="false" tabindex="-1" hidden>📋 Ordres</button>
                     <button type="button" role="tab" id="tab-activity" data-tab="activity" aria-controls="panel-activity" aria-selected="false" tabindex="-1" hidden>🛠️ Activité</button>
                     <button type="button" role="tab" id="tab-trade" data-tab="trade" aria-controls="panel-trade" aria-selected="false" tabindex="-1" hidden>💰 Ventes</button>
                     <button type="button" role="tab" id="tab-staff" data-tab="staff" aria-controls="panel-staff" aria-selected="false" tabindex="-1" hidden>👷 Personnel</button>
                     <button type="button" role="tab" id="tab-services" data-tab="services" aria-controls="panel-services" aria-selected="false" tabindex="-1" hidden>🔧 Services</button>
                     <button type="button" role="tab" id="tab-clients" data-tab="clients" aria-controls="panel-clients" aria-selected="false" tabindex="-1" hidden>🤝 Clients</button>
-                    <button type="button" role="tab" id="tab-neighbors" data-tab="neighbors" aria-controls="panel-neighbors" aria-selected="false" tabindex="-1" hidden>🏘️ Voisins</button>
+                    <button type="button" role="tab" id="tab-collectors" data-tab="collectors" aria-controls="panel-collectors" aria-selected="false" tabindex="-1" hidden>⛏️ Collecteurs</button>
                     <button type="button" role="tab" id="tab-messages" data-tab="messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1" hidden>💬 Messages</button>
                     <button type="button" role="tab" id="tab-finance" data-tab="finance" aria-controls="panel-finance" aria-selected="false" tabindex="-1" hidden>💰 Finances</button>
                 </div>
                 <div class="info-building__body">
                     <div id="panel-foyer" role="tabpanel" class="info-building__tabpanel is-active" aria-labelledby="tab-foyer" tabindex="0"></div>
+                    <div id="panel-state" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-state" tabindex="0" hidden></div>
                     <div id="panel-diet" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-diet" tabindex="0" hidden></div>
                     <div id="panel-stocks" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-stocks" tabindex="0" hidden></div>
                     <div id="panel-shelfLife" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-shelfLife" tabindex="0" hidden></div>
+                    <div id="panel-orders" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-orders" tabindex="0" hidden></div>
                     <div id="panel-activity" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-activity" tabindex="0" hidden></div>
                     <div id="panel-trade" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-trade" tabindex="0" hidden></div>
                     <div id="panel-staff" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-staff" tabindex="0" hidden></div>
                     <div id="panel-services" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-services" tabindex="0" hidden></div>
                     <div id="panel-clients" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-clients" tabindex="0" hidden></div>
-                    <div id="panel-neighbors" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-neighbors" tabindex="0" hidden></div>
+                    <div id="panel-collectors" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-collectors" tabindex="0" hidden></div>
                     <div id="panel-messages" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-messages" tabindex="0" hidden></div>
                     <div id="panel-finance" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-finance" tabindex="0" hidden></div>
                 </div>
@@ -1099,6 +1102,37 @@
             </button>
             <button
                 type="button"
+                class="info-box supply-balance-box stats-buttons"
+                id="supply-balance-btn"
+                title="Approvisionnement : la ville produit-elle assez ?"
+                aria-label="Ouvrir l'approvisionnement de la ville"
+            >
+                <span class="budget-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
+                        <path d="M2 22 16 8"/>
+                        <path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                        <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 14l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                        <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 10l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
+                        <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
+                        <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                        <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                        <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
+                    </svg>
+                </span>
+            </button>
+            <button
+                type="button"
+                class="info-box economy-box stats-buttons"
+                id="economy-btn"
+                title="Économie : PIB, dette"
+                aria-label="Ouvrir l'économie du hameau"
+            >
+                <span class="budget-icon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-landmark"><path d="M10 18v-7"/><path d="M11.12 2.198a2 2 0 0 1 1.76.006l7.866 3.847c.476.233.31.949-.22.949H3.474c-.53 0-.695-.716-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/></svg>
+                </span>
+            </button>
+            <button
+                type="button"
                 id="map-filters-btn"
                 class="info-box map-filters-box stats-buttons"
                 title="Filtres de carte"
@@ -1860,25 +1894,7 @@
                     <span class="sr-only">Unités de Stock</span>
                 </button>
 
-                <button
-                    class="administrator-nav-btn"
-                    id="admin-nav-supply-traceability"
-                    data-section="supply-traceability"
-                    title="Traçabilité Alimentaire"
-                    aria-label="Ouvrir la section Traçabilité Alimentaire">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
-                        <path d="M2 22 16 8"/>
-                        <path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                        <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 14l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                        <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 10l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                        <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
-                        <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                        <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                        <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                    </svg>
-                    <span class="sr-only">Traçabilité Alimentaire</span>
-                </button>
-                
+
                 <button
                     class="administrator-nav-btn"
                     id="admin-nav-commerce"
@@ -1907,6 +1923,20 @@
                         <circle cx="17.5" cy="17.5" r="2.5"/>
                     </svg>
                     <span class="sr-only">Taxes</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-companyAid"
+                    data-section="companyAid"
+                    title="Aide aux entreprises"
+                    aria-label="Ouvrir la section Aide aux entreprises">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/>
+                        <path d="M16 10h.01"/>
+                        <path d="M2 8v1a2 2 0 0 0 2 2h1"/>
+                    </svg>
+                    <span class="sr-only">Aide aux entreprises</span>
                 </button>
 
                 <button
@@ -2542,95 +2572,6 @@
                 </div>
             </div>
             
-            <!-- Food Traceability Section -->
-            <div class="administrator-section" id="admin-section-supply-traceability">
-                <div class="administrator-section-title">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wheat">
-                        <path d="M2 22 16 8"/>
-                        <path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                        <path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 14l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                        <path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 10l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/>
-                        <path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/>
-                        <path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                        <path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                        <path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/>
-                    </svg>
-                    Traçabilité Alimentaire <span class="supply-traceability-hamlet" data-hamlet-label></span>
-                </div>
-                <div class="administrator-section-content">
-                    <div class="supply-traceability-content">
-                        <!-- Tabs -->
-                        <div class="supply-traceability-tabs">
-                            <button class="supply-traceability-tab active" data-tab="details">📋 Transactions</button>
-                            <button class="supply-traceability-tab" data-tab="charts">📊 Satisfaction</button>
-                        </div>
-                        
-                        <!-- Details Tab -->
-                        <div class="supply-traceability-tab-content active" id="supply-traceability-details-tab">
-                            <div class="supply-traceability-filters">
-                                <button class="supply-traceability-filter-btn active" data-period="all">Tout l'historique</button>
-                                <button class="supply-traceability-filter-btn" data-period="7">7 derniers jours</button>
-                                <button class="supply-traceability-filter-btn" data-period="30">30 derniers jours</button>
-                                <button class="supply-traceability-filter-btn" data-period="60">60 derniers jours</button>
-                            </div>
-
-                            <div class="supply-traceability-category-pills" id="supply-traceability-category-pills"></div>
-
-                            <div class="supply-traceability-refresh-section">
-                                <button class="supply-traceability-refresh-btn" id="supply-traceability-refresh-btn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
-                                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                                        <path d="M21 3v5h-5"/>
-                                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                                        <path d="M3 21v-5h5"/>
-                                    </svg>
-                                    Actualiser
-                                </button>
-                                <button class="supply-traceability-refresh-btn" id="supply-traceability-export-btn" title="Télécharger toutes les transactions en JSON">
-                                    Exporter en JSON
-                                </button>
-                            </div>
-
-                            <div class="supply-traceability-log" data-transaction-log></div>
-                        <div class="supply-traceability-list" id="supply-traceability-list">
-                                <div class="supply-traceability-loading">
-                                    <div class="loading-spinner"></div>
-                                    <p>Chargement de la traçabilité...</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Charts Tab -->
-                        <div class="supply-traceability-tab-content" id="supply-traceability-charts-tab">
-                            <div class="supply-traceability-category-pills" id="supply-charts-category-pills"></div>
-                            <div class="supply-charts-controls">
-                                <select id="supply-charts-year-select" class="supply-charts-select">
-                                    <option value="all">Toutes les années</option>
-                                </select>
-                                <button class="supply-traceability-refresh-btn" id="supply-charts-refresh-btn">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
-                                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                                        <path d="M21 3v5h-5"/>
-                                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                                        <path d="M3 21v-5h5"/>
-                                    </svg>
-                                    Actualiser
-                                </button>
-                                <button class="supply-traceability-refresh-btn" id="supply-charts-export-btn" title="Télécharger la traçabilité en JSON">
-                                    Exporter en JSON
-                                </button>
-                            </div>
-                            <div class="supply-stats-container" id="supply-stats-container">
-                                <div class="supply-stats-loading">
-                                    <div class="loading-spinner"></div>
-                                    <p>Chargement des statistiques...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
             <!-- Archives Section -->
             <!-- Commerce Section -->
             <div class="administrator-section" id="admin-section-commerce">
@@ -2657,6 +2598,66 @@
                             <span class="commerce-budget-impact-label">Recettes douanières ce mois :</span>
                             <span class="commerce-budget-impact-value" id="commerce-export-this-month">—</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-companyAid">
+                <div class="administrator-section-title">
+                    Aide aux entreprises — <span class="admin-hamlet-label" data-hamlet-label></span>
+                </div>
+                <div class="administrator-section-content">
+                    <p class="commerce-customs-hint" id="aid-commitment" role="status"></p>
+                    <p class="commerce-customs-hint">Limite : cette politique est la même pour toutes les entreprises du hameau. Dans la réalité, l'aide se décide par entreprise ou par secteur ; pour agir sur une entreprise précise, ouvrez sa fiche (onglet Finances, « Aide de la ville »), ou utilisez le formulaire « Mettre de l'argent dans une entreprise » plus bas, qui liste chacune avec sa position.</p>
+                    <div class="taxes-board aid-board" id="aid-board">
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Fonds de roulement financé</span><span class="taxes-row-scope">du stock plein</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-working-capital-slider" class="commerce-customs-slider" aria-label="Part du stock plein financée par la ville, en pourcentage" /><span class="commerce-customs-value" id="aid-working-capital-value">…</span></div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Forme : prêt</span><span class="taxes-row-scope">de ce financement</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-loan-slider" class="commerce-customs-slider" aria-label="Part du financement prêtée, en pourcentage" /><span class="commerce-customs-value" id="aid-loan-value">…</span></div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Forme : l'État actionnaire</span><span class="taxes-row-scope">de ce financement</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-shareholder-slider" class="commerce-customs-slider" aria-label="Part du financement apportée en tant qu'actionnaire, en pourcentage" /><span class="commerce-customs-value" id="aid-shareholder-value">…</span></div>
+                        </div>
+                        <p class="commerce-customs-hint" id="aid-participation" role="status"></p>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Intérêt du prêt</span><span class="taxes-row-scope">par an</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-interest-slider" class="commerce-customs-slider" aria-label="Intérêt annuel du prêt, en pourcentage" /><span class="commerce-customs-value" id="aid-interest-value">…</span></div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Intérêts dus après</span><span class="taxes-row-scope">mois</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-grace-slider" class="commerce-customs-slider" aria-label="Mois après le prêt avant que les intérêts soient dus" /><span class="commerce-customs-value" id="aid-grace-value">…</span></div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Dividendes de l'État actionnaire</span><span class="taxes-row-scope">du résultat distribuable</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-payout-slider" class="commerce-customs-slider" aria-label="Part du résultat distribuable versée à l'État actionnaire, en pourcentage" /><span class="commerce-customs-value" id="aid-payout-value">…</span></div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head"><span class="taxes-row-label">Durée de l'engagement</span><span class="taxes-row-scope">ans</span></div>
+                            <div class="commerce-customs-controls"><input type="range" id="aid-commitment-slider" class="commerce-customs-slider" aria-label="Durée de l'engagement, en années" /><span class="commerce-customs-value" id="aid-commitment-value">…</span></div>
+                        </div>
+                        <p class="commerce-customs-hint" id="aid-error" role="alert" hidden></p>
+                        <button type="button" class="aid-apply-btn" id="aid-apply">Valider et s'engager</button>
+                        <div class="aid-inject" id="aid-inject">
+                            <h4 class="aid-inject-title">Mettre de l'argent dans une entreprise</h4>
+                            <p class="commerce-customs-hint">À tout moment, sans attendre une création : devenir actionnaire, prêter (aux conditions de la politique en vigueur) ou apporter du capital sans contrepartie.</p>
+                            <label class="aid-field"><span>Entreprise</span><select id="aid-company"></select></label>
+                            <label class="aid-field"><span>Forme</span>
+                                <select id="aid-form">
+                                    <option value="shareholder">L'État actionnaire (capital et dividendes)</option>
+                                    <option value="loan">Prêt</option>
+                                    <option value="participation">Participation (capital sans contrepartie)</option>
+                                </select>
+                            </label>
+                            <label class="aid-field"><span>Montant (€)</span><input type="number" id="aid-amount" min="1" step="1" inputmode="numeric" value="100" /></label>
+                            <p class="commerce-customs-hint" id="aid-preview" role="status"></p>
+                            <p class="commerce-customs-hint" id="aid-inject-error" role="alert" hidden></p>
+                            <button type="button" class="aid-apply-btn" id="aid-inject-apply">Verser</button>
+                        </div>
+                        <p class="commerce-customs-hint">Une fois validée, la politique vaut pour les entreprises créées à partir de maintenant et ne peut plus être changée avant la fin de l'engagement. Un prêt garde ses conditions jusqu'à son remboursement.</p>
                     </div>
                 </div>
             </div>
@@ -3122,80 +3123,72 @@
     </div>
 </div>
 
-<!-- Food Traceability Panel -->
-<div id="supply-traceability-panel" class="supply-traceability-panel">
+<!-- Economy panel: the product, the debts, who holds them (a reading; the button under the supply one) -->
+<div id="economy-panel" class="supply-traceability-panel" role="dialog" aria-modal="true" aria-label="Économie" aria-hidden="true" tabindex="-1">
     <div class="supply-traceability-wrapper">
         <div class="supply-traceability-header">
-            <h3>🌾 Traçabilité Alimentaire <span class="supply-traceability-hamlet" data-hamlet-label></span></h3>
-            <div class="supply-traceability-close-btn" title="Fermer" aria-label="Fermer la traçabilité alimentaire">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
+            <h3>🏛️ Économie <span class="supply-traceability-hamlet" data-hamlet-label></span></h3>
+            <button type="button" class="supply-traceability-close-btn" title="Fermer" aria-label="Fermer l'économie">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x" aria-hidden="true">
                     <path d="M18 6L6 18"/>
                     <path d="M6 6l12 12"/>
                 </svg>
+            </button>
+        </div>
+        <div class="supply-traceability-content">
+            <div class="eco-tabs" role="tablist" aria-label="Économie">
+                <button type="button" class="eco-tab active" role="tab" id="economy-tab-production" data-tab="production" aria-selected="true" aria-controls="economy-production-tab">Production</button>
+                <button type="button" class="eco-tab" role="tab" id="economy-tab-debts" data-tab="debts" aria-selected="false" aria-controls="economy-debts-tab">Dettes</button>
+                <button type="button" class="eco-tab" role="tab" id="economy-tab-development" data-tab="development" aria-selected="false" aria-controls="economy-development-tab">Développement</button>
+            </div>
+            <div class="eco-panels" id="economy-container">
+                <div class="eco-tab-content active" id="economy-production-tab" role="tabpanel" aria-labelledby="economy-tab-production"></div>
+                <div class="eco-tab-content" id="economy-debts-tab" role="tabpanel" aria-labelledby="economy-tab-debts"></div>
+                <div class="eco-tab-content" id="economy-development-tab" role="tabpanel" aria-labelledby="economy-tab-development"></div>
             </div>
         </div>
-        
+    </div>
+</div>
+
+<!-- Supply balance panel: does the city make what its citizens use up? (right-hand button) + the satisfaction history -->
+<div id="supply-balance-panel" class="supply-traceability-panel" role="dialog" aria-modal="true" aria-label="Approvisionnement" aria-hidden="true" tabindex="-1">
+    <div class="supply-traceability-wrapper">
+        <div class="supply-traceability-header">
+            <h3>🌾 Approvisionnement <span class="supply-traceability-hamlet" data-hamlet-label></span></h3>
+            <button type="button" class="supply-balance-export-btn" title="Exporter en JSON" aria-label="Exporter l'approvisionnement en JSON">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            </button>
+            <button type="button" class="supply-traceability-close-btn" title="Fermer" aria-label="Fermer l'approvisionnement">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x" aria-hidden="true">
+                    <path d="M18 6L6 18"/>
+                    <path d="M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
         <div class="supply-traceability-content">
-            <!-- Tabs -->
             <div class="supply-traceability-tabs">
-                <button class="supply-traceability-tab active" data-tab="details">📋 Transactions</button>
-                <button class="supply-traceability-tab" data-tab="charts">📊 Satisfaction</button>
-            </div>
-            
-            <!-- Details Tab -->
-            <div class="supply-traceability-tab-content active" id="supply-traceability-details-tab">
-                <div class="supply-traceability-filters">
-                    <button class="supply-traceability-filter-btn active" data-period="all">Tout l'historique</button>
-                    <button class="supply-traceability-filter-btn" data-period="7">7 derniers jours</button>
-                    <button class="supply-traceability-filter-btn" data-period="30">30 derniers jours</button>
-                    <button class="supply-traceability-filter-btn" data-period="60">60 derniers jours</button>
-                </div>
-
-                <div class="supply-traceability-category-pills" id="supply-traceability-category-pills"></div>
-
-                <div class="supply-traceability-refresh-section">
-                    <button class="supply-traceability-refresh-btn" id="supply-traceability-refresh-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
-                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                            <path d="M21 3v5h-5"/>
-                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                            <path d="M3 21v-5h5"/>
-                        </svg>
-                        Actualiser
-                    </button>
-                    <button class="supply-traceability-refresh-btn" id="supply-traceability-export-btn" title="Télécharger toutes les transactions en JSON">
-                        Exporter en JSON
-                    </button>
-                </div>
-
-                <div class="supply-traceability-log" data-transaction-log></div>
-                <div class="supply-traceability-list" id="supply-traceability-list">
-                    <div class="supply-traceability-loading">
-                        <div class="loading-spinner"></div>
-                        <p>Chargement de la traçabilité...</p>
-                    </div>
-                </div>
+                <button type="button" class="supply-traceability-tab active" data-tab="balance">⚖️ Équilibre</button>
+                <button type="button" class="supply-traceability-tab" data-tab="power">💶 Pouvoir d'achat</button>
+                <button type="button" class="supply-traceability-tab" data-tab="charts">📊 Satisfaction</button>
             </div>
 
-            <!-- Charts Tab -->
+            <div class="supply-traceability-tab-content active" id="supply-traceability-balance-tab">
+                <div class="supply-balance-list" id="supply-balance-container"></div>
+            </div>
+
+            <div class="supply-traceability-tab-content" id="supply-traceability-power-tab">
+                <div class="supply-balance-list" id="supply-power-container"></div>
+            </div>
+
             <div class="supply-traceability-tab-content" id="supply-traceability-charts-tab">
                 <div class="supply-traceability-category-pills" id="supply-charts-category-pills"></div>
                 <div class="supply-charts-controls">
                     <select id="supply-charts-year-select" class="supply-charts-select">
                         <option value="all">Toutes les années</option>
                     </select>
-                    <button class="supply-traceability-refresh-btn" id="supply-charts-refresh-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw">
-                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
-                            <path d="M21 3v5h-5"/>
-                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
-                            <path d="M3 21v-5h5"/>
-                        </svg>
-                        Actualiser
-                    </button>
-                    <button class="supply-traceability-refresh-btn" id="supply-charts-export-btn" title="Télécharger la traçabilité en JSON">
-                        Exporter en JSON
-                    </button>
+                    <button type="button" class="supply-traceability-refresh-btn" id="supply-charts-refresh-btn">Actualiser</button>
+                    <button type="button" class="supply-traceability-refresh-btn" id="supply-charts-export-btn" title="Télécharger la traçabilité en JSON">Exporter en JSON</button>
                 </div>
                 <div class="supply-stats-container" id="supply-stats-container">
                     <div class="supply-stats-loading">
@@ -3309,7 +3302,6 @@
                     <button class="filter-btn" data-filter="houses">Maisons</button>
                     <button class="filter-btn" data-filter="infrastructure">Infrastructure</button>
                     <button class="filter-btn" data-filter="services">Services</button>
-                    <button class="neighbors-btn" type="button">Voisins</button>
                 </div>
                 <div class="city-map-scrollable">
                     <div class="city-map-grid" id="city-map-grid">

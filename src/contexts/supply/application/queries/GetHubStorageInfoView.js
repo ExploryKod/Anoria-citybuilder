@@ -1,9 +1,9 @@
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { getResourceRoles } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { getResourceCategoryPresentation } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
-import { buildHubStorageLines } from '../../domain/policies/HubStorageOrdersPolicy.js';
+import { buildHubStorageLines, HUB_STORAGE_MODES, HUB_STORAGE_MODE_LABELS } from '../../domain/policies/HubStorageOrdersPolicy.js';
 import { buildHubStoragePieSegments } from '../../domain/policies/HubStoragePiePolicy.js';
-import { getMaxStockForBuilding, getScheduleForRole } from '../../domain/policies/ResourceRolePolicy.js';
+import { getMaxStockForBuilding, getCollectionSchedule } from '../../domain/policies/ResourceRolePolicy.js';
 import { monthsUntilNextMatch } from '../../domain/policies/ResourceSchedulePolicy.js';
 import { computeCarryOver, computeAutonomyMonths } from '../../domain/policies/HubCapacityPolicy.js';
 
@@ -84,12 +84,14 @@ export class GetHubStorageInfoView {
       workerNeed: buildingRow.employees?.worker_need ?? 0,
       ...storage,
       lines,
+      // The modes an order cycles through, in order, with their names: the orders tab explains them from this.
+      modes: Object.freeze(HUB_STORAGE_MODES.map((id) => Object.freeze({ id, label: HUB_STORAGE_MODE_LABELS[id] }))),
       // What is left from before the last harvest, and how long the stock lasts at last month's pace.
       carryOverTotal: lines.reduce((sum, line) => sum + line.carryOver, 0),
       autonomyMonths: computeAutonomyMonths(storage.currentTotal, buildingRow.lastOutflow?.units),
       // Months until the hub's own collection schedule next fires (its harvest), when a calendar is given.
       harvestInMonths: timeContextAhead
-        ? monthsUntilNextMatch(getScheduleForRole(buildingRow.type, 'collector'), timeContextAhead)
+        ? monthsUntilNextMatch(getCollectionSchedule(buildingRow.type), timeContextAhead)
         : null,
       pieSegments: buildHubStoragePieSegments({
         lines,

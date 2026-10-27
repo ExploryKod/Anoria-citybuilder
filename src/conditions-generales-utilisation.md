@@ -4,7 +4,7 @@
 
 ## Informations importantes
 
-- **Site de démonstration** — Eraanurbs est un projet de démonstration.
+- **Site de démonstration** — Urbanicompta est un projet de démonstration.
 - **En cours de développement** — le Site n'est pas terminé.
 - **Données saisies** — ne saisissez aucune donnée personnelle sensible lorsque le Site demande un nom ou autre information textuelle.
 

@@ -148,7 +148,6 @@ function toHousingSnapshot(row) {
     supplyShortfall: row.supplyShortfall ?? null,
     stocks: row.stocks || createEmptyStocks(),
     price: row.price ?? 0,
-    neighbors: row.neighbors || [],
   });
 }
 
@@ -233,5 +232,21 @@ export async function getHudPopulationScopeSnapshot(scope = 'active') {
     employment,
     employmentCauses,
     employmentGroupCauses,
+  };
+}
+
+/**
+ * What the development index reads of the houses of the active hamlet: how many inhabitants, how many go hungry, the unemployment, and for each house its inhabitants and
+ * the months its services last served it (`servedFlags`). The rules that turn it into an index are the shared DevelopmentIndexPolicy's.
+ * @returns {Promise<{ population: number, famished: number, unemploymentPercentage: number, houses: Array<{ pop: number, servedFlags: Record<string, number> }> }>}
+ */
+export async function getDevelopmentReading() {
+  const snapshot = await getHudPopulationScopeSnapshot('active');
+  const rows = (await db.houses.toArray()).filter((row) => rowMatchesScope(row, 'active') && isResidentialHouseType(normalizeResidentialType(row.type || '')));
+  return {
+    population: snapshot.totalPop,
+    famished: snapshot.famishedPopulation,
+    unemploymentPercentage: snapshot.employment.unemploymentPercentage,
+    houses: rows.map((row) => ({ pop: row.pop ?? 0, servedFlags: row.servedFlags ?? {} })),
   };
 }

@@ -20,6 +20,7 @@ import { RunHubSurplusCycle } from '../../../src/contexts/supply/application/com
 import { EmptyHubGoods } from '../../../src/contexts/supply/application/commands/surplus/EmptyHubGoods.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 import { ProduceResource } from '../../../src/contexts/supply/application/commands/harvest/ProduceResource.js';
+import { referencePriceBook } from '../../helpers/referencePriceBook.js';
 
 class InMemoryRepository {
   constructor(buildings) {
@@ -69,7 +70,7 @@ class InMemoryRepository {
 function cycleOver(repo) {
   const process = new ProcessHubCollection(
     repo,
-    new CollectResourceToHub(repo, new HubServing(repo)),
+    new CollectResourceToHub(repo, new HubServing(repo), { priceBook: referencePriceBook, purchasingPower: async () => Infinity }),
     new SetHubCollectingFlag(repo),
     new MarkSourceCollectedByHub(repo)
   );
@@ -93,7 +94,7 @@ describe('Supply — goods warehouse', () => {
     ]);
 
     // July: not the windmill's month.
-    await cycleOver(repo).execute({ month: 'july', monthIndex: 6, dayInMonth: 5, year: 1 });
+    await cycleOver(repo).execute({ month: 'july', monthIndex: 6, dayInMonth: 5, year: 1, turn: 1 });
 
     expect(repo.raw.get(id.wh).stocks.wood).toBe(10);
     expect(repo.raw.get(id.near).stocks.wood).toBe(0);

@@ -245,8 +245,3 @@ export async function applyRoleStatusSprites(ctx, { mesh, type, instanceId }) {
     await applyProducerCycleSprites(ctx, mesh, instanceId, saleEntry, asset, { inHouse: resolveBuildingKind(type) === BUILDING_KIND_HOUSE });
   }
 }
-
-/** True for a building that buys and sells a stock (a market): the catalog says so, not its name. */
-export function isQuantityDistributor(type) {
-  return getResourceRoles(type).some(isQuantityDistributorEntry);
-}

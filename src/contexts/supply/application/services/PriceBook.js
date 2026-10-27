@@ -6,8 +6,9 @@ import {
   unitPriceAtStage,
 } from '../../../../shared/resource-catalog/ValueChainCatalog.js';
 import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
-import { getResourceBaseValue, getServiceCategories } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { getResourceBaseValue, getServiceCategories, unsoldRiskDiscount } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 import { getResourceRoles } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { shelfLifeMonthsAt } from '../../domain/policies/ResourceRolePolicy.js';
 import { standardUnitCostOf } from '../../domain/policies/StandardUnitCostPolicy.js';
 
 /** How many months' costs are kept: the month being played and the ones a settlement still prices. */
@@ -25,6 +26,8 @@ const monthKeyOf = (period) => (period.year || 0) * MONTHS_PER_YEAR + (period.mo
  *   marked up by their own margin: a change upstream reaches the shelves as the new deliveries replace the old (the timing effect of a weighted
  *   average cost). It is read from the deliveries logged (nothing is stored), so it is the average price of what came in, not of the exact units
  *   still on the shelf.
+ * - Every seller of a good cuts its price by the risk of its stock going bad unsold, derived from how long its place keeps the good (see unsoldRiskDiscount): a
+ *   farm of cabbages earns less than a farm of wheat, a stall less than a granary. A stock is still valued at cost (`stockUnitCost`), not at this price.
  * - A service no producer makes (a school's lessons) is priced at its base value, outside the chain.
  *
  * What has no cost to read yet keeps the reference chain: a building with no delivery in the window values its stock at the opening cost, a producer
@@ -120,6 +123,12 @@ export class PriceBook {
     return state.averageCosts.get(`${building.id}|${category}`) ?? openingUnitCost(stage, category);
   }
 
+  /** A good's price less the risk its seller carries of the stock going bad unsold; a service keeps its price. */
+  #withUnsoldRisk(building, category, price) {
+    if (getServiceCategories().includes(category)) return price;
+    return Math.round(price * (1 - unsoldRiskDiscount(shelfLifeMonthsAt(building.type, category))) * 100) / 100;
+  }
+
   /**
    * @param {{ id: string, type: string }} building the seller
    * @param {string} category the good or service
@@ -135,9 +144,9 @@ export class PriceBook {
     if (stage === 'producer' || makesIt) {
       // A good with no reference value (a service-like one) has nothing to be marked up from: it stays at the reference chain.
       const cost = getResourceBaseValue(category) > 0 ? this.#standardCost(state, building.type, category) : null;
-      return cost === null ? unitPriceAtStage(stage, category) : priceFromCost('producer', cost);
+      return cost === null ? unitPriceAtStage(stage, category) : this.#withUnsoldRisk(building, category, priceFromCost('producer', cost));
     }
     const cost = state.averageCosts.get(`${building.id}|${category}`) ?? openingUnitCost(stage, category);
-    return priceFromCost(stage, cost);
+    return this.#withUnsoldRisk(building, category, priceFromCost(stage, cost));
   }
 }

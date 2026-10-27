@@ -1,5 +1,6 @@
 import { needsRoadAccess, withRoadNeed } from '../../domain/policies/BuildingTypePolicy.js';
-import { evaluateRoadAccess, evaluateRoadAccessByRange } from '../../domain/policies/RoadAccessPolicy.js';
+import { evaluateRoadAccessByRange } from '../../domain/policies/RoadAccessPolicy.js';
+import { createRoadAccess } from '../../domain/value-objects/RoadAccess.js';
 
 /**
  * Query : lit l'accès routier d'un bâtiment (routes à portée de Manhattan de son empreinte).
@@ -26,7 +27,7 @@ export class GetBuildingRoadAccess {
       return {
         instanceId,
         type: building.type,
-        roadAccess: evaluateRoadAccess([]),
+        roadAccess: createRoadAccess(0),
         applicable: false,
       };
     }

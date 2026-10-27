@@ -38,6 +38,7 @@ export class RecordLedgerEntry {
    * @param {number|null} [params.customsBase] a customs line: the value the rate was applied to
    * @param {string|null} [params.resource] a household's purchase line: the catalog category it bought (a good or a service), to group its budget by use
    * @param {Array<{ account: string, debit: number, credit: number }>|null} [params.legs] the legs of an écriture with more than two (centimes, balanced); null takes the two the catalog gives the type (the journal books every écriture when it writes it)
+   * @param {number|null} [params.shares] a capital line: the shares it issued (stamped when it is made; none: one share per euro, see CompanyAidCatalog.js)
    * @param {string|null} [params.transactionId] ties the écritures of one flow between actors (each actor books its own)
    * @param {boolean} [params.persist]
    * @returns {Promise<RecordLedgerEntryResult>}
@@ -55,6 +56,7 @@ export class RecordLedgerEntry {
     counterpartyBuildingId = null,
     loanId = null,
     loan = null,
+    shares = null,
     taxYear = null,
     taxBreakdown = null,
     dutyRate = null,
@@ -94,6 +96,7 @@ export class RecordLedgerEntry {
         counterpartyBuildingId,
         loanId,
         loan,
+        shares,
         taxYear,
         taxBreakdown,
         dutyRate,

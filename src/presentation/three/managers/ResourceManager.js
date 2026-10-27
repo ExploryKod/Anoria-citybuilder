@@ -81,12 +81,10 @@ export class ResourceManager {
                         category: 'nature',
                         x,
                         y,
-                        neighbors: [],
                         pop: 0,
                         stocks: { wood: woodAmount },
                         maxStocks: { wood: woodAmount },
                         roads: 0,
-                        worldTime: 0,
                         price: 0,
                         isBuilding: false,
                     });
@@ -153,7 +151,6 @@ export class ResourceManager {
                         category: 'nature',
                         x,
                         y,
-                        neighbors: [],
                         pop: 0,
                         stocks: {
                             rock: rockAmount,
@@ -166,7 +163,6 @@ export class ResourceManager {
                             iron: ironAmount,
                         },
                         roads: 0,
-                        worldTime: 0,
                         price: 0,
                         isBuilding: false,
                     });

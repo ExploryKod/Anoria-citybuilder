@@ -8,6 +8,7 @@ export function createConsumerMoneyPort(accounting) {
   return {
     fundsOf: (houseId) => accounting.getBuildingAccountBalance(houseId, 'particulier'),
     recordPurchases: (purchases) => accounting.recordConsumerPurchases(purchases),
+    companyFundsOf: (buildingId) => accounting.getBuildingAccountBalance(buildingId),
     isServiceCutOff: (params) => accounting.isServiceCutOff(params),
     producerCosting: () => accounting.getProducerCosting(),
   };

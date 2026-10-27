@@ -40,7 +40,7 @@ describe('Employment — HouseGroupSectorEligibilityPolicy (skill/tab derivation
 
     test('scholars own every public-service skill', () => {
       const skills = exclusiveSkillsForGroup('scholars');
-      for (const skill of ['hydraulique', 'medical', 'incendie', 'securite', 'education', 'entertainment']) {
+      for (const skill of ['hydraulique', 'medecine-proximite', 'medecine-hospitaliere', 'incendie', 'securite', 'education', 'entertainment', 'arts-scene']) {
         expect(skills).toContain(skill);
       }
     });
@@ -93,11 +93,11 @@ describe('Employment — HouseGroupSectorEligibilityPolicy (skill/tab derivation
       expect(groupsProvidingSkill('fermier')).toEqual([{ group: 'artisans', tier: 1 }]);
     });
 
-    test('a higher level is only provided by the groups that reach it, and later', () => {
-      const level1 = groupsProvidingSkill('medical', 1);
-      const level2 = groupsProvidingSkill('medical', 2);
-      expect(level2.length).toBeGreaterThan(0);
-      expect(level2[0].tier).toBeGreaterThan(level1[0].tier);
+    test('an advanced trade is a skill of its own, provided later than the trade it builds on', () => {
+      const local = groupsProvidingSkill('medecine-proximite');
+      const hospital = groupsProvidingSkill('medecine-hospitaliere');
+      expect(hospital.length).toBeGreaterThan(0);
+      expect(hospital[0].tier).toBeGreaterThan(local[0].tier);
     });
 
     test('every skill a workplace needs is provided by at least one group', () => {

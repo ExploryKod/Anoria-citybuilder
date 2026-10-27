@@ -24,7 +24,7 @@ describe('formatHousePopulationPresentation', () => {
     expect(skills).toEqual([
       expect.objectContaining({ skillKey: 'fermier', label: 'fermier' }),
       expect.objectContaining({ skillKey: 'artisanat', label: 'artisanat' }),
-      expect.objectContaining({ skillKey: 'energie', label: 'énergie' }),
+      expect.objectContaining({ skillKey: 'energie', label: 'énergie thermique' }),
     ]);
   });
 

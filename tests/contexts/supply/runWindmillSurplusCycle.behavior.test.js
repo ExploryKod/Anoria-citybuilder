@@ -14,6 +14,7 @@ import { ProcessHubCollection } from '../../../src/contexts/supply/application/c
 import { RunHubSurplusCycle } from '../../../src/contexts/supply/application/commands/surplus/RunHubSurplusCycle.js';
 import { createBuildingInstanceId } from '../../../src/shared/building-identity/index.js';
 import { hasResourceRole } from '../../../src/contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { referencePriceBook } from '../../helpers/referencePriceBook.js';
 
 class InMemorySupplyBuildingRepository {
   constructor(buildings = []) {
@@ -163,7 +164,7 @@ describe('Supply — windmill surplus cycle', () => {
       }),
     ]);
 
-    const collect = new CollectResourceToHub(repo);
+    const collect = new CollectResourceToHub(repo, null, { priceBook: referencePriceBook, purchasingPower: async () => Infinity });
     const setCollecting = new SetHubCollectingFlag(repo);
     const markSold = new MarkSourceCollectedByHub(repo);
     const process = new ProcessHubCollection(
@@ -195,7 +196,16 @@ describe('Supply — windmill surplus cycle', () => {
     expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
   });
 
-  test('December collects surplus and marks farms sold to windmill', async () => {
+  test('October collects the cabbage before it spoils and leaves the wheat for December', async () => {
+    const outcome = await runCycle.execute({ month: 'october', monthIndex: 9, dayInMonth: 15, year: 2, turn: 14 });
+
+    expect(outcome.ranCollection).toBe(true);
+    expect(outcome.hubs[0].totalUnits).toBe(4);
+    expect((await repo.findById(windmillId)).stocks.food).toBe(4);
+    expect((await repo.findById(wheatFarmId)).stocks.wheat).toBe(10);
+  });
+
+  test('December collects the wheat and marks it sold to the windmill; the cabbage was sold in October', async () => {
     const outcome = await runCycle.execute({
       month: 'december',
       monthIndex: 11,
@@ -207,12 +217,13 @@ describe('Supply — windmill surplus cycle', () => {
     expect(outcome.ranCollection).toBe(true);
     expect(outcome.hubs).toHaveLength(1);
     expect(outcome.hubs[0].collected).toBe(true);
-    expect(outcome.hubs[0].totalUnits).toBe(14);
+    expect(outcome.hubs[0].totalUnits).toBe(10);
 
     const mill = await repo.findById(windmillId);
-    expect(mill.stocks.food).toBe(14);
+    expect(mill.stocks.food).toBe(10);
     expect((await repo.findSupplyView(wheatFarmId)).collectedByHub).toBe(true);
-    expect((await repo.findSupplyView(cabbageFarmId)).collectedByHub).toBe(true);
+    // Its own sale window is closed: its flag is cleared, as every year.
+    expect((await repo.findSupplyView(cabbageFarmId)).collectedByHub).toBe(false);
     expect(repo.raw.get(wheatFarmId).salesToHub).toHaveLength(1);
   });
 
@@ -227,6 +238,7 @@ describe('Supply — windmill surplus cycle', () => {
       monthIndex: 11,
       dayInMonth: 1,
       year: 2,
+      turn: 1,
     });
 
     const sales = repo.raw.get(wheatFarmId).salesToHub;

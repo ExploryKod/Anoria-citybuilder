@@ -64,12 +64,12 @@ describe('servicesInfoFormat — informative chips (items)', () => {
 describe('servicesInfoFormat — evolution requirements', () => {
   const WATER_MET = { lastWaterConsumption: { month: 4, totalUnfed: 0 } };
 
-  test('a tier-1 house (pop 1) shows population, food, water and a dispensary; food and water met, road excluded', () => {
+  test('a tier-1 house (pop 1) shows population, food, water, a dispensary and a primary school; food and water met, road excluded', () => {
     const model = formatServicesModel(
       houseVm({ buildingPop: 1, lastConsumption: { month: 4, totalUnfed: 0 }, outcomes: WATER_MET, periodKey: 4 }),
     );
 
-    expect(model.evolutionRequirements.map((r) => r.label)).toEqual(['Population', 'Nourriture', 'Eau', 'Soins médicaux']);
+    expect(model.evolutionRequirements.map((r) => r.label)).toEqual(['Population', 'Nourriture', 'Eau', 'Soins médicaux', 'École primaire']);
     expect(model.evolutionRequirements.find((r) => r.label === 'Eau')).toEqual({
       emoji: '💧', label: 'Eau', value: '✓', status: 'ok', ariaLabel: 'Eau à portée',
     });
@@ -117,7 +117,7 @@ describe('servicesInfoFormat — evolution requirements', () => {
     );
 
     expect(model.evolutionRequirements.map((r) => r.label)).toEqual([
-      'Population', 'Nourriture', 'Eau', 'Soins médicaux', 'Biens', 'Lutte contre le feu', 'Entrepôt (activité)', 'Énergie',
+      'Population', 'Nourriture', 'Eau', 'Soins médicaux', 'École primaire', 'Biens', 'Lutte contre le feu', 'Entrepôt (activité)', 'Énergie',
     ]);
     expect(model.evolutionRequirements.find((r) => r.label === 'Énergie')).toMatchObject({ status: 'ok', value: '✓' });
     expect(model.evolutionRequirements.find((r) => r.label === 'Entrepôt (activité)')).toEqual({

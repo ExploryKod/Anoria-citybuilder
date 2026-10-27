@@ -33,6 +33,14 @@ function tooltip() {
   tooltipEl.setAttribute('role', 'tooltip');
   tooltipEl.hidden = true;
   document.body.append(tooltipEl);
+  // The scene only reports hovers over the map: once the pointer is on anything else (the info modal that a click on the
+  // building opens, a panel, the toolbar) or a press happens, no hover will come to hide it, so it would stay frozen.
+  document.addEventListener('pointermove', (event) => {
+    if (!(event.target instanceof HTMLCanvasElement)) tooltipEl.hidden = true;
+  });
+  document.addEventListener('pointerdown', () => {
+    tooltipEl.hidden = true;
+  }, true);
   return tooltipEl;
 }
 

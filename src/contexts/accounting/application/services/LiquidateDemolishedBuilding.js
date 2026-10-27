@@ -1,5 +1,6 @@
 import { payablesOf } from '../../domain/policies/DebtPolicy.js';
 import { planLiquidation } from '../../domain/policies/LiquidationPlanPolicy.js';
+import { companyAidOf } from '../../domain/policies/CompanyAidLedgerPolicy.js';
 import { PAYABLE_KINDS, LIQUIDATION_RECOVERY_RATE } from '../../domain/catalogs/PayableCatalog.js';
 import { accountKeyOf, PERSONAL_ACCOUNT } from '../../domain/policies/AccountKeyPolicy.js';
 import { postedStockOf, stockVariationOf } from '../../domain/policies/MonthClosingPolicy.js';
@@ -29,7 +30,6 @@ export class LiquidateDemolishedBuilding {
    * @param {object} deps
    * @param {() => Promise<Array<object>>} deps.getJournalEntries
    * @param {(params: object) => Promise<{ recorded: boolean, reason?: string }>} deps.recordLedgerEntry
-   * @param {(movement: object) => Promise<void>} deps.recordEconomyMovement the economy register
    * @param {<T>(work: () => Promise<T>) => Promise<T>} deps.inJournalBatch runs the liquidation so that all its lines are written at once, or none
    * @param {(turn: number) => { year: number, monthIndex: number, month?: string }} deps.getTimeInfo
    * @param {() => Promise<Array<{ id: string, type: string }>>} deps.listBuildings the hamlet's buildings, for the names in the journal's descriptions
@@ -80,11 +80,12 @@ export class LiquidateDemolishedBuilding {
       let holding = 0;
       for (const entry of entries) {
         if (accountKeyOf(entry) !== key) continue;
-        if (entry.type === 'company_capital_received') holding += toCentimes(entry.amount);
+        if (entry.type === 'company_capital_received' || entry.type === 'shareholder_capital_received') holding += toCentimes(entry.amount);
         else if (entry.type === 'liquidation_surplus_paid') holding -= toCentimes(entry.amount);
       }
       const cash = toCentimes(await this.deps.cashOf(buildingId, accountKind));
-      accounts.push({ accountKind, key, debts, cash, holding, plan: planLiquidation({ cash, stocks, debts, holding, recoveryRate: LIQUIDATION_RECOVERY_RATE }) });
+      const { outstanding: loan } = companyAidOf(entries, buildingId, accountKind);
+      accounts.push({ accountKind, key, debts, cash, holding, loan, plan: planLiquidation({ cash, stocks, debts, holding, loan, recoveryRate: LIQUIDATION_RECOVERY_RATE }) });
     }
     return { done: false, owedToIt, accounts, entries };
   }
@@ -169,7 +170,7 @@ export class LiquidateDemolishedBuilding {
       }
 
       // 2. Each account the building holds is liquidated.
-      for (const { accountKind, key, debts, plan, holding } of accounts) {
+      for (const { accountKind, key, debts, plan, holding, loan } of accounts) {
         // The stock leaves the books, and is sold at the liquidation rate.
         for (const { nature, posted } of plan.stockOut) {
           const variation = stockVariationOf({ live: 0, posted, nature });
@@ -223,6 +224,17 @@ export class LiquidateDemolishedBuilding {
               type: creditorLoss, amount: left, holder, accountKind: lossAccountKind, counterparty: buildingId, suffix: `${key}:loss:${creditorLoss}:${creditorKey}`, description: `${label} non payés à la liquidation : créance perdue`,
             });
           }
+        }
+
+        // What the company still owes the city of a loan of working capital is paid back as far as the cash goes; the rest is abandoned, and the city bears the loss.
+        if (plan.loanRepaid > 0) {
+          const flow = `liquidation:aid-loan:${buildingId}:${key}`;
+          await write({ kind: 'aid_loan_repaid', amount: plan.loanRepaid / 100, holder: buildingId, counterparty: null, accountKind, flow }, `${key}:aid-loan-repaid`, `${LINE_LABELS.aid_loan_repaid} - ${monthLabel}`);
+          await write({ kind: 'aid_loan_repayment_received', amount: plan.loanRepaid / 100, holder: null, counterparty: buildingId, flow }, `${key}:aid-loan-received`, `${LINE_LABELS.aid_loan_repayment_received} - ${monthLabel}`);
+        }
+        if (plan.loanLost > 0) {
+          await od({ type: 'od_aid_loan_abandoned', amount: plan.loanLost, holder: buildingId, accountKind, counterparty: null, suffix: `${key}:aid-loan-abandoned`, description: 'Prêt de la ville non remboursé à la liquidation : dette abandonnée' });
+          await od({ type: 'od_aid_loan_loss', amount: plan.loanLost, holder: null, accountKind: null, counterparty: buildingId, suffix: `${key}:aid-loan-loss`, description: 'Prêt à une entreprise liquidée : créance perdue' });
         }
 
         // What is left of the cash goes back to the city as the capital it put in; the rest of that capital is lost.

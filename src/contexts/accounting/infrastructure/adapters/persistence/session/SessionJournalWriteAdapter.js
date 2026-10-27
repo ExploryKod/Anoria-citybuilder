@@ -44,6 +44,7 @@ export class SessionJournalWriteAdapter extends JournalWritePort {
         counterpartyBuildingId: entry.counterpartyBuildingId ?? null,
         loanId: entry.loanId ?? null,
         loan: entry.loan ?? null,
+        shares: entry.shares ?? null,
         taxYear: entry.taxYear ?? null,
         taxBreakdown: entry.taxBreakdown ?? null,
         dutyRate: entry.dutyRate ?? null,

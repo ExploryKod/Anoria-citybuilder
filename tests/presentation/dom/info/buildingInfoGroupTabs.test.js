@@ -15,61 +15,35 @@ describe('buildingInfoGroupRegistry tabs', () => {
       BUILDING_INFO_TAB_IDS.activity,
       BUILDING_INFO_TAB_IDS.residents,
       BUILDING_INFO_TAB_IDS.services,
-      BUILDING_INFO_TAB_IDS.clients,
-      BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
       BUILDING_INFO_TAB_IDS.finance,
     ]);
   });
 
-  test('hub storage exposes foyer, shelf life, staff, common context tabs and finance', () => {
+  test('every workplace group has its staff and services inside the État tab, never as tabs of their own', () => {
+    for (const group of [BUILDING_INFO_GROUPS.hubStorage, BUILDING_INFO_GROUPS.farm, BUILDING_INFO_GROUPS.market, BUILDING_INFO_GROUPS.service]) {
+      const ids = tabIds(group);
+      expect(ids).toContain(BUILDING_INFO_TAB_IDS.state);
+      expect(ids).not.toContain(BUILDING_INFO_TAB_IDS.staff);
+      expect(ids).not.toContain(BUILDING_INFO_TAB_IDS.services);
+    }
+  });
+
+  test('hub storage exposes storage, orders, shelf life, état, context tabs and finance', () => {
     expect(tabIds(BUILDING_INFO_GROUPS.hubStorage)).toEqual([
       BUILDING_INFO_TAB_IDS.foyer,
+      BUILDING_INFO_TAB_IDS.orders,
       BUILDING_INFO_TAB_IDS.shelfLife,
-      BUILDING_INFO_TAB_IDS.staff,
-      BUILDING_INFO_TAB_IDS.services,
+      BUILDING_INFO_TAB_IDS.state,
       BUILDING_INFO_TAB_IDS.clients,
-      BUILDING_INFO_TAB_IDS.neighbors,
       BUILDING_INFO_TAB_IDS.messages,
       BUILDING_INFO_TAB_IDS.finance,
     ]);
   });
 
-  test('farm exposes production-oriented tabs', () => {
-    expect(tabIds(BUILDING_INFO_GROUPS.farm)).toEqual([
-      BUILDING_INFO_TAB_IDS.foyer,
-      BUILDING_INFO_TAB_IDS.stocks,
-      BUILDING_INFO_TAB_IDS.shelfLife,
-      BUILDING_INFO_TAB_IDS.trade,
-      BUILDING_INFO_TAB_IDS.staff,
-      BUILDING_INFO_TAB_IDS.services,
-      BUILDING_INFO_TAB_IDS.clients,
-      BUILDING_INFO_TAB_IDS.neighbors,
-      BUILDING_INFO_TAB_IDS.messages,
-      BUILDING_INFO_TAB_IDS.finance,
-    ]);
-  });
-
-  test('service (FireStation, School, Doctor, ...) exposes état + staff + common context tabs and its finance, not market tabs', () => {
+  test('service (FireStation, School, Doctor, ...) has no market tabs', () => {
     const ids = tabIds(BUILDING_INFO_GROUPS.service);
     expect(ids).not.toContain(BUILDING_INFO_TAB_IDS.stocks);
     expect(ids).not.toContain(BUILDING_INFO_TAB_IDS.trade);
-    expect(ids).toEqual([
-      BUILDING_INFO_TAB_IDS.foyer,
-      BUILDING_INFO_TAB_IDS.staff,
-      BUILDING_INFO_TAB_IDS.services,
-      BUILDING_INFO_TAB_IDS.clients,
-      BUILDING_INFO_TAB_IDS.neighbors,
-      BUILDING_INFO_TAB_IDS.messages,
-      BUILDING_INFO_TAB_IDS.finance,
-    ]);
-  });
-
-  test('nature only exposes resource + neighbors + messages', () => {
-    expect(tabIds(BUILDING_INFO_GROUPS.nature)).toEqual([
-      BUILDING_INFO_TAB_IDS.foyer,
-      BUILDING_INFO_TAB_IDS.neighbors,
-      BUILDING_INFO_TAB_IDS.messages,
-    ]);
   });
 });

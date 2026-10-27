@@ -38,7 +38,7 @@ export class AdjustWageRates {
       const known = latest.get(wageKey(row.skill, row.level));
       // A month already read is not read again (the settlement of a month runs once; this keeps a second call from moving a wage twice).
       if (known && known.year === timeInfo.year && known.month === month) continue;
-      const current = known?.amount ?? startWageOf(row.level);
+      const current = known?.amount ?? startWageOf(row.skill, row.level);
       const next = nextWageRate({ current, jobs: row.jobs, vacancies: row.vacancies, idle: row.idle, minimumWage });
       if (next.rate === current) continue;
       await this.wageRateRepository.append({

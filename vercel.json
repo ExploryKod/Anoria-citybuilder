@@ -11,6 +11,8 @@
   "rewrites": [
     { "source": "/game", "destination": "/game.html" },
     { "source": "/game/:hamletId", "destination": "/game.html" },
+    { "source": "/hamlets", "destination": "/hamlets.html" },
+    { "source": "/world", "destination": "/world.html" },
     { "source": "/missions", "destination": "/missions.html" },
     { "source": "/settings", "destination": "/settings.html" },
     { "source": "/privacy", "destination": "/privacy.html" },

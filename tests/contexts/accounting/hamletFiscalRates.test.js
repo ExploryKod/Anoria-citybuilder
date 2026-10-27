@@ -6,6 +6,7 @@
 import Dexie from 'dexie';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { HamletFiscalRateRepository } from '../../../src/contexts/accounting/infrastructure/persistence/HamletFiscalRateRepository.js';
+import { DEFAULT_COMPANY_AID } from '../../../src/contexts/accounting/domain/catalogs/CompanyAidCatalog.js';
 import { DEFAULT_HAMLET_FISCAL_RATES } from '../../../src/contexts/accounting/domain/catalogs/FiscalRateCatalog.js';
 import { TEST_HAMLET_ID } from '../../helpers/testHamlet.js';
 
@@ -43,5 +44,26 @@ describe('HamletFiscalRateRepository', () => {
     await repo.ensureRates(TEST_HAMLET_ID);
     await expect(repo.setCitizenTaxPerCapita(9999)).rejects.toThrow(/between 0 and 1000/);
     await expect(repo.setSalarySettings({ salaryTaxRate1: 2 })).rejects.toThrow(/between 0 and 1/);
+  });
+
+  test('the aid policy binds the hamlet for the years the player chose: it cannot be changed before, and can after', async () => {
+    await repo.ensureRates(TEST_HAMLET_ID);
+    // Nothing chosen yet: the catalog's policy stands and the player may set his own.
+    expect((await repo.getCompanyAid()).committedUntilYear).toBeNull();
+    const policy = { ...DEFAULT_COMPANY_AID, loanShare: 0.5, loanInterestRate: 0.04, commitmentYears: 3 };
+
+    const written = await repo.setCompanyAid(policy, 1);
+
+    expect(written.committedUntilYear).toBe(4);
+    await expect(repo.setCompanyAid({ ...policy, loanShare: 0.1 }, 3)).rejects.toThrow(/binds the hamlet until year 4/);
+    expect((await repo.getCompanyAid()).policy.loanShare).toBe(0.5);
+    // Once the commitment is over, a new policy is accepted and commits again.
+    expect((await repo.setCompanyAid({ ...policy, loanShare: 0.1, commitmentYears: 2 }, 4)).committedUntilYear).toBe(6);
+  });
+
+  test('an aid policy out of its bounds, or whose shares leave nothing for the participation, is refused', async () => {
+    await repo.ensureRates(TEST_HAMLET_ID);
+    await expect(repo.setCompanyAid({ ...DEFAULT_COMPANY_AID, commitmentYears: 1 }, 1)).rejects.toThrow(/between 2 and 8/);
+    await expect(repo.setCompanyAid({ ...DEFAULT_COMPANY_AID, loanShare: 0.8, shareholderShare: 0.4 }, 1)).rejects.toThrow(/leave nothing/);
   });
 });

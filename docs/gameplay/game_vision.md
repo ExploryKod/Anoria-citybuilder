@@ -141,7 +141,7 @@ Chaque maison Bleue/Rouge/Violette progresse **indépendamment de sa couleur** e
 | Coût | 50 € |
 |------|------|
 | **Ouvriers** | 4 + 2 élite |
-| **Rôle** | En **décembre**, collecte le **surplus** de **toutes** les fermes de la ville |
+| **Rôle** | En **octobre** (les choux, qui ne se gardent que deux mois) et en **décembre** (les autres cultures), collecte le **surplus** de **toutes** les fermes de la ville |
 | **Stockage** | Oui (capacité élevée ~1000) — **ne distribue pas** aux maisons |
 
 ### Chaîne alimentaire (résumé)

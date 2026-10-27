@@ -171,13 +171,17 @@ export function renderHubStoragePieChart(view, summaryLines = []) {
 
   return `
     <div class="hub-pie-chart">
-      <svg class="hub-pie-svg" viewBox="0 0 200 200" role="img" aria-label="Occupation de l'entrepôt">
-        <circle cx="${cx}" cy="${cy}" r="${r + 1}" fill="#fff" stroke="#dee2e6" stroke-width="1" />
-        ${wedges}
-        ${labels}
-      </svg>
-      <div class="hub-pie-legend">${legend}</div>
-      <p class="hub-pie-caption">${summaryLines.map((line) => `<span class="hub-pie-summary-line">${line}</span>`).join('<br />')}</p>
+      <figure class="hub-pie-figure">
+        <svg class="hub-pie-svg" viewBox="0 0 200 200" role="img" aria-label="Occupation de l'entrepôt">
+          <circle cx="${cx}" cy="${cy}" r="${r + 1}" fill="#fff" stroke="#dee2e6" stroke-width="1" />
+          ${wedges}
+          ${labels}
+        </svg>
+      </figure>
+      <div class="hub-pie-details">
+        <div class="hub-pie-legend">${legend}</div>
+        <p class="hub-pie-caption">${summaryLines.map((line) => `<span class="hub-pie-summary-line">${line}</span>`).join('')}</p>
+      </div>
     </div>
   `;
 }

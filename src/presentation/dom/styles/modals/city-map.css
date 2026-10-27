@@ -122,30 +122,6 @@
     cursor: pointer;
     transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
 }
-.city-map-filters .neighbors-btn {
-    padding: 8px 14px;
-    font-size: 0.9rem;
-    border-radius: 999px;
-    border: 1px solid #ffcc80;
-    background: #fff7e6;
-    color: #1b1b1b;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease, border-color 0.2s ease;
-}
-.city-map-filters .neighbors-btn:hover {
-    background: #ffe0b2;
-    border-color: #ffb74d;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-}
-.city-map-filters .neighbors-btn:active {
-    transform: translateY(1px);
-}
-.city-map-filters .neighbors-btn.active {
-    background: #ff9800;
-    color: #ffffff;
-    border-color: #ff9800;
-}
 .city-map-filters .filter-btn:hover {
     background: #ffe0b2;
     border-color: #ffb74d;
@@ -354,11 +330,6 @@
     opacity: 0.25;
 }
 
-/* Hide neighbors when toggled */
-#city-map-grid.hide-neighbors .neighbors-list {
-    display: none;
-}
-
 .grid-loading {
     display: flex;
     flex-direction: column;
@@ -545,34 +516,13 @@
     background: rgba(15, 23, 42, 0.3);
 }
 
-/* Neighbors display */
-.neighbors-list {
-    font-size: 0.7rem;
-    color: #1b1b1b;
-    margin-top: 4px;
-}
-
-/* Habitants count appears in place of neighbors when neighbors are hidden */
+/* A house's inhabitants, under its code */
 .habitants-count {
-    display: none;
+    display: block;
     margin-top: 4px;
     font-size: 0.8rem;
     font-weight: 800;
     color: #ff9800; /* vivid orange */
-}
-#city-map-grid.hide-neighbors .habitants-count {
-    display: block;
-}
-#city-map-grid.hide-neighbors .neighbors-list {
-    display: none;
-}
-
-.neighbors-list .neighbor-code {
-    display: inline-block;
-    margin: 1px 2px;
-    padding: 2px 4px;
-    border-radius: 3px;
-    background: rgba(51, 65, 85, 0.6);
 }
 
 /* Scrollbar styling */

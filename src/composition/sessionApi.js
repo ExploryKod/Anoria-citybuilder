@@ -6,6 +6,9 @@
  */
 
 import { COMMERCIAL_ROUTE_FEE } from '../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
+import { developmentOf, economyOf, purchasingPowerOf } from './purchasingPower.js';
+import { getSessionGameTime } from './sessionRuntime.js';
+import { TimeManager } from '../shared/time/TimeManager.js';
 import { fiscalSliderBounds } from '../contexts/accounting/domain/catalogs/FiscalRateCatalog.js';
 import { createEmptyCityLedgerYearLines } from '../contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
 import {
@@ -24,15 +27,13 @@ import {
 } from '../contexts/accounting/domain/catalogs/ObjectiveCatalog.js';
 import { hasRoadAccessFromCount } from '../contexts/parcels/domain/value-objects/RoadAccess.js';
 import {
-  getBuildingsNamesInZone,
-} from '../contexts/parcels/infrastructure/spatial/sceneNeighborhoodScan.js';
-import {
   canPlaceBuildingAtTileWithSupplyRules,
 } from './canPlaceBuildingAtTileWithSupplyRules.js';
 import {
   hasResourceRole,
   getPlacementRequirements,
 } from '../contexts/supply/domain/policies/ResourceRolePolicy.js';
+import { getDevelopmentReading, getHudPopulationScopeSnapshot } from './hudPopulationAggregates.js';
 import { isRoadBuildingType } from '../contexts/construction/domain/policies/FootprintAvailabilityPolicy.js';
 import { listRoadPaintCells } from '../contexts/construction/domain/policies/RoadPaintPolicy.js';
 
@@ -84,6 +85,10 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
 
     getHouseMaintenanceSubsidyRate: () => accounting.getHouseMaintenanceSubsidyRate(),
     setHouseMaintenanceSubsidyRate: (rate) => accounting.setHouseMaintenanceSubsidyRate(rate),
+    getCompanyAid: () => accounting.getCompanyAid(),
+    setCompanyAid: (policy) => accounting.setCompanyAid(policy),
+    describeAidCompanies: () => accounting.describeAidCompanies(),
+    injectCompanyAid: (params) => accounting.injectCompanyAid(params),
     getCorporateTaxRate: () => accounting.getCorporateTaxRate(),
     setCorporateTaxRate: (rate) => accounting.setCorporateTaxRate(rate),
     getCitizenTaxPerCapita: () => accounting.getCitizenTaxPerCapita(),
@@ -169,6 +174,9 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
   });
 }
 
+/** The calendar now: the month the services' coverage flags are read against. */
+const gameTimeInfo = () => TimeManager.getTimeInfo(getSessionGameTime());
+
 /**
  * @param {ReturnType<import('./createSupplyContext.js').createSupplyContext>} supply
  */
@@ -187,6 +195,7 @@ export function createSupplySessionApi(supply) {
     getAllSupplyTraceabilityTransactions: (hamletId = null) =>
       supply.getAllSupplyTraceabilityTransactions(hamletId),
     recordBuildingEvent: (params) => supply.recordBuildingEvent(params),
+    describeSupplyBalance: () => supply.describeSupplyBalance(),
     getHubStorageInfoView: (hubKind, buildingRow, options = {}) =>
       supply.getHubStorageInfoView(hubKind, buildingRow, options),
     updateHubStorageOrderMode: (hubKind, buildingId, productId) =>
@@ -228,6 +237,11 @@ export function createHousingSessionApi(housing) {
       return totalPop;
     },
     getCityPopulationSummary: () => housing.getCityPopulationSummary(),
+    /** How many inhabitants of the active hamlet go hungry, and for which of the two causes (disette: they cannot pay; pénurie: nothing to buy). */
+    getHunger: async () => {
+      const snapshot = await getHudPopulationScopeSnapshot('active');
+      return { famished: snapshot.famishedPopulation, disette: snapshot.disettePopulation, penurie: snapshot.penuriePopulation, atRisk: snapshot.hungerRisk };
+    },
   });
 }
 
@@ -237,7 +251,6 @@ export function createHousingSessionApi(housing) {
 export function createParcelsSessionApi(_parcels = null) {
   return Object.freeze({
     hasRoadAccessFromCount: (...args) => hasRoadAccessFromCount(...args),
-    getBuildingsNamesInZone: (...args) => getBuildingsNamesInZone(...args),
   });
 }
 
@@ -273,6 +286,21 @@ export function assembleSessionApi({
   }
   if (supply) {
     api.supply = createSupplySessionApi(supply);
+    if (accounting) {
+      // The purchasing power of the houses reads two contexts: what they earn and pay (the journal) and what their needs cost (the markets).
+      api.supply = Object.freeze({
+        ...api.supply,
+        describeEconomy: async () => {
+          const [economy, baskets, reading] = await Promise.all([accounting.getHamletEconomy(), supply.describeResidentBasket(), getDevelopmentReading()]);
+          const joined = economyOf({ economy, baskets });
+          return { ...joined, development: developmentOf({ economy: joined, reading, periodKey: gameTimeInfo().monthIndex }) };
+        },
+        describePurchasingPower: async () => {
+          const [budgets, baskets] = await Promise.all([accounting.getHouseholdBudgets(), supply.describeResidentBasket()]);
+          return { ready: budgets.ready, year: budgets.year, months: budgets.months, kinds: purchasingPowerOf({ households: budgets.households, baskets }) };
+        },
+      });
+    }
   }
   if (employment) {
     api.employment = createEmploymentSessionApi(employment);

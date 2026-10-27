@@ -22,16 +22,17 @@ describe('Employment — WorkplaceSkillRequirementPolicy', () => {
     expect(getRequiredSkillForBuilding('PetrolPlant')).toBe('energie');
     expect(getRequiredSkillForBuilding('Market-Stall-Red')).toBe('vente-alimentaire');
     expect(getRequiredSkillForBuilding('Factory-Plate')).toBe('artisanat');
-    expect(getRequiredSkillForBuilding('Doctor')).toBe('medical');
-    expect(getRequiredSkillForBuilding('Hospital')).toBe('medical');
+    expect(getRequiredSkillForBuilding('Doctor')).toBe('medecine-proximite');
+    expect(getRequiredSkillForBuilding('Hospital')).toBe('medecine-hospitaliere');
   });
 
-  test('requiredSkillLevel defaults to 1, and a bigger sibling building can require level 2', () => {
+  test('a skill has one level: every workplace asks level 1, and an advanced trade is a skill of its own', () => {
     expect(getRequiredSkillLevelForBuilding('WaterTank')).toBe(1);
     expect(getRequiredSkillLevelForBuilding('Doctor')).toBe(1);
-    expect(getRequiredSkillLevelForBuilding('Hospital')).toBe(2);
+    // A more advanced trade is a skill of its own, never a higher level of the same one.
+    expect(getRequiredSkillLevelForBuilding('Hospital')).toBe(1);
     expect(getRequiredSkillLevelForBuilding('Cinema')).toBe(1);
-    expect(getRequiredSkillLevelForBuilding('Theatre')).toBe(2);
+    expect(getRequiredSkillLevelForBuilding('Theatre')).toBe(1);
   });
 
   test('workplace skills use Housing profession skill vocabulary (contract)', () => {

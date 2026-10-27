@@ -188,18 +188,3 @@ export function formatTimeShort(days, daysPerMonth) {
 
   return `${dayLabel} | ${timeInfo.month} | ${timeInfo.season}`;
 }
-
-/** @param {number} currentTime @param {number} worldTime */
-export function getBuildingAge(currentTime, worldTime) {
-  assertTurnCount(currentTime, 'currentTime');
-  assertTurnCount(worldTime, 'the building worldTime');
-  if (worldTime > currentTime) {
-    throw new Error(`[TimeCalendar] building worldTime ${worldTime} is after the current time ${currentTime}`);
-  }
-  return currentTime - worldTime;
-}
-
-/** @param {number} currentTime @param {number} worldTime @param {number} [requiredAgeDays=3] */
-export function isBuildingOldEnough(currentTime, worldTime, requiredAgeDays = 3) {
-  return getBuildingAge(currentTime, worldTime) > requiredAgeDays;
-}

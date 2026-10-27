@@ -6,17 +6,13 @@ import {
 } from '../../../domain/value-objects/ResourceStock.js';
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
 import { isLockedForPeriod, buildLockUpdate } from '../../../domain/policies/PeriodLockPolicy.js';
-import { getResourceRoles, getCategoriesForRole, getTotalKeyForRole } from '../../../domain/policies/ResourceRolePolicy.js';
+import { getResourceRoles, getCategoriesForRole, getTotalKeyForRole, stockShapeFor } from '../../../domain/policies/ResourceRolePolicy.js';
 import {
   findNaturalSourcesInRange,
   isWithinRange,
   manhattanDistance,
 } from '../../../domain/policies/ResourceRangePolicy.js';
-import {
-  getCategoriesForTotalKey,
-  getMaxStockForBuilding,
-  getTotalKeyForCategory,
-} from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getMaxStockForBuilding } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
  * Command: a building produces resource units into its own stock, gated by
@@ -67,24 +63,6 @@ import {
  * filed under that aggregate, so the aggregate stays consistent and the
  * building's other goods are untouched.
  */
-/**
- * The categories and aggregate a stock write about `category` must use, so
- * that the right total stays in sync: the entry's own `totalKey` when it
- * declares one, otherwise the aggregate the catalog files that good under
- * (the good itself when it belongs to none, e.g. pottery today). Used for
- * both sides of a transformation, so an input and an output are read and
- * written by the same rule.
- *
- * @param {string} category
- * @param {string} [declaredTotalKey]
- * @returns {{ categories: readonly string[], totalKey: string }}
- */
-function stockShapeFor(category, declaredTotalKey) {
-  const totalKey = declaredTotalKey ?? getTotalKeyForCategory(category);
-  const filedUnder = getCategoriesForTotalKey(totalKey);
-  return { categories: filedUnder.length > 0 ? filedUnder : [category], totalKey };
-}
-
 export class ProduceResource {
   /**
    * @param {import('../../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository

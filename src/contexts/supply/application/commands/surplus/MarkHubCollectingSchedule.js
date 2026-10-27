@@ -1,5 +1,5 @@
 import { matchesSchedule } from '../../../domain/policies/ResourceSchedulePolicy.js';
-import { getScheduleForRole } from '../../../domain/policies/ResourceRolePolicy.js';
+import { getCollectionSchedule } from '../../../domain/policies/ResourceRolePolicy.js';
 
 /**
  * Command: set every hub's `isCollecting` (UI flag) from its own 'collector'
@@ -23,7 +23,7 @@ export class MarkHubCollectingSchedule {
     let isCollecting = false;
 
     for (const hub of hubs) {
-      const schedule = getScheduleForRole(hub.type, 'collector');
+      const schedule = getCollectionSchedule(hub.type);
       const hubIsCollecting = matchesSchedule(schedule, { month });
       isCollecting = isCollecting || hubIsCollecting;
       await this.supplyBuildingRepository.saveSupplyFlags(hub.id, {

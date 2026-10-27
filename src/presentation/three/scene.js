@@ -23,7 +23,7 @@ import {
     buildingsObjects,
 } from '../../shared/building-catalog/index.js';
 import { houses } from './assets/buildingCategories.js';
-import { applyRoleStatusSprites, isQuantityDistributor } from './meshs/roleStatusSprites.js';
+import { applyRoleStatusSprites } from './meshs/roleStatusSprites.js';
 import { setupRoadAccessIcons } from '../../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
 import { LightingManager } from './managers/LightingManager.js';
 import { BackdropManager } from './managers/BackdropManager.js';
@@ -42,7 +42,6 @@ import {
   MapOverlayVisibility,
   spriteNamesOfFilter,
 } from './managers/MapOverlayVisibility.js';
-import { syncTileNeighborsPass } from './sync/syncTileNeighborsPass.js';
 import { cleanupOrphanedBuildings } from './sync/cleanupOrphanedBuildings.js';
 import { registerAppService } from '../../composition/appServices.js';
 import {
@@ -123,9 +122,7 @@ export function createScene(_gameStore, assetManager, deps) {
 
     const findBuildingAtTile = (params) => construction.findBuildingAtTile(params);
     const getBuildingById = (id) => construction.getBuildingById(id);
-    const updateBuildingFields = (id, fields) => construction.updateBuildingFields(id, fields);
     const getBuildingField = (id, key) => construction.getBuildingField(id, key);
-    const incrementBuildingField = (params) => construction.incrementBuildingField(params);
     const listAllBuildingRows = () => construction.listAllBuildingRows();
     const ensureBuildingEmployeesSchema = (id, type) =>
       construction.ensureBuildingEmployeesSchema(id, type);
@@ -398,11 +395,9 @@ export function createScene(_gameStore, assetManager, deps) {
     let currentCity = null; // Store current city object for citizen updates
     let lastSceneUpdateTime = 0;
     /**
-     * What an update already wrote for each building, so it does not write it again: the day stamped on its row (`worldTime`) and whether its
-     * employees schema was checked. Without it every tile of every building cost several database operations at every update (placements update
-     * the scene twice), which is what made a placement take seconds.
+     * The buildings whose employees schema an update already checked, so it does not check it again. Without it every tile of every building cost several
+     * database operations at every update (placements update the scene twice), which is what made a placement take seconds.
      */
-    const stampedWorldTime = new Map();
     const employeesSchemaChecked = new Set();
     
     // Note: per-turn budget orchestration lives in ProcessTurnBudget (accounting BC) via scene.update
@@ -696,6 +691,27 @@ export function createScene(_gameStore, assetManager, deps) {
     async function runUpdate(city, time = 0, _options = {}) {
         lastSceneUpdateTime = time;
 
+        // Measurement only: the milliseconds each section of this update took, reported at its end (dev builds).
+        const sectionMs = {};
+        let sectionStartedAt = performance.now();
+        const lap = (section) => {
+            const now = performance.now();
+            sectionMs[section] = now - sectionStartedAt;
+            sectionStartedAt = now;
+        };
+        // What the tile loop spends in each call that awaits (measurement only): { name: { ms, calls } }.
+        const tileCalls = {};
+        const timed = async (name, call) => {
+            const startedAt = performance.now();
+            try {
+                return await call();
+            } finally {
+                const spent = tileCalls[name] ?? (tileCalls[name] = { ms: 0, calls: 0 });
+                spent.ms += performance.now() - startedAt;
+                spent.calls += 1;
+            }
+        };
+
         /**
          * The residential house on a tile, from ONE read of the houses of the hamlet per update: asking the database tile by tile read the
          * whole table for every tile of every house, which is what made each update (and so each placement) take seconds.
@@ -898,11 +914,10 @@ export function createScene(_gameStore, assetManager, deps) {
         // Population for HUD / citizens (gameplay persist + turn budget owned by game tick)
         const popSummary = await housing.getCityPopulationSummary();
         const totalPop = popSummary.totalPop;
+        lap('population');
 
         // --- BOUCLE SUR LA VILLE ----
-        parcels.bindSpatialContext({ city, buildings, terrain, time });
-
-        // UUID on meshes so spatial neighbor scans resolve Dexie rows (PlaceBuilding adjacents)
+        // UUID on meshes so the grid scan the walkers use (zoneBordersBuildings) resolves each building
         for (let sx = 0; sx < city.size; sx++) {
             for (let sy = 0; sy < city.size; sy++) {
                 const inst = city.tiles[sx]?.[sy]?.instanceId;
@@ -925,6 +940,9 @@ export function createScene(_gameStore, assetManager, deps) {
             supply,
             time,
         };
+
+        // The buildings that exist, from ONE read of the table: asking for the building of each tile cost a read per tile at every update.
+        const existingBuildingIds = new Set((await timed('listRows', () => listAllBuildingRows())).map((row) => row.instanceId));
 
         for(let x = 0; x < city.size; x++) {
             for(let y = 0; y < city.size; y++) {
@@ -974,8 +992,8 @@ export function createScene(_gameStore, assetManager, deps) {
               // Check if building is on edge (need special handling for neighbors)
               const isOnEdge = x === 0 || x === city.size - 1 || y === 0 || y === city.size - 1;
 
-              // Create/replace mesh before neighbor scans (grass in terrain[] ≠ building in buildings[])
-              await placeTileMeshIfNeeded(x, y, needsMeshPlacement, tileBuildingId);
+              // Create/replace the mesh first (grass in terrain[] ≠ building in buildings[])
+              await timed('placeMesh', () => placeTileMeshIfNeeded(x, y, needsMeshPlacement, tileBuildingId));
 
               if (tileInstanceId && buildings[x]?.[y]?.userData) {
                   buildings[x][y].userData.instanceId = tileInstanceId;
@@ -991,7 +1009,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 // After bulldoze, city.tiles is cleared first — looking up Dexie would
                 // briefly resurrect buildingId/instanceId and flash a mesh/sprite.
                 if (!currentInstanceId && tileBuildingId) {
-                    const atTile = await findBuildingAtTile({ x, y });
+                    const atTile = await timed('findAtTile', () => findBuildingAtTile({ x, y }));
                     currentInstanceId = atTile?.instanceId ?? atTile?.id ?? null;
                     if (currentInstanceId && city.tiles[x]?.[y]) {
                         city.tiles[x][y].instanceId = currentInstanceId;
@@ -1047,11 +1065,11 @@ export function createScene(_gameStore, assetManager, deps) {
                     tileBuildingId &&
                     houses.includes(currentBuildingId)
                 ) {
-                    const residentialSync = await syncResidentialHouseMeshFromDb(
+                    const residentialSync = await timed('syncHouseMesh', () => syncResidentialHouseMeshFromDb(
                         x,
                         y,
                         currentBuildingId
-                    );
+                    ));
                     currentBuildingId = residentialSync.buildingId;
                     if (residentialSync.instanceId) {
                         currentInstanceId = residentialSync.instanceId;
@@ -1100,7 +1118,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 
                 // Ne vérifier la suppression que si aucun nouveau bâtiment n'est en cours de création
                 if (!isRoad && !hasNewBuilding) {
-                    let buildingExists = await getBuildingById(currentInstanceId);
+                    let buildingExists = existingBuildingIds.has(currentInstanceId);
                     // Resurrect from Housing only when the tile still claims this building
                     if (
                         !buildingExists &&
@@ -1138,27 +1156,14 @@ export function createScene(_gameStore, assetManager, deps) {
                     }
                 }
                 
-                // Update building data in database
-                // Once per building and day, and its employees schema once per session (a building spans several tiles, and the scene is
-                // updated more than once a day).
+                // A building's employees schema is checked once per session (a building spans several tiles, and the scene is updated more than once a day).
                 if (!isRoad) {
-                    if (stampedWorldTime.get(currentInstanceId) !== time) {
-                        await updateBuildingFields(currentInstanceId, { worldTime: time });
-                        stampedWorldTime.set(currentInstanceId, time);
-                    }
                     if (!employeesSchemaChecked.has(currentInstanceId)) {
-                        await ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId);
+                        await timed('employeesSchema', () => ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId));
                         employeesSchemaChecked.add(currentInstanceId);
                     }
                 } else {
                     try {
-                        if (stampedWorldTime.get(currentInstanceId) !== time) {
-                            await updateBuildingFields(currentInstanceId, { worldTime: time });
-                            if (buildings[x][y]?.userData) {
-                                await updateBuildingFields(currentInstanceId, {});
-                            }
-                            stampedWorldTime.set(currentInstanceId, time);
-                        }
                         if (!employeesSchemaChecked.has(currentInstanceId)) {
                             await ensureBuildingEmployeesSchema(currentInstanceId, currentBuildingId);
                             employeesSchemaChecked.add(currentInstanceId);
@@ -1186,7 +1191,6 @@ export function createScene(_gameStore, assetManager, deps) {
                     terrain
                 };
 
-                // Neighbors persisted in second pass after all meshes exist
                 if(!newBuildingId && currentBuildingId) {
                     if(bulldozeSelected.classList.contains('selected') && currentBuildingId) {
                         // Debug: Verify building exists at coordinates
@@ -1246,24 +1250,14 @@ export function createScene(_gameStore, assetManager, deps) {
                 // its `type` / `id` are the visual ones and can be a kit piece's.
                 const catalogTypeId = buildings[x][y]?.userData?.catalogId;
 
-                // A building that buys and sells a stock keeps its own clock (a market).
-                if (isQuantityDistributor(catalogTypeId)) {
-                    await incrementBuildingField({
-                        instanceId: currentInstanceId,
-                        field: 'time',
-                        increment: 1,
-                        condition: false,
-                    });
-                }
-
                 // What each building is doing, by the roles the catalog gives it (hub, distributor, producer).
                 // Road / worker / resource statuses come first, from refreshEmploymentPresentation.
                 if (buildings[x][y]) {
-                    await applyRoleStatusSprites(roleSpriteContext, {
+                    await timed('roleSprites', () => applyRoleStatusSprites(roleSpriteContext, {
                         mesh: buildings[x][y],
                         type: catalogTypeId,
                         instanceId: currentInstanceId,
-                    });
+                    }));
                 }
 
                 //  only update if current building is a house
@@ -1287,7 +1281,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     // Then this code was reading empty userData.stocks and overwriting IndexedDB with 0s!
 
                     // Read stocks from Supply BC
-                    const houseSupply = await supply.getBuildingSupplyView(currentInstanceId);
+                    const houseSupply = await timed('houseSupplyView', () => supply.getBuildingSupplyView(currentInstanceId));
                     const houseFoodStocks = houseSupply?.stocks || null;
 
                     // Sync Supply stocks to userData for visual display
@@ -1307,17 +1301,9 @@ export function createScene(_gameStore, assetManager, deps) {
 
         }
 
-        // Neighbor sync once every tile mesh is up to date this frame
-        await syncTileNeighborsPass({
-          city,
-          buildings,
-          terrain,
-          time,
-          parcels,
-          updateBuildingFields,
-        });
+        lap('tiles');
 
-        // Sync residential road icons after neighbors (evolution may have run in ECS)
+        // Sync residential road icons once every tile mesh is up to date (evolution may have run in ECS)
         for (let nx = 0; nx < city.size; nx++) {
             for (let ny = 0; ny < city.size; ny++) {
                 const tileType = city.tiles[nx]?.[ny]?.buildingId;
@@ -1339,6 +1325,8 @@ export function createScene(_gameStore, assetManager, deps) {
             }
         }
 
+        lap('houseRoadIcons');
+
         // Cleanup: Remove orphaned house records from IndexedDB
         try {
             await cleanupOrphanedBuildings({
@@ -1349,6 +1337,12 @@ export function createScene(_gameStore, assetManager, deps) {
             });
         } catch (error) {
             console.warn('[Scene] Error during orphaned house cleanup:', error);
+        }
+        lap('cleanup');
+        if (import.meta.env?.DEV) {
+            const sections = Object.entries(sectionMs).map(([section, ms]) => `${section}=${ms.toFixed(1)}`).join(' ');
+            const calls = Object.entries(tileCalls).map(([name, spent]) => `${name}=${spent.ms.toFixed(0)}ms/${spent.calls}`).join(' ');
+            console.info(`[tick-perf] scene.update day=${time} ${sections} | tile calls: ${calls}`);
         }
 
         // Gestion de la barre des délais

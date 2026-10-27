@@ -42,12 +42,4 @@ export class TimeManager {
   static formatTimeShort(days) {
     return TimeCalendar.formatTimeShort(days, this.DAYS_PER_MONTH);
   }
-
-  static getBuildingAge(currentTime, worldTime) {
-    return TimeCalendar.getBuildingAge(currentTime, worldTime);
-  }
-
-  static isBuildingOldEnough(currentTime, worldTime, requiredAgeDays = 3) {
-    return TimeCalendar.isBuildingOldEnough(currentTime, worldTime, requiredAgeDays);
-  }
 }

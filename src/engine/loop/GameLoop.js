@@ -11,13 +11,18 @@ export class GameLoop {
   #tickInFlight = false;
 
   /**
-   * @param {{ onTick: (deltaMs: number) => void | Promise<void>, intervalMs?: number, useAnimationFrame?: boolean }} options
+   * `onError` tells the player a day failed (the loop itself shows nothing); it is optional and a failure inside it is logged, never thrown over the original error.
+   * @param {{ onTick: (deltaMs: number) => void | Promise<void>, intervalMs?: number, useAnimationFrame?: boolean, onError?: (error: unknown) => void }} options
    */
-  constructor({ onTick, intervalMs = 1000, useAnimationFrame = false }) {
+  constructor({ onTick, intervalMs = 1000, useAnimationFrame = false, onError = null }) {
     if (typeof onTick !== 'function') {
       throw new Error('GameLoop: onTick must be a function');
     }
+    if (onError !== null && typeof onError !== 'function') {
+      throw new Error('GameLoop: onError must be a function');
+    }
     this.onTick = onTick;
+    this.onError = onError;
     this.intervalMs = intervalMs;
     this.useAnimationFrame = useAnimationFrame;
     this.#lastTickAt = null;
@@ -59,6 +64,11 @@ export class GameLoop {
       // A day that throws used to vanish as an unhandled rejection with no tag: the game went on to the next day and nobody knew a month had not been settled.
       // The tag makes it reach the dev log; the error is thrown on as before.
       console.error('[GameLoop] A day failed and was not completed:', error);
+      try {
+        this.onError?.(error);
+      } catch (reportError) {
+        console.error('[GameLoop] onError failed:', reportError);
+      }
       throw error;
     } finally {
       this.#tickInFlight = false;

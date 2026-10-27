@@ -226,6 +226,10 @@ export class SessionJournalStore {
                 entry.loan = options.loan;
             }
 
+            if (options.shares != null) {
+                entry.shares = options.shares;
+            }
+
             if (options.dutyRate != null) {
                 entry.dutyRate = options.dutyRate;
                 entry.customsBase = options.customsBase;

@@ -4,6 +4,8 @@
  */
 export const unlimitedConsumerMoney = Object.freeze({
   fundsOf: async () => Infinity,
+  // A company's cash: plenty, and finite (the purchasing power is an amount of euros).
+  companyFundsOf: async () => 1e9,
   recordPurchases: async () => {},
   isServiceCutOff: async () => false,
   // A wage of 8 and no upkeep: what a producer's month costs, for the supply tests that are not about prices.

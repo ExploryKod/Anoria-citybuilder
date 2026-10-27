@@ -1,5 +1,6 @@
 import { needsRoadAccess, withRoadNeed } from '../../domain/policies/BuildingTypePolicy.js';
-import { evaluateRoadAccess, evaluateRoadAccessByRange } from '../../domain/policies/RoadAccessPolicy.js';
+import { evaluateRoadAccessByRange } from '../../domain/policies/RoadAccessPolicy.js';
+import { createRoadAccess } from '../../domain/value-objects/RoadAccess.js';
 import { createRoadAccessChanged } from '../../domain/events/RoadAccessChanged.js';
 
 /**
@@ -29,7 +30,7 @@ export class RecalculateRoadAccessForBuilding {
       return {
         updated: false,
         instanceId,
-        roadAccess: evaluateRoadAccess([]),
+        roadAccess: createRoadAccess(0),
         skipped: true,
       };
     }

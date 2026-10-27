@@ -21,7 +21,6 @@ import { edibleBasketsFromCategories } from './value-objects/FoodStocks.js';
  * @property {{ totalUnfed?: number, month?: number, categoriesTaken?: string[] } | null} [lastConsumption]
  * @property {import('./value-objects/FoodStocks.js').FoodStocks} [stocks]
  * @property {number} [price]
- * @property {string[]} [neighbors]
  */
 
 /**
@@ -41,7 +40,6 @@ export function createHousingBuildingSnapshot({
   lastConsumption = null,
   stocks = {},
   price = 0,
-  neighbors = [],
   // Passed through as-is — this is what lets a Supply-context field the
   // Housing BC didn't ask for (e.g. `servedFlags`, written by
   // DistributeResourceToConsumers.js onto the same underlying `houses`
@@ -92,6 +90,5 @@ export function createHousingBuildingSnapshot({
       return next;
     })(),
     price: price ?? 0,
-    neighbors: neighbors ?? [],
   });
 }

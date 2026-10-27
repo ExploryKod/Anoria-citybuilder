@@ -1,9 +1,13 @@
-import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+import { buildingCatalog, getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+import { getShelfLifeMonths } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
+import { shelfLifeTurnsOf } from './StockAgingPolicy.js';
 import {
   getResourceRoles,
   getAllCategoriesForRole,
   getResourceStockShape,
   getMaxStockForBuilding,
+  getCategoriesForTotalKey,
+  getTotalKeyForCategory,
 } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
@@ -17,6 +21,22 @@ import {
  * re-exported here so Supply keeps a single import point.
  */
 export { getResourceRoles, getAllCategoriesForRole, getResourceStockShape, getMaxStockForBuilding };
+
+/**
+ * The categories and aggregate a stock write about `category` must use, so that the right total stays in sync: the entry's own `totalKey` when it
+ * declares one, otherwise the aggregate the catalog files that good under (the good itself when it belongs to none, e.g. pottery today). Every write to a
+ * stock (a harvest, a recipe, a loss to spoilage) uses this one rule, so what goes in and what comes out are read and written the same way: a role that
+ * names only its own good (a farm's) would otherwise take units out of a total of its own and leave the shared one (the food) standing.
+ *
+ * @param {string} category
+ * @param {string} [declaredTotalKey]
+ * @returns {{ categories: readonly string[], totalKey: string }}
+ */
+export function stockShapeFor(category, declaredTotalKey) {
+  const totalKey = declaredTotalKey ?? getTotalKeyForCategory(category);
+  const filedUnder = getCategoriesForTotalKey(totalKey);
+  return { categories: filedUnder.length > 0 ? filedUnder : [category], totalKey };
+}
 
 /**
  * Resolves the one `resourceRoles` entry an accessor means, when a building
@@ -189,6 +209,70 @@ export function getMaxStockForRole(buildingType, role, category) {
  */
 export function getScheduleForRole(buildingType, role, category, consumption) {
   return findRoleEntry(buildingType, role, { category, consumption })?.schedule;
+}
+
+/**
+ * The life of a good in the place a building keeps it, in turns: its months in the calendar's days, times the `shelfLifeFactor` of the hub role that keeps it (1 where there is none: a field, a stall).
+ * The one rule the aging of the stocks and the price of a fresh or stale unit both read.
+ * @param {string} buildingType
+ * @param {string} category
+ * @param {number} daysPerMonth
+ * @returns {number} `Infinity` for a good that never goes bad
+ */
+export function shelfLifeTurnsAt(buildingType, category, daysPerMonth) {
+  const factor = listRoleEntries(buildingType, 'hub').find((hub) => hub.categories.includes(category))?.shelfLifeFactor ?? 1;
+  return shelfLifeTurnsOf({ shelfLifeMonths: getShelfLifeMonths(category), factor, daysPerMonth });
+}
+
+/**
+ * The same life in months, before the calendar turns it into days: the span a seller's stock keeps a good, which its price carries the risk of (see unsoldRiskDiscount).
+ * @param {string} buildingType
+ * @param {string} category
+ * @returns {number} `Infinity` for a good that never goes bad
+ */
+export function shelfLifeMonthsAt(buildingType, category) {
+  const factor = listRoleEntries(buildingType, 'hub').find((hub) => hub.categories.includes(category))?.shelfLifeFactor ?? 1;
+  return getShelfLifeMonths(category) * factor;
+}
+
+const MONTHS_OF_THE_YEAR = Object.freeze(['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']);
+
+/** @type {Map<string, { unit: string, values?: ReadonlyArray<string> }>} the derived collection schedules (the catalog does not change while the game runs) */
+const collectionSchedules = new Map();
+
+/**
+ * The months a collector (a granary) collects in. One that declares a `schedule` keeps it. One that declares none collects in the months its sources sell in: the union of the
+ * `sale` windows of the producers of the goods it collects, in the order of the year (a producer with no window sells whenever the hub collects, so the hub then collects all
+ * year). Each window is declared once, on its producer: a crop sold in a month its granary does not collect in would otherwise never be bought, and nothing would say so.
+ *
+ * @param {string} hubType
+ * @returns {{ unit: string, values?: ReadonlyArray<string> } | undefined} undefined when the type is no collector
+ */
+export function getCollectionSchedule(hubType) {
+  const collector = findRoleEntry(hubType, 'collector');
+  if (!collector) return undefined;
+  if (collector.schedule) return collector.schedule;
+  if (!collectionSchedules.has(hubType)) collectionSchedules.set(hubType, deriveCollectionSchedule(hubType, collector));
+  return collectionSchedules.get(hubType);
+}
+
+function deriveCollectionSchedule(hubType, collector) {
+  const months = new Set();
+  let producers = 0;
+  for (const definition of Object.values(buildingCatalog)) {
+    for (const entry of definition.resourceRoles ?? []) {
+      if (entry.role !== 'producer' || !entry.categories.some((category) => collector.categories.includes(category))) continue;
+      producers += 1;
+      if (!entry.sale) return Object.freeze({ unit: 'always' });
+      const window = entry.sale.schedule;
+      if (window?.unit !== 'month' || !Array.isArray(window.values)) {
+        throw new Error(`[ResourceRolePolicy] a producer of ${entry.categories.join('/')} sells in a window that is not a list of months: ${hubType}'s collection months cannot be derived from it`);
+      }
+      for (const month of window.values) months.add(month);
+    }
+  }
+  if (producers === 0) throw new Error(`[ResourceRolePolicy] ${hubType} collects ${collector.categories.join('/')}, declares no schedule, and no producer makes any of it`);
+  return Object.freeze({ unit: 'month', values: Object.freeze(MONTHS_OF_THE_YEAR.filter((month) => months.has(month))) });
 }
 
 /**

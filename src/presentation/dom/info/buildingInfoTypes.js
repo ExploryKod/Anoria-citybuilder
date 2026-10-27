@@ -6,7 +6,7 @@
  * - `formats/*` : VM → modèle d'affichage, sans DOM
  * - `views/*` + `layout/` : DOM (cadre modal + briques)
  * - `buildingInfoGroupRegistry` : chaque ensemble déclare ses `tabs[]`
- * - `buildingInfoSharedTabs` : handlers communs (services / voisins / messages)
+ * - `buildingInfoSharedTabs` : handlers communs (services / messages)
  */
 
 /**
@@ -69,7 +69,6 @@
  * @property {string} terrainLabel
  * @property {number} buildingPop
  * @property {object} roadAccess
- * @property {ReadonlyArray<object>} neighborRows
  * @property {object | null} supplyView
  * @property {object | null} stocks
  * @property {number} houseLevel
@@ -117,7 +116,6 @@ export function createBuildingInfoViewModel(params) {
     terrainLabel,
     buildingPop,
     roadAccess,
-    neighbors,
     supplyView,
     stocks,
     employment,
@@ -137,7 +135,6 @@ export function createBuildingInfoViewModel(params) {
     terrainLabel,
     buildingPop,
     roadAccess,
-    neighborRows: (neighbors ?? []).filter((n) => n.x != null && n.y != null),
     supplyView,
     stocks,
     houseLevel: Number.isFinite(buildingRow?.level) && buildingRow.level >= 1 ? Math.floor(buildingRow.level) : 1,

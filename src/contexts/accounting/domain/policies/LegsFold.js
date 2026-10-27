@@ -122,6 +122,40 @@ export class LegsFold {
   }
 
   /**
+   * The totals of every compte of every account of a hamlet over one fiscal year (or up to a point in time), account by account: what an aggregate of the whole
+   * economy (the output of the companies, the debts of every account) is added up from. One pass over the accounts' months, not over the journal.
+   * @param {{ hamletId: string, year?: number | null, untilYear?: number | null, fromKey?: number | null, toKey?: number | null }} scope
+   *   `fromKey` and `toKey`: a range of months, both ends included, as `year × 12 + (month - 1)` (the à-nouveaux of a closed year, month 0, are not in a range)
+   * @returns {Map<string | null, Map<string, { debit: number, credit: number }>>} by account key (null: the city's), then by compte, in centimes
+   */
+  totalsByAccount({ hamletId, year = null, untilYear = null, fromKey = null, toKey = null }) {
+    if (typeof hamletId !== 'string' || hamletId.length === 0) throw new Error('[fold] the totals by account are read for one hamlet');
+    const byAccount = new Map();
+    for (const scope of this.#scopes.values()) {
+      if (scope.hamletId !== hamletId) continue;
+      const sum = byAccount.get(scope.accountKey) ?? new Map();
+      byAccount.set(scope.accountKey, sum);
+      for (const [fiscalYear, months] of scope.years) {
+        if (year !== null && fiscalYear !== year) continue;
+        if (untilYear !== null && fiscalYear > untilYear) continue;
+        for (const [month, fold] of months) {
+          if (fromKey !== null || toKey !== null) {
+            const key = fiscalYear * 12 + (month - 1);
+            if (month === CARRIED_MONTH || (fromKey !== null && key < fromKey) || (toKey !== null && key > toKey)) continue;
+          }
+          for (const [account, total] of fold.totals) {
+            const running = sum.get(account) ?? { debit: 0, credit: 0 };
+            running.debit += total.debit;
+            running.credit += total.credit;
+            sum.set(account, running);
+          }
+        }
+      }
+    }
+    return byAccount;
+  }
+
+  /**
    * @param {string} account a compte, e.g. `512` for the cash
    * @param {Parameters<LegsFold['totalsOf']>[0]} [scope]
    * @returns {number} the balance of that compte in centimes, debit minus credit

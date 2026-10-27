@@ -13,6 +13,7 @@ import {
   producedCategories,
   resolveInstanceClientPriorities,
 } from '../../../src/shared/building-catalog/clientQueries.js';
+import { referencePriceBook } from '../../helpers/referencePriceBook.js';
 
 /** One candidate per client type eligible for this producer: the type-level order the tests check. */
 const resolveClientPriorities = (producerType, saved = null) =>
@@ -68,7 +69,7 @@ describe('Supply — a hub serves its clients by priority', () => {
   };
   const serving = () => new HubServing(repo);
   const pull = (targetId, demand, turn) =>
-    new TransferHubToHub(repo, serving()).execute({ targetId, period: { turn }, demand, category: 'plate' });
+    new TransferHubToHub(repo, serving(), referencePriceBook, async () => Infinity).execute({ targetId, period: { turn }, demand, category: 'plate' });
 
   test('the catalog\'s default order is used until the player saves one', () => {
     expect(resolveClientPriorities('Factory-Pot').order.length).toBeGreaterThan(1);
@@ -115,7 +116,7 @@ describe('Supply — a hub serves its clients by priority', () => {
     repo.rows.get('warehouse').lots = { wood: { Lumberjack: 10 } };
     repo.rows.get('second').heatHubId = 'warehouse';
 
-    const outcome = await new TransferHubToHub(repo, serving()).execute({ targetId: 'second', period: { turn: 1 }, demand: 4, category: 'wood' });
+    const outcome = await new TransferHubToHub(repo, serving(), referencePriceBook, async () => Infinity).execute({ targetId: 'second', period: { turn: 1 }, demand: 4, category: 'wood' });
 
     expect(outcome.totalUnits).toBe(4);
     expect(repo.rows.get('second').stocks.heat).toBe(4);
