@@ -105,9 +105,11 @@ class InfoPanelAnimations {
       }
     });
 
-    // Ensure z-index is set before animating
+    // Ensure z-index is set before animating (inline wins over the CSS: it must carry the same token, above every menu)
+    const zIndex = getComputedStyle(document.documentElement).getPropertyValue('--z-index-info-building').trim();
+    if (!zIndex) throw new Error('InfoPanelAnimations: --z-index-info-building is not defined in main.css');
     gsap.set(this.overlay, {
-      zIndex: 10020,
+      zIndex: Number(zIndex),
       visibility: 'visible',
       pointerEvents: 'auto'
     });

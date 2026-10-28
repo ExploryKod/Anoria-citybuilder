@@ -1192,6 +1192,230 @@
   height: 20px;
 }
 
+/*
+ * Fold toggle (hudFoldGroup.js) — one button for every group of HUD buttons that folds (the right column, the construction row), looking like
+ * the population rail's own expand button: the same size, frame and colour, so the three read as one family. Folded, only the toggle stays
+ * and every other button of the group is one tap away.
+ */
+.hud-fold-toggle {
+  appearance: none;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--hud-chip-height, 40px);
+  height: var(--hud-chip-height, 40px);
+  min-width: var(--hud-chip-height, 40px);
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  border: 1px solid var(--game-chrome-border);
+  border-radius: var(--game-chrome-radius);
+  background: var(--game-chrome-bg);
+  color: var(--primary);
+  box-shadow: var(--game-chrome-shadow);
+  backdrop-filter: var(--game-chrome-blur);
+}
+
+.hud-fold-toggle:hover {
+  background: #fff;
+}
+
+.hud-fold-toggle:focus-visible {
+  outline: 3px solid var(--cta);
+  outline-offset: 2px;
+}
+
+.hud-fold-toggle__icon {
+  display: block;
+  pointer-events: none;
+}
+
+.hud-fold-toggle[aria-expanded="true"] .hud-fold-toggle__icon--folded,
+.hud-fold-toggle[aria-expanded="false"] .hud-fold-toggle__icon--unfolded {
+  display: none;
+}
+
+.hud-fold--collapsed > :not(.hud-fold-toggle) {
+  display: none !important;
+}
+
+@media screen and (max-width: 1024px) {
+  /*
+   * Touch: the toggles stay where they are whether their group is folded or not, so the column hangs from its toggle (top right, under the
+   * date / funds / camera buttons) instead of being centred around it, and the construction row starts at the left edge instead of being
+   * centred. The buttons are a grid that fills columns: as many rows as the room under the top-right stack allows (hudTopRight.js measures
+   * it), then a new column on the LEFT of the first one (rtl flow: the first column, with the toggle, stays on the right edge).
+   */
+  .hud-side-actions.info-box-stats {
+    top: var(--hud-side-actions-top-touch);
+    transform: none;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(var(--hud-side-actions-rows), var(--hud-chip-height));
+    grid-auto-columns: var(--hud-chip-height);
+    direction: rtl;
+    align-items: start;
+    justify-items: center;
+    gap: 6px;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .hud-side-actions.info-box-stats > * {
+    direction: ltr;
+  }
+}
+
+/*
+ * Touch HUD, top-right corner (hudTopRight.js): the date, the funds and the camera controls are three buttons, one under the other, aligned on
+ * the right edge with the column of tools below. Each opens the panel the desktop HUD always shows, to its left and on its own row.
+ */
+.hud-top-right {
+  display: none;
+}
+
+@media screen and (max-width: 1024px) {
+  .hud-bar__end {
+    position: relative;
+    flex: 0 0 auto;
+    width: var(--hud-chip-height);
+    max-width: none;
+  }
+
+  .hud-top-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+  }
+
+  .hud-top-right__funds-figure {
+    /* 12px is the largest that keeps the widest figure ("€-999K", 37.9px) inside the button's 38px inner width */
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The status row only holds the date and the funds, which become panels of their own: the row itself takes no room */
+  .hud-bar .hud-bar__end > .hud-bar__row--status {
+    display: contents;
+  }
+
+  /* !important: the panels are hidden and placed by their button alone, whatever other rule (portrait, landscape, the live game) says about these chips */
+  .hud-bar .hud-bar__end .hud-bar__row--status > .info-box.infos-time,
+  .hud-bar .hud-bar__end .hud-bar__row--status > .info-box.infos-budget,
+  .hud-bar__end #hud-camera-rotate {
+    display: none !important;
+    position: absolute !important;
+    right: calc(var(--hud-chip-height) + 8px) !important;
+    left: auto !important;
+    /* The panel hangs off a 40px column: `auto` would shrink it to nothing (its text clips), so it takes the width of its content */
+    width: max-content !important;
+    max-width: calc(100vw - 2 * var(--hud-chip-height) - 3 * var(--hud-gutter)) !important;
+    height: var(--hud-chip-height) !important;
+    min-height: var(--hud-chip-height) !important;
+    margin: 0 !important;
+  }
+
+  .hud-bar .hud-bar__end .hud-bar__row--status > .info-box.infos-time {
+    top: 0 !important;
+  }
+
+  .hud-bar .hud-bar__end .hud-bar__row--status > .info-box.infos-budget {
+    top: calc(var(--hud-chip-height) + 8px) !important;
+  }
+
+  .hud-bar__end #hud-camera-rotate {
+    top: calc(2 * (var(--hud-chip-height) + 8px)) !important;
+  }
+
+  .hud-bar__end.hud-top-right--date-open .hud-bar__row--status > .info-box.infos-time,
+  .hud-bar__end.hud-top-right--funds-open .hud-bar__row--status > .info-box.infos-budget,
+  .hud-bar__end.hud-top-right--camera-open #hud-camera-rotate {
+    display: flex !important;
+  }
+
+  .hud-fold-toggle[aria-expanded="true"][data-panel] {
+    background: #fff;
+    border-color: var(--cta);
+  }
+}
+
+/* A group whose toggle sits outside it (the bottom dock below) folds away entirely */
+.hud-fold--collapsed.hud-fold--external {
+  display: none !important;
+}
+
+/*
+ * Bottom dock: the fold toggles of the construction row and of the command bar, outside both so that they never move: one above the other
+ * at the left edge, each at the height of its group's row, whatever is folded. The groups stay centred (and give way to the dock on a
+ * narrow screen, see below).
+ */
+.hud-bottom-toggles {
+  position: fixed;
+  left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
+  bottom: 0;
+  z-index: var(--z-index-hud-fab-dock);
+  width: var(--hud-chip-height);
+  height: 0;
+  pointer-events: none;
+}
+
+.hud-bottom-toggles .hud-fold-toggle {
+  position: absolute;
+  left: 0;
+  pointer-events: auto;
+}
+
+/* The dock's toggles are icons of their group, not arrows: orange while the group is unfolded (the project's "active" look), neutral once folded */
+.hud-bottom-toggles .hud-fold-toggle[aria-expanded="true"],
+.hud-bottom-toggles .hud-fold-toggle[aria-expanded="true"]:hover {
+  background: var(--cta);
+  border-color: var(--cta);
+  color: #fff;
+}
+
+/* Centred in the command bar's band (the bottom chrome height), and in the construction row's (48px, 10px above that band) */
+.hud-bottom-toggles__commands {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + (var(--hud-bottom-height) - var(--hud-chip-height)) / 2);
+}
+
+.hud-bottom-toggles__build {
+  bottom: calc(
+    var(--hud-bottom-height)
+    + env(safe-area-inset-bottom, 0px)
+    + var(--hud-fab-row-gap)
+    + (var(--hud-fab-row-height) - var(--hud-chip-height)) / 2
+  );
+}
+
+@media screen and (max-width: 700px) {
+  /* Too narrow to centre the groups and keep the dock clear: both take the room to the right of the dock instead (still centred in it) */
+  nav.hud-actions.info-box-stats {
+    left: calc(var(--hud-gutter) + var(--hud-chip-height) + 8px);
+    right: var(--hud-gutter);
+    width: fit-content;
+    max-width: none;
+    margin: 0 auto;
+    transform: none;
+  }
+
+  .legend-btns-container.legend-btns-container--mobile {
+    left: calc(var(--hud-gutter) + var(--hud-chip-height) + 8px);
+    right: 0;
+    width: auto;
+    max-width: none;
+    transform: none;
+    padding-left: 0;
+  }
+}
+
 .hud-actions .info-box.game-control-box {
   background-color: #009999;
 }
@@ -1351,22 +1575,32 @@
 }
 
 /* -------------------------------------------------------------------------
-   Touch (phone / tablet) — pop rail anchored above bottom chrome
+   Touch (phone / tablet) — pop rail hangs under the exit door, aligned with it (its top is measured by hudPopRailCollapse.js), and its
+   panel grows downward to just above the bottom chrome
    ------------------------------------------------------------------------- */
 
 @media screen and (max-width: 1024px) {
   .hud-pop-rail.info-panel-pop-detail.hud-pop-detail {
-    top: auto;
-    bottom: var(--hud-pop-rail-bottom-touch);
+    top: var(--hud-pop-rail-top-touch);
+    bottom: auto;
     left: var(--hud-gutter);
     right: auto;
     --hud-pop-rail-max-height: calc(
       100svh
+      - var(--hud-pop-rail-top-touch)
       - var(--hud-pop-rail-bottom-touch)
-      - var(--hud-pop-rail-top-reserve-touch)
-      - env(safe-area-inset-top, 0px)
     );
     max-height: var(--hud-pop-rail-max-height);
+    /* The room is what the rail is given (a phone in landscape gives little): the 424px a desktop panel keeps for itself would spill over the bottom dock */
+    --hud-pop-rail-panel-content-min-height: 0px;
+    --hud-pop-rail-panel-min-height: 0px;
+  }
+
+  /* The tab column scrolls inside the rail too, instead of running past it */
+  .hud-pop-rail .hud-pop-rail__side {
+    max-height: 100%;
+    overflow-y: auto;
+    scrollbar-width: none;
   }
 
   .hud-pop-rail.hud-pop-rail--dragged {

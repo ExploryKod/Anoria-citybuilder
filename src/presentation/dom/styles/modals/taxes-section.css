@@ -173,6 +173,40 @@
 
 .taxes-board .ir-bracket-line .commerce-customs-controls {
     flex: 1;
+    min-width: 0;
+}
+
+/*
+ * A narrow card (a phone): each line stacks, its title first and its slider under it, and the slider takes what room there is (same
+ * position on its track, less width) instead of pushing its value out of the card. The card's own width decides, not the screen's.
+ */
+.taxes-board .taxes-row {
+    container-type: inline-size;
+}
+
+@container (max-width: 460px) {
+    .taxes-board .ir-bracket-line {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+    }
+
+    .taxes-board .ir-bracket-line-label {
+        flex: 0 0 auto;
+    }
+
+    .taxes-board .commerce-customs-controls {
+        gap: 12px;
+    }
+
+    .taxes-board .commerce-customs-slider {
+        min-width: 0;
+    }
+
+    .taxes-board .commerce-customs-value {
+        min-width: 56px;
+        flex: 0 0 auto;
+    }
 }
 
 /* A VAT category: its rate, then the exemption box of each item it holds. */

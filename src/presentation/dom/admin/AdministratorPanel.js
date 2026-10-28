@@ -4,6 +4,8 @@
  */
 
 import { createModalFocusSession, getFocusableElements } from '../shell/modalFocus.js';
+import { initScrollStripArrows } from '../shell/scrollStripArrows.js';
+import { keepTableSemantics } from '../info/views/stackableTable.js';
 
 /** A main-thread block shorter than this is not reported (measurement only). */
 const LONG_TASK_REPORT_MS = 150;
@@ -52,6 +54,15 @@ export function initAdministratorPanel(deps = {}) {
   }
 
   if (import.meta.env?.DEV) reportLongTasks(administratorPanel);
+
+  // The city's ledger is a static table that the stylesheet turns into cards on a narrow panel: it stays a table for a screen reader.
+  document.querySelectorAll('.finances-table').forEach(keepTableSemantics);
+
+  const navArrows = initScrollStripArrows({
+    strip: tablist,
+    back: document.getElementById('administrator-nav-back'),
+    forward: document.getElementById('administrator-nav-forward'),
+  });
 
   /** @type {ReturnType<typeof createModalFocusSession> | null} */
   let focusSession = null;
@@ -103,6 +114,7 @@ export function initAdministratorPanel(deps = {}) {
     });
 
     const selectedTab = navButtons.find((btn) => btn.dataset.section === sectionId);
+    if (selectedTab) navArrows.reveal(selectedTab);
     const activePanel = document.getElementById(`admin-section-${sectionId}`);
 
     if (focusTab) {

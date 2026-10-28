@@ -154,6 +154,8 @@ export const displayDelay = document.querySelector('.info-panel .display-delay')
 export const displayDelayUI = document.querySelector('.delay-ui');
 export const bulldozeSelected = document.querySelector('.bulldoze-btn');
 export const displayFunds = document.querySelector('.info-panel .display-funds');
+/** The short figure on the funds button of the touch HUD (€10K); `displayFunds` keeps the exact one. */
+export const displayFundsCompact = document.getElementById('hud-funds-compact');
 export const displayDebt = document.querySelector('.info-panel .display-debt');
 
 // index.html

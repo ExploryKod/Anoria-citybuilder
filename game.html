@@ -367,7 +367,7 @@
           </div>
       </div>
 
-        <div class="legend-btns-container legend-btns-container--mobile">
+        <div id="hud-build-row" class="legend-btns-container legend-btns-container--mobile">
               <div class="legend-btns world-map-link">
                 <a
                   href="/world"
@@ -1053,6 +1053,11 @@
         </aside>
 
         <nav class="hud-side-actions info-box-stats" aria-label="Outils rapides">
+            <!-- Folds the column to this one button and unfolds it (hudFoldGroup.js) -->
+            <button type="button" id="hud-side-actions-toggle" class="hud-fold-toggle" aria-expanded="true" aria-label="Réduire les outils">
+                <svg class="hud-fold-toggle__icon hud-fold-toggle__icon--folded" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                <svg class="hud-fold-toggle__icon hud-fold-toggle__icon--unfolded" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
+            </button>
             <div
                 class="info-box gestion-box stats-buttons"
                 id="gestion-rail-btn"
@@ -1383,6 +1388,18 @@
                     </div>
 
                     <div class="hud-bar__end">
+                        <!-- Touch HUD (≤1024px): three buttons in the top-right corner, one under the other; each opens its panel to its left (hudTopRight.js) -->
+                        <div class="hud-top-right" role="group" aria-label="Date, fonds et caméra">
+                            <button type="button" id="hud-date-btn" class="hud-fold-toggle" data-panel="date" aria-expanded="false" aria-label="Afficher la date" title="Date">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+                            </button>
+                            <button type="button" id="hud-funds-btn" class="hud-fold-toggle hud-top-right__funds" data-panel="funds" aria-expanded="false" aria-label="Afficher les fonds exacts" title="Fonds">
+                                <span id="hud-funds-compact" class="hud-top-right__funds-figure">…</span>
+                            </button>
+                            <button type="button" id="hud-camera-btn" class="hud-fold-toggle" data-panel="camera" aria-expanded="false" aria-label="Afficher les commandes de la caméra" title="Caméra">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+                            </button>
+                        </div>
                         <div class="info-panel hud-bar__row hud-bar__row--status">
                             <section class="info-box infos-time">
                                 <span class="hud-season hud-season--loading" role="img" aria-label="Saison : chargement…" title="Saison">…</span>
@@ -1409,7 +1426,7 @@
                                         <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"/>
                                     </svg>
                                     </span>
-                                    <div class="display-funds"></div>
+                                    <div class="display-funds">…</div>
                                 </article>
                             </section>
                         </div>
@@ -1571,7 +1588,7 @@
                 </div>
             </section>
 
-            <nav class="hud-actions info-box-stats" aria-label="Barre de commandes">
+            <nav id="hud-actions" class="hud-actions info-box-stats" aria-label="Barre de commandes">
                 <div class="hud-actions__group hud-actions__group--session" role="group" aria-label="Session">
                     <button
                         type="button"
@@ -1644,6 +1661,17 @@
                 </div>
             </div>
 
+            <!-- The fold toggles of the two bottom groups, outside them so that they stay put whatever the groups do (hudFoldGroup.js) -->
+            <div class="hud-bottom-toggles">
+                <button type="button" id="hud-build-row-toggle" class="hud-fold-toggle hud-bottom-toggles__build" aria-controls="hud-build-row" aria-expanded="true" aria-label="Réduire la barre de construction">
+                    <!-- Hammer: the construction row. Orange when the row is unfolded -->
+                    <svg class="hud-fold-toggle__icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9"/><path d="m18 15 4-4"/><path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/></svg>
+                </button>
+                <button type="button" id="hud-actions-toggle" class="hud-fold-toggle hud-bottom-toggles__commands" aria-controls="hud-actions" aria-expanded="true" aria-label="Réduire la barre de commandes">
+                    <!-- Play in a circle: the time controls (pause, replay, speed). Orange when the bar is unfolded -->
+                    <svg class="hud-fold-toggle__icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                </button>
+            </div>
             <aside id="hud-fab-dock" class="hud-fab-dock" aria-label="Outils">
             </aside>
         </section>
@@ -1809,26 +1837,8 @@
     <!-- Administrator Panel -->
     <div id="administrator-panel" class="administrator-panel" role="dialog" aria-modal="true" aria-label="Panneau administrateur" aria-hidden="true" tabindex="-1">
         <div class="administrator-panel-wrapper">
-            <div class="administrator-panel-header">
-                <div class="administrator-panel-title">
-                    <h2>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
-                            <path d="m9 12 2 2 4-4"/>
-                        </svg>
-                        Panneau Administrateur
-                    </h2>
-                </div>
-                <button type="button" class="administrator-panel-close-btn" id="administrator-panel-close-btn" title="Fermer" aria-label="Fermer le panneau administrateur">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
-                        <circle cx="12" cy="12" r="10"/>
-                        <path d="m15 9-6 6"/>
-                        <path d="m9 9 6 6"/>
-                    </svg>
-                </button>
-            </div>
-            
-            <!-- Navigation Buttons -->
+            <!-- No title bar (the content says what the panel is): one row holds the category strip, its back / forward arrows (scrollStripArrows.js) and the close cross -->
+            <div class="administrator-nav-carousel">
             <div class="administrator-nav-buttons" role="tablist" aria-label="Catégories du panneau administrateur">
                 <button 
                     type="button"
@@ -2025,7 +2035,21 @@
                     <span class="sr-only">Rapport</span>
                 </button>
             </div>
-            
+                <button type="button" class="administrator-nav-arrow" id="administrator-nav-back" title="Précédent" aria-label="Catégories précédentes">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <button type="button" class="administrator-nav-arrow" id="administrator-nav-forward" title="Suivant" aria-label="Catégories suivantes">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+                <button type="button" class="administrator-panel-close-btn" id="administrator-panel-close-btn" title="Fermer" aria-label="Fermer le panneau administrateur">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="m15 9-6 6"/>
+                        <path d="m9 9 6 6"/>
+                    </svg>
+                </button>
+            </div>
+
             <!-- Content Area -->
             <div class="administrator-panel-content">
                 <!-- Finances Section -->

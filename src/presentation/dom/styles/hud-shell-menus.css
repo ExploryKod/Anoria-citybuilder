@@ -217,8 +217,10 @@
 }
 
 @media (max-width: 1024px) {
-  .gestion-rail {
-    right: calc(max(8px, env(safe-area-inset-right, 0px)) + 52px);
+  /* The flyouts open beside the whole grid of tools, however many columns it has (hudTopRight.js measures its width) */
+  .gestion-rail,
+  .map-filters-column {
+    right: calc(max(var(--hud-gutter), env(safe-area-inset-right, 0px)) + var(--hud-side-actions-width) + 12px);
   }
 
   .hud-actions.info-box-stats {

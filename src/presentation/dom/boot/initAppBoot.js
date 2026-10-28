@@ -19,6 +19,8 @@ import { initMobileToolbar } from './ToolbarShell.js';
 import { initHudTimeBarMinWidth } from '../shell/hudTimeBarSizing.js';
 import { initHudPopRailTabs } from '../shell/hudPopRailTabs.js';
 import { initHudPopRailCollapse } from '../shell/hudPopRailCollapse.js';
+import { initHudFoldGroup } from '../shell/hudFoldGroup.js';
+import { initHudTopRight } from '../shell/hudTopRight.js';
 import { initHudPopRailScope } from '../shell/hudPopRailScope.js';
 import { adoptHudFabDockChildren } from '../shell/hudFabDock.js';
 import { initHudShellMenus } from '../shell/HudShellMenus.js';
@@ -81,6 +83,32 @@ export async function initAppBoot() {
   initMobileToolbar();
   initHudPopRailTabs();
   initHudPopRailCollapse();
+  initHudTopRight();
+  initHudFoldGroup({
+    rootSelector: '.hud-side-actions',
+    toggleId: 'hud-side-actions-toggle',
+    storageKey: 'anoria.hudSideActionsCollapsed',
+    foldedLabel: 'Ouvrir les outils',
+    unfoldedLabel: 'Réduire les outils',
+    foldedOnTouch: true,
+    openerIds: ['gestion-rail-btn', 'map-filters-btn'],
+  });
+  initHudFoldGroup({
+    rootSelector: '.legend-btns-container--mobile',
+    toggleId: 'hud-build-row-toggle',
+    storageKey: 'anoria.hudBuildRowCollapsed',
+    foldedLabel: 'Ouvrir la barre de construction',
+    unfoldedLabel: 'Réduire la barre de construction',
+    foldedOnTouch: false,
+  });
+  initHudFoldGroup({
+    rootSelector: '.hud-actions',
+    toggleId: 'hud-actions-toggle',
+    storageKey: 'anoria.hudActionsCollapsed',
+    foldedLabel: 'Ouvrir la barre de commandes',
+    unfoldedLabel: 'Réduire la barre de commandes',
+    foldedOnTouch: false,
+  });
   initHudPopRailScope();
   initParametersPanel({
     pauseGame,
