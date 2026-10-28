@@ -28,10 +28,16 @@ import {
  * @param {{ lack?: number, unemployed?: number, unemploymentPercentage?: number }} [stats]
  * @returns {{ mode: 'lack' | 'unemployment' | 'both', display: string, count: number, unemployed: number, lack: number }}
  */
-export function laborSlotFromStats(stats = {}) {
-  const lack = Math.max(0, Math.floor(stats.lack) || 0);
-  const unemployed = Math.max(0, Math.floor(stats.unemployed) || 0);
-  const pct = Math.max(0, Math.floor(stats.unemploymentPercentage) || 0);
+export function laborSlotFromStats(stats) {
+  // A figure that is missing is not 0 (no unemployed, no empty post): the labour cells stay "…" until the figures are known.
+  for (const key of ['lack', 'unemployed', 'unemploymentPercentage']) {
+    if (typeof stats?.[key] !== 'number' || Number.isNaN(stats[key])) {
+      throw new Error(`laborSlotFromStats: ${key} must be a number, got ${stats?.[key]}`);
+    }
+  }
+  const lack = Math.max(0, Math.floor(stats.lack));
+  const unemployed = Math.max(0, Math.floor(stats.unemployed));
+  const pct = Math.max(0, Math.floor(stats.unemploymentPercentage));
   if (lack > 0 && unemployed > 0) {
     return { mode: 'both', display: `${pct}% · ${lack}`, count: lack, unemployed, lack };
   }

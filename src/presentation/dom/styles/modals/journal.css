@@ -206,6 +206,7 @@
 .journal-refresh-section {
     margin-bottom: 20px;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 10px;
@@ -232,8 +233,10 @@
 
 .journal-export-buttons {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     align-items: center;
+    min-width: 0;
 }
 
 .journal-export-btn {
@@ -942,10 +945,110 @@
         font-size: 1rem;
     }
     
+    /* The summary chips share the line and shrink; when a label and its amount do not fit side by side, the amount goes under the label */
+    .journal-year-summary,
+    .journal-month-summary {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
     .journal-summary-item {
-        flex: 1;
-        min-width: 100px;
+        flex: 1 1 100px;
+        min-width: 0;
+        flex-wrap: wrap;
         justify-content: space-between;
+    }
+
+    .journal-summary-item .amount {
+        overflow-wrap: anywhere;
     }
 }
 
+
+/*
+ * Touch screens (a phone or a tablet): the journal gives its room to the entries.
+ *  - the twenty filter pills are replaced by one dropdown (JournalPanel.js builds it from the pills);
+ *  - the title (the panel says what it is by its content) goes, so the header is the dropdown and the close cross, and stays on top;
+ *  - the whole panel scrolls under that header, instead of a small scrolling box under a header that took half of the screen;
+ *  - the period buttons keep to one line that slides sideways.
+ */
+.journal-type-select {
+    display: none;
+}
+
+@media screen and (max-width: 1024px) {
+    .journal-filter-pills {
+        display: none;
+    }
+
+    .journal-type-select {
+        display: block;
+        flex: 1 1 auto;
+        width: 100%;
+        min-width: 0;
+        min-height: 44px;
+        padding: 0 12px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background: white;
+        color: var(--primary);
+        font-size: 14px;
+    }
+
+    .journal-wrapper {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .journal-header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+    }
+
+    .journal-header-left {
+        min-width: 0;
+        gap: 0;
+    }
+
+    .journal-header h3 {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
+
+    .journal-close-btn {
+        flex: 0 0 auto;
+        width: 44px;
+        height: 44px;
+        padding: 8px;
+    }
+
+    .journal-content {
+        flex: none;
+        overflow: visible;
+        padding: 12px;
+    }
+
+    .journal-filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding-bottom: 2px;
+    }
+
+    .journal-filters::-webkit-scrollbar {
+        display: none;
+    }
+
+    .journal-filters > * {
+        flex: 0 0 auto;
+    }
+}

@@ -35,13 +35,25 @@ import {
     popResourceCityNodes,
     popResourceNatureNodes,
     displayFunds,
+    displayFundsCompact,
     infoObjectOverlay,
     infoObjectCloseBtn,
     overOverlay,
     overOverlayMessage,
     bulldozeSelected
 } from './nodes.js';
-import { formatEuroAmount } from '../../../contexts/accounting/presentation/formatMoney.js';
+import { formatEuroAmount, formatEuroCompact } from '../../../contexts/accounting/presentation/formatMoney.js';
+
+/** The funds on screen: the exact figure, and the short one on the funds button (#hud-funds-compact in game.html) */
+function showFunds(funds) {
+    if (!displayFundsCompact) throw new Error('GameUI: #hud-funds-compact is missing from game.html');
+    // Funds that are not known yet are "…" (the markup's initial state), never 0: a zero reads as an empty treasury.
+    if (typeof funds !== 'number' || Number.isNaN(funds)) {
+        throw new Error(`GameUI.updateFunds: funds must be a number, got ${funds}`);
+    }
+    displayFunds.textContent = formatEuroAmount(funds);
+    displayFundsCompact.textContent = formatEuroCompact(funds);
+}
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { SEASON_KEYS } from '../../../shared/time/TimeCalendar.js';
 import { msToSpeedLevel, SPEED_LEVEL_MAX } from '../../../shared/gameplay/SimulationDefaults.js';
@@ -74,7 +86,11 @@ const HUD_SEASON_MODIFIER_CLASSES = [
  */
 function setHudCount(el, value) {
     if (!el) return;
-    el.textContent = String(Math.max(0, Math.floor(value) || 0));
+    // A count that is not a number is a count not known: it stays "…" (the loading state), it is never shown as 0.
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+        throw new Error(`GameUI.setHudCount: expected a number for ${el.className}, got ${value}`);
+    }
+    el.textContent = String(Math.max(0, Math.floor(value)));
 }
 
 /**
@@ -151,9 +167,9 @@ function setGroupCounts(nodesByGroup, countryCounts, hamletCounts) {
     for (const group of allSocialGroups()) {
         const nodes = nodesByGroup[group];
         if (!nodes) continue;
-        setHudCount(nodes.country, countryCounts?.[group] ?? 0);
+        setHudCount(nodes.country, countryCounts?.[group]);
         if (hamletCounts) {
-            setHudCount(nodes.hamlet, hamletCounts[group] ?? 0);
+            setHudCount(nodes.hamlet, hamletCounts[group]);
         }
     }
 }
@@ -496,15 +512,19 @@ class GameUI {
      */
     updateFunds(funds) {
         if (displayFunds) {
-            displayFunds.textContent = formatEuroAmount(funds ?? 0);
+            showFunds(funds);
         }
     }
 
-    /** Initial HUD placeholders at city load (owned by GameUI, not scene). */
+    /**
+     * Initial HUD placeholders at city load (owned by GameUI, not scene).
+     * The population rail's figures go back to "…" (not known yet, never 0); the caller syncs them right after (`syncPopRailHud`).
+     * The funds are not reset here: they stay "…" until the treasury says what they are, and this runs after the scene is built,
+     * possibly after they have arrived.
+     */
     resetInitialHud() {
-        this.updatePopulationTotals(0, 0);
-        if (displayFunds) {
-            displayFunds.textContent = formatEuroAmount(0);
+        for (const value of document.querySelectorAll('#hud-pop-rail .pop-detail-value')) {
+            value.textContent = '…';
         }
         const debtBox = document.querySelector('.debt-box');
         if (debtBox) {

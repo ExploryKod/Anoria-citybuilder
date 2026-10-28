@@ -46,8 +46,8 @@ export async function syncPopRailHud(gameUI) {
     ]);
 
     gameUI.updateFamishedPopulation?.(
-      { disette: country.disettePopulation || 0, penurie: country.penuriePopulation || 0 },
-      { disette: hamlet.disettePopulation || 0, penurie: hamlet.penuriePopulation || 0 }
+      { disette: country.disettePopulation, penurie: country.penuriePopulation },
+      { disette: hamlet.disettePopulation, penurie: hamlet.penuriePopulation }
     );
 
     gameUI.updateHungerRisk?.(country.hungerRisk, hamlet.hungerRisk);
@@ -63,8 +63,8 @@ export async function syncPopRailHud(gameUI) {
 
     // The workers' head figure is what the per-class worker rows below it add up to, never a count of its own.
     const sumOf = (counts) => Object.values(counts).reduce((sum, count) => sum + count, 0);
-    gameUI.updatePopulationTotals?.(country.totalPop ?? 0, sumOf(workerCountsFromGroups(countryGroups)), {
-      totalPop: hamlet.totalPop ?? 0,
+    gameUI.updatePopulationTotals?.(country.totalPop, sumOf(workerCountsFromGroups(countryGroups)), {
+      totalPop: hamlet.totalPop,
       workersCount: sumOf(workerCountsFromGroups(hamletGroups)),
     });
 
@@ -74,14 +74,14 @@ export async function syncPopRailHud(gameUI) {
       workersCountry: workerCountsFromGroups(countryGroups),
       workersHamlet: workerCountsFromGroups(hamletGroups),
       laborCountry: {
-        unemployed: country.employment.unemployed ?? 0,
-        unemploymentPercentage: country.employment.unemploymentPercentage ?? 0,
-        lack: country.employment.lack ?? 0,
+        unemployed: country.employment.unemployed,
+        unemploymentPercentage: country.employment.unemploymentPercentage,
+        lack: country.employment.lack,
       },
       laborHamlet: {
-        unemployed: hamlet.employment.unemployed ?? 0,
-        unemploymentPercentage: hamlet.employment.unemploymentPercentage ?? 0,
-        lack: hamlet.employment.lack ?? 0,
+        unemployed: hamlet.employment.unemployed,
+        unemploymentPercentage: hamlet.employment.unemploymentPercentage,
+        lack: hamlet.employment.lack,
       },
       groupsCountry: countryGroups,
       groupsHamlet: hamletGroups,
@@ -140,7 +140,7 @@ export async function syncSessionHud({
 
   try {
     const snapshot = await getOrCreateAccountingContext().getTreasurySnapshot();
-    gameUI.updateFunds(snapshot?.funds ?? 0);
+    gameUI.updateFunds(snapshot.funds);
   } catch (err) {
     console.warn('[syncSessionHud] treasury:', err);
   }

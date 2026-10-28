@@ -254,14 +254,11 @@ export function replaySessionGame() {
 /** @param {number} funds */
 export function updateSessionDisplayedFunds(funds) {
   const gameUI = getSessionGameUI();
-  if (gameUI && typeof gameUI.updateFunds === 'function') {
-    gameUI.updateFunds(funds);
-    return;
+  if (!gameUI || typeof gameUI.updateFunds !== 'function') {
+    // Writing the raw figure straight into the DOM would skip the formatter and the compact button.
+    throw new Error('updateSessionDisplayedFunds: no GameUI is registered to show the funds');
   }
-  const displayFunds = document.querySelector('.display-funds');
-  if (displayFunds) {
-    displayFunds.textContent = String(funds);
-  }
+  gameUI.updateFunds(funds);
 }
 
 /** @internal Tests only */

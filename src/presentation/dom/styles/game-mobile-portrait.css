@@ -1,6 +1,7 @@
 /*
  * /game on a phone held in portrait — nothing here applies to the other pages, to landscape or to a tablet.
  * (This sheet is linked by game.html only; the other pages never load it.)
+ * The one exception is the statement tables' cards below: a container query on the panel's width, which any narrow panel gets.
  */
 
 /* The cookie button of Paramètres only exists for the phone: elsewhere the floating one does the job. */
@@ -31,6 +32,7 @@
     max-width: 100%;
     justify-content: flex-start;
     gap: 8px;
+    /* its left starts clear of the fold toggles' dock (hud.css, max-width: 700px) */
     padding: 0 28px 0 12px;
     overflow-x: auto;
     overflow-y: hidden;
@@ -121,14 +123,17 @@
     flex: 0 0 auto;
     white-space: nowrap;
   }
+}
 
-  /*
-   * Financial statements: a table with several figure columns does not fit a phone, so each row becomes a small card — its label on a line, its figures side by side
-   * under it, each named by its column (the data-label that stackableTable.js gives the cells; the head row is kept for screen readers only). A figure that is nil
-   * (an empty cell) is left out. The balance sheet and the compte de résultat (two columns: a label and an amount) are not concerned: they already read as lines.
-   */
-  .building-finance-table:not(.balance-sheet-table) thead,
-  .finances-table thead {
+/*
+ * Financial statements: a table with several figure columns does not fit a narrow panel, so each row becomes a small card — its label on a line, its figures side by side
+ * under it, each named by its column (the data-label that stackableTable.js gives the cells; the head row is kept for screen readers only). A figure that is nil
+ * (an empty cell) is left out. The balance sheet and the compte de résultat (two columns: a label and an amount) are not concerned: they already read as lines.
+ * It is the width of the panel that decides (a container query: .administrator-panel-content and .info-building-panel are the containers), not the phone's
+ * orientation: held in landscape, or on a tablet, a narrow panel gets the cards too, and a wide one keeps its table.
+ */
+@container (max-width: 560px) {
+  .building-finance-table:not(.balance-sheet-table) thead {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -209,25 +214,42 @@
     display: none;
   }
 
-  /* The city's ledger (Finances): icon + label, then the two years. */
-  .finances-table td.indicator-col {
-    flex: 0 0 auto;
+  /*
+   * The city's ledger (Finances): the two years are named once, by a caption row that stays on top while the rows scroll, and every row is two lines — the
+   * label (after a fixed icon column, so labels line up whether a row has an icon or not), then its two figures right-aligned under the captions.
+   */
+  .finances-table {
+    --ledger-figure-width: 96px;
   }
 
-  .finances-table td.label-col {
-    flex: 1 1 70%;
-    text-align: left;
-  }
-
-  .finances-table td.last-year-col,
-  .finances-table td.this-year-col {
-    flex: 1 1 40%;
-    text-align: right;
-  }
-
-  .finances-table td.last-year-col::before,
-  .finances-table td.this-year-col::before {
+  .finances-table thead {
     display: block;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #fff;
+    border-bottom: 1px solid #eceff1;
+  }
+
+  .finances-table thead tr {
+    display: flex;
+    justify-content: flex-end;
+    column-gap: 8px;
+    padding: 8px 12px 6px 8px;
+    border-bottom: none;
+  }
+
+  .finances-table thead th {
+    display: none;
+  }
+
+  .finances-table thead th.last-year-col,
+  .finances-table thead th.this-year-col {
+    display: block;
+    flex: 0 0 var(--ledger-figure-width);
+    width: auto;
+    padding: 0;
+    text-align: right;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -235,18 +257,45 @@
     color: #78909c;
   }
 
-  .finances-table td.last-year-col::before {
-    content: "Année dernière";
+  .finances-table tbody tr {
+    align-items: center;
+    column-gap: 8px;
+    row-gap: 2px;
+    padding: 8px 12px 8px 8px;
   }
 
-  .finances-table td.this-year-col::before {
-    content: "Cette année";
+  .finances-table td.indicator-col {
+    flex: 0 0 22px;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .finances-table td.label-col {
+    flex: 1 1 calc(100% - 31px);
+    padding: 0;
+    text-align: left;
+  }
+
+  .finances-table td.last-year-col,
+  .finances-table td.this-year-col {
+    flex: 0 0 var(--ledger-figure-width);
+    padding: 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Both figures hug the right edge, under their captions */
+  .finances-table td.last-year-col {
+    margin-left: auto;
   }
 
   .finances-table .finances-section-header td {
     flex: 1 0 100%;
   }
+}
 
+@media screen and (max-width: 600px) and (orientation: portrait) {
   /* The journal: the legs of an entry stay a table (account, label, debit, credit); the label may wrap, and the table slides sideways rather than overflowing the card. */
   .journal-entry-legs {
     display: block;
@@ -258,14 +307,5 @@
   .journal-entry-legs .journal-entry-leg-label {
     white-space: normal;
     min-width: 90px;
-  }
-
-  /* The pill and the door take more room at the top left: the population panel starts lower. */
-  :root {
-    --hud-pop-rail-top-reserve-touch: calc(
-      var(--progress-bar-h, 2vh)
-      + var(--hud-chip-height, 40px)
-      + 50px
-    );
   }
 }

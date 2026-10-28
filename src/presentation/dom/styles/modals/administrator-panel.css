@@ -29,48 +29,21 @@
     flex-direction: column;
 }
 
-.administrator-panel-header {
-    background: linear-gradient(135deg, #fff6f0, #fff);
-    padding: 20px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-}
-
-.administrator-panel-title {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    justify-content: flex-start;
-}
-
-.administrator-panel-title h2 {
-    margin: 0;
-    font-size: 24px;
-    font-weight: 600;
-    color: var(--primary);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    text-align: left;
-}
-
+/* The close cross, last in the category row (there is no title bar): the same 44px round as the arrows beside it */
 .administrator-panel-close-btn {
     background: white;
     border: none;
     color: var(--cta);
-    width: 40px;
-    height: 40px;
-    border-radius: var(--border-radius-small);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background-color 0.2s ease, color 0.2s ease;
     flex-shrink: 0;
-    min-width: 40px;
+    min-width: 44px;
     appearance: none;
     -webkit-appearance: none;
     font: inherit;
@@ -88,17 +61,69 @@
 }
 
 /* Navigation Buttons Bar */
-.administrator-nav-buttons {
+/* The categories are a strip that scrolls sideways (swipe, or the two arrows at its right): one row, whatever the screen */
+.administrator-nav-carousel {
     display: flex;
-    gap: 12px;
+    align-items: center;
+    gap: 8px;
     padding: 16px 24px;
     background: #fff;
+}
+
+.administrator-nav-buttons {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    gap: 12px;
+    /* room for the lift of a hovered button, which the strip's overflow would clip */
+    padding: 4px 0;
     justify-content: flex-start;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.administrator-nav-buttons::-webkit-scrollbar {
+    display: none;
+}
+
+.administrator-nav-arrow {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 1px solid rgba(29, 34, 40, 0.12);
+    border-radius: 50%;
+    background: #fff;
+    color: var(--primary);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.administrator-nav-arrow:hover:not(:disabled),
+.administrator-nav-arrow:focus-visible:not(:disabled) {
+    background: var(--cta);
+    border-color: var(--cta);
+    color: #fff;
+}
+
+.administrator-nav-arrow:disabled {
+    opacity: 0.35;
+    cursor: default;
 }
 
 .administrator-nav-btn {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
     position: relative;
     width: 64px;
     height: 64px;
@@ -162,6 +187,8 @@
 
 /* Content Area */
 .administrator-panel-content {
+    /* The width the sections have to fit: the statement tables turn into cards when it is narrow (game-mobile-portrait.css) */
+    container-type: inline-size;
     flex: 1;
     padding: 24px;
     overflow-y: auto;
@@ -245,17 +272,11 @@
         max-height: 90vh;
     }
 
-    .administrator-panel-header {
-        padding: 12px 16px;
-    }
-
-    .administrator-panel-title h2 {
-        font-size: 18px;
-        text-align: left;
+    .administrator-nav-carousel {
+        padding: 10px 16px;
     }
 
     .administrator-nav-buttons {
-        padding: 10px 16px;
         gap: 8px;
         justify-content: flex-start;
     }
@@ -294,12 +315,11 @@
         max-height: 90vh;
     }
 
-    .administrator-panel-title h2 {
-        text-align: left;
+    .administrator-nav-carousel {
+        padding: 12px;
     }
 
     .administrator-nav-buttons {
-        padding: 12px;
         gap: 8px;
         justify-content: flex-start;
     }

@@ -604,10 +604,15 @@ export function createScene(_gameStore, assetManager, deps) {
         tileGridOverlay.rebuild(scene, city.size, isEditorMode());
         
         // HUD placeholders — GameUI owns DOM (Barre D)
+        // Placeholders ("…", never 0), then the real figures straight away: the reset may run after a first sync has already filled them.
+        const resetAndSyncPopRail = () => {
+            gameUI.resetInitialHud?.();
+            syncPopRailHud(gameUI);
+        };
         if (typeof requestIdleCallback !== 'undefined') {
-            requestIdleCallback(() => gameUI.resetInitialHud?.(), { timeout: 1000 });
+            requestIdleCallback(resetAndSyncPopRail, { timeout: 1000 });
         } else {
-            setTimeout(() => gameUI.resetInitialHud?.(), 0);
+            setTimeout(resetAndSyncPopRail, 0);
         }
         
         await whenTexturesLoaded();

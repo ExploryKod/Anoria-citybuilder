@@ -411,6 +411,56 @@
     color: var(--cta);
 }
 
+/*
+ * A narrow panel (a phone): the priorities table keeps its four columns but they shrink to what they hold (the activity name takes the rest and wraps),
+ * and a tooltip hangs from the right edge of its figure instead of being centred on it, so it can not run out of the panel.
+ * The panel's own width decides (a container query on .administrator-panel-content), not the phone's orientation.
+ */
+@container (max-width: 560px) {
+    .work-table {
+        table-layout: fixed;
+    }
+
+    .work-table th.priority-col {
+        width: 60px;
+    }
+
+    .work-table th.need-col,
+    .work-table th.have-col {
+        width: 68px;
+    }
+
+    .work-table th,
+    .work-table td {
+        padding-left: 4px;
+        padding-right: 4px;
+    }
+
+    .work-table td.sector-col {
+        overflow-wrap: anywhere;
+    }
+
+    .work-priority-input {
+        width: 44px;
+        padding: 4px;
+    }
+
+    .work-detail-tooltip {
+        left: auto;
+        right: 0;
+        transform: none;
+        white-space: normal;
+        width: max-content;
+        max-width: min(240px, calc(100cqw - 32px));
+    }
+
+    .work-detail-tooltip::after {
+        left: auto;
+        right: 16px;
+        transform: none;
+    }
+}
+
 /* Mobile Responsive */
 @media screen and (max-width: 1024px) {
     .work-board {

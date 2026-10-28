@@ -96,7 +96,9 @@
     /* Draggable pop rail — above HUD chrome, below modals */
     --z-index-hud-pop-rail: 10025;
     --z-index-modal: 10030;
-    --z-index-notification: 10040;
+    --z-index-notification: 10051;
+    /* Building sheet: above every menu, the HUD and the toasts, so its close button is always reachable */
+    --z-index-info-building: 10050;
 
     /* Touch: pop rail above bottom command bar + construction FAB row */
     --hud-fab-row-height: 48px;
@@ -108,11 +110,7 @@
       + var(--hud-fab-row-height)
       + 12px
     );
-    --hud-pop-rail-top-reserve-touch: calc(
-      var(--progress-bar-h, 2vh)
-      + var(--hud-chip-height, 40px)
-      + 24px
-    );
+    /* --hud-pop-rail-top-touch (the rail hangs under the exit door) is measured by hudPopRailCollapse.js */
     /* Reserved bottom chrome: command bar (~56px) — used by legends / mobile offsets */
     --hud-bottom-height: 56px;
     /* Bottom-right FAB stack (perf + cookies) — above command bar on mobile */
@@ -120,6 +118,7 @@
     --fab-stack-gap: 8px;
     --fab-stack-perf-size: 40px;
     --hud-chip-height: 40px;
+    /* --hud-side-actions-top-touch (where the right column of tools starts, under the three top-right buttons) is measured by hudTopRight.js */
     --hud-vitals-row-gap: 10px;
     --hud-camera-rotate-gap: 10px;
     --hud-camera-view-separator-gap: 24px;
@@ -1311,6 +1310,8 @@ footer .footer-links a:hover {
 }
 
 .info-building-panel {
+    /* The width its tabs have to fit: the statement tables turn into cards when it is narrow (game-mobile-portrait.css) */
+    container-type: inline-size;
     position: relative;
     z-index: 1;
     width: min(960px, 92vw);
@@ -1333,8 +1334,8 @@ footer .footer-links a:hover {
 
 .info-building-overlay.active {
     pointer-events: auto;
-    /* A modal: above the HUD chrome (10010–10025), which would otherwise cover the header and its close button at the top of a full-height panel. */
-    z-index: var(--z-index-modal, 10030);
+    /* Above the HUD chrome (10010–10025) and the toasts, which would otherwise cover the header and its close button at the top of a full-height panel. */
+    z-index: var(--z-index-info-building);
 }
 
 .info-building-overlay.active .info-building-backdrop {
