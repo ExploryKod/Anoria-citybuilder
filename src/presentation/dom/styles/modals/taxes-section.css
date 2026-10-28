@@ -97,6 +97,13 @@
     cursor: pointer;
 }
 
+/* A select in a control row (the wage levers): it shrinks to the row, its long options are cut rather than pushing the row out of the panel */
+.taxes-board .commerce-customs-controls select {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 100%;
+}
+
 .taxes-board .commerce-customs-slider:disabled {
     cursor: not-allowed;
 }
@@ -282,6 +289,8 @@
 /* Aide aux entreprises: the form that puts money into a company, one field per line, full width on a phone */
 .aid-inject {
     display: grid;
+    /* One column that may shrink: left to `auto` it takes the width of the widest field (a select with a long option) and runs out of a phone's panel */
+    grid-template-columns: minmax(0, 1fr);
     gap: 8px;
     margin: 16px 0;
     padding-top: 16px;
@@ -303,6 +312,9 @@
 
 .aid-field select,
 .aid-field input {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     min-height: 44px;
     padding: 0 12px;
     border: 1px solid rgba(0, 0, 0, 0.23);

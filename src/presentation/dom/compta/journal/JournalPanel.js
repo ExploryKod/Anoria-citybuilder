@@ -135,6 +135,8 @@ export function initJournalPopup(panelDeps) {
     });
   });
 
+  initTypeSelect(filterPills);
+
   const exportJsonBtn = document.getElementById('journal-export-json-btn');
   const exportPdfBtn = document.getElementById('journal-export-pdf-btn');
 
@@ -156,6 +158,50 @@ export function initJournalPopup(panelDeps) {
       await exportJournalToPDF();
     });
   }
+}
+
+/**
+ * On a phone the filter pills (about twenty of them) would fill the screen: the same filters are offered as one dropdown, shown in their place by the stylesheet.
+ * It is built from the pills (their labels, their groups "Revenus" / "Dépenses"), so there is one list of filters, and choosing an option clicks the matching
+ * pill, so there is one way to filter. A click on a pill (a tablet, a resized window) moves the dropdown to it.
+ * @param {NodeListOf<Element>} filterPills
+ */
+function initTypeSelect(filterPills) {
+  const pillsBox = document.querySelector('.journal-filter-pills');
+  if (!pillsBox) throw new Error('Journal: .journal-filter-pills is missing from game.html');
+
+  const select = document.createElement('select');
+  select.id = 'journal-type-filter';
+  select.className = 'journal-type-select';
+  select.setAttribute('aria-label', 'Filtrer par type d\'écriture');
+  select.append(new Option('Tous les types', ''));
+
+  const pillByFilter = new Map();
+  for (const section of pillsBox.querySelectorAll('.journal-filter-pills-section')) {
+    const group = document.createElement('optgroup');
+    group.label = section.querySelector('.journal-filter-pills-label')?.textContent.replace(/\s*:\s*$/, '').trim() ?? '';
+    for (const pill of section.querySelectorAll('.journal-filter-pill')) {
+      pillByFilter.set(pill.dataset.filter, pill);
+      group.append(new Option(pill.querySelector('.pill-label')?.textContent.trim() ?? pill.dataset.filter, pill.dataset.filter));
+    }
+    select.append(group);
+  }
+
+  const syncFromPills = () => {
+    const active = [...filterPills].find((pill) => pill.classList.contains('active'));
+    select.value = active ? active.dataset.filter : '';
+  };
+
+  select.addEventListener('change', () => {
+    const wanted = select.value === '' ? null : pillByFilter.get(select.value);
+    const active = [...filterPills].find((pill) => pill.classList.contains('active'));
+    if (wanted === null) active?.click(); // "all": a click on the active pill turns the filter off
+    else if (wanted !== active) wanted.click();
+  });
+  filterPills.forEach((pill) => pill.addEventListener('click', syncFromPills));
+
+  pillsBox.after(select);
+  syncFromPills();
 }
 
 /** The hamlet selected in the journal filter, or null for every hamlet. */
