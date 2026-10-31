@@ -3,14 +3,14 @@
 @import '../../dom/styles/modals/city-exchange.css';
 @import '../maps/map-page.css';
 
-.world-phaser-host {
+.world-map-host {
   display: flex;
   flex-direction: column;
   padding: 0;
   background: #1a3a5c;
 }
 
-.world-phaser-root {
+.world-map-view {
   flex: 1;
   min-height: 320px;
   width: 100%;
@@ -18,8 +18,73 @@
   overflow: hidden;
 }
 
-.world-phaser-root canvas {
+/* The canvas fills its view without giving it a size of its own (no feedback between the two). A finger drags the map: the page does not scroll under it. */
+.world-map-canvas {
+  position: absolute;
+  inset: 0;
   display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The names of the places, over the canvas: sharp text whatever the zoom, placed by the adapter. */
+.world-map-labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.world-map-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  white-space: nowrap;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  line-height: 1.2;
+  /* an outline in the sea's dark, as the names were drawn */
+  text-shadow:
+    -1.5px 0 #1d2228, 1.5px 0 #1d2228, 0 -1.5px #1d2228, 0 1.5px #1d2228,
+    -1.5px -1.5px #1d2228, 1.5px -1.5px #1d2228, -1.5px 1.5px #1d2228, 1.5px 1.5px #1d2228;
+  will-change: transform;
+}
+
+.world-map-label--city {
+  font-size: 13px;
+  color: #f4f5f6;
+}
+
+.world-map-label--hamlet {
+  font-size: 11px;
+  color: #e8edf2;
+}
+
+.world-map-label--locked {
+  font-style: italic;
+  color: #c9bba8;
+  opacity: 0.82;
+}
+
+.world-map-label--selected {
+  font-weight: 600;
+}
+
+.world-map-label--locked.world-map-label--selected {
+  opacity: 0.95;
+}
+
+@media (max-width: 700px) {
+  .world-map-label--city {
+    font-size: 14px;
+  }
+
+  .world-map-label--hamlet {
+    font-size: 12px;
+  }
 }
 
 .trade-map-city--player {

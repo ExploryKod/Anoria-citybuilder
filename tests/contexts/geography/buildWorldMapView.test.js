@@ -17,22 +17,22 @@ describe('buildWorldMapView', () => {
     await ensureHamletCatalog();
   });
 
-  test('builds kingdom influence from unlocked hamlets', async () => {
+  test('counts the unlocked hamlets of the kingdom', async () => {
     const view = await buildWorldMapView();
 
     expect(view.kingdom.id).toBe('anoria');
-    expect(view.kingdom.influence).toBeCloseTo(1 / 4);
+    expect(view.kingdom.unlockedHamlets).toBe(1);
+    expect(view.kingdom.totalHamlets).toBe(4);
     expect(view.cities.length).toBeGreaterThan(0);
   });
 
-  test('increases influence when more hamlets are unlocked', async () => {
+  test('counts more unlocked hamlets once they are unlocked', async () => {
     await unlockHamlet(H['clairiere']);
     await unlockHamlet(H['pont-saules']);
 
     const view = await buildWorldMapView();
 
     expect(view.kingdom.unlockedHamlets).toBe(3);
-    expect(view.kingdom.influence).toBeCloseTo(3 / 4);
 
     const unlocked = view.hamlets.filter((hamlet) => hamlet.access !== HAMLET_ACCESS.locked);
     expect(unlocked).toHaveLength(2);

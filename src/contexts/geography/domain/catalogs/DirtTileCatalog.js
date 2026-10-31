@@ -1,7 +1,7 @@
 /**
  * Curated Kenney Dirt tiles — see `kenneyTerrainTaxonomy.js`.
  *
- * Each entry: descriptive filename on disk → Phaser atlas frame + folder category.
+ * Each entry: descriptive filename on disk → atlas frame + folder category.
  */
 
 import { layoutToCatalogRole, terrainLayoutKind } from './kenneyTerrainTaxonomy.js';

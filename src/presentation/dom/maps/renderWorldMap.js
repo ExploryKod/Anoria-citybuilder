@@ -1,5 +1,6 @@
 import { HAMLET_ACCESS } from '../../../core/persistence/hamlet/hamletAccess.js';
-import { satisfactionOf, formatSatisfaction } from '../../../shared/trade-catalog/satisfaction.js';
+import { goodIcon, goodLabel } from '../shell/CatalogVocabulary.js';
+import { satisfactionOf,formatSatisfaction } from '../../../shared/trade-catalog/satisfaction.js';
 import {
   WORLD_CITY_CATEGORY_LABELS,
   getWorldCityById,
@@ -48,8 +49,8 @@ function renderTradeBlock({ relation, entry, sales }) {
   const statusClass = status ? (RELATION_STATUS_CLASS[status] ?? 'closed') : 'closed';
 
   const wantsLine = entry.wants
-    .map((w) => w.good)
-    .join(', ');
+    .map((w) => `<span class="trade-map-good-icon" title="${goodLabel(w.good)}" aria-label="${goodLabel(w.good)}" role="img">${goodIcon(w.good)}</span>`)
+    .join('');
 
   // Last-month sales summary — quick glance only; the full log lives in the exchange modal.
   const lastMonthSales = sales.slice(0, entry.wants.length * 2);
@@ -65,6 +66,9 @@ function renderTradeBlock({ relation, entry, sales }) {
     <div class="trade-map-trade-block">
       <div class="trade-map-trade-header">
         <span class="trade-map-panel-route ${statusClass}">${statusLabel}</span>
+        <button type="button" class="trade-map-exchanges-btn" data-action="open-city-exchange" title="Échanges et décisions" aria-label="Échanges et décisions">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h13v14H6a2 2 0 0 1-2-2V5z"/><path d="M17 9h3v8a2 2 0 0 1-2 2h-1"/><path d="M7 9h7M7 12h7M7 15h4"/></svg>
+        </button>
       </div>
       ${status === 'active' ? `
         <p class="trade-map-trade-wants">Demande : <strong>${wantsLine}</strong></p>
@@ -73,7 +77,6 @@ function renderTradeBlock({ relation, entry, sales }) {
           <p class="trade-map-trade-recent-label">Dernières ventes :</p>
           <ul class="trade-map-trade-sales-list">${salesLines}</ul>
         </div>` : ''}
-      <button type="button" class="trade-map-exchanges-btn" data-action="open-city-exchange">Échanges</button>
     </div>`
 ;
 }
@@ -90,8 +93,8 @@ export function renderWorldMapShell(view, selection = {}) {
 
   return `
     <div class="map-page-body">
-      <div class="map-page-canvas trade-map-canvas world-phaser-host" id="world-phaser-host">
-        <div id="world-phaser-root" class="world-phaser-root" aria-label="Carte hexagonale du monde"></div>
+      <div class="map-page-canvas trade-map-canvas world-map-host" id="world-map-host">
+        <div id="world-map-view" class="world-map-view" aria-label="Carte hexagonale du monde"></div>
       </div>
       <div class="map-page-panel trade-map-panel" id="world-map-panel">
         ${renderWorldMapPanel(view, panelSelection)}
@@ -169,8 +172,7 @@ export function renderWorldMapPanel(view, selection = {}, tradeInfo = null) {
  * @param {Awaited<ReturnType<import('../../../contexts/geography/application/queries/buildWorldMapView.js').buildWorldMapView>>} view
  */
 export function renderWorldMapStats(view) {
-  const influencePercent = Math.round(view.kingdom.influence * 100);
-  return `${view.kingdom.unlockedHamlets}/${view.kingdom.totalHamlets} hameaux · Royaume ${influencePercent}%`;
+  return `${view.kingdom.unlockedHamlets}/${view.kingdom.totalHamlets} hameaux`;
 }
 
 /** @deprecated Use renderWorldMapShell */

@@ -1,6 +1,9 @@
 # World map — renderer-independent architecture
 
-Status: **design, nothing built yet.** Decided with the project's owner: the map stays 2D, keeps its look (the Kenney hexagons), and is first drawn
+Status: **the renderer is swapped; the architecture below is not built yet.** The map is drawn by a Canvas adapter (`presentation/world-map/canvas/`:
+`CanvasWorldMap.js`, its appearance as data in `worldMapTheme.js`, its camera as pure functions in `camera.js`, the atlas reader in `kenneyAtlas.js`) and
+Phaser is gone from the code (steps 3 and 4 of section 6, done together and without the port: only the renderer changed, the look and the use stay). Still
+to do: the **port**, the scene description and the catalogs (step 1), then the world events (step 5). Decided with the project's owner: the map stays 2D, keeps its look (the Kenney hexagons), and is first drawn
 on a **Canvas** by an adapter; Phaser (or Pixi, SVG, Three.js) can come back later as another adapter. The game's rules never depend on a renderer.
 
 ## 1. Principles

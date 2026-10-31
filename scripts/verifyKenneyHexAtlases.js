@@ -93,5 +93,5 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     console.error('[verifyKenneyHexAtlases] FAILED:\n' + result.errors.join('\n'));
     process.exit(1);
   }
-  console.log('[verifyKenneyHexAtlases] OK — all Kenney hex atlas files ready for Phaser.');
+  console.log('[verifyKenneyHexAtlases] OK — all Kenney hex atlas files ready for the world map.');
 }

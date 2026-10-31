@@ -9,9 +9,6 @@ import { buildHamletsMapView } from './buildHamletsMapView.js';
 
 export async function buildWorldMapView() {
   const hamletsView = await buildHamletsMapView();
-  const influence = hamletsView.totalHamlets > 0
-    ? hamletsView.unlockedCount / hamletsView.totalHamlets
-    : 0;
 
   /** Satellite hamlets around Anoria (castle = eraanurbs at centre, not duplicated). */
   const hamlets = hamletsView.hamlets
@@ -51,7 +48,6 @@ export async function buildWorldMapView() {
       name: WORLD_KINGDOM.name,
       map: { ...WORLD_KINGDOM.map },
       activeHamletId: hamletsView.activeHamletId,
-      influence,
       unlockedHamlets: hamletsView.unlockedCount,
       totalHamlets: hamletsView.totalHamlets,
     },
