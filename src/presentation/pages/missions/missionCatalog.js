@@ -1,4 +1,7 @@
-/** Catalogue de missions — données de démo (style Pharaon / César). */
+/**
+ * Catalogue de missions. Une mission dit seulement ce que le jeu en fait : la taille de la carte et son nom. Ni date, ni climat, ni combat, ni
+ * conditions de victoire : le jeu n'en a pas, et la page n'invente rien.
+ */
 
 /** @typedef {'story' | 'open'} MissionCategory */
 
@@ -8,14 +11,8 @@
  * @property {'story'} category
  * @property {string} name
  * @property {string} title
- * @property {string} date
- * @property {string} climate
  * @property {string} land
- * @property {string} combat
- * @property {string} difficulty
  * @property {number} citySize Side of the square map, in tiles (12 to 18: the playable range, see resolveCitySize.js). It follows `land`: a narrow land is 12, a medium one 16, a vast one 18.
- * @property {{ label: string, value: string | number }[]} winConditions
- * @property {string[]} buildings
  * @property {string} previewEmoji
  */
 
@@ -25,20 +22,8 @@ export const STORY_MISSIONS = [
     category: 'story',
     name: 'Anoria Prime',
     title: 'Une affaire citadine',
-    date: '400 av. J.-C.',
-    climate: 'Climat normal',
     land: 'Terre vaste',
-    combat: 'Escarmouches mineures',
-    difficulty: 'Mission très difficile',
     citySize: 18,
-    winConditions: [
-      { label: 'Culture', value: 65 },
-      { label: 'Prospérité', value: 75 },
-      { label: 'Royaume', value: 75 },
-      { label: 'Population', value: '20 000' },
-      { label: 'Palais', value: 5 },
-    ],
-    buildings: ['Temple du soleil', 'Complexe pyramidal', 'Grande pyramide'],
     previewEmoji: '🏛️',
   },
   {
@@ -46,18 +31,8 @@ export const STORY_MISSIONS = [
     category: 'story',
     name: 'Delta des échanges',
     title: 'Routes du delta',
-    date: '350 av. J.-C.',
-    climate: 'Climat chaud',
     land: 'Terre moyenne',
-    combat: 'Pas de combat',
-    difficulty: 'Mission normale',
     citySize: 16,
-    winConditions: [
-      { label: 'Commerce', value: 50 },
-      { label: 'Prospérité', value: 60 },
-      { label: 'Population', value: '8 000' },
-    ],
-    buildings: ['Marché', 'Entrepôt', 'Caravansérail'],
     previewEmoji: '🏺',
   },
   {
@@ -65,18 +40,8 @@ export const STORY_MISSIONS = [
     category: 'story',
     name: 'Frontière du nord',
     title: 'Les convois du nord',
-    date: '280 av. J.-C.',
-    climate: 'Climat froid',
     land: 'Terre étroite',
-    combat: 'Combats fréquents',
-    difficulty: 'Mission difficile',
     citySize: 12,
-    winConditions: [
-      { label: 'Défense', value: 70 },
-      { label: 'Prospérité', value: 55 },
-      { label: 'Population', value: '12 000' },
-    ],
-    buildings: ['Casernes', 'Muraille', 'Tour de guet'],
     previewEmoji: '🛡️',
   },
   {
@@ -84,18 +49,8 @@ export const STORY_MISSIONS = [
     category: 'story',
     name: 'Vallée sacrée',
     title: 'Offrandes du delta',
-    date: '500 av. J.-C.',
-    climate: 'Climat normal',
     land: 'Terre vaste',
-    combat: 'Pas de combat',
-    difficulty: 'Mission facile',
     citySize: 18,
-    winConditions: [
-      { label: 'Culture', value: 40 },
-      { label: 'Ferveur', value: 50 },
-      { label: 'Population', value: '5 000' },
-    ],
-    buildings: ['Sanctuaire', 'Autel', 'Jardin sacré'],
     previewEmoji: '🌾',
   },
 ];
@@ -107,16 +62,8 @@ export const OPEN_MISSIONS = [
     category: 'open',
     name: 'Open mission',
     title: 'Terrain personnalisé',
-    date: 'Carte éditeur',
-    climate: '—',
     land: 'Selon la carte',
-    combat: '—',
-    difficulty: 'Open mission',
     citySize: 12,
-    winConditions: [
-      { label: 'Objectif', value: 'Construire sur votre terrain' },
-    ],
-    buildings: [],
     previewEmoji: '🗺️',
   },
 ];
