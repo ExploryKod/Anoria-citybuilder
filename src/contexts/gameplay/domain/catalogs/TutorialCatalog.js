@@ -26,7 +26,7 @@ export const TUTORIAL_START_TOOLS = Object.freeze(['House-Mayor']);
  *   shown as pictures under the text; its `image` is a file of public/. A dépêche is read a page at a time: `choices: [{ label, page }]` are buttons
  *   with their own sentence that open a page, and `next` is the page "Lire la suite" opens; a page is `{ body, action?, illustrations?, image?, choices?, next? }`.
  * - `counter` (optional): `{ label, after, items: [{ type, atLeast }] }` (`after`, always said: `null` to show the counter at once, or what must have
- *   happened before it shows, exactly one of `{ news: <dépêche id> }` closed, `{ toast: <toast id> }` shown, `{ event: [conditions] }` holding, read like a toast's `when`; a step's own dépêche always comes first), the progress shown on screen under the season ("Maisons « Artisans » construites 2/3"),
+ *   happened before it shows, exactly one of `{ news: <dépêche id> }` closed, `{ toast: <toast id> }` shown, `{ event: [conditions] }` holding, read like a toast's `when`; a step's own dépêche always comes first), the progress shown on screen in the pills strip above the bottom buttons ("Maisons « Artisans » 2/3"). Keep its `label` SHORT, only what is counted and never the verb (the player knows it is about building): about 25 characters once the tokens are replaced. The pill is one line, a longer label is cut with an ellipsis on a phone; the explanation belongs to the step's dépêche,
  *   pulsing; each item counts the buildings of its type up to `atLeast` (a number, or a token text such as `{farms:…}`). When the step is done the counter
  *   stays on screen full, marked done, for a moment (the congratulation toast comes with it).
  * - `unlocks` (optional, on a step that has a dépêche, and on a dispatch): the construction buttons (building ids) that work from the moment that dépêche has
@@ -56,7 +56,7 @@ export const TUTORIAL_STEPS = Object.freeze([
     id: 'road',
     delay: 0,
     unlocks: [primaryRoadType()],
-    counter: { after: null, label: 'Routes tracées', items: [{ roads: true, atLeast: 4 }] },
+    counter: { after: null, label: 'Routes', items: [{ roads: true, atLeast: 4 }] },
     done: [{ roadBuilt: 4 }],
     reminder: { after: 15, every: 20, duration: REMINDER_MS, text: `Il faut tracer quatre routes : cliquez sur le bouton de route, à côté du bouton en forme de maison, puis faites glisser la souris.` },
     news: {
@@ -80,7 +80,7 @@ export const TUTORIAL_STEPS = Object.freeze([
     id: 'artisans',
     delay: 0,
     unlocks: ['House-Red'],
-    counter: { after: null, label: 'Maisons « {building:House-Red} » construites', items: [{ type: 'House-Red', atLeast: 3 }] },
+    counter: { after: null, label: 'Maisons « {building:House-Red} »', items: [{ type: 'House-Red', atLeast: 3 }] },
     done: [{ built: { type: 'House-Red', atLeast: 3 } }],
     reminder: { after: 20, every: 30, duration: REMINDER_MS, text: `Il vous reste à bâtir des maisons « {building:House-Red} » : trois en tout.` },
     news: {
@@ -98,7 +98,7 @@ export const TUTORIAL_STEPS = Object.freeze([
     id: 'farms',
     delay: 0,
     unlocks: ['Farm-Wheat'],
-    counter: { after: null, label: 'Champs « {building:Farm-Wheat} » construits', items: [{ type: 'Farm-Wheat', atLeast: '{farms:3*House-Red/Farm-Wheat}' }] },
+    counter: { after: null, label: 'Champs « {building:Farm-Wheat} »', items: [{ type: 'Farm-Wheat', atLeast: '{farms:3*House-Red/Farm-Wheat}' }] },
     done: [{ built: 'Farm-Wheat' }, { foodCovered: 'built' }],
     reminder: { after: 20, every: 30, duration: REMINDER_MS, text: `Vos habitants ont besoin de champs : posez des « {building:Farm-Wheat} ».` },
     news: {

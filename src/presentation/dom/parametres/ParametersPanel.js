@@ -93,8 +93,9 @@ class ParametersPanel {
             this.show();
         }, true);
 
-        if (this.closeButton) {
-            this.closeButton.addEventListener('click', (event) => {
+        // The footer's button and the header's cross close the panel the same way.
+        for (const button of this.panel.querySelectorAll('.parameters-close-btn, .parameters-close-icon-btn')) {
+            button.addEventListener('click', (event) => {
                 event.preventDefault();
                 this.hide();
             });

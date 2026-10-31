@@ -100,6 +100,10 @@ export async function initAppBoot() {
     foldedLabel: 'Ouvrir la barre de construction',
     unfoldedLabel: 'Réduire la barre de construction',
     foldedOnTouch: false,
+    // The menus it opens (construction bar, hamlets) would be left floating with no opener in sight
+    openerIds: ['toolbar-mobile-toggle', 'hamlet-switcher-btn'],
+    scrollArrowId: 'hud-build-row-next',
+    exclusiveWith: 'hud-actions-toggle',
   });
   initHudFoldGroup({
     rootSelector: '.hud-actions',
@@ -108,6 +112,8 @@ export async function initAppBoot() {
     foldedLabel: 'Ouvrir la barre de commandes',
     unfoldedLabel: 'Réduire la barre de commandes',
     foldedOnTouch: false,
+    scrollArrowId: 'hud-actions-next',
+    exclusiveWith: 'hud-build-row-toggle',
   });
   initHudPopRailScope();
   initParametersPanel({

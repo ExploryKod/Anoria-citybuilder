@@ -6,6 +6,8 @@
  * clicked. A target that is not on screen yet (a pill of the build bar, which exists only once the bar is open) is lit as soon as it appears.
  */
 
+import { unfoldGroupOf } from '../shell/hudFoldGroup.js';
+
 /** The targets a toast may name (`highlight` in the tutorial catalog) and the button each one is. */
 const TARGETS = Object.freeze({
   // The house-shaped button that opens the build bar.
@@ -39,6 +41,8 @@ export function highlightTarget(target) {
   let at = Math.max(0, targets.findLastIndex(isShown));
   const show = () => {
     document.body.dataset.tutorialHighlight = targets[at];
+    // The button pulsing must be there to be pressed: its group of the bottom bars is unfolded if the player had folded it.
+    unfoldGroupOf(document.querySelector(TARGETS[targets[at]]));
   };
   const onClick = (event) => {
     if (!(event.target instanceof Element) || !event.target.closest(TARGETS[targets[at]])) return;

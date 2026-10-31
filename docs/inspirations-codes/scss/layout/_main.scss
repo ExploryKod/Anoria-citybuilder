@@ -1,0 +1,241 @@
+/* Questions of layout are treated here for the whole site :
+- Principals spacings between sections and between header and footer
+ */
+.main-layout,
+.legal-layout,
+.confidentiality-layout,
+.error-layout,
+.header-layout {
+  width: 100%;
+  margin: 0 auto;
+}
+
+// Special class used if we need to use container but without Bootsrap
+.custom-container {
+  margin: 20px 10px 0 10px;
+
+  @include media-breakpoint-up(sm) {
+    margin: 30px 20px 0 20px;
+  }
+}
+
+// Space between footer and last section
+.footer-layout {
+  margin: 130px auto 0 auto;
+}
+
+.header-layout {
+  z-index: $z-index-max;
+}
+
+/**
+  HOME PAGE
+**/
+.main-layout {
+  position: relative;
+  // first section (logo) vertical margin on screens < lg (992px)
+  .main__logo-section {
+    margin: $logo-section-my 0;
+  }
+
+  @include media-breakpoint-up(lg) {
+    margin-top: 281px;
+    .main__logo-section {
+      display: none;
+    }
+  }
+
+}
+
+.main {
+  // Space between each sections
+  &__team-section,
+  &__fees-section,
+  &__contact-section {
+    margin-top: 100px;
+
+    @include media-breakpoint-up(lg) {
+      margin-top: 130px;
+    }
+  }
+}
+
+// Adjust padding on scroll
+#skills:target {
+
+  @include media-breakpoint-up(lg) {
+    &:target {
+      padding-top: $lg-header-h * 1.5;
+      margin-top: -$lg-header-h;
+    }
+  }
+
+  @include media-breakpoint-up(xl) {
+    &:target {
+      padding-top: $xl-header-h * 1;
+      margin-top: -$xl-header-h;
+    }
+  }
+
+}
+
+// Adjust padding on scroll
+#cabinet, #team, #fees, #contact {
+
+  @include media-breakpoint-up(lg) {
+    &:target {
+      padding-top: $lg-header-h * 1.5;
+      margin-top: -$lg-header-h;
+    }
+  }
+
+  @include media-breakpoint-up(xl) {
+    &:target {
+      padding-top: $xl-header-h;
+      margin-top: -$xl-header-h;
+    }
+  }
+}
+
+
+/**
+  LEGAL PAGE
+**/
+.legal {
+  // Space between each sections
+  &__title-section,
+  &__editor-section,
+  &__host-section,
+  &__credits-section,
+  &__retention-section {
+    margin-top: 100px;
+
+    padding-left: 20px;
+    padding-right: 20px;
+
+    @include media-breakpoint-up(sm) {
+
+    }
+    @include media-breakpoint-up(lg) {
+      margin-top: 75px;
+    }
+  }
+}
+
+/**
+  CONFIDENTIALITY PAGE
+**/
+.confidentiality {
+  // Space between each sections
+  &__data-section,
+  &__reasons-section,
+  &__legal-section,
+  &__receivers-section,
+  &__rights-section,
+  &__where-section,
+  &__time-section,
+  &__modification-section {
+    margin-top: 100px;
+
+    padding-left: 20px;
+    padding-right: 20px;
+
+    @include media-breakpoint-up(sm) {
+
+    }
+    @include media-breakpoint-up(lg) {
+      margin-top: 75px;
+    }
+  }
+
+  .confidentiality__list {
+    li {
+      list-style: inside;
+    }
+  }
+
+  .confidentiality__table {
+    border-collapse: collapse;
+    margin: 25px 0;
+    font-size: 0.9em;
+    font-family: sans-serif;
+    min-width: 400px;
+
+    thead tr {
+      background-color: $dci-dark-blue;
+      color: #ffffff;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 12px 15px;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid #dddddd;
+    }
+
+    tbody tr:nth-of-type(even) {
+      background-color: #f3f3f3;
+    }
+    tbody tr:last-of-type {
+      border-bottom: 2px solid $dci-dark-blue;
+    }
+  }
+
+
+}
+
+// Adjust padding on scroll
+#data, #reasons, #legal, #rights, #receivers, #where, #time, #modification {
+
+  @include media-breakpoint-up(lg) {
+    &:target {
+      padding-top: $lg-header-h * 1.5;
+      margin-top: -$lg-header-h;
+    }
+  }
+
+  @include media-breakpoint-up(xl) {
+    &:target {
+      padding-top: $xl-header-h;
+      margin-top: -$xl-header-h;
+    }
+  }
+}
+
+/**
+  ERROR PAGE
+**/
+.page-error {
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  .error {
+    flex-grow: 1;
+
+    &__container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+    }
+
+    // Space between each sections
+    &__title-section
+    {
+      height: 100%;
+      margin-top: 300px;
+    }
+  }
+
+  .footer-layout {
+    margin-top: 50px;
+  }
+
+}
+

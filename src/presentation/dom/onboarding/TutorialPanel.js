@@ -378,6 +378,8 @@ class TutorialPanel {
      */
     hideTutorial() {
         this.panel.classList.remove('visible');
+        // A panel hidden from assistive technology cannot keep the focus inside it: it leaves before `aria-hidden` is set (restoreFocusAfterClose puts it back below)
+        if (this.panel.contains(document.activeElement)) document.activeElement.blur();
         this.panel.hidden = true;
         this.panel.setAttribute('aria-hidden', 'true');
         this.isVisible = false;

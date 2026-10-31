@@ -1,0 +1,66 @@
+.scroll-top-button {
+  --size: 40px;
+
+  position: fixed;
+  z-index: $z-index-high;
+  right: 20px;
+  bottom: 20px;
+  width: var(--size);
+  height: var(--size);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease-in;
+  border: 2px solid $dci-btn-bg-color;
+  border-radius: calc(var(--size) / 2);
+  background: $dci-btn-color;
+  color: $dci-btn-bg-color;
+  cursor: pointer;
+
+
+  &.hide-btn {
+    transition: transform 0.5s ease-in-out;
+    transform: translateY(299px);
+    pointer-events: none;
+  }
+
+
+  &:hover {
+    background-color: $dci-btn-color-hover;
+  }
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.dci-btn {
+	padding:10px 20px;
+	display:inline-block;
+	border-radius:3px;
+	background: $dci-btn-color;
+	font-size:16px;
+	color: $dci-neutral-bg;
+
+  &:hover {
+    background-color: $dci-btn-color-hover;
+  }
+
+  &.--center {
+    margin: 0 auto;
+  }
+
+  &.--align-self-center {
+    align-self: center;
+  }
+
+  &.--justify-self-center {
+    justify-self: center;
+  }
+}
+
+.dci-btn-large {
+	padding:20px 30px;
+	font-size:22px;
+	@extend .dci-btn;
+}

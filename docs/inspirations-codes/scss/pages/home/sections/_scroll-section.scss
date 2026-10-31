@@ -1,0 +1,23 @@
+.main {
+  &__scroll-section {
+    .scroll-section--min-height {
+      min-height: 181px;
+    }
+
+    .scroll-bloc {
+      margin: 5px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      @include media-breakpoint-up(lg) {
+        margin: 10px 0;
+      }
+
+
+      @include media-breakpoint-up(fhd) {
+        margin: 160px 0;
+      }
+    }
+  }
+}

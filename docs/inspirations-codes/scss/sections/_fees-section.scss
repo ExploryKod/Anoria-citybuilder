@@ -1,0 +1,53 @@
+.main {
+  &__fees-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+
+    .fees-section__image-wrapper {
+      img {
+        display: none;
+      }
+
+      @include media-breakpoint-up(xl) {
+        min-width: 40%;
+
+        img {
+          width: 100%;
+        }
+      }
+
+      @include media-breakpoint-up(xxl) {
+        min-width: 730px;
+      }
+    }
+
+    .fees-section__fees-wrapper {
+      .fees-wrapper__fees {
+        .fees__title {
+          display: flex;
+          flex-wrap: wrap;
+
+          @include media-breakpoint-up(lg) {
+            display: block;
+
+            span {
+              display: block;
+            }
+          }
+        }
+
+        .fees__para {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+
+          p {
+            margin: 0;
+            font-size: $text-size-lg;
+          }
+        }
+      }
+    }
+  }
+}

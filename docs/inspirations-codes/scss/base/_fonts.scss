@@ -1,0 +1,16 @@
+@font-face {
+  font-family: 'Montserrat';
+  font-style: normal;
+  font-weight: 500;
+  src: url('#{$fonts-path}/Montserrat/Montserrat-Black.ttf');
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DidotLTStd-Roman';
+  font-style: normal;
+  font-weight: 500;
+  src: url('#{$fonts-path}/DidotLTStd-Roman/DidotLTStd-Roman.otf');
+  font-display: swap;
+}
+

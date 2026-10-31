@@ -1,5 +1,5 @@
 /**
- * The tutorial's objective counter: a small fixed line under the HUD's season and date ("Maisons « Artisans » construites 2/3"), pulsing, so the player always
+ * The tutorial's objective counter: a small pill in the strip above the bottom buttons (#hud-pills, "Maisons « Artisans » 2/3"), pulsing, so the player always
  * knows what the step asks. When a step is finished its counter stays on screen, full and marked done, for a moment before the next step's takes its place.
  */
 

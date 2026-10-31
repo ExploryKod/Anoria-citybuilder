@@ -38,22 +38,17 @@ export const gameWindow = document.getElementById('game-window');
 // HUD population — left vertical rail
 const popHudRoot = '#hud-pop-rail';
 
-export const displayPopTotal = document.querySelector(`${popHudRoot} .pop-total.pop-detail-value--country`);
-export const displayPopTotalHamlet = document.querySelector(`${popHudRoot} .pop-total--hamlet`);
-export const displayPopActiveTotal = document.querySelector(`${popHudRoot} .pop-active-total.pop-detail-value--country`);
-export const displayPopActiveTotalHamlet = document.querySelector(`${popHudRoot} .pop-active-total--hamlet`);
-export const displayHungerRisk = document.querySelector(`${popHudRoot} .display-hunger-risk.pop-detail-value--country`);
-export const displayHungerRiskHamlet = document.querySelector(`${popHudRoot} .display-hunger-risk--hamlet`);
+// Every figure that follows the rail's scope (the hamlet or the country) is one element: GameUI writes the figure of the scope on show.
+export const displayPopTotal = document.querySelector(`${popHudRoot} .pop-total.pop-detail-value--scoped`);
+export const displayPopActiveTotal = document.querySelector(`${popHudRoot} .pop-active-total.pop-detail-value--scoped`);
+export const displayHungerRisk = document.querySelector(`${popHudRoot} .display-hunger-risk.pop-detail-value--scoped`);
 export const iconHungerRisk = document.querySelector(`${popHudRoot} .pop-detail-icon--hunger-risk`);
-export const displayDisettePop =document.querySelector(`${popHudRoot} .display-disette-pop.pop-detail-value--country`);
-export const displayDisettePopHamlet = document.querySelector(`${popHudRoot} .display-disette-pop--hamlet`);
+export const displayDisettePop =document.querySelector(`${popHudRoot} .display-disette-pop.pop-detail-value--scoped`);
 export const iconDisette = document.querySelector(`${popHudRoot} .pop-detail-icon--disette`);
 export const iconPenurie = document.querySelector(`${popHudRoot} .pop-detail-hunger .pop-detail-icon`);
-export const displayHungerPop =document.querySelector(`${popHudRoot} .display-hunger-pop.pop-detail-value--country`);
-export const displayHungerPopHamlet = document.querySelector(`${popHudRoot} .display-hunger-pop--hamlet`);
+export const displayHungerPop =document.querySelector(`${popHudRoot} .display-hunger-pop.pop-detail-value--scoped`);
 export const displayDeathsPop = document.querySelector(`${popHudRoot} .display-deaths-pop`);
-export const displayLaborCountry = document.querySelector(`${popHudRoot} .pop-labor-value--country`);
-export const displayLaborHamlet = document.querySelector(`${popHudRoot} .pop-labor-value--hamlet`);
+export const displayLabor = document.querySelector(`${popHudRoot} .pop-labor-value`);
 
 // The social categories the rail has a row for. The administrators have a population row only: they look for no job, so they have no workers or
 // labour-market row (their rows in those metrics do not exist, and a missing row is left alone).
@@ -61,7 +56,7 @@ const POP_SOCIAL_GROUPS = ['artisans', 'merchants', 'scholars', 'administrators'
 
 /**
  * @param {'pop' | 'workers' | 'labor'} metric
- * @returns {Record<string, { row: Element | null, country: Element | null, hamlet: Element | null }>}
+ * @returns {Record<string, { row: Element | null, value: Element | null }>}
  */
 function queryGroupMetricNodes(metric) {
     return Object.fromEntries(
@@ -76,8 +71,7 @@ function queryGroupMetricNodes(metric) {
                 group,
                 {
                     row,
-                    country: row?.querySelector('.pop-detail-value--country') ?? null,
-                    hamlet: row?.querySelector('.pop-detail-value--hamlet') ?? null,
+                    value: row?.querySelector('.pop-detail-value--scoped') ?? null,
                 },
             ];
         })
@@ -97,8 +91,7 @@ function queryCauseNodes(cause, group) {
     const row = document.querySelector(`${popHudRoot} [data-metric="cause"][data-cause="${cause}"]${scope}`);
     return {
         row,
-        country: row?.querySelector('.pop-detail-value--country') ?? null,
-        hamlet: row?.querySelector('.pop-detail-value--hamlet') ?? null,
+        value: row?.querySelector('.pop-detail-value--scoped') ?? null,
     };
 }
 
@@ -125,7 +118,7 @@ renderHudResourceRows({ root: popHudRoot, destination: 'nature', panelId: 'hud-p
 /**
  * @param {'city' | 'nature'} destination
  * @param {ReadonlyArray<string>} products
- * @returns {Record<string, { row: Element | null, country: Element | null, hamlet: Element | null }>}
+ * @returns {Record<string, { row: Element | null, value: Element | null }>}
  */
 function queryResourceProductNodes(destination, products) {
     return Object.fromEntries(
@@ -137,8 +130,7 @@ function queryResourceProductNodes(destination, products) {
                 product,
                 {
                     row,
-                    country: row?.querySelector('.pop-detail-value--country') ?? null,
-                    hamlet: row?.querySelector('.pop-detail-value--hamlet') ?? null,
+                    value: row?.querySelector('.pop-detail-value--scoped') ?? null,
                 },
             ];
         })

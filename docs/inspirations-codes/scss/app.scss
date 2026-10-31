@@ -1,0 +1,36 @@
+@charset "UTF-8";
+@import 'fonts/icomoon/style';
+// 1. Configuration and helpers
+@import 'abstracts/variables';
+@import 'abstracts/functions';
+@import 'abstracts/mixins';
+@import 'abstracts/responsive';
+
+// 3. Base stuff
+@import 'base/fonts';
+@import 'base/root';
+@import 'base/base';
+@import 'base/typography';
+@import 'base/helpers';
+
+// 5. Generic Components
+@import 'components/buttons';
+
+
+// 6. layout
+@import 'layout/footer';
+@import 'layout/header';
+@import 'layout/header-slim';
+@import 'layout/main';
+
+// 7. Specific components by page
+
+// 8.   Sections by page
+@import 'pages/home/sections/intro-section';
+@import 'pages/home/sections/skills-section';
+@import 'pages/home/sections/team-section';
+@import 'pages/home/sections/fees-section';
+@import 'pages/home/sections/contact-section';
+@import 'pages/home/sections/scroll-section';
+
+

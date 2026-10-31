@@ -1,0 +1,23 @@
+.main {
+  &__fees-section {
+
+    .fees-section__img-wrapper {
+
+      img {
+        width: 100%;
+      }
+
+      @include media-breakpoint-up(sm) {
+        min-width: 50%;
+      }
+
+      @include media-breakpoint-up(lg) {
+        min-width: 40%;
+      }
+
+      @include media-breakpoint-up(xxl) {
+        min-width: 50%;
+      }
+    }
+  }
+}

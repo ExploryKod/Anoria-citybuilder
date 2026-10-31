@@ -20,8 +20,7 @@ export function renderHudResourceRows({ root, destination, panelId, products }) 
     row.innerHTML = `
       <span class="pop-detail-emoji" title="${goodLabel(product)}" aria-hidden="true">${goodIcon(product)}</span>
       <span class="pop-detail-values">
-        <span class="pop-detail-value pop-detail-value--country">0</span>
-        <span class="pop-detail-value pop-detail-value--hamlet">0</span>
+        <span class="pop-detail-value pop-detail-value--scoped">0</span>
       </span>`;
     group.appendChild(row);
   }

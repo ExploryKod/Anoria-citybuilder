@@ -236,6 +236,8 @@ export function initNewsEventModal(deps) {
   const titleEl = document.getElementById('news-event-title');
   const metaEl = document.getElementById('news-event-meta');
   const bodyEl = document.getElementById('news-event-body');
+  const contentEl = modal.querySelector('.news-event-modal-content');
+  if (!contentEl) throw new Error('[news] #news-event-modal has no .news-event-modal-content in game.html');
   const illustrationsEl = document.getElementById('news-event-illustrations');
   const imageEl = document.getElementById('news-event-image');
   const imageCaptionEl = document.getElementById('news-event-image-caption');
@@ -256,6 +258,9 @@ export function initNewsEventModal(deps) {
   let queue = [];
   let index = 0;
   let bodyRevealed = false;
+  /** What was last drawn (the dépêche or its opened page, and whether its text was shown): when it changes, the text starts again from its top. */
+  let shownView = null;
+  let shownBody = null;
   /** The page of the dépêche being read, once the reader has opened one of its pages (null: the dépêche's own first page), and the dépêche it belongs to. */
   let openedPage = null;
   let openedPageOf = null;
@@ -335,6 +340,7 @@ export function initNewsEventModal(deps) {
   }
 
   function closeModal() {
+    shownView = null;
     setModalClosed();
   }
 
@@ -363,6 +369,13 @@ export function initNewsEventModal(deps) {
       bodyEl.innerHTML = richTextHtml(showBody
         ? view.body
         : item.teaser || 'Une dépêche est disponible contre contribution.');
+    }
+    // A dépêche, or a page of one, is read from its top: the scroll of the one before must not carry over. A render that only refreshes the same
+    // page (the funds changed, the button was pressed) keeps where the reader is.
+    if (view !== shownView || showBody !== shownBody) {
+      shownView = view;
+      shownBody = showBody;
+      contentEl.scrollTop = 0;
     }
 
     // The buildings a dépêche shows, side by side under its text: their picture and their catalog name.

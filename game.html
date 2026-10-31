@@ -611,10 +611,6 @@
                         title="Chiffres du hameau"
                         aria-label="Chiffres du hameau — cliquer pour changer"
                     >
-                        <svg data-scope-icon="both" hidden xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect width="7" height="16" x="3" y="4" rx="1"/>
-                            <rect width="7" height="16" x="14" y="4" rx="1"/>
-                        </svg>
                         <svg data-scope-icon="country" hidden xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <circle cx="12" cy="12" r="10"/>
                             <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
@@ -711,6 +707,10 @@
             </div>
             <div id="hud-pop-rail-panels" class="hud-pop-rail__panels">
                 <div class="hud-pop-rail__chrome" role="toolbar" aria-label="Contrôles du panneau">
+                    <!-- Bottom strip on a phone in landscape only (hudPopRailCollapse.js): pages the labour market's blocks (the city, then each category), back to the first after the last -->
+                    <button type="button" id="hud-pop-labor-next" class="hud-pop-rail__collapse hud-pop-rail__page-next" title="Catégorie suivante" aria-label="Voir la catégorie suivante" aria-controls="hud-pop-panel-emploi" hidden>
+                        <svg class="hud-fold-toggle__icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
                     <button
                         type="button"
                         id="hud-pop-rail-collapse"
@@ -735,63 +735,47 @@
                             </svg>
                         </span>
                         <span class="pop-detail-values" aria-label="Population totale">
-                            <span class="pop-detail-value pop-total pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-total--hamlet pop-detail-value--hamlet">0</span>
-                        </span>
+                            <span class="pop-detail-value pop-total pop-detail-value--scoped">0</span>                        </span>
                     </div>
                     <div class="pop-detail-groups" aria-label="Population par groupe social">
                         <div class="pop-detail-metric pop-group-row" data-metric="pop" data-social-group="artisans">
                             <span class="pop-detail-emoji" title="Artisans" aria-hidden="true">🔨</span>
                             <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
+                                <span class="pop-detail-value pop-detail-value--scoped">0</span>                            </span>
                         </div>
                         <div class="pop-detail-metric pop-group-row" data-metric="pop" data-social-group="merchants">
                             <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">⚖️</span>
                             <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
+                                <span class="pop-detail-value pop-detail-value--scoped">0</span>                            </span>
                         </div>
                         <div class="pop-detail-metric pop-group-row" data-metric="pop" data-social-group="scholars">
                             <span class="pop-detail-emoji" title="Savants" aria-hidden="true">📚</span>
                             <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
+                                <span class="pop-detail-value pop-detail-value--scoped">0</span>                            </span>
                         </div>
                         <div class="pop-detail-metric pop-group-row" data-metric="pop" data-social-group="administrators">
                             <span class="pop-detail-emoji" title="Administrateurs" aria-hidden="true">🏛️</span>
                             <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
+                                <span class="pop-detail-value pop-detail-value--scoped">0</span>                            </span>
                         </div>
                     </div>
                 </div>
                 <div class="pop-detail-metric pop-detail-hunger-risk">
                     <span class="pop-detail-icon pop-detail-icon--hunger-risk" aria-hidden="true"></span>
                     <span class="pop-detail-values" aria-label="Citoyens menacés par la faim">
-                        <span class="pop-detail-value display-hunger-risk pop-detail-value--country">0</span>
-                        <span class="pop-detail-value display-hunger-risk--hamlet pop-detail-value--hamlet">0</span>
-                    </span>
+                        <span class="pop-detail-value display-hunger-risk pop-detail-value--scoped">0</span>                    </span>
                 </div>
                 <div class="pop-detail-metric pop-detail-disette">
                     <span class="pop-detail-icon pop-detail-icon--disette" title="Disette" aria-hidden="true"></span>
                     <span class="pop-detail-values" aria-label="Citoyens en disette">
-                        <span class="pop-detail-value display-disette-pop pop-detail-value--country">0</span>
-                        <span class="pop-detail-value display-disette-pop--hamlet pop-detail-value--hamlet">0</span>
-                    </span>
+                        <span class="pop-detail-value display-disette-pop pop-detail-value--scoped">0</span>                    </span>
                 </div>
                 <div class="pop-detail-metric pop-detail-hunger">
                     <span class="pop-detail-icon" title="Pénurie">
                         <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
                     </span>
                     <span class="pop-detail-values" aria-label="Citoyens en pénurie">
-                        <span class="pop-detail-value display-hunger-pop pop-detail-value--country">0</span>
-                        <span class="pop-detail-value display-hunger-pop--hamlet pop-detail-value--hamlet">0</span>
-                    </span>
+                        <span class="pop-detail-value display-hunger-pop pop-detail-value--scoped">0</span>                    </span>
                 </div>
                 <div class="pop-detail-metric pop-detail-deaths">
                     <span class="pop-detail-icon pop-detail-icon--deaths" title="Morts" aria-hidden="true">
@@ -803,31 +787,23 @@
                     <div class="pop-detail-metric pop-active-head">
                         <span class="pop-detail-emoji pop-active-emoji" title="Travailleurs" aria-hidden="true">👷</span>
                         <span class="pop-detail-values" aria-label="Population active totale">
-                            <span class="pop-detail-value pop-active-total pop-detail-value--country">0</span>
-                            <span class="pop-detail-value pop-active-total--hamlet pop-detail-value--hamlet">0</span>
-                        </span>
+                            <span class="pop-detail-value pop-active-total pop-detail-value--scoped">0</span>                        </span>
                     </div>
                     <div class="pop-detail-groups" aria-label="Travailleurs par groupe social">
                         <div class="pop-detail-metric pop-group-row" data-metric="workers" data-social-group="artisans">
                             <span class="pop-detail-emoji" title="Artisans" aria-hidden="true">🔨</span>
                             <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
+                                <span class="pop-detail-value pop-detail-value--scoped">0</span>                            </span>
                         </div>
                         <div class="pop-detail-metric pop-group-row" data-metric="workers" data-social-group="merchants">
                             <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">⚖️</span>
                             <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
+                                <span class="pop-detail-value pop-detail-value--scoped">0</span>                            </span>
                         </div>
                         <div class="pop-detail-metric pop-group-row" data-metric="workers" data-social-group="scholars">
                             <span class="pop-detail-emoji" title="Savants" aria-hidden="true">📚</span>
                             <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                            </span>
+                                <span class="pop-detail-value pop-detail-value--scoped">0</span>                            </span>
                         </div>
                     </div>
                 </div>
@@ -847,45 +823,33 @@
                                 <img src="/resources/textures/status/no-work_colored.png" alt="" class="unemployed-icon">
                             </span>
                             <span class="pop-detail-values" aria-label="Marché du travail">
-                                <span class="pop-detail-value pop-labor-value--country pop-detail-value--country">0%</span>
-                                <span class="pop-detail-value pop-labor-value--hamlet pop-detail-value--hamlet">0%</span>
-                            </span>
+                                <span class="pop-detail-value pop-labor-value pop-detail-value--scoped">0%</span>                            </span>
                         </div>
                         <ul class="pop-labor-causes" aria-label="Causes du chômage et des postes vides — toutes catégories">
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoSkill">
                                 <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoPosts">
                                 <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoSkill">
                                 <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoHands">
                                 <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoRoad">
                                 <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                         </ul>
                     </section>
@@ -893,45 +857,33 @@
                         <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="artisans">
                             <span class="pop-detail-emoji" title="Artisans" aria-hidden="true">🔨</span>
                             <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0%</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
-                            </span>
+                                <span class="pop-detail-value pop-detail-value--scoped">0%</span>                            </span>
                         </div>
                         <ul class="pop-labor-causes" aria-label="Causes du chômage et des postes vides — Artisans">
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoSkill" data-social-group="artisans">
                                 <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoPosts" data-social-group="artisans">
                                 <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoSkill" data-social-group="artisans">
                                 <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoHands" data-social-group="artisans">
                                 <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoRoad" data-social-group="artisans">
                                 <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                         </ul>
                     </section>
@@ -939,45 +891,33 @@
                         <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="merchants">
                             <span class="pop-detail-emoji" title="Commerçants" aria-hidden="true">⚖️</span>
                             <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0%</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
-                            </span>
+                                <span class="pop-detail-value pop-detail-value--scoped">0%</span>                            </span>
                         </div>
                         <ul class="pop-labor-causes" aria-label="Causes du chômage et des postes vides — Commerçants">
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoSkill" data-social-group="merchants">
                                 <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoPosts" data-social-group="merchants">
                                 <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoSkill" data-social-group="merchants">
                                 <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoHands" data-social-group="merchants">
                                 <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoRoad" data-social-group="merchants">
                                 <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                         </ul>
                     </section>
@@ -985,45 +925,33 @@
                         <div class="pop-detail-metric pop-group-row" data-metric="labor" data-social-group="scholars">
                             <span class="pop-detail-emoji" title="Savants" aria-hidden="true">📚</span>
                             <span class="pop-detail-values">
-                                <span class="pop-detail-value pop-detail-value--country">0%</span>
-                                <span class="pop-detail-value pop-detail-value--hamlet">0%</span>
-                            </span>
+                                <span class="pop-detail-value pop-detail-value--scoped">0%</span>                            </span>
                         </div>
                         <ul class="pop-labor-causes" aria-label="Causes du chômage et des postes vides — Savants">
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoSkill" data-social-group="scholars">
                                 <span class="pop-detail-emoji" aria-hidden="true">🎓</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoPosts" data-social-group="scholars">
                                 <span class="pop-detail-emoji" aria-hidden="true">🪑</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoSkill" data-social-group="scholars">
                                 <span class="pop-detail-emoji" aria-hidden="true">🧩</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="lackNoHands" data-social-group="scholars">
                                 <span class="pop-detail-emoji" aria-hidden="true">🧍</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                             <li class="pop-detail-metric pop-cause-cell" data-metric="cause" data-cause="unemployedNoRoad" data-social-group="scholars">
                                 <span class="pop-detail-emoji" aria-hidden="true">🛣️</span>
                                 <span class="pop-detail-values">
-                                    <span class="pop-detail-value pop-detail-value--country">0</span>
-                                    <span class="pop-detail-value pop-detail-value--hamlet">0</span>
-                                </span>
+                                    <span class="pop-detail-value pop-detail-value--scoped">0</span>                                </span>
                             </li>
                         </ul>
                     </section>
@@ -1431,12 +1359,6 @@
                             </section>
                         </div>
 
-                        <!-- The tutorial's objective counter, under the season and date (TutorialObjective.js): tutorial games only -->
-                        <div id="tutorial-objective" class="hud-bar__row tutorial-objective" role="status" aria-live="polite" hidden>
-                            <span class="tutorial-objective__label"></span>
-                            <strong class="tutorial-objective__count"></strong>
-                        </div>
-
                         <div
                             id="hud-camera-rotate"
                             class="hud-bar__row hud-vitals__row--camera"
@@ -1654,10 +1576,21 @@
                 </div>
             </nav>
 
-            <!-- Short reminders under the HUD, one after the other (HudTicker.js); hidden while there is none. -->
-            <div id="hud-ticker" class="hud-ticker" role="status" aria-live="polite" aria-label="Rappels" hidden>
-                <div class="splide hud-ticker__splide">
-                    <div class="splide__track"><ul class="splide__list"></ul></div>
+            <!--
+                The two status pills, above the bottom buttons: stacked in portrait, side by side in landscape (hud.css, .hud-pills).
+                Keep their texts short: the objective's label is cut with an ellipsis in one line, the ticker scrolls.
+            -->
+            <div id="hud-pills" class="hud-pills">
+                <!-- The tutorial's objective counter (TutorialObjective.js): tutorial games only. Short label: what is counted ("Marché et Grenier"), never a sentence or a verb -->
+                <div id="tutorial-objective" class="tutorial-objective" role="status" aria-live="polite" hidden>
+                    <span class="tutorial-objective__label"></span>
+                    <strong class="tutorial-objective__count"></strong>
+                </div>
+                <!-- Short reminders, one after the other (HudTicker.js); hidden while there is none. -->
+                <div id="hud-ticker" class="hud-ticker" role="status" aria-live="polite" aria-label="Rappels" hidden>
+                    <div class="splide hud-ticker__splide">
+                        <div class="splide__track"><ul class="splide__list"></ul></div>
+                    </div>
                 </div>
             </div>
 
@@ -1670,6 +1603,14 @@
                 <button type="button" id="hud-actions-toggle" class="hud-fold-toggle hud-bottom-toggles__commands" aria-controls="hud-actions" aria-expanded="true" aria-label="Réduire la barre de commandes">
                     <!-- Play in a circle: the time controls (pause, replay, speed). Orange when the bar is unfolded -->
                     <svg class="hud-fold-toggle__icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                </button>
+                <!-- Phone in portrait: pages the command bar sideways, back to its start after the last page (hudFoldGroup.js) -->
+                <button type="button" id="hud-actions-next" class="hud-fold-toggle hud-bottom-toggles__commands-next" aria-controls="hud-actions" aria-label="Voir la suite des boutons" title="Voir la suite" hidden>
+                    <svg class="hud-fold-toggle__icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+                <!-- Phone in portrait: pages the construction row sideways, back to its start after the last page (hudFoldGroup.js) -->
+                <button type="button" id="hud-build-row-next" class="hud-fold-toggle hud-bottom-toggles__build-next" aria-controls="hud-build-row" aria-label="Voir la suite des boutons" title="Voir la suite" hidden>
+                    <svg class="hud-fold-toggle__icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
                 </button>
             </div>
             <aside id="hud-fab-dock" class="hud-fab-dock" aria-label="Outils">
@@ -3479,6 +3420,10 @@
     <div class="parameters-panel-wrapper">
         <div class="parameters-panel-header">
             <h3 id="parameters-panel-title">🔧 Paramètres</h3>
+            <!-- Always in reach, whatever the height: the footer's buttons are out of sight on a short screen -->
+            <button type="button" class="parameters-close-icon-btn" aria-label="Fermer les paramètres" title="Fermer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 6-12 12"/><path d="m6 6 12 12"/></svg>
+            </button>
         </div>
         <div class="parameters-panel-content">
             <div class="parameters-content">

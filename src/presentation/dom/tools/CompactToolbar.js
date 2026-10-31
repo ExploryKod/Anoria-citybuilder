@@ -11,6 +11,7 @@ import {
 import { attachBuildToolHoverPreview, hideBuildToolHoverPreview } from './BuildToolHoverPreview.js';
 import { MOBILE_TOOLBAR_CATEGORIES } from './mobileToolbarCategories.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
+import { unfoldGroupOf } from '../shell/hudFoldGroup.js';
 import { buildingIconHtml, buildingName } from '../shell/CatalogVocabulary.js';
 import { getSessionGame } from '../../../composition/sessionRuntime.js';
 import { getRequiredSkillForBuilding, getRequiredSkillLevelForBuilding } from '../../../composition/employmentCatalog.js';
@@ -169,6 +170,7 @@ function syncBuildBarAnchor() {
     const maxWidth = Math.min(720, window.innerWidth - 24);
     const width = Math.max(rect.width, Math.min(maxWidth, Math.max(280, rect.width * 2.2)));
 
+    // What the bar asks for. Keeping it inside the screen is the CSS's job (compact-toolbar.css, .mobile-build-bar), at every width.
     document.documentElement.style.setProperty('--mobile-build-bar-bottom', `${bottomPx}px`);
     document.documentElement.style.setProperty('--mobile-build-bar-center-x', `${centerX}px`);
     document.documentElement.style.setProperty('--mobile-build-bar-width', `${Math.min(maxWidth, width)}px`);
@@ -181,6 +183,8 @@ function syncBuildBarAnchor() {
 
 export function open() {
   if (!buildBarEl) return;
+  // The bar is anchored on the row of buttons it opens from: a folded row has no place on screen to anchor on
+  unfoldGroupOf(document.getElementById('toolbar-mobile-toggle'));
   isOpen = true;
   buildBarEl.hidden = false;
   buildBarEl.classList.add('mobile-build-bar--open');
@@ -225,6 +229,8 @@ export function close() {
   isOpen = false;
   buildBarFocusSession?.release({ restoreFocus: false });
   buildBarFocusSession = null;
+  // A bar hidden from assistive technology cannot keep the focus inside it (the browser refuses `aria-hidden` on a focused element)
+  if (buildBarEl.contains(document.activeElement)) document.activeElement.blur();
   buildBarEl.hidden = true;
   buildBarEl.classList.remove('mobile-build-bar--open');
   buildBarEl.setAttribute('aria-hidden', 'true');

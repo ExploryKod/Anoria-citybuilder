@@ -67,7 +67,7 @@ any other building (whatever the step); it unlocks nothing.
 
 A step may carry `counter: { label, after, items: [{ type, atLeast }] }`. `AdvanceTutorial` answers `progress` (the current step's counter: label, have, target)
 and `justCompleted` (the counter of the step the player has just finished, full). The HUD shows it as a pulsing line under the season and date
-(`#tutorial-objective`, `TutorialObjective.js`): "Maisons « Artisans » construites 2/3". The counter of a step that has a dépêche appears only once the player got past it (closed it, or left by its button: it is then archived, `wasRead`);
+(`#tutorial-objective`, `TutorialObjective.js`): "Maisons « Artisans » 2/3". The counter of a step that has a dépêche appears only once the player got past it (closed it, or left by its button: it is then archived, `wasRead`);
 the game looks at the tutorial as soon as the dépêche modal closes. A counter always says `after`: `null` to show at once, or what must have happened before it shows,
 exactly one of `{ news: <dépêche id> }` (that dépêche, of the steps or of the dispatches, has been read), `{ toast: <toast id> }` (that toast has been
 shown) or `{ event: [conditions] }` (the conditions hold, read like a toast's `when`); the step's own dépêche still comes first. A bad `after` (several
