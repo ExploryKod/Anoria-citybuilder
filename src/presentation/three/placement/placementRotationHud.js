@@ -1,5 +1,8 @@
 import { footprintCenterOffset, projectWorldToScreen } from './placementRotation.js';
 
+/** The screens too small to leave the bar beside the ghost: it is docked at the top instead (placement-rotation-hud.css). */
+const DOCKED_QUERY = '(max-width: 1024px)';
+
 /**
  * Floating HUD beside an anchored placement ghost (rotate + select mesh + confirm).
  *
@@ -42,6 +45,16 @@ export function createPlacementRotationHud({
 
   function updatePosition() {
     if (!root || !isShown || !anchor) {
+      return;
+    }
+
+    // On a small screen the bar stays where the stylesheet puts it (a free place at the top): beside the building it would hide the very thing being placed
+    const docked = window.matchMedia(DOCKED_QUERY).matches;
+    root.classList.toggle('placement-rotation-hud--docked', docked);
+    if (docked) {
+      root.classList.remove('hidden');
+      root.style.left = '';
+      root.style.top = '';
       return;
     }
 

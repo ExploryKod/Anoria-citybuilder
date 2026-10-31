@@ -21,6 +21,24 @@
   transition: opacity 0.15s ease, visibility 0.15s ease;
 }
 
+/*
+ * Small screens: the bar does not follow the building, it stands in a column on the left edge, halfway down: the top is where the tutorial's toasts come,
+ * the corners are taken by the columns of buttons and the bottom bars. Above every panel, so it is always there to be pressed, and it never covers the ghost.
+ */
+.placement-rotation-hud--docked {
+  left: max(var(--hud-gutter, 12px), env(safe-area-inset-left, 0px));
+  top: 50%;
+  flex-direction: column;
+  transform: translateY(-50%);
+}
+
+/* A short screen: the column of buttons at the top-left is there, the bar waits under it */
+@media (max-height: 500px) {
+  .placement-rotation-hud--docked {
+    top: calc(50% + 36px);
+  }
+}
+
 .placement-rotation-hud.hidden,
 .placement-rotation-hud[hidden] {
   /* display:none — visibility:hidden alone still leaves controls in the Tab order */
