@@ -1,3 +1,7 @@
+# Exports of a game (city, journal, flux...): debug material written to docs/ledgers/, the folder itself stays
+docs/ledgers/*
+!docs/ledgers/.gitkeep
+
 # Logs
 logs
 *.log
