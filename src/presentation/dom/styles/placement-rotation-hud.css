@@ -68,8 +68,14 @@
     transform 0.1s ease;
 }
 
-.placement-rotation-hud__btn:hover,
-.placement-rotation-hud__btn:focus-visible {
+/* A choice this building does not offer (one shape only): shown, greyed out */
+.placement-rotation-hud__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.placement-rotation-hud__btn:not(:disabled):hover,
+.placement-rotation-hud__btn:not(:disabled):focus-visible {
   border-color: var(--cta);
   background: var(--cta-tint, #fff6f0);
 }

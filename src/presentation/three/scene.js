@@ -376,6 +376,12 @@ export function createScene(_gameStore, assetManager, deps) {
     let touchStartObject = null;
     let touchHasMoved = false;
     let cameraTouchInitialized = false; // Track if we've initialized camera for this touch
+    // The finger on screen is dragging out a road / a row of houses or fields (the game decides, see `preferPlacementPaintDrag`): it anchors on touch start,
+    // stretches while it moves, and on release the game keeps the plan to be confirmed instead of laying it at once.
+    let touchPainting = false;
+    // The tile in focus comes from the finger (touch) and not from the mouse: the frame loop must not replace it by what lies under the mouse, which a
+    // touch screen never moves (the ghost would be wiped one frame after the finger put it down). Any real mouse move gives the focus back to the mouse.
+    let focusDrivenByTouch = false;
     const TAP_THRESHOLD = 10; // pixels - movement below this is considered a tap
 
     function getPointerClientXY(event) {
@@ -1875,6 +1881,9 @@ export function createScene(_gameStore, assetManager, deps) {
     }
 
     function updateFocusedObject() {
+        if (focusDrivenByTouch) {
+            return;
+        }
         const inputMouse = (getSessionService('inputManager')?.mouse ?? null);
         if (!inputMouse) {
             return;
@@ -1908,7 +1917,7 @@ export function createScene(_gameStore, assetManager, deps) {
      * Updates the selected object and calls the selection callback
      * @param {THREE.Object3D} object - The object to select (or null to deselect)
      */
-    function updateSelectedObject(object) {
+    function updateSelectedObject(object, options) {
         // Clear previous selection highlight if existed
         // DISABLED: Don't change material color when selecting objects for info panel
         // if (selectedObject && typeof selectedObject.setSelected === 'function') {
@@ -1925,7 +1934,7 @@ export function createScene(_gameStore, assetManager, deps) {
 
         // Call the selection callback if registered
         if (this.onObjectSelected && object) {
-            Promise.resolve(this.onObjectSelected(object)).catch((error) => {
+            Promise.resolve(this.onObjectSelected(object, options)).catch((error) => {
                 console.error('[scene.js] onObjectSelected failed:', error);
             });
         }
@@ -2153,6 +2162,10 @@ function onMouseMove(event) {
     }
     
     camera.onMouseMove(event);
+    // The mouse events a browser replays after a touch (compatibility events) are not a mouse that moved
+    if (!event.sourceCapabilities?.firesTouchEvents) {
+        focusDrivenByTouch = false;
+    }
 
     // Track right-drag vs short right-click (inspect)
     if (rightPointerDownPos && (event.buttons & 4) === 4) {
@@ -2208,6 +2221,7 @@ function raycastTouchClient(clientX, clientY) {
 }
 
 function emitPlacementHoverFromTouch(object) {
+    focusDrivenByTouch = true;
     focusedObject = object;
     hoveredObjectName = object?.name || '';
     if (typeof this.onPlacementHover === 'function') {
@@ -2250,6 +2264,11 @@ function onTouchStart(event) {
         // Placement tool: show green/red ghost immediately under the finger.
         if (prefersPlacementTouchDrag.call(this)) {
             emitPlacementHoverFromTouch.call(this, touchStartObject);
+            // A road or a row of plots: the touch anchors it, like the press of the mouse button
+            touchPainting = Boolean(touchStartObject) && typeof this.preferPlacementPaintDrag === 'function' && this.preferPlacementPaintDrag();
+            if (touchPainting) {
+                updateSelectedObject.call(this, touchStartObject, { touchPaint: true });
+            }
         }
         
         // Don't update selection yet - wait for touchEnd to determine if it was a tap
@@ -2294,8 +2313,17 @@ function onTouchMove(event) {
             if (distance > TAP_THRESHOLD) {
                 touchHasMoved = true;
             }
+            // A finger that drags takes the ghost that was waiting for its confirmation along with it (a finger that only taps does not)
+            if (touchHasMoved && typeof this.onPlacementTouchDrag === 'function') {
+                this.onPlacementTouchDrag();
+            }
             const object = raycastTouchClient(touch.clientX, touch.clientY);
             emitPlacementHoverFromTouch.call(this, object);
+            if (touchPainting && object && typeof this.onRoadPaintMove === 'function') {
+                Promise.resolve(this.onRoadPaintMove(object)).catch((error) => {
+                    console.error('[scene.js] onRoadPaintMove (touch) failed:', error);
+                });
+            }
             return;
         }
         
@@ -2335,9 +2363,21 @@ function onTouchEnd(event) {
     }
 
     const placementDrag = prefersPlacementTouchDrag.call(this);
-    
-    // Tap (no pan) — or placement drag release: place / anchor at finger tile.
-    if (
+
+    if (touchPainting) {
+        // The finger lifted after dragging out a road or a row of plots: the game keeps the plan to be confirmed. A single tile is the ordinary
+        // flow instead (it has its shape and its turn to choose), so it is selected as a tap now.
+        touchPainting = false;
+        const touch = event.changedTouches?.[0];
+        const lastObject = (touch ? raycastTouchClient(touch.clientX, touch.clientY) : null) || focusedObject;
+        event.preventDefault();
+        Promise.resolve(this.onTouchPaintEnd()).then((outcome) => {
+            if (outcome === 'single' && lastObject) updateSelectedObject.call(this, lastObject);
+        }).catch((error) => {
+            console.error('[scene.js] onTouchPaintEnd failed:', error);
+        });
+    } else if (
+        // Tap (no pan) — or placement drag release: place / anchor at finger tile.
         event.changedTouches
         && event.changedTouches.length > 0
         && (placementDrag || !touchHasMoved)
@@ -2577,6 +2617,10 @@ function onTouchEnd(event) {
          * @type {(() => boolean) | undefined}
          */
         preferPlacementTouchDrag: undefined,
+        // Touch: whether the finger drags out a road / a row of plots (true), and what the game does with it once the finger lifts ('single' | 'pending' | 'none')
+        preferPlacementPaintDrag: undefined,
+        onPlacementTouchDrag: undefined,
+        onTouchPaintEnd: undefined,
         /**
          * Switch to select behavior (toolbar + activeToolId). Orthogonal to map mode (editor / solo).
          * @type {(() => void) | undefined}

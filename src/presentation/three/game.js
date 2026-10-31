@@ -217,6 +217,21 @@ export function createGame(gameStore, assetManager, citySize = null) {
   /** Touch/tablet: anchor ghost + rotation HUD before confirming placement. */
   let touchPendingPlacement = null;
 
+  /**
+   * Touch/tablet: a road or a row of houses / fields was dragged out and the finger has lifted. The plan stays previewed, and the button of the bar below
+   * (confirm only: the pieces and their turn are chosen by the plan, there is nothing to turn or to change) lays it. A new drag replaces it.
+   */
+  let touchPaintPending = false;
+
+  /** The plan waiting to be confirmed is given up (a new drag, another tool, Escape, or it was laid): the bar goes. */
+  function dropTouchPaintPending() {
+    if (!touchPaintPending) {
+      return;
+    }
+    touchPaintPending = false;
+    placementRotationHud?.hide();
+  }
+
   function usesTouchPlacementRotationFlow(toolId) {
     return prefersTouchPlacementFlow()
       && isPlaceableBuildingTool(toolId, buildingPlacementCatalog);
@@ -723,7 +738,21 @@ export function createGame(gameStore, assetManager, citySize = null) {
       touchPendingPlacement.rotationStep = scene.placementGhost.rotationStep;
     },
     onSelectMesh: () => selectMeshForPendingPlacement(),
+    // Nothing is built: the ghost, or the dragged plan, goes, and so does the tool (back to the hand, as Escape does), or the next touch on the map would
+    // put the same building in front of the player again
+    onCancel: () => {
+      cancelRoadPaint();
+      cancelHousePaint();
+      cancelTouchPendingPlacement();
+      scene.onEnterSelectMode?.();
+    },
     onConfirm: async () => {
+      if (touchPaintPending) {
+        // The dragged plan is laid (the commit puts the bar away)
+        await commitRoadPaint();
+        await commitHousePaint();
+        return;
+      }
       if (!touchPendingPlacement) {
         return;
       }
@@ -1013,6 +1042,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
   /** The player let go of the road tool, or of Escape: nothing is laid. */
   function cancelRoadPaint() {
+    dropTouchPaintPending();
     roadPaint.active = false;
     roadPaint.anchor = null;
     roadPaint.axis = null;
@@ -1077,11 +1107,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
     showRoadDragPreview();
   }
 
-  /** A tool whose building takes a plot of the player's land (a house): it can be dragged out like a road. */
+  /** A tool whose building takes a plot of the player's land (a house, a field): it can be dragged out like a road. */
   function isPlotDragTool(toolId) {
     const definition = getBuildingDefinition(resolvePlacementBuildingId(toolId));
     // A house the hamlet holds only so many of (the mayor's) is placed one at a time: a dragged row of them could not all be built.
-    return Boolean(definition?.residentialGroup) && definition.maxPerHamlet === undefined;
+    const isPlot = Boolean(definition?.residentialGroup) || definition?.construction?.category === 'farms';
+    return isPlot && definition.maxPerHamlet === undefined;
   }
 
   /**
@@ -1135,6 +1166,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   }
 
   function cancelHousePaint() {
+    dropTouchPaintPending();
     housePaint.active = false;
     housePaint.anchor = null;
     housePaint.axis = null;
@@ -1537,7 +1569,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     return shouldReturnToSelectOnEscape(activeToolId, behaviorModeOptions);
   };
 
-  scene.onObjectSelected = async (selectedObject) => {
+  scene.onObjectSelected = async (selectedObject, { touchPaint = false } = {}) => {
     selectedObject.info = '';
     selectedObject.name = activeToolId !== 'select-object' ? activeToolId : selectedObject.name;
 
@@ -1558,6 +1590,12 @@ export function createGame(gameStore, assetManager, citySize = null) {
     if (!tile) {
       console.warn('[game.onObjectSelected] Missing tile at coordinates', { x, y });
       return;
+    }
+
+    // A finger that starts a new drag gives up the plan that was waiting, whatever the tile it presses (a red one included): the ghost follows again
+    if (touchPaint && (touchPaintPending || roadPaint.active || housePaint.active)) {
+      cancelRoadPaint();
+      cancelHousePaint();
     }
 
     const behaviorMode = resolveActiveBehaviorMode();
@@ -1660,12 +1698,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
         }
       }
 
-      discardTouchPendingIfDisabled();
-      if (touchPendingPlacement) {
-        return;
-      }
+      // A tap elsewhere while a ghost waits moves it there: the waiting one is given up, this tile takes its place
+      cancelTouchPendingPlacement();
 
-      if (usesTouchPlacementRotationFlow(activeToolId)) {
+      // A finger that drags out a road (touchPaint) takes the paint path below, like the mouse; a plain tap keeps the touch flow (shape and turn to choose)
+      if (usesTouchPlacementRotationFlow(activeToolId) && !touchPaint) {
         const tile = city.tiles[x][y];
         const canOverwriteRoad = !tile?.buildingId || isRoadBuildingType(tile.buildingId);
         if (!canOverwriteRoad) {
@@ -1690,7 +1727,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
         return;
       }
 
-      // Desktop: Cesar III — the press anchors, dragging draws the L, letting go lays it.
+      // Desktop: Cesar III — the press anchors, dragging draws the L, letting go lays it (touch: letting go keeps it, the button of the bar lays it).
+      dropTouchPaintPending();
       roadPaint.active = true;
       roadPaint.anchor = { x, y };
       roadPaint.axis = null;
@@ -1710,12 +1748,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
       const { x: placeX, y: placeY } = selectedObject.userData;
 
-      discardTouchPendingIfDisabled();
-      if (touchPendingPlacement) {
-        return;
-      }
+      // A tap elsewhere while a ghost waits moves it there: the waiting one is given up, this tile takes its place
+      cancelTouchPendingPlacement();
 
-      if (usesTouchPlacementRotationFlow(activeToolId)) {
+      if (usesTouchPlacementRotationFlow(activeToolId) && !(touchPaint && isPlotDragTool(activeToolId))) {
         const placementCheck = canPlaceBuildingAtTileWithSupplyRules({
           city,
           x: placeX,
@@ -1736,6 +1772,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
       // Desktop: a house is dragged out like a road — the press anchors, dragging plans the plots, letting go places them.
       if (isPlotDragTool(activeToolId)) {
+        dropTouchPaintPending();
         housePaint.active = true;
         housePaint.anchor = { x: placeX, y: placeY };
         housePaint.axis = null;
@@ -1797,25 +1834,57 @@ export function createGame(gameStore, assetManager, citySize = null) {
     await commitErasePaint();
   };
 
+  // Touch (Mode tactile): one finger on a road tool, or on a house / field, drags the plan out like the mouse does (it replaces a plan or a ghost waiting).
+  scene.preferPlacementPaintDrag = () => usesTouchPlacementRotationFlow(activeToolId)
+    && resolveActiveBehaviorMode() === BEHAVIOR_MODE.BUILD
+    && (isRoadBuildingType(activeToolId) || isPlotDragTool(activeToolId));
+
+  /**
+   * The finger lifted after a drag. A single tile is the ordinary touch flow ('single': it has its shape and its turn to choose). Several tiles are kept as a
+   * plan ('pending'): previewed as dragged, to be laid by the confirm button, which has nothing to turn here since each piece fits its neighbours by itself.
+   * @returns {'single' | 'pending' | 'none'}
+   */
+  scene.onTouchPaintEnd = async () => {
+    const paint = roadPaint.active ? roadPaint : (housePaint.active ? housePaint : null);
+    if (!paint) {
+      return 'none';
+    }
+    if (paint.path.length <= 1) {
+      cancelRoadPaint();
+      cancelHousePaint();
+      return 'single';
+    }
+    // Nothing of the plan can be laid (all red): there is nothing to confirm, the player is told why and the ghost stays free to move
+    const layable = roadPaint.active ? planRoadDrag().valid.length : planHouseDrag().valid.length;
+    if (layable === 0) {
+      await commitRoadPaint();
+      await commitHousePaint();
+      return 'none';
+    }
+    touchPaintPending = true;
+    const last = paint.path[paint.path.length - 1];
+    placementRotationHud?.show({ x: last.x, y: last.y, gridSize: 1, canSelectMesh: false, canRotate: false });
+    return 'pending';
+  };
+
   scene.onPlacementHover = (focusedObject) => {
     // The eraser (playing): the building under the cursor is lit whole before any click. While the square is being drawn, its own preview is shown instead.
     if (resolveActiveBehaviorMode() === BEHAVIOR_MODE.ERASE && !isEditorMode() && !erasePaint.active) {
       showEraseHoverPreview(focusedObject);
     }
     discardTouchPendingIfDisabled();
-    if (touchPendingPlacement) {
+    if (touchPendingPlacement || touchPaintPending) {
       return;
     }
     placementGhostSession.sync(focusedObject);
   };
 
   // Build tool + 1 finger: green/red ghost follows the finger (2 fingers still pan/zoom).
-  scene.preferPlacementTouchDrag = () => {
-    if (touchPendingPlacement) {
-      return false;
-    }
-    return resolveActiveBehaviorMode() === BEHAVIOR_MODE.BUILD;
-  };
+  // A ghost waiting for its confirmation does not take the finger away from the placement: dragging moves it again (see `onPlacementTouchDrag`).
+  scene.preferPlacementTouchDrag = () => resolveActiveBehaviorMode() === BEHAVIOR_MODE.BUILD;
+
+  // The finger drags: the ghost that was anchored (with its bar) is picked up and follows it, green or red as before it was anchored; letting go anchors it again.
+  scene.onPlacementTouchDrag = () => cancelTouchPendingPlacement();
 
   /**
    * Build mode: R is reserved for the placement ghost (camera R is blocked).
@@ -2085,6 +2154,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
       }
       if (!isRoadBuildingType(toolId) && roadPaint.active) {
         cancelRoadPaint();
+      }
+      // A plan waiting for its confirmation does not outlive the tool it was dragged with
+      if (touchPaintPending && toolChanged) {
+        cancelRoadPaint();
+        cancelHousePaint();
       }
       if (housePaint.active && !isPlotDragTool(toolId)) {
         cancelHousePaint();

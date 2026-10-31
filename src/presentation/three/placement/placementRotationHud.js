@@ -10,6 +10,7 @@ const DOCKED_QUERY = '(max-width: 1024px)';
  * @param {() => void} [options.onRotate]
  * @param {() => void} [options.onSelectMesh] S-key equivalent, shown only when `show({ canSelectMesh })`
  * @param {() => void | Promise<void>} [options.onConfirm]
+ * @param {() => void} [options.onCancel] the player gives up placing what is waiting (nothing is built)
  * @param {() => import('three').Camera | null | undefined} [options.getCamera]
  * @param {() => HTMLElement | null | undefined} [options.getCanvas]
  */
@@ -17,6 +18,7 @@ export function createPlacementRotationHud({
   onRotate,
   onSelectMesh,
   onConfirm,
+  onCancel,
   getCamera = () => null,
   getCanvas = () => document.querySelector('canvas'),
 } = {}) {
@@ -24,6 +26,7 @@ export function createPlacementRotationHud({
   const rotateBtn = document.getElementById('placement-rotation-turn');
   const selectBtn = document.getElementById('placement-rotation-select');
   const confirmBtn = document.getElementById('placement-rotation-confirm');
+  const cancelBtn = document.getElementById('placement-rotation-cancel');
 
   let rafId = null;
   let isShown = false;
@@ -85,7 +88,7 @@ export function createPlacementRotationHud({
     rafId = requestAnimationFrame(loop);
   }
 
-  function show({ x, y, gridSize, canSelectMesh = false }) {
+  function show({ x, y, gridSize, canSelectMesh = false, canRotate = true }) {
     if (!root) {
       console.warn('[placementRotationHud] #placement-rotation-hud missing from DOM');
       return;
@@ -100,12 +103,26 @@ export function createPlacementRotationHud({
     root.removeAttribute('hidden');
     root.removeAttribute('inert');
     root.setAttribute('aria-hidden', 'false');
-    rotateBtn?.removeAttribute('tabindex');
-    selectBtn?.classList.toggle('hidden', !canSelectMesh);
-    if (canSelectMesh) {
+    // A dragged plan has no turn to give: each piece fits its neighbours by itself
+    rotateBtn?.classList.toggle('hidden', !canRotate);
+    if (canRotate) {
+      rotateBtn?.removeAttribute('tabindex');
+    } else {
+      rotateBtn?.setAttribute('tabindex', '-1');
+    }
+    // The change of shape is always there to be read as a choice that exists, greyed out when this building has only one shape; a plan has none to choose
+    selectBtn?.classList.toggle('hidden', !canRotate);
+    if (selectBtn) {
+      selectBtn.disabled = !canSelectMesh;
+      selectBtn.title = canSelectMesh ? 'Changer de forme' : 'Une seule forme pour ce bâtiment';
+    }
+    if (canRotate && canSelectMesh) {
       selectBtn?.removeAttribute('tabindex');
+    } else {
+      selectBtn?.setAttribute('tabindex', '-1');
     }
     confirmBtn?.removeAttribute('tabindex');
+    cancelBtn?.removeAttribute('tabindex');
     updatePosition();
     track();
   }
@@ -122,6 +139,7 @@ export function createPlacementRotationHud({
       rotateBtn?.setAttribute('tabindex', '-1');
       selectBtn?.setAttribute('tabindex', '-1');
       confirmBtn?.setAttribute('tabindex', '-1');
+      cancelBtn?.setAttribute('tabindex', '-1');
     }
   }
 
@@ -135,6 +153,12 @@ export function createPlacementRotationHud({
     e.preventDefault();
     e.stopPropagation();
     onSelectMesh?.();
+  });
+
+  cancelBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onCancel?.();
   });
 
   confirmBtn?.addEventListener('click', (e) => {
