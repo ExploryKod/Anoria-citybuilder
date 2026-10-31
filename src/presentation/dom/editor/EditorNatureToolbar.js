@@ -9,7 +9,7 @@ import { hideBuildToolHoverPreview } from '../tools/BuildToolHoverPreview.js';
 import { serializeEditorLayout } from '../../three/editor/editorNatureLayout.js';
 import { getSessionCity } from '../../../composition/sessionRuntime.js';
 import { v4 as uuidv4 } from 'uuid';
-import {
+import { initEditorMapResources } from './EditorMapResources.js';import {
   getDefaultCategoryForFabGroup,
   getKenneyEditorCategoriesForFabGroup,
 } from '../../../shared/editor-catalog/classifyKenneyNatureAsset.js';
@@ -50,6 +50,7 @@ export function initEditorNatureToolbar(toolbarDeps) {
 
   initSplide();
   initPillsArrows();
+  initEditorMapResources();
 
   closeBtn?.addEventListener('click', (e) => {
     e.stopPropagation();

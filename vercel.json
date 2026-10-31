@@ -14,6 +14,7 @@
     { "source": "/hamlets", "destination": "/hamlets.html" },
     { "source": "/world", "destination": "/world.html" },
     { "source": "/missions", "destination": "/missions.html" },
+    { "source": "/editor", "destination": "/editor.html" },
     { "source": "/settings", "destination": "/settings.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },

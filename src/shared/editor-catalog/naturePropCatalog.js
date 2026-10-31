@@ -75,6 +75,92 @@ export function isBlockingNatureProp(propId) {
 }
 
 /**
+ * What a piece of nature on the grid is for the game. Nothing on the grid is decor (decor stands outside it): every prop of a map is a record of the hamlet,
+ * of the building type that says what it is and what it holds, by kind of piece: a tree holds 100 wood; a rock holds stone, and the large ones iron, the tall
+ * ones gold (the more massive the rock, the more it hides); a stone or a small rock only stone; any other piece nothing yet (ore and clay are to be tied to pieces).
+ * The figures the game counts (the nature tab, the editor's total) are the sum of these, nothing else.
+ */
+const PROP_RECORDS = Object.freeze({
+  tree: Object.freeze({ type: 'Tree-Chene', stocks: Object.freeze({ wood: 100 }) }),
+  rockSmall: Object.freeze({ type: 'Boulder-001', stocks: Object.freeze({ rock: 50 }) }),
+  rockLarge: Object.freeze({ type: 'Boulder-001', stocks: Object.freeze({ rock: 150, iron: 60 }) }),
+  rockTall: Object.freeze({ type: 'Boulder-001', stocks: Object.freeze({ rock: 100, gold: 30 }) }),
+  other: Object.freeze({ type: 'Nature-Piece', stocks: Object.freeze({}) }),
+});
+
+/** The kind of rock record each rock or stone category of the kit makes. */
+const ROCK_RECORD_BY_CATEGORY = Object.freeze({
+  editorRockSmall: 'rockSmall',
+  editorRockLarge: 'rockLarge',
+  editorRockTall: 'rockTall',
+  editorStoneSmall: 'rockSmall',
+  editorStoneLarge: 'rockSmall',
+  editorStoneTall: 'rockSmall',
+});
+
+/**
+ * @param {string} assetId a piece of a map (`nature:...` ground, `nature-prop:...` prop)
+ * @returns {{ type: string, stocks: Readonly<Record<string, number>> } | null} the record the piece is on the grid, null for a piece of ground
+ */
+export function propRecordSpec(assetId) {
+  if (!assetId.startsWith('nature-prop:')) return null;
+  const entry = NATURE_PROP_CATALOG[assetId];
+  if (!entry) {
+    throw new Error(`[naturePropCatalog] "${assetId}" is not a nature prop of the catalog`);
+  }
+  if (entry.tags.includes('editorTrees')) return PROP_RECORDS.tree;
+  const rockCategory = entry.tags.find((tag) => ROCK_RECORD_BY_CATEGORY[tag]);
+  return rockCategory ? PROP_RECORDS[ROCK_RECORD_BY_CATEGORY[rockCategory]] : PROP_RECORDS.other;
+}
+
+/**
+ * The props of a map that are records of the hamlet: one per tile (a second prop on the same tile adds no record of its own), each with its type and stocks. The
+ * game gives each its record on the hamlet's first load; the editor adds up what they hold as the player places them.
+ * @param {ReadonlyArray<{ assetId: string, x: number, y: number }>} pieces the pieces of a map
+ * @returns {Array<{ piece: { assetId: string, x: number, y: number }, type: string, stocks: Readonly<Record<string, number>> }>}
+ */
+export function propsHoldingRecord(pieces) {
+  const seen = new Set();
+  const props = [];
+  for (const piece of pieces) {
+    const spec = propRecordSpec(piece.assetId);
+    const tile = `${piece.x},${piece.y}`;
+    if (spec === null || seen.has(tile)) continue;
+    seen.add(tile);
+    props.push({ piece, ...spec });
+  }
+  return props;
+}
+
+/** The pieces a new hamlet's nature is made of when it is generated at random (glb names of the Kenney kit). */
+const SEEDED_TREE_GLBS = Object.freeze(['tree_default', 'tree_oak', 'tree_pineDefaultA', 'tree_pineTallA', 'tree_simple', 'tree_small']);
+const SEEDED_ROCK_GLBS = Object.freeze(['rock_largeA', 'rock_smallA', 'rock_tallA', 'stone_largeA', 'stone_smallA']);
+
+/**
+ * @param {readonly string[]} glbNames
+ * @returns {string[]} the prop ids, each checked against the catalog
+ */
+function seededPropIds(glbNames) {
+  return glbNames.map((glbName) => {
+    const propId = `nature-prop:${glbName}`;
+    if (!NATURE_PROP_CATALOG[propId]) {
+      throw new Error(`[naturePropCatalog] the seeded piece "${propId}" is not a prop of the Kenney kit`);
+    }
+    return propId;
+  });
+}
+
+/** @returns {string[]} the trees a generated hamlet is planted with */
+export function seededTreePropIds() {
+  return seededPropIds(SEEDED_TREE_GLBS);
+}
+
+/** @returns {string[]} the rocks a generated hamlet is strewn with */
+export function seededRockPropIds() {
+  return seededPropIds(SEEDED_ROCK_GLBS);
+}
+
+/**
  * @param {string} propId
  * @returns {typeof NATURE_PROP_CATALOG[string] | undefined}
  */

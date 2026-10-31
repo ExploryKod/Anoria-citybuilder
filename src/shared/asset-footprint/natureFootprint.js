@@ -7,6 +7,7 @@
  */
 export const NATURE_FOOTPRINT = Object.freeze({
   'Boulder-001': Object.freeze({ width: 1, depth: 1 }),
+  'Nature-Piece': Object.freeze({ width: 1, depth: 1 }),
   'Tree-Arbuste': Object.freeze({ width: 1, depth: 1 }),
   'Tree-Chene': Object.freeze({ width: 1, depth: 1 }),
   'Tree-Pine-001': Object.freeze({ width: 1, depth: 1 }),

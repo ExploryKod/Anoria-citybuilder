@@ -62,16 +62,17 @@ Built too (2026-10-31): the buildings and roads once placed are lifted by their 
 mesh); the road paint preview and the reach overlay lie on the ground of each tile; the walkers walk at their tile's height. The status icons and the plot
 highlight are children of a building or of the ghost, so they follow.
 
-To do, in this order:
-1. The natural resources seeded on a virgin hamlet (`ResourceManager`: trees, boulders) are not lifted; it matters only on a map with relief that is also seeded.
-2. **Roads between two levels.** Built (2026-10-31): a road may stand on a **slope** (`SLOPE_PIECES` in `kenneyPlacementProfile.js`: `cliff_blockSlope_rock/stone`, which cover the
+The natural resources seeded on a virgin hamlet (`ResourceManager`: trees, boulders) are lifted by their ground, and only seeded on flat, clear grass (no slope, cliff or obstacle).
+
+**Roads between two levels.** Built (2026-10-31): a road may stand on a **slope** (`SLOPE_PIECES` in `kenneyPlacementProfile.js`: `cliff_blockSlope_rock/stone`, which cover the
    whole tile and rise 1.0), never a building. `cliff_half_*` is **not** a slope (it covers only the upper part of its tile, a one-tile road would not fit it): it is a cliff,
    blocking roads and buildings. A slope rises toward where its +z axis points once turned by the piece's `rotationY` (`relief.slope` = { dx, dy, rise }). What lies on
    it is **sheared** (`placement/groundShear.js`: `y += rise × distance along the slope`), not turned: a turned plate leaves a groove at both ends, a sheared one keeps
    its whole span and meets the neighbouring roads at the exact height; the road, its ghost and the previews are laid this way, and the walkers walk at the middle
    height. On a slope a road goes straight up or down (`slopeAxisSides`, `canPlaceHere` in `game.js`): no bend, tee or side road there. Roads are two-way.
-   Still to do: nothing yet forbids two **flat** road tiles of different levels side by side without a slope between (the walkers would cross the cliff): a road
-   should connect to a neighbour of another level only through a slope.
+   A road touches a neighbouring road only at the same height (`roadLevelsMeet` in `roadPaintPlanner.js`, `ground_road_level`): two flat tiles of different levels, or a
+   slope's end against the wrong level, are refused, in a single placement and along a drag (the path is cut there). Still to do: the other Kenney pieces (flat or
+   slope) the player has not listed yet.
 
 ## A "lego" placement step for big buildings made of several parts
 

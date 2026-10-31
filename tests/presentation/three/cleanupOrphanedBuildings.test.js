@@ -24,6 +24,15 @@ describe('findOrphanedBuildingIds', () => {
     expect(orphans).toEqual([]);
   });
 
+  test('keeps the record of a piece of nature: it has no tile claim nor building mesh (regression: every tree record was deleted at once)', () => {
+    const buildings = [[undefined, undefined], [undefined, undefined]];
+    const orphans = findOrphanedBuildingIds(
+      [{ instanceId: 'uuid-tree', type: 'Tree-Chene', x: 1, y: 1, piece: { assetId: 'nature-prop:tree_oak', rotationY: 0, baseLocalY: 0 } }],
+      { city: makeCity(), buildings }
+    );
+    expect(orphans).toEqual([]);
+  });
+
   test('flags rows missing from tiles and mismatched mesh', () => {
     const city = makeCity();
     const buildings = [

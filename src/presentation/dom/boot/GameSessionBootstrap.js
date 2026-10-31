@@ -39,7 +39,8 @@ import {
 import { getMissionById } from '../../pages/missions/missionCatalog.js';
 import { loadEditorMapLayout } from '../../../contexts/world-layout/application/queries/LoadEditorMapLayout.js';
 import { getEditorMapRepository } from '../../../composition/editorMapRepository.js';
-import { setMissionMapLayoutId, getMissionMapLayoutId, clearMissionMapLayout } from '../../../shared/gameplay/customMapLayout.js';
+import { setMissionMapLayoutId, getMissionMapLayoutId, clearMissionMapLayout, peekPendingEditorMap } from '../../../shared/gameplay/customMapLayout.js';
+import { readEditorMapDocument } from '../../../contexts/world-layout/application/queries/EditorMapDocument.js';
 import {
   gameModeFromBootMode,
   isEditorMode,
@@ -220,6 +221,12 @@ export async function bootstrapGameSession(assetManager) {
     } catch (error) {
       console.error('[Bootstrap] Failed to resolve custom map size:', error);
     }
+  }
+
+  // An editor opened on a map chosen in the editor menu is created at that map's size (an invalid map stops the boot, saying why)
+  const editorMap = bootMode === 'editor' ? peekPendingEditorMap() : null;
+  if (editorMap) {
+    selectedCitySize = readEditorMapDocument(editorMap).citySize;
   }
 
   persistCitySize(selectedCitySize);

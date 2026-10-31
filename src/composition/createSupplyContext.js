@@ -30,7 +30,8 @@ import { getWorldCityById } from '../contexts/geography/domain/catalogs/WorldCit
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { syncRemovedBuilding } from './parcelsOps.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
-import { getNaturalResourceKind, getNaturalSources, getSuppliedCategories } from '../shared/building-catalog/resourceRoleQueries.js';
+import { getNaturalSources, getSuppliedCategories } from '../shared/building-catalog/resourceRoleQueries.js';
+import { depositKindsOf } from '../shared/building-catalog/depositQueries.js';
 import { findNaturalSourcesInRange, isWithinRange } from '../contexts/supply/domain/policies/ResourceRangePolicy.js';
 import { SupplyTraceability } from '../contexts/supply/infrastructure/presentation/SupplyTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
@@ -566,13 +567,13 @@ export function createSupplyContext({
     async listNaturalCollectors(natureBuildingId) {
       const node = await supplyBuildingRepositoryImpl.findRowById(natureBuildingId);
       if (!node) throw new Error(`[supply] listNaturalCollectors: no building "${natureBuildingId}"`);
-      const kind = getNaturalResourceKind(node.type);
-      if (!kind) throw new Error(`[supply] listNaturalCollectors: "${node.type}" is not a natural resource`);
+      // What the piece holds: a tree its wood, a rock its stone, iron, gold...; a piece with nothing to draw (a flower) has no collector
+      const kinds = depositKindsOf(node.type);
       const rows = await supplyBuildingRepositoryImpl.listAllBuildingRows();
       return rows
         .filter((row) =>
           row.x != null && row.y != null
-          && getNaturalSources(row.type).some((source) => source.resource === kind && isWithinRange(row, node, source.range))
+          && getNaturalSources(row.type).some((source) => kinds.includes(source.resource) && isWithinRange(row, node, source.range))
         )
         .map((row) => ({ id: instanceIdFromHouseRow(row), type: row.type, x: row.x, y: row.y }));
     },

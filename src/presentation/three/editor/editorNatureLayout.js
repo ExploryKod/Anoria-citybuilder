@@ -29,9 +29,25 @@
 let stackObjects = [];
 let nextId = 1;
 
+/** @type {Set<(objects: readonly EditorStackObject[]) => void>} */
+const changeListeners = new Set();
+
+/**
+ * Called with the whole stack each time a piece is placed, removed, or the stack is replaced (the editor's counters follow it).
+ * @param {(objects: readonly EditorStackObject[]) => void} listener
+ */
+export function onEditorStackChange(listener) {
+  changeListeners.add(listener);
+}
+
+function notifyStackChanged() {
+  for (const listener of changeListeners) listener(stackObjects);
+}
+
 export function resetEditorNatureLayout() {
   stackObjects = [];
   nextId = 1;
+  notifyStackChanged();
 }
 
 /**
@@ -52,6 +68,7 @@ export function importEditorStackObjects(objects) {
     return Math.max(max, Number(match[1]));
   }, 0);
   nextId = maxId + 1;
+  notifyStackChanged();
 }
 
 /** @returns {readonly EditorStackObject[]} */
@@ -105,6 +122,7 @@ export function addEditorStackObject(assetId, x, y, rotationY, placement) {
   };
   nextId += 1;
   stackObjects.push(entry);
+  notifyStackChanged();
   return entry;
 }
 
@@ -144,6 +162,7 @@ export function removeEditorStackObjectById(id) {
 
   const removed = stackObjects.find((obj) => obj.id === id) ?? null;
   stackObjects = stackObjects.filter((obj) => !toRemove.has(obj.id));
+  notifyStackChanged();
   return removed;
 }
 
@@ -162,6 +181,7 @@ export function removeEditorStackObjectsAtTile(x, y) {
   }
   const removed = stackObjects.filter((obj) => ids.has(obj.id));
   stackObjects = stackObjects.filter((obj) => !ids.has(obj.id));
+  notifyStackChanged();
   return removed;
 }
 

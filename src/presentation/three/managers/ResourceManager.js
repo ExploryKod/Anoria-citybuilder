@@ -1,250 +1,75 @@
 import { listTileDeposits } from '../../../shared/building-catalog/depositQueries.js';
-import { resolveAndCreateBuildingMesh } from '../meshs/resolveBuildingMesh.js';
+import { getColumnTopLocalY } from '../../../shared/editor-catalog/kenneyPlacementProfile.js';
+import { propRecordSpec, seededRockPropIds, seededTreePropIds } from '../../../shared/editor-catalog/naturePropCatalog.js';
 
-export class ResourceManager {
-    constructor() {
-        this.resources = new Map();
+/** Ground a tree or a rock can stand on: grass that is flat and clear (no slope, cliff face, or piece of the map already in the way). */
+function isOpenGround(tile) {
+  return tile.terrainId === 'grass' && (!tile.relief || (tile.relief.flat && !tile.relief.obstacle));
+}
+
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+
+/**
+ * The nature of a new hamlet, generated at random: trees (5 % of the tiles) and rocks (3 %), each a piece of the map like any piece a map file sets —
+ * a prop with its coordinates, and the record of the hamlet that says what it holds. Nothing on the grid is decor.
+ *
+ * @param {object} city
+ * @returns {Array<{ piece: { id: string, assetId: string, x: number, y: number, rotationY: number, baseLocalY: number, parentId: null, anchor: 'terrain' }, type: string, stocks: Record<string, number> }>}
+ */
+export function generateNaturePieces(city) {
+  const taken = new Set();
+  const items = [];
+  const treeIds = seededTreePropIds();
+  const rockIds = seededRockPropIds();
+
+  const scatter = (count, propIds, stocksOf) => {
+    let placed = 0;
+    while (placed < count) {
+      const x = Math.floor(Math.random() * city.size);
+      const y = Math.floor(Math.random() * city.size);
+      const tile = city.tiles[x]?.[y];
+      if (!tile || tile.buildingId || taken.has(`${x},${y}`) || !isOpenGround(tile)) continue;
+      taken.add(`${x},${y}`);
+      const assetId = pick(propIds);
+      const spec = propRecordSpec(assetId);
+      items.push({
+        piece: {
+          // Each piece of the stack has its own id (the scene puts one mesh per id) and stands on the ground of its tile
+          id: `nature-${x}-${y}`,
+          assetId,
+          x,
+          y,
+          rotationY: Math.floor(Math.random() * 4) * (Math.PI / 2),
+          baseLocalY: getColumnTopLocalY([], x, y, tile.terrainId),
+          parentId: null,
+          anchor: 'terrain',
+        },
+        type: spec.type,
+        stocks: stocksOf(spec),
+      });
+      placed += 1;
     }
+  };
 
-    /**
-     * @param {object} city
-     * @param {object} assetManager
-     * @param {object[][]} buildings
-     * @param {object[]} zoneGroups
-     * @param {{ placeBuildingRecord: (data: object) => Promise<object> }} constructionApi
-     * @param {{ listNatureResources: () => Promise<object[]> }} [supplyApi]
-     */
-    async initializeResources(city, assetManager, buildings, zoneGroups, constructionApi, supplyApi = null) {
-        const treeCount = Math.floor(city.size * city.size * 0.05);
-        const boulderCount = Math.floor(city.size * city.size * 0.03);
+  // What a piece holds is what its kind holds (the large rocks hide iron, the tall ones gold, see `propRecordSpec`): the model drawn is what decides
+  scatter(Math.floor(city.size * city.size * 0.05), treeIds, (spec) => ({ ...spec.stocks }));
+  scatter(Math.floor(city.size * city.size * 0.03), rockIds, (spec) => ({ ...spec.stocks }));
+  return items;
+}
 
-        await this.placeRandomTrees(
-          city, assetManager, buildings, zoneGroups, treeCount, constructionApi
-        );
-        await this.placeRandomBoulders(
-          city, assetManager, buildings, zoneGroups, boulderCount, constructionApi
-        );
-        this.markDepositTiles(city);
-        await this.markIronBoulders(city, supplyApi);
-        await this.markGoldBoulders(city, supplyApi);
+/** Scatter the deposits the catalog says the ground carries (each on its declared share of its terrain's tiles). */
+export function markDepositTiles(city) {
+  for (const { terrain, kind, share } of listTileDeposits()) {
+    const count = Math.floor(city.size * city.size * share);
+
+    for (let i = 0; i < count; i++) {
+      const x = Math.floor(Math.random() * city.size);
+      const y = Math.floor(Math.random() * city.size);
+      const tile = city.tiles[x]?.[y];
+
+      if (tile && tile.terrainId === terrain) {
+        tile.deposits = { ...(tile.deposits ?? {}), [kind]: true };
+      }
     }
-
-    async placeRandomTrees(city, assetManager, buildings, zoneGroups, count, constructionApi) {
-        const { placeBuildingRecord } = constructionApi;
-        const treeTypes = ['Tree-Sapin', 'Tree-Arbuste', 'Tree-Chene'];
-        const ZONE_SIZE = 4;
-        let placed = 0;
-
-        while (placed < count) {
-            const x = Math.floor(Math.random() * city.size);
-            const y = Math.floor(Math.random() * city.size);
-            const tile = city.tiles[x]?.[y];
-
-            if (tile && !tile.buildingId && tile.terrainId === 'grass' && !buildings[x][y]) {
-                const treeTypeId = treeTypes[Math.floor(Math.random() * treeTypes.length)];
-                const treeId = `${treeTypeId}-${x}-${y}`;
-
-                tile.buildingId = treeTypeId;
-                tile.buildingCoord = { x, y };
-
-                try {
-                    const mesh = await resolveAndCreateBuildingMesh({ buildingId: treeTypeId, x, y, assetManager });
-                    if (mesh) {
-                        mesh.name = treeId;
-                        mesh.userData.id = treeTypeId;
-                        mesh.userData.type = treeTypeId;
-                        mesh.userData.x = x;
-                        mesh.userData.y = y;
-                        mesh.userData.isBuilding = false;
-
-                        const zoneX = Math.floor(x / ZONE_SIZE);
-                        const zoneY = Math.floor(y / ZONE_SIZE);
-                        const zoneIndex = zoneX * Math.ceil(city.size / ZONE_SIZE) + zoneY;
-
-                        if (zoneGroups[zoneIndex]) {
-                            zoneGroups[zoneIndex].add(mesh);
-                        }
-
-                        buildings[x][y] = mesh;
-                    }
-
-                    const treeWoodStocks = {
-                        'Tree-Sapin': 100,
-                        'Tree-Arbuste': 80,
-                        'Tree-Chene': 120,
-                    };
-                    const woodAmount = treeWoodStocks[treeTypeId] || 100;
-
-                    const placed = await placeBuildingRecord({
-                        name: treeId,
-                        type: treeTypeId,
-                        category: 'nature',
-                        x,
-                        y,
-                        pop: 0,
-                        stocks: { wood: woodAmount },
-                        maxStocks: { wood: woodAmount },
-                        roads: 0,
-                        price: 0,
-                        isBuilding: false,
-                    });
-                    if (placed?.success && placed.instanceId) {
-                        tile.instanceId = placed.instanceId;
-                        if (buildings[x]?.[y]?.userData) {
-                            buildings[x][y].userData.instanceId = placed.instanceId;
-                        }
-                    }
-                } catch (_error) {
-                    // preserve silent failure
-                }
-
-                placed++;
-            }
-        }
-    }
-
-    async placeRandomBoulders(city, assetManager, buildings, zoneGroups, count, constructionApi) {
-        const { placeBuildingRecord } = constructionApi;
-        const ZONE_SIZE = 4;
-        let placed = 0;
-
-        while (placed < count) {
-            const x = Math.floor(Math.random() * city.size);
-            const y = Math.floor(Math.random() * city.size);
-            const tile = city.tiles[x]?.[y];
-
-            if (tile && !tile.buildingId && tile.terrainId === 'grass' && !buildings[x][y]) {
-                const boulderType = 'Boulder-001';
-                const boulderId = `${boulderType}-${x}-${y}`;
-
-                tile.buildingId = boulderType;
-                tile.buildingCoord = { x, y };
-
-                try {
-                    const mesh = await resolveAndCreateBuildingMesh({ buildingId: boulderType, x, y, assetManager });
-                    if (mesh) {
-                        mesh.name = boulderId;
-                        mesh.userData.id = boulderType;
-                        mesh.userData.type = boulderType;
-                        mesh.userData.x = x;
-                        mesh.userData.y = y;
-                        mesh.userData.isBuilding = false;
-
-                        const zoneX = Math.floor(x / ZONE_SIZE);
-                        const zoneY = Math.floor(y / ZONE_SIZE);
-                        const zoneIndex = zoneX * Math.ceil(city.size / ZONE_SIZE) + zoneY;
-
-                        if (zoneGroups[zoneIndex]) {
-                            zoneGroups[zoneIndex].add(mesh);
-                        }
-
-                        buildings[x][y] = mesh;
-                    }
-
-                    const rockAmount = 50 + Math.floor(Math.random() * 100);
-                    const goldAmount = Math.random() < 0.3 ? 0 : 20 + Math.floor(Math.random() * 30);
-                    const ironAmount = Math.random() < 0.2 ? 0 : 30 + Math.floor(Math.random() * 40);
-
-                    const placed = await placeBuildingRecord({
-                        name: boulderId,
-                        type: boulderType,
-                        category: 'nature',
-                        x,
-                        y,
-                        pop: 0,
-                        stocks: {
-                            rock: rockAmount,
-                            gold: goldAmount,
-                            iron: ironAmount,
-                        },
-                        maxStocks: {
-                            rock: rockAmount,
-                            gold: goldAmount,
-                            iron: ironAmount,
-                        },
-                        roads: 0,
-                        price: 0,
-                        isBuilding: false,
-                    });
-                    if (placed?.success && placed.instanceId) {
-                        tile.instanceId = placed.instanceId;
-                        if (buildings[x]?.[y]?.userData) {
-                            buildings[x][y].userData.instanceId = placed.instanceId;
-                        }
-                    }
-                } catch (_error) {
-                    // preserve silent failure
-                }
-
-                placed++;
-            }
-        }
-    }
-
-    /** Scatter the deposits the catalog says the ground carries (each on its declared share of its terrain's tiles). */
-    markDepositTiles(city) {
-        for (const { terrain, kind, share } of listTileDeposits()) {
-            const count = Math.floor(city.size * city.size * share);
-
-            for (let i = 0; i < count; i++) {
-                const x = Math.floor(Math.random() * city.size);
-                const y = Math.floor(Math.random() * city.size);
-                const tile = city.tiles[x]?.[y];
-
-                if (tile && tile.terrainId === terrain) {
-                    tile.deposits = { ...(tile.deposits ?? {}), [kind]: true };
-                }
-            }
-        }
-    }
-
-    /**
-     * @param {object} city
-     * @param {{ listNatureResources: () => Promise<object[]> } | null} supplyApi
-     */
-    async markIronBoulders(city, supplyApi) {
-        try {
-            if (!supplyApi?.listNatureResources) return;
-            const boulders = (await supplyApi.listNatureResources()).filter((h) =>
-                (h.type || '').includes('Boulder')
-            );
-            const ironBoulderCount = Math.floor(boulders.length * 0.15);
-
-            for (let i = 0; i < ironBoulderCount && i < boulders.length; i++) {
-                const boulder = boulders[Math.floor(Math.random() * boulders.length)];
-                const tile = city.tiles[boulder.x]?.[boulder.y];
-
-                if (tile) {
-                    tile.hasIron = true;
-                }
-            }
-        } catch (_error) {
-            // preserve silent failure
-        }
-    }
-
-    /**
-     * @param {object} city
-     * @param {{ listNatureResources: () => Promise<object[]> } | null} supplyApi
-     */
-    async markGoldBoulders(city, supplyApi) {
-        try {
-            if (!supplyApi?.listNatureResources) return;
-            const boulders = (await supplyApi.listNatureResources()).filter((h) =>
-                (h.type || '').includes('Boulder')
-            );
-            const goldBoulderCount = Math.floor(boulders.length * 0.1);
-
-            for (let i = 0; i < goldBoulderCount && i < boulders.length; i++) {
-                const boulder = boulders[Math.floor(Math.random() * boulders.length)];
-                const tile = city.tiles[boulder.x]?.[boulder.y];
-
-                if (tile && !tile.hasIron) {
-                    tile.hasGold = true;
-                }
-            }
-        } catch (_error) {
-            // preserve silent failure
-        }
-    }
+  }
 }

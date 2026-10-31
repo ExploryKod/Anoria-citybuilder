@@ -27,7 +27,6 @@ import { applyRoleStatusSprites } from './meshs/roleStatusSprites.js';
 import { setupRoadAccessIcons } from '../../contexts/parcels/infrastructure/presentation/roadAccessIcons.js';
 import { LightingManager } from './managers/LightingManager.js';
 import { BackdropManager } from './managers/BackdropManager.js';
-import { ResourceManager } from './managers/ResourceManager.js';
 import { PerformanceManager } from './managers/PerformanceManager.js';
 import { DecorativeVillageManager } from './managers/DecorativeVillageManager.js';
 import { listUnlockedNeighborHamletIds } from '../../core/persistence/hamlet/hamletAccess.js';
@@ -72,6 +71,7 @@ import { attachSceneTilePort } from './scene-board/SceneTilePort.js';
 import {
   addEditorStackObject,
   getEditorStackObjects,
+  getEditorStackObjectsAt,
   removeEditorStackObjectById,
   removeEditorStackObjectsAtTile,
   removeTopEditorStackObjectAt,
@@ -83,6 +83,7 @@ import {
   resolveEditorGhostPlacementPreview as computeEditorGhostPlacementPreview,
 } from '../../shared/editor-catalog/editorStackPlacement.js';
 import { applyKenneyVerticalEdgeMountToObject } from '../../shared/editor-catalog/editorVerticalFaceMount.js';
+import { propRecordSpec } from '../../shared/editor-catalog/naturePropCatalog.js';
 import { getGroundElevation, getGroundSurface } from '../../shared/editor-catalog/kenneyPlacementProfile.js';
 import { applyGroundShear } from './placement/groundShear.js';
 import { WORLD_PLATFORM_Y } from '../../shared/terrain-catalog/terrainWorldContract.js';
@@ -255,7 +256,7 @@ export function createScene(_gameStore, assetManager, deps) {
         webglContextLost = false;
         try {
             if (currentCity) {
-                await initialize(currentCity, { seedNature: false });
+                await initialize(currentCity);
                 await update(currentCity, lastSceneUpdateTime);
             }
             showInfoToast('Affichage 3D restauré.', { timeout: 3000 });
@@ -445,8 +446,8 @@ export function createScene(_gameStore, assetManager, deps) {
 
     async function initialize(city, options = {}) {
         await rendererReady;
-        const seedNature = options.seedNature === true;
-        editorStackHydrationEnabled = usesEditorLikePresentation() || options.hydrateEditorLayout === true;
+        // The nature of the grid (trees, rocks...) is pieces of the map in the stack, in every mode: they are always put on the scene
+        editorStackHydrationEnabled = true;
 
         // Free the previous hamlet's GPU resources first: scene.clear() only detaches them.
         hamletRegistry.disposeAll();
@@ -469,7 +470,8 @@ export function createScene(_gameStore, assetManager, deps) {
         terrain = [];
         buildings = [];
         editorStackMeshes.clear();
-        if (isEditorMode()) {
+        // A blank editor starts from an empty stack; one opened on a map keeps the pieces the map was just applied with
+        if (isEditorMode() && options.hydrateEditorLayout !== true) {
             resetEditorNatureLayout();
         }
         
@@ -653,20 +655,6 @@ export function createScene(_gameStore, assetManager, deps) {
 
         // No extra backdrop — syncGroundFill covers the infinite ground aspect.
 
-        // Initialize resources (trees, boulders) only on a virgin hamlet.
-        // Returning to a saved hamlet hydrates tiles from Dexie instead.
-        if (seedNature) {
-            const resourceManager = new ResourceManager();
-            await resourceManager.initializeResources(
-              city,
-              assetManager,
-              buildings,
-              zoneGroups,
-              { placeBuildingRecord: (data) => construction.placeBuildingRecord(data) },
-              supply
-            );
-        }
-        
         await syncNeighborHamletDeco(city);
         
         // Initialize PerformanceManager after zoneGroups are set up
@@ -1358,6 +1346,17 @@ export function createScene(_gameStore, assetManager, deps) {
             console.warn('[Scene] Error during orphaned house cleanup:', error);
         }
         lap('cleanup');
+
+        // A piece of nature stands while its record does: one used up (a tree a lumberjack took whole) leaves the grid with it
+        if (!isEditorMode()) {
+            const recordTiles = new Set(
+                (await listAllBuildingRows()).filter((row) => row.piece).map((row) => `${row.x},${row.y}`)
+            );
+            for (const piece of getEditorStackObjects().filter((obj) => propRecordSpec(obj.assetId) !== null)) {
+                if (!recordTiles.has(`${piece.x},${piece.y}`)) removeEditorStackById(piece.id);
+            }
+            lap('naturePieces');
+        }
         if (import.meta.env?.DEV) {
             const sections = Object.entries(sectionMs).map(([section, ms]) => `${section}=${ms.toFixed(1)}`).join(' ');
             const calls = Object.entries(tileCalls).map(([name, spent]) => `${name}=${spent.ms.toFixed(0)}ms/${spent.calls}`).join(' ');
@@ -1896,6 +1895,18 @@ export function createScene(_gameStore, assetManager, deps) {
     }
 
     /**
+     * Playing: clears what the map set on a tile that is not ground (trees, rocks, bushes, flowers...: the `nature-prop:` pieces), whatever the height it
+     * stands at; the terrain, plateau and cliff pieces stay. The tile's relief is read again, so a cleared tile takes a building.
+     * @param {number} x
+     * @param {number} y
+     * @returns {Array<{ id: string, assetId: string }>} the props that were cleared
+     */
+    function removeNaturePropsAt(x, y) {
+        const props = getEditorStackObjectsAt(x, y).filter((obj) => obj.assetId.startsWith('nature-prop:'));
+        return props.filter((prop) => removeEditorStackById(prop.id));
+    }
+
+    /**
      * @param {number} x
      * @param {number} y
      * @returns {boolean}
@@ -2132,7 +2143,10 @@ export function createScene(_gameStore, assetManager, deps) {
 
     function isInspectableBuilding(object) {
         const buildingId = object?.userData?.id;
-        return Boolean(buildingId && buildingsObjects.includes(buildingId));
+        if (buildingId && buildingsObjects.includes(buildingId)) return true;
+        // A piece of nature on the grid is a record of the hamlet too (what it holds, who draws on it): playing, it has its info panel (the editor has no records)
+        const propId = object?.userData?.propId;
+        return !isEditorMode() && typeof propId === 'string' && propRecordSpec(propId) !== null;
     }
 
     function onMouseDown(event){
@@ -2653,6 +2667,7 @@ function onTouchEnd(event) {
         placeEditorStackObject,
         placeEditorNatureProp,
         removeEditorNaturePropAt,
+        removeNaturePropsAt,
         removeEditorStackById,
         clearEditorTileBaseToSea,
         resolveEditorPlacementAnchorLocalY,

@@ -43,6 +43,42 @@ export function slopeAxisSides(slope) {
   return [high, OPPOSITE[high]];
 }
 
+const LEVEL_TOLERANCE = 0.01;
+
+/**
+ * How high the road of a tile stands on one of its sides: the level of a flat tile, the top or the foot of a slope on its two ends. Null on the flanks of a
+ * slope, where no road runs.
+ * @param {{ elevation: number, slope: { dx: number, dy: number, rise: number } | null } | undefined} relief absent = plain grass at level 0
+ * @param {string} side
+ * @returns {number | null}
+ */
+function edgeHeight(relief, side) {
+  if (!relief) return 0;
+  if (!relief.slope) return relief.elevation;
+  const step = SIDE_STEP[side];
+  if (step.dx === relief.slope.dx && step.dy === relief.slope.dy) return relief.elevation;
+  if (step.dx === -relief.slope.dx && step.dy === -relief.slope.dy) return relief.elevation - relief.slope.rise;
+  return null;
+}
+
+/**
+ * Two roads side by side must meet at the same height: a road only changes level along a slope, so two flat tiles of different levels (or a slope's end
+ * against the wrong level) leave a step the walkers would cross through the cliff.
+ * @param {{ x: number, y: number }} from
+ * @param {{ x: number, y: number }} to a tile next to `from`
+ * @param {object | undefined} reliefFrom the `tile.relief` of `from`
+ * @param {object | undefined} reliefTo the `tile.relief` of `to`
+ * @returns {boolean}
+ */
+export function roadLevelsMeet(from, to, reliefFrom, reliefTo) {
+  const side = sideToward(from, to);
+  if (!side) throw new Error(`[roadPaintPlanner] roadLevelsMeet needs two adjacent tiles, got (${from.x}, ${from.y}) and (${to.x}, ${to.y})`);
+  const here = edgeHeight(reliefFrom, side);
+  const there = edgeHeight(reliefTo, OPPOSITE[side]);
+  if (here === null || there === null) return true;
+  return Math.abs(here - there) <= LEVEL_TOLERANCE;
+}
+
 /**
  * The sides a piece reaches once turned `steps` quarter turns.
  * @param {ReadonlyArray<string>} sides

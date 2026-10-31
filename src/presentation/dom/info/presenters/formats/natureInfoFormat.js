@@ -27,9 +27,14 @@ export function formatNatureLayoutOptions() {
  * @returns {{ terrain: string, resources: Array<{ kind: string, emoji: string, label: string, remaining: number, consumed: number, total: number }> }}
  */
 export function formatNatureResourceModel(vm) {
-  const { buildingType, terrainLabel, buildingRow, stocks } = vm;
-  const remainingStocks = stocks ?? buildingRow?.stocks ?? {};
-  const totals = buildingRow?.maxStocks ?? {};
+  const { buildingType, terrainLabel, buildingRow } = vm;
+  // What is left is what the record of the piece holds. (Not the supply view's stock: it is the stock shape of the goods the supply chain moves, which a tree or
+  // a rock does not have, so it reads 0 for everything and every deposit looked consumed.)
+  if (!buildingRow?.stocks || !buildingRow?.maxStocks) {
+    throw new Error(`[natureInfoFormat] the record of "${buildingType}" at (${vm.anchorX}, ${vm.anchorY}) has no stocks / maxStocks: it holds nothing to show`);
+  }
+  const remainingStocks = buildingRow.stocks;
+  const totals = buildingRow.maxStocks;
 
   const resources = depositKindsOf(buildingType)
     .filter((kind) => (totals[kind] ?? 0) > 0)

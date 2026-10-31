@@ -3,6 +3,7 @@ import { BUILDING_ASSETS } from '../../src/presentation/three/assets/buildingAss
 import {
   planRoadPaint,
   pieceForSides,
+  roadLevelsMeet,
   roadPathBetween,
   roadPiecesFrom,
   slopeAxisSides,
@@ -25,6 +26,22 @@ describe('adaptive road drag', () => {
     expect(slopeAxisSides({ dx: 0, dy: 1 }).sort()).toEqual(['north', 'south']);
     expect(slopeAxisSides({ dx: -1, dy: 0 }).sort()).toEqual(['east', 'west']);
     expect(() => slopeAxisSides({ dx: 1, dy: 1 })).toThrow(/rises toward a side/);
+  });
+
+  test('roads side by side meet at the same height: a level changes only along a slope', () => {
+    const flat = (elevation) => ({ elevation, slope: null });
+    const slope = { elevation: 0.5, slope: { dx: 1, dy: 0, rise: 0.5 } }; // rises toward the east, from level 0 to 0.5
+    const a = { x: 3, y: 3 };
+    const east = { x: 4, y: 3 };
+    expect(roadLevelsMeet(a, east, flat(0), flat(0))).toBe(true);
+    expect(roadLevelsMeet(a, east, flat(0), flat(0.5))).toBe(false);
+    // Ground with no relief is plain level 0
+    expect(roadLevelsMeet(a, east, undefined, flat(0.5))).toBe(false);
+    // The foot of the slope meets level 0, its top meets level 0.5, never the other way round
+    expect(roadLevelsMeet(a, east, flat(0), slope)).toBe(true);
+    expect(roadLevelsMeet(a, east, flat(0.5), slope)).toBe(false);
+    expect(roadLevelsMeet(east, { x: 5, y: 3 }, slope, flat(0.5))).toBe(true);
+    expect(() => roadLevelsMeet(a, { x: 6, y: 3 }, flat(0), flat(0))).toThrow(/adjacent/);
   });
 
   test('the path is an L that goes first along the axis the cursor is furthest on', () => {

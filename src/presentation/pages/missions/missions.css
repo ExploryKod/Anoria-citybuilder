@@ -555,3 +555,19 @@
     padding: 12px;
   }
 }
+
+/* Editor menu (editor.html): a column of choices, one thumb wide on a phone */
+.editor-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(100%, 480px);
+  margin: 0 auto;
+  padding: 12px;
+}
+
+.editor-menu .site-btn {
+  min-height: 44px;
+  text-align: center;
+  cursor: pointer;
+}

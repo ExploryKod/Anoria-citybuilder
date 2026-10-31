@@ -138,8 +138,7 @@ function bindMyMapPanel() {
   const openEditorBtn = document.getElementById('mission-map-open-editor');
 
   openEditorBtn?.addEventListener('click', () => {
-    setBootMode('editor');
-    window.location.href = '/game';
+    window.location.href = '/editor';
   });
 
   const showStatus = (message, isError = false) => {

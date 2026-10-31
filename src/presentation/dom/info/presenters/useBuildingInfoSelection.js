@@ -10,6 +10,8 @@
  */
 
 import { getResourceRoles, getResourceStockShape } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { isEditorMode } from '../../../../shared/gameplay/gameMode.js';
+import { propRecordSpec } from '../../../../shared/editor-catalog/naturePropCatalog.js';
 import { houseEnterprises } from '../../../../shared/population/workforceQueries.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { supplyTimeContextAhead } from '../../../../composition/supplyTimeLabels.js';
@@ -188,7 +190,11 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
     construction, employment, accounting,
   } = ctx;
 
-  const shouldOpenInfo = buildingsObjects.includes(selectedObject.userData.id);
+  // A piece of nature on the grid is not a building but a record of the hamlet, holding what the catalog says: it has its info panel too
+  const { propId } = selectedObject.userData;
+  // (the editor has no hamlet records to read it from)
+  const holdsResource = !isEditorMode() && typeof propId === 'string' && propRecordSpec(propId) !== null;
+  const shouldOpenInfo = buildingsObjects.includes(selectedObject.userData.id) || holdsResource;
 
   resetBuildingInfoLayout();
 
@@ -211,6 +217,9 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
       ?? city.tiles?.[selX]?.[selY]?.instanceId
       ?? (await construction.findBuildingAtTile({ x: selX, y: selY }))?.instanceId
       ?? null;
+    if (holdsResource && !uniqueId) {
+      throw new Error(`[BuildingInfo] the piece of nature "${propId}" at (${selX}, ${selY}) has no record in the hamlet: nothing to say about what it holds`);
+    }
 
     const buildingRow = uniqueId ? await construction.getBuildingById(uniqueId) : null;
     const { anchorX, anchorY, terrainLabel } = resolveTerrainDisplay(buildingRow, selX, selY);

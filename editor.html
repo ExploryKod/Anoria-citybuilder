@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#fb8122" />
+    <title>Urbanicompta — Éditeur</title>
+    <link rel="stylesheet" href="/src/presentation/pages/missions/missions.css">
+</head>
+<body>
+    <main class="site-page editor-menu-page">
+        <header class="site-header">
+            <a href="/" class="site-back">← Menu principal</a>
+            <h1>Éditeur</h1>
+        </header>
+
+        <section class="editor-menu" aria-label="Ouvrir l'éditeur">
+            <button type="button" id="editor-menu-blank" class="site-btn site-btn--primary">Carte vierge</button>
+
+            <label class="site-btn">
+                Charger un fichier (.json)
+                <input type="file" id="editor-menu-file" accept="application/json,.json" hidden>
+            </label>
+
+            <p class="site-section-title">Cartes enregistrées</p>
+            <ul id="editor-menu-maps" class="mission-modal-list" aria-label="Cartes enregistrées"></ul>
+
+            <p id="editor-menu-status" class="mission-my-map-upload-status" role="alert" hidden></p>
+        </section>
+    </main>
+
+    <script type="module" src="/src/presentation/pages/editor-menu/main.js"></script>
+</body>
+</html>

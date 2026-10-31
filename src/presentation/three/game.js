@@ -12,10 +12,14 @@ import {
 } from '../../composition/sessionShell.js';
 import {
   getMissionMapLayoutId,
-  isCustomMapLayoutActive,
+  takePendingEditorMap,
   setCustomMapLayoutActive,
 } from '../../shared/gameplay/customMapLayout.js';
 import { loadEditorMapLayout } from '../../contexts/world-layout/application/queries/LoadEditorMapLayout.js';
+import { generateNaturePieces, markDepositTiles } from './managers/ResourceManager.js';
+import { getGroundSurface } from '../../shared/editor-catalog/kenneyPlacementProfile.js';
+import { propRecordSpec, propsHoldingRecord } from '../../shared/editor-catalog/naturePropCatalog.js';
+import { readEditorMapDocument } from '../../contexts/world-layout/application/queries/EditorMapDocument.js';
 import { applyEditorMapLayoutToCity } from '../../contexts/world-layout/application/services/ApplyEditorMapLayoutToCity.js';
 import { createEditorNatureStackLayoutPort } from '../../contexts/world-layout/infrastructure/adapters/presentation/EditorNatureStackLayoutAdapter.js';
 import { getEditorMapRepository } from '../../composition/editorMapRepository.js';
@@ -59,7 +63,7 @@ import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.
 import { computeBuildingReach, listPlacedBuildings } from '../../shared/building-catalog/buildingReach.js';
 import { buildingCatalog, getBuildingDefinition, isUndemolishable } from '../../shared/building-catalog/buildingCatalog.js';
 import { BUILDING_ASSETS } from './assets/buildingAssets.js';
-import { planRoadPaint, plotsAlongPath, roadPathBetween, roadPiecesFrom, slopeAxisSides, turnedSides } from './placement/roadPaintPlanner.js';
+import { planRoadPaint, plotsAlongPath, roadLevelsMeet, roadPathBetween, roadPiecesFrom, slopeAxisSides, turnedSides } from './placement/roadPaintPlanner.js';
 import { resolveFootprint } from '../../shared/asset-footprint/resolveFootprint.js';
 import {
   BEHAVIOR_MODE,
@@ -203,17 +207,29 @@ export function createGame(gameStore, assetManager, citySize = null) {
     if (!result.ok || !isRoadBuildingType(params.buildingType)) {
       return result;
     }
-    const slope = params.city.tiles[params.x]?.[params.y]?.relief?.slope;
-    if (!slope) {
-      return result;
+    const { tiles } = params.city;
+    const here = { x: params.x, y: params.y };
+    const slope = tiles[params.x]?.[params.y]?.relief?.slope;
+    if (slope) {
+      const piece = roadPieces.find((candidate) => candidate.id === params.buildingType);
+      if (!piece) {
+        throw new Error(`[game] the road "${params.buildingType}" has no roadSides: cannot tell whether it follows a slope`);
+      }
+      const axis = slopeAxisSides(slope);
+      const follows = turnedSides(piece.sides, params.rotationStep ?? 0).every((side) => axis.includes(side));
+      if (!follows) {
+        return { ...result, ok: false, reason: 'ground_slope_direction' };
+      }
     }
-    const piece = roadPieces.find((candidate) => candidate.id === params.buildingType);
-    if (!piece) {
-      throw new Error(`[game] the road "${params.buildingType}" has no roadSides: cannot tell whether it follows a slope`);
-    }
-    const axis = slopeAxisSides(slope);
-    const follows = turnedSides(piece.sides, params.rotationStep ?? 0).every((side) => axis.includes(side));
-    return follows ? result : { ...result, ok: false, reason: 'ground_slope_direction' };
+    // A road only changes level along a slope: it may not touch a road standing at another height
+    const stepsUp = [[0, -1], [1, 0], [0, 1], [-1, 0]].some(([dx, dy]) => {
+      const next = { x: params.x + dx, y: params.y + dy };
+      const neighbour = tiles[next.x]?.[next.y];
+      return neighbour?.buildingId
+        && isRoadBuildingType(neighbour.buildingId)
+        && !roadLevelsMeet(here, next, tiles[params.x]?.[params.y]?.relief, neighbour.relief);
+    });
+    return stepsUp ? { ...result, ok: false, reason: 'ground_road_level' } : result;
   }
 
   /**
@@ -658,6 +674,30 @@ export function createGame(gameStore, assetManager, citySize = null) {
     const rows = await constructionApi.listAllBuildingRows();
     loaderManager.setStep('Lecture des bâtiments…');
     const mapLayoutId = getMissionMapLayoutId();
+    const hamlet = await getHamlet(getActiveHamletId());
+    // Nothing on the grid is decor: every tree, rock or flower is a piece of the map (a prop with its coordinates) AND a record of the hamlet that says what it
+    // holds. The records are what the hamlet keeps: a piece stands while its record does (one cleared is gone for good, with what it held). The first load of a
+    // hamlet gives each piece its record: those of the map file, or the pieces generated at random for a new hamlet.
+    const isNatureRecord = (row) => row.category === 'nature';
+    const pieceOfRecord = (row) => {
+      if (!row.piece) {
+        throw new Error(`[game] the record "${row.name}" of nature at (${row.x}, ${row.y}) has no piece of the map: it cannot stand on the grid`);
+      }
+      return {
+        id: `nature-${row.instanceId ?? row.id}`,
+        assetId: row.piece.assetId,
+        x: row.x,
+        y: row.y,
+        rotationY: row.piece.rotationY,
+        baseLocalY: row.piece.baseLocalY,
+        parentId: null,
+        anchor: 'terrain',
+      };
+    };
+    /** The pieces that have no record yet: { piece, type, stocks } */
+    let natureToSeed = [];
+    /** Whether this hamlet is a new one whose nature is generated at random. */
+    let generatesNature = false;
     let hydrateEditorLayout = false;
 
     if (mapLayoutId) {
@@ -668,24 +708,77 @@ export function createGame(gameStore, assetManager, citySize = null) {
           `City size ${city.size} does not match custom map ${layout.citySize}`
         );
       }
-      applyEditorMapLayoutToCity(city, layout, createEditorNatureStackLayoutPort());
+      const groundPieces = layout.stackObjects.filter((piece) => propRecordSpec(piece.assetId) === null);
+      let naturePieces;
+      if (hamlet?.natureSeeded) {
+        naturePieces = rows.filter(isNatureRecord).map(pieceOfRecord);
+      } else {
+        natureToSeed = propsHoldingRecord(layout.stackObjects);
+        naturePieces = natureToSeed.map(({ piece }) => piece);
+      }
+      applyEditorMapLayoutToCity(city, { ...layout, stackObjects: [...groundPieces, ...naturePieces] }, createEditorNatureStackLayoutPort());
       hydrateEditorLayout = true;
     } else if (isEditorMode()) {
-      initializeEditorCityTiles(city);
+      const editorMap = takePendingEditorMap();
+      if (editorMap) {
+        // The map the player chose in the editor menu: the editor opens on it, as on a mission's map
+        applyEditorMapLayoutToCity(city, readEditorMapDocument(editorMap), createEditorNatureStackLayoutPort());
+        hydrateEditorLayout = true;
+      } else {
+        initializeEditorCityTiles(city);
+      }
     } else {
-      hydrateCityTilesFromRows(city, rows, buildingPlacementCatalog);
+      // Buildings stamp the grid; the nature does not (it is pieces of the map, below)
+      hydrateCityTilesFromRows(city, rows.filter((row) => !isNatureRecord(row)), buildingPlacementCatalog);
+      let naturePieces;
+      if (hamlet?.natureSeeded) {
+        naturePieces = rows.filter(isNatureRecord).map(pieceOfRecord);
+      } else if (rows.length === 0) {
+        generatesNature = true;
+        natureToSeed = generateNaturePieces(city);
+        naturePieces = natureToSeed.map(({ piece }) => piece);
+      } else {
+        naturePieces = [];
+      }
+      const stackPort = createEditorNatureStackLayoutPort();
+      stackPort.resetStackObjects();
+      stackPort.importStackObjects(naturePieces);
+      // What stands on a tile is read once, here: a tree or a rock is in the way of a building
+      for (const { x, y } of naturePieces) {
+        city.tiles[x][y].relief = getGroundSurface(naturePieces, x, y, city.tiles[x][y].terrainId);
+      }
     }
+    // The records of the pieces: what each is and what it holds (the kind the lumberjacks or the quarries look for); the picture is the piece itself
+    for (const { piece, type, stocks } of natureToSeed) {
+      const placed = await constructionApi.placeBuildingRecord({
+        name: `${piece.assetId}-${piece.x}-${piece.y}`,
+        type,
+        category: 'nature',
+        x: piece.x,
+        y: piece.y,
+        pop: 0,
+        stocks: { ...stocks },
+        maxStocks: { ...stocks },
+        roads: 0,
+        price: 0,
+        isBuilding: false,
+        piece: { assetId: piece.assetId, rotationY: piece.rotationY, baseLocalY: piece.baseLocalY },
+      });
+      if (!placed?.success) {
+        throw new Error(`[game] the piece of the map "${piece.assetId}" at (${piece.x}, ${piece.y}) could not be given its record: ${placed?.error ?? 'refused'}`);
+      }
+    }
+    if (generatesNature) {
+      markDepositTiles(city);
+    }
+    // (the tag reaches the dev log: `pnpm console:tag seed`)
+    const recordsAfter = (await constructionApi.listAllBuildingRows()).filter(isNatureRecord);
+    console.info(`[seed] hamlet ${getActiveHamletId()}: seeded=${Boolean(hamlet?.natureSeeded)} generated=${generatesNature} toSeed=${natureToSeed.length} natureRecords=${recordsAfter.length} rows=${rows.length}`);
 
-    const hamlet = await getHamlet(getActiveHamletId());
-    const seedNature = !isEditorMode()
-      && !hydrateEditorLayout
-      && !isCustomMapLayoutActive()
-      && !hamlet?.natureSeeded
-      && rows.length === 0;
     loaderManager.setStep('Construction de la scène 3D…');
-    await scene.initialize(city, { seedNature, hydrateEditorLayout });
+    await scene.initialize(city, { hydrateEditorLayout });
     if (import.meta.env.DEV) Object.assign(window, { __scene: scene, __city: city });
-    if (seedNature) {
+    if (generatesNature || (mapLayoutId && !hamlet?.natureSeeded)) {
       await markHamletNatureSeeded(getActiveHamletId());
     }
     await scene.update(city, time);
@@ -1068,7 +1161,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
         assetCatalog: buildingPlacementCatalog,
         rotationStep: step.rotationStep,
       }).ok;
-      (fits ? valid : blocked).push(step);
+      // The tile before it is not built yet: the two must meet at the same height all the same
+      const before = valid[valid.length - 1];
+      const meets = !fits || !before
+        || roadLevelsMeet(before, step, city.tiles[before.x]?.[before.y]?.relief, city.tiles[step.x]?.[step.y]?.relief);
+      (fits && meets ? valid : blocked).push(step);
     }
     return { valid, blocked };
   }
@@ -1456,6 +1553,32 @@ export function createGame(gameStore, assetManager, citySize = null) {
    * @param {Array<{ x: number, y: number, instanceId?: string | null }>} targets
    */
   async function demolishTiles(targets) {
+    // What the map set on the grid (trees, rocks, bushes...) is cleared too: it costs nothing and brings nothing down. Each piece is a record of the hamlet:
+    // the record goes with it, so what it held (the wood of a tree...) goes down in the figures the game counts.
+    let clearedProps = 0;
+    let clearedRecords = 0;
+    for (const target of targets) {
+      const removed = scene.removeNaturePropsAt(target.x, target.y);
+      clearedProps += removed.length;
+      // (the editor has no hamlet records: its pieces are only pieces of the map)
+      if (!isEditorMode() && removed.length > 0) {
+        const record = await constructionApi.findBuildingAtTile({ x: target.x, y: target.y });
+        if (!record) {
+          throw new Error(`[game] the piece of nature cleared at (${target.x}, ${target.y}) has no record in the hamlet`);
+        }
+        await constructionApi.removeBuildingRecord(record.instanceId ?? record.id);
+        clearedRecords += 1;
+      }
+    }
+    if (clearedProps > 0) {
+      playBulldozeSound();
+      await refreshPlacementPresentation();
+    }
+    if (clearedRecords > 0) {
+      // includeEmployment also redraws the pop-details resources (the nature tab counts what the records hold)
+      await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+    }
+
     // The buildings the targets stand for, each once (a large one covers several tiles); the ones the catalog forbids to demolish are refused here, before anything is touched.
     const buildings = [];
     const seen = new Set();

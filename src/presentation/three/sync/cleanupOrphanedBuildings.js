@@ -20,6 +20,11 @@ export function findOrphanedBuildingIds(rows, { city, buildings }) {
       continue;
     }
 
+    // A piece of nature (tree, rock...) is a record without tile or building mesh: it stands as a piece of the map, which its record keeps alive
+    if (house.piece) {
+      continue;
+    }
+
     const tile = city.tiles[x]?.[y];
     // city.tiles is the placement source of truth — mesh may lag one frame
     if (tile?.instanceId === instanceId) {

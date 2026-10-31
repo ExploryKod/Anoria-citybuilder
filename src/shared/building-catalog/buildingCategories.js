@@ -15,13 +15,16 @@ import { getAnnualSupplyEntry } from './resourceRoleQueries.js';
 export const farms = Object.freeze(Object.keys(buildingCatalog).filter((type) => getAnnualSupplyEntry(type)));
 
 /**
- * Types that open the building info overlay when selected: every type that lives in the economy (it declares a
- * social group or roles in the supply chain) and the Kenney kit buildings.
+ * Types that open the info overlay when selected: every type that lives in the economy (it declares a
+ * social group or roles in the supply chain), the Kenney kit buildings, and the pieces of nature on the grid
+ * (trees, rocks... nothing on the grid is decor: each is a record that holds something).
  */
 export const buildingsObjects = Object.freeze([
   ...new Set([
     ...Object.keys(buildingCatalog).filter(
-      (type) => buildingCatalog[type].residentialGroup || (buildingCatalog[type].resourceRoles ?? []).length > 0
+      (type) => buildingCatalog[type].residentialGroup
+        || (buildingCatalog[type].resourceRoles ?? []).length > 0
+        || buildingCatalog[type].construction?.category === 'nature'
     ),
     ...KENNEY_CITY_KIT_BUILDING_IDS,
   ]),
