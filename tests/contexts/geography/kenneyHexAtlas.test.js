@@ -7,13 +7,13 @@ import {
   KENNEY_TERRAIN_CATALOG,
   getKenneyTerrainTileMeta,
   kenneyFrameName,
-  resolveKenneyPhaserFrame,
+  resolveKenneyAtlasFrame,
 } from '../../../src/contexts/geography/domain/catalogs/HexAssetCatalog.js';
 import { verifyKenneyHexAtlasFiles } from '../../../scripts/verifyKenneyHexAtlases.js';
 
 const publicRoot = join(dirname(fileURLToPath(import.meta.url)), '../../../public');
 
-describe('Kenney hex atlases (Phaser)', () => {
+describe('Kenney hex atlases', () => {
   test('PNG and XML pairs exist on disk with valid imagePath', () => {
     const result = verifyKenneyHexAtlasFiles(publicRoot);
     if (!result.ok) {
@@ -22,16 +22,17 @@ describe('Kenney hex atlases (Phaser)', () => {
     expect(result.ok).toBe(true);
   });
 
-  test('resolveKenneyPhaserFrame maps gameplay keys to atlas texture keys', () => {
-    const grass = resolveKenneyPhaserFrame('grassland');
+  test('resolveKenneyAtlasFrame maps gameplay keys to an atlas and a frame', () => {
+    const grass = resolveKenneyAtlasFrame('grassland');
     expect(grass).toEqual({
-      textureKey: KENNEY_HEX_ATLASES.terrain.key,
+      atlasId: 'terrain',
       frame: KENNEY_TERRAIN_CATALOG.gameplayFillDefaults.grassland,
     });
+    expect(KENNEY_HEX_ATLASES[grass.atlasId]).toBeDefined();
 
-    const capital = resolveKenneyPhaserFrame('capital');
+    const capital = resolveKenneyAtlasFrame('capital');
     expect(capital).toEqual({
-      textureKey: KENNEY_HEX_ATLASES.buildings.key,
+      atlasId: 'buildings',
       frame: 'medieval_largeCastle.png',
     });
   });

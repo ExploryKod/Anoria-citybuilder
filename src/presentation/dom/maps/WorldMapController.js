@@ -1,5 +1,5 @@
 import { renderWorldMapPanel, renderWorldMapShell, renderWorldMapStats } from './renderWorldMap.js';
-import { bootstrapWorldMap } from '../../phaser/world/bootstrapWorldMap.js';
+import { mountWorldMap } from '../../world-map/canvas/CanvasWorldMap.js';
 import { CityExchangeModal } from './CityExchangeModal.js';
 
 /**
@@ -18,10 +18,10 @@ export class WorldMapController {
     this.selectedCityId = 'anoria';
     this.selectedHamletId = null;
     this.messageTimeout = null;
-    /** @type {ReturnType<typeof bootstrapWorldMap> | null} */
-    this.phaserHandle = null;
+    /** @type {ReturnType<typeof mountWorldMap> | null} */
+    this.mapHandle = null;
     /** @type {HTMLElement | null} */
-    this.phaserHost = null;
+    this.mapHost = null;
     /** The last tradeInfo fetched for the selected city — the "Échanges" button reuses it rather
      * than re-fetching (updatePanel already has it fresh every time the selection changes). */
     this.currentTradeInfo = null;
@@ -41,7 +41,7 @@ export class WorldMapController {
     this.mountLayout();
     this.updateStats();
     await this.updatePanel();
-    this.mountPhaser();
+    this.mountMap();
   }
 
   getSelection() {
@@ -54,14 +54,14 @@ export class WorldMapController {
   mountLayout() {
     if (!this.view) return;
     this.root.innerHTML = renderWorldMapShell(this.view, this.getSelection());
-    this.phaserHost = this.root.querySelector('#world-phaser-root');
+    this.mapHost = this.root.querySelector('#world-map-view');
   }
 
-  mountPhaser() {
-    if (!this.phaserHost || !this.view) return;
+  mountMap() {
+    if (!this.mapHost || !this.view) return;
 
-    this.phaserHandle?.destroy();
-    this.phaserHandle = bootstrapWorldMap(this.phaserHost, {
+    this.mapHandle?.destroy();
+    this.mapHandle = mountWorldMap(this.mapHost, {
       view: this.view,
       selectedCityId: this.selectedCityId,
       selectedHamletId: this.selectedHamletId,
@@ -77,7 +77,7 @@ export class WorldMapController {
     this.selectedCityId = cityId;
     this.selectedHamletId = null;
     await this.updatePanel();
-    this.phaserHandle?.refresh(this.view, this.getSelection());
+    this.mapHandle?.refresh(this.view, this.getSelection());
   }
 
   /**
@@ -87,14 +87,14 @@ export class WorldMapController {
     this.selectedHamletId = hamletId;
     this.selectedCityId = null;
     this.updatePanel();
-    this.phaserHandle?.refresh(this.view, this.getSelection());
+    this.mapHandle?.refresh(this.view, this.getSelection());
   }
 
   async refresh() {
     this.view = await this.mapApi.getWorldMapView();
     this.updateStats();
     await this.updatePanel();
-    this.phaserHandle?.refresh(this.view, this.getSelection());
+    this.mapHandle?.refresh(this.view, this.getSelection());
   }
 
   updateStats() {
@@ -158,8 +158,8 @@ export class WorldMapController {
 
   destroy() {
     this.exchangeModal.close();
-    this.phaserHandle?.destroy();
-    this.phaserHandle = null;
+    this.mapHandle?.destroy();
+    this.mapHandle = null;
     if (this.messageTimeout) {
       clearTimeout(this.messageTimeout);
     }

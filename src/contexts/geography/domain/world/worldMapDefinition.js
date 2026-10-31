@@ -23,7 +23,7 @@ const AXIAL_NEIGHBOR_DELTAS = Object.freeze([
 
 /**
  * Solid land disc that covers every trade city with a grass shoreline buffer.
- * Ocean is never tiled — Phaser background colour only (Kenney has no water hexes).
+ * Ocean is never tiled — the map's background colour only (Kenney has no water hexes).
  */
 const WORLD_LAND_RADIUS = (() => {
   const sites = Object.values(WORLD_CITY_HEX_SITES);

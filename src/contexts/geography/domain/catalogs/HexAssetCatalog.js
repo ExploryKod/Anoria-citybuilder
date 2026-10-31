@@ -1,8 +1,8 @@
 /**
- * Kenney Hexagon Pack — Phaser atlas keys, URLs and gameplay frame mapping.
+ * Kenney Hexagon Pack — atlas keys, URLs and gameplay frame mapping.
  *
  * Atlases live in `public/resources/kenney_hexagon-pack/Spritesheets/`.
- * Phaser loads them via `load.atlasXML(key, pngUrl, xmlUrl)` (Starling XML format).
+ * Each atlas is a PNG and an XML file that names the frames of the PNG (Starling XML format).
  *
  * Frame names in XML include the `.png` suffix — use `kenneyFrameName()` when building from a stem.
  *
@@ -137,17 +137,16 @@ export function resolveKenneyGameplaySprite(gameplayKey) {
 }
 
 /**
- * Texture key + frame for `scene.add.image(x, y, textureKey, frame)`.
+ * The atlas and the frame (its name in the atlas XML) that draw a gameplay key.
  * @param {string} gameplayKey
- * @returns {{ textureKey: string, frame: string } | null}
+ * @returns {{ atlasId: KenneyHexAtlasId, frame: string } | null}
  */
-export function resolveKenneyPhaserFrame(gameplayKey) {
+export function resolveKenneyAtlasFrame(gameplayKey) {
   const sprite = resolveKenneyGameplaySprite(gameplayKey);
   if (!sprite) return null;
-  const atlas = KENNEY_HEX_ATLASES[sprite.atlas];
-  if (!atlas) return null;
+  if (!KENNEY_HEX_ATLASES[sprite.atlas]) return null;
   return {
-    textureKey: atlas.key,
+    atlasId: sprite.atlas,
     frame: kenneyFrameName(sprite.frame),
   };
 }

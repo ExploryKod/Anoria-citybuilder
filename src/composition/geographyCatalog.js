@@ -16,7 +16,7 @@ export {
   getDirtTileMeta,
   kenneyFrameName,
   resolveKenneyGameplaySprite,
-  resolveKenneyPhaserFrame,
+  resolveKenneyAtlasFrame,
   getKenneyAtlas,
 } from '../contexts/geography/domain/catalogs/HexAssetCatalog.js';
 
