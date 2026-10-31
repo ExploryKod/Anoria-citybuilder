@@ -56,7 +56,7 @@ export const TUTORIAL_STEPS = Object.freeze([
     id: 'road',
     delay: 0,
     unlocks: [primaryRoadType()],
-    counter: { after: null, label: 'Routes', items: [{ roads: true, atLeast: 4 }] },
+    counter: { after: null, label: 'Routes', items: [{ roads: true, atLeast: 4 }], highlight: 'road' },
     done: [{ roadBuilt: 4 }],
     reminder: { after: 15, every: 20, duration: REMINDER_MS, text: `Il faut tracer quatre routes : cliquez sur le bouton de route, à côté du bouton en forme de maison, puis faites glisser la souris.` },
     news: {
@@ -80,7 +80,7 @@ export const TUTORIAL_STEPS = Object.freeze([
     id: 'artisans',
     delay: 0,
     unlocks: ['House-Red'],
-    counter: { after: null, label: 'Maisons « {building:House-Red} »', items: [{ type: 'House-Red', atLeast: 3 }] },
+    counter: { after: null, label: 'Maisons « {building:House-Red} »', items: [{ type: 'House-Red', atLeast: 3 }], highlight: ['construction', 'houses', 'tool:House-Red'] },
     done: [{ built: { type: 'House-Red', atLeast: 3 } }],
     reminder: { after: 20, every: 30, duration: REMINDER_MS, text: `Il vous reste à bâtir des maisons « {building:House-Red} » : trois en tout.` },
     news: {
@@ -98,7 +98,7 @@ export const TUTORIAL_STEPS = Object.freeze([
     id: 'farms',
     delay: 0,
     unlocks: ['Farm-Wheat'],
-    counter: { after: null, label: 'Champs « {building:Farm-Wheat} »', items: [{ type: 'Farm-Wheat', atLeast: '{farms:3*House-Red/Farm-Wheat}' }] },
+    counter: { after: null, label: 'Champs « {building:Farm-Wheat} »', items: [{ type: 'Farm-Wheat', atLeast: '{farms:3*House-Red/Farm-Wheat}' }], highlight: ['construction', 'artisans', 'tool:Farm-Wheat'] },
     done: [{ built: 'Farm-Wheat' }, { foodCovered: 'built' }],
     reminder: { after: 20, every: 30, duration: REMINDER_MS, text: `Vos habitants ont besoin de champs : posez des « {building:Farm-Wheat} ».` },
     news: {
@@ -120,6 +120,7 @@ export const TUTORIAL_STEPS = Object.freeze([
       after: { news: 'trade-chain' },
       label: '{building:Market-Stall-Red} et {building:Windmill-001}',
       items: [{ type: 'Market-Stall-Red', atLeast: 1 }, { type: 'Windmill-001', atLeast: 1 }],
+      highlight: ['construction', 'merchants', 'tool:Market-Stall-Red', 'tool:Windmill-001'],
     },
     done: [{ built: 'Market-Stall-Red' }, { built: 'Windmill-001' }],
     reminder: {
@@ -411,7 +412,8 @@ const TOAST_LONG_MS = 10000;
  *   congratulation, an arrival); always said. The screen shows only a few toasts at once: the higher priority shows first, the others wait their turn
  *   and are dropped if they wait as long as they would have stayed on screen (see `showTutorialToast`, game.js). A step's reminder is an instruction.
  * - `highlight`: 'construction' (the house-shaped button that opens the build bar), 'road' (the road button beside it) or 'history' (the button that
- *   opens the tutorial's dépêches again), 'pause' (the button that stops the clock) or 'merchants' (the merchants' pill of the build bar) turns yellow and
+ *   opens the tutorial's dépêches again), 'pause' (the button that stops the clock), 'houses', 'artisans' or 'merchants' (a pill of the build bar)
+ *   turns yellow and
  *   pulses until the player clicks it. A list points at several buttons one after the other (`['construction', 'merchants']`: the one that opens the build
  *   bar, then the pill).
  * At least one of `when` / `step` is required.

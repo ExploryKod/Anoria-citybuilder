@@ -14,7 +14,7 @@ export function mountSiteLegalFooter() {
 
   const copy = document.createElement('p');
   copy.className = 'site-legal-footer__copy';
-  copy.textContent = 'Projet de Amaury Franssen — 2024 © Tous droits réservés';
+  copy.textContent = 'Projet de Amaury Franssen — 2026 © Tous droits réservés';
 
   const nav = document.createElement('nav');
   nav.className = 'site-legal-footer__links';

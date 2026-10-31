@@ -97,8 +97,10 @@ export function initMobileToolbar() {
   if (toolbarMobileToggle) {
     toolbarMobileToggle.addEventListener('click', (e) => {
       e.stopPropagation();
-      // Always open compact construction bar (left toolbar is retired).
-      if (!isMobileBuildBarOpen()) {
+      // The compact construction bar is the construction menu (left toolbar is retired): the house button opens it, and closes it again.
+      if (isMobileBuildBarOpen()) {
+        closeMobileBuildBar();
+      } else {
         openMobileBuildBar();
       }
     });

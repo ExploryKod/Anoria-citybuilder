@@ -20,7 +20,8 @@ import { MONTHS, MONTHS_PER_YEAR, SEASONS } from '../../../../shared/time/TimeCa
  *
  * `delay`: turns to wait, after the player reaches the step, before its dépêche is given (required, 0 = at once).
  * `counter`: `{ label, items: [{ type, atLeast }] }`, the progress the screen shows while the player is on the step ("2/3"): each item counts the buildings of its
- * type up to `atLeast` (a number, or a token text such as `{farms:…}`).
+ * type up to `atLeast` (a number, or a token text such as `{farms:…}`). `highlight` (optional, a button or a list): every button of the way to the objective pulses at once, seen
+ * or not, for as long as the counter is not full (the toggle of a folded row and the paging arrow are added by the screen); `tool:<building id>` is a building's button.
  * `unlocks`: construction buttons (building ids) that work from the moment the step's dépêche has been written (so only on a step that has one). Only the
  * tutorial's start tools work before; every other construction button is greyed out until a dépêche unlocks it.
  * `reminder`: a toast that reminds the player what the step asks when they have not done it: after `after` turns on the step, then every `every` turns
@@ -32,7 +33,7 @@ import { MONTHS, MONTHS_PER_YEAR, SEASONS } from '../../../../shared/time/TimeCa
  * (is on it or past it). At least one of `when` / `step` is required. `delay`: turns the moment must last before the toast shows (required, 0 = at once).
  * `duration`: milliseconds it stays on screen, unless taken off earlier: when its moment goes off, or as soon as its `until` conditions hold (the player did
  * what it points at). `highlight`: a part of the interface it points at while it shows ('construction': the house-shaped button that opens the build bar).
- * @typedef {{ id: string, kind: 'info' | 'success' | 'warning', duration: number, when?: TutorialCondition[], unless?: TutorialCondition[], step?: string, delay: number, priority: number, until?: TutorialCondition[], highlight?: 'construction' | 'road' | 'history' | 'pause' | 'merchants' | Array<'construction' | 'road' | 'history' | 'pause' | 'merchants'>, text: string }} TutorialToast
+ * @typedef {{ id: string, kind: 'info' | 'success' | 'warning', duration: number, when?: TutorialCondition[], unless?: TutorialCondition[], step?: string, delay: number, priority: number, until?: TutorialCondition[], highlight?: 'construction' | 'road' | 'history' | 'pause' | 'houses' | 'artisans' | 'merchants' | Array<'construction' | 'road' | 'history' | 'pause' | 'houses' | 'artisans' | 'merchants'>, text: string }} TutorialToast
  *
  * A dispatch is a dépêche triggered like a toast (same `when` / `unless` / `step` / `delay`), outside the sequence of steps: it comes when its moment
  * comes, whichever step the player is on. Announced once (Intelligence's once-only rule).
@@ -568,7 +569,9 @@ export function validateTutorialDispatches(dispatches, steps) {
   }
 }
 
-const HIGHLIGHT_TARGETS = Object.freeze(['construction', 'road', 'history', 'pause', 'merchants']);
+const HIGHLIGHT_TARGETS = Object.freeze(['construction', 'road', 'history', 'pause', 'houses', 'artisans', 'merchants']);
+/** An objective may also point at a building's button in the build bar: `tool:House-Red`. */
+const TOOL_TARGET_PREFIX = 'tool:';
 
 const TOAST_KINDS = Object.freeze(['info', 'success', 'warning']);
 
@@ -650,6 +653,14 @@ function validateCounter(ownerId, counter) {
   // `after` is said on every counter: null shows it at once (the shape of what it names is checked by AdvanceTutorial, which knows the dépêches and toasts).
   if (counter.after === undefined) throw new Error(`[tutorial] "${ownerId}": its counter has no \`after\` (null to show at once)`);
   if (!Array.isArray(counter.items) || counter.items.length === 0) throw new Error(`[tutorial] "${ownerId}": its counter \`items\` is a list of { type, atLeast }`);
+  if (counter.highlight !== undefined) {
+    const targets = Array.isArray(counter.highlight) ? counter.highlight : [counter.highlight];
+    const isTool = (target) => typeof target === 'string' && target.startsWith(TOOL_TARGET_PREFIX);
+    if (targets.length === 0 || !targets.every((target) => HIGHLIGHT_TARGETS.includes(target) || isTool(target))) {
+      throw new Error(`[tutorial] "${ownerId}": its counter \`highlight\` is one of ${HIGHLIGHT_TARGETS.join(', ')} or "${TOOL_TARGET_PREFIX}<building id>" (or a list of them), got ${JSON.stringify(counter.highlight)}`);
+    }
+    for (const target of targets.filter(isTool)) requireBuildingId('counter highlight', target.slice(TOOL_TARGET_PREFIX.length));
+  }
   for (const item of counter.items) {
     // `{ roads: true, atLeast }` counts the road tiles, whichever their variant; otherwise the buildings of one type.
     if (item?.roads !== true) requireBuildingId('counter', item?.type);
@@ -674,7 +685,7 @@ export function counterOf(step, facts) {
     have += Math.min(standing.length, atLeast);
     target += atLeast;
   }
-  return { label: resolveTutorialText(step.counter.label), have, target };
+  return { label: resolveTutorialText(step.counter.label), have, target, highlight: step.counter.highlight ?? null };
 }
 
 /**

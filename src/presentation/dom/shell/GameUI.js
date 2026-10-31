@@ -46,7 +46,15 @@ function showFunds(funds) {
         throw new Error(`GameUI.updateFunds: funds must be a number, got ${funds}`);
     }
     displayFunds.textContent = formatEuroAmount(funds);
-    displayFundsCompact.textContent = formatEuroCompact(funds);
+    // The euro sign sits above the figure (hud.css): the button is too narrow for a gap between them on one line
+    const compact = formatEuroCompact(funds);
+    if (!compact.startsWith('€')) throw new Error(`GameUI.updateFunds: the short figure "${compact}" does not start with the euro sign`);
+    const sign = document.createElement('span');
+    sign.className = 'hud-top-right__funds-sign';
+    sign.textContent = '€';
+    const figure = document.createElement('span');
+    figure.textContent = compact.slice(1);
+    displayFundsCompact.replaceChildren(sign, figure);
 }
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { SEASON_KEYS } from '../../../shared/time/TimeCalendar.js';

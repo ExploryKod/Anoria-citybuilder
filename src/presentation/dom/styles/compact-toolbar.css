@@ -526,15 +526,7 @@
   transform: scale(0.95);
 }
 
-/* Construction opener is open-only (never shows a close state) */
-.toolbar-open-construction-btn .toolbar-toggle-icon--close {
-  display: none !important;
-}
-
-.toolbar-open-construction-btn.active .toolbar-toggle-icon--open {
-  display: flex !important;
-}
-
+/* The construction opener lit while its bar is open: a cross replaces the house (legends.css), a click closes the bar */
 .toolbar-open-construction-btn.active {
   background: var(--cta);
   border-color: var(--cta);

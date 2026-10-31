@@ -136,7 +136,7 @@ import { createPlacementRotationHud } from './placement/placementRotationHud.js'
 import { getSelectableMeshIds, resolveSelectedMeshId } from './meshs/resolveBuildingMesh.js';
 import { readGameClock, writeGameClock } from '../../core/persistence/game-clock/gameClock.js';
 import { showTutorialObjective } from '../dom/onboarding/TutorialObjective.js';
-import { clearHighlight, highlightTarget } from '../dom/onboarding/tutorialHighlight.js';
+import { clearHighlight, highlightTarget, keepPointingAt } from '../dom/onboarding/tutorialHighlight.js';
 import { updateStatusIconTooltip } from '../dom/tools/StatusIconTooltip.js';
 
 /**
@@ -407,6 +407,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
       dismissed.forEach(hideTutorialToast);
       if (news) await presentIncomingNewsEvents();
       toasts.forEach(showTutorialToast);
+      // The step's button keeps pulsing until its objective is reached (the road button while roads are still to be laid)
+      keepPointingAt(progress && progress.highlight && progress.have < progress.target ? progress.highlight : null);
     } catch (error) {
       console.error('[game] The tutorial could not advance:', error);
     }

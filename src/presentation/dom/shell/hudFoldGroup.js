@@ -67,6 +67,17 @@ export function unfoldGroupOf(element) {
 }
 
 /**
+ * The toggle that unfolds the group a button is hidden in, for the tutorial to point at before the button itself.
+ * @param {Element | null} element
+ * @returns {HTMLElement | null} null when the button is not in a folded group
+ */
+export function foldToggleOf(element) {
+  if (!element) return null;
+  const entry = registry.find((candidate) => candidate.group.root.contains(element));
+  return entry && entry.group.root.classList.contains('hud-fold--collapsed') ? entry.group.toggle : null;
+}
+
+/**
  * @param {{
  *   root: HTMLElement,
  *   toggle: HTMLElement,
@@ -155,6 +166,8 @@ export function initHudFoldGroup(config) {
     arrow.title = rewind ? rewindLabel : nextLabel;
   };
   if (arrow) {
+    // Says to the tutorial which button pages this group, when the button it points at is out of sight (tutorialHighlight.js)
+    root.dataset.pageArrow = scrollArrowId;
     arrow.addEventListener('click', () => pageSideways(root, 0.75));
     root.addEventListener('scroll', syncArrow, { passive: true });
     new ResizeObserver(syncArrow).observe(root);

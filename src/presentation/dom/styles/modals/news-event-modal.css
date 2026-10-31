@@ -329,6 +329,10 @@
   background: #fff3e0;
 }
 
+.news-event-action-label {
+  white-space: nowrap;
+}
+
 .news-event-action-icon img {
   width: 56px;
   height: 56px;

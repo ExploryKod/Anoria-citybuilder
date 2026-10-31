@@ -1374,6 +1374,16 @@
     line-height: 1;
     white-space: nowrap;
     font-variant-numeric: tabular-nums;
+    /* The euro sign above the figure: a gap between them on one line would not fit the button's width */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .hud-top-right__funds-sign {
+    font-size: 10px;
+    opacity: 0.8;
   }
 
   /* The status row only holds the date and the funds, which become panels of their own: the row itself takes no room */

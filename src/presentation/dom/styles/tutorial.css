@@ -274,11 +274,17 @@
 }
 
 /* The tutorial points at the house-shaped button that opens the build bar (tutorialHighlight.js): yellow, and pulsing until the player clicks it. */
+/* A toast points through an attribute of the body (data-tutorial-highlight) */
 body[data-tutorial-highlight="construction"] #toolbar-mobile-toggle,
 body[data-tutorial-highlight="road"] #toolbar-road-btn,
 body[data-tutorial-highlight="history"] #tutorial-history-btn,
 body[data-tutorial-highlight="pause"] #pause-btn,
-body[data-tutorial-highlight="merchants"] .mobile-build-bar__pill[data-category="merchants"] {
+body[data-tutorial-highlight="houses"] .mobile-build-bar__pill[data-category="houses"],
+body[data-tutorial-highlight="artisans"] .mobile-build-bar__pill[data-category="artisans"],
+body[data-tutorial-highlight="merchants"] .mobile-build-bar__pill[data-category="merchants"],
+/* A button on the way to a toast's target (the toggle of a folded group, a paging arrow) pulses the same, until pressed; and every button of the way to the
+   objective of the step pulses at once, for as long as it is not reached */
+body button:is([data-tutorial-pulse], [data-tutorial-objective-pulse]) {
     background: #ffd43b;
     color: #3d2f00;
     border-color: #f59f00;
@@ -295,7 +301,10 @@ body[data-tutorial-highlight="merchants"] .mobile-build-bar__pill[data-category=
     body[data-tutorial-highlight="road"] #toolbar-road-btn,
     body[data-tutorial-highlight="history"] #tutorial-history-btn,
     body[data-tutorial-highlight="pause"] #pause-btn,
-    body[data-tutorial-highlight="merchants"] .mobile-build-bar__pill[data-category="merchants"] {
+    body[data-tutorial-highlight="houses"] .mobile-build-bar__pill[data-category="houses"],
+    body[data-tutorial-highlight="artisans"] .mobile-build-bar__pill[data-category="artisans"],
+    body[data-tutorial-highlight="merchants"] .mobile-build-bar__pill[data-category="merchants"],
+    body button:is([data-tutorial-pulse], [data-tutorial-objective-pulse]) {
         animation: none;
         box-shadow: 0 0 0 3px rgba(255, 212, 59, 0.85);
     }

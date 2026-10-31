@@ -20,8 +20,11 @@ import { STAFF_LEVEL_COLORS } from '../../three/assets/buildingAssets.js';
 
 /** Gap between build bar bottom edge and top of the round FAB container. */
 const BUILD_BAR_GAP_PX = 8;
-/** A phone held in landscape: the open build bar covers a third of the map, so it steps aside once a tool is chosen (see `closeForPlacement`). */
-const SHORT_LANDSCAPE_QUERY = '(max-width: 1024px) and (orientation: landscape) and (max-height: 500px)';
+/**
+ * A screen with no room for the open build bar AND the map to place on (it is the size that decides, not the touch): narrow, or very short. The bar steps
+ * aside once a tool is chosen (see `closeForPlacement`); on a wider screen it stays open while the player builds.
+ */
+const NO_ROOM_FOR_BAR_QUERY = '(max-width: 1024px), (max-height: 500px)';
 /** Horizontal scroll step for category pills (approx. 2–3 pills). */
 const PILLS_SCROLL_STEP_PX = 160;
 
@@ -243,11 +246,11 @@ export function close() {
 }
 
 /**
- * A tool has just been put in hand: on a short landscape screen the bar closes, so that the map under it can be touched to place the building or
- * the road. The tool stays armed; the house button opens the bar again.
+ * A tool has just been put in hand: on a screen too small for the bar and the map together (see `NO_ROOM_FOR_BAR_QUERY`) the bar closes, so that the
+ * map under it can be used to place the building or the road. The tool stays armed; the house button opens the bar again.
  */
 function closeForPlacement() {
-  if (isOpen && window.matchMedia(SHORT_LANDSCAPE_QUERY).matches) close();
+  if (isOpen && window.matchMedia(NO_ROOM_FOR_BAR_QUERY).matches) close();
 }
 
 function syncConstructionOpenButton() {

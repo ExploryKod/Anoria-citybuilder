@@ -14,7 +14,7 @@ import { buildingIconHtml, buildingName } from '../shell/CatalogVocabulary.js';
 /**
  * The buttons a dépêche can carry (its `action`): what each looks like and what it does. A new kind is one more entry; a dépêche that names a kind
  * not listed here fails loudly.
- * @type {Readonly<Record<string, { relevant: (action: object, deps: object) => boolean, iconHtml: (action: object) => string, label: (action: object) => string, run: (action: object, deps: object) => void }>>}
+ * @type {Readonly<Record<string, { relevant: (action: object, deps: object) => boolean, iconHtml: (action: object) => string, label: (action: object) => string, title: (action: object) => string, run: (action: object, deps: object) => void }>>}
  */
 const NEWS_ACTIONS = Object.freeze({
   // Pick a building to place: the button wears its picture, a click closes the dépêche and puts the tool in hand. Once the building stands the
@@ -25,7 +25,9 @@ const NEWS_ACTIONS = Object.freeze({
       return !deps.isBuilt(action.toolId);
     },
     iconHtml: (action) => buildingIconHtml(action.toolId),
-    label: (action) => `Placer : ${buildingName(action.toolId)}`,
+    // The button is its picture and one word, so its size never depends on the building's name; the name is in the tooltip and for screen readers
+    label: () => 'Placer',
+    title: (action) => `Placer : ${buildingName(action.toolId)}`,
     run: (action, deps) => {
       if (typeof deps.activateBuildTool !== 'function') throw new Error('[news] a dépêche offers a building to place, but the modal was not given activateBuildTool');
       deps.activateBuildTool(action.toolId);
@@ -456,6 +458,10 @@ export function initNewsEventModal(deps) {
       const kind = newsActionOf(action);
       if (actionIconEl) actionIconEl.innerHTML = kind.iconHtml(action);
       if (actionLabelEl) actionLabelEl.textContent = kind.label(action);
+      if (actionBtn) {
+        actionBtn.title = kind.title(action);
+        actionBtn.setAttribute('aria-label', kind.title(action));
+      }
     }
     // Two buttons at most: an unpaid dépêche offers to pay or to leave it; a readable one offers to close, and to read the next only if there is one.
     // With a button of its own on it, the dépêche shows only one of those two: the next one when there is one, to close it otherwise.

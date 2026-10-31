@@ -132,12 +132,12 @@ describe('AdvanceTutorial', () => {
       { id: 'next', delay: 0, done: [{ built: { type: 'House-Red', atLeast: 9 } }], news: null },
     ];
     const { advance, state } = service({ buildings: [building('House-Mayor'), building('House-Red')], script });
-    expect((await advance.execute()).progress).toEqual({ label: 'Maisons « Artisans »', have: 1, target: 3 });
+    expect((await advance.execute()).progress).toEqual({ label: 'Maisons « Artisans »', have: 1, target: 3, highlight: null });
     state.buildings = [building('House-Mayor'), building('House-Red'), building('House-Red')];
     expect((await advance.execute()).progress).toMatchObject({ have: 2, target: 3 });
     state.buildings = [...state.buildings, building('House-Red')];
     const done = await advance.execute();
-    expect(done.justCompleted).toEqual({ label: 'Maisons « Artisans »', have: 3, target: 3 });
+    expect(done.justCompleted).toEqual({ label: 'Maisons « Artisans »', have: 3, target: 3, highlight: null });
     expect(done.progress).toBeNull();
   });
 
@@ -154,7 +154,7 @@ describe('AdvanceTutorial', () => {
     const { advance, state } = service({ buildings: [building('House-Red')], script });
     expect((await advance.execute()).progress).toBeNull();
     state.read.add('houses');
-    expect((await advance.execute()).progress).toEqual({ label: 'Maisons', have: 1, target: 3 });
+    expect((await advance.execute()).progress).toEqual({ label: 'Maisons', have: 1, target: 3, highlight: null });
   });
 
   test('the counter of a step with an `after` shows only once the dépêche it names has been read', async () => {
@@ -171,7 +171,7 @@ describe('AdvanceTutorial', () => {
     const { advance, state } = service({ script, dispatches: [{ id: 'chain', step: 'trade', delay: 0, news }] });
     expect((await advance.execute()).progress).toBeNull();
     state.read.add('chain');
-    expect((await advance.execute()).progress).toEqual({ label: 'Marché', have: 0, target: 1 });
+    expect((await advance.execute()).progress).toEqual({ label: 'Marché', have: 0, target: 1, highlight: null });
   });
 
   test('a counter whose `after` names a dépêche or a toast that does not exist throws, naming the step', () => {
