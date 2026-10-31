@@ -108,6 +108,8 @@ export function initTutorialHistory({ intelligence, popupManager }) {
     titleEl.textContent = item.title;
     backBtn.hidden = false;
     list.replaceChildren(...pagesOf(item).map(renderPage));
+    // The list is one scroller for every dépêche and for the list itself: a dépêche is read from its top
+    list.scrollTop = 0;
   }
 
   async function showList() {
@@ -159,6 +161,7 @@ export function initTutorialHistory({ intelligence, popupManager }) {
 
   async function open() {
     await showList();
+    list.scrollTop = 0;
     modal.hidden = false;
     modal.setAttribute('aria-hidden', 'false');
     modal.removeAttribute('inert');
@@ -167,6 +170,9 @@ export function initTutorialHistory({ intelligence, popupManager }) {
   }
 
   openBtn.addEventListener('click', () => void open());
-  backBtn.addEventListener('click', () => void showList());
+  backBtn.addEventListener('click', async () => {
+    await showList();
+    list.scrollTop = 0;
+  });
   closeBtn.addEventListener('click', close);
 }

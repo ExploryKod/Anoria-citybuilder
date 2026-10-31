@@ -11,6 +11,7 @@ import {
 import { attachBuildToolHoverPreview, hideBuildToolHoverPreview } from './BuildToolHoverPreview.js';
 import { MOBILE_TOOLBAR_CATEGORIES } from './mobileToolbarCategories.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
+import { unfoldGroupOf } from '../shell/hudFoldGroup.js';
 import { buildingIconHtml, buildingName } from '../shell/CatalogVocabulary.js';
 import { getSessionGame } from '../../../composition/sessionRuntime.js';
 import { getRequiredSkillForBuilding, getRequiredSkillLevelForBuilding } from '../../../composition/employmentCatalog.js';
@@ -19,6 +20,8 @@ import { STAFF_LEVEL_COLORS } from '../../three/assets/buildingAssets.js';
 
 /** Gap between build bar bottom edge and top of the round FAB container. */
 const BUILD_BAR_GAP_PX = 8;
+/** A phone held in landscape: the open build bar covers a third of the map, so it steps aside once a tool is chosen (see `closeForPlacement`). */
+const SHORT_LANDSCAPE_QUERY = '(max-width: 1024px) and (orientation: landscape) and (max-height: 500px)';
 /** Horizontal scroll step for category pills (approx. 2–3 pills). */
 const PILLS_SCROLL_STEP_PX = 160;
 
@@ -139,6 +142,7 @@ function mountRoadButton() {
     getButtonsUnactive();
     button.classList.add('selected');
     deps?.invokeSetActiveTool?.(e);
+    closeForPlacement();
   });
   deps?.buttonStateManager?.registerButton?.(toolId, button);
 }
@@ -169,6 +173,7 @@ function syncBuildBarAnchor() {
     const maxWidth = Math.min(720, window.innerWidth - 24);
     const width = Math.max(rect.width, Math.min(maxWidth, Math.max(280, rect.width * 2.2)));
 
+    // What the bar asks for. Keeping it inside the screen is the CSS's job (compact-toolbar.css, .mobile-build-bar), at every width.
     document.documentElement.style.setProperty('--mobile-build-bar-bottom', `${bottomPx}px`);
     document.documentElement.style.setProperty('--mobile-build-bar-center-x', `${centerX}px`);
     document.documentElement.style.setProperty('--mobile-build-bar-width', `${Math.min(maxWidth, width)}px`);
@@ -181,6 +186,8 @@ function syncBuildBarAnchor() {
 
 export function open() {
   if (!buildBarEl) return;
+  // The bar is anchored on the row of buttons it opens from: a folded row has no place on screen to anchor on
+  unfoldGroupOf(document.getElementById('toolbar-mobile-toggle'));
   isOpen = true;
   buildBarEl.hidden = false;
   buildBarEl.classList.add('mobile-build-bar--open');
@@ -225,12 +232,22 @@ export function close() {
   isOpen = false;
   buildBarFocusSession?.release({ restoreFocus: false });
   buildBarFocusSession = null;
+  // A bar hidden from assistive technology cannot keep the focus inside it (the browser refuses `aria-hidden` on a focused element)
+  if (buildBarEl.contains(document.activeElement)) document.activeElement.blur();
   buildBarEl.hidden = true;
   buildBarEl.classList.remove('mobile-build-bar--open');
   buildBarEl.setAttribute('aria-hidden', 'true');
   document.documentElement.style.setProperty('--mobile-build-bar-offset', '0px');
   setBuildBarDocumentState(false);
   syncConstructionOpenButton();
+}
+
+/**
+ * A tool has just been put in hand: on a short landscape screen the bar closes, so that the map under it can be touched to place the building or
+ * the road. The tool stays armed; the house button opens the bar again.
+ */
+function closeForPlacement() {
+  if (isOpen && window.matchMedia(SHORT_LANDSCAPE_QUERY).matches) close();
 }
 
 function syncConstructionOpenButton() {
@@ -684,6 +701,7 @@ function activateDirectTool(pill, toolId, event) {
   getButtonsUnactive();
   pill.classList.add('selected');
   deps?.invokeSetActiveTool?.(event);
+  closeForPlacement();
 }
 
 function renderCarousel(categoryId) {
@@ -737,6 +755,7 @@ function renderCarousel(categoryId) {
           if (index >= 0) {
             syncCarouselToolRovingTabIndex(index);
           }
+          closeForPlacement();
         },
       });
       const levelPill = staffLevelPill(buttonInfo.tool);

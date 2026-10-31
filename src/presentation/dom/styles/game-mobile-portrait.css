@@ -33,7 +33,8 @@
     justify-content: flex-start;
     gap: 8px;
     /* its left starts clear of the fold toggles' dock (hud.css, max-width: 700px) */
-    padding: 0 28px 0 12px;
+    /* its right keeps room for the arrow that pages it (hud-bottom-toggles__build-next) */
+    padding: 0 60px 0 12px;
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x proximity;
@@ -47,6 +48,34 @@
 
   .legend-btns-container--mobile::-webkit-scrollbar {
     display: none;
+  }
+
+  /*
+   * The command bar (pause, replay, speed, ...) does the same when its buttons outgrow it: it takes all the room right of the dock and is dragged
+   * sideways, its arrow (hud-bottom-toggles__commands-next) pages it. Fitting, it stays centred and as wide as its buttons.
+   */
+  nav.hud-actions.info-box-stats {
+    max-width: calc(100% - 2 * var(--hud-gutter) - var(--hud-dock-width) - 8px);
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    touch-action: pan-x;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  nav.hud-actions.info-box-stats::-webkit-scrollbar {
+    display: none;
+  }
+
+  nav.hud-actions.info-box-stats > * {
+    flex: 0 0 auto;
+  }
+
+  /* room for the paging arrow: 6px + its 40px + 6px */
+  nav.hud-actions.info-box-stats.hud-fold--paged {
+    padding-right: 52px;
   }
 
   .legend-btns-container--mobile > * {

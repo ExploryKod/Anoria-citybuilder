@@ -9,13 +9,24 @@ import {
   HUD_POP_RAIL_COLLAPSED_KEY,
 } from '../../../../src/presentation/dom/shell/hudPopRailCollapse.js';
 
+// jsdom has neither of these: the rail measures its anchor under the exit door and pages the labour market on a phone in landscape
+globalThis.ResizeObserver = class {
+  observe() {}
+  disconnect() {}
+};
+window.matchMedia = (query) => ({ matches: false, media: query, addEventListener() {}, removeEventListener() {} });
+
 function mountRail() {
   document.body.innerHTML = `
+    <button type="button" id="game-exit-home-btn"></button>
     <aside id="hud-pop-rail">
       <button type="button" id="hud-pop-rail-collapse" aria-expanded="true"></button>
       <button type="button" id="hud-pop-rail-expand" hidden></button>
+      <button type="button" id="hud-pop-labor-next" hidden></button>
       <div class="hud-pop-rail__tabs"></div>
-      <div class="hud-pop-rail__panels"></div>
+      <div class="hud-pop-rail__panels">
+        <section id="hud-pop-panel-emploi"><div class="pop-detail-labor"></div></section>
+      </div>
     </aside>
   `;
   localStorage.removeItem(HUD_POP_RAIL_COLLAPSED_KEY);

@@ -1,0 +1,94 @@
+.main {
+  &__contact-section {
+    .contact-address {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      &::before {
+        content: '';
+        display: block;
+        width: 30px;
+        min-width: 30px;
+        height: 30px;
+        background: url('/assets/uploads/icones/dci-map.svg') no-repeat center center/cover;
+      }
+    }
+
+    .contact-tel {
+      display: flex;
+      position: relative;
+      align-items: center;
+      gap: 10px;
+      //TODO: Une autre icone est nécessaire pour le phone
+      &::before {
+        content: '';
+        display: block;
+        width: 30px;
+        min-width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: url('/assets/uploads/icones/dci-telephone.svg') no-repeat center center/cover;
+      }
+    }
+
+    .contact-schedules {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      &::before {
+        content: '';
+        display: block;
+        width: 30px;
+        min-width: 30px;
+        height: 30px;
+        background: url('/assets/uploads/icones/dci-horaires.svg') no-repeat center center/cover;
+      }
+    }
+
+    .contact-email {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      &::before {
+        content: '';
+        display: block;
+        width: 30px;
+        min-width: 30px;
+        height: 30px;
+        background: url('/assets/uploads/icones/dci-mail.svg') no-repeat center center/cover;
+      }
+    }
+
+    // Leaflet map class
+    #map {
+      z-index: $z-index-high;
+      height: 380px;
+
+      @include media-breakpoint-up(sm) {
+        height: 474px;
+      }
+    }
+
+    .contact-container {
+      height: 100%;
+
+      &__coordinates {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        border-radius: $border-radius-sm;
+        text-align: left;
+
+        .contact-email {
+          .contact-email__link {
+            color: $dci-dark-blue;
+          }
+        }
+      }
+    }
+  }
+}

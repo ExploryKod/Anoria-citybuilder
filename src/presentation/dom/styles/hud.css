@@ -32,9 +32,82 @@
   pointer-events: auto;
 }
 
+/*
+ * The top bar is a transparent row as wide as the screen and as tall as its tallest column (date, funds, camera, ... on the right: some 200px on a phone
+ * in landscape). Its wrappers must not take the touches that fall between its controls: those belong to the map, where a building is placed under it.
+ * Only the controls themselves (buttons, links, the info boxes) take touches.
+ */
+.info-panel-wrapper.hud > .hud-status,
+.delay-ui-wrapper,
+.hud-bar,
+.hud-bar__start,
+.hud-bar__end,
+.hud-bar__row {
+  pointer-events: none;
+}
+
+.hud-bar :where(button, a, input, select, textarea, label, summary, [tabindex], .info-box, .game-active-hamlet) {
+  pointer-events: auto;
+}
+
 /* -------------------------------------------------------------------------
    Reminder bar: short messages one after the other, under the HUD (HudTicker.js)
    ------------------------------------------------------------------------- */
+
+/*
+ * The two status pills (the tutorial's objective and the reminders ticker) share one strip above the bottom buttons: side by side in landscape,
+ * stacked in portrait. The strip clears the construction row (wide screens) or the bottom band (phone and tablet, where the open group sits in the band).
+ * It lets clicks through to the map.
+ */
+.hud-pills {
+  position: fixed;
+  z-index: var(--z-index-hud-menu);
+  left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
+  right: max(var(--hud-gutter), env(safe-area-inset-right, 0px));
+  bottom: calc(
+    var(--hud-bottom-height)
+    + env(safe-area-inset-bottom, 0px)
+    + var(--hud-fab-row-gap)
+    + var(--hud-fab-row-height)
+    + 8px
+  );
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.hud-pills[hidden] {
+  display: none;
+}
+
+@media screen and (max-width: 1024px) {
+  .hud-pills {
+    bottom: calc(var(--hud-bottom-height) + env(safe-area-inset-bottom, 0px) + 8px);
+  }
+}
+
+@media screen and (orientation: portrait) {
+  .hud-pills {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+/* Side by side the ticker takes what the objective leaves; stacked each is as wide as its text, up to the strip */
+.hud-pills > .hud-ticker {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+@media screen and (orientation: landscape) {
+  .hud-pills > .hud-ticker {
+    flex: 1 1 0;
+    max-width: 720px;
+  }
+}
 
 .hud-ticker {
   align-self: center;
@@ -474,7 +547,8 @@
   padding: 0;
   margin: 0;
   overflow: visible;
-  pointer-events: auto;
+  /* The rail's own box is wider than what shows (the strip beside the tabs, the corner under them): only its panels and tabs take touches (below) */
+  pointer-events: none;
   box-sizing: border-box;
   /* drag + scope + details + emploi + ville + commerce + nature */
   --hud-pop-tab-min-count: 7;
@@ -532,6 +606,12 @@
 .hud-pop-rail--collapsed .hud-pop-rail__panels,
 .hud-pop-rail--collapsed .hud-pop-rail__tabs {
   display: none;
+}
+
+.hud-pop-rail__panels,
+.hud-pop-rail__tab,
+.hud-pop-rail__expand {
+  pointer-events: auto;
 }
 
 .hud-pop-rail__side {
@@ -942,21 +1022,9 @@
   color: var(--primary);
 }
 
-.hud-pop-rail .pop-detail-value--country {
-  color: var(--primary);
-}
-
-.hud-pop-rail .pop-detail-value--hamlet {
+/* A figure that follows the rail's scope (GameUI writes the one of the scope on show): the hamlet's are in its accent colour, the country's in the text's */
+.hud-pop-rail[data-pop-scope="hamlet"] .pop-detail-value--scoped {
   color: var(--hud-hamlet-accent, #2d7a4f);
-}
-
-/* Metric scope: hide country and/or hamlet figures */
-.hud-pop-rail[data-pop-scope="country"] .pop-detail-value--hamlet {
-  display: none;
-}
-
-.hud-pop-rail[data-pop-scope="hamlet"] .pop-detail-value--country {
-  display: none;
 }
 
 .hud-pop-rail .pop-detail-active {
@@ -1046,7 +1114,7 @@
   color: #cc0000;
 }
 
-.hud-pop-rail .pop-detail-value--hamlet.pop-detail-value--lack {
+.hud-pop-rail[data-pop-scope="hamlet"] .pop-detail-value--scoped.pop-detail-value--lack {
   color: #e05555;
 }
 
@@ -1075,6 +1143,12 @@
   border: none;
   backdrop-filter: none;
   max-height: calc(100vh - 120px);
+  /* A column (a grid of columns on touch) that is not always full: only its buttons take touches, not the empty cells */
+  pointer-events: none;
+}
+
+.hud-side-actions.info-box-stats > * {
+  pointer-events: auto;
 }
 
 /* -------------------------------------------------------------------------
@@ -1395,10 +1469,76 @@
   );
 }
 
-@media screen and (max-width: 700px) {
-  /* Too narrow to centre the groups and keep the dock clear: both take the room to the right of the dock instead (still centred in it) */
+/* The two paging arrows sit on one vertical line: one distance from the right edge for both */
+.hud-bottom-toggles {
+  --hud-paging-arrow-right: calc(max(var(--hud-gutter), env(safe-area-inset-right, 0px)) + 6px);
+}
+
+/* Pages the construction row sideways on a phone in portrait (hudFoldGroup.js): at the right edge, in the row's band, over the faded end */
+.hud-bottom-toggles .hud-bottom-toggles__build-next {
+  display: none;
+  position: fixed;
+  left: auto;
+  right: var(--hud-paging-arrow-right);
+  bottom: calc(
+    var(--hud-bottom-height)
+    + env(safe-area-inset-bottom, 0px)
+    + var(--hud-fab-row-gap)
+    + (var(--hud-fab-row-height) - var(--hud-chip-height)) / 2
+  );
+}
+
+/* At the end of the row the paging arrow points back to the start: the next click rewinds */
+.hud-fold-toggle--rewind .hud-fold-toggle__icon {
+  transform: rotate(180deg);
+}
+
+/* The same for the command bar: inside its right end (its padding makes the room, see game-mobile-portrait.css) */
+.hud-bottom-toggles .hud-bottom-toggles__commands-next {
+  display: none;
+  position: fixed;
+  left: auto;
+  right: var(--hud-paging-arrow-right);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + (var(--hud-bottom-height) - var(--hud-chip-height)) / 2);
+}
+
+@media screen and (max-width: 600px) and (orientation: portrait) {
+  .hud-bottom-toggles .hud-bottom-toggles__build-next:not([hidden]),
+  .hud-bottom-toggles .hud-bottom-toggles__commands-next:not([hidden]) {
+    display: flex;
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  /*
+   * Phone and tablet: one of the two bottom groups is open at a time (hudFoldGroup.js, `exclusiveWith`), so it takes the bottom band and nothing
+   * is stacked under it. The two toggles sit side by side at the left of that band (a tap on the other one switches to its group); the open group
+   * takes the room to the right of them (still centred in it).
+   */
+  :root {
+    --hud-dock-width: calc(var(--hud-chip-height) * 2 + 8px);
+  }
+
+  .hud-bottom-toggles {
+    width: var(--hud-dock-width);
+  }
+
+  .hud-bottom-toggles .hud-bottom-toggles__build,
+  .hud-bottom-toggles .hud-bottom-toggles__commands {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + (var(--hud-bottom-height) - var(--hud-chip-height)) / 2);
+  }
+
+  .hud-bottom-toggles .hud-bottom-toggles__commands {
+    left: calc(var(--hud-chip-height) + 8px);
+  }
+
+  /* Both paging arrows now live in the same band */
+  .hud-bottom-toggles .hud-bottom-toggles__build-next {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + (var(--hud-bottom-height) - var(--hud-chip-height)) / 2);
+  }
+
   nav.hud-actions.info-box-stats {
-    left: calc(var(--hud-gutter) + var(--hud-chip-height) + 8px);
+    left: calc(var(--hud-gutter) + var(--hud-dock-width) + 8px);
     right: var(--hud-gutter);
     width: fit-content;
     max-width: none;
@@ -1406,9 +1546,19 @@
     transform: none;
   }
 
+  /* The row spans the whole width right of the toggles: only its buttons take touches, the map shows through (and takes them) between them */
   .legend-btns-container.legend-btns-container--mobile {
-    left: calc(var(--hud-gutter) + var(--hud-chip-height) + 8px);
+    pointer-events: none;
+  }
+
+  .legend-btns-container.legend-btns-container--mobile > * {
+    pointer-events: auto;
+  }
+
+  .legend-btns-container.legend-btns-container--mobile {
+    left: calc(var(--hud-gutter) + var(--hud-dock-width) + 8px);
     right: 0;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + (var(--hud-bottom-height) - var(--hud-fab-row-height)) / 2);
     width: auto;
     max-width: none;
     transform: none;
@@ -1815,5 +1965,172 @@
 
   .hud-pop-rail .pop-detail-active {
     gap: 6px;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Pop rail as a bottom sheet — phone in landscape (short screen)
+   A column of 7 tabs and a 90px panel cannot fit in 330px of height, so once opened the rail is a wide strip along the bottom of the screen
+   (above the bottom buttons: its z-index is higher), the tabs in a row on its top edge and the figures in columns. Folded, it is the same small
+   button as everywhere (hudPopRailCollapse.js folds it by default on such a screen). The ✋ still drags it, wherever the player puts it.
+   ------------------------------------------------------------------------- */
+
+@media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .hud-pop-rail.info-panel-pop-detail.hud-pop-detail:not(.hud-pop-rail--collapsed) {
+    top: auto;
+    bottom: env(safe-area-inset-bottom, 0px);
+    left: max(var(--hud-gutter), env(safe-area-inset-left, 0px));
+    right: auto;
+    flex-direction: column;
+    width: calc(100vw - 2 * max(var(--hud-gutter), env(safe-area-inset-left, 0px)));
+    max-height: min(70svh, calc(100svh - var(--hud-pop-rail-top-touch) - 8px));
+  }
+
+  /* The tabs: a row on the top edge of the panel instead of a column on its side */
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__side {
+    order: 0;
+    flex-direction: row;
+    align-items: flex-end;
+    align-self: flex-start;
+    max-height: none;
+    overflow: visible;
+    margin: 0 0 -1px 10px;
+  }
+
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__tabs {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 12px;
+    padding-top: 0;
+  }
+
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__tablist {
+    flex-direction: row;
+    align-items: flex-end;
+  }
+
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__tab {
+    width: 40px;
+    min-height: 40px;
+    height: 40px;
+    padding: 4px;
+    border: 1px solid rgba(29, 34, 40, 0.2);
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__tab[aria-selected="true"] {
+    width: 40px;
+    min-height: 46px;
+    height: 46px;
+  }
+
+  /* The panel: as wide as the strip, its figures flowing in columns (as many as the width allows) instead of one long column */
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__panels {
+    order: 1;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__panel:not([hidden]) {
+    display: block;
+    columns: 112px;
+    column-gap: 16px;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    min-height: 0;
+    padding: 10px 52px 10px 12px;
+  }
+
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__panel .pop-detail-metric,
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__panel .pop-labor-group {
+    break-inside: avoid;
+  }
+
+  /* A line between two sections is a rule across a column, and one that lands at the top of a column: in columns the spacing says it */
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__panel .pop-detail-sep {
+    display: none;
+  }
+
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__panel > * {
+    border-top: none;
+    margin: 0 0 8px;
+    padding-top: 0;
+  }
+
+  /* The close button (and the paging arrow beside it) float at the top right of the panel instead of owning a header row */
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__chrome {
+    left: auto;
+    width: auto;
+    min-width: 48px;
+    border-bottom: none;
+    background: transparent;
+    justify-content: flex-end;
+    gap: 0;
+    padding: 0 4px;
+  }
+
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__page-next:not([hidden]) {
+    display: flex;
+  }
+
+  /*
+   * The labour market: a sideways scroller of one-line blocks (the city, then each social category), a page at a time, so the strip stays
+   * one line tall instead of showing every category at once. The arrow in the chrome pages it (hudPopRailCollapse.js).
+   */
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) #hud-pop-panel-emploi:not([hidden]) {
+    columns: auto;
+    padding: 8px 100px 8px 12px;
+    overflow: hidden;
+  }
+
+  .hud-pop-rail #hud-pop-panel-emploi .pop-detail-labor {
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scrollbar-width: none;
+  }
+
+  .hud-pop-rail #hud-pop-panel-emploi .pop-detail-labor::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hud-pop-rail #hud-pop-panel-emploi .pop-labor-group {
+    flex: 0 0 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    box-sizing: border-box;
+    scroll-snap-align: start;
+  }
+
+  .hud-pop-rail #hud-pop-panel-emploi .pop-labor-group > .pop-detail-metric {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .hud-pop-rail #hud-pop-panel-emploi .pop-labor-causes {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 14px;
+    padding: 0;
+  }
+
+  /* Open, the strip covers the bottom of the screen: the status pills would float beside its tabs, so they wait until it is closed */
+  html:has(.hud-pop-rail:not(.hud-pop-rail--collapsed)) .hud-pills {
+    display: none;
   }
 }

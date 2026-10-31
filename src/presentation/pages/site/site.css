@@ -193,3 +193,51 @@ a {
   padding-top: 24px;
   padding-bottom: 24px;
 }
+
+/*
+ * The home on a phone held in landscape (a short screen): seven buttons in one column are taller than the screen, so the menu becomes the title
+ * beside two columns of buttons (the main one across both), every entry showing with no scrolling.
+ */
+@media (orientation: landscape) and (max-height: 500px) {
+  .site-center-page {
+    justify-content: flex-start;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .site-home-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr);
+    align-items: center;
+    column-gap: 20px;
+    max-width: min(760px, 100%);
+    padding: 14px 18px;
+  }
+
+  .site-home-panel .site-menu-title {
+    margin: 0;
+  }
+
+  .site-menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .site-menu .site-btn--primary {
+    grid-column: 1 / -1;
+  }
+
+  .site-menu .site-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+  }
+
+  .site-footer {
+    margin-top: 12px;
+  }
+}

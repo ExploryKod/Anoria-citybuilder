@@ -786,7 +786,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
           footprintHeight: 1,
         };
       }
-      return canPlaceBuildingAtTile(params);
+      // The same gate as the placement itself (footprint, then the catalog's limits and requirements): blue says the click will place, red that it will not
+      return canPlaceBuildingAtTileWithSupplyRules(params);
     },
     getPlacementAnchorLocalY: (x, y) => {
       if (!isEditorPlacementTool(activeToolId)) {
@@ -1753,6 +1754,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
       } else {
         placementGhostSession.sync(selectedObject);
       }
+    } else if (isActivePlacementTool(activeToolId)) {
+      // A building tool on a tile that is taken: the ghost is red there, and pressing it says why instead of doing nothing.
+      showGenericErrorNotification(activeToolId, 'building_already_exists');
     }
   };
 

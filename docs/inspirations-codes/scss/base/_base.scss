@@ -1,0 +1,98 @@
+// -----------------------------------------------------------------------------
+// This file contains very basic styles.
+// -----------------------------------------------------------------------------
+
+//
+// Make all elements from the DOM inherit from the parent box-sizing
+// Since `*` has a specificity of 0, it does not override the `html` value
+// making all elements inheriting from the root box-sizing value
+// See: https://css-tricks.com/inheriting-box-sizing-probably-slightly-better-best-practice/
+//
+
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  border: 0;
+  vertical-align: baseline;
+  scroll-behavior: smooth;
+}
+
+body {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100vh;
+  color: $dci-text-dark-color;
+  font-family: $font-family, sans-serif;
+  font-size: 100%;
+  line-height: 1;
+
+  &.no-scroll {
+    margin-right: var(--scrollbarsize, 0);
+    overflow: hidden;
+  }
+}
+
+a {
+  transition: color ease-in-out 0.2s;
+  text-decoration: none;
+
+  @include on-event() {
+    text-decoration: underline;
+  }
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    @for $i from 1 through 4 {
+      &.with-chevron-#{$i} {
+        display: flex;
+        align-items: center;
+
+        &::before {
+          content: '';
+          display: block;
+          background: url('/assets/uploads/icones/right-chevron.svg') no-repeat center center/cover;
+
+          @extend .chevron-size-#{$i};
+        }
+      }
+    }
+  }
+}
+
+blockquote::before,
+blockquote::after,
+q::before,
+q::after {
+  content: '';
+  content: none;
+}
+
+table {
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section {
+  display: block;
+}

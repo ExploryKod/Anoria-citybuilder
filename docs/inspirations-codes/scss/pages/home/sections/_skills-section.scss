@@ -1,0 +1,64 @@
+.main {
+  &__skills-section {
+    @include media-breakpoint-up(xl) {
+      margin: 0 auto;
+    }
+
+    .skills-section__intro-wrapper {
+      max-width: 650px;
+
+      @include media-breakpoint-down(sm) {
+        max-width: 90%;
+      }
+
+      @include media-breakpoint-up(xl) {
+        margin-top: $main-title-top;
+
+        .intro__para {
+          max-width: 781px;
+        }
+      }
+    }
+
+    .skills-section__skills-wrapper {
+      max-width: 90%;
+
+      @include media-breakpoint-up(sm) {
+        max-width: 460px;
+      }
+
+      .skills-list {
+        li {
+          padding: 10px 0;
+
+          @include media-breakpoint-up(sm) {
+            padding: 17px 14px;
+            border-top: 1px solid $dci-dark-blue;
+            border-right: none;
+            border-left: none;
+
+            &:last-of-type {
+              border-bottom: 1px solid $dci-dark-blue;
+            }
+          }
+
+          .skills-list__domain {
+            margin: 0;
+          }
+
+          .skills-list__lawyer {
+            margin: 5px 0;
+
+            @include media-breakpoint-up(sm) {
+              margin: 0;
+            }
+
+            .lawyer-name {
+              font-size: $text-size-xl;
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -17,13 +17,11 @@ import {
 function mountRail() {
   document.body.innerHTML = `
     <aside id="hud-pop-rail">
-      <button type="button" id="hud-pop-rail-scope" data-scope="both">
-        <svg data-scope-icon="both"></svg>
+      <button type="button" id="hud-pop-rail-scope" data-scope="hamlet">
         <svg data-scope-icon="country" hidden></svg>
         <svg data-scope-icon="hamlet" hidden></svg>
       </button>
-      <span class="pop-detail-value--country">10</span>
-      <span class="pop-detail-value--hamlet">3</span>
+      <span class="pop-detail-value--scoped">10</span>
     </aside>
   `;
   return document.getElementById('hud-pop-rail');
@@ -35,11 +33,12 @@ describe('hudPopRailScope', () => {
     mountRail();
   });
 
-  test('cycles both → country → hamlet → both', () => {
-    expect(nextHudPopRailScope('both')).toBe('country');
+  test('switches hamlet ↔ country, and refuses any other scope instead of replacing it', () => {
+    expect(nextHudPopRailScope('hamlet')).toBe('country');
     expect(nextHudPopRailScope('country')).toBe('hamlet');
-    expect(nextHudPopRailScope('hamlet')).toBe('both');
-    expect(normalizeHudPopRailScope('nope')).toBe('hamlet');
+    // 'both' (figures side by side) is gone: a stale stored choice must be named, not turned into another scope
+    expect(() => normalizeHudPopRailScope('both')).toThrow('unknown scope "both"');
+    expect(() => normalizeHudPopRailScope('nope')).toThrow('unknown scope "nope"');
   });
 
   test('setHudPopRailScope updates data attribute, icon and label', () => {
@@ -52,18 +51,16 @@ describe('hudPopRailScope', () => {
     expect(btn.dataset.scope).toBe('hamlet');
     expect(btn.title).toBe('Chiffres du hameau');
     expect(btn.querySelector('[data-scope-icon="hamlet"]').hasAttribute('hidden')).toBe(false);
-    expect(btn.querySelector('[data-scope-icon="both"]').hasAttribute('hidden')).toBe(true);
+    expect(btn.querySelector('[data-scope-icon="country"]').hasAttribute('hidden')).toBe(true);
     expect(localStorage.getItem(HUD_POP_RAIL_SCOPE_KEY)).toBe('hamlet');
   });
 
-  test('click cycles scope three times back to hamlet', () => {
+  test('click switches scope, twice back to hamlet', () => {
     const root = document.getElementById('hud-pop-rail');
     initHudPopRailScope(root);
     const btn = root.querySelector('#hud-pop-rail-scope');
 
     expect(getHudPopRailScope(root)).toBe('hamlet');
-    btn.click();
-    expect(getHudPopRailScope(root)).toBe('both');
     btn.click();
     expect(getHudPopRailScope(root)).toBe('country');
     btn.click();

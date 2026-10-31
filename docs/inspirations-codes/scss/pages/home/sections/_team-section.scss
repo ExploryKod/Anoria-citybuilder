@@ -1,0 +1,166 @@
+.main {
+
+
+  &__team-section {
+    .team-section__cards-wrapper {
+      row-gap: 70px;
+
+      .team-card {
+        position: relative;
+        max-width:$dci-card-w;
+        display: flex;
+        flex-direction: column;
+
+        @include media-breakpoint-up(sm) {
+          max-width: $max-md-dci-card-w;
+        }
+
+
+        .card-title {
+          position: relative;
+          margin-bottom: $dci-team-name-mb;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+
+          .dci-lawyer-name {
+            white-space: nowrap;
+          }
+
+          .dci-linkedin-icon, .dci-lawyer-name {
+            height: 30px;
+          }
+
+          .dci-linkedin-icon {
+            margin-top: -6px;
+            width: 30px;
+
+             a {
+               width: 100%;
+               height: 100%;
+
+               img {
+                width: 100%;
+               }
+             }
+          }
+        }
+
+        .card-body {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+        }
+
+        .card-body__content {
+          display: flex;
+          flex-direction: column;
+          margin-bottom: 16px;
+          gap: $md-dci-card-content-gap;
+
+          @include media-breakpoint-up(md) {
+            flex-direction: row;
+            height: $md-dci-card-content-h;
+          }
+
+          .card-content__img {
+
+            img {
+              width: 50%;
+            }
+
+            @include media-breakpoint-up(sm) {
+              img {
+                width: 65%;
+              }
+            }
+
+            @include media-breakpoint-up(lg) {
+              img {
+                width: auto;
+                height: 100%;
+              }
+            }
+
+
+            @include media-breakpoint-up(md) {
+              img {
+                width: $md-dci-card-img-w;
+                height: auto;
+              }
+            }
+          }
+
+          .card-content__text {
+            .text__para {
+              margin: $dci-card-content-text-my 0;
+            }
+          }
+        }
+
+        .card-body__tab {
+          margin-top: $dci-card-tab-mt;
+          align-self: flex-end;
+          max-width: $dci-card-tab-w;
+          padding-bottom: 10px;
+          border-bottom: 1px solid $dci-dark-blue;
+
+          input {
+            position: absolute;
+            z-index: -1;
+            opacity: 0;
+
+            &:checked ~ .tab__content {
+              max-height: 100%;
+              // TODO: - Valider le point ci-dessus avec la créa
+              // @include media-breakpoint-up(xl) {
+              //   min-height: $xl-dci-tab-content-minh-checked;
+              // }
+            }
+
+            &:checked + .tab__label::after {
+              transform: rotate(270deg);
+            }
+          }
+
+          .tab__label {
+            display: flex;
+            justify-content: space-between;
+            color: $dci-dark-blue;
+            text-transform: uppercase;
+            cursor: pointer;
+
+            &::after {
+              content: '\276F';
+              width: 1em;
+              height: 1em;
+              transform: rotate(90deg);
+              transition: all 0.35s;
+              text-align: center;
+            }
+          }
+
+          .tab__content {
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.35s;
+
+            ul li {
+              margin: 8px 0;
+              font-size: $text-size-sm;
+
+              &.tab__title {
+                font-size: $text-size-sm;
+                font-weight: bold;
+              }
+
+              span {
+                font-weight: bold;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

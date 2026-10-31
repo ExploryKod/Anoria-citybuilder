@@ -1,0 +1,130 @@
+// -----------------------------------------------------------------------------
+// This file contains all application-wide Sass mixins.
+// -----------------------------------------------------------------------------
+@use 'sass:math';
+
+/// Event wrapper
+/// @author Harry Roberts
+/// @param {Bool} $self [false] - Whether or not to include current selector
+/// @link https://twitter.com/csswizardry/status/478938530342006784 Original tweet from Harry Roberts
+@mixin on-event($self: false) {
+  @if $self {
+    &,
+    &:hover,
+    &:active,
+    &:focus {
+      @content;
+    }
+  } @else {
+    &:hover,
+    &:active,
+    &:focus {
+      @content;
+    }
+  }
+}
+
+/// Make a context based selector a little more friendly
+/// @author Kitty Giraudel
+/// @param {String} $context
+@mixin when-inside($context) {
+  #{$context} & {
+    @content;
+  }
+}
+
+@mixin font-face($font-path, $font-name, $file-name, $weight: normal, $style: normal, $display: swap) {
+  @font-face {
+    font-family: quote($font-name);
+    font-style: $style;
+    font-weight: $weight;
+    src: url('#{$font-path}/#{$font-name}/#{$file-name}.ttf') format('truetype');
+    src: url('#{$font-path}/#{$font-name}/#{$file-name}.eot') format('embedded-opentype'), url('#{$font-path}/#{$font-name}/#{$file-name}.eotiefix') format('embedded-opentype'),
+      url('#{$font-path}/#{$font-name}/#{$file-name}.woff') format('woff'), url('#{$font-path}/#{$font-name}/#{$file-name}.svg#{$font-name}') format('svg');
+    font-display: $display;
+  }
+}
+
+@mixin icomoonFont {
+  // use !important to prevent issues with browser extensions that change fonts //
+  font-family: '#{$icomoon-font-family}' !important;
+
+  // Better Font Rendering //
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: normal;
+  line-height: 1;
+  text-transform: none;
+  speak: never;
+}
+
+@mixin center($position) {
+  position: absolute;
+
+  @if $position == 'vertical' {
+    top: 50%;
+    transform: translateY(-50%);
+  } @else if $position == 'horizontal' {
+    left: 50%;
+    transform: translateX(-50%);
+  } @else if $position == 'both' {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+@mixin text-shorten {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin hidden {
+  display: none;
+  visibility: hidden;
+}
+
+@mixin unselectable {
+  pointer-events: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+@mixin center-block {
+  display: block;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+@mixin pseudo($display: block, $pos: absolute, $content: '') {
+  content: $content;
+  display: $display;
+  position: $pos;
+}
+
+@mixin gradient($start-color, $end-color, $orientation) {
+  background: $start-color;
+
+  @if $orientation == 'vertical' {
+    background: linear-gradient(to bottom, $start-color, $end-color);
+  } @else if $orientation == 'horizontal' {
+    background: linear-gradient(to right, $start-color, $end-color);
+  } @else {
+    background: radial-gradient(ellipse at center, $start-color, $end-color);
+  }
+}
+
+@mixin font-text($size, $weight: normal, $line-height: 1.2) {
+  line-height: $line-height;
+  font-weight: $weight;
+
+  $desktop-size: map-get($text-sizes-xl-array, $size);
+  $mobile-size: map-get($text-sizes-mobile-array, $size);
+  $vw-size: math.div(map-get($text-sizes-xl-array, $size) * 100, 1920);
+
+  font-size: clamp(#{$mobile-size}px, #{$vw-size}vw, #{$desktop-size}px);
+}
+

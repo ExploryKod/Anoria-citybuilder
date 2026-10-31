@@ -1,0 +1,144 @@
+.main {
+  // Use these variables to change cards layout key points (md = beyond 992px viewport width)
+  $dci-card-md-max-w: 650px;
+  // Content height need to go beyond the height of the longest text (header + paragraph) among cards texts
+  $dci-card-md-content-h: 400px;
+  // The gap between image & text
+  $dci-card-md-content-gap: 19px;
+  $dci-card-md-img-w: 240px;
+  $dci-para-md-my: 10px;
+
+  &__team-section {
+    .team-section__cards-wrapper {
+      .team-card {
+        max-width: 650px;
+
+        .card-title {
+          margin-bottom: $dci-team-name-mb;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+
+          .dci-linkedin-icon {
+            width: 30px;
+             a {
+               width: 100%;
+               height: 100%;
+
+               img {
+                width: 100%;
+               }
+             }
+          }
+        }
+
+        .card-content {
+          display: flex;
+          flex-direction: column;
+          margin-bottom: 16px;
+          gap: $dci-card-md-content-gap;
+
+          @include media-breakpoint-up(md) {
+            flex-direction: row;
+            height: $dci-card-md-content-h;
+          }
+
+          .card-content__img {
+
+            img {
+              width: 50%;
+            }
+
+            @include media-breakpoint-up(sm) {
+              img {
+                width: 65%;
+              }
+            }
+
+            @include media-breakpoint-up(lg) {
+              img {
+                width: auto;
+                height: 100%;
+              }
+            }
+
+
+            @include media-breakpoint-up(md) {
+              img {
+                width: $dci-card-md-img-w;
+                height: auto;
+              }
+            }
+          }
+
+          .card-content__text {
+            .text__para {
+              margin: $dci-para-md-my 0;
+            }
+          }
+        }
+
+        .card-tab {
+          max-width: 75%;
+          padding-bottom: 5px;
+          border-bottom: 1px solid $dci-dark-blue;
+
+          @include media-breakpoint-up(md) {
+            max-width: 100%;
+          }
+
+          input {
+            position: absolute;
+            z-index: -1;
+            opacity: 0;
+
+            &:checked ~ .card-tab__content {
+              max-height: 100%;
+            }
+
+            &:checked + .card-tab__label::after {
+              transform: rotate(270deg);
+            }
+          }
+
+          .card-tab__label {
+            display: flex;
+            justify-content: space-between;
+            color: $dci-dark-blue;
+            text-transform: uppercase;
+            cursor: pointer;
+
+            &::after {
+              content: '\276F';
+              width: 1em;
+              height: 1em;
+              transform: rotate(90deg);
+              transition: all 0.35s;
+              text-align: center;
+            }
+          }
+
+          .card-tab__content {
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.35s;
+
+            ul li {
+              margin: 8px 0;
+              font-size: $text-size-sm;
+
+              &.card-tab__title {
+                font-size: $text-size-sm;
+                font-weight: bold;
+              }
+
+              span {
+                font-weight: bold;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

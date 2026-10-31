@@ -12,21 +12,15 @@ import {
     infoPanelNoClockIcon,
     gameWindow as gameWindowElement,
     displayPopTotal,
-    displayPopTotalHamlet,
     displayPopActiveTotal,
-    displayPopActiveTotalHamlet,
     displayHungerPop,
-    displayHungerPopHamlet,
     displayDisettePop,
-    displayDisettePopHamlet,
     displayHungerRisk,
-    displayHungerRiskHamlet,
     iconHungerRisk,
     iconDisette,
     iconPenurie,
     displayDeathsPop,
-    displayLaborCountry,
-    displayLaborHamlet,
+    displayLabor,
     popGroupPopNodes,
     popGroupWorkerNodes,
     popGroupLaborNodes,
@@ -60,6 +54,7 @@ import { msToSpeedLevel, SPEED_LEVEL_MAX } from '../../../shared/gameplay/Simula
 import { getResidentialGroupTitle } from './ResidentialGroupLabels.js';
 import { allSocialGroups } from '../../../composition/employmentCatalog.js';
 import { laborSlotFromStats } from '../../../composition/hudPopulationAggregates.js';
+import { getHudPopRailScope, HUD_POP_RAIL_SCOPE_EVENT } from './hudPopRailScope.js';
 import {
     HUD_CITY_RESOURCE_PRODUCTS,
     HUD_NATURE_RESOURCE_PRODUCTS,
@@ -114,16 +109,19 @@ function laborFigures(slot) {
     return slot.mode === 'lack' ? lackWords : `${unemployedWords} (${slot.display})`;
 }
 
+/** Who the figures on show are about, as the tooltips say it */
+const SCOPE_WORDS = Object.freeze({ country: 'Pays', hamlet: 'Hameau visible' });
+
 /**
- * The tooltip of a labour block's first row (the whole city's, or a class's): what the percentage is, then what it comes to in the country and in the
- * visible hamlet. The row's own icon says nothing else, so its own title goes.
+ * The tooltip of a labour block's first row (the whole city's, or a class's): what the percentage is, then what it comes to in the scope on show.
+ * The row's own icon says nothing else, so its own title goes.
  * @param {Element | null} row
- * @param {{ heading: string, definition: string, country: object, hamlet: object }} words the two slots are `laborSlotFromStats` answers
+ * @param {{ heading: string, definition: string, scope: 'country' | 'hamlet', slot: object }} words the slot is a `laborSlotFromStats` answer
  */
-function setLaborRowWords(row, { heading, definition, country, hamlet }) {
+function setLaborRowWords(row, { heading, definition, scope, slot }) {
     if (!row) return;
     row.querySelector('.pop-detail-emoji, .pop-detail-labor-icon')?.removeAttribute('title');
-    const lines = [heading, definition, `Pays : ${laborFigures(country)}`, `Hameau visible : ${laborFigures(hamlet)}`];
+    const lines = [heading, definition, `${SCOPE_WORDS[scope]} : ${laborFigures(slot)}`];
     row.setAttribute('title', lines.join('\n'));
     row.setAttribute('aria-label', lines.join('. '));
 }
@@ -141,38 +139,150 @@ const LABOR_CAUSE_WORDS = Object.freeze({
 });
 
 /**
- * @param {{ row: Element | null, country: Element | null, hamlet: Element | null }} nodes
+ * @param {{ row: Element | null, value: Element | null }} nodes
  * @param {string} cause
- * @param {number} countryCount
- * @param {number} hamletCount
+ * @param {number} figure the count of the scope on show
  * @param {string} scopeTitle who the cell is about: the whole city, or a social category
+ * @param {'country' | 'hamlet'} scope
  */
-function setLaborCauseCell(nodes, cause, countryCount, hamletCount, scopeTitle) {
+function setLaborCauseCell(nodes, cause, figure, scopeTitle, scope) {
     if (!nodes.row) return;
-    setHudCount(nodes.country, countryCount);
-    setHudCount(nodes.hamlet, hamletCount);
-    nodes.row.classList.toggle('is-zero', !(countryCount > 0) && !(hamletCount > 0));
+    setHudCount(nodes.value, figure);
+    nodes.row.classList.toggle('is-zero', !(figure > 0));
     const { unit, what, whatMany = what, hint } = LABOR_CAUSE_WORDS[cause];
     const count = (n) => `${n} ${unit}${n === 1 ? '' : 's'} ${n === 1 ? what : whatMany}`;
     nodes.row.title = `${scopeTitle} : ${unit}s ${whatMany} — ${hint}`;
-    nodes.row.setAttribute('aria-label', `${scopeTitle} — pays : ${count(countryCount)} ; hameau visible : ${count(hamletCount)}. ${hint}`);
+    nodes.row.setAttribute('aria-label', `${scopeTitle} — ${SCOPE_WORDS[scope].toLowerCase()} : ${count(figure)}. ${hint}`);
 }
 
 /**
- * @param {Record<string, { row: Element | null, country: Element | null, hamlet: Element | null }>} nodesByGroup
- * @param {Record<string, number>} countryCounts
- * @param {Record<string, number> | null} hamletCounts
+ * @param {Record<string, { row: Element | null, value: Element | null }>} nodesByGroup
+ * @param {Record<string, number> | null} counts the counts of the scope on show, by social group (null: not known yet, the cells stay as they are)
  */
-function setGroupCounts(nodesByGroup, countryCounts, hamletCounts) {
+function setGroupCounts(nodesByGroup, counts) {
+    if (!counts) return;
     for (const group of allSocialGroups()) {
         const nodes = nodesByGroup[group];
         if (!nodes) continue;
-        setHudCount(nodes.country, countryCounts?.[group]);
-        if (hamletCounts) {
-            setHudCount(nodes.hamlet, hamletCounts[group]);
-        }
+        setHudCount(nodes.value, counts[group]);
     }
 }
+
+/**
+ * What the population rail was last given, by kind, kept so that it can be drawn again for the other scope (hudPopRailScope.js) without asking the
+ * game for its figures again. Each kind holds both scopes' figures; `drawRail*` writes the one of the scope on show.
+ * @type {{ totals: object | null, famished: object | null, hungerRisk: object | null, group: object | null, resources: object | null }}
+ */
+const railHud = { totals: null, famished: null, hungerRisk: null, group: null, resources: null };
+
+/** @returns {'country' | 'hamlet'} the scope on show */
+function railScope() {
+    return getHudPopRailScope();
+}
+
+function drawRailTotals() {
+    const totals = railHud.totals?.[railScope()];
+    if (!totals) return;
+    setHudCount(displayPopTotal, totals.totalPop);
+    setHudCount(displayPopActiveTotal, totals.workersCount);
+}
+
+function drawRailFamished() {
+    const famished = railHud.famished?.[railScope()];
+    if (!famished) return;
+    setHudCount(displayDisettePop, famished.disette);
+    setHudCount(displayHungerPop, famished.penurie);
+}
+
+function drawRailHungerRisk() {
+    const risk = railHud.hungerRisk?.[railScope()];
+    if (!risk) return;
+    if (iconHungerRisk) {
+        iconHungerRisk.textContent = HUNGER_RISK.icon;
+        iconHungerRisk.title = `${HUNGER_RISK.label} : ${HUNGER_CAUSES.disette.label.toLowerCase()} ${risk.disette}, ${HUNGER_CAUSES.penurie.label.toLowerCase()} ${risk.penurie}`;
+    }
+    setHudCount(displayHungerRisk, risk.disette + risk.penurie);
+}
+
+function drawRailGroupHud() {
+    const payload = railHud.group;
+    if (!payload) return;
+    const scope = railScope();
+    const country = scope === 'country';
+    // The payload carries both scopes (the game's read models); the rail shows one.
+    const pick = (ofCountry, ofHamlet) => (country ? ofCountry : ofHamlet);
+
+    setGroupCounts(popGroupPopNodes, pick(payload.popCountry ?? {}, payload.popHamlet ?? null));
+    setGroupCounts(popGroupWorkerNodes, pick(payload.workersCountry ?? {}, payload.workersHamlet ?? null));
+
+    const slot = laborSlotFromStats(pick(payload.laborCountry, payload.laborHamlet));
+    setLaborCell(displayLabor, slot);
+    setLaborRowWords(displayLabor?.closest('.pop-detail-labor-head'), {
+        heading: 'Travail et chômage — toutes catégories',
+        definition: 'Part des habitants qui cherchent un travail et n\'en ont pas, toutes catégories confondues. Le détail de ses causes est dessous.',
+        scope,
+        slot,
+    });
+
+    const groups = pick(payload.groupsCountry, payload.groupsHamlet);
+    const groupCauses = pick(payload.groupCausesCountry, payload.groupCausesHamlet);
+    for (const group of allSocialGroups()) {
+        const nodes = popGroupLaborNodes[group];
+        if (!nodes) continue;
+        const groupTitle = getResidentialGroupTitle(group);
+        const slotOfGroup = laborSlotFromStats(groups?.[group] ?? {});
+        setLaborCell(nodes.value, slotOfGroup);
+        setLaborRowWords(nodes.row, {
+            heading: `Travail et chômage — ${groupTitle}`,
+            definition: 'Part des habitants de cette catégorie qui cherchent un travail et n\'en ont pas. Le détail de ses causes est dessous.',
+            scope,
+            slot: slotOfGroup,
+        });
+
+        // The same situations under the class's own percentage, dimmed while they are at zero. The block is named as the catalog names the class.
+        nodes.row?.closest('.pop-labor-group')?.setAttribute('aria-label', groupTitle);
+        nodes.row?.closest('.pop-labor-group')?.querySelector('.pop-labor-causes')
+            ?.setAttribute('aria-label', `Causes du chômage et des postes vides — ${groupTitle}`);
+        for (const [cause, causeNodes] of Object.entries(popGroupLaborCauseNodes[group] ?? {})) {
+            setLaborCauseCell(causeNodes, cause, groupCauses?.[group]?.[cause] ?? 0, groupTitle, scope);
+        }
+    }
+
+    // Why people are out of work and why posts stay empty, the whole city's.
+    const causes = pick(payload.causesCountry, payload.causesHamlet);
+    for (const [cause, nodes] of Object.entries(popLaborCauseNodes)) {
+        setLaborCauseCell(nodes, cause, causes?.[cause] ?? 0, 'Toutes catégories', scope);
+    }
+}
+
+function drawRailResources() {
+    const payload = railHud.resources;
+    if (!payload) return;
+    const country = railScope() === 'country';
+    const city = country ? payload.cityCountry : payload.cityHamlet;
+    const nature = country ? payload.natureCountry : payload.natureHamlet;
+    for (const product of HUD_CITY_RESOURCE_PRODUCTS) {
+        const nodes = popResourceCityNodes[product];
+        if (!nodes) continue;
+        setHudCount(nodes.value, city?.[product] ?? 0);
+    }
+    for (const product of HUD_NATURE_RESOURCE_PRODUCTS) {
+        const nodes = popResourceNatureNodes[product];
+        if (!nodes) continue;
+        setHudCount(nodes.value, nature?.[product] ?? 0);
+    }
+}
+
+function drawRail() {
+    drawRailTotals();
+    drawRailFamished();
+    drawRailHungerRisk();
+    drawRailGroupHud();
+    drawRailResources();
+}
+
+// Another scope on show: the same figures, drawn for it.
+window.addEventListener(HUD_POP_RAIL_SCOPE_EVENT, drawRail);
 
 /**
  * Visible HUD date stays abbreviated; screen readers get the full month name.
@@ -356,12 +466,8 @@ class GameUI {
      * @param {{ totalPop: number, workersCount: number } | null} [hamlet] the active hamlet's own figures
      */
     updatePopulationTotals(totalPopulation, workersCount, hamlet = null) {
-        setHudCount(displayPopTotal, totalPopulation);
-        setHudCount(displayPopActiveTotal, workersCount);
-        if (hamlet) {
-            setHudCount(displayPopTotalHamlet, hamlet.totalPop);
-            setHudCount(displayPopActiveTotalHamlet, hamlet.workersCount);
-        }
+        railHud.totals = { country: { totalPop: totalPopulation, workersCount }, hamlet };
+        drawRailTotals();
     }
 
     /**
@@ -375,12 +481,8 @@ class GameUI {
             iconDisette.title = HUNGER_CAUSES.disette.label;
         }
         if (iconPenurie) iconPenurie.title = HUNGER_CAUSES.penurie.label;
-        setHudCount(displayDisettePop, country.disette);
-        setHudCount(displayHungerPop, country.penurie);
-        if (hamlet != null) {
-            setHudCount(displayDisettePopHamlet, hamlet.disette);
-            setHudCount(displayHungerPopHamlet, hamlet.penurie);
-        }
+        railHud.famished = { country, hamlet };
+        drawRailFamished();
     }
 
     /**
@@ -390,13 +492,8 @@ class GameUI {
      * @param {{ disette: number, penurie: number }} [hamlet]
      */
     updateHungerRisk(country, hamlet = null) {
-        const total = (risk) => risk.disette + risk.penurie;
-        if (iconHungerRisk) {
-            iconHungerRisk.textContent = HUNGER_RISK.icon;
-            iconHungerRisk.title = `${HUNGER_RISK.label} : ${HUNGER_CAUSES.disette.label.toLowerCase()} ${country.disette}, ${HUNGER_CAUSES.penurie.label.toLowerCase()} ${country.penurie}`;
-        }
-        setHudCount(displayHungerRisk, total(country));
-        if (hamlet != null) setHudCount(displayHungerRiskHamlet, total(hamlet));
+        railHud.hungerRisk = { country, hamlet };
+        drawRailHungerRisk();
     }
 
     /**
@@ -429,56 +526,8 @@ class GameUI {
      * }} payload
      */
     updateGroupHud(payload = {}) {
-        setGroupCounts(popGroupPopNodes, payload.popCountry ?? {}, payload.popHamlet ?? null);
-        setGroupCounts(popGroupWorkerNodes, payload.workersCountry ?? {}, payload.workersHamlet ?? null);
-
-        const countrySlot = laborSlotFromStats(payload.laborCountry);
-        const hamletSlot = laborSlotFromStats(payload.laborHamlet);
-        setLaborCell(displayLaborCountry, countrySlot);
-        setLaborCell(displayLaborHamlet, hamletSlot);
-        setLaborRowWords(displayLaborCountry?.closest('.pop-detail-labor-head'), {
-            heading: 'Travail et chômage — toutes catégories',
-            definition: 'Part des habitants qui cherchent un travail et n\'en ont pas, toutes catégories confondues. Le détail de ses causes est dessous.',
-            country: countrySlot,
-            hamlet: hamletSlot,
-        });
-
-        for (const group of allSocialGroups()) {
-            const nodes = popGroupLaborNodes[group];
-            if (!nodes) continue;
-            const country = payload.groupsCountry?.[group] ?? {};
-            const hamlet = payload.groupsHamlet?.[group] ?? {};
-            const groupTitle = getResidentialGroupTitle(group);
-            const countrySlotOfGroup = laborSlotFromStats(country);
-            const hamletSlotOfGroup = laborSlotFromStats(hamlet);
-            setLaborCell(nodes.country, countrySlotOfGroup);
-            setLaborCell(nodes.hamlet, hamletSlotOfGroup);
-            setLaborRowWords(nodes.row, {
-                heading: `Travail et chômage — ${groupTitle}`,
-                definition: 'Part des habitants de cette catégorie qui cherchent un travail et n\'en ont pas. Le détail de ses causes est dessous.',
-                country: countrySlotOfGroup,
-                hamlet: hamletSlotOfGroup,
-            });
-
-            // The same four situations under the class's own percentage, dimmed while both scopes are at zero. The block is named as the catalog names the class.
-            nodes.row?.closest('.pop-labor-group')?.setAttribute('aria-label', groupTitle);
-            nodes.row?.closest('.pop-labor-group')?.querySelector('.pop-labor-causes')
-                ?.setAttribute('aria-label', `Causes du chômage et des postes vides — ${groupTitle}`);
-            for (const [cause, causeNodes] of Object.entries(popGroupLaborCauseNodes[group] ?? {})) {
-                setLaborCauseCell(
-                    causeNodes,
-                    cause,
-                    payload.groupCausesCountry?.[group]?.[cause] ?? 0,
-                    payload.groupCausesHamlet?.[group]?.[cause] ?? 0,
-                    groupTitle
-                );
-            }
-        }
-
-        // Why people are out of work and why posts stay empty, the whole city's.
-        for (const [cause, nodes] of Object.entries(popLaborCauseNodes)) {
-            setLaborCauseCell(nodes, cause, payload.causesCountry?.[cause] ?? 0, payload.causesHamlet?.[cause] ?? 0, 'Toutes catégories');
-        }
+        railHud.group = payload;
+        drawRailGroupHud();
     }
 
     /**
@@ -492,18 +541,8 @@ class GameUI {
      * }} payload
      */
     updateResourcesHud(payload = {}) {
-        for (const product of HUD_CITY_RESOURCE_PRODUCTS) {
-            const nodes = popResourceCityNodes[product];
-            if (!nodes) continue;
-            setHudCount(nodes.country, payload.cityCountry?.[product] ?? 0);
-            setHudCount(nodes.hamlet, payload.cityHamlet?.[product] ?? 0);
-        }
-        for (const product of HUD_NATURE_RESOURCE_PRODUCTS) {
-            const nodes = popResourceNatureNodes[product];
-            if (!nodes) continue;
-            setHudCount(nodes.country, payload.natureCountry?.[product] ?? 0);
-            setHudCount(nodes.hamlet, payload.natureHamlet?.[product] ?? 0);
-        }
+        railHud.resources = payload;
+        drawRailResources();
     }
 
     /**
@@ -523,6 +562,8 @@ class GameUI {
      * possibly after they have arrived.
      */
     resetInitialHud() {
+        // What the rail was given belongs to the city that went: a scope switch must not draw it again for the new one
+        Object.assign(railHud, { totals: null, famished: null, hungerRisk: null, group: null, resources: null });
         for (const value of document.querySelectorAll('#hud-pop-rail .pop-detail-value')) {
             value.textContent = '…';
         }

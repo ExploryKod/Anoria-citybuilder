@@ -345,6 +345,99 @@
 }
 
 /*
+ * A dépêche on a phone held in landscape (a short screen): it takes the whole screen, so that its text has the room, and what it offers to do is only
+ * the building's icon, pulsing, in the bottom row beside the footer's buttons instead of a row of its own. The words stay for screen readers.
+ * (The confirmation keeps its own card: its text is a short question.)
+ */
+@keyframes news-action-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 129, 24, 0.55); }
+  50% { box-shadow: 0 0 0 10px rgba(251, 129, 24, 0); }
+}
+
+@media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .news-event-modal:not(.confirm-modal) .news-event-modal-card {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    box-sizing: border-box;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    border-width: 0;
+    border-radius: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "header header"
+      "content content"
+      "action footer";
+  }
+
+  .news-event-modal:not(.confirm-modal) .news-event-modal-header {
+    grid-area: header;
+    padding: 8px 16px 6px;
+  }
+
+  .news-event-modal:not(.confirm-modal) .news-event-modal-header h3 {
+    margin: 0 0 2px;
+    font-size: 1rem;
+  }
+
+  .news-event-modal:not(.confirm-modal) .news-event-modal-meta {
+    font-size: 0.8rem;
+  }
+
+  .news-event-modal:not(.confirm-modal) .news-event-modal-content {
+    grid-area: content;
+    min-height: 0;
+    padding: 10px 16px;
+  }
+
+  .news-event-modal:not(.confirm-modal) .news-event-modal-action {
+    grid-area: action;
+    align-items: center;
+    padding: 6px 0 6px 16px;
+    border-top: 2px solid var(--cta);
+    background: #faf7f1;
+  }
+
+  .news-event-modal:not(.confirm-modal) .news-event-modal-footer {
+    grid-area: footer;
+    align-items: center;
+    padding: 6px 16px;
+  }
+
+  .news-event-modal:not(.confirm-modal) .news-event-action-btn {
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border-radius: 50%;
+    animation: news-action-pulse 1.6s ease-in-out infinite;
+  }
+
+  .news-event-modal:not(.confirm-modal) .news-event-action-icon img {
+    width: 40px;
+    height: 40px;
+  }
+
+  /* No words on the button: the icon says "click me" and the reader of the screen still gets the name */
+  .news-event-modal:not(.confirm-modal) .news-event-action-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .news-event-action-btn {
+    animation: none !important;
+  }
+}
+
+/*
  * The confirmation (ConfirmModal.js): a question with a list under it. Everything sits on the same left edge — title, message and list text —, the list shows no
  * bullet, and each entry is a quiet card with an accent rule, so a long list stays easy to read line by line.
  */

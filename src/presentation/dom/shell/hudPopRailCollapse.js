@@ -2,7 +2,12 @@
  * Collapse the population rail to a single users icon (same as pop total).
  */
 
+import { isScrolledToEnd, pageSideways } from './hudFoldGroup.js';
+
 export const HUD_POP_RAIL_COLLAPSED_KEY = 'anoria.hudPopRailCollapsed';
+
+/** A phone held in landscape: the rail opens as a bottom strip there (hud.css, "Pop rail as a bottom sheet") */
+const SHEET_QUERY = '(max-width: 1024px) and (orientation: landscape) and (max-height: 500px)';
 
 /**
  * @param {HTMLElement | null} [root]
@@ -81,11 +86,46 @@ function placeRailUnderDoor() {
 }
 
 /**
+ * In the bottom strip (phone in landscape) the labour market panel shows one block at a time, the city then each social category, as a sideways
+ * scroller (hud.css). Its arrow pages it, back to the first block after the last, and points back while the last one is shown.
+ * @param {HTMLElement} root
+ */
+function initLaborPaging(root) {
+  const arrow = root.querySelector('#hud-pop-labor-next');
+  const panel = root.querySelector('#hud-pop-panel-emploi');
+  const scroller = panel?.querySelector('.pop-detail-labor');
+  if (!arrow || !panel || !scroller) {
+    throw new Error('hudPopRailCollapse: #hud-pop-labor-next, #hud-pop-panel-emploi or its .pop-detail-labor is missing from game.html');
+  }
+  const nextLabel = arrow.getAttribute('aria-label') ?? '';
+  const rewindLabel = 'Revenir à la première catégorie';
+  const sheet = window.matchMedia(SHEET_QUERY);
+
+  const sync = () => {
+    const shown = sheet.matches && !panel.hidden && scroller.scrollWidth > scroller.clientWidth + 1;
+    arrow.hidden = !shown;
+    const rewind = shown && isScrolledToEnd(scroller);
+    arrow.classList.toggle('hud-fold-toggle--rewind', rewind);
+    arrow.setAttribute('aria-label', rewind ? rewindLabel : nextLabel);
+    arrow.title = rewind ? rewindLabel : nextLabel;
+  };
+
+  arrow.addEventListener('click', () => pageSideways(scroller, 1));
+  scroller.addEventListener('scroll', sync, { passive: true });
+  new ResizeObserver(sync).observe(scroller);
+  // The panel is shown or hidden by its tab (the `hidden` attribute)
+  new MutationObserver(sync).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+  sheet.addEventListener('change', sync);
+  sync();
+}
+
+/**
  * @param {HTMLElement | null} [root]
  */
 export function initHudPopRailCollapse(root = document.getElementById('hud-pop-rail')) {
   if (!root || root.dataset.popRailCollapseReady === 'true') return;
   placeRailUnderDoor();
+  initLaborPaging(root);
   const collapseBtn = root.querySelector('#hud-pop-rail-collapse');
   const expandBtn = root.querySelector('#hud-pop-rail-expand');
   if (!collapseBtn || !expandBtn) return;
@@ -99,11 +139,13 @@ export function initHudPopRailCollapse(root = document.getElementById('hud-pop-r
     setHudPopRailCollapsed(false, root, { focus: true });
   });
 
-  let stored = false;
+  // Opened, the rail is a wide strip over the bottom of a phone held in landscape: until the player has chosen, it starts folded there
+  let stored = window.matchMedia(SHEET_QUERY).matches;
   try {
-    stored = localStorage.getItem(HUD_POP_RAIL_COLLAPSED_KEY) === 'true';
+    const saved = localStorage.getItem(HUD_POP_RAIL_COLLAPSED_KEY);
+    if (saved !== null) stored = saved === 'true';
   } catch {
-    stored = false;
+    // Private mode: the default above stands.
   }
   setHudPopRailCollapsed(stored, root, { persist: false, focus: false });
 }

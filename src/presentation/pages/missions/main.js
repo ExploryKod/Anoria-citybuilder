@@ -196,14 +196,6 @@ function bindMyMapPanel() {
 function renderDetail(mission) {
   if (!detailEl) return;
 
-  const winHtml = mission.winConditions
-    .map((c) => `<li>${c.label} : <strong>${c.value}</strong></li>`)
-    .join('');
-
-  const buildingsHtml = mission.buildings?.length
-    ? `<p class="missions-buildings">Bâtiments notables : ${mission.buildings.join(', ')}</p>`
-    : '';
-
   const myMapHtml = isOpenMission(mission)
     ? renderMyMapSection(selectedMapLayoutId)
     : '';
@@ -217,21 +209,13 @@ function renderDetail(mission) {
       </div>
     </div>
     <ul class="missions-meta">
-      <li><strong>${mission.date}</strong></li>
-      <li>${mission.climate}</li>
       <li>Taille de la cité : <strong>${mission.citySize} × ${mission.citySize}</strong></li>
-      <li>${mission.combat}</li>
-      <li>${mission.difficulty}</li>
     </ul>
-    <p class="site-section-title">Conditions de victoire</p>
-    <ul class="missions-win-list">${winHtml}</ul>
-    ${buildingsHtml}
     <div class="mission-profile">
-      <p class="site-section-title" id="mission-profile-label">Profil</p>
       <div
         class="mission-profile-modes"
         role="radiogroup"
-        aria-labelledby="mission-profile-label"
+        aria-label="Profil"
       >
         <label class="mission-profile-mode">
           <input

@@ -1,0 +1,1 @@
+Exports of a game (city, journal, flux...) are written to this folder. They are debug material: git ignores them (see .gitignore), this file only keeps the folder.

@@ -88,3 +88,26 @@
     padding-right: 28px;
   }
 }
+
+/* A short screen (a phone in landscape): the title and the button take less, so that the text has the room (it scrolls inside the dialog) */
+@media (orientation: landscape) and (max-height: 500px) {
+  .site-welcome {
+    width: min(720px, calc(100% - 2 * var(--site-page-gutter)));
+    max-height: calc(100dvh - 16px);
+  }
+
+  .site-welcome__title {
+    padding: 8px 16px 6px;
+    font-size: 1rem;
+  }
+
+  .site-welcome__body {
+    padding: 10px 16px;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .site-welcome__actions {
+    padding: 8px 16px max(8px, env(safe-area-inset-bottom, 0px));
+  }
+}

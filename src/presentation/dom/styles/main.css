@@ -100,14 +100,12 @@
     /* Building sheet: above every menu, the HUD and the toasts, so its close button is always reachable */
     --z-index-info-building: 10050;
 
-    /* Touch: pop rail above bottom command bar + construction FAB row */
     --hud-fab-row-height: 48px;
     --hud-fab-row-gap: 10px;
+    /* Touch: pop rail above the bottom band, where the one open group (construction row or command bar) sits: they never stack there */
     --hud-pop-rail-bottom-touch: calc(
       var(--hud-bottom-height, 56px)
       + env(safe-area-inset-bottom, 0px)
-      + var(--hud-fab-row-gap)
-      + var(--hud-fab-row-height)
       + 12px
     );
     /* --hud-pop-rail-top-touch (the rail hangs under the exit door) is measured by hudPopRailCollapse.js */

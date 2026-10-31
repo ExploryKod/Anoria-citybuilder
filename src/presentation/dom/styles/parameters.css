@@ -36,10 +36,36 @@
 }
 
 .parameters-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     padding: 18px 24px 14px;
     border-bottom: 2px solid var(--cta);
     background: #fff6f0;
     text-align: left;
+}
+
+/* The cross that closes the panel, in the header so that it never leaves the screen */
+.parameters-close-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(29, 34, 40, 0.06);
+    color: var(--primary);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.parameters-close-icon-btn:hover,
+.parameters-close-icon-btn:focus-visible {
+    background: rgba(29, 34, 40, 0.14);
 }
 
 .parameters-panel-header h3 {
@@ -357,6 +383,33 @@
 
     .parameters-panel-wrapper {
         min-height: 360px;
+    }
+}
+
+/*
+ * A short screen (a phone in landscape): the panel is as tall as the screen, its header stays on top with the cross that closes it, and only the
+ * settings scroll. The footer (two disabled buttons and "Fermer") gives its place to the cross.
+ */
+@media (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+    .parameters-panel {
+        height: calc(100svh - 16px);
+        max-height: none;
+    }
+
+    .parameters-panel-wrapper {
+        min-height: 0;
+    }
+
+    .parameters-panel-header {
+        padding: 6px 12px 6px 18px;
+    }
+
+    .parameters-panel-header h3 {
+        font-size: 17px;
+    }
+
+    .parameters-buttons {
+        display: none;
     }
 }
 

@@ -1,0 +1,20 @@
+// -----------------------------------------------------------------------------
+// This file contains all application-wide Sass root properties.
+// -----------------------------------------------------------------------------
+
+:root {
+  @each $state-color, $value in $state-colors {
+    --color-#{$state-color}: #{$value};
+    --color-rgb-#{$state-color}: #{hexToRGBString($value)};
+  }
+
+  @each $bp, $value in $grid-breakpoints {
+    --breakpoint-#{$bp}: #{$value};
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    --nomotion: none;
+  }
+
+  --scrollbarsize: 17px;
+}

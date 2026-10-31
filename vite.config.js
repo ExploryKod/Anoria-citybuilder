@@ -54,6 +54,14 @@ export default defineConfig({
     createMapsIndexPlugin(mapsDir),
     createDevLogPlugin(__dirname),
     {
+      // The home menu's "Prefab" entry starts a development city: it stays on localhost (`vite`), the production build (`vite build`) leaves it out of the page.
+      name: 'drop-dev-only-menu-entries',
+      apply: 'build',
+      transformIndexHtml(html) {
+        return html.replace(/\s*<a [^>]*data-boot-mode="prefab"[^>]*>[\s\S]*?<\/a>/, '')
+      },
+    },
+    {
       name: 'rewrite-clean-routes',
       configureServer(server) {
         server.middlewares.use((req, _res, next) => {

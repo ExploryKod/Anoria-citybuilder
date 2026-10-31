@@ -1,0 +1,16 @@
+.main {
+  &__intro-section {
+
+    img {
+      width: 80%;
+
+      @include media-breakpoint-up(lg) {
+        width: 100%;
+      }
+
+      @include media-breakpoint-up(xxl) {
+        max-width: 730px;
+      }
+    }
+  }
+}

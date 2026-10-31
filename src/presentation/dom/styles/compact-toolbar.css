@@ -29,15 +29,30 @@
 }
 
 .mobile-build-bar {
+  /*
+   * The bar fits the screen whatever the width, with no help from the script: it asks for a width and a centre (--mobile-build-bar-width and
+   * --mobile-build-bar-center-x, set by CompactToolbar.js from the bottom row), and the CSS keeps it inside the screen — its width is cut to the
+   * room there is, and its centre is held far enough from both edges for the whole bar to show.
+   */
+  --mobile-build-bar-edge-left: max(12px, env(safe-area-inset-left, 0px));
+  --mobile-build-bar-edge-right: max(12px, env(safe-area-inset-right, 0px));
+  --mobile-build-bar-fit: min(
+    var(--mobile-build-bar-width),
+    calc(100vw - var(--mobile-build-bar-edge-left) - var(--mobile-build-bar-edge-right))
+  );
   display: flex;
   flex-direction: column;
   gap: 8px;
   position: fixed;
-  left: var(--mobile-build-bar-center-x);
+  left: clamp(
+    calc(var(--mobile-build-bar-edge-left) + var(--mobile-build-bar-fit) / 2),
+    var(--mobile-build-bar-center-x),
+    calc(100vw - var(--mobile-build-bar-edge-right) - var(--mobile-build-bar-fit) / 2)
+  );
   right: auto;
   bottom: var(--mobile-build-bar-bottom);
-  width: var(--mobile-build-bar-width);
-  max-width: calc(100vw - 24px);
+  width: var(--mobile-build-bar-fit);
+  min-width: 0;
   z-index: var(--z-index-hud-menu-panel);
   padding: 10px 12px 12px;
   box-sizing: border-box;
@@ -569,6 +584,41 @@
 
 .camera-dpad-fab .toolbar-mobile-controls-toggle-btn {
   display: block !important;
+}
+
+/*
+ * Phone in landscape (a short screen): the bar gives its title row away — the close button goes to the top right corner, over the pills' row,
+ * which keeps the room for it — so that the pills and the tools fit above the bottom buttons without reaching the top of the screen.
+ */
+@media screen and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
+  .mobile-build-bar {
+    gap: 4px;
+    padding: 8px 10px 10px;
+    max-height: calc(100svh - var(--mobile-build-bar-bottom) - 56px);
+    overflow-y: auto;
+  }
+
+  .mobile-build-bar__header {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 3;
+    min-height: 0;
+  }
+
+  .mobile-build-bar__title {
+    display: none;
+  }
+
+  .mobile-build-bar__close {
+    width: 40px;
+    height: 40px;
+  }
+
+  .mobile-build-bar__pills-row {
+    padding-right: 44px;
+    box-sizing: border-box;
+  }
 }
 
 /* Permanently hide left toolbar stubs (gating IDs only) */

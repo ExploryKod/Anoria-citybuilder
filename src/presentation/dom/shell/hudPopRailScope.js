@@ -1,39 +1,46 @@
 /**
- * Cycle pop-rail metric scope: both → country → hamlet → both.
- * Controls visibility of .pop-detail-value--country / --hamlet via data-pop-scope.
+ * Switch the pop-rail metric scope: the hamlet ↔ the whole country (one at a time, never side by side).
+ * The scope is data-pop-scope on the rail: GameUI writes the figures of that scope, and the CSS colours them by it.
  */
 
 export const HUD_POP_RAIL_SCOPE_KEY = 'anoria.hudPopRailScope';
 
+/** Fired on `window` each time the scope is set; GameUI redraws the rail's figures for the new scope. `detail.scope` is the scope. */
+export const HUD_POP_RAIL_SCOPE_EVENT = 'anoria:pop-rail-scope-change';
+
 export const HUD_POP_RAIL_SCOPES = Object.freeze({
-  both: 'both',
   country: 'country',
   hamlet: 'hamlet',
 });
 
 const SCOPE_ORDER = Object.freeze([
-  HUD_POP_RAIL_SCOPES.both,
-  HUD_POP_RAIL_SCOPES.country,
   HUD_POP_RAIL_SCOPES.hamlet,
+  HUD_POP_RAIL_SCOPES.country,
 ]);
 
 const SCOPE_LABELS = Object.freeze({
-  [HUD_POP_RAIL_SCOPES.both]: 'Pays et hameau',
   [HUD_POP_RAIL_SCOPES.country]: 'Chiffres globaux',
   [HUD_POP_RAIL_SCOPES.hamlet]: 'Chiffres du hameau',
 });
 
 /**
  * @param {string | null | undefined} value
- * @returns {'both' | 'country' | 'hamlet'}
+ * @returns {'country' | 'hamlet'}
+ * @throws {Error} when the value is not a scope (a stale stored choice, a typo): it is named, never replaced by another
  */
 export function normalizeHudPopRailScope(value) {
-  return SCOPE_ORDER.includes(value) ? value : HUD_POP_RAIL_SCOPES.hamlet;
+  if (!SCOPE_ORDER.includes(value)) {
+    throw new Error(
+      `hudPopRailScope: unknown scope ${JSON.stringify(value)} (expected ${SCOPE_ORDER.join(' or ')}); `
+      + `if it comes from the browser's storage, clear it: localStorage.removeItem('${HUD_POP_RAIL_SCOPE_KEY}')`,
+    );
+  }
+  return value;
 }
 
 /**
- * @param {'both' | 'country' | 'hamlet'} scope
- * @returns {'both' | 'country' | 'hamlet'}
+ * @param {'country' | 'hamlet'} scope
+ * @returns {'country' | 'hamlet'}
  */
 export function nextHudPopRailScope(scope) {
   const current = normalizeHudPopRailScope(scope);
@@ -43,14 +50,14 @@ export function nextHudPopRailScope(scope) {
 
 /**
  * @param {HTMLElement | null} [root]
- * @returns {'both' | 'country' | 'hamlet'}
+ * @returns {'country' | 'hamlet'}
  */
 export function getHudPopRailScope(root = document.getElementById('hud-pop-rail')) {
   return normalizeHudPopRailScope(root?.dataset?.popScope);
 }
 
 /**
- * @param {'both' | 'country' | 'hamlet'} scope
+ * @param {'country' | 'hamlet'} scope
  * @param {HTMLElement | null} [root]
  * @param {{ persist?: boolean }} [options]
  */
@@ -64,6 +71,7 @@ export function setHudPopRailScope(
   const persist = options.persist !== false;
 
   root.dataset.popScope = next;
+  window.dispatchEvent(new CustomEvent(HUD_POP_RAIL_SCOPE_EVENT, { detail: { scope: next } }));
 
   const btn = root.querySelector('#hud-pop-rail-scope');
   if (btn instanceof HTMLButtonElement) {
@@ -108,11 +116,12 @@ export function initHudPopRailScope(root = document.getElementById('hud-pop-rail
     cycleHudPopRailScope(root);
   });
 
-  let stored = HUD_POP_RAIL_SCOPES.hamlet;
+  // No stored choice yet: the hamlet's figures. A stored value that is not a scope throws (see normalizeHudPopRailScope).
+  let saved = null;
   try {
-    stored = normalizeHudPopRailScope(localStorage.getItem(HUD_POP_RAIL_SCOPE_KEY));
+    saved = localStorage.getItem(HUD_POP_RAIL_SCOPE_KEY);
   } catch {
-    stored = HUD_POP_RAIL_SCOPES.hamlet;
+    // Private mode: nothing stored, the default stands.
   }
-  setHudPopRailScope(stored, root, { persist: false });
+  setHudPopRailScope(saved ?? HUD_POP_RAIL_SCOPES.hamlet, root, { persist: false });
 }

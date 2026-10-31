@@ -1,0 +1,25 @@
+.main {
+  &__scroll-section {
+    .scroll-section--min-height {
+      min-height: 181px;
+    }
+
+    .scroll-bloc {
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 45px;
+      margin-top: 80px;
+      border: 2px solid $dci-dark-blue;
+      border-radius: 20px;
+
+      img {
+        width: 8px;
+        height: 20px;
+        transform: rotate(90deg);
+      }
+    }
+  }
+}
