@@ -23,7 +23,6 @@ import {
 } from '../../../composition/sessionRuntime.js';
 import { clearGameTablesForNewGame, waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
 import { importPrefab } from '../../../core/persistence/prefab/importPrefab.js';
-import { getPrefab, START_PREFAB_ID } from '../../../shared/prefabs/prefabCatalog.js';
 import { ensureHamletCatalog, listHamlets, parseGameHamletPath } from '../../../core/persistence/hamlet/hamletSession.js';
 import { initGameCalendar } from '../../../config/events.js';
 import { createGame } from '../../three/game.js';
@@ -70,6 +69,9 @@ import { initTutorialPanel } from '../onboarding/TutorialPanel.js';
 import { initTutorialHistory } from '../onboarding/TutorialHistory.js';
 import { activateBuildToolButton } from '../tools/ToolPanel.js';
 
+/** Why a prefab start is refused outside localhost. */
+const PREFAB_DEV_ONLY = '[prefab] the starter prefab is for development only: the production build does not ship it';
+
 function persistCitySize(size) {
   try {
     localStorage.setItem('selectedCitySize', String(size));
@@ -79,7 +81,11 @@ function persistCitySize(size) {
   }
 }
 
-function resolveBootSelection(bootMode) {
+/**
+ * @param {string} bootMode
+ * @param {number | null} prefabCitySize the side of the city of the prefab being started (null when none is)
+ */
+function resolveBootSelection(bootMode, prefabCitySize) {
   if (bootMode === 'tutorial') {
     clearMissionMapLayout();
     return {
@@ -111,7 +117,7 @@ function resolveBootSelection(bootMode) {
   if (bootMode === 'prefab') {
     clearMissionMapLayout();
     return {
-      size: getPrefab(START_PREFAB_ID).citySize,
+      size: prefabCitySize,
       multiplayer: false,
       pseudo: null,
       roomId: null,
@@ -164,9 +170,19 @@ export async function bootstrapGameSession(assetManager) {
     loaderManager.setStep('Remise à zéro de la partie…');
     await clearGameTablesForNewGame();
   }
+  let prefabCitySize = null;
   if (bootMode === 'prefab') {
-    loaderManager.setStep('Chargement de la sauvegarde…');
-    await importPrefab(getPrefab(START_PREFAB_ID));
+    // The starter prefab is a development tool (its menu button exists on localhost only): the production build does not ship it. `import.meta.env.DEV`
+    // is a constant of the build, so the block under it, with the import of the prefab and its data, is dropped from the production code.
+    if (import.meta.env.DEV) {
+      const { loadPrefab, START_PREFAB_ID } = await import('../../../shared/prefabs/prefabCatalog.js');
+      loaderManager.setStep('Chargement de la sauvegarde…');
+      const prefab = await loadPrefab(START_PREFAB_ID);
+      await importPrefab(prefab);
+      prefabCitySize = prefab.citySize;
+    } else {
+      throw new Error(PREFAB_DEV_ONLY);
+    }
   }
 
   // Before any context is built: the game's calendar is loaded here (frozen from the pre-game choice on a new game).
@@ -187,7 +203,7 @@ export async function bootstrapGameSession(assetManager) {
     throw new Error(`[bootstrap] the address does not name the active hamlet ${activeHamletId}: the game does not start`);
   }
 
-  const selectionResult = resolveBootSelection(bootMode ?? 'new');
+  const selectionResult = resolveBootSelection(bootMode ?? 'new', prefabCitySize);
   if (!Number.isInteger(selectionResult.size) || selectionResult.size <= 0) {
     throw new Error(`[bootstrap] the boot selection "${selectionResult.action}" gives no city size`);
   }

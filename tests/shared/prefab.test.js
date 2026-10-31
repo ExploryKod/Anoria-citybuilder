@@ -4,10 +4,10 @@
  */
 
 import { describe, test, expect } from '@jest/globals';
-import { PREFABS } from '../../src/shared/prefabs/prefabCatalog.js';
+import { loadPrefab } from '../../src/shared/prefabs/prefabCatalog.js';
 import { canonicalizeHouseRecord } from '../../src/shared/building-identity/index.js';
 
-const prefab = PREFABS['anoria-tour-107'];
+const prefab = await loadPrefab('anoria-tour-107');
 
 describe('prefab anoria-tour-107 — its state is the saved one', () => {
   test('every exported building keeps the anchor it was saved at, in its hamlet', () => {
