@@ -1,0 +1,3463 @@
+{
+  "exportDate": "2026-10-31T11:22:47.116Z",
+  "config": {
+    "citySize": 16,
+    "turn": 391,
+    "daysPerMonth": 5,
+    "perCapitaDemand": 1,
+    "annualYieldPerProducer": 288,
+    "hubMaxStock": 2880,
+    "distributorMaxStock": 240
+  },
+  "omittedBuildingFields": [
+    "id",
+    "anchorX",
+    "anchorY",
+    "name"
+  ],
+  "buildings": [
+    {
+      "type": "Tree-Sapin",
+      "category": "nature",
+      "x": 10,
+      "y": 0,
+      "pop": 0,
+      "stocks": {
+        "wood": 100
+      },
+      "maxStocks": {
+        "wood": 100
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "8974e90f-6209-4b61-8d44-8132e97dd05c",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          0
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 12,
+      "y": 0,
+      "pop": 0,
+      "stocks": {
+        "rock": 109,
+        "gold": 31,
+        "iron": 30
+      },
+      "maxStocks": {
+        "rock": 109,
+        "gold": 31,
+        "iron": 30
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "5026053f-3f34-43bf-9382-e0d9f8e7ca66",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          12,
+          0
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Tree-Sapin",
+      "category": "nature",
+      "x": 6,
+      "y": 1,
+      "pop": 0,
+      "stocks": {
+        "wood": 100
+      },
+      "maxStocks": {
+        "wood": 100
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "427c35d7-a15b-4ec6-9976-4a694933cac8",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          6,
+          1
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Tree-Sapin",
+      "category": "nature",
+      "x": 7,
+      "y": 1,
+      "pop": 0,
+      "stocks": {
+        "wood": 100
+      },
+      "maxStocks": {
+        "wood": 100
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "66f9494d-ccc9-4836-9292-d31fae4e29b4",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          7,
+          1
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Tree-Sapin",
+      "category": "nature",
+      "x": 9,
+      "y": 2,
+      "pop": 0,
+      "stocks": {
+        "wood": 100
+      },
+      "maxStocks": {
+        "wood": 100
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "6b90b987-eb7d-45ec-81a7-5d04fb83721e",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          2
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Tree-Chene",
+      "category": "nature",
+      "x": 15,
+      "y": 2,
+      "pop": 0,
+      "stocks": {
+        "wood": 120
+      },
+      "maxStocks": {
+        "wood": 120
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "850061db-6d20-49ea-abc6-7d26d5f47ebc",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          15,
+          2
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 7,
+      "y": 3,
+      "pop": 0,
+      "stocks": {
+        "rock": 79,
+        "gold": 42,
+        "iron": 31
+      },
+      "maxStocks": {
+        "rock": 79,
+        "gold": 42,
+        "iron": 31
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "7ef787f6-7341-4970-b725-4496bdcd0642",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          7,
+          3
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Tree-Arbuste",
+      "category": "nature",
+      "x": 6,
+      "y": 4,
+      "pop": 0,
+      "stocks": {
+        "wood": 80
+      },
+      "maxStocks": {
+        "wood": 80
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "2124ed1d-6e5b-4f31-8046-a38cabf03761",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          6,
+          4
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Tree-Chene",
+      "category": "nature",
+      "x": 3,
+      "y": 5,
+      "pop": 0,
+      "stocks": {
+        "wood": 120
+      },
+      "maxStocks": {
+        "wood": 120
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "3c894054-0983-473e-b71d-feb3ea35febf",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          3,
+          5
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "instanceId": "a71a6096-a095-4169-921a-dce8d48e5f10",
+      "type": "House-Red",
+      "category": "construction",
+      "pop": 6,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 8,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "x": 9,
+      "y": 5,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "house",
+      "tier": 3,
+      "footprintTiles": [
+        [
+          9,
+          5
+        ],
+        [
+          9,
+          6
+        ],
+        [
+          10,
+          5
+        ],
+        [
+          10,
+          6
+        ]
+      ],
+      "saleWindowOpen": false,
+      "distributorTooFar": false,
+      "lastPopulationGrowthMonth": 6,
+      "lastConsumptionMonth": 6,
+      "lastConsumption": {
+        "month": 6,
+        "demand": 6,
+        "taken": 0,
+        "totalUnfed": 6,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastGoodsConsumptionMonth": 6,
+      "lastGoodsConsumption": {
+        "month": 6,
+        "demand": 1.5,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 6,
+      "lastHeatConsumption": {
+        "month": 6,
+        "demand": 0.6000000000000001,
+        "taken": 0,
+        "totalUnfed": 1,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 6,
+      "lastLightConsumption": {
+        "month": 6,
+        "demand": 0.6000000000000001,
+        "taken": 0,
+        "totalUnfed": 1,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastWaterMonth": 6,
+      "lastWaterConsumption": {
+        "month": 6,
+        "demand": 24,
+        "taken": 0,
+        "totalUnfed": 24,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastEnergyMonth": 6,
+      "lastEnergyConsumption": {
+        "month": 6,
+        "demand": 6,
+        "taken": 0,
+        "totalUnfed": 6,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "cycleState": {
+        "decoratedPot": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        },
+        "carrotCake": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        }
+      },
+      "activityShortfall": {
+        "decoratedPot": true,
+        "carrotCake": true
+      },
+      "unpaidByHub": false,
+      "supplyShortfall": {
+        "current": {
+          "year": 6,
+          "monthIndex": 6,
+          "byNeed": {
+            "food": {
+              "unpaid": 0,
+              "shortage": 12,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 6
+            },
+            "goods": {
+              "unpaid": 0,
+              "shortage": 4,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 2
+            },
+            "heat": {
+              "unpaid": 0,
+              "shortage": 2,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            },
+            "light": {
+              "unpaid": 0,
+              "shortage": 2,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            }
+          }
+        },
+        "previous": {
+          "year": 6,
+          "monthIndex": 5,
+          "byNeed": {
+            "food": {
+              "unpaid": 0,
+              "shortage": 30,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 6
+            },
+            "goods": {
+              "unpaid": 0,
+              "shortage": 10,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 2
+            },
+            "heat": {
+              "unpaid": 0,
+              "shortage": 5,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            },
+            "light": {
+              "unpaid": 0,
+              "shortage": 5,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            }
+          }
+        }
+      },
+      "salesToDistributor": [],
+      "salesToHub": []
+    },
+    {
+      "instanceId": "fa85e69e-9300-435e-a7dc-4c5fe0de9285",
+      "type": "House-Mayor",
+      "category": "construction",
+      "pop": 6,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 1,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "x": 12,
+      "y": 5,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "house",
+      "tier": 1,
+      "footprintTiles": [
+        [
+          12,
+          5
+        ],
+        [
+          12,
+          6
+        ],
+        [
+          13,
+          5
+        ],
+        [
+          13,
+          6
+        ]
+      ],
+      "distributorTooFar": false,
+      "lastPopulationGrowthMonth": 5,
+      "lastConsumptionMonth": 6,
+      "lastConsumption": {
+        "month": 6,
+        "demand": 6,
+        "taken": 0,
+        "totalUnfed": 6,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastGoodsConsumptionMonth": 6,
+      "lastGoodsConsumption": {
+        "month": 6,
+        "demand": 1.5,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 6,
+      "lastHeatConsumption": {
+        "month": 6,
+        "demand": 0.6000000000000001,
+        "taken": 0,
+        "totalUnfed": 1,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 6,
+      "lastLightConsumption": {
+        "month": 6,
+        "demand": 0.6000000000000001,
+        "taken": 0,
+        "totalUnfed": 1,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastWaterMonth": 6,
+      "lastWaterConsumption": {
+        "month": 6,
+        "demand": 24,
+        "taken": 0,
+        "totalUnfed": 24,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastEnergyMonth": 6,
+      "lastEnergyConsumption": {
+        "month": 6,
+        "demand": 6,
+        "taken": 0,
+        "totalUnfed": 6,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "supplyShortfall": {
+        "current": {
+          "year": 6,
+          "monthIndex": 6,
+          "byNeed": {
+            "food": {
+              "unpaid": 0,
+              "shortage": 12,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 6
+            },
+            "goods": {
+              "unpaid": 0,
+              "shortage": 4,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 2
+            },
+            "heat": {
+              "unpaid": 0,
+              "shortage": 2,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            },
+            "light": {
+              "unpaid": 0,
+              "shortage": 2,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            }
+          }
+        },
+        "previous": {
+          "year": 6,
+          "monthIndex": 5,
+          "byNeed": {
+            "food": {
+              "unpaid": 0,
+              "shortage": 30,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 6
+            },
+            "goods": {
+              "unpaid": 0,
+              "shortage": 10,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 2
+            },
+            "heat": {
+              "unpaid": 0,
+              "shortage": 5,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            },
+            "light": {
+              "unpaid": 0,
+              "shortage": 5,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            }
+          }
+        }
+      }
+    },
+    {
+      "instanceId": "9f4d919f-033b-4fea-8a81-3e38174a8b64",
+      "type": "Windmill-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 67,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 50,
+      "maintenance": 0,
+      "x": 14,
+      "y": 5,
+      "gridSize": 2,
+      "footprintWidth": 1,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 4,
+        "worker": 4,
+        "sector": 2,
+        "salary": 40,
+        "workerSources": {
+          "371d8af0-83c1-4683-8ae5-ac586d946bd0": 4
+        }
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "windmill",
+      "tier": null,
+      "footprintTiles": [
+        [
+          14,
+          5
+        ],
+        [
+          14,
+          6
+        ]
+      ],
+      "isCollecting": false,
+      "linkedDistributors": [
+        {
+          "distributorId": "0e4769d5-955a-4703-b123-0a6811e7b94c",
+          "x": 14,
+          "y": 8,
+          "allocatedStocks": {
+            "dealCoal": 0,
+            "dealPetrol": 0,
+            "dealUranium": 0,
+            "dealExoticWood": 0,
+            "dealWood": 0,
+            "dealDecoratedPot": 0,
+            "dealBook": 0,
+            "dealCarrotCake": 0,
+            "decoratedPot": 0,
+            "carrotCake": 0,
+            "book": 0,
+            "wheat": 214,
+            "carrot": 0,
+            "cabbage": 0,
+            "olive": 0,
+            "plate": 0,
+            "pot": 0,
+            "amphora": 0,
+            "oil": 0,
+            "candle": 0,
+            "wood": 0,
+            "bandwidth": 0,
+            "furniture": 0,
+            "water": 0,
+            "energy": 0
+          }
+        }
+      ],
+      "clientDemand": {
+        "wheat": {
+          "5ef733fd-183d-4f7f-9d83-ae964896b40d": {
+            "turn": 391,
+            "wanted": 4,
+            "served": 0,
+            "streak": 311
+          },
+          "a71a6096-a095-4169-921a-dce8d48e5f10": {
+            "turn": 391,
+            "wanted": 4,
+            "served": 0,
+            "streak": 311
+          },
+          "bfe0b521-4dd6-425f-9eb8-523091637c89": {
+            "turn": 391,
+            "wanted": 4,
+            "served": 0,
+            "streak": 311
+          },
+          "0e4769d5-955a-4703-b123-0a6811e7b94c": {
+            "turn": 280,
+            "wanted": 30,
+            "served": 0,
+            "streak": 106
+          }
+        },
+        "carrot": {
+          "5ef733fd-183d-4f7f-9d83-ae964896b40d": {
+            "turn": 280,
+            "wanted": 4,
+            "served": 0,
+            "streak": 105
+          },
+          "a71a6096-a095-4169-921a-dce8d48e5f10": {
+            "turn": 280,
+            "wanted": 4,
+            "served": 0,
+            "streak": 105
+          },
+          "bfe0b521-4dd6-425f-9eb8-523091637c89": {
+            "turn": 280,
+            "wanted": 4,
+            "served": 0,
+            "streak": 105
+          }
+        }
+      },
+      "lastCollection": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "food": 0
+      },
+      "stockAges": {
+        "wheat": []
+      },
+      "lots": {
+        "wheat": {
+          "689f50a3-88a7-40be-820d-b187a8408821": 214
+        }
+      },
+      "lastTransaction": {
+        "year": 2,
+        "monthIndex": 11
+      },
+      "carryOver": {
+        "year": 2,
+        "stocks": {
+          "wheat": 0,
+          "carrot": 0,
+          "cabbage": 0
+        },
+        "harvested": {
+          "wheat": 214,
+          "carrot": 0,
+          "cabbage": 0
+        }
+      },
+      "lastOutflow": {
+        "year": 2,
+        "monthIndex": 4,
+        "units": 12
+      }
+    },
+    {
+      "instanceId": "1e1b9269-553c-4bf9-876b-d37247fed50c",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 80,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "x": 7,
+      "y": 7,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          7,
+          7
+        ]
+      ]
+    },
+    {
+      "instanceId": "d1ef8a0f-22ec-41f4-b80c-54ecb77305e9",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 3,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "x": 8,
+      "y": 7,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          8,
+          7
+        ]
+      ]
+    },
+    {
+      "instanceId": "23d875b0-2094-4925-aceb-f0495bbb1eda",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 3,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "x": 9,
+      "y": 7,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          7
+        ]
+      ]
+    },
+    {
+      "instanceId": "df0e7d73-d5ed-4535-9ced-f0f9263e9209",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 3,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "x": 10,
+      "y": 7,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          7
+        ]
+      ]
+    },
+    {
+      "instanceId": "41dfbc51-d62a-4917-be92-a63e8038fc0c",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 3,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "x": 11,
+      "y": 7,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          11,
+          7
+        ]
+      ]
+    },
+    {
+      "instanceId": "29cd1ce2-99a8-4db0-bf4b-4c3411a4a4cb",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 3,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "x": 12,
+      "y": 7,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          12,
+          7
+        ]
+      ]
+    },
+    {
+      "instanceId": "85d7c506-757a-48b4-a0e5-06f6227f4937",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 3,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "x": 13,
+      "y": 7,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          13,
+          7
+        ]
+      ]
+    },
+    {
+      "instanceId": "f1ebde51-5c7d-485d-b3c2-d31e63dc7232",
+      "type": "StonePath-001",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 68,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 5,
+      "maintenance": 0,
+      "x": 14,
+      "y": 7,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 5,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "road",
+      "tier": null,
+      "footprintTiles": [
+        [
+          14,
+          7
+        ]
+      ]
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 2,
+      "y": 8,
+      "pop": 0,
+      "stocks": {
+        "rock": 88,
+        "gold": 27,
+        "iron": 58
+      },
+      "maxStocks": {
+        "rock": 88,
+        "gold": 27,
+        "iron": 58
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "a7218392-ab74-4ed5-96a5-94b38c76470c",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          2,
+          8
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "instanceId": "371d8af0-83c1-4683-8ae5-ac586d946bd0",
+      "type": "House-Blue",
+      "category": "construction",
+      "pop": 6,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 40,
+        "dealPetrol": 0,
+        "dealUranium": 10,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 50,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 79,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "x": 6,
+      "y": 8,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "house",
+      "tier": 2,
+      "footprintTiles": [
+        [
+          6,
+          8
+        ],
+        [
+          6,
+          9
+        ],
+        [
+          7,
+          8
+        ],
+        [
+          7,
+          9
+        ]
+      ],
+      "saleWindowOpen": false,
+      "distributorTooFar": false,
+      "lastPopulationGrowthMonth": 8,
+      "cycleState": {
+        "dealCoal": {
+          "index": 0,
+          "value": 0,
+          "opened": false
+        },
+        "dealUranium": {
+          "index": 0,
+          "value": 0,
+          "opened": false
+        },
+        "dealWood": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        }
+      },
+      "unpaidByHub": false,
+      "lastConsumptionMonth": 6,
+      "lastConsumption": {
+        "month": 6,
+        "demand": 6,
+        "taken": 0,
+        "totalUnfed": 6,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastGoodsConsumptionMonth": 6,
+      "lastGoodsConsumption": {
+        "month": 6,
+        "demand": 1.5,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 6,
+      "lastHeatConsumption": {
+        "month": 6,
+        "demand": 0.6000000000000001,
+        "taken": 0,
+        "totalUnfed": 1,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 6,
+      "lastLightConsumption": {
+        "month": 6,
+        "demand": 0.6000000000000001,
+        "taken": 0,
+        "totalUnfed": 1,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastWaterMonth": 6,
+      "lastWaterConsumption": {
+        "month": 6,
+        "demand": 24,
+        "taken": 0,
+        "totalUnfed": 24,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastEnergyMonth": 6,
+      "lastEnergyConsumption": {
+        "month": 6,
+        "demand": 6,
+        "taken": 0,
+        "totalUnfed": 6,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "activityShortfall": {
+        "dealWood": true
+      },
+      "lastFailedSale": {
+        "year": 6,
+        "monthIndex": 6,
+        "units": 50,
+        "cause": "no_hub"
+      },
+      "supplyShortfall": {
+        "current": {
+          "year": 6,
+          "monthIndex": 6,
+          "byNeed": {
+            "food": {
+              "unpaid": 0,
+              "shortage": 12,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 6
+            },
+            "goods": {
+              "unpaid": 0,
+              "shortage": 0,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 0
+            },
+            "heat": {
+              "unpaid": 0,
+              "shortage": 2,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            },
+            "light": {
+              "unpaid": 0,
+              "shortage": 2,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            }
+          }
+        },
+        "previous": {
+          "year": 6,
+          "monthIndex": 5,
+          "byNeed": {
+            "food": {
+              "unpaid": 0,
+              "shortage": 30,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 6
+            },
+            "goods": {
+              "unpaid": 0,
+              "shortage": 0,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 0
+            },
+            "heat": {
+              "unpaid": 0,
+              "shortage": 5,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            },
+            "light": {
+              "unpaid": 0,
+              "shortage": 5,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            }
+          }
+        }
+      },
+      "salesToDistributor": [],
+      "salesToHub": []
+    },
+    {
+      "instanceId": "bfe0b521-4dd6-425f-9eb8-523091637c89",
+      "type": "House-Red",
+      "category": "construction",
+      "pop": 6,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 13,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "x": 8,
+      "y": 8,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "house",
+      "tier": 3,
+      "footprintTiles": [
+        [
+          8,
+          8
+        ],
+        [
+          8,
+          9
+        ],
+        [
+          9,
+          8
+        ],
+        [
+          9,
+          9
+        ]
+      ],
+      "cycleState": {
+        "decoratedPot": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        },
+        "carrotCake": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        }
+      },
+      "activityShortfall": {
+        "decoratedPot": true,
+        "carrotCake": true
+      },
+      "distributorTooFar": false,
+      "lastPopulationGrowthMonth": 7,
+      "lastConsumptionMonth": 6,
+      "lastConsumption": {
+        "month": 6,
+        "demand": 6,
+        "taken": 0,
+        "totalUnfed": 6,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastGoodsConsumptionMonth": 6,
+      "lastGoodsConsumption": {
+        "month": 6,
+        "demand": 1.5,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 6,
+      "lastHeatConsumption": {
+        "month": 6,
+        "demand": 0.6000000000000001,
+        "taken": 0,
+        "totalUnfed": 1,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 6,
+      "lastLightConsumption": {
+        "month": 6,
+        "demand": 0.6000000000000001,
+        "taken": 0,
+        "totalUnfed": 1,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastWaterMonth": 6,
+      "lastWaterConsumption": {
+        "month": 6,
+        "demand": 24,
+        "taken": 0,
+        "totalUnfed": 24,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastEnergyMonth": 6,
+      "lastEnergyConsumption": {
+        "month": 6,
+        "demand": 6,
+        "taken": 0,
+        "totalUnfed": 6,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "saleWindowOpen": false,
+      "unpaidByHub": false,
+      "supplyShortfall": {
+        "current": {
+          "year": 6,
+          "monthIndex": 6,
+          "byNeed": {
+            "food": {
+              "unpaid": 0,
+              "shortage": 12,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 6
+            },
+            "goods": {
+              "unpaid": 0,
+              "shortage": 4,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 2
+            },
+            "heat": {
+              "unpaid": 0,
+              "shortage": 2,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            },
+            "light": {
+              "unpaid": 0,
+              "shortage": 2,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            }
+          }
+        },
+        "previous": {
+          "year": 6,
+          "monthIndex": 5,
+          "byNeed": {
+            "food": {
+              "unpaid": 0,
+              "shortage": 30,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 6
+            },
+            "goods": {
+              "unpaid": 0,
+              "shortage": 10,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 2
+            },
+            "heat": {
+              "unpaid": 0,
+              "shortage": 5,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            },
+            "light": {
+              "unpaid": 0,
+              "shortage": 5,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            }
+          }
+        }
+      },
+      "salesToDistributor": [],
+      "salesToHub": []
+    },
+    {
+      "instanceId": "5ef733fd-183d-4f7f-9d83-ae964896b40d",
+      "type": "House-Red",
+      "category": "construction",
+      "pop": 6,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 12,
+      "isBuilding": true,
+      "roads": 2,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "x": 11,
+      "y": 8,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "house",
+      "tier": 3,
+      "footprintTiles": [
+        [
+          11,
+          8
+        ],
+        [
+          11,
+          9
+        ],
+        [
+          12,
+          8
+        ],
+        [
+          12,
+          9
+        ]
+      ],
+      "cycleState": {
+        "decoratedPot": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        },
+        "carrotCake": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        }
+      },
+      "activityShortfall": {
+        "decoratedPot": true,
+        "carrotCake": true
+      },
+      "distributorTooFar": false,
+      "lastPopulationGrowthMonth": 7,
+      "lastConsumptionMonth": 6,
+      "lastConsumption": {
+        "month": 6,
+        "demand": 6,
+        "taken": 0,
+        "totalUnfed": 6,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastGoodsConsumptionMonth": 6,
+      "lastGoodsConsumption": {
+        "month": 6,
+        "demand": 1.5,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 6,
+      "lastHeatConsumption": {
+        "month": 6,
+        "demand": 0.6000000000000001,
+        "taken": 0,
+        "totalUnfed": 1,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 6,
+      "lastLightConsumption": {
+        "month": 6,
+        "demand": 0.6000000000000001,
+        "taken": 0,
+        "totalUnfed": 1,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastWaterMonth": 6,
+      "lastWaterConsumption": {
+        "month": 6,
+        "demand": 24,
+        "taken": 0,
+        "totalUnfed": 24,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastEnergyMonth": 6,
+      "lastEnergyConsumption": {
+        "month": 6,
+        "demand": 6,
+        "taken": 0,
+        "totalUnfed": 6,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "saleWindowOpen": false,
+      "unpaidByHub": false,
+      "supplyShortfall": {
+        "current": {
+          "year": 6,
+          "monthIndex": 6,
+          "byNeed": {
+            "food": {
+              "unpaid": 0,
+              "shortage": 12,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 6
+            },
+            "goods": {
+              "unpaid": 0,
+              "shortage": 4,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 2
+            },
+            "heat": {
+              "unpaid": 0,
+              "shortage": 2,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            },
+            "light": {
+              "unpaid": 0,
+              "shortage": 2,
+              "turn": 391,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            }
+          }
+        },
+        "previous": {
+          "year": 6,
+          "monthIndex": 5,
+          "byNeed": {
+            "food": {
+              "unpaid": 0,
+              "shortage": 30,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 6
+            },
+            "goods": {
+              "unpaid": 0,
+              "shortage": 10,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 2
+            },
+            "heat": {
+              "unpaid": 0,
+              "shortage": 5,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            },
+            "light": {
+              "unpaid": 0,
+              "shortage": 5,
+              "turn": 389,
+              "dayUnpaid": 0,
+              "dayShortage": 1
+            }
+          }
+        }
+      },
+      "salesToDistributor": [],
+      "salesToHub": []
+    },
+    {
+      "instanceId": "0e4769d5-955a-4703-b123-0a6811e7b94c",
+      "type": "Market-Stall-Red",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 74,
+      "isBuilding": true,
+      "roads": 1,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "x": 14,
+      "y": 8,
+      "gridSize": 2,
+      "footprintWidth": 1,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 2,
+        "worker": 2,
+        "sector": 2,
+        "salary": 20,
+        "workerSources": {
+          "371d8af0-83c1-4683-8ae5-ac586d946bd0": 2
+        }
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "market",
+      "tier": null,
+      "footprintTiles": [
+        [
+          14,
+          8
+        ],
+        [
+          14,
+          9
+        ]
+      ],
+      "supplyHubId": "9f4d919f-033b-4fea-8a81-3e38174a8b64",
+      "distributorTooFar": false,
+      "noSourcesNearby": false,
+      "unmetDemand": 30,
+      "stockAges": {
+        "wheat": []
+      },
+      "lastTransaction": {
+        "year": 2,
+        "monthIndex": 4
+      }
+    },
+    {
+      "type": "Tree-Chene",
+      "category": "nature",
+      "x": 4,
+      "y": 9,
+      "pop": 0,
+      "stocks": {
+        "wood": 120
+      },
+      "maxStocks": {
+        "wood": 120
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "c62de493-1697-4d62-b025-f27b161bac6c",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          9
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 10,
+      "y": 9,
+      "pop": 0,
+      "stocks": {
+        "rock": 106,
+        "gold": 44,
+        "iron": 0
+      },
+      "maxStocks": {
+        "rock": 106,
+        "gold": 44,
+        "iron": 0
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "a43199a1-f7b0-4559-8cd8-79c8a9ff1028",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          9
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "instanceId": "f354dd8f-affc-46ad-9f99-cf01e94a6cc8",
+      "type": "House-Red",
+      "category": "construction",
+      "pop": 6,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 300,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "x": 6,
+      "y": 10,
+      "gridSize": 2,
+      "footprintWidth": 2,
+      "footprintHeight": 2,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "house",
+      "tier": 3,
+      "footprintTiles": [
+        [
+          6,
+          10
+        ],
+        [
+          6,
+          11
+        ],
+        [
+          7,
+          10
+        ],
+        [
+          7,
+          11
+        ]
+      ],
+      "cycleState": {
+        "decoratedPot": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        },
+        "carrotCake": {
+          "index": 0,
+          "value": 0,
+          "opened": true
+        }
+      },
+      "distributorTooFar": false,
+      "lastPopulationGrowthMonth": 5,
+      "lastConsumptionMonth": 6,
+      "lastConsumption": {
+        "month": 6,
+        "demand": 6,
+        "taken": 0,
+        "totalUnfed": 6,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastGoodsConsumptionMonth": 6,
+      "lastGoodsConsumption": {
+        "month": 6,
+        "demand": 1.5,
+        "taken": 0,
+        "totalUnfed": 2,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastHeatConsumptionMonth": 6,
+      "lastHeatConsumption": {
+        "month": 6,
+        "demand": 0.6000000000000001,
+        "taken": 0,
+        "totalUnfed": 1,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastLightConsumptionMonth": 6,
+      "lastLightConsumption": {
+        "month": 6,
+        "demand": 0.6000000000000001,
+        "taken": 0,
+        "totalUnfed": 1,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastWaterMonth": 6,
+      "lastWaterConsumption": {
+        "month": 6,
+        "demand": 24,
+        "taken": 0,
+        "totalUnfed": 24,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "lastEnergyMonth": 6,
+      "lastEnergyConsumption": {
+        "month": 6,
+        "demand": 6,
+        "taken": 0,
+        "totalUnfed": 6,
+        "categoriesTaken": [],
+        "takenByCategory": {}
+      },
+      "saleWindowOpen": false,
+      "unpaidByHub": false,
+      "salesToDistributor": [],
+      "salesToHub": []
+    },
+    {
+      "type": "Tree-Chene",
+      "category": "nature",
+      "x": 14,
+      "y": 10,
+      "pop": 0,
+      "stocks": {
+        "wood": 120
+      },
+      "maxStocks": {
+        "wood": 120
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "ae3515e4-50c1-41b8-902b-6cdfea05fb9d",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          14,
+          10
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "instanceId": "bca3a8ae-7d07-46a1-ab88-e92e6543fadd",
+      "type": "Farm-Wheat",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 15,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "x": 9,
+      "y": 11,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30,
+        "workerSources": {
+          "a71a6096-a095-4169-921a-dce8d48e5f10": 3
+        }
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          9,
+          11
+        ]
+      ],
+      "lastProductionYear": 5,
+      "stockAges": {
+        "wheat": []
+      },
+      "saleWindowOpen": false,
+      "unpaidByHub": false,
+      "lastFailedSale": {
+        "year": 6,
+        "monthIndex": 0,
+        "units": 288,
+        "cause": "hub_no_money"
+      },
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false
+    },
+    {
+      "instanceId": "689f50a3-88a7-40be-820d-b187a8408821",
+      "type": "Farm-Wheat",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 18,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "x": 10,
+      "y": 11,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30,
+        "workerSources": {
+          "5ef733fd-183d-4f7f-9d83-ae964896b40d": 3
+        }
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          10,
+          11
+        ]
+      ],
+      "lastProductionYear": 5,
+      "stockAges": {
+        "wheat": []
+      },
+      "saleWindowOpen": false,
+      "unpaidByHub": false,
+      "lastFailedSale": {
+        "year": 6,
+        "monthIndex": 0,
+        "units": 288,
+        "cause": "hub_no_money"
+      },
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false,
+      "activityCollected": {
+        "wheat": {
+          "amount": 214,
+          "turn": 175
+        }
+      }
+    },
+    {
+      "instanceId": "933cb3d2-cf5e-49f4-b040-45478de9cb90",
+      "type": "Farm-Wheat",
+      "category": "construction",
+      "pop": 0,
+      "stocks": {
+        "wheat": 0,
+        "carrot": 0,
+        "cabbage": 0,
+        "furniture": 0,
+        "plate": 0,
+        "pot": 0,
+        "amphora": 0,
+        "wood": 0,
+        "oil": 0,
+        "candle": 0,
+        "water": 0,
+        "energy": 0,
+        "dealCoal": 0,
+        "dealPetrol": 0,
+        "dealUranium": 0,
+        "dealExoticWood": 0,
+        "dealWood": 0,
+        "dealDecoratedPot": 0,
+        "dealBook": 0,
+        "dealCarrotCake": 0,
+        "decoratedPot": 0,
+        "carrotCake": 0,
+        "book": 0,
+        "olive": 0,
+        "bandwidth": 0,
+        "coal": 0,
+        "petrol": 0,
+        "uranium": 0,
+        "exoticWood": 0,
+        "food": 0,
+        "goods": 0,
+        "heat": 0,
+        "light": 0
+      },
+      "gameTurn": 19,
+      "isBuilding": true,
+      "roads": 0,
+      "stage": 0,
+      "stageName": "",
+      "price": 10,
+      "maintenance": 0,
+      "x": 11,
+      "y": 11,
+      "gridSize": 1,
+      "footprintWidth": 1,
+      "footprintHeight": 1,
+      "placementRotationStep": 0,
+      "employees": {
+        "worker_need": 3,
+        "worker": 3,
+        "sector": 1,
+        "salary": 30,
+        "workerSources": {
+          "5ef733fd-183d-4f7f-9d83-ae964896b40d": 3
+        }
+      },
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "farm",
+      "tier": null,
+      "footprintTiles": [
+        [
+          11,
+          11
+        ]
+      ],
+      "lastProductionYear": 5,
+      "stockAges": {
+        "wheat": []
+      },
+      "saleWindowOpen": false,
+      "unpaidByHub": false,
+      "lastFailedSale": {
+        "year": 6,
+        "monthIndex": 0,
+        "units": 288,
+        "cause": "hub_no_money"
+      },
+      "salesToDistributor": [],
+      "salesToHub": [],
+      "collectedByHub": false
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 0,
+      "y": 12,
+      "pop": 0,
+      "stocks": {
+        "rock": 137,
+        "gold": 40,
+        "iron": 69
+      },
+      "maxStocks": {
+        "rock": 137,
+        "gold": 40,
+        "iron": 69
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "de62d8ae-30f8-4839-b568-ec0929884841",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          0,
+          12
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 4,
+      "y": 12,
+      "pop": 0,
+      "stocks": {
+        "rock": 72,
+        "gold": 41,
+        "iron": 43
+      },
+      "maxStocks": {
+        "rock": 72,
+        "gold": 41,
+        "iron": 43
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "7cdf01c2-f632-4c51-87f4-66beaa68b5a1",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          4,
+          12
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Tree-Chene",
+      "category": "nature",
+      "x": 6,
+      "y": 12,
+      "pop": 0,
+      "stocks": {
+        "wood": 120
+      },
+      "maxStocks": {
+        "wood": 120
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "d4a7e3cc-d110-41f3-b472-ccbedb41a63e",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          6,
+          12
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Boulder-001",
+      "category": "nature",
+      "x": 0,
+      "y": 13,
+      "pop": 0,
+      "stocks": {
+        "rock": 65,
+        "gold": 32,
+        "iron": 0
+      },
+      "maxStocks": {
+        "rock": 65,
+        "gold": 32,
+        "iron": 0
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "57b1d5c9-c580-4744-ae1f-9795cfc08a28",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          0,
+          13
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Tree-Sapin",
+      "category": "nature",
+      "x": 7,
+      "y": 14,
+      "pop": 0,
+      "stocks": {
+        "wood": 100
+      },
+      "maxStocks": {
+        "wood": 100
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "1b6c2569-39af-4a80-9550-9dc43c249107",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          7,
+          14
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    },
+    {
+      "type": "Tree-Chene",
+      "category": "nature",
+      "x": 11,
+      "y": 15,
+      "pop": 0,
+      "stocks": {
+        "wood": 120
+      },
+      "maxStocks": {
+        "wood": 120
+      },
+      "roads": 0,
+      "price": 0,
+      "isBuilding": false,
+      "instanceId": "bd16b57d-95cd-4054-96ae-62e0894ea2e2",
+      "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+      "kind": "nature",
+      "tier": null,
+      "footprintTiles": [
+        [
+          11,
+          15
+        ]
+      ],
+      "employees": {
+        "worker_need": 0,
+        "worker": 0,
+        "sector": 0,
+        "salary": 0
+      }
+    }
+  ],
+  "employmentSummary": {
+    "workerPool": 24,
+    "totalPopulation": 36,
+    "totalAssigned": 15,
+    "totalNeed": 15,
+    "unemployed": 15,
+    "unemploymentPercentage": 50,
+    "lack": 0,
+    "causes": {
+      "unemployedNoSkill": 0,
+      "unemployedNoPosts": 9,
+      "unemployedNoRoad": 6,
+      "lackNoSkill": 0,
+      "lackNoHands": 0
+    },
+    "understaffedBuildingIds": [],
+    "bySector": {
+      "1": {
+        "workerNeed": 9,
+        "workers": 9,
+        "need": 0
+      },
+      "2": {
+        "workerNeed": 6,
+        "workers": 6,
+        "need": 0
+      }
+    },
+    "bySkill": {
+      "vente-alimentaire": {
+        "workerNeed": 2,
+        "workers": 2,
+        "need": 0
+      },
+      "fermier": {
+        "workerNeed": 9,
+        "workers": 9,
+        "need": 0
+      },
+      "stockage-alimentaire": {
+        "workerNeed": 4,
+        "workers": 4,
+        "need": 0
+      }
+    },
+    "byGroup": {
+      "artisans": {
+        "workerPool": 18,
+        "assigned": 9,
+        "seeking": 24,
+        "unemployed": 15,
+        "unemployedNoRoad": 6,
+        "poolByLevel": {
+          "1": 18
+        }
+      },
+      "merchants": {
+        "workerPool": 6,
+        "assigned": 6,
+        "seeking": 6,
+        "unemployed": 0,
+        "unemployedNoRoad": 0,
+        "poolByLevel": {
+          "1": 6
+        }
+      },
+      "scholars": {
+        "workerPool": 0,
+        "assigned": 0,
+        "seeking": 0,
+        "unemployed": 0,
+        "unemployedNoRoad": 0,
+        "poolByLevel": {}
+      },
+      "administrators": {
+        "workerPool": 0,
+        "assigned": 0,
+        "seeking": 0,
+        "unemployed": 0,
+        "unemployedNoRoad": 0,
+        "poolByLevel": {
+          "1": 0
+        }
+      }
+    }
+  },
+  "populationSummary": {
+    "totalPop": 36,
+    "houseCount": 6
+  },
+  "news": {
+    "incoming": [],
+    "archived": [
+      {
+        "id": "tutorial:merchants-needed:c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "turn": 75,
+        "sourceId": "city",
+        "categoryId": "tutorial",
+        "title": "Il manque des commerçants",
+        "body": "Un bâtiment du commerce attend ses travailleurs. « Marché » demande des habitants ayant la compétence 🏪 « Vente alimentaire », « Grenier » la compétence 🥫 « Stockage alimentaire » : seuls les « Commerçants » les ont.\n\n**Il vous faut plus de commerçants.**",
+        "teaser": "Les étals restent vides…",
+        "reliability": "trusted",
+        "payload": null,
+        "access": {
+          "requiresAssets": []
+        },
+        "lifecycle": "archived",
+        "revelation": "free",
+        "readAtTurn": 75,
+        "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "action": {
+          "kind": "buildTool",
+          "toolId": "House-Blue"
+        },
+        "illustrations": [],
+        "image": null,
+        "hidden": false,
+        "blocking": false,
+        "legend": [],
+        "choices": [],
+        "next": null
+      },
+      {
+        "id": "tutorial:workers-needed:c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "turn": 69,
+        "sourceId": "city",
+        "categoryId": "tutorial",
+        "title": "Il manque des bras",
+        "body": "Un bâtiment qui affiche l'icône **« sans travailleurs »** n'a personne pour y travailler : il reste **à l'arrêt**.\n\nChaque bâtiment est relié à l'un des trois groupes d'habitants — « Artisans », « Commerçants » ou « Savants » — et n'embauche que dans son groupe, selon leurs compétences.\n\nPar exemple, « Champ de blé » demande des « Fermier », que seuls les « Artisans » ont.\n\n**Quand un bâtiment attend ses travailleurs, bâtissez plus de maisons du groupe qui a les compétences voulues, ou attendez que plus d'habitants n'arrivent dans une de ces maisons.**",
+        "teaser": "Des bâtiments restent sans bras…",
+        "reliability": "trusted",
+        "payload": null,
+        "access": {
+          "requiresAssets": []
+        },
+        "lifecycle": "archived",
+        "revelation": "free",
+        "readAtTurn": 72,
+        "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "action": null,
+        "illustrations": [
+          {
+            "src": "/tuto/no-work-sprite.svg",
+            "label": "Sans travailleurs"
+          },
+          "Farm-Wheat"
+        ],
+        "image": {
+          "src": "/tuto/no-work-farms.png",
+          "alt": "Des champs de blé, chacun avec l’icône « sans travailleurs » au-dessus"
+        },
+        "hidden": false,
+        "blocking": false,
+        "legend": [],
+        "choices": [],
+        "next": null
+      },
+      {
+        "id": "tutorial:trade-chain:c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "turn": 61,
+        "sourceId": "city",
+        "categoryId": "tutorial",
+        "title": "Préparer la vente",
+        "body": "La récolte doit être stockée puis vendue. Choisissez dans la barre de construction : « Marché » pour vendre et « Grenier » pour garder la récolte.\n\n**Les fermiers vous ont peut-être déjà alerté** des risques : restez attentif. Faites un clic droit sur un « Champ de blé », puis ouvrez l'onglet **« Messages »**.",
+        "teaser": "Les négociants se préparent à la moisson…",
+        "reliability": "trusted",
+        "payload": null,
+        "access": {
+          "requiresAssets": []
+        },
+        "lifecycle": "archived",
+        "revelation": "free",
+        "readAtTurn": 61,
+        "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "action": null,
+        "illustrations": [
+          "Market-Stall-Red",
+          "Windmill-001"
+        ],
+        "image": {
+          "src": "/tuto/messages.png",
+          "alt": "L’onglet « Messages » d’un champ de blé : trop de champs, conservation insuffisante faute de grenier, impayés",
+          "caption": "L'onglet « Messages » d'un « Champ de blé » (clic droit sur le champ) : ici, trop de champs, aucun grenier en état de marche, et des impayés. Cliquez sur l'image pour l'agrandir."
+        },
+        "hidden": false,
+        "blocking": false,
+        "legend": [],
+        "choices": [],
+        "next": null
+      },
+      {
+        "id": "tutorial:scholars-house:c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "turn": 31,
+        "sourceId": "city",
+        "categoryId": "tutorial",
+        "title": "Des savants pour la cité",
+        "body": "En attendant la moisson, appelez de nouveaux habitants : la maison « Savants » abrite les savants, qui font tourner les services publics. Bâtissez-en une.",
+        "teaser": "Des lettrés cherchent une cité où s’établir…",
+        "reliability": "trusted",
+        "payload": null,
+        "access": {
+          "requiresAssets": []
+        },
+        "lifecycle": "archived",
+        "revelation": "free",
+        "readAtTurn": 32,
+        "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "action": {
+          "kind": "buildTool",
+          "toolId": "House-Purple"
+        },
+        "illustrations": [],
+        "image": null,
+        "hidden": false,
+        "blocking": false,
+        "legend": [],
+        "choices": [],
+        "next": null
+      },
+      {
+        "id": "tutorial:explore-menu:c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "turn": 18,
+        "sourceId": "city",
+        "categoryId": "tutorial",
+        "title": "Le menu de gauche",
+        "body": "Votre premier champ est posé. Profitez de l'attente de la récolte pour explorer le menu à gauche de l'écran : ses onglets vous renseignent sur votre hameau, à tout moment. Passez la souris sur les icônes pour avoir une explication.",
+        "teaser": "Un messager vous montre un tableau…",
+        "reliability": "trusted",
+        "payload": null,
+        "access": {
+          "requiresAssets": []
+        },
+        "lifecycle": "archived",
+        "revelation": "free",
+        "readAtTurn": 18,
+        "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "action": null,
+        "illustrations": [],
+        "image": null,
+        "hidden": false,
+        "blocking": false,
+        "legend": [
+          {
+            "icon": "rail-population",
+            "word": "Population"
+          },
+          {
+            "icon": "rail-employment",
+            "word": "Emploi"
+          },
+          {
+            "icon": "rail-city-stocks",
+            "word": "Stocks"
+          },
+          {
+            "icon": "rail-nature",
+            "word": "Nature"
+          }
+        ],
+        "choices": [],
+        "next": null
+      },
+      {
+        "id": "tutorial:farms:c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "turn": 13,
+        "sourceId": "city",
+        "categoryId": "tutorial",
+        "title": "De quoi les nourrir",
+        "body": "Vos habitants doivent manger : posez 1 « Champ de blé » pour les nourrir. Un champ n'a pas besoin de route, mais il lui faut des travailleurs ayant la compétence « Fermier » : les habitants de vos maisons « Artisans » les fourniront. Il ne donne sa récolte qu'une fois l'an.",
+        "teaser": "Les habitants ont faim…",
+        "reliability": "trusted",
+        "payload": null,
+        "access": {
+          "requiresAssets": []
+        },
+        "lifecycle": "archived",
+        "revelation": "free",
+        "readAtTurn": 13,
+        "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "action": {
+          "kind": "buildTool",
+          "toolId": "Farm-Wheat"
+        },
+        "illustrations": [],
+        "image": null,
+        "hidden": false,
+        "blocking": false,
+        "legend": [],
+        "choices": [],
+        "next": null
+      },
+      {
+        "id": "tutorial:artisans:c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "turn": 3,
+        "sourceId": "city",
+        "categoryId": "tutorial",
+        "title": "Les bras de la terre",
+        "body": "La maison « Artisans » abrite ceux qui savent travailler la terre : leur compétence « Fermier » fera tourner vos champs. Une seule maison ne donne pas assez de bras : bâtissez-en trois.",
+        "teaser": "Des exilés cherchent un toit…",
+        "reliability": "trusted",
+        "payload": null,
+        "access": {
+          "requiresAssets": []
+        },
+        "lifecycle": "archived",
+        "revelation": "free",
+        "readAtTurn": 3,
+        "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "action": {
+          "kind": "buildTool",
+          "toolId": "House-Red"
+        },
+        "illustrations": [],
+        "image": null,
+        "hidden": false,
+        "blocking": false,
+        "legend": [],
+        "choices": [],
+        "next": null
+      },
+      {
+        "id": "tutorial:road:c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "turn": 2,
+        "sourceId": "city",
+        "categoryId": "tutorial",
+        "title": "Des routes pour la cité",
+        "body": "Vos bâtiments communiquent par les **routes** : **tracez-en quatre**. Cliquez sur le bouton de route, à côté du bouton en forme de maison, puis faites glisser la souris : la forme de chaque case se choisit toute seule.\n\nPour poser **une seule case**, la touche **S** change sa forme, et la touche **R** la tourne. Voici les formes possibles :",
+        "teaser": "Les bâtisseurs réclament des chemins…",
+        "reliability": "trusted",
+        "payload": null,
+        "access": {
+          "requiresAssets": []
+        },
+        "lifecycle": "archived",
+        "revelation": "free",
+        "readAtTurn": 2,
+        "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "action": {
+          "kind": "buildTool",
+          "toolId": "StonePath-001"
+        },
+        "illustrations": [
+          {
+            "src": "/tuto/roads/straight.svg",
+            "label": "Droite"
+          },
+          {
+            "src": "/tuto/roads/bend.svg",
+            "label": "Virage"
+          },
+          {
+            "src": "/tuto/roads/tee.svg",
+            "label": "Intersection"
+          },
+          {
+            "src": "/tuto/roads/cross.svg",
+            "label": "Croisement"
+          },
+          {
+            "src": "/tuto/roads/end.svg",
+            "label": "Bout"
+          }
+        ],
+        "image": null,
+        "hidden": false,
+        "blocking": false,
+        "legend": [],
+        "choices": [],
+        "next": null
+      },
+      {
+        "id": "milestone:mayor-house:c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "turn": 1,
+        "sourceId": "city",
+        "categoryId": "announcement",
+        "title": "La maison du maire est bâtie",
+        "body": "Les administrateurs de la ville s'installent (6 au plus). Leur maison leur donne des compétences, d'office : propriétaire — ils perçoivent les loyers et leur maison est la condition pour bâtir toutes les autres maisons ; impôt citoyen, impôt sur le revenu, tva — ils perçoivent les impôts des autres maisons.",
+        "teaser": "Les administrateurs prennent leurs quartiers…",
+        "reliability": "trusted",
+        "payload": null,
+        "access": {
+          "requiresAssets": []
+        },
+        "lifecycle": "archived",
+        "revelation": "free",
+        "readAtTurn": 2,
+        "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "action": null,
+        "illustrations": [],
+        "image": null,
+        "hidden": false,
+        "blocking": false,
+        "legend": [],
+        "choices": [],
+        "next": null
+      },
+      {
+        "id": "milestone:starting-fortune:c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "turn": 0,
+        "sourceId": "city",
+        "categoryId": "announcement",
+        "title": "Vous décidez de rester",
+        "body": "Vous décidez de rester sur ce territoire. Vous dotez le budget de votre ville avec le trésor trouvé en chemin, 2 000,00€, pour bâtir vos premières maisons. Tout commence par la vôtre : cliquez sur la maison ci-dessous, puis placez-la sur la carte. C'est elle qui fait de vous un propriétaire et ouvre la construction de toutes les autres.",
+        "teaser": "Vous avez fait votre choix…",
+        "reliability": "trusted",
+        "payload": null,
+        "access": {
+          "requiresAssets": []
+        },
+        "lifecycle": "archived",
+        "revelation": "free",
+        "readAtTurn": 0,
+        "hamletId": "c1c366c1-e349-4655-b66e-35af68daf2ff",
+        "action": {
+          "kind": "buildTool",
+          "toolId": "House-Mayor"
+        },
+        "illustrations": [],
+        "image": null,
+        "hidden": false,
+        "blocking": false,
+        "legend": [],
+        "choices": [],
+        "next": null
+      }
+    ]
+  },
+  "unreadableSections": {}
+}

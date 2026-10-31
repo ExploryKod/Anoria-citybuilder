@@ -32,6 +32,24 @@
   pointer-events: auto;
 }
 
+/*
+ * The top bar is a transparent row as wide as the screen and as tall as its tallest column (date, funds, camera, ... on the right: some 200px on a phone
+ * in landscape). Its wrappers must not take the touches that fall between its controls: those belong to the map, where a building is placed under it.
+ * Only the controls themselves (buttons, links, the info boxes) take touches.
+ */
+.info-panel-wrapper.hud > .hud-status,
+.delay-ui-wrapper,
+.hud-bar,
+.hud-bar__start,
+.hud-bar__end,
+.hud-bar__row {
+  pointer-events: none;
+}
+
+.hud-bar :where(button, a, input, select, textarea, label, summary, [tabindex], .info-box, .game-active-hamlet) {
+  pointer-events: auto;
+}
+
 /* -------------------------------------------------------------------------
    Reminder bar: short messages one after the other, under the HUD (HudTicker.js)
    ------------------------------------------------------------------------- */
@@ -529,7 +547,8 @@
   padding: 0;
   margin: 0;
   overflow: visible;
-  pointer-events: auto;
+  /* The rail's own box is wider than what shows (the strip beside the tabs, the corner under them): only its panels and tabs take touches (below) */
+  pointer-events: none;
   box-sizing: border-box;
   /* drag + scope + details + emploi + ville + commerce + nature */
   --hud-pop-tab-min-count: 7;
@@ -587,6 +606,12 @@
 .hud-pop-rail--collapsed .hud-pop-rail__panels,
 .hud-pop-rail--collapsed .hud-pop-rail__tabs {
   display: none;
+}
+
+.hud-pop-rail__panels,
+.hud-pop-rail__tab,
+.hud-pop-rail__expand {
+  pointer-events: auto;
 }
 
 .hud-pop-rail__side {
@@ -1118,6 +1143,12 @@
   border: none;
   backdrop-filter: none;
   max-height: calc(100vh - 120px);
+  /* A column (a grid of columns on touch) that is not always full: only its buttons take touches, not the empty cells */
+  pointer-events: none;
+}
+
+.hud-side-actions.info-box-stats > * {
+  pointer-events: auto;
 }
 
 /* -------------------------------------------------------------------------
@@ -1513,6 +1544,15 @@
     max-width: none;
     margin: 0 auto;
     transform: none;
+  }
+
+  /* The row spans the whole width right of the toggles: only its buttons take touches, the map shows through (and takes them) between them */
+  .legend-btns-container.legend-btns-container--mobile {
+    pointer-events: none;
+  }
+
+  .legend-btns-container.legend-btns-container--mobile > * {
+    pointer-events: auto;
   }
 
   .legend-btns-container.legend-btns-container--mobile {

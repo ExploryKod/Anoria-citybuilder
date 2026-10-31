@@ -20,6 +20,8 @@ import { STAFF_LEVEL_COLORS } from '../../three/assets/buildingAssets.js';
 
 /** Gap between build bar bottom edge and top of the round FAB container. */
 const BUILD_BAR_GAP_PX = 8;
+/** A phone held in landscape: the open build bar covers a third of the map, so it steps aside once a tool is chosen (see `closeForPlacement`). */
+const SHORT_LANDSCAPE_QUERY = '(max-width: 1024px) and (orientation: landscape) and (max-height: 500px)';
 /** Horizontal scroll step for category pills (approx. 2–3 pills). */
 const PILLS_SCROLL_STEP_PX = 160;
 
@@ -140,6 +142,7 @@ function mountRoadButton() {
     getButtonsUnactive();
     button.classList.add('selected');
     deps?.invokeSetActiveTool?.(e);
+    closeForPlacement();
   });
   deps?.buttonStateManager?.registerButton?.(toolId, button);
 }
@@ -237,6 +240,14 @@ export function close() {
   document.documentElement.style.setProperty('--mobile-build-bar-offset', '0px');
   setBuildBarDocumentState(false);
   syncConstructionOpenButton();
+}
+
+/**
+ * A tool has just been put in hand: on a short landscape screen the bar closes, so that the map under it can be touched to place the building or
+ * the road. The tool stays armed; the house button opens the bar again.
+ */
+function closeForPlacement() {
+  if (isOpen && window.matchMedia(SHORT_LANDSCAPE_QUERY).matches) close();
 }
 
 function syncConstructionOpenButton() {
@@ -690,6 +701,7 @@ function activateDirectTool(pill, toolId, event) {
   getButtonsUnactive();
   pill.classList.add('selected');
   deps?.invokeSetActiveTool?.(event);
+  closeForPlacement();
 }
 
 function renderCarousel(categoryId) {
@@ -743,6 +755,7 @@ function renderCarousel(categoryId) {
           if (index >= 0) {
             syncCarouselToolRovingTabIndex(index);
           }
+          closeForPlacement();
         },
       });
       const levelPill = staffLevelPill(buttonInfo.tool);
