@@ -1,4 +1,5 @@
 import { EDITOR_SEA_TERRAIN_ID } from '../../shared/terrain-catalog/editorSeaTerrain.js';
+import { getGroundSurface } from '../../shared/editor-catalog/kenneyPlacementProfile.js';
 
 export function createTile(x, y) {
     return {
@@ -30,6 +31,8 @@ export function clearCityTiles(city) {
                 continue;
             }
             tile.terrainId = 'grass';
+            // Plain grass again: no relief (a map layout sets it when it is applied)
+            delete tile.relief;
             tile.buildingId = undefined;
             tile.instanceId = undefined;
             tile.buildingCoord = undefined;
@@ -52,6 +55,7 @@ export function initializeEditorCityTiles(city) {
             }
             const cell = city.tiles[x][y];
             cell.terrainId = EDITOR_SEA_TERRAIN_ID;
+            cell.relief = getGroundSurface([], x, y, EDITOR_SEA_TERRAIN_ID);
             cell.buildingId = undefined;
             cell.instanceId = undefined;
             cell.buildingCoord = undefined;

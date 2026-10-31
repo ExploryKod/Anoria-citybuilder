@@ -40,6 +40,39 @@ To solve: find which panel or tool still shows a finite scope for a market or a 
 distributor's scope should mean (who it reaches, by road or by distance), make the distribution read it, and give finite values back
 where it should bite.
 
+## Relief: buildings stand on the ground of their tile (decided 2026-10-31, step 1 built)
+
+A custom map (editor) makes its relief with Kenney terrain pieces stacked on a tile (`stackObjects`, `baseLocalY`; the Anoria map has two levels, 0 and 0.5).
+Buildings used to stand at one fixed height (`KENNEY_CITY_KIT_PLATFORM_HEIGHT`), so on a plateau they sank into it. The vertical axis of the 3D scene is Y; a
+tile `(x, y)` sits at world `(x, ·, y)`; a height is a `baseLocalY`, relative to `WORLD_PLATFORM_Y`.
+
+Built: `getGroundElevation` (`kenneyPlacementProfile.js`: the top of the terrain pieces of a tile above the flat grass the game builds on, 0 there; props do not
+count), read by `scene.resolveGroundElevation(x, y, width, depth)`, and the placement ghost (plain and anchored) is lifted by it. Derived from the map, never stored.
+
+Built too (the rules): a tile carries a `relief` ({ elevation, flat }) when its map has one, set when the map layout is applied (`ApplyEditorMapLayoutToCity`) and
+re-read when the editor changes a tile; plain grass has none (flat, level 0). `groundRefusal` (`FootprintAvailabilityPolicy`) refuses a footprint on non-flat ground
+(`ground_not_flat`) and one **straddling two levels** (`ground_not_level`), for the ghost and for the real placement, roads included. The flat pieces are the list
+the player gave (`FLAT_TOP_PIECES` in `kenneyPlacementProfile.js`: the `cliff_block*` blocks quarter/half/full/cave in rock and stone, `ground_grass`,
+`ground_pathOpen`, every `path_stone*`). **Every other Kenney piece takes no building** until the player adds it to that list (the other `ground_path*`, the
+rivers, the cliff faces, the slopes). A prop standing on a tile that blocks (`ground_obstructed`: trees, rocks, stones, stumps, structures, details, bushes; not the
+flowers, grass, mushrooms or moss) refuses the building too: the list is `BLOCKING_PROP_CATEGORIES` in `naturePropCatalog.js`, to adjust when a prop is wrongly
+blocking or not.
+
+Built too (2026-10-31): the buildings and roads once placed are lifted by their ground (`liftToGround` in `scene.js`, at the two places that create a building
+mesh); the road paint preview and the reach overlay lie on the ground of each tile; the walkers walk at their tile's height. The status icons and the plot
+highlight are children of a building or of the ghost, so they follow.
+
+To do, in this order:
+1. The natural resources seeded on a virgin hamlet (`ResourceManager`: trees, boulders) are not lifted; it matters only on a map with relief that is also seeded.
+2. **Roads between two levels.** Built (2026-10-31): a road may stand on a **slope** (`SLOPE_PIECES` in `kenneyPlacementProfile.js`: `cliff_blockSlope_rock/stone`, which cover the
+   whole tile and rise 1.0), never a building. `cliff_half_*` is **not** a slope (it covers only the upper part of its tile, a one-tile road would not fit it): it is a cliff,
+   blocking roads and buildings. A slope rises toward where its +z axis points once turned by the piece's `rotationY` (`relief.slope` = { dx, dy, rise }). What lies on
+   it is **sheared** (`placement/groundShear.js`: `y += rise × distance along the slope`), not turned: a turned plate leaves a groove at both ends, a sheared one keeps
+   its whole span and meets the neighbouring roads at the exact height; the road, its ghost and the previews are laid this way, and the walkers walk at the middle
+   height. On a slope a road goes straight up or down (`slopeAxisSides`, `canPlaceHere` in `game.js`): no bend, tee or side road there. Roads are two-way.
+   Still to do: nothing yet forbids two **flat** road tiles of different levels side by side without a slope between (the walkers would cross the cliff): a road
+   should connect to a neighbour of another level only through a slope.
+
 ## A "lego" placement step for big buildings made of several parts
 
 Idea (not built): instead of placing a multi-mesh building (the nuclear plant, `geometry.parts`) in one click, the player places each

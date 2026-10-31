@@ -67,6 +67,33 @@ export function isAreaAvailableForBuilding(city, x, y, width, height = width) {
   return true;
 }
 
+/** Two grounds are one level when they are this close (the levels of a map are steps of half a tile). */
+const SAME_LEVEL_TOLERANCE = 0.01;
+/** The ground of a tile with no relief: plain grass. */
+const PLAIN_GROUND = Object.freeze({ elevation: 0, flat: true, obstacle: false, slope: null });
+
+/**
+ * What the ground of the footprint says about building on it. A tile carries a `relief` ({ elevation, flat }) when its map has one (a map layout), and has
+ * none on plain grass, which is flat and of one level. A building stands on flat ground only, and on a single level: a footprint straddling two levels would
+ * float over the lower tile or sink into the higher one.
+ * A tree, a rock... standing on a tile of the footprint is in the way (`ground_obstructed`).
+ * @returns {'ground_obstructed' | 'ground_not_flat' | 'ground_not_level' | null} why the footprint cannot be built on, or null
+ */
+export function groundRefusal(city, x, y, width, height = width, { allowSlope = false } = {}) {
+  let level = null;
+  for (let dx = 0; dx < width; dx++) {
+    for (let dy = 0; dy < height; dy++) {
+      const relief = city.tiles?.[x + dx]?.[y + dy]?.relief ?? PLAIN_GROUND;
+      if (relief.obstacle) return 'ground_obstructed';
+      // A slope is not flat: a road follows it (`allowSlope`), a building never stands on it
+      if (!relief.flat && !(allowSlope && relief.slope)) return 'ground_not_flat';
+      level ??= relief.elevation;
+      if (Math.abs(relief.elevation - level) > SAME_LEVEL_TOLERANCE) return 'ground_not_level';
+    }
+  }
+  return null;
+}
+
 /**
  * Clear buildingId/instanceId on the footprint anchored at (x, y).
  *
@@ -171,20 +198,22 @@ export function canPlaceBuildingAtTile({
   }
 
   if (isRoadBuildingType(buildingType)) {
-    const ok = !tile.buildingId || isRoadBuildingType(tile.buildingId);
+    const free = !tile.buildingId || isRoadBuildingType(tile.buildingId);
+    const groundReason = free ? groundRefusal(city, x, y, 1, 1, { allowSlope: true }) : null;
     return {
-      ok,
-      reason: ok ? undefined : 'area_not_available',
+      ok: free && !groundReason,
+      reason: free ? (groundReason ?? undefined) : 'area_not_available',
       gridSize,
       footprintWidth: width,
       footprintHeight: height,
     };
   }
 
-  const ok = isAreaAvailableForBuilding(city, x, y, width, height);
+  const free = isAreaAvailableForBuilding(city, x, y, width, height);
+  const groundReason = free ? groundRefusal(city, x, y, width, height) : null;
   return {
-    ok,
-    reason: ok ? undefined : 'area_not_available',
+    ok: free && !groundReason,
+    reason: free ? (groundReason ?? undefined) : 'area_not_available',
     gridSize,
     footprintWidth: width,
     footprintHeight: height,

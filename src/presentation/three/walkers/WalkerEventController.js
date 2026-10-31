@@ -26,9 +26,12 @@ let nextWalkerId = 0;
  * `zoneBordersBuildings`, a scan of the grid around the tile: a walker's
  * entry road is the nearest road tile it finds.
  */
-export function createWalkerEventController({ scene, citizenManager, citizenPathfinding, buildings, city, eventPublisher }) {
+export function createWalkerEventController({ scene, citizenManager, citizenPathfinding, buildings, city, eventPublisher, getGroundElevation }) {
   if (!eventPublisher) {
     throw new Error('[WalkerEventController] eventPublisher is required — walkers only exist in reaction to domain events.');
+  }
+  if (typeof getGroundElevation !== 'function') {
+    throw new Error('[WalkerEventController] getGroundElevation is required — a walker\'s feet stand on the ground of the tile it is on.');
   }
 
   /** @type {Map<number, { citizen: object, path: Array<{x:number,y:number}>, index: number, walkerId: number }>} */
@@ -71,7 +74,7 @@ export function createWalkerEventController({ scene, citizenManager, citizenPath
     const citizen = await citizenManager.createCitizenInstance(walkerType);
     if (!citizen) return;
 
-    citizen.character.position.set(path[0].x, citizen.groundY, path[0].y);
+    citizen.character.position.set(path[0].x, citizen.groundY + getGroundElevation(path[0].x, path[0].y), path[0].y);
     citizen.character.visible = true;
     scene.add(citizen.character);
 
@@ -144,7 +147,7 @@ export function createWalkerEventController({ scene, citizenManager, citizenPath
       }
 
       const currentPos = citizen.character.position;
-      const targetPos = new THREE.Vector3(target.x, citizen.groundY, target.y);
+      const targetPos = new THREE.Vector3(target.x, citizen.groundY + getGroundElevation(target.x, target.y), target.y);
       const direction = new THREE.Vector3().subVectors(targetPos, currentPos);
       const distance = direction.length();
 

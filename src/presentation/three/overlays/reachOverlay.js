@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { WORLD_PLATFORM_Y } from '../../../shared/terrain-catalog/terrainWorldContract.js';
+import { groundShearMatrix } from '../placement/groundShear.js';
 
 /**
  * The "range" mode's picture: the roads a building reaches lit blue (as in Caesar III), and a
@@ -14,9 +15,10 @@ const ROAD_LIFT = 0.2;
 const VOLUME_HEIGHT = 1.0;
 
 /**
- * @param {{ scene: THREE.Scene }} deps
+ * @param {{ scene: THREE.Scene, getGroundPose: (x: number, y: number) => { elevation: number, slope: { dx: number, dy: number, rise: number } | null } }} deps
+ *   `getGroundPose`: how the ground of a tile lies (how high above the flat ground, and its slope if it is one): the light lies on it, not in it
  */
-export function createReachOverlay({ scene }) {
+export function createReachOverlay({ scene, getGroundPose }) {
   /** @type {THREE.InstancedMesh[]} */
   let meshes = [];
 
@@ -25,7 +27,10 @@ export function createReachOverlay({ scene }) {
     const mesh = new THREE.InstancedMesh(geometry, material, tiles.length);
     const matrix = new THREE.Matrix4();
     tiles.forEach((tile, index) => {
-      matrix.makeTranslation(tile.x, y, tile.y);
+      const pose = getGroundPose(tile.x, tile.y);
+      if (pose.slope) groundShearMatrix(pose.slope, matrix);
+      else matrix.identity();
+      matrix.setPosition(tile.x, y + pose.elevation, tile.y);
       mesh.setMatrixAt(index, matrix);
     });
     mesh.instanceMatrix.needsUpdate = true;

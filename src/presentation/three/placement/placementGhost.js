@@ -12,6 +12,7 @@ import { propGroupWorldY } from '../../../shared/editor-catalog/kenneyPlacementP
 import { maxEditorPlacementRotationSteps, isEditorRiverAsset, resolveRiverMountFromRotationStep, resolveVerticalFaceRiverAssetId } from '../../../shared/editor-catalog/editorKenneyAssetBehavior.js';
 import { applyKenneyVerticalEdgeMountToObject } from '../../../shared/editor-catalog/editorVerticalFaceMount.js';
 import { WORLD_PLATFORM_Y } from '../../../shared/terrain-catalog/terrainWorldContract.js';
+import { applyGroundShear } from './groundShear.js';
 
 /**
  * @param {string} assetId
@@ -192,6 +193,18 @@ export function createPlacementGhostController({ scene, assetManager }) {
   let lastFootprintHeight = 1;
   let lastRotationStep = 0;
   let isAnchored = false;
+  /** How high the ground stands under the ghost, above the flat ground: the ghost is lifted by it, to stand on its plateau (see `getGroundElevation`). */
+  let lastGroundElevation = 0;
+  /** The slope under the ghost (a road on a slope), or null: the ghost is sheared along it (see groundShear.js). */
+  let lastGroundSlope = null;
+
+  const sameSlope = (a, b) => (a === null && b === null) || (a !== null && b !== null && a.dx === b.dx && a.dy === b.dy && a.rise === b.rise);
+
+  /** The shear is computed from the ghost's own position and turn: call it again after the ghost is moved or turned. */
+  function applyGhostSlope(mesh, slope) {
+    applyGroundShear(mesh, slope);
+    lastGroundSlope = slope;
+  }
   /** Authored yaw on the correct Euler axis (Y upright / Z tipped). */
   let baseYawAngle = 0;
   let rotationStep = 0;
@@ -377,6 +390,10 @@ export function createPlacementGhostController({ scene, assetManager }) {
       mesh.position.y += 0.04;
     }
     mesh.renderOrder = 999;
+    // Its height on flat ground is remembered, the ground it stands on is added to it (here, and each time it is moved)
+    mesh.userData.ghostBaseY = mesh.position.y;
+    lastGroundElevation = options.groundElevation ?? 0;
+    mesh.position.y += lastGroundElevation;
     scene.add(mesh);
 
     ghost = mesh;
@@ -406,6 +423,8 @@ export function createPlacementGhostController({ scene, assetManager }) {
         setPlacementRotationStep(mesh, baseYawAngle, rotationStep);
       }
     }
+    // Last, once the ghost's position and turn are final: the shear is computed from them
+    applyGhostSlope(mesh, options.groundSlope ?? null);
   }
 
   /**
@@ -563,6 +582,8 @@ export function createPlacementGhostController({ scene, assetManager }) {
     const gridSize = options.gridSize ?? 1;
     const rotationStepOpt = options.rotationStep ?? rotationStep;
     const mountKey = resolveEditorMountKey(options);
+    const groundElevation = options.groundElevation ?? 0;
+    const groundSlope = options.groundSlope ?? null;
 
     if (isAnchored) {
       return;
@@ -571,6 +592,8 @@ export function createPlacementGhostController({ scene, assetManager }) {
     if (
       ghost
       && currentAssetId === assetId
+      && lastGroundElevation === groundElevation
+      && sameSlope(lastGroundSlope, groundSlope)
       && lastX === x
       && lastY === y
       && lastValid === valid
@@ -596,6 +619,10 @@ export function createPlacementGhostController({ scene, assetManager }) {
     }
 
     repositionGhost(ghost, assetId, x, y, options);
+    // Moved to another tile: lifted to the ground there
+    ghost.position.y = ghost.userData.ghostBaseY + groundElevation;
+    lastGroundElevation = groundElevation;
+    applyGhostSlope(ghost, groundSlope);
     lastX = x;
     lastY = y;
     lastMountKey = mountKey;
@@ -625,6 +652,8 @@ export function createPlacementGhostController({ scene, assetManager }) {
         footprintWidth: lastFootprintWidth,
         footprintHeight: lastFootprintHeight,
         rotationStep,
+        groundElevation: lastGroundElevation,
+        groundSlope: lastGroundSlope,
       });
       return;
     }
@@ -642,6 +671,8 @@ export function createPlacementGhostController({ scene, assetManager }) {
         rotationStep,
         placementToolId,
       });
+      ghost.position.y = ghost.userData.ghostBaseY + lastGroundElevation;
+      applyGhostSlope(ghost, lastGroundSlope);
     }
   }
 
@@ -665,6 +696,8 @@ export function createPlacementGhostController({ scene, assetManager }) {
     lastFootprintHeight = 1;
     lastRotationStep = 0;
     rotationStep = 0;
+    lastGroundElevation = 0;
+    lastGroundSlope = null;
     lastMountKey = 'surface';
   }
 

@@ -32,6 +32,18 @@ function turnSide(side, steps) {
 }
 
 /**
+ * The two sides a road on a slope may reach: the one facing uphill and the one facing downhill. A road climbs a slope straight; a bend, a tee or a side
+ * road on it would leave the ramp across its flank.
+ * @param {{ dx: number, dy: number }} slope the neighbour the slope rises toward
+ * @returns {string[]}
+ */
+export function slopeAxisSides(slope) {
+  const high = Object.entries(SIDE_STEP).find(([, step]) => step.dx === slope.dx && step.dy === slope.dy)?.[0];
+  if (!high) throw new Error(`[roadPaintPlanner] a slope rises toward a side of the tile, got (${slope.dx}, ${slope.dy})`);
+  return [high, OPPOSITE[high]];
+}
+
+/**
  * The sides a piece reaches once turned `steps` quarter turns.
  * @param {ReadonlyArray<string>} sides
  * @param {number} steps

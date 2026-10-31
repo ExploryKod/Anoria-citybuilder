@@ -83,6 +83,8 @@ import {
   resolveEditorGhostPlacementPreview as computeEditorGhostPlacementPreview,
 } from '../../shared/editor-catalog/editorStackPlacement.js';
 import { applyKenneyVerticalEdgeMountToObject } from '../../shared/editor-catalog/editorVerticalFaceMount.js';
+import { getGroundElevation, getGroundSurface } from '../../shared/editor-catalog/kenneyPlacementProfile.js';
+import { applyGroundShear } from './placement/groundShear.js';
 import { WORLD_PLATFORM_Y } from '../../shared/terrain-catalog/terrainWorldContract.js';
 import { EDITOR_SEA_TERRAIN_ID, isEditorSeaTerrain } from '../../shared/terrain-catalog/editorSeaTerrain.js';
 import { HamletResourceRegistry } from './hamlet/HamletResourceRegistry.js';
@@ -138,8 +140,11 @@ export function createScene(_gameStore, assetManager, deps) {
     } catch (_) {}
 
     const placementGhost = createPlacementGhostController({ scene, assetManager });
-    const reachOverlay = createReachOverlay({ scene });
-    const roadPaintPreview = createRoadPaintPreview({ scene });
+    // For what lies on the ground (the previews, the walkers): outside the city there is no relief, a tile drawn there lies flat
+    const groundElevationAt = (x, y) => (currentCity?.tiles?.[x]?.[y] ? resolveGroundElevation(x, y, 1, 1) : 0);
+    const groundPoseAt = (x, y) => ({ elevation: groundElevationAt(x, y), slope: resolveGroundSlope(x, y) });
+    const reachOverlay = createReachOverlay({ scene, getGroundPose: groundPoseAt });
+    const roadPaintPreview = createRoadPaintPreview({ scene, getGroundPose: groundPoseAt });
     
     // Initialize managers
     const lightingManager = new LightingManager(scene);
@@ -682,6 +687,7 @@ export function createScene(_gameStore, assetManager, deps) {
             buildings,
             city: currentCity,
             eventPublisher: getSharedEventBus(),
+            getGroundElevation: groundElevationAt,
         });
     }
 
@@ -790,6 +796,7 @@ export function createScene(_gameStore, assetManager, deps) {
                     };
                 }
                 buildings[x][y] = nextMesh;
+                liftToGround(nextMesh, x, y);
                 // No manual centering here: resolveAndCreateBuildingMesh's contract
                 // (buildingSourceAdapterRegistry.js) is to return a FULLY positioned
                 // mesh, footprint centering included — the adapter owns that, not
@@ -878,6 +885,7 @@ export function createScene(_gameStore, assetManager, deps) {
                 });
                 removeInteractiveObject(buildings[x][y]);
                 buildings[x][y] = mesh;
+                liftToGround(mesh, x, y);
                 // No manual centering here — resolveAndCreateBuildingMesh's contract
                 // is to return a fully positioned mesh, footprint centering included
                 // (see buildingSourceAdapterRegistry.js and the sceneTile/Kenney
@@ -1668,6 +1676,73 @@ export function createScene(_gameStore, assetManager, deps) {
     }
 
     /**
+     * A building (or a road) stands on the ground of its tile: its mesh, made fully positioned on flat ground, is lifted by how high that ground stands (0 on
+     * plain grass), so that it stands on its plateau and not in it.
+     * @param {import('three').Object3D} mesh
+     * @param {number} x
+     * @param {number} y
+     */
+    function liftToGround(mesh, x, y) {
+        const width = mesh.userData?.footprintWidth ?? mesh.userData?.gridSize ?? 1;
+        const depth = mesh.userData?.footprintDepth ?? mesh.userData?.gridSize ?? 1;
+        mesh.position.y += resolveGroundElevation(x, y, width, depth);
+        // A road on a slope is sheared along it (see groundShear.js): the turn the planner chose stays what it is
+        applyGroundShear(mesh, resolveGroundSlope(x, y));
+    }
+
+    /**
+     * The slope of a tile, if it is one (the neighbour it rises toward, and by how much): what lies on it is sheared along it. Null on flat ground, and outside
+     * the city.
+     * @param {number} x
+     * @param {number} y
+     * @returns {{ dx: number, dy: number, rise: number } | null}
+     */
+    function resolveGroundSlope(x, y) {
+        return currentCity?.tiles?.[x]?.[y]?.relief?.slope ?? null;
+    }
+
+    /**
+     * The editor changed what stands on a tile (a piece stacked, removed, the base terrain replaced): the ground it offers a building is read again.
+     * @param {number} x
+     * @param {number} y
+     */
+    function refreshTileRelief(x, y) {
+        const tile = currentCity?.tiles?.[x]?.[y];
+        if (!tile) return;
+        tile.relief = getGroundSurface(getEditorStackObjects(), x, y, tile.terrainId);
+    }
+
+    /**
+     * How high the ground stands under a building that would cover `width` x `depth` tiles from (x, y), above the flat grass the game builds on: the
+     * highest of its tiles (a footprint straddling two levels is refused by the placement rule, so this only matters for the picture of the ghost there).
+     * @param {number} x
+     * @param {number} y
+     * @param {number} width
+     * @param {number} depth
+     * @returns {number}
+     */
+    function resolveGroundElevation(x, y, width, depth) {
+        if (!currentCity?.tiles) {
+            throw new Error('[Scene] resolveGroundElevation: no city is loaded');
+        }
+        const stackObjects = getEditorStackObjects();
+        let highest = null;
+        for (let dx = 0; dx < width; dx += 1) {
+            for (let dy = 0; dy < depth; dy += 1) {
+                const tile = currentCity.tiles[x + dx]?.[y + dy];
+                // A tile of the footprint outside the city has no ground to read (the placement rule refuses it)
+                if (!tile) continue;
+                const elevation = getGroundElevation(stackObjects, x + dx, y + dy, tile.terrainId);
+                highest = highest === null ? elevation : Math.max(highest, elevation);
+            }
+        }
+        if (highest === null) {
+            throw new Error(`[Scene] resolveGroundElevation: (${x}, ${y}) is outside the city`);
+        }
+        return highest;
+    }
+
+    /**
      * @param {number} x
      * @param {number} y
      * @param {object | null | undefined} pickedObject
@@ -1758,6 +1833,7 @@ export function createScene(_gameStore, assetManager, deps) {
 
         editorStackMeshes.set(entry.id, mesh);
         addMeshToTileZone(mesh, placement.x, placement.y);
+        refreshTileRelief(placement.x, placement.y);
         scene.userData.requestShadowRefresh?.();
         return true;
     }
@@ -1798,6 +1874,7 @@ export function createScene(_gameStore, assetManager, deps) {
         }
         terrain[x][y] = null;
         city.tiles[x][y].terrainId = EDITOR_SEA_TERRAIN_ID;
+        refreshTileRelief(x, y);
         scene.userData.requestShadowRefresh?.();
         return true;
     }
@@ -1814,6 +1891,7 @@ export function createScene(_gameStore, assetManager, deps) {
             scene.userData.requestShadowRefresh?.();
         }
         const removed = removeEditorStackObjectById(stackId);
+        if (removed) refreshTileRelief(removed.x, removed.y);
         return Boolean(removed || mesh);
     }
 
@@ -2578,6 +2656,8 @@ function onTouchEnd(event) {
         removeEditorStackById,
         clearEditorTileBaseToSea,
         resolveEditorPlacementAnchorLocalY,
+        resolveGroundElevation,
+        resolveGroundSlope,
         resolveEditorGhostPlacementPreview,
         syncNeighborHamletDeco,
         start,

@@ -10,6 +10,7 @@ function resetTiles(city) {
       const tile = city.tiles[x]?.[y];
       if (!tile) continue;
       tile.terrainId = 'grass';
+      delete tile.relief;
       tile.buildingId = undefined;
       tile.instanceId = undefined;
       tile.buildingCoord = undefined;

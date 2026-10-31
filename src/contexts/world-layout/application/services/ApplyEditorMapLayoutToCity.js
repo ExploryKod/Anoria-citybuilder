@@ -1,3 +1,5 @@
+import { getGroundSurface } from '../../../../shared/editor-catalog/kenneyPlacementProfile.js';
+
 /** @typedef {import('../../domain/EditorMapLayout.js').EditorMapLayout} EditorMapLayout */
 /** @typedef {import('../ports/EditorStackLayoutPort.js').EditorStackLayoutPort} EditorStackLayoutPort */
 
@@ -29,4 +31,11 @@ export function applyEditorMapLayoutToCity(city, layout, stackPort) {
 
   stackPort.resetStackObjects();
   stackPort.importStackObjects(layout.stackObjects);
+
+  // The ground each tile offers a building (how high, flat or not) is read from the pieces stacked on it, once, here
+  for (let x = 0; x < layout.citySize; x += 1) {
+    for (let y = 0; y < layout.citySize; y += 1) {
+      city.tiles[x][y].relief = getGroundSurface(layout.stackObjects, x, y, layout.terrain[x][y]);
+    }
+  }
 }

@@ -119,6 +119,10 @@ export function createPlacementGhostSession({
   canPlaceBuildingAtTile,
   getPlacementAnchorLocalY = () => null,
   getEditorGhostPreview = () => null,
+  /** (x, y, width, depth) => how high the ground stands under the building above the flat ground (the ghost is lifted by it) */
+  getGroundElevation,
+  /** (x, y) => the slope of the tile the ghost is on ({ dx, dy, rise }, null on flat ground): the ghost is sheared along it */
+  getGroundSlope,
   getFocusedObject = () => null,
   onReachPreview = () => {},
 }) {
@@ -215,6 +219,10 @@ export function createPlacementGhostSession({
 
     const ghostX = editorGhostPreview?.x ?? x;
     const ghostY = editorGhostPreview?.y ?? y;
+    // A building stands on its ground: lifted to the plateau it is placed on (an editor piece has its own base height)
+    const groundElevation = editorGhostPreview
+      ? 0
+      : getGroundElevation(x, y, placement.footprintWidth ?? ghostGridSize, placement.footprintHeight ?? ghostGridSize);
 
     ghost.show(
       resolveEditorGhostVisualAssetId(assetId, rotationStep, editorGhostPreview),
@@ -229,6 +237,8 @@ export function createPlacementGhostSession({
       placementToolId: assetId,
       placementBaseLocalY: editorGhostPreview?.baseLocalY ?? placementBaseLocalY ?? undefined,
       editorGhostPreview,
+      groundElevation,
+      groundSlope: editorGhostPreview ? null : getGroundSlope(x, y),
     });
     onReachPreview({
       type: assetId,

@@ -59,7 +59,7 @@ import { resetCumulativeDeaths } from '../../composition/gameplayMortalityState.
 import { computeBuildingReach, listPlacedBuildings } from '../../shared/building-catalog/buildingReach.js';
 import { buildingCatalog, getBuildingDefinition, isUndemolishable } from '../../shared/building-catalog/buildingCatalog.js';
 import { BUILDING_ASSETS } from './assets/buildingAssets.js';
-import { planRoadPaint, plotsAlongPath, roadPathBetween, roadPiecesFrom, turnedSides } from './placement/roadPaintPlanner.js';
+import { planRoadPaint, plotsAlongPath, roadPathBetween, roadPiecesFrom, slopeAxisSides, turnedSides } from './placement/roadPaintPlanner.js';
 import { resolveFootprint } from '../../shared/asset-footprint/resolveFootprint.js';
 import {
   BEHAVIOR_MODE,
@@ -195,6 +195,28 @@ export function createGame(gameStore, assetManager, citySize = null) {
   const roadPieces = roadPiecesFrom(BUILDING_ASSETS);
 
   /**
+   * The placement gate (footprint, ground, the catalog's limits and requirements) plus the one thing only the road pieces know: on a slope a road goes
+   * straight up or down it, never across (a bend, a tee or a side road would leave the ramp over its flank).
+   */
+  function canPlaceHere(params) {
+    const result = canPlaceBuildingAtTileWithSupplyRules(params);
+    if (!result.ok || !isRoadBuildingType(params.buildingType)) {
+      return result;
+    }
+    const slope = params.city.tiles[params.x]?.[params.y]?.relief?.slope;
+    if (!slope) {
+      return result;
+    }
+    const piece = roadPieces.find((candidate) => candidate.id === params.buildingType);
+    if (!piece) {
+      throw new Error(`[game] the road "${params.buildingType}" has no roadSides: cannot tell whether it follows a slope`);
+    }
+    const axis = slopeAxisSides(slope);
+    const follows = turnedSides(piece.sides, params.rotationStep ?? 0).every((side) => axis.includes(side));
+    return follows ? result : { ...result, ok: false, reason: 'ground_slope_direction' };
+  }
+
+  /**
    * The same press-and-drag for a house: from where the player pressed to the cursor, as many plots as fit along
    * the L, shown before they are placed and placed on release (a plain click places the one plot).
    */
@@ -270,6 +292,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
     };
     scene.placementGhost.anchor(buildingType, placeX, placeY, true, gridSize, {
       rotationStep,
+      groundElevation: scene.resolveGroundElevation(placeX, placeY, gridSize, gridSize),
+      groundSlope: scene.resolveGroundSlope(placeX, placeY),
     });
     placementRotationHud?.show({
       x: placeX,
@@ -435,6 +459,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
   });
 
   async function finalizeBuildingPlacement(placeX, placeY, buildingType, rotationStep = 0) {
+    // A road on a slope goes straight up or down it: the player's own turn (R) may not (the drag picks its own pieces, see `canPlaceHere`)
+    if (isRoadBuildingType(buildingType)) {
+      const check = canPlaceHere({ city, x: placeX, y: placeY, buildingType, assetCatalog: buildingPlacementCatalog, rotationStep });
+      if (!check.ok) {
+        showGenericErrorNotification(buildingType, check.reason);
+        return false;
+      }
+    }
     const result = await constructionApi.placeBuildingAtTile({
       city,
       x: placeX,
@@ -724,7 +756,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
     const gridSize = buildingPlacementCatalog[buildingType]?.gridSize ?? 1;
     touchPendingPlacement.buildingType = buildingType;
     touchPendingPlacement.gridSize = gridSize;
-    scene.placementGhost.anchor(buildingType, x, y, true, gridSize, { rotationStep });
+    scene.placementGhost.anchor(buildingType, x, y, true, gridSize, {
+      rotationStep,
+      groundElevation: scene.resolveGroundElevation(x, y, gridSize, gridSize),
+      groundSlope: scene.resolveGroundSlope(x, y),
+    });
   }
 
   placementRotationHud = createPlacementRotationHud({
@@ -818,8 +854,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
         };
       }
       // The same gate as the placement itself (footprint, then the catalog's limits and requirements): blue says the click will place, red that it will not
-      return canPlaceBuildingAtTileWithSupplyRules(params);
+      return canPlaceHere(params);
     },
+    getGroundElevation: (x, y, width, depth) => scene.resolveGroundElevation(x, y, width, depth),
+    getGroundSlope: (x, y) => scene.resolveGroundSlope(x, y),
     getPlacementAnchorLocalY: (x, y) => {
       if (!isEditorPlacementTool(activeToolId)) {
         return null;
@@ -1022,7 +1060,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     const blocked = [];
     for (const step of plan) {
       const inCity = step.x >= 0 && step.y >= 0 && step.x < city.size && step.y < city.size;
-      const fits = blocked.length === 0 && inCity && canPlaceBuildingAtTileWithSupplyRules({
+      const fits = blocked.length === 0 && inCity && canPlaceHere({
         city,
         x: step.x,
         y: step.y,
@@ -1710,12 +1748,13 @@ export function createGame(gameStore, assetManager, citySize = null) {
           return;
         }
 
-        const placementCheck = canPlaceBuildingAtTileWithSupplyRules({
+        const placementCheck = canPlaceHere({
           city,
           x,
           y,
           buildingType: resolvePlacementBuildingId(),
           assetCatalog: buildingPlacementCatalog,
+          rotationStep: getPlacementRotationStep(),
         });
         if (!placementCheck.ok) {
           if (placementCheck.reason) {

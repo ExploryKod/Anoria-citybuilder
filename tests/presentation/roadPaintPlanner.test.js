@@ -5,6 +5,7 @@ import {
   pieceForSides,
   roadPathBetween,
   roadPiecesFrom,
+  slopeAxisSides,
   turnedSides,
 } from '../../src/presentation/three/placement/roadPaintPlanner.js';
 
@@ -18,6 +19,12 @@ describe('adaptive road drag', () => {
     for (const shape of [['east', 'west'], ['north', 'east'], ['north', 'east', 'west'], ['north', 'east', 'south', 'west'], ['east']]) {
       expect(pieceForSides(shape, pieces)).not.toBeNull();
     }
+  });
+
+  test('a road on a slope may only reach the uphill and the downhill sides', () => {
+    expect(slopeAxisSides({ dx: 0, dy: 1 }).sort()).toEqual(['north', 'south']);
+    expect(slopeAxisSides({ dx: -1, dy: 0 }).sort()).toEqual(['east', 'west']);
+    expect(() => slopeAxisSides({ dx: 1, dy: 1 })).toThrow(/rises toward a side/);
   });
 
   test('the path is an L that goes first along the axis the cursor is furthest on', () => {

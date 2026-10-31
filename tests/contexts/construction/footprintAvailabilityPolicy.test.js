@@ -1,6 +1,8 @@
 import {
+  canPlaceBuildingAtTile,
   clearBuildingFootprint,
   findFootprintAnchor,
+  groundRefusal,
   isAreaAvailableForBuilding,
   isRoadBuildingType,
   resolveFootprintDimensions,
@@ -28,6 +30,35 @@ describe('FootprintAvailabilityPolicy', () => {
     expect(isAreaAvailableForBuilding(city, 0, 0, 1)).toBe(false);
     expect(isAreaAvailableForBuilding(city, 1, 1, 1)).toBe(true);
     expect(isAreaAvailableForBuilding(city, 1, 1, 2)).toBe(false);
+  });
+
+  test('the relief of the map: flat ground of one level only takes a building', () => {
+    const city = makeCity(3);
+    // A plateau (flat, level 0.5) of two tiles, a lower flat tile, a tile with no relief (plain grass), and a cliff face
+    city.tiles[0][0].relief = { elevation: 0.5, flat: true };
+    city.tiles[1][0].relief = { elevation: 0.5, flat: true };
+    city.tiles[2][0].relief = { elevation: 0, flat: true };
+    city.tiles[0][1].relief = { elevation: 0.5, flat: false };
+
+    expect(groundRefusal(city, 0, 0, 2, 1)).toBeNull();
+    // Two levels side by side: refused, whichever the way round
+    expect(groundRefusal(city, 1, 0, 2, 1)).toBe('ground_not_level');
+    // A cliff face takes no building
+    expect(groundRefusal(city, 0, 1, 1, 1)).toBe('ground_not_flat');
+    // Plain grass has no relief: flat, level 0
+    expect(groundRefusal(city, 1, 2, 1, 1)).toBeNull();
+    expect(groundRefusal(city, 0, 0, 1, 3)).toBe('ground_not_flat');
+    // A slope takes a road, never a building
+    city.tiles[1][2].relief = { elevation: 1, flat: false, obstacle: false, slope: { dx: 0, dy: 1, rise: 1 } };
+    expect(groundRefusal(city, 1, 2, 1, 1)).toBe('ground_not_flat');
+    expect(groundRefusal(city, 1, 2, 1, 1, { allowSlope: true })).toBeNull();
+    // A tree in the footprint is in the way
+    city.tiles[2][2].relief = { elevation: 0, flat: true, obstacle: true };
+    expect(groundRefusal(city, 2, 2, 1, 1)).toBe('ground_obstructed');
+
+    const assetCatalog = { 'House-Red': { gridSize: 2 } };
+    const refused = canPlaceBuildingAtTile({ city, x: 1, y: 0, buildingType: 'House-Red', assetCatalog });
+    expect(refused).toMatchObject({ ok: false, reason: 'ground_not_level' });
   });
 
   test('clear and stamp square footprint', () => {

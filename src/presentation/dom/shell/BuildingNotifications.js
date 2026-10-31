@@ -55,6 +55,11 @@ export function getBuildingDisplayName(buildingId) {
 const PLACEMENT_REFUSALS = Object.freeze([
   // The ground or the purse.
   { reason: 'area_not_available', say: () => 'Espace non disponible' },
+  // The relief of the map: only flat ground takes a building, and a building does not straddle two levels.
+  { reason: 'ground_obstructed', say: () => 'Un arbre, un rocher ou un autre obstacle bloque cet emplacement' },
+  { reason: 'ground_slope_direction', say: () => 'Sur une pente, la route ne peut aller que dans le sens de la montée' },
+  { reason: 'ground_not_flat', say: () => "Le sol n'est pas plat ici : on ne peut pas y construire" },
+  { reason: 'ground_not_level', say: () => "Le terrain n'est pas de niveau : un bâtiment ne peut pas être à cheval sur deux niveaux" },
   { reason: 'insufficient_funds', say: () => 'Fonds insuffisants' },
   { reason: 'building_already_exists', say: () => 'Un bâtiment existe déjà à cet emplacement' },
   { reason: 'database_error', say: () => "Erreur lors de l'enregistrement du bâtiment" },
