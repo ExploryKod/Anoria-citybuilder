@@ -83,7 +83,10 @@ export function groundRefusal(city, x, y, width, height = width, { allowSlope = 
   let level = null;
   for (let dx = 0; dx < width; dx++) {
     for (let dy = 0; dy < height; dy++) {
-      const relief = city.tiles?.[x + dx]?.[y + dy]?.relief ?? PLAIN_GROUND;
+      const tile = city.tiles?.[x + dx]?.[y + dy];
+      // Land the town hall has put up for sale is fenced: nothing is built on it
+      if (tile?.plot) return 'ground_plot';
+      const relief = tile?.relief ?? PLAIN_GROUND;
       if (relief.obstacle) return 'ground_obstructed';
       // A slope is not flat: a road follows it (`allowSlope`), a building never stands on it
       if (!relief.flat && !(allowSlope && relief.slope)) return 'ground_not_flat';

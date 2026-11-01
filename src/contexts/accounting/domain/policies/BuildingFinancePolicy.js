@@ -81,10 +81,14 @@ export function incomeStatementOf(entries, buildingId, { year, month = null, acc
       byLine.set(placed.line.id, (byLine.get(placed.line.id) ?? 0) + amount);
       byAccount.set(account, (byAccount.get(account) ?? 0) + amount);
       // What the line is made of: the journal's own kinds of movement, merged when they read the same (an account, a meaning, a good).
-      const good = goodOfJournalType(entry.type);
+      // A kind of movement may stand for one good (an export of wood); a trade line of a building with several products names its own (a mine's stone, iron, gold)
+      const typeGood = goodOfJournalType(entry.type);
+      const good = typeGood ?? entry.resource ?? null;
+      // A trade line split by product reads as the product alone under its line ("Blé", not "Biens achetés à … — Blé"): the line above already says what it is
+      const perProduct = typeGood == null && good !== null;
       const itemKey = [account, pcg.label, pcg.detail ?? '', good ?? ''].join('|');
       const items = byItem.get(placed.line.id) ?? new Map();
-      const item = items.get(itemKey) ?? { account, label: pcg.label, detail: pcg.detail ?? null, good, tone: pcg.tone, centimes: 0 };
+      const item = items.get(itemKey) ?? { account, label: pcg.label, detail: pcg.detail ?? null, good, perProduct, tone: pcg.tone, centimes: 0 };
       item.centimes += amount;
       items.set(itemKey, item);
       byItem.set(placed.line.id, items);

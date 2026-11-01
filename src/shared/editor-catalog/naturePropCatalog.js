@@ -30,17 +30,40 @@ function naturePropEntry(glbName, categoryId) {
   };
 }
 
+/**
+ * The trees a forest plot grows (Kenney mini-forest kit, not the nature kit: they are planted by the game, never by the map editor, so they are not in its manifest):
+ * a plant, then a tree, then a high tree. `glbName` is the kit's file (`plant.glb`, `tree.glb`, `tree-high.glb`); the id carries the kit so it cannot be taken for a
+ * piece of the nature kit.
+ */
+const MINI_FOREST_GLB_BASE = '/resources/kenney_mini-forest_1.0/Models/GLB format';
+export const PLANTATION_PROP_IDS = Object.freeze({
+  plant: 'nature-prop:mini-forest_plant',
+  tree: 'nature-prop:mini-forest_tree',
+  treeHigh: 'nature-prop:mini-forest_tree-high',
+});
+const PLANTATION_PROPS = Object.freeze({
+  [PLANTATION_PROP_IDS.plant]: { kitFile: 'plant', category: 'editorPlants' },
+  [PLANTATION_PROP_IDS.tree]: { kitFile: 'tree', category: 'editorTrees' },
+  [PLANTATION_PROP_IDS.treeHigh]: { kitFile: 'tree-high', category: 'editorTrees' },
+});
+
 /** @type {Record<string, ReturnType<typeof naturePropEntry>>} */
-export const NATURE_PROP_CATALOG = Object.freeze(
-  Object.fromEntries(
+export const NATURE_PROP_CATALOG = Object.freeze({
+  ...Object.fromEntries(
     KENNEY_NATURE_ASSETS
       .filter((asset) => asset.layer === 'prop')
       .map((asset) => [
         asset.toolId,
         naturePropEntry(asset.glbName, asset.categoryId),
       ])
-  )
-);
+  ),
+  ...Object.fromEntries(
+    Object.entries(PLANTATION_PROPS).map(([propId, { kitFile, category }]) => [
+      propId,
+      { ...naturePropEntry(propId.replace('nature-prop:', ''), category), glb: `${MINI_FOREST_GLB_BASE}/${kitFile}.glb` },
+    ])
+  ),
+});
 
 /**
  * What stands on a tile and stops a building from being placed there (it is not removed: the player is told the way is blocked): the trees, the rocks and

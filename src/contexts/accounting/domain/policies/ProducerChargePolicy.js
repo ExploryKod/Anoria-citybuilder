@@ -59,16 +59,19 @@ const centimes = (amount) => Math.round(amount * 100) / 100;
 /**
  * The trade lines of one pair of the chain for one month: the seller's sale, and the buyer's purchase when there is a buyer.
  * A sale to the houses has no company buyer: its counterparty is null.
- * @param {{ sellerId: string, buyerId: string | null, amountHT: number }} pair
+ * One pair, one good: a seller with several products (a mine) has a pair of lines per good, each naming the good it sells (`resource`), so the building's
+ * sales read by product.
+ * @param {{ sellerId: string, buyerId: string | null, good: string, amountHT: number }} pair
  * @returns {ChargeLine[]}
  */
-export function tradeLines({ sellerId, buyerId, amountHT }) {
+export function tradeLines({ sellerId, buyerId, good, amountHT }) {
+  if (!good) throw new Error(`[producer] the trade of ${sellerId} with ${buyerId} names no good: its lines cannot say what was sold`);
   const amount = centimes(amountHT);
   if (amount <= 0) return [];
   // A sale with no company buyer has no counterpart in this flow (`flow: null`): the houses' own side is booked with the sale itself (RecordConsumerPurchases).
-  const flow = `trade:${sellerId}:${buyerId}`;
-  const lines = [{ kind: 'producer_revenue', amount, holder: sellerId, counterparty: buyerId, flow: buyerId ? flow : null }];
-  if (buyerId) lines.push({ kind: 'producer_purchase', amount, holder: buyerId, counterparty: sellerId, flow });
+  const flow = `trade:${sellerId}:${buyerId}:${good}`;
+  const lines = [{ kind: 'producer_revenue', amount, holder: sellerId, counterparty: buyerId, resource: good, flow: buyerId ? flow : null }];
+  if (buyerId) lines.push({ kind: 'producer_purchase', amount, holder: buyerId, counterparty: sellerId, resource: good, flow });
   return lines;
 }
 

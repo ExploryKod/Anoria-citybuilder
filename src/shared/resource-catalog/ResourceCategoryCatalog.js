@@ -44,10 +44,20 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   // Activité — chaque maison a sa propre petite entreprise (voir ARTISAN/SAVANT/MERCHANT_ACTIVITY_ROLES).
   bandwidth: Object.freeze({ vatCategory: 'other', emoji: '📶', label: 'Accès réseau', unit: unitOf('unité', 'unités'), baseValue: 0, colors: Object.freeze({ dark: '#2E6B8A', pale: '#A8D0E0' }) }),
   decoratedPot: Object.freeze({ vatCategory: 'art', emoji: '🏺', label: 'Pot décoré',  unit: unitOf('pot décoré', 'pots décorés'), baseValue: 8.0,  colors: Object.freeze({ dark: '#C9702B', pale: '#F0C79A' }) }),
+  decoratedPlate: Object.freeze({ vatCategory: 'art', emoji: '🍽️', label: 'Plat décoré', unit: unitOf('plat décoré', 'plats décorés'), baseValue: 11.0, colors: Object.freeze({ dark: '#3F6E9A', pale: '#BFD4E8' }) }),
+  // Set with gold: worth far more than the decorated piece and the gold it took.
+  gildedPot: Object.freeze({ vatCategory: 'luxury', emoji: '🏺', label: 'Pot décoré serti d\'or', unit: unitOf('pot serti d\'or', 'pots sertis d\'or'), baseValue: 30.0, colors: Object.freeze({ dark: '#B8860B', pale: '#F2DC8C' }) }),
+  gildedPlate: Object.freeze({ vatCategory: 'luxury', emoji: '🍽️', label: 'Plat décoré serti d\'or', unit: unitOf('plat serti d\'or', 'plats sertis d\'or'), baseValue: 38.0, colors: Object.freeze({ dark: '#A67C00', pale: '#EDD98A' }) }),
   carrotCake: Object.freeze({ vatCategory: 'luxury', emoji: '🥕', label: 'Carrot cake', unit: unitOf('gâteau', 'gâteaux'), baseValue: 6.0, colors: Object.freeze({ dark: '#D98A2E', pale: '#F5D9A8' }) }),
   book:   Object.freeze({ vatCategory: 'luxury', emoji: '📚', label: 'Livre', unit: unitOf('livre', 'livres'),     baseValue: 15.0, colors: Object.freeze({ dark: '#5B4636', pale: '#C9B79C' }) }),
   dealWood:        Object.freeze({ emoji: '🤝', label: 'Export bois',       unit: unitOf('vente', 'ventes'), standsFor: 'wood', colors: Object.freeze({ dark: '#6D4C2C', pale: '#D4BC8C' }) }),
   dealDecoratedPot: Object.freeze({ emoji: '🤝', label: 'Export pot décoré', unit: unitOf('vente', 'ventes'), standsFor: 'decoratedPot', colors: Object.freeze({ dark: '#C9702B', pale: '#F0C79A' }) }),
+  dealRock:        Object.freeze({ emoji: '🤝', label: 'Export pierre',     unit: unitOf('vente', 'ventes'), standsFor: 'rock', colors: Object.freeze({ dark: '#78909C', pale: '#CFD8DC' }) }),
+  dealIron:        Object.freeze({ emoji: '🤝', label: 'Export fer',        unit: unitOf('vente', 'ventes'), standsFor: 'iron', colors: Object.freeze({ dark: '#546E7A', pale: '#B0BEC5' }) }),
+  dealGold:        Object.freeze({ emoji: '🤝', label: 'Export or',         unit: unitOf('vente', 'ventes'), standsFor: 'gold', colors: Object.freeze({ dark: '#C9A227', pale: '#F3E3A0' }) }),
+  dealDecoratedPlate: Object.freeze({ emoji: '🤝', label: 'Export plat décoré', unit: unitOf('vente', 'ventes'), standsFor: 'decoratedPlate', colors: Object.freeze({ dark: '#3F6E9A', pale: '#BFD4E8' }) }),
+  dealGildedPot:   Object.freeze({ emoji: '🤝', label: 'Export pot serti d\'or', unit: unitOf('vente', 'ventes'), standsFor: 'gildedPot', colors: Object.freeze({ dark: '#B8860B', pale: '#F2DC8C' }) }),
+  dealGildedPlate: Object.freeze({ emoji: '🤝', label: 'Export plat serti d\'or', unit: unitOf('vente', 'ventes'), standsFor: 'gildedPlate', colors: Object.freeze({ dark: '#A67C00', pale: '#EDD98A' }) }),
   dealBook:        Object.freeze({ emoji: '🤝', label: 'Export livre',       unit: unitOf('vente', 'ventes'), standsFor: 'book', colors: Object.freeze({ dark: '#5B4636', pale: '#C9B79C' }) }),
   dealCarrotCake:  Object.freeze({ emoji: '🤝', label: 'Export carrot cake', unit: unitOf('vente', 'ventes'), standsFor: 'carrotCake', colors: Object.freeze({ dark: '#D98A2E', pale: '#F5D9A8' }) }),
   // Deals waiting for an import: made by the merchants' business, turned into the real good when the city delivers.
@@ -62,10 +72,11 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   pot:       Object.freeze({ vatCategory: 'craft', emoji: '🍲', label: 'Pot',     unit: unitOf('pot', 'pots'),           baseValue: 3.0,  colors: Object.freeze({ dark: '#BF5B3A', pale: '#E8B9A3' }) }),
   amphora:   Object.freeze({ vatCategory: 'craft', emoji: '🏺', label: 'Amphore', unit: unitOf('amphore', 'amphores'),   baseValue: 4.0,  colors: Object.freeze({ dark: '#C98A2B', pale: '#F0D9A8' }) }),
   // Deposits of the map.
-  rock: Object.freeze({ emoji: '🪨', label: 'Pierre', unit: unitOf('bloc', 'blocs') }),
+  // Stone, iron and gold are drawn from the rocks by the mine and sold to the warehouse, so they are goods with a value too.
+  rock: Object.freeze({ vatCategory: 'other', emoji: '🪨', label: 'Pierre', unit: unitOf('bloc', 'blocs'), baseValue: 0.6, colors: Object.freeze({ dark: '#78909C', pale: '#CFD8DC' }) }),
   clay: Object.freeze({ emoji: '🧱', label: 'Argile', unit: unitOf('bloc', 'blocs') }),
-  iron: Object.freeze({ emoji: '⚙️', label: 'Fer', unit: unitOf('lingot', 'lingots') }),
-  gold: Object.freeze({ emoji: '🥇', label: 'Or', unit: unitOf('lingot', 'lingots') }),
+  iron: Object.freeze({ vatCategory: 'other', emoji: '⚙️', label: 'Fer', unit: unitOf('lingot', 'lingots'), baseValue: 2.0, colors: Object.freeze({ dark: '#546E7A', pale: '#B0BEC5' }) }),
+  gold: Object.freeze({ vatCategory: 'luxury', emoji: '🥇', label: 'Or', unit: unitOf('lingot', 'lingots'), baseValue: 12.0, colors: Object.freeze({ dark: '#C9A227', pale: '#F3E3A0' }) }),
   // Services travel the same chain as goods: each delivered unit is priced here, and the city subsidises its share.
   // Water: a need of every house like the diet, drawn from a tank's reservoir (the land's groundwater), a cubic metre at a time.
   water: Object.freeze({ kind: 'service', vatCategory: 'essential', emoji: '💧', label: 'Eau', unit: unitOf('mètre cube', 'mètres cubes'), baseValue: 0.125 }),
@@ -175,7 +186,7 @@ export function getResourceBaseValue(category) {
 const SHELF_LIFE_MONTHS = Object.freeze({
   wheat: 6, carrot: 3, cabbage: 2, dattes: 6, olive: 1, oil: 18, carrotCake: 1, wood: 36,
   coal: Infinity, petrol: Infinity, uranium: Infinity, exoticWood: Infinity, candle: Infinity,
-  decoratedPot: Infinity, book: Infinity, furniture: Infinity, plate: Infinity, pot: Infinity, amphora: Infinity,
+  decoratedPot: Infinity, decoratedPlate: Infinity, gildedPot: Infinity, gildedPlate: Infinity, book: Infinity, furniture: Infinity, plate: Infinity, pot: Infinity, amphora: Infinity,
   rock: Infinity, clay: Infinity, iron: Infinity, gold: Infinity, bandwidth: Infinity,
   // An agreement waiting for its import is not a good: it never goes bad.
   dealCoal: Infinity, dealPetrol: Infinity, dealUranium: Infinity, dealExoticWood: Infinity,

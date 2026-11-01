@@ -54,6 +54,7 @@ export function isJournalEntryIncomeForMonthlySummary(entry, allEntries, getTime
     entry.type === 'aid_interest_received' ||
     entry.type === 'state_dividend_received' ||
     entry.type === 'liquidation_stock_sale' ||
+    entry.type === 'land_sale' ||
     entry.type === 'liquidation_surplus_received' ||
     entry.type === 'capital_funds' ||
     entry.type === 'loan_capital';

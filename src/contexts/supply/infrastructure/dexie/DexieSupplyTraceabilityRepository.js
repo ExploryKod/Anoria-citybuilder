@@ -180,7 +180,8 @@ export class DexieSupplyTraceabilityRepository {
    * to make the deals is a `hub_to_building` purchase, in it like any other.
    * @param {number} year
    * @param {number} monthIndex
-   * @returns {Promise<Array<{ sellerId: string, buyerId: string | null, amountHT: number }>>}
+   * One entry per pair AND per good: a building with several products (a mine: stone, iron, gold) books each its own line, so its revenue reads by product.
+   * @returns {Promise<Array<{ sellerId: string, buyerId: string | null, good: string, amountHT: number }>>}
    */
   async sumGoodsFlowsByPair(year, monthIndex) {
     const goods = getGoodCategories();
@@ -190,8 +191,8 @@ export class DexieSupplyTraceabilityRepository {
     for (const row of rows) {
       if (!row.fromId) throw new Error(`[traceability] goods transfer ${row.id} names no seller`);
       if (!row.toId) throw new Error(`[traceability] goods transfer ${row.id} names no buyer`);
-      const key = `${row.fromId}>${row.toId}`;
-      const pair = pairs.get(key) ?? { sellerId: row.fromId, buyerId: row.toId, amountHT: 0 };
+      const key = `${row.fromId}>${row.toId}>${row.foodType}`;
+      const pair = pairs.get(key) ?? { sellerId: row.fromId, buyerId: row.toId, good: row.foodType, amountHT: 0 };
       pair.amountHT += row.quantity * row.price;
       pairs.set(key, pair);
     }

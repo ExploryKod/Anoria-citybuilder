@@ -14,6 +14,7 @@ describe('buildingInfoGroupRegistry tabs', () => {
       BUILDING_INFO_TAB_IDS.stocks,
       BUILDING_INFO_TAB_IDS.activity,
       BUILDING_INFO_TAB_IDS.residents,
+      BUILDING_INFO_TAB_IDS.prices,
       BUILDING_INFO_TAB_IDS.services,
       BUILDING_INFO_TAB_IDS.messages,
       BUILDING_INFO_TAB_IDS.finance,

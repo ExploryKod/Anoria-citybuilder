@@ -67,10 +67,10 @@ export function pickRequirementOwner(pos, candidates, requirement) {
  * @returns {{ ok: boolean, reason?: string, ownerId?: string, role?: string }}
  */
 export function canPlaceBuildingAt({ x, y, buildingType, candidates, naturalCandidates = [] }) {
-  for (const source of getNaturalSources(buildingType)) {
-    if (findNaturalSourcesInRange({ x, y }, naturalCandidates, source).length === 0) {
-      return { ok: false, reason: 'natural_resource_missing' };
-    }
+  // A producer with several sources (a mine: stone, iron, gold) is placed where it can draw on at least one of them
+  const sources = getNaturalSources(buildingType);
+  if (sources.length > 0 && sources.every((source) => findNaturalSourcesInRange({ x, y }, naturalCandidates, source).length === 0)) {
+    return { ok: false, reason: 'natural_resource_missing' };
   }
 
   const requirements = getPlacementRequirements(buildingType);

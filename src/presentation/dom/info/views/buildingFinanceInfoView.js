@@ -731,7 +731,7 @@ function itemRowsOf(lineId, columns) {
   return [...known.entries()].map(([key, item]) => {
     const tr = el('tr', 'building-finance-row building-finance-row--item');
     tr.dataset.tone = item.tone;
-    const name = `${item.detail ?? item.label}${item.good ? ` — ${goodLabel(item.good)}` : ''}`;
+    const name = item.perProduct ? goodLabel(item.good) : `${item.detail ?? item.label}${item.good ? ` — ${goodLabel(item.good)}` : ''}`;
     const th = el('th', null, `${name} (${item.account})`);
     th.scope = 'row';
     tr.append(th);

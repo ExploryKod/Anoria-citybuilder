@@ -12,6 +12,7 @@
 import db from '../dexie/db.js';
 import { HAMLET_CATALOG } from '../../../shared/hamlet-catalog/hamletCatalog.js';
 import { initGameCalendar } from '../../../config/events.js';
+import { getLandUse } from '../../../shared/land-catalog/LandUseCatalog.js';
 
 /** Slug of the starting hamlet (its definition in HAMLET_CATALOG). */
 export const DEFAULT_HAMLET_SLUG = HAMLET_CATALOG.find((hamlet) => hamlet.starting).slug;
@@ -197,4 +198,58 @@ export async function markHamletNatureSeeded(hamletId) {
   const row = await db.hamlets.get(hamletId);
   if (!row) return;
   await db.hamlets.put({ ...row, natureSeeded: true });
+}
+
+/**
+ * The plots the town hall has put up for sale in a hamlet: one entry per tile, with the use it is reserved for and the company that bought it (null while for sale).
+ * @param {string} hamletId
+ * `crop`: where the tile's tree stands (null before its first plant, see ForestGrowthPolicy); `groundY`: how high the tile's ground lies, for the trees standing on it.
+ * @returns {Promise<Array<{ x: number, y: number, use: string, owner: string | null, crop: { stage: string, since: number } | null, groundY: number }>>}
+ */
+export async function getHamletPlots(hamletId) {
+  const row = await db.hamlets.get(hamletId);
+  if (!row) throw new Error(`[hamletSession] no hamlet "${hamletId}" to read the plots of`);
+  return (row.plots ?? []).map(({ x, y, use, owner, crop, groundY }) => {
+    if (owner === undefined || crop === undefined || groundY === undefined) {
+      throw new Error(`[hamletSession] the plot at (${x}, ${y}) of "${hamletId}" lacks its owner, its crop or its ground height: it was saved by an earlier version`);
+    }
+    return { x, y, use, owner, crop, groundY };
+  });
+}
+
+/**
+ * The price per tile the owner's house sells a use of land at: the one the player set for this hamlet, otherwise the catalog's own price (the starting one).
+ * @param {string} hamletId
+ * @param {string} use
+ * @returns {Promise<number>}
+ */
+export async function getHamletLandPrice(hamletId, use) {
+  const row = await db.hamlets.get(hamletId);
+  if (!row) throw new Error(`[hamletSession] no hamlet "${hamletId}" to read the land prices of`);
+  return row.landPrices?.[use] ?? getLandUse(use).pricePerTile;
+}
+
+/**
+ * @param {string} hamletId
+ * @param {string} use
+ * @param {number} pricePerTile
+ * @returns {Promise<void>}
+ */
+export async function setHamletLandPrice(hamletId, use, pricePerTile) {
+  getLandUse(use);
+  if (!(Number.isFinite(pricePerTile) && pricePerTile > 0)) throw new Error(`[hamletSession] a land price is more than nothing, got ${pricePerTile}`);
+  const row = await db.hamlets.get(hamletId);
+  if (!row) throw new Error(`[hamletSession] no hamlet "${hamletId}" to set the land price of`);
+  await db.hamlets.put({ ...row, landPrices: { ...(row.landPrices ?? {}), [use]: pricePerTile } });
+}
+
+/**
+ * @param {string} hamletId
+ * @param {Array<{ x: number, y: number, use: string, owner: string | null }>} plots the whole list, as it now stands
+ * @returns {Promise<void>}
+ */
+export async function saveHamletPlots(hamletId, plots) {
+  const row = await db.hamlets.get(hamletId);
+  if (!row) throw new Error(`[hamletSession] no hamlet "${hamletId}" to save the plots of`);
+  await db.hamlets.put({ ...row, plots: plots.map(({ x, y, use, owner, crop, groundY }) => ({ x, y, use, owner, crop, groundY })) });
 }

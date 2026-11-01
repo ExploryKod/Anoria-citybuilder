@@ -75,7 +75,11 @@ export class PriceBook {
     }
     const hubCostByGood = new Map([...hubTotals].map(([category, total]) => [category, total.amount / total.quantity]));
     this.months.set(key, { averageCosts, hubCostByGood, costing: await this.loadProducerCosting(), standardCosts: new Map() });
-    for (const kept of [...this.months.keys()].sort((a, b) => a - b).slice(0, -MONTHS_KEPT)) this.months.delete(kept);
+    // Only the latest months are kept, but never the one just prepared: a past month asked for (a year read back) is older than the kept ones and would delete itself,
+    // leaving `sellingPrice` to find it missing right after `ensure` returned.
+    for (const dropped of [...this.months.keys()].sort((a, b) => a - b).slice(0, -MONTHS_KEPT)) {
+      if (dropped !== key) this.months.delete(dropped);
+    }
   }
 
   /** The price a warehouse sells a good at, as a producer's input: what the warehouses paid for it plus their margin, the reference chain before any delivery. */

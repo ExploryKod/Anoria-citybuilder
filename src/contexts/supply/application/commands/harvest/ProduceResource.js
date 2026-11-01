@@ -53,11 +53,13 @@ import { getMaxStockForBuilding } from '../../../../../shared/building-catalog/r
  *   - `requiresOpenDeal: true` — the entry makes a deal for a trade, so it runs only while the trade context says one
  *     is open for its good (`dealGate.isOpen(category)`): no city to deal with, nothing made. A gate that was never
  *     given throws, it never lets the entry through.
- *   - `source: { resource, range, consume }` — makes the entry a RAW-MATERIAL
+ *   - `source: { resource, range, consume | draw }` — makes the entry a RAW-MATERIAL
  *     producer: it works only while enough natural resources of that kind lie
  *     within `range` tiles, and each production uses `consume` of them up
- *     (the nearest ones, removed from the game). No natural resource is named
- *     here. The player's "no resource" warning is not stored: it is derived
+ *     (the nearest ones, removed from the game). With `draw: true` the entry
+ *     instead takes its `amount` out of the stocks of the sources in range (a
+ *     rock holds stone, iron, gold), and a source left with nothing is removed.
+ *     No natural resource is named here. The player's "no resource" warning is not stored: it is derived
  *     from the same rule (see listNoResourceBuildingIds in createSupplyContext).
  * An entry with a `totalKey` writes through the full set of categories
  * filed under that aggregate, so the aggregate stays consistent and the
@@ -86,6 +88,26 @@ export class ProduceResource {
     this.hubServing = hubServing;
   }
 
+
+  /**
+   * Takes `amount` of `resource` from the nearest sources, one after the other, out of what each of them holds (their record's stocks). A source that holds
+   * nothing at all any more (every deposit of the piece spent) is used up: it leaves the game, as a tree does.
+   */
+  async #drawFromSources(sources, resource, amount) {
+    let left = amount;
+    for (const source of sources) {
+      if (left <= 0) break;
+      const held = source.stocks?.[resource] ?? 0;
+      const taken = Math.min(held, left);
+      if (taken <= 0) continue;
+      left -= taken;
+      const stocks = { ...source.stocks, [resource]: held - taken };
+      await this.supplyBuildingRepository.updateBuildingFields(source.id, { stocks });
+      if (Object.values(stocks).every((value) => !(value > 0))) {
+        await this.removeBuilding?.({ instanceId: source.id });
+      }
+    }
+  }
 
   /**
    * Where an input declared with `from` would be drawn from: the nearest working buildings of that role
@@ -380,6 +402,13 @@ export class ProduceResource {
       }
       let amount = (entry.amount ?? 0) * multiplier;
 
+      // A source that is drawn from gives what it holds, no more: the mine takes the month's amount, or what the rocks in range have left of it.
+      const drawing = entry.source?.draw === true;
+      if (drawing) {
+        const available = sources.reduce((sum, source) => sum + (source.stocks?.[entry.source.resource] ?? 0), 0);
+        amount = Math.min(amount, available);
+      }
+
       // A reservoir cannot overflow: a building that declares a stock ceiling (a tank, a power plant) makes only what fits
       // under it, and burns only the share of its inputs that makes. Full, it makes nothing and takes nothing.
       let share = 1;
@@ -408,9 +437,13 @@ export class ProduceResource {
         continue;
       }
 
-      // Raw material: use up the nearest sources.
-      for (const used of sources.slice(0, sourceNeed)) {
-        await this.removeBuilding?.({ instanceId: used.id });
+      // Raw material: draw from the nearest sources what the entry takes (a mine), or use up the nearest ones whole (a lumberjack's trees).
+      if (drawing) {
+        await this.#drawFromSources(sources, entry.source.resource, amount);
+      } else {
+        for (const used of sources.slice(0, sourceNeed)) {
+          await this.removeBuilding?.({ instanceId: used.id });
+        }
       }
 
       // Each write is merged back into the whole row: a write scoped to one

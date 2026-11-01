@@ -152,7 +152,7 @@ describe('formatHouseActivityModel — a house\'s own business, one block per re
 
   test('House-Red has one block per recipe its catalog declares, in order', () => {
     const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow: null });
-    expect(model.recipes.map((r) => r.category)).toEqual(['decoratedPot', 'carrotCake']);
+    expect(model.recipes.map((r) => r.category)).toEqual(['decoratedPot', 'decoratedPlate', 'gildedPot', 'gildedPlate', 'carrotCake']);
   });
 
   // Raw materials collapse to ONE card even for a multi-input recipe (2026-10-10) — the bottleneck
@@ -185,7 +185,7 @@ describe('formatHouseActivityModel — a house\'s own business, one block per re
       activityInputs: { carrotCake: { year: 1, monthIndex: 1, takenByCategory: { wheat: 4, carrot: 0, oil: 2 } } },
     };
     const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow });
-    const cake = model.recipes[1];
+    const cake = model.recipes.find((recipe) => recipe.category === 'carrotCake');
     expect(cake.material.kind).toBe('materials');
     expect(cake.material.valueText).toBe('0');
     expect(cake.material.met).toBe(false);

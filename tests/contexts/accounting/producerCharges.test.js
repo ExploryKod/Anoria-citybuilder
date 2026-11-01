@@ -13,16 +13,27 @@ import { buildingCatalog } from '../../../src/shared/building-catalog/buildingCa
 
 describe('trade lines — a sale and its purchase name each other, on each company account', () => {
   test('a sale between two companies is a revenue on the seller and a purchase on the buyer', () => {
-    expect(tradeLines({ sellerId: 'farm', buyerId: 'market', amountHT: 100 })).toMatchObject([
-      { kind: 'producer_revenue', amount: 100, holder: 'farm', counterparty: 'market' },
-      { kind: 'producer_purchase', amount: 100, holder: 'market', counterparty: 'farm' },
+    expect(tradeLines({ sellerId: 'farm', buyerId: 'market', good: 'wheat', amountHT: 100 })).toMatchObject([
+      { kind: 'producer_revenue', amount: 100, holder: 'farm', counterparty: 'market', resource: 'wheat' },
+      { kind: 'producer_purchase', amount: 100, holder: 'market', counterparty: 'farm', resource: 'wheat' },
     ]);
   });
 
   test('a sale to the houses has no buying company', () => {
-    expect(tradeLines({ sellerId: 'market', buyerId: null, amountHT: 50 })).toMatchObject([
+    expect(tradeLines({ sellerId: 'market', buyerId: null, good: 'wheat', amountHT: 50 })).toMatchObject([
       { kind: 'producer_revenue', amount: 50, holder: 'market', counterparty: null },
     ]);
+  });
+
+  test('each good of a pair has its own lines, and a trade that names no good is refused', () => {
+    const stone = tradeLines({ sellerId: 'mine', buyerId: 'warehouse', good: 'rock', amountHT: 5 });
+    const gold = tradeLines({ sellerId: 'mine', buyerId: 'warehouse', good: 'gold', amountHT: 24 });
+    expect(stone[0]).toMatchObject({ resource: 'rock', amount: 5 });
+    expect(gold[0]).toMatchObject({ resource: 'gold', amount: 24 });
+    // The sale and the purchase of one good are the two sides of one flow, apart from the other goods' flows
+    expect(stone[0].flow).toBe(stone[1].flow);
+    expect(stone[0].flow).not.toBe(gold[0].flow);
+    expect(() => tradeLines({ sellerId: 'mine', buyerId: 'warehouse', amountHT: 5 })).toThrow(/names no good/);
   });
 });
 

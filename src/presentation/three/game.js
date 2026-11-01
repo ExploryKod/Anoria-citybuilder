@@ -19,6 +19,8 @@ import { loadEditorMapLayout } from '../../contexts/world-layout/application/que
 import { generateNaturePieces, markDepositTiles } from './managers/ResourceManager.js';
 import { getGroundSurface } from '../../shared/editor-catalog/kenneyPlacementProfile.js';
 import { propRecordSpec, propsHoldingRecord } from '../../shared/editor-catalog/naturePropCatalog.js';
+import { plotMarkRefusal } from '../../shared/land-catalog/plotLayout.js';
+import { PLOT_SQUARE_MAX_SIDE, parsePlotTool } from '../../shared/land-catalog/plotTools.js';
 import { readEditorMapDocument } from '../../contexts/world-layout/application/queries/EditorMapDocument.js';
 import { applyEditorMapLayoutToCity } from '../../contexts/world-layout/application/services/ApplyEditorMapLayoutToCity.js';
 import { createEditorNatureStackLayoutPort } from '../../contexts/world-layout/infrastructure/adapters/presentation/EditorNatureStackLayoutAdapter.js';
@@ -30,6 +32,7 @@ import { syncSupplyLinksAfterBuildingChange } from '../../composition/syncSupply
 import { isConfirmedBeforeDemolition, previewDemolitionLiquidation } from '../../composition/constructionTreasuryBridge.js';
 import { resolveGetTimeInfo } from '../../composition/gameTimeBridge.js';
 import { getSharedEventBus } from '../../composition/sharedEventBus.js';
+import { PLOTS_CHANGED_EVENT } from '../../composition/createLandContext.js';
 import { refreshSupplyPlacementIndex } from '../../contexts/supply/infrastructure/presentation/SupplyPlacementIndex.js';
 import { ensureGameRuntimeBootstrapped } from '../../composition/ensureGameRuntimeBootstrapped.js';
 import { bootGameContexts } from '../../composition/bootGameContexts.js';
@@ -46,6 +49,8 @@ import {
   parseGameHamletPath,
   getHamlet,
   markHamletNatureSeeded,
+  getHamletPlots,
+  saveHamletPlots,
   requireActiveHamletId,
   setActiveHamletId,
 } from '../../core/persistence/hamlet/hamletSession.js';
@@ -163,6 +168,7 @@ ensureGameRuntimeBootstrapped();
 
 /** Stops the previous game's listener when a new game is created in the same page. */
 let stopPopulationDepartureToasts = null;
+let stopPlotsChanged = null;
 
 export function createGame(gameStore, assetManager, citySize = null) {
   resetCumulativeDeaths();
@@ -251,6 +257,16 @@ export function createGame(gameStore, assetManager, citySize = null) {
     end: null,
     busy: false,
   };
+
+  /** The town hall's land tools (Terrains tab): a square from where the player pressed to the cursor, marked or cleared on release. */
+  let plotPaint = {
+    active: false,
+    anchor: null,
+    end: null,
+    busy: false,
+  };
+  /** The tiles the town hall holds for sale, with the use each is reserved for: { x, y, use }. */
+  let plots = [];
 
   /** Touch/tablet: anchor ghost + rotation HUD before confirming placement. */
   let touchPendingPlacement = null;
@@ -576,6 +592,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     construction,
     accounting,
     trade,
+    land,
     sessionApi,
     runtime,
   } = bootGameContexts();
@@ -589,6 +606,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
     },
   });
   const { construction: constructionApi } = sessionApi;
+  // A company bought some of the land for sale: the map takes the plots as the hamlet keeps them now (the owned ones turn dark green)
+  stopPlotsChanged?.();
+  stopPlotsChanged = getSharedEventBus().subscribe(PLOTS_CHANGED_EVENT, () => {
+    loadPlots().catch((error) => console.error('[game] The plots could not be drawn again:', error));
+  });
   const {
     isRoadBuildingType,
     listRoadPaintCells,
@@ -782,6 +804,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
       await markHamletNatureSeeded(getActiveHamletId());
     }
     await scene.update(city, time);
+    // The editor draws a map, it holds no land for sale
+    if (!isEditorMode()) await loadPlots();
   }
 
   /**
@@ -1680,6 +1704,106 @@ export function createGame(gameStore, assetManager, citySize = null) {
     await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
   }
 
+  /** The tiles of the square from where the player pressed to the cursor (inside the city). */
+  function plotSquareTiles() {
+    const { anchor, end } = plotPaint;
+    const tiles = [];
+    for (let x = Math.min(anchor.x, end.x); x <= Math.max(anchor.x, end.x); x += 1) {
+      for (let y = Math.min(anchor.y, end.y); y <= Math.max(anchor.y, end.y); y += 1) {
+        if (x >= 0 && y >= 0 && x < city.size && y < city.size) tiles.push({ x, y });
+      }
+    }
+    return tiles;
+  }
+
+  /**
+   * What the land tool would do with the square: marking, green is what goes up for sale and red what cannot (a building, a tree, a slope, land already for sale);
+   * clearing, red is the land taken off sale (of the tool's use) and amber the rest of the square.
+   */
+  function plotPlanOf(squareTiles, { use, action }) {
+    const valid = [];
+    const blocked = [];
+    const area = [];
+    for (const { x, y } of squareTiles) {
+      const tile = city.tiles[x]?.[y];
+      if (action === 'mark') {
+        (plotMarkRefusal(tile) === null ? valid : blocked).push({ x, y });
+      } else {
+        // Only land still for sale can be taken off sale: what a company has bought is its own
+        (tile?.plot?.use === use && tile.plot.owner === null ? blocked : area).push({ x, y });
+      }
+    }
+    return { valid, blocked, area };
+  }
+
+  function showPlotDragPreview() {
+    scene.roadPaintPreview.show(plotPlanOf(plotSquareTiles(), parsePlotTool(activeToolId)));
+  }
+
+  function cancelPlotPaint() {
+    plotPaint.active = false;
+    plotPaint.anchor = null;
+    plotPaint.end = null;
+    scene.roadPaintPreview.clear();
+  }
+
+  /** The cursor moved: the square is redrawn from where the player pressed, and stops growing at the longest side the town hall can mark at once. */
+  function dragPlotToward(x, y) {
+    const { anchor } = plotPaint;
+    const reach = PLOT_SQUARE_MAX_SIDE - 1;
+    plotPaint.end = {
+      x: Math.max(anchor.x - reach, Math.min(anchor.x + reach, x)),
+      y: Math.max(anchor.y - reach, Math.min(anchor.y + reach, y)),
+    };
+    showPlotDragPreview();
+  }
+
+  /** The land for sale becomes `next`: the tiles, the list the hamlet keeps, and the fences around it. */
+  async function applyPlots(next) {
+    for (const { x, y } of plots) delete city.tiles[x][y].plot;
+    for (const { x, y, use, owner } of next) city.tiles[x][y].plot = { use, owner };
+    plots = next;
+    await saveHamletPlots(requireActiveHamletId(), plots);
+    await scene.setPlotFences(plots);
+    await refreshPlacementPresentation();
+  }
+
+  /** The land for sale a hamlet kept is put back on its tiles as it loads. */
+  async function loadPlots() {
+    // The city's tiles were laid again for this hamlet: what the previous one had for sale is no longer on them
+    plots = [];
+    const saved = await getHamletPlots(requireActiveHamletId());
+    for (const { x, y } of saved) {
+      if (!city.tiles[x]?.[y]) throw new Error(`[game] a plot of the hamlet at (${x}, ${y}) is outside the city`);
+    }
+    await applyPlots(saved);
+  }
+
+  /** The button is released: the square is put up for sale, or taken off sale. */
+  async function commitPlotPaint() {
+    if (!plotPaint.active || plotPaint.busy) {
+      return;
+    }
+    plotPaint.busy = true;
+    try {
+      const tool = parsePlotTool(activeToolId);
+      const { valid } = plotPlanOf(plotSquareTiles(), tool);
+      const square = plotSquareTiles();
+      cancelPlotPaint();
+      if (tool.action === 'mark') {
+        if (valid.length === 0) return;
+        await applyPlots([...plots, ...valid.map(({ x, y }) => ({ x, y, use: tool.use, owner: null, crop: null, groundY: scene.resolveGroundElevation(x, y, 1, 1) }))]);
+      } else {
+        const covered = new Set(square.map(({ x, y }) => `${x},${y}`));
+        const kept = plots.filter((plot) => plot.owner !== null || plot.use !== tool.use || !covered.has(`${plot.x},${plot.y}`));
+        if (kept.length === plots.length) return;
+        await applyPlots(kept);
+      }
+    } finally {
+      plotPaint.busy = false;
+    }
+  }
+
   /** The button is released: demolish what the square covers. */
   async function commitErasePaint() {
     if (!erasePaint.active || erasePaint.busy) {
@@ -1761,6 +1885,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
 
     const behaviorMode = resolveActiveBehaviorMode();
 
+    if (behaviorMode === BEHAVIOR_MODE.PLOT) {
+      // The town hall's land tools: the press anchors a square, dragging stretches it, letting go marks or clears it
+      plotPaint.active = true;
+      plotPaint.anchor = { x, y };
+      plotPaint.end = { x, y };
+      showPlotDragPreview();
+      return;
+    }
+
     if (isEditorMode()) {
       if (behaviorMode === BEHAVIOR_MODE.BUILD) {
         if (isEditorPlacementTool(activeToolId)) {
@@ -1813,6 +1946,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
           construction: constructionApi,
           employment: sessionApi.employment,
           accounting: sessionApi.accounting,
+          land,
         });
         return;
       }
@@ -1846,6 +1980,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
         construction: constructionApi,
         employment: sessionApi.employment,
         accounting: sessionApi.accounting,
+        land,
       });
     } else if (isRoadBuildingType(activeToolId)) {
       if (infoObjectOverlay.classList.contains('active')) {
@@ -1964,6 +2099,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
   scene.onStatusHover = updateStatusIconTooltip;
 
   scene.onRoadPaintMove = async (focusedObject) => {
+    if (plotPaint.active) {
+      const px = focusedObject?.userData?.x;
+      const py = focusedObject?.userData?.y;
+      if (typeof px === 'number' && typeof py === 'number') {
+        dragPlotToward(px, py);
+      }
+      return;
+    }
     if (erasePaint.active) {
       const ex = focusedObject?.userData?.x;
       const ey = focusedObject?.userData?.y;
@@ -1994,6 +2137,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
     await commitRoadPaint();
     await commitHousePaint();
     await commitErasePaint();
+    await commitPlotPaint();
   };
 
   // Touch (Mode tactile): one finger on a road tool, or on a house / field, drags the plan out like the mouse does (it replaces a plan or a ghost waiting).
@@ -2328,8 +2472,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
       if (erasePaint.active) {
         cancelErasePaint();
       }
+      if (plotPaint.active) {
+        cancelPlotPaint();
+      }
       // The eraser's hover light must not stay on the map once another tool is in hand (a paint in progress keeps its own preview).
-      if (!roadPaint.active && !housePaint.active && !erasePaint.active) {
+      if (!roadPaint.active && !housePaint.active && !erasePaint.active && !plotPaint.active) {
         scene.roadPaintPreview.clear();
       }
     },

@@ -54,6 +54,8 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'Factory-Candle': Object.freeze({ width: 2, depth: 2 }),
   // Network provider wears Kenney industrial building-n (1x2).
   'Factory-Network': Object.freeze({ width: 1, depth: 2 }),
+  // The mine wears the same building-n (1x2).
+  'Mine': Object.freeze({ width: 1, depth: 2 }),
   // Lumberjack reassigns its geometry to Kenney industrial building-o (see buildingAssets.js) — 1x2 there.
   // Furniture workshop / Warehouse reassign to Kenney industrial building-f (2x2) / building-a (3x2).
   'Factory-Furniture': Object.freeze({ width: 2, depth: 2 }),

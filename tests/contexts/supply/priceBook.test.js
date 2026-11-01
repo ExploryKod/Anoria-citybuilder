@@ -93,6 +93,16 @@ describe('PriceBook — prices built on the cost of the stock', () => {
     expect(book.sellingPrice({ id: 'house-1', type: 'House-Red' }, 'decoratedPot', period)).toBe(unitPriceAtStage('producer', 'decoratedPot'));
   });
 
+  // Regression: reading a past year back in the Finances tab asked for a month older than the four kept, which deleted itself right after being prepared.
+  test('a past month prepared after newer ones is still there to be priced', async () => {
+    const book = bookWith([]);
+    for (const monthIndex of [4, 5, 6, 7, 8]) await book.ensure({ year: 6, monthIndex });
+    const past = { year: 5, monthIndex: 11 };
+    await book.ensure(past);
+
+    expect(() => book.sellingPrice(warehouse, 'wheat', past)).not.toThrow();
+  });
+
   test('a price asked for a month that was not prepared throws', async () => {
     const book = await ready([]);
 

@@ -56,6 +56,7 @@ export const ASSET_IDS_BY_CATEGORY = Object.freeze({
     'Factory-Amphora',
     'Lumberjack',
     'Lumberjack-Industry',
+    'Mine',
     'Factory-Furniture',
     'Factory-Network',
     'CoalPlant',

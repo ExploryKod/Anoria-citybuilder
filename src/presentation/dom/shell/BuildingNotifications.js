@@ -57,6 +57,7 @@ const PLACEMENT_REFUSALS = Object.freeze([
   { reason: 'area_not_available', say: () => 'Espace non disponible' },
   // The relief of the map: only flat ground takes a building, and a building does not straddle two levels.
   { reason: 'ground_obstructed', say: () => 'Un arbre, un rocher ou un autre obstacle bloque cet emplacement' },
+  { reason: 'ground_plot', say: () => 'Ce terrain est mis en vente par la mairie : on ne peut pas y construire' },
   { reason: 'ground_slope_direction', say: () => 'Sur une pente, la route ne peut aller que dans le sens de la montée' },
   { reason: 'ground_road_level', say: () => 'Une route ne change de niveau que par une pente' },
   { reason: 'ground_not_flat', say: () => "Le sol n'est pas plat ici : on ne peut pas y construire" },

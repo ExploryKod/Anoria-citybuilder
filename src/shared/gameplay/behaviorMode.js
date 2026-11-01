@@ -7,13 +7,17 @@
  * - **range** — a click on a building shows what it reaches (roads, buildings that receive or supply it)
  */
 
-/** @typedef {'select' | 'build' | 'erase' | 'range'} BehaviorMode */
+import { parsePlotTool } from '../land-catalog/plotTools.js';
+
+/** @typedef {'select' | 'build' | 'erase' | 'range' | 'plot'} BehaviorMode */
 
 export const BEHAVIOR_MODE = Object.freeze({
   SELECT: 'select',
   BUILD: 'build',
   ERASE: 'erase',
   RANGE: 'range',
+  /** The town hall puts a square of land up for sale, or takes it off sale (see land-catalog/plotTools.js). */
+  PLOT: 'plot',
 });
 
 /**
@@ -40,6 +44,9 @@ export function resolveBehaviorMode(toolId, { isPlacementTool } = {}) {
   }
   if (toolId === RANGE_TOOL_ID) {
     return BEHAVIOR_MODE.RANGE;
+  }
+  if (parsePlotTool(toolId)) {
+    return BEHAVIOR_MODE.PLOT;
   }
   if (typeof isPlacementTool === 'function' && isPlacementTool(toolId)) {
     return BEHAVIOR_MODE.BUILD;
@@ -92,5 +99,5 @@ export function isRangeBehaviorMode(toolId, options) {
  */
 export function shouldReturnToSelectOnEscape(toolId, options) {
   const mode = resolveBehaviorMode(toolId, options);
-  return mode === BEHAVIOR_MODE.BUILD || mode === BEHAVIOR_MODE.ERASE || mode === BEHAVIOR_MODE.RANGE;
+  return mode === BEHAVIOR_MODE.BUILD || mode === BEHAVIOR_MODE.ERASE || mode === BEHAVIOR_MODE.RANGE || mode === BEHAVIOR_MODE.PLOT;
 }

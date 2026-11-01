@@ -40,6 +40,56 @@ function setup({ trees }) {
   return { rows, naturals, produce };
 }
 
+/** A mine and the rocks around it: the rocks hold stocks, which the mine draws on (they are rows of the hamlet, written through `updateBuildingFields`). */
+function setupMine({ rocks }) {
+  const rows = new Map([
+    ['mine', { id: 'mine', type: 'Mine', x: 10, y: 10, roadCount: 1, worker: 3, workerNeed: 3, stocks: {} }],
+    ...rocks.map((rock) => [rock.id, { type: 'Boulder-001', ...rock }]),
+  ]);
+  const repository = {
+    async findById(id) {
+      const b = rows.get(id);
+      return b && createSupplyBuildingSnapshot({ ...b, stocks: createSupplyStock(b.stocks) });
+    },
+    async saveStocks(id, stocks) {
+      rows.get(id).stocks = { ...createSupplyStock(stocks) };
+    },
+    async updateBuildingFields(id, fields) {
+      Object.assign(rows.get(id), fields);
+    },
+    async listNaturalResources() {
+      return [...rows.values()].filter((row) => row.type === 'Boulder-001').map((row) => ({ ...row }));
+    },
+  };
+  const produce = new ProduceResource(repository, { removeBuilding: async ({ instanceId }) => rows.delete(instanceId) });
+  return { rows, produce };
+}
+
+describe('Supply — a mine draws on the stocks of the rocks around it', () => {
+  test('takes stone, iron and gold from the rock each month, and the rock goes once it holds nothing', async () => {
+    const { rows, produce } = setupMine({ rocks: [{ id: 'rock', x: 11, y: 10, stocks: { rock: 8, iron: 4, gold: 2 } }] });
+
+    const first = await produce.execute({ buildingId: 'mine', period: PERIOD });
+
+    expect(first.produced).toBe(true);
+    expect(rows.get('mine').stocks).toMatchObject({ rock: 8, iron: 4, gold: 2 });
+    // Everything it held was taken at once: nothing left, so the rock leaves the game
+    expect(rows.has('rock')).toBe(false);
+    const idle = await produce.execute({ buildingId: 'mine', period: { ...PERIOD, monthIndex: 4 } });
+    expect(idle).toEqual({ produced: false, reason: 'no_resource' });
+  });
+
+  test('draws only what the rocks hold, and leaves what it did not take', async () => {
+    const { rows, produce } = setupMine({ rocks: [{ id: 'rock', x: 11, y: 10, stocks: { rock: 20, iron: 1, gold: 0 } }] });
+
+    await produce.execute({ buildingId: 'mine', period: PERIOD });
+
+    // 8 stone a month out of 20, the 1 iron there is, no gold (nothing in range holds any)
+    expect(rows.get('mine').stocks).toMatchObject({ rock: 8, iron: 1, gold: 0 });
+    expect(rows.get('rock').stocks).toMatchObject({ rock: 12, iron: 0, gold: 0 });
+  });
+});
+
 describe('Supply — raw-material producer and its natural resource', () => {
   test('produces wood, fells the nearest tree, and idles once none is left', async () => {
     const { rows, naturals, produce } = setup({

@@ -115,7 +115,7 @@ describe('a demolished building leaves no debt that can never be paid', () => {
       monthIndex: 3,
       cash: 1000,
       buildings,
-      pairs: [{ sellerId: 'farm', buyerId: 'gone-shop', amountHT: 50 }, { sellerId: 'gone-farm', buyerId: 'farm', amountHT: 30 }],
+      pairs: [{ sellerId: 'farm', buyerId: 'gone-shop', good: 'wheat', amountHT: 50 }, { sellerId: 'gone-farm', buyerId: 'farm', good: 'wheat', amountHT: 30 }],
       serviceFlows: [{ buildingId: 'gone-tank', houseId: 'house', service: 'water', units: 3 }, { buildingId: 'farm', houseId: 'gone-house', service: 'water', units: 1 }],
       spoilage: [{ buildingId: 'gone-farm', units: 2, lostRevenue: 10 }],
     })).resolves.not.toThrow();

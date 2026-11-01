@@ -550,11 +550,12 @@ export function createSupplyContext({
       const rows = await supplyBuildingRepositoryImpl.listAllBuildingRows();
       const naturals = await supplyBuildingRepositoryImpl.listNaturalResources();
       return rows
-        .filter((row) =>
-          getNaturalSources(row.type).some(
-            (source) => findNaturalSourcesInRange(row, naturals, source).length < (source.consume ?? 1)
-          )
-        )
+        .filter((row) => {
+          const sources = getNaturalSources(row.type);
+          // Warned when none of what it can draw on (a mine has several kinds) is left in range
+          return sources.length > 0
+            && sources.every((source) => findNaturalSourcesInRange(row, naturals, source).length < (source.consume ?? 1));
+        })
         .map((row) => instanceIdFromHouseRow(row));
     },
 

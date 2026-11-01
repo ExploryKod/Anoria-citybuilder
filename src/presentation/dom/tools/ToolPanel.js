@@ -21,6 +21,7 @@ import { NATURE_ASSETS } from '../../three/assets/natureAssets.js';
 import { TERRAIN_ASSETS } from '../../three/assets/terrainAssets.js';
 import { getDirectToolForCategory, toolbarGroupOf } from '../../three/assets/buildingCategories.js';
 import { EDITOR_TOOLS_BY_CATEGORY } from '../../../shared/editor-catalog/editorKenneyCatalog.js';
+import { plotToolClusters } from '../../../shared/land-catalog/plotTools.js';
 
 export { getDirectToolForCategory };
 
@@ -323,6 +324,8 @@ export function getToolButtonInfosForCategory(categoryKey) {
     ];
   }
 
+  if (categoryKey === 'plots') return plotToolClusters().flat();
+
   // A category whose pill IS a tool (the catalog's button.pillCategory) lists just that tool
   const directTool = getDirectToolForCategory(categoryKey);
   if (directTool) {
@@ -365,6 +368,10 @@ export function getToolButtonInfosForCategory(categoryKey) {
 export function getToolButtonInfoClustersForCategory(categoryKey) {
   if (categoryKey === 'tools' || getDirectToolForCategory(categoryKey)) {
     return [getToolButtonInfosForCategory(categoryKey)];
+  }
+  // The "Terrains" tab: one cluster (sub-tab) per use of land the town hall can sell
+  if (categoryKey === 'plots') {
+    return plotToolClusters();
   }
 
   const exclude = new Set(CATEGORY_EXCLUDES[categoryKey] || []);

@@ -72,6 +72,7 @@ import { renderKvPanelView } from '../views/kvPanelView.js';
 import { renderShelfLifeTab } from '../views/shelfLifeTabView.js';
 import { renderBuildingFinanceTab } from '../views/buildingFinanceInfoView.js';
 import { renderHouseResidentsTab } from '../views/houseResidentsInfoView.js';
+import { renderLandPricesTab } from '../views/landPricesView.js';
 
 /** @typedef {import('../buildingInfoTypes.js').BuildingInfoGroupDefinition} BuildingInfoGroupDefinition */
 
@@ -131,6 +132,13 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         id: BUILDING_INFO_TAB_IDS.residents,
         format: (vm) => (vm.uniqueId ? { accounting: vm.accounting, buildingId: vm.uniqueId } : null),
         render: (container, model) => renderHouseResidentsTab(container, model),
+      },
+      {
+        // Only the owner's house: what its property company sells (land) and at what price
+        id: BUILDING_INFO_TAB_IDS.prices,
+        isVisible: (vm) => vm.isPropertyOwner === true,
+        format: (vm) => ({ land: vm.land }),
+        render: (container, model) => renderLandPricesTab(container, model),
       },
       // What the house needs to evolve to its next level.
       { id: BUILDING_INFO_TAB_IDS.services, label: '🌱 Évolution' },

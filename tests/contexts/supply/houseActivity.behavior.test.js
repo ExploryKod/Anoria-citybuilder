@@ -108,9 +108,9 @@ describe('Supply — a house running its own business', () => {
     }
   });
 
-  test('only the merchants buy what the artisans and the savants make, straight from the catalog', () => {
-    // Nobody references carrotCake anywhere yet: decoratedPot alone gives House-Red its one client.
-    expect(resolveClientPriorities('House-Red').order).toEqual(['House-Blue']);
+  test('who buys what the artisans and the savants make comes straight from the catalog', () => {
+    // The merchants buy it to export; the artisans also take back their own decorated pots and plates to set gold into them.
+    expect(resolveClientPriorities('House-Red').order.sort()).toEqual(['House-Blue', 'House-Red']);
     expect(resolveClientPriorities('Factory-Network').order).toEqual(['House-Purple']);
   });
 });

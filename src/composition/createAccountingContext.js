@@ -548,6 +548,14 @@ export function createAccountingContext(deps = {}) {
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
 
+  // The property company that is owed the rents and sells the land: the house that holds the owner skill, standing whether or not people live in it.
+  const findPropertyOwner = async () => {
+    const ownerHouse = (await dexieDb.houses.toArray())
+      .filter((row) => isActiveHamletRow(row) && resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE && houseHoldsSkill(row.type, 1, OWNER_SKILL))
+      .sort((a, b) => String(a.id).localeCompare(String(b.id)))[0];
+    return ownerHouse ? { id: ownerHouse.id, businessAccount: businessAccountOf(houseEnterpriseOf(ownerHouse.type, 'rental').id) } : null;
+  };
+
   // The rent of every house but the owner's goes to the owner: the house whose residents hold the owner skill (the mayor's house).
   const getRentalHouses = async () => {
     const owned = (await dexieDb.houses.toArray())
@@ -758,12 +766,7 @@ export function createAccountingContext(deps = {}) {
       return deps.valueStock(buildingId, period);
     },
     // The property company that is owed the rents: the house that holds the owner skill, standing whether or not people live in it (as the settlement reads it).
-    getOwner: async () => {
-      const ownerHouse = (await dexieDb.houses.toArray())
-        .filter((row) => isActiveHamletRow(row) && resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE && houseHoldsSkill(row.type, 1, OWNER_SKILL))
-        .sort((a, b) => String(a.id).localeCompare(String(b.id)))[0];
-      return ownerHouse ? { id: ownerHouse.id, businessAccount: businessAccountOf(houseEnterpriseOf(ownerHouse.type, 'rental').id) } : null;
-    },
+    getOwner: findPropertyOwner,
   });
 
   const processTurnBudget = new ProcessTurnBudget({
@@ -1088,6 +1091,35 @@ export function createAccountingContext(deps = {}) {
     async canAfford(amount) {
       const budget = await getTreasurySnapshotQuery.execute();
       return canAffordFromBudget(budget, amount);
+    },
+
+    /** @param {string} houseId @returns {Promise<boolean>} whether this house is the owner's house, whose property company sells the land */
+    async isPropertyOwner(houseId) {
+      return (await findPropertyOwner())?.id === houseId;
+    },
+
+    /**
+     * A company buys land from the property company (SCI) of the owner's house: the price comes out of the buyer's cash into the SCI's (a land purchase, a land sale), both
+     * written together. The SCI found the land for nothing, so the whole price is its product. Refused, with nothing written, when the buyer cannot pay.
+     * @param {{ buyerId: string, tileCount: number, pricePerTile: number, turn: number, label: string }} params
+     * @returns {Promise<{ sold: boolean, reason?: string, amount: number }>}
+     */
+    async sellLandToCompany({ buyerId, tileCount, pricePerTile, turn, label }) {
+      const owner = await findPropertyOwner();
+      if (!owner) throw new Error('[land] the owner\'s house stands nowhere: the land for sale has no seller (a defect: nothing is built without it)');
+      const amount = Math.round(tileCount * pricePerTile * 100) / 100;
+      if (!(amount > 0)) throw new Error(`[land] a sale of ${tileCount} tiles at ${pricePerTile} is worth nothing`);
+      if ((await getTreasurySnapshotQuery.cashOf({ accountBuildingId: buyerId, accountKind: null })) < amount) return { sold: false, reason: 'insufficient_funds', amount };
+      const hamletId = requireActiveHamletId();
+      const line = (type, description, account) => ({ turn, amount, type, description, buildingInstanceId: buyerId, businessKey: `${type}:${hamletId}:${buyerId}:${turn}`, ...account });
+      for (const written of [
+        line('land_purchase', `Terrain acheté ${label}`, { accountBuildingId: buyerId, accountKind: null, counterpartyBuildingId: owner.id }),
+        line('land_sale', `Terrain vendu ${label}`, { accountBuildingId: owner.id, accountKind: owner.businessAccount, counterpartyBuildingId: buyerId }),
+      ]) {
+        const result = await recordLedgerEntryCommand.execute(written);
+        if (!result.recorded) throw new Error(`[land] the ${written.type} line "${written.description}" was not recorded: ${result.reason}`);
+      }
+      return { sold: true, amount };
     },
 
     /** The active hamlet's citizen tax per inhabitant. */

@@ -92,7 +92,7 @@ export function balanceSheetOf(entries, buildingId, { accountKind = null, cash, 
         previousResult -= net;
       } else if (account === '101') capital -= net;
       else if (account === '164') loans -= net;
-      else if (account === '213') fixedAssets += net;
+      else if (account === '213' || account === '211') fixedAssets += net;
       else if (account === '274') loansLent += net;
       else if (account === '457') distributions -= net;
       else if (account === '281') accumulatedDepreciation -= net;

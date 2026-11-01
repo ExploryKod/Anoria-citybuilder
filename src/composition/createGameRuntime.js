@@ -9,6 +9,7 @@ import { createRandomEventsSystem } from '../contexts/gameplay/infrastructure/ru
 import { createIntelligenceMonthlyNewsSystem } from '../contexts/intelligence/infrastructure/runtime/intelligenceMonthlyNewsSystem.js';
 import { createCityTradeMonthlySystem } from '../contexts/geography/infrastructure/runtime/cityTradeMonthlySystem.js';
 import { createCityTradeRelationsSystem } from '../contexts/geography/infrastructure/runtime/cityTradeRelationsSystem.js';
+import { createLandMonthlySystem } from '../contexts/supply/infrastructure/runtime/landMonthlySystem.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { isLoseMode } from '../config/loseMode.js';
 import { recordDeaths } from './gameplayMortalityState.js';
@@ -39,6 +40,7 @@ export function createGameRuntime({
   gameplay,
   intelligence,
   trade,
+  land,
   getTimeInfo: getTimeInfoDep,
   toSupplySeason,
   toSupplyMonth,
@@ -64,6 +66,9 @@ export function createGameRuntime({
   }
   if (!trade) {
     throw new Error('createGameRuntime: trade context required');
+  }
+  if (!land) {
+    throw new Error('createGameRuntime: land context required');
   }
   if (typeof getSkillPriorities !== 'function') {
     throw new Error('createGameRuntime: getSkillPriorities required');
@@ -120,7 +125,8 @@ export function createGameRuntime({
     .register(
       'commerce.monthlyCityTrade',
       createCityTradeMonthlySystem({ trade, getTimeInfo })
-    );
+    )
+    .register('land.monthlyPurchases', createLandMonthlySystem({ land, getTimeInfo }));
 
   return {
     world,

@@ -14,10 +14,11 @@ const AREA_COLOR = 0xf0b429;
 const LIFT = 0.16;
 
 /**
- * @param {{ scene: THREE.Scene, getGroundPose: (x: number, y: number) => { elevation: number, slope: { dx: number, dy: number, rise: number } | null } }} deps
+ * @param {{ scene: THREE.Scene, getGroundPose: (x: number, y: number) => { elevation: number, slope: { dx: number, dy: number, rise: number } | null }, validColor?: number }} deps
  *   `getGroundPose`: how the ground of a tile lies (how high above the flat ground, and its slope if it is one): the tint lies on it, not in it
+ *   `validColor`: the tint of the `valid` tiles when it is not the default green (the land the companies own is dark green: see scene.js)
  */
-export function createRoadPaintPreview({ scene, getGroundPose }) {
+export function createRoadPaintPreview({ scene, getGroundPose, validColor = VALID_COLOR }) {
   /** @type {THREE.InstancedMesh[]} */
   let meshes = [];
 
@@ -59,7 +60,7 @@ export function createRoadPaintPreview({ scene, getGroundPose }) {
   function show({ valid, blocked, area = [] }) {
     clear();
     layer(area, AREA_COLOR);
-    layer(valid, VALID_COLOR);
+    layer(valid, validColor);
     layer(blocked, BLOCKED_COLOR);
   }
 

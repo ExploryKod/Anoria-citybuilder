@@ -103,6 +103,10 @@ const BY_TYPE = Object.freeze({
   loan_repayment: entry(outflow('164'), 'Emprunts auprès des établissements de crédit', 'loan-repayment', false, undefined, publicVariant(outflow('1641'), 'Emprunts en euros')),
   // Classe 2 — immobilisations
   construction: entry(outflow('213'), 'Constructions', 'fixed-asset', false, undefined, publicVariant(outflow('2131'), 'Bâtiments publics')),
+  // Land a company buys from the property company (SCI) of the owner's house: the buyer holds it as a fixed asset (211, land is not depreciated); the SCI found it for nothing,
+  // so it books the whole price as the product of a disposal (775) with no book value to write off.
+  land_purchase: entry(outflow('211'), 'Terrains', 'fixed-asset', false, 'Terrain acheté à la société immobilière'),
+  land_sale: entry(inflow('775'), 'Produits des cessions d’éléments d’actif', 'sales', false, 'Terrain vendu à une entreprise'),
   construction_refund: entry(inflow('213'), 'Constructions', 'fixed-asset', false, undefined, publicVariant(inflow('2131'), 'Bâtiments publics')),
   loan_capital_lent: entry(outflow('274'), 'Prêts', 'loan'),
   loan_repayment_received: entry(inflow('274'), 'Prêts', 'loan-repayment'),
@@ -150,7 +154,7 @@ const BY_TYPE = Object.freeze({
   withdrawal_paid: entry(outflow('165'), 'Dépôts et cautionnements reçus', 'treasury'),
   household_deposit_interest: entry(inflow('768'), 'Autres produits financiers', 'treasury', true),
   // Classe 6 — charges
-  producer_purchase: entry(outflow('607'), 'Achats de marchandises', 'purchase', false, 'Biens achetés à un entrepôt'),
+  producer_purchase: entry(outflow('607'), 'Achats de marchandises', 'purchase', false, 'Biens achetés à un fournisseur'),
   consumer_purchase: entry(outflow('607'), 'Achats de marchandises', 'purchase', true),
   service_purchase: entry(outflow('604'), 'Achats d’études et prestations de services', 'purchase', false, 'Services payés (eau, énergie, soins…)'),
   maintenance: entry(outflow('6156'), 'Maintenance', 'external', false, 'Entretien mensuel du bâtiment', publicVariant(outflow('6156'), 'Maintenance', 'Entretien mensuel du bâtiment')),

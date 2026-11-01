@@ -1,5 +1,6 @@
 import { hasResourceRole } from './ResourceRolePolicy.js';
-import { isRoadNeedMet, getNaturalResourceKind } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { isRoadNeedMet } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { depositKindsOf } from '../../../../shared/building-catalog/depositQueries.js';
 
 /**
  * Manhattan distance in tiles.
@@ -59,17 +60,19 @@ export function findBuildingsWithRoleInRange(origin, buildings, { role, category
  *
  * @param {{ x?: number, y?: number }} origin
  * @param {Array<{ id: string, type: string, x?: number, y?: number }>} candidates Any placed buildings; the ones that are not this natural resource are ignored.
- * @param {{ resource: string, range: number }} source The producer's `source` catalog fact.
- * @returns {Array<{ id: string, type: string, x: number, y: number }>}
+ * @param {{ resource: string, range: number, draw?: boolean }} source The producer's `source` catalog fact. A source that is drawn from (`draw`)
+ *   must still hold some of the resource: a rock of which the iron is spent is no source of iron, whatever stone it keeps.
+ * @returns {Array<{ id: string, type: string, x: number, y: number, stocks?: Record<string, number> }>}
  */
-export function findNaturalSourcesInRange(origin, candidates, { resource, range }) {
+export function findNaturalSourcesInRange(origin, candidates, { resource, range, draw = false }) {
   if (origin?.x == null || origin?.y == null) return [];
   return candidates
     .filter(
       (c) =>
         c.x != null &&
         c.y != null &&
-        getNaturalResourceKind(c.type) === resource &&
+        depositKindsOf(c.type).includes(resource) &&
+        (!draw || (c.stocks?.[resource] ?? 0) > 0) &&
         isWithinRange(origin, c, range)
     )
     .sort(

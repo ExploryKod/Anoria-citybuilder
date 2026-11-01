@@ -10,6 +10,7 @@ import {
 } from './ToolPanel.js';
 import { attachBuildToolHoverPreview, hideBuildToolHoverPreview } from './BuildToolHoverPreview.js';
 import { MOBILE_TOOLBAR_CATEGORIES } from './mobileToolbarCategories.js';
+import { parsePlotTool } from '../../../shared/land-catalog/plotTools.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
 import { unfoldGroupOf } from '../shell/hudFoldGroup.js';
 import { buildingIconHtml, buildingName } from '../shell/CatalogVocabulary.js';
@@ -625,7 +626,7 @@ function buildPills() {
 
     // A pill that IS a tool wears that tool's own icon (the one the dépêches show for it), not a generic one that could be taken for another tool's
     // (the range button wears the same route glyph).
-    const iconHtml = directTool ? buildingIconHtml(directTool) : getCategoryIconHtml(category.sourceBtnId);
+    const iconHtml = directTool ? buildingIconHtml(directTool) : (category.iconHtml ?? getCategoryIconHtml(category.sourceBtnId));
     if (iconHtml) {
       const iconWrap = document.createElement('span');
       iconWrap.className = 'mobile-build-bar__pill-icon';
@@ -733,7 +734,7 @@ function renderCarousel(categoryId) {
     slide.appendChild(group);
 
     cluster.forEach((buttonInfo) => {
-      let icon = resolveIcon(buttonInfo.tool);
+      let icon = categoryId === 'plots' ? plotToolIcon(buttonInfo.tool) : resolveIcon(buttonInfo.tool);
       if (categoryId === 'tools') {
         icon = getDirectToolIcon(buttonInfo.tool) || icon;
       }
@@ -800,6 +801,14 @@ function staffLevelPill(toolId) {
   pill.textContent = `niv. ${level}`;
   pill.title = `Il a des travailleurs à partir des maisons de niveau ${level}`;
   return pill;
+}
+
+/** A plot tool is no catalog building and has no catalog icon: putting up for sale wears the tab's fenced land, taking off sale the same with a cross. */
+function plotToolIcon(toolId) {
+  const { action } = parsePlotTool(toolId);
+  const fenced = MOBILE_TOOLBAR_CATEGORIES.find((category) => category.id === 'plots').iconHtml;
+  if (action === 'mark') return fenced;
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M5 20V12"/><path d="M19 20V12"/><path d="m9 5 6 6"/><path d="m15 5-6 6"/></svg>';
 }
 
 function getDirectToolIcon(toolId) {

@@ -48,9 +48,11 @@ const PREFAB_INDEX = /* @__PURE__ */ Object.freeze({
     relations: Object.freeze(relationsExport.relations),
     async loadLedgers() {
       const [journalCityExport, journalPrivateExport, transactionsExport] = await Promise.all([
-        import('./anoria-tour-107/journal-2026-10-25-132501.json', { with: { type: 'json' } }),
-        import('./anoria-tour-107/flux-prives-2026-10-25-132501.json', { with: { type: 'json' } }),
-        import('./anoria-tour-107/transactions-2026-10-25-132501.json', { with: { type: 'json' } }),
+        // No `with: { type: 'json' }` here: Vite's dev server answers a JSON module as JavaScript, which a browser refuses when the import asks for JSON
+        // ("Expected a JSON module script but the server responded with a MIME type of text/javascript"). Vite reads the file as JSON by its extension.
+        import('./anoria-tour-107/journal-2026-10-25-132501.json'),
+        import('./anoria-tour-107/flux-prives-2026-10-25-132501.json'),
+        import('./anoria-tour-107/transactions-2026-10-25-132501.json'),
       ]);
       return {
         journal: [...journalCityExport.default.entries, ...journalPrivateExport.default.entries],

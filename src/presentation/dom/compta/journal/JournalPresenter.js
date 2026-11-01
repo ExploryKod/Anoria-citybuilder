@@ -320,6 +320,7 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
     employer_contribution: 'Cotisations patronales',
     rent_paid: 'Loyer payé',    rent_received: 'Loyer perçu',
     premises_rent_paid: 'Loyer du local payé',    premises_rent_received: 'Loyer du local perçu',
+    land_purchase: 'Terrain acheté',    land_sale: 'Terrain vendu',
     company_capital_paid: 'Fonds propres versés',    company_capital_received: 'Fonds propres reçus',
     shareholder_capital_paid: 'Fonds propres versés (actionnaire)',    shareholder_capital_received: 'Fonds propres reçus (ville actionnaire)',
     aid_loan_paid: 'Prêt accordé à une entreprise',    aid_loan_received: 'Prêt reçu de la ville',
