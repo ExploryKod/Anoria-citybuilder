@@ -106,6 +106,7 @@ export const BUILDING_THEME_COLORS = Object.freeze({
   crops: '#3f8f3f',
   water: '#2f7fb8',
   safety: '#8a2f2f',
+  state: '#5e4b8b',
   energy: '#d4a017',
   education: '#2f5fa8',
   health: '#c0392b',
@@ -1520,6 +1521,39 @@ export const BUILDING_ASSETS = Object.freeze({
       icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-a.png' },
     },
     tags: ['markets', 'building'],
+  },
+  // Banque centrale — Kenney Commercial building-skyscraper-b (economy/footprint keyed to 'CentralBank'): a tower like the bank's, the next skyscraper of the
+  // kit, so the state's institution of money stands apart from the shop fronts.
+  'CentralBank': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-skyscraper-b',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'state',
+      editorGroup: null,
+      label: 'Banque centrale',
+      tooltip: "Fixe le taux directeur ; deux administrateurs y sont nommés, payés par la ville",
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-b.png' },
+    },
+    tags: ['public', 'building'],
   },
   // Commerce — building-skyscraper-b
   'Kenney-Commercial-building-skyscraper-b': {

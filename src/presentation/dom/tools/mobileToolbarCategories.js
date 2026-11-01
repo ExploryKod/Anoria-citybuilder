@@ -20,6 +20,7 @@ export const MOBILE_TOOLBAR_CATEGORIES = [
   socialClassCategory('artisans', 'artisans-btn'),
   socialClassCategory('merchants', 'merchants-btn'),
   socialClassCategory('scholars', 'scholars-btn'),
+  socialClassCategory('administrators', 'administrators-btn'),
   // Land the town hall puts up for sale, one sub-tab per use (land-catalog/LandUseCatalog.js): the pill wears its own icon, it has no button in the stubs
   {
     id: 'plots',

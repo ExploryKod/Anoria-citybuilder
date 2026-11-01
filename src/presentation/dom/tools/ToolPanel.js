@@ -127,6 +127,8 @@ const GROUP_CREATORS = {
   artisans: () => fillPanelFromToolIds('artisans'),
   merchants: () => fillPanelFromToolIds('merchants'),
   scholars: () => fillPanelFromToolIds('scholars'),
+  // The administrators' pill: the state's buildings, those whose posts the city appoints (the central bank)
+  administrators: () => fillPanelFromToolIds('administrators'),
   // The road tool and its variants have their own pill (Routes): not listed again here.
   infrastructure: () => fillPanelFromToolIds('infrastructure', { exclude: listRoadTypes() }),
   nature: () => fillPanelFromToolIds('nature'),

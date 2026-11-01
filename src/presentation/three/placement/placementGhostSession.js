@@ -11,6 +11,7 @@ const NON_PLACEABLE_TOOL_IDS = new Set([
   'artisans', // toolbar category id, not an asset
   'merchants', // toolbar category id, not an asset
   'scholars', // toolbar category id, not an asset
+  'administrators', // toolbar category id, not an asset
   'loans',
   'journal',
   'tutorial',

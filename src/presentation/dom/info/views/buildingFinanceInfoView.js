@@ -2,6 +2,7 @@ import { balanceSheetView } from './balanceSheetView.js';
 import { companyAidSection } from './companyAidSection.js';
 import { accountLedgerView, trialBalanceView } from './accountLedgerView.js';
 import { labelCells } from './stackableTable.js';
+import { initScrollStripArrows } from '../../shell/scrollStripArrows.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../../../../shared/building-identity/index.js';
 import { INCOME_STATEMENT } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
@@ -430,6 +431,15 @@ const DERIVED_READINGS = Object.freeze({
   }),
 });
 
+/** @param {'back' | 'forward'} direction */
+function pillsArrow(direction) {
+  const arrow = el('button', 'building-finance-arrow');
+  arrow.type = 'button';
+  arrow.textContent = direction === 'back' ? '‹' : '›';
+  arrow.setAttribute('aria-label', direction === 'back' ? 'Vues précédentes' : 'Vues suivantes');
+  return arrow;
+}
+
 /**
  * The pills that switch between the statement and the ratios, and the button that downloads the account as JSON.
  * @param {{ accounting: { exportBuildingAccountJson: (buildingId: string, accountKind: string | null) => Promise<string> }, buildingId: string, buildingType: string }} model
@@ -458,7 +468,13 @@ function financeToolbar(model, accountKind, isPersonal, showContent, financing) 
       return button;
     });
     pills.append(...buttons);
-    bar.append(pills);
+    // The strip scrolls sideways when the pills do not fit: a back and a forward arrow beside it say so (scrollStripArrows.js).
+    const back = pillsArrow('back');
+    const forward = pillsArrow('forward');
+    const carousel = el('div', 'building-finance-carousel');
+    carousel.append(back, pills, forward);
+    bar.append(carousel);
+    initScrollStripArrows({ strip: pills, back, forward }).reveal(buttons.find((button) => button.classList.contains('is-active')) ?? buttons[0]);
   }
   const download = el('button', 'building-finance-download', 'JSON');
   download.type = 'button';

@@ -51,6 +51,26 @@ describe('the debts of a company on its balance sheet', () => {
   });
 });
 
+// Regression: a bank that received a deposit had no place for it on its balance sheet (account 165 was unknown), so the sheet threw instead of showing
+// the deposit. The money is the bank's cash, and what it owes back to the depositor is its debt: the two sides agree, and a withdrawal reverses both.
+describe('the deposits of a bank on its balance sheet', () => {
+  const deposit = line('deposit_received', 200, { counterpartyBuildingId: 'house' });
+
+  test('a deposit is the bank\'s cash and its debt to the depositor, and the sheet balances', () => {
+    const sheet = balanceSheetOf([deposit], 'b1', { cash: 200, stock: [], currentYear: 0 });
+    expect(sheet.assets.cash).toBe(200);
+    expect(sheet.liabilities.deposits).toBe(200);
+    expect(sheet.assets.total).toBe(200);
+    expect(sheet.liabilities.total).toBe(200);
+  });
+
+  test('a withdrawal gives the cash and the debt back together', () => {
+    const sheet = balanceSheetOf([deposit, line('withdrawal_paid', 150, { counterpartyBuildingId: 'house' })], 'b1', { cash: 50, stock: [], currentYear: 0 });
+    expect(sheet.liabilities.deposits).toBe(50);
+    expect(sheet.assets.total).toBe(sheet.liabilities.total);
+  });
+});
+
 // A purge never changes what an account owns and owes: the closing carries its balances, so the balance sheet reads the same once the lines are gone.
 describe('a purged year leaves the balance sheet as it was', () => {
   const timeInfoOf = () => ({ monthIndex: 0 });

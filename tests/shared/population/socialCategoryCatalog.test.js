@@ -17,11 +17,11 @@ describe('SOCIAL_CATEGORY — single source for the social categories', () => {
     expect(Object.keys(SOCIAL_CATEGORY.administrators.tiers).map(Number)).toEqual([1, 2, 3]);
   });
 
-  test('the administrators are six at most whatever the tier, and hold their two skills by right from the first tier', () => {
+  test('the administrators are six at most whatever the tier, and hold their skills by right from the first tier (the central bank\'s included)', () => {
     const { administrators } = SOCIAL_CATEGORY;
     for (const tier of Object.values(administrators.tiers)) expect(tier.maxPopulation).toBe(6);
     expect(administrators.tiers[1].requirements).toEqual([]);
-    expect(administrators.tiers[1].skills).toEqual({ proprietaire: 1, perception_ic: 1, perception_ir: 1, perception_tva: 1 });
+    expect(administrators.tiers[1].skills).toEqual({ proprietaire: 1, perception_ic: 1, perception_ir: 1, perception_tva: 1, 'banque-centrale': 1 });
     expect(administrators.tiers[2].skills).toEqual({ perception_is: 1, perception_douane: 1 });
   });
 

@@ -27,6 +27,7 @@ export class DexieEmploymentBuildingRepository {
       workerNeed: employees.worker_need ?? 0,
       sector: employees.sector ?? 0,
       workerSources: employees.workerSources ?? {},
+      appointedFrom: employees.appointedFrom ?? {},
     });
   }
 
@@ -78,7 +79,7 @@ export class DexieEmploymentBuildingRepository {
       const buildingId = instanceIdFromHouseRow(house);
       try {
         await this.#putFields(buildingId, {
-          employees: { ...employees, worker: 0, workerSources: {} },
+          employees: { ...employees, worker: 0, workerSources: {}, appointedFrom: {} },
         });
       } catch (err) {
         console.warn('[DexieEmploymentBuildingRepository] Failed to reset workers:', {
@@ -122,6 +123,21 @@ export class DexieEmploymentBuildingRepository {
     const employees = row.employees || { worker: 0, worker_need: 0 };
     await this.#putFields(buildingId, {
       employees: { ...employees, workerSources: sources },
+    });
+  }
+
+  /**
+   * The residents named to the posts of an appointed workplace: `{ houseId: count }` (see `employment.appointed` in buildingEconomy.js).
+   * @param {string} buildingId
+   * @param {Record<string, number>} appointedFrom
+   */
+  async saveAppointed(buildingId, appointedFrom) {
+    if (!buildingId) return;
+    const row = await db.houses.get(buildingId);
+    if (!row) return;
+    const employees = row.employees || { worker: 0, worker_need: 0 };
+    await this.#putFields(buildingId, {
+      employees: { ...employees, appointedFrom },
     });
   }
 }

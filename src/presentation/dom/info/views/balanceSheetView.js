@@ -68,6 +68,7 @@ export function balanceSheetView(sheet) {
     { label: 'Dividendes versés (457)', amount: liabilities.distributions },
     { label: 'Capitaux propres', amount: liabilities.equity, kind: 'subtotal' },
     { label: 'Emprunts (164)', amount: liabilities.loans },
+    { label: 'Dépôts de la clientèle (165)', amount: liabilities.deposits, note: 'Ce que la banque doit à ceux qui lui ont confié leur épargne : leur argent est dans sa caisse, mais il leur revient' },
     { label: 'Concours bancaires courants (519)', amount: liabilities.overdraft, note: 'Le compte est sous zéro : ce qui n’a pas de créancier (les achats, l’entretien) est payé tout de même, et le compte se creuse' },
     ...Object.entries(liabilities.payables).map(([account, amount]) => ({
       label: `${accountLabelOf(account)} (${account})`,

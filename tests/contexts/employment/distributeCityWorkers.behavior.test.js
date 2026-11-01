@@ -68,6 +68,12 @@ class InMemoryEmploymentBuildingRepository {
     this.raw.set(buildingId, { ...b, workerSources: sources });
   }
 
+  async saveAppointed(buildingId, appointedFrom) {
+    const b = this.raw.get(buildingId);
+    if (!b) return;
+    this.raw.set(buildingId, { ...b, appointedFrom });
+  }
+
   get(id) {
     return this.raw.get(id);
   }
@@ -403,6 +409,37 @@ describe('Employment — DistributeCityWorkers', () => {
 
       expect(repo.get('Farm-Wheat-a').worker).toBe(3);
       expect(repo.get('Factory-Plate-a').worker).toBe(1);
+    });
+  });
+
+  // The central bank's two posts are filled by appointment, from the administrators' house: its residents look for no job, so they are no part of the
+  // labour market, yet they staff the bank; they are named apart (`appointedFrom`), never in the jobs the houses' workers hold (`workerSources`).
+  describe('appointed posts (the central bank)', () => {
+    const mayorHouse = (pop) => house('House-Mayor-1', pop, 1, 'House-Mayor', 1);
+    const centralBank = () => workplace('CentralBank-1', { workerNeed: 2, sector: 6, type: 'CentralBank' });
+
+    test('two administrators are named to the two posts, whatever the labour market does', async () => {
+      const repo = new InMemoryEmploymentBuildingRepository([mayorHouse(4), centralBank()]);
+      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel }).execute();
+
+      expect(repo.get('CentralBank-1').worker).toBe(2);
+      expect(repo.get('CentralBank-1').appointedFrom).toEqual({ 'House-Mayor-1': 2 });
+      // named, not hired: the house has no job in its workers' record, and the market counts no vacancy of the bank
+      expect(repo.get('CentralBank-1').workerSources).toEqual({});
+    });
+
+    test('a house with a single administrator leaves a post empty', async () => {
+      const repo = new InMemoryEmploymentBuildingRepository([mayorHouse(1), centralBank()]);
+      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel }).execute();
+
+      expect(repo.get('CentralBank-1').worker).toBe(1);
+    });
+
+    test('no house of administrators, no post filled: the bank stays closed (the other categories do not fill it)', async () => {
+      const repo = new InMemoryEmploymentBuildingRepository([house('House-Red-1-1', 6, 1, 'House-Red'), centralBank()]);
+      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel }).execute();
+
+      expect(repo.get('CentralBank-1').worker).toBe(0);
     });
   });
 });

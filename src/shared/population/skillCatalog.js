@@ -50,6 +50,8 @@ export const SKILL_CATALOG = Object.freeze({
   perception_tva: Object.freeze({ label: 'TVA', emoji: '🧾' }),
   perception_is: Object.freeze({ label: 'Impôt sur les sociétés', emoji: '🧾' }),
   perception_douane: Object.freeze({ label: 'Douanes', emoji: '🛃' }),
+  // The central bank's two posts, filled by appointment from the administrators' house (see `employment.appointed`, buildingEconomy.js)
+  'banque-centrale': Object.freeze({ label: 'Banque centrale', emoji: '💱' }),
   'elder-wisdom': Object.freeze({ label: 'Sagesse', emoji: '📜' }),
   learning: Object.freeze({ label: 'Apprentissage', emoji: '📚' }),
 });

@@ -86,6 +86,7 @@ export const ASSET_IDS_BY_CATEGORY = Object.freeze({
     'Pub',
     'FireStation',
     'PoliceStation',
+    'CentralBank',
   ]),
   nature: Object.freeze([
     'Tree-Pine-001',

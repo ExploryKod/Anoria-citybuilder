@@ -2504,6 +2504,39 @@ button.building-info-metric-card[aria-pressed="true"] {
     scrollbar-width: none;
 }
 
+/* The pills with a back and a forward arrow on each side; the arrows are 40 px for a finger and disabled at the ends. */
+.building-finance-carousel {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.building-finance-carousel .building-finance-pills {
+    flex: 1 1 auto;
+}
+
+.building-finance-arrow {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid rgba(29, 34, 40, 0.12);
+    border-radius: 50%;
+    background: #fff;
+    color: var(--primary);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.building-finance-arrow:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
 .building-finance-pills .building-finance-pill-tab {
     flex: 0 0 auto;
     min-height: 32px;

@@ -67,6 +67,8 @@
  * @property {string} [requiredSkill] Citizen skill a worker must have to staff
  *   this workplace (see shared/population/socialCategoryCatalog.js). Omitted
  *   means any worker can staff it.
+ * @property {boolean} [appointed] The posts are filled by appointment from the house(s) that grant `requiredSkill`, not by the labour market:
+ *   those residents look for no job (the administrators), and are neither hired, nor unemployed, nor paid by the building.
  *
  * @typedef {Object} BuildingAccountingFacts
  * @property {number} maintenance

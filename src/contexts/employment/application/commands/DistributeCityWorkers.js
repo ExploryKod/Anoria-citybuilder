@@ -3,7 +3,7 @@ import {
   isEligibleWorkplace,
   isLaborSource,
 } from '../../domain/policies/BuildingRolePolicy.js';
-import { workerPopFromHouse } from '../../domain/policies/LaborPoolPolicy.js';
+import { citizenPopFromHouse, workerPopFromHouse } from '../../domain/policies/LaborPoolPolicy.js';
 import {
   allocateWorkers,
   orderSkillsByPriority,
@@ -13,6 +13,7 @@ import {
   allWorkplaceEmploymentSkills,
   getRequiredSkillForBuilding,
   getRequiredSkillLevelForBuilding,
+  isAppointedWorkplace,
 } from '../../domain/policies/WorkplaceSkillRequirementPolicy.js';
 
 /**
@@ -80,6 +81,9 @@ export class DistributeCityWorkers {
     const workplaces = (await this.employmentBuildingRepository.listWorkplaces()).filter(
       (b) => isEligibleWorkplace(b),
     );
+    // The posts filled by appointment (the central bank) are no part of the labour market: the market staffs the others.
+    const marketWorkplaces = workplaces.filter((workplace) => !isAppointedWorkplace(workplace.type));
+    const appointedWorkplaces = workplaces.filter((workplace) => isAppointedWorkplace(workplace.type));
 
     const readDoneAt = performance.now();
 
@@ -126,9 +130,30 @@ export class DistributeCityWorkers {
     const workerCountById = new Map(workplaces.map((w) => [w.id, 0]));
     const allAssignments = [];
 
+    // The appointed posts first: the house that grants the skill names its residents to them, whoever they are (they look for no job, so they are not in
+    // the pool above), a resident taking at most one post. A house with fewer residents than posts leaves the rest empty: the building is then closed.
+    const appointableById = new Map(laborSources.map((building) => [building.id, citizenPopFromHouse(building.type, building.pop)]));
+    const appointedFromById = new Map();
+    for (const workplace of appointedWorkplaces) {
+      const skillKey = getRequiredSkillForBuilding(workplace.type);
+      const level = getRequiredSkillLevelForBuilding(workplace.type);
+      let missing = workplace.workerNeed;
+      const named = {};
+      for (const building of qualifyingSources(skillKey, level)) {
+        if (missing <= 0) break;
+        const take = Math.min(appointableById.get(building.id) ?? 0, missing);
+        if (take <= 0) continue;
+        appointableById.set(building.id, (appointableById.get(building.id) ?? 0) - take);
+        named[building.id] = take;
+        missing -= take;
+      }
+      appointedFromById.set(workplace.id, named);
+      workerCountById.set(workplace.id, Object.values(named).reduce((sum, count) => sum + count, 0));
+    }
+
     const orderedSkillKeys = orderSkillsByPriority(allWorkplaceEmploymentSkills(), skillPriorities);
     for (const skillKey of orderedSkillKeys) {
-      const skillWorkplaces = workplaces.filter(
+      const skillWorkplaces = marketWorkplaces.filter(
         (workplace) => getRequiredSkillForBuilding(workplace.type) === skillKey,
       );
       if (skillWorkplaces.length === 0) continue;
@@ -167,7 +192,12 @@ export class DistributeCityWorkers {
     for (const [buildingId, workers] of workerCountById) {
       if (workers > 0) {
         await this.employmentBuildingRepository.saveWorkers(buildingId, workers);
-        await this.employmentBuildingRepository.saveWorkerSources(buildingId, sourcesById.get(buildingId) ?? {});
+        if (appointedFromById.has(buildingId)) {
+          // Named, not hired: the trace is kept apart from the jobs the houses' workers hold
+          await this.employmentBuildingRepository.saveAppointed(buildingId, appointedFromById.get(buildingId));
+        } else {
+          await this.employmentBuildingRepository.saveWorkerSources(buildingId, sourcesById.get(buildingId) ?? {});
+        }
         savedWorkplaces += 1;
       }
     }
@@ -177,7 +207,7 @@ export class DistributeCityWorkers {
     // vacancies, and the qualified citizens still without a job. The wages are settled on it (accounting's AdjustWageRates).
     const labourMarket = [];
     for (const skillKey of orderedSkillKeys) {
-      const skillWorkplaces = workplaces.filter((workplace) => getRequiredSkillForBuilding(workplace.type) === skillKey);
+      const skillWorkplaces = marketWorkplaces.filter((workplace) => getRequiredSkillForBuilding(workplace.type) === skillKey);
       for (const level of new Set(skillWorkplaces.map((w) => getRequiredSkillLevelForBuilding(w.type)))) {
         const atLevel = skillWorkplaces.filter((w) => getRequiredSkillLevelForBuilding(w.type) === level);
         const jobs = atLevel.reduce((sum, w) => sum + w.workerNeed, 0);

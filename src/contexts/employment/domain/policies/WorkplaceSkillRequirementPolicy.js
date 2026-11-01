@@ -45,6 +45,16 @@ export function getRequiredSkillLevelForBuilding(buildingType) {
   return buildingCatalog[buildingType]?.employment?.requiredSkillLevel ?? 1;
 }
 
+/**
+ * Whether the posts of this building are filled by appointment, not by the labour market (the central bank: `employment.appointed`). The residents
+ * who fill them look for no job (the administrators), so they are neither hired, nor counted as unemployed, nor in the jobs the market has to fill.
+ * @param {string} buildingType
+ * @returns {boolean}
+ */
+export function isAppointedWorkplace(buildingType) {
+  return buildingCatalog[buildingType]?.employment?.appointed === true;
+}
+
 /** @returns {ReadonlyArray<string>} */
 export function allWorkplaceEmploymentSkills() {
   return Object.freeze([...new Set(Object.values(WORKPLACE_REQUIRED_SKILL))]);

@@ -944,6 +944,17 @@ export const BUILDING_ECONOMY = {
     accounting: { maintenance: 6 },
   },
 
+  // Central bank: the state's institution of money (the policy rate, the refinancing of the bank, later the liquidity ratio and the crisis operations).
+  // It produces and stores nothing and is no company: no wages, no profit. Its two posts are filled by APPOINTMENT (`appointed`): the administrators' house
+  // names two of its residents, who are no part of the labour market and stay paid by the city like the other administrators. One per hamlet.
+  'CentralBank': {
+    displayName: 'Banque centrale',
+    construction: { price: 200, category: 'public' },
+    employment: { sector: 6, workerNeed: 2, requiredSkill: 'banque-centrale', appointed: true },
+    accounting: { maintenance: 8 },
+    maxPerHamlet: 1,
+  },
+
   // Water tank: it draws water from the ground of the land (its reservoir) and distributes it straight to the houses,
   // like a market sells food, into each house's own WATER_CONSUMER need. Sector 6 (Services Publics) — savants' workplace,
   // staffed by the `hydraulique` skill their houses hold from the start (a level-1 house needs water to evolve).

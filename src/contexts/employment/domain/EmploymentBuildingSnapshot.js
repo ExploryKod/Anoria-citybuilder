@@ -13,6 +13,7 @@ export function createEmploymentBuildingSnapshot({
   workerNeed = 0,
   sector = 0,
   workerSources = {},
+  appointedFrom = {},
 } = {}) {
   if (!id || typeof id !== 'string') {
     throw new Error('EmploymentBuildingSnapshot: id is required');
@@ -38,5 +39,8 @@ export function createEmploymentBuildingSnapshot({
     // The houses this building's workers come from (`{ houseId: count }`) — a house reads it to know how many of its
     // own residents are working anywhere, the single rule behind both its civil-servant count and the city's.
     workerSources: workerSources && typeof workerSources === 'object' ? workerSources : {},
+    // The residents the posts of an appointed workplace (`employment.appointed`, the central bank) are filled with, `{ houseId: count }`: named by the house,
+    // no part of the labour market, so they are in no house's `workerSources` (those count the jobs a house's workers hold, and its seekers of work).
+    appointedFrom: appointedFrom && typeof appointedFrom === 'object' ? appointedFrom : {},
   });
 }

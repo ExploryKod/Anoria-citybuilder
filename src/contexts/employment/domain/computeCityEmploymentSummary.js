@@ -12,7 +12,7 @@ import {
   eligibleSectorsForGroup,
   residentialGroupForType,
 } from './catalogs/HouseGroupSectorEligibilityPolicy.js';
-import { getRequiredSkillForBuilding } from './policies/WorkplaceSkillRequirementPolicy.js';
+import { getRequiredSkillForBuilding, isAppointedWorkplace } from './policies/WorkplaceSkillRequirementPolicy.js';
 import { employmentShortfallCauses } from './policies/EmploymentShortfallPolicy.js';
 import { residentsSeekingWork } from '../../../shared/population/workforceQueries.js';
 
@@ -62,6 +62,11 @@ export function computeCityEmploymentSummary(buildings) {
     }
 
     if (!isEligibleWorkplace(building)) {
+      continue;
+    }
+    // The posts named by appointment (the central bank) are not jobs of the market: they are neither assigned nor vacant in its figures
+    // (a closed central bank says so in its own Problèmes tab).
+    if (isAppointedWorkplace(building.type)) {
       continue;
     }
 
