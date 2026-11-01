@@ -5,7 +5,7 @@
 
 import { formatServicesModel } from './presenters/formats/servicesInfoFormat.js';
 import { formatMessagesModel } from './presenters/formats/messagesInfoFormat.js';
-import { renderServicesTab } from './views/servicesInfoView.js';
+import { hasServicesToShow, renderServicesTab } from './views/servicesInfoView.js';
 import { renderClientPriorityTab } from './views/clientPriorityInfoView.js';
 import { renderMessagesTab } from './layout/buildingInfoLayout.js';
 import { BUILDING_INFO_TAB_IDS } from './buildingInfoTabCatalog.js';
@@ -41,6 +41,8 @@ export const CONTEXT_MESSAGES_TAB_SPECS = Object.freeze([
 /** @type {Readonly<Record<string, BuildingInfoTabHandler>>} */
 export const SHARED_BUILDING_INFO_TAB_HANDLERS = Object.freeze({
   [BUILDING_INFO_TAB_IDS.services]: {
+    // Nothing to say (no chip): the tab is left out of the strip rather than shown empty.
+    isVisible: (vm) => hasServicesToShow(formatServicesModel(vm)),
     format: (vm) => formatServicesModel(vm),
     render: (container, model) => renderServicesTab(container, model),
   },

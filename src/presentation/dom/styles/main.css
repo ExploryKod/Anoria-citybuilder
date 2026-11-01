@@ -1403,11 +1403,27 @@ footer .footer-links a:hover {
     background: linear-gradient(135deg, #8d6e00, #f9a825);
 }
 
-/* Two arrows in the header, side by side, that slide the tab strip: shown only when the strip overflows (see updateBuildingInfoTabArrows). */
+/*
+ * The tab strip and its two arrows. The arrows sit at the end of the strip, over the tabs, side by side, on a white fade: they are the carousel's own
+ * controls, shown only when the strip overflows (see updateBuildingInfoTabArrows). While they show, the strip keeps room under them so that the last tab
+ * can slide clear of them (padding and scroll-padding of `.has-arrows`).
+ */
+.info-building__tabs-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
 .info-building__tab-arrows {
-    flex: 0 0 auto;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 1px;
     display: flex;
-    gap: 6px;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 3px;
+    padding: 0 6px 0 16px;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0), #fff 16px);
 }
 
 .info-building__tab-arrows[hidden] {
@@ -1418,23 +1434,33 @@ footer .footer-links a:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 28px;
+    height: 28px;
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.22);
-    color: #fff;
+    background: #eceff1;
+    color: #455a64;
     cursor: pointer;
 }
 
+.info-building__tab-arrow svg {
+    width: 16px;
+    height: 16px;
+}
+
 .info-building__tab-arrow:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.36);
+    background: #cfd8dc;
 }
 
 .info-building__tab-arrow:disabled {
     opacity: 0.4;
     cursor: default;
+}
+
+.info-building__tabs.has-arrows {
+    padding-right: 84px;
+    scroll-padding-inline-end: 84px;
 }
 
 .info-building__tabs {
@@ -1621,9 +1647,9 @@ footer .footer-links a:hover {
     color: #455a64;
 }
 
-.building-info-icon-chip--upcoming .building-info-icon-chip__emoji,
-.building-info-icon-chip--upcoming .building-info-icon-chip__label {
-    opacity: 0.6;
+/* Not held yet: the whole chip (icon, word and level pill) is faded together, so it reads at once against the ones that are held. */
+.building-info-icon-chip--upcoming {
+    opacity: 0.45;
 }
 
 .building-info-icon-chip__level-pill {
@@ -2215,6 +2241,8 @@ button.building-info-metric-card[aria-pressed="true"] {
 /* Problèmes tab: groups told apart by space, no frames; each line opens with its emoji. */
 .problems-group {
     margin: 0 0 24px;
+    /* The tab's panel may centre its content: the problems are read from the left. */
+    text-align: left;
 }
 
 .problems-group__title {
@@ -2232,10 +2260,13 @@ button.building-info-metric-card[aria-pressed="true"] {
     padding: 0;
 }
 
+/* Two columns, icon | text: the icon column has one fixed width so that the texts of all the lines start on the same vertical, whatever the emoji; a long text wraps inside its own column. */
 .problems-line {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    /* The text is centred vertically on its icon (a long text wraps around the icon's middle). */
+    align-items: center;
+    column-gap: 10px;
     min-height: 40px;
     padding: 6px 0;
     font-size: 14px;
@@ -2244,15 +2275,29 @@ button.building-info-metric-card[aria-pressed="true"] {
 }
 
 .problems-line__emoji {
-    flex: 0 0 auto;
+    justify-self: start;
     font-size: 18px;
     line-height: 1.3;
 }
 
+/* The text is a pill that wraps with it: pale red when it evokes the problem, blue when it is what is asked to solve it. */
 .problems-line__text {
-    flex: 1 1 auto;
     min-width: 0;
+    justify-self: start;
+    padding: 4px 12px;
+    border-radius: 14px;
+    text-align: left;
     overflow-wrap: anywhere;
+}
+
+.problems-line__text--problem {
+    background: #fdecea;
+    color: #8a2f2f;
+}
+
+.problems-line__text--request {
+    background: #e3f2fd;
+    color: #1565c0;
 }
 
 .problems-none {
@@ -3788,6 +3833,39 @@ button.building-info-metric-card[aria-pressed="true"] {
     }
     .kv-value {
         justify-self: start;
+    }
+}
+
+/*
+ * A phone held in landscape (little height, any width): the building sheet takes the whole screen, edge to edge, not a modal with margins around it.
+ * The notch/rounded corners are kept clear with the safe-area insets; the header is compacted so that the tabs and their content keep the room.
+ */
+@media (orientation: landscape) and (max-height: 500px) {
+    .info-building-overlay {
+        padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    }
+
+    .info-building-panel {
+        width: 100%;
+        min-width: 0;
+        height: 100%;
+        max-height: 100%;
+        border-radius: 0;
+        box-shadow: none;
+        transform: none;
+    }
+
+    .info-building__header {
+        padding: 8px 14px 8px;
+    }
+
+    .info-building__title-block h2 {
+        font-size: 18px;
+    }
+
+    .info-building__meta {
+        margin-top: 2px;
+        font-size: 13px;
     }
 }
 

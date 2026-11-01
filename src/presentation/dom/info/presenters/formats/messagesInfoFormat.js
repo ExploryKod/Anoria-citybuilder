@@ -1,7 +1,7 @@
 import { getResourceRoles, getResourceStockShape, getSuppliedCategories } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { buildingNameInSentence, goodAmount, goodLabel, namesOfBuildings } from '../../../shell/CatalogVocabulary.js';
 import { roadCause, shortageCause } from './staffingReasonFormat.js';
-import { asksPublicAid } from './problemsInfoFormat.js';
+import { asksPublicAid, PUBLIC_AID_REQUEST_EMOJI } from './problemsInfoFormat.js';
 import { departureCauses } from '../../../../../shared/population/DepartureCauseCatalog.js';
 import { HUNGER_CAUSES } from '../../../../../shared/population/HungerCauseCatalog.js';
 import { splitUnfedByCause } from '../../../../../composition/housingCatalog.js';
@@ -185,7 +185,7 @@ export function formatMessagesModel(vm) {
   complaints.push(...departureComplaints(vm));
   complaints.push(...insolvencyComplaints(vm));
   // A purchase that failed for lack of money: the building asks the public for help (the Problèmes tab says which purchase)
-  if (asksPublicAid(vm.buildingRow)) complaints.push('🆘 Une aide publique est demandée');
+  if (asksPublicAid(vm.buildingRow)) complaints.push(`${PUBLIC_AID_REQUEST_EMOJI} Une aide publique est demandée`);
 
   return { complaints };
 }

@@ -314,7 +314,7 @@ export const TUTORIAL_DISPATCHES = Object.freeze([
         + `- de la **nourriture** ;\n`
         + `- de l'**eau** ;\n`
         + `- des **soins médicaux**.\n\n`
-        + `Ces besoins se lisent dans l'onglet **« Services »** de sa fiche (clic droit sur la maison), sous « besoins pour l'évolution » :\n`
+        + `Ces besoins se lisent dans l'onglet **« Services »** de sa fiche (clic droit sur la maison) :\n`
         + `- une **coche** ✓ : le besoin est comblé ;\n`
         + `- une **croix** : il manque encore ;\n`
         + `- **« inexistant »** : aucun bâtiment ne fournit encore ce service à la maison, comme les soins médicaux ici.`,

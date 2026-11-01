@@ -44,9 +44,13 @@ export function residentialGroupForType(buildingType) {
     return matchKey ? RESIDENTIAL_GROUP_BY_TYPE[matchKey] : null;
 }
 
-/** @param {string} group @returns {string} */
+/**
+ * A group's title is its one word (the name of its house: "Artisans", "Administrateurs"…), no "Groupe des": it heads a house's sheet,
+ * where a longer title widens the header.
+ * @param {string} group @returns {string}
+ */
 export function getResidentialGroupTitle(group) {
-    return `Groupe des ${getResidentialGroupLabel(group).toLowerCase()}`;
+    return getResidentialGroupLabel(group);
 }
 
 /** @param {string} group @returns {string} */

@@ -116,6 +116,7 @@ describe('getHudPopulationScopeSnapshot', () => {
       count: 3,
       unemployed: 2,
       lack: 3,
+      percentage: 40,
     });
     expect(laborSlotFromStats({ lack: 3, unemployed: 0, unemploymentPercentage: 0 })).toMatchObject({ mode: 'lack', display: '3' });
     expect(laborSlotFromStats({ lack: 0, unemployed: 2, unemploymentPercentage: 40 })).toMatchObject({ mode: 'unemployment', display: '40%', count: 2 });

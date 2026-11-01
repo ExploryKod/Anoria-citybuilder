@@ -26,7 +26,8 @@ import {
  * vacancies hid the unemployed.
  *
  * @param {{ lack?: number, unemployed?: number, unemploymentPercentage?: number }} [stats]
- * @returns {{ mode: 'lack' | 'unemployment' | 'both', display: string, count: number, unemployed: number, lack: number }}
+ * @returns {{ mode: 'lack' | 'unemployment' | 'both', display: string, count: number, unemployed: number, lack: number, percentage: number }}
+ *   `percentage` is the unemployment share on its own (the HUD stacks it over the vacant posts instead of reading it out of `display`).
  */
 export function laborSlotFromStats(stats) {
   // A figure that is missing is not 0 (no unemployed, no empty post): the labour cells stay "…" until the figures are known.
@@ -39,12 +40,12 @@ export function laborSlotFromStats(stats) {
   const unemployed = Math.max(0, Math.floor(stats.unemployed));
   const pct = Math.max(0, Math.floor(stats.unemploymentPercentage));
   if (lack > 0 && unemployed > 0) {
-    return { mode: 'both', display: `${pct}% · ${lack}`, count: lack, unemployed, lack };
+    return { mode: 'both', display: `${pct}% · ${lack}`, count: lack, unemployed, lack, percentage: pct };
   }
   if (lack > 0) {
-    return { mode: 'lack', display: String(lack), count: lack, unemployed, lack };
+    return { mode: 'lack', display: String(lack), count: lack, unemployed, lack, percentage: pct };
   }
-  return { mode: 'unemployment', display: `${pct}%`, count: unemployed, unemployed, lack };
+  return { mode: 'unemployment', display: `${pct}%`, count: unemployed, unemployed, lack, percentage: pct };
 }
 
 /**

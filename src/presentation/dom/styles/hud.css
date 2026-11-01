@@ -832,6 +832,18 @@
   outline-offset: 2px;
 }
 
+/* The page the paging arrow is on, out of how many ("1/2"): small, beside the arrow in the panel's header (hudPopRailCollapse.js) */
+.hud-pop-rail__page-count {
+  flex: 0 0 auto;
+  padding: 0 2px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--primary) 65%, transparent);
+}
+
 .hud-pop-rail__collapse svg {
   display: block;
   width: var(--hud-pop-rail-chrome-icon-size, 16px);
@@ -930,10 +942,16 @@
 }
 
 .hud-pop-rail .infos-pop-detail > * + *,
+.hud-pop-rail .infos-pop-detail > .pop-detail-pages > * + *,
 .hud-pop-rail .infos-pop-ressources > * + * {
   border-top: 1px solid rgba(29, 34, 40, 0.12);
   margin-top: 8px;
   padding-top: 8px;
+}
+
+/* The blocks of the details panel sit in a scroller (for the bottom strip of a phone in landscape): elsewhere it has no box, the blocks lay out as its own children */
+.hud-pop-rail .pop-detail-pages {
+  display: contents;
 }
 
 .hud-pop-rail .infos-pop-detail > .pop-detail-sep,
@@ -1002,6 +1020,13 @@
   color: #6b4f4f;
 }
 
+/* "ND" (not available): a figure that is not measured yet, told apart from a real 0 — grey, no dotted underline of the abbreviation, its tooltip says why */
+.hud-pop-rail .pop-detail-nd {
+  color: #78909c;
+  text-decoration: none;
+  cursor: help;
+}
+
 .hud-pop-rail .pop-detail-total .pop-total {
   font-weight: 700;
 }
@@ -1043,6 +1068,15 @@
   align-items: stretch;
   gap: 6px;
   width: 100%;
+}
+
+/* A one-word title over a block whose icons are not obvious (the famine figures): small, grey, takes one short line of the narrow rail. */
+.hud-pop-rail .pop-detail-block__title {
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #78909c;
 }
 
 .hud-pop-rail .pop-detail-groups {
@@ -1114,8 +1148,29 @@
   color: #cc0000;
 }
 
-.hud-pop-rail[data-pop-scope="hamlet"] .pop-detail-value--scoped.pop-detail-value--lack {
+.hud-pop-rail[data-pop-scope="hamlet"] .pop-detail-value--scoped.pop-detail-value--lack,
+.hud-pop-rail[data-pop-scope="hamlet"] .pop-labor-line--lack {
   color: #e05555;
+}
+
+/* The unemployment over the vacant posts, one line each: the row's icon is centred against the pair, the vacant posts carry a small icon of their own */
+.hud-pop-rail .pop-labor-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.hud-pop-rail .pop-labor-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.hud-pop-rail .pop-labor-line__icon {
+  font-size: 12px;
+  line-height: 1;
 }
 
 /* -------------------------------------------------------------------------
@@ -1956,6 +2011,7 @@
   }
 
   .hud-pop-rail .infos-pop-detail > * + *,
+  .hud-pop-rail .infos-pop-detail > .pop-detail-pages > * + *,
   .hud-pop-rail .infos-pop-ressources > * + * {
     margin-top: 6px;
     padding-top: 6px;
@@ -2139,8 +2195,223 @@
     padding: 0;
   }
 
-  /* Open, the strip covers the bottom of the screen: the status pills would float beside its tabs, so they wait until it is closed */
-  html:has(.hud-pop-rail:not(.hud-pop-rail--collapsed)) .hud-pills {
+  /*
+   * The details panel, built like the labour market's: the panel keeps its padding (the room of the buttons, under which its white, its corners and its
+   * shadow run to the end) and the blocks scroll in an inner scroller, a page at a time (population, hunger, deaths, work). Each page is two rows: the
+   * block's word, then its figures side by side. The blocks are as wide as their content and hudPopRailCollapse.js groups them into pages (as many as
+   * fit the width): two small blocks (hunger, deaths) share one page, a wide one has its own. Between two blocks of a page: `--pop-page-gap`.
+   * The arrow in the chrome pages it.
+   */
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) #hud-pop-panel-details:not([hidden]) {
+    columns: auto;
+    padding: 8px 100px 8px 12px;
+    overflow: hidden;
+  }
+
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-pages {
+    --pop-page-gap: 20px;
+    display: flex;
+    flex-direction: row;
+    gap: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    scrollbar-width: none;
+  }
+
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-pages::-webkit-scrollbar {
     display: none;
+  }
+
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) #hud-pop-panel-details .pop-detail-pages > .pop-detail-block {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 16px;
+    width: auto;
+    margin: 0 var(--pop-page-gap) 0 0;
+    padding: 0;
+    /* Side by side, the blocks are told apart by space: no grey rule between them (the one of the column layout) */
+    border: none;
+    box-sizing: border-box;
+  }
+
+  /* The first block of each page (marked by hudPopRailCollapse.js): the scroll stops there */
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-pages > .pop-detail-block[data-page-start] {
+    scroll-snap-align: start;
+  }
+
+  /* Row 1: the word, alone on its line */
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-block__title {
+    flex: 0 0 100%;
+    text-align: left;
+  }
+
+  /* All the text of a block starts on its left edge (the panel may centre its content elsewhere) */
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-pages {
+    text-align: left;
+  }
+
+  /* Row 2: the figures side by side, each only as wide as it is */
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-block .pop-detail-metric {
+    flex: 0 0 auto;
+    width: auto;
+  }
+
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-block .pop-detail-groups {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    width: auto;
+  }
+
+  /*
+   * Open, the strip covers the bottom of the screen: the status pills would float beside its tabs, and the tools dock (the performance counter, the
+   * cookie button) would show through under its buttons, so they wait until it is closed
+   */
+  html:has(.hud-pop-rail:not(.hud-pop-rail--collapsed)) .hud-pills,
+  html:has(.hud-pop-rail:not(.hud-pop-rail--collapsed)) .hud-fab-dock {
+    display: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   The details panel in portrait (phone / narrow tablet): its blocks page downwards
+   Beside its column of tabs the panel is tall, and it grew past them as soon as it had more than a few figures. Its blocks are cut into pages as tall
+   as the column of tabs (hudPopRailCollapse.js: as many blocks to a page as fit, so two or more when they hold few figures), scrolled one page at a time.
+   The arrow sits by the close button at the top, and points back to the first page from the last one.
+   ------------------------------------------------------------------------- */
+
+@media screen and (max-width: 1024px) and (orientation: portrait) {
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-pages {
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    scrollbar-width: none;
+  }
+
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-pages::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-pages > .pop-detail-block {
+    flex: 0 0 auto;
+  }
+
+  /* The first block of a page (marked by hudPopRailCollapse.js): the scroll stops there, and no rule or room above it: it is the top of the view */
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-pages > .pop-detail-block[data-page-start] {
+    scroll-snap-align: start;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  /*
+   * The header of the panel: the close button is a button of its own on its own row, centred; under it, when the blocks are in more than one page,
+   * the page counter and the paging arrow side by side, centred too. No row of buttons has to fit the width of the narrow panel. The panel keeps room
+   * for the second row only while the arrow shows (its padding follows the header height).
+   */
+  .hud-pop-rail:not(.hud-pop-rail--collapsed) .hud-pop-rail__chrome {
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-areas:
+      "close close"
+      "count arrow";
+    justify-content: center;
+    justify-items: center;
+    align-content: center;
+    align-items: center;
+    row-gap: 4px;
+    column-gap: 6px;
+    height: auto;
+    min-height: var(--hud-pop-rail-header-height);
+    padding: 4px 6px;
+  }
+
+  .hud-pop-rail #hud-pop-rail-collapse {
+    grid-area: close;
+  }
+
+  .hud-pop-rail #hud-pop-details-page,
+  .hud-pop-rail #hud-pop-labor-page {
+    grid-area: count;
+  }
+
+  .hud-pop-rail #hud-pop-details-next,
+  .hud-pop-rail #hud-pop-labor-next {
+    grid-area: arrow;
+  }
+
+  .hud-pop-rail.info-panel-pop-detail.hud-pop-detail:has(#hud-pop-details-next:not([hidden]), #hud-pop-labor-next:not([hidden])) {
+    --hud-pop-rail-header-height: calc(var(--hud-pop-rail-chrome-btn-size) * 2 + 16px);
+  }
+
+  /* The paging arrow points down, and up (back to the first page) from the last page */
+  .hud-pop-rail #hud-pop-details-next .hud-fold-toggle__icon,
+  .hud-pop-rail #hud-pop-labor-next .hud-fold-toggle__icon {
+    transform: rotate(90deg);
+  }
+
+  .hud-pop-rail #hud-pop-details-next.hud-fold-toggle--rewind .hud-fold-toggle__icon,
+  .hud-pop-rail #hud-pop-labor-next.hud-fold-toggle--rewind .hud-fold-toggle__icon {
+    transform: rotate(-90deg);
+  }
+
+  /*
+   * The labour market, the same way: one category to a page (the city, then each social category), scrolled downwards. Its icons are in one column,
+   * not two: two columns made the panel wider than its tabs.
+   */
+  .hud-pop-rail #hud-pop-panel-emploi .pop-detail-labor {
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    scrollbar-width: none;
+  }
+
+  .hud-pop-rail #hud-pop-panel-emploi .pop-detail-labor::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hud-pop-rail #hud-pop-panel-emploi .pop-labor-group {
+    flex: 0 0 auto;
+  }
+
+  .hud-pop-rail #hud-pop-panel-emploi .pop-labor-group[data-page-start] {
+    scroll-snap-align: start;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .hud-pop-rail #hud-pop-panel-emploi .pop-labor-causes {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  /* A page has room in height: the categories are told apart by more white (the figures of a block, the causes under a percentage, two blocks of a page) */
+  .hud-pop-rail #hud-pop-panel-emploi .pop-labor-group {
+    gap: 16px;
+  }
+
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-pages > .pop-detail-block {
+    gap: 10px;
+  }
+
+  .hud-pop-rail #hud-pop-panel-details .pop-detail-pages > .pop-detail-block + .pop-detail-block:not([data-page-start]) {
+    margin-top: 20px;
+    padding-top: 16px;
   }
 }

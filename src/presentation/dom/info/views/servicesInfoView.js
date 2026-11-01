@@ -1,10 +1,9 @@
 /**
  * Services tab — view layer (DOM only).
  *
- * Two visually separate rows (2026-10-10): `items` (informative facts — Route, Marché reach, Entrepôt
- * activité — unrelated to tier evolution) render plainly, as before; `evolutionRequirements` render under
- * their own "Besoins pour l'évolution" title, so the player can tell "what my house can reach" apart from
- * "what my house needs to grow" at a glance, even though both use the exact same chip markup.
+ * One row of chips, no title: all of it is what the house's evolution needs. `items` (Route, Marché reach, Entrepôt
+ * activité) are facts the house also depends on, listed first; `evolutionRequirements` are the tier's own requirements.
+ * Both use the same chip markup.
  */
 
 const SERVICE_DENIED_ICON = `
@@ -52,6 +51,15 @@ function appendServiceRow(container, chips) {
 }
 
 /**
+ * Whether the model has any chip to show: a building with none (a farm, a workshop) has no Services tab or section at all, rather than an empty one.
+ * @param {ServicesViewModel | null} model
+ * @returns {boolean}
+ */
+export function hasServicesToShow(model) {
+  return Boolean(model?.items?.length || model?.evolutionRequirements?.length);
+}
+
+/**
  * @param {HTMLElement | null} container
  * @param {ServicesViewModel | null} model
  */
@@ -59,24 +67,15 @@ export function renderServicesTab(container, model) {
   if (!container) return;
   container.innerHTML = '';
 
-  const hasItems = Boolean(model?.items?.length);
-  const hasRequirements = Boolean(model?.evolutionRequirements?.length);
-  if (!hasItems && !hasRequirements) return;
+  // Everything on this tab is a need of the house's evolution: the tier's requirements, and the facts it also depends on (Route, Marché, the
+  // warehouse of its business). One row, no title. A fact the tier already asks for under the same name is said once, as the requirement.
+  const requirements = model?.evolutionRequirements ?? [];
+  const requirementLabels = new Set(requirements.map((requirement) => requirement.label));
+  const chips = [...(model?.items ?? []).filter((item) => !requirementLabels.has(item.label)), ...requirements];
+  if (chips.length === 0) return;
 
   const wrap = document.createElement('div');
   wrap.className = 'building-info-services';
-
-  if (hasItems) {
-    appendServiceRow(wrap, model.items);
-  }
-
-  if (hasRequirements) {
-    const title = document.createElement('p');
-    title.className = 'building-info-stock-group-label';
-    title.textContent = "Besoins pour l'évolution";
-    wrap.appendChild(title);
-    appendServiceRow(wrap, model.evolutionRequirements);
-  }
-
+  appendServiceRow(wrap, chips);
   container.appendChild(wrap);
 }
