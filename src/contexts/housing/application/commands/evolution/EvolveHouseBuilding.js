@@ -20,11 +20,32 @@ export class EvolveHouseBuilding {
      * @type {((house: object) => Promise<boolean>) | null}
      */
     this.activityAccessCheck = null;
+    /**
+     * Whether the cheat "every house at its highest level" is in force — the composition's to say (it knows the player's permission and
+     * the game's flags, which are not the housing's business). Off is the real state of a game without the cheat, not a stand-in.
+     * @type {() => Promise<boolean>}
+     */
+    this.levelsUnlockedCheck = async () => false;
+    /**
+     * The inhabitants every house is held at while the cheat MaxPop<n> is in force, or null (the real state of a game without it).
+     * @type {() => Promise<number | null>}
+     */
+    this.populationOverrideCheck = async () => null;
+  }
+
+  /** @param {() => Promise<number | null>} check the number every house is held at, or null */
+  setPopulationOverrideCheck(check) {
+    this.populationOverrideCheck = check;
   }
 
   /** @param {(house: object) => Promise<boolean>} check */
   setActivityAccessCheck(check) {
     this.activityAccessCheck = check;
+  }
+
+  /** @param {() => Promise<boolean>} check true while the cheat that lifts every house to its highest level is allowed and on */
+  setLevelsUnlockedCheck(check) {
+    this.levelsUnlockedCheck = check;
   }
 
   /**
@@ -83,6 +104,8 @@ export class EvolveHouseBuilding {
       outcomes: this.#outcomesOf(house),
       activityAccess: await this.#activityAccessOf(house),
       periodKey,
+      levelsUnlocked: (await this.levelsUnlockedCheck()) === true,
+      populationOverride: await this.populationOverrideCheck(),
     });
 
     if (!resolution.changed) {

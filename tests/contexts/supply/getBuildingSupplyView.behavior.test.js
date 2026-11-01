@@ -64,7 +64,7 @@ describe('Supply — GetBuildingSupplyView', () => {
       createSupplyBuildingView({
         id: 'Windmill-001-8-8',
         type: 'Windmill-001',
-        stocks: { wheat: 20, food: 20, iron: 1 },
+        stocks: { wheat: 20, food: 20, zinc: 1 },
         maxStock: 1000,
         isCollecting: true,
         lastCollection: { wheat: 20, total: 20 },
@@ -150,7 +150,7 @@ describe('Supply — GetBuildingSupplyView', () => {
     expect(dto.isCollecting).toBe(true);
     expect(dto.lastCollection.wheat).toBe(20);
     // A good the catalog does not declare is not carried through the view.
-    expect(dto.stocks.iron).toBeUndefined();
+    expect(dto.stocks.zinc).toBeUndefined();
     expect(dto.maxStock).toBe(1000);
   });
 

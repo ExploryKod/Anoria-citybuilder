@@ -1,4 +1,8 @@
-/* Discrete game loader — no full-screen overlay */
+/*
+ * Game loader: while the game loads, a blank white screen that shows only what is loading (the sentence under the spinner) and nothing of the
+ * game. It is above every menu and panel and under the toasts only (see --z-index-loader / --z-index-notification in main.css), so that errors
+ * and tips still reach the player over it.
+ */
 
 .game-loader {
   position: fixed;
@@ -21,9 +25,8 @@
   margin: 0;
   max-width: 80vw;
   text-align: center;
-  color: #fff;
+  color: #37474f;
   font-size: 15px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
 .game-loader:not(.hidden) {
@@ -32,7 +35,7 @@
   top: 0;
   left: 0;
   transform: none;
-  background: rgba(20, 18, 16, 0.28);
+  background: #fff;
 }
 
 .game-loader.hidden {

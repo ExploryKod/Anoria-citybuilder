@@ -101,7 +101,7 @@ function settle({ pairs, businessCash, taxRate = { threshold1: 0, rate1: 0, thre
 
 describe('the year-end settlement of a house\'s cooperative', () => {
   test('the surplus reaches the residents\' personal account, the tax reaches the city, and the statement carries the participation before the tax', async () => {
-    const journal = await settle({ pairs: [{ sellerId: 'house-1', buyerId: null, amountHT: 200 }], businessCash: 1000 });
+    const journal = await settle({ pairs: [{ sellerId: 'house-1', buyerId: null, good: 'decoratedPot', amountHT: 200 }], businessCash: 1000 });
 
     const of = (type) => journal.find((line) => line.type === type);
     expect(of('enterprise_participation')).toMatchObject({ amount: 80, accountBuildingId: 'house-1', accountKind: 'entreprise:cooperative' });
@@ -127,7 +127,7 @@ describe('the year-end settlement of a house\'s cooperative', () => {
   test('the participation and the dividend are taxed with the year\'s income, on the same bands', async () => {
     // 80 + 30 = 110 over the year; the first 5 a month (60 a year) are exempt, then 10 %: (110 − 60) × 10 % = 5.
     const journal = await settle({
-      pairs: [{ sellerId: 'house-1', buyerId: null, amountHT: 200 }],
+      pairs: [{ sellerId: 'house-1', buyerId: null, good: 'decoratedPot', amountHT: 200 }],
       businessCash: 1000,
       taxRate: { threshold1: 5, rate1: 0.1, threshold2: 5, rate2: 0.1 },
     });
@@ -222,7 +222,7 @@ describe('the year-end settlement of a house\'s cooperative', () => {
 
   test('a household whose income stays under the exempt part is charged nothing at the close', async () => {
     const journal = await settle({
-      pairs: [{ sellerId: 'house-1', buyerId: null, amountHT: 200 }],
+      pairs: [{ sellerId: 'house-1', buyerId: null, good: 'decoratedPot', amountHT: 200 }],
       businessCash: 1000,
       taxRate: { threshold1: 20, rate1: 0.1, threshold2: 20, rate2: 0.1 },
     });
@@ -232,7 +232,7 @@ describe('the year-end settlement of a house\'s cooperative', () => {
 
   test('a business that sold nothing, or at a loss, shares nothing', async () => {
     expect(await settle({ pairs: [], businessCash: 1000 })).toEqual([]);
-    const loss = await settle({ pairs: [{ sellerId: 'supplier', buyerId: 'house-1', amountHT: 50 }], businessCash: 1000 });
+    const loss = await settle({ pairs: [{ sellerId: 'supplier', buyerId: 'house-1', good: 'pot', amountHT: 50 }], businessCash: 1000 });
 
     const houseLines = loss.filter((line) => line.accountBuildingId === 'house-1');
     expect(houseLines.some((line) => ['enterprise_participation', 'enterprise_dividend', 'corporate_tax'].includes(line.type))).toBe(false);

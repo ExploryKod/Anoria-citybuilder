@@ -39,7 +39,8 @@ export function formatHouseLayoutHeader(vm) {
   const group = residentialGroupForType(vm.buildingType);
   const title = group ? getResidentialGroupTitle(group) : buildingName(vm.buildingType);
 
-  const maxPop = maxPopulationForLevel(vm.houseLevel, group);
+  // The ceiling the house really has: the level's, or the number the cheat MaxPop<n> holds every house at.
+  const maxPop = vm.populationCapOverride ?? maxPopulationForLevel(vm.houseLevel, group);
   const dwellingLabel = getHouseDwellingLevelLabel(vm.houseLevel);
   const dwellingAria = getHouseDwellingLevelAriaLabel(vm.houseLevel);
   // The dwelling's name and its level in brackets: the level is the house's own (it moves as the house evolves).
@@ -395,8 +396,10 @@ export function formatHouseActivityModel(vm) {
   const gaps = vm.activitySupplyGaps ?? [];
   // The legal forms of the house's businesses (its category's `enterprises`), one pill each; the tab opens on the default one.
   const { enterprises, defaultId } = vm.buildingType ? houseEnterprises(vm.buildingType) : { enterprises: [], defaultId: null };
+  // What the house itself makes: a good among the materials of another recipe of the house comes from its own earlier production.
+  const ownGoods = new Set(entries.map((entry) => entry.categories[0]));
   return {
-    recipes: entries.map((entry) => activityRecipeOf(entry, vm.buildingRow, gaps)),
+    recipes: entries.map((entry) => activityRecipeOf(entry, vm.buildingRow, gaps, ownGoods)),
     enterprises,
     defaultId,
     rental: enterprises.some((enterprise) => enterprise.activity === 'rental') ? rentalOf(vm.rentalBoard ?? null) : null,
@@ -433,8 +436,10 @@ function rentalOf(board) {
 /**
  * @param {import('../../../../../shared/building-catalog/buildingCatalog.js').ResourceRoleFacts} entry
  * @param {object | null} buildingRow The raw building row (stocks, cycleState, activityShortfall, activityInputs).
+ * @param {ReadonlyArray<object>} gaps
+ * @param {ReadonlySet<string>} ownGoods The goods the house makes itself (one per recipe).
  */
-function activityRecipeOf(entry, buildingRow, gaps = []) {
+function activityRecipeOf(entry, buildingRow, gaps, ownGoods) {
   const category = entry.categories[0];
   const recipeGaps = gaps.filter((gap) => gap.category === category);
   const gapMessages = recipeGaps.map((gap) => describeActivitySupplyGap(gap));
@@ -457,9 +462,16 @@ function activityRecipeOf(entry, buildingRow, gaps = []) {
 
   const collected = collectedCardOf(category, productLabel, buildingRow?.activityCollected?.[category]);
 
-  const steps = entry.cycle.map((step, index) => stepCardOf(step, index, entry.cycle.length, cycleState));
+  // A recipe with no step shows no step card (the chain is then just material → product).
+  const steps = (entry.cycle ?? []).map((step, index) => stepCardOf(step, index, cycleState));
 
-  return { category, label: productLabel, material, product, collected, steps, gapMessages };
+  // The materials this house made itself in another of its recipes (the gilded pot is set on the pot the "decorated pot" recipe made): said
+  // on the recipe so that its chain is not read as starting from nothing.
+  const upstream = [...new Set(inputs.map((input) => input.category))]
+    .filter((good) => good !== category && ownGoods.has(good))
+    .map((good) => ({ icon: goodIcon(good), label: goodLabel(good) }));
+
+  return { category, label: productLabel, material, product, collected, steps, gapMessages, upstream };
 }
 
 /**
@@ -471,9 +483,12 @@ function activityRecipeOf(entry, buildingRow, gaps = []) {
  * @param {object | null} lastInputs
  */
 function materialCardOf(inputs, lastInputs) {
+  // A recipe with no material has no material card.
+  if (inputs.length === 0) return null;
   const label = 'Matières premières';
-  const icon = '🧺';
-  if (inputs.length === 0 || !lastInputs) {
+  // The card shows the material itself (a decorated pot, wheat and carrots…), not a generic basket: the goods the recipe takes, one icon each.
+  const icon = [...new Set(inputs.map((input) => input.category))].map((good) => goodIcon(good)).join('');
+  if (!lastInputs) {
     return { kind: 'materials', icon, label, met: false, valueText: NO_CYCLE_YET, ariaLabel: `${label} : pas encore de cycle` };
   }
   const whole = (value) => Math.max(0, Math.floor(Number(value) || 0));
@@ -516,19 +531,15 @@ function collectedCardOf(category, label, lastCollected) {
   };
 }
 
-/** Structural only ("Étape 1", "Étape 2"...) — the recipe's own step id is an internal catalog word, not one a
- *  player reads (see CatalogVocabulary); a single-step recipe is named for what it does instead of numbered. */
-function stepLabel(index, total) {
-  return total > 1 ? `Étape ${index + 1}` : 'Fabrication';
-}
-
 /**
  * A step's progress, read live from `cycleState[category]` (`{ index, value, opened }`, see ProduceResource.js):
  * a lower index than the step's own means it is done for the cycle under way, the same index means it is the
  * one running now (or stuck on `activityShortfall`), a higher index means it has not started yet.
  */
-function stepCardOf(step, index, total, cycleState) {
-  const label = stepLabel(index, total);
+function stepCardOf(step, index, cycleState) {
+  // The step's name is the catalog's (`label`, see STEP_LABELS in buildingEconomy.js): never a number made up here.
+  const label = step.label;
+  if (!label) throw new Error(`[recipe] the step "${step.id}" has no name in the catalog`);
   const currentIndex = cycleState?.index ?? 0;
   const isCurrent = currentIndex === index;
 
@@ -549,7 +560,8 @@ function stepCardOf(step, index, total, cycleState) {
 
   return {
     kind: step.id,
-    icon: met ? '✅' : '⏳',
+    // The step's own icon (catalog `icon`); only a step the catalog gives none keeps the state icon (done, or waiting), as the player asked.
+    icon: step.icon ?? (met ? '✅' : '⏳'),
     label,
     met,
     valueText: status,

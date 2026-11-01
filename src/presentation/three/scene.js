@@ -86,6 +86,7 @@ import { applyKenneyVerticalEdgeMountToObject } from '../../shared/editor-catalo
 import { propRecordSpec } from '../../shared/editor-catalog/naturePropCatalog.js';
 import { getGroundElevation, getGroundSurface } from '../../shared/editor-catalog/kenneyPlacementProfile.js';
 import { applyGroundShear } from './placement/groundShear.js';
+import { plotFencePieces } from '../../shared/land-catalog/plotLayout.js';
 import { WORLD_PLATFORM_Y } from '../../shared/terrain-catalog/terrainWorldContract.js';
 import { EDITOR_SEA_TERRAIN_ID, isEditorSeaTerrain } from '../../shared/terrain-catalog/editorSeaTerrain.js';
 import { HamletResourceRegistry } from './hamlet/HamletResourceRegistry.js';
@@ -146,7 +147,10 @@ export function createScene(_gameStore, assetManager, deps) {
     const groundPoseAt = (x, y) => ({ elevation: groundElevationAt(x, y), slope: resolveGroundSlope(x, y) });
     const reachOverlay = createReachOverlay({ scene, getGroundPose: groundPoseAt });
     const roadPaintPreview = createRoadPaintPreview({ scene, getGroundPose: groundPoseAt });
-    
+    // The land of the plots a company has bought, in dark green: it stands out from the plots still for sale (the fences alone)
+    const OWNED_PLOT_COLOR = 0x1b5e20;
+    const ownedPlotTint = createRoadPaintPreview({ scene, getGroundPose: groundPoseAt, validColor: OWNED_PLOT_COLOR });
+
     // Initialize managers
     const lightingManager = new LightingManager(scene);
     const backdropManager = new BackdropManager(scene);
@@ -403,6 +407,8 @@ export function createScene(_gameStore, assetManager, deps) {
     let buildings = [];
     /** @type {Map<string, import('three').Object3D>} */
     const editorStackMeshes = new Map();
+    /** The fences around the plots for sale (not pieces of the editor's stack): they follow the plots the town hall holds. */
+    const plotFenceMeshes = new Map();
     let currentCitySize = 16; // Store current city size for citizen pathfinding
     let currentCity = null; // Store current city object for citizen updates
     let lastSceneUpdateTime = 0;
@@ -458,6 +464,7 @@ export function createScene(_gameStore, assetManager, deps) {
         placementGhost.clear();
         reachOverlay.clear();
         roadPaintPreview.clear();
+        ownedPlotTint.clear();
         decorativeVillageManager.dispose();
         scene.clear();
         zoneGroups.length = 0;
@@ -470,6 +477,7 @@ export function createScene(_gameStore, assetManager, deps) {
         terrain = [];
         buildings = [];
         editorStackMeshes.clear();
+        plotFenceMeshes.clear();
         // A blank editor starts from an empty stack; one opened on a map keeps the pieces the map was just applied with
         if (isEditorMode() && options.hydrateEditorLayout !== true) {
             resetEditorNatureLayout();
@@ -1349,11 +1357,18 @@ export function createScene(_gameStore, assetManager, deps) {
 
         // A piece of nature stands while its record does: one used up (a tree a lumberjack took whole) leaves the grid with it
         if (!isEditorMode()) {
-            const recordTiles = new Set(
-                (await listAllBuildingRows()).filter((row) => row.piece).map((row) => `${row.x},${row.y}`)
-            );
+            const pieceRows = (await listAllBuildingRows()).filter((row) => row.piece);
+            const rowAtTile = new Map(pieceRows.map((row) => [`${row.x},${row.y}`, row]));
             for (const piece of getEditorStackObjects().filter((obj) => propRecordSpec(obj.assetId) !== null)) {
-                if (!recordTiles.has(`${piece.x},${piece.y}`)) removeEditorStackById(piece.id);
+                const row = rowAtTile.get(`${piece.x},${piece.y}`);
+                // A tree planted on a plot changes with its record (plant, tree, high tree): the piece standing is the one the record says
+                if (!row || (row.planted && row.piece.assetId !== piece.assetId)) removeEditorStackById(piece.id);
+            }
+            // ...and a planted record whose piece is not standing (just planted, or just grown) is drawn
+            const standing = new Set(getEditorStackObjects().filter((obj) => propRecordSpec(obj.assetId) !== null).map((obj) => `${obj.x},${obj.y}`));
+            for (const row of pieceRows.filter((candidate) => candidate.planted && !standing.has(`${candidate.x},${candidate.y}`))) {
+                // Said loudly, not thrown: one tree that cannot be drawn must not stop the day of the whole city
+                await standPieceOfRecord(row).catch((error) => console.error(`[Scene] the planted tree "${row.piece.assetId}" at (${row.x}, ${row.y}) could not be drawn:`, error));
             }
             lap('naturePieces');
         }
@@ -1837,6 +1852,37 @@ export function createScene(_gameStore, assetManager, deps) {
         return true;
     }
 
+    /**
+     * Stands a piece of the map the hamlet's records say should stand (a tree planted on a plot): at the height its record keeps, on the ground of its tile, with no
+     * editor placement rule (those are for the pieces a player picks, and know only the editor's own catalog).
+     * @param {{ x: number, y: number, piece: { assetId: string, rotationY: number, baseLocalY: number } }} row
+     * @returns {Promise<void>}
+     */
+    async function standPieceOfRecord({ x, y, piece }) {
+        const entry = addEditorStackObject(piece.assetId, x, y, piece.rotationY, {
+            baseLocalY: piece.baseLocalY,
+            parentId: null,
+            anchor: 'terrain',
+            mountMode: 'surface',
+            faceDirection: null,
+        });
+        let mesh;
+        try {
+            mesh = await createEditorStackMesh(entry);
+        } catch (error) {
+            removeEditorStackObjectById(entry.id);
+            throw error;
+        }
+        if (!mesh) {
+            removeEditorStackObjectById(entry.id);
+            throw new Error(`[Scene] no mesh for the piece "${piece.assetId}" at (${x}, ${y})`);
+        }
+        editorStackMeshes.set(entry.id, mesh);
+        addMeshToTileZone(mesh, x, y);
+        refreshTileRelief(x, y);
+        scene.userData.requestShadowRefresh?.();
+    }
+
     /** @deprecated use placeEditorStackObject */
     async function placeEditorNatureProp(x, y, propId, rotationY = 0) {
         return placeEditorStackObject(x, y, propId, rotationY, null);
@@ -1904,6 +1950,25 @@ export function createScene(_gameStore, assetManager, deps) {
     function removeNaturePropsAt(x, y) {
         const props = getEditorStackObjectsAt(x, y).filter((obj) => obj.assetId.startsWith('nature-prop:'));
         return props.filter((prop) => removeEditorStackById(prop.id));
+    }
+
+    /**
+     * The fences around the plots for sale, drawn again from the plots the town hall holds: each stands on the ground of its tile.
+     * @param {Array<{ x: number, y: number, use: string, owner: string | null }>} plots `owner`: the company that bought it, null while it is for sale
+     * @returns {Promise<void>}
+     */
+    async function setPlotFences(plots) {
+        ownedPlotTint.show({ valid: plots.filter((plot) => plot.owner !== null), blocked: [] });
+        for (const mesh of plotFenceMeshes.values()) removeInteractiveObject(mesh);
+        plotFenceMeshes.clear();
+        for (const fence of plotFencePieces(plots)) {
+            const baseLocalY = resolveGroundElevation(fence.x, fence.y, 1, 1);
+            const mesh = await createEditorStackMesh({ ...fence, baseLocalY });
+            if (!mesh) throw new Error(`[Scene] setPlotFences: no mesh for the fence "${fence.id}" (${fence.assetId})`);
+            plotFenceMeshes.set(fence.id, mesh);
+            addMeshToTileZone(mesh, fence.x, fence.y);
+        }
+        scene.userData.requestShadowRefresh?.();
     }
 
     /**
@@ -2668,6 +2733,7 @@ function onTouchEnd(event) {
         placeEditorNatureProp,
         removeEditorNaturePropAt,
         removeNaturePropsAt,
+        setPlotFences,
         removeEditorStackById,
         clearEditorTileBaseToSea,
         resolveEditorPlacementAnchorLocalY,

@@ -267,8 +267,8 @@ export class SettleProducerCharges {
         const accountKind = houseIds.has(line.holder) ? businessAccountOf(houseEnterpriseOf(typeOfBuilding.get(line.holder), 'recipes').id) : null;
         await this.#record({ ...line, accountKind }, {
           time,
-          key: buildTradeLineBusinessKey(line.kind, line.holder, line.counterparty, timeInfo, hamletId),
-          description: `${LINE_LABELS[line.kind]} ${nameOf(line.holder)}${line.counterparty ? ` avec ${nameOf(line.counterparty)}` : ''} - ${monthLabel}`,
+          key: buildTradeLineBusinessKey(line.kind, line.holder, line.counterparty, timeInfo, hamletId, line.resource),
+          description: `${LINE_LABELS[line.kind]} ${getResourceCategoryPresentation(line.resource).label} : ${nameOf(line.holder)}${line.counterparty ? ` avec ${nameOf(line.counterparty)}` : ''} - ${monthLabel}`,
           buildingInstanceId: line.holder,
           timeInfo,
         });

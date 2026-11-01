@@ -188,6 +188,14 @@
                         <h2 id="info-building-title">Informations</h2>
                         <p id="info-building-meta" class="info-building__meta" hidden></p>
                     </div>
+                    <div class="info-building__tab-arrows" hidden>
+                        <button type="button" class="info-building__tab-arrow" data-dir="-1" title="Onglets précédents" aria-label="Voir les onglets précédents" aria-controls="info-building-tabs">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                        </button>
+                        <button type="button" class="info-building__tab-arrow" data-dir="1" title="Onglets suivants" aria-label="Voir les onglets suivants" aria-controls="info-building-tabs">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                        </button>
+                    </div>
                     <button type="button" class="panel-close-btn" title="Fermer" aria-label="Fermer le panneau d'information">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
                             <circle cx="12" cy="12" r="10"/>
@@ -196,7 +204,7 @@
                         </svg>
                     </button>
                 </header>
-                <div class="info-building__tabs" role="tablist" aria-label="Sections du bâtiment">
+                <div id="info-building-tabs" class="info-building__tabs" role="tablist" aria-label="Sections du bâtiment">
                     <button type="button" role="tab" id="tab-foyer" data-tab="foyer" aria-controls="panel-foyer" aria-selected="true" tabindex="0">🏠 Bâtiment</button>
                     <button type="button" role="tab" id="tab-state" data-tab="state" aria-controls="panel-state" aria-selected="false" tabindex="-1" hidden>🧭 État</button>
                     <button type="button" role="tab" id="tab-diet" data-tab="diet" aria-controls="panel-diet" aria-selected="false" tabindex="-1" hidden>🍽️ Régime</button>
@@ -211,6 +219,9 @@
                     <button type="button" role="tab" id="tab-collectors" data-tab="collectors" aria-controls="panel-collectors" aria-selected="false" tabindex="-1" hidden>⛏️ Collecteurs</button>
                     <button type="button" role="tab" id="tab-messages" data-tab="messages" aria-controls="panel-messages" aria-selected="false" tabindex="-1" hidden>💬 Messages</button>
                     <button type="button" role="tab" id="tab-finance" data-tab="finance" aria-controls="panel-finance" aria-selected="false" tabindex="-1" hidden>💰 Finances</button>
+                    <button type="button" role="tab" id="tab-residents" data-tab="residents" aria-controls="panel-residents" aria-selected="false" tabindex="-1" hidden>👥 Habitants</button>
+                    <button type="button" role="tab" id="tab-prices" data-tab="prices" aria-controls="panel-prices" aria-selected="false" tabindex="-1" hidden>🏷️ Prix</button>
+                    <button type="button" role="tab" id="tab-problems" data-tab="problems" aria-controls="panel-problems" aria-selected="false" tabindex="-1" hidden>⚠️ Problèmes</button>
                 </div>
                 <div class="info-building__body">
                     <div id="panel-foyer" role="tabpanel" class="info-building__tabpanel is-active" aria-labelledby="tab-foyer" tabindex="0"></div>
@@ -227,6 +238,9 @@
                     <div id="panel-collectors" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-collectors" tabindex="0" hidden></div>
                     <div id="panel-messages" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-messages" tabindex="0" hidden></div>
                     <div id="panel-finance" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-finance" tabindex="0" hidden></div>
+                    <div id="panel-residents" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-residents" tabindex="0" hidden></div>
+                    <div id="panel-prices" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-prices" tabindex="0" hidden></div>
+                    <div id="panel-problems" role="tabpanel" class="info-building__tabpanel" aria-labelledby="tab-problems" tabindex="0" hidden></div>
                 </div>
             </div>
         </div>
@@ -783,22 +797,24 @@
                         </div>
                     </div>
                 </div>
-                <div class="pop-detail-metric pop-detail-hunger-risk">
-                    <span class="pop-detail-icon pop-detail-icon--hunger-risk" aria-hidden="true"></span>
-                    <span class="pop-detail-values" aria-label="Citoyens menacés par la faim">
-                        <span class="pop-detail-value display-hunger-risk pop-detail-value--scoped">0</span>                    </span>
-                </div>
-                <div class="pop-detail-metric pop-detail-disette">
-                    <span class="pop-detail-icon pop-detail-icon--disette" title="Disette" aria-hidden="true"></span>
-                    <span class="pop-detail-values" aria-label="Citoyens en disette">
-                        <span class="pop-detail-value display-disette-pop pop-detail-value--scoped">0</span>                    </span>
-                </div>
-                <div class="pop-detail-metric pop-detail-hunger">
-                    <span class="pop-detail-icon" title="Pénurie">
-                        <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
-                    </span>
-                    <span class="pop-detail-values" aria-label="Citoyens en pénurie">
-                        <span class="pop-detail-value display-hunger-pop pop-detail-value--scoped">0</span>                    </span>
+                <div class="pop-detail-block pop-detail-famine" aria-label="Faim">
+                    <div class="pop-detail-metric pop-detail-hunger-risk">
+                        <span class="pop-detail-icon pop-detail-icon--hunger-risk" aria-hidden="true"></span>
+                        <span class="pop-detail-values" aria-label="Citoyens menacés par la faim">
+                            <span class="pop-detail-value display-hunger-risk pop-detail-value--scoped">0</span>                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-detail-disette">
+                        <span class="pop-detail-icon pop-detail-icon--disette" title="Disette" aria-hidden="true"></span>
+                        <span class="pop-detail-values" aria-label="Citoyens en disette">
+                            <span class="pop-detail-value display-disette-pop pop-detail-value--scoped">0</span>                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-detail-hunger">
+                        <span class="pop-detail-icon" title="Pénurie">
+                            <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
+                        </span>
+                        <span class="pop-detail-values" aria-label="Citoyens en pénurie">
+                            <span class="pop-detail-value display-hunger-pop pop-detail-value--scoped">0</span>                        </span>
+                    </div>
                 </div>
                 <div class="pop-detail-metric pop-detail-deaths">
                     <span class="pop-detail-icon pop-detail-icon--deaths" title="Morts" aria-hidden="true">

@@ -17,6 +17,7 @@ import { appendStatusMessage } from '../layout/buildingInfoLayout.js';
  *   getClientPriorityBoardForBuilding: (buildingId: string) => Promise<object | null>,
  *   saveClientPriorityForBuilding: (buildingId: string, category: string, value: { order: string[], disabled: string[] }) => Promise<void>,
  *   resetClientPriorityForBuilding: (buildingId: string, category: string) => Promise<void>,
+ *   setClientsOnlyForBuilding: (buildingId: string, category: string, scope: { clientsOnly: boolean, onlyClientType?: string }) => Promise<void>,
  * }} supply
  * @property {string} buildingId
  */
@@ -120,6 +121,48 @@ function renderGoodBoard(model, good, rerender) {
   hint.className = 'clients-hint';
   hint.textContent = 'Ce bâtiment sert ses clients dans cet ordre : 1 = servi en premier. La croix arrête de servir un client.';
   section.appendChild(hint);
+
+  // ClientsOnly: unchecked, the good goes to every buyer by the priorities below; checked, to one buyer type alone, chosen in
+  // the dropdown (no other building and no trade city). The defaults come from the catalog and the player can change both.
+  if (good.buyerTypes.length > 0) {
+    const scope = document.createElement('div');
+    scope.className = 'clients-scope';
+
+    const label = document.createElement('label');
+    label.className = 'clients-scope__check';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.checked = good.clientsOnly;
+    checkbox.addEventListener('change', async () => {
+      // Checking it needs a buyer: the one already chosen, else the first one that buys this good.
+      const onlyClientType = checkbox.checked ? good.onlyClientType ?? good.buyerTypes[0] : undefined;
+      await model.supply.setClientsOnlyForBuilding(model.buildingId, good.category, { clientsOnly: checkbox.checked, onlyClientType });
+      rerender(good.category);
+    });
+    label.append(checkbox, document.createTextNode(` Vendre à un seul client : ${goodLabel(good.category)}`));
+    scope.appendChild(label);
+
+    if (good.clientsOnly) {
+      const select = document.createElement('select');
+      select.className = 'clients-scope__select';
+      select.setAttribute('aria-label', `Seul client de ${goodLabel(good.category)}`);
+      if (good.onlyClientType === null) {
+        // The catalog lists several clients and none is chosen yet: say so rather than show one that is not the case.
+        const choose = new Option('Choisir le client…', '', true, true);
+        choose.disabled = true;
+        select.appendChild(choose);
+      }
+      for (const type of good.buyerTypes) {
+        select.appendChild(new Option(buildingName(type), type, false, type === good.onlyClientType));
+      }
+      select.addEventListener('change', async () => {
+        await model.supply.setClientsOnlyForBuilding(model.buildingId, good.category, { clientsOnly: true, onlyClientType: select.value });
+        rerender(good.category);
+      });
+      scope.appendChild(select);
+    }
+    section.appendChild(scope);
+  }
 
   if (good.isCustom) {
     const reset = document.createElement('button');

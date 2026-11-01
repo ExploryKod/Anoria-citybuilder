@@ -1,5 +1,6 @@
 import { isRoadType } from './roadQueries.js';
-import { getResourceRoles, getNaturalResourceKind, getRoadRange, requiresRoad } from './resourceRoleQueries.js';
+import { getResourceRoles, getRoadRange, requiresRoad } from './resourceRoleQueries.js';
+import { depositKindsOf } from './depositQueries.js';
 import { getBuildingDefinition } from './buildingCatalog.js';
 
 /**
@@ -157,7 +158,7 @@ export function computeBuildingReach(origin, buildings, roadTiles) {
     if (entry.role === 'producer') {
       if (entry.source) {
         for (const other of others) {
-          if (getNaturalResourceKind(other.type) === entry.source.resource && manhattan(origin, other) <= entry.source.range) {
+          if (depositKindsOf(other.type).includes(entry.source.resource) && manhattan(origin, other) <= entry.source.range) {
             reach(other, 'in');
           }
         }

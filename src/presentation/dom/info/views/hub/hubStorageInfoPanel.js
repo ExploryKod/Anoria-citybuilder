@@ -24,6 +24,11 @@ function chartTitleOf(view, flowId) {
   return view.storageViews?.find((candidate) => candidate.id === flowId)?.label ?? 'Stock';
 }
 
+/** The sentence the catalog gives a flow, shown under its name (null when it gives none). */
+function chartNoteOf(view, flowId) {
+  return view.storageViews?.find((candidate) => candidate.id === flowId)?.note ?? null;
+}
+
 /** The buttons that switch the chart from one flow to another (none when the hub holds a single flow). */
 function renderFlowTabs(view, flowId) {
   if (!(view.storageViews?.length > 1)) return '';
@@ -184,6 +189,7 @@ export async function renderHubStorageInfoPanel({
       ${renderFlowTabs(view, ctx.flowId)}
       <section class="hub-storage-chart-section${ctx.flowId ? ` hub-storage-chart-section--${ctx.flowId}` : ''}">
         <h3 class="hub-storage-chart-title">${chartTitleOf(view, ctx.flowId)}</h3>
+        ${chartNoteOf(view, ctx.flowId) ? `<p class="hub-storage-chart-note">${chartNoteOf(view, ctx.flowId)}</p>` : ''}
         ${renderHubStoragePieChart(chartViewOf(view, ctx.flowId), formatHubStockSummary(chartViewOf(view, ctx.flowId)))}
       </section>
     </div>
@@ -191,7 +197,7 @@ export async function renderHubStorageInfoPanel({
 
   const drawChart = () => {
     const chartView = chartViewOf(ctx.view, ctx.flowId);
-    patchHubStoragePieChart(container, chartView, formatHubStockSummary(chartView), chartTitleOf(ctx.view, ctx.flowId));
+    patchHubStoragePieChart(container, chartView, formatHubStockSummary(chartView), chartTitleOf(ctx.view, ctx.flowId), chartNoteOf(ctx.view, ctx.flowId));
   };
 
   refreshStorageChart = (freshView) => {

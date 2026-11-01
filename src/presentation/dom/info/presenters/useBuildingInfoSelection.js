@@ -187,7 +187,7 @@ async function renderGroupTabs(groupDef, vm) {
 export async function useBuildingInfoSelection(selectedObject, ctx) {
   const {
     city, parcels, supply, scene, game, time, runScenePresentationPass,
-    construction, employment, accounting,
+    construction, employment, accounting, land, housing,
   } = ctx;
 
   // A piece of nature on the grid is not a building but a record of the hamlet, holding what the catalog says: it has its info panel too
@@ -273,9 +273,16 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
       ...vm,
       wagePerWorker: buildingRow ? await accounting.getWagePerWorkerOf(buildingType) : null,
       employerContributionRate: (await accounting.getSalarySettings()).employerContributionRate,
+      // The owner's house sells the land: its Prix tab sets what the land is sold at
+      land,
+      isPropertyOwner: uniqueId ? await accounting.isPropertyOwner(uniqueId) : false,
     };
 
     const groupId = resolveBuildingInfoGroup({ buildingRow, supplyView });
+    // The number the cheat MaxPop<n> holds every house at (null without it): the house's panel shows it as its ceiling.
+    if (groupId === BUILDING_INFO_GROUPS.house) {
+      vm = { ...vm, populationCapOverride: await housing.getPopulationOverride() };
+    }
     vm = await enrichBuildingInfoViewModel(groupId, vm);
 
     const groupDef = getBuildingInfoGroupDef(groupId);

@@ -58,6 +58,15 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     evolveHouseBuilding,
     /** @param {(house: object) => Promise<boolean>} check whether a warehouse is within reach of the house's activity */
     setActivityAccessCheck: (check) => evolveHouseBuilding.setActivityAccessCheck(check),
+    /** @param {() => Promise<boolean>} check whether the cheat lifting every house to its highest level is allowed and on */
+    setLevelsUnlockedCheck: (check) => evolveHouseBuilding.setLevelsUnlockedCheck(check),
+    /** @param {() => Promise<number | null>} check the inhabitants every house is held at (cheat MaxPop<n>), or null */
+    setPopulationOverrideCheck: (check) => {
+      growHousePopulation.setPopulationOverrideCheck(check);
+      evolveHouseBuilding.setPopulationOverrideCheck(check);
+    },
+    /** The inhabitants every house is held at (cheat MaxPop<n>, when allowed and on), or null: what the house panel shows as its ceiling. */
+    getPopulationOverride: () => growHousePopulation.populationOverrideCheck(),
     evolveAllHouseBuildings,
     getCityPopulationSummaryQuery,
     getResidentialHouseAtTileQuery,

@@ -1,5 +1,5 @@
 import { hasResourceRole } from '../../domain/policies/ResourceRolePolicy.js';
-import { getNaturalResourceKind } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { depositKindsOf } from '../../../../shared/building-catalog/depositQueries.js';
 import { instanceIdFromHouseRow } from '../../../../shared/building-identity/index.js';
 
 /**
@@ -39,8 +39,8 @@ export function refreshSupplyPlacementIndex(rows = []) {
     }));
 
   naturalResources = rows
-    .filter((row) => getNaturalResourceKind(row.type) && row.x != null && row.y != null)
-    .map((row) => ({ id: instanceIdFromHouseRow(row), type: row.type, x: row.x, y: row.y }));
+    .filter((row) => depositKindsOf(row.type).length > 0 && row.x != null && row.y != null)
+    .map((row) => ({ id: instanceIdFromHouseRow(row), type: row.type, x: row.x, y: row.y, stocks: row.stocks ?? {} }));
 
   distributors = rows
     .filter((row) => hasResourceRole(row.type, 'distributor'))

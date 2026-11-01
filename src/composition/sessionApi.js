@@ -124,6 +124,7 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     exportBuildingAccountJson: (buildingId, accountKind) => accounting.exportBuildingAccountJson(buildingId, accountKind),
     getHouseResidents: (houseId) => accounting.getHouseResidents(houseId),
     hasBuildingAccount: (buildingType) => accounting.hasBuildingAccount(buildingType),
+    isPropertyOwner: (houseId) => accounting.isPropertyOwner(houseId),
     findBankBuildingId: () => accounting.findBankBuildingId(),
     getHouseholdDepositBalance: (houseId) => accounting.getHouseholdDepositBalance(houseId),
     recordHouseholdDeposit: (params) => accounting.recordHouseholdDeposit(params),
@@ -205,6 +206,7 @@ export function createSupplySessionApi(supply) {
     getClientPriorityBoardForBuilding: (buildingId) => supply.getClientPriorityBoardForBuilding(buildingId),
     saveClientPriorityForBuilding: (buildingId, category, value) => supply.saveClientPriorityForBuilding(buildingId, category, value),
     resetClientPriorityForBuilding: (buildingId, category) => supply.resetClientPriorityForBuilding(buildingId, category),
+    setClientsOnlyForBuilding: (buildingId, category, scope) => supply.setClientsOnlyForBuilding(buildingId, category, scope),
     hasResourceRole: (buildingType, role, category) => hasResourceRole(buildingType, role, category),
     getPlacementRequirements: (buildingType) => getPlacementRequirements(buildingType),
   });

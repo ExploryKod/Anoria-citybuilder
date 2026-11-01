@@ -188,10 +188,10 @@
       "y": 0,
       "pop": 0,
       "stocks": {
-        "wood": 120
+        "wood": 100
       },
       "maxStocks": {
-        "wood": 120
+        "wood": 100
       },
       "roads": 0,
       "price": 0,
@@ -211,10 +211,15 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_oak",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
-      "type": "Tree-Sapin",
+      "type": "Tree-Chene",
       "category": "nature",
       "x": 14,
       "y": 0,
@@ -243,10 +248,15 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_pineDefaultA",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
-      "type": "Tree-Sapin",
+      "type": "Tree-Chene",
       "category": "nature",
       "x": 1,
       "y": 1,
@@ -275,6 +285,11 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_pineDefaultA",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
@@ -347,16 +362,16 @@
       ]
     },
     {
-      "type": "Tree-Arbuste",
+      "type": "Tree-Chene",
       "category": "nature",
       "x": 12,
       "y": 1,
       "pop": 0,
       "stocks": {
-        "wood": 80
+        "wood": 100
       },
       "maxStocks": {
-        "wood": 80
+        "wood": 100
       },
       "roads": 0,
       "price": 0,
@@ -376,6 +391,11 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_small",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
@@ -385,14 +405,12 @@
       "y": 1,
       "pop": 0,
       "stocks": {
-        "rock": 61,
-        "gold": 30,
-        "iron": 34
+        "rock": 50,
+        "gold": 0,
+        "iron": 0
       },
       "maxStocks": {
-        "rock": 61,
-        "gold": 30,
-        "iron": 34
+        "rock": 50
       },
       "roads": 0,
       "price": 0,
@@ -412,6 +430,11 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:rock_smallA",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
@@ -421,10 +444,10 @@
       "y": 2,
       "pop": 0,
       "stocks": {
-        "wood": 120
+        "wood": 100
       },
       "maxStocks": {
-        "wood": 120
+        "wood": 100
       },
       "roads": 0,
       "price": 0,
@@ -444,6 +467,11 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_oak",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
@@ -700,10 +728,10 @@
       "y": 3,
       "pop": 0,
       "stocks": {
-        "wood": 120
+        "wood": 100
       },
       "maxStocks": {
-        "wood": 120
+        "wood": 100
       },
       "roads": 0,
       "price": 0,
@@ -723,19 +751,24 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_oak",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
-      "type": "Tree-Arbuste",
+      "type": "Tree-Chene",
       "category": "nature",
       "x": 2,
       "y": 4,
       "pop": 0,
       "stocks": {
-        "wood": 80
+        "wood": 100
       },
       "maxStocks": {
-        "wood": 80
+        "wood": 100
       },
       "roads": 0,
       "price": 0,
@@ -755,6 +788,11 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_small",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
@@ -1344,7 +1382,7 @@
       }
     },
     {
-      "type": "Tree-Sapin",
+      "type": "Tree-Chene",
       "category": "nature",
       "x": 15,
       "y": 5,
@@ -1373,6 +1411,11 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_pineDefaultA",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
@@ -1661,14 +1704,12 @@
       "y": 6,
       "pop": 0,
       "stocks": {
-        "rock": 143,
+        "rock": 50,
         "gold": 0,
-        "iron": 39
+        "iron": 0
       },
       "maxStocks": {
-        "rock": 143,
-        "gold": 0,
-        "iron": 39
+        "rock": 50
       },
       "roads": 0,
       "price": 0,
@@ -1688,6 +1729,11 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:rock_smallA",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
@@ -1862,10 +1908,10 @@
       "y": 7,
       "pop": 0,
       "stocks": {
-        "wood": 120
+        "wood": 100
       },
       "maxStocks": {
-        "wood": 120
+        "wood": 100
       },
       "roads": 0,
       "price": 0,
@@ -1885,19 +1931,24 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_oak",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
-      "type": "Tree-Arbuste",
+      "type": "Tree-Chene",
       "category": "nature",
       "x": 3,
       "y": 8,
       "pop": 0,
       "stocks": {
-        "wood": 80
+        "wood": 100
       },
       "maxStocks": {
-        "wood": 80
+        "wood": 100
       },
       "roads": 0,
       "price": 0,
@@ -1917,6 +1968,11 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_small",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
@@ -2242,7 +2298,7 @@
       ]
     },
     {
-      "type": "Tree-Sapin",
+      "type": "Tree-Chene",
       "category": "nature",
       "x": 2,
       "y": 9,
@@ -2271,6 +2327,11 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_pineDefaultA",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
@@ -4361,16 +4422,16 @@
       }
     },
     {
-      "type": "Tree-Arbuste",
+      "type": "Tree-Chene",
       "category": "nature",
       "x": 16,
       "y": 12,
       "pop": 0,
       "stocks": {
-        "wood": 80
+        "wood": 100
       },
       "maxStocks": {
-        "wood": 80
+        "wood": 100
       },
       "roads": 0,
       "price": 0,
@@ -4390,6 +4451,11 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_small",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
@@ -5528,14 +5594,12 @@
       "y": 15,
       "pop": 0,
       "stocks": {
-        "rock": 84,
-        "gold": 32,
-        "iron": 41
+        "rock": 50,
+        "gold": 0,
+        "iron": 0
       },
       "maxStocks": {
-        "rock": 84,
-        "gold": 32,
-        "iron": 41
+        "rock": 50
       },
       "roads": 0,
       "price": 0,
@@ -5555,6 +5619,11 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:rock_smallA",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
@@ -6463,14 +6532,12 @@
       "y": 16,
       "pop": 0,
       "stocks": {
-        "rock": 141,
-        "gold": 35,
-        "iron": 50
+        "rock": 50,
+        "gold": 0,
+        "iron": 0
       },
       "maxStocks": {
-        "rock": 141,
-        "gold": 35,
-        "iron": 50
+        "rock": 50
       },
       "roads": 0,
       "price": 0,
@@ -6490,10 +6557,15 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:rock_smallA",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
-      "type": "Tree-Sapin",
+      "type": "Tree-Chene",
       "category": "nature",
       "x": 4,
       "y": 17,
@@ -6522,10 +6594,15 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_pineDefaultA",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     },
     {
-      "type": "Tree-Sapin",
+      "type": "Tree-Chene",
       "category": "nature",
       "x": 16,
       "y": 17,
@@ -6554,6 +6631,11 @@
         "worker": 0,
         "sector": 0,
         "salary": 0
+      },
+      "piece": {
+        "assetId": "nature-prop:tree_pineDefaultA",
+        "rotationY": 0,
+        "baseLocalY": 0
       }
     }
   ],

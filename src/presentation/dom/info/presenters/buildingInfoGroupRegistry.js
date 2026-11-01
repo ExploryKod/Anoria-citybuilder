@@ -72,6 +72,9 @@ import { renderKvPanelView } from '../views/kvPanelView.js';
 import { renderShelfLifeTab } from '../views/shelfLifeTabView.js';
 import { renderBuildingFinanceTab } from '../views/buildingFinanceInfoView.js';
 import { renderHouseResidentsTab } from '../views/houseResidentsInfoView.js';
+import { renderLandPricesTab } from '../views/landPricesView.js';
+import { renderProblemsView } from '../views/problemsInfoView.js';
+import { formatProblemsModel } from './formats/problemsInfoFormat.js';
 
 /** @typedef {import('../buildingInfoTypes.js').BuildingInfoGroupDefinition} BuildingInfoGroupDefinition */
 
@@ -85,6 +88,16 @@ const FINANCE_TAB_SPEC = Object.freeze({
   isVisible: (vm) => vm.uniqueId != null && vm.accounting.hasBuildingAccount(vm.buildingType),
   format: (vm) => (vm.uniqueId ? { accounting: vm.accounting, buildingId: vm.uniqueId, buildingType: vm.buildingType } : null),
   render: (container, model) => renderBuildingFinanceTab(container, model),
+});
+
+/**
+ * The Problèmes tab of a workplace: what stands in the way of the building (its road, its purchases, the public aid it asks for); later the strikes.
+ * @type {import('../buildingInfoTypes.js').BuildingInfoTabSpec}
+ */
+const PROBLEMS_TAB_SPEC = Object.freeze({
+  id: BUILDING_INFO_TAB_IDS.problems,
+  format: (vm) => formatProblemsModel(vm),
+  render: (container, model) => renderProblemsView(container, model),
 });
 
 /**
@@ -132,6 +145,13 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         format: (vm) => (vm.uniqueId ? { accounting: vm.accounting, buildingId: vm.uniqueId } : null),
         render: (container, model) => renderHouseResidentsTab(container, model),
       },
+      {
+        // Only the owner's house: what its property company sells (land) and at what price
+        id: BUILDING_INFO_TAB_IDS.prices,
+        isVisible: (vm) => vm.isPropertyOwner === true,
+        format: (vm) => ({ land: vm.land }),
+        render: (container, model) => renderLandPricesTab(container, model),
+      },
       // What the house needs to evolve to its next level.
       { id: BUILDING_INFO_TAB_IDS.services, label: '🌱 Évolution' },
       ...CONTEXT_MESSAGES_TAB_SPECS,
@@ -177,6 +197,7 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         render: (container, model) => renderShelfLifeTab(container, model),
       },
       stateTabSpec({ state: formatHubStorageStateModel, staff: formatHubStorageStaffModel }),
+      PROBLEMS_TAB_SPEC,
       ...WORKPLACE_CONTEXT_TAB_SPECS,
       FINANCE_TAB_SPEC,
     ],
@@ -186,6 +207,7 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
     formatLayoutHeader: formatFarmLayoutHeader,
     tabs: [
       stateTabSpec({ state: formatFarmOverviewModel, staff: formatFarmStaffModel }),
+      PROBLEMS_TAB_SPEC,
       {
         id: BUILDING_INFO_TAB_IDS.stocks,
         format: formatFarmStocksModel,
@@ -210,6 +232,7 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
     formatLayoutHeader: formatMarketLayoutHeader,
     tabs: [
       stateTabSpec({ state: formatMarketOverviewModel, staff: formatMarketStaffModel }),
+      PROBLEMS_TAB_SPEC,
       {
         id: BUILDING_INFO_TAB_IDS.stocks,
         format: formatMarketStocksModel,

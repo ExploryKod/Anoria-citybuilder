@@ -97,6 +97,7 @@
 export const BUILDING_THEME_COLORS = Object.freeze({
   pottery: '#c1440e',
   wood: '#8b5a2b',
+  mining: '#5f6b73',
   lighting: '#d4a017',
   network: '#1a8a8a',
   'food-hub': '#5a7d3a',
@@ -2340,7 +2341,12 @@ export const BUILDING_ASSETS = Object.freeze({
   // Bûcheron — RÉASSIGNÉ au kit Kenney Industrial building-o (geometry copied
   // from Kenney-Industrial-building-o; economy/footprint keyed to 'Lumberjack').
   // Raw-material producer, see buildingEconomy.js.
-  'Lumberjack': LUMBERJACK_MESH,
+  // Its wood is the households' fuel (wood is an energy of the 'housing' consumption group), so it is listed with the power
+  // plants (theme 'energy'), after the nuclear plant. The industrial one feeds the workshops and stays with the 'wood' theme.
+  'Lumberjack': {
+    ...LUMBERJACK_MESH,
+    button: { ...LUMBERJACK_MESH.button, theme: 'energy' },
+  },
   // Same mesh, another catalog entry (name and clients differ, see buildingEconomy.js).
   'Lumberjack-Industry': {
     ...LUMBERJACK_MESH,
@@ -2735,6 +2741,38 @@ export const BUILDING_ASSETS = Object.freeze({
       editorGroup: null,
       label: 'Fournisseur d\'accès',
       tooltip: 'Fournisseur d\'accès',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-n.png' },
+    },
+    tags: ['industry', 'building'],
+  },
+  // Mine — wears Kenney industrial building-n too (as the lumberjacks share building-o): economy and footprint are keyed to 'Mine'.
+  'Mine': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'industrial',
+      buildingId: 'Kenney-Industrial-building-n',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'mining',
+      editorGroup: null,
+      label: 'Mine',
+      tooltip: 'Mine',
       icon: { kind: 'png', value: '/resources/kenney_city-kit-industrial_2.0/Previews/building-n.png' },
     },
     tags: ['industry', 'building'],

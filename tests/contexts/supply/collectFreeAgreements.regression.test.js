@@ -63,4 +63,18 @@ describe('a hub that cannot pay still collects what costs nothing', () => {
     expect(outcome.totalUnits).toBe(4);
     expect(repo.raw.get(farmId).unpaidByHub).toBe(true);
   });
+
+  test('what it leaves behind is told with its cause: the 6 units it could not pay for are refused for lack of money, out of the 10 waiting', async () => {
+    const hubId = createBuildingInstanceId();
+    const farmId = createBuildingInstanceId();
+    const repo = new Repo([
+      createSupplyBuildingSnapshot({ id: hubId, type: 'Windmill-001', roadCount: 1, worker: 1, workerNeed: 1, stocks: { wheat: 0, food: 0 }, maxStock: 1000 }),
+      createSupplyBuildingSnapshot({ id: farmId, type: 'Farm-Wheat', roadCount: 1, stocks: { wheat: 10, food: 10 }, maxStock: 100 }),
+    ]);
+    const collect = new CollectResourceToHub(repo, null, { priceBook: { ensure: async () => {}, sellingPrice: () => 1 }, purchasingPower: async () => 4 });
+
+    const { refusals } = await collect.execute({ hubId, sourceRefs: [{ instanceId: farmId }], period: { month: 'december', turn: 1 } });
+
+    expect(refusals.wheat).toEqual({ waiting: 10, limits: { no_budget: 6 } });
+  });
 });

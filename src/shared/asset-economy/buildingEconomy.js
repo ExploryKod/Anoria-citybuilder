@@ -39,9 +39,13 @@ const RAW_FARM_GOODS = ['olive'];
  * heat/light. Each social group runs its own business, buying raw material from a warehouse and selling its
  * own output back to one, exactly like a workshop; only the merchants' also buys OTHER houses' output.
  */
-const ARTISAN_ACTIVITY_GOODS = ['decoratedPot', 'carrotCake'];
+const ARTISAN_ACTIVITY_GOODS = ['decoratedPot', 'decoratedPlate', 'gildedPot', 'gildedPlate', 'carrotCake'];
 const SAVANT_ACTIVITY_GOODS = ['bandwidth', 'book'];
-const MERCHANT_ACTIVITY_GOODS = ['dealWood', 'dealDecoratedPot', 'dealBook', 'dealCarrotCake'];
+const MERCHANT_ACTIVITY_GOODS = [
+  'dealWood', 'dealRock', 'dealIron', 'dealGold',
+  'dealDecoratedPot', 'dealDecoratedPlate', 'dealGildedPot', 'dealGildedPlate',
+  'dealBook', 'dealCarrotCake',
+];
 /**
  * Goods bought from trade cities (see TradeCatalog `offers`): they arrive by import, never from a producer here, so
  * only the trade warehouse holds them — in the same stock as the deal goods, told apart by where they came from.
@@ -50,7 +54,7 @@ const IMPORTED_GOODS = ['coal', 'petrol', 'uranium', 'exoticWood'];
 /** The merchants' deals waiting for those imports (one per imported good): see ResourceCategoryCatalog `importGood`. */
 const MERCHANT_IMPORT_DEAL_GOODS = ['dealCoal', 'dealPetrol', 'dealUranium', 'dealExoticWood'];
 const STORED_GOODS = [
-  'wood', ...RETAIL_GOODS, ...LIGHT_GOODS, ...RAW_FARM_GOODS,
+  'wood', 'rock', 'iron', 'gold', ...RETAIL_GOODS, ...LIGHT_GOODS, ...RAW_FARM_GOODS,
   ...ARTISAN_ACTIVITY_GOODS, ...SAVANT_ACTIVITY_GOODS,
   // MERCHANT_ACTIVITY_GOODS (deal goods) intentionally excluded: they go to TradeWarehouse only.
 ];
@@ -103,20 +107,55 @@ const OLIVE_SALE = { schedule: { unit: 'month', values: ['september'] } };
  * The next cycle starts the following month, and selling never holds it up (see ProduceResource `cycle`).
  * Change the numbers, the months or the step names here, one building at a time.
  */
+/**
+ * The name the player reads for each step of a recipe (its card in the production chain). One entry per step id used below: a step with
+ * no name here is a catalog defect and throws where the cycle is declared, never an "Étape 1" put in its place.
+ */
+const stepEntry = (label, icon) => Object.freeze({ label, icon });
+const STEP_LABELS = Object.freeze({
+  sourcing: stepEntry('Approvisionnement', '🚚'),
+  shaping: stepEntry('Façonnage', '🤲'),
+  firing: stepEntry('Cuisson', '🔥'),
+  baking: stepEntry('Cuisson', '🥧'),
+  pressing: stepEntry('Pressage', '🫒'),
+  settling: stepEntry('Décantation', '💧'),
+  melting: stepEntry('Fonte', '♨️'),
+  moulding: stepEntry('Moulage', '🕯️'),
+  installing: stepEntry('Installation', '🔧'),
+  broadcasting: stepEntry('Diffusion', '📡'),
+  cutting: stepEntry('Découpe', '🪓'),
+  assembling: stepEntry('Assemblage', '🔨'),
+  decorating: stepEntry('Décoration', '🎨'),
+  gilding: stepEntry('Dorure', '✨'),
+  browsing: stepEntry('Recherche', '🔎'),
+  writing: stepEntry('Rédaction', '✍️'),
+  negotiating: stepEntry('Négociation', '🤝'),
+  dealing: stepEntry('Transaction', '💱'),
+});
+const stepNamed = (id) => {
+  const named = STEP_LABELS[id];
+  if (!named) throw new Error(`[economy] the recipe step "${id}" has no name in STEP_LABELS`);
+  return { id, label: named.label, icon: named.icon };
+};
+
 const twoMonthCycle = ({ first, second, base, factor, inputs }) => ({
   cycle: [
-    { id: first, when: { unit: 'monthIndex', interval: 2, offset: 0 }, amount: base, wait: true, ...(inputs ? { inputs } : {}) },
-    { id: second, when: { unit: 'monthIndex', interval: 2, offset: 1 }, factor, wait: true },
+    { ...stepNamed(first), when: { unit: 'monthIndex', interval: 2, offset: 0 }, amount: base, wait: true, ...(inputs ? { inputs } : {}) },
+    { ...stepNamed(second), when: { unit: 'monthIndex', interval: 2, offset: 1 }, factor, wait: true },
   ],
   sale: { schedule: { unit: 'monthIndex', interval: 2, offset: 1 } },
 });
 
 /** A raw-material producer of wood from the trees around it; its name and who it serves first vary. */
-const lumberjack = ({ displayName, clients, requiredSkill = 'artisanat' }) => ({
+const lumberjack = ({ displayName, clients, clientsOnly = false, requiredSkill = 'artisanat' }) => ({
   displayName,
   placementNotice: true,
   construction: { price: 45, category: 'industry' },
   employment: { sector: 3, workerNeed: 2, requiredSkill },
+  // When the trees in its range run short, it buys plots the owner's house put up for sale for a forest (`use`, see LandUseCatalog.js), to plant its own.
+  // `resource` is what the trees give; it buys when fewer than `buysBelowSources` of them still hold some within its range, and up to `tilesPerPurchase` tiles a month.
+  // First values, to tune by playing.
+  landPurchase: { use: 'forest', resource: 'wood', buysBelowSources: 2, tilesPerPurchase: 4 },
   resourceRoles: [{
     role: 'producer',
     categories: ['wood'],
@@ -124,6 +163,7 @@ const lumberjack = ({ displayName, clients, requiredSkill = 'artisanat' }) => ({
     amount: 10,
     source: { resource: 'wood', range: 6, consume: 1 },
     clients,
+    ...(clientsOnly ? { clientsOnly: true } : {}),
     periodLock: { field: 'lastProductionMonth', unit: 'month' },
   }],
 });
@@ -150,6 +190,11 @@ const fromWarehouse = (category, amount) => ({ category, amount, from: { role: '
  */
 const ARTISAN_ACTIVITY_ROLES = [
   activityRecipe('decoratedPot', { first: 'sourcing', second: 'decorating' }, [fromWarehouse('pot', 10)], ['House-Blue']),
+  activityRecipe('decoratedPlate', { first: 'sourcing', second: 'decorating' }, [fromWarehouse('plate', 10)], ['House-Blue']),
+  // Setting gold into a decorated piece: it takes the decorated pot (or plate) and some gold from a warehouse, and what it makes is worth far more than the
+  // piece and the gold it took (raw < decorated < decorated and set with gold).
+  activityRecipe('gildedPot', { first: 'sourcing', second: 'gilding' }, [fromWarehouse('decoratedPot', 10), fromWarehouse('gold', 2)], ['House-Blue']),
+  activityRecipe('gildedPlate', { first: 'sourcing', second: 'gilding' }, [fromWarehouse('decoratedPlate', 10), fromWarehouse('gold', 2)], ['House-Blue']),
   activityRecipe('carrotCake', { first: 'sourcing', second: 'baking' }, [
     fromWarehouse('wheat', 4),
     fromWarehouse('carrot', 4),
@@ -192,7 +237,13 @@ const importDealRecipe = (dealGood) => ({
 const MERCHANT_ACTIVITY_ROLES = [
   ...MERCHANT_IMPORT_DEAL_GOODS.map(importDealRecipe),
   dealRecipe('wood', 'dealWood'),
+  dealRecipe('rock', 'dealRock'),
+  dealRecipe('iron', 'dealIron'),
+  dealRecipe('gold', 'dealGold'),
   dealRecipe('decoratedPot', 'dealDecoratedPot'),
+  dealRecipe('decoratedPlate', 'dealDecoratedPlate'),
+  dealRecipe('gildedPot', 'dealGildedPot'),
+  dealRecipe('gildedPlate', 'dealGildedPlate'),
   dealRecipe('book', 'dealBook'),
   dealRecipe('carrotCake', 'dealCarrotCake'),
 ];
@@ -684,12 +735,15 @@ export const BUILDING_ECONOMY = {
   // natureEconomy.js), each month's production fells `consume` of them, and the
   // same range gates its placement. Retune or reuse it for any natural resource.
   //
-  // Two entries of the same producer that differ only in name and in whom its wood goes to first (`clients`,
-  // which the player can reorder or stop in the Clients tab): the lumberjack for households, the industrial
-  // one for workshops. Same mesh and footprint (see buildingAssets.js / buildingFootprint.js).
+  // Two entries of the same producer that differ in name and in whom its wood goes to (`clients`, which the player
+  // can reorder or stop in the Clients tab): the lumberjack is the households' fuel, the industrial one is for
+  // workshops. Same mesh and footprint (see buildingAssets.js / buildingFootprint.js).
+  // The lumberjack's wood goes to the warehouse each month, and only the markets draw it from there (their heat
+  // distributor, HEAT_GOODS) to sell it on to the houses: never to a workshop or to a house's own business.
   'Lumberjack': lumberjack({
     displayName: 'Bûcheron',
-    clients: ['Market-Stall-Red', 'Factory-Furniture', 'House-Blue'],
+    clients: ['Market-Stall-Red'],
+    clientsOnly: true,
   }),
   'Lumberjack-Industry': lumberjack({
     displayName: 'Bûcheron industriel',
@@ -697,6 +751,30 @@ export const BUILDING_ECONOMY = {
     requiredSkill: 'artisanat-specialise',
     clients: ['Factory-Furniture', 'Market-Stall-Red', 'House-Blue'],
   }),
+
+  // The mine: draws stone, iron and gold out of the rocks around it, each a producer entry of its own (a producer may have several outputs). What a rock holds is
+  // declared with its piece (naturePropCatalog.js); the mine takes `amount` a month of each from the stocks of the rocks in range, and a rock left with nothing
+  // goes (see ProduceResource `source.draw`). Sold to a warehouse; the merchants export all three, the artisans set the gold into their pots and plates.
+  'Mine': {
+    displayName: 'Mine',
+    placementNotice: true,
+    construction: { price: 90, category: 'industry' },
+    employment: { sector: 3, workerNeed: 3, requiredSkill: 'artisanat-specialise' },
+    resourceRoles: [
+      { resource: 'rock', amount: 8, clients: ['House-Blue'] },
+      { resource: 'iron', amount: 4, clients: ['House-Blue'] },
+      { resource: 'gold', amount: 2, clients: ['House-Red', 'House-Blue'] },
+    ].map(({ resource, amount, clients }) => ({
+      role: 'producer',
+      categories: [resource],
+      schedule: { unit: 'always' },
+      amount,
+      source: { resource, range: 6, draw: true },
+      clients,
+      // No `field`: the lock is kept per good (a dedicated field would hold only one of the three)
+      periodLock: { unit: 'month' },
+    })),
+  },
 
   // Network provider: what the savants' business runs on (see SAVANT_ACTIVITY_ROLES). Produces from nothing but
   // labour, exactly like the pottery workshops — the player reads its output as "network access"; the catalog
@@ -766,7 +844,7 @@ export const BUILDING_ECONOMY = {
         // (agreements, not goods yet), and the goods that really arrived.
         storageViews: [
           { id: 'export', label: "Accords d'export", categories: [...MERCHANT_ACTIVITY_GOODS] },
-          { id: 'importDeals', label: "Accords d'import", categories: [...MERCHANT_IMPORT_DEAL_GOODS] },
+          { id: 'importDeals', label: "Accords d'import", note: 'Places réservées par des accords : biens physiques à venir', categories: [...MERCHANT_IMPORT_DEAL_GOODS] },
           { id: 'import', label: 'Biens importés', categories: [...IMPORTED_GOODS] },
         ],
         totalKey: GOODS_TOTAL_KEY,

@@ -1,7 +1,7 @@
 import { reconcileLots, addToLot, takeFromLots, lotOrigin, lotKeyMovedThrough } from '../../domain/policies/HubLotsPolicy.js';
 import { availableToClient, allocateToClient } from '../../domain/policies/HubClientAllocationPolicy.js';
 import { recordClientDemand, othersWanted } from '../../domain/policies/HubClientDemandPolicy.js';
-import { listClientTypes, resolveInstanceClientPriorities } from '../../../../shared/building-catalog/clientQueries.js';
+import { eligibleClientTypes, hasOnlyListedClients, resolveInstanceClientPriorities } from '../../../../shared/building-catalog/clientQueries.js';
 
 /**
  * How a hub serves its clients: what each client INSTANCE may take of a good given who delivered it (that
@@ -61,7 +61,6 @@ export class HubServing {
 
     const rows = await this.#listAllBuildingRowsCached();
     const byId = new Map(rows.map((row) => [row.id, row]));
-    const clientTypes = listClientTypes([category]);
     const externalClients = this.listExternalClients(category);
     const profiles = new Map();
     for (const producerId of producerIds) {
@@ -70,17 +69,15 @@ export class HubServing {
         profiles.set(producerId, { order: [], disabled: [] });
         continue;
       }
+      const saved = producer.clientPriorityByGood?.[category] ?? null;
+      const clientTypes = eligibleClientTypes(producer.type, category, saved);
       const candidates = [
         ...rows.filter((row) => row.id !== producerId && clientTypes.includes(row.type)).map((row) => ({ id: row.id, type: row.type })),
-        ...externalClients,
+        ...(hasOnlyListedClients(producer.type, category, saved) ? [] : externalClients),
       ];
       profiles.set(
         producerId,
-        resolveInstanceClientPriorities({
-          producerType: producer.type,
-          candidates,
-          saved: producer.clientPriorityByGood?.[category] ?? null,
-        })
+        resolveInstanceClientPriorities({ producerType: producer.type, candidates, saved })
       );
     }
 

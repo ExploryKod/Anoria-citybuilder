@@ -87,11 +87,12 @@ export function renderHouseResourcesView(container, model) {
  * @typedef {object} HouseActivityRecipeViewModel
  * @property {string} category
  * @property {string} label
- * @property {object} material One card, even for a multi-input recipe — see houseInfoFormat.js's materialCardOf.
+ * @property {object | null} material One card, even for a multi-input recipe — see houseInfoFormat.js's materialCardOf; null when the recipe takes no material.
  * @property {object} product
  * @property {object} collected When this good was last taken by a hub, and how much.
  * @property {ReadonlyArray<object>} steps
  * @property {ReadonlyArray<string>} gapMessages Structural gaps — why an input cannot even be reached or sourced.
+ * @property {ReadonlyArray<{ icon: string, label: string }>} upstream The materials this house made itself in another recipe (the chain this one continues).
  */
 
 /**
@@ -120,86 +121,103 @@ let enterprisesView = 'productions';
  */
 export function renderHouseEnterprisesView(container, model) {
   container.innerHTML = '';
+  const { enterprises, defaultId } = model.activity;
+  let enterpriseId = defaultId;
   const views = [
-    { id: 'productions', label: 'Productions', render: (target) => renderHouseActivityView(target, model.activity) },
+    { id: 'productions', label: 'Productions', render: (target) => renderHouseActivityView(target, model.activity, enterpriseId) },
     ...(model.clients ? [{ id: 'clients', label: 'Clients', render: (target) => renderClientPriorityTab(target, model.clients) }] : []),
   ];
-  if (views.length === 1) {
+  // Nothing to choose between, and no business type to name: just the view.
+  if (views.length === 1 && enterprises.length === 0) {
     views[0].render(container);
     return;
   }
 
-  const pills = document.createElement('div');
-  pills.className = 'building-info-view-pills';
-  pills.setAttribute('role', 'tablist');
+  // One bar: the views on the left (they slide sideways when the width is short), the type of the business as a badge pinned on the right,
+  // so the badge costs no row of its own.
+  const bar = document.createElement('div');
+  bar.className = 'building-info-view-bar';
   const panel = document.createElement('div');
   panel.setAttribute('role', 'tabpanel');
-  container.append(pills, panel);
+  container.append(bar, panel);
 
-  const buttons = new Map();
-  const show = (view) => {
-    enterprisesView = view.id;
-    for (const [id, button] of buttons) {
-      button.classList.toggle('is-active', id === view.id);
-      button.setAttribute('aria-selected', String(id === view.id));
+  let current = views.find((view) => view.id === enterprisesView) ?? views[0];
+  const viewButtons = new Map();
+  const badgeButtons = new Map();
+  const paint = () => {
+    for (const [id, button] of viewButtons) {
+      button.classList.toggle('is-active', id === current.id);
+      button.setAttribute('aria-selected', String(id === current.id));
+    }
+    for (const [id, button] of badgeButtons) {
+      button.classList.toggle('is-active', id === enterpriseId);
+      button.setAttribute('aria-selected', String(id === enterpriseId));
     }
     panel.replaceChildren();
-    view.render(panel);
+    current.render(panel);
   };
-  for (const view of views) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'building-info-view-pill';
-    button.setAttribute('role', 'tab');
-    button.textContent = view.label;
-    button.addEventListener('click', () => show(view));
-    buttons.set(view.id, button);
-    pills.append(button);
+
+  if (views.length > 1) {
+    const pills = document.createElement('div');
+    pills.className = 'building-info-view-pills';
+    pills.setAttribute('role', 'tablist');
+    for (const view of views) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'building-info-view-pill';
+      button.setAttribute('role', 'tab');
+      button.textContent = view.label;
+      button.addEventListener('click', () => {
+        current = view;
+        enterprisesView = view.id;
+        paint();
+      });
+      viewButtons.set(view.id, button);
+      pills.append(button);
+    }
+    bar.append(pills);
   }
-  show(views.find((view) => view.id === enterprisesView) ?? views[0]);
+
+  if (enterprises.length > 0) {
+    // The type of each business (cooperative, property company…): a badge, not a button of the same family as the views.
+    const badges = document.createElement('div');
+    badges.className = 'enterprise-badges';
+    badges.setAttribute('role', 'tablist');
+    for (const enterprise of enterprises) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'enterprise-badge';
+      button.setAttribute('role', 'tab');
+      button.textContent = enterprise.label;
+      button.addEventListener('click', () => {
+        enterpriseId = enterprise.id;
+        paint();
+      });
+      badgeButtons.set(enterprise.id, button);
+      badges.append(button);
+    }
+    bar.append(badges);
+  }
+  paint();
 }
 
 /**
- * The Productions view: one pill per business the house runs (its legal form: a cooperative, a property company), the default one
- * open. Each pill shows what its activity does: the recipes the house makes, or the rents it collects.
+ * The Productions view of one business of the house (its legal form: a cooperative, a property company): what its activity does,
+ * the recipes the house makes, or the rents it collects. Which business is shown is picked with the badge of the tab's bar.
  * @param {HTMLElement} container
  * @param {HouseActivityViewModel} model
+ * @param {string | null} enterpriseId The business to show (null for a house that declares none).
  */
-export function renderHouseActivityView(container, model) {
+export function renderHouseActivityView(container, model, enterpriseId) {
   container.innerHTML = '';
   if (model.enterprises.length === 0) {
     renderRecipes(container, model.recipes);
     return;
   }
-
-  const pills = document.createElement('div');
-  pills.className = 'enterprise-pills';
-  pills.setAttribute('role', 'tablist');
-  const panel = document.createElement('div');
-  panel.className = 'enterprise-panel';
-  container.append(pills, panel);
-
-  const buttons = new Map();
-  const show = (enterprise) => {
-    for (const [id, button] of buttons) {
-      button.classList.toggle('is-active', id === enterprise.id);
-      button.setAttribute('aria-selected', String(id === enterprise.id));
-    }
-    panel.replaceChildren();
-    if (enterprise.activity === 'rental') renderRental(panel, model.rental);
-    else renderRecipes(panel, model.recipes);
-  };
-  for (const enterprise of model.enterprises) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'enterprise-pill';
-    button.setAttribute('role', 'tab');
-    button.textContent = enterprise.label;
-    button.addEventListener('click', () => show(enterprise));
-    buttons.set(enterprise.id, button);
-    pills.append(button);
-  }
-  show(model.enterprises.find((enterprise) => enterprise.id === model.defaultId));
+  const enterprise = model.enterprises.find((candidate) => candidate.id === enterpriseId);
+  if (!enterprise) throw new Error(`[house] no enterprise "${enterpriseId}" among ${model.enterprises.map((candidate) => candidate.id).join(', ')}`);
+  if (enterprise.activity === 'rental') renderRental(container, model.rental);
+  else renderRecipes(container, model.recipes);
 }
 
 /**
@@ -265,28 +283,87 @@ function renderRecipes(container, recipes) {
     return;
   }
 
-  // What blocks a recipe from reaching its inputs or its clients, said once up front in a table (good, then what is missing).
-  const gaps = recipes.flatMap((recipe) => (recipe.gapMessages ?? []).map((message) => ({ label: recipe.label, message })));
-  if (gaps.length > 0) {
-    const table = document.createElement('table');
-    table.className = 'building-info-gaps';
-    const caption = document.createElement('caption');
-    caption.textContent = '⚠️ À régler';
-    const body = document.createElement('tbody');
-    for (const gap of gaps) {
-      const row = document.createElement('tr');
-      const good = document.createElement('th');
-      good.scope = 'row';
-      good.textContent = gap.label;
-      const message = document.createElement('td');
-      message.textContent = gap.message;
-      row.append(good, message);
-      body.append(row);
+  // What blocks a recipe from reaching its inputs or its clients. The same problem met by several recipes is said once, with
+  // how many (×2, ×3…) and which recipes, not repeated.
+  const gaps = new Map();
+  for (const recipe of recipes) {
+    for (const message of recipe.gapMessages ?? []) {
+      const gap = gaps.get(message) ?? { message, recipeLabels: [] };
+      gap.recipeLabels.push(recipe.label);
+      gaps.set(message, gap);
     }
-    table.append(caption, body);
-    container.appendChild(table);
+  }
+  if (gaps.size === 0) {
+    renderProductionChains(container, recipes);
+    return;
   }
 
+  // Two pills: the problems to settle (open first, they are what the player must act on) or the production chains.
+  const pills = document.createElement('div');
+  pills.className = 'enterprise-pills';
+  pills.setAttribute('role', 'tablist');
+  const panel = document.createElement('div');
+  container.append(pills, panel);
+  const views = [
+    { id: 'gaps', label: `⚠️ À régler (${gaps.size})`, render: () => renderGaps(panel, [...gaps.values()]) },
+    { id: 'chains', label: 'Chaînes de production', render: () => renderProductionChains(panel, recipes) },
+  ];
+  const buttons = new Map();
+  const show = (view) => {
+    for (const [id, button] of buttons) {
+      button.classList.toggle('is-active', id === view.id);
+      button.setAttribute('aria-selected', String(id === view.id));
+    }
+    panel.replaceChildren();
+    view.render();
+  };
+  for (const view of views) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'enterprise-pill';
+    button.setAttribute('role', 'tab');
+    button.textContent = view.label;
+    button.addEventListener('click', () => show(view));
+    buttons.set(view.id, button);
+    pills.append(button);
+  }
+  show(views[0]);
+}
+
+/**
+ * The problems to settle, one line each: the sentence once, ×N when several recipes meet it, and the recipes it holds back.
+ * @param {HTMLElement} container
+ * @param {ReadonlyArray<{ message: string, recipeLabels: string[] }>} gaps
+ */
+function renderGaps(container, gaps) {
+  const list = document.createElement('ul');
+  list.className = 'building-info-gaps';
+  for (const gap of gaps) {
+    const item = document.createElement('li');
+    const message = document.createElement('span');
+    message.className = 'building-info-gaps__message';
+    message.textContent = gap.message;
+    item.appendChild(message);
+    if (gap.recipeLabels.length > 1) {
+      const count = document.createElement('span');
+      count.className = 'building-info-gaps__count';
+      count.textContent = `×${gap.recipeLabels.length}`;
+      item.appendChild(count);
+    }
+    const recipes = document.createElement('span');
+    recipes.className = 'building-info-gaps__recipes';
+    recipes.textContent = gap.recipeLabels.join(', ');
+    item.appendChild(recipes);
+    list.appendChild(item);
+  }
+  container.appendChild(list);
+}
+
+/**
+ * @param {HTMLElement} container
+ * @param {ReadonlyArray<HouseActivityRecipeViewModel>} recipes
+ */
+function renderProductionChains(container, recipes) {
   for (const recipe of recipes) {
     const block = document.createElement('div');
     block.className = 'building-info-activity-recipe';
@@ -296,8 +373,17 @@ function renderRecipes(container, recipes) {
     heading.textContent = recipe.label;
     block.appendChild(heading);
 
+    // This recipe continues another one of the house's: its material is a good the house made itself, not one bought from nothing.
+    if (recipe.upstream.length > 0) {
+      const origin = document.createElement('p');
+      origin.className = 'building-info-recipe-origin';
+      const goods = recipe.upstream.map((good) => `${good.icon} ${good.label}`).join(', ');
+      origin.textContent = `↳ Suite de la production précédente de cette maison : ${goods}`;
+      block.appendChild(origin);
+    }
+
     appendMetricCardGroups(block, [
-      [recipe.material],
+      recipe.material ? [recipe.material] : [],
       recipe.steps,
       [recipe.product],
       [recipe.collected],

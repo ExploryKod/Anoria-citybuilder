@@ -59,6 +59,9 @@ function normalizeLevel(level) {
  *   when a tier declares an `activityAccess` requirement.
  * @param {number} [params.periodKey] Current month index, compared against
  *   `servedFlags`/`lastConsumption`/`outcomes` entries — only read for the same reason.
+ * @param {boolean} [params.levelsUnlocked] Cheat: the house is at the highest tier of its category whatever its requirements, and never
+ *   goes down. Only ever true when the player allowed cheat codes AND the game holds the flag (see EvolveHouseBuilding).
+ * @param {number | null} [params.populationOverride] Cheat MaxPop<n>: every house's ceiling is this number, whatever its level.
  * @returns {{
  *   targetLevel: number,
  *   targetPop: number,
@@ -68,7 +71,7 @@ function normalizeLevel(level) {
  *   reason?: string,
  * }}
  */
-export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, servedFlags, lastConsumption, outcomes, activityAccess, periodKey }) {
+export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, servedFlags, lastConsumption, outcomes, activityAccess, periodKey, levelsUnlocked = false, populationOverride = null }) {
   const previousLevel = normalizeLevel(level);
   const previousPop = clampPop(pop);
   const tiers = residentialGroup ? SOCIAL_CATEGORY[residentialGroup]?.tiers : null;
@@ -79,7 +82,14 @@ export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, ser
   /** Why a demotion happened: the requirements of the tier that no longer hold. */
   let unmetRequirements;
 
-  if (tiers) {
+  if (tiers && levelsUnlocked === true) {
+    // Cheat: straight to the highest tier of the category, no requirement looked at, and nothing below it is ever the target.
+    const highestTier = Math.max(...Object.keys(tiers).map(Number));
+    if (previousLevel < highestTier) {
+      targetLevel = highestTier;
+      reason = `level${previousLevel}_to_level${targetLevel}_cheat_levels_unlocked`;
+    }
+  } else if (tiers) {
     const context = { pop: previousPop, roadCount: roadCount ?? 0, servedFlags, lastConsumption, outcomes, activityAccess, periodKey };
     const nextTier = tiers[previousLevel + 1];
 
@@ -90,7 +100,8 @@ export function resolveHouseLevel({ level, pop, roadCount, residentialGroup, ser
       const currentTier = tiers[previousLevel];
       if (previousLevel > HOUSE_LEVEL_AUTARKY && currentTier && !meetsTierRequirements(currentTier.requirements, context)) {
         targetLevel = previousLevel - 1;
-        targetPop = Math.min(previousPop, maxPopulationForLevel(targetLevel, residentialGroup));
+        // Cheat MaxPop<n>: the house keeps its n inhabitants, a lower level does not send any away.
+        targetPop = Math.min(previousPop, populationOverride ?? maxPopulationForLevel(targetLevel, residentialGroup));
         reason = `level${previousLevel}_to_level${targetLevel}_requirements_lost`;
         unmetRequirements = describeTierRequirements(currentTier.requirements, context)
           .filter((item) => !item.met)

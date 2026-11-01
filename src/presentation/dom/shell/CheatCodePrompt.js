@@ -3,6 +3,8 @@
  */
 
 import { applyCheatCode } from '../../../composition/applyCheatCode.js';
+import { isCheatCodesAllowed } from '../../../config/cheatCodes.js';
+import { initCheatBadge, refreshCheatBadge } from './CheatBadge.js';
 
 /**
  * @param {HTMLElement} root
@@ -16,7 +18,9 @@ function setPromptOpen(root, open) {
 }
 
 export function initCheatCodePrompt() {
-  const root = document.getElementById('cheat-code-prompt');
+  // The badge that says a cheat is in force, on every page that has the prompt (it is independent of the prompt's own markup).
+  initCheatBadge();
+  const root =document.getElementById('cheat-code-prompt');
   const form = document.getElementById('cheat-code-form');
   const input = document.getElementById('cheat-code-input');
   const feedback = document.getElementById('cheat-code-feedback');
@@ -52,6 +56,8 @@ export function initCheatCodePrompt() {
 
   document.addEventListener('keydown', (e) => {
     if (!e.ctrlKey || !e.altKey || e.key.toLowerCase() !== 'k') return;
+    // The prompt does not exist for a player who has not allowed cheat codes (Paramètres): the shortcut is left alone, not even announced.
+    if (!isCheatCodesAllowed()) return;
     e.preventDefault();
     e.stopPropagation();
     togglePrompt();
@@ -63,6 +69,7 @@ export function initCheatCodePrompt() {
     void (async () => {
       const result = await applyCheatCode(raw);
       if (result.ok) {
+        void refreshCheatBadge();
         showFeedback(result.message, 'success');
         input.value = '';
         input.focus();
@@ -71,6 +78,8 @@ export function initCheatCodePrompt() {
       const messages = {
         empty: 'Saisissez un code.',
         unknown: 'Code inconnu.',
+        invalid_value: 'Valeur invalide (MaxPop<nombre>, de 1 à 1000).',
+        not_allowed:'Les codes de triche ne sont pas autorisés (Paramètres).',
       };
       showFeedback(messages[result.reason] ?? 'Échec.', 'error');
       input.select();

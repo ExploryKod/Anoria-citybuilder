@@ -34,6 +34,70 @@ export function listClientTypes(categories) {
   );
 }
 
+/** @param {string} producerType @param {string} category The producer entry that makes this good. */
+function producerEntryOf(producerType, category) {
+  return getResourceRoles(producerType).find(
+    (candidate) => candidate.role === 'producer' && candidate.categories.includes(category)
+  );
+}
+
+/**
+ * The building types a producer instance sells a good to EXCLUSIVELY (no other building, no trade city), or null when it
+ * sells to every buyer in the order of its priorities. Every value starts from the catalog (`clientsOnly` and the `clients`
+ * list) and is the player's to change, per instance (`saved`, from the Clients tab): `saved.clientsOnly` switches it on or
+ * off, `saved.onlyClientType` names the one buyer type he chose.
+ * @param {string} producerType
+ * @param {string} category
+ * @param {{ clientsOnly?: boolean, onlyClientType?: string } | null} saved The instance's saved setting for this good (null when none).
+ * @returns {string[] | null}
+ */
+export function onlyClientTypesOf(producerType, category, saved) {
+  const clientsOnly = typeof saved?.clientsOnly === 'boolean' ? saved.clientsOnly : producerEntryOf(producerType, category)?.clientsOnly === true;
+  if (!clientsOnly) return null;
+  if (saved?.onlyClientType) return [saved.onlyClientType];
+  const listed = listedClientTypes(producerType, category);
+  if (listed.length === 0) throw new Error(`[clients] "${producerType}" sells "${category}" to one client only, but none is chosen and the catalog lists none`);
+  return listed;
+}
+
+/**
+ * @param {string} producerType
+ * @param {string} category
+ * @param {{ clientsOnly?: boolean, onlyClientType?: string } | null} saved
+ * @returns {boolean} whether the good goes to the types of `onlyClientTypesOf` alone
+ */
+export function hasOnlyListedClients(producerType, category, saved) {
+  return onlyClientTypesOf(producerType, category, saved) !== null;
+}
+
+/**
+ * The client types the catalog lists for this good of a producer type (what a restriction keeps).
+ * @param {string} producerType
+ * @param {string} category
+ * @returns {string[]}
+ */
+export function listedClientTypes(producerType, category) {
+  return [...(producerEntryOf(producerType, category)?.clients ?? [])];
+}
+
+/**
+ * The client types that may draw a good from a hub when a given producer instance made it: every type that buys the good
+ * (`listClientTypes`), or only those of `onlyClientTypesOf` when the producer sells to one client exclusively. A type that
+ * does not buy the good (a catalog defect, or a stale choice) throws.
+ * @param {string} producerType
+ * @param {string} category
+ * @param {{ clientsOnly?: boolean, onlyClientType?: string } | null} saved The instance's saved setting for this good (null when none).
+ * @returns {string[]}
+ */
+export function eligibleClientTypes(producerType, category, saved) {
+  const buyers = listClientTypes([category]);
+  const only = onlyClientTypesOf(producerType, category, saved);
+  if (!only) return buyers;
+  const stranger = only.find((type) => !buyers.includes(type));
+  if (stranger) throw new Error(`[clients] "${producerType}" sells "${category}" to "${stranger}" only, but "${stranger}" does not buy it`);
+  return only;
+}
+
 /**
  * The goods a producer type sends to hubs (every category of its 'producer' entries).
  * @param {string} producerType

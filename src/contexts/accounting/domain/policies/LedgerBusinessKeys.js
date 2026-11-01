@@ -197,13 +197,15 @@ export function buildProducerLineBusinessKey(kind, buildingId, timeInfo, hamletI
  * @param {string | null} counterpartyId the other company, or null for the houses
  * @param {{ year: number, monthIndex: number }} timeInfo
  * @param {string} hamletId
+ * @param {string} [good] the good a goods trade line is about (a pair trades several goods; one line each): absent for the lines that are no trade of goods (wages)
  * @returns {string}
  */
-export function buildTradeLineBusinessKey(kind, holderId, counterpartyId, timeInfo, hamletId) {
+export function buildTradeLineBusinessKey(kind, holderId, counterpartyId, timeInfo, hamletId, good = null) {
   if (!kind || !holderId || !hamletId || typeof timeInfo?.year !== 'number') {
     throw new Error('[journal] a trade line needs its kind, its company, its month and its hamlet');
   }
-  return `${kind}:${hamletId}:${holderId}:${counterpartyId ?? 'houses'}:${timeInfo.year}:${timeInfo.monthIndex}`;
+  const trade = `${kind}:${hamletId}:${holderId}:${counterpartyId ?? 'houses'}:${timeInfo.year}:${timeInfo.monthIndex}`;
+  return good ? `${trade}:${good}` : trade;
 }
 
 /**

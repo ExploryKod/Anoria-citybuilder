@@ -13,6 +13,42 @@
     color: #607d8b;
 }
 
+/* Who may buy this good at all (open to every buyer, or kept to the catalog's listed clients): text wraps, button is a 40px touch target. */
+.clients-scope {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin: 0 0 16px;
+    font-size: 13px;
+}
+
+.clients-scope__check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 220px;
+    min-height: 40px;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+}
+
+.clients-scope__check input {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.clients-scope__select {
+    flex: 1 1 180px;
+    min-height: 40px;
+    padding: 0 10px;
+    border: 1px solid rgba(29, 34, 40, 0.15);
+    border-radius: 4px;
+    background: white;
+    font-size: 13px;
+}
+
 .clients-list {
     display: flex;
     flex-direction: column;

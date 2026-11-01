@@ -16,12 +16,19 @@ const DEFAULT_PROFILE = Object.freeze({
   stackHeight: 0,
 });
 
+/** The heights of the mini-forest kit's plant and trees (read off their GLBs), which the generated nature-kit profiles do not hold; keyed by the catalog's `glbName`. */
+const MINI_FOREST_PLACEMENT_PROFILES = Object.freeze({
+  'mini-forest_plant': Object.freeze({ bboxMinY: -0.017, bboxMaxY: 0.175 }),
+  'mini-forest_tree': Object.freeze({ bboxMinY: 0, bboxMaxY: 1.684 }),
+  'mini-forest_tree-high': Object.freeze({ bboxMinY: 0, bboxMaxY: 2.284 }),
+});
+
 /**
  * @param {string} glbName
  * @returns {KenneyPlacementProfile}
  */
 export function getKenneyPlacementProfileByGlbName(glbName) {
-  const raw = KENNEY_PLACEMENT_PROFILES[glbName];
+  const raw = KENNEY_PLACEMENT_PROFILES[glbName] ?? MINI_FOREST_PLACEMENT_PROFILES[glbName];
   if (!raw) {
     return DEFAULT_PROFILE;
   }

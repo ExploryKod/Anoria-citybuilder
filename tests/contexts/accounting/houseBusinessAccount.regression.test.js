@@ -59,7 +59,7 @@ function settle(pairs) {
 
 describe('a house that runs its own business is booked on its business account, not a bare key', () => {
   test('selling its output to a warehouse is producer_revenue on the house\'s entreprise account', async () => {
-    const journal = await settle([{ sellerId: HOUSE, buyerId: null, amountHT: 80 }]);
+    const journal = await settle([{ sellerId: HOUSE, buyerId: null, good: 'decoratedPot', amountHT: 80 }]);
 
     const sale = journal.find((line) => line.type === 'producer_revenue' && line.accountBuildingId === HOUSE);
     expect(sale).toBeDefined();
@@ -67,7 +67,7 @@ describe('a house that runs its own business is booked on its business account, 
   });
 
   test('buying its raw material from a warehouse is producer_purchase on the house\'s entreprise account', async () => {
-    const journal = await settle([{ sellerId: 'warehouse-1', buyerId: HOUSE, amountHT: 30 }]);
+    const journal = await settle([{ sellerId: 'warehouse-1', buyerId: HOUSE, good: 'pot', amountHT: 30 }]);
 
     const purchase = journal.find((line) => line.type === 'producer_purchase' && line.accountBuildingId === HOUSE);
     expect(purchase).toBeDefined();
@@ -75,7 +75,7 @@ describe('a house that runs its own business is booked on its business account, 
   });
 
   test('a sale between two companies still carries no accountKind', async () => {
-    const journal = await settle([{ sellerId: 'farm-1', buyerId: 'market-1', amountHT: 50 }]);
+    const journal = await settle([{ sellerId: 'farm-1', buyerId: 'market-1', good: 'wheat', amountHT: 50 }]);
 
     const sale = journal.find((line) => line.type === 'producer_revenue' && line.accountBuildingId === 'farm-1');
     expect(sale.accountKind).toBeNull();
@@ -90,8 +90,8 @@ describe('a house that runs its own business is booked on its business account, 
   // this proves it end to end, not just by reading the aggregation code.
   test('a house selling two different activities to two different counterparties: the entreprise account sums both', async () => {
     const journal = await settle([
-      { sellerId: HOUSE, buyerId: 'warehouse-1', amountHT: 80 }, // e.g. decoratedPot
-      { sellerId: HOUSE, buyerId: 'warehouse-2', amountHT: 50 }, // e.g. carrotCake
+      { sellerId: HOUSE, buyerId: 'warehouse-1', good: 'decoratedPot', amountHT: 80 },
+      { sellerId: HOUSE, buyerId: 'warehouse-2', good: 'carrotCake', amountHT: 50 },
     ]);
 
     const sales = journal.filter((line) => line.type === 'producer_revenue' && line.accountBuildingId === HOUSE);

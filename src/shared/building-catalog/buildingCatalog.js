@@ -86,7 +86,7 @@
  * @property {number} [linkCapacity] Max number of distributors a 'hub' can
  *   stay linked to at once (e.g. how many markets one windmill can serve).
  *   Only meaningful for 'hub'.
- * @property {Array<{ id: string, label: string, categories: string[] }>} [storageViews] On a 'hub' role: the flows of goods it
+ * @property {Array<{ id: string, label: string, note?: string, categories: string[] }>} [storageViews] On a 'hub' role: the flows of goods it
  *   holds, read apart in its info panel (one chart each — e.g. a trade warehouse's exports and imports). Omitted: one chart.
  * @property {number} [maxStock] Max total units this building type can hold
  *   (a silo's storage, a market stall's shelves). Declared on the role
@@ -149,7 +149,7 @@
  * @property {boolean} [unlimitedSupplierCredit] On a 'hub' entry: what the hub buys is not held back by its money and its suppliers' credit (see
  *   SupplierCreditPolicy.js). For a hub whose trade is not measured by its sales in the journal (the trade warehouse buys the merchants' deals and the imports
  *   to pass them on abroad). Omitted means the hub buys within its means.
- * @property {Array<{ id: string, when?: object, amount?: number, factor?: number, inputs?: object[], missed?: number, wait?: boolean }>} [cycle]
+ * @property {Array<{ id: string, label: string, icon?: string, when?: object, amount?: number, factor?: number, inputs?: object[], missed?: number, wait?: boolean }>} [cycle]
  *   On a 'producer' entry: a chain of steps instead of a single production. `when` is a schedule (see
  *   ResourceSchedulePolicy.js); the first step sets a base (`amount`), each next one multiplies the running
  *   value (`factor`); the product is credited to the stock when the last step is done. `missed` is the factor
@@ -173,7 +173,9 @@
  *   Omitted means the entry needs nothing natural (a farm, a workshop).
  * @property {string[]} [clients] On a 'producer' whose goods go to a hub: the building types it serves first, in
  *   order (the default the player can change in the Clients tab). Every other building type that buys these goods
- *   follows, in catalog order — a type is never left out by omission.
+ *   follows, in catalog order — a type is never left out by omission, unless `clientsOnly` is set.
+ * @property {boolean} [clientsOnly] On a 'producer' with `clients`: the listed types are the ONLY ones that may draw these
+ *   goods (no other buyer, no trade city), instead of just the first in line. Every listed type must buy the good.
  * @property {'hub' | 'house'} [deliversTo] On a 'producer': where its output structurally ends up.
  *   Omitted (default) means 'hub' — collected by a 'hub'-role building elsewhere, the chain every
  *   producer used until 2026-10-10. 'house' means it never reaches a hub at all: the SAME building's own

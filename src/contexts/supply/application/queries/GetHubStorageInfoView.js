@@ -63,6 +63,8 @@ export class GetHubStorageInfoView {
         return Object.freeze({
           id: declared.id,
           label: declared.label,
+          // A sentence under the flow's name when the catalog gives one (what the places of this flow stand for).
+          note: declared.note ?? null,
           lines: Object.freeze(viewLines),
           total: viewLines.reduce((sum, line) => sum + line.amount, 0),
           pieSegments: buildHubStoragePieSegments({

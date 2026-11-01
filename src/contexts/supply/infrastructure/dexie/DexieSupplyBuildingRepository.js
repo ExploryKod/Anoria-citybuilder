@@ -7,7 +7,7 @@ import {
   canonicalizeHouseRecord,
   instanceIdFromHouseRow,
 } from '../../../../shared/building-identity/index.js';
-import { getNaturalResourceKind } from '../../../../shared/building-catalog/resourceRoleQueries.js';
+import { depositKindsOf } from '../../../../shared/building-catalog/depositQueries.js';
 import {
   hasResourceRole,
   getAllCategoriesForRole,
@@ -339,8 +339,8 @@ export class DexieSupplyBuildingRepository {
   async listNaturalResources() {
     const rows = await this.#activeRows();
     return rows
-      .filter((row) => getNaturalResourceKind(row.type) && row.x != null && row.y != null)
-      .map((row) => ({ id: instanceIdFromHouseRow(row), type: row.type, x: row.x, y: row.y }));
+      .filter((row) => depositKindsOf(row.type).length > 0 && row.x != null && row.y != null)
+      .map((row) => ({ id: instanceIdFromHouseRow(row), type: row.type, x: row.x, y: row.y, stocks: row.stocks ?? {} }));
   }
 
   async listAllBuildingRows() {

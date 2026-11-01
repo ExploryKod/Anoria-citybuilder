@@ -69,6 +69,7 @@ import loaderManager from '../shell/LoaderManager.js';
 import { initTutorialPanel } from '../onboarding/TutorialPanel.js';
 import { initTutorialHistory } from '../onboarding/TutorialHistory.js';
 import { activateBuildToolButton } from '../tools/ToolPanel.js';
+import { readGameCitySize, writeGameCitySize } from '../../../core/persistence/game-city/gameCitySize.js';
 
 /** Why a prefab start is refused outside localhost. */
 const PREFAB_DEV_ONLY = '[prefab] the starter prefab is for development only: the production build does not ship it';
@@ -229,6 +230,13 @@ export async function bootstrapGameSession(assetManager) {
     selectedCitySize = readEditorMapDocument(editorMap).citySize;
   }
 
+  // The size of the map belongs to the game: frozen when the game is created (the menu's choice), read back when it is reloaded — a reload has
+  // no menu choice, and the default size was put over a city of another size.
+  if (startsFromScratch) {
+    await writeGameCitySize(selectedCitySize);
+  } else {
+    selectedCitySize = await readGameCitySize();
+  }
   persistCitySize(selectedCitySize);
   const multiplayerEnabled = selectionResult.multiplayer || false;
   const playerPseudo = selectionResult.pseudo || null;

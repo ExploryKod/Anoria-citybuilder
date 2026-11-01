@@ -19,7 +19,7 @@ import {
   KENNEY_NATURE_PROP_COUNT,
   KENNEY_NATURE_TERRAIN_COUNT,
 } from '../../../src/shared/editor-catalog/kenneyNatureKitManifest.generated.js';
-import { NATURE_PROP_CATALOG } from '../../../src/shared/editor-catalog/naturePropCatalog.js';
+import { NATURE_PROP_CATALOG, PLANTATION_PROP_IDS } from '../../../src/shared/editor-catalog/naturePropCatalog.js';
 import { TERRAIN_CATALOG } from '../../../src/shared/terrain-catalog/terrainCatalog.js';
 
 describe('classifyKenneyNatureAsset', () => {
@@ -87,7 +87,8 @@ describe('kenneyNatureKitManifest', () => {
     expect(EDITOR_TERRAIN_TOOL_IDS).toHaveLength(KENNEY_NATURE_TERRAIN_COUNT);
     expect(EDITOR_NATURE_TOOL_IDS).toHaveLength(KENNEY_NATURE_PROP_COUNT);
     expect(Object.keys(EDITOR_TOOL_META)).toHaveLength(329);
-    expect(Object.keys(NATURE_PROP_CATALOG)).toHaveLength(KENNEY_NATURE_PROP_COUNT);
+    // The nature kit's props, and the three of the mini-forest kit the game plants (not offered to the editor)
+    expect(Object.keys(NATURE_PROP_CATALOG)).toHaveLength(KENNEY_NATURE_PROP_COUNT + Object.keys(PLANTATION_PROP_IDS).length);
     expect(Object.keys(TERRAIN_CATALOG).length).toBeGreaterThanOrEqual(KENNEY_NATURE_TERRAIN_COUNT);
   });
 

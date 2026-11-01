@@ -1,4 +1,5 @@
 import { computePopulationAfterGrowth } from '../../../domain/policies/PopulationGrowthPolicy.js';
+import { isResidentialHouseType } from '../../../domain/policies/HouseCapacityPolicy.js';
 import {
   computeMonthlyFamineDeathsAtHouse,
   didHouseGoHungryLastConsumption,
@@ -13,6 +14,17 @@ export class GrowHousePopulation {
    */
   constructor(housingBuildingRepository) {
     this.repository = housingBuildingRepository;
+    /**
+     * The inhabitants every house is held at while the cheat MaxPop<n> is in force, or null (the real state of a game without it) —
+     * the composition's to say, it knows the player's permission and the game's flags.
+     * @type {() => Promise<number | null>}
+     */
+    this.populationOverrideCheck = async () => null;
+  }
+
+  /** @param {() => Promise<number | null>} check the number every house is held at, or null */
+  setPopulationOverrideCheck(check) {
+    this.populationOverrideCheck = check;
   }
 
   /**
@@ -33,6 +45,16 @@ export class GrowHousePopulation {
     const house = await this.repository.findById(houseId);
     if (!house) {
       return { changed: false, reason: 'house_not_found', deaths: 0 };
+    }
+
+    // Cheat MaxPop<n>: the house holds exactly n inhabitants, filled at once, whatever its level allows and whatever a crisis or hunger would do.
+    const populationOverride = await this.populationOverrideCheck();
+    if (populationOverride !== null && isResidentialHouseType(house.type)) {
+      if (house.pop === populationOverride) {
+        return { changed: false, houseId, pop: house.pop, reason: 'cheat_population', deaths: 0 };
+      }
+      await this.repository.savePopulation(houseId, { pop: populationOverride, lastPopulationGrowthMonth: house.lastPopulationGrowthMonth });
+      return { changed: true, houseId, pop: populationOverride, previousPop: house.pop, reason: 'cheat_population', deaths: 0 };
     }
 
     // A house in a crisis of departure (a rent it cannot pay, ...) does not grow back, nor does one serving the penalty that follows it (see RunMonthlyDepartures.js).

@@ -20,6 +20,19 @@ import {
 
 const sum = (values) => values.reduce((total, value) => total + value, 0);
 
+/**
+ * What one buyer (a hub) last said of why it did not buy a good (see ProcessHubCollection): its own state when it is not working or is full, then the reasons it kept units
+ * of that good out, each with the units refused.
+ * @returns {Array<{ hubId: string, hubType: string, reason: string, units: number | null }>}
+ */
+function refusalsOfHub(hub, category) {
+  const said = hub.collectionRefusals;
+  if (!said) return [];
+  const own = said.hubReason ? [{ hubId: hub.id, hubType: hub.type, reason: said.hubReason, units: null }] : [];
+  const ofGood = Object.entries(said.goods?.[category]?.limits ?? {}).map(([reason, units]) => ({ hubId: hub.id, hubType: hub.type, reason, units }));
+  return [...own, ...ofGood];
+}
+
 export class DescribeSupplyBalance {
   /**
    * @param {import('../ports/SupplyBuildingRepository.js').SupplyBuildingRepository} supplyBuildingRepository
@@ -70,6 +83,8 @@ export class DescribeSupplyBalance {
           spoiled: flows.spoiled[category] ?? 0,
           stocks: { producers: stockOf(makers, category), hubs: stockOf(hubs, category), distributors: stockOf(distributors, category) },
           neverCollected: neverCollected({ working: makersWorking.length, collected, months }),
+          // What the buyers said of why they did not buy it (their own state, or the sellers'): { hubId, hubType, reason, units | null }
+          refusals: hubs.flatMap((hub) => refusalsOfHub(hub, category)),
           calendar: declaredCalendarOf(category),
         };
       });
@@ -91,6 +106,10 @@ export class DescribeSupplyBalance {
           hubs: sum(goods.map((good) => good.stocks.hubs)),
           distributors: sum(goods.map((good) => good.stocks.distributors)),
         },
+        // What the markets said of why they did not buy from their hub (the leg after the hub): { marketId, marketType, reason }
+        transferRefusals: distributors
+          .filter((market) => market.transferRefusal)
+          .map((market) => ({ marketId: market.id, marketType: market.type, reason: market.transferRefusal.reason })),
         verdict: chainVerdictOf({ judged: balance.judged, buildingsMissing: balance.buildingsMissing, goods }),
       });
     }

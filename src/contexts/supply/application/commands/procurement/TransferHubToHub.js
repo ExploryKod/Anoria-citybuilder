@@ -60,7 +60,30 @@ export class TransferHubToHub {
    *   totalUnits: number,
    * }>}
    */
-  async execute({ targetId, period, demand, category }) {
+  async execute(params) {
+    const outcome = await this.#run(params);
+    await this.#sayWhy(params.targetId, outcome, params);
+    return outcome;
+  }
+
+  /**
+   * What the buyer (the market) says of why it did not buy from its hub, kept on it (`transferRefusal`) for the supply balance. Only what is worth saying is kept: a market
+   * that is outside its buying period or has all it asks for has nothing to explain. A purchase that went through clears what was said.
+   */
+  async #sayWhy(targetId, outcome, { category, period }) {
+    const silent = outcome.reason === 'not_transfer_period' || outcome.reason === 'no_demand' || outcome.reason === 'target_not_found';
+    if (silent) return;
+    const target = await this.supplyBuildingRepository.findById(targetId);
+    const before = target?.transferRefusal ?? null;
+    if (outcome.transferred) {
+      if (before !== null) await this.supplyBuildingRepository.updateBuildingFields(targetId, { transferRefusal: null });
+      return;
+    }
+    if (before?.reason === outcome.reason && before.category === category) return;
+    await this.supplyBuildingRepository.updateBuildingFields(targetId, { transferRefusal: { reason: outcome.reason, category, turn: period?.turn ?? null } });
+  }
+
+  async #run({ targetId, period, demand, category }) {
     const target = await this.supplyBuildingRepository.findById(targetId);
     if (!target) {
       return { transferred: false, reason: 'target_not_found', transfers: [], totalUnits: 0 };
@@ -179,7 +202,9 @@ export class TransferHubToHub {
     }
 
     if (transfers.length === 0) {
-      return { transferred: false, reason: 'nothing_to_transfer', transfers: [], totalUnits: 0 };
+      // Nothing to sell it, no money to pay for it, or its place in the queue of the hub's clients left nothing for it
+      const reason = available.every((units) => !(units > 0)) ? 'source_empty' : !(budget > 0) ? 'no_budget' : 'nothing_to_transfer';
+      return { transferred: false, reason, transfers: [], totalUnits: 0 };
     }
 
     const totalUnits = transfers.reduce((sum, transfer) => sum + transfer.amount, 0);

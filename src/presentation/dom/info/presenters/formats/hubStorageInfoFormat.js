@@ -53,6 +53,7 @@ export function formatHubStorageStateModel(vm) {
   } else {
     status = `⏸️ En attente — collecte : ${collectsWhen}.`;
   }
+  // What stands in the way of its purchases is on the Problèmes tab
   return { sections: [{ title: 'État', rows: [{ label: 'Collecte', value: status }] }] };
 }
 

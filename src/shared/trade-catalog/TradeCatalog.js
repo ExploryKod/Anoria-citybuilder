@@ -118,6 +118,8 @@ export const TRADE_CATALOG = Object.freeze([
     cityId: 'olivea',
     wants: Object.freeze([
       { good: 'wood', merchantGood: 'dealWood', baseMultiplier: 1.9 },
+      { good: 'rock', merchantGood: 'dealRock', baseMultiplier: 1.7 },
+      { good: 'iron', merchantGood: 'dealIron', baseMultiplier: 1.7 },
       { good: 'pot',  merchantGood: null,        baseMultiplier: 1.3 },
       { good: 'oil',  merchantGood: null,        baseMultiplier: 1.4 },
     ]),
@@ -133,8 +135,11 @@ export const TRADE_CATALOG = Object.freeze([
   {
     cityId: 'silvania',
     wants: Object.freeze([
+      { good: 'gold',         merchantGood: 'dealGold',         baseMultiplier: 1.8 },
       { good: 'book',         merchantGood: 'dealBook',         baseMultiplier: 1.8 },
       { good: 'decoratedPot', merchantGood: 'dealDecoratedPot', baseMultiplier: 1.75 },
+      { good: 'decoratedPlate', merchantGood: 'dealDecoratedPlate', baseMultiplier: 1.75 },
+      { good: 'gildedPot', merchantGood: 'dealGildedPot', baseMultiplier: 2.2 },
     ]),
     offers: Object.freeze([{ good: 'exoticWood', merchantGood: 'dealExoticWood', baseMultiplier: 1.5, quantityPerOrder: 15 }]),
     relation: Object.freeze({ durationMonths: 6, renewalThreshold: 70, breakThreshold: -40 }),
@@ -178,6 +183,9 @@ export const TRADE_CATALOG = Object.freeze([
   {
     cityId: 'maris',
     wants: Object.freeze([
+      { good: 'gold',      merchantGood: 'dealGold', baseMultiplier: 1.8 },
+      { good: 'gildedPlate', merchantGood: 'dealGildedPlate', baseMultiplier: 2.2 },
+      { good: 'iron',      merchantGood: 'dealIron', baseMultiplier: 1.7 },
       { good: 'furniture', merchantGood: null, baseMultiplier: 1.6 },
       { good: 'amphora',   merchantGood: null, baseMultiplier: 1.3 },
       { good: 'carrotCake', merchantGood: 'dealCarrotCake', baseMultiplier: 1.7 },

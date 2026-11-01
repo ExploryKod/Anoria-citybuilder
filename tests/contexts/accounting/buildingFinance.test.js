@@ -25,6 +25,20 @@ describe('building finance — a company account is a compte de résultat read f
     expect(lineOf(buildingFinanceFigures(entries, 'farm', { year: 2026, salesNature: 'production' }).statement, 'productionSold')).toBe(1200);
   });
 
+  test('a building with several products reads its sales by product: one small row per good under the sales line', () => {
+    const sale = (resource, amount) => booked({ type: 'producer_revenue', amount, resource, year: 2026, month: 3, accountBuildingId: 'mine' });
+
+    const { statement } = buildingFinanceFigures(
+      [sale('rock', 5), sale('iron', 8), sale('gold', 24)],
+      'mine',
+      { year: 2026, month: 3, salesNature: 'production' },
+    );
+
+    const sales = statement.sections.flatMap((section) => section.lines).find((line) => line.id === 'productionSold');
+    expect(sales.amount).toBe(37);
+    expect(Object.fromEntries(sales.items.map((item) => [item.good, item.amount]))).toEqual({ rock: 5, iron: 8, gold: 24 });
+  });
+
   test('a merchant house\'s account counts what an import cost: price, freight and duty are in the commercial margin', () => {
     const line = (type, amount) => booked({ type, amount, year: 3, month: 11, accountBuildingId: 'merchants', accountKind: 'entreprise:cooperative' });
     const entries = [

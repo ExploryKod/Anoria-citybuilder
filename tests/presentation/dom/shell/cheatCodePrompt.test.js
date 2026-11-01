@@ -16,6 +16,7 @@ jest.unstable_mockModule('../../../../src/composition/applyCheatCode.js', () => 
 }));
 
 const { initCheatCodePrompt } = await import('../../../../src/presentation/dom/shell/CheatCodePrompt.js');
+const { setCheatCodesAllowed } = await import('../../../../src/config/cheatCodes.js');
 
 function mountPrompt() {
   document.body.innerHTML = `
@@ -33,7 +34,19 @@ describe('CheatCodePrompt', () => {
   beforeEach(() => {
     mountPrompt();
     jest.clearAllMocks();
+    setCheatCodesAllowed(true);
     initCheatCodePrompt();
+  });
+
+  test('the prompt does not open while the player has not allowed cheat codes', () => {
+    setCheatCodesAllowed(false);
+    const root = document.getElementById('cheat-code-prompt');
+
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, altKey: true, bubbles: true })
+    );
+
+    expect(root.hidden).toBe(true);
   });
 
   test('Ctrl+Alt+K opens the prompt and focuses input', async () => {

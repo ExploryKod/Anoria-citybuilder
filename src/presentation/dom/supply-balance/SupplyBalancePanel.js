@@ -6,6 +6,7 @@
  */
 
 import { buildingName, goodAmount, goodLabel, namesOfBuildings, scheduleLabel } from '../shell/CatalogVocabulary.js';
+import { getCollectionRefusalReason } from '../../../shared/resource-catalog/CollectionRefusalCatalog.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
 import { showActiveHamletLabel } from '../admin/supply-traceability/SupplyTraceabilityPanel.js';
 import { getResourceStockShape } from '../../../shared/building-catalog/resourceRoleQueries.js';
@@ -76,6 +77,19 @@ function goodAlertsHtml(balance) {
       alerts.push(`${goodLabel(good.category)} : aucun achat en ${balance.months} mois, ${goodAmount(good.category, Math.round(good.stocks.producers))} en attente chez les producteurs.`);
     }
     if (good.spoiled > 0) alerts.push(`${goodLabel(good.category)} : ${goodAmount(good.category, Math.round(good.spoiled))} perdus par avarie.`);
+    // Why the buyers did not take it, as each said it at its last purchase: whose fault it is (the buyer's state or the seller's), and how much it kept out
+    if (good.neverCollected || good.spoiled > 0) {
+      for (const refusal of good.refusals) {
+        const { side, sentence } = getCollectionRefusalReason(refusal.reason);
+        const amount = refusal.units === null ? '' : ` (${goodAmount(good.category, Math.round(refusal.units))} refusés)`;
+        alerts.push(`↳ ${goodLabel(good.category)} : ${side === 'hub' ? `${buildingName(refusal.hubType)} — ` : ''}${sentence}${amount}.`);
+      }
+    }
+  }
+  // The leg after the hub: why a market did not buy from the warehouse or granary that feeds it
+  for (const refusal of balance.transferRefusals) {
+    const { side, sentence } = getCollectionRefusalReason(refusal.reason);
+    alerts.push(`↳ ${side === 'buyer' ? `${buildingName(refusal.marketType)} — ` : ''}${sentence}.`);
   }
   if (alerts.length === 0) return '';
   return `<ul class="bal-alerts">${alerts.map((alert) => `<li>${escapeHtml(alert)}</li>`).join('')}</ul>`;
