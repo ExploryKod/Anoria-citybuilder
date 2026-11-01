@@ -11,7 +11,7 @@ const reason = (side, emoji, sentence) => Object.freeze({ side, emoji, sentence 
 export const COLLECTION_REFUSAL_REASONS = Object.freeze({
   hub_full: reason('hub', '📦', 'plus de place dans son stock'),
   storage_order: reason('hub', '🚫', 'sa limite de stockage pour ce produit est atteinte, ou il a ordre de ne pas en prendre'),
-  no_budget: reason('hub', '💸', 'pas assez de trésorerie pour payer'),
+  no_budget: reason('hub', '💰', 'pas assez de trésorerie pour payer'),
   hub_not_operational: reason('hub', '⛔', 'il ne fonctionne pas (pas de route ou pas assez de personnel)'),
   not_collection_period: reason('hub', '📅', "il n'achète pas encore : sa période d'achat n'est pas ouverte"),
   source_no_road: reason('seller', '🛣️', "le producteur n'a pas de route"),

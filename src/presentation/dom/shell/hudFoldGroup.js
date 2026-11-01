@@ -22,6 +22,20 @@ export function pageSideways(scroller, fraction) {
   else scroller.scrollBy({ left: scroller.clientWidth * fraction, behavior: 'smooth' });
 }
 
+/** @param {HTMLElement} scroller @returns {boolean} whether a vertical scroller is at its last page */
+export function isScrolledToBottom(scroller) {
+  return scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2;
+}
+
+/**
+ * The paging arrow's action for a scroller that pages downwards: a page forward, or back to the top from the last page.
+ * @param {HTMLElement} scroller
+ */
+export function pageDownwards(scroller) {
+  if (isScrolledToBottom(scroller)) scroller.scrollTo({ top: 0, behavior: 'smooth' });
+  else scroller.scrollBy({ top: scroller.clientHeight, behavior: 'smooth' });
+}
+
 /** @type {{ group: object, exclusiveWith: string | null, syncArrow: () => void }[]} the groups initialised so far */
 const registry = [];
 let exclusiveMediaBound = false;

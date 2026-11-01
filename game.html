@@ -188,14 +188,6 @@
                         <h2 id="info-building-title">Informations</h2>
                         <p id="info-building-meta" class="info-building__meta" hidden></p>
                     </div>
-                    <div class="info-building__tab-arrows" hidden>
-                        <button type="button" class="info-building__tab-arrow" data-dir="-1" title="Onglets précédents" aria-label="Voir les onglets précédents" aria-controls="info-building-tabs">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-                        </button>
-                        <button type="button" class="info-building__tab-arrow" data-dir="1" title="Onglets suivants" aria-label="Voir les onglets suivants" aria-controls="info-building-tabs">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-                        </button>
-                    </div>
                     <button type="button" class="panel-close-btn" title="Fermer" aria-label="Fermer le panneau d'information">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-x" aria-hidden="true">
                             <circle cx="12" cy="12" r="10"/>
@@ -204,6 +196,7 @@
                         </svg>
                     </button>
                 </header>
+                <div class="info-building__tabs-wrap">
                 <div id="info-building-tabs" class="info-building__tabs" role="tablist" aria-label="Sections du bâtiment">
                     <button type="button" role="tab" id="tab-foyer" data-tab="foyer" aria-controls="panel-foyer" aria-selected="true" tabindex="0">🏠 Bâtiment</button>
                     <button type="button" role="tab" id="tab-state" data-tab="state" aria-controls="panel-state" aria-selected="false" tabindex="-1" hidden>🧭 État</button>
@@ -222,6 +215,15 @@
                     <button type="button" role="tab" id="tab-residents" data-tab="residents" aria-controls="panel-residents" aria-selected="false" tabindex="-1" hidden>👥 Habitants</button>
                     <button type="button" role="tab" id="tab-prices" data-tab="prices" aria-controls="panel-prices" aria-selected="false" tabindex="-1" hidden>🏷️ Prix</button>
                     <button type="button" role="tab" id="tab-problems" data-tab="problems" aria-controls="panel-problems" aria-selected="false" tabindex="-1" hidden>⚠️ Problèmes</button>
+                </div>
+                <div class="info-building__tab-arrows" hidden>
+                    <button type="button" class="info-building__tab-arrow" data-dir="-1" title="Onglets précédents" aria-label="Voir les onglets précédents" aria-controls="info-building-tabs">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+                    <button type="button" class="info-building__tab-arrow" data-dir="1" title="Onglets suivants" aria-label="Voir les onglets suivants" aria-controls="info-building-tabs">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                </div>
                 </div>
                 <div class="info-building__body">
                     <div id="panel-foyer" role="tabpanel" class="info-building__tabpanel is-active" aria-labelledby="tab-foyer" tabindex="0"></div>
@@ -745,6 +747,12 @@
             <div id="hud-pop-rail-panels" class="hud-pop-rail__panels">
                 <div class="hud-pop-rail__chrome" role="toolbar" aria-label="Contrôles du panneau">
                     <!-- Bottom strip on a phone in landscape only (hudPopRailCollapse.js): pages the labour market's blocks (the city, then each category), back to the first after the last -->
+                    <!-- The same, for the details panel: its blocks (population, work, hunger, health), a few at a time. Its counter says which page is shown (hudPopRailCollapse.js fills it) -->
+                    <span id="hud-pop-details-page" class="hud-pop-rail__page-count" role="status" hidden></span>
+                    <button type="button" id="hud-pop-details-next" class="hud-pop-rail__collapse hud-pop-rail__page-next" title="Catégorie suivante" aria-label="Voir la catégorie suivante" aria-controls="hud-pop-panel-details" hidden>
+                        <svg class="hud-fold-toggle__icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                    <span id="hud-pop-labor-page" class="hud-pop-rail__page-count" role="status" hidden></span>
                     <button type="button" id="hud-pop-labor-next" class="hud-pop-rail__collapse hud-pop-rail__page-next" title="Catégorie suivante" aria-label="Voir la catégorie suivante" aria-controls="hud-pop-panel-emploi" hidden>
                         <svg class="hud-fold-toggle__icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
                     </button>
@@ -763,7 +771,10 @@
                     </button>
                 </div>
             <section id="hud-pop-panel-details" class="info-box infos-pop-detail hud-pop-rail__panel" role="tabpanel" aria-labelledby="hud-pop-tab-details">
+                <!-- The blocks sit in their own scroller (as the labour market's): in the bottom strip of a phone in landscape it pages them, the panel keeping its white and its corners under the buttons. Anywhere else it takes no box of its own (display: contents). -->
+                <div class="pop-detail-pages">
                 <div class="pop-detail-block">
+                    <span class="pop-detail-block__title" aria-hidden="true">Population</span>
                     <div class="pop-detail-metric pop-detail-total">
                         <span class="pop-detail-icon pop-detail-icon--users" title="Population" aria-hidden="true">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
@@ -797,32 +808,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="pop-detail-block pop-detail-famine" aria-label="Faim">
-                    <div class="pop-detail-metric pop-detail-hunger-risk">
-                        <span class="pop-detail-icon pop-detail-icon--hunger-risk" aria-hidden="true"></span>
-                        <span class="pop-detail-values" aria-label="Citoyens menacés par la faim">
-                            <span class="pop-detail-value display-hunger-risk pop-detail-value--scoped">0</span>                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-detail-disette">
-                        <span class="pop-detail-icon pop-detail-icon--disette" title="Disette" aria-hidden="true"></span>
-                        <span class="pop-detail-values" aria-label="Citoyens en disette">
-                            <span class="pop-detail-value display-disette-pop pop-detail-value--scoped">0</span>                        </span>
-                    </div>
-                    <div class="pop-detail-metric pop-detail-hunger">
-                        <span class="pop-detail-icon" title="Pénurie">
-                            <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
-                        </span>
-                        <span class="pop-detail-values" aria-label="Citoyens en pénurie">
-                            <span class="pop-detail-value display-hunger-pop pop-detail-value--scoped">0</span>                        </span>
-                    </div>
-                </div>
-                <div class="pop-detail-metric pop-detail-deaths">
-                    <span class="pop-detail-icon pop-detail-icon--deaths" title="Morts" aria-hidden="true">
-                        <img src="/icons/skull.svg" alt="" class="deaths-icon" width="18" height="18" decoding="async">
-                    </span>
-                    <span class="pop-detail-value display-deaths-pop">0</span>
-                </div>
                 <div class="pop-detail-block">
+                    <span class="pop-detail-block__title" aria-hidden="true">Travail</span>
                     <div class="pop-detail-metric pop-active-head">
                         <span class="pop-detail-emoji pop-active-emoji" title="Travailleurs" aria-hidden="true">👷</span>
                         <span class="pop-detail-values" aria-label="Population active totale">
@@ -845,6 +832,73 @@
                                 <span class="pop-detail-value pop-detail-value--scoped">0</span>                            </span>
                         </div>
                     </div>
+                </div>
+                <div class="pop-detail-block pop-detail-famine" aria-label="Faim">
+                    <span class="pop-detail-block__title" aria-hidden="true">Faim</span>
+                    <div class="pop-detail-metric pop-detail-hunger-risk">
+                        <span class="pop-detail-icon pop-detail-icon--hunger-risk" aria-hidden="true"></span>
+                        <span class="pop-detail-values" aria-label="Citoyens menacés par la faim">
+                            <span class="pop-detail-value display-hunger-risk pop-detail-value--scoped">0</span>                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-detail-disette">
+                        <span class="pop-detail-icon pop-detail-icon--disette" title="Disette" aria-hidden="true"></span>
+                        <span class="pop-detail-values" aria-label="Citoyens en disette">
+                            <span class="pop-detail-value display-disette-pop pop-detail-value--scoped">0</span>                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-detail-hunger">
+                        <span class="pop-detail-icon" title="Pénurie">
+                            <img src="/resources/textures/status/nofood.png" alt="" class="famished-icon">
+                        </span>
+                        <span class="pop-detail-values" aria-label="Citoyens en pénurie">
+                            <span class="pop-detail-value display-hunger-pop pop-detail-value--scoped">0</span>                        </span>
+                    </div>
+                    <!-- Each cause has the deaths it can cause: the famine's, counted since the start of the game -->
+                    <div class="pop-detail-metric pop-detail-deaths">
+                        <span class="pop-detail-icon pop-detail-icon--deaths" title="Morts de faim" aria-hidden="true">
+                            <img src="/icons/skull.svg" alt="" class="deaths-icon" width="18" height="18" decoding="async">
+                        </span>
+                        <span class="pop-detail-values" aria-label="Morts de faim depuis le début de la partie">
+                            <span class="pop-detail-value display-deaths-pop">0</span>
+                        </span>
+                    </div>
+                </div>
+                <!-- Health is not measured yet: "ND" (not available) everywhere, never a 0 that would be false -->
+                <div class="pop-detail-block pop-detail-health" aria-label="Santé">
+                    <span class="pop-detail-block__title" aria-hidden="true">Santé</span>
+                    <!-- Physical illness then mental illness, each from the mildest to the gravest; then the deaths (always from a grave illness) -->
+                    <div class="pop-detail-metric pop-detail-sick-physical-mild">
+                        <span class="pop-detail-emoji" title="Malades physiques bénins" aria-hidden="true">🤧</span>
+                        <span class="pop-detail-values" aria-label="Citoyens malades physiques, cas bénins : non disponible, pas encore mesuré">
+                            <abbr class="pop-detail-value pop-detail-nd" title="Non disponible : pas encore mesuré">ND</abbr>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-detail-sick-physical-severe">
+                        <span class="pop-detail-emoji" title="Malades physiques graves" aria-hidden="true">🤮</span>
+                        <span class="pop-detail-values" aria-label="Citoyens malades physiques, cas graves : non disponible, pas encore mesuré">
+                            <abbr class="pop-detail-value pop-detail-nd" title="Non disponible : pas encore mesuré">ND</abbr>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-detail-sick-mental-mild">
+                        <span class="pop-detail-emoji" title="Malades psychiques bénins" aria-hidden="true">😟</span>
+                        <span class="pop-detail-values" aria-label="Citoyens malades psychiques, cas bénins : non disponible, pas encore mesuré">
+                            <abbr class="pop-detail-value pop-detail-nd" title="Non disponible : pas encore mesuré">ND</abbr>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-detail-sick-mental-severe">
+                        <span class="pop-detail-emoji" title="Malades psychiques graves" aria-hidden="true">😵</span>
+                        <span class="pop-detail-values" aria-label="Citoyens malades psychiques, cas graves : non disponible, pas encore mesuré">
+                            <abbr class="pop-detail-value pop-detail-nd" title="Non disponible : pas encore mesuré">ND</abbr>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-detail-sick-deaths">
+                        <span class="pop-detail-icon pop-detail-icon--deaths" title="Morts de maladie" aria-hidden="true">
+                            <img src="/icons/skull.svg" alt="" class="deaths-icon" width="18" height="18" decoding="async">
+                        </span>
+                        <span class="pop-detail-values" aria-label="Morts de maladie : non disponible, pas encore mesuré">
+                            <abbr class="pop-detail-value pop-detail-nd" title="Non disponible : pas encore mesuré">ND</abbr>
+                        </span>
+                    </div>
+                </div>
                 </div>
             </section>
             <section

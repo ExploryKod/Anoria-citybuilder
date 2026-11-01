@@ -179,8 +179,11 @@ export function updateBuildingInfoTabArrows() {
   const tablist = document.querySelector('.info-building__tabs');
   const arrows = document.querySelector('.info-building__tab-arrows');
   if (!tablist || !arrows) return;
-  const overflowing = tablist.scrollWidth > tablist.clientWidth + 1;
+  // Measured without the room kept under the arrows, so that showing them does not make the strip look wider than it is.
+  const keptRoom = tablist.classList.contains('has-arrows') ? Number.parseFloat(getComputedStyle(tablist).paddingRight) - Number.parseFloat(getComputedStyle(tablist).paddingLeft) : 0;
+  const overflowing = tablist.scrollWidth - keptRoom > tablist.clientWidth + 1;
   arrows.hidden = !overflowing;
+  tablist.classList.toggle('has-arrows', overflowing);
   if (!overflowing) return;
   const [previous, next] = arrows.querySelectorAll('.info-building__tab-arrow');
   previous.disabled = tablist.scrollLeft <= 1;

@@ -1,10 +1,10 @@
 /**
  * Services tab — pure format (VM → display model).
  *
- * Two sections, kept visually and structurally apart (2026-10-10):
- *  - `items`: informative facts with no bearing on tier evolution (Route, Marché reach, Entrepôt
- *    (activité)) — a farm or a workshop gets these too, nothing here assumes a social-category tier
- *    ladder exists.
+ * Two lists in the model; the view shows them as ONE row, all of it needs of the house (see servicesInfoView.js):
+ *  - `items`: the facts the house also depends on (Marché reach, Entrepôt (activité)) — only a house has them; a farm or
+ *    a workshop has none, and its Services tab is then left out (see `hasServicesToShow` in servicesInfoView.js). The road is not one of them: the
+ *    building's sprite and, for a workplace, its Problèmes tab say it.
  *  - `evolutionRequirements`: every requirement the house's CURRENT/NEXT tier declares (road,
  *    population, food, goods variety, a named service's coverage or demand), each read as a plain
  *    met/unmet fact — never a number, even where the underlying figure is one (population, food). The
@@ -18,7 +18,6 @@ import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
 import {
   getCycleRecipeEntries,
   getSuppliedCategories,
-  requiresRoad,
 } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 import { goodIcon, goodLabel, namesOfBuildings } from '../../../shell/CatalogVocabulary.js';
 
@@ -84,31 +83,15 @@ function evolutionRequirementItem(requirement, vm) {
  * }}
  */
 export function formatServicesModel(vm) {
-  const roadCount = vm.roadAccess?.roadCount ?? 0;
-  // A type the catalog declares `requiresRoad: false` has no road status to lose: always positive.
-  const roadRequired = requiresRoad(vm.buildingType);
-  const hasRoad = !roadRequired || vm.roadAccess?.hasAccess === true || roadCount > 0;
-
-  /** @type {ReadonlyArray<{
+  // No Route chip: a road that is missing already shows on the building (its sprite) and, for a workplace, in its Problèmes tab.
+  /** @type {Array<{
    *   emoji: string,
    *   label: string,
    *   value: string | null,
    *   status: 'ok' | 'off',
    *   ariaLabel: string,
    * }>} */
-  const items = [
-    {
-      emoji: '🛣️',
-      label: 'Route',
-      value: !roadRequired ? '✓' : hasRoad ? String(roadCount) : null,
-      status: hasRoad ? 'ok' : 'off',
-      ariaLabel: !roadRequired
-        ? 'Route non requise'
-        : hasRoad
-          ? `${roadCount} route${roadCount > 1 ? 's' : ''} à portée`
-          : 'Aucune route à portée',
-    },
-  ];
+  const items = [];
 
   const evolutionRequirements = [];
 

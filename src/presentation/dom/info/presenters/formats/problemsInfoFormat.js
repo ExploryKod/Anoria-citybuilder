@@ -40,6 +40,9 @@ function purchaseLines(vm) {
   return lines;
 }
 
+/** The icon of the request for a public aid (the Problems tab and the Messages tab say it with the same one): the city, which is asked. */
+export const PUBLIC_AID_REQUEST_EMOJI = '🏛️';
+
 /**
  * Whether a purchase of this building failed for lack of money: the public aid is then asked for (the Problems tab and the Messages say so).
  * @param {{ collectionRefusals?: object, transferRefusal?: { reason: string } } | null | undefined} row
@@ -53,19 +56,20 @@ export function asksPublicAid(row) {
 
 /**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
- * @returns {{ groups: Array<{ title: string, lines: Array<{ emoji: string, text: string }> }> }}
+ * @returns {{ groups: Array<{ title: string, lines: Array<{ emoji: string, text: string, kind: 'problem' | 'request' }> }> }}
+ *   A line is either the evocation of a problem (`problem`: a pale red pill) or what the building asks to solve it (`request`: a blue pill).
  */
 export function formatProblemsModel(vm) {
   const groups = [];
 
   const infrastructure = [];
   if (vm.buildingRow && !isRoadNeedMet(vm.buildingRow.type, vm.buildingRow.roads)) {
-    infrastructure.push({ emoji: '🛣️', text: `${buildingName(vm.buildingType)} n'a pas de route : il ne peut pas fonctionner` });
+    infrastructure.push({ emoji: '🛣️', text: `${buildingName(vm.buildingType)} n'a pas de route : il ne peut pas fonctionner`, kind: 'problem' });
   }
   if (infrastructure.length > 0) groups.push({ title: 'Infrastructure', lines: infrastructure });
 
-  const purchases = purchaseLines(vm).map(({ emoji, text }) => ({ emoji, text }));
-  if (asksPublicAid(vm.buildingRow)) purchases.push({ emoji: '🆘', text: 'Une aide publique est demandée' });
+  const purchases = purchaseLines(vm).map(({ emoji, text }) => ({ emoji, text, kind: 'problem' }));
+  if (asksPublicAid(vm.buildingRow)) purchases.push({ emoji: PUBLIC_AID_REQUEST_EMOJI, text: 'Une aide publique est demandée', kind: 'request' });
   if (purchases.length > 0) groups.push({ title: 'Achats', lines: purchases });
 
   return { groups };

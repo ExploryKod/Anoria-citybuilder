@@ -15,20 +15,18 @@ function houseVm(overrides = {}) {
 }
 
 describe('servicesInfoFormat — informative chips (items)', () => {
-  test('a non-house building only ever gets the Route chip, no evolution requirements', () => {
+  test('a non-house building has no chip at all (the road is said by its sprite and its Problèmes tab), so nothing to show', () => {
     const model = formatServicesModel({
       buildingType: 'Farm-Wheat',
       roadAccess: { hasAccess: true, roadCount: 1 },
     });
-    expect(model.items).toEqual([
-      expect.objectContaining({ label: 'Route', status: 'ok' }),
-    ]);
+    expect(model.items).toEqual([]);
     expect(model.evolutionRequirements).toEqual([]);
   });
 
-  test('a house shows Route, Marché and its own business access as informative chips — no service in this row anymore', () => {
+  test('a house shows Marché and its own business access as informative chips — no road, no service in this row', () => {
     const model = formatServicesModel(houseVm());
-    expect(model.items.map((i) => i.label)).toEqual(['Route', 'Marché', 'Entrepôt (activité)']);
+    expect(model.items.map((i) => i.label)).toEqual(['Marché', 'Entrepôt (activité)']);
   });
 
   test('a house running a business (House-Red) shows whether it can reach a hub for it', () => {

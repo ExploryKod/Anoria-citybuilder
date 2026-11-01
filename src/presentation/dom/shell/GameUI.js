@@ -96,15 +96,38 @@ function setHudCount(el, value) {
     el.textContent = String(Math.max(0, Math.floor(value)));
 }
 
+/** The icon of the vacant posts (the manpower that is missing) under the unemployment: the row's own icon says the unemployment */
+const LACK_ICON = '🙋';
+
 /**
- * A percentage of the labour market. It carries no tooltip of its own: the whole row speaks (see `setLaborRowWords`).
+ * The labour figures of a row: the unemployment (a percentage) and the vacant posts (a count) stacked, one over the other, so that both can be read
+ * without widening the panel. The row's own icon stays centred against the stack; the vacant posts carry their own small icon. It carries no
+ * tooltip of its own: the whole row speaks (see `setLaborRowWords`).
  * @param {HTMLElement | null} el
- * @param {{ mode: 'lack' | 'unemployment' | 'both', display: string, count: number, unemployed: number, lack: number }} slot
+ * @param {{ mode: 'lack' | 'unemployment' | 'both', display: string, count: number, unemployed: number, lack: number, percentage: number }} slot
  */
 function setLaborCell(el, slot) {
     if (!(el instanceof HTMLElement)) return;
-    el.textContent = slot.display;
-    el.classList.toggle('pop-detail-value--lack', slot.mode !== 'unemployment');
+    const line = (className, text, icon = null) => {
+        const node = document.createElement('span');
+        node.className = `pop-labor-line ${className}`;
+        if (icon) {
+            const iconNode = document.createElement('span');
+            iconNode.className = 'pop-labor-line__icon';
+            iconNode.setAttribute('aria-hidden', 'true');
+            iconNode.textContent = icon;
+            node.append(iconNode);
+        }
+        node.append(text);
+        return node;
+    };
+    const lines = [];
+    if (slot.mode !== 'lack') lines.push(line('pop-labor-line--unemployment', `${slot.percentage}%`));
+    if (slot.mode !== 'unemployment') lines.push(line('pop-labor-line--lack pop-detail-value--lack', String(slot.lack), LACK_ICON));
+    const stack = document.createElement('span');
+    stack.className = 'pop-labor-stack';
+    stack.append(...lines);
+    el.replaceChildren(stack);
     el.removeAttribute('title');
 }
 

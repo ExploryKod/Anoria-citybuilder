@@ -1,5 +1,5 @@
 import { describe, test, expect } from '@jest/globals';
-import { asksPublicAid, formatProblemsModel } from '../../../../src/presentation/dom/info/presenters/formats/problemsInfoFormat.js';
+import { asksPublicAid, formatProblemsModel, PUBLIC_AID_REQUEST_EMOJI } from '../../../../src/presentation/dom/info/presenters/formats/problemsInfoFormat.js';
 
 const hubRow = (extra = {}) => ({ type: 'Windmill-001', roads: 1, ...extra });
 const vmOf = (buildingRow) => ({ buildingRow, buildingType: buildingRow.type });
@@ -10,8 +10,9 @@ describe('the Problèmes tab: what stands in the way of a building, grouped, eac
     const { groups } = formatProblemsModel(vmOf(row));
 
     expect(groups.map((group) => group.title)).toEqual(['Achats']);
-    expect(groups[0].lines[0].emoji).toBe('💸');
-    expect(groups[0].lines.at(-1)).toEqual({ emoji: '🆘', text: 'Une aide publique est demandée' });
+    expect(groups[0].lines[0].emoji).toBe('💰');
+    expect(groups[0].lines.at(-1)).toEqual({ emoji: PUBLIC_AID_REQUEST_EMOJI, text: 'Une aide publique est demandée', kind: 'request' });
+    expect(groups[0].lines[0].kind).toBe('problem');
     expect(asksPublicAid(row)).toBe(true);
   });
 

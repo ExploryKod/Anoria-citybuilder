@@ -22,9 +22,14 @@ function mountRail() {
     <aside id="hud-pop-rail">
       <button type="button" id="hud-pop-rail-collapse" aria-expanded="true"></button>
       <button type="button" id="hud-pop-rail-expand" hidden></button>
+      <span id="hud-pop-labor-page" hidden></span>
       <button type="button" id="hud-pop-labor-next" hidden></button>
+      <span id="hud-pop-details-page" hidden></span>
+      <button type="button" id="hud-pop-details-next" hidden></button>
+      <div class="hud-pop-rail__side"></div>
       <div class="hud-pop-rail__tabs"></div>
       <div class="hud-pop-rail__panels">
+        <section id="hud-pop-panel-details"><div class="pop-detail-pages"></div></section>
         <section id="hud-pop-panel-emploi"><div class="pop-detail-labor"></div></section>
       </div>
     </aside>

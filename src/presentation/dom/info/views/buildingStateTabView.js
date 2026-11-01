@@ -4,7 +4,7 @@
  */
 
 import { renderKvPanelView } from './kvPanelView.js';
-import { renderServicesTab } from './servicesInfoView.js';
+import { hasServicesToShow, renderServicesTab } from './servicesInfoView.js';
 
 /**
  * @typedef {object} BuildingStateModel
@@ -64,7 +64,7 @@ export function renderBuildingStateView(container, model) {
     { id: 'etat', icon: '🧭', title: 'État', kv: model.state },
     { id: 'personnel', icon: '👷', title: 'Personnel', kv: model.staff },
     { id: 'services', icon: '🔧', title: 'Services', services: model.services },
-  ].filter((section) => section.kv?.sections?.length || section.services?.items?.length);
+  ].filter((section) => section.kv?.sections?.length || hasServicesToShow(section.services));
   if (sections.length === 0) return;
 
   const elements = sections.map((section) => {

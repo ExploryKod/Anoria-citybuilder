@@ -39,7 +39,7 @@ export const LIQUIDATION_RECOVERY_RATE = 0.5;
 export const FOUNDING_CAPITAL_MONTHS = 2;
 
 /** How the building's problems say a company cannot pay what it owes: an icon and a short word (the detail goes in the tooltip). */
-export const INSOLVENCY_DISPLAY = Object.freeze({ icon: '💸', label: 'impayés' });
+export const INSOLVENCY_DISPLAY = Object.freeze({ icon: '💰', label: 'impayés' });
 
 /**
  * How many months in a row a company may go on without paying what it owes before it is liquidated (the end of the grace period; see the

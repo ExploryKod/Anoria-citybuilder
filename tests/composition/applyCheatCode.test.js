@@ -32,11 +32,46 @@ jest.unstable_mockModule('../../src/composition/sessionShell.js', () => ({
   getTimeManager,
 }));
 
+// The player's permission (Paramètres) and the flags a game keeps: faked, the codes are what is under test
+let cheatCodesAllowed = true;
+const writeGameCheatFlag = jest.fn(async () => {});
+jest.unstable_mockModule('../../src/config/cheatCodes.js', () => ({
+  isCheatCodesAllowed: () => cheatCodesAllowed,
+}));
+jest.unstable_mockModule('../../src/core/persistence/cheat/gameCheatFlags.js', () => ({
+  GAME_CHEAT_FLAGS: { houseLevelsUnlocked: 'houseLevelsUnlocked', housePopulation: 'housePopulation' },
+  writeGameCheatFlag,
+}));
+
 const { applyCheatCode } = await import('../../src/composition/applyCheatCode.js');
 
 describe('applyCheatCode', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    cheatCodesAllowed = true;
+  });
+
+  test('nothing opens until the player allowed cheat codes: even a known code is refused, and nothing is recorded', async () => {
+    cheatCodesAllowed = false;
+    for (const code of ['Treasury', 'GetLastLevel', 'MaxPop12', 'Nope']) {
+      expect(await applyCheatCode(code)).toEqual({ ok: false, reason: 'not_allowed' });
+    }
+    expect(recordCommerceExportIncome).not.toHaveBeenCalled();
+    expect(writeGameCheatFlag).not.toHaveBeenCalled();
+    expect(recordCheatActivation).not.toHaveBeenCalled();
+  });
+
+  test('GetLastLevel and MaxPop<n> set a flag of the game (MaxPop only from 1 to 1000)', async () => {
+    expect((await applyCheatCode('GetLastLevel')).ok).toBe(true);
+    expect(writeGameCheatFlag).toHaveBeenCalledWith('houseLevelsUnlocked', true);
+
+    expect((await applyCheatCode('MaxPop12')).ok).toBe(true);
+    expect(writeGameCheatFlag).toHaveBeenCalledWith('housePopulation', 12);
+
+    writeGameCheatFlag.mockClear();
+    expect(await applyCheatCode('MaxPop0')).toEqual({ ok: false, reason: 'invalid_value' });
+    expect(await applyCheatCode('MaxPop1001')).toEqual({ ok: false, reason: 'invalid_value' });
+    expect(writeGameCheatFlag).not.toHaveBeenCalled();
   });
 
   test('Treasury records income and persists activation', async () => {

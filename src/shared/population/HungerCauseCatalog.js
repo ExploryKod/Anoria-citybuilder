@@ -17,7 +17,7 @@ export const HUNGER_RISK = Object.freeze({
 
 export const HUNGER_CAUSES = Object.freeze({
   disette: Object.freeze({
-    icon: '💸',
+    icon: '💰',
     label: 'Disette',
     detail: 'ne peuvent pas payer la nourriture',
   }),
