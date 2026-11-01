@@ -2341,7 +2341,12 @@ export const BUILDING_ASSETS = Object.freeze({
   // Bûcheron — RÉASSIGNÉ au kit Kenney Industrial building-o (geometry copied
   // from Kenney-Industrial-building-o; economy/footprint keyed to 'Lumberjack').
   // Raw-material producer, see buildingEconomy.js.
-  'Lumberjack': LUMBERJACK_MESH,
+  // Its wood is the households' fuel (wood is an energy of the 'housing' consumption group), so it is listed with the power
+  // plants (theme 'energy'), after the nuclear plant. The industrial one feeds the workshops and stays with the 'wood' theme.
+  'Lumberjack': {
+    ...LUMBERJACK_MESH,
+    button: { ...LUMBERJACK_MESH.button, theme: 'energy' },
+  },
   // Same mesh, another catalog entry (name and clients differ, see buildingEconomy.js).
   'Lumberjack-Industry': {
     ...LUMBERJACK_MESH,

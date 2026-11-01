@@ -19,6 +19,7 @@ import {
 import { SOCIAL_CATEGORY } from '../../../src/shared/population/socialCategoryCatalog.js';
 import { EvolveHouseBuilding } from '../../../src/contexts/housing/application/commands/evolution/EvolveHouseBuilding.js';
 import { EvolveAllHouseBuildings } from '../../../src/contexts/housing/application/commands/evolution/EvolveAllHouseBuildings.js';
+import { GrowHousePopulation } from '../../../src/contexts/housing/application/commands/growth/GrowHousePopulation.js';
 
 class InMemoryHousingEvolutionRepository {
   constructor(buildings = []) {
@@ -38,6 +39,10 @@ class InMemoryHousingEvolutionRepository {
     const house = this.raw.get(houseId);
     house.level = targetLevel;
     house.pop = targetPop;
+  }
+
+  async savePopulation(houseId, { pop }) {
+    this.raw.get(houseId).pop = pop;
   }
 }
 
@@ -256,6 +261,65 @@ describe('Housing — house progression', () => {
     test('asking whether a warehouse is within reach, before the composition said how, throws: no quiet "no access"', async () => {
       const unwired = new EvolveHouseBuilding(repo);
       await expect(unwired.execute({ houseId: 'House-Red-2-3', periodKey: PERIOD })).rejects.toThrow(/activity-access check was never set/);
+    });
+
+    describe('cheat: every house holds n inhabitants (MaxPop<n>)', () => {
+      const FILLED = 40;
+
+      test('a level-1 house is filled to n at once, past what its level allows; without the cheat it is left alone', async () => {
+        const make = () => new InMemoryHousingEvolutionRepository([house('House-Red-2-3', HOUSE_TYPE_RED, { level: 1, pop: 1 })]);
+
+        repo = make();
+        const normal = new GrowHousePopulation(repo);
+        await normal.execute({ houseId: 'House-Red-2-3', monthIndex: PERIOD });
+        expect((await repo.findById('House-Red-2-3')).pop).toBeLessThan(FILLED);
+
+        repo = make();
+        const cheating = new GrowHousePopulation(repo);
+        cheating.setPopulationOverrideCheck(async () => FILLED);
+        const result = await cheating.execute({ houseId: 'House-Red-2-3', monthIndex: PERIOD });
+        expect(result.pop).toBe(FILLED);
+        expect((await repo.findById('House-Red-2-3')).pop).toBe(FILLED);
+      });
+
+      test('a house that loses its level keeps its n inhabitants instead of being cut to the lower ceiling', () => {
+        const top = Math.max(...Object.keys(SOCIAL_CATEGORY.artisans.tiers).map(Number));
+        const losing = { level: top, pop: FILLED, roadCount: 0, residentialGroup: 'artisans' };
+        expect(resolveHouseLevel(losing).targetPop).toBeLessThan(FILLED);
+        expect(resolveHouseLevel({ ...losing, populationOverride: FILLED }).targetPop).toBe(FILLED);
+      });
+    });
+
+    describe('cheat: every house at its highest level (GetLastLevel)', () => {
+      const highest = (group) => Math.max(...Object.keys(SOCIAL_CATEGORY[group].tiers).map(Number));
+
+      test('a bare house (no services, no requirement) goes straight to the highest level of its category and never comes down', () => {
+        const bare = { level: 1, pop: 0, roadCount: 0, residentialGroup: 'artisans', levelsUnlocked: true };
+        const up = resolveHouseLevel(bare);
+        expect(up.targetLevel).toBe(highest('artisans'));
+        expect(up.changed).toBe(true);
+        // Already at the top with every requirement lost: the normal rules would demote it, the cheat keeps it there.
+        expect(resolveHouseLevel({ ...bare, level: highest('artisans') }).changed).toBe(false);
+        expect(resolveHouseLevel({ ...bare, level: highest('artisans') }).targetLevel).toBe(highest('artisans'));
+      });
+
+      test('without the cheat the same bare house stays where the rules put it', () => {
+        expect(resolveHouseLevel({ level: 1, pop: 0, roadCount: 0, residentialGroup: 'artisans' }).targetLevel).toBe(1);
+      });
+
+      test('the command asks the composition whether the cheat is in force, and is off until told otherwise', async () => {
+        const bare = () => new InMemoryHousingEvolutionRepository([house('House-Red-2-3', HOUSE_TYPE_RED, { level: 1, roadCount: 0 })]);
+
+        repo = bare();
+        command = new EvolveHouseBuilding(repo);
+        command.setActivityAccessCheck(async () => false);
+        expect((await command.execute({ houseId: 'House-Red-2-3', periodKey: PERIOD })).changed).toBe(false);
+
+        command.setLevelsUnlockedCheck(async () => true);
+        const result = await command.execute({ houseId: 'House-Red-2-3', periodKey: PERIOD });
+        expect(result.targetLevel).toBe(highest('artisans'));
+        expect((await repo.findById('House-Red-2-3')).level).toBe(highest('artisans'));
+      });
     });
   });
 

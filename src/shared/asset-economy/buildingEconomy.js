@@ -107,16 +107,47 @@ const OLIVE_SALE = { schedule: { unit: 'month', values: ['september'] } };
  * The next cycle starts the following month, and selling never holds it up (see ProduceResource `cycle`).
  * Change the numbers, the months or the step names here, one building at a time.
  */
+/**
+ * The name the player reads for each step of a recipe (its card in the production chain). One entry per step id used below: a step with
+ * no name here is a catalog defect and throws where the cycle is declared, never an "Étape 1" put in its place.
+ */
+const stepEntry = (label, icon) => Object.freeze({ label, icon });
+const STEP_LABELS = Object.freeze({
+  sourcing: stepEntry('Approvisionnement', '🚚'),
+  shaping: stepEntry('Façonnage', '🤲'),
+  firing: stepEntry('Cuisson', '🔥'),
+  baking: stepEntry('Cuisson', '🥧'),
+  pressing: stepEntry('Pressage', '🫒'),
+  settling: stepEntry('Décantation', '💧'),
+  melting: stepEntry('Fonte', '♨️'),
+  moulding: stepEntry('Moulage', '🕯️'),
+  installing: stepEntry('Installation', '🔧'),
+  broadcasting: stepEntry('Diffusion', '📡'),
+  cutting: stepEntry('Découpe', '🪓'),
+  assembling: stepEntry('Assemblage', '🔨'),
+  decorating: stepEntry('Décoration', '🎨'),
+  gilding: stepEntry('Dorure', '✨'),
+  browsing: stepEntry('Recherche', '🔎'),
+  writing: stepEntry('Rédaction', '✍️'),
+  negotiating: stepEntry('Négociation', '🤝'),
+  dealing: stepEntry('Transaction', '💱'),
+});
+const stepNamed = (id) => {
+  const named = STEP_LABELS[id];
+  if (!named) throw new Error(`[economy] the recipe step "${id}" has no name in STEP_LABELS`);
+  return { id, label: named.label, icon: named.icon };
+};
+
 const twoMonthCycle = ({ first, second, base, factor, inputs }) => ({
   cycle: [
-    { id: first, when: { unit: 'monthIndex', interval: 2, offset: 0 }, amount: base, wait: true, ...(inputs ? { inputs } : {}) },
-    { id: second, when: { unit: 'monthIndex', interval: 2, offset: 1 }, factor, wait: true },
+    { ...stepNamed(first), when: { unit: 'monthIndex', interval: 2, offset: 0 }, amount: base, wait: true, ...(inputs ? { inputs } : {}) },
+    { ...stepNamed(second), when: { unit: 'monthIndex', interval: 2, offset: 1 }, factor, wait: true },
   ],
   sale: { schedule: { unit: 'monthIndex', interval: 2, offset: 1 } },
 });
 
 /** A raw-material producer of wood from the trees around it; its name and who it serves first vary. */
-const lumberjack = ({ displayName, clients, requiredSkill = 'artisanat' }) => ({
+const lumberjack = ({ displayName, clients, clientsOnly = false, requiredSkill = 'artisanat' }) => ({
   displayName,
   placementNotice: true,
   construction: { price: 45, category: 'industry' },
@@ -132,6 +163,7 @@ const lumberjack = ({ displayName, clients, requiredSkill = 'artisanat' }) => ({
     amount: 10,
     source: { resource: 'wood', range: 6, consume: 1 },
     clients,
+    ...(clientsOnly ? { clientsOnly: true } : {}),
     periodLock: { field: 'lastProductionMonth', unit: 'month' },
   }],
 });
@@ -703,12 +735,15 @@ export const BUILDING_ECONOMY = {
   // natureEconomy.js), each month's production fells `consume` of them, and the
   // same range gates its placement. Retune or reuse it for any natural resource.
   //
-  // Two entries of the same producer that differ only in name and in whom its wood goes to first (`clients`,
-  // which the player can reorder or stop in the Clients tab): the lumberjack for households, the industrial
-  // one for workshops. Same mesh and footprint (see buildingAssets.js / buildingFootprint.js).
+  // Two entries of the same producer that differ in name and in whom its wood goes to (`clients`, which the player
+  // can reorder or stop in the Clients tab): the lumberjack is the households' fuel, the industrial one is for
+  // workshops. Same mesh and footprint (see buildingAssets.js / buildingFootprint.js).
+  // The lumberjack's wood goes to the warehouse each month, and only the markets draw it from there (their heat
+  // distributor, HEAT_GOODS) to sell it on to the houses: never to a workshop or to a house's own business.
   'Lumberjack': lumberjack({
     displayName: 'Bûcheron',
-    clients: ['Market-Stall-Red', 'Factory-Furniture', 'House-Blue'],
+    clients: ['Market-Stall-Red'],
+    clientsOnly: true,
   }),
   'Lumberjack-Industry': lumberjack({
     displayName: 'Bûcheron industriel',
@@ -809,7 +844,7 @@ export const BUILDING_ECONOMY = {
         // (agreements, not goods yet), and the goods that really arrived.
         storageViews: [
           { id: 'export', label: "Accords d'export", categories: [...MERCHANT_ACTIVITY_GOODS] },
-          { id: 'importDeals', label: "Accords d'import", categories: [...MERCHANT_IMPORT_DEAL_GOODS] },
+          { id: 'importDeals', label: "Accords d'import", note: 'Places réservées par des accords : biens physiques à venir', categories: [...MERCHANT_IMPORT_DEAL_GOODS] },
           { id: 'import', label: 'Biens importés', categories: [...IMPORTED_GOODS] },
         ],
         totalKey: GOODS_TOTAL_KEY,

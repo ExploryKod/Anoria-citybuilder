@@ -149,6 +149,7 @@ export function syncBuildingInfoTabs(tabSpecs) {
   }
 
   activateBuildingInfoTab(visibleTabIds[0]);
+  updateBuildingInfoTabArrows();
 }
 
 function handleTabKeydown(event) {
@@ -170,10 +171,36 @@ function handleTabKeydown(event) {
   }
 }
 
+/**
+ * The two arrows of the header that slide the tab strip: shown only while the strip is wider than its container (some tab starts to run
+ * out of it), each greyed at its end. They work at any screen size. Read from the strip's own measures, never from the screen's width.
+ */
+export function updateBuildingInfoTabArrows() {
+  const tablist = document.querySelector('.info-building__tabs');
+  const arrows = document.querySelector('.info-building__tab-arrows');
+  if (!tablist || !arrows) return;
+  const overflowing = tablist.scrollWidth > tablist.clientWidth + 1;
+  arrows.hidden = !overflowing;
+  if (!overflowing) return;
+  const [previous, next] = arrows.querySelectorAll('.info-building__tab-arrow');
+  previous.disabled = tablist.scrollLeft <= 1;
+  next.disabled = tablist.scrollLeft + tablist.clientWidth >= tablist.scrollWidth - 1;
+}
+
 export function ensureBuildingInfoTabs() {
   if (tabsInitialized) return;
   const tablist = document.querySelector('.info-building__tabs');
   if (!tablist) return;
+
+  // The arrows move the strip by most of its width; the strip tells them when it moves, changes width or changes tabs.
+  document.querySelector('.info-building__tab-arrows')?.addEventListener('click', (event) => {
+    const arrow = event.target.closest('.info-building__tab-arrow');
+    if (!arrow) return;
+    tablist.scrollBy({ left: Number(arrow.dataset.dir) * Math.max(120, tablist.clientWidth * 0.8), behavior: 'smooth' });
+  });
+  tablist.addEventListener('scroll', updateBuildingInfoTabArrows, { passive: true });
+  if (typeof ResizeObserver === 'function') new ResizeObserver(updateBuildingInfoTabArrows).observe(tablist);
+  window.addEventListener('resize', updateBuildingInfoTabArrows);
 
   tablist.addEventListener('click', (event) => {
     const tab = event.target.closest('[role="tab"]');

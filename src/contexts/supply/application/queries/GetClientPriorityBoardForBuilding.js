@@ -1,6 +1,8 @@
 import {
   deliversDirectlyToHouses,
+  eligibleClientTypes,
   listClientTypes,
+  onlyClientTypesOf,
   producedCategories,
   resolveInstanceClientPriorities,
 } from '../../../../shared/building-catalog/clientQueries.js';
@@ -35,6 +37,9 @@ export class GetClientPriorityBoardForBuilding {
    *     category: string,
    *     isCustom: boolean,
    *     hasEligibleClientTypes: boolean,
+   *     clientsOnly: boolean,
+   *     buyerTypes: string[],
+   *     onlyClientType: string | null,
    *     deliversDirectlyToHouses: boolean,
    *     clients: Array<{ id: string, type: string, x: number|null, y: number|null, label: string|null, disabled: boolean, wanted: number, served: number }>,
    *   }>,
@@ -65,8 +70,10 @@ export class GetClientPriorityBoardForBuilding {
     }
 
     const goods = categories.map((category) => {
-      const clientTypes = listClientTypes([category]);
-      const externalClients = this.listExternalClients(category);
+      const saved = savedByGood[category] ?? null;
+      const onlyTypes = onlyClientTypesOf(producer.type, category, saved);
+      const clientTypes = eligibleClientTypes(producer.type, category, saved);
+      const externalClients = onlyTypes ? [] : this.listExternalClients(category);
       const candidates = [
         ...rows
           .filter((row) => row.id !== buildingId && clientTypes.includes(row.type))
@@ -74,7 +81,6 @@ export class GetClientPriorityBoardForBuilding {
         ...externalClients.map((client) => ({ ...client, x: null, y: null })),
       ];
 
-      const saved = savedByGood[category] ?? null;
       const { order, disabled } = resolveInstanceClientPriorities({
         producerType: producer.type,
         candidates,
@@ -89,6 +95,12 @@ export class GetClientPriorityBoardForBuilding {
         // here for a structural reason — nobody, ever, not just "none placed nearby yet" — so the
         // view must tell the two apart instead of showing the same "no client" message either way.
         hasEligibleClientTypes: clientTypes.length > 0 || externalClients.length > 0,
+        // The "ClientsOnly" checkbox: true when this good goes to one client alone (the catalog's default, or the player's choice).
+        clientsOnly: onlyTypes !== null,
+        // The buyer types of the dropdown: everyone who buys this good. `onlyClientType` is the one selected (null when the
+        // catalog lists several and the player has not picked one yet, or when the box is unchecked).
+        buyerTypes: listClientTypes([category]),
+        onlyClientType: onlyTypes && onlyTypes.length === 1 ? onlyTypes[0] : null,
         // A third, different structural reason for zero clients: this good never touches a hub at
         // all (see buildingCatalog.js's `deliversTo`), so "it still goes to a warehouse" would be wrong.
         deliversDirectlyToHouses: deliversDirectlyToHouses(producer.type, category),

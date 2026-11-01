@@ -1367,9 +1367,8 @@ export function createScene(_gameStore, assetManager, deps) {
             // ...and a planted record whose piece is not standing (just planted, or just grown) is drawn
             const standing = new Set(getEditorStackObjects().filter((obj) => propRecordSpec(obj.assetId) !== null).map((obj) => `${obj.x},${obj.y}`));
             for (const row of pieceRows.filter((candidate) => candidate.planted && !standing.has(`${candidate.x},${candidate.y}`))) {
-                const placed = await placeEditorStackObject(row.x, row.y, row.piece.assetId, row.piece.rotationY);
-                // Said loudly, not thrown: one tree the ground refuses must not stop the day of the whole city
-                if (!placed) console.error(`[Scene] the planted tree "${row.piece.assetId}" at (${row.x}, ${row.y}) could not be drawn`);
+                // Said loudly, not thrown: one tree that cannot be drawn must not stop the day of the whole city
+                await standPieceOfRecord(row).catch((error) => console.error(`[Scene] the planted tree "${row.piece.assetId}" at (${row.x}, ${row.y}) could not be drawn:`, error));
             }
             lap('naturePieces');
         }
@@ -1851,6 +1850,37 @@ export function createScene(_gameStore, assetManager, deps) {
         refreshTileRelief(placement.x, placement.y);
         scene.userData.requestShadowRefresh?.();
         return true;
+    }
+
+    /**
+     * Stands a piece of the map the hamlet's records say should stand (a tree planted on a plot): at the height its record keeps, on the ground of its tile, with no
+     * editor placement rule (those are for the pieces a player picks, and know only the editor's own catalog).
+     * @param {{ x: number, y: number, piece: { assetId: string, rotationY: number, baseLocalY: number } }} row
+     * @returns {Promise<void>}
+     */
+    async function standPieceOfRecord({ x, y, piece }) {
+        const entry = addEditorStackObject(piece.assetId, x, y, piece.rotationY, {
+            baseLocalY: piece.baseLocalY,
+            parentId: null,
+            anchor: 'terrain',
+            mountMode: 'surface',
+            faceDirection: null,
+        });
+        let mesh;
+        try {
+            mesh = await createEditorStackMesh(entry);
+        } catch (error) {
+            removeEditorStackObjectById(entry.id);
+            throw error;
+        }
+        if (!mesh) {
+            removeEditorStackObjectById(entry.id);
+            throw new Error(`[Scene] no mesh for the piece "${piece.assetId}" at (${x}, ${y})`);
+        }
+        editorStackMeshes.set(entry.id, mesh);
+        addMeshToTileZone(mesh, x, y);
+        refreshTileRelief(x, y);
+        scene.userData.requestShadowRefresh?.();
     }
 
     /** @deprecated use placeEditorStackObject */

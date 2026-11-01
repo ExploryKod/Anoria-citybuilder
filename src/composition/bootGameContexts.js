@@ -18,6 +18,8 @@ import { createLandContext } from './createLandContext.js';
 import { toSupplySeason, toSupplyMonth } from './supplyTimeLabels.js';
 import { createGameRuntime } from './createGameRuntime.js';
 import { assembleSessionApi } from './sessionApi.js';
+import { isCheatCodesAllowed } from '../config/cheatCodes.js';
+import { GAME_CHEAT_FLAGS, readGameCheatFlag } from '../core/persistence/cheat/gameCheatFlags.js';
 
 /**
  * @returns {{
@@ -61,6 +63,12 @@ export function bootGameContexts() {
     const gaps = await supply.describeActivitySupplyAccess({ id: house.id, type: house.type, x: house.x, y: house.y });
     return !gaps.some((gap) => gap.status === 'no-hub');
   });
+  // The cheat that lifts every house to its highest level: in force only while the player allows cheat codes (Paramètres) AND this game holds the flag.
+  housing.setLevelsUnlockedCheck(async () =>
+    isCheatCodesAllowed() && (await readGameCheatFlag(GAME_CHEAT_FLAGS.houseLevelsUnlocked)));
+  // The cheat MaxPop<n>: every house holds exactly n inhabitants — the same two conditions (allowed in Paramètres, flag held by this game).
+  housing.setPopulationOverrideCheck(async () =>
+    isCheatCodesAllowed() ? await readGameCheatFlag(GAME_CHEAT_FLAGS.housePopulation) : null);
   const intelligence = getOrCreateIntelligenceContext();
   const trade = getOrCreateTradeContext({ supply, accounting });
   const land = createLandContext({ supply, accounting, construction });

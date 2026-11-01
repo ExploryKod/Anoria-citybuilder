@@ -32,6 +32,7 @@ import { syncRemovedBuilding } from './parcelsOps.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
 import { getNaturalSources, getSuppliedCategories } from '../shared/building-catalog/resourceRoleQueries.js';
 import { depositKindsOf } from '../shared/building-catalog/depositQueries.js';
+import { listClientTypes } from '../shared/building-catalog/clientQueries.js';
 import { findNaturalSourcesInRange, isWithinRange } from '../contexts/supply/domain/policies/ResourceRangePolicy.js';
 import { SupplyTraceability } from '../contexts/supply/infrastructure/presentation/SupplyTraceability.js';
 import { GetBuildingSupplyView } from '../contexts/supply/application/queries/GetBuildingSupplyView.js';
@@ -412,8 +413,32 @@ export function createSupplyContext({
     /** This instance's own order (and refusals) among ONE good's candidate clients; effective from the next tick. */
     async saveClientPriorityForBuilding(buildingId, category, { order, disabled }) {
       const producer = await supplyBuildingRepositoryImpl.findById(buildingId);
+      const saved = producer?.clientPriorityByGood?.[category] ?? {};
       await supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, {
-        clientPriorityByGood: { ...(producer?.clientPriorityByGood ?? {}), [category]: { order, disabled } },
+        // `...saved` keeps the player's `clientsOnly` choice: ordering clients does not undo it.
+        clientPriorityByGood: { ...(producer?.clientPriorityByGood ?? {}), [category]: { ...saved, order, disabled } },
+      });
+    },
+
+    /**
+     * The player's choice for this instance and this good, over the catalog's defaults: sell to one buyer type alone
+     * (`clientsOnly` true, `onlyClientType` required) or to every buyer by priority (false). Effective from the next tick.
+     * The type chosen is kept when the box is unchecked, so checking it again finds it.
+     */
+    async setClientsOnlyForBuilding(buildingId, category, { clientsOnly, onlyClientType }) {
+      if (typeof clientsOnly !== 'boolean') throw new Error(`[clients] setClientsOnlyForBuilding("${buildingId}", "${category}") needs a boolean clientsOnly, got ${typeof clientsOnly}`);
+      const producer = await supplyBuildingRepositoryImpl.findById(buildingId);
+      if (!producer) throw new Error(`[clients] setClientsOnlyForBuilding: building "${buildingId}" not found`);
+      if (clientsOnly && !onlyClientType) throw new Error(`[clients] "${producer.type}" cannot sell "${category}" to one client only without a client chosen`);
+      if (onlyClientType && !listClientTypes([category]).includes(onlyClientType)) {
+        throw new Error(`[clients] "${onlyClientType}" does not buy "${category}": it cannot be its only client`);
+      }
+      const saved = producer.clientPriorityByGood?.[category] ?? {};
+      await supplyBuildingRepositoryImpl.updateBuildingFields(buildingId, {
+        clientPriorityByGood: {
+          ...(producer.clientPriorityByGood ?? {}),
+          [category]: { ...saved, clientsOnly, ...(onlyClientType ? { onlyClientType } : {}) },
+        },
       });
     },
 

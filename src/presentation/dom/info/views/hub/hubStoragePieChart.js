@@ -194,11 +194,13 @@ export function renderHubStoragePieChart(view, summaryLines = []) {
  * @param {ReadonlyArray<string>} [summaryLines]
  * @param {string} [titleText] Replaces the chart's title (the flow it now draws).
  */
-export function patchHubStoragePieChart(root, view, summaryLines = [], titleText = null) {
+export function patchHubStoragePieChart(root, view, summaryLines = [], titleText = null, noteText = null) {
   const section = root.querySelector('.hub-storage-chart-section');
   if (!section) return;
   const title = section.querySelector('.hub-storage-chart-title');
   if (title && titleText) title.textContent = titleText;
   const titleHtml = title ? title.outerHTML : `<h3 class="hub-storage-chart-title">${titleText ?? 'Stock'}</h3>`;
-  section.innerHTML = `${titleHtml}${renderHubStoragePieChart(view, summaryLines)}`;
+  // The note the catalog gives the flow (null: none), kept under the title each time the chart is redrawn.
+  const noteHtml = noteText ? `<p class="hub-storage-chart-note">${noteText}</p>` : '';
+  section.innerHTML = `${titleHtml}${noteHtml}${renderHubStoragePieChart(view, summaryLines)}`;
 }

@@ -9,6 +9,7 @@ import { createSupplyStock } from '../../../src/contexts/supply/domain/value-obj
 import { HubServing } from '../../../src/contexts/supply/application/services/HubServing.js';
 import { TransferHubToHub } from '../../../src/contexts/supply/application/commands/procurement/TransferHubToHub.js';
 import {
+  eligibleClientTypes,
   listClientTypes,
   producedCategories,
   resolveInstanceClientPriorities,
@@ -102,13 +103,19 @@ describe('Supply — a hub serves its clients by priority', () => {
     expect(repo.rows.get('warehouse').stocks.plate).toBe(10);
   });
 
-  test('the two lumberjacks serve the same clients in a different order, from the catalog alone', () => {
-    const household = resolveClientPriorities('Lumberjack').order;
-    const industrial = resolveClientPriorities('Lumberjack-Industry').order;
-    expect([...household].sort()).toEqual([...industrial].sort());
-    expect(household[0]).toBe('Market-Stall-Red');
-    expect(industrial[0]).toBe('Factory-Furniture');
-    expect(household).toContain('Factory-Furniture');
+  test('the lumberjack\'s wood (households\' fuel) goes to the markets alone; the industrial one serves the workshops first', () => {
+    expect(eligibleClientTypes('Lumberjack', 'wood', null)).toEqual(['Market-Stall-Red']);
+    expect(eligibleClientTypes('Lumberjack-Industry', 'wood', null)).toContain('Factory-Furniture');
+    expect(resolveClientPriorities('Lumberjack-Industry').order[0]).toBe('Factory-Furniture');
+  });
+
+  test('the player can uncheck ClientsOnly, or check it and pick the one buyer, whatever the catalog says', () => {
+    expect(eligibleClientTypes('Lumberjack', 'wood', { clientsOnly: false })).toContain('Factory-Furniture');
+    expect(eligibleClientTypes('Lumberjack-Industry', 'wood', { clientsOnly: true, onlyClientType: 'Factory-Furniture' })).toEqual(['Factory-Furniture']);
+    expect(eligibleClientTypes('Lumberjack', 'wood', { clientsOnly: true, onlyClientType: 'Factory-Furniture' })).toEqual(['Factory-Furniture']);
+    expect(() => eligibleClientTypes('Lumberjack', 'wood', { clientsOnly: true, onlyClientType: 'Windmill-001' })).toThrow(/does not buy/);
+    // ordering or switching clients off does not undo the choice
+    expect(eligibleClientTypes('Lumberjack', 'wood', { order: [], disabled: [] })).toEqual(['Market-Stall-Red']);
   });
 
   test('a market draws wood for heat, and the warehouse files it under its own total', async () => {

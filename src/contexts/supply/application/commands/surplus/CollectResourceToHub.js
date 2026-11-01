@@ -98,23 +98,27 @@ export class CollectResourceToHub {
     const transfers = [];
     // Each unit keeps its age on the way (see StockAgingPolicy.js): what was taken, from whom, out of how much.
     const ageMoves = [];
+    // Why units that waited at a producer were not bought, by good: { waiting, limits: { [reason]: units } }. It is what the supply balance and the hub's panel say when
+    // nothing is sold (the reasons are those of CollectionRefusalCatalog.js).
+    const refusals = {};
+    const refuse = (category, reason, units) => {
+      if (!(units > 0)) return;
+      const entry = refusals[category] ?? { waiting: 0, limits: {} };
+      entry.limits[reason] = (entry.limits[reason] ?? 0) + units;
+      refusals[category] = entry;
+    };
+    const waitingAt = (category, units) => {
+      const entry = refusals[category] ?? { waiting: 0, limits: {} };
+      entry.waiting += units;
+      refusals[category] = entry;
+    };
 
     for (const ref of sourceRefs) {
-      if (capacity <= 0) break;
-
       const sourceId = resolveInstanceIdFromBuildingRef(ref);
       if (!sourceId) continue;
 
       const source = await this.supplyBuildingRepository.findById(sourceId);
       if (!source) continue;
-
-      if (!isRoadNeedMet(source.type, source.roadCount)) continue;
-      if (range !== Infinity && !isWithinRange(hub, source, range)) continue;
-      // A producer that declares its own `sale` window sells only inside it (its cycle is done by then).
-      const sale = getResourceRoles(source.type).find(
-        (entry) => entry.role === 'producer' && entry.sale && entry.categories.some((c) => categories.includes(c))
-      )?.sale;
-      if (sale && !matchesSchedule(sale.schedule, period)) continue;
 
       // Only goods this hub collects: a producer of anything else (household
       // gathering, another chain's output) is simply not this hub's business.
@@ -134,11 +138,27 @@ export class CollectResourceToHub {
       ];
       if (sourceCategories.length === 0) continue;
 
+      // What keeps a producer's stock from being bought at all: its road, the hub's reach, its own sale window. Each unit it holds is told as refused for that reason.
+      const refusedAll = (reason) => {
+        for (const category of sourceCategories) {
+          const held = getCategoryAmount(source.stocks, category);
+          waitingAt(category, held);
+          refuse(category, reason, held);
+        }
+      };
+      if (!isRoadNeedMet(source.type, source.roadCount)) { refusedAll('source_no_road'); continue; }
+      if (range !== Infinity && !isWithinRange(hub, source, range)) { refusedAll('source_out_of_range'); continue; }
+      // A producer that declares its own `sale` window sells only inside it (its cycle is done by then).
+      const sale = getResourceRoles(source.type).find(
+        (entry) => entry.role === 'producer' && entry.sale && entry.categories.some((c) => categories.includes(c))
+      )?.sale;
+      if (sale && !matchesSchedule(sale.schedule, period)) { refusedAll('source_sale_window'); continue; }
+
       let sourceStocks = source.stocks;
       let tookAny = false;
       for (const category of sourceCategories) {
-        if (capacity <= 0) break;
         const available = getCategoryAmount(sourceStocks, category);
+        waitingAt(category, available);
         const room = getHubProductRemainingInbound({
           productId: category,
           productIds: hubGoods,
@@ -149,12 +169,15 @@ export class CollectResourceToHub {
         // The hub pays for what it takes, at the price it is traced at: it takes only what its money and its suppliers' credit cover.
         const price = this.pricing.priceBook.sellingPrice(source, category, period);
         if (!(price >= 0)) throw new Error(`[supply] ${source.type} sells ${category} at ${price}: the hub cannot buy it`);
-        const wanted = Math.min(available, capacity, room);
+        const wanted = Math.min(available, Math.max(0, capacity), room);
+        // The units the hub's room or its storage orders keep out: the tighter of the two is the cause
+        if (wanted < available) refuse(category, capacity <= 0 || capacity <= room ? 'hub_full' : 'storage_order', available - wanted);
         // An agreement (a trade deal) is no good yet and costs nothing: it is always affordable.
         const amount = price === 0 ? wanted : Math.min(wanted, Math.floor(Math.round(budget * 100) / Math.round(price * 100)));
         if (amount < wanted) {
           shortOfMoney = true;
           unpaidSourceIds.add(sourceId);
+          refuse(category, 'no_budget', wanted - amount);
         }
         if (amount <= 0) continue;
         budget = Math.round((budget - amount * price) * 100) / 100;
@@ -173,7 +196,7 @@ export class CollectResourceToHub {
     for (const sourceId of unpaidSourceIds) await this.supplyBuildingRepository.updateBuildingFields(sourceId, { unpaidByHub: true });
 
     if (transfers.length === 0) {
-      return { collected: false, reason: shortOfMoney ? 'no_budget' : 'nothing_to_collect', transfers: [], totalUnits: 0 };
+      return { collected: false, reason: shortOfMoney ? 'no_budget' : 'nothing_to_collect', transfers: [], totalUnits: 0, refusals };
     }
 
     const freshHub = await this.supplyBuildingRepository.findById(hubId);
@@ -207,7 +230,7 @@ export class CollectResourceToHub {
     }
 
     const totalUnits = transfers.reduce((sum, transfer) => sum + transfer.amount, 0);
-    return { collected: true, transfers, totalUnits };
+    return { collected: true, transfers, totalUnits, refusals };
   }
 
   /**

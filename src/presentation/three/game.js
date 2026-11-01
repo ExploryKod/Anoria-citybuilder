@@ -675,6 +675,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
   let isTraveling = false;
   /** Serializes first boot and later hamlet swaps so two initialize() never overlap. */
   let hamletSceneGate = Promise.resolve();
+  /** Why the first load of the hamlet's scene failed (null while it loads or once it has loaded): no day may be simulated on a scene that does not exist. */
+  let sceneLoadError = null;
 
   async function loadActiveHamletScene() {
     loaderManager.setStep('Chargement du hameau…');
@@ -750,6 +752,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
         initializeEditorCityTiles(city);
       }
     } else {
+      // What the game holds must stand on the map it is drawn on: said by name here, not found later as a hole in the grid.
+      for (const row of rows) {
+        const x = row.anchorX ?? row.x;
+        const y = row.anchorY ?? row.y;
+        // (a row with no position is not on the map: hydrateCityTilesFromRows leaves it out too)
+        if (typeof x === 'number' && typeof y === 'number' && !city.tiles[x]?.[y]) {
+          throw new Error(`[game] "${row.name ?? row.type}" (${row.type}) is at (${x}, ${y}), outside the ${city.size} x ${city.size} map of this game`);
+        }
+      }
       // Buildings stamp the grid; the nature does not (it is pieces of the map, below)
       hydrateCityTilesFromRows(city, rows.filter((row) => !isNatureRecord(row)), buildingPlacementCatalog);
       let naturePieces;
@@ -766,7 +777,10 @@ export function createGame(gameStore, assetManager, citySize = null) {
       stackPort.resetStackObjects();
       stackPort.importStackObjects(naturePieces);
       // What stands on a tile is read once, here: a tree or a rock is in the way of a building
-      for (const { x, y } of naturePieces) {
+      for (const { x, y, assetId } of naturePieces) {
+        if (!city.tiles[x]?.[y]) {
+          throw new Error(`[game] the piece of nature "${assetId}" is at (${x}, ${y}), outside the ${city.size} x ${city.size} map of this game`);
+        }
         city.tiles[x][y].relief = getGroundSurface(naturePieces, x, y, city.tiles[x][y].terrainId);
       }
     }
@@ -1052,7 +1066,9 @@ export function createGame(gameStore, assetManager, citySize = null) {
     // Sans ce filet, une erreur ici (asset manquant, réseau mobile instable,
     // perte de contexte WebGL...) laissait le loader bloqué
     // bloqué indéfiniment, sans aucun message pour le joueur.
-    console.error('[game.js] scene.initialize failed:', error);
+    // Tagged `[game]` so that it reaches the dev log (`pnpm console:tag game`): a tag with a dot is not relayed.
+    console.error('[game] the hamlet scene could not be loaded:', error);
+    sceneLoadError = error;
     loaderManager.hide(0);
     showErrorToast(
       "Le chargement de la ville a rencontré un problème. Merci de recharger la page.",
@@ -2506,6 +2522,14 @@ export function createGame(gameStore, assetManager, citySize = null) {
     },
     onTick: async () => {
       await awaitBudgetReady();
+      // The loop starts with the page, the scene a moment later: a day waits for it. A scene that failed to load never gets days
+      // (they would fail on its empty grid, every tick): the loop stops and the cause is said once, with its error.
+      await hamletSceneGate;
+      if (sceneLoadError) {
+        gameLoop.stop();
+        console.error('[game] no day is simulated: the hamlet scene was not loaded, see the error above:', sceneLoadError);
+        return;
+      }
       if (isPause || isOver) {
         return;
       }

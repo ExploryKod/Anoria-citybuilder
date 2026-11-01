@@ -62,6 +62,7 @@ export function formatMarketOverviewModel(vm) {
     ];
   });
 
+  // What stands in the way of its purchases is on the Problèmes tab
   return { sections: [{ title: `État · ${buildingName(vm.buildingType)}`, rows }] };
 }
 

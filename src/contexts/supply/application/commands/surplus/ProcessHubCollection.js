@@ -32,6 +32,24 @@ export class ProcessHubCollection {
   }
 
   /**
+   * What the hub says of why it did not buy what waited: kept on the hub (`collectionRefusals`), good by good, for the supply balance and the hub's own panel. A pass
+   * that found goods waiting replaces what was said of them (so an old reason does not outlive the day it stopped holding); a pass outside the buying period says nothing
+   * and leaves the last word standing. The hub's own state (full, not working) is `hubReason`.
+   * @param {object} hub
+   * @param {{ collected: boolean, reason?: string, refusals?: Record<string, { waiting: number, limits: Record<string, number> }> }} outcome
+   * @param {{ turn?: number } | null} period
+   */
+  async #recordRefusals(hub, outcome, period) {
+    if (outcome.reason === 'not_collection_period' || outcome.reason === 'hub_not_found') return;
+    const goods = { ...(hub.collectionRefusals?.goods ?? {}) };
+    for (const [category, entry] of Object.entries(outcome.refusals ?? {})) {
+      if (entry.waiting > 0) goods[category] = { waiting: entry.waiting, limits: entry.limits, turn: period?.turn ?? null };
+    }
+    const hubReason = outcome.reason === 'hub_full' || outcome.reason === 'hub_not_operational' ? outcome.reason : null;
+    await this.supplyBuildingRepository.updateBuildingFields(hub.id, { collectionRefusals: { hubReason, goods } });
+  }
+
+  /**
    * @param {object} params
    * @param {string} params.hubId
    * @param {object[]} params.sourceRefs
@@ -72,6 +90,7 @@ export class ProcessHubCollection {
         hubId,
         isCollecting: false,
       });
+      await this.#recordRefusals(hub, { collected: false, reason: 'hub_not_operational' }, period);
       return {
         processed: true,
         collected: false,
@@ -90,6 +109,7 @@ export class ProcessHubCollection {
       sourceRefs,
       period: period ?? { month },
     });
+    await this.#recordRefusals(hub, outcome, period);
 
     if (!outcome.collected) {
       if (outcome.reason === 'hub_not_operational') {

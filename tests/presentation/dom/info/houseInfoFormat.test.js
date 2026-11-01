@@ -191,10 +191,10 @@ describe('formatHouseActivityModel — a house\'s own business, one block per re
     expect(cake.material.met).toBe(false);
   });
 
-  test('a two-step recipe gets two step cards, numbered', () => {
+  test('a two-step recipe gets two step cards, each named by the catalog (never "Étape N")', () => {
     const model = formatHouseActivityModel({ buildingType: 'House-Red', buildingRow: null });
     const pot = model.recipes[0];
-    expect(pot.steps.map((s) => s.label)).toEqual(['Étape 1', 'Étape 2']);
+    expect(pot.steps.map((s) => s.label)).toEqual(['Approvisionnement', 'Décoration']);
   });
 
   test('a step already done this cycle reads done, the one after it in progress', () => {

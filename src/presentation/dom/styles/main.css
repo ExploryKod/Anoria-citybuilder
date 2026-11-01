@@ -91,12 +91,14 @@
 
     --z-index-panel: 10010;
     --z-index-legend: var(--z-index-hud-menu);
-    --z-index-loader: 10020;
+    /* The loading screen covers every menu and panel of the game (the highest of them is the trade map, 20000); only the toasts are above it. */
+    --z-index-loader: 100000;
     --z-index-info-panel: 10020;
     /* Draggable pop rail — above HUD chrome, below modals */
     --z-index-hud-pop-rail: 10025;
     --z-index-modal: 10030;
-    --z-index-notification: 10051;
+    /* Toasts: above everything, the loading screen included (errors and tips reach the player while the game loads). */
+    --z-index-notification: 100001;
     /* Building sheet: above every menu, the HUD and the toasts, so its close button is always reachable */
     --z-index-info-building: 10050;
 
@@ -1401,6 +1403,40 @@ footer .footer-links a:hover {
     background: linear-gradient(135deg, #8d6e00, #f9a825);
 }
 
+/* Two arrows in the header, side by side, that slide the tab strip: shown only when the strip overflows (see updateBuildingInfoTabArrows). */
+.info-building__tab-arrows {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 6px;
+}
+
+.info-building__tab-arrows[hidden] {
+    display: none;
+}
+
+.info-building__tab-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+    cursor: pointer;
+}
+
+.info-building__tab-arrow:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.36);
+}
+
+.info-building__tab-arrow:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
 .info-building__tabs {
     flex-shrink: 0;
     display: flex;
@@ -1663,6 +1699,49 @@ footer .footer-links a:hover {
     font-weight: 600;
 }
 
+/* The type of a business (cooperative, property company…): a small badge on the right, not a button. With several, the one shown is the filled one. */
+.enterprise-badges {
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-left: auto;
+}
+
+/* The bar of the Enterprises tab: the views on the left (they slide when the width is short), the badge of the business pinned on the right, on one row, in portrait and in landscape. */
+.building-info-view-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.building-info-view-bar .building-info-view-pills {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.enterprise-badge {
+    padding: 1px 8px;
+    border: 1px solid rgba(120, 144, 156, 0.4);
+    border-radius: 4px;
+    background: transparent;
+    color: #607d8b;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.enterprise-badge.is-active {
+    border-color: transparent;
+    background: rgba(120, 144, 156, 0.2);
+    color: #37474f;
+    cursor: default;
+}
+
 /* The views of a tab (Productions / Clients of a house's Entreprises tab): a row of pills that slide sideways rather than wrap a label. */
 .building-info-view-pills {
     display: flex;
@@ -1674,14 +1753,25 @@ footer .footer-links a:hover {
 
 .building-info-view-pill {
     flex: 0 0 auto;
-    min-height: 40px;
-    padding: 6px 18px;
+    padding: 3px 12px;
     border: 1px solid rgba(120, 144, 156, 0.5);
     border-radius: 999px;
     background: transparent;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     white-space: nowrap;
     cursor: pointer;
+}
+
+/* On a phone the touch target stays 40px high; the padding stays small. */
+@media (max-width: 600px) {
+    .building-info-view-pill {
+        min-height: 40px;
+    }
+
+    /* A badge that can be picked (a house with several businesses) is a touch target too; the one shown is only a label. */
+    .enterprise-badge:not(.is-active) {
+        min-height: 40px;
+    }
 }
 
 .building-info-view-pill.is-active {
@@ -1691,48 +1781,52 @@ footer .footer-links a:hover {
     font-weight: 600;
 }
 
-/* What a house's businesses still need, up front: the good on the left, what is missing beside it, all aligned left. */
+/* What a house's businesses still need: one line per problem (the sentence once, ×N when several recipes meet it, then the recipes), aligned left. */
 .building-info-gaps {
-    width: 100%;
-    margin-bottom: 20px;
-    border-collapse: collapse;
+    display: flex;
+    flex-direction: column;
+    margin: 0 0 20px;
+    padding: 0;
+    list-style: none;
     text-align: left;
 }
 
-.building-info-gaps caption {
-    padding-bottom: 6px;
-    text-align: left;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #5f6368;
-}
-
-.building-info-gaps th,
-.building-info-gaps td {
-    padding: 6px 12px 6px 0;
+.building-info-gaps li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 8px;
+    padding: 8px 0;
     border-top: 1px solid rgba(120, 144, 156, 0.2);
-    text-align: left;
-    vertical-align: top;
     font-size: 0.85rem;
+    overflow-wrap: anywhere;
 }
 
-.building-info-gaps th {
+.building-info-gaps li:first-child {
+    border-top: 0;
+}
+
+.building-info-gaps__message {
     font-weight: 600;
-    white-space: nowrap;
+}
+
+.building-info-gaps__count {
+    padding: 0 8px;
+    border-radius: 999px;
+    background: rgba(207, 61, 46, 0.12);
+    color: #cf3d2e;
+    font-weight: 700;
+}
+
+.building-info-gaps__recipes {
+    flex-basis: 100%;
+    color: #78909c;
+    font-size: 0.8rem;
 }
 
 @media (max-width: 600px) {
-    .building-info-gaps th,
-    .building-info-gaps td {
-        display: block;
-        padding: 2px 0;
-        border-top: 0;
-    }
-
-    .building-info-gaps tr {
-        display: block;
-        padding: 6px 0;
-        border-top: 1px solid rgba(120, 144, 156, 0.2);
+    .enterprise-pill {
+        min-height: 40px;
     }
 }
 
@@ -1748,6 +1842,29 @@ footer .footer-links a:hover {
 .building-info-activity-recipe + .building-info-activity-recipe {
     padding-top: 16px;
     border-top: 1px solid rgba(120, 144, 156, 0.2);
+}
+
+/* A production chain is read from the left: its name and its cards start at the left edge, not the middle. */
+.building-info-activity-recipe .building-info-section-label {
+    text-align: left;
+}
+
+.building-info-activity-recipe .building-info-activity-row {
+    justify-content: flex-start;
+}
+
+/* Where a recipe's material comes from when the house made it itself: one wrapping line under the chain's name. */
+.building-info-recipe-origin {
+    margin: 0 0 10px;
+    text-align: left;
+    font-size: 0.8rem;
+    color: #607d8b;
+    overflow-wrap: anywhere;
+}
+
+/* The line sits right under the chain's name, on the same left edge: the name's own bottom margin is taken up by it. */
+.building-info-activity-recipe .building-info-section-label:has(+ .building-info-recipe-origin) {
+    margin-bottom: 4px;
 }
 
 .building-info-activity-row {
@@ -2095,6 +2212,54 @@ button.building-info-metric-card[aria-pressed="true"] {
     vertical-align: middle;
 }
 
+/* Problèmes tab: groups told apart by space, no frames; each line opens with its emoji. */
+.problems-group {
+    margin: 0 0 24px;
+}
+
+.problems-group__title {
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #78909c;
+}
+
+.problems-group__lines {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.problems-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-height: 40px;
+    padding: 6px 0;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #424242;
+}
+
+.problems-line__emoji {
+    flex: 0 0 auto;
+    font-size: 18px;
+    line-height: 1.3;
+}
+
+.problems-line__text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.problems-none {
+    margin: 8px 0;
+    color: #546e7a;
+}
+
 /* Prix tab of the owner's house: one line per use of land (label, price per tile, save, what is set). Narrow first: the line wraps, every control is at least 40px high. */
 .land-prices {
     list-style: none;
@@ -2148,33 +2313,68 @@ button.building-info-metric-card[aria-pressed="true"] {
     .land-prices__status { flex: 0 1 auto; }
 }
 
-/* Habitants tab: one line per citizen, in a list that scrolls. */
+/* Habitants tab: one card per citizen, in a grid that fills the width (a single column on a phone, more as the room grows). */
 .house-residents-list {
     list-style: none;
     margin: 0;
     padding: 0;
-    max-height: 320px;
-    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+    gap: 8px;
     font-size: 14px;
 }
 
-.house-residents-item {
-    padding: 6px 8px;
-    border-bottom: 1px solid #eceff1;
+.house-resident-card {
+    padding: 10px 12px;
+    border: 1px solid #eceff1;
+    border-radius: 6px;
     color: #424242;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
-.house-residents-name {
+.house-resident-card__name {
+    margin: 0;
+    font-size: 15px;
     font-weight: 700;
     color: #111;
 }
 
-.house-residents-item--civil_servant .house-residents-place {
+.house-resident-card__place {
+    margin: 2px 0 8px;
+    font-size: 13px;
+}
+
+.house-resident-card--administrator .house-resident-card__place {
     color: #1565c0;
 }
 
-.house-residents-item--unemployed .house-residents-place {
+.house-resident-card--unemployed .house-resident-card__place {
     color: #8e2424;
+}
+
+.house-resident-card__facts {
+    margin: 0;
+    padding-top: 8px;
+    border-top: 1px solid #eceff1;
+}
+
+.house-resident-card__facts > div {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 2px 8px;
+}
+
+.house-resident-card__facts dt {
+    font-size: 12px;
+    color: #607d8b;
+}
+
+.house-resident-card__facts dd {
+    margin: 0;
+    font-weight: 600;
+    color: #111;
 }
 
 /* Finances tab: one analytical statement per account (see buildingFinanceInfoView.js); a house has two accounts. */
@@ -3077,6 +3277,15 @@ button.building-info-metric-card[aria-pressed="true"] {
     font-size: 14px;
     font-weight: 600;
     text-align: left;
+}
+
+/* The sentence a flow carries under its name (e.g. what the places of the import agreements stand for): left, small, wraps. */
+.hub-storage-chart-note {
+    margin: -6px 0 10px;
+    font-size: 12px;
+    color: #607d8b;
+    text-align: left;
+    overflow-wrap: anywhere;
 }
 
 .hub-flow-tabs {

@@ -36,6 +36,7 @@ describe('buildingInfoGroupRegistry tabs', () => {
       BUILDING_INFO_TAB_IDS.orders,
       BUILDING_INFO_TAB_IDS.shelfLife,
       BUILDING_INFO_TAB_IDS.state,
+      BUILDING_INFO_TAB_IDS.problems,
       BUILDING_INFO_TAB_IDS.clients,
       BUILDING_INFO_TAB_IDS.messages,
       BUILDING_INFO_TAB_IDS.finance,
