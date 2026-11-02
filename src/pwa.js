@@ -3,9 +3,10 @@
  * were removed from package.json (see vite.config.js) because workbox-build's
  * dependency tree was tripping Socket Firewall's supply-chain trust check on
  * every `pnpm install`, and the game doesn't need offline/installable
- * support right now. This file stays as a no-op stub with the SAME exported
- * API so its 4 call sites (main.js, bootSiteChrome.js, ParametersPanel.js,
- * settings/main.js) don't need to change.
+ * support right now. This file stays as a no-op stub (`initPWA`) so its call
+ * sites (main.js, bootSiteChrome.js) don't need to change. The "last update" /
+ * "force the download" buttons of the settings page and the in-game panel
+ * were removed with it (no service worker, nothing to update).
  *
  * To restore real PWA support: re-add `vite-plugin-pwa`, `workbox-window`,
  * `@vite-pwa/assets-generator` to package.json, re-add the `VitePWA(...)`
@@ -18,17 +19,3 @@
  * No-op — no service worker to register while PWA support is disabled.
  */
 export function initPWA() {}
-
-/**
- * @returns {string | null} Always null while PWA support is disabled.
- */
-export function getLastPwaUpdateAt() {
-  return null;
-}
-
-/**
- * @returns {Promise<'unsupported'>} Always 'unsupported' while PWA support is disabled.
- */
-export async function installLatestPwaUpdate() {
-  return 'unsupported';
-}

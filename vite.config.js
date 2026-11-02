@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import { createMapsApiPlugin, createMapsIndexPlugin, resolveMapsDirectory } from './scripts/dev/mapsApiPlugin.mjs'
@@ -50,6 +51,18 @@ export default defineConfig({
     createMapsApiPlugin(mapsDir),
     createMapsIndexPlugin(mapsDir),
     createDevLogPlugin(__dirname),
+    {
+      // The game's version (package.json, raised by deploy/deploy.sh at each publication) replaces {{APP_VERSION}} in the pages, in `vite` and in `vite build`.
+      name: 'inject-app-version',
+      transformIndexHtml: {
+        order: 'pre',
+        handler(html) {
+          const { version } = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8'))
+          if (typeof version !== 'string' || version === '') throw new Error('package.json has no "version": the pages cannot show the game version')
+          return html.replaceAll('{{APP_VERSION}}', version)
+        },
+      },
+    },
     {
       // The home menu's "Prefab" entry starts a development city: it stays on localhost (`vite`), the production build (`vite build`) leaves it out of the page.
       name: 'drop-dev-only-menu-entries',

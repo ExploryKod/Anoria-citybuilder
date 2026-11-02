@@ -8,8 +8,6 @@ export const HUD_POP_RAIL_COLLAPSED_KEY = 'anoria.hudPopRailCollapsed';
 
 /** A phone held in landscape: the rail opens as a bottom strip there (hud.css, "Pop rail as a bottom sheet") */
 const SHEET_QUERY = '(max-width: 1024px) and (orientation: landscape) and (max-height: 500px)';
-/** A phone or tablet held in portrait: the rail is a tall column beside its tabs, and the details panel pages its blocks downwards there */
-const PORTRAIT_QUERY = '(max-width: 1024px) and (orientation: portrait)';
 
 /**
  * @param {HTMLElement | null} [root]
@@ -201,12 +199,12 @@ function packPages(scroller, slides, active, perPage) {
  * social category; the details panel, population, hunger, deaths, work. Each has its arrow, which pages it, back to the first block after the last, and points
  * back while the last one is shown.
  * @param {HTMLElement} root
- * @param {{ arrowId: string, panelId: string, scrollerSelector: string | null, slideSelector?: string, slidesPerPage?: number, pagesDownInPortrait?: boolean }} paged
+ * @param {{ arrowId: string, panelId: string, scrollerSelector: string | null, slideSelector?: string, slidesPerPage?: number, pagesDown?: boolean }} paged
  *   `scrollerSelector` null: the panel itself is the scroller. `slideSelector`: its blocks are grouped into pages by width (see packPages), up to
- *   `slidesPerPage` of them, instead of one per page. `pagesDownInPortrait`: in a portrait column its blocks page downwards, as many to a page as
+ *   `slidesPerPage` of them, instead of one per page. `pagesDown`: outside the bottom strip its blocks page downwards, as many to a page as
  *   fit its height (see packVerticalPages), with the same arrow.
  */
-function initPanelPaging(root, { arrowId, panelId, scrollerSelector, slideSelector = null, slidesPerPage = Infinity, pagesDownInPortrait = false, counterId = null }) {
+function initPanelPaging(root, { arrowId, panelId, scrollerSelector, slideSelector = null, slidesPerPage = Infinity, pagesDown = false, counterId = null }) {
   const arrow = root.querySelector(`#${arrowId}`);
   const counter = counterId ? root.querySelector(`#${counterId}`) : null;
   if (counterId && !counter) throw new Error(`hudPopRailCollapse: #${counterId} is missing from game.html`);
@@ -219,13 +217,12 @@ function initPanelPaging(root, { arrowId, panelId, scrollerSelector, slideSelect
   const nextLabel = arrow.getAttribute('aria-label') ?? '';
   const rewindLabel = 'Revenir à la première catégorie';
   const sheet = window.matchMedia(SHEET_QUERY);
-  const portrait = window.matchMedia(PORTRAIT_QUERY);
 
-  /** How the blocks are paged now: sideways in the bottom strip, downwards in a portrait column (when asked), else not at all */
+  /** How the blocks are paged now: sideways in the bottom strip, downwards everywhere else (when asked), else not at all */
   const direction = () => {
     if (panel.hidden) return null;
     if (sheet.matches) return 'sideways';
-    return pagesDownInPortrait && portrait.matches ? 'downwards' : null;
+    return pagesDown ? 'downwards' : null;
   };
 
   const sync = () => {
@@ -275,12 +272,11 @@ function initPanelPaging(root, { arrowId, panelId, scrollerSelector, slideSelect
   const resizes = new ResizeObserver(relayout);
   resizes.observe(scroller);
   for (const slide of slides) resizes.observe(slide);
-  // A page of a portrait column is as tall as the column of tabs beside it
-  if (pagesDownInPortrait) resizes.observe(side);
+  // A page is as tall as the column of tabs beside it
+  if (pagesDown) resizes.observe(side);
   // The panel is shown or hidden by its tab (the `hidden` attribute)
   new MutationObserver(relayout).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
   sheet.addEventListener('change', relayout);
-  portrait.addEventListener('change', relayout);
   relayout();
 }
 
@@ -290,17 +286,17 @@ function initPanelPaging(root, { arrowId, panelId, scrollerSelector, slideSelect
 export function initHudPopRailCollapse(root = document.getElementById('hud-pop-rail')) {
   if (!root || root.dataset.popRailCollapseReady === 'true') return;
   placeRailUnderDoor();
-  // The labour market: one category to a page (the city, then each social category); downwards in a portrait column
+  // The labour market: one category to a page (the city, then each social category); downwards outside the bottom strip
   initPanelPaging(root, {
     arrowId: 'hud-pop-labor-next',
     panelId: 'hud-pop-panel-emploi',
     scrollerSelector: '.pop-detail-labor',
     slideSelector: '.pop-labor-group',
     slidesPerPage: 1,
-    pagesDownInPortrait: true,
+    pagesDown: true,
     counterId: 'hud-pop-labor-page',
   });
-  initPanelPaging(root, { arrowId: 'hud-pop-details-next', panelId: 'hud-pop-panel-details', scrollerSelector: '.pop-detail-pages', slideSelector: '.pop-detail-block', slidesPerPage: 2, pagesDownInPortrait: true, counterId: 'hud-pop-details-page' });
+  initPanelPaging(root, { arrowId: 'hud-pop-details-next', panelId: 'hud-pop-panel-details', scrollerSelector: '.pop-detail-pages', slideSelector: '.pop-detail-block', slidesPerPage: 2, pagesDown: true, counterId: 'hud-pop-details-page' });
   const collapseBtn = root.querySelector('#hud-pop-rail-collapse');
   const expandBtn = root.querySelector('#hud-pop-rail-expand');
   if (!collapseBtn || !expandBtn) return;

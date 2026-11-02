@@ -447,6 +447,24 @@ class TutorialPanel {
         const content = this.panel.querySelector('.tutorial-content');
         if (content) {
             content.innerHTML = step.content;
+            content.scrollTop = 0;
+        }
+
+        // Repère de progression : « Histoire · 1 / 5 » et une pastille par étape
+        const eyebrow = this.panel.querySelector('.tutorial-eyebrow');
+        if (eyebrow) {
+            const label = this.mode === 'rules' ? 'Règles' : 'Histoire';
+            eyebrow.textContent = `${label} · ${this.currentStep + 1} / ${this.steps.length}`;
+        }
+        const progress = this.panel.querySelector('.tutorial-progress');
+        if (progress) {
+            progress.replaceChildren(...this.steps.map((_, index) => {
+                const dot = document.createElement('span');
+                dot.className = 'tutorial-progress__dot';
+                if (index === this.currentStep) dot.classList.add('is-current');
+                else if (index < this.currentStep) dot.classList.add('is-done');
+                return dot;
+            }));
         }
 
         // Mettre à jour les boutons
@@ -467,7 +485,8 @@ class TutorialPanel {
 
         // Bouton précédent
         if (previousBtn) {
-            previousBtn.style.display = this.currentStep > 0 ? 'block' : 'none';
+            // Masqué mais gardé dans la mise en page : les boutons ne bougent pas d'une page à l'autre
+            previousBtn.style.visibility = this.currentStep > 0 ? 'visible' : 'hidden';
         }
 
         // Bouton suivant

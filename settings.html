@@ -12,7 +12,7 @@
 <body>
     <main class="site-page">
         <header class="site-header">
-            <a href="/" class="site-back">← Menu principal</a>
+            <a href="/" class="site-back" aria-label="Retour au menu principal" title="Menu principal"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg></a>
             <h1>Paramètres généraux</h1>
         </header>
 
@@ -81,22 +81,6 @@
                 </div>
                 <p class="site-hint">Pour construire les étapes suivantes du jeu sans y jouer. Désactivé, le jeu retrouve ses règles.</p>
                 <p class="site-hint">Raccourci pour saisir un code, en jeu : <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>K</kbd> (<kbd>Échap</kbd> pour fermer).</p>
-            </section>
-
-            <section>
-                <h2 class="site-section-title">Application</h2>
-                <div class="site-field site-field--row">
-                    <label for="settings-pwa-update-btn">Dernière mise à jour</label>
-                    <button
-                        type="button"
-                        id="settings-pwa-update-btn"
-                        class="site-btn site-btn--primary site-btn--inline"
-                    >
-                        Installer
-                    </button>
-                </div>
-                <p id="settings-pwa-update-status" class="site-hint" hidden></p>
-                <p class="site-hint">Force le téléchargement de la dernière version (utile sur mobile / PWA).</p>
             </section>
 
             <div class="settings-actions">

@@ -1,6 +1,7 @@
 /**
  * Composant BEM : site-welcome
  * Message d'arrivée de l'accueil, montré une seule fois (<dialog> natif : focus piégé, Échap ferme).
+ * Une carte, un seul niveau de cadre : ombre douce, bande orange en haut, filets fins. Pensé d'abord pour l'écran étroit.
  */
 
 .site-welcome {
@@ -8,47 +9,150 @@
   max-height: calc(100dvh - 2 * var(--site-page-gutter));
   margin: auto;
   padding: 0;
-  border: 3px solid var(--site-border);
-  border-radius: var(--border-radius);
-  background: var(--site-surface);
+  border: 0;
+  border-radius: 16px;
+  background: #fffdf9;
   color: var(--site-text);
+  box-shadow: 0 24px 60px rgba(29, 34, 40, 0.35), 0 0 0 1px rgba(29, 34, 40, 0.06);
   overflow: hidden;
 }
 
 .site-welcome[open] {
   display: flex;
   flex-direction: column;
+  animation: site-welcome-in 0.3s ease-out;
 }
 
 .site-welcome::backdrop {
   background: rgba(29, 34, 40, 0.55);
+  backdrop-filter: blur(3px);
+}
+
+/* La seule ornementation : un filet de couleur en haut de la carte */
+.site-welcome::before {
+  content: '';
+  display: block;
+  flex-shrink: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--cta), #ffc078);
+}
+
+.site-welcome__header {
+  flex-shrink: 0;
+  padding: 20px 20px 12px;
+}
+
+.site-welcome__eyebrow {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cta);
 }
 
 .site-welcome__title {
-  flex-shrink: 0;
   margin: 0;
-  padding: 16px 20px 12px;
-  border-bottom: 2px solid var(--site-border);
-  background: var(--site-surface-header);
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
 
 .site-welcome__body {
   flex: 1 1 auto;
   min-height: 0;
-  padding: 16px 20px;
+  padding: 4px 20px 20px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  line-height: 1.55;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(29, 34, 40, 0.22) transparent;
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(29, 34, 40, 0.86);
 }
 
 .site-welcome__body p {
-  margin: 0 0 0.75rem;
+  margin: 0 0 1rem;
+  overflow-wrap: anywhere;
 }
 
 .site-welcome__body p:last-child {
   margin-bottom: 0;
+}
+
+/* Le premier paragraphe dit l'essentiel : il se détache du reste par sa taille, sans cadre */
+.site-welcome__lead {
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--site-text);
+}
+
+/* Les passions : une liste à puces orange, sans cadre */
+.site-welcome__passions {
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+}
+
+.site-welcome__passions li {
+  position: relative;
+  margin-bottom: 6px;
+  padding-left: 20px;
+}
+
+.site-welcome__passions li::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0.65em;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cta);
+}
+
+/* Un sous-titre par section : petit, orange, en capitales, comme le sur-titre */
+.site-welcome__subtitle {
+  margin: 1.5rem 0 0.4rem;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--cta);
+}
+
+/* Le contour que le navigateur dessine autour de la fenêtre à son ouverture : la carte n'en a pas besoin */
+.site-welcome:focus,
+.site-welcome:focus-visible,
+.site-welcome__body:focus,
+.site-welcome__body:focus-visible {
+  outline: none;
+}
+
+/* Barre de défilement fine et discrète (le texte défile dans la carte) */
+.site-welcome__body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.site-welcome__body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.site-welcome__body::-webkit-scrollbar-thumb {
+  background: rgba(29, 34, 40, 0.18);
+  border-radius: 3px;
+}
+
+.site-welcome__body strong {
+  font-weight: 700;
+  color: var(--site-text);
+}
+
+.site-welcome__body em {
+  font-style: italic;
 }
 
 .site-welcome__actions {
@@ -56,15 +160,48 @@
   display: flex;
   justify-content: flex-end;
   padding: 12px 20px max(16px, env(safe-area-inset-bottom, 0px));
-  border-top: 2px solid var(--site-border-light);
+  border-top: 1px solid rgba(29, 34, 40, 0.08);
+}
+
+.site-welcome__actions .site-btn {
+  min-height: 44px;
+  padding: 0 24px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(251, 129, 34, 0.35);
+}
+
+.site-welcome__actions .site-btn:focus-visible {
+  outline: 3px solid rgba(251, 129, 34, 0.5);
+  outline-offset: 2px;
+}
+
+@keyframes site-welcome-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-welcome[open] {
+    animation: none;
+  }
 }
 
 @media (max-width: 480px) {
-  .site-welcome__title,
+  .site-welcome__header,
   .site-welcome__body,
   .site-welcome__actions {
     padding-left: 16px;
     padding-right: 16px;
+  }
+
+  .site-welcome__title {
+    font-size: 1.3rem;
   }
 
   .site-welcome__actions .site-btn {
@@ -73,19 +210,26 @@
 }
 
 @media (min-width: 768px) {
+  .site-welcome__header {
+    padding: 28px 32px 14px;
+  }
+
   .site-welcome__title {
-    padding: 20px 28px 14px;
-    font-size: 1.2rem;
+    font-size: 1.75rem;
   }
 
   .site-welcome__body {
-    padding: 20px 28px;
-    font-size: 15px;
+    padding: 6px 32px 24px;
+    font-size: 16px;
+  }
+
+  .site-welcome__lead {
+    font-size: 18px;
   }
 
   .site-welcome__actions {
-    padding-left: 28px;
-    padding-right: 28px;
+    padding-left: 32px;
+    padding-right: 32px;
   }
 }
 
@@ -96,18 +240,33 @@
     max-height: calc(100dvh - 16px);
   }
 
+  .site-welcome__header {
+    padding: 8px 16px 4px;
+  }
+
+  .site-welcome__eyebrow {
+    display: none;
+  }
+
   .site-welcome__title {
-    padding: 8px 16px 6px;
-    font-size: 1rem;
+    font-size: 1.1rem;
   }
 
   .site-welcome__body {
-    padding: 10px 16px;
+    padding: 4px 16px 10px;
     font-size: 14px;
     line-height: 1.45;
   }
 
+  .site-welcome__lead {
+    font-size: 14px;
+  }
+
   .site-welcome__actions {
     padding: 8px 16px max(8px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .site-welcome__actions .site-btn {
+    width: auto;
   }
 }

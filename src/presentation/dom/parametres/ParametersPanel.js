@@ -4,7 +4,6 @@ import * as eventsConfig from '../../../config/events.js';
 import { isTouchModeEnabled, setTouchModeEnabled } from '../../../config/touchMode.js';
 import { isCameraDpadEnabled, setCameraDpadEnabled } from '../../../config/cameraDpad.js';
 import { readStoredTileGridVisibility } from '../../three/managers/TileGridOverlay.js';
-import { getLastPwaUpdateAt, installLatestPwaUpdate } from '../../../pwa.js';
 import { DEFAULT_TICK_MS, TICK_MS_MIN, TICK_MS_MAX, clampTickMs } from '../../../shared/gameplay/SimulationDefaults.js';
 
 /** @type {{
@@ -37,8 +36,6 @@ class ParametersPanel {
         this.tileGridToggle = null;
         this.touchModeToggle = null;
         this.cameraDpadToggle = null;
-        this.pwaUpdateInstallBtn = null;
-        this.pwaUpdateStatus = null;
 
         this.handleDocumentKeyDown = this.handleDocumentKeyDown.bind(this);
         this.handleOutsideClick = this.handleOutsideClick.bind(this);
@@ -73,12 +70,9 @@ class ParametersPanel {
         this.tileGridToggle = this.panel.querySelector('#tile-grid-toggle');
         this.touchModeToggle = this.panel.querySelector('#touch-mode-toggle');
         this.cameraDpadToggle = this.panel.querySelector('#camera-dpad-toggle');
-        this.pwaUpdateInstallBtn = this.panel.querySelector('#pwa-update-install-btn');
-        this.pwaUpdateStatus = this.panel.querySelector('#pwa-update-status');
 
         this.setupEventListeners();
         this.loadValues();
-        this.refreshPwaUpdateStatus();
     }
 
     setupEventListeners() {
@@ -185,14 +179,6 @@ class ParametersPanel {
                 window.cookieBanner.open();
             });
         }
-
-        if (this.pwaUpdateInstallBtn) {
-            this.pwaUpdateInstallBtn.addEventListener('click', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                void this.handlePwaUpdateInstall();
-            });
-        }
     }
 
     async loadValues() {
@@ -251,42 +237,6 @@ class ParametersPanel {
             setCameraDpadEnabled(enabled);
         } catch (error) {
             console.error('[ParametersPanel] Error toggling camera D-pad:', error);
-        }
-    }
-
-    refreshPwaUpdateStatus() {
-        if (!this.pwaUpdateStatus) return;
-        const iso = getLastPwaUpdateAt();
-        if (!iso) {
-            this.pwaUpdateStatus.hidden = true;
-            this.pwaUpdateStatus.textContent = '';
-            return;
-        }
-        try {
-            const formatted = new Date(iso).toLocaleString('fr-FR', {
-                dateStyle: 'short',
-                timeStyle: 'short',
-            });
-            this.pwaUpdateStatus.hidden = false;
-            this.pwaUpdateStatus.textContent = `Dernière installation : ${formatted}`;
-        } catch {
-            this.pwaUpdateStatus.hidden = true;
-        }
-    }
-
-    async handlePwaUpdateInstall() {
-        if (!this.pwaUpdateInstallBtn) return;
-        const btn = this.pwaUpdateInstallBtn;
-        const previousLabel = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Installation…';
-        try {
-            await installLatestPwaUpdate();
-            this.refreshPwaUpdateStatus();
-        } finally {
-            // Reload usually follows; restore UI if it did not.
-            btn.disabled = false;
-            btn.textContent = previousLabel || 'Installer';
         }
     }
 
@@ -427,7 +377,6 @@ class ParametersPanel {
         this.lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
         this.loadValues();
-        this.refreshPwaUpdateStatus();
 
         this.panel.classList.add('visible');
         this.panel.removeAttribute('inert');

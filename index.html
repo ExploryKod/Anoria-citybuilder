@@ -47,39 +47,54 @@
 
         <footer class="site-footer">
             <p>City Builder de démonstration</p>
+            <p class="site-footer__version">Version {{APP_VERSION}}</p>
         </footer>
     </main>
 
     <dialog class="site-welcome" id="site-welcome" aria-labelledby="site-welcome-title">
-        <h2 class="site-welcome__title" id="site-welcome-title">Un mot avant de commencer</h2>
+        <header class="site-welcome__header">
+            <span class="site-welcome__eyebrow">Urbanicompta</span>
+            <h2 class="site-welcome__title" id="site-welcome-title">Un mot avant de commencer</h2>
+        </header>
         <div class="site-welcome__body">
-            <p>
-                <strong>Ce jeu est inachevé.</strong> Il reflète ma passion pour un ensemble de disciplines qui marquent ma vie&nbsp;:
-                les relations internationales, la gestion d'entreprise (comptabilité, droit des affaires…), l'informatique
-                (infrastructure, développement web…), les city builders de la série
-                <em>César&nbsp;III</em> et <em>Civilization</em> III à IV, sans oublier mes Lego et l'écriture d'un roman où j'ai
-                inventé une nation imaginaire à 12&nbsp;ans.
+            <p class="site-welcome__lead">
+                <strong>Ce jeu est inachevé.</strong> Il reflète ma passion pour un ensemble de disciplines qui marquent ma vie.
             </p>
+            <ul class="site-welcome__passions">
+                <li><strong>Les relations internationales</strong></li>
+                <li><strong>La gestion d'entreprise</strong> (comptabilité, droit des affaires…)</li>
+                <li><strong>L'informatique</strong> (infrastructure, développement web…)</li>
+                <li><strong>Les city builders</strong> de la série <em>César&nbsp;III</em> et <em>Civilization</em> III à IV</li>
+                <li><strong>Mes Lego</strong> et <strong>l'écriture d'un roman</strong> où j'ai inventé une nation imaginaire à 12&nbsp;ans</li>
+            </ul>
+
+            <h3 class="site-welcome__subtitle">Un espace de liberté</h3>
             <p>
-                Il a été mis en ligne. Il exprime ma créativité et mon désir de liberté, aidé maintenant des LLM, sans oublier
-                ma réflexion, et sans les contraintes du monde professionnel, du moins tant que je ne désire rien vendre.
+                Il a été mis en ligne. Il exprime ma <strong>créativité</strong> et mon <strong>désir de liberté</strong>, aidé maintenant des LLM,
+                sans oublier ma réflexion, et sans les contraintes du monde professionnel, du moins tant que je ne désire rien vendre.
                 J'utilise donc des technologies inadaptées mais qui me font plaisir&nbsp;; je dessine une architecture que
-                j'aime, qui emprunte autant à la clean architecture qu'à d'autres sans jamais les respecter au cordeau&nbsp;;
+                j'aime, qui emprunte autant à la <strong>clean architecture</strong> qu'à d'autres sans jamais les respecter au cordeau&nbsp;;
                 je teste, j'expérimente et je rêve.
             </p>
+
+            <h3 class="site-welcome__subtitle">Pourquoi en ligne</h3>
             <p>
-                Je l'ai aussi mis en ligne pour le tester au niveau des performances, qui gagneraient grandement à être
-                améliorées par une meilleure intelligence de la qualité logicielle, sans oublier l'écologie&nbsp;: à ce niveau-là,
+                Je l'ai aussi mis en ligne pour le tester au niveau des <strong>performances</strong>, qui gagneraient grandement à être
+                améliorées par une meilleure intelligence de la qualité logicielle, sans oublier <strong>l'écologie</strong>&nbsp;: à ce niveau-là,
                 la 3D et l'usage des LLM posent un défi éthique délicat.
             </p>
+
+            <h3 class="site-welcome__subtitle">Ce que je cherche</h3>
             <p>
-                Je cherche à créer quelque chose de ludique qui apprendra à mieux vivre, sans être dans une logique habituelle.
+                Créer quelque chose de <strong>ludique</strong> qui apprendra à mieux vivre, sans être dans une logique habituelle.
                 L'idée est en germe&nbsp;: une fois la base posée. À ce stade, je ne fais que poser des bases, encore en cours de
-                fondation. Mais j'ai une vision articulée autour de la pédagogie par le jeu et d'un message sur la force de la
-                coopération, alors que notre société connaît une perte de repères.
+                fondation. Mais j'ai une vision articulée autour de la <strong>pédagogie par le jeu</strong> et d'un message sur la
+                <strong>force de la coopération</strong>, alors que notre société connaît une perte de repères.
             </p>
+
+            <h3 class="site-welcome__subtitle">Mon espoir</h3>
             <p>
-                J'espère que ce jeu sera plus profond qu'un simple side project, sans pour autant être un véritable jeu vidéo
+                J'espère que ce jeu sera plus profond qu'un simple <em>side project</em>, sans pour autant être un véritable jeu vidéo
                 au sens classique du terme.
             </p>
         </div>

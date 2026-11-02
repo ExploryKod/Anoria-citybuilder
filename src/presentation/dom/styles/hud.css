@@ -2285,9 +2285,12 @@
    Beside its column of tabs the panel is tall, and it grew past them as soon as it had more than a few figures. Its blocks are cut into pages as tall
    as the column of tabs (hudPopRailCollapse.js: as many blocks to a page as fit, so two or more when they hold few figures), scrolled one page at a time.
    The arrow sits by the close button at the top, and points back to the first page from the last one.
+   Every window has it, whatever its width or shape: it is the default. How many blocks fit a page follows the room (hudPopRailCollapse.js), so a small
+   screen shows few and a large one more. The one exception is the bottom strip (a phone in landscape), which pages sideways (above): it is excluded here
+   so that this block, which comes later, does not override the strip's rules.
    ------------------------------------------------------------------------- */
 
-@media screen and (max-width: 1024px) and (orientation: portrait) {
+@media not all and (max-width: 1024px) and (orientation: landscape) and (max-height: 500px) {
   .hud-pop-rail #hud-pop-panel-details .pop-detail-pages {
     display: flex;
     flex-direction: column;

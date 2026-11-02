@@ -3390,16 +3390,20 @@
 >
     <div class="tutorial-panel-wrapper">
         <div class="tutorial-panel-header">
-            <h3>🎓 Tutoriel</h3>
+            <div class="tutorial-panel-heading">
+                <span class="tutorial-eyebrow"></span>
+                <h3>Tutoriel</h3>
+            </div>
             <button type="button" class="tutorial-rules-btn">Règles</button>
         </div>
         <div class="tutorial-panel-content">
             <div class="tutorial-content"></div>
+            <div class="tutorial-progress" aria-hidden="true"></div>
             <div class="tutorial-buttons">
                 <div class="tutorial-buttons-wrapper">
+                    <button type="button" class="tutorial-close-btn">Fermer</button>
                     <button type="button" class="tutorial-previous-btn">Précédent</button>
                     <button type="button" class="tutorial-next-btn">Suivant</button>
-                    <button type="button" class="tutorial-close-btn">Fermer</button>
                 </div>
             </div>
         </div>
@@ -3628,27 +3632,6 @@
                                 Gérer les cookies
                             </button>
                         </div>
-                    </div>
-                </div>
-
-                <div class="parameters-section">
-                    <h4 class="parameters-section-title">Application</h4>
-                    <div class="parameters-control-group">
-                        <div class="parameters-control-label" style="cursor: default;">
-                            <span class="parameters-control-text" id="pwa-update-label">Dernière mise à jour</span>
-                            <button
-                                type="button"
-                                id="pwa-update-install-btn"
-                                class="parameters-action-btn"
-                                aria-describedby="pwa-update-hint"
-                            >
-                                Installer
-                            </button>
-                        </div>
-                        <p id="pwa-update-hint" class="parameters-shortcut-label" style="margin: 6px 0 0; padding-left: 0;">
-                            Force le téléchargement de la dernière version (utile sur mobile / PWA).
-                        </p>
-                        <p id="pwa-update-status" class="parameters-shortcut-label" style="margin: 4px 0 0; padding-left: 0;" hidden></p>
                     </div>
                 </div>
 

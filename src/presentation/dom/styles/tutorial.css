@@ -1,23 +1,30 @@
+/*
+ * The welcome / rules dialog (TutorialPanel.js). One card, one level of frame: a soft shadow, a thin divider under the header and above the actions.
+ * Narrow width first (a phone): the card nearly fills the screen, every touch target is 44 px tall; it widens from 600 px up.
+ */
 .tutorial-panel {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) translateX(-100%);
-    max-width: 450px;
-    width: 90%;
-    max-height: 80vh;
-    background: #fafafa;
-    border: 3px solid var(--cta);
-    border-radius: var(--border-radius-small);
+    transform: translate(-50%, -50%) translateY(16px) scale(0.98);
+    width: calc(100vw - 24px);
+    max-width: 520px;
+    /* A fixed height: the card keeps its size from one page to the next (the text scrolls inside when it is long) */
+    height: min(540px, calc(100dvh - 24px));
+    background: #fffdf9;
+    border: 0;
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(29, 34, 40, 0.35), 0 0 0 1px rgba(29, 34, 40, 0.06);
     z-index: var(--z-index-modal);
     color: var(--primary);
     font-family: inherit;
     opacity: 0;
-    transition: all 0.3s ease-in-out;
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
     pointer-events: none;
     display: flex;
     flex-direction: column;
     text-align: left;
+    overflow: hidden;
 }
 
 .tutorial-panel[hidden] {
@@ -26,14 +33,23 @@
 
 .tutorial-panel.visible {
     opacity: 1;
-    transform: translate(-50%, -50%) translateX(0);
+    transform: translate(-50%, -50%);
     pointer-events: auto;
+}
+
+/* A thin band of colour on top is the only ornament */
+.tutorial-panel::before {
+    content: '';
+    display: block;
+    height: 4px;
+    flex-shrink: 0;
+    background: linear-gradient(90deg, var(--cta), #ffc078);
 }
 
 .tutorial-panel-wrapper {
     width: 100%;
-    height: 100%;
-    min-height: 400px;
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -41,42 +57,58 @@
 }
 
 .tutorial-panel-header {
-    padding: 16px 20px 12px 20px;
-    border-bottom: 2px solid var(--cta);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 20px 20px 14px;
     flex-shrink: 0;
     text-align: left;
 }
 
-.tutorial-panel-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+.tutorial-panel-heading {
+    min-width: 0;
 }
 
-.tutorial-panel-header .tutorial-rules-btn {
-    flex-shrink: 0;
-    padding: 4px 12px;
-    border: 2px solid var(--cta);
-    border-radius: var(--border-radius-small);
-    background: transparent;
-    color: var(--cta);
-    font-size: 12px;
+.tutorial-eyebrow {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
     font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-}
-
-.tutorial-panel-header .tutorial-rules-btn:hover {
-    background-color: rgba(251, 129, 24, 0.1);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--cta);
 }
 
 .tutorial-panel-header h3 {
     margin: 0;
-    font-size: 18px;
-    font-weight: 600;
+    font-size: 24px;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     color: var(--primary);
     text-align: left;
+    text-wrap: balance;
+}
+
+.tutorial-panel-header .tutorial-rules-btn {
+    flex-shrink: 0;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid rgba(29, 34, 40, 0.18);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.tutorial-panel-header .tutorial-rules-btn:hover {
+    background-color: rgba(251, 129, 24, 0.1);
+    border-color: var(--cta);
+    color: var(--cta);
 }
 
 .tutorial-panel-content {
@@ -90,7 +122,7 @@
 
 .tutorial-content {
     flex: 1;
-    padding: 20px;
+    padding: 4px 20px 20px;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
@@ -116,11 +148,18 @@
 }
 
 .tutorial-content p {
-    margin: 0 0 12px 0;
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--primary);
+    margin: 0 0 14px 0;
+    font-size: 15px;
+    line-height: 1.65;
+    color: rgba(29, 34, 40, 0.86);
     text-align: left;
+    overflow-wrap: anywhere;
+}
+
+/* The first paragraph of a page is its lead */
+.tutorial-content p:first-child {
+    font-size: 16px;
+    color: var(--primary);
 }
 
 .tutorial-content p:last-child {
@@ -128,17 +167,31 @@
 }
 
 .tutorial-content ul {
-    margin: 12px 0;
-    padding-left: 20px;
+    margin: 14px 0;
+    padding: 0;
+    list-style: none;
     text-align: left;
 }
 
 .tutorial-content li {
-    margin-bottom: 8px;
-    font-size: 14px;
+    position: relative;
+    margin-bottom: 10px;
+    padding-left: 22px;
+    font-size: 15px;
     line-height: 1.6;
-    color: var(--primary);
+    color: rgba(29, 34, 40, 0.86);
     text-align: left;
+}
+
+.tutorial-content li::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 0.6em;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cta);
 }
 
 .tutorial-content strong {
@@ -147,69 +200,113 @@
     text-align: left;
 }
 
+.tutorial-content em {
+    color: var(--primary-05);
+}
+
 .tutorial-content * {
     text-align: left !important;
 }
 
-.tutorial-buttons {
-    padding: 16px 20px;
-    border-top: 2px solid var(--cta);
+/* One dot per page: the current one is stretched, the pages read are filled */
+.tutorial-progress {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 20px 14px;
     flex-shrink: 0;
-    background: #fafafa;
+}
+
+.tutorial-progress__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(29, 34, 40, 0.14);
+    transition: width 0.25s ease, background-color 0.25s ease;
+}
+
+.tutorial-progress__dot.is-done {
+    background: var(--cta-05);
+}
+
+.tutorial-progress__dot.is-current {
+    width: 22px;
+    background: var(--cta);
+}
+
+.tutorial-buttons {
+    padding: 12px 20px 16px;
+    border-top: 1px solid rgba(29, 34, 40, 0.08);
+    flex-shrink: 0;
 }
 
 .tutorial-buttons-wrapper {
     display: flex;
+    align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
 }
 
 .tutorial-buttons button {
-    width: 180px;
-    padding: 8px 16px;
-    border: 3px solid var(--cta);
-    border-radius: var(--border-radius-small);
-    font-size: 13px;
+    min-height: 44px;
+    padding: 0 20px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease-in-out;
-    min-width: 80px;
-    background-color: var(--cta);
-    color: white;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
 }
 
-.tutorial-buttons button.tutorial-previous-btn {
-    background-color: transparent;
-    color: var(--cta);
-    border: 3px solid var(--cta);
+.tutorial-buttons button:active {
+    transform: scale(0.97);
 }
 
-.tutorial-buttons button.tutorial-previous-btn:hover {
-    background-color: rgba(251, 129, 24, 0.1);
-    color: var(--cta);
-}
-
-.tutorial-buttons button.tutorial-next-btn {
-    background-color: var(--cta);
-    color: white;
-}
-
-.tutorial-buttons button.tutorial-next-btn:hover {
-    background-color: white;
-    color: var(--cta);
-}
-
+/* Close is a quiet text button on the left; the two navigation buttons sit together on the right */
 .tutorial-buttons button.tutorial-close-btn {
-    background-color: #dc3545;
-    color: white;
-    border: 3px solid #dc3545;
+    margin-right: auto;
+    padding: 0 12px;
+    background: transparent;
+    color: var(--primary-05);
 }
 
 .tutorial-buttons button.tutorial-close-btn:hover {
-    background-color: #c82333;
+    color: var(--primary);
+    background: rgba(29, 34, 40, 0.06);
+}
+
+.tutorial-buttons button.tutorial-previous-btn {
+    background: transparent;
+    color: var(--primary);
+    border-color: rgba(29, 34, 40, 0.18);
+}
+
+.tutorial-buttons button.tutorial-previous-btn:hover {
+    border-color: var(--cta);
+    color: var(--cta);
+    background: rgba(251, 129, 24, 0.08);
+}
+
+.tutorial-buttons button.tutorial-previous-btn,
+.tutorial-buttons button.tutorial-next-btn {
+    width: 120px;
+    padding: 0;
+}
+
+.tutorial-buttons button.tutorial-next-btn {
+    background: var(--cta);
     color: white;
-    border: 3px solid #c82333;
+    box-shadow: 0 4px 12px rgba(251, 129, 24, 0.35);
+}
+
+.tutorial-buttons button.tutorial-next-btn:hover {
+    background: #e8730f;
+}
+
+.tutorial-buttons button:focus-visible,
+.tutorial-panel-header .tutorial-rules-btn:focus-visible {
+    outline: 3px solid rgba(251, 129, 24, 0.5);
+    outline-offset: 2px;
 }
 
 /*
@@ -266,6 +363,11 @@
     .tutorial-objective {
         animation: none;
     }
+
+    .tutorial-panel,
+    .tutorial-progress__dot {
+        transition: none;
+    }
 }
 
 /* The history button is there in tutorial games only: [hidden] must win over the HUD buttons' display */
@@ -310,19 +412,26 @@ body button:is([data-tutorial-pulse], [data-tutorial-objective-pulse]) {
     }
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-    .tutorial-panel {
-        max-width: calc(100vw - 20px);
-        max-height: 90vh;
+/* Responsive: on a phone the title is a little smaller and the buttons share the row */
+@media (max-width: 480px) {
+    .tutorial-panel-header {
+        padding: 16px 16px 10px;
     }
-    
-    .tutorial-panel-wrapper {
-        min-height: 350px;
+
+    .tutorial-panel-header h3 {
+        font-size: 21px;
     }
-    
-    .tutorial-buttons-wrapper {
-        gap: 6px;
+
+    .tutorial-content {
+        padding: 2px 16px 16px;
     }
-    
+
+    .tutorial-buttons {
+        padding: 10px 16px 14px;
+    }
+
+    .tutorial-buttons button.tutorial-previous-btn,
+    .tutorial-buttons button.tutorial-next-btn {
+        width: 108px;
+    }
 }

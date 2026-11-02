@@ -88,14 +88,32 @@ a {
   letter-spacing: 0.02em;
 }
 
+/* Retour au menu : une flèche ronde à gauche du titre (barre d'application), sans texte ; 40 px pour le doigt */
 .site-back {
-  color: var(--site-text-muted);
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--site-btn-border);
+  border-radius: 50%;
+  background: var(--site-input-bg);
+  color: var(--site-text);
+  box-shadow: 0 1px 3px rgba(29, 34, 40, 0.12);
   text-decoration: none;
-  font-size: 0.9rem;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .site-back:hover {
+  border-color: var(--cta);
+  background: var(--site-btn-bg-hover);
   color: var(--cta);
+}
+
+.site-back:focus-visible {
+  outline: 3px solid rgba(251, 129, 34, 0.5);
+  outline-offset: 2px;
 }
 
 .site-menu-title {
@@ -126,6 +144,19 @@ a {
   text-align: center;
   color: var(--site-text-muted);
   font-size: 0.75rem;
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+/* La version du jeu, discrète, sous la ligne du pied de page */
+.site-footer__version {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
 }
 
 .site-panel {

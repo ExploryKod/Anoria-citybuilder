@@ -3,7 +3,6 @@ import { isTouchModeEnabled, setTouchModeEnabled } from '../../../config/touchMo
 import { isCameraDpadEnabled, setCameraDpadEnabled } from '../../../config/cameraDpad.js';
 import { isCheatCodesAllowed, setCheatCodesAllowed } from '../../../config/cheatCodes.js';
 import { bootSiteChrome } from '../site/bootSiteChrome.js';
-import { getLastPwaUpdateAt, installLatestPwaUpdate } from '../../../pwa.js';
 
 bootSiteChrome();
 
@@ -26,28 +25,6 @@ const touchModeToggle = document.getElementById('settings-touch-mode');
 const cameraDpadToggle = document.getElementById('settings-camera-dpad');
 const cheatCodesToggle = document.getElementById('settings-cheat-codes');
 const saveBtn = document.getElementById('settings-save-btn');
-const pwaUpdateBtn = document.getElementById('settings-pwa-update-btn');
-const pwaUpdateStatus = document.getElementById('settings-pwa-update-status');
-
-function refreshPwaUpdateStatus() {
-  if (!pwaUpdateStatus) return;
-  const iso = getLastPwaUpdateAt();
-  if (!iso) {
-    pwaUpdateStatus.hidden = true;
-    pwaUpdateStatus.textContent = '';
-    return;
-  }
-  try {
-    const formatted = new Date(iso).toLocaleString('fr-FR', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    });
-    pwaUpdateStatus.hidden = false;
-    pwaUpdateStatus.textContent = `Dernière installation : ${formatted}`;
-  } catch {
-    pwaUpdateStatus.hidden = true;
-  }
-}
 
 /** Days per month: editable only before a game exists; frozen once it does. */
 async function loadCalendar() {
@@ -87,7 +64,6 @@ function loadValues() {
   if (cheatCodesToggle) {
     cheatCodesToggle.checked = isCheatCodesAllowed();
   }
-  refreshPwaUpdateStatus();
 }
 
 function saveValues() {
@@ -130,21 +106,6 @@ if (saveBtn) {
     setTimeout(() => {
       saveBtn.textContent = 'Enregistrer';
     }, 1500);
-  });
-}
-
-if (pwaUpdateBtn) {
-  pwaUpdateBtn.addEventListener('click', async () => {
-    const previous = pwaUpdateBtn.textContent;
-    pwaUpdateBtn.disabled = true;
-    pwaUpdateBtn.textContent = 'Installation…';
-    try {
-      await installLatestPwaUpdate();
-      refreshPwaUpdateStatus();
-    } finally {
-      pwaUpdateBtn.disabled = false;
-      pwaUpdateBtn.textContent = previous || 'Installer';
-    }
   });
 }
 

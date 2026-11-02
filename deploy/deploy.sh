@@ -8,6 +8,10 @@ HOST=anoria-deploy   # the Host alias of ~/.ssh/config: the deployment user (ani
 RELEASE=$(date +%Y-%m-%d-%H%M)
 KEEP=2
 
+# The game's version is package.json's: one patch more at each publication, before the build so that the home page shows it (vite.config.js, {{APP_VERSION}}).
+# For a bigger step, set it by hand beforehand (`npm version minor --no-git-tag-version`) and the script goes on from there.
+VERSION=$(npm version patch --no-git-tag-version)
+
 pnpm install --frozen-lockfile
 pnpm run build
 
@@ -16,4 +20,4 @@ pnpm run build
 rsync -az --delete --exclude='*.zip' --link-dest=/var/www/anoria/current/ dist/ "$HOST:/var/www/anoria/releases/$RELEASE/"
 ssh "$HOST" "ln -sfn /var/www/anoria/releases/$RELEASE /var/www/anoria/current && ls -1dt /var/www/anoria/releases/* | tail -n +$((KEEP + 1)) | xargs -r rm -rf"
 
-echo "Published $RELEASE"
+echo "Published $VERSION ($RELEASE)"
