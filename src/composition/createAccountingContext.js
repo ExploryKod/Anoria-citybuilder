@@ -102,6 +102,7 @@ import { costOfLivingOf } from '../contexts/accounting/domain/policies/CostOfLiv
 import { serviceSubsidyShare } from '../contexts/accounting/domain/policies/ServiceSubsidyPolicy.js';
 import { addVatTo } from '../contexts/accounting/domain/policies/VatIncludedPolicy.js';
 import { stockValueAtCapacity } from '../shared/resource-catalog/ValueChainCatalog.js';
+import { getOrCreateCitizenRegistry } from './citizenRegistry.js';
 
 /**
  * Composition root — Accounting bounded context.
@@ -1774,7 +1775,8 @@ export function createAccountingContext(deps = {}) {
       // The residents who look for no job (the administrators) are paid a stipend by the hamlet: they are neither workers nor unemployed.
       const seeking = residentsSeekingWork(house.type, house.pop);
       const salaried = house.pop - seeking;
-      const residents = residentsOfHouse({ houseId, pop: house.pop, salaried, workplaces: workplaces.map(({ workplaceId, workers }) => ({ workplaceId, workers })) });
+      const citizens = await getOrCreateCitizenRegistry().forHouse({ houseId, hamletId: house.hamletId, pop: house.pop });
+      const residents = residentsOfHouse({ houseId, citizens, salaried, workplaces: workplaces.map(({ workplaceId, workers }) => ({ workplaceId, workers })) });
       const typeOf = new Map(workplaces.map((entry) => [entry.workplaceId, entry.workplaceType]));
 
       const workers = workplaces.reduce((sum, entry) => sum + entry.workers, 0);

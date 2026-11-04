@@ -27,6 +27,20 @@ function isConstraintError(err) {
 
 /** Construction adapter — direct Dexie (table `houses`). */
 export class DexieConstructionBuildingRepository {
+  /** @param {{ citizens: import('../../../../shared/citizens/DexieCitizenRegistry.js').DexieCitizenRegistry }} deps */
+  constructor({ citizens } = {}) {
+    if (!citizens) throw new Error('[construction] the repository needs the citizens registry: a removed house takes its citizens with it');
+    this.citizens = citizens;
+  }
+
+  /** Delete a building's row and, with it, the citizens it housed — one transaction. */
+  async #deleteRow(instanceId) {
+    await db.transaction('rw', db.houses, db.citizens, async () => {
+      await this.citizens.removeHouse(instanceId);
+      await db.houses.delete(instanceId);
+    });
+  }
+
   async findByAnchor(x, y) {
     const tileX = Math.floor(x);
     const tileY = Math.floor(y);
@@ -70,7 +84,7 @@ export class DexieConstructionBuildingRepository {
 
     const occupant = atAnchor.find(isActiveHamletRow);
     if (occupant && occupant.instanceId !== keepInstanceId) {
-      await db.houses.delete(occupant.instanceId);
+      await this.#deleteRow(occupant.instanceId);
     }
   }
 
@@ -185,7 +199,7 @@ export class DexieConstructionBuildingRepository {
   /** @param {string} instanceId */
   async deleteById(instanceId) {
     if (!instanceId) return;
-    await db.houses.delete(instanceId);
+    await this.#deleteRow(instanceId);
   }
 }
 

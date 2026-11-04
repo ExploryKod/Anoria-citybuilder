@@ -6639,6 +6639,872 @@
       }
     }
   ],
+  "citizens": [
+    {
+      "id": "0c24cfd6-fb63-4046-a37d-1b79b9df54db",
+      "firstName": "Jules",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.4905051242080236,
+        "sensitivity": 1.4331556028952348
+      },
+      "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 72.0887899109918
+    },
+    {
+      "id": "0c7ee713-12ab-4e8c-bfac-83d5b2dc2415",
+      "firstName": "Félix",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.2903484329959741,
+        "sensitivity": 0.7758084920820879
+      },
+      "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 75.64335742016615
+    },
+    {
+      "id": "12c33cf7-fece-4c6a-bb54-c82133bab8f3",
+      "firstName": "Yvette",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.1071698384159186,
+        "sensitivity": 1.3599453169700855
+      },
+      "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 75.26175921672764
+    },
+    {
+      "id": "2b6715ac-b5da-42aa-9192-b581abfbefbe",
+      "firstName": "Émile",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.34157849334714335,
+        "sensitivity": 1.3432508901288447
+      },
+      "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 88.6114406866619
+    },
+    {
+      "id": "463f6d0c-2e35-4a45-9805-9ba644b5df4b",
+      "firstName": "Charles",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.1719745407534925,
+        "sensitivity": 0.950893090119746
+      },
+      "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 70.64806836019544
+    },
+    {
+      "id": "7e8f459c-f84b-427c-a525-2e282885d00f",
+      "firstName": "Henri",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.4346457842752337,
+        "sensitivity": 1.3576305580541859
+      },
+      "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 68.82400802609634
+    },
+    {
+      "id": "82e42d0c-a300-46b3-9124-b83b321cc7eb",
+      "firstName": "Hélène",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.3719007323265381,
+        "sensitivity": 1.1030309560961236
+      },
+      "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 87.2778492680357
+    },
+    {
+      "id": "83a64fce-22f6-456a-9235-d7f55fabc2a2",
+      "firstName": "Rose",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.2560431076387979,
+        "sensitivity": 0.8605420495832994
+      },
+      "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 59.76422834452725
+    },
+    {
+      "id": "bd6dff01-dd1c-4565-bbdf-26e5d6d68cc9",
+      "firstName": "Émile",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.4761232282254434,
+        "sensitivity": 1.0663646485111236
+      },
+      "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 76.68662367380814
+    },
+    {
+      "id": "c6974e43-e3de-4b6b-9322-1b14e1f51f50",
+      "firstName": "Camille",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.28653022884448576,
+        "sensitivity": 0.6021321212127185
+      },
+      "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 82.61948917702608
+    },
+    {
+      "id": "d5308489-6ee6-4c54-957b-9d9131b604cb",
+      "firstName": "Charles",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.31838599550767066,
+        "sensitivity": 0.8140858264870254
+      },
+      "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 67.04442417744093
+    },
+    {
+      "id": "de6a479c-2e67-40b7-8a93-cff61aed10a1",
+      "firstName": "Yvette",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.2877032171812698,
+        "sensitivity": 1.2158576515763402
+      },
+      "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 74.7892103322031
+    },
+    {
+      "id": "0309ea76-cbdf-4114-acc8-c8a20d512501",
+      "firstName": "Arthur",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.16410632119230883,
+        "sensitivity": 0.7700814545618057
+      },
+      "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 82.15904811779524
+    },
+    {
+      "id": "0c073e3c-c625-4a5f-a0b9-4555885426ca",
+      "firstName": "Simon",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.10993794410636691,
+        "sensitivity": 1.2356756193961793
+      },
+      "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 60.746716819775536
+    },
+    {
+      "id": "0d5b6030-b8aa-48de-abbb-64b424796b35",
+      "firstName": "Denis",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.4914968493803269,
+        "sensitivity": 0.5340530561384279
+      },
+      "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 76.15352324093759
+    },
+    {
+      "id": "18d734ac-918a-49e4-b74d-d2efacc0ed26",
+      "firstName": "Léa",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.10304354494645383,
+        "sensitivity": 1.3166587878027178
+      },
+      "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 81.52050880640164
+    },
+    {
+      "id": "2de3ac74-442d-494e-aa7b-4b92d0813e0b",
+      "firstName": "Jules",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.3632501936011102,
+        "sensitivity": 1.2260580683982014
+      },
+      "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 59.482997269398034
+    },
+    {
+      "id": "30687852-43d4-4f9a-ac63-bbad584689ac",
+      "firstName": "Victor",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.29887844624854254,
+        "sensitivity": 1.4898379355318059
+      },
+      "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 74.62271235793705
+    },
+    {
+      "id": "5eefa347-d087-4f78-8a66-6e30536b5c4a",
+      "firstName": "Amélie",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.3852497806741334,
+        "sensitivity": 1.320784742642302
+      },
+      "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 82.52575382682552
+    },
+    {
+      "id": "76769762-7874-4a65-b55f-2bcba96b343d",
+      "firstName": "Camille",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.27756840682313777,
+        "sensitivity": 1.0314208035774675
+      },
+      "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 57.95650509494427
+    },
+    {
+      "id": "9079876a-2aa4-404c-83c1-77ac8b099418",
+      "firstName": "Camille",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.23701626140686552,
+        "sensitivity": 1.4567319845011342
+      },
+      "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 85.31703440525979
+    },
+    {
+      "id": "b0a7563c-1adb-473a-8fd3-290b81d5f139",
+      "firstName": "Félix",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.3776160540746163,
+        "sensitivity": 1.3756616402157975
+      },
+      "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 60.04380477062632
+    },
+    {
+      "id": "b2f3e777-4b79-44b4-ae65-4386af8e865f",
+      "firstName": "Jules",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.23524703641532901,
+        "sensitivity": 1.2655905504632594
+      },
+      "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 60.18032838581318
+    },
+    {
+      "id": "f365e197-10b5-4dd3-a509-a7c30a131b1a",
+      "firstName": "Hélène",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.29916780500201434,
+        "sensitivity": 1.1371858877684202
+      },
+      "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 68.44924700327516
+    },
+    {
+      "id": "0d8179cc-1620-42c0-9048-114e8ff1bd43",
+      "firstName": "Léa",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.15810655215498418,
+        "sensitivity": 0.652173830765242
+      },
+      "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 61.842993713257435
+    },
+    {
+      "id": "474dc666-b893-413a-9f6d-b74e094987bd",
+      "firstName": "Louis",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.47612834226847767,
+        "sensitivity": 1.4436744034412932
+      },
+      "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 70.74499673711932
+    },
+    {
+      "id": "62789c43-9a38-4e61-b7dd-98d771aa4e5e",
+      "firstName": "Charles",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.4812482672315457,
+        "sensitivity": 1.0159220942554033
+      },
+      "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 75.11509195339585
+    },
+    {
+      "id": "8b1a9ba7-024f-4d41-8f55-728d9d6c20a2",
+      "firstName": "Jules",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.3464769572212283,
+        "sensitivity": 0.6799667050198885
+      },
+      "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 83.09945610165417
+    },
+    {
+      "id": "b1f3e12d-ab16-41d3-8b5c-77702f5ed7cb",
+      "firstName": "Félix",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.35703047497517526,
+        "sensitivity": 0.5288301461062804
+      },
+      "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 63.126098017891664
+    },
+    {
+      "id": "b9078eb7-8333-459f-a8f2-cb03e2ea3fe4",
+      "firstName": "Louis",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.16679314074417206,
+        "sensitivity": 1.1686514787976652
+      },
+      "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 87.94546967823243
+    },
+    {
+      "id": "efe1b23a-b9ce-4ac3-926b-a93565089835",
+      "firstName": "Zoé",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.36864169105574074,
+        "sensitivity": 1.2794994799224684
+      },
+      "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 86.43165872117241
+    },
+    {
+      "id": "f163f686-da2e-451e-9500-e37f834bb039",
+      "firstName": "Arthur",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.11520374936462163,
+        "sensitivity": 0.730522284277578
+      },
+      "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 55.50440570164684
+    },
+    {
+      "id": "f2b2a4a9-4ceb-4efc-aa8f-a0e6a81c6abd",
+      "firstName": "Félix",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.3037753025035653,
+        "sensitivity": 1.043806718957499
+      },
+      "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 71.71316811745623
+    },
+    {
+      "id": "f6db951e-5709-46d5-a770-68a8dee6cd96",
+      "firstName": "Rose",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.42746462324580936,
+        "sensitivity": 1.0463914327741246
+      },
+      "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 79.51520942300755
+    },
+    {
+      "id": "faf1c4bb-bb7c-473e-9305-0402b5dad055",
+      "firstName": "Odile",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.31200398016173303,
+        "sensitivity": 1.240785356890449
+      },
+      "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 58.328264319015716
+    },
+    {
+      "id": "fe769ae2-dd22-42f7-9d8d-b9c09e2b5fe9",
+      "firstName": "Thérèse",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.16183917261292186,
+        "sensitivity": 0.8499012715878339
+      },
+      "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 59.39033482868131
+    },
+    {
+      "id": "2ab3e85b-b936-4382-b873-3ca8ec5f4a07",
+      "firstName": "Denis",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.2727470696729163,
+        "sensitivity": 1.1795046995196645
+      },
+      "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 89.79535680693829
+    },
+    {
+      "id": "4328d420-c3d3-47c2-9268-dd032f2f3544",
+      "firstName": "Victor",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.12567815142413652,
+        "sensitivity": 0.8035356641377207
+      },
+      "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 72.3374926800535
+    },
+    {
+      "id": "928c961f-0542-488e-b1bb-0812a8ec116e",
+      "firstName": "Camille",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.33433047996454246,
+        "sensitivity": 1.230929984478176
+      },
+      "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 67.38410543445968
+    },
+    {
+      "id": "92c04041-675a-4ecb-a1bb-52a8d1aeb9a8",
+      "firstName": "Léa",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.37399339464791836,
+        "sensitivity": 1.0171515572137833
+      },
+      "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 59.8336262879517
+    },
+    {
+      "id": "a3c39bc2-50b1-4e78-859a-8a84268a710c",
+      "firstName": "Henri",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.36924276011458323,
+        "sensitivity": 0.9647455652723153
+      },
+      "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 80.99458023846509
+    },
+    {
+      "id": "b16ef295-434c-4aba-91c1-fb73fa30e761",
+      "firstName": "Béatrice",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.10333917595430941,
+        "sensitivity": 1.1063946175772705
+      },
+      "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 72.96640796876503
+    },
+    {
+      "id": "198ce694-158e-4580-a20d-a63cf688f402",
+      "firstName": "Claire",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.31307234682968665,
+        "sensitivity": 1.1332943901692225
+      },
+      "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 71.43503204284018
+    },
+    {
+      "id": "225ba8dd-847e-481c-847c-d4377c101739",
+      "firstName": "Henri",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.3108082047323423,
+        "sensitivity": 0.7599124023349428
+      },
+      "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 60.99242660687625
+    },
+    {
+      "id": "5f9d7581-1467-4d10-8eb1-4d40505c1642",
+      "firstName": "Charles",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.31395216540369036,
+        "sensitivity": 0.935509759242506
+      },
+      "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 63.06270483386334
+    },
+    {
+      "id": "78a61867-85e0-43ab-9381-a04ba981d281",
+      "firstName": "Gaston",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.1634860986539232,
+        "sensitivity": 1.094497652247357
+      },
+      "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 77.14126972883737
+    },
+    {
+      "id": "8850fc93-47b9-48ac-a80f-6e193a5950ad",
+      "firstName": "Victor",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.13341090544150133,
+        "sensitivity": 1.1152602892083558
+      },
+      "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 70.0025959438978
+    },
+    {
+      "id": "9937b9ea-5fa5-4263-9bbe-1284a586eab1",
+      "firstName": "Charles",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.1834686410740962,
+        "sensitivity": 1.3603283952157255
+      },
+      "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 73.46937895710636
+    },
+    {
+      "id": "c932183f-6fea-411e-92e0-a12fcb3e9b32",
+      "firstName": "Zoé",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.44631141577680367,
+        "sensitivity": 1.1959460489341724
+      },
+      "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 84.03389938843591
+    },
+    {
+      "id": "cf3a80b5-fce1-4eb8-a25b-2032627637bd",
+      "firstName": "Bernard",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.2257775722396362,
+        "sensitivity": 1.399218035100787
+      },
+      "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 85.23387964827793
+    },
+    {
+      "id": "db16ed1a-e434-4066-b69a-58ce98a065c2",
+      "firstName": "Adèle",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.22582297138219767,
+        "sensitivity": 0.6888601055195472
+      },
+      "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 84.93846362231207
+    },
+    {
+      "id": "f0d0151f-ec5e-471f-b90e-c8b085a0b2b6",
+      "firstName": "Yvette",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.14028444465796086,
+        "sensitivity": 1.4657292510612545
+      },
+      "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 87.52936606729264
+    },
+    {
+      "id": "f696e5a3-a7f0-4fb2-b360-4f660299dfff",
+      "firstName": "Arthur",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.19306817271740098,
+        "sensitivity": 0.7623639569364968
+      },
+      "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 77.71206801413115
+    },
+    {
+      "id": "f8a927b5-b5a9-49a3-a132-f3e6fecde893",
+      "firstName": "Jules",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.36842546014613176,
+        "sensitivity": 0.6752532803404684
+      },
+      "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 77.3206090888475
+    },
+    {
+      "id": "1abe6255-0cc6-4eb2-98c4-db9ffdf5d139",
+      "firstName": "Adèle",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.17292421627875998,
+        "sensitivity": 1.159349383535773
+      },
+      "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 73.94110045028403
+    },
+    {
+      "id": "32cd73b2-9085-44bb-ab32-1d7767647f3e",
+      "firstName": "Émile",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.3154544495687633,
+        "sensitivity": 0.9988728262517831
+      },
+      "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 85.81044353837444
+    },
+    {
+      "id": "581c70ce-901d-4341-9522-d8afd74f872c",
+      "firstName": "Gaston",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.107970325894158,
+        "sensitivity": 0.6310993841267822
+      },
+      "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 77.84951126668128
+    },
+    {
+      "id": "c662724f-778d-47d4-aca0-d60a3c397333",
+      "firstName": "Alain",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.19408272493153766,
+        "sensitivity": 0.5114714164413927
+      },
+      "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 78.9866787094727
+    },
+    {
+      "id": "d1899a4e-1509-4efb-8270-31e256f9f91b",
+      "firstName": "Victor",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.30228371966258605,
+        "sensitivity": 0.5687665332827224
+      },
+      "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 55.18856643438038
+    },
+    {
+      "id": "dd4085c2-08d2-4e14-b146-ce1ceed2b8f5",
+      "firstName": "Charles",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.31095818378866796,
+        "sensitivity": 0.5533481584711857
+      },
+      "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 72.87391556574788
+    },
+    {
+      "id": "1af3a1e9-b2e9-4e42-b22a-1dfbbaa75d29",
+      "firstName": "Inès",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.42824196554241023,
+        "sensitivity": 1.0377683446307764
+      },
+      "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 62.37078548461092
+    },
+    {
+      "id": "3123d8e5-eaf4-49b9-bc1f-92b1137e2782",
+      "firstName": "Marcel",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.1982272026052947,
+        "sensitivity": 0.943568941486951
+      },
+      "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 81.30620772615745
+    },
+    {
+      "id": "3796c2f4-eadb-4dd4-b095-3c313944c04e",
+      "firstName": "Alain",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.4543182352970171,
+        "sensitivity": 0.6778945639149483
+      },
+      "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 68.1043827252877
+    },
+    {
+      "id": "773c6f77-145c-4bd4-af62-5ceb22b633ad",
+      "firstName": "Inès",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.4373681717104343,
+        "sensitivity": 1.4876064807977274
+      },
+      "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 62.57223235091916
+    },
+    {
+      "id": "7a71442b-a25e-4fec-ba4c-fb546fd9355f",
+      "firstName": "Inès",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.4342788788784314,
+        "sensitivity": 1.3188440266755754
+      },
+      "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 73.11019212167044
+    },
+    {
+      "id": "7b14c5e3-38c8-4d6a-99eb-0591d328f5bf",
+      "firstName": "Élise",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.4598890880759414,
+        "sensitivity": 1.0094515320356714
+      },
+      "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 58.77792149162167
+    },
+    {
+      "id": "9fed500e-381f-44e0-9796-9b3b3745e232",
+      "firstName": "Claire",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.2727157646092112,
+        "sensitivity": 1.3924319507772005
+      },
+      "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 73.21932162663184
+    },
+    {
+      "id": "c6fe89e5-6a38-402d-b6e4-30420a7c3cab",
+      "firstName": "Claire",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.20197265006059537,
+        "sensitivity": 0.6102496482641736
+      },
+      "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 55.10138902919721
+    },
+    {
+      "id": "d0e50c16-e277-4551-88e7-0423ec47f821",
+      "firstName": "Louis",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.15852436171973316,
+        "sensitivity": 0.7120891488519145
+      },
+      "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 76.65473274310516
+    },
+    {
+      "id": "e18db2af-d55e-4624-a69f-bb43a2447999",
+      "firstName": "Denis",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.21243584342167568,
+        "sensitivity": 0.968580171657038
+      },
+      "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 70.41500256677257
+    },
+    {
+      "id": "e2855c3b-c11e-4563-9083-4fa15a3a4c8b",
+      "firstName": "Gaston",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.19933104747614389,
+        "sensitivity": 0.6289173872752484
+      },
+      "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 78.9021687623584
+    },
+    {
+      "id": "e9256be7-e8fd-4b13-bc25-10008de06a4b",
+      "firstName": "Yvette",
+      "arrivalTurn": 0,
+      "constitution": {
+        "convergence": 0.4511036188668849,
+        "sensitivity": 1.1009309948655583
+      },
+      "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
+      "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "health": 63.80482528156726
+    }
+  ],
   "employmentSummary": {
     "workerPool": 66,
     "totalPopulation": 72,

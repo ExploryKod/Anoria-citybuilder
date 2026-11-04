@@ -14,6 +14,7 @@ import { createEmploymentBuildingSnapshot } from '../contexts/employment/domain/
 import { isResidentialHouseType } from '../contexts/housing/domain/policies/HouseCapacityPolicy.js';
 import { normalizeResidentialType } from '../contexts/housing/domain/HouseTypeCatalog.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
+import { residentsCountOf } from '../shared/population/residentsCount.js';
 import {
   allSocialGroups,
   groupsForSkill,
@@ -147,7 +148,7 @@ function toHousingSnapshot(row) {
     x: row.x ?? null,
     y: row.y ?? null,
     roadCount: row.roads ?? 0,
-    pop: row.pop ?? 0,
+    pop: residentsCountOf(row),
     level: row.level ?? 1,
     lastPopulationGrowthMonth: row.lastPopulationGrowthMonth ?? null,
     lastFamineDeathMonth: row.lastFamineDeathMonth ?? null,
@@ -170,7 +171,7 @@ function toEmploymentSnapshot(row) {
     x: row.x ?? null,
     y: row.y ?? null,
     roadCount: row.roads ?? 0,
-    pop: row.pop ?? 0,
+    pop: residentsCountOf(row),
     level: row.level ?? 1,
     worker: employees.worker ?? 0,
     workerNeed: employees.worker_need ?? 0,
@@ -254,6 +255,6 @@ export async function getDevelopmentReading() {
     population: snapshot.totalPop,
     famished: snapshot.famishedPopulation,
     unemploymentPercentage: snapshot.employment.unemploymentPercentage,
-    houses: rows.map((row) => ({ pop: row.pop ?? 0, servedFlags: row.servedFlags ?? {} })),
+    houses: rows.map((row) => ({ pop: residentsCountOf(row), servedFlags: row.servedFlags ?? {} })),
   };
 }

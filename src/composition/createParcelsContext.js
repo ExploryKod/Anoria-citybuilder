@@ -6,6 +6,7 @@ import { PlaceBuilding } from '../contexts/parcels/application/commands/PlaceBui
 import { RemoveBuilding } from '../contexts/parcels/application/commands/RemoveBuilding.js';
 import { GetBuildingRoadAccess } from '../contexts/parcels/application/queries/GetBuildingRoadAccess.js';
 import { liquidateDemolishedBuilding } from './constructionTreasuryBridge.js';
+import { getOrCreateCitizenRegistry } from './citizenRegistry.js';
 
 /**
  * Composition root du bounded context Parcels.
@@ -21,7 +22,7 @@ export function createParcelsContext({
   liquidateBuilding,
 } = {}) {
   const buildingRepositoryImpl =
-    buildingRepository ?? new DexieBuildingRepository();
+    buildingRepository ?? new DexieBuildingRepository({ citizens: getOrCreateCitizenRegistry() });
   const events = eventPublisher ?? new InMemoryDomainEventPublisher();
 
   const recalculateRoadAccessForBuilding = new RecalculateRoadAccessForBuilding(

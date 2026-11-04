@@ -4,6 +4,8 @@ import { createParcelsRoadAccessSystem } from '../contexts/parcels/infrastructur
 import { createSupplyMonthlyResourceSystem } from '../contexts/supply/infrastructure/runtime/supplyMonthlyResourceSystem.js';
 import { createHousingPopulationGrowthSystem } from '../contexts/housing/infrastructure/runtime/housingPopulationGrowthSystem.js';
 import { createHousingEvolutionSystem } from '../contexts/housing/infrastructure/runtime/housingEvolutionSystem.js';
+import { createHousingHealthSystem } from '../contexts/housing/infrastructure/runtime/housingHealthSystem.js';
+import { getDaysPerMonth } from '../config/events.js';
 import { createEmploymentRedistributeSystem } from '../contexts/employment/infrastructure/runtime/employmentRedistributeSystem.js';
 import { createRandomEventsSystem } from '../contexts/gameplay/infrastructure/runtime/randomEventsSystem.js';
 import { createIntelligenceMonthlyNewsSystem } from '../contexts/intelligence/infrastructure/runtime/intelligenceMonthlyNewsSystem.js';
@@ -112,6 +114,7 @@ export function createGameRuntime({
     .register('supply.monthlyResourceCycle', supplyMonthlyResourceCycle)
     .register('housing.populationGrowth', housingPopulationGrowth)
     .register('housing.evolution', housingEvolution)
+    .register('housing.health', createHousingHealthSystem({ housing, getTimeInfo, getDaysPerMonth }))
     .register('employment.redistribute', employmentRedistribute)
     .register('gameplay.randomEvents', createRandomEventsSystem({ gameplay }))
     .register(

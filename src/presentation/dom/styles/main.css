@@ -2422,6 +2422,66 @@ button.building-info-metric-card[aria-pressed="true"] {
     color: #111;
 }
 
+/* Habitants tab: the health environment of the house (see healthHistogramView.js): one stacked bar, then its parts as rows. Phone first. */
+.health-histogram {
+    margin: 0 0 12px;
+    font-size: 14px;
+}
+
+.health-histogram__title {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111;
+}
+
+.health-histogram__bar {
+    display: flex;
+    height: 14px;
+    border-radius: 7px;
+    overflow: hidden;
+    background: #eceff1;
+}
+
+.health-histogram__segment--0 { background: #90a4ae; }
+.health-histogram__segment--1 { background: #66bb6a; }
+.health-histogram__segment--2 { background: #42a5f5; }
+.health-histogram__segment--3 { background: #ffb74d; }
+.health-histogram__segment--4 { background: #ab47bc; }
+
+.health-histogram__rows {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+}
+
+.health-histogram__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    border-top: 1px solid #eceff1;
+    color: #424242;
+}
+
+.health-histogram__swatch {
+    flex: 0 0 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.health-histogram__label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.health-histogram__value {
+    flex: 0 0 auto;
+    font-weight: 600;
+    color: #111;
+}
+
 /* Finances tab: one analytical statement per account (see buildingFinanceInfoView.js); a house has two accounts. */
 .building-finance-accounts {
     display: flex;

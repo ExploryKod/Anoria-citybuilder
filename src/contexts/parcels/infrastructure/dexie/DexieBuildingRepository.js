@@ -10,6 +10,12 @@ import {
 
 /** Parcels port adapter — accès direct Dexie (table `houses`). */
 export class DexieBuildingRepository {
+  /** @param {{ citizens: import('../../../../shared/citizens/DexieCitizenRegistry.js').DexieCitizenRegistry }} deps */
+  constructor({ citizens } = {}) {
+    if (!citizens) throw new Error('[parcels] the repository needs the citizens registry: a removed house takes its citizens with it');
+    this.citizens = citizens;
+  }
+
   #toSnapshot(house) {
     return createBuildingSnapshot({
       id: instanceIdFromHouseRow(house),
@@ -81,6 +87,9 @@ export class DexieBuildingRepository {
 
   async deleteById(instanceId) {
     const id = assertBuildingInstanceId(instanceId);
-    await db.houses.delete(id);
+    await db.transaction('rw', db.houses, db.citizens, async () => {
+      await this.citizens.removeHouse(id);
+      await db.houses.delete(id);
+    });
   }
 }

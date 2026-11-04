@@ -65,6 +65,10 @@ Fichiers relatifs à `src/`.
 
 ## 4. Stockage retenu : un tableau de scores par maison
 
+> **Remplacé le 2026-11-04** par `docs/plan/passbycitizen.plan.md` : l'habitant est une entité (table `citizens`, uuid,
+> constitution, santé, maison). Ce qui suit est l'idée d'origine, gardée pour l'historique ; la santé est désormais un
+> champ de l'habitant, pas un tableau de la maison.
+
 `health: [72, 55, 90, ...]`, un score par habitant, de longueur égale à `pop`. Aucune table d'habitants n'est créée.
 
 - La moyenne de la maison, le nombre d'habitants sous un seuil et la répartition sont **dérivés à la lecture**.

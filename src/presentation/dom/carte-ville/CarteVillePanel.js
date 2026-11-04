@@ -162,6 +162,8 @@ export async function exportCityToJSON() {
 
   const payload = buildCityExport({
     buildingRows: await read('buildings', () => deps.construction.listAllBuildingRows(), []),
+    // No stand-in on failure: a city exported without its people could not be started again.
+    citizens: await deps.housing.listCitizens(),
     employmentSummary: await read('employmentSummary', () => deps.employment.getCityEmploymentSummary(), null),
     populationSummary: await read('populationSummary', () => deps.housing.getCityPopulationSummary(), null),
     news: {

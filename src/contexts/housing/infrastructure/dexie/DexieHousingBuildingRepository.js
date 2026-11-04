@@ -12,7 +12,16 @@ import { footprintFromRecord, footprintOccupiesTile } from '../../../../shared/b
 
 /** Housing port adapter — accès direct Dexie (table `houses`). */
 export class DexieHousingBuildingRepository {
+  /** @param {{ citizens: import('../../../../shared/citizens/DexieCitizenRegistry.js').DexieCitizenRegistry }} deps */
+  constructor({ citizens } = {}) {
+    if (!citizens) throw new Error('[housing] the repository needs the citizens registry: a house population change moves its citizens');
+    this.citizens = citizens;
+  }
+
   #toSnapshot(house) {
+    if (!Number.isInteger(house.pop) || house.pop < 0) {
+      throw new Error(`[housing] house ${instanceIdFromHouseRow(house)} has no residents count, got ${house.pop}`);
+    }
     return createHousingBuildingSnapshot({
       // Passed first so any field this BC doesn't explicitly name (e.g.
       // Supply's `servedFlags`) rides along — the explicit keys below then
@@ -23,7 +32,7 @@ export class DexieHousingBuildingRepository {
       x: house.x ?? null,
       y: house.y ?? null,
       roadCount: house.roads ?? 0,
-      pop: house.pop ?? 0,
+      pop: house.pop,
       level: house.level ?? 1,
       lastPopulationGrowthMonth: house.lastPopulationGrowthMonth ?? null,
       lastFamineDeathMonth: house.lastFamineDeathMonth ?? null,
@@ -34,21 +43,28 @@ export class DexieHousingBuildingRepository {
   }
 
   /**
+   * One transaction for the row and its citizens: a change of `pop` brings the house's citizens to the new count (arrivals drawn,
+   * the latest arrivals leave), so the row and the citizens never disagree on disk.
    * @param {string} instanceId
    * @param {Record<string, unknown>} updates
    */
   async #putFields(instanceId, updates) {
-    const row = await db.houses.get(instanceId);
-    if (!row) return;
+    await db.transaction('rw', db.houses, db.citizens, async () => {
+      const row = await db.houses.get(instanceId);
+      if (!row) return;
 
-    const next = { ...row };
-    for (const key of Object.keys(updates)) {
-      if (updates[key] !== undefined) {
-        next[key] = updates[key];
+      const next = { ...row };
+      for (const key of Object.keys(updates)) {
+        if (updates[key] !== undefined) {
+          next[key] = updates[key];
+        }
       }
-    }
 
-    await db.houses.put(canonicalizeHouseRecord(next));
+      if (updates.pop !== undefined) {
+        await this.citizens.setHousePopulation({ houseId: instanceId, hamletId: row.hamletId, pop: updates.pop });
+      }
+      await db.houses.put(canonicalizeHouseRecord(next));
+    });
   }
 
   async findById(instanceId) {
@@ -114,6 +130,20 @@ export class DexieHousingBuildingRepository {
       fields.lastFamineDeathMonth = payload.lastFamineDeathMonth;
     }
     await this.#putFields(instanceId, fields);
+  }
+
+  /**
+   * Persist a month's health judgement of a house: its citizens' new health and the mark that the month was judged — one transaction.
+   * @param {string} instanceId
+   * @param {{ citizens: ReadonlyArray<import('../../../../shared/citizens/Citizen.js').Citizen>, monthKey: number }} judgement
+   */
+  async saveHealthJudgement(instanceId, { citizens, monthKey }) {
+    await db.transaction('rw', db.houses, db.citizens, async () => {
+      const row = await db.houses.get(instanceId);
+      if (!row) throw new Error(`[health] house ${instanceId} is not in the hamlet: its health cannot be saved`);
+      await this.citizens.updateHealth(citizens);
+      await db.houses.put(canonicalizeHouseRecord({ ...row, lastHealthMonth: monthKey }));
+    });
   }
 
   /** Persist the crises of a house (what made inhabitants leave, see RunMonthlyDepartures.js) with its population after the departures. */

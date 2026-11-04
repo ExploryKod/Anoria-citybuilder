@@ -80,12 +80,15 @@ import {
  * @param {import('../contexts/supply/application/ports/SupplyBuildingRepository.js').SupplyBuildingRepository} [deps.supplyBuildingRepository]
  * @param {import('../contexts/supply/infrastructure/dexie/DexieSupplyTraceabilityRepository.js').DexieSupplyTraceabilityRepository} [deps.supplyTraceabilityRepository]
  * @param {(turn: number) => object} [deps.getTimeInfo]
+ * @param {{ order: Function }} [deps.serviceQueue] the order houses are served in by a service building whose capacity cannot reach them all
+ *   (see serviceQueuePort.js): needed by the game, which has such services; asked without it, the distribution throws.
  */
 export function createSupplyContext({
   supplyBuildingRepository,
   supplyTraceabilityRepository,
   getTimeInfo: getTimeInfoDep,
   consumerMoney,
+  serviceQueue = null,
 } = {}) {
   if (!consumerMoney) throw new Error('[supply] createSupplyContext needs consumerMoney: the consumers\' accounts (fundsOf, recordPurchases)');
   const getTimeInfo = getTimeInfoDep ?? resolveGetTimeInfo();
@@ -169,7 +172,8 @@ export function createSupplyContext({
   const distributeResourceToConsumers = new DistributeResourceToConsumers(
     supplyBuildingRepositoryImpl,
     consumerMoney,
-    priceBook
+    priceBook,
+    serviceQueue
   );
   const collectResourceToHub = new CollectResourceToHub(supplyBuildingRepositoryImpl, hubServing, { priceBook, purchasingPower: purchasingPowerOf });
   const updateConsumerDistributorReach = new UpdateConsumerDistributorReach(

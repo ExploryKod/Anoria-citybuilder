@@ -28,6 +28,11 @@ export class HousingBuildingRepository {
     throw new Error('HousingBuildingRepository: port not implemented');
   }
 
+  /** Persist a month's health judgement of a house: its citizens' new health and the month judged. */
+  async saveHealthJudgement(_buildingId, _judgement) {
+    throw new Error('HousingBuildingRepository: port not implemented');
+  }
+
   /** Persist a level change (1 <-> 2) — house `type`/color never changes here. */
   async applyLevelChange(_payload) {
     throw new Error('HousingBuildingRepository: port not implemented');

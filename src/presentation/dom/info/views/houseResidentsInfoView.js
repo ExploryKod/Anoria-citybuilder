@@ -1,5 +1,8 @@
 import { buildingName } from '../../shell/CatalogVocabulary.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
+import { HEALTH_LABELS, HEALTH_SICK_BELOW } from '../../../../shared/population/HealthFactorCatalog.js';
+import { HEALTH_MAX } from '../../../../shared/population/CitizenCatalog.js';
+import { renderHealthHistogram } from './healthHistogramView.js';
 
 const STATUS_LABELS = Object.freeze({ unemployed: 'Chômeur', administrator: 'Administrateur' });
 
@@ -15,7 +18,10 @@ const PAY_LABELS = Object.freeze({ worker: 'Salaire reçu', unemployed: 'Allocat
 function factsOf(resident) {
   const payLabel = PAY_LABELS[resident.status];
   if (!payLabel) throw new Error(`[HouseResidentsTab] no pay label for the status "${resident.status}"`);
-  return [{ label: payLabel, value: resident.settled ? formatEuro(resident.amount) : 'Pas encore réglé' }];
+  return [
+    { label: HEALTH_LABELS.score, value: `${Math.round(resident.health)} / ${HEALTH_MAX}${resident.health < HEALTH_SICK_BELOW ? ` · ${HEALTH_LABELS.sick}` : ''}` },
+    { label: payLabel, value: resident.settled ? formatEuro(resident.amount) : 'Pas encore réglé' },
+  ];
 }
 
 /**
@@ -70,5 +76,6 @@ export async function renderHouseResidentsTab(container, model) {
     card.append(name, place, facts);
     list.append(card);
   }
+  if (model.health) container.append(renderHealthHistogram(model.health.environment, model.health.sick));
   container.append(list);
 }

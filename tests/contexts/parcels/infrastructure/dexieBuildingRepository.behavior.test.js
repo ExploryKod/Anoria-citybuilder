@@ -9,6 +9,7 @@ import 'fake-indexeddb/auto';
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { clearBuildingsTable, seedBuilding, getBuildingRow } from '../../../helpers/buildingDb.js';
 import { DexieBuildingRepository } from '../../../../src/contexts/parcels/infrastructure/dexie/DexieBuildingRepository.js';
+import { getOrCreateCitizenRegistry } from '../../../../src/composition/citizenRegistry.js';
 import { GetBuildingRoadAccess } from '../../../../src/contexts/parcels/application/queries/GetBuildingRoadAccess.js';
 import { RecalculateRoadAccessForBuilding } from '../../../../src/contexts/parcels/application/commands/RecalculateRoadAccessForBuilding.js';
 import { InMemoryDomainEventPublisher } from '../../../../src/contexts/parcels/infrastructure/events/InMemoryDomainEventPublisher.js';
@@ -24,7 +25,7 @@ describe('DexieBuildingRepository — boundary UUID ↔ Dexie', () => {
 
   beforeEach(async () => {
     await clearBuildingsTable();
-    repository = new DexieBuildingRepository();
+    repository = new DexieBuildingRepository({ citizens: getOrCreateCitizenRegistry() });
   });
 
   afterEach(async () => {
@@ -68,7 +69,7 @@ describe('DexieBuildingRepository — use cases bout-en-bout (UUID)', () => {
 
   beforeEach(async () => {
     await clearBuildingsTable();
-    repository = new DexieBuildingRepository();
+    repository = new DexieBuildingRepository({ citizens: getOrCreateCitizenRegistry() });
     events = new InMemoryDomainEventPublisher();
 
     const record = makeHouseRecord({ type: 'House-Blue', x: 8, y: 10 });

@@ -6,6 +6,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { loadPrefab } from '../../src/shared/prefabs/prefabCatalog.js';
 import { canonicalizeHouseRecord } from '../../src/shared/building-identity/index.js';
+import { createCitizen, assertCitizensMatchPop } from '../../src/shared/citizens/Citizen.js';
 
 const prefab = await loadPrefab('anoria-tour-107');
 
@@ -17,6 +18,18 @@ describe('prefab anoria-tour-107 — its state is the saved one', () => {
       expect(record.anchorY).toBe(building.y);
       expect(record.hamletId).toBe(prefab.hamletId);
     }
+  });
+
+  test('every house holds exactly as many citizens as it counts residents, each a whole citizen of its hamlet', () => {
+    const citizens = prefab.city.citizens.map((row) => createCitizen(row));
+    const houses = prefab.city.buildings.filter((building) => building.kind === 'house');
+    for (const house of houses) {
+      const inside = citizens.filter((citizen) => citizen.houseId === house.instanceId);
+      expect(() => assertCitizensMatchPop(house.instanceId, house.pop, inside)).not.toThrow();
+    }
+    expect(citizens).toHaveLength(houses.reduce((sum, house) => sum + house.pop, 0));
+    expect(new Set(citizens.map((citizen) => citizen.id)).size).toBe(citizens.length);
+    for (const citizen of citizens) expect(citizen.hamletId).toBe(prefab.hamletId);
   });
 
   test('its journal joins the two exports without losing or repeating a line, all in its hamlet', () => {

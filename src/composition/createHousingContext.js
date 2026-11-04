@@ -15,6 +15,9 @@ import {
   residentialGroupForHouseType,
 } from '../contexts/housing/domain/policies/GroupSkillPolicy.js';
 import { computeHouseCitizenComposition } from '../contexts/housing/domain/policies/HouseCitizenCompositionPolicy.js';
+import { getOrCreateCitizenRegistry } from './citizenRegistry.js';
+import { EvolveHealthOfHouses } from '../contexts/housing/application/commands/health/EvolveHealthOfHouses.js';
+import { DescribeHouseHealth } from '../contexts/housing/application/queries/DescribeHouseHealth.js';
 
 /**
  * Composition root — Housing bounded context.
@@ -24,8 +27,11 @@ import { computeHouseCitizenComposition } from '../contexts/housing/domain/polic
  *   Tests : injecter un fake in-memory, ou utiliser core/db + resetHousingContextForTests().
  */
 export function createHousingContext({ housingBuildingRepository } = {}) {
+  const citizens = getOrCreateCitizenRegistry();
   const housingBuildingRepositoryImpl =
-    housingBuildingRepository ?? new DexieHousingBuildingRepository();
+    housingBuildingRepository ?? new DexieHousingBuildingRepository({ citizens });
+  const evolveHealthOfHouses = new EvolveHealthOfHouses(housingBuildingRepositoryImpl, citizens);
+  const describeHouseHealth = new DescribeHouseHealth(housingBuildingRepositoryImpl, citizens);
   const growHousePopulation = new GrowHousePopulation(housingBuildingRepositoryImpl);
   const growAllHousePopulation = new GrowAllHousePopulation(
     housingBuildingRepositoryImpl,
@@ -73,6 +79,21 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     getFamishedPopulationQuery,
     getCityFoodSupplyQuery,
     evaluateHouseFoodAffluenceQuery,
+
+    /** @param {{ monthKey: number, periodKey: number }} params judges each house once per month: see EvolveHealthOfHouses */
+    async evolveHealthOfHouses({ monthKey, periodKey }) {
+      return evolveHealthOfHouses.execute({ monthKey, periodKey });
+    },
+
+    /** @param {{ houseId: string, periodKey: number }} params the house's environment (its histogram) and its inhabitants' average health */
+    async describeHouseHealth({ houseId, periodKey }) {
+      return describeHouseHealth.ofHouse({ houseId, periodKey });
+    },
+
+    /** The hamlet's average health over its inhabitants, and how many they are (null average while nobody lives there). */
+    async getCityHealth() {
+      return describeHouseHealth.ofHamlet();
+    },
 
     async growHousePopulation(houseId, monthIndex, options = {}) {
       return growHousePopulation.execute({

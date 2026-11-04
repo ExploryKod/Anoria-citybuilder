@@ -1,5 +1,6 @@
 import db from '../../../../core/persistence/dexie/db.js';
 import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { residentsCountOf } from '../../../../shared/population/residentsCount.js';
 import { createEmploymentBuildingSnapshot } from '../../domain/EmploymentBuildingSnapshot.js';
 import {
   isHouseType,
@@ -21,7 +22,7 @@ export class DexieEmploymentBuildingRepository {
       x: house.x ?? null,
       y: house.y ?? null,
       roadCount: house.roads ?? 0,
-      pop: house.pop ?? 0,
+      pop: residentsCountOf(house),
       level: house.level ?? 1,
       worker: employees.worker ?? 0,
       workerNeed: employees.worker_need ?? 0,

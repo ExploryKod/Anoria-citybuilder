@@ -95,6 +95,10 @@
  *   entry that holds the stock. Omitted means UNBOUNDED — there is no
  *   hidden default anywhere in code; this is the only place a ceiling
  *   is set. Read via resourceRoleQueries.getMaxStockForBuilding.
+ * @property {{ inhabitantsPerWorker: number, serveFirst: string }} [capacity] On a 'distributor' of a 'flag' service: how many inhabitants it
+ *   reaches in a period, per worker in post (so an unstaffed or understaffed service reaches fewer), and `serveFirst`, the rule that orders the
+ *   houses when it cannot reach them all (a rule the supply's service queue knows, e.g. 'lowestHealth'). Omitted means it reaches every house
+ *   of its range. Houses are served whole: one that does not fit what is left is passed over.
  * @property {'building' | 'population'} [scale] Only for a 'producer'
  *   entry on a building that has inhabitants (household gathering): how
  *   `amount` is read. 'building' (default) = a fixed amount whatever the

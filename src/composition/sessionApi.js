@@ -8,6 +8,8 @@
 import { COMMERCIAL_ROUTE_FEE } from '../contexts/accounting/domain/catalogs/TreasuryCatalog.js';
 import { developmentOf, economyOf, purchasingPowerOf } from './purchasingPower.js';
 import { getSessionGameTime } from './sessionRuntime.js';
+import { getOrCreateCitizenRegistry } from './citizenRegistry.js';
+import { requireActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
 import { TimeManager } from '../shared/time/TimeManager.js';
 import { fiscalSliderBounds } from '../contexts/accounting/domain/catalogs/FiscalRateCatalog.js';
 import { createEmptyCityLedgerYearLines } from '../contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
@@ -239,6 +241,8 @@ export function createHousingSessionApi(housing) {
       return totalPop;
     },
     getCityPopulationSummary: () => housing.getCityPopulationSummary(),
+    /** Every citizen of the active hamlet, house by house in their stable order (what a city export carries). */
+    listCitizens: async () => [...(await getOrCreateCitizenRegistry().forHamlet(requireActiveHamletId())).values()].flat(),
     /** How many inhabitants of the active hamlet go hungry, and for which of the two causes (disette: they cannot pay; pénurie: nothing to buy). */
     getHunger: async () => {
       const snapshot = await getHudPopulationScopeSnapshot('active');

@@ -142,7 +142,7 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
       },
       {
         id: BUILDING_INFO_TAB_IDS.residents,
-        format: (vm) => (vm.uniqueId ? { accounting: vm.accounting, buildingId: vm.uniqueId } : null),
+        format: (vm) => (vm.uniqueId ? { accounting: vm.accounting, buildingId: vm.uniqueId, health: vm.houseHealth } : null),
         render: (container, model) => renderHouseResidentsTab(container, model),
       },
       {

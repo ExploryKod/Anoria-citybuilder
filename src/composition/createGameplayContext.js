@@ -19,6 +19,7 @@ import { getTimeInfo } from '../shared/time/TimeCalendar.js';
 import { getAnnualHarvestSchedule, getConsumerEntries, getResourceStockShape } from '../shared/building-catalog/resourceRoleQueries.js';
 import { matchesSchedule, monthsUntilNextMatch } from '../contexts/supply/domain/policies/ResourceSchedulePolicy.js';
 import { RandomEventsSimulationService } from '../contexts/gameplay/application/services/RandomEventsSimulationService.js';
+import { residentsCountOf } from '../shared/population/residentsCount.js';
 import { AdvanceTutorial } from '../contexts/gameplay/application/services/AdvanceTutorial.js';
 import { TUTORIAL_DISPATCHES, TUTORIAL_START_TOOLS, TUTORIAL_STEPS, TUTORIAL_TOASTS } from '../contexts/gameplay/domain/catalogs/TutorialCatalog.js';
 
@@ -82,7 +83,7 @@ function createTutorialPorts() {
           },
           buildings: await Promise.all(rows.map(async (row) => ({
             type: row.type,
-            pop: row.pop ?? 0,
+            pop: residentsCountOf(row),
             workers: row.employees?.worker ?? 0,
             workerNeed: row.employees?.worker_need ?? 0,
             understaffed: understaffed.has(instanceIdFromHouseRow(row)),

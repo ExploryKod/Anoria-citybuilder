@@ -16,6 +16,7 @@ import {
   getTotalKeyForRole,
   getConsumptionModeForRole,
   getPeriodLockForRole,
+  getRoleEntry,
   computeConsumerDeficit,
 } from '../../../domain/policies/ResourceRolePolicy.js';
 import { getCategoriesForTotalKey, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
@@ -44,7 +45,7 @@ export class DistributeResourceToConsumers {
    * @param {{ fundsOf: (consumerId: string) => Promise<number> }} consumerMoney what each consumer can spend now, from its
    *   personal account: a consumer buys only what it can pay
    */
-  constructor(supplyBuildingRepository, consumerMoney, priceBook) {
+  constructor(supplyBuildingRepository, consumerMoney, priceBook, serviceQueue = null) {
     if (!consumerMoney || typeof consumerMoney.fundsOf !== 'function') {
       throw new Error('[supply] the distribution needs the consumers\' money (fundsOf)');
     }
@@ -52,6 +53,12 @@ export class DistributeResourceToConsumers {
     this.supplyBuildingRepository = supplyBuildingRepository;
     this.consumerMoney = consumerMoney;
     this.priceBook = priceBook;
+    /**
+     * The order houses are served in when a service building's capacity cannot reach them all: `order(rule, houses)` returns the houses
+     * (`{ id, pop }`) in the order the catalog's rule puts them. Needed only by a service that declares a capacity.
+     * @type {{ order: (rule: string, houses: Array<{ id: string, pop: number }>) => Promise<Array<{ id: string }>> } | null}
+     */
+    this.serviceQueue = serviceQueue;
   }
 
   /**
@@ -101,7 +108,7 @@ export class DistributeResourceToConsumers {
     }
 
     if (getConsumptionModeForRole(source.type, 'distributor', category) === 'flag') {
-      return this.#distributeFlag({ categories, consumerIds, period });
+      return this.#distributeFlag({ source, categories, consumerIds, period });
     }
 
     await this.priceBook.ensure(period);
@@ -204,19 +211,46 @@ export class DistributeResourceToConsumers {
    * @param {string[]} params.consumerIds
    * @param {object} params.period
    */
-  async #distributeFlag({ categories, consumerIds, period }) {
+  async #distributeFlag({ source, categories, consumerIds, period }) {
     const category = categories[0] ?? null;
     if (!category) {
       return { distributed: false, reason: 'unknown_resource_category', transfers: [], totalUnits: 0 };
     }
 
-    const transfers = [];
+    // The catalog may bound what a service building can reach in a period: its staff times the inhabitants one of them looks after.
+    // A service with no `capacity` declared reaches every house of its range.
+    const capacity = getRoleEntry(source.type, 'distributor', category)?.capacity ?? null;
+    if (capacity && !this.serviceQueue) {
+      throw new Error(`[supply] ${source.type} declares a capacity for "${category}": the distribution needs its service queue (the order houses are served in)`);
+    }
+    const limit = capacity ? source.worker * capacity.inhabitantsPerWorker : Infinity;
+
+    // The houses to visit, in the order they are served; a bounded service takes the houses the catalog's rule puts first.
+    const candidates = [];
+    let used = 0;
     for (const consumerId of consumerIds) {
       const consumer = await this.supplyBuildingRepository.findById(consumerId);
       if (!consumer || !isRoadNeedMet(consumer.type, consumer.roadCount)) continue;
-
       const periodLock = getPeriodLockForRole(consumer.type, 'consumer', category, 'flag');
-      if (!periodLock || isLockedForPeriod(consumer, periodLock, period, category)) continue;
+      if (!periodLock) continue;
+      if (isLockedForPeriod(consumer, periodLock, period, category)) {
+        // Already served this period: by this building, it counts against this building's capacity.
+        if (consumer.servedBy?.[category] === source.id) used += consumer.pop;
+        continue;
+      }
+      candidates.push({ consumer, periodLock });
+    }
+    const ordered = capacity
+      ? await this.serviceQueue.order(capacity.serveFirst, candidates.map(({ consumer }) => ({ id: consumer.id, pop: consumer.pop })))
+      : candidates.map(({ consumer }) => ({ id: consumer.id }));
+    const byId = new Map(candidates.map((entry) => [entry.consumer.id, entry]));
+
+    const transfers = [];
+    for (const { id: consumerId } of ordered) {
+      const { consumer, periodLock } = byId.get(consumerId) ?? {};
+      if (!consumer) throw new Error(`[supply] the service queue named house ${consumerId}, which was not asked`);
+      // A house that does not fit in what is left is passed over: a smaller one after it may still fit.
+      if (used + consumer.pop > limit) continue;
 
       // A house whose bill for this service was not paid is not served this month: the reason is kept on the house.
       const cutOff = await this.consumerMoney.isServiceCutOff({
@@ -237,8 +271,13 @@ export class DistributeResourceToConsumers {
       // Served: any cut-off kept from an earlier month is over.
       await this.supplyBuildingRepository.updateBuildingFields(
         consumerId,
-        buildLockUpdate(consumer, periodLock, period, category, consumer.serviceCutOff ? { serviceCutOff: null } : {})
+        buildLockUpdate(consumer, periodLock, period, category, {
+          ...(consumer.serviceCutOff ? { serviceCutOff: null } : {}),
+          // Which building reached the house: a bounded service counts only the houses it served itself.
+          ...(capacity ? { servedBy: { ...consumer.servedBy, [category]: source.id } } : {}),
+        })
       );
+      used += consumer.pop;
       transfers.push({ consumerId, category, amount: 1 });
     }
 

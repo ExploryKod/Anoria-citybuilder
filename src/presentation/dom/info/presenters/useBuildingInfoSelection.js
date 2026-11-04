@@ -112,6 +112,13 @@ async function enrichBuildingInfoViewModel(groupId, vm) {
     extra.periodKey = budget?.turn !== undefined
       ? (TimeManager.getTimeInfo(budget.turn)?.monthIndex ?? null)
       : null;
+    // The house's health environment (the histogram of the Habitants tab), read for the month the records above are read for.
+    try {
+      extra.houseHealth = await housing.describeHouseHealth({ houseId: vm.uniqueId, periodKey: extra.periodKey });
+    } catch (error) {
+      console.error('[BuildingInfo] describeHouseHealth failed:', error);
+      extra.houseHealth = null;
+    }
     // Same structural check as the farm group — a house's OWN business is a recipe like any workshop's.
     extra.activitySupplyGaps = await vm.supply.describeActivitySupplyAccess({
       id: vm.uniqueId,

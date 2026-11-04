@@ -5,6 +5,8 @@
 import { TimeManager } from '../shared/time/TimeManager.js';
 import { getOrCreateParcelsContext } from './createParcelsContext.js';
 import { getOrCreateSupplyContext } from './createSupplyContext.js';
+import { createServiceQueuePort } from './serviceQueuePort.js';
+import { getOrCreateCitizenRegistry } from './citizenRegistry.js';
 import { createConsumerMoneyPort } from './consumerMoneyPort.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
 import { getOrCreateEmploymentContext } from './createEmploymentContext.js';
@@ -57,7 +59,10 @@ export function bootGameContexts() {
     listServicePrices: (period) => supply.listServicePrices(period),
   });
   // The supply needs the consumers' money (their personal accounts), so the accounting exists first.
-  const supply = getOrCreateSupplyContext({ consumerMoney: createConsumerMoneyPort(accounting) });
+  const supply = getOrCreateSupplyContext({
+    consumerMoney: createConsumerMoneyPort(accounting),
+    serviceQueue: createServiceQueuePort(getOrCreateCitizenRegistry()),
+  });
   // A house reaches level 3 only if its own business can reach a warehouse: no 'no-hub' gap in any of its recipes.
   housing.setActivityAccessCheck(async (house) => {
     const gaps = await supply.describeActivitySupplyAccess({ id: house.id, type: house.type, x: house.x, y: house.y });

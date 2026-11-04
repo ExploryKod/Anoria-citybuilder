@@ -191,6 +191,11 @@ db.version(22).stores({
   supplyTraceability: '++id, hamletId, turn, month, year, transactionType, fromId, toId, foodType, businessKey, [hamletId+year+month]',
 });
 
+// v23: the inhabitants, one row each (see shared/citizens/Citizen.js). Read by hamlet (one query for the whole hamlet), written by house.
+db.version(23).stores({
+  citizens: 'id, houseId, hamletId',
+});
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 

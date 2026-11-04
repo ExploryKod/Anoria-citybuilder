@@ -159,3 +159,58 @@ describe('Supply — school coverage (flag consumption)', () => {
     expect(outcome.distributed).toBe(true);
   });
 });
+
+// A service the catalog bounds (the Cabinet médical: 40 inhabitants per worker in post) reaches houses whole, in the order the catalog's rule
+// gives, and never past its capacity, however often it is asked in the period.
+describe('Supply — a bounded service (capacity per worker, houses served in the rule\'s order)', () => {
+  const doctor = (id, worker) => createSupplyBuildingSnapshot({ id, type: 'Doctor', roadCount: 1, worker, workerNeed: 2, stocks: {} });
+  // The queue stands for the composition's rule: the houses are served in the order it gives, here the order of `priority`.
+  const queueOf = (priority) => ({ order: async (rule, houses) => {
+    if (rule !== 'lowestHealth') throw new Error(`unexpected rule ${rule}`);
+    return [...houses].sort((a, b) => priority.indexOf(a.id) - priority.indexOf(b.id));
+  } });
+
+  let ids;
+  let repo;
+  let refs;
+
+  beforeEach(() => {
+    ids = { doctor: createBuildingInstanceId(), a: createBuildingInstanceId(), b: createBuildingInstanceId(), c: createBuildingInstanceId() };
+    repo = new InMemorySupplyBuildingRepository([
+      doctor(ids.doctor, 1),
+      house(ids.a, { pop: 30 }),
+      house(ids.b, { pop: 25 }),
+      house(ids.c, { pop: 10 }),
+    ]);
+    refs = [{ instanceId: ids.a }, { instanceId: ids.b }, { instanceId: ids.c }];
+  });
+
+  test('one worker reaches 40 inhabitants: the first house in the queue, then the first that still fits', async () => {
+    const useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook, queueOf([ids.a, ids.b, ids.c]));
+    const outcome = await useCase.execute({ sourceId: ids.doctor, period: { monthIndex: 3 }, consumerRefs: refs });
+
+    // a (30) fits; b (25) would make 55 > 40, passed over; c (10) fits: 40.
+    expect(outcome.transfers.map((transfer) => transfer.consumerId)).toEqual([ids.a, ids.c]);
+    expect((await repo.findById(ids.b)).servedFlags).toBeUndefined();
+  });
+
+  test('asked again in the same period it serves no more than its capacity', async () => {
+    const useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook, queueOf([ids.a, ids.b, ids.c]));
+    await useCase.execute({ sourceId: ids.doctor, period: { monthIndex: 3 }, consumerRefs: refs });
+    const second = await useCase.execute({ sourceId: ids.doctor, period: { monthIndex: 3 }, consumerRefs: refs });
+    expect(second.distributed).toBe(false);
+    expect((await repo.findById(ids.b)).servedFlags).toBeUndefined();
+  });
+
+  test('the rule decides who is reached: the house the queue puts first is served before a larger one', async () => {
+    const useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook, queueOf([ids.b, ids.c, ids.a]));
+    const outcome = await useCase.execute({ sourceId: ids.doctor, period: { monthIndex: 3 }, consumerRefs: refs });
+    // b (25) and c (10) fit within 40 (35); a (30) does not.
+    expect(outcome.transfers.map((transfer) => transfer.consumerId)).toEqual([ids.b, ids.c]);
+  });
+
+  test('a bounded service asked without a service queue throws, naming what is missing', async () => {
+    const useCase = new DistributeResourceToConsumers(repo, unlimitedConsumerMoney, referencePriceBook);
+    await expect(useCase.execute({ sourceId: ids.doctor, period: { monthIndex: 3 }, consumerRefs: refs })).rejects.toThrow(/service queue/);
+  });
+});

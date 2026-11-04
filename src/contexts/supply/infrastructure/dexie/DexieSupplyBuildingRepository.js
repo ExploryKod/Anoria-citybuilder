@@ -1,5 +1,6 @@
 import db from '../../../../core/persistence/dexie/db.js';
 import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { residentsCountOf } from '../../../../shared/population/residentsCount.js';
 import { createSupplyBuildingSnapshot } from '../../domain/SupplyBuildingSnapshot.js';
 import { createSupplyBuildingView } from '../../domain/SupplyBuildingView.js';
 import { createSupplyStock } from '../../domain/value-objects/SupplyStock.js';
@@ -117,7 +118,7 @@ export class DexieSupplyBuildingRepository {
       lastProductionYear: house.lastProductionYear ?? null,
       lastConsumptionMonth: house.lastConsumptionMonth ?? null,
       lastConsumption: house.lastConsumption ?? null,
-      pop: house.pop ?? 0,
+      pop: residentsCountOf(house),
       level: house.level ?? 1,
       supplyHubId: house.supplyHubId ?? null,
       linkedDistributors: house.linkedDistributors ?? [],
@@ -135,7 +136,7 @@ export class DexieSupplyBuildingRepository {
       stocks: house.stocks || {},
       // The catalog is the only source of a stock ceiling — a stored row value never overrides it.
       maxStock: getMaxStockForBuilding(type),
-      pop: house.pop ?? 0,
+      pop: residentsCountOf(house),
       isBuying: house.isBuying === true,
       noSourcesNearby: house.noSourcesNearby === true,
       distributorTooFar: house.distributorTooFar === true,

@@ -43,6 +43,7 @@ function fakeHousing() {
       evolutionCalls += 1;
       return { housesProcessed: 0, housesChanged: 0, changes: [] };
     },
+    evolveHealthOfHouses: async () => ({ judged: 0 }),
   };
 }
 
@@ -109,6 +110,7 @@ describe('createGameRuntime', () => {
       'supply.monthlyResourceCycle',
       'housing.populationGrowth',
       'housing.evolution',
+      'housing.health',
       'employment.redistribute',
       'gameplay.randomEvents',
       'intelligence.monthlyNews',

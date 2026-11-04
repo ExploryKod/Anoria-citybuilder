@@ -1047,13 +1047,15 @@ export const BUILDING_ECONOMY = {
     displayName: 'Cabinet médical',
     construction: { price: 55, category: 'public' },
     employment: { sector: 6, workerNeed: 2, requiredSkill: 'medecine-proximite' },
-    resourceRoles: [{ role: 'distributor', categories: ['doctor'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
+    // A visit reaches the inhabitants its staff can look after (the prevention visit and, one day, care share this capacity); when it cannot
+    // reach every house, the lowest health is served first (see HealthFactorCatalog.js for what the visit gives).
+    resourceRoles: [{ role: 'distributor', categories: ['doctor'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag', capacity: { inhabitantsPerWorker: 40, serveFirst: 'lowestHealth' } }],
   },
   Hospital: {
     displayName: 'Hôpital',
     construction: { price: 140, category: 'public' },
     employment: { sector: 6, workerNeed: 4, requiredSkill: 'medecine-hospitaliere' },
-    resourceRoles: [{ role: 'distributor', categories: ['hospital'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
+    resourceRoles: [{ role: 'distributor', categories: ['hospital'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag', capacity: { inhabitantsPerWorker: 30, serveFirst: 'lowestHealth' } }],
   },
   Theatre: {
     displayName: 'Théâtre',

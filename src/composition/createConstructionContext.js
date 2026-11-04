@@ -17,6 +17,7 @@ import {
   recordConstructionRefund,
 } from './constructionTreasuryBridge.js';
 import { awaitBudgetReady } from './budgetReadyGate.js';
+import { getOrCreateCitizenRegistry } from './citizenRegistry.js';
 import { getOrCreateParcelsContext } from './createParcelsContext.js';
 import {
   registerSceneBuildingTypeListing,
@@ -48,7 +49,7 @@ export function createConstructionContext({
   getDefaultEmployees: getDefaultEmployeesDep,
   awaitBudgetReady: awaitBudgetReadyDep,
 } = {}) {
-  const repository = buildingRepository ?? new DexieConstructionBuildingRepository();
+  const repository = buildingRepository ?? new DexieConstructionBuildingRepository({ citizens: getOrCreateCitizenRegistry() });
   const sceneInventory = sceneBuildingInventory ?? new SceneBuildingInventoryAdapter();
   const catalog = assetCatalog ?? buildingPlacementCatalog;
   const getBuildingAtTile = new GetBuildingAtTile(repository);

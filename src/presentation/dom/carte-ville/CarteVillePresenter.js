@@ -284,6 +284,7 @@ const EXPORT_OMITTED_FIELDS = ['id', 'anchorX', 'anchorY', 'name'];
  * and the settings the numbers depend on.
  * @param {object} params
  * @param {Array<object>} params.buildingRows Raw building rows.
+ * @param {Array<object>} params.citizens Every citizen of the hamlet (a section that cannot be read makes the export fail, not drop the people).
  * @param {object|null} params.employmentSummary
  * @param {object|null} params.populationSummary
  * @param {{ incoming: Array<object>, archived: Array<object> }} params.news
@@ -291,10 +292,11 @@ const EXPORT_OMITTED_FIELDS = ['id', 'anchorX', 'anchorY', 'name'];
  * @param {number} params.turn The game turn the export is taken at (the clock, read once: a building row does not carry it).
  * @param {Record<string, string>} params.errors Sections that could not be read, by name.
  */
-export function buildCityExport({ buildingRows, employmentSummary, populationSummary, news, citySize, turn, errors }) {
+export function buildCityExport({ buildingRows, citizens, employmentSummary, populationSummary, news, citySize, turn, errors }) {
   if (!Number.isInteger(turn) || turn < 0) {
     throw new Error(`[export] the city export needs the turn it is taken at, got ${turn}`);
   }
+  if (!Array.isArray(citizens)) throw new Error('[export] the city export needs the citizens of the hamlet');
   const buildings = buildingRows
     .map((row) => {
       const kept = { ...row };
@@ -317,6 +319,8 @@ export function buildCityExport({ buildingRows, employmentSummary, populationSum
     },
     omittedBuildingFields: EXPORT_OMITTED_FIELDS,
     buildings,
+    // Every inhabitant, whole (uuid, constitution, health, house): a prefab started from this export gets the same people.
+    citizens: citizens.map((citizen) => ({ ...citizen })),
     employmentSummary,
     populationSummary,
     news,
