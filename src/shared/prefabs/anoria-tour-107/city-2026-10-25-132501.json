@@ -1980,6 +1980,7 @@
       "type": "House-Mayor",
       "category": "construction",
       "pop": 6,
+      "sickCount": 0,
       "stocks": {
         "wheat": 6,
         "carrot": 0,
@@ -3293,6 +3294,7 @@
       "type": "House-Blue",
       "category": "construction",
       "pop": 12,
+      "sickCount": 0,
       "stocks": {
         "wheat": 12,
         "carrot": 0,
@@ -3720,6 +3722,7 @@
       "type": "House-Red",
       "category": "construction",
       "pop": 12,
+      "sickCount": 0,
       "stocks": {
         "wheat": 12,
         "carrot": 0,
@@ -4463,6 +4466,7 @@
       "type": "House-Blue",
       "category": "construction",
       "pop": 6,
+      "sickCount": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -4878,6 +4882,7 @@
       "type": "House-Red",
       "category": "construction",
       "pop": 12,
+      "sickCount": 0,
       "stocks": {
         "wheat": 12,
         "carrot": 0,
@@ -5151,6 +5156,7 @@
       "type": "House-Red",
       "category": "construction",
       "pop": 12,
+      "sickCount": 0,
       "stocks": {
         "wheat": 12,
         "carrot": 0,
@@ -5631,6 +5637,7 @@
       "type": "House-Purple",
       "category": "construction",
       "pop": 12,
+      "sickCount": 0,
       "stocks": {
         "wheat": 12,
         "carrot": 0,

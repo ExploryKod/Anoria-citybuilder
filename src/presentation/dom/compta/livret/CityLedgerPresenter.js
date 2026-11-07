@@ -104,6 +104,7 @@ export function renderCityLedgerTable(comparison) {
       thisYear: 'unemploymentBenefitThisYear',
       lastYear: 'unemploymentBenefitLastYear',
     },
+    { key: 'sicknessBenefit', thisYear: 'sicknessBenefitThisYear', lastYear: 'sicknessBenefitLastYear' },
     { key: 'serviceSubsidy', thisYear: 'serviceSubsidyThisYear', lastYear: 'serviceSubsidyLastYear' },
     { key: 'companySubsidy', thisYear: 'companySubsidyThisYear', lastYear: 'companySubsidyLastYear' },
     { key: 'housingSubsidy', thisYear: 'housingSubsidyThisYear', lastYear: 'housingSubsidyLastYear' },

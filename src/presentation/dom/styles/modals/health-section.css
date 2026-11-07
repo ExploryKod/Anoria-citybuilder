@@ -87,161 +87,71 @@
     min-width: 100px;
 }
 
-.health-item-value.percentage {
-    color: var(--primary);
-}
-
 .health-item-value.number {
     color: var(--primary);
-}
-
-.health-item-value.low-risk {
-    color: var(--success);
-}
-
-.health-item-value.medium-risk {
-    color: var(--warning);
 }
 
 .health-item-value.high-risk {
     color: var(--danger);
 }
 
-.health-item-value.critical {
-    color: var(--danger);
-    font-weight: 700;
-}
-
-.health-item.low-risk {
-    background: rgba(40, 167, 69, 0.06);
-}
-
-.health-item.medium-risk {
-    background: rgba(255, 193, 7, 0.08);
-}
-
 .health-item.high-risk {
     background: rgba(156, 41, 57, 0.06);
 }
 
-.health-coverage-bar {
-    width: 200px;
-    height: 20px;
-    background: #e0e0e0;
-    border-radius: 10px;
-    overflow: hidden;
-    position: relative;
-    flex-shrink: 0;
-}
-
-.health-coverage-fill {
-    height: 100%;
-    background: var(--success);
-    transition: width 0.3s ease;
-    border-radius: 10px;
-}
-
-.health-coverage-fill.medium {
-    background: var(--warning);
-}
-
-.health-coverage-fill.low {
-    background: var(--danger);
-}
-
-.health-death-rate {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 15px;
-    background: rgba(156, 41, 57, 0.05);
-    border-radius: var(--border-radius-small);
-}
-
-.health-death-rate-label {
-    font-size: 14px;
-    color: var(--primary);
-    font-weight: 500;
-    text-align: left;
-}
-
-.health-death-rate-value {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--danger);
-    text-align: right;
-}
-
-.health-major-disease {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px;
-    background: rgba(156, 41, 57, 0.1);
-    border-radius: var(--border-radius-small);
-    border: none;
-    margin-top: 10px;
-}
-
-.health-major-disease-label {
-    font-size: 13px;
-    color: var(--primary);
-    font-weight: 500;
-    text-align: left;
-}
-
-.health-major-disease-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--danger);
-    text-align: left;
+.health-note {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+    opacity: 0.75;
 }
 
 /* Mobile Responsive */
 @media screen and (max-width: 1024px) {
     .health-board {
         padding: 15px;
-        text-align: left;
     }
 
     .health-header-title {
         font-size: 20px;
-        text-align: left;
     }
 
     .health-item {
         flex-direction: column;
         align-items: flex-start;
         gap: 8px;
-        background: #fff;
-        box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
     }
 
     .health-item-value {
         text-align: left;
         width: 100%;
     }
+}
 
-    .health-coverage-bar {
-        width: 100%;
-    }
+/* The sick-leave law: one select, full width, a touch target of at least 40 px, its explanation wrapping under it. */
+.health-section select {
+    width: 100%;
+    min-height: 40px;
+    box-sizing: border-box;
+}
+
+.health-section select + .health-note {
+    display: block;
+    margin-top: 8px;
 }
 
 @media screen and (max-width: 768px) {
     .health-board {
         padding: 12px;
-        text-align: left;
     }
 
     .health-section {
         padding: 15px;
-        background: transparent;
     }
 
     .health-item {
         padding: 8px;
-        background: #fff;
-        box-shadow: 0 1px 2px rgba(29, 34, 40, 0.08);
     }
 }
-

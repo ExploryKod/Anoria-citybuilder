@@ -4,6 +4,7 @@ import { getServiceCategories } from '../../../../shared/resource-catalog/Resour
 import { getVatCategories, getVatCategoryOf, getVatItems } from '../../../../shared/resource-catalog/VatCategoryCatalog.js';
 import { DEFAULT_COMPANY_AID } from '../../domain/catalogs/CompanyAidCatalog.js';
 import { assertCompanyAidPolicy } from '../../domain/policies/CompanyAidPolicy.js';
+import { DEFAULT_SICKNESS_COVER, SICKNESS_COVERS, assertSicknessCover } from '../../../../shared/accounting-catalog/SicknessCoverCatalog.js';
 import {
   DEFAULT_HAMLET_FISCAL_RATES,
   DEFAULT_MINIMUM_WAGE_MODE,
@@ -226,6 +227,24 @@ export class HamletFiscalRateRepository {
     return this.getSalarySettings();
   }
 
+  /** @returns {Promise<string>} who pays a worker who is sick: one of SICKNESS_COVERS (see SicknessCoverCatalog.js) */
+  async getSicknessCover() {
+    const hamletId = requireActiveHamletId();
+    const row = await this.db.hamlets.get(hamletId);
+    if (!row) throw new Error(`[sickness] hamlet ${hamletId} has no row`);
+    if (!SICKNESS_COVERS.includes(row.sicknessCover)) {
+      throw new Error(`[sickness] hamlet ${hamletId} has no valid sickness cover (${row.sicknessCover}): it is written when the hamlet is created`);
+    }
+    return row.sicknessCover;
+  }
+
+  /** @param {string} cover @returns {Promise<string>} */
+  async setSicknessCover(cover) {
+    assertSicknessCover(cover);
+    await this.db.hamlets.update(requireActiveHamletId(), { sicknessCover: cover });
+    return cover;
+  }
+
   /**
    * The hamlet's policy of aid to its companies (see CompanyAidCatalog.js), and until which year the player is committed to it (null: not yet committed, he may still set it).
    * @returns {Promise<{ policy: Record<string, number>, committedUntilYear: number | null }>}
@@ -267,6 +286,7 @@ export class HamletFiscalRateRepository {
     const missing = Object.keys(DEFAULT_HAMLET_FISCAL_RATES).filter((field) => typeof row[field] !== 'number');
     const defaults = Object.fromEntries(missing.map((field) => [field, DEFAULT_HAMLET_FISCAL_RATES[field]]));
     if (!row.minimumWageMode) defaults.minimumWageMode = DEFAULT_MINIMUM_WAGE_MODE;
+    if (!row.sicknessCover) defaults.sicknessCover = DEFAULT_SICKNESS_COVER;
     if (!row.companyAid) defaults.companyAid = { policy: { ...DEFAULT_COMPANY_AID }, committedUntilYear: null };
     if (typeof row.rentControlEnabled !== 'boolean') defaults.rentControlEnabled = DEFAULT_RENT_CONTROL_ENABLED;
     if (!row.serviceSubsidy) {

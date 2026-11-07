@@ -28,6 +28,8 @@ export const HEALTH_LABELS = Object.freeze({
   /** What a citizen below the sick threshold is, and how a count of them is called. */
   sick: 'Malade',
   sickCount: 'Malades',
+  /** Workers assigned to a workplace who are sick, so absent. */
+  absentWorkers: 'Absents (malades)',
   /** A citizen's score. */
   score: 'Santé',
   /** The part of the environment every house has, whatever it gives. */
@@ -35,6 +37,11 @@ export const HEALTH_LABELS = Object.freeze({
   /** What the house's factors add up to. */
   environment: 'Niveau de l\'environnement',
 });
+
+/** What "sick" means, for the player: a score below the threshold. */
+export function sickExplanation() {
+  return `Un habitant est malade quand sa santé passe sous ${HEALTH_SICK_BELOW} sur ${HEALTH_MAX}.`;
+}
 
 /** The level of a house that gives nothing: what its inhabitants' health settles at. */
 export const HEALTH_BASE_LEVEL = 40;

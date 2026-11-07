@@ -1,4 +1,5 @@
 import { HEALTH_BASE_LEVEL, HEALTH_FACTORS, maxPointsOfFactor } from '../../../../shared/population/HealthFactorCatalog.js';
+import { HEALTH_MAX } from '../../../../shared/population/CitizenCatalog.js';
 import { describeTierRequirements } from './HouseTierRequirementPolicy.js';
 
 /**
@@ -27,4 +28,22 @@ export function describeHealthEnvironment(house, periodKey) {
     return { id: factor.id, label: factor.label, points, max: maxPointsOfFactor(factor) };
   });
   return { base: HEALTH_BASE_LEVEL, parts, level: HEALTH_BASE_LEVEL + parts.reduce((sum, part) => sum + part.points, 0) };
+}
+
+/**
+ * The environment as one citizen lives it: what the factors give above the base is weighed by his `sensitivity`, and when that goes
+ * over the scale every part is lowered by the same share so the level stops at the top of it. The parts always add up to the level, and
+ * the level is the target his health moves towards (HealthEvolutionPolicy), so his histogram is the breakdown of the real calculation.
+ *
+ * @param {ReturnType<typeof describeHealthEnvironment>} environment the house's environment
+ * @param {{ sensitivity: number }} constitution
+ * @returns {{ base: number, parts: Array<{ id: string, label: string, points: number, max: number }>, level: number }}
+ */
+export function describeCitizenEnvironment(environment, constitution) {
+  const weighed = environment.parts.map((part) => constitution.sensitivity * part.points);
+  const room = HEALTH_MAX - environment.base;
+  const total = weighed.reduce((sum, points) => sum + points, 0);
+  const share = total > room ? room / total : 1;
+  const parts = environment.parts.map((part, index) => ({ ...part, points: weighed[index] * share }));
+  return { base: environment.base, parts, level: environment.base + parts.reduce((sum, part) => sum + part.points, 0) };
 }

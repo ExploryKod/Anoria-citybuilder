@@ -14,6 +14,8 @@ export {
 const MONTHLY_IDEMPOTENT_TYPES = new Set([
   'salary',
   'unemployment_benefit',
+  'sickness_benefit',
+  'household_sickness_benefit',
   'payroll_tax',
   'maintenance',
 ]);

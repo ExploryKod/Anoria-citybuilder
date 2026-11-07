@@ -33,7 +33,9 @@ const LINES = Object.freeze({
   // The upkeep of the buildings the hamlet does not run itself is the rent it pays their owner: one line, "Entretien".
   maintenance: { out: ['6156', '613'] },
   salary: { out: ['6411'] },
-  unemploymentBenefit: { out: ['431'] },
+  // The unemployment benefit is paid out of the unemployment fund (4378), the sickness allowance out of the health fund (431): see SocialFundsCatalog.js.
+  unemploymentBenefit: { out: ['4378'] },
+  sicknessBenefit: { out: ['431'] },
   serviceSubsidy: { out: ['65738'] },
   // What the city gives its companies, less what comes back from them: the interest of its loans (7626) and the dividends of its holdings (761).
   companySubsidy: { out: ['65742'], takeOff: ['7626', '761'] },
@@ -48,7 +50,7 @@ const LINES = Object.freeze({
 
 const INCOME_LINES = ['initialFunds', 'incomeTax', 'payrollTax', 'vat', 'corporateTaxRevenue', 'exports', 'customsImport', 'socialContributions', 'loanCapital'];
 const EXPENSE_LINES = [
-  'construction', 'maintenance', 'salary', 'unemploymentBenefit', 'serviceSubsidy', 'companySubsidy', 'housingSubsidy', 'repairs', 'commercialRoutes',
+  'construction', 'maintenance', 'salary', 'unemploymentBenefit', 'sicknessBenefit', 'serviceSubsidy', 'companySubsidy', 'housingSubsidy', 'repairs', 'commercialRoutes',
   'contributions', 'imports', 'loanInterest', 'loanRepayment',
 ];
 
@@ -93,6 +95,7 @@ export function cityLedgerYearLinesFromCashFlows(year, flows, { balanceForYear, 
     maintenance: euros('maintenance'),
     salary: euros('salary'),
     unemploymentBenefit: euros('unemploymentBenefit'),
+    sicknessBenefit: euros('sicknessBenefit'),
     serviceSubsidy: euros('serviceSubsidy'),
     corporateTaxRevenue: euros('corporateTaxRevenue'),
     companySubsidy: euros('companySubsidy'),

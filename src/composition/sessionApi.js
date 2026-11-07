@@ -110,6 +110,8 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     revalueMinimumWage: () => accounting.revalueMinimumWage(),
     getWagePerWorkerOf: (buildingType) => accounting.getWagePerWorkerOf(buildingType),
     setSalarySettings: (partial) => accounting.setSalarySettings(partial),
+    getSicknessCover: () => accounting.getSicknessCover(),
+    setSicknessCover: (cover) => accounting.setSicknessCover(cover),
     ensureHamletFiscalRates: (hamletId) => accounting.ensureHamletFiscalRates(hamletId),
 
     ensureCustomsDuties: () => accounting.ensureCustomsDuties(),
@@ -241,6 +243,8 @@ export function createHousingSessionApi(housing) {
       return totalPop;
     },
     getCityPopulationSummary: () => housing.getCityPopulationSummary(),
+    /** The hamlet's average health over its citizens, how many they are, how many are sick and its environment (null while nobody lives there). */
+    getCityHealth: (params) => housing.getCityHealth(params),
     /** Every citizen of the active hamlet, house by house in their stable order (what a city export carries). */
     listCitizens: async () => [...(await getOrCreateCitizenRegistry().forHamlet(requireActiveHamletId())).values()].flat(),
     /** How many inhabitants of the active hamlet go hungry, and for which of the two causes (disette: they cannot pay; pénurie: nothing to buy). */

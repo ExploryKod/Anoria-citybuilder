@@ -3,6 +3,7 @@
  */
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
+import { HEALTH_LABELS } from '../../../../../shared/population/HealthFactorCatalog.js';
 import { getSkillDisplay } from '../../../../../shared/population/skillCatalog.js';
 import { getResidentialGroupLabel } from '../../../shell/ResidentialGroupLabels.js';
 import { formatEuro } from '../../../../../contexts/accounting/presentation/formatMoney.js';
@@ -35,8 +36,9 @@ function staffLabel(buildingType, employment) {
  * @param {string | null} staffingLine why the post is filled or empty (see staffingReasonFormat.js)
  * @returns {import('../../buildingInfoTypes.js').InfoKvPanelModel | null}
  */
-export function formatWorkplaceEmployeesPanel(buildingData, employment, staffingLine, wagePerWorker, employerContributionRate) {
+export function formatWorkplaceEmployeesPanel(buildingData, employment, staffingLine, wagePerWorker, employerContributionRate, absentWorkers) {
   if (!buildingData?.employees) return null;
+  if (absentWorkers === undefined) throw new Error('[staff tab] the view-model carries no absentWorkers (a number, or null for a building that has no supply view)');
   if (wagePerWorker === undefined) throw new Error('[staff tab] the view-model carries no wagePerWorker (a number, or null for a building that pays none)');
   if (wagePerWorker !== null && !Number.isFinite(employerContributionRate)) throw new Error('[staff tab] the view-model carries no employerContributionRate: the cost of its workers cannot be told');
 
@@ -63,6 +65,8 @@ export function formatWorkplaceEmployeesPanel(buildingData, employment, staffing
             ]
           : []),
         { label: staffLabel(buildingType, employment), value: `${workers}/${workerNeed}` },
+        // Assigned workers who are sick do not work: only said when there are some.
+        ...(absentWorkers > 0 ? [{ label: HEALTH_LABELS.absentWorkers, value: `${absentWorkers} sur ${workers}` }] : []),
         ...(wagePerWorker !== null
           ? [
               { label: 'Salaire (marché du travail)', value: `${formatEuro(wagePerWorker)} par ouvrier et par mois` },

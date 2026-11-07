@@ -1,161 +1,162 @@
+import { HEALTH_LABELS, sickExplanation } from '../../../../shared/population/HealthFactorCatalog.js';
+import { SICKNESS_COVERS, SICKNESS_COVER_LABELS, sicknessCoverExplanation } from '../../../../shared/accounting-catalog/SicknessCoverCatalog.js';
+import { HEALTH_FUND_ACCOUNT, SOCIAL_FUND_LABELS, UNEMPLOYMENT_FUND_ACCOUNT } from '../../../../shared/accounting-catalog/SocialFundsCatalog.js';
+import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
+import { HEALTH_MAX } from '../../../../shared/population/CitizenCatalog.js';
+import { getSessionGameTime } from '../../../../composition/sessionRuntime.js';
+import { TimeManager } from '../../../../shared/time/TimeManager.js';
+import { renderHealthHistogram } from '../../info/views/healthHistogramView.js';
+
+/**
+ * The city's health, read from its citizens (`housing.getCityHealth`): the average over the inhabitants, how many they are and how
+ * many are sick. Nothing here is invented: while the figures load the panel shows "…", and a city nobody lives in shows no average.
+ * Its words come from `HEALTH_LABELS`.
+ */
 export class HealthSectionPresenter {
-    constructor() {
-        this.healthData = null;
+    /**
+     * @param {{
+     *   housing?: { getCityHealth: (params: { periodKey: number }) => Promise<{ average: number | null, citizens: number, sick: number, environment: object | null }> },
+     *   accounting?: { getSicknessCover: () => Promise<string>, setSicknessCover: (cover: string) => Promise<string>, getCityStatements: () => Promise<{ trialBalance: { accounts: Array<{ account: string, debitBalance: number, creditBalance: number }> } }> },
+     * }} deps
+     */
+    constructor(deps = {}) {
+        if (!deps.housing?.getCityHealth) throw new Error('[health] the health panel needs housing.getCityHealth');
+        if (!deps.accounting?.getSicknessCover || !deps.accounting?.setSicknessCover) throw new Error('[health] the health panel needs accounting.getSicknessCover and setSicknessCover');
+        if (!deps.accounting?.getCityStatements) throw new Error('[health] the health panel needs accounting.getCityStatements to read the social funds');
+        this.housing = deps.housing;
+        this.accounting = deps.accounting;
+        this.cityHealth = null;
+        /** What the city holds for each social fund (euros, negative = deficit), by account; null while it loads: the panel then shows "…". */
+        this.socialFunds = null;
+        /** The cover in force (SICKNESS_COVERS); null while it loads: the control then shows "…". */
+        this.sicknessCover = null;
     }
 
     init() {
-        this.loadHealthData();
+        this.render();
+        this.load();
     }
 
-    async loadHealthData() {
-        this.healthData = this.generatePlaceholderHealthData();
+    async load() {
+        const { monthIndex } = TimeManager.getTimeInfo(getSessionGameTime());
+        const [health, cover, statements] = await Promise.all([
+            this.housing.getCityHealth({ periodKey: monthIndex }),
+            this.accounting.getSicknessCover(),
+            this.accounting.getCityStatements(),
+        ]);
+        this.cityHealth = health;
+        this.sicknessCover = cover;
+        // A fund nothing was ever booked on has no line in the city's balance: it holds nothing.
+        const heldBy = (account) => {
+            const row = statements.trialBalance.accounts.find((candidate) => candidate.account === account);
+            return row ? row.creditBalance - row.debitBalance : 0;
+        };
+        this.socialFunds = { [HEALTH_FUND_ACCOUNT]: heldBy(HEALTH_FUND_ACCOUNT), [UNEMPLOYMENT_FUND_ACCOUNT]: heldBy(UNEMPLOYMENT_FUND_ACCOUNT) };
         this.render();
     }
 
-    generatePlaceholderHealthData() {
-        return {
-            coverage: {
-                doctor: 75,
-                hospital: 60,
-                medicines: 80
-            },
-            risks: {
-                depression: 12,
-                suicide: 3
-            },
-            nutrition: {
-                hungry: { percentage: 8, absolute: 240 },
-                nourished: { percentage: 65, absolute: 1950 },
-                wellBalanced: { percentage: 27, absolute: 810 }
-            },
-            sickness: {
-                light: 15,
-                medium: 5,
-                fatal: 1
-            },
-            death: {
-                rate: 2.3,
-                majorDisease: 'Pneumonie'
-            }
-        };
+    /** What the city holds for each branch of its social security, and a deficit shown as such. */
+    #socialFundsSection() {
+        const section = document.createElement('div');
+        section.className = 'health-section';
+        const title = document.createElement('div');
+        title.className = 'health-section-title';
+        title.textContent = SOCIAL_FUND_LABELS.title;
+        const items = document.createElement('div');
+        items.className = 'health-items';
+        for (const [account, label] of [[HEALTH_FUND_ACCOUNT, SOCIAL_FUND_LABELS.health], [UNEMPLOYMENT_FUND_ACCOUNT, SOCIAL_FUND_LABELS.unemployment]]) {
+            const held = this.socialFunds === null ? null : this.socialFunds[account];
+            const item = document.createElement('div');
+            item.className = `health-item${held !== null && held < 0 ? ' high-risk' : ''}`;
+            const name = document.createElement('span');
+            name.className = 'health-item-label';
+            name.textContent = label;
+            const value = document.createElement('span');
+            value.className = 'health-item-value number';
+            value.textContent = held === null ? '…' : held < 0 ? `${SOCIAL_FUND_LABELS.deficit} ${formatEuro(-held)}` : formatEuro(held);
+            item.append(name, value);
+            items.append(item);
+        }
+        const note = document.createElement('small');
+        note.className = 'health-note';
+        note.textContent = SOCIAL_FUND_LABELS.note;
+        section.append(title, items, note);
+        return section;
     }
 
-    getCoverageStatus(coverage) {
-        if (coverage >= 70) return { class: '', fillClass: '' };
-        if (coverage >= 40) return { class: 'medium-risk', fillClass: 'medium' };
-        return { class: 'low-risk', fillClass: 'low' };
-    }
-
-    getRiskStatus(risk) {
-        if (risk < 5) return { class: 'low-risk', valueClass: 'low-risk' };
-        if (risk < 15) return { class: 'medium-risk', valueClass: 'medium-risk' };
-        return { class: 'high-risk', valueClass: 'high-risk' };
+    /** The law of the sick leave: who pays a worker who is sick. A choice of the player, none by default. */
+    #sicknessCoverControl() {
+        const section = document.createElement('div');
+        section.className = 'health-section';
+        const title = document.createElement('div');
+        title.className = 'health-section-title';
+        title.textContent = SICKNESS_COVER_LABELS.title;
+        section.append(title);
+        if (this.sicknessCover === null) {
+            const loading = document.createElement('div');
+            loading.className = 'health-item';
+            loading.textContent = '…';
+            section.append(loading);
+            return section;
+        }
+        const select = document.createElement('select');
+        select.setAttribute('aria-label', SICKNESS_COVER_LABELS.title);
+        for (const cover of SICKNESS_COVERS) {
+            const option = document.createElement('option');
+            option.value = cover;
+            option.textContent = SICKNESS_COVER_LABELS[cover];
+            option.selected = cover === this.sicknessCover;
+            select.append(option);
+        }
+        select.addEventListener('change', async () => {
+            this.sicknessCover = await this.accounting.setSicknessCover(select.value);
+            this.render();
+        });
+        const note = document.createElement('small');
+        note.className = 'health-note';
+        note.textContent = sicknessCoverExplanation(this.sicknessCover);
+        section.append(select, note);
+        return section;
     }
 
     render() {
-        if (!this.healthData) return;
-
         const healthSections = document.getElementById('health-sections');
         if (!healthSections) return;
 
-        const doctorStatus = this.getCoverageStatus(this.healthData.coverage.doctor);
-        const hospitalStatus = this.getCoverageStatus(this.healthData.coverage.hospital);
-        const medicinesStatus = this.getCoverageStatus(this.healthData.coverage.medicines);
-        const depressionStatus = this.getRiskStatus(this.healthData.risks.depression);
-        const suicideStatus = this.getRiskStatus(this.healthData.risks.suicide);
+        const health = this.cityHealth;
+        const average = health === null ? '…' : health.average === null ? '—' : `${Math.round(health.average)} / ${HEALTH_MAX}`;
+        const citizens = health === null ? '…' : String(health.citizens);
+        const sick = health === null ? '…' : `${health.sick}${health.citizens > 0 ? ` (${Math.round((health.sick / health.citizens) * 100)} %)` : ''}`;
+        const sickClass = health !== null && health.sick > 0 ? 'high-risk' : '';
 
         healthSections.innerHTML = `
             <div class="health-section">
-                <div class="health-section-title">Couverture médicale</div>
-                <div class="health-items">
-                    <div class="health-item ${doctorStatus.class}">
-                        <span class="health-item-label">Couverture médicale</span>
-                        <div class="health-coverage-bar">
-                            <div class="health-coverage-fill ${doctorStatus.fillClass}" style="width: ${this.healthData.coverage.doctor}%"></div>
-                        </div>
-                        <span class="health-item-value percentage">${this.healthData.coverage.doctor}%</span>
-                    </div>
-                    <div class="health-item ${hospitalStatus.class}">
-                        <span class="health-item-label">Couverture hospitalière</span>
-                        <div class="health-coverage-bar">
-                            <div class="health-coverage-fill ${hospitalStatus.fillClass}" style="width: ${this.healthData.coverage.hospital}%"></div>
-                        </div>
-                        <span class="health-item-value percentage">${this.healthData.coverage.hospital}%</span>
-                    </div>
-                    <div class="health-item ${medicinesStatus.class}">
-                        <span class="health-item-label">Accès médicaments</span>
-                        <div class="health-coverage-bar">
-                            <div class="health-coverage-fill ${medicinesStatus.fillClass}" style="width: ${this.healthData.coverage.medicines}%"></div>
-                        </div>
-                        <span class="health-item-value percentage">${this.healthData.coverage.medicines}%</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="health-section">
-                <div class="health-section-title">Risques psychologiques</div>
-                <div class="health-items">
-                    <div class="health-item ${depressionStatus.class}">
-                        <span class="health-item-label">Risque de dépression</span>
-                        <span class="health-item-value percentage ${depressionStatus.valueClass}">${this.healthData.risks.depression}%</span>
-                    </div>
-                    <div class="health-item ${suicideStatus.class}">
-                        <span class="health-item-label">Risque de suicide</span>
-                        <span class="health-item-value percentage ${suicideStatus.valueClass}">${this.healthData.risks.suicide}%</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="health-section">
-                <div class="health-section-title">Nutrition</div>
+                <div class="health-section-title">${HEALTH_LABELS.score}</div>
                 <div class="health-items">
                     <div class="health-item">
-                        <span class="health-item-label">Personnes affamées</span>
-                        <span class="health-item-value number">${this.healthData.nutrition.hungry.percentage}% (${this.healthData.nutrition.hungry.absolute})</span>
+                        <span class="health-item-label">${HEALTH_LABELS.score} moyenne</span>
+                        <span class="health-item-value number">${average}</span>
                     </div>
                     <div class="health-item">
-                        <span class="health-item-label">Personnes nourries</span>
-                        <span class="health-item-value number">${this.healthData.nutrition.nourished.percentage}% (${this.healthData.nutrition.nourished.absolute})</span>
+                        <span class="health-item-label">Habitants</span>
+                        <span class="health-item-value number">${citizens}</span>
                     </div>
-                    <div class="health-item">
-                        <span class="health-item-label">Alimentation équilibrée</span>
-                        <span class="health-item-value number">${this.healthData.nutrition.wellBalanced.percentage}% (${this.healthData.nutrition.wellBalanced.absolute})</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="health-section">
-                <div class="health-section-title">Maladies</div>
-                <div class="health-items">
-                    <div class="health-item">
-                        <span class="health-item-label">Maladies légères</span>
-                        <span class="health-item-value percentage">${this.healthData.sickness.light}%</span>
-                    </div>
-                    <div class="health-item">
-                        <span class="health-item-label">Maladies moyennes</span>
-                        <span class="health-item-value percentage">${this.healthData.sickness.medium}%</span>
-                    </div>
-                    <div class="health-item">
-                        <span class="health-item-label">Maladies fatales</span>
-                        <span class="health-item-value percentage critical">${this.healthData.sickness.fatal}%</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="health-section">
-                <div class="health-section-title">Mortalité</div>
-                <div class="health-items">
-                    <div class="health-death-rate">
-                        <span class="health-death-rate-label">Taux de mortalité global (par an)</span>
-                        <span class="health-death-rate-value">${this.healthData.death.rate}%</span>
-                    </div>
-                    <div class="health-major-disease">
-                        <span class="health-major-disease-label">Maladie majeure causant la mort :</span>
-                        <span class="health-major-disease-name">${this.healthData.death.majorDisease}</span>
+                    <div class="health-item ${sickClass}">
+                        <span class="health-item-label">
+                            ${HEALTH_LABELS.sickCount}
+                            <small class="health-note">${sickExplanation()}</small>
+                        </span>
+                        <span class="health-item-value number ${sickClass}">${sick}</span>
                     </div>
                 </div>
             </div>
         `;
+        if (health?.environment) {
+            const section = document.createElement('div');
+            section.className = 'health-section';
+            section.append(renderHealthHistogram(health.environment, 0));
+            healthSections.append(section);
+        }
+        healthSections.append(this.#sicknessCoverControl(), this.#socialFundsSection());
     }
 }
-

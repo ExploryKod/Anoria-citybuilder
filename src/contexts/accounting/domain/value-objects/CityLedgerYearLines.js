@@ -20,6 +20,7 @@
  * @property {number} maintenance
  * @property {number} salary
  * @property {number} unemploymentBenefit
+ * @property {number} sicknessBenefit
  * @property {number} serviceSubsidy
  * @property {number} repairs
  * @property {number} commercialRoutes
@@ -53,6 +54,7 @@ export function createEmptyCityLedgerYearLines(year = 0) {
     maintenance: 0,
     salary: 0,
     unemploymentBenefit: 0,
+    sicknessBenefit: 0,
     serviceSubsidy: 0,
     corporateTaxRevenue: 0,
     companySubsidy: 0,

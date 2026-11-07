@@ -9,7 +9,7 @@ export function initHealthSection(deps = {}) {
   const healthSection = document.getElementById('admin-section-health');
   if (!healthSection) return;
 
-  const presenter = new HealthSectionPresenter();
+  const presenter = new HealthSectionPresenter(deps);
 
   const observer = new MutationObserver(() => {
     if (healthSection.classList.contains('active')) {

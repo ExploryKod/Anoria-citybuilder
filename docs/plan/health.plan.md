@@ -136,7 +136,7 @@ drapeau sans limite (`consumption: 'flag'`, `range: Infinity`, `DistributeResour
 ## 8. Décisions à trancher
 
 1. Les morts de santé comptent-elles dans les 25 morts de la fin de partie, ou seulement celles de la famine ?
-2. L'arrêt maladie est-il payé par l'employeur ou par la ville ? (journal : 421, 431 ; à fixer avant la règle d'absentéisme)
+2. ~~L'arrêt maladie est-il payé par l'employeur ou par la ville ?~~ Tranché le 2026-11-07 : ni l'un ni l'autre (voir `passbycitizen.plan.md`, « Absentéisme et sécurité sociale »).
 3. Le score reste-t-il attaché à sa position (même prénom, même santé) tant que l'habitant ne meurt pas ? (suppose un
    ordre de cartes stable)
 4. Les visites de prévention et les soins partagent-ils la capacité ? Quel ordre de service quand elle manque ?

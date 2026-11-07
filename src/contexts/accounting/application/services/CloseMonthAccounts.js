@@ -1,4 +1,6 @@
 import { accountKeyOf } from '../../domain/policies/AccountKeyPolicy.js';
+import { unemploymentAllocationOf } from '../../domain/policies/SocialAllocationPolicy.js';
+import { UNEMPLOYMENT_CONTRIBUTION_SHARE } from '../../../../shared/accounting-catalog/SocialFundsCatalog.js';
 import { assetMovementsOf, monthlyDepreciationOf, postedAssetsOf, postedStockOf, stockVariationOf } from '../../domain/policies/MonthClosingPolicy.js';
 import { DEPRECIATION_YEARS } from '../../domain/catalogs/DepreciationCatalog.js';
 import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
@@ -35,6 +37,20 @@ export class CloseMonthAccounts {
     const timeInfo = this.deps.getTimeInfo(deliveredTime);
     const monthLabel = `${timeInfo.month} ${timeInfo.year}`;
     const entries = await this.deps.getJournalEntries();
+
+    // The city's social security passes the unemployment fund its share of the month's contributions (an écriture between its two funds, no money moves).
+    const allocation = unemploymentAllocationOf(entries, { year: timeInfo.year, month: timeInfo.monthIndex + 1 }, UNEMPLOYMENT_CONTRIBUTION_SHARE);
+    if (allocation > 0) {
+      await this.#record({
+        turn: time,
+        type: 'od_social_allocation',
+        amount: allocation / 100,
+        description: `[OD] Répartition des cotisations vers la caisse chômage - ${monthLabel}`,
+        businessKey: `od_social_allocation:city:${timeInfo.year}:${timeInfo.monthIndex}`,
+        accountBuildingId: null,
+        accountKind: null,
+      });
+    }
 
     for (const { buildingId, accountKind, nature } of await this.deps.listStockAccounts()) {
       const items = await this.deps.valueStock(buildingId, { year: timeInfo.year, monthIndex: timeInfo.monthIndex });

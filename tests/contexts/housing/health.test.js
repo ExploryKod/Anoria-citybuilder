@@ -5,12 +5,13 @@
 import 'fake-indexeddb/auto';
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import db from '../../../src/core/persistence/dexie/db.js';
-import { describeHealthEnvironment } from '../../../src/contexts/housing/domain/policies/HealthEnvironmentPolicy.js';
+import { describeCitizenEnvironment, describeHealthEnvironment } from '../../../src/contexts/housing/domain/policies/HealthEnvironmentPolicy.js';
 import { nextHealthOf } from '../../../src/contexts/housing/domain/policies/HealthEvolutionPolicy.js';
 import { EvolveHealthOfHouses } from '../../../src/contexts/housing/application/commands/health/EvolveHealthOfHouses.js';
 import { DexieHousingBuildingRepository } from '../../../src/contexts/housing/infrastructure/dexie/DexieHousingBuildingRepository.js';
 import { DexieCitizenRegistry } from '../../../src/shared/citizens/DexieCitizenRegistry.js';
-import { HEALTH_BASE_LEVEL } from '../../../src/shared/population/HealthFactorCatalog.js';
+import { HEALTH_BASE_LEVEL, HEALTH_SICK_BELOW } from '../../../src/shared/population/HealthFactorCatalog.js';
+import { absentWorkersOf } from '../../../src/shared/population/absenteeism.js';
 import { seedBuilding, clearBuildingsTable } from '../../helpers/buildingDb.js';
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 
@@ -42,8 +43,17 @@ describe('health environment — the parts add up to the level', () => {
   });
 });
 
+describe('a citizen\'s environment — the histogram is the breakdown of his real target', () => {
+  test.each([0.5, 1, 1.5])('sensitivity %d: the parts add up to the level, which stays on the scale', (sensitivity) => {
+    const citizenEnvironment = describeCitizenEnvironment(describeHealthEnvironment(wellServed, PERIOD), { sensitivity });
+    expect(citizenEnvironment.base + citizenEnvironment.parts.reduce((sum, part) => sum + part.points, 0)).toBeCloseTo(citizenEnvironment.level, 9);
+    expect(citizenEnvironment.level).toBeLessThanOrEqual(100);
+    expect(citizenEnvironment.level).toBeCloseTo(Math.min(100, 40 + sensitivity * 46), 9);
+  });
+});
+
 describe('health evolution — settles towards the environment, never past it', () => {
-  const environment = { base: 40, level: 86 };
+  const environment = describeHealthEnvironment(wellServed, PERIOD); // base 40, level 86
   const citizen = (health, convergence, sensitivity) => ({ health, constitution: { convergence, sensitivity } });
 
   test.each([
@@ -99,8 +109,21 @@ describe('monthly judgement of the houses', () => {
       expect(citizen.health).toBeCloseTo(nextHealthOf(before[index], environment), 9);
     });
     expect((await repository.findById(houseId)).lastHealthMonth).toBe(7);
+    expect((await repository.findById(houseId)).sickCount).toBe(after.filter((citizen) => citizen.health < HEALTH_SICK_BELOW).length);
 
     expect(await command.execute({ monthKey: 7, periodKey: PERIOD })).toEqual({ judged: 0 });
     expect(await command.execute({ monthKey: 8, periodKey: PERIOD })).toEqual({ judged: 1 });
+  });
+});
+
+describe('absenteeism — a sick citizen does not work', () => {
+  const houses = { a: { sick: 2, residents: 4 }, b: { sick: 0, residents: 6 }, empty: { sick: 0, residents: 0 } };
+  const healthOf = (id) => houses[id];
+
+  test('the absent are the share of each source house that is sick, never more than the assigned', () => {
+    expect(absentWorkersOf({ a: 4, b: 2 }, healthOf, 6)).toBe(2);
+    expect(absentWorkersOf({ a: 4 }, () => ({ sick: 4, residents: 4 }), 3)).toBe(3);
+    expect(absentWorkersOf({ empty: 2 }, healthOf, 2)).toBe(0);
+    expect(absentWorkersOf({}, healthOf, 0)).toBe(0);
   });
 });

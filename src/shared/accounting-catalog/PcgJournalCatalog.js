@@ -129,6 +129,7 @@ const BY_TYPE = Object.freeze({
   household_wage: entry(inflow('421'), 'Personnel - Rémunérations dues', 'household', true, undefined, undefined, 'PA'),
   public_wage: entry(inflow('421'), 'Personnel - Rémunérations dues', 'household', true, undefined, undefined, 'PA'),
   household_benefit: entry(inflow('437'), 'Autres organismes sociaux', 'household', true, undefined, undefined, 'PA'),
+  household_sickness_benefit: entry(inflow('437'), 'Autres organismes sociaux', 'household', true, undefined, undefined, 'PA'),
   // Le loyer d'une maison à la maison du maire (le propriétaire) : une charge de logement du ménage, un produit locatif de la maison du maire.
   rent_paid: entry(outflow('6132'), 'Locations immobilières', 'purchase', true, 'Loyer versé au propriétaire'),
   rent_received: entry(inflow('752'), 'Revenus des immeubles', 'sales', false, 'Loyers des maisons'),
@@ -170,7 +171,9 @@ const BY_TYPE = Object.freeze({
   household_participation: entry(inflow('421'), 'Personnel — participation aux résultats', 'household', true),
   household_dividend: entry(inflow('457'), 'Associés — dividendes reçus', 'household', true),
   // The benefit is paid out of what the city holds for the social body (431): it does not touch the city's result.
-  unemployment_benefit: publicEntry(outflow('431'), 'Sécurité sociale', 'personnel', 'Allocation chômage'),
+  unemployment_benefit: publicEntry(outflow('4378'), 'Autres organismes sociaux', 'personnel', 'Allocation chômage'),
+  // The sickness allowance is paid out of the health fund (431), the unemployment benefit out of the unemployment fund (4378): see SocialFundsCatalog.js.
+  sickness_benefit: publicEntry(outflow('431'), 'Sécurité sociale', 'personnel', 'Indemnités journalières maladie'),
   loan_interest: entry(outflow('6611'), 'Intérêts des emprunts et dettes', 'financial', false, undefined, publicVariant(outflow('66111'), 'Intérêts réglés à l’échéance')),
   deposit_interest_paid: entry(outflow('6615'), 'Intérêts des comptes courants et des dépôts créditeurs', 'financial'),
   subsidy_housing: publicEntry(outflow('65741'), 'Subventions de fonctionnement aux ménages', 'subsidy-given', 'Aide au logement'),
@@ -244,6 +247,8 @@ const OPERATIONS_DIVERSES = Object.freeze({
   // owed to the social body, so the city holds a receivable on the company (4387) against what it owes that body (431), no product.
   od_receivable_corporate_tax: Object.freeze({ debit: '411', credit: '73118', label: 'Autres contributions directes', tone: 'tax-received', detail: 'Impôt sur les bénéfices dû à la ville, pas encore encaissé' }),
   od_receivable_contribution: Object.freeze({ debit: '4387', credit: '431', label: 'Sécurité sociale', tone: 'tax-received', detail: 'Cotisations dues à la sécurité sociale, pas encore encaissées' }),
+  // The city's social security passes the unemployment fund its share of the contributions received that month (see SocialFundsCatalog.js): it moves no money.
+  od_social_allocation: Object.freeze({ debit: '431', credit: '4378', label: 'Répartition des cotisations', tone: 'personnel', detail: 'Une part des cotisations reçues revient à la caisse chômage' }),
   // The owner holds the buildings the city paid for: they enter its books as fixed assets (213) against the city's contribution in kind (capital, 101).
   od_asset_contribution: Object.freeze({ debit: '213', credit: '101', label: 'Constructions apportées par la ville', tone: 'fixed-asset', detail: 'Un bâtiment payé par la ville entre dans le patrimoine de la SCI' }),
   // A building that is gone leaves the owner's books: its depreciation so far is released, and what it was still worth is a loss (675).
@@ -368,6 +373,7 @@ const EXTRA_ACCOUNT_LABELS = Object.freeze({
   '654': 'Pertes sur créances irrécouvrables',
   '6541': 'Créances admises en non-valeur',
   '431': 'Sécurité sociale',
+  '4378': 'Autres organismes sociaux – Divers',
   '6411': 'Salaires, appointements',
   '645': 'Charges de sécurité sociale et de prévoyance',
   '695': 'Impôts sur les bénéfices',

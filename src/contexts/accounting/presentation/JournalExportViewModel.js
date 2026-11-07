@@ -55,6 +55,8 @@ export function journalEntryTypeLabel(entry) {
     citizen_tax_paid: 'Impôt Citoyen retenu',
     public_wage: 'Salaire de fonctionnaire perçu',
     household_benefit: 'Allocation chômage perçue',
+    sickness_benefit: 'Indemnités maladie versées',
+    household_sickness_benefit: 'Indemnités maladie perçues',
     service_purchase: 'Achats de services',
     service_subsidy_received: 'Subvention reçue',
     subsidy_companies_received: 'Subvention entretien reçue',

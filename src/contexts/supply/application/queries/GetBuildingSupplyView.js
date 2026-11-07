@@ -44,6 +44,8 @@ export class GetBuildingSupplyView {
       type: view.type,
       stocks: { ...view.stocks },
       maxStock: view.maxStock,
+      // Workers assigned but sick, so not working (see absenteeism.js).
+      absentWorkers: snapshot ? snapshot.absentWorkers : null,
       // The step of its production cycle a producer is on (its `cycle` in the catalog), for the graphics.
       cycleStep: currentCycleStep(view),
       // When goods last really moved through it: the activity icons follow this, not a schedule.

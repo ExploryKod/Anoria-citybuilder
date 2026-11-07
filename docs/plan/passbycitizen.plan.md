@@ -187,18 +187,36 @@ Décisions du joueur-concepteur (2026-11-04) et ce qu'elles ont donné :
 - **Seuil de maladie** (fait, laissé à ma décision) : `HEALTH_SICK_BELOW = 45` dans `HealthFactorCatalog.js`. Une maison qui a de
   l'eau et une sorte de nourriture (60) en est loin ; une maison qui ne donne que la base (40) est juste dessous : seule une maison
   négligée tombe malade. Le nombre de malades est dérivé à la lecture (maison et hameau), affiché dans l'onglet Habitants.
-- **Qui paie l'arrêt maladie** : l'entreprise, sauf si la ville couvre les arrêts (subvention aux entreprises). **Non codé** : voir
-  ci-dessous.
+- **Qui paie l'arrêt maladie** (décidé le 2026-11-07, fait) : **jamais l'employeur ni la ville** (un remboursement de la ville
+  n'existe pas dans la vie réelle). L'employeur ne paie pas un jour non travaillé : la paie suit les ouvriers présents. Le ménage
+  est indemnisé par la sécurité sociale si le joueur l'a choisie dans le panneau Santé (réglage `sicknessCover`, `none` par défaut,
+  `SicknessCoverCatalog`), sinon par personne. Voir « Absentéisme et sécurité sociale » ci-dessous.
+
+Absentéisme et sécurité sociale (fait le 2026-11-07) :
+
+- **Effectif effectif** : `absenteeism.js` (`shared/population`) est la seule règle. Les absents d'un lieu sont la part des malades de
+  chaque maison source (`workerSources`) : `ouvriers de la maison × malades / résidents`. La porte opérationnelle et la capacité des
+  services de soin lisent des ouvriers entiers (arrondis, `DexieSupplyBuildingRepository`, `worker` du snapshot Supply) ; la paie et
+  l'indemnité lisent la part exacte, en argent. Le nombre de malades de la maison (`sickCount`) est écrit avec la santé à chaque
+  jugement mensuel (le prefab porte `sickCount: 0` sur ses 7 maisons). Un malade garde son poste : il n'est pas chômeur.
+- **Sécurité sociale** (choix du joueur, jamais par défaut) : 50 % du salaire que l'absent aurait gagné, moins une carence de 10 % du
+  mois (une part du mois, jamais un nombre de jours : un mois dure `daysPerMonth`). Écritures `sickness_benefit` (ville, sortie de 431)
+  et `household_sickness_benefit` (ménage, 437), bulletin comme l'allocation chômage (impôt retenu, pas de cotisation salarié).
+- **Deux caisses** (`SocialFundsCatalog`) : caisse maladie = 431, caisse chômage = 4378 (« Autres organismes sociaux – Divers », 437 n'ayant
+  pas de compte propre pour l'assurance chômage dans les sources lues ; 4372 est celui des mutuelles). Toutes les cotisations créditent
+  431 ; à la clôture du mois, `CloseMonthAccounts` écrit l'OD `od_social_allocation` (431 → 4378, aucun argent ne bouge) du tiers de ce
+  qui a été crédité à 431 sur le compte de la ville ce mois-là (`UNEMPLOYMENT_CONTRIBUTION_SHARE`). L'allocation chômage sort de 4378,
+  l'indemnité maladie de 431. Le livret a une ligne par prestation ; le panneau Santé affiche le solde de chaque caisse (déficit visible).
+- **Premier équilibrage à jouer** : avec 3 chômeurs pour 3 ouvriers, un tiers des cotisations (35 par mois) ne couvre pas leur allocation (210),
+  la caisse chômage est en déficit. Il tient à peu près quand le chômage est sous ~14 % (avec ces taux) ; la part, le taux de l'allocation et les
+  cotisations se règlent dans les catalogues et le panneau Salaires.
+- Tests : `sicknessBenefit.regression`, `socialFunds.regression`, `socialFundsMonths.regression` (accounting).
 
 Reste (non fait), avec le mécanisme retenu :
 
-- **Absentéisme et paiement de l'arrêt.** Les travailleurs malades restent affectés et payés par leur employeur (c'est déjà ce que
-  fait la paie, calculée sur `employees.worker`) ; ce qui change est qu'un malade ne travaille pas. Il faut donc un effectif *effectif*
-  par lieu de travail (affectés moins absents, les absents d'un lieu étant la part des malades de chaque maison source selon
-  `workerSources`) lu par la production et par la porte opérationnelle, et une règle de comptabilité : l'employeur paie, ou la ville
-  rembourse la part d'un taux de couverture que le joueur règle, comme l'aide aux entreprises (`CompanyAidCatalog`, panneau
-  d'administration). Écritures PCG (type d'écriture dans `PcgJournalCatalog`, compte 641/645 ou équivalent, remboursement de la
-  ville en subvention) à définir avant d'y toucher : c'est de la comptabilité, à ne pas coder sans lancer les tests de journal.
+- **Assurances et mutuelles** (tranche suivante) : bâtiment de service « Assurances » regroupant des compagnies en concurrence (compte 4372),
+  adhésion par pouvoir d'achat, indemnités plafonnées à la réserve accumulée, délai minimal d'adhésion, faillite et aide de la ville comme
+  pour toute entreprise ; la loi qui impose l'assurance est désactivée tant que le bâtiment n'est pas fonctionnel. À détailler dans un plan propre.
 - **Histogramme de la ville et de la carte d'habitant** : la maison l'a ; la ville a sa requête (`getCityHealth`) mais pas d'écran.
 - Les valeurs du catalogue (base, points, plages de constitution, capacités, seuil) sont un premier équilibrage à ajuster en jeu.
 

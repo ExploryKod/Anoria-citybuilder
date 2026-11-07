@@ -39,8 +39,9 @@ import { playDoorOpenSound } from '../../../audio/SoundEffects.js';
 /**
  * @param {import('../buildingInfoTypes.js').BuildingInfoGroupId} groupId
  * @param {import('../buildingInfoTypes.js').BuildingInfoViewModel} vm
+ * @param {{ describeHouseHealth: (params: { houseId: string, periodKey: number }) => Promise<object> }} housing
  */
-async function enrichBuildingInfoViewModel(groupId, vm) {
+async function enrichBuildingInfoViewModel(groupId, vm, housing) {
   /** @type {Record<string, unknown>} */
   const extra = {};
 
@@ -290,7 +291,7 @@ export async function useBuildingInfoSelection(selectedObject, ctx) {
     if (groupId === BUILDING_INFO_GROUPS.house) {
       vm = { ...vm, populationCapOverride: await housing.getPopulationOverride() };
     }
-    vm = await enrichBuildingInfoViewModel(groupId, vm);
+    vm = await enrichBuildingInfoViewModel(groupId, vm, housing);
 
     const groupDef = getBuildingInfoGroupDef(groupId);
     const layoutHeader = groupDef.formatLayoutHeader(vm);

@@ -124,7 +124,7 @@ export function deriveTreasuryFigures(entries, { currentTurn }) {
     }
     figures.expenses += amount;
     // The city's upkeep of the buildings it does not run itself is the rent it pays their owner.
-    if (today && (type === 'salary' || type === 'unemployment_benefit' || type === 'maintenance' || type === 'premises_rent_paid' || type.startsWith('import_') || type.startsWith('freight_') || type.startsWith('duty_paid_'))) {
+    if (today && (type === 'salary' || type === 'unemployment_benefit' || type === 'sickness_benefit' || type === 'maintenance' || type === 'premises_rent_paid' || type.startsWith('import_') || type.startsWith('freight_') || type.startsWith('duty_paid_'))) {
       figures.dailyExpenses += amount;
     }
     if (type === 'maintenance' || type === 'premises_rent_paid') figures.totalBuildingMaintenance += amount;

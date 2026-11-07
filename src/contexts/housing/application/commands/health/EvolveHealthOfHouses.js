@@ -1,6 +1,7 @@
 import { describeHealthEnvironment } from '../../../domain/policies/HealthEnvironmentPolicy.js';
 import { nextHealthOf } from '../../../domain/policies/HealthEvolutionPolicy.js';
 import { withHealth } from '../../../../../shared/citizens/Citizen.js';
+import { HEALTH_SICK_BELOW } from '../../../../../shared/population/HealthFactorCatalog.js';
 
 /**
  * Command: once a month, bring the health of every citizen of every house a step towards the level its house's environment gives
@@ -32,7 +33,8 @@ export class EvolveHealthOfHouses {
       const inhabitants = await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId, pop: house.pop });
       const environment = describeHealthEnvironment(house, periodKey);
       const evolved = inhabitants.map((citizen) => withHealth(citizen, nextHealthOf(citizen, environment)));
-      await this.repository.saveHealthJudgement(house.id, { citizens: evolved, monthKey });
+      const sick = evolved.filter((citizen) => citizen.health < HEALTH_SICK_BELOW).length;
+      await this.repository.saveHealthJudgement(house.id, { citizens: evolved, monthKey, sick });
       judged += 1;
     }
     return { judged };

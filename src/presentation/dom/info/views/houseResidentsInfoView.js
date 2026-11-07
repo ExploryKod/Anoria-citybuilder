@@ -25,16 +25,60 @@ function factsOf(resident) {
 }
 
 /**
- * The Habitants tab of a house: one card per citizen, in a grid that fills the width (one column on a phone). A card says who
- * he is, where he works (or his status when he works for no one: a civil servant of the city, or unemployed) and the facts
- * about him (see factsOf). The names and the workplaces come from the catalogs; the citizens are read from the buildings
- * (see getHouseResidents).
+ * One citizen's card: who he is, where he works (or his status when he works for no one), the facts about him (see factsOf) and the
+ * breakdown of his health, the environment as he lives it.
+ * @param {object} resident
+ * @param {object} environment see describeCitizenEnvironment
+ * @returns {HTMLElement}
+ */
+function residentCard(resident, environment) {
+  const card = document.createElement('div');
+  card.className = `house-resident-card house-resident-card--${resident.status}`;
+
+  const name = document.createElement('h4');
+  name.className = 'house-resident-card__name';
+  name.textContent = resident.firstName;
+
+  const place = document.createElement('p');
+  place.className = 'house-resident-card__place';
+  place.textContent = resident.status === 'worker' ? `Travaille à ${buildingName(resident.workplaceType)}` : STATUS_LABELS[resident.status];
+
+  const facts = document.createElement('dl');
+  facts.className = 'house-resident-card__facts';
+  for (const { label, value } of factsOf(resident)) {
+    const row = document.createElement('div');
+    const term = document.createElement('dt');
+    term.textContent = label;
+    const detail = document.createElement('dd');
+    detail.textContent = value;
+    row.append(term, detail);
+    facts.append(row);
+  }
+
+  const health = document.createElement('div');
+  health.className = 'house-resident-card__health';
+  health.append(renderHealthHistogram(environment, 0));
+
+  card.append(name, place, facts, health);
+  return card;
+}
+
+/**
+ * The Habitants tab of a house: a bar of pills, the house first (named by the catalog) then one pill per citizen. The house pill shows
+ * the house's health environment (its histogram); a citizen's pill shows his card alone. The two are never on screen together. The names and
+ * the workplaces come from the catalogs; the citizens are read from the buildings (see getHouseResidents).
  * @param {HTMLElement} container
- * @param {{ accounting: { getHouseResidents: (houseId: string) => Promise<Array<object>> }, buildingId: string } | null} model
+ * @param {{ accounting: { getHouseResidents: (houseId: string) => Promise<Array<object>> }, buildingId: string, buildingType: string, health: object | null } | null} model
  */
 export async function renderHouseResidentsTab(container, model) {
   container.replaceChildren();
   if (!model) return;
+  if (!model.health) {
+    const message = document.createElement('p');
+    message.textContent = 'La santé de cette maison n\'est pas disponible.';
+    container.append(message);
+    return;
+  }
   let residents;
   try {
     residents = await model.accounting.getHouseResidents(model.buildingId);
@@ -46,36 +90,46 @@ export async function renderHouseResidentsTab(container, model) {
     return;
   }
 
-  const list = document.createElement('ul');
-  list.className = 'house-residents-list';
-  list.setAttribute('aria-label', 'Habitants de la maison');
-  for (const resident of residents) {
-    const card = document.createElement('li');
-    card.className = `house-resident-card house-resident-card--${resident.status}`;
+  // The views, in the order of the pills: the house first, then each citizen in his stable order.
+  const views = [
+    { key: 'house', label: buildingName(model.buildingType), draw: () => renderHealthHistogram(model.health.environment, model.health.sick) },
+    ...residents.map((resident) => ({
+      key: resident.id,
+      label: resident.firstName,
+      draw: () => {
+        const environment = model.health.citizenEnvironments[resident.id];
+        if (!environment) throw new Error(`[HouseResidentsTab] no health environment for the citizen ${resident.id}`);
+        return residentCard(resident, environment);
+      },
+    })),
+  ];
 
-    const name = document.createElement('h4');
-    name.className = 'house-resident-card__name';
-    name.textContent = resident.firstName;
+  const bar = document.createElement('div');
+  bar.className = 'building-finance-pills house-residents-pills';
+  bar.setAttribute('role', 'group');
+  bar.setAttribute('aria-label', 'Maison et habitants');
+  const body = document.createElement('div');
+  body.className = 'house-residents-body';
 
-    const place = document.createElement('p');
-    place.className = 'house-resident-card__place';
-    place.textContent = resident.status === 'worker' ? `Travaille à ${buildingName(resident.workplaceType)}` : STATUS_LABELS[resident.status];
+  const buttons = views.map((view) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'building-finance-pill-tab';
+    button.textContent = view.label;
+    button.addEventListener('click', () => select(view.key));
+    bar.append(button);
+    return button;
+  });
 
-    const facts = document.createElement('dl');
-    facts.className = 'house-resident-card__facts';
-    for (const { label, value } of factsOf(resident)) {
-      const row = document.createElement('div');
-      const term = document.createElement('dt');
-      term.textContent = label;
-      const detail = document.createElement('dd');
-      detail.textContent = value;
-      row.append(term, detail);
-      facts.append(row);
-    }
-
-    card.append(name, place, facts);
-    list.append(card);
+  function select(key) {
+    views.forEach((view, index) => {
+      const open = view.key === key;
+      buttons[index].classList.toggle('is-active', open);
+      buttons[index].setAttribute('aria-pressed', String(open));
+    });
+    body.replaceChildren(views.find((view) => view.key === key).draw());
   }
-  if (model.health) container.append(renderHealthHistogram(model.health.environment, model.health.sick));
-  container.append(list);
+
+  container.append(bar, body);
+  select('house');
 }

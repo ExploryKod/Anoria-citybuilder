@@ -59,6 +59,8 @@ import { administratorPayStatusOf } from '../contexts/accounting/domain/policies
 import { benefitBaseOf, flooredWage, readLabourMarket, startWageOf, wageFloorOf } from '../contexts/accounting/domain/policies/WageRatePolicy.js';
 import { START_WAGE_BASE } from '../contexts/accounting/domain/catalogs/LabourMarketCatalog.js';
 import { wagePerWorkerOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
+import { absentBySource } from '../shared/population/absenteeism.js';
+import { residentsCountOf } from '../shared/population/residentsCount.js';
 import { INCOME_STATEMENT, pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
 import { buildingFinanceFigures, cashMovementsOf, householdBudgetOf, householdLastMonthOf, incomeStatementOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 import { residentsOfHouse } from '../contexts/accounting/domain/policies/HouseResidentsPolicy.js';
@@ -403,10 +405,19 @@ export function createAccountingContext(deps = {}) {
   // A company's charges are read from its goods and service flows and its upkeep, once per delivered month.
   const settleProducerCharges = new SettleProducerCharges({
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
-    listBuildings: async () =>
-      (await dexieDb.houses.toArray())
-        .filter(isActiveHamletRow)
-        .map((row) => ({ id: row.id, type: row.type, workerSources: row.employees?.workerSources ?? {} })),
+    listBuildings: async () => {
+      const rows = (await dexieDb.houses.toArray()).filter(isActiveHamletRow);
+      const rowById = new Map(rows.map((row) => [row.id, row]));
+      return rows.map((row) => {
+        const workerSources = row.employees?.workerSources ?? {};
+        // The sick of the houses the workers come from (the health system's last judgement; a house not judged yet has none known sick): see absenteeism.js.
+        const absentSources = absentBySource(workerSources, (houseId) => {
+          const house = rowById.get(houseId);
+          return house ? { sick: house.sickCount ?? 0, residents: residentsCountOf(house) } : { sick: 0, residents: 0 };
+        });
+        return { id: row.id, type: row.type, workerSources, absentSources };
+      });
+    },
     sumGoodsFlowsByPair: (year, monthIndex) =>
       supplyTraceabilityRepository.sumGoodsFlowsByPair(year, monthIndex),
     sumServiceFlows: (year, monthIndex) => supplyTraceabilityRepository.sumServiceFlows(year, monthIndex),
@@ -436,6 +447,7 @@ export function createAccountingContext(deps = {}) {
         employerContributionRate: settings.employerContributionRate,
         employeeContributionRate: settings.employeeContributionRate,
         administratorStipend: settings.administratorStipend,
+        sicknessCover: await hamletFiscalRates.getSicknessCover(),
       };
     },
     getWageRateOf: () => marketWageRateOf(),
@@ -1225,6 +1237,16 @@ export function createAccountingContext(deps = {}) {
     /** @param {{ minimumWage?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number, unemploymentBenefitRate?: number }} partial */
     setSalarySettings(partial) {
       return hamletFiscalRates.setSalarySettings(partial);
+    },
+
+    /** Who pays a worker who is sick: 'none' or 'secu' (see SicknessCoverCatalog.js). @returns {Promise<string>} */
+    getSicknessCover() {
+      return hamletFiscalRates.getSicknessCover();
+    },
+
+    /** @param {string} cover one of SICKNESS_COVERS @returns {Promise<string>} */
+    setSicknessCover(cover) {
+      return hamletFiscalRates.setSicknessCover(cover);
     },
 
     /** Writes the default rates on a hamlet that has none yet (its creation). @param {string} hamletId */

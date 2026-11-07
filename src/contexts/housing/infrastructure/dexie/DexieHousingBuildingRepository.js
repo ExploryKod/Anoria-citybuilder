@@ -137,12 +137,14 @@ export class DexieHousingBuildingRepository {
    * @param {string} instanceId
    * @param {{ citizens: ReadonlyArray<import('../../../../shared/citizens/Citizen.js').Citizen>, monthKey: number }} judgement
    */
-  async saveHealthJudgement(instanceId, { citizens, monthKey }) {
+  async saveHealthJudgement(instanceId, { citizens, monthKey, sick }) {
+    // The sick of the house at this judgement, kept with the citizens' health in one transaction: employment reads it for absenteeism.
+    if (!Number.isInteger(sick) || sick < 0 || sick > citizens.length) throw new Error(`[health] house ${instanceId}: ${sick} sick among ${citizens.length} citizens`);
     await db.transaction('rw', db.houses, db.citizens, async () => {
       const row = await db.houses.get(instanceId);
       if (!row) throw new Error(`[health] house ${instanceId} is not in the hamlet: its health cannot be saved`);
       await this.citizens.updateHealth(citizens);
-      await db.houses.put(canonicalizeHouseRecord({ ...row, lastHealthMonth: monthKey }));
+      await db.houses.put(canonicalizeHouseRecord({ ...row, lastHealthMonth: monthKey, sickCount: sick }));
     });
   }
 

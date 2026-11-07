@@ -54,15 +54,16 @@ describe('Accounting — city ledger', () => {
       expect(lines.balance).toBe(220);
     });
 
-    test('the unemployment benefit is paid out of what the city holds for the social body, and the contributions are what comes in on it', () => {
-      const flows = flowsOf({ 73111: { in: 5000, out: 0 }, 6411: { in: 0, out: 10000 }, 431: { in: 2000, out: 4000 } });
+    test('the contributions come in on the health fund (431); the sickness allowance goes out of it, the unemployment benefit out of the unemployment fund (4378)', () => {
+      const flows = flowsOf({ 73111: { in: 5000, out: 0 }, 6411: { in: 0, out: 10000 }, 431: { in: 2000, out: 1500 }, 4378: { in: 0, out: 4000 } });
 
       const lines = cityLedgerYearLinesFromCashFlows(1, flows, { balanceForYear: 10, previousNetFlow: 0 });
 
       expect(lines.salary).toBe(100);
       expect(lines.socialContributions).toBe(20);
+      expect(lines.sicknessBenefit).toBe(15);
       expect(lines.unemploymentBenefit).toBe(40);
-      expect(lines.totalExpenses).toBe(140);
+      expect(lines.totalExpenses).toBe(155);
     });
 
     // Regression: the city giving back an income-tax advance leaves its treasury; the ledger shows it as a smaller income tax, so its totals agree with the treasury.

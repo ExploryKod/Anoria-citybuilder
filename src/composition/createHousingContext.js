@@ -90,9 +90,9 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
       return describeHouseHealth.ofHouse({ houseId, periodKey });
     },
 
-    /** The hamlet's average health over its inhabitants, and how many they are (null average while nobody lives there). */
-    async getCityHealth() {
-      return describeHouseHealth.ofHamlet();
+    /** @param {{ periodKey: number }} params the hamlet's average health over its inhabitants, how many they are and its environment (null while nobody lives there) */
+    async getCityHealth({ periodKey }) {
+      return describeHouseHealth.ofHamlet({ periodKey });
     },
 
     async growHousePopulation(houseId, monthIndex, options = {}) {

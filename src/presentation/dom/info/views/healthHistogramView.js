@@ -1,5 +1,8 @@
 import { HEALTH_LABELS } from '../../../../shared/population/HealthFactorCatalog.js';
 
+/** Points are weighed by a citizen's sensitivity or averaged over a city: shown to one decimal at most. */
+const roundPoints = (points) => Math.round(points * 10) / 10;
+
 /**
  * The histogram of a house's health environment: one stacked bar, each segment the share a part gives of the house's level (the base,
  * then each factor the catalog declares), and the same parts as rows below it (label, points, share). It draws the breakdown that
@@ -22,7 +25,7 @@ export function renderHealthHistogram(environment, sick) {
   const bar = document.createElement('div');
   bar.className = 'health-histogram__bar';
   bar.setAttribute('role', 'img');
-  bar.setAttribute('aria-label', segments.map((segment) => `${segment.label} ${segment.points}`).join(', '));
+  bar.setAttribute('aria-label', segments.map((segment) => `${segment.label} ${roundPoints(segment.points)}`).join(', '));
 
   const rows = document.createElement('ul');
   rows.className = 'health-histogram__rows';
@@ -44,7 +47,7 @@ export function renderHealthHistogram(environment, sick) {
     label.textContent = segment.label;
     const value = document.createElement('span');
     value.className = 'health-histogram__value';
-    value.textContent = `${segment.points} (${Math.round(share)} %)`;
+    value.textContent = `${roundPoints(segment.points)} (${Math.round(share)} %)`;
     row.append(swatch, label, value);
     rows.append(row);
   });

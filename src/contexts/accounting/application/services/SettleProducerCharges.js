@@ -4,6 +4,7 @@ import {
   corporateTaxDueOf,
   corporateTaxLines,
   isLucrativeBuilding,
+  wagePerWorkerOf,
   employerContributionLines,
   serviceSaleLines,
   serviceSubsidyLines,
@@ -24,6 +25,7 @@ import { serviceSubsidyShare } from '../../domain/policies/ServiceSubsidyPolicy.
 import { addVatTo } from '../../domain/policies/VatIncludedPolicy.js';
 import { payableServiceBills } from '../../domain/policies/ServiceSolvencyPolicy.js';
 import { householdPublicPayOf } from '../../domain/policies/HouseholdPublicPayPolicy.js';
+import { SICKNESS_INDEMNITY_RATE, SICKNESS_WAITING_SHARE, assertSicknessCover } from '../../../../shared/accounting-catalog/SicknessCoverCatalog.js';
 import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
 import { payslipLegs, planWithholding } from '../../domain/policies/WithholdingPolicy.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
@@ -108,10 +110,15 @@ export class SettleProducerCharges {
     // and the workers a company drew from a house that is gone are not paid (the employment is redistributed each day, but a disaster can strike after it).
     // The rest of the month, and the other party's own charges, are settled as usual; the movements stay in the supply traceability.
     const standing = new Set(listed.map((building) => building.id));
-    const buildings = listed.map((building) => ({
-      ...building,
-      workerSources: Object.fromEntries(Object.entries(building.workerSources ?? {}).filter(([houseId]) => standing.has(houseId))),
-    }));
+    // `assignedSources` are the workers a house sends to a workplace (what the unemployment is counted from); `absentSources` those of them who are sick; `workerSources`
+    // from here on the workers who actually work, the ones the payroll follows (the employer pays nobody for a day not worked).
+    const ofStandingHouses = (sources) => Object.fromEntries(Object.entries(sources ?? {}).filter(([houseId]) => standing.has(houseId)));
+    const buildings = listed.map((building) => {
+      const assignedSources = ofStandingHouses(building.workerSources);
+      const absentSources = ofStandingHouses(building.absentSources);
+      const workerSources = Object.fromEntries(Object.entries(assignedSources).map(([houseId, workers]) => [houseId, workers - (absentSources[houseId] ?? 0)]));
+      return { ...building, assignedSources, absentSources, workerSources };
+    });
     const pairs = (await this.deps.sumGoodsFlowsByPair(timeInfo.year, timeInfo.monthIndex))
       .filter((pair) => standing.has(pair.sellerId) && (pair.buyerId === null || standing.has(pair.buyerId)));
     const serviceFlows = (await this.deps.sumServiceFlows(timeInfo.year, timeInfo.monthIndex))
@@ -177,7 +184,8 @@ export class SettleProducerCharges {
         rentMargin: legalFormOf(houseEnterpriseOf(ownerHouse.type, 'rental').id).regime.rentMargin,
       }
       : null;
-    const workersIn = (houseId) => buildings.reduce((sum, building) => sum + (building.workerSources?.[houseId] ?? 0), 0);
+    // A sick worker still has his job: he is not unemployed, so the unemployment counts the assigned workers, not the ones at work.
+    const workersIn = (houseId) => buildings.reduce((sum, building) => sum + (building.assignedSources[houseId] ?? 0), 0);
     const benefitByHouse = new Map();
     const unemployedCountByHouse = new Map();
     for (const household of households) {
@@ -203,8 +211,27 @@ export class SettleProducerCharges {
       if (stipend <= 0) continue;
       stipendByHouse.set(household.id, stipend);
     }
-    // What the city pays a house is taxed and spent like a wage: the benefit and the stipend together.
+    // The social security's allowance to the households of the sick workers, when the player has chosen it (see SicknessCoverCatalog.js): a share of the wage the absent
+    // worker would have earned, less the waiting period. The cover is read only when somebody is absent, so a month with nobody sick settles as it always did.
+    const sicknessByHouse = new Map();
+    if (buildings.some((building) => Object.keys(building.absentSources).length > 0) && assertSicknessCover(publicPay.sicknessCover) === 'secu') {
+      const wageRateOf = await this.deps.getWageRateOf();
+      const missed = new Map();
+      for (const building of buildings) {
+        if (!isLucrativeBuilding(building.type)) continue;
+        const wage = wagePerWorkerOf({ type: building.type, wageRateOf });
+        for (const [houseId, absent] of Object.entries(building.absentSources)) missed.set(houseId, (missed.get(houseId) ?? 0) + absent * wage);
+      }
+      for (const [houseId, wages] of missed) {
+        const allowance = centimes(wages * SICKNESS_INDEMNITY_RATE * (1 - SICKNESS_WAITING_SHARE));
+        if (allowance > 0) sicknessByHouse.set(houseId, allowance);
+      }
+    }
+    // What the city pays a house is taxed and spent like a wage: the benefit, the sickness allowance and the stipend together.
     const publicPayByHouse = new Map(benefitByHouse);
+    for (const [houseId, allowance] of sicknessByHouse) {
+      publicPayByHouse.set(houseId, centimes((publicPayByHouse.get(houseId) ?? 0) + allowance));
+    }
     for (const [houseId, stipend] of stipendByHouse) {
       publicPayByHouse.set(houseId, centimes((publicPayByHouse.get(houseId) ?? 0) + stipend));
     }
@@ -221,6 +248,7 @@ export class SettleProducerCharges {
       }
     }
     for (const [houseId, benefit] of benefitByHouse) slots.push({ key: `benefit|${houseId}`, houseId, kind: 'public', gross: toCentimes(benefit) });
+    for (const [houseId, allowance] of sicknessByHouse) slots.push({ key: `sickness|${houseId}`, houseId, kind: 'public', gross: toCentimes(allowance) });
     for (const [houseId, stipend] of stipendByHouse) slots.push({ key: `stipend|${houseId}`, houseId, kind: 'public', gross: toCentimes(stipend) });
     const withholding = planWithholding({ slots, employeeRate: publicPay.employeeContributionRate, taxRate });
 
@@ -241,6 +269,23 @@ export class SettleProducerCharges {
         await this.#recordPayslip({
           kind: 'household_benefit', houseId: household.id, gross: toCentimes(benefit), withheld: withholding.get(`benefit|${household.id}`), payerId: null, flow: `benefit:${household.id}`,
           key: `${household.id}:benefit`, description: `${LINE_LABELS.household_benefit} - ${monthLabel}`, time, timeInfo, hamletId, monthLabel, nameOf,
+        });
+      }
+      const allowance = sicknessByHouse.get(household.id);
+      if (allowance > 0) {
+        await this.#record(
+          { kind: 'sickness_benefit', amount: allowance, holder: null, counterparty: household.id, accountKind: null, flow: `sickness:${household.id}` },
+          {
+            time,
+            key: buildProducerLineBusinessKey('sickness_benefit', household.id, timeInfo, hamletId),
+            description: `${LINE_LABELS.sickness_benefit} pour ${nameOf(household.id)} - ${monthLabel}`,
+            buildingInstanceId: household.id,
+            timeInfo,
+          },
+        );
+        await this.#recordPayslip({
+          kind: 'household_sickness_benefit', houseId: household.id, gross: toCentimes(allowance), withheld: withholding.get(`sickness|${household.id}`), payerId: null, flow: `sickness:${household.id}`,
+          key: `${household.id}:sickness`, description: `${LINE_LABELS.household_sickness_benefit} - ${monthLabel}`, time, timeInfo, hamletId, monthLabel, nameOf,
         });
       }
       const stipend = stipendByHouse.get(household.id);
@@ -685,7 +730,7 @@ export class SettleProducerCharges {
    *   `gross` and what is withheld in centimes; `payerId` the employer, null for the city; `key` tells this payslip from another of the same kind that month
    */
   async #recordPayslip({ kind, houseId, gross, withheld, payerId, flow, key, description, time, timeInfo, hamletId, monthLabel, nameOf }) {
-    const creditAccount = kind === 'household_benefit' ? '437' : '421';
+    const creditAccount = kind === 'household_benefit' || kind === 'household_sickness_benefit' ? '437' : '421';
     const legs = payslipLegs({ creditAccount, gross, contribution: withheld.contribution, tax: withheld.tax });
     const counterparty = payerId ?? houseId;
     await this.#record(
