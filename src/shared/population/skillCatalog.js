@@ -30,6 +30,7 @@ export const SKILL_CATALOG = Object.freeze({
   telecoms: Object.freeze({ label: 'Télécommunications', emoji: '📡' }),
   'vente-alimentaire': Object.freeze({ label: 'Vente alimentaire', emoji: '🏪' }),
   finance: Object.freeze({ label: 'Finance', emoji: '🏦' }),
+  assurance: Object.freeze({ label: 'Assurance', emoji: '🛡️' }),
   'stockage-alimentaire': Object.freeze({ label: 'Stockage alimentaire', emoji: '🥫' }),
   hydraulique: Object.freeze({ label: 'Hydraulique', emoji: '💧' }),
   'medecine-proximite': Object.freeze({ label: 'Médecine de proximité', emoji: '⚕️' }),
@@ -55,6 +56,12 @@ export const SKILL_CATALOG = Object.freeze({
   'elder-wisdom': Object.freeze({ label: 'Sagesse', emoji: '📜' }),
   learning: Object.freeze({ label: 'Apprentissage', emoji: '📚' }),
 });
+
+/**
+ * The skills that make a workplace a company without any good to make or sell: the trades of money (the bank holds and lends it, an insurance company
+ * insures with it). A building asking one of these, and declaring no resource role, is lucrative (ProducerChargePolicy.js).
+ */
+export const MONEY_SKILLS = Object.freeze(['finance', 'assurance']);
 
 /**
  * @param {string} skillId

@@ -65,6 +65,8 @@ export const BUILDING_FOOTPRINT = Object.freeze({
   'Bank': Object.freeze({ width: 2, depth: 2 }),
   // The central bank wears Kenney commercial building-skyscraper-b (see buildingAssets.js) — 2x2 as well.
   'CentralBank': Object.freeze({ width: 2, depth: 2 }),
+  // The insurance building wears Kenney commercial building-skyscraper-c (see buildingAssets.js) — 2x2 as well.
+  'Insurance': Object.freeze({ width: 2, depth: 2 }),
   'Lumberjack': Object.freeze({ width: 1, depth: 2 }),
   'Lumberjack-Industry': Object.freeze({ width: 1, depth: 2 }),
   // A house reserves one uniform 2x2 plot — the widest of the house models — whatever model it wears at its

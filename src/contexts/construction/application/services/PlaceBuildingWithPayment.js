@@ -1,4 +1,5 @@
 import { createBuildingInstanceId } from '../../../../shared/building-identity/index.js';
+import { companiesOf, nextFreeCompanyId } from '../../../../shared/building-catalog/buildingCompanies.js';
 
 /**
  * Orchestration: budget debit → persist building row.
@@ -88,6 +89,12 @@ export class PlaceBuildingWithPayment {
         error: 'Building already exists at this location',
         message: 'Building already exists at this location',
       };
+    }
+
+    // A building that is one company of a catalog list takes the first place no standing building holds, before it is paid: no place left throws.
+    if (companiesOf(data.type)) {
+      const standing = (await this.repository.listAllRows()).filter((row) => row.type === data.type);
+      data = { ...data, companyId: nextFreeCompanyId(data.type, standing.map((row) => row.companyId)) };
     }
 
     this.pendingAdditions.add(instanceId);

@@ -107,7 +107,7 @@ export const HOUSEHOLD_CONSUMPTION_GROUPS = Object.freeze([
   Object.freeze({ id: 'leisure', coicop: '09', label: 'Loisirs et culture', categories: Object.freeze(['library', 'theatre', 'cinema']) }),
   Object.freeze({ id: 'education', coicop: '10', label: 'Enseignement', categories: Object.freeze(['primarySchool', 'school']) }),
   Object.freeze({ id: 'restaurants', coicop: '11', label: 'Restauration', categories: Object.freeze(['pub']) }),
-  Object.freeze({ id: 'other', coicop: '12', label: 'Autres biens et services', categories: Object.freeze(['fire', 'police']) }),
+  Object.freeze({ id: 'other', coicop: '12', label: 'Autres biens et services', categories: Object.freeze(['fire', 'police', 'insurance']) }),
 ]);
 
 /**

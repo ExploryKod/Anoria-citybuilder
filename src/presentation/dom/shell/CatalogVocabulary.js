@@ -1,5 +1,6 @@
 import { buildingCatalog, getBuildingDefinition } from '../../../shared/building-catalog/index.js';
 import { getResourceRoles } from '../../../shared/building-catalog/resourceRoleQueries.js';
+import { companiesOf, companyNameOf } from '../../../shared/building-catalog/buildingCompanies.js';
 import { BUILDING_ASSETS } from '../../three/assets/buildingAssets.js';
 import {
   getResourceCategoryPresentation,
@@ -42,6 +43,17 @@ export function unresolvedTerm(what, id) {
 /** @param {string} type A building id. @returns {string} Its `displayName`, e.g. "Moulin". */
 export function buildingName(type) {
   return getBuildingDefinition(type)?.displayName ?? unresolvedTerm('building name', type);
+}
+
+/**
+ * The name of a building that stands: its type's, except a building that is one company of a catalog list (the insurance building), which is named after its
+ * company so the player tells two of them apart. A row without its company is a defect and throws.
+ * @param {string} type A building id.
+ * @param {{ companyId?: string | null } | null | undefined} row The building's stored row.
+ * @returns {string}
+ */
+export function buildingInstanceName(type, row) {
+  return companiesOf(type) ? companyNameOf(type, row?.companyId) : buildingName(type);
 }
 
 /**

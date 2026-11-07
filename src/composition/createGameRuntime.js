@@ -8,6 +8,7 @@ import { createHousingHealthSystem } from '../contexts/housing/infrastructure/ru
 import { getDaysPerMonth } from '../config/events.js';
 import { createEmploymentRedistributeSystem } from '../contexts/employment/infrastructure/runtime/employmentRedistributeSystem.js';
 import { createRandomEventsSystem } from '../contexts/gameplay/infrastructure/runtime/randomEventsSystem.js';
+import { createInsolvencySystem } from '../contexts/gameplay/infrastructure/runtime/insolvencySystem.js';
 import { createIntelligenceMonthlyNewsSystem } from '../contexts/intelligence/infrastructure/runtime/intelligenceMonthlyNewsSystem.js';
 import { createCityTradeMonthlySystem } from '../contexts/geography/infrastructure/runtime/cityTradeMonthlySystem.js';
 import { createCityTradeRelationsSystem } from '../contexts/geography/infrastructure/runtime/cityTradeRelationsSystem.js';
@@ -117,6 +118,7 @@ export function createGameRuntime({
     .register('housing.health', createHousingHealthSystem({ housing, getTimeInfo, getDaysPerMonth }))
     .register('employment.redistribute', employmentRedistribute)
     .register('gameplay.randomEvents', createRandomEventsSystem({ gameplay }))
+    .register('gameplay.insolvency', createInsolvencySystem({ gameplay, getTimeInfo, getDaysPerMonth }))
     .register(
       'intelligence.monthlyNews',
       createIntelligenceMonthlyNewsSystem({ intelligence, getTimeInfo })

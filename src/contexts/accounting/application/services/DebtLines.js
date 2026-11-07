@@ -45,6 +45,8 @@ export const LINE_LABELS = Object.freeze({
   household_benefit: 'Allocation chômage perçue',
   sickness_benefit: 'Indemnités maladie versées',
   household_sickness_benefit: 'Indemnités maladie perçues',
+  insurance_benefit: 'Indemnités d’assurance versées',
+  household_insurance_benefit: 'Indemnités d’assurance perçues',
   salary: 'Traitement versé',
   public_wage: 'Traitement perçu',
   liquidation_stock_sale: 'Stock vendu en liquidation',

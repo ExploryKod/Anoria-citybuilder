@@ -68,6 +68,7 @@ function fakeGameplay() {
         eventCalls += 1;
       },
     },
+    liquidateInsolventCompanies: { execute: async () => [] },
   };
 }
 
@@ -113,6 +114,7 @@ describe('createGameRuntime', () => {
       'housing.health',
       'employment.redistribute',
       'gameplay.randomEvents',
+      'gameplay.insolvency',
       'intelligence.monthlyNews',
       'commerce.checkNewRelations',
       'commerce.monthlyCityTrade',

@@ -130,6 +130,11 @@ const BY_TYPE = Object.freeze({
   public_wage: entry(inflow('421'), 'Personnel - Rémunérations dues', 'household', true, undefined, undefined, 'PA'),
   household_benefit: entry(inflow('437'), 'Autres organismes sociaux', 'household', true, undefined, undefined, 'PA'),
   household_sickness_benefit: entry(inflow('437'), 'Autres organismes sociaux', 'household', true, undefined, undefined, 'PA'),
+  // An insurance company (see InsuranceCatalog.js) pays the household of its member who is sick: a charge of the company (658, the candidate of the general
+  // chart, to confirm at the game's accounting audit), what the household receives against the mutual-insurance account (4372). The premium it was paid is
+  // the household's `service_purchase` of the service `insurance` and the company's `service_sales`.
+  insurance_benefit: entry(outflow('658'), 'Charges diverses de gestion courante', 'personnel', false, 'Indemnités versées aux adhérents malades'),
+  household_insurance_benefit: entry(inflow('4372'), 'Mutuelles', 'household', true),
   // Le loyer d'une maison à la maison du maire (le propriétaire) : une charge de logement du ménage, un produit locatif de la maison du maire.
   rent_paid: entry(outflow('6132'), 'Locations immobilières', 'purchase', true, 'Loyer versé au propriétaire'),
   rent_received: entry(inflow('752'), 'Revenus des immeubles', 'sales', false, 'Loyers des maisons'),
@@ -374,6 +379,9 @@ const EXTRA_ACCOUNT_LABELS = Object.freeze({
   '6541': 'Créances admises en non-valeur',
   '431': 'Sécurité sociale',
   '4378': 'Autres organismes sociaux – Divers',
+  '4372': 'Mutuelles',
+  '658': 'Charges diverses de gestion courante',
+  '616': 'Primes d’assurances',
   '6411': 'Salaires, appointements',
   '645': 'Charges de sécurité sociale et de prévoyance',
   '695': 'Impôts sur les bénéfices',

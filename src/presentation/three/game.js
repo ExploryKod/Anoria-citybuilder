@@ -168,6 +168,7 @@ ensureGameRuntimeBootstrapped();
 
 /** Stops the previous game's listener when a new game is created in the same page. */
 let stopPopulationDepartureToasts = null;
+let stopCompanyLiquidationToasts = null;
 let stopPlotsChanged = null;
 
 export function createGame(gameStore, assetManager, citySize = null) {
@@ -578,6 +579,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
     'housing.populationDeparted',
     showPopulationDepartureNotification
   );
+  // A company liquidated for its debts: the map follows (see onCompanyLiquidated)
+  stopCompanyLiquidationToasts?.();
+  stopCompanyLiquidationToasts = getSharedEventBus().subscribe('gameplay.companyLiquidated', (event) => {
+    onCompanyLiquidated(event).catch((error) => console.error('[game] The screen could not follow a liquidated company:', error));
+  });
   gameUI.updateTimeDisplay(time);
   const freshGame = isFreshGameIntent();
 
@@ -1716,6 +1722,19 @@ export function createGame(gameStore, assetManager, citySize = null) {
     await scene.update(city, time);
     if (limitedDemolished) syncLimitedBuildingButtons();
     await syncEmploymentAfterBuildingChange(scene, city, lastBuildingId);
+    await refreshPlacementPresentation();
+    await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+  }
+
+  /**
+   * A company that could not pay its debts was liquidated and demolished (LiquidateInsolventCompanies.js, announced as `gameplay.companyLiquidated`): the player is told,
+   * and the map, the construction buttons (its place is free again) and the HUD follow, as after the player's own demolition.
+   */
+  async function onCompanyLiquidated(event) {
+    showErrorToast(`🏦 ${event.name} est en faillite : ses comptes sont liquidés et le bâtiment est démoli.`, { timeout: 6000 });
+    await scene.update(city, time);
+    if (isLimitedBuilding(event.buildingType)) syncLimitedBuildingButtons();
+    await syncEmploymentAfterBuildingChange(scene, city, event.buildingType);
     await refreshPlacementPresentation();
     await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
   }

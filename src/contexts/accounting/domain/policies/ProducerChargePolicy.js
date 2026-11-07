@@ -3,16 +3,17 @@ import { isRoadType } from '../../../../shared/building-catalog/roadQueries.js';
 import { getResourceRoles } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { resolveBuildingKind, BUILDING_KIND_HOUSE } from '../../../../shared/building-identity/index.js';
+import { MONEY_SKILLS } from '../../../../shared/population/skillCatalog.js';
 import {
   COMPANY_MAINTENANCE_SUBSIDY_PERCENT,
   HOUSING_MAINTENANCE_SUBSIDY_PERCENT,
 } from '../catalogs/ProducerChargeCatalog.js';
 
-/** A building with no resourceRole of its own that is still lucrative: today, only the bank (it holds and lends
- * money, not goods — see buildingEconomy.js's 'Bank' entry). Read off its own `employment.requiredSkill`, the
- * one catalog fact a resourceRole-less building still declares. */
+/** A building with no resourceRole of its own that is still lucrative: the bank and the insurance companies (they hold, lend or insure money, not goods —
+ * see buildingEconomy.js's 'Bank' and 'Insurance' entries). Read off its own `employment.requiredSkill`, the one catalog fact a resourceRole-less
+ * building still declares, against the skills the catalog names as a trade of money. */
 function financeSkillOf(type) {
-  return getBuildingDefinition(type)?.employment?.requiredSkill === 'finance';
+  return MONEY_SKILLS.includes(getBuildingDefinition(type)?.employment?.requiredSkill);
 }
 
 /**

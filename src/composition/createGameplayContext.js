@@ -19,6 +19,10 @@ import { getTimeInfo } from '../shared/time/TimeCalendar.js';
 import { getAnnualHarvestSchedule, getConsumerEntries, getResourceStockShape } from '../shared/building-catalog/resourceRoleQueries.js';
 import { matchesSchedule, monthsUntilNextMatch } from '../contexts/supply/domain/policies/ResourceSchedulePolicy.js';
 import { RandomEventsSimulationService } from '../contexts/gameplay/application/services/RandomEventsSimulationService.js';
+import { LiquidateInsolventCompanies } from '../contexts/gameplay/application/services/LiquidateInsolventCompanies.js';
+import { getBuildingDefinition } from '../shared/building-catalog/buildingCatalog.js';
+import { companiesOf, companyNameOf } from '../shared/building-catalog/buildingCompanies.js';
+import { getSharedEventBus } from './sharedEventBus.js';
 import { residentsCountOf } from '../shared/population/residentsCount.js';
 import { AdvanceTutorial } from '../contexts/gameplay/application/services/AdvanceTutorial.js';
 import { TUTORIAL_DISPATCHES, TUTORIAL_START_TOOLS, TUTORIAL_STEPS, TUTORIAL_TOASTS } from '../contexts/gameplay/domain/catalogs/TutorialCatalog.js';
@@ -129,6 +133,20 @@ export function createGameplayContext(deps = {}) {
   const randomEventsSimulation =
     deps.randomEventsSimulation ?? new RandomEventsSimulationService(simulationDeps);
 
+  // A company that cannot pay its debts the grace months in a row is liquidated and demolished as the player's own demolition would (see LiquidateInsolventCompanies.js).
+  const liquidateInsolventCompanies =
+    deps.liquidateInsolventCompanies ??
+    new LiquidateInsolventCompanies({
+      listAllBuildingRows: simulationDeps.listAllBuildingRows,
+      instanceIdFromHouseRow,
+      isLiquidatedWhenInsolvent: (type) => getBuildingDefinition(type)?.liquidatedWhenInsolvent === true,
+      getInsolvency: (instanceId) => getOrCreateAccountingContext().getInsolvency(instanceId),
+      bulldozeBuildingAtTile: (params) => getOrCreateConstructionContext().bulldozeBuildingAtTile(params),
+      getGameCity: simulationDeps.getGameCity,
+      nameOfRow: (row) => (companiesOf(row.type) ? companyNameOf(row.type, row.companyId) : getBuildingDefinition(row.type).displayName),
+      announce: (event) => getSharedEventBus().publish({ type: 'gameplay.companyLiquidated', ...event }),
+    });
+
   const advanceTutorial =
     deps.advanceTutorial ??
     new AdvanceTutorial({
@@ -143,6 +161,7 @@ export function createGameplayContext(deps = {}) {
 
   return {
     randomEventsSimulation,
+    liquidateInsolventCompanies,
     simulationDeps,
     advanceTutorial,
   };

@@ -244,6 +244,9 @@
  *   resourceRoleQueries.requiresRoad / isRoadNeedMet) instead of checking
  *   road counts or type names on its own.
  * @property {number} [maxPerHamlet] How many of this building a hamlet can hold (the mayor's house: one). Omitted means no limit.
+ * @property {boolean} [liquidatedWhenInsolvent] The company is liquidated and demolished when its debts stay open the grace months in a row (the insurance companies).
+ * @property {ReadonlyArray<{ id: string, name: string, premiumRate?: number }>} [companies] The companies this building can be, in the order they are founded (the insurance building):
+ *   each placement takes the first one no standing building holds (`companyId` on its row), and a type that lists companies limits itself to as many (`maxPerHamlet`).
  * @property {boolean} [undemolishable] The player cannot demolish this building (the mayor's house: its owners hold every other building, so it cannot
  *   leave; a "move" will come later). Omitted means it can be demolished.
  * @property {string} [firstBuiltNews] The milestone dépêche announced the first time the hamlet builds this one

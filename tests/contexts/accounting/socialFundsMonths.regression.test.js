@@ -13,17 +13,26 @@ const HAMLET = 'hamlet-1';
 
 async function runMonths(months, { sicknessCover = 'none', absent = {} } = {}) {
   const journal = [];
-  const stamp = (line, monthIndex) => booked({ ...line, hamletId: HAMLET, year: 1, month: monthIndex + 1, turn: line.turn ?? monthIndex * 10 });
-  for (let monthIndex = 0; monthIndex < months; monthIndex += 1) {
-    const timeInfo = { year: 1, monthIndex, month: `M${monthIndex}` };
+  // A month is 10 turns. The journal dates a line by its turn, as the real one does: the settlement of the delivered month runs on the first turn of the next
+  // one, so its lines carry the next month's stamp (see ProcessTurnBudget.js).
+  const getTimeInfo = (turn) => {
+    const month = Math.floor(turn / 10);
+    return { year: 1 + Math.floor(month / 12), monthIndex: month % 12, month: `M${month}` };
+  };
+  const stamp = (line) => {
+    const { year, monthIndex } = getTimeInfo(line.turn);
+    return booked({ ...line, hamletId: HAMLET, year, month: monthIndex + 1 });
+  };
+  for (let delivered = 0; delivered < months; delivered += 1) {
+    const time = (delivered + 1) * 10;
     const record = async (line) => {
       if (line.businessKey && journal.some((previous) => previous.businessKey === line.businessKey)) return { recorded: false, reason: 'duplicate_business_key' };
-      journal.push(stamp(line, monthIndex));
+      journal.push(stamp(line));
       return { recorded: true };
     };
-    journal.push(stamp({ type: 'loan_interest_received', amount: 1000, accountBuildingId: 'bank-1' }, monthIndex));
+    journal.push(stamp({ type: 'loan_interest_received', amount: 1000, accountBuildingId: 'bank-1', turn: time - 1 }));
     await new SettleProducerCharges({
-      getTimeInfo: () => timeInfo,
+      getTimeInfo,
       listBuildings: async () => [
         { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 3 }, absentSources: absent },
         { id: 'house-1', type: 'House-Blue', workerSources: {}, absentSources: {} },
@@ -51,15 +60,15 @@ async function runMonths(months, { sicknessCover = 'none', absent = {} } = {}) {
       readCompanyYear: companyYearReaderOf(journal),
       readHouseholdYear: householdYearReaderOf(journal),
       recordLedgerEntry: record,
-    }).execute({ time: monthIndex * 10 + 2, deliveredTime: monthIndex * 10 + 1 });
+    }).execute({ time, deliveredTime: time - 1 });
     await new CloseMonthAccounts({
-      getTimeInfo: () => timeInfo,
+      getTimeInfo,
       listStockAccounts: async () => [],
       valueStock: async () => [],
       getOwnerHoldings: async () => null,
       getJournalEntries: async () => journal,
       recordLedgerEntry: record,
-    }).execute({ time: monthIndex * 10 + 2, deliveredTime: monthIndex * 10 + 1 });
+    }).execute({ time, deliveredTime: time - 1 });
   }
   const fold = new LegsFold();
   for (const entry of journal) fold.add(entry);

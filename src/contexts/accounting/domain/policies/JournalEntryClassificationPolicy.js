@@ -82,6 +82,7 @@ export function isJournalEntryIncomeForMonthlySummary(entry, allEntries, getTime
     entry.type === 'salary' ||
     entry.type === 'unemployment_benefit' ||
     entry.type === 'sickness_benefit' ||
+    entry.type === 'insurance_benefit' ||
     entry.type === 'exceptional_expenses' ||
     entry.type === 'commercial_route' ||
     entry.type === 'contribution'

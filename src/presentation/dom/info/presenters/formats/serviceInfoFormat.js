@@ -13,7 +13,7 @@
  */
 
 import { getBuildingDefinition } from '../../../../../shared/building-catalog/index.js';
-import { buildingName } from '../../../shell/CatalogVocabulary.js';
+import { buildingInstanceName, buildingName } from '../../../shell/CatalogVocabulary.js';
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
 import { staffingStatusLine } from './staffingReasonFormat.js';
 import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
@@ -35,7 +35,7 @@ function resolveServiceRole(buildingType) {
 export function formatServiceLayoutHeader(vm) {
   const def = getBuildingDefinition(vm.buildingType);
   return {
-    title: buildingName(vm.buildingType),
+    title: buildingInstanceName(vm.buildingType, vm.buildingRow),
     meta: `📍 (${vm.anchorX}, ${vm.anchorY}) · <span aria-label="${vm.buildingPop} habitants">${vm.buildingPop} hab.</span>`,
     accent: null,
   };

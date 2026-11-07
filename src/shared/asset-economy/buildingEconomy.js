@@ -1,4 +1,5 @@
 import { KENNEY_BUILDING_CATALOG_ENTRIES } from '../building-catalog/kenneyCityKitRegistry.generated.js';
+import { INSURANCE_COMPANIES } from './insuranceCompanies.js';
 
 /**
  * Economy facts (price, category, employment, accounting, residentialGroup,
@@ -942,6 +943,20 @@ export const BUILDING_ECONOMY = {
     construction: { price: 150, category: 'markets' },
     employment: { sector: 2, workerNeed: 3, requiredSkill: 'finance' },
     accounting: { maintenance: 6 },
+  },
+
+  // The insurance building (see docs/plan/assurances.plan.md): a merchants' workplace (the 'assurance' skill, tier 2 of their houses) that holds no goods and,
+  // like the bank, declares no `resourceRoles` and is a company by its skill (ProducerChargePolicy.js). One building is one company of INSURANCE_COMPANIES,
+  // chosen when it is placed; the construction is greyed once every company stands (`maxPerHamlet`).
+  'Insurance': {
+    displayName: 'Assurances',
+    construction: { price: 140, category: 'markets' },
+    employment: { sector: 2, workerNeed: 3, requiredSkill: 'assurance' },
+    accounting: { maintenance: 6 },
+    companies: INSURANCE_COMPANIES,
+    maxPerHamlet: INSURANCE_COMPANIES.length,
+    // An insurer that cannot pay its debts for the grace months in a row is liquidated and demolished (LiquidateInsolventCompanies.js).
+    liquidatedWhenInsolvent: true,
   },
 
   // Central bank: the state's institution of money (the policy rate, the refinancing of the bank, later the liquidity ratio and the crisis operations).

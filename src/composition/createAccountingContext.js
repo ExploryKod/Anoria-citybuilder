@@ -60,6 +60,12 @@ import { benefitBaseOf, flooredWage, readLabourMarket, startWageOf, wageFloorOf 
 import { START_WAGE_BASE } from '../contexts/accounting/domain/catalogs/LabourMarketCatalog.js';
 import { wagePerWorkerOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { absentBySource } from '../shared/population/absenteeism.js';
+import { companiesOf, companyNameOf } from '../shared/building-catalog/buildingCompanies.js';
+import { INSURANCE_LAW_LABELS } from '../shared/accounting-catalog/InsuranceCatalog.js';
+import { insuranceLawStatusOf } from '../contexts/accounting/domain/policies/InsuranceLawPolicy.js';
+
+/** The name of a stored building: its type's, or its company's for a building that is one company of a catalog list (the insurance building). */
+const buildingNameOfRow = (row) => (companiesOf(row.type) ? companyNameOf(row.type, row.companyId) : getBuildingDefinition(row.type)?.displayName);
 import { residentsCountOf } from '../shared/population/residentsCount.js';
 import { INCOME_STATEMENT, pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
 import { buildingFinanceFigures, cashMovementsOf, householdBudgetOf, householdLastMonthOf, incomeStatementOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
@@ -415,7 +421,7 @@ export function createAccountingContext(deps = {}) {
           const house = rowById.get(houseId);
           return house ? { sick: house.sickCount ?? 0, residents: residentsCountOf(house) } : { sick: 0, residents: 0 };
         });
-        return { id: row.id, type: row.type, workerSources, absentSources };
+        return { id: row.id, type: row.type, companyId: row.companyId ?? null, workerSources, absentSources };
       });
     },
     sumGoodsFlowsByPair: (year, monthIndex) =>
@@ -448,6 +454,7 @@ export function createAccountingContext(deps = {}) {
         employeeContributionRate: settings.employeeContributionRate,
         administratorStipend: settings.administratorStipend,
         sicknessCover: await hamletFiscalRates.getSicknessCover(),
+        insuranceMandatory: await hamletFiscalRates.getInsuranceMandatory(),
       };
     },
     getWageRateOf: () => marketWageRateOf(),
@@ -578,7 +585,7 @@ export function createAccountingContext(deps = {}) {
     const houses = owned.filter((row) => row.pop >= 1);
     const owner = houses.find((row) => houseHoldsSkill(row.type, row.level ?? 1, OWNER_SKILL));
     if (!owner) return null;
-    const nameOf = (row) => getBuildingDefinition(row.type)?.displayName;
+    const nameOf = (row) => buildingNameOfRow(row);
     return {
       ownerId: owner.id,
       ownerType: owner.type,
@@ -656,7 +663,7 @@ export function createAccountingContext(deps = {}) {
       const { employerContributionRate } = await hamletFiscalRates.getSalarySettings();
       const needs = [];
       for (const row of (await dexieDb.houses.toArray()).filter(isActiveHamletRow)) {
-        const name = getBuildingDefinition(row.type)?.displayName;
+        const name = buildingNameOfRow(row);
         if (resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE) {
           const business = houseEnterprises(row.type).enterprises.find((enterprise) => enterprise.activity === 'recipes');
           const share = premisesShareOf(row.type);
@@ -714,7 +721,7 @@ export function createAccountingContext(deps = {}) {
     listCompanies: async () =>
       (await dexieDb.houses.toArray())
         .filter((row) => isActiveHamletRow(row) && isLucrativeBuilding(row.type))
-        .map((row) => ({ buildingId: row.id, name: getBuildingDefinition(row.type)?.displayName, x: row.x, y: row.y })),
+        .map((row) => ({ buildingId: row.id, name: buildingNameOfRow(row), x: row.x, y: row.y })),
     getJournalEntries: () => journalRepository.getJournalEntries(),
     getLegsFold: () => journalRepository.getLegsFold(),
     companyFundsOf: (buildingId) => getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId, accountKind: null }),
@@ -726,7 +733,7 @@ export function createAccountingContext(deps = {}) {
     listCompanies: async () =>
       (await dexieDb.houses.toArray())
         .filter((row) => isActiveHamletRow(row) && isLucrativeBuilding(row.type))
-        .map((row) => ({ buildingId: row.id, name: getBuildingDefinition(row.type)?.displayName, x: row.x, y: row.y })),
+        .map((row) => ({ buildingId: row.id, name: buildingNameOfRow(row), x: row.x, y: row.y })),
     getJournalEntries: () => journalRepository.getJournalEntries(),
     getLegsFold: () => journalRepository.getLegsFold(),
     getCompanyAidPolicy: async () => (await hamletFiscalRates.getCompanyAid()).policy,
@@ -1237,6 +1244,30 @@ export function createAccountingContext(deps = {}) {
     /** @param {{ minimumWage?: number, salaryTaxThreshold1?: number, salaryTaxRate1?: number, salaryTaxThreshold2?: number, salaryTaxRate2?: number, unemploymentBenefitRate?: number }} partial */
     setSalarySettings(partial) {
       return hamletFiscalRates.setSalarySettings(partial);
+    },
+
+    /**
+     * The law of compulsory insurance: whether the player passed it, whether it can be (the insurance works) and so whether it is in force, and why it cannot be.
+     * Read from the same facts as the settlement (InsuranceLawPolicy.js).
+     * @returns {Promise<{ mandatory: boolean, available: boolean, inForce: boolean, reasons: string[] }>}
+     */
+    async getInsuranceLaw() {
+      const companies = [];
+      for (const row of (await dexieDb.houses.toArray()).filter(isActiveHamletRow)) {
+        if (!companiesOf(row.type)) continue;
+        const insolvency = await accountingApi.getInsolvency(row.id);
+        companies.push({ staffed: (row.employees?.worker ?? 0) > 0, defaultMonths: insolvency.months });
+      }
+      return insuranceLawStatusOf({ mandatory: await hamletFiscalRates.getInsuranceMandatory(), companies, graceMonths: INSOLVENCY_GRACE_MONTHS });
+    },
+
+    /** Passes or repeals the law. Passing it while the insurance does not work is refused, with the reason. @param {boolean} mandatory */
+    async setInsuranceMandatory(mandatory) {
+      if (mandatory === true) {
+        const { available, reasons } = await accountingApi.getInsuranceLaw();
+        if (!available) throw new Error(`[insurance-law] the law cannot be passed: ${reasons.map((reason) => INSURANCE_LAW_LABELS.reasons[reason]).join(' ')}`);
+      }
+      return hamletFiscalRates.setInsuranceMandatory(mandatory);
     },
 
     /** Who pays a worker who is sick: 'none' or 'secu' (see SicknessCoverCatalog.js). @returns {Promise<string>} */

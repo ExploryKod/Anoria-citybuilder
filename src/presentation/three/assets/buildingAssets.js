@@ -1555,6 +1555,39 @@ export const BUILDING_ASSETS = Object.freeze({
     },
     tags: ['public', 'building'],
   },
+  // Assurances — Kenney Commercial building-skyscraper-c (economy/footprint keyed to 'Insurance'): an office tower, the next skyscraper of the kit after the two banks'.
+  // Every insurance company wears this same model; the company is told apart by the id its building keeps (see insuranceCompanies.js).
+  'Insurance': {
+    source: 'kenneyCityKit',
+    geometry: {
+      glb: null,
+      sourceKey: null,
+      aliases: [],
+      kit: 'commercial',
+      buildingId: 'Kenney-Commercial-building-skyscraper-c',
+    },
+    transform: {
+      rotationDeg: null,
+      positionOffsetY: 0.2,
+      scale: null,
+    },
+    presentation: {
+      mode: 'lit',
+      castShadow: true,
+      receiveShadow: true,
+      renderOrder: null,
+      frustumCulled: true,
+      displayColor: null,
+    },
+    button: {
+      theme: 'commerce',
+      editorGroup: null,
+      label: 'Assurances',
+      tooltip: 'Une compagnie d’assurance : indemnise les habitants affiliés pendant un arrêt maladie',
+      icon: { kind: 'png', value: '/resources/kenney_city-kit-commercial_2.1/Previews/building-skyscraper-c.png' },
+    },
+    tags: ['markets', 'building'],
+  },
   // Commerce — building-skyscraper-b
   'Kenney-Commercial-building-skyscraper-b': {
     source: 'kenneyCityKit',

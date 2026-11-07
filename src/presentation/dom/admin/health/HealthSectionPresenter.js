@@ -2,6 +2,7 @@ import { HEALTH_LABELS, sickExplanation } from '../../../../shared/population/He
 import { SICKNESS_COVERS, SICKNESS_COVER_LABELS, sicknessCoverExplanation } from '../../../../shared/accounting-catalog/SicknessCoverCatalog.js';
 import { HEALTH_FUND_ACCOUNT, SOCIAL_FUND_LABELS, UNEMPLOYMENT_FUND_ACCOUNT } from '../../../../shared/accounting-catalog/SocialFundsCatalog.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
+import { INSURANCE_LAW_LABELS } from '../../../../shared/accounting-catalog/InsuranceCatalog.js';
 import { HEALTH_MAX } from '../../../../shared/population/CitizenCatalog.js';
 import { getSessionGameTime } from '../../../../composition/sessionRuntime.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
@@ -23,6 +24,7 @@ export class HealthSectionPresenter {
         if (!deps.housing?.getCityHealth) throw new Error('[health] the health panel needs housing.getCityHealth');
         if (!deps.accounting?.getSicknessCover || !deps.accounting?.setSicknessCover) throw new Error('[health] the health panel needs accounting.getSicknessCover and setSicknessCover');
         if (!deps.accounting?.getCityStatements) throw new Error('[health] the health panel needs accounting.getCityStatements to read the social funds');
+        if (!deps.accounting?.getInsuranceLaw || !deps.accounting?.setInsuranceMandatory) throw new Error('[health] the health panel needs accounting.getInsuranceLaw and setInsuranceMandatory');
         this.housing = deps.housing;
         this.accounting = deps.accounting;
         this.cityHealth = null;
@@ -30,6 +32,8 @@ export class HealthSectionPresenter {
         this.socialFunds = null;
         /** The cover in force (SICKNESS_COVERS); null while it loads: the control then shows "…". */
         this.sicknessCover = null;
+        /** The law of compulsory insurance (InsuranceLawPolicy.js), null while it loads: the control then shows "…". */
+        this.insuranceLaw = null;
     }
 
     init() {
@@ -39,13 +43,15 @@ export class HealthSectionPresenter {
 
     async load() {
         const { monthIndex } = TimeManager.getTimeInfo(getSessionGameTime());
-        const [health, cover, statements] = await Promise.all([
+        const [health, cover, statements, law] = await Promise.all([
             this.housing.getCityHealth({ periodKey: monthIndex }),
             this.accounting.getSicknessCover(),
             this.accounting.getCityStatements(),
+            this.accounting.getInsuranceLaw(),
         ]);
         this.cityHealth = health;
         this.sicknessCover = cover;
+        this.insuranceLaw = law;
         // A fund nothing was ever booked on has no line in the city's balance: it holds nothing.
         const heldBy = (account) => {
             const row = statements.trialBalance.accounts.find((candidate) => candidate.account === account);
@@ -53,6 +59,49 @@ export class HealthSectionPresenter {
         };
         this.socialFunds = { [HEALTH_FUND_ACCOUNT]: heldBy(HEALTH_FUND_ACCOUNT), [UNEMPLOYMENT_FUND_ACCOUNT]: heldBy(UNEMPLOYMENT_FUND_ACCOUNT) };
         this.render();
+    }
+
+    /**
+     * The law of compulsory insurance. It can be passed only while the insurance works: otherwise the choice is greyed and says why; a law already passed that the insurance
+     * can no longer carry is shown as suspended, never silently off.
+     */
+    #insuranceLawControl() {
+        const section = document.createElement('div');
+        section.className = 'health-section';
+        const title = document.createElement('div');
+        title.className = 'health-section-title';
+        title.textContent = INSURANCE_LAW_LABELS.title;
+        section.append(title);
+        const law = this.insuranceLaw;
+        if (law === null) {
+            const loading = document.createElement('div');
+            loading.className = 'health-item';
+            loading.textContent = '…';
+            section.append(loading);
+            return section;
+        }
+        const select = document.createElement('select');
+        select.setAttribute('aria-label', INSURANCE_LAW_LABELS.title);
+        for (const [value, label] of [['off', INSURANCE_LAW_LABELS.off], ['on', INSURANCE_LAW_LABELS.on]]) {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            option.selected = (value === 'on') === law.mandatory;
+            select.append(option);
+        }
+        // Passing it is refused while the insurance does not work; repealing it never is.
+        select.querySelector('option[value="on"]').disabled = !law.available && !law.mandatory;
+        select.addEventListener('change', async () => {
+            await this.accounting.setInsuranceMandatory(select.value === 'on');
+            await this.load();
+        });
+        const note = document.createElement('small');
+        note.className = 'health-note';
+        note.textContent = law.inForce
+            ? INSURANCE_LAW_LABELS.inForce
+            : [law.mandatory ? INSURANCE_LAW_LABELS.suspended : null, ...law.reasons.map((reason) => INSURANCE_LAW_LABELS.reasons[reason])].filter(Boolean).join(' ');
+        section.append(select, note);
+        return section;
     }
 
     /** What the city holds for each branch of its social security, and a deficit shown as such. */
@@ -157,6 +206,6 @@ export class HealthSectionPresenter {
             section.append(renderHealthHistogram(health.environment, 0));
             healthSections.append(section);
         }
-        healthSections.append(this.#sicknessCoverControl(), this.#socialFundsSection());
+        healthSections.append(this.#sicknessCoverControl(), this.#insuranceLawControl(), this.#socialFundsSection());
     }
 }

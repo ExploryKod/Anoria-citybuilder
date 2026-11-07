@@ -14,7 +14,7 @@ import {
   withholdIncomeTax,
 } from '../../domain/policies/ProducerChargePolicy.js';
 import { PERSONAL_ACCOUNT, businessAccountOf } from '../../domain/policies/AccountKeyPolicy.js';
-import { payablesOf, planCompanyPayments } from '../../domain/policies/DebtPolicy.js';
+import { difficultyMonthsOf, payablesOf, planCompanyPayments } from '../../domain/policies/DebtPolicy.js';
 import { PAYABLE_KINDS } from '../../domain/catalogs/PayableCatalog.js';
 import { houseEnterpriseOf, houseEnterprises, houseHoldsSkill } from '../../../../shared/population/workforceQueries.js';
 import { OWNER_SKILL } from '../../../../shared/population/socialCategoryCatalog.js';
@@ -30,6 +30,11 @@ import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
 import { payslipLegs, planWithholding } from '../../domain/policies/WithholdingPolicy.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+import { companiesOf, companyNameOf } from '../../../../shared/building-catalog/buildingCompanies.js';
+import { INSURANCE_INDEMNITY_RATE, INSURANCE_SERVICE, INSURANCE_VOLUNTARY_BUFFER_MONTHS, INSURANCE_WAITING_MONTHS } from '../../../../shared/accounting-catalog/InsuranceCatalog.js';
+import { insuranceLawStatusOf } from '../../domain/policies/InsuranceLawPolicy.js';
+import { INSOLVENCY_GRACE_MONTHS } from '../../domain/catalogs/PayableCatalog.js';
+import { claimsPaidOf, companyToJoin, membershipOf, premiumsPaidOf } from '../../domain/policies/InsurancePolicy.js';
 import { getResourceCategoryPresentation } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
 
 /** What a company owes the city when it cannot pay: the receivable the city books on its own account (an opération diverse), by kind of debt. */
@@ -128,7 +133,8 @@ export class SettleProducerCharges {
     const monthLabel = `${timeInfo.month} ${timeInfo.year}`;
     const nameOf = (buildingId) => {
       const building = buildings.find((candidate) => candidate.id === buildingId);
-      const name = building && getBuildingDefinition(building.type)?.displayName;
+      // A building that is one company of a catalog list is named after its company, so the journal tells two of them apart.
+      const name = building && (companiesOf(building.type) ? companyNameOf(building.type, building.companyId) : getBuildingDefinition(building.type)?.displayName);
       if (!name) throw new Error(`[producer] building ${buildingId} has no catalog name for its journal lines`);
       return name;
     };
@@ -214,15 +220,19 @@ export class SettleProducerCharges {
     // The social security's allowance to the households of the sick workers, when the player has chosen it (see SicknessCoverCatalog.js): a share of the wage the absent
     // worker would have earned, less the waiting period. The cover is read only when somebody is absent, so a month with nobody sick settles as it always did.
     const sicknessByHouse = new Map();
-    if (buildings.some((building) => Object.keys(building.absentSources).length > 0) && assertSicknessCover(publicPay.sicknessCover) === 'secu') {
+    // The wages each house misses because its workers are sick (euros): what the social security and the insurance companies each pay a share of.
+    const missedByHouse = new Map();
+    const someoneIsSick = buildings.some((building) => Object.keys(building.absentSources).length > 0);
+    if (someoneIsSick) {
       const wageRateOf = await this.deps.getWageRateOf();
-      const missed = new Map();
       for (const building of buildings) {
         if (!isLucrativeBuilding(building.type)) continue;
         const wage = wagePerWorkerOf({ type: building.type, wageRateOf });
-        for (const [houseId, absent] of Object.entries(building.absentSources)) missed.set(houseId, (missed.get(houseId) ?? 0) + absent * wage);
+        for (const [houseId, absent] of Object.entries(building.absentSources)) missedByHouse.set(houseId, (missedByHouse.get(houseId) ?? 0) + absent * wage);
       }
-      for (const [houseId, wages] of missed) {
+    }
+    if (someoneIsSick && assertSicknessCover(publicPay.sicknessCover) === 'secu') {
+      for (const [houseId, wages] of missedByHouse) {
         const allowance = centimes(wages * SICKNESS_INDEMNITY_RATE * (1 - SICKNESS_WAITING_SHARE));
         if (allowance > 0) sicknessByHouse.set(houseId, allowance);
       }
@@ -518,6 +528,104 @@ export class SettleProducerCharges {
             timeInfo,
           },
         );
+      }
+    }
+
+    // The insurance of the households comes last: its premiums are paid out of the net wages the month's pay has just put on their accounts.
+    await this.#settleInsurance({ buildings, households, slots, withholding, missedByHouse, publicPay, time, timeInfo, hamletId, monthLabel, nameOf });
+  }
+
+  /**
+   * The month of the insurance companies (see InsuranceCatalog.js and docs/plan/assurances.plan.md). First what they owe: the members who are covered are paid
+   * for the wages their sick workers missed, when the social security does not already, each company never more than it holds. Then what they are paid: each
+   * household with net wages pays its company its premium, after the fact; one that cannot pay loses the cover. Read from the journal, nothing stored.
+   */
+  async #settleInsurance({ buildings, households, slots, withholding, missedByHouse, publicPay, time, timeInfo, hamletId, monthLabel, nameOf }) {
+    const companies = buildings.filter((building) => companiesOf(building.type));
+    if (companies.length === 0) return;
+    const standing = new Set(companies.map((company) => company.id));
+    const monthKey = timeInfo.year * MONTHS_PER_YEAR + timeInfo.monthIndex;
+    const entries = await this.deps.getJournalEntries();
+    const paidByHouse = premiumsPaidOf(entries);
+    // The law of compulsory insurance is in force only while the insurance works (InsuranceLawPolicy.js), read from the facts the Health panel reads. The settlement dates
+    // its lines on `time`, so the months a debt has been open are counted up to that stamp.
+    const written = this.deps.getTimeInfo(time);
+    const law = insuranceLawStatusOf({
+      mandatory: publicPay.insuranceMandatory,
+      companies: companies.map((company) => ({
+        staffed: Object.values(company.assignedSources).some((workers) => workers > 0),
+        defaultMonths: difficultyMonthsOf(entries, company.id, null, { year: written.year, month: written.monthIndex + 1 }, MONTHS_PER_YEAR),
+      })),
+      graceMonths: INSOLVENCY_GRACE_MONTHS,
+    });
+    const rateOf = (company) => {
+      const rate = companiesOf(company.type).find((candidate) => candidate.id === company.companyId)?.premiumRate;
+      if (!(rate >= 0 && rate <= 1)) throw new Error(`[insurance] the company ${company.companyId} of ${company.id} has no premium rate between 0 and 1 in the catalog (${rate})`);
+      return rate;
+    };
+
+    // What they owe. The social security pays the sick of a city that chose it; the insurance pays the others, and only the members who are covered.
+    if (missedByHouse.size > 0 && assertSicknessCover(publicPay.sicknessCover) !== 'secu') {
+      const claimsByCompany = new Map();
+      for (const [houseId, missed] of missedByHouse) {
+        const membership = membershipOf(paidByHouse.get(houseId), monthKey, INSURANCE_WAITING_MONTHS, standing);
+        const amount = centimes(missed * INSURANCE_INDEMNITY_RATE);
+        if (!membership.covered || amount <= 0) continue;
+        claimsByCompany.set(membership.companyId, [...(claimsByCompany.get(membership.companyId) ?? []), { houseId, amount }]);
+      }
+      for (const [companyId, claims] of claimsByCompany) {
+        const reserve = await this.deps.companyFundsOf(companyId);
+        for (const { houseId, amount } of claimsPaidOf(claims, reserve)) {
+          if (amount <= 0) continue;
+          const flow = `insurance_benefit:${companyId}:${houseId}`;
+          const description = `${nameOf(companyId)} indemnise ${nameOf(houseId)} - ${monthLabel}`;
+          await this.#record(
+            { kind: 'insurance_benefit', amount, holder: companyId, counterparty: houseId, accountKind: null, flow },
+            { time, key: buildServiceLineBusinessKey('insurance_benefit', companyId, houseId, INSURANCE_SERVICE, timeInfo, hamletId), description: `${LINE_LABELS.insurance_benefit} : ${description}`, buildingInstanceId: companyId, timeInfo },
+          );
+          await this.#record(
+            { kind: 'household_insurance_benefit', amount, holder: houseId, counterparty: companyId, accountKind: PERSONAL_ACCOUNT, flow },
+            { time, key: buildServiceLineBusinessKey('household_insurance_benefit', houseId, companyId, INSURANCE_SERVICE, timeInfo, hamletId), description: `${LINE_LABELS.household_insurance_benefit} : ${description}`, buildingInstanceId: houseId, timeInfo },
+          );
+        }
+      }
+    }
+
+    // What they are paid. A household with no net wage has no premium; one that is a member keeps its company while it stands; a newcomer joins the company that holds the most per member.
+    const netByHouse = new Map();
+    for (const slot of slots) {
+      if (slot.kind !== 'wage') continue;
+      const withheld = withholding.get(slot.key);
+      netByHouse.set(slot.houseId, (netByHouse.get(slot.houseId) ?? 0) + slot.gross - withheld.contribution - withheld.tax);
+    }
+    const members = new Map(companies.map((company) => [company.id, 0]));
+    for (const household of households) {
+      const { companyId } = membershipOf(paidByHouse.get(household.id), monthKey, 0, standing);
+      if (companyId) members.set(companyId, members.get(companyId) + 1);
+    }
+    const reserves = new Map();
+    for (const company of companies) reserves.set(company.id, await this.deps.companyFundsOf(company.id));
+    for (const household of households) {
+      const net = netByHouse.get(household.id) ?? 0;
+      if (net <= 0) continue;
+      const current = membershipOf(paidByHouse.get(household.id), monthKey, 0, standing).companyId;
+      const companyId = current ?? companyToJoin(companies.map((company) => ({ id: company.id, reserve: reserves.get(company.id), members: members.get(company.id) })));
+      const company = companies.find((candidate) => candidate.id === companyId);
+      const premium = centimes((net / 100) * rateOf(company));
+      // A household that cannot pay pays nothing: no premium line for the month is the lapse (the journal is the only memory of it).
+      const cash = await this.deps.fundsOf(household.id);
+      if (premium <= 0 || cash < premium) continue;
+      // Insurance is the household's choice unless the law makes it compulsory: it keeps a month of its net wages in cash beyond the premium, or it goes without.
+      if (!law.inForce && cash - premium < (net / 100) * INSURANCE_VOLUNTARY_BUFFER_MONTHS) continue;
+      if (!current) members.set(companyId, members.get(companyId) + 1);
+      for (const line of serviceSaleLines({ sellerId: companyId, buyerId: household.id, service: INSURANCE_SERVICE, ttc: premium, ht: premium, vat: 0 })) {
+        await this.#record(line, {
+          time,
+          key: buildServiceLineBusinessKey(line.kind, line.holder ?? 'city', line.counterparty, INSURANCE_SERVICE, timeInfo, hamletId),
+          description: `${LINE_LABELS[line.kind]} Prime d’assurance : ${nameOf(companyId)} avec ${nameOf(household.id)} - ${monthLabel}`,
+          buildingInstanceId: line.holder ?? line.counterparty,
+          timeInfo,
+        });
       }
     }
   }

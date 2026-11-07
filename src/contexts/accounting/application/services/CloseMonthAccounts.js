@@ -39,7 +39,9 @@ export class CloseMonthAccounts {
     const entries = await this.deps.getJournalEntries();
 
     // The city's social security passes the unemployment fund its share of the month's contributions (an écriture between its two funds, no money moves).
-    const allocation = unemploymentAllocationOf(entries, { year: timeInfo.year, month: timeInfo.monthIndex + 1 }, UNEMPLOYMENT_CONTRIBUTION_SHARE);
+    // The settlement of the delivered month dates its lines on `time`, the first turn of the next month: that is the stamp the month's contributions carry.
+    const written = this.deps.getTimeInfo(time);
+    const allocation = unemploymentAllocationOf(entries, { year: written.year, month: written.monthIndex + 1 }, UNEMPLOYMENT_CONTRIBUTION_SHARE);
     if (allocation > 0) {
       await this.#record({
         turn: time,

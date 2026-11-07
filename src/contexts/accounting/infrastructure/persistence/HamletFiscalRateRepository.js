@@ -245,6 +245,22 @@ export class HamletFiscalRateRepository {
     return cover;
   }
 
+  /** @returns {Promise<boolean>} whether the player passed the law of compulsory insurance (it is in force only while the insurance works: see InsuranceLawPolicy.js) */
+  async getInsuranceMandatory() {
+    const hamletId = requireActiveHamletId();
+    const row = await this.db.hamlets.get(hamletId);
+    if (!row) throw new Error(`[insurance-law] hamlet ${hamletId} has no row`);
+    if (typeof row.insuranceMandatory !== 'boolean') throw new Error(`[insurance-law] hamlet ${hamletId} has no insurance law setting: it is written when the hamlet is created`);
+    return row.insuranceMandatory;
+  }
+
+  /** @param {boolean} mandatory @returns {Promise<boolean>} */
+  async setInsuranceMandatory(mandatory) {
+    if (typeof mandatory !== 'boolean') throw new Error(`[insurance-law] the law is set or not, got ${mandatory}`);
+    await this.db.hamlets.update(requireActiveHamletId(), { insuranceMandatory: mandatory });
+    return mandatory;
+  }
+
   /**
    * The hamlet's policy of aid to its companies (see CompanyAidCatalog.js), and until which year the player is committed to it (null: not yet committed, he may still set it).
    * @returns {Promise<{ policy: Record<string, number>, committedUntilYear: number | null }>}
@@ -287,6 +303,7 @@ export class HamletFiscalRateRepository {
     const defaults = Object.fromEntries(missing.map((field) => [field, DEFAULT_HAMLET_FISCAL_RATES[field]]));
     if (!row.minimumWageMode) defaults.minimumWageMode = DEFAULT_MINIMUM_WAGE_MODE;
     if (!row.sicknessCover) defaults.sicknessCover = DEFAULT_SICKNESS_COVER;
+    if (typeof row.insuranceMandatory !== 'boolean') defaults.insuranceMandatory = false;
     if (!row.companyAid) defaults.companyAid = { policy: { ...DEFAULT_COMPANY_AID }, committedUntilYear: null };
     if (typeof row.rentControlEnabled !== 'boolean') defaults.rentControlEnabled = DEFAULT_RENT_CONTROL_ENABLED;
     if (!row.serviceSubsidy) {

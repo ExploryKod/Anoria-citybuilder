@@ -163,8 +163,8 @@ export const SOCIAL_CATEGORY = Object.freeze({
       2: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[2],
         requirements: Object.freeze([ROAD, population(1), FOOD, WATER, covered('doctor'), covered('primarySchool')]),
-        // 'manutention' (the warehouses, the trade warehouse) and 'finance' (the bank): the group's own Commerces sector.
-        skills: Object.freeze({ finance: 1, manutention: 1 }),
+        // 'manutention' (the warehouses, the trade warehouse), 'finance' (the bank) and 'assurance' (the insurance companies): the group's own Commerces sector.
+        skills: Object.freeze({ finance: 1, manutention: 1, assurance: 1 }),
       }),
       3: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[3],

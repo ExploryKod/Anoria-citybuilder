@@ -284,7 +284,7 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
   const of = (type) => byType.get(type) ?? 0;
 
   // The income tax the city gave back at the year's close (an advance that was too high) reaches the household like any receipt.
-  const householdIncome = of('household_wage') + of('public_wage') + of('household_benefit') + of('household_sickness_benefit') + of('household_participation') + of('household_dividend') + of('income_tax_refund');
+  const householdIncome = of('household_wage') + of('public_wage') + of('household_benefit') + of('household_sickness_benefit') + of('household_insurance_benefit') + of('household_participation') + of('household_dividend') + of('income_tax_refund');
   const householdCharges = of('service_purchase') + of('consumer_purchase') + of('rent_paid') + of('income_tax') + of('citizen_tax_paid') + withheld.tax + withheld.contribution;
   const householdResult = householdIncome - householdCharges;
 
@@ -304,7 +304,7 @@ export function buildingFinanceFigures(entries, buildingId, { year, month = null
     },
     wagesReceived: fromCentimes(of('household_wage')),
     publicWageReceived: fromCentimes(of('public_wage')),
-    benefitReceived: fromCentimes(of('household_benefit') + of('household_sickness_benefit')),
+    benefitReceived: fromCentimes(of('household_benefit') + of('household_sickness_benefit') + of('household_insurance_benefit')),
     participationReceived: fromCentimes(of('household_participation')),
     dividendReceived: fromCentimes(of('household_dividend')),
     incomeTaxRefunded: fromCentimes(of('income_tax_refund')),
@@ -348,7 +348,7 @@ export function householdBudgetOf(entries, houseId, { year, month, balance }) {
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey || entry.year !== year || entry.month !== month) continue;
     const amount = toCentimes(entry.amount);
-    if (['household_wage', 'public_wage', 'household_benefit', 'household_sickness_benefit', 'household_participation', 'household_dividend', 'income_tax_refund'].includes(entry.type)) {
+    if (['household_wage', 'public_wage', 'household_benefit', 'household_sickness_benefit', 'household_insurance_benefit', 'household_participation', 'household_dividend', 'income_tax_refund'].includes(entry.type)) {
       wages += amount;
       // The payer kept the contribution and the tax back: they are charges of the month beside the service bills, though they never reached the account.
       const kept = withheldOf(entry);

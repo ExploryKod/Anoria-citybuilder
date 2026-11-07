@@ -16,6 +16,8 @@ const MONTHLY_IDEMPOTENT_TYPES = new Set([
   'unemployment_benefit',
   'sickness_benefit',
   'household_sickness_benefit',
+  'insurance_benefit',
+  'household_insurance_benefit',
   'payroll_tax',
   'maintenance',
 ]);
