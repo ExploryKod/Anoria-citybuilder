@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { WebGPURenderer } from 'three/webgpu';
 import {createCamera} from './camera.js';
 import { createPerfHud } from './PerfHud.js';
+import { logRenderLoad } from './renderLoadBreakdown.js';
 import { adoptHudFabDockChildren } from '../dom/shell/hudFabDock.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -90,6 +91,7 @@ import { plotFencePieces } from '../../shared/land-catalog/plotLayout.js';
 import { WORLD_PLATFORM_Y } from '../../shared/terrain-catalog/terrainWorldContract.js';
 import { EDITOR_SEA_TERRAIN_ID, isEditorSeaTerrain } from '../../shared/terrain-catalog/editorSeaTerrain.js';
 import { HamletResourceRegistry } from './hamlet/HamletResourceRegistry.js';
+import { tickPerfEnabled } from '../../core/diagnostics/tickPerf.js';
 
 /** Terminaux tactiles / petits écrans — GPU plus souvent limité (mémoire, contexte WebGL). */
 function isMobileDevice() {
@@ -226,7 +228,8 @@ export function createScene(_gameStore, assetManager, deps) {
 
     // Overlay perf : FPS + MS + MB, net, ~20% largeur, bas-droite
     // (stats.js en CSS scale était flou et ne montrait qu'un panneau)
-    const stats = createPerfHud({ widthRatio: 0.2, bottom: 96, right: 16 });
+    // A click on its graphs writes to the console what the draw calls are made of (renderLoadBreakdown.js; the scene and the renderer exist by the time it is clicked).
+    const stats = createPerfHud({ widthRatio: 0.2, bottom: 96, right: 16, onDetail: () => logRenderLoad(scene, renderer) });
     document.body.appendChild(stats.dom);
     adoptHudFabDockChildren();
     
@@ -1372,7 +1375,7 @@ export function createScene(_gameStore, assetManager, deps) {
             }
             lap('naturePieces');
         }
-        if (import.meta.env?.DEV) {
+        if (tickPerfEnabled()) {
             const sections = Object.entries(sectionMs).map(([section, ms]) => `${section}=${ms.toFixed(1)}`).join(' ');
             const calls = Object.entries(tileCalls).map(([name, spent]) => `${name}=${spent.ms.toFixed(0)}ms/${spent.calls}`).join(' ');
             console.info(`[tick-perf] scene.update day=${time} ${sections} | tile calls: ${calls}`);
@@ -2111,7 +2114,7 @@ export function createScene(_gameStore, assetManager, deps) {
         if (now - performanceStats.lastLogTime > 1000) {
             const info = renderer.info;
             const fps = performanceStats.frameCount;
-            const drawCalls = info.render.calls;
+            const drawCalls = info.render.drawCalls;
             const triangles = info.render.triangles;
             const geometries = info.memory.geometries;
             const textures = info.memory.textures;
@@ -2173,7 +2176,8 @@ export function createScene(_gameStore, assetManager, deps) {
         renderer.render(scene, camera.camera);
         logPerformanceStats(); // Log performance stats if enabled
 
-        stats.end({ drawCalls: renderer.info.render.calls });
+        // `info.render.drawCalls` is this frame's draw calls; `info.render.calls` of the WebGPU renderer is the number of `render()` calls since the app started (it only grows).
+        stats.end({ drawCalls: renderer.info.render.drawCalls });
     }
 
     function start() {

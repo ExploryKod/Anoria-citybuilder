@@ -17,6 +17,7 @@ import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { isLoseMode } from '../config/loseMode.js';
 import { recordDeaths } from './gameplayMortalityState.js';
 import { getSharedEventBus } from './sharedEventBus.js';
+import { tickPerfEnabled } from '../core/diagnostics/tickPerf.js';
 
 /**
  * Composition root du runtime ECS (engine + systèmes minces).
@@ -101,6 +102,7 @@ export function createGameRuntime({
     housing,
     getTimeInfo,
     onChanges: (changes, timeInfo) => supply.recordHouseChanges(timeInfo, changes),
+    readSupplyOnce: (work) => supply.readOnce(work),
     // The player is told, with the reason, when inhabitants leave (see BuildingNotifications.js)
     onPopulationDeparted: (departure) =>
       getSharedEventBus().publish({ type: 'housing.populationDeparted', ...departure }),
@@ -150,7 +152,7 @@ export function createGameRuntime({
      */
     async runSimulation(context = {}) {
       const timings = await pipeline.runGroup('simulation', world, context);
-      if (import.meta.env?.DEV) {
+      if (tickPerfEnabled()) {
         console.info(`[tick-perf] ecs systems ${timings.map(({ name, ms }) => `${name}=${ms.toFixed(1)}`).join(' ')}`);
       }
     },

@@ -4,9 +4,21 @@
  */
 import { describe, expect, test } from '@jest/globals';
 import { houseSkillTier, lowestHouseTierForWorkers } from '../../../src/shared/population/workforceQueries.js';
-import { getRequiredSkillForBuilding, getRequiredSkillLevelForBuilding } from '../../../src/contexts/employment/domain/policies/WorkplaceSkillRequirementPolicy.js';
+import { getRequiredSkillForBuilding, getRequiredSkillLevelForBuilding, isAppointedWorkplace } from '../../../src/contexts/employment/domain/policies/WorkplaceSkillRequirementPolicy.js';
+import { buildingCatalog } from '../../../src/shared/building-catalog/buildingCatalog.js';
 
-const cardTierOf = (buildingType) => lowestHouseTierForWorkers(getRequiredSkillForBuilding(buildingType), getRequiredSkillLevelForBuilding(buildingType));
+const cardTierOf = (buildingType) => lowestHouseTierForWorkers(getRequiredSkillForBuilding(buildingType), getRequiredSkillLevelForBuilding(buildingType), isAppointedWorkplace(buildingType));
+
+// Regression: the toolbar threw "no house tier ... grants the skill banque-centrale" when drawing the card of the central bank, whose posts are filled by appointment from
+// the administrators (who look for no job): the "niv. N" of every card must be readable, whoever staffs the building.
+describe('every building that takes workers has a level to show on its card', () => {
+  test('whoever staffs it, the labour market or an appointment', () => {
+    const staffed = Object.keys(buildingCatalog).filter((type) => getRequiredSkillForBuilding(type));
+    expect(staffed.length).toBeGreaterThan(0);
+    for (const type of staffed) expect(() => cardTierOf(type)).not.toThrow();
+    expect(cardTierOf('CentralBank')).toBe(1);
+  });
+});
 
 describe('the level of a skill is the house level it came with', () => {
   test('a house shows, for each skill it holds, the level a workplace of that skill shows on its card', () => {

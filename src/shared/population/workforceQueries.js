@@ -167,19 +167,24 @@ export function upcomingHouseSkills(houseType, level) {
 /**
  * The house tier from which a building can be given workers: the lowest tier, over every social category whose residents look for a job, that grants the
  * skill at the level the building asks. A skill no such tier grants is an error: the building could never be staffed.
+ * A workplace filled by appointment (`employment.appointed`, the central bank) is staffed by the opposite kind of category: the ones whose residents look for no job
+ * (the administrators), which the labour market never reaches.
  * @param {string} skill the building's `employment.requiredSkill`
  * @param {number} level the building's `employment.requiredSkillLevel`
+ * @param {boolean} appointed whether the building's posts are filled by appointment, not by the labour market
  * @returns {number}
  */
-export function lowestHouseTierForWorkers(skill, level) {
+export function lowestHouseTierForWorkers(skill, level, appointed) {
+  if (typeof appointed !== 'boolean') throw new Error(`[workforce] whether the posts asking "${skill}" are filled by appointment must be told, got ${appointed}`);
   let lowest = null;
   for (const [group, category] of Object.entries(SOCIAL_CATEGORY)) {
-    if (category.seeksWork === false) continue;
+    // The posts of the labour market go to the categories that look for a job; the appointed ones, to those that do not.
+    if ((category.seeksWork === false) !== appointed) continue;
     for (const [tier, facts] of Object.entries(category.tiers)) {
       if ((facts.skills[skill] ?? 0) >= level && (lowest === null || Number(tier) < lowest)) lowest = Number(tier);
     }
   }
-  if (lowest === null) throw new Error(`[workforce] no house tier of a category that looks for work grants the skill "${skill}" at level ${level}: its workplaces could never be staffed`);
+  if (lowest === null) throw new Error(`[workforce] no house tier of a category that ${appointed ? 'looks for no work' : 'looks for work'} grants the skill "${skill}" at level ${level}: its workplaces could never be staffed`);
   return lowest;
 }
 

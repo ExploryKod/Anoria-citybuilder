@@ -4,6 +4,7 @@ import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { listRoleEntries, shelfLifeTurnsAt, stockShapeFor } from '../../domain/policies/ResourceRolePolicy.js';
 import { expireAges, reconcileAges } from '../../domain/policies/StockAgingPolicy.js';
 import { takeCategoryAmount } from '../../domain/value-objects/ResourceStock.js';
+import { tickPerfEnabled } from '../../../../core/diagnostics/tickPerf.js';
 
 /** The roles whose stock is a good that sits somewhere and can go bad (a consumer's stock is its meal of the month, eaten at once). */
 const KEEPING_ROLES = Object.freeze(['producer', 'hub', 'distributor']);
@@ -152,7 +153,7 @@ export class RunMonthlyResourceCycle {
       );
     }
     lap('consumption');
-    if (import.meta.env?.DEV) {
+    if (tickPerfEnabled()) {
       console.info(`[tick-perf] supply.cycle ${Object.entries(stageMs).map(([stage, ms]) => `${stage}=${ms.toFixed(1)}`).join(' ')}`);
     }
   }

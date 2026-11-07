@@ -1,27 +1,26 @@
 import { onEditorStackChange, getEditorStackObjects } from '../../three/editor/editorNatureLayout.js';
 import { propsHoldingRecord } from '../../../shared/editor-catalog/naturePropCatalog.js';
-import { goodAmount, goodIcon } from '../shell/CatalogVocabulary.js';
+import { listDepositKinds } from '../../../shared/building-catalog/depositQueries.js';
+import { showEditorMapNature } from '../shell/GameUI.js';
 
 /**
- * What the map being built holds: the sum, per good, of what its pieces of nature hold (the wood of its trees, the stone of its rocks...), kept up to date as
- * pieces are placed and removed. The game gives each piece its record when the map is first played, so these figures are what the hamlet starts with.
- * (Iron, gold, ore and clay are not tied to a piece of nature yet.)
+ * What the map being built holds: the sum, per good, of what its pieces of nature hold (the wood of its trees, the iron of its large rocks...), kept up to date as
+ * pieces are placed and removed. It is shown where the player reads it in the game, the "nature" tab of the population rail (every good of that tab, 0 for the
+ * ones the map holds none of). The game gives each piece its record when the map is first played, so these figures are what the hamlet starts with.
+ * (Clay is the ground's, not a piece's: the editor does not count it yet.)
  */
 export function initEditorMapResources() {
-  const el = document.getElementById('editor-map-resources');
-  if (!el) {
-    throw new Error('[EditorMapResources] #editor-map-resources is missing from game.html');
-  }
-
   const render = (pieces) => {
-    /** @type {Map<string, number>} */
-    const totals = new Map();
+    const totals = Object.fromEntries(listDepositKinds().map((good) => [good, 0]));
     for (const { stocks } of propsHoldingRecord(pieces)) {
       for (const [good, amount] of Object.entries(stocks)) {
-        totals.set(good, (totals.get(good) ?? 0) + amount);
+        if (!(good in totals)) {
+          throw new Error(`[EditorMapResources] "${good}" is held by a piece of nature but is not a deposit kind of the catalog`);
+        }
+        totals[good] += amount;
       }
     }
-    el.textContent = [...totals].map(([good, amount]) => `${goodIcon(good)} ${goodAmount(good, amount)}`).join(' · ');
+    showEditorMapNature(totals);
   };
 
   onEditorStackChange(render);

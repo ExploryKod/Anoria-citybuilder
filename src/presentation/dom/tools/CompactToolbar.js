@@ -15,7 +15,7 @@ import { createModalFocusSession } from '../shell/modalFocus.js';
 import { unfoldGroupOf } from '../shell/hudFoldGroup.js';
 import { buildingIconHtml, buildingName } from '../shell/CatalogVocabulary.js';
 import { getSessionGame } from '../../../composition/sessionRuntime.js';
-import { getRequiredSkillForBuilding, getRequiredSkillLevelForBuilding } from '../../../composition/employmentCatalog.js';
+import { getRequiredSkillForBuilding, getRequiredSkillLevelForBuilding, isAppointedWorkplace } from '../../../composition/employmentCatalog.js';
 import { lowestHouseTierForWorkers } from '../../../shared/population/workforceQueries.js';
 import { STAFF_LEVEL_COLORS } from '../../three/assets/buildingAssets.js';
 
@@ -792,7 +792,7 @@ function renderCarousel(categoryId) {
 function staffLevelPill(toolId) {
   const skill = getRequiredSkillForBuilding(toolId);
   if (!skill) return null;
-  const level = lowestHouseTierForWorkers(skill, getRequiredSkillLevelForBuilding(toolId));
+  const level = lowestHouseTierForWorkers(skill, getRequiredSkillLevelForBuilding(toolId), isAppointedWorkplace(toolId));
   const color = STAFF_LEVEL_COLORS[level];
   if (!color) throw new Error(`[CompactToolbar] "${toolId}" is staffed from house level ${level}, which STAFF_LEVEL_COLORS (buildingAssets.js) gives no color`);
   const pill = document.createElement('span');

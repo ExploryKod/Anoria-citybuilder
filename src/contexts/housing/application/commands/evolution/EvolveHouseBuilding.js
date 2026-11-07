@@ -31,6 +31,8 @@ export class EvolveHouseBuilding {
      * @type {() => Promise<number | null>}
      */
     this.populationOverrideCheck = async () => null;
+    /** Measurement only: the milliseconds a pass spent per step, summed over the houses (reset and written by EvolveAllHouseBuildings). */
+    this.timings = {};
   }
 
   /** @param {() => Promise<number | null>} check the number every house is held at, or null */
@@ -94,6 +96,13 @@ export class EvolveHouseBuilding {
    * @param {number} [periodKey]
    */
   async #executeLevelResolution(house, periodKey) {
+    // Measurement only (performance.plan.md): where the time of this pass goes, summed over the houses and written by EvolveAllHouseBuildings.
+    const measured = async (name, work) => {
+      const startedAt = performance.now();
+      const value = await work();
+      this.timings[name] = (this.timings[name] ?? 0) + performance.now() - startedAt;
+      return value;
+    };
     const resolution = resolveHouseLevel({
       level: house.level,
       pop: house.pop,
@@ -102,10 +111,10 @@ export class EvolveHouseBuilding {
       servedFlags: house.servedFlags,
       lastConsumption: house.lastConsumption,
       outcomes: this.#outcomesOf(house),
-      activityAccess: await this.#activityAccessOf(house),
+      activityAccess: await measured('activityAccess', () => this.#activityAccessOf(house)),
       periodKey,
-      levelsUnlocked: (await this.levelsUnlockedCheck()) === true,
-      populationOverride: await this.populationOverrideCheck(),
+      levelsUnlocked: (await measured('cheats', () => this.levelsUnlockedCheck())) === true,
+      populationOverride: await measured('cheats', () => this.populationOverrideCheck()),
     });
 
     if (!resolution.changed) {

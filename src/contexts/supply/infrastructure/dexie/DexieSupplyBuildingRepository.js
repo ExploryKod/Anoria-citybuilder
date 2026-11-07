@@ -79,10 +79,17 @@ export class DexieSupplyBuildingRepository {
     return row ? structuredClone(row) : undefined;
   }
 
-  /** Copies of every stored row. */
-  async #allRows() {
+  /**
+   * Copies of the stored rows of the active hamlet that `matches`. The test is made on the rows as held, and only the ones that pass are copied: a unit of work asks
+   * for the producers, then the hubs, then the consumers, hundreds of times, and copying every row of the table (the nature, the other hamlets' buildings…) each time
+   * was most of its cost.
+   * @param {(row: Record<string, any>) => boolean} [matches]
+   * @param {(row: Record<string, any>) => any} [take] what is handed out for a held row that matches: a copy of it by default. A caller that builds something new from the row
+   *   (and never gives the row itself away) passes `(row) => row` and copies only what it keeps.
+   */
+  async #activeRows(matches = () => true, take = (row) => structuredClone(row)) {
     const session = this.#session;
-    if (!session) return db.houses.toArray();
+    if (!session) return (await db.houses.toArray()).filter((row) => isActiveHamletRow(row) && matches(row));
     if (!session.allLoaded) {
       for (const row of await db.houses.toArray()) {
         // A row already held keeps what this unit of work has done to it.
@@ -90,12 +97,11 @@ export class DexieSupplyBuildingRepository {
       }
       session.allLoaded = true;
     }
-    return [...session.rows.values()].filter(Boolean).map((row) => structuredClone(row));
-  }
-
-  async #activeRows() {
-    const rows = await this.#allRows();
-    return rows.filter(isActiveHamletRow);
+    const found = [];
+    for (const row of session.rows.values()) {
+      if (row && isActiveHamletRow(row) && matches(row)) found.push(take(row));
+    }
+    return found;
   }
 
   /**
@@ -277,8 +283,7 @@ export class DexieSupplyBuildingRepository {
 
   async resetSourceSalesForYear(currentYear) {
     const year = Number.isFinite(currentYear) ? Math.floor(currentYear) : 0;
-    const rows = await this.#activeRows();
-    const sources = rows.filter((row) => hasResourceRole(row.type, 'producer'));
+    const sources = await this.#activeRows((row) => hasResourceRole(row.type, 'producer'));
 
     for (const source of sources) {
       const sourceId = instanceIdFromHouseRow(source);
@@ -342,22 +347,19 @@ export class DexieSupplyBuildingRepository {
   }
 
   async findByResourceRole(role, categories) {
-    const rows = await this.#activeRows();
-    return rows
-      .filter((row) => hasResourceRole(row.type, role, categories))
-      .map((row) => this.#toSnapshot(row, this.#absentOf(row)));
+    const rows = await this.#activeRows((row) => hasResourceRole(row.type, role, categories));
+    return rows.map((row) => this.#toSnapshot(row, this.#absentOf(row)));
   }
 
   async listNatureItems() {
-    const rows = await this.#activeRows();
-    return rows.filter((row) => (row.category || '') === 'nature');
+    return this.#activeRows((row) => (row.category || '') === 'nature');
   }
 
   async listNaturalResources() {
-    const rows = await this.#activeRows();
+    // Asked once per producer per day, over every tree and rock of the hamlet: the held rows are read, not copied, and only the small stock of each is.
+    const rows = await this.#activeRows((row) => depositKindsOf(row.type).length > 0 && row.x != null && row.y != null, (row) => row);
     return rows
-      .filter((row) => depositKindsOf(row.type).length > 0 && row.x != null && row.y != null)
-      .map((row) => ({ id: instanceIdFromHouseRow(row), type: row.type, x: row.x, y: row.y, stocks: row.stocks ?? {} }));
+      .map((row) => ({ id: instanceIdFromHouseRow(row), type: row.type, x: row.x, y: row.y, stocks: structuredClone(row.stocks ?? {}) }));
   }
 
   async listAllBuildingRows() {

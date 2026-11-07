@@ -488,6 +488,17 @@ export function createSupplyContext({
       });
     },
 
+    /**
+     * Runs `work` with the supply's buildings read once and kept (a unit of work of the repository), for a pass that asks many questions of them and changes none of
+     * the supply's rows. A repository without a unit of work runs `work` as it is.
+     * @template T
+     * @param {() => Promise<T>} work
+     * @returns {Promise<T>}
+     */
+    async readOnce(work) {
+      return typeof supplyBuildingRepositoryImpl.inUnitOfWork === 'function' ? supplyBuildingRepositoryImpl.inUnitOfWork(work) : work();
+    },
+
     /** Structural gaps in a building's own recipe(s) — see DescribeActivitySupplyAccess.js. */
     async describeActivitySupplyAccess(building) {
       return describeActivitySupplyAccessQuery.execute(building);

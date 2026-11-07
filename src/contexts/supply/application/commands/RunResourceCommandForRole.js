@@ -1,3 +1,5 @@
+import { tickPerfEnabled } from '../../../../core/diagnostics/tickPerf.js';
+
 /**
  * Generic orchestration: run one command once for every building holding a
  * given resourceRoles role, collecting the successful outcomes.
@@ -28,10 +30,14 @@ export class RunResourceCommandForRole {
    * @returns {Promise<{ count: number, results: object[] }>}
    */
   async execute({ role, categories, buildParams, successKey }) {
+    const startedAt = performance.now();
     const buildings = await this.supplyBuildingRepository.findByResourceRole(role, categories);
     const results = [];
+    // Measurement only (performance.plan.md): the time each building's command took, so a slow pass names the buildings that make it slow.
+    const spent = [];
 
     for (const building of buildings) {
+      const buildingStartedAt = performance.now();
       // One building's command must never take the rest of the city down with it: an uncaught
       // throw here used to abort this loop entirely, silently skipping every building queued
       // after the failing one — and, since this same call is one step of RunMonthlyResourceCycle,
@@ -47,6 +53,12 @@ export class RunResourceCommandForRole {
       if (outcome[successKey]) {
         results.push(outcome);
       }
+      spent.push({ type: building.type, ms: performance.now() - buildingStartedAt });
+    }
+
+    if (tickPerfEnabled()) {
+      const slowest = [...spent].sort((a, b) => b.ms - a.ms).slice(0, 3).map(({ type, ms }) => `${type}=${ms.toFixed(1)}`).join(' ');
+      console.info(`[tick-perf] role=${role}${categories ? ` (${[].concat(categories).join(',')})` : ''} buildings=${buildings.length} total=${(performance.now() - startedAt).toFixed(1)}ms slowest: ${slowest}`);
     }
 
     return { count: results.length, results };

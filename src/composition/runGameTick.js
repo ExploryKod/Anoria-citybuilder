@@ -11,6 +11,12 @@ import {
 import { syncSessionHud } from './syncSessionHud.js';
 import { isLoseMode } from '../config/loseMode.js';
 import { isDeathGameOverReached } from './gameplayMortalityState.js';
+import { tickPerfEnabled } from '../core/diagnostics/tickPerf.js';
+import { createCoalescedRefresh } from './coalescedRefresh.js';
+
+/** The HUD is read at most this often (ms), however many game turns pass. */
+const HUD_REFRESH_MS = 750;
+const hudRefresh = createCoalescedRefresh({ minIntervalMs: HUD_REFRESH_MS });
 
 /**
  * @param {object} params
@@ -127,8 +133,12 @@ export async function runGameTick({
   }
 
   if (!silent) {
-    await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
-    await refreshEmploymentPresentation();
+    // Off the turn's path: reading the whole HUD took ~200 ms of every turn (measured, performance.plan.md). It is refreshed at most once per `HUD_REFRESH_MS`, and once more after
+    // the last turn, so the screen ends on the latest state.
+    hudRefresh.request(async () => {
+      await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
+      await refreshEmploymentPresentation();
+    });
     lap('hud');
   }
 
@@ -141,7 +151,7 @@ export async function runGameTick({
     return;
   }
 
-  if (import.meta.env?.DEV) {
+  if (tickPerfEnabled()) {
     const total = Object.values(stageMs).reduce((sum, ms) => sum + ms, 0);
     const stages = Object.entries(stageMs).map(([stage, ms]) => `${stage}=${ms.toFixed(1)}`).join(' ');
     console.info(`[tick-perf] day=${time}${silent ? ' (silent)' : ''} total=${total.toFixed(1)}ms ${stages}`);

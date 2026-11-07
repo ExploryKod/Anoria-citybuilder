@@ -4,8 +4,6 @@
  * Collapsible: expanded panel OR discrete FAB icon (like cookie consent).
  */
 
-const STORAGE_KEY = 'show-stats-js';
-
 function activityIconSvg() {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>`;
 }
@@ -20,6 +18,7 @@ export function createPerfHud({
   maxWidth = 520,
   bottom = 96,
   right = 16,
+  onDetail = null,
 } = {}) {
   const root = document.createElement('div');
   root.id = 'stats-js';
@@ -63,7 +62,9 @@ export function createPerfHud({
   let displayW = 0;
   let displayH = 0;
   let dpr = 1;
-  let expanded = localStorage.getItem(STORAGE_KEY) !== 'false';
+  // Always closed at the start, in development too: the panel opens when the icon is clicked, and is not remembered (a panel that was left open would be open by default
+  // the next time).
+  let expanded = false;
 
   let frameCount = 0;
   let fps = 0;
@@ -94,7 +95,6 @@ export function createPerfHud({
     root.classList.toggle('perf-hud--collapsed', !expanded);
     panel.hidden = !expanded;
     fab.hidden = expanded;
-    localStorage.setItem(STORAGE_KEY, expanded ? 'true' : 'false');
     if (expanded) {
       resize();
     }
@@ -173,7 +173,7 @@ export function createPerfHud({
         disabled: !memorySupported,
       },
       {
-        // Jaune — draw calls Three.js (renderer.info.render.calls)
+        // Jaune — draw calls of the last frame (renderer.info.render.drawCalls; not `.calls`, which counts render() calls since the start and only grows)
         label: 'calls',
         value: calls,
         min: callsMin === Infinity ? 0 : callsMin,
@@ -274,6 +274,15 @@ export function createPerfHud({
     e.stopPropagation();
     setExpanded(false);
   });
+  // A click on the graphs takes a reading of what the draw calls are made of (renderLoadBreakdown.js), written to the console.
+  if (onDetail) {
+    canvas.title = 'Cliquer : relever ce que contiennent les draw calls (console)';
+    canvas.style.cursor = 'pointer';
+    canvas.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onDetail();
+    });
+  }
   fab.addEventListener('click', (e) => {
     e.stopPropagation();
     setExpanded(true);

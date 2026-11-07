@@ -137,6 +137,16 @@ export function propRecordSpec(assetId) {
 }
 
 /**
+ * @param {string} categoryId a nature category of the editor (`editorTrees`, `editorRockLarge`, ...)
+ * @returns {Readonly<Record<string, number>>} what one piece of that category holds when the hamlet is played (empty for a piece that holds nothing)
+ */
+export function categoryRecordStocks(categoryId) {
+  if (categoryId === 'editorTrees') return PROP_RECORDS.tree.stocks;
+  const rockRecord = ROCK_RECORD_BY_CATEGORY[categoryId];
+  return rockRecord ? PROP_RECORDS[rockRecord].stocks : PROP_RECORDS.other.stocks;
+}
+
+/**
  * The props of a map that are records of the hamlet: one per tile (a second prop on the same tile adds no record of its own), each with its type and stocks. The
  * game gives each its record on the hamlet's first load; the editor adds up what they hold as the player places them.
  * @param {ReadonlyArray<{ assetId: string, x: number, y: number }>} pieces the pieces of a map

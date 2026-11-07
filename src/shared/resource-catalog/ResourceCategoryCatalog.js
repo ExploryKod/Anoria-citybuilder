@@ -75,8 +75,8 @@ export const RESOURCE_CATEGORY_PRESENTATION = Object.freeze({
   // Stone, iron and gold are drawn from the rocks by the mine and sold to the warehouse, so they are goods with a value too.
   rock: Object.freeze({ vatCategory: 'other', emoji: '🪨', label: 'Pierre', unit: unitOf('bloc', 'blocs'), baseValue: 0.6, colors: Object.freeze({ dark: '#78909C', pale: '#CFD8DC' }) }),
   clay: Object.freeze({ emoji: '🧱', label: 'Argile', unit: unitOf('bloc', 'blocs') }),
-  iron: Object.freeze({ vatCategory: 'other', emoji: '⚙️', label: 'Fer', unit: unitOf('lingot', 'lingots'), baseValue: 2.0, colors: Object.freeze({ dark: '#546E7A', pale: '#B0BEC5' }) }),
-  gold: Object.freeze({ vatCategory: 'luxury', emoji: '🥇', label: 'Or', unit: unitOf('lingot', 'lingots'), baseValue: 12.0, colors: Object.freeze({ dark: '#C9A227', pale: '#F3E3A0' }) }),
+  iron: Object.freeze({ vatCategory: 'other', emoji: '⚙️', label: 'Fer', unit: unitOf('fer', 'fer'), baseValue: 2.0, colors: Object.freeze({ dark: '#546E7A', pale: '#B0BEC5' }) }),
+  gold: Object.freeze({ vatCategory: 'luxury', emoji: '🥇', label: 'Or', unit: unitOf('or', 'or'), baseValue: 12.0, colors: Object.freeze({ dark: '#C9A227', pale: '#F3E3A0' }) }),
   // Services travel the same chain as goods: each delivered unit is priced here, and the city subsidises its share.
   // Water: a need of every house like the diet, drawn from a tank's reservoir (the land's groundwater), a cubic metre at a time.
   water: Object.freeze({ kind: 'service', vatCategory: 'essential', emoji: '💧', label: 'Eau', unit: unitOf('mètre cube', 'mètres cubes'), baseValue: 0.125 }),

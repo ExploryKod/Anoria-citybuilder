@@ -9,7 +9,10 @@ import { hideBuildToolHoverPreview } from '../tools/BuildToolHoverPreview.js';
 import { serializeEditorLayout } from '../../three/editor/editorNatureLayout.js';
 import { getSessionCity } from '../../../composition/sessionRuntime.js';
 import { v4 as uuidv4 } from 'uuid';
-import { initEditorMapResources } from './EditorMapResources.js';import {
+import { initEditorMapResources } from './EditorMapResources.js';
+import { categoryRecordStocks } from '../../../shared/editor-catalog/naturePropCatalog.js';
+import { goodAmount, goodIcon } from '../shell/CatalogVocabulary.js';
+import {
   getDefaultCategoryForFabGroup,
   getKenneyEditorCategoriesForFabGroup,
 } from '../../../shared/editor-catalog/classifyKenneyNatureAsset.js';
@@ -110,6 +113,17 @@ function openFabGroup(fabGroup) {
 }
 
 /**
+ * What one piece of a nature category holds, in the catalog's words ("🪨 150 pierres + ⛏ 60 fer"), so the player knows which rock to pick for iron or gold.
+ * @param {string} categoryId
+ * @returns {string} empty when the pieces of the category hold nothing
+ */
+function holdingLabel(categoryId) {
+  return Object.entries(categoryRecordStocks(categoryId))
+    .map(([good, amount]) => `${goodIcon(good)} ${goodAmount(good, amount)}`)
+    .join(' + ');
+}
+
+/**
  * @param {'terrain' | 'nature'} fabGroup
  */
 function buildCategoryPills(fabGroup) {
@@ -124,8 +138,10 @@ function buildCategoryPills(fabGroup) {
     pill.dataset.category = category.id;
     pill.setAttribute('role', 'tab');
     pill.setAttribute('aria-selected', category.id === activeCategoryId ? 'true' : 'false');
-    pill.setAttribute('aria-label', category.tooltip);
-    pill.title = category.tooltip;
+    const holding = fabGroup === 'nature' ? holdingLabel(category.id) : '';
+    const pillLabel = holding ? `${category.tooltip} : ${holding}` : category.tooltip;
+    pill.setAttribute('aria-label', pillLabel);
+    pill.title = pillLabel;
     pill.setAttribute('tabindex', category.id === activeCategoryId ? '0' : '-1');
     pill.setAttribute('aria-controls', 'editor-build-bar-tools');
     if (category.id === activeCategoryId) {
@@ -261,11 +277,35 @@ function selectCategory(categoryId) {
   renderCarousel(categoryId);
 }
 
+/**
+ * The line under the pills that says, for the category on show, what each of its pieces holds once the hamlet is played (nature only; not shown for terrain).
+ * @param {string} categoryId
+ */
+function showHoldingLine(categoryId) {
+  const line = document.getElementById('editor-build-bar-holding');
+  if (!line) {
+    throw new Error('[EditorNatureToolbar] #editor-build-bar-holding is missing from game.html');
+  }
+  if (activeFabGroup !== 'nature') {
+    line.hidden = true;
+    return;
+  }
+  const category = getKenneyEditorCategoriesForFabGroup('nature').find((def) => def.id === categoryId);
+  if (!category) {
+    throw new Error(`[EditorNatureToolbar] "${categoryId}" is not a nature category`);
+  }
+  const holding = holdingLabel(categoryId);
+  line.textContent = holding ? `${category.tooltip} — chaque pièce contient : ${holding}` : `${category.tooltip} — ne contient aucune ressource`;
+  line.hidden = false;
+}
+
 function renderCarousel(categoryId) {
   if (!listEl) return;
   listEl.innerHTML = '';
 
   const toolInfos = getToolButtonInfosForCategory(categoryId);
+  const holding = activeFabGroup === 'nature' ? holdingLabel(categoryId) : '';
+  showHoldingLine(categoryId);
   toolInfos.forEach((buttonInfo) => {
     const slide = document.createElement('li');
     slide.className = 'splide__slide mobile-build-bar__slide';
@@ -280,6 +320,11 @@ function renderCarousel(categoryId) {
         deps?.invokeSetActiveTool?.(e);
       },
     });
+
+    const toolButton = slide.querySelector('button');
+    if (holding && toolButton) {
+      toolButton.title = toolButton.title ? `${toolButton.title} : ${holding}` : holding;
+    }
 
     listEl.appendChild(slide);
   });

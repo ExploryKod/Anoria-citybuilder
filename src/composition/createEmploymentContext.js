@@ -1,5 +1,6 @@
 import { DexieEmploymentBuildingRepository } from '../contexts/employment/infrastructure/dexie/DexieEmploymentBuildingRepository.js';
 import { getOrCreateCitizenRegistry } from './citizenRegistry.js';
+import { tickPerfEnabled } from '../core/diagnostics/tickPerf.js';
 import { requireActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
 import { isInvalid } from '../contexts/housing/domain/policies/InvalidityPolicy.js';
 import { HEALTH_SICK_BELOW } from '../shared/population/HealthFactorCatalog.js';
@@ -156,7 +157,7 @@ export function createEmploymentContext({ employmentBuildingRepository, citizenP
     async distributeCityWorkers(params = {}) {
       const result = await distributeCityWorkersCommand.execute(params);
       lastLabourMarket = { rows: result.labourMarket };
-      if (import.meta.env?.DEV) {
+      if (tickPerfEnabled()) {
         const { readMs, computeMs, writeMs, laborSources, workplaces, savedWorkplaces } = result.timings;
         console.info(
           `[tick-perf] employment.distribute read=${readMs.toFixed(1)}ms compute=${computeMs.toFixed(1)}ms write=${writeMs.toFixed(1)}ms`

@@ -10,6 +10,7 @@ import { getOrCreateIntelligenceContext } from './createIntelligenceContext.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { MONTHS_PER_YEAR } from '../shared/time/TimeCalendar.js';
+import { tickPerfEnabled } from '../core/diagnostics/tickPerf.js';
 import { getCumulativeDeaths } from './gameplayMortalityState.js';
 
 /**
@@ -76,7 +77,7 @@ export async function processGameTurnBudget({ city, buildings, time, totalPop })
     const departuresMs = performance.now() - afterMonthStartedAt - rentArrearsMs;
     // The houses left empty owe nothing any more: the owner knows it will not be paid (no prosecution in the game).
     await getOrCreateAccountingContext().writeOffVacantRentDebts({ time });
-    if (import.meta.env?.DEV) {
+    if (tickPerfEnabled()) {
       const steps = { ...result.stepMs, rentArrears: rentArrearsMs, departures: departuresMs, writeOffRents: performance.now() - afterMonthStartedAt - rentArrearsMs - departuresMs };
       console.info(`[tick-perf] month-end day=${time} ${Object.entries(steps).map(([step, ms]) => `${step}=${ms.toFixed(1)}`).join(' ')}`);
     }

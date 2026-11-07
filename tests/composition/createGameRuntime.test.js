@@ -26,6 +26,8 @@ function fakeSupply() {
     runMonthlyResourceCycle: async () => {
       foodCalls += 1;
     },
+    // The housing pass runs with the supply read once (the real one keeps its rows for the pass): the double just runs the work.
+    readOnce: async (work) => work(),
   };
 }
 

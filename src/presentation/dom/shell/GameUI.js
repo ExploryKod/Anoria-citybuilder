@@ -209,6 +209,21 @@ function setGroupCounts(nodesByGroup, counts) {
  */
 const railHud = { totals: null, famished: null, hungerRisk: null, group: null, resources: null };
 
+/**
+ * In the map editor there is no hamlet yet: the "nature" tab shows what the map being built holds (set by EditorMapResources), for both scopes, in place of
+ * the figures read from the hamlet's records. Null outside the editor.
+ * @type {Record<string, number> | null}
+ */
+let editorMapNature = null;
+
+/**
+ * @param {Record<string, number>} totals what the map holds, per good (every good of the nature tab present)
+ */
+export function showEditorMapNature(totals) {
+    editorMapNature = totals;
+    drawRailResources();
+}
+
 /** @returns {'country' | 'hamlet'} the scope on show */
 function railScope() {
     return getHudPopRailScope();
@@ -291,10 +306,10 @@ function drawRailGroupHud() {
 
 function drawRailResources() {
     const payload = railHud.resources;
-    if (!payload) return;
+    if (!payload && !editorMapNature) return;
     const country = railScope() === 'country';
-    const city = country ? payload.cityCountry : payload.cityHamlet;
-    const nature = country ? payload.natureCountry : payload.natureHamlet;
+    const city = country ? payload?.cityCountry : payload?.cityHamlet;
+    const nature = editorMapNature ?? (country ? payload.natureCountry : payload.natureHamlet);
     for (const product of HUD_CITY_RESOURCE_PRODUCTS) {
         const nodes = popResourceCityNodes[product];
         if (!nodes) continue;

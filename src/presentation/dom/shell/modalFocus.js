@@ -177,6 +177,13 @@ export function createModalFocusSession(options) {
       if (!active) return;
       active = false;
       document.removeEventListener('keydown', handleDocumentKeyDown, true);
+      // Focus must leave the panel BEFORE it is hidden from assistive technology: a hidden subtree that keeps the focus is what the browser warns about
+      // ("Blocked aria-hidden on an element because its descendant retained focus"). Back to where it was when that can take it now, else off the panel.
+      const focused = document.activeElement;
+      if (focused instanceof HTMLElement && panel.contains(focused)) {
+        if (restoreFocus && lastFocused?.isConnected && !panel.contains(lastFocused)) lastFocused.focus();
+        if (document.activeElement instanceof HTMLElement && panel.contains(document.activeElement)) document.activeElement.blur();
+      }
       panel.setAttribute('aria-hidden', 'true');
       if (restoreFocus && lastFocused && typeof lastFocused.focus === 'function') {
         // Defer: callers often clear `inert` on #game-window in the same turn after release.

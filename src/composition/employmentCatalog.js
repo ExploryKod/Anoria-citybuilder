@@ -6,4 +6,5 @@ export { allSocialGroups } from '../contexts/employment/domain/catalogs/HouseGro
 export {
   getRequiredSkillForBuilding,
   getRequiredSkillLevelForBuilding,
+  isAppointedWorkplace,
 } from '../contexts/employment/domain/policies/WorkplaceSkillRequirementPolicy.js';

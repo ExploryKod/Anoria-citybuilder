@@ -5,7 +5,8 @@
 import { formatWorkplaceEmployeesPanel } from './workplaceEmployeesFormat.js';
 import { staffingStatusLine } from './staffingReasonFormat.js';
 import { buildingName, scheduleLabel } from '../../../shell/CatalogVocabulary.js';
-import { getResourceRoles, isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { isRoadNeedMet } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
+import { getCollectionSchedule } from '../../../../../composition/supplyCatalog.js';
 
 export function formatHubStorageLayoutHeader() {
   return null;
@@ -44,7 +45,8 @@ export function formatHubStorageStateModel(vm) {
   const { hubKind, supplyView, buildingRow } = vm;
   if (hubKind !== 'hub' || !supplyView) return null;
 
-  const collectsWhen = scheduleLabel(getResourceRoles(buildingRow.type).find((entry) => entry.role === 'collector')?.schedule);
+  // A collector that declares no schedule (the granary) collects in the months its crops are sold in: the schedule the game runs on, not the declared field.
+  const collectsWhen = scheduleLabel(getCollectionSchedule(buildingRow.type));
   let status;
   if (!isRoadNeedMet(buildingRow.type, buildingRow.roads)) {
     status = `⚠️ Sans route, ${buildingName(buildingRow.type)} ne peut pas stocker.`;

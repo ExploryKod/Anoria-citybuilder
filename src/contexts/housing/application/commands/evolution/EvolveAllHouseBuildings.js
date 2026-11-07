@@ -1,3 +1,5 @@
+import { tickPerfEnabled } from '../../../../../core/diagnostics/tickPerf.js';
+
 /**
  * Inhabitants who left because a house's standing changed (its population was brought back to
  * the cap of the lower level), and the requirements that no longer held.
@@ -56,8 +58,10 @@ export class EvolveAllHouseBuildings {
    * }>}
    */
   async execute({ periodKey } = {}) {
+    const startedAt = performance.now();
     const houses = await this.repository.findResidentialHouses();
     const changes = [];
+    this.evolveHouseBuilding.timings = {};
 
     for (const house of houses) {
       const result = await this.evolveHouseBuilding.execute({ houseId: house.id, periodKey });
@@ -77,6 +81,10 @@ export class EvolveAllHouseBuildings {
       }
     }
 
+    if (tickPerfEnabled()) {
+      const steps = Object.entries(this.evolveHouseBuilding.timings).map(([step, ms]) => `${step}=${ms.toFixed(1)}`).join(' ');
+      console.info(`[tick-perf] housing.evolution houses=${houses.length} total=${(performance.now() - startedAt).toFixed(1)}ms ${steps}`);
+    }
     return {
       housesProcessed: houses.length,
       housesChanged: changes.length,
