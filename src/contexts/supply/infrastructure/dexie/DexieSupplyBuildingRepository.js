@@ -1,5 +1,6 @@
 import db from '../../../../core/persistence/dexie/db.js';
 import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { refuseResidentsField } from '../../../../core/persistence/dexie/residentsProjection.js';
 import { residentsCountOf } from '../../../../shared/population/residentsCount.js';
 import { createSupplyBuildingSnapshot } from '../../domain/SupplyBuildingSnapshot.js';
 import { createSupplyBuildingView } from '../../domain/SupplyBuildingView.js';
@@ -178,6 +179,7 @@ export class DexieSupplyBuildingRepository {
    * @param {Record<string, unknown>} updates
    */
   async #putFields(instanceId, updates) {
+    refuseResidentsField(instanceId, updates);
     const session = this.#session;
     if (session) {
       if (!session.rows.has(instanceId)) session.rows.set(instanceId, (await db.houses.get(instanceId)) ?? null);

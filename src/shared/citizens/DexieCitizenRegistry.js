@@ -1,6 +1,6 @@
 import Dexie from 'dexie';
 import db from '../../core/persistence/dexie/db.js';
-import { createCitizen, drawArrivingCitizen, planHousePopulation, inHouseOrder, assertCitizensMatchPop, withWorkplace } from './Citizen.js';
+import { createCitizen, drawArrivingCitizen, planHousePopulation, inHouseOrder, withWorkplace } from './Citizen.js';
 
 /**
  * The citizens of the game: the only way in or out of the `citizens` table.
@@ -8,7 +8,7 @@ import { createCitizen, drawArrivingCitizen, planHousePopulation, inHouseOrder, 
  * IndexedDB is touched by batch, never per citizen:
  * - a read is ONE indexed query for a whole hamlet (`forHamlet`), kept in memory afterwards; a house is read from that memory;
  * - a write is the delta of one house (`bulkAdd` of the arrivals, `bulkDelete` of the leavers) inside the transaction that also
- *   writes the house, so the row's `pop` and its citizens never disagree on disk.
+ *   writes the house. The house's `pop` is not stored: it is the count of these citizens (core/persistence/dexie/residentsProjection.js).
  *
  * The cache of a hamlet is dropped when a transaction that changed its citizens commits, and rebuilt by the next read.
  */
@@ -52,13 +52,11 @@ export class DexieCitizenRegistry {
   }
 
   /**
-   * The citizens of a house, in their stable order; the house's population must agree with them (a gap throws).
-   * @param {{ houseId: string, hamletId: string, pop: number }} house
+   * The citizens of a house, in their stable order: its residents (a house nobody lives in has none).
+   * @param {{ houseId: string, hamletId: string }} house
    */
-  async forHouse({ houseId, hamletId, pop }) {
-    const citizens = (await this.forHamlet(hamletId)).get(houseId) ?? [];
-    assertCitizensMatchPop(houseId, pop, citizens);
-    return citizens;
+  async forHouse({ houseId, hamletId }) {
+    return (await this.forHamlet(hamletId)).get(houseId) ?? [];
   }
 
   /**

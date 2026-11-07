@@ -1,4 +1,5 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { refuseResidentsField } from '../../../../core/persistence/dexie/residentsProjection.js';
 import {
   isActiveHamletRow,
   requireActiveHamletId,
@@ -140,6 +141,7 @@ export class DexieConstructionBuildingRepository {
    * @param {Record<string, unknown>} updates
    */
   async updateFields(instanceId, updates) {
+    refuseResidentsField(instanceId, updates);
     const row = await db.houses.get(instanceId);
     if (!row) return;
 
@@ -171,6 +173,7 @@ export class DexieConstructionBuildingRepository {
    * @param {{ limit?: number } | false} [condition]
    */
   async incrementField(instanceId, field, increment, condition = false) {
+    refuseResidentsField(instanceId, { [field]: increment });
     const row = await db.houses.get(instanceId);
     if (!row || row[field] === undefined) return;
 

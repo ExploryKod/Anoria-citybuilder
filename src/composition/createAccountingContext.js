@@ -1830,7 +1830,7 @@ export function createAccountingContext(deps = {}) {
       // The residents who look for no job (the administrators) are paid a stipend by the hamlet: they are neither workers nor unemployed.
       const seeking = residentsSeekingWork(house.type, house.pop);
       const salaried = house.pop - seeking;
-      const citizens = await getOrCreateCitizenRegistry().forHouse({ houseId, hamletId: house.hamletId, pop: house.pop });
+      const citizens = await getOrCreateCitizenRegistry().forHouse({ houseId, hamletId: house.hamletId });
       const residents = residentsOfHouse({ houseId, citizens, seeksWork: seeking > 0 });
       const typeOf = new Map(rows.map((row) => [row.id, row.type]));
 

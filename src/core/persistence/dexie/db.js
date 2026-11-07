@@ -6,6 +6,7 @@
  */
 import Dexie from 'dexie';
 import { reconcileHamletUnlockFlags } from '../hamlet/hamletUnlockMigration.js';
+import { applyResidentDeltas, buildResidents, emptyResidents, residentsOfHouseId } from './residentsProjection.js';
 
 const db = new Dexie('anoriaDb');
 
@@ -196,6 +197,106 @@ db.version(23).stores({
   citizens: 'id, houseId, hamletId',
 });
 
+// The residents of a house are its citizens (residentsProjection.js): `pop` is not stored on the house row, it is served on every read of the table from the count the
+// citizens make. The citizens' hooks keep that count: a change moves it at once (what the code reads right after writing is true), and a transaction that fails gives
+// back what it moved.
+//
+// Two facts of Dexie shape this. The promise of a transaction settles BEFORE its `complete` event (so waiting for the commit would leave a stale count), and it rejects
+// BEFORE the `abort` event (so waiting for the abort would leave the count wrong for the caller that catches the failure). The count is therefore given back by
+// `db.transaction` itself, as it rejects, and the `abort` event is only the net for an abort that comes from elsewhere. A nested transaction is the same IndexedDB
+// transaction as its parent, so everything is kept against the outermost one.
+const movedByTransaction = new WeakMap();
+
+function outermost(transaction) {
+  let root = transaction;
+  while (root.parent) root = root.parent;
+  return root;
+}
+
+/** Give back what a transaction moved. Idempotent: what it moved is forgotten as it is given back. */
+function giveBackResidents(root) {
+  const moved = movedByTransaction.get(root);
+  if (!moved) return;
+  movedByTransaction.delete(root);
+  applyResidentDeltas(new Map([...moved].map(([houseId, total]) => [houseId, -total])));
+}
+
+function recordResidentChange(innerTransaction, houseId, delta) {
+  const root = outermost(innerTransaction);
+  let moved = movedByTransaction.get(root);
+  if (!moved) {
+    moved = new Map();
+    movedByTransaction.set(root, moved);
+    root.on('abort', () => giveBackResidents(root));
+    root.on('complete', () => movedByTransaction.delete(root));
+  }
+  moved.set(houseId, (moved.get(houseId) ?? 0) + delta);
+  applyResidentDeltas(new Map([[houseId, delta]]));
+  // The way back for a write that fails on its own (a duplicate id, say) without aborting the transaction.
+  return () => {
+    if (movedByTransaction.get(root) !== moved) return; // already given back with its transaction
+    moved.set(houseId, moved.get(houseId) - delta);
+    applyResidentDeltas(new Map([[houseId, -delta]]));
+  };
+}
+
+const runTransaction = db.transaction.bind(db);
+db.transaction = (...args) => {
+  const scope = args.pop();
+  let started = null;
+  // Dexie must see an async function here (it wraps those so a native `await` keeps the transaction alive), whatever kind of function the caller gave.
+  return runTransaction(...args, async function scopeOfTransaction(...scopeArgs) {
+    started = Dexie.currentTransaction;
+    return scope.apply(this, scopeArgs);
+  }).catch((error) => {
+    if (started) giveBackResidents(outermost(started));
+    throw error;
+  });
+};
+
+db.citizens.hook('creating', function countArrival(primKey, citizen, transaction) {
+  const undo = recordResidentChange(transaction, citizen.houseId, 1);
+  this.onerror = undo;
+});
+db.citizens.hook('deleting', function countDeparture(primKey, citizen, transaction) {
+  const undo = recordResidentChange(transaction, citizen.houseId, -1);
+  this.onerror = undo;
+});
+db.citizens.hook('updating', (modifications, primKey, citizen, transaction) => {
+  if (!('houseId' in modifications) || modifications.houseId === citizen.houseId) return;
+  recordResidentChange(transaction, citizen.houseId, -1);
+  recordResidentChange(transaction, modifications.houseId, 1);
+});
+
+async function countResidentsFromTable() {
+  const houseIds = [];
+  await db.citizens.each((citizen) => houseIds.push(citizen.houseId));
+  buildResidents(houseIds);
+}
+db.houses.hook('reading', (row) => {
+  // A read that finds nothing hands the hook nothing: there is no house to count the residents of.
+  if (!row) return row;
+  row.pop = residentsOfHouseId(row.instanceId);
+  return row;
+});
+// `clear()` fires no hook: a table emptied (a new game, a test) leaves nobody anywhere.
+const clearCitizens = db.citizens.clear.bind(db.citizens);
+db.citizens.clear = async () => {
+  const transaction = Dexie.currentTransaction;
+  await clearCitizens();
+  emptyResidents();
+  // If the transaction that emptied the table aborts, the citizens are back: count them again.
+  if (transaction) transaction.on('abort', () => countResidentsFromTable());
+};
+// The first time the database opens, the residents are counted from the table before anything reads a house. (`ready` does not fire again when the same connection is closed and
+// reopened, so a deletion, which leaves nobody anywhere, empties the count itself.)
+db.on('ready', countResidentsFromTable);
+const deleteDatabase = db.delete.bind(db);
+db.delete = async (...args) => {
+  await deleteDatabase(...args);
+  emptyResidents();
+};
+
 /** @type {Promise<void> | null} */
 let dbReadyPromise = null;
 
@@ -216,18 +317,33 @@ function clearLegacyLocalStorage() {
 const TABLES_KEPT_ACROSS_GAMES = Object.freeze(['cheatCodes']);
 
 /**
- * A new game starts from nothing: every table of the game is emptied (buildings, hamlets, journal,
- * traceability, news, trade relations, objectives, clock, calendar), so the next boot creates them afresh.
- * Called only for a boot that follows a menu choice of a new game — never on a plain reload.
+ * A new game starts from nothing: the whole database is deleted (schema and every table: buildings, citizens, hamlets, journal, traceability, news, trade relations,
+ * objectives, clock, calendar) and created again, so the next boot builds them afresh. Only the tables that outlive a game (the cheat codes) are read before and written
+ * back after. Called only for a boot that follows a menu choice of a new game — never on a plain reload.
+ *
+ * Other tabs holding the database open are closed by Dexie on the version change; a connection of this tab that stays open would block the deletion, which then does not
+ * finish: nothing of this tab uses the database while this runs (it is awaited before the game boots).
  * @returns {Promise<void>}
  */
-export async function clearGameTablesForNewGame() {
-  const tables = db.tables.filter((table) => !TABLES_KEPT_ACROSS_GAMES.includes(table.name));
-  await db.transaction('rw', tables, async () => {
-    for (const table of tables) {
-      await table.clear();
-    }
-  });
+export async function deleteGameDatabaseForNewGame() {
+  await waitForDatabaseReady();
+  const kept = new Map();
+  for (const name of TABLES_KEPT_ACROSS_GAMES) kept.set(name, await db.table(name).toArray());
+  // The next `waitForDatabaseReady` must open the new database, not hand back the promise of the old one.
+  dbReadyPromise = null;
+  db.close();
+  await db.delete();
+  await waitForDatabaseReady();
+  // The deletion is checked, not trusted: a table that still holds a row means the old game is still there.
+  for (const table of db.tables) {
+    if (TABLES_KEPT_ACROSS_GAMES.includes(table.name)) continue;
+    const left = await table.count();
+    if (left > 0) throw new Error(`[db] the game database was not deleted: ${table.name} still holds ${left} row(s)`);
+  }
+  // The residents are counted again on opening (`ready`): the new database has none.
+  for (const [name, rows] of kept) {
+    if (rows.length > 0) await db.table(name).bulkAdd(rows);
+  }
 }
 
 /**

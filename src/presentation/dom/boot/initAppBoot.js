@@ -14,6 +14,7 @@ import { loadGameAssets, initButtonStateRegistry } from './AssetLoader.js';
 import { bootstrapGameSession } from './GameSessionBootstrap.js';
 import { initPlaybackControls } from './PlaybackControls.js';
 import { initSpeedControls } from './SpeedControls.js';
+import { initLeaveGame } from './LeaveGameFlow.js';
 import { initToolBarBindings } from './ToolBarBindings.js';
 import { initMobileToolbar } from './ToolbarShell.js';
 import { initHudTimeBarMinWidth } from '../shell/hudTimeBarSizing.js';
@@ -66,6 +67,7 @@ export async function initAppBoot() {
     getScene: getSessionScene,
   });
   initSpeedControls({ getGame: getSessionGame });
+  initLeaveGame({ pauseGame, playGame });
   initToolBarBindings({
     buttonStateManager,
     invokeSetActiveTool,

@@ -137,7 +137,6 @@ export class PlaceBuildingAtTile {
         instanceId,
         type: buildingType,
         category: 'construction',
-        pop: 0,
         stocks: createEmptyStocks(),
         gameTurn,
         isBuilding: true,

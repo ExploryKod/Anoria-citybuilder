@@ -53,7 +53,7 @@ export class DescribeHouseHealth {
     if (!house) throw new Error(`[health] house ${houseId} is not in the hamlet`);
     // The administrators' house stands outside health: it has no score, no environment and no illness to describe, and the screen says so.
     if (houseIsOutsideHealth(house.type)) return { outsideHealth: true };
-    const inhabitants = await this.citizens.forHouse({ houseId, hamletId: house.hamletId, pop: house.pop });
+    const inhabitants = await this.citizens.forHouse({ houseId, hamletId: house.hamletId });
     const workplaces = await this.repository.workplaceExposureByHouse();
     const neighbours = await this.repository.neighbourSickByHouse(CONTAGION_RADIUS);
     const around = surroundingsOfHouse(house, workplaces, neighbours);
@@ -93,7 +93,7 @@ export class DescribeHouseHealth {
     const minds = [];
     for (const house of await this.repository.findResidentialHouses()) {
       if (houseIsOutsideHealth(house.type)) continue;
-      for (const citizen of await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId, pop: house.pop })) {
+      for (const citizen of await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId })) {
         bodies.push(citizen.health);
         minds.push(citizen.mentalHealth);
       }
@@ -132,7 +132,7 @@ export class DescribeHouseHealth {
     };
     for (const house of houses) {
       if (houseIsOutsideHealth(house.type)) continue;
-      const inhabitants = await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId, pop: house.pop });
+      const inhabitants = await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId });
       if (inhabitants.length === 0) continue;
       const around = surroundingsOfHouse(house, workplaces, neighbours);
       add(physical, describeHealthEnvironment(house, periodKey, around), inhabitants.length);

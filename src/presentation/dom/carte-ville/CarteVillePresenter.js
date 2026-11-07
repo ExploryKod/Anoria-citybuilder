@@ -274,8 +274,11 @@ export function renderCityMapErrorHtml(error) {
         `;
 }
 
-/** Row fields left out of the export: redundant with the coordinates and footprint, or a display name. The neighbours stay: they are stored state. */
-const EXPORT_OMITTED_FIELDS = ['id', 'anchorX', 'anchorY', 'name'];
+/**
+ * Row fields left out of the export: redundant with the coordinates and footprint, a display name, or `pop` (the residents of a house are the citizens the export
+ * carries beside the buildings, not a number of the row). The neighbours stay: they are stored state.
+ */
+const EXPORT_OMITTED_FIELDS = ['id', 'anchorX', 'anchorY', 'name', 'pop'];
 
 /**
  * The city as one JSON document, readable without the screen: every building

@@ -501,3 +501,20 @@
   display: block;
   white-space: pre-line;
 }
+
+/* The two answers of a confirmation are big enough to touch (40px) and share the width on a narrow screen. */
+.confirm-modal .news-event-modal-footer .modal-btn {
+  min-height: 40px;
+  min-width: 96px;
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .confirm-modal .news-event-modal-footer {
+    flex-wrap: wrap;
+  }
+
+  .confirm-modal .news-event-modal-footer .modal-btn {
+    flex: 1 1 100%;
+  }
+}

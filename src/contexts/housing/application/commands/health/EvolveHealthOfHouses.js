@@ -47,7 +47,7 @@ export class EvolveHealthOfHouses {
       if (house.lastHealthMonth === monthKey) continue;
       // The administrators stand outside health: their house is never judged (no score moves, no one falls ill, is invalid or dies).
       if (houseIsOutsideHealth(house.type)) continue;
-      const inhabitants = await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId, pop: house.pop });
+      const inhabitants = await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId });
       // The surroundings weigh differently on each citizen: unemployment only on those who have no job, the pollution of work only on those who work, and by the level of the
       // very workplace he works at. The environments are read once per distinct situation of the house.
       const seeking = residentsSeekingWork(house.type, house.pop);

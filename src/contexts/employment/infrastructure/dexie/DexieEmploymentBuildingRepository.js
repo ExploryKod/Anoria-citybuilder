@@ -1,4 +1,5 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { refuseResidentsField } from '../../../../core/persistence/dexie/residentsProjection.js';
 import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { residentsCountOf } from '../../../../shared/population/residentsCount.js';
 import { createEmploymentBuildingSnapshot } from '../../domain/EmploymentBuildingSnapshot.js';
@@ -37,6 +38,7 @@ export class DexieEmploymentBuildingRepository {
    * @param {Record<string, unknown>} updates
    */
   async #putFields(instanceId, updates) {
+    refuseResidentsField(instanceId, updates);
     const row = await db.houses.get(instanceId);
     if (!row) return;
 

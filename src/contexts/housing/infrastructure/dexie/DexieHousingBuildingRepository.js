@@ -217,7 +217,7 @@ export class DexieHousingBuildingRepository {
       if (!row) throw new Error(`[health] house ${instanceId} is not in the hamlet: its health cannot be saved`);
       await this.citizens.updateHealth(survivors);
       await this.citizens.remove(dead);
-      await db.houses.put(canonicalizeHouseRecord({ ...row, pop: row.pop - dead.length, lastHealthMonth: monthKey, sickCount: sick, invalidCount: invalid }));
+      await db.houses.put(canonicalizeHouseRecord({ ...row, lastHealthMonth: monthKey, sickCount: sick, invalidCount: invalid }));
     });
   }
 

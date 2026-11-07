@@ -1020,6 +1020,11 @@
   color: #6b4f4f;
 }
 
+/* Suicides have a skull of their own, in the violet of the mind (a coloured file: an <img> takes no `currentColor`), and their figure the same */
+.hud-pop-rail .pop-detail-suicides .display-suicides-pop {
+  color: #7b1fa2;
+}
+
 /* "ND" (not available): a figure that is not measured yet, told apart from a real 0 — grey, no dotted underline of the abbreviation, its tooltip says why */
 .hud-pop-rail .pop-detail-nd {
   color: #78909c;

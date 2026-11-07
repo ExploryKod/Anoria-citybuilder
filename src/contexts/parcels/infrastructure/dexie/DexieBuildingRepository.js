@@ -1,5 +1,6 @@
 import { listRoadTypes } from '../../../../shared/building-catalog/roadQueries.js';
 import db from '../../../../core/persistence/dexie/db.js';
+import { refuseResidentsField } from '../../../../core/persistence/dexie/residentsProjection.js';
 import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { createBuildingSnapshot } from '../../domain/BuildingSnapshot.js';
 import {
@@ -32,6 +33,7 @@ export class DexieBuildingRepository {
    * @param {Record<string, unknown>} updates
    */
   async #putFields(instanceId, updates) {
+    refuseResidentsField(instanceId, updates);
     const row = await db.houses.get(instanceId);
     if (!row) return;
 

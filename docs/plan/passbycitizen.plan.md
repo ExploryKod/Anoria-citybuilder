@@ -1,6 +1,6 @@
 # Plan — Passer par l'habitant (`passbycitizen`)
 
-Statut (2026-11-07) : étapes 0 à 5 faites, `workplaceId` fait (étape 6, 1re partie) ; reste la dérivation de `pop` (voir §8 bis). Écrit le 2026-11-04. Remplace le §4 de `health.plan.md` (le tableau
+Statut (2026-11-07) : toutes les étapes sont faites (`workplaceId` et `pop` dérivé des citoyens compris, voir §8 bis). Écrit le 2026-11-04. Remplace le §4 de `health.plan.md` (le tableau
 `health[]` par maison est abandonné : l'habitant devient une entité).
 
 ## 1. Idée générale
@@ -37,7 +37,7 @@ Aujourd'hui la maison porte `pop`, le lieu de travail (`employees.workerSources`
 ## 3. Modèle
 
 Table `citizens` (schéma Dexie v23, sans `upgrade` : il n'y a pas de partie à migrer) :
-`id, houseId, hamletId` (index). `clearGameTablesForNewGame` la vide déjà, car elle vide toutes les tables.
+`id, houseId, hamletId` (index). `deleteGameDatabaseForNewGame` (qui supprime toute la base à chaque nouvelle partie, hors `cheatCodes`) la repart de zéro.
 
 Une ligne se compose de deux parties :
 
@@ -246,13 +246,32 @@ Reste (non fait), avec le mécanisme retenu :
   les bâtiments ; un lieu de travail n'a réellement aucun résident) et `workerSources ?? {}` / `absentSources ?? {}` (un lieu qui n'a pas encore
   été réparti n'a réellement aucun travailleur ; une maison n'a pas d'`employees`).
 
-### Étape 6, seconde partie : `pop` dérivé (non faite, décision à prendre)
+### Étape 6, seconde partie : `pop` dérivé des citoyens (fait)
 
-`pop` est écrit avec ses habitants dans **une seule transaction** (`#putFields`, `saveHealthJudgement`, démolition) et l'invariant « un habitant
-par résident » est vérifié à la lecture : il n'y a donc déjà qu'une source de vérité effective. Le rendre purement dérivé d'une projection
-mémoire touche ~68 fichiers de `src`, dont toutes les lectures de lignes brutes (`db.houses.toArray()`, rendu de la carte, HUD) qui
-devraient lire une projection synchrone. Gain : supprimer un champ redondant. Coût : refonte large et risquée de la lecture, sans effet
-visible. Recommandation : garder `pop` comme champ matérialisé tant que l'invariant tient, et ne basculer que si un écart apparaît en jeu.
+Les habitants d'une maison **sont** ses citoyens ; `pop` n'est plus stocké sur la ligne.
+
+- **Projection** (`core/persistence/dexie/residentsProjection.js`) : le nombre de résidents par maison, en mémoire, reconstruit à chaque
+  ouverture de la base (`db.on('ready')`), vidé par `citizens.clear()`.
+- **Tenue à jour par les hooks de la table `citizens`** (`db.js`) : un citoyen ajouté ou retiré bouge le compte tout de suite (ce qu'on lit
+  juste après l'écriture est vrai) ; une transaction qui avorte rend ce qu'elle a bougé. Attendre `complete` ne convenait pas : la promesse
+  d'une transaction se résout avant son événement `complete`.
+- **Échec d'une transaction** : Dexie rejette la promesse d'une transaction *avant* l'événement `abort`, et une transaction imbriquée est la même
+  transaction IndexedDB que son parent. `db.transaction` est donc enveloppé (`db.js`) : il rend les comptes bougés par la transaction
+  **la plus externe** au moment où il rejette ; l'événement `abort` n'est qu'un filet (idempotent). Une écriture qui échoue seule rend son
+  incrément (`onerror` du hook) ; un `citizens.clear()` dans une transaction avortée recompte la table. Régression :
+  `tests/shared/citizens/residentsProjection.regression.test.js`.
+- **Servie à chaque lecture de `houses`** : un hook `reading` pose `row.pop` d'après la projection. Les ~68 lecteurs de `pop` n'ont pas changé.
+  Avant la construction de la projection, une lecture lève une erreur (jamais un 0 trompeur).
+- **Jamais écrit** : `canonicalizeHouseRecord` retire `pop` de toute ligne écrite (et le hook de lecture le réécrit de toute façon). Il ne peut
+  pas distinguer un `pop` relu d'un `pop` voulu ; les écrivains de champs nommés (emploi, construction, approvisionnement, parcelles)
+  **refusent** donc `pop` eux-mêmes (`refuseResidentsField`), pour qu'une écriture sans effet ne passe pas pour réussie. Les
+  commandes `savePopulation` / `applyLevelChange` / `saveDepartures` gardent leur nom : « amener la maison à N habitants » (arrivées tirées,
+  dernières arrivées parties), via `setHousePopulation`. Une mort retire le citoyen (plus de `pop − morts`).
+- L'invariant « un citoyen par résident » n'a plus lieu d'être (c'est la même donnée) : `assertCitizensMatchPop` et le paramètre `pop` de
+  `forHouse` sont supprimés. Le prefab n'a plus de `pop` sur ses maisons, l'export de ville non plus (`EXPORT_OMITTED_FIELDS`).
+- Tests : les fixtures donnent à une maison de test autant de citoyens que son `pop` demandé (`seedBuilding`, `seedResidents`) ;
+  régression dans `citizenRegistry.test.js` (le `pop` est le compte des citoyens, un nombre écrit dans la ligne ne change rien, une
+  transaction avortée ne bouge rien).
 
 ## 9. Tests (peu, essentiels)
 

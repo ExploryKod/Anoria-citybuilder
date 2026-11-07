@@ -139,12 +139,3 @@ export function planHousePopulation({ citizens, targetPop }) {
   if (targetPop >= ordered.length) return { arrivals: targetPop - ordered.length, leaving: [] };
   return { arrivals: 0, leaving: ordered.slice(targetPop) };
 }
-
-/**
- * The invariant of the model while a house still carries `pop`: one citizen per resident. A gap throws, naming the house.
- * @param {string} houseId @param {number} pop @param {ReadonlyArray<Citizen>} citizens
- */
-export function assertCitizensMatchPop(houseId, pop, citizens) {
-  if (!Number.isInteger(pop) || pop < 0) throw new Error(`[citizen] house ${houseId} has no residents count, got ${pop}`);
-  if (citizens.length !== pop) throw new Error(`[citizen] house ${houseId} counts ${pop} residents but holds ${citizens.length} citizens`);
-}
