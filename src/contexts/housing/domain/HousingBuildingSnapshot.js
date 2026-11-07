@@ -33,7 +33,7 @@ export function createHousingBuildingSnapshot({
   x = null,
   y = null,
   roadCount = 0,
-  pop = 0,
+  pop,
   level = 1,
   lastPopulationGrowthMonth = null,
   lastFamineDeathMonth = null,
@@ -48,6 +48,8 @@ export function createHousingBuildingSnapshot({
   // contexts/supply/docs/period-lock-catalog-refactor.md.
   ...rest
 }) {
+  // A house always has a residents count (0 when nobody lives in it yet): a row without one is a defect of its writer, never an empty house.
+  if (!Number.isInteger(pop) || pop < 0) throw new Error(`[housing] house ${id} has no residents count (pop), got ${pop}`);
   return Object.freeze({
     ...rest,
     id,
@@ -55,7 +57,7 @@ export function createHousingBuildingSnapshot({
     x,
     y,
     roadCount: roadCount ?? 0,
-    pop: pop ?? 0,
+    pop,
     level: Number.isFinite(level) && level >= 1 ? Math.floor(level) : 1,
     lastPopulationGrowthMonth: lastPopulationGrowthMonth ?? null,
     lastFamineDeathMonth: lastFamineDeathMonth ?? null,

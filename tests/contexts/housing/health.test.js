@@ -26,6 +26,7 @@ import {
   workplaceExposureOf,
 } from '../../../src/shared/population/HealthFactorCatalog.js';
 import { invalidityAfter, isInvalid } from '../../../src/contexts/housing/domain/policies/InvalidityPolicy.js';
+import { surroundingsOf, surroundingsOfCitizen } from '../../../src/contexts/housing/domain/policies/HealthSurroundingsPolicy.js';
 import { withHealth, withInvalidity, withMentalHealth } from '../../../src/shared/citizens/Citizen.js';
 import { DescribeHouseHealth } from '../../../src/contexts/housing/application/queries/DescribeHouseHealth.js';
 import { getBuildingDefinition } from '../../../src/shared/building-catalog/buildingCatalog.js';
@@ -36,7 +37,6 @@ import {
   recordDeaths,
   resetCumulativeDeaths,
 } from '../../../src/composition/gameplayMortalityState.js';
-import { absentWorkersOf } from '../../../src/shared/population/absenteeism.js';
 import { seedBuilding, clearBuildingsTable } from '../../helpers/buildingDb.js';
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
 
@@ -265,6 +265,43 @@ describe('monthly judgement of the houses', () => {
       expect(unemployedShareOf(0, 0)).toBe(0);
     });
 
+    // Regression: the unemployment (a share of the house's job seekers) and the pollution of work (an average over its workers) weighed on every resident of the house, so a
+    // resident who works was hit by the unemployment of his housemates, and one with no job by the pollution of a workplace he does not go to.
+    test('unemployment weighs only on the residents with no job, and the pollution of work only on those who work', async () => {
+      const id = await seedHouse('House-Blue', 90, 90);
+      const mine = makeHouseRecord({ type: 'Mine', x: 80, y: 80, extra: { employees: { worker: 1, worker_need: 3, workerSources: { [id]: 1 } } } });
+      await seedBuilding(mine);
+      await setScores(id, [{ health: 80, mental: 60 }, { health: 80, mental: 60 }, { health: 80, mental: 60 }]);
+      const hamletOfHouse = (await repository.findById(id)).hamletId;
+      const [first] = await registry.forHouse({ houseId: id, hamletId: hamletOfHouse, pop: 3 });
+      await registry.assignWorkplaces(hamletOfHouse, [{ citizen: first, workplaceId: mine.instanceId }]);
+      registry.resetForTests();
+
+      await command.execute({ monthKey: 7, periodKey: PERIOD, deathsEnabled: false });
+
+      const hamletId = (await repository.findById(id)).hamletId;
+      const [worker, firstUnemployed, secondUnemployed] = await registry.forHouse({ houseId: id, hamletId, pop: 3 });
+      // Constitution of the suite: convergence 0.3, sensitivity 1. The worker's body is pulled to 40 − 12 (the mine, level 3) and his mind to 60 − 9 (its nuisance), with no
+      // unemployment; the others' body to 40 and their mind to 60 − 20 (all the job seekers who have none are theirs), with no pollution.
+      expect(worker.health).toBeCloseTo(80 + 0.3 * (28 - 80), 9);
+      expect(worker.mentalHealth).toBeCloseTo(60 + 0.3 * (51 - 60), 9);
+      for (const unemployed of [firstUnemployed, secondUnemployed]) {
+        expect(unemployed.health).toBeCloseTo(80 + 0.3 * (40 - 80), 9);
+        expect(unemployed.mentalHealth).toBeCloseTo(60 + 0.3 * (40 - 60), 9);
+      }
+    });
+
+    test('a citizen\'s situation is his own: no job weighs as unemployment only where jobs are sought, a job exposes to the level of that workplace', () => {
+      const neighbours = { sick: 2, residents: 8 };
+      const pollution = new Map([['mine', 3], ['bank', 0]]);
+      expect(surroundingsOfCitizen({ id: 'a', workplaceId: null }, 3, neighbours, pollution)).toEqual({ workplaceExposure: 0, neighbourSickShare: 0.25, unemployedShare: 1 });
+      expect(surroundingsOfCitizen({ id: 'a', workplaceId: null }, 0, neighbours, pollution)).toEqual({ workplaceExposure: 0, neighbourSickShare: 0.25, unemployedShare: 0 });
+      expect(surroundingsOfCitizen({ id: 'a', workplaceId: 'mine' }, 3, neighbours, pollution)).toEqual({ workplaceExposure: 3, neighbourSickShare: 0.25, unemployedShare: 0 });
+      expect(surroundingsOfCitizen({ id: 'a', workplaceId: 'bank' }, 3, neighbours, pollution).workplaceExposure).toBe(0);
+      expect(() => surroundingsOfCitizen({ id: 'a', workplaceId: 'gone' }, 3, neighbours, pollution)).toThrow(/not a workplace/);
+      expect(surroundingsOf({ pop: 3, seeking: 3 }, { workers: 1, exposure: 3 }, neighbours)).toEqual({ workplaceExposure: 3, neighbourSickShare: 0.25, unemployedShare: 2 / 3 });
+    });
+
     test('the suicide risk is nothing from the severe threshold up and grows to its top at nothing', () => {
       expect(suicideRisk(HEALTH_SEVERE_BELOW)).toBe(0);
       expect(suicideRisk(80)).toBe(0);
@@ -428,17 +465,5 @@ describe('monthly judgement of the houses', () => {
       expect(() => recordDeaths(1, 'plague')).toThrow(/unknown cause/);
       resetCumulativeDeaths();
     });
-  });
-});
-
-describe('absenteeism — a sick citizen does not work', () => {
-  const houses = { a: { sick: 2, residents: 4 }, b: { sick: 0, residents: 6 }, empty: { sick: 0, residents: 0 } };
-  const healthOf = (id) => houses[id];
-
-  test('the absent are the share of each source house that is sick, never more than the assigned', () => {
-    expect(absentWorkersOf({ a: 4, b: 2 }, healthOf, 6)).toBe(2);
-    expect(absentWorkersOf({ a: 4 }, () => ({ sick: 4, residents: 4 }), 3)).toBe(3);
-    expect(absentWorkersOf({ empty: 2 }, healthOf, 2)).toBe(0);
-    expect(absentWorkersOf({}, healthOf, 0)).toBe(0);
   });
 });

@@ -1,7 +1,6 @@
 import db from '../../../../core/persistence/dexie/db.js';
 import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { residentsCountOf } from '../../../../shared/population/residentsCount.js';
-import { absentWorkersOf } from '../../../../shared/population/absenteeism.js';
 import { createSupplyBuildingSnapshot } from '../../domain/SupplyBuildingSnapshot.js';
 import { createSupplyBuildingView } from '../../domain/SupplyBuildingView.js';
 import { createSupplyStock } from '../../domain/value-objects/SupplyStock.js';
@@ -99,23 +98,13 @@ export class DexieSupplyBuildingRepository {
   }
 
   /**
-   * The workers of a workplace that do not work, from the rows of the houses they come from (see absenteeism.js): the sick and the invalid. A house the health
-   * system has not judged yet has neither count: nobody is known unfit there, which is its real state, so it counts 0.
+   * The workers of a workplace that do not work: the sick among those assigned, counted exactly by the worker distribution (`employees.absentSources`, by source house).
    * @param {object} workplace the workplace's row
-   * @param {(houseId: string) => object | undefined} houseRowOf
    */
-  #absentOf(workplace, houseRowOf) {
+  #absentOf(workplace) {
     const employees = workplace.employees || {};
-    return absentWorkersOf(
-      employees.workerSources ?? {},
-      (houseId) => {
-        const row = houseRowOf(houseId);
-        // A house demolished since the last distribution has no residents left, so none of its workers is sick (the payroll treats it alike).
-        if (!row) return { sick: 0, residents: 0 };
-        return { sick: (row.sickCount ?? 0) + (row.invalidCount ?? 0), residents: residentsCountOf(row) };
-      },
-      employees.worker ?? 0,
-    );
+    const absent = Object.values(employees.absentSources ?? {}).reduce((sum, count) => sum + count, 0);
+    return Math.min(employees.worker ?? 0, absent);
   }
 
   /** The staff that actually works: the workers assigned, less those who are sick. Passed as `absent`. */
@@ -218,9 +207,7 @@ export class DexieSupplyBuildingRepository {
     if (!buildingId) return null;
     const row = await this.#getRow(buildingId);
     if (!row) return null;
-    const sources = Object.keys(row.employees?.workerSources ?? {});
-    const houseRows = new Map(await Promise.all(sources.map(async (id) => [id, await this.#getRow(id)])));
-    return this.#toSnapshot(row, this.#absentOf(row, (id) => houseRows.get(id)));
+    return this.#toSnapshot(row, this.#absentOf(row));
   }
 
   async findSupplyView(buildingId) {
@@ -354,10 +341,9 @@ export class DexieSupplyBuildingRepository {
 
   async findByResourceRole(role, categories) {
     const rows = await this.#activeRows();
-    const byId = new Map(rows.map((row) => [instanceIdFromHouseRow(row), row]));
     return rows
       .filter((row) => hasResourceRole(row.type, role, categories))
-      .map((row) => this.#toSnapshot(row, this.#absentOf(row, (id) => byId.get(id))));
+      .map((row) => this.#toSnapshot(row, this.#absentOf(row)));
   }
 
   async listNatureItems() {

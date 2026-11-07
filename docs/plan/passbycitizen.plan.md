@@ -1,6 +1,6 @@
 # Plan — Passer par l'habitant (`passbycitizen`)
 
-Statut : proposition, rien n'est construit. Écrit le 2026-11-04. Remplace le §4 de `health.plan.md` (le tableau
+Statut (2026-11-07) : étapes 0 à 5 faites, `workplaceId` fait (étape 6, 1re partie) ; reste la dérivation de `pop` (voir §8 bis). Écrit le 2026-11-04. Remplace le §4 de `health.plan.md` (le tableau
 `health[]` par maison est abandonné : l'habitant devient une entité).
 
 ## 1. Idée générale
@@ -220,7 +220,39 @@ Reste (non fait), avec le mécanisme retenu :
 - **Histogramme de la ville et de la carte d'habitant** : la maison l'a ; la ville a sa requête (`getCityHealth`) mais pas d'écran.
 - Les valeurs du catalogue (base, points, plages de constitution, capacités, seuil) sont un premier équilibrage à ajuster en jeu.
 
-Reste à faire : étape 6 (projection à la place de `pop`, `workplaceId`).
+### Étape 6, première partie : `workplaceId` (fait)
+
+- Le citoyen porte `workplaceId` (null = sans emploi). `DistributeCityWorkers` répartit d'abord les effectifs par maison (inchangé), puis
+  **nomme** les personnes (`WorkforceAssignmentPolicy`) : les valides d'abord, les malades seulement si le compte l'exige, jamais les invalides
+  (retirés du bassin d'embauche). Seuls les citoyens dont le lieu change sont écrits (un lot, `assignWorkplaces`). `workerSources` reste la
+  projection comptée de la même répartition.
+- La santé lit la situation **réelle** du citoyen : sans emploi (dans une maison qui cherche du travail) = chômage ; employé = pollution **de son
+  propre lieu** (`surroundingsOfCitizen`, `pollutionByWorkplace`). Le calcul positionnel (`unemployedIdsOf`) a disparu. Un `workplaceId` qui ne
+  désigne plus un lieu du hameau lève une erreur.
+- La liste des habitants d'une maison (`residentsOfHouse`) lit les statuts du `workplaceId` : plus de positions.
+- **Absents exacts** : la répartition compte les malades affectés par lieu et maison source (`employees.absentSources`) ; l'effectif de la
+  production (Supply) et la paie en dérivent. `absenteeism.js` (part fractionnelle) est supprimé.
+- **Pension d'invalidité forfaitaire** : `INVALIDITY_PENSION_RATE × base des allocations × invalides de la maison` (`invalidCount`), les
+  assureurs mesurent leur part sur la même base. L'invalide n'est plus un « travailleur absent » ni un chômeur indemnisé.
+- Limite connue : les moyennes de la maison et du hameau (en-têtes d'histogramme) lisent encore `workerSources` (la projection) ; seules les
+  situations par citoyen lisent `workplaceId`.
+
+### Étape 0, soldée (lectures strictes)
+
+- `createHousingBuildingSnapshot` exige `pop` (entier ≥ 0) et n'a plus de défaut ; `house.pop || 0` est remplacé par `residentsCountOf` /
+  `house.pop` là où il ne s'agit que de maisons (`hudPopulationAggregates`, `CitizenTaxCollectionPolicy`, `GetCityPopulationSummary`, le PIB
+  par habitant de `createAccountingContext`). `DexieHousingBuildingRepository.#putFields` lève une erreur si la maison n'existe pas.
+- Laissés tels quels, **à dessein** : le `pop = 0` des fabriques `Supply…`/`Employment…` et `SupplyBuildingView` (ces instantanés couvrent tous
+  les bâtiments ; un lieu de travail n'a réellement aucun résident) et `workerSources ?? {}` / `absentSources ?? {}` (un lieu qui n'a pas encore
+  été réparti n'a réellement aucun travailleur ; une maison n'a pas d'`employees`).
+
+### Étape 6, seconde partie : `pop` dérivé (non faite, décision à prendre)
+
+`pop` est écrit avec ses habitants dans **une seule transaction** (`#putFields`, `saveHealthJudgement`, démolition) et l'invariant « un habitant
+par résident » est vérifié à la lecture : il n'y a donc déjà qu'une source de vérité effective. Le rendre purement dérivé d'une projection
+mémoire touche ~68 fichiers de `src`, dont toutes les lectures de lignes brutes (`db.houses.toArray()`, rendu de la carte, HUD) qui
+devraient lire une projection synchrone. Gain : supprimer un champ redondant. Coût : refonte large et risquée de la lecture, sans effet
+visible. Recommandation : garder `pop` comme champ matérialisé tant que l'invariant tient, et ne basculer que si un écart apparaît en jeu.
 
 ## 9. Tests (peu, essentiels)
 

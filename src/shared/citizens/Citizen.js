@@ -5,9 +5,10 @@ import { drawCitizenFirstName } from '../population/CitizenNameCatalog.js';
  * An inhabitant, an actor of the game.
  *
  * - Identity, for life: `id` (uuid), `firstName`, `arrivalTurn`, `constitution`. No function here changes them.
- * - State: `houseId` (a citizen may one day move house), `health` and `mentalHealth` (two scores, of the body and of the mind), and what a very low one has made of him:
- *   `severeMonths`, the months in a row either score has been under the severe threshold, and `invalid`, set for good when his category's invalidity is permanent
- *   (see InvalidityPolicy.js). Only `withHealth`, `withMentalHealth`, `withInvalidity` and `movedTo` produce a new state.
+ * - State: `houseId` (a citizen may one day move house), `workplaceId` (where he works, or null when he has no job: the employment names it, see DistributeCityWorkers.js),
+ *   `health` and `mentalHealth` (two scores, of the body and of the mind), and what a very low one has made of him: `severeMonths`, the months in a row either score has been
+ *   under the severe threshold, and `invalid`, set for good when his category's invalidity is permanent (see InvalidityPolicy.js). Only `withHealth`, `withMentalHealth`,
+ *   `withInvalidity`, `withWorkplace` and `movedTo` produce a new state.
  * - Never stored on the citizen: anything the house gives (skills, social category) or the employment decides (status),
  *   and every figure derived from the citizens (a house's average health, the city's).
  *
@@ -16,7 +17,7 @@ import { drawCitizenFirstName } from '../population/CitizenNameCatalog.js';
  * @typedef {{ convergence: number, sensitivity: number }} Constitution
  * @typedef {Readonly<{
  *   id: string, firstName: string, arrivalTurn: number, constitution: Readonly<Constitution>,
- *   houseId: string, hamletId: string, health: number, mentalHealth: number, severeMonths: number, invalid: boolean,
+ *   houseId: string, hamletId: string, workplaceId: string | null, health: number, mentalHealth: number, severeMonths: number, invalid: boolean,
  * }>} Citizen
  */
 
@@ -32,13 +33,14 @@ function assertInRange(name, value, min, max) {
  * @returns {Citizen}
  */
 export function createCitizen(row) {
-  const { id, firstName, arrivalTurn, constitution, houseId, hamletId, health, mentalHealth, severeMonths, invalid } = row ?? {};
+  const { id, firstName, arrivalTurn, constitution, houseId, hamletId, workplaceId, health, mentalHealth, severeMonths, invalid } = row ?? {};
   if (typeof id !== 'string' || !UUID.test(id)) throw new Error(`[citizen] the id must be a uuid, got ${id}`);
   const who = `citizen ${id}`;
   if (typeof firstName !== 'string' || firstName === '') throw new Error(`[citizen] ${who} has no first name`);
   if (!Number.isInteger(arrivalTurn) || arrivalTurn < 0) throw new Error(`[citizen] ${who} has no arrival turn, got ${arrivalTurn}`);
   if (typeof houseId !== 'string' || houseId === '') throw new Error(`[citizen] ${who} has no house`);
   if (typeof hamletId !== 'string' || hamletId === '') throw new Error(`[citizen] ${who} has no hamlet`);
+  if (workplaceId !== null && (typeof workplaceId !== 'string' || workplaceId === '')) throw new Error(`[citizen] ${who} works nowhere (null) or at a workplace, got ${workplaceId}`);
   const { convergence, sensitivity } = constitution ?? {};
   assertInRange(`${who}: constitution.convergence`, convergence, 0, 1);
   assertInRange(`${who}: constitution.sensitivity`, sensitivity, 0, Infinity);
@@ -53,6 +55,7 @@ export function createCitizen(row) {
     constitution: Object.freeze({ convergence, sensitivity }),
     houseId,
     hamletId,
+    workplaceId,
     health,
     mentalHealth,
     severeMonths,
@@ -82,6 +85,7 @@ export function drawArrivingCitizen({ houseId, hamletId, turn, random, newId }) 
     },
     houseId,
     hamletId,
+    workplaceId: null,
     health: draw(CITIZEN_ARRIVAL.startingHealth, random),
     mentalHealth: draw(CITIZEN_ARRIVAL.startingMentalHealth, random),
     severeMonths: 0,
@@ -92,6 +96,11 @@ export function drawArrivingCitizen({ houseId, hamletId, turn, random, newId }) 
 /** @param {Citizen} citizen @param {number} health */
 export function withHealth(citizen, health) {
   return createCitizen({ ...citizen, health });
+}
+
+/** @param {Citizen} citizen @param {string | null} workplaceId where he works now, or null when he has no job */
+export function withWorkplace(citizen, workplaceId) {
+  return createCitizen({ ...citizen, workplaceId });
 }
 
 /** @param {Citizen} citizen @param {number} mentalHealth */

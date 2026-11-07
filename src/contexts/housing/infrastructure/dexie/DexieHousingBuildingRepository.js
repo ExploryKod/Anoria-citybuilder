@@ -53,7 +53,7 @@ export class DexieHousingBuildingRepository {
   async #putFields(instanceId, updates) {
     await db.transaction('rw', db.houses, db.citizens, async () => {
       const row = await db.houses.get(instanceId);
-      if (!row) return;
+      if (!row) throw new Error(`[housing] house ${instanceId} is not in the database: ${Object.keys(updates).join(', ')} cannot be written`);
 
       const next = { ...row };
       for (const key of Object.keys(updates)) {
@@ -155,6 +155,20 @@ export class DexieHousingBuildingRepository {
   }
 
   /**
+   * The pollution level of every workplace of the hamlet that employs (the `pollution` the catalog gives its type, 0 when it exposes to nothing), by workplace id: what a
+   * citizen is exposed to is that of the workplace he works at (his `workplaceId`).
+   * @returns {Promise<Map<string, number>>}
+   */
+  async pollutionByWorkplace() {
+    const byWorkplace = new Map();
+    for (const row of (await db.houses.toArray()).filter(isActiveHamletRow)) {
+      if (!(row.employees?.worker_need > 0)) continue;
+      byWorkplace.set(instanceIdFromHouseRow(row), getBuildingDefinition(row.type)?.employment?.pollution ?? 0);
+    }
+    return byWorkplace;
+  }
+
+  /**
    * For each residential house, the sick and the residents of the OTHER houses within `radius` tiles (Manhattan, from the anchors): what the contagion spreads from (see
    * HealthFactorCatalog.js). A house that has not been judged yet has no sick known (`sickCount` absent: nobody has been found ill), and an invalid citizen who is not sick
    * is not counted. Every house is in the map, with zeros when nobody lives around.
@@ -188,7 +202,7 @@ export class DexieHousingBuildingRepository {
   async saveHealthJudgement(instanceId, { citizens, monthKey, sick, invalid, deaths }) {
     // `deaths` are the ids of citizens who died of poor health this month: they leave with the same write that records the health of the others and lowers the house's
     // population, so the row's `pop` and its citizens never disagree. Among the survivors, `invalid` counts those who are invalid and `sick` those under the sick threshold
-    // who are not: together they are the ones who cannot work, which employment reads for absenteeism; the pension is paid for the first, the sick leave for the second.
+    // who are not: together they are the ones who cannot work; the pension is paid for the first (a flat share of the benefit base), the sick leave for the second.
     // The caller always says who died (an empty list when nobody did): a judgement written without it would pass for "nobody died".
     if (!Array.isArray(deaths)) throw new Error(`[health] house ${instanceId}: the judgement does not say who died (${deaths})`);
     const dying = new Set(deaths);

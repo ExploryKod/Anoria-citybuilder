@@ -9,6 +9,7 @@ import {
   orderSkillsByPriority,
   orderWorkplacesByPriority,
 } from '../../domain/policies/WorkerAllocationPolicy.js';
+import { workplacesOfHouse } from '../../domain/policies/WorkforceAssignmentPolicy.js';
 import {
   allWorkplaceEmploymentSkills,
   getRequiredSkillForBuilding,
@@ -55,12 +56,19 @@ import {
 export class DistributeCityWorkers {
   /**
    * @param {import('../ports/EmploymentBuildingRepository.js').EmploymentBuildingRepository} employmentBuildingRepository
-   * @param {object} [deps]
+   * @param {object} deps
    * @param {(house: { type?: string, level?: number }, skillKey: string, requiredLevel: number) => boolean} [deps.citizenProvidesSkillAtLevel]
+   * @param {{
+   *   byHouse: () => Promise<Map<string, ReadonlyArray<{ id: string, workplaceId: string | null, health: number, mentalHealth: number }>>>,
+   *   statusOf: (citizen: object, houseType: string) => 'fit' | 'sick' | 'invalid',
+   *   assign: (changes: ReadonlyArray<{ citizen: object, workplaceId: string | null }>) => Promise<void>,
+   * }} deps.citizens the citizens of the hamlet by house in their stable order, what ails each (an invalid one holds no post), and where to write the workplace each now works at
    */
   constructor(employmentBuildingRepository, deps = {}) {
+    if (!deps.citizens) throw new Error('[employment] the worker distribution needs the citizens: it names who works where');
     this.employmentBuildingRepository = employmentBuildingRepository;
     this.citizenProvidesSkillAtLevel = deps.citizenProvidesSkillAtLevel ?? (() => false);
+    this.citizens = deps.citizens;
   }
 
   /**
@@ -87,9 +95,13 @@ export class DistributeCityWorkers {
 
     const readDoneAt = performance.now();
 
+    // The citizens, by house: the invalid among them hold no post, so they are no part of the pool (the social security pays them a pension).
+    const citizensByHouse = await this.citizens.byHouse();
+    const invalidCountOf = (building) => (citizensByHouse.get(building.id) ?? []).filter((citizen) => this.citizens.statusOf(citizen, building.type) === 'invalid').length;
+
     // A house's whole worker pool is hireable — civil servants were removed (2026-10-10, "suppress it for
-    // now"): nothing is set aside before hiring anymore (see computeHouseholdEmploymentStatus).
-    const hireablePopOf = (building) => workerPopFromHouse(building.type, building.pop, building.level);
+    // now"): nothing is set aside before hiring anymore (see computeHouseholdEmploymentStatus) — but the invalid.
+    const hireablePopOf = (building) => Math.max(0, workerPopFromHouse(building.type, building.pop, building.level) - invalidCountOf(building));
 
     const remainingPopById = new Map(
       laborSources.map((building) => [building.id, hireablePopOf(building)]),
@@ -187,6 +199,35 @@ export class DistributeCityWorkers {
       }
     }
 
+    // The persons: how many of each house work at each workplace is known; who they are is told here, fit first (WorkforceAssignmentPolicy.js). Only the citizens whose
+    // workplace changed are written.
+    const laborSourceById = new Map(laborSources.map((building) => [building.id, building]));
+    const marketWorkplaceIds = marketWorkplaces.map((workplace) => workplace.id);
+    const workplaceChanges = [];
+    // Of the workers assigned, the sick ones are at home: counted exactly here, by workplace and source house, for whoever reads the staff that actually works.
+    const absentById = new Map();
+    for (const [houseId, citizens] of citizensByHouse) {
+      const building = laborSourceById.get(houseId);
+      // A house outside the labour market (no road, or one that looks for no job) has nobody employed.
+      const assignment = building
+        ? workplacesOfHouse(
+          citizens,
+          (citizen) => this.citizens.statusOf(citizen, building.type),
+          marketWorkplaceIds.map((workplaceId) => ({ workplaceId, workers: sourcesById.get(workplaceId)?.[houseId] ?? 0 })).filter((share) => share.workers > 0),
+        )
+        : new Map(citizens.map((citizen) => [citizen.id, null]));
+      for (const citizen of citizens) {
+        const workplaceId = assignment.get(citizen.id);
+        if (citizen.workplaceId !== workplaceId) workplaceChanges.push({ citizen, workplaceId });
+        if (workplaceId !== null && this.citizens.statusOf(citizen, building.type) === 'sick') {
+          const absent = absentById.get(workplaceId) ?? {};
+          absent[houseId] = (absent[houseId] ?? 0) + 1;
+          absentById.set(workplaceId, absent);
+        }
+      }
+    }
+    await this.citizens.assign(workplaceChanges);
+
     const writeStartedAt = performance.now();
     let savedWorkplaces = 0;
     for (const [buildingId, workers] of workerCountById) {
@@ -196,7 +237,7 @@ export class DistributeCityWorkers {
           // Named, not hired: the trace is kept apart from the jobs the houses' workers hold
           await this.employmentBuildingRepository.saveAppointed(buildingId, appointedFromById.get(buildingId));
         } else {
-          await this.employmentBuildingRepository.saveWorkerSources(buildingId, sourcesById.get(buildingId) ?? {});
+          await this.employmentBuildingRepository.saveWorkerSources(buildingId, sourcesById.get(buildingId) ?? {}, absentById.get(buildingId) ?? {});
         }
         savedWorkplaces += 1;
       }

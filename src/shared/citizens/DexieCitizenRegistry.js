@@ -1,6 +1,6 @@
 import Dexie from 'dexie';
 import db from '../../core/persistence/dexie/db.js';
-import { createCitizen, drawArrivingCitizen, planHousePopulation, inHouseOrder, assertCitizensMatchPop } from './Citizen.js';
+import { createCitizen, drawArrivingCitizen, planHousePopulation, inHouseOrder, assertCitizensMatchPop, withWorkplace } from './Citizen.js';
 
 /**
  * The citizens of the game: the only way in or out of the `citizens` table.
@@ -92,6 +92,22 @@ export class DexieCitizenRegistry {
     if (citizens.length === 0) return;
     await db.citizens.bulkPut(citizens.map((citizen) => ({ ...createCitizen(citizen) })));
     for (const hamletId of new Set(citizens.map((citizen) => citizen.hamletId))) this.#dropOnCommit(transaction, hamletId);
+  }
+
+  /**
+   * Where citizens work now, as the employment has just named it: only the ones whose workplace changed are written, in one `bulkPut` and one transaction of their own (the
+   * distribution of the workers runs outside a house's write). Everything else about them is left as it is.
+   * @param {string} hamletId
+   * @param {ReadonlyArray<{ citizen: import('./Citizen.js').Citizen, workplaceId: string | null }>} changes
+   * @returns {Promise<void>}
+   */
+  async assignWorkplaces(hamletId, changes) {
+    if (!hamletId) throw new Error('[citizens] a hamlet is needed to assign workplaces');
+    if (changes.length === 0) return;
+    await db.transaction('rw', db.citizens, async () => {
+      await db.citizens.bulkPut(changes.map(({ citizen, workplaceId }) => ({ ...withWorkplace(citizen, workplaceId) })));
+    });
+    this.#byHamlet.delete(hamletId);
   }
 
   /**

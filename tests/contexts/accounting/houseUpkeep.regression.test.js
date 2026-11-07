@@ -25,7 +25,7 @@ function settle({ buildings, subsidyRate }) {
     sumHouseSales: async () => [],
     sumBankInterestByBuilding: async () => [],
     sumOtherExpensesByBuilding: async () => [],
-    listHouses: async () => buildings.filter((building) => building.type.startsWith('House')).map((building) => ({ id: building.id, pop: 0, salaried: 0 })),
+    listHouses: async () => buildings.filter((building) => building.type.startsWith('House')).map((building) => ({ id: building.id, pop: 0, salaried: 0, invalid: 0 })),
     getPublicPay: async () => ({ benefitBase: 0, unemploymentBenefitRate: 0, employerContributionRate: 0, employeeContributionRate: 0, administratorStipend: 0 }),
     getWageRateOf: async () => () => 8,
     getSalaryTax: async () => ({ threshold1: 0, rate1: 0, threshold2: 0, rate2: 0 }),

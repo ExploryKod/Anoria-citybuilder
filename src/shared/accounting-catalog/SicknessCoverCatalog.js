@@ -1,5 +1,5 @@
 /**
- * Who pays a worker who is sick (see src/shared/population/absenteeism.js for who is absent). In every mode the employer pays nobody
+ * Who pays a worker who is sick (the absent are the sick among the workers assigned, counted by the worker distribution: `employees.absentSources`). In every mode the employer pays nobody
  * for a day not worked: the absent share of a workplace's workers is out of its payroll. The modes differ in what the household receives instead.
  *
  * - `none` (the default): nothing. The household loses that share of the wage; the company loses the production. No law is passed.

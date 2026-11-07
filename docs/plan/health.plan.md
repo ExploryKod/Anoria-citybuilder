@@ -26,7 +26,13 @@ la culture le soulève (bibliothèque, théâtre, cinéma, café-restaurant couv
 scores compte), avec la même pension ; et **au lieu de la mort, le suicide** : un tirage mensuel de `suicideRisk` (rien à partir de 25, `SUICIDE_RISK_AT_ZERO` = 0,2 à zéro), seulement là où la
 famine tue, jamais chez les administrateurs, compté à part (`suicide`, troisième cause de `gameplayMortalityState`, trois compteurs au HUD) et pour les 25 de la fin de partie. Le HUD affiche
 enfin ses **quatre cases de maladie** (physique bénin/grave, psychique bénin/grave, `DescribeHouseHealth.illnessOfHamlet`, une lecture légère des seuls scores) ; la fiche d'un habitant et celle de la
-maison montrent les deux scores et les deux histogrammes. **Les administrateurs sont hors santé** (fait le 2026-11-07) : fait de catalogue `outsideHealth` sur leur catégorie (`houseIsOutsideHealth`). Leur maison n'est jamais jugée (aucun score ne
+maison montrent les deux scores et les deux histogrammes. **Individualiser les environnements** (fait le 2026-11-07) : le chômage (une part des demandeurs d'emploi de la maison) et la pollution du travail (une moyenne des lieux de ses travailleurs) pesaient
+sur **tous** les résidents d'une maison. Maintenant (`HealthSurroundingsPolicy`) la situation de chacun est lue — positionnelle, comme `residentsOfHouse` : dans l'ordre stable, les travailleurs d'abord,
+puis ceux qui n'ont pas d'emploi — et chaque score évolue avec l'environnement de sa situation : le chômage ne touche que ceux qui n'ont pas d'emploi (le facteur plein, ni part ni moyenne), la
+pollution du travail et les nuisances que ceux qui travaillent. La fiche de l'habitant montre l'environnement qu'il vit ; celle de la maison reste la moyenne de ses résidents. Contagion, faim et culture
+restent ceux de la maison, pour tous.
+
+**Les administrateurs sont hors santé** (fait le 2026-11-07) : fait de catalogue `outsideHealth` sur leur catégorie (`houseIsOutsideHealth`). Leur maison n'est jamais jugée (aucun score ne
 bouge, ni malade, ni invalide, ni mort, ni suicide), elle n'entre dans aucun chiffre (compteurs du HUD, moyennes, histogrammes de la ville, contagion), et leurs cartes et leurs fiches disent
 **« Immortels »** à la place des scores, avec la raison, sans barre ni histogramme. **À équilibrer en jeu** : le chômage et le manque de loisirs peuvent rendre beaucoup d'habitants malades psychiques (donc absents) ;
 c'est le premier endroit à surveiller sur le prefab.

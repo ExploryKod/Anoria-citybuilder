@@ -22,7 +22,7 @@ function settle({ pop, salaried = 0, minimumWage, administratorStipend = 0, unem
     sumHouseSales: async () => [],
     sumBankInterestByBuilding: async () => [],
     sumOtherExpensesByBuilding: async () => [],
-    listHouses: async () => [{ id: 'house', pop, salaried }],
+    listHouses: async () => [{ id: 'house', pop, salaried, invalid: 0 }],
     getPublicPay: async () => ({ benefitBase: minimumWage, unemploymentBenefitRate, employerContributionRate: 0, employeeContributionRate: 0, administratorStipend }),
     getWageRateOf: async () => () => 100,
     getSalaryTax: async () => taxRate,

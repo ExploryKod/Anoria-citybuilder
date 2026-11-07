@@ -37,6 +37,14 @@ export class HousingBuildingRepository {
   }
 
   /**
+   * The pollution level of each workplace that employs, by workplace id (the work exposes whoever works there: see HealthFactorCatalog.js).
+   * @returns {Promise<Map<string, number>>}
+   */
+  async pollutionByWorkplace() {
+    throw new Error('HousingBuildingRepository: port not implemented');
+  }
+
+  /**
    * For each residential house, the sick and the residents of the other houses within `radius` tiles: what the contagion spreads from.
    * @param {number} _radius
    * @returns {Promise<Map<string, { sick: number, residents: number }>>}
