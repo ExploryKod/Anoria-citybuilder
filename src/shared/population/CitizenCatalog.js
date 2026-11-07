@@ -8,6 +8,8 @@
 export const CITIZEN_ARRIVAL = Object.freeze({
   /** Health score (0-100) an arriving citizen starts from. */
   startingHealth: Object.freeze({ min: 55, max: 90 }),
+  /** Mental-health score (0-100) an arriving citizen starts from: a state, like the health, that moves towards what his surroundings give. */
+  startingMentalHealth: Object.freeze({ min: 60, max: 85 }),
   constitution: Object.freeze({
     /** Share of the gap to the environment level the health closes each month (0-1). */
     convergence: Object.freeze({ min: 0.1, max: 0.5 }),

@@ -3,7 +3,8 @@
  */
 
 import { getOrCreateAccountingContext } from './createAccountingContext.js';
-import { getCumulativeDeaths } from './gameplayMortalityState.js';
+import { getOrCreateHousingContext } from './createHousingContext.js';
+import { getDeathsByCause } from './gameplayMortalityState.js';
 import {
   getHudPopulationScopeSnapshot,
   mapEmploymentGroupsForHud,
@@ -32,6 +33,9 @@ function workerCountsFromGroups(groups) {
  *   updateFamishedPopulation?: (country: { disette: number, penurie: number }, hamlet?: { disette: number, penurie: number }) => void,
  *   updateHungerRisk?: (country: { disette: number, penurie: number }, hamlet?: { disette: number, penurie: number }) => void,
  *   updateDeaths?: (n: number) => void,
+ *   updateSickDeaths?: (n: number) => void,
+ *   updateSuicides?: (n: number) => void,
+ *   updateIllness?: (illness: { physical: { mild: number, severe: number }, mental: { mild: number, severe: number } }) => void,
  *   updatePopulationTotals?: Function,
  *   updateGroupHud?: Function,
  * }} gameUI
@@ -113,9 +117,19 @@ export async function syncPopRailHud(gameUI) {
   }
 
   try {
-    gameUI.updateDeaths?.(getCumulativeDeaths());
+    // Each cause has its own counter; the end of the game counts them together.
+    const byCause = getDeathsByCause();
+    gameUI.updateDeaths?.(byCause.famine);
+    gameUI.updateSickDeaths?.(byCause.health);
+    gameUI.updateSuicides?.(byCause.suicide);
   } catch (err) {
     console.warn('[syncPopRailHud] deaths:', err);
+  }
+
+  try {
+    gameUI.updateIllness?.(await getOrCreateHousingContext().describeIllness());
+  } catch (err) {
+    console.warn('[syncPopRailHud] illness:', err);
   }
 }
 

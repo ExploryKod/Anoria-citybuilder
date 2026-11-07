@@ -20,6 +20,9 @@ export class PlaceBuildingWithPayment {
     this.pendingTimeouts = new Map();
   }
 
+  /** The types that list companies and have a placement being written: only one at a time (see `execute`). */
+  #companyTypesInFlight = new Set();
+
   /** @param {string} instanceId */
   #setPendingTimeout(instanceId, timeoutMs = 5000) {
     if (this.pendingTimeouts.has(instanceId)) {
@@ -52,6 +55,18 @@ export class PlaceBuildingWithPayment {
    * @returns {Promise<object>}
    */
   async execute(data) {
+    // A building that is one company of a catalog list takes its company from the buildings that stand: two placements at once would read the same ones and take the
+    // same company, so a second one waits until the first is written.
+    const companyType = companiesOf(data.type) ? data.type : null;
+    if (companyType && this.#companyTypesInFlight.has(companyType)) {
+      return {
+        success: false,
+        reason: 'company_pending',
+        error: 'Another company of this kind is being founded',
+        message: 'Une autre compagnie de ce type est en cours de fondation : réessayez dans un instant.',
+      };
+    }
+    if (companyType) this.#companyTypesInFlight.add(companyType);
     try {
       return await this.#executePlacement(data);
     } catch (error) {
@@ -62,6 +77,8 @@ export class PlaceBuildingWithPayment {
         error: error?.message ?? 'Unexpected placement error',
         message: error?.message ?? 'Unexpected placement error',
       };
+    } finally {
+      if (companyType) this.#companyTypesInFlight.delete(companyType);
     }
   }
 

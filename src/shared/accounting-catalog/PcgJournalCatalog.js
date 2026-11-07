@@ -178,7 +178,7 @@ const BY_TYPE = Object.freeze({
   // The benefit is paid out of what the city holds for the social body (431): it does not touch the city's result.
   unemployment_benefit: publicEntry(outflow('4378'), 'Autres organismes sociaux', 'personnel', 'Allocation chômage'),
   // The sickness allowance is paid out of the health fund (431), the unemployment benefit out of the unemployment fund (4378): see SocialFundsCatalog.js.
-  sickness_benefit: publicEntry(outflow('431'), 'Sécurité sociale', 'personnel', 'Indemnités journalières maladie'),
+  sickness_benefit: publicEntry(outflow('431'), 'Sécurité sociale', 'personnel', 'Indemnités journalières et pensions d’invalidité'),
   loan_interest: entry(outflow('6611'), 'Intérêts des emprunts et dettes', 'financial', false, undefined, publicVariant(outflow('66111'), 'Intérêts réglés à l’échéance')),
   deposit_interest_paid: entry(outflow('6615'), 'Intérêts des comptes courants et des dépôts créditeurs', 'financial'),
   subsidy_housing: publicEntry(outflow('65741'), 'Subventions de fonctionnement aux ménages', 'subsidy-given', 'Aide au logement'),
@@ -381,7 +381,6 @@ const EXTRA_ACCOUNT_LABELS = Object.freeze({
   '4378': 'Autres organismes sociaux – Divers',
   '4372': 'Mutuelles',
   '658': 'Charges diverses de gestion courante',
-  '616': 'Primes d’assurances',
   '6411': 'Salaires, appointements',
   '645': 'Charges de sécurité sociale et de prévoyance',
   '695': 'Impôts sur les bénéfices',

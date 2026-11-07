@@ -865,40 +865,48 @@
                         </span>
                     </div>
                 </div>
-                <!-- Health is not measured yet: "ND" (not available) everywhere, never a 0 that would be false -->
+                <!-- Health of the hamlet's citizens: the body then the mind, each from the mildest illness (under the sick threshold) to the gravest (under the severe one); then the deaths -->
                 <div class="pop-detail-block pop-detail-health" aria-label="Santé">
                     <span class="pop-detail-block__title" aria-hidden="true">Santé</span>
                     <!-- Physical illness then mental illness, each from the mildest to the gravest; then the deaths (always from a grave illness) -->
                     <div class="pop-detail-metric pop-detail-sick-physical-mild">
                         <span class="pop-detail-emoji" title="Malades physiques bénins" aria-hidden="true">🤧</span>
-                        <span class="pop-detail-values" aria-label="Citoyens malades physiques, cas bénins : non disponible, pas encore mesuré">
-                            <abbr class="pop-detail-value pop-detail-nd" title="Non disponible : pas encore mesuré">ND</abbr>
+                        <span class="pop-detail-values" aria-label="Citoyens malades physiques, cas bénins">
+                            <span class="pop-detail-value display-sick-physical-mild">0</span>
                         </span>
                     </div>
                     <div class="pop-detail-metric pop-detail-sick-physical-severe">
                         <span class="pop-detail-emoji" title="Malades physiques graves" aria-hidden="true">🤮</span>
-                        <span class="pop-detail-values" aria-label="Citoyens malades physiques, cas graves : non disponible, pas encore mesuré">
-                            <abbr class="pop-detail-value pop-detail-nd" title="Non disponible : pas encore mesuré">ND</abbr>
+                        <span class="pop-detail-values" aria-label="Citoyens malades physiques, cas graves">
+                            <span class="pop-detail-value display-sick-physical-severe">0</span>
                         </span>
                     </div>
                     <div class="pop-detail-metric pop-detail-sick-mental-mild">
                         <span class="pop-detail-emoji" title="Malades psychiques bénins" aria-hidden="true">😟</span>
-                        <span class="pop-detail-values" aria-label="Citoyens malades psychiques, cas bénins : non disponible, pas encore mesuré">
-                            <abbr class="pop-detail-value pop-detail-nd" title="Non disponible : pas encore mesuré">ND</abbr>
+                        <span class="pop-detail-values" aria-label="Citoyens malades psychiques, cas bénins">
+                            <span class="pop-detail-value display-sick-mental-mild">0</span>
                         </span>
                     </div>
                     <div class="pop-detail-metric pop-detail-sick-mental-severe">
                         <span class="pop-detail-emoji" title="Malades psychiques graves" aria-hidden="true">😵</span>
-                        <span class="pop-detail-values" aria-label="Citoyens malades psychiques, cas graves : non disponible, pas encore mesuré">
-                            <abbr class="pop-detail-value pop-detail-nd" title="Non disponible : pas encore mesuré">ND</abbr>
+                        <span class="pop-detail-values" aria-label="Citoyens malades psychiques, cas graves">
+                            <span class="pop-detail-value display-sick-mental-severe">0</span>
                         </span>
                     </div>
                     <div class="pop-detail-metric pop-detail-sick-deaths">
                         <span class="pop-detail-icon pop-detail-icon--deaths" title="Morts de maladie" aria-hidden="true">
                             <img src="/icons/skull.svg" alt="" class="deaths-icon" width="18" height="18" decoding="async">
                         </span>
-                        <span class="pop-detail-values" aria-label="Morts de maladie : non disponible, pas encore mesuré">
-                            <abbr class="pop-detail-value pop-detail-nd" title="Non disponible : pas encore mesuré">ND</abbr>
+                        <span class="pop-detail-values" aria-label="Morts de maladie depuis le début de la partie">
+                            <span class="pop-detail-value display-sick-deaths-pop">0</span>
+                        </span>
+                    </div>
+                    <div class="pop-detail-metric pop-detail-suicides">
+                        <span class="pop-detail-icon pop-detail-icon--deaths" title="Suicides" aria-hidden="true">
+                            <img src="/icons/skull.svg" alt="" class="deaths-icon" width="18" height="18" decoding="async">
+                        </span>
+                        <span class="pop-detail-values" aria-label="Suicides depuis le début de la partie">
+                            <span class="pop-detail-value display-suicides-pop">0</span>
                         </span>
                     </div>
                 </div>
@@ -2309,7 +2317,7 @@
                                     </tr>
                                     <tr>
                                         <td class="indicator-col"></td>
-                                        <td class="label-col finances-row-label">Indemnités maladie</td>
+                                        <td class="label-col finances-row-label">Maladie et invalidité</td>
                                         <td class="last-year-col finances-value-negative" data-field="sicknessBenefitLastYear" id="sickness-benefit-last-year">0</td>
                                         <td class="this-year-col finances-value-negative" data-field="sicknessBenefitThisYear" id="sickness-benefit-this-year">0</td>
                                     </tr>

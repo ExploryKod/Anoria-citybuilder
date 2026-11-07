@@ -93,7 +93,7 @@ export function createGameRuntime({
     getTimeInfo,
     areFamineLimitsEnabled: isLoseMode,
     onFamineDeaths: (deaths, timeInfo) => {
-      recordDeaths(deaths);
+      recordDeaths(deaths, 'famine');
       void supply.recordFamineDeaths(timeInfo, deaths);
     },
   });
@@ -115,7 +115,14 @@ export function createGameRuntime({
     .register('supply.monthlyResourceCycle', supplyMonthlyResourceCycle)
     .register('housing.populationGrowth', housingPopulationGrowth)
     .register('housing.evolution', housingEvolution)
-    .register('housing.health', createHousingHealthSystem({ housing, getTimeInfo, getDaysPerMonth }))
+    .register('housing.health', createHousingHealthSystem({
+      housing,
+      getTimeInfo,
+      getDaysPerMonth,
+      areHealthDeathsEnabled: isLoseMode,
+      onHealthDeaths: (deaths) => recordDeaths(deaths, 'health'),
+      onSuicides: (suicides) => recordDeaths(suicides, 'suicide'),
+    }))
     .register('employment.redistribute', employmentRedistribute)
     .register('gameplay.randomEvents', createRandomEventsSystem({ gameplay }))
     .register('gameplay.insolvency', createInsolvencySystem({ gameplay, getTimeInfo, getDaysPerMonth }))

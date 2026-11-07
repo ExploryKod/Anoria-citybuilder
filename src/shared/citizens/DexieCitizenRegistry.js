@@ -95,6 +95,19 @@ export class DexieCitizenRegistry {
   }
 
   /**
+   * Citizens who died: they leave, named one by one (unlike `setHousePopulation`, where the latest arrivals leave). Inside the transaction that writes their house's row.
+   * @param {ReadonlyArray<import('./Citizen.js').Citizen>} citizens
+   * @returns {Promise<void>}
+   */
+  async remove(citizens) {
+    const transaction = Dexie.currentTransaction;
+    if (!transaction) throw new Error('[citizens] a death must be written in the transaction of the house row');
+    if (citizens.length === 0) return;
+    await db.citizens.bulkDelete(citizens.map((citizen) => citizen.id));
+    for (const hamletId of new Set(citizens.map((citizen) => citizen.hamletId))) this.#dropOnCommit(transaction, hamletId);
+  }
+
+  /**
    * The house is gone (demolished): so are its citizens. Inside the transaction that deletes the row.
    * @param {string} houseId
    * @returns {Promise<void>}

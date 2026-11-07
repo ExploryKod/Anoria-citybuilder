@@ -3,6 +3,7 @@ import { SICKNESS_COVERS, SICKNESS_COVER_LABELS, sicknessCoverExplanation } from
 import { HEALTH_FUND_ACCOUNT, SOCIAL_FUND_LABELS, UNEMPLOYMENT_FUND_ACCOUNT } from '../../../../shared/accounting-catalog/SocialFundsCatalog.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
 import { INSURANCE_LAW_LABELS } from '../../../../shared/accounting-catalog/InsuranceCatalog.js';
+import { showErrorToast } from '../../shell/ToastNotifier.js';
 import { HEALTH_MAX } from '../../../../shared/population/CitizenCatalog.js';
 import { getSessionGameTime } from '../../../../composition/sessionRuntime.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
@@ -92,7 +93,12 @@ export class HealthSectionPresenter {
         // Passing it is refused while the insurance does not work; repealing it never is.
         select.querySelector('option[value="on"]').disabled = !law.available && !law.mandatory;
         select.addEventListener('change', async () => {
-            await this.accounting.setInsuranceMandatory(select.value === 'on');
+            // A refused vote (the insurance stopped working meanwhile) is said, and the control reads the real state again instead of keeping the choice that was not made.
+            try {
+                await this.accounting.setInsuranceMandatory(select.value === 'on');
+            } catch (error) {
+                showErrorToast(error.message);
+            }
             await this.load();
         });
         const note = document.createElement('small');
@@ -174,6 +180,7 @@ export class HealthSectionPresenter {
 
         const health = this.cityHealth;
         const average = health === null ? '…' : health.average === null ? '—' : `${Math.round(health.average)} / ${HEALTH_MAX}`;
+        const mentalAverage = health === null ? '…' : health.mentalAverage === null ? '—' : `${Math.round(health.mentalAverage)} / ${HEALTH_MAX}`;
         const citizens = health === null ? '…' : String(health.citizens);
         const sick = health === null ? '…' : `${health.sick}${health.citizens > 0 ? ` (${Math.round((health.sick / health.citizens) * 100)} %)` : ''}`;
         const sickClass = health !== null && health.sick > 0 ? 'high-risk' : '';
@@ -187,7 +194,11 @@ export class HealthSectionPresenter {
                         <span class="health-item-value number">${average}</span>
                     </div>
                     <div class="health-item">
-                        <span class="health-item-label">Habitants</span>
+                        <span class="health-item-label">${HEALTH_LABELS.mentalAverage}</span>
+                        <span class="health-item-value number">${mentalAverage}</span>
+                    </div>
+                    <div class="health-item">
+                        <span class="health-item-label">${HEALTH_LABELS.citizens}</span>
                         <span class="health-item-value number">${citizens}</span>
                     </div>
                     <div class="health-item ${sickClass}">
@@ -203,7 +214,8 @@ export class HealthSectionPresenter {
         if (health?.environment) {
             const section = document.createElement('div');
             section.className = 'health-section';
-            section.append(renderHealthHistogram(health.environment, 0));
+            section.append(renderHealthHistogram(health.environment, 0, HEALTH_LABELS.environment));
+            if (health.mentalEnvironment) section.append(renderHealthHistogram(health.mentalEnvironment, 0, HEALTH_LABELS.mentalEnvironment));
             healthSections.append(section);
         }
         healthSections.append(this.#sicknessCoverControl(), this.#insuranceLawControl(), this.#socialFundsSection());

@@ -29,6 +29,13 @@ export function sicknessCoverExplanation(cover) {
 /** The share of the wage the allowance pays (France: half of the gross wage). A first balance, tuned here. */
 export const SICKNESS_INDEMNITY_RATE = 0.5;
 
+/**
+ * The share of the wage an invalid worker would have earned that the social security pays him as a pension (France: 30 to 50 %), from the first day: no waiting period, for as
+ * long as he is invalid (HealthFactorCatalog.js). It comes out of the same health fund as the sickness allowance (431: the branch of sickness, invalidity and death),
+ * and is taxed the same. A first balance, tuned here.
+ */
+export const INVALIDITY_PENSION_RATE = 0.5;
+
 /** The share of the month at the start of an illness that is paid by nobody (France: 3 days of 30). A share, never a number of days: a month is `daysPerMonth` long. */
 export const SICKNESS_WAITING_SHARE = 0.1;
 

@@ -11,7 +11,8 @@
  */
 export function createInsolvencySystem({ gameplay, getTimeInfo, getDaysPerMonth }) {
   return async function insolvency(_world, context = {}) {
-    if (getTimeInfo(context.time ?? 0).dayInMonth !== getDaysPerMonth()) return;
+    if (!Number.isFinite(context.time)) throw new Error(`[insolvency] the tick carries no time (${context.time}): the month cannot be told`);
+    if (getTimeInfo(context.time).dayInMonth !== getDaysPerMonth()) return;
     await gameplay.liquidateInsolventCompanies.execute();
   };
 }

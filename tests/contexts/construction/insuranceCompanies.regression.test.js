@@ -48,6 +48,37 @@ describe('insurance companies — one building, one company of the catalog', () 
     expect(rows.map((row) => row.companyId)).toEqual([SECOND, FIRST]);
   });
 
+  // Regression: two placements read the standing buildings before either was written and took the same company.
+  test('a second placement made while the first is being written waits, so they cannot take the same company', async () => {
+    const rows = [];
+    let release;
+    const slow = new Promise((resolve) => { release = resolve; });
+    const placeBuilding = new PlaceBuildingWithPayment({
+      repository: {
+        findById: async () => null,
+        listAllRows: async () => rows,
+        addRecord: async (data) => {
+          await slow;
+          rows.push(data);
+          return { success: true, instanceId: data.instanceId };
+        },
+      },
+      recordExpense: async () => ({ success: true, budget: 0 }),
+      recordRefund: async () => ({ success: true }),
+    });
+
+    const first = placeBuilding.execute({ type: 'Insurance', price: 140 });
+    await Promise.resolve();
+    const second = await placeBuilding.execute({ type: 'Insurance', price: 140 });
+    release();
+    await first;
+    const third = await placeBuilding.execute({ type: 'Insurance', price: 140 });
+
+    expect(second).toMatchObject({ success: false, reason: 'company_pending' });
+    expect(third.success).toBe(true);
+    expect(rows.map((row) => row.companyId)).toEqual([FIRST, SECOND]);
+  });
+
   test('with every company standing, a third building is not placed: it throws, and nothing is paid for it', async () => {
     expect(() => nextFreeCompanyId('Insurance', [FIRST, SECOND])).toThrow(/already stands/);
     const { rows, place } = placer([{ type: 'Insurance', companyId: FIRST }, { type: 'Insurance', companyId: SECOND }]);

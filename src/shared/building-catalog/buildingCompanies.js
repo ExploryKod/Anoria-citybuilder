@@ -29,6 +29,17 @@ export function nextFreeCompanyId(type, takenIds) {
 }
 
 /**
+ * The name of a building that stands: the name of its company when its type lists companies (so two of them are told apart), otherwise its catalog name. One
+ * rule, for every place that names a stored building (the journal, the lists, the info panel).
+ * @param {string} type a building id
+ * @param {{ companyId?: string | null } | null | undefined} row its stored row
+ * @returns {string | undefined} undefined when the type has no catalog name (the caller says what that means for it)
+ */
+export function buildingNameOf(type, row) {
+  return companiesOf(type) ? companyNameOf(type, row?.companyId) : getBuildingDefinition(type)?.displayName;
+}
+
+/**
  * The name of the company a building is, as the catalog gives it.
  * @param {string} type a building id that lists companies
  * @param {string | null | undefined} companyId the `companyId` of its row

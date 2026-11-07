@@ -108,6 +108,8 @@ export const SOCIAL_CATEGORY = Object.freeze({
   artisans: Object.freeze({
     eligibleSectors: Object.freeze([1, 3, 4]),
     enterprises: COOPERATIVE_ENTERPRISES,
+    // A grave illness (HEALTH_SEVERE_BELOW, INVALIDITY_MONTHS in a row) makes an artisan invalid for good: manual work wears the body out and does not heal.
+    invalidity: Object.freeze({ permanent: true }),
     tiers: Object.freeze({
       1: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[1],
@@ -154,6 +156,8 @@ export const SOCIAL_CATEGORY = Object.freeze({
   merchants: Object.freeze({
     eligibleSectors: Object.freeze([2]),
     enterprises: COOPERATIVE_ENTERPRISES,
+    // A merchant who falls gravely ill is invalid only while his health stays that low: he works again when it recovers.
+    invalidity: Object.freeze({ permanent: false }),
     tiers: Object.freeze({
       1: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[1],
@@ -201,6 +205,8 @@ export const SOCIAL_CATEGORY = Object.freeze({
   scholars: Object.freeze({
     eligibleSectors: Object.freeze([6]),
     enterprises: COOPERATIVE_ENTERPRISES,
+    // Same for a scholar: invalid only while his health stays that low.
+    invalidity: Object.freeze({ permanent: false }),
     tiers: Object.freeze({
       1: Object.freeze({
         maxPopulation: TIER_MAX_POPULATION[1],
@@ -261,6 +267,9 @@ export const SOCIAL_CATEGORY = Object.freeze({
     enterprises: Object.freeze([Object.freeze({ id: 'sci', label: 'SCI', activity: 'rental' })]),
     // Governing is not a post of the labour market (see workforceQueries.js): no hiring, no unemployment, no benefit.
     seeksWork: false,
+    // They stand outside health altogether: they fall neither ill nor invalid and neither die of poor health nor take their own lives, and no health figure counts them (see
+    // workforceQueries.js `houseIsOutsideHealth`). Their house cannot be demolished and holds the owner of every building, so it must never empty.
+    outsideHealth: true,
     tiers: Object.freeze({
       1: Object.freeze({
         maxPopulation: ADMINISTRATORS_MAX,

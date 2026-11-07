@@ -34,7 +34,7 @@ async function runMonths(months, { sicknessCover = 'none', absent = {} } = {}) {
     await new SettleProducerCharges({
       getTimeInfo,
       listBuildings: async () => [
-        { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 3 }, absentSources: absent },
+        { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 3 }, absentSources: absent, sickAbsentSources: absent, invalidAbsentSources: {} },
         { id: 'house-1', type: 'House-Blue', workerSources: {}, absentSources: {} },
       ],
       sumGoodsFlowsByPair: async () => [],

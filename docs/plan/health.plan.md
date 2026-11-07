@@ -1,6 +1,35 @@
 # Plan — Système de santé
 
-Statut : proposition, rien n'est construit. Écrit le 2026-11-02 après analyse du modèle des habitants.
+Statut : proposition à l'origine (2026-11-02, après analyse du modèle des habitants) ; la tranche 1, l'absentéisme, la sécurité sociale, les assurances et l'étape 2 sont faites
+(voir `passbycitizen.plan.md` et `assurances.plan.md`). **Étape 2 faite le 2026-11-07** : (1) la **mort** : chaque mois un malade (santé sous `HEALTH_SICK_BELOW`) meurt avec un risque
+linéaire de 0 au seuil à `HEALTH_DEATH_RISK_AT_ZERO` (0,3) à santé nulle (`HealthMortalityPolicy`, `EvolveHealthOfHouses`), le citoyen précis disparaît et la population de la maison baisse dans la
+même transaction ; seulement là où la famine tue (le mode avec défaite) ; les morts sont **comptées par cause** (`gameplayMortalityState` : famine / maladie, deux compteurs du HUD) et
+comptent ensemble pour les 25 de la fin de partie ; (2) la **pollution interne** : un fait de catalogue `employment.pollution` (1 à 3) sur les lieux de travail qui exposent leurs salariés
+(mine et centrale à charbon 3 ; ateliers de céramique, de meubles, centrale à pétrole, bûcheron industriel 2 ; huilerie, chandellerie, bûcheron, centrale nucléaire 1), une exposition de maison
+qui est la moyenne des niveaux de ses travailleurs (`workerSources`, `workplaceExposureByHouse`) et un facteur négatif (−4 points par niveau, `HealthFactorCatalog`), vu dans l'histogramme en
+rouge. Valeurs à équilibrer en jeu.
+
+**Étapes 3 et 4 faites le 2026-11-07.** *Invalidité* : un habitant dont la santé reste sous `HEALTH_SEVERE_BELOW` (25, la maladie grave) `INVALIDITY_MONTHS` (3) mois de suite est invalide ;
+si c'est pour la vie dépend de sa catégorie sociale (`invalidity.permanent` dans `socialCategoryCatalog` : artisans oui, commerçants et savants seulement tant qu'il reste aussi malade,
+administrateurs jamais). L'état est sur le citoyen (`severeMonths`, `invalid`) ; la maison garde `invalidCount` (les invalides) à côté de `sickCount` (les malades qui ne sont pas invalides).
+Un invalide ne travaille pas : il est absent comme un malade (`absentSources` = les deux), et la sécu, si elle est choisie, lui verse une **pension** de `INVALIDITY_PENSION_RATE` (50 %) du
+salaire manqué dès le premier jour (sans carence), de la même caisse (431, la branche maladie-invalidité) et par la même écriture que l'indemnité maladie (le livret dit « Maladie et
+invalidité »). Les assurances indemnisent malades et invalides de la même façon. Sans sécu ni assurance, personne. Le prefab porte `severeMonths: 0, invalid: false` sur ses 72 habitants
+et `invalidCount: 0` sur ses 7 maisons. *Contagion* : un facteur négatif `contagion` ; une maison perd jusqu'à `CONTAGION_POINTS_AT_FULL` (15) points quand tous les habitants des autres maisons
+dans un rayon de `CONTAGION_RADIUS` (6, Manhattan) sont malades, en proportion de leur part ; un cabinet médical ou un hôpital qui couvre la maison en retire la moitié
+(`CONTAGION_PROTECTION`). Déterministe, sans tirage ; lu à chaque jugement mensuel avec la pollution. **À équilibrer en jeu** : un quartier négligé et dense peut s'emballer, c'est voulu.
+
+**La santé psychique (faite le 2026-11-07)** : un **deuxième score par habitant**, `mentalHealth` (0 à 100, prefab à 70), avec son environnement et son histogramme. Base `MENTAL_BASE_LEVEL` 60 ;
+la culture le soulève (bibliothèque, théâtre, cinéma, café-restaurant couverts : +5 chacun, `HealthFactorCatalog`) ; le **chômage** (jusqu'à −20 selon la part des demandeurs d'emploi sans emploi), la
+**faim** (−15 quand la maison a manqué de nourriture à sa dernière consommation) et les **nuisances du travail** (−3 par niveau de pollution) le font baisser. Il évolue comme la santé du corps
+(même constitution). Conséquences : un malade psychique (sous 45) est absent comme un malade physique, une maladie **grave** (sous 25) trois mois de suite rend **invalide** (le plus bas des deux
+scores compte), avec la même pension ; et **au lieu de la mort, le suicide** : un tirage mensuel de `suicideRisk` (rien à partir de 25, `SUICIDE_RISK_AT_ZERO` = 0,2 à zéro), seulement là où la
+famine tue, jamais chez les administrateurs, compté à part (`suicide`, troisième cause de `gameplayMortalityState`, trois compteurs au HUD) et pour les 25 de la fin de partie. Le HUD affiche
+enfin ses **quatre cases de maladie** (physique bénin/grave, psychique bénin/grave, `DescribeHouseHealth.illnessOfHamlet`, une lecture légère des seuls scores) ; la fiche d'un habitant et celle de la
+maison montrent les deux scores et les deux histogrammes. **Les administrateurs sont hors santé** (fait le 2026-11-07) : fait de catalogue `outsideHealth` sur leur catégorie (`houseIsOutsideHealth`). Leur maison n'est jamais jugée (aucun score ne
+bouge, ni malade, ni invalide, ni mort, ni suicide), elle n'entre dans aucun chiffre (compteurs du HUD, moyennes, histogrammes de la ville, contagion), et leurs cartes et leurs fiches disent
+**« Immortels »** à la place des scores, avec la raison, sans barre ni histogramme. **À équilibrer en jeu** : le chômage et le manque de loisirs peuvent rendre beaucoup d'habitants malades psychiques (donc absents) ;
+c'est le premier endroit à surveiller sur le prefab.
 Les points marqués **À trancher** attendent une décision du joueur-concepteur avant le plan détaillé de la tranche 1.
 
 ## 1. Idée générale

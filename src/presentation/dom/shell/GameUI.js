@@ -20,6 +20,9 @@ import {
     iconDisette,
     iconPenurie,
     displayDeathsPop,
+    displaySickDeathsPop,
+    displaySuicidesPop,
+    displayIllness,
     displayLabor,
     popGroupPopNodes,
     popGroupWorkerNodes,
@@ -535,6 +538,40 @@ class GameUI {
         if (displayDeathsPop) {
             displayDeathsPop.textContent = String(Math.max(0, Math.floor(deaths) || 0));
         }
+    }
+
+    /**
+     * The deaths of poor health since the start of the game, told apart from the famine's (both count towards the end of the game).
+     * @param {number} deaths
+     */
+    updateSickDeaths(deaths) {
+        if (displaySickDeathsPop) {
+            displaySickDeathsPop.textContent = String(Math.max(0, Math.floor(deaths) || 0));
+        }
+    }
+
+    /**
+     * The suicides since the start of the game, told apart from the other deaths (all count towards the end of the game).
+     * @param {number} suicides
+     */
+    updateSuicides(suicides) {
+        if (displaySuicidesPop) {
+            displaySuicidesPop.textContent = String(Math.max(0, Math.floor(suicides) || 0));
+        }
+    }
+
+    /**
+     * How many citizens of the hamlet are ill and how gravely, in the body and in the mind: the four counts of the health block of the population rail.
+     * @param {{ physical: { mild: number, severe: number }, mental: { mild: number, severe: number } }} illness
+     */
+    updateIllness(illness) {
+        const show = (node, count) => {
+            if (node) node.textContent = String(Math.max(0, Math.floor(count) || 0));
+        };
+        show(displayIllness.physicalMild, illness.physical.mild);
+        show(displayIllness.physicalSevere, illness.physical.severe);
+        show(displayIllness.mentalMild, illness.mental.mild);
+        show(displayIllness.mentalSevere, illness.mental.severe);
     }
 
     /**

@@ -48,6 +48,14 @@ export const iconDisette = document.querySelector(`${popHudRoot} .pop-detail-ico
 export const iconPenurie = document.querySelector(`${popHudRoot} .pop-detail-hunger .pop-detail-icon`);
 export const displayHungerPop =document.querySelector(`${popHudRoot} .display-hunger-pop.pop-detail-value--scoped`);
 export const displayDeathsPop = document.querySelector(`${popHudRoot} .display-deaths-pop`);
+export const displaySickDeathsPop = document.querySelector(`${popHudRoot} .display-sick-deaths-pop`);
+export const displaySuicidesPop = document.querySelector(`${popHudRoot} .display-suicides-pop`);
+export const displayIllness = Object.freeze({
+  physicalMild: document.querySelector(`${popHudRoot} .display-sick-physical-mild`),
+  physicalSevere: document.querySelector(`${popHudRoot} .display-sick-physical-severe`),
+  mentalMild: document.querySelector(`${popHudRoot} .display-sick-mental-mild`),
+  mentalSevere: document.querySelector(`${popHudRoot} .display-sick-mental-severe`),
+});
 export const displayLabor = document.querySelector(`${popHudRoot} .pop-labor-value`);
 
 // The social categories the rail has a row for. The administrators have a population row only: they look for no job, so they have no workers or

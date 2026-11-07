@@ -99,8 +99,8 @@ export class DexieSupplyBuildingRepository {
   }
 
   /**
-   * The workers of a workplace that are sick, from the rows of the houses they come from (see absenteeism.js). A house the health
-   * system has not judged yet has no `sickCount`: nobody is known sick there, which is its real state, so it counts 0.
+   * The workers of a workplace that do not work, from the rows of the houses they come from (see absenteeism.js): the sick and the invalid. A house the health
+   * system has not judged yet has neither count: nobody is known unfit there, which is its real state, so it counts 0.
    * @param {object} workplace the workplace's row
    * @param {(houseId: string) => object | undefined} houseRowOf
    */
@@ -112,7 +112,7 @@ export class DexieSupplyBuildingRepository {
         const row = houseRowOf(houseId);
         // A house demolished since the last distribution has no residents left, so none of its workers is sick (the payroll treats it alike).
         if (!row) return { sick: 0, residents: 0 };
-        return { sick: row.sickCount ?? 0, residents: residentsCountOf(row) };
+        return { sick: (row.sickCount ?? 0) + (row.invalidCount ?? 0), residents: residentsCountOf(row) };
       },
       employees.worker ?? 0,
     );

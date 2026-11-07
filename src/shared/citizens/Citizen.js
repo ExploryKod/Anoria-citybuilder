@@ -5,7 +5,9 @@ import { drawCitizenFirstName } from '../population/CitizenNameCatalog.js';
  * An inhabitant, an actor of the game.
  *
  * - Identity, for life: `id` (uuid), `firstName`, `arrivalTurn`, `constitution`. No function here changes them.
- * - State: `houseId` (a citizen may one day move house) and `health`. Only `withHealth` and `movedTo` produce a new state.
+ * - State: `houseId` (a citizen may one day move house), `health` and `mentalHealth` (two scores, of the body and of the mind), and what a very low one has made of him:
+ *   `severeMonths`, the months in a row either score has been under the severe threshold, and `invalid`, set for good when his category's invalidity is permanent
+ *   (see InvalidityPolicy.js). Only `withHealth`, `withMentalHealth`, `withInvalidity` and `movedTo` produce a new state.
  * - Never stored on the citizen: anything the house gives (skills, social category) or the employment decides (status),
  *   and every figure derived from the citizens (a house's average health, the city's).
  *
@@ -14,7 +16,7 @@ import { drawCitizenFirstName } from '../population/CitizenNameCatalog.js';
  * @typedef {{ convergence: number, sensitivity: number }} Constitution
  * @typedef {Readonly<{
  *   id: string, firstName: string, arrivalTurn: number, constitution: Readonly<Constitution>,
- *   houseId: string, hamletId: string, health: number,
+ *   houseId: string, hamletId: string, health: number, mentalHealth: number, severeMonths: number, invalid: boolean,
  * }>} Citizen
  */
 
@@ -30,7 +32,7 @@ function assertInRange(name, value, min, max) {
  * @returns {Citizen}
  */
 export function createCitizen(row) {
-  const { id, firstName, arrivalTurn, constitution, houseId, hamletId, health } = row ?? {};
+  const { id, firstName, arrivalTurn, constitution, houseId, hamletId, health, mentalHealth, severeMonths, invalid } = row ?? {};
   if (typeof id !== 'string' || !UUID.test(id)) throw new Error(`[citizen] the id must be a uuid, got ${id}`);
   const who = `citizen ${id}`;
   if (typeof firstName !== 'string' || firstName === '') throw new Error(`[citizen] ${who} has no first name`);
@@ -41,6 +43,9 @@ export function createCitizen(row) {
   assertInRange(`${who}: constitution.convergence`, convergence, 0, 1);
   assertInRange(`${who}: constitution.sensitivity`, sensitivity, 0, Infinity);
   assertInRange(`${who}: health`, health, HEALTH_MIN, HEALTH_MAX);
+  assertInRange(`${who}: mental health`, mentalHealth, HEALTH_MIN, HEALTH_MAX);
+  if (!Number.isInteger(severeMonths) || severeMonths < 0) throw new Error(`[citizen] ${who} has no count of severe months, got ${severeMonths}`);
+  if (typeof invalid !== 'boolean') throw new Error(`[citizen] ${who} is invalid or not, got ${invalid}`);
   return Object.freeze({
     id,
     firstName,
@@ -49,6 +54,9 @@ export function createCitizen(row) {
     houseId,
     hamletId,
     health,
+    mentalHealth,
+    severeMonths,
+    invalid,
   });
 }
 
@@ -75,12 +83,25 @@ export function drawArrivingCitizen({ houseId, hamletId, turn, random, newId }) 
     houseId,
     hamletId,
     health: draw(CITIZEN_ARRIVAL.startingHealth, random),
+    mentalHealth: draw(CITIZEN_ARRIVAL.startingMentalHealth, random),
+    severeMonths: 0,
+    invalid: false,
   });
 }
 
 /** @param {Citizen} citizen @param {number} health */
 export function withHealth(citizen, health) {
   return createCitizen({ ...citizen, health });
+}
+
+/** @param {Citizen} citizen @param {number} mentalHealth */
+export function withMentalHealth(citizen, mentalHealth) {
+  return createCitizen({ ...citizen, mentalHealth });
+}
+
+/** @param {Citizen} citizen @param {{ severeMonths: number, invalid: boolean }} invalidity what a month of very low health made of him (see InvalidityPolicy.js) */
+export function withInvalidity(citizen, { severeMonths, invalid }) {
+  return createCitizen({ ...citizen, severeMonths, invalid });
 }
 
 /** @param {Citizen} citizen @param {string} houseId */

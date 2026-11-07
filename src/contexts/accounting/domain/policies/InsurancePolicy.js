@@ -80,13 +80,14 @@ export function companyToJoin(companies) {
 export function claimsPaidOf(claims, reserve) {
   const wanted = claims.reduce((sum, claim) => sum + Math.round(claim.amount * 100), 0);
   const available = Math.max(0, Math.round(reserve * 100));
-  const payable = Math.min(wanted, available);
-  let given = 0;
+  let left = Math.min(wanted, available);
+  const payable = left;
   return claims.map((claim, index) => {
+    // A share never goes past what is left, so the rounding cannot make the last one negative, nor the total go over the reserve.
     const share = index === claims.length - 1
-      ? payable - given
-      : Math.round((Math.round(claim.amount * 100) * payable) / (wanted || 1));
-    given += share;
+      ? left
+      : Math.min(left, Math.round((Math.round(claim.amount * 100) * payable) / (wanted || 1)));
+    left -= share;
     return { houseId: claim.houseId, amount: share / 100 };
   });
 }

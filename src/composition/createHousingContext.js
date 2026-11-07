@@ -30,7 +30,8 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
   const citizens = getOrCreateCitizenRegistry();
   const housingBuildingRepositoryImpl =
     housingBuildingRepository ?? new DexieHousingBuildingRepository({ citizens });
-  const evolveHealthOfHouses = new EvolveHealthOfHouses(housingBuildingRepositoryImpl, citizens);
+  // The deaths of poor health are drawn here, from the browser's random: the composition gives it, the command has none of its own.
+  const evolveHealthOfHouses = new EvolveHealthOfHouses(housingBuildingRepositoryImpl, citizens, Math.random);
   const describeHouseHealth = new DescribeHouseHealth(housingBuildingRepositoryImpl, citizens);
   const growHousePopulation = new GrowHousePopulation(housingBuildingRepositoryImpl);
   const growAllHousePopulation = new GrowAllHousePopulation(
@@ -80,9 +81,9 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     getCityFoodSupplyQuery,
     evaluateHouseFoodAffluenceQuery,
 
-    /** @param {{ monthKey: number, periodKey: number }} params judges each house once per month: see EvolveHealthOfHouses */
-    async evolveHealthOfHouses({ monthKey, periodKey }) {
-      return evolveHealthOfHouses.execute({ monthKey, periodKey });
+    /** @param {{ monthKey: number, periodKey: number, deathsEnabled: boolean }} params judges each house once per month: see EvolveHealthOfHouses */
+    async evolveHealthOfHouses({ monthKey, periodKey, deathsEnabled }) {
+      return evolveHealthOfHouses.execute({ monthKey, periodKey, deathsEnabled });
     },
 
     /** @param {{ houseId: string, periodKey: number }} params the house's environment (its histogram) and its inhabitants' average health */
@@ -93,6 +94,11 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     /** @param {{ periodKey: number }} params the hamlet's average health over its inhabitants, how many they are and its environment (null while nobody lives there) */
     async getCityHealth({ periodKey }) {
       return describeHouseHealth.ofHamlet({ periodKey });
+    },
+
+    /** How many citizens of the hamlet are ill and how gravely, in the body and in the mind (the HUD's four counts): a light reading, cheap enough for every turn. */
+    async describeIllness() {
+      return describeHouseHealth.illnessOfHamlet();
     },
 
     async growHousePopulation(houseId, monthIndex, options = {}) {

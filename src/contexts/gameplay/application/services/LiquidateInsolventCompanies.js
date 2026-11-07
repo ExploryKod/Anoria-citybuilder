@@ -4,6 +4,9 @@
  * `getInsolvency`: derived from the journal, nothing stored). The demolition is the player's own (BulldozeBuildingAtTile): the books are closed first (the liquidation of
  * PLAN_DEMOLITION_LIQUIDATION.md: stock sold, creditors paid by rank, the rest abandoned, the cash back to the city), then the footprint and the row go, and the place
  * of the company is free again. The player is told by an event; the screen reads it (see game.js).
+ *
+ * A company that cannot be liquidated (its books refuse to close, the demolition is refused) does not stop the others, nor the rest of the day's systems: each failure is
+ * reported (the console, and an event the screen shows as an error) and the company is tried again the next month. Nothing is skipped without being said.
  */
 export class LiquidateInsolventCompanies {
   /**
@@ -16,6 +19,7 @@ export class LiquidateInsolventCompanies {
    * @param {() => object | null} deps.getGameCity
    * @param {(row: object) => string} deps.nameOfRow the name of the company, as the catalog gives it
    * @param {(event: { instanceId: string, buildingType: string, name: string, x: number, y: number }) => void} deps.announce
+   * @param {(failure: { instanceId: string, buildingType: string, name: string, reason: string }) => void} deps.reportFailure
    */
   constructor(deps) {
     for (const [name, dep] of Object.entries(deps)) {
@@ -25,25 +29,34 @@ export class LiquidateInsolventCompanies {
   }
 
   /**
-   * @returns {Promise<Array<{ instanceId: string, name: string }>>} the companies liquidated
+   * @returns {Promise<{ liquidated: Array<{ instanceId: string, name: string }>, failed: Array<{ instanceId: string, name: string, reason: string }> }>}
    */
   async execute() {
-    const city = this.deps.getGameCity();
     const liquidated = [];
+    const failed = [];
     for (const row of await this.deps.listAllBuildingRows()) {
       if (!this.deps.isLiquidatedWhenInsolvent(row.type)) continue;
       const instanceId = this.deps.instanceIdFromHouseRow(row);
+      // Reading the debts and naming the company are not the liquidation: an error there is a defect of the game, and it is left to stop loudly instead of being told to the
+      // player as a bankruptcy that could not be settled. Only the liquidation itself (below) is reported company by company.
       const insolvency = await this.deps.getInsolvency(instanceId);
-      if (!insolvency) throw new Error(`[insolvency] ${row.type} ${instanceId} is liquidated when it cannot pay but is no company: its debts cannot be read`);
+      if (!insolvency) throw new Error(`[insolvency] ${row.type} is liquidated when it cannot pay but is no company: its debts cannot be read`);
       if (insolvency.months < insolvency.graceMonths) continue;
-      // A company is liquidated where it stands: with no city to take it off, it is left (the next month tries again), never half removed.
-      if (!city) continue;
       const name = this.deps.nameOfRow(row);
-      const outcome = await this.deps.bulldozeBuildingAtTile({ city, x: row.x, y: row.y, meshInstanceId: instanceId });
-      if (outcome.refused) throw new Error(`[insolvency] ${name} (${instanceId}) cannot be liquidated: the demolition was refused (${outcome.refused})`);
-      liquidated.push({ instanceId, name });
-      this.deps.announce({ instanceId, buildingType: row.type, name, x: row.x, y: row.y });
+      try {
+        const city = this.deps.getGameCity();
+        if (!city) throw new Error('there is no city on screen to take the building off');
+        const outcome = await this.deps.bulldozeBuildingAtTile({ city, x: row.x, y: row.y, meshInstanceId: instanceId });
+        if (outcome.refused) throw new Error(`the demolition was refused (${outcome.refused})`);
+        liquidated.push({ instanceId, name });
+        this.deps.announce({ instanceId, buildingType: row.type, name, x: row.x, y: row.y });
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        console.error(`[insolvency] ${name} (${instanceId}) could not be liquidated, it is tried again next month:`, error);
+        failed.push({ instanceId, name, reason });
+        this.deps.reportFailure({ instanceId, buildingType: row.type, name, reason });
+      }
     }
-    return liquidated;
+    return { liquidated, failed };
   }
 }

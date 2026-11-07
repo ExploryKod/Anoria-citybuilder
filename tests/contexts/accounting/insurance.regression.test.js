@@ -30,7 +30,7 @@ async function runMonths(months, { sicknessCover = 'none', reserve = 1e9, canPay
     await new SettleProducerCharges({
       getTimeInfo,
       listBuildings: async () => [
-        { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 4 }, absentSources: { 'house-1': 1 } },
+        { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 4 }, absentSources: { 'house-1': 1 }, sickAbsentSources: { 'house-1': 1 }, invalidAbsentSources: {} },
         // Staffed, the insurer employs a worker of another house: the law of compulsory insurance can then be in force.
         { id: 'insurance-1', type: 'Insurance', companyId: 'ano', workerSources: staffedInsurer ? { 'house-2': 1 } : {}, absentSources: {} },
         { id: 'house-1', type: 'House-Blue', workerSources: {}, absentSources: {} },
@@ -172,5 +172,24 @@ describe('insurance policy', () => {
     const shared = claimsPaidOf([{ houseId: 'x', amount: 60 }, { houseId: 'y', amount: 30 }], 45);
     expect(shared).toEqual([{ houseId: 'x', amount: 30 }, { houseId: 'y', amount: 15 }]);
     expect(claimsPaidOf([{ houseId: 'x', amount: 10 }], 0)).toEqual([{ houseId: 'x', amount: 0 }]);
+  });
+
+  // Regression: each share is rounded on its own, and the rounding used to be able to push the last share below nothing (dropped by the caller), so the company paid
+  // a centime or two more than it held. Whatever the claims and the reserve, the total is the reserve (or the claims when it covers them) and no share is negative.
+  test('whatever the claims and the reserve, the total paid never goes over the reserve and no share is negative', () => {
+    let seed = 7;
+    const next = () => {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      return seed / 2147483648;
+    };
+    for (let round = 0; round < 500; round += 1) {
+      const claims = Array.from({ length: 1 + Math.floor(next() * 6) }, (_, index) => ({ houseId: `h${index}`, amount: Math.round(next() * 500) / 100 }));
+      const reserve = Math.round(next() * 1500) / 100;
+      const paid = claimsPaidOf(claims, reserve);
+      const wantedCents = claims.reduce((sum, claim) => sum + Math.round(claim.amount * 100), 0);
+      const paidCents = paid.reduce((sum, share) => sum + Math.round(share.amount * 100), 0);
+      expect(paid.every((share) => share.amount >= 0)).toBe(true);
+      expect(paidCents).toBe(Math.min(wantedCents, Math.round(reserve * 100)));
+    }
   });
 });

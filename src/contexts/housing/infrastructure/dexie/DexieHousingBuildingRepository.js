@@ -1,6 +1,8 @@
 import db from '../../../../core/persistence/dexie/db.js';
 import { createEmptyStocks } from '../../../../shared/building-catalog/resourceRoleQueries.js';
 import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
+import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
+import { houseIsOutsideHealth } from '../../../../shared/population/workforceQueries.js';
 import { createHousingBuildingSnapshot } from '../../domain/HousingBuildingSnapshot.js';
 import { isResidentialHouseType } from '../../domain/policies/HouseCapacityPolicy.js';
 import { normalizeResidentialType } from '../../domain/HouseTypeCatalog.js';
@@ -133,18 +135,75 @@ export class DexieHousingBuildingRepository {
   }
 
   /**
+   * For each house, how many of its residents work and the sum of the pollution levels of their workplaces: read from the workplaces' `workerSources` (the houses their
+   * workers come from) and the `pollution` the catalog gives their type. Housing reads the rows employment writes, as supply does.
+   * @returns {Promise<Map<string, { workers: number, exposure: number }>>} only the houses that have workers
+   */
+  async workplaceExposureByHouse() {
+    const byHouse = new Map();
+    for (const row of (await db.houses.toArray()).filter(isActiveHamletRow)) {
+      const pollution = getBuildingDefinition(row.type)?.employment?.pollution ?? 0;
+      for (const [houseId, workers] of Object.entries(row.employees?.workerSources ?? {})) {
+        if (!(workers > 0)) continue;
+        const known = byHouse.get(houseId) ?? { workers: 0, exposure: 0 };
+        known.workers += workers;
+        known.exposure += workers * pollution;
+        byHouse.set(houseId, known);
+      }
+    }
+    return byHouse;
+  }
+
+  /**
+   * For each residential house, the sick and the residents of the OTHER houses within `radius` tiles (Manhattan, from the anchors): what the contagion spreads from (see
+   * HealthFactorCatalog.js). A house that has not been judged yet has no sick known (`sickCount` absent: nobody has been found ill), and an invalid citizen who is not sick
+   * is not counted. Every house is in the map, with zeros when nobody lives around.
+   * @param {number} radius
+   * @returns {Promise<Map<string, { sick: number, residents: number }>>}
+   */
+  async neighbourSickByHouse(radius) {
+    // The houses that stand outside health (the administrators') are neither a source of contagion nor part of the residents it is shared among.
+    const houses = (await db.houses.toArray())
+      .filter((row) => isActiveHamletRow(row) && isResidentialHouseType(row.type || '') && !houseIsOutsideHealth(row.type))
+      .map((row) => ({ id: instanceIdFromHouseRow(row), x: row.x, y: row.y, residents: row.pop, sick: row.sickCount ?? 0 }));
+    const byHouse = new Map();
+    for (const house of houses) {
+      const around = { sick: 0, residents: 0 };
+      for (const other of houses) {
+        if (other.id === house.id) continue;
+        if (Math.abs(other.x - house.x) + Math.abs(other.y - house.y) > radius) continue;
+        around.sick += other.sick;
+        around.residents += other.residents;
+      }
+      byHouse.set(house.id, around);
+    }
+    return byHouse;
+  }
+
+  /**
    * Persist a month's health judgement of a house: its citizens' new health and the mark that the month was judged — one transaction.
    * @param {string} instanceId
    * @param {{ citizens: ReadonlyArray<import('../../../../shared/citizens/Citizen.js').Citizen>, monthKey: number }} judgement
    */
-  async saveHealthJudgement(instanceId, { citizens, monthKey, sick }) {
-    // The sick of the house at this judgement, kept with the citizens' health in one transaction: employment reads it for absenteeism.
-    if (!Number.isInteger(sick) || sick < 0 || sick > citizens.length) throw new Error(`[health] house ${instanceId}: ${sick} sick among ${citizens.length} citizens`);
+  async saveHealthJudgement(instanceId, { citizens, monthKey, sick, invalid, deaths }) {
+    // `deaths` are the ids of citizens who died of poor health this month: they leave with the same write that records the health of the others and lowers the house's
+    // population, so the row's `pop` and its citizens never disagree. Among the survivors, `invalid` counts those who are invalid and `sick` those under the sick threshold
+    // who are not: together they are the ones who cannot work, which employment reads for absenteeism; the pension is paid for the first, the sick leave for the second.
+    // The caller always says who died (an empty list when nobody did): a judgement written without it would pass for "nobody died".
+    if (!Array.isArray(deaths)) throw new Error(`[health] house ${instanceId}: the judgement does not say who died (${deaths})`);
+    const dying = new Set(deaths);
+    const dead = citizens.filter((citizen) => dying.has(citizen.id));
+    if (dead.length !== dying.size) throw new Error(`[health] house ${instanceId}: ${dying.size} deaths named but only ${dead.length} of them live there`);
+    const survivors = citizens.filter((citizen) => !dying.has(citizen.id));
+    if (!Number.isInteger(sick) || sick < 0 || !Number.isInteger(invalid) || invalid < 0 || sick + invalid > survivors.length) {
+      throw new Error(`[health] house ${instanceId}: ${sick} sick and ${invalid} invalid among ${survivors.length} citizens`);
+    }
     await db.transaction('rw', db.houses, db.citizens, async () => {
       const row = await db.houses.get(instanceId);
       if (!row) throw new Error(`[health] house ${instanceId} is not in the hamlet: its health cannot be saved`);
-      await this.citizens.updateHealth(citizens);
-      await db.houses.put(canonicalizeHouseRecord({ ...row, lastHealthMonth: monthKey, sickCount: sick }));
+      await this.citizens.updateHealth(survivors);
+      await this.citizens.remove(dead);
+      await db.houses.put(canonicalizeHouseRecord({ ...row, pop: row.pop - dead.length, lastHealthMonth: monthKey, sickCount: sick, invalidCount: invalid }));
     });
   }
 

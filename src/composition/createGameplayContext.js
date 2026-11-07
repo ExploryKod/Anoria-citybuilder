@@ -21,7 +21,7 @@ import { matchesSchedule, monthsUntilNextMatch } from '../contexts/supply/domain
 import { RandomEventsSimulationService } from '../contexts/gameplay/application/services/RandomEventsSimulationService.js';
 import { LiquidateInsolventCompanies } from '../contexts/gameplay/application/services/LiquidateInsolventCompanies.js';
 import { getBuildingDefinition } from '../shared/building-catalog/buildingCatalog.js';
-import { companiesOf, companyNameOf } from '../shared/building-catalog/buildingCompanies.js';
+import { buildingNameOf } from '../shared/building-catalog/buildingCompanies.js';
 import { getSharedEventBus } from './sharedEventBus.js';
 import { residentsCountOf } from '../shared/population/residentsCount.js';
 import { AdvanceTutorial } from '../contexts/gameplay/application/services/AdvanceTutorial.js';
@@ -143,8 +143,13 @@ export function createGameplayContext(deps = {}) {
       getInsolvency: (instanceId) => getOrCreateAccountingContext().getInsolvency(instanceId),
       bulldozeBuildingAtTile: (params) => getOrCreateConstructionContext().bulldozeBuildingAtTile(params),
       getGameCity: simulationDeps.getGameCity,
-      nameOfRow: (row) => (companiesOf(row.type) ? companyNameOf(row.type, row.companyId) : getBuildingDefinition(row.type).displayName),
+      nameOfRow: (row) => {
+        const name = buildingNameOf(row.type, row);
+        if (!name) throw new Error(`[insolvency] ${row.type} has no catalog name: the liquidation cannot be announced`);
+        return name;
+      },
       announce: (event) => getSharedEventBus().publish({ type: 'gameplay.companyLiquidated', ...event }),
+      reportFailure: (failure) => getSharedEventBus().publish({ type: 'gameplay.companyLiquidationFailed', ...failure }),
     });
 
   const advanceTutorial =

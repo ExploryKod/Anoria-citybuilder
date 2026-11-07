@@ -28,7 +28,24 @@ export class HousingBuildingRepository {
     throw new Error('HousingBuildingRepository: port not implemented');
   }
 
-  /** Persist a month's health judgement of a house: its citizens' new health and the month judged. */
+  /**
+   * For each house, how many of its residents work and the sum of the pollution levels of their workplaces (the work exposes them: see HealthFactorCatalog.js).
+   * @returns {Promise<Map<string, { workers: number, exposure: number }>>} only the houses that have workers
+   */
+  async workplaceExposureByHouse() {
+    throw new Error('HousingBuildingRepository: port not implemented');
+  }
+
+  /**
+   * For each residential house, the sick and the residents of the other houses within `radius` tiles: what the contagion spreads from.
+   * @param {number} _radius
+   * @returns {Promise<Map<string, { sick: number, residents: number }>>}
+   */
+  async neighbourSickByHouse(_radius) {
+    throw new Error('HousingBuildingRepository: port not implemented');
+  }
+
+  /** Persist a month's health judgement of a house: its citizens' new health, those who died, how many are sick or invalid, and the month judged. */
   async saveHealthJudgement(_buildingId, _judgement) {
     throw new Error('HousingBuildingRepository: port not implemented');
   }

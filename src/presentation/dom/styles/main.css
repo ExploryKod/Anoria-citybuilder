@@ -2419,17 +2419,124 @@ button.building-info-metric-card[aria-pressed="true"] {
     border-top: 1px solid #eceff1;
 }
 
-/* The pills of the Habitants tab (house, then each citizen): scroll sideways on a narrow screen; one card or one histogram below, never both. */
-.house-residents-pills {
-    margin-bottom: 12px;
+/*
+ * The Habitants tab: small cards in a grid (the house first, then each citizen), phone first. Two to a row on a narrow screen, more as it widens, never a sideways
+ * scroll. A card is a button as a whole (at least 72 px tall, a finger can hit it); pressing it opens the sheet of the house or of the citizen, with a way back.
+ */
+.house-residents-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+    gap: 8px;
 }
 
-.house-residents-pills .building-finance-pill-tab {
+.house-residents-grid__item {
+    min-width: 0;
+}
+
+.house-card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    min-height: 72px;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    text-align: left;
+    font: inherit;
+    color: #424242;
+    background: #fff;
+    border: 1px solid #eceff1;
+    border-radius: 8px;
+    cursor: pointer;
+    touch-action: manipulation;
+    overflow-wrap: anywhere;
+}
+
+.house-card:hover { border-color: #b0bec5; }
+.house-card:focus-visible { outline: 2px solid var(--primary, #1565c0); outline-offset: 2px; }
+.house-card.is-sick { border-color: #e57373; }
+
+/* A card outside health (the administrators') shows no score: its mention is set in a muted colour, with no meter. */
+.house-card--outside .house-card__score { color: #607d8b; font-weight: 500; }
+
+.house-resident-card__note {
+    margin: 0;
+    font-size: 13px;
+    color: #607d8b;
+}
+
+/* The house's card is set apart by a tint, not by a frame of its own. */
+.house-card--house { background: #f5f7f8; }
+
+.house-card__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111;
+}
+
+.house-card__line {
+    font-size: 12px;
+    color: #607d8b;
+}
+
+.house-card--administrator .house-card__line { color: #1565c0; }
+.house-card--unemployed .house-card__line { color: #8e2424; }
+
+.house-card__score {
+    margin-top: auto;
+    padding-top: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111;
+}
+
+.house-card__meter {
+    display: block;
+    height: 4px;
+    margin-top: 4px;
+    border-radius: 2px;
+    background: #eceff1;
+    overflow: hidden;
+}
+
+.house-card__meter-fill {
+    display: block;
+    height: 100%;
+    background: #66bb6a;
+}
+
+.house-card__meter.is-sick .house-card__meter-fill { background: #e57373; }
+
+/* The way back from a sheet to the cards: a button of at least 40 px, the width of the screen on a phone. */
+.house-sheet__back {
+    display: block;
+    width: 100%;
     min-height: 40px;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    text-align: left;
+    font: inherit;
+    font-weight: 600;
+    color: var(--primary, #1565c0);
+    background: transparent;
+    border: 1px solid #eceff1;
+    border-radius: 8px;
+    cursor: pointer;
+    touch-action: manipulation;
 }
 
-.house-residents-body {
-    max-width: 480px;
+.house-sheet__back:focus-visible { outline: 2px solid var(--primary, #1565c0); outline-offset: 2px; }
+
+@media (min-width: 560px) {
+    .house-sheet__back { width: auto; }
+}
+
+/* A sheet reads at a comfortable measure, not the width of a desktop panel. */
+.house-resident-card {
+    max-width: 560px;
 }
 
 .house-resident-card__health .health-histogram {
@@ -2451,6 +2558,7 @@ button.building-info-metric-card[aria-pressed="true"] {
 }
 
 .health-histogram__bar {
+    position: relative;
     display: flex;
     height: 14px;
     border-radius: 7px;
@@ -2458,11 +2566,31 @@ button.building-info-metric-card[aria-pressed="true"] {
     background: #eceff1;
 }
 
+/* A part is as wide as its points on the scale of 0 to 100: it never grows or shrinks to fill the bar. */
+.health-histogram__bar > .health-histogram__segment {
+    flex: 0 0 auto;
+}
+
+/* What the parts that take points off remove, drawn over the end of what was given, each in the colour of its factor and hatched. */
+.health-histogram__lost,
+.health-histogram__swatch--taken {
+    background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.45) 0 3px, transparent 3px 6px);
+}
+
+.health-histogram__lost {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+}
+
 .health-histogram__segment--0 { background: #90a4ae; }
 .health-histogram__segment--1 { background: #66bb6a; }
 .health-histogram__segment--2 { background: #42a5f5; }
 .health-histogram__segment--3 { background: #ffb74d; }
 .health-histogram__segment--4 { background: #ab47bc; }
+.health-histogram__segment--5 { background: #ef5350; }
+.health-histogram__segment--6 { background: #8d6e63; }
+.health-histogram__segment--7 { background: #26a69a; }
 
 .health-histogram__rows {
     list-style: none;

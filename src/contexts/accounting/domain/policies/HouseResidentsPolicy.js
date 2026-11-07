@@ -27,6 +27,7 @@ export function residentsOfHouse({ houseId, citizens, salaried, workplaces }) {
     houseId,
     firstName: citizens[index].firstName,
     health: citizens[index].health,
+    mentalHealth: citizens[index].mentalHealth,
     status: entry.status,
     workplaceId: entry.workplaceId,
   }));

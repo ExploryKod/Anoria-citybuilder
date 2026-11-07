@@ -25,14 +25,14 @@ import { serviceSubsidyShare } from '../../domain/policies/ServiceSubsidyPolicy.
 import { addVatTo } from '../../domain/policies/VatIncludedPolicy.js';
 import { payableServiceBills } from '../../domain/policies/ServiceSolvencyPolicy.js';
 import { householdPublicPayOf } from '../../domain/policies/HouseholdPublicPayPolicy.js';
-import { SICKNESS_INDEMNITY_RATE, SICKNESS_WAITING_SHARE, assertSicknessCover } from '../../../../shared/accounting-catalog/SicknessCoverCatalog.js';
+import { INVALIDITY_PENSION_RATE, SICKNESS_INDEMNITY_RATE, SICKNESS_WAITING_SHARE, assertSicknessCover } from '../../../../shared/accounting-catalog/SicknessCoverCatalog.js';
 import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
 import { payslipLegs, planWithholding } from '../../domain/policies/WithholdingPolicy.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
-import { companiesOf, companyNameOf } from '../../../../shared/building-catalog/buildingCompanies.js';
+import { buildingNameOf, companiesOf } from '../../../../shared/building-catalog/buildingCompanies.js';
 import { INSURANCE_INDEMNITY_RATE, INSURANCE_SERVICE, INSURANCE_VOLUNTARY_BUFFER_MONTHS, INSURANCE_WAITING_MONTHS } from '../../../../shared/accounting-catalog/InsuranceCatalog.js';
-import { insuranceLawStatusOf } from '../../domain/policies/InsuranceLawPolicy.js';
+import { insuranceLawStatusOf, isStaffed } from '../../domain/policies/InsuranceLawPolicy.js';
 import { INSOLVENCY_GRACE_MONTHS } from '../../domain/catalogs/PayableCatalog.js';
 import { claimsPaidOf, companyToJoin, membershipOf, premiumsPaidOf } from '../../domain/policies/InsurancePolicy.js';
 import { getResourceCategoryPresentation } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
@@ -122,7 +122,8 @@ export class SettleProducerCharges {
       const assignedSources = ofStandingHouses(building.workerSources);
       const absentSources = ofStandingHouses(building.absentSources);
       const workerSources = Object.fromEntries(Object.entries(assignedSources).map(([houseId, workers]) => [houseId, workers - (absentSources[houseId] ?? 0)]));
-      return { ...building, assignedSources, absentSources, workerSources };
+      // Of the absent, the sick and the invalid apart (the social security pays them differently).
+      return { ...building, assignedSources, absentSources, sickAbsentSources: ofStandingHouses(building.sickAbsentSources), invalidAbsentSources: ofStandingHouses(building.invalidAbsentSources), workerSources };
     });
     const pairs = (await this.deps.sumGoodsFlowsByPair(timeInfo.year, timeInfo.monthIndex))
       .filter((pair) => standing.has(pair.sellerId) && (pair.buyerId === null || standing.has(pair.buyerId)));
@@ -134,7 +135,7 @@ export class SettleProducerCharges {
     const nameOf = (buildingId) => {
       const building = buildings.find((candidate) => candidate.id === buildingId);
       // A building that is one company of a catalog list is named after its company, so the journal tells two of them apart.
-      const name = building && (companiesOf(building.type) ? companyNameOf(building.type, building.companyId) : getBuildingDefinition(building.type)?.displayName);
+      const name = building && buildingNameOf(building.type, building);
       if (!name) throw new Error(`[producer] building ${buildingId} has no catalog name for its journal lines`);
       return name;
     };
@@ -220,20 +221,25 @@ export class SettleProducerCharges {
     // The social security's allowance to the households of the sick workers, when the player has chosen it (see SicknessCoverCatalog.js): a share of the wage the absent
     // worker would have earned, less the waiting period. The cover is read only when somebody is absent, so a month with nobody sick settles as it always did.
     const sicknessByHouse = new Map();
-    // The wages each house misses because its workers are sick (euros): what the social security and the insurance companies each pay a share of.
-    const missedByHouse = new Map();
-    const someoneIsSick = buildings.some((building) => Object.keys(building.absentSources).length > 0);
-    if (someoneIsSick) {
-      const wageRateOf = await this.deps.getWageRateOf();
+    // The wages each house misses because its workers do not work (euros): the sick and the invalid together (what the insurance companies each pay a share of), and each
+    // apart (the social security pays a sick worker his allowance after the waiting period, an invalid one a pension from the first day).
+    const someoneIsAway = buildings.some((building) => Object.keys(building.absentSources).length > 0);
+    const wageRateOf = someoneIsAway ? await this.deps.getWageRateOf() : null;
+    const missedWages = (field) => {
+      const missed = new Map();
       for (const building of buildings) {
         if (!isLucrativeBuilding(building.type)) continue;
         const wage = wagePerWorkerOf({ type: building.type, wageRateOf });
-        for (const [houseId, absent] of Object.entries(building.absentSources)) missedByHouse.set(houseId, (missedByHouse.get(houseId) ?? 0) + absent * wage);
+        for (const [houseId, absent] of Object.entries(building[field])) missed.set(houseId, (missed.get(houseId) ?? 0) + absent * wage);
       }
-    }
-    if (someoneIsSick && assertSicknessCover(publicPay.sicknessCover) === 'secu') {
-      for (const [houseId, wages] of missedByHouse) {
-        const allowance = centimes(wages * SICKNESS_INDEMNITY_RATE * (1 - SICKNESS_WAITING_SHARE));
+      return missed;
+    };
+    const missedByHouse = someoneIsAway ? missedWages('absentSources') : new Map();
+    if (someoneIsAway && assertSicknessCover(publicPay.sicknessCover) === 'secu') {
+      const missedSick = missedWages('sickAbsentSources');
+      const missedInvalid = missedWages('invalidAbsentSources');
+      for (const houseId of new Set([...missedSick.keys(), ...missedInvalid.keys()])) {
+        const allowance = centimes((missedSick.get(houseId) ?? 0) * SICKNESS_INDEMNITY_RATE * (1 - SICKNESS_WAITING_SHARE) + (missedInvalid.get(houseId) ?? 0) * INVALIDITY_PENSION_RATE);
         if (allowance > 0) sicknessByHouse.set(houseId, allowance);
       }
     }
@@ -553,7 +559,7 @@ export class SettleProducerCharges {
     const law = insuranceLawStatusOf({
       mandatory: publicPay.insuranceMandatory,
       companies: companies.map((company) => ({
-        staffed: Object.values(company.assignedSources).some((workers) => workers > 0),
+        staffed: isStaffed(company.assignedSources),
         defaultMonths: difficultyMonthsOf(entries, company.id, null, { year: written.year, month: written.monthIndex + 1 }, MONTHS_PER_YEAR),
       })),
       graceMonths: INSOLVENCY_GRACE_MONTHS,

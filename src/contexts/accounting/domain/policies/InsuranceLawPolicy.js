@@ -1,4 +1,13 @@
 /**
+ * Whether a company has staff in post: some worker is assigned to it by a house that stands. One reading, for the settlement and the Health panel.
+ * @param {Record<string, number>} assignedSources `{ houseId: workers }` of the company, the houses that no longer stand already left out
+ * @returns {boolean}
+ */
+export function isStaffed(assignedSources) {
+  return Object.values(assignedSources).some((workers) => workers > 0);
+}
+
+/**
  * Whether the law of compulsory insurance can be, and is, in force (see InsuranceCatalog.js). Read from the same facts wherever it is asked — the settlement of the month,
  * the Health panel — so they cannot disagree. An insurance that works is a company that stands, has staff in post, and is not in default (its debts open under the grace months).
  *

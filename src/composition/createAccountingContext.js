@@ -60,12 +60,10 @@ import { benefitBaseOf, flooredWage, readLabourMarket, startWageOf, wageFloorOf 
 import { START_WAGE_BASE } from '../contexts/accounting/domain/catalogs/LabourMarketCatalog.js';
 import { wagePerWorkerOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { absentBySource } from '../shared/population/absenteeism.js';
-import { companiesOf, companyNameOf } from '../shared/building-catalog/buildingCompanies.js';
+import { buildingNameOf, companiesOf } from '../shared/building-catalog/buildingCompanies.js';
 import { INSURANCE_LAW_LABELS } from '../shared/accounting-catalog/InsuranceCatalog.js';
-import { insuranceLawStatusOf } from '../contexts/accounting/domain/policies/InsuranceLawPolicy.js';
-
-/** The name of a stored building: its type's, or its company's for a building that is one company of a catalog list (the insurance building). */
-const buildingNameOfRow = (row) => (companiesOf(row.type) ? companyNameOf(row.type, row.companyId) : getBuildingDefinition(row.type)?.displayName);
+import { insuranceLawStatusOf, isStaffed } from '../contexts/accounting/domain/policies/InsuranceLawPolicy.js';
+import { isInvalid } from '../contexts/housing/domain/policies/InvalidityPolicy.js';
 import { residentsCountOf } from '../shared/population/residentsCount.js';
 import { INCOME_STATEMENT, pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
 import { buildingFinanceFigures, cashMovementsOf, householdBudgetOf, householdLastMonthOf, incomeStatementOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
@@ -77,7 +75,7 @@ import { balanceSheetOf } from '../contexts/accounting/domain/policies/BalanceSh
 import { accountLedgerOf, trialBalanceOf } from '../contexts/accounting/domain/policies/AccountLedgerPolicy.js';
 import { isLucrativeBuilding, payrollOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../shared/building-identity/index.js';
-import { houseEnterpriseOf, houseEnterprises, houseHoldsSkill, premisesShareOf, residentsSeekingWork } from '../shared/population/workforceQueries.js';
+import { houseEnterpriseOf, houseEnterprises, houseHoldsSkill, houseInvalidityRule, premisesShareOf, residentsSeekingWork } from '../shared/population/workforceQueries.js';
 import { OWNER_SKILL, TAX_COLLECTION_SKILLS } from '../shared/population/socialCategoryCatalog.js';
 import { premisesRentOf, rentArrearsMonthsByHouse, rentDebtsOf, rentQuoteOf } from '../contexts/accounting/domain/policies/RentPolicy.js';
 import { legalFormOf } from '../shared/accounting-catalog/LegalFormCatalog.js';
@@ -416,12 +414,19 @@ export function createAccountingContext(deps = {}) {
       const rowById = new Map(rows.map((row) => [row.id, row]));
       return rows.map((row) => {
         const workerSources = row.employees?.workerSources ?? {};
-        // The sick of the houses the workers come from (the health system's last judgement; a house not judged yet has none known sick): see absenteeism.js.
+        // The workers who do not work, house by house (the health system's last judgement; a house not judged yet has none known): see absenteeism.js. The sick are away for a
+        // time, the invalid for as long as they are invalid: the social security pays them differently, so they are told apart, and `absentSources` is both.
+        const absentOf = (field) => absentBySource(workerSources, (houseId) => {
+          const house = rowById.get(houseId);
+          return house ? { sick: house[field] ?? 0, residents: residentsCountOf(house) } : { sick: 0, residents: 0 };
+        });
+        const sickAbsentSources = absentOf('sickCount');
+        const invalidAbsentSources = absentOf('invalidCount');
         const absentSources = absentBySource(workerSources, (houseId) => {
           const house = rowById.get(houseId);
-          return house ? { sick: house.sickCount ?? 0, residents: residentsCountOf(house) } : { sick: 0, residents: 0 };
+          return house ? { sick: (house.sickCount ?? 0) + (house.invalidCount ?? 0), residents: residentsCountOf(house) } : { sick: 0, residents: 0 };
         });
-        return { id: row.id, type: row.type, companyId: row.companyId ?? null, workerSources, absentSources };
+        return { id: row.id, type: row.type, companyId: row.companyId ?? null, workerSources, absentSources, sickAbsentSources, invalidAbsentSources };
       });
     },
     sumGoodsFlowsByPair: (year, monthIndex) =>
@@ -585,7 +590,7 @@ export function createAccountingContext(deps = {}) {
     const houses = owned.filter((row) => row.pop >= 1);
     const owner = houses.find((row) => houseHoldsSkill(row.type, row.level ?? 1, OWNER_SKILL));
     if (!owner) return null;
-    const nameOf = (row) => buildingNameOfRow(row);
+    const nameOf = (row) => buildingNameOf(row.type, row);
     return {
       ownerId: owner.id,
       ownerType: owner.type,
@@ -663,7 +668,7 @@ export function createAccountingContext(deps = {}) {
       const { employerContributionRate } = await hamletFiscalRates.getSalarySettings();
       const needs = [];
       for (const row of (await dexieDb.houses.toArray()).filter(isActiveHamletRow)) {
-        const name = buildingNameOfRow(row);
+        const name = buildingNameOf(row.type, row);
         if (resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE) {
           const business = houseEnterprises(row.type).enterprises.find((enterprise) => enterprise.activity === 'recipes');
           const share = premisesShareOf(row.type);
@@ -721,7 +726,7 @@ export function createAccountingContext(deps = {}) {
     listCompanies: async () =>
       (await dexieDb.houses.toArray())
         .filter((row) => isActiveHamletRow(row) && isLucrativeBuilding(row.type))
-        .map((row) => ({ buildingId: row.id, name: buildingNameOfRow(row), x: row.x, y: row.y })),
+        .map((row) => ({ buildingId: row.id, name: buildingNameOf(row.type, row), x: row.x, y: row.y })),
     getJournalEntries: () => journalRepository.getJournalEntries(),
     getLegsFold: () => journalRepository.getLegsFold(),
     companyFundsOf: (buildingId) => getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId, accountKind: null }),
@@ -733,7 +738,7 @@ export function createAccountingContext(deps = {}) {
     listCompanies: async () =>
       (await dexieDb.houses.toArray())
         .filter((row) => isActiveHamletRow(row) && isLucrativeBuilding(row.type))
-        .map((row) => ({ buildingId: row.id, name: buildingNameOfRow(row), x: row.x, y: row.y })),
+        .map((row) => ({ buildingId: row.id, name: buildingNameOf(row.type, row), x: row.x, y: row.y })),
     getJournalEntries: () => journalRepository.getJournalEntries(),
     getLegsFold: () => journalRepository.getLegsFold(),
     getCompanyAidPolicy: async () => (await hamletFiscalRates.getCompanyAid()).policy,
@@ -1252,11 +1257,15 @@ export function createAccountingContext(deps = {}) {
      * @returns {Promise<{ mandatory: boolean, available: boolean, inForce: boolean, reasons: string[] }>}
      */
     async getInsuranceLaw() {
+      const rows = (await dexieDb.houses.toArray()).filter(isActiveHamletRow);
+      const standing = new Set(rows.map((row) => row.id));
       const companies = [];
-      for (const row of (await dexieDb.houses.toArray()).filter(isActiveHamletRow)) {
+      for (const row of rows) {
         if (!companiesOf(row.type)) continue;
         const insolvency = await accountingApi.getInsolvency(row.id);
-        companies.push({ staffed: (row.employees?.worker ?? 0) > 0, defaultMonths: insolvency.months });
+        // Staff in post is read as the settlement reads it: the workers the standing houses assign (isStaffed).
+        const assigned = Object.fromEntries(Object.entries(row.employees?.workerSources ?? {}).filter(([houseId]) => standing.has(houseId)));
+        companies.push({ staffed: isStaffed(assigned), defaultMonths: insolvency.months });
       }
       return insuranceLawStatusOf({ mandatory: await hamletFiscalRates.getInsuranceMandatory(), companies, graceMonths: INSOLVENCY_GRACE_MONTHS });
     },
@@ -1850,9 +1859,14 @@ export function createAccountingContext(deps = {}) {
       );
       const payOf = new Map(breakdown.map((entry) => [entry.id, entry]));
 
+      // Whether each is invalid now (HealthFactorCatalog.js), read from the citizen and the rule of his category: the sheet says so.
+      const rule = houseInvalidityRule(house.type);
+      const invalidOf = new Map(citizens.map((citizen) => [citizen.id, isInvalid(citizen, rule)]));
+
       return residents.map((resident) => ({
         ...resident,
         workplaceType: resident.workplaceId ? typeOf.get(resident.workplaceId) : null,
+        invalid: invalidOf.get(resident.id),
         ...payOf.get(resident.id),
       }));
     },

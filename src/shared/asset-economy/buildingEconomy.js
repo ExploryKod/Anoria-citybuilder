@@ -148,11 +148,11 @@ const twoMonthCycle = ({ first, second, base, factor, inputs }) => ({
 });
 
 /** A raw-material producer of wood from the trees around it; its name and who it serves first vary. */
-const lumberjack = ({ displayName, clients, clientsOnly = false, requiredSkill = 'artisanat' }) => ({
+const lumberjack = ({ displayName, clients, clientsOnly = false, requiredSkill = 'artisanat', pollution }) => ({
   displayName,
   placementNotice: true,
   construction: { price: 45, category: 'industry' },
-  employment: { sector: 3, workerNeed: 2, requiredSkill },
+  employment: { sector: 3, workerNeed: 2, requiredSkill, pollution },
   // When the trees in its range run short, it buys plots the owner's house put up for sale for a forest (`use`, see LandUseCatalog.js), to plant its own.
   // `resource` is what the trees give; it buys when fewer than `buysBelowSources` of them still hold some within its range, and up to `tilesPerPurchase` tiles a month.
   // First values, to tune by playing.
@@ -345,11 +345,11 @@ const ENERGY_CONSUMER = {
  * A power plant: burns `fuelPerMonth` of an imported fuel (drawn from a trade warehouse) into a month's energy, and distributes it.
 `mwhPerMonth` is its monthly output (the fossil plants make the energy of 120 citizens), `requiredSkill` the energy skill its workers need (thermal energy, or nuclear for the nuclear plant).
  */
-const energyPlant = ({ displayName, fuel, fuelPerMonth, price, maintenance, mwhPerMonth = ENERGY_PLANT_MWH_PER_MONTH, workerNeed = 3, requiredSkill = 'energie' }) => ({
+const energyPlant = ({ displayName, fuel, fuelPerMonth, price, maintenance, mwhPerMonth = ENERGY_PLANT_MWH_PER_MONTH, workerNeed = 3, requiredSkill = 'energie', pollution }) => ({
   displayName,
   construction: { price, category: 'industry' },
   accounting: { maintenance },
-  employment: { sector: 3, workerNeed, requiredSkill },
+  employment: { sector: 3, workerNeed, requiredSkill, pollution },
   resourceRoles: [
     {
       role: 'producer',
@@ -663,7 +663,7 @@ export const BUILDING_ECONOMY = {
   'Factory-Plate': {
     displayName: 'Atelier de plats',
     construction: { price: 40, category: 'industry' },
-    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat', pollution: 2 },
     resourceRoles: [{
       role: 'producer',
       categories: ['plate'],
@@ -674,7 +674,7 @@ export const BUILDING_ECONOMY = {
   'Factory-Pot': {
     displayName: 'Atelier de pots',
     construction: { price: 55, category: 'industry' },
-    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat', pollution: 2 },
     resourceRoles: [{
       role: 'producer',
       categories: ['pot'],
@@ -687,7 +687,7 @@ export const BUILDING_ECONOMY = {
   'Factory-Amphora': {
     displayName: 'Atelier d\'amphores',
     construction: { price: 70, category: 'industry' },
-    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat', pollution: 2 },
     resourceRoles: [{
       role: 'producer',
       categories: ['amphora'],
@@ -702,7 +702,7 @@ export const BUILDING_ECONOMY = {
     displayName: 'Huilerie',
     placementNotice: true,
     construction: { price: 50, category: 'industry' },
-    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat', pollution: 1 },
     resourceRoles: [{
       role: 'producer',
       categories: ['oil'],
@@ -722,7 +722,7 @@ export const BUILDING_ECONOMY = {
   'Factory-Candle': {
     displayName: 'Chandellerie',
     construction: { price: 60, category: 'industry' },
-    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat-specialise' /* a chain opened at level 3 */ },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat-specialise' /* a chain opened at level 3 */, pollution: 1 },
     resourceRoles: [{
       role: 'producer',
       categories: ['candle'],
@@ -745,12 +745,14 @@ export const BUILDING_ECONOMY = {
     displayName: 'Bûcheron',
     clients: ['Market-Stall-Red'],
     clientsOnly: true,
+    pollution: 1,
   }),
   'Lumberjack-Industry': lumberjack({
     displayName: 'Bûcheron industriel',
     // One of the chains opened at level 3 (specialised crafts).
     requiredSkill: 'artisanat-specialise',
     clients: ['Factory-Furniture', 'Market-Stall-Red', 'House-Blue'],
+    pollution: 2,
   }),
 
   // The mine: draws stone, iron and gold out of the rocks around it, each a producer entry of its own (a producer may have several outputs). What a rock holds is
@@ -760,7 +762,7 @@ export const BUILDING_ECONOMY = {
     displayName: 'Mine',
     placementNotice: true,
     construction: { price: 90, category: 'industry' },
-    employment: { sector: 3, workerNeed: 3, requiredSkill: 'artisanat-specialise' },
+    employment: { sector: 3, workerNeed: 3, requiredSkill: 'artisanat-specialise', pollution: 3 },
     resourceRoles: [
       { resource: 'rock', amount: 8, clients: ['House-Blue'] },
       { resource: 'iron', amount: 4, clients: ['House-Blue'] },
@@ -800,7 +802,7 @@ export const BUILDING_ECONOMY = {
     displayName: 'Atelier de meubles',
     placementNotice: true,
     construction: { price: 60, category: 'industry' },
-    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat' },
+    employment: { sector: 3, workerNeed: 2, requiredSkill: 'artisanat', pollution: 2 },
     resourceRoles: [{
       role: 'producer',
       categories: ['furniture'],
@@ -1105,9 +1107,9 @@ export const BUILDING_ECONOMY = {
     resourceRoles: [{ role: 'distributor', categories: ['police'], range: Infinity, schedule: { unit: 'always' }, consumption: 'flag' }],
   },
   // The two power plants: the artisans' energy industry (sector 3), one on coal, one on petrol.
-  CoalPlant: energyPlant({ displayName: 'Centrale à charbon', fuel: 'coal', fuelPerMonth: 4, price: 110, maintenance: 5 }),
-  PetrolPlant: energyPlant({ displayName: 'Centrale à pétrole', fuel: 'petrol', fuelPerMonth: 2, price: 120, maintenance: 5 }),
+  CoalPlant: energyPlant({ displayName: 'Centrale à charbon', fuel: 'coal', fuelPerMonth: 4, price: 110, maintenance: 5, pollution: 3 }),
+  PetrolPlant: energyPlant({ displayName: 'Centrale à pétrole', fuel: 'petrol', fuelPerMonth: 2, price: 120, maintenance: 5, pollution: 2 }),
   // The nuclear plant: four times a fossil plant's output from two drums of imported uranium a month, at the price of a big
   // site and a trained crew (level 2 of the energy skill, which the level-3 houses grant).
-  NuclearPlant: energyPlant({ displayName: 'Centrale nucléaire', fuel: 'uranium', fuelPerMonth: 2, price: 600, maintenance: 25, mwhPerMonth: 480, workerNeed: 8, requiredSkill: 'energie-nucleaire' }),
+  NuclearPlant: energyPlant({ displayName: 'Centrale nucléaire', fuel: 'uranium', fuelPerMonth: 2, price: 600, maintenance: 25, mwhPerMonth: 480, workerNeed: 8, requiredSkill: 'energie-nucleaire', pollution: 1 }),
 };

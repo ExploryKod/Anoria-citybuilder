@@ -14,6 +14,29 @@ export function houseSeeksWork(houseType) {
 }
 
 /**
+ * Whether the residents of a house stand outside health: the catalog's `outsideHealth` fact of their social category (omitted means they do not). The city's administrators
+ * do: they are never judged, never ill, invalid or dead of poor health, and no figure of health counts them. Their house cannot be demolished and holds the owner of every
+ * building, so it must never empty.
+ * @param {string} houseType
+ * @returns {boolean}
+ */
+export function houseIsOutsideHealth(houseType) {
+  const group = getBuildingDefinition(houseType)?.residentialGroup;
+  return Boolean(group) && SOCIAL_CATEGORY[group]?.outsideHealth === true;
+}
+
+/**
+ * What a grave illness makes of the residents of a house: the catalog's `invalidity` fact of their social category, `{ permanent }`, or null for a category that cannot
+ * become invalid (the administrators', who are exempt from the deaths of poor health too).
+ * @param {string} houseType
+ * @returns {{ permanent: boolean } | null}
+ */
+export function houseInvalidityRule(houseType) {
+  const group = getBuildingDefinition(houseType)?.residentialGroup;
+  return (group && SOCIAL_CATEGORY[group]?.invalidity) || null;
+}
+
+/**
  * The businesses of a house, as its social category declares them, and the one the Enterprises tab opens on: the only one, or the one flagged
  * `default: true`. A house with none, or with several and no default (or several defaults), is an error: the tab would not know what to show.
  * @param {string} houseType

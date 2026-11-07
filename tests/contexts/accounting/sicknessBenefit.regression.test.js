@@ -7,12 +7,14 @@ import { unpairedFlowsOf } from '../../../src/contexts/accounting/domain/policie
 
 // A worker who is sick is not paid by his employer. With the social security chosen, the city's social body (431) pays his household an allowance:
 // half of the wage he would have earned, less the waiting period (a tenth of the month). With no cover, nobody does.
-function settle({ sicknessCover, absent = { 'house-1': 1 } }) {
+function settle({ sicknessCover, absent = { 'house-1': 1 }, invalid = {} }) {
   const journal = [];
+  // The workers who do not work are the sick (`absent`) and the invalid (`invalid`), house by house.
+  const away = Object.fromEntries([...new Set([...Object.keys(absent), ...Object.keys(invalid)])].map((houseId) => [houseId, (absent[houseId] ?? 0) + (invalid[houseId] ?? 0)]));
   const service = new SettleProducerCharges({
     getTimeInfo: () => ({ year: 1, monthIndex: 5, month: 'Juin' }),
     listBuildings: async () => [
-      { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 4 }, absentSources: absent },
+      { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 4 }, absentSources: away, sickAbsentSources: absent, invalidAbsentSources: invalid },
       { id: 'house-1', type: 'House-Blue', workerSources: {}, absentSources: {} },
     ],
     sumGoodsFlowsByPair: async () => [],
@@ -55,6 +57,24 @@ describe('sickness — the employer pays the ones at work, the social security t
     expect(journal.find((line) => line.type === 'sickness_benefit')).toMatchObject({ amount: 45, accountBuildingId: null, counterpartyBuildingId: 'house-1' });
     expect(journal.find((line) => line.type === 'household_sickness_benefit')).toMatchObject({ amount: 45, accountBuildingId: 'house-1', accountKind: 'particulier', journal: 'PA' });
     expect(unpairedFlowsOf(journal).lonely).toEqual([]);
+  });
+
+  // An invalid worker is paid a pension from the first day (half of his wage, no waiting period), a sick one an allowance after it; both from the same fund.
+  test('secu: an invalid worker is paid a pension with no waiting period, beside the sick one\'s allowance', async () => {
+    const invalidOnly = await settle({ sicknessCover: 'secu', absent: {}, invalid: { 'house-1': 1 } });
+    expect(invalidOnly.find((line) => line.type === 'producer_wage').amount).toBe(300); // the invalid worker is out of the payroll too
+    expect(invalidOnly.find((line) => line.type === 'sickness_benefit')).toMatchObject({ amount: 50, accountBuildingId: null }); // 1 × 100 × 50 %
+
+    const both = await settle({ sicknessCover: 'secu', absent: { 'house-1': 1 }, invalid: { 'house-1': 1 } });
+    expect(both.find((line) => line.type === 'producer_wage').amount).toBe(200);
+    expect(both.find((line) => line.type === 'sickness_benefit').amount).toBe(95); // 45 of allowance (after the waiting period) + 50 of pension
+    expect(unpairedFlowsOf(both).lonely).toEqual([]);
+  });
+
+  test('no cover: the invalid are paid by no one either', async () => {
+    const journal = await settle({ sicknessCover: 'none', absent: {}, invalid: { 'house-1': 1 } });
+
+    expect(journal.some((line) => line.type === 'sickness_benefit')).toBe(false);
   });
 
   test('a sick worker keeps his job: he is not unemployed, so no unemployment benefit is paid for him', async () => {

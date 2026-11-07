@@ -1981,6 +1981,7 @@
       "category": "construction",
       "pop": 6,
       "sickCount": 0,
+      "invalidCount": 0,
       "stocks": {
         "wheat": 6,
         "carrot": 0,
@@ -3295,6 +3296,7 @@
       "category": "construction",
       "pop": 12,
       "sickCount": 0,
+      "invalidCount": 0,
       "stocks": {
         "wheat": 12,
         "carrot": 0,
@@ -3723,6 +3725,7 @@
       "category": "construction",
       "pop": 12,
       "sickCount": 0,
+      "invalidCount": 0,
       "stocks": {
         "wheat": 12,
         "carrot": 0,
@@ -4467,6 +4470,7 @@
       "category": "construction",
       "pop": 6,
       "sickCount": 0,
+      "invalidCount": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -4883,6 +4887,7 @@
       "category": "construction",
       "pop": 12,
       "sickCount": 0,
+      "invalidCount": 0,
       "stocks": {
         "wheat": 12,
         "carrot": 0,
@@ -5157,6 +5162,7 @@
       "category": "construction",
       "pop": 12,
       "sickCount": 0,
+      "invalidCount": 0,
       "stocks": {
         "wheat": 12,
         "carrot": 0,
@@ -5638,6 +5644,7 @@
       "category": "construction",
       "pop": 12,
       "sickCount": 0,
+      "invalidCount": 0,
       "stocks": {
         "wheat": 12,
         "carrot": 0,
@@ -6657,6 +6664,9 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 72.0887899109918
     },
     {
@@ -6669,6 +6679,9 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 75.64335742016615
     },
     {
@@ -6681,6 +6694,9 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 75.26175921672764
     },
     {
@@ -6693,6 +6709,9 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 88.6114406866619
     },
     {
@@ -6705,6 +6724,9 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 70.64806836019544
     },
     {
@@ -6717,6 +6739,9 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 68.82400802609634
     },
     {
@@ -6729,6 +6754,9 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 87.2778492680357
     },
     {
@@ -6741,6 +6769,9 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 59.76422834452725
     },
     {
@@ -6753,6 +6784,9 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 76.68662367380814
     },
     {
@@ -6765,6 +6799,9 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 82.61948917702608
     },
     {
@@ -6777,6 +6814,9 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 67.04442417744093
     },
     {
@@ -6789,6 +6829,9 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 74.7892103322031
     },
     {
@@ -6801,6 +6844,9 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 82.15904811779524
     },
     {
@@ -6813,6 +6859,9 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 60.746716819775536
     },
     {
@@ -6825,6 +6874,9 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 76.15352324093759
     },
     {
@@ -6837,6 +6889,9 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 81.52050880640164
     },
     {
@@ -6849,6 +6904,9 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 59.482997269398034
     },
     {
@@ -6861,6 +6919,9 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 74.62271235793705
     },
     {
@@ -6873,6 +6934,9 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 82.52575382682552
     },
     {
@@ -6885,6 +6949,9 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 57.95650509494427
     },
     {
@@ -6897,6 +6964,9 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 85.31703440525979
     },
     {
@@ -6909,6 +6979,9 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 60.04380477062632
     },
     {
@@ -6921,6 +6994,9 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 60.18032838581318
     },
     {
@@ -6933,6 +7009,9 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 68.44924700327516
     },
     {
@@ -6945,6 +7024,9 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 61.842993713257435
     },
     {
@@ -6957,6 +7039,9 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 70.74499673711932
     },
     {
@@ -6969,6 +7054,9 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 75.11509195339585
     },
     {
@@ -6981,6 +7069,9 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 83.09945610165417
     },
     {
@@ -6993,6 +7084,9 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 63.126098017891664
     },
     {
@@ -7005,6 +7099,9 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 87.94546967823243
     },
     {
@@ -7017,6 +7114,9 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 86.43165872117241
     },
     {
@@ -7029,6 +7129,9 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 55.50440570164684
     },
     {
@@ -7041,6 +7144,9 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 71.71316811745623
     },
     {
@@ -7053,6 +7159,9 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 79.51520942300755
     },
     {
@@ -7065,6 +7174,9 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 58.328264319015716
     },
     {
@@ -7077,6 +7189,9 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 59.39033482868131
     },
     {
@@ -7089,6 +7204,9 @@
       },
       "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 89.79535680693829
     },
     {
@@ -7101,6 +7219,9 @@
       },
       "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 72.3374926800535
     },
     {
@@ -7113,6 +7234,9 @@
       },
       "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 67.38410543445968
     },
     {
@@ -7125,6 +7249,9 @@
       },
       "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 59.8336262879517
     },
     {
@@ -7137,6 +7264,9 @@
       },
       "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 80.99458023846509
     },
     {
@@ -7149,6 +7279,9 @@
       },
       "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 72.96640796876503
     },
     {
@@ -7161,6 +7294,9 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 71.43503204284018
     },
     {
@@ -7173,6 +7309,9 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 60.99242660687625
     },
     {
@@ -7185,6 +7324,9 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 63.06270483386334
     },
     {
@@ -7197,6 +7339,9 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 77.14126972883737
     },
     {
@@ -7209,6 +7354,9 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 70.0025959438978
     },
     {
@@ -7221,6 +7369,9 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 73.46937895710636
     },
     {
@@ -7233,6 +7384,9 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 84.03389938843591
     },
     {
@@ -7245,6 +7399,9 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 85.23387964827793
     },
     {
@@ -7257,6 +7414,9 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 84.93846362231207
     },
     {
@@ -7269,6 +7429,9 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 87.52936606729264
     },
     {
@@ -7281,6 +7444,9 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 77.71206801413115
     },
     {
@@ -7293,6 +7459,9 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 77.3206090888475
     },
     {
@@ -7305,6 +7474,9 @@
       },
       "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 73.94110045028403
     },
     {
@@ -7317,6 +7489,9 @@
       },
       "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 85.81044353837444
     },
     {
@@ -7329,6 +7504,9 @@
       },
       "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 77.84951126668128
     },
     {
@@ -7341,6 +7519,9 @@
       },
       "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 78.9866787094727
     },
     {
@@ -7353,6 +7534,9 @@
       },
       "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 55.18856643438038
     },
     {
@@ -7365,6 +7549,9 @@
       },
       "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 72.87391556574788
     },
     {
@@ -7377,6 +7564,9 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 62.37078548461092
     },
     {
@@ -7389,6 +7579,9 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 81.30620772615745
     },
     {
@@ -7401,6 +7594,9 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 68.1043827252877
     },
     {
@@ -7413,6 +7609,9 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 62.57223235091916
     },
     {
@@ -7425,6 +7624,9 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 73.11019212167044
     },
     {
@@ -7437,6 +7639,9 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 58.77792149162167
     },
     {
@@ -7449,6 +7654,9 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 73.21932162663184
     },
     {
@@ -7461,6 +7669,9 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 55.10138902919721
     },
     {
@@ -7473,6 +7684,9 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 76.65473274310516
     },
     {
@@ -7485,6 +7699,9 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 70.41500256677257
     },
     {
@@ -7497,6 +7714,9 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 78.9021687623584
     },
     {
@@ -7509,6 +7729,9 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "mentalHealth": 70,
+      "severeMonths": 0,
+      "invalid": false,
       "health": 63.80482528156726
     }
   ],

@@ -169,6 +169,7 @@ ensureGameRuntimeBootstrapped();
 /** Stops the previous game's listener when a new game is created in the same page. */
 let stopPopulationDepartureToasts = null;
 let stopCompanyLiquidationToasts = null;
+let stopCompanyLiquidationFailureToasts = null;
 let stopPlotsChanged = null;
 
 export function createGame(gameStore, assetManager, citySize = null) {
@@ -583,6 +584,11 @@ export function createGame(gameStore, assetManager, citySize = null) {
   stopCompanyLiquidationToasts?.();
   stopCompanyLiquidationToasts = getSharedEventBus().subscribe('gameplay.companyLiquidated', (event) => {
     onCompanyLiquidated(event).catch((error) => console.error('[game] The screen could not follow a liquidated company:', error));
+  });
+  // A company that could not be liquidated stays, and the player is told (it is tried again next month)
+  stopCompanyLiquidationFailureToasts?.();
+  stopCompanyLiquidationFailureToasts = getSharedEventBus().subscribe('gameplay.companyLiquidationFailed', (failure) => {
+    showErrorToast(`🏦 ${failure.name} est en faillite mais n'a pas pu être liquidée : ${failure.reason}. Nouvel essai le mois prochain.`, { timeout: 8000 });
   });
   gameUI.updateTimeDisplay(time);
   const freshGame = isFreshGameIntent();
