@@ -34,7 +34,7 @@ async function runMonths(months, { sicknessCover = 'none', absent = {} } = {}) {
     await new SettleProducerCharges({
       getTimeInfo,
       listBuildings: async () => [
-        { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 3 }, absentSources: absent, sickAbsentSources: absent, invalidAbsentSources: {} },
+        { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 3 }, absentSources: absent, sickAbsentSources: absent },
         { id: 'house-1', type: 'House-Blue', workerSources: {}, absentSources: {} },
       ],
       sumGoodsFlowsByPair: async () => [],
@@ -48,7 +48,7 @@ async function runMonths(months, { sicknessCover = 'none', absent = {} } = {}) {
       sumHouseSales: async () => [],
       sumBankInterestByBuilding: async () => [{ buildingId: 'bank-1', amountHT: 1000 }],
       sumOtherExpensesByBuilding: async () => [],
-      listHouses: async () => [{ id: 'house-1', pop: 6, salaried: 0 }],
+      listHouses: async () => [{ id: 'house-1', pop: 6, salaried: 0, invalid: 0 }],
       getPublicPay: async () => ({ benefitBase: 100, unemploymentBenefitRate: 0.7, employerContributionRate: 0.25, employeeContributionRate: 0.1, administratorStipend: 0, sicknessCover }),
       getWageRateOf: async () => () => 100,
       getSalaryTax: async () => ({ threshold1: 1e6, rate1: 0, threshold2: 1e6, rate2: 0 }),

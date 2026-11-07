@@ -1,5 +1,5 @@
 /**
- * Who pays a worker who is sick (see src/shared/population/absenteeism.js for who is absent). In every mode the employer pays nobody
+ * Who pays a worker who is sick (the absent are the sick among the workers assigned, counted by the worker distribution: `employees.absentSources`). In every mode the employer pays nobody
  * for a day not worked: the absent share of a workplace's workers is out of its payroll. The modes differ in what the household receives instead.
  *
  * - `none` (the default): nothing. The household loses that share of the wage; the company loses the production. No law is passed.
@@ -15,15 +15,16 @@ export const DEFAULT_SICKNESS_COVER = 'none';
 /** The words the player reads about the cover: declared here so that the panel writes none by hand. */
 export const SICKNESS_COVER_LABELS = Object.freeze({
   title: 'Arrêts maladie',
-  none: 'Aucune couverture : un ouvrier malade n\'est payé par personne',
-  secu: 'Sécurité sociale : elle indemnise les ménages des ouvriers malades',
+  // Short, they are the entries of a dropdown: what each one does is `sicknessCoverExplanation`, written under it.
+  none: 'Aucune couverture',
+  secu: 'Sécurité sociale',
 });
 
 /** What the cover does, in words, from the figures above (so that changing them changes the wording). */
 export function sicknessCoverExplanation(cover) {
   assertSicknessCover(cover);
-  if (cover === 'none') return 'L\'employeur ne paie pas un ouvrier absent, et son ménage perd cette part du salaire.';
-  return `L\'employeur ne paie pas un ouvrier absent. La sécurité sociale verse à son ménage ${Math.round(SICKNESS_INDEMNITY_RATE * 100)} % du salaire, après une carence de ${Math.round(SICKNESS_WAITING_SHARE * 100)} % du mois, prélevée sur les cotisations.`;
+  if (cover === 'none') return 'Le ménage perd le salaire de l\'absent.';
+  return `Le ménage touche ${Math.round(SICKNESS_INDEMNITY_RATE * 100)} % du salaire, après ${Math.round(SICKNESS_WAITING_SHARE * 100)} % du mois de carence.`;
 }
 
 /** The share of the wage the allowance pays (France: half of the gross wage). A first balance, tuned here. */

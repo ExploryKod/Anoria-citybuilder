@@ -59,12 +59,10 @@ import { administratorPayStatusOf } from '../contexts/accounting/domain/policies
 import { benefitBaseOf, flooredWage, readLabourMarket, startWageOf, wageFloorOf } from '../contexts/accounting/domain/policies/WageRatePolicy.js';
 import { START_WAGE_BASE } from '../contexts/accounting/domain/catalogs/LabourMarketCatalog.js';
 import { wagePerWorkerOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
-import { absentBySource } from '../shared/population/absenteeism.js';
 import { buildingNameOf, companiesOf } from '../shared/building-catalog/buildingCompanies.js';
 import { INSURANCE_LAW_LABELS } from '../shared/accounting-catalog/InsuranceCatalog.js';
 import { insuranceLawStatusOf, isStaffed } from '../contexts/accounting/domain/policies/InsuranceLawPolicy.js';
 import { isInvalid } from '../contexts/housing/domain/policies/InvalidityPolicy.js';
-import { residentsCountOf } from '../shared/population/residentsCount.js';
 import { INCOME_STATEMENT, pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
 import { buildingFinanceFigures, cashMovementsOf, householdBudgetOf, householdLastMonthOf, incomeStatementOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 import { residentsOfHouse } from '../contexts/accounting/domain/policies/HouseResidentsPolicy.js';
@@ -75,6 +73,7 @@ import { balanceSheetOf } from '../contexts/accounting/domain/policies/BalanceSh
 import { accountLedgerOf, trialBalanceOf } from '../contexts/accounting/domain/policies/AccountLedgerPolicy.js';
 import { isLucrativeBuilding, payrollOf } from '../contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../shared/building-identity/index.js';
+import { residentsCountOf } from '../shared/population/residentsCount.js';
 import { houseEnterpriseOf, houseEnterprises, houseHoldsSkill, houseInvalidityRule, premisesShareOf, residentsSeekingWork } from '../shared/population/workforceQueries.js';
 import { OWNER_SKILL, TAX_COLLECTION_SKILLS } from '../shared/population/socialCategoryCatalog.js';
 import { premisesRentOf, rentArrearsMonthsByHouse, rentDebtsOf, rentQuoteOf } from '../contexts/accounting/domain/policies/RentPolicy.js';
@@ -137,6 +136,13 @@ import { getOrCreateCitizenRegistry } from './citizenRegistry.js';
  * @param {() => { rows: Array<{ skill: string, level: number, jobs: number, filled: number, vacancies: number, idle: number }> } | null} [deps.getLabourMarket]
  *   the labour market of the last worker distribution (employment's), read each month to move the wages
  */
+
+/** The type of the workplace a resident works at; a workplace that is not in the hamlet is a defect, not a blank. */
+function requireWorkplaceType(typeOf, resident) {
+  const type = typeOf.get(resident.workplaceId);
+  if (!type) throw new Error(`[residents] citizen ${resident.id} works at ${resident.workplaceId}, which is not a building of the hamlet`);
+  return type;
+}
 
 /**
  * One journal type's lines of one month, grouped by the account that holds them — the shape
@@ -411,22 +417,11 @@ export function createAccountingContext(deps = {}) {
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
     listBuildings: async () => {
       const rows = (await dexieDb.houses.toArray()).filter(isActiveHamletRow);
-      const rowById = new Map(rows.map((row) => [row.id, row]));
       return rows.map((row) => {
-        const workerSources = row.employees?.workerSources ?? {};
-        // The workers who do not work, house by house (the health system's last judgement; a house not judged yet has none known): see absenteeism.js. The sick are away for a
-        // time, the invalid for as long as they are invalid: the social security pays them differently, so they are told apart, and `absentSources` is both.
-        const absentOf = (field) => absentBySource(workerSources, (houseId) => {
-          const house = rowById.get(houseId);
-          return house ? { sick: house[field] ?? 0, residents: residentsCountOf(house) } : { sick: 0, residents: 0 };
-        });
-        const sickAbsentSources = absentOf('sickCount');
-        const invalidAbsentSources = absentOf('invalidCount');
-        const absentSources = absentBySource(workerSources, (houseId) => {
-          const house = rowById.get(houseId);
-          return house ? { sick: (house.sickCount ?? 0) + (house.invalidCount ?? 0), residents: residentsCountOf(house) } : { sick: 0, residents: 0 };
-        });
-        return { id: row.id, type: row.type, companyId: row.companyId ?? null, workerSources, absentSources, sickAbsentSources, invalidAbsentSources };
+        // The workers who do not work, house by house: the sick among those assigned, counted exactly by the worker distribution. The invalid hold no post (they are not
+        // hired), so they are no absent worker: their pension is the house's (see `invalidCount` of the households).
+        const absentSources = row.employees?.absentSources ?? {};
+        return { id: row.id, type: row.type, companyId: row.companyId ?? null, workerSources: row.employees?.workerSources ?? {}, absentSources, sickAbsentSources: absentSources };
       });
     },
     sumGoodsFlowsByPair: (year, monthIndex) =>
@@ -448,7 +443,8 @@ export function createAccountingContext(deps = {}) {
           // The residents who look for a job: the administrators do not, so no benefit is paid for them.
           const seeking = residentsSeekingWork(row.type, row.pop);
           // `salaried`: the residents the city pays a stipend (the administrators).
-          return { id: row.id, pop: seeking, salaried: row.pop - seeking };
+          // `invalid`: those of them who are invalid (judged monthly, `invalidCount`): they hold no post and draw a pension, not the unemployment benefit.
+          return { id: row.id, pop: seeking, salaried: row.pop - seeking, invalid: seeking > 0 ? (row.invalidCount ?? 0) : 0 };
         }),
     getPublicPay: async () => {
       const settings = await hamletFiscalRates.getSalarySettings();
@@ -1328,7 +1324,7 @@ export function createAccountingContext(deps = {}) {
       const debt = publicDebtOf(cityTotals, portfolio);
       const external = externalInterestOf(fold.totalsByAccount(window).get(null) ?? new Map(), debt);
       const privateDebt = privateDebtOf(upToNow);
-      const population = (await dexieDb.houses.toArray()).filter((row) => isActiveHamletRow(row) && resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE).reduce((sum, row) => sum + (row.pop ?? 0), 0);
+      const population = (await dexieDb.houses.toArray()).filter((row) => isActiveHamletRow(row) && resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE).reduce((sum, row) => sum + residentsCountOf(row), 0);
       const gdp = toYear(product.gdp);
       return {
         ready: true,
@@ -1831,20 +1827,17 @@ export function createAccountingContext(deps = {}) {
       const house = rows.find((row) => row.id === houseId);
       if (!house) throw new Error(`[residents] household ${houseId} is not in the hamlet`);
       if (!Number.isInteger(house.pop)) throw new Error(`[residents] household ${houseId} has no residents count`);
-      const workplaces = rows
-        .filter((row) => (row.employees?.workerSources?.[houseId] ?? 0) > 0)
-        .map((row) => ({ workplaceId: row.id, workplaceType: row.type, workers: row.employees.workerSources[houseId] }));
       // The residents who look for no job (the administrators) are paid a stipend by the hamlet: they are neither workers nor unemployed.
       const seeking = residentsSeekingWork(house.type, house.pop);
       const salaried = house.pop - seeking;
-      const citizens = await getOrCreateCitizenRegistry().forHouse({ houseId, hamletId: house.hamletId, pop: house.pop });
-      const residents = residentsOfHouse({ houseId, citizens, salaried, workplaces: workplaces.map(({ workplaceId, workers }) => ({ workplaceId, workers })) });
-      const typeOf = new Map(workplaces.map((entry) => [entry.workplaceId, entry.workplaceType]));
+      const citizens = await getOrCreateCitizenRegistry().forHouse({ houseId, hamletId: house.hamletId });
+      const residents = residentsOfHouse({ houseId, citizens, seeksWork: seeking > 0 });
+      const typeOf = new Map(rows.map((row) => [row.id, row.type]));
 
-      const workers = workplaces.reduce((sum, entry) => sum + entry.workers, 0);
+      const workers = residents.filter((resident) => resident.status === 'worker').length;
       const settings = await hamletFiscalRates.getSalarySettings();
       const expectedPay = householdPublicPayOf({
-        pop: seeking,
+        pop: seeking - (seeking > 0 ? (house.invalidCount ?? 0) : 0),
         workers,
         benefitBase: await benefitBaseOfHamlet(settings),
         unemploymentBenefitRate: settings.unemploymentBenefitRate,
@@ -1865,7 +1858,7 @@ export function createAccountingContext(deps = {}) {
 
       return residents.map((resident) => ({
         ...resident,
-        workplaceType: resident.workplaceId ? typeOf.get(resident.workplaceId) : null,
+        workplaceType: resident.workplaceId ? requireWorkplaceType(typeOf, resident) : null,
         invalid: invalidOf.get(resident.id),
         ...payOf.get(resident.id),
       }));

@@ -53,8 +53,12 @@ export function canonicalizeHouseRecord(raw) {
       ? Math.floor(raw.tier)
       : initialTierForToolId(type);
 
+  // `pop` is not stored: the residents of a house are its citizens, and every read of the table serves their count (core/persistence/dexie/residentsProjection.js).
+  // A row read from the table carries that count (the reading hook), so a read-modify-write hands it back here and it is dropped: it cannot be told from a writer
+  // that means to set it, which is why the writers that take named fields refuse `pop` themselves (see `refuseResidentsField`).
+  const { pop: _residents, ...stored } = raw;
   const record = {
-    ...raw,
+    ...stored,
     instanceId,
     id: instanceId,
     kind,

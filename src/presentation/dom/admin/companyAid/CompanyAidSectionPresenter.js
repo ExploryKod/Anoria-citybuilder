@@ -1,7 +1,7 @@
 /**
  * The Aide aux entreprises section: the policy the player sets for the working capital the city finances for its companies (see CompanyAidCatalog.js): how much of their stock,
  * in which forms (participation, loan, State shareholder), the loan's interest and when it starts, the dividend of the State shareholder, and how many years the decision binds him.
- * The sliders only draft the policy; "Valider et s'engager" stores it, and from then on it cannot be changed until the end of the commitment.
+ * The sliders only draft the policy; "S'engager" stores it, and from then on it cannot be changed until the end of the commitment.
  */
 export class CompanyAidSectionPresenter {
   /** @param {{ accounting: object }} deps */

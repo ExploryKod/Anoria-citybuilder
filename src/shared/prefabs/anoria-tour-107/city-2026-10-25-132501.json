@@ -20,7 +20,6 @@
       "instanceId": "8ebe8e8b-f883-4634-86cf-b63ff961522a",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -89,7 +88,6 @@
       "instanceId": "379be3e3-acae-4a97-914e-62646b4ac608",
       "type": "CoalPlant",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -186,7 +184,6 @@
       "category": "nature",
       "x": 12,
       "y": 0,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -223,7 +220,6 @@
       "category": "nature",
       "x": 14,
       "y": 0,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -260,7 +256,6 @@
       "category": "nature",
       "x": 1,
       "y": 1,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -296,7 +291,6 @@
       "instanceId": "8a6cb275-28de-4a70-9199-0e4af66c8ffa",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -366,7 +360,6 @@
       "category": "nature",
       "x": 12,
       "y": 1,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -403,7 +396,6 @@
       "category": "nature",
       "x": 17,
       "y": 1,
-      "pop": 0,
       "stocks": {
         "rock": 50,
         "gold": 0,
@@ -442,7 +434,6 @@
       "category": "nature",
       "x": 5,
       "y": 2,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -478,7 +469,6 @@
       "instanceId": "a1864cb3-35a5-43f9-be9d-42099c1378dc",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -547,7 +537,6 @@
       "instanceId": "9e120d40-0e2f-4f1e-8f9a-58bc164b4cd5",
       "type": "Factory-Pot",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -656,7 +645,6 @@
       "instanceId": "80e6ffe0-1610-44f6-ba12-323f8c290ab3",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -726,7 +714,6 @@
       "category": "nature",
       "x": 13,
       "y": 3,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -763,7 +750,6 @@
       "category": "nature",
       "x": 2,
       "y": 4,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -799,7 +785,6 @@
       "instanceId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
       "type": "Warehouse",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -1052,7 +1037,6 @@
       "instanceId": "9f54f5e2-bdb2-42dd-a769-d18f6337a690",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -1121,7 +1105,6 @@
       "instanceId": "14817b1b-8ebe-4d59-98d5-4af18bb22e9f",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -1190,7 +1173,6 @@
       "instanceId": "9101dc05-005a-40a8-b1b0-068907e24961",
       "type": "TradeWarehouse",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -1386,7 +1368,6 @@
       "category": "nature",
       "x": 15,
       "y": 5,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -1422,7 +1403,6 @@
       "instanceId": "810be22f-5b2c-4087-a0f8-fe55bd849d9a",
       "type": "Windmill-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 42,
         "carrot": 0,
@@ -1632,7 +1612,6 @@
       "instanceId": "f6a0454a-ef58-4a62-9a47-a70bebedec9e",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -1702,7 +1681,6 @@
       "category": "nature",
       "x": 16,
       "y": 6,
-      "pop": 0,
       "stocks": {
         "rock": 50,
         "gold": 0,
@@ -1740,7 +1718,6 @@
       "instanceId": "88d9a40c-26b5-4902-83e1-154b2e37d02d",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -1809,7 +1786,6 @@
       "instanceId": "a3f6b1b2-a108-4489-8d83-65619d408211",
       "type": "Market-Stall-Red",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 6,
         "carrot": 0,
@@ -1906,7 +1882,6 @@
       "category": "nature",
       "x": 14,
       "y": 7,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -1943,7 +1918,6 @@
       "category": "nature",
       "x": 3,
       "y": 8,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -1979,7 +1953,6 @@
       "instanceId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "type": "House-Mayor",
       "category": "construction",
-      "pop": 6,
       "sickCount": 0,
       "invalidCount": 0,
       "stocks": {
@@ -2234,7 +2207,6 @@
       "instanceId": "2f4ca1d3-c4f6-450f-99de-0bb1ea8c33ba",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -2304,7 +2276,6 @@
       "category": "nature",
       "x": 2,
       "y": 9,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -2340,7 +2311,6 @@
       "instanceId": "7c238bba-472b-4dd3-afba-1aa2234c6088",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -2409,7 +2379,6 @@
       "instanceId": "e5014d4e-1b8a-4e04-997f-ba54db4ffced",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -2478,7 +2447,6 @@
       "instanceId": "6667bddd-93f9-4a9c-bc06-b70edfe6e224",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -2547,7 +2515,6 @@
       "instanceId": "29f181f0-7886-4c45-8834-f6a83c5e422a",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -2616,7 +2583,6 @@
       "instanceId": "324e0ea2-810e-4a94-9905-3d4e61da4e7b",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -2685,7 +2651,6 @@
       "instanceId": "d73acaaa-3796-4dee-bc51-0c6f721e6b69",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -2754,7 +2719,6 @@
       "instanceId": "40cb6ab5-18e4-4e5b-b156-8c2919b4fae9",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -2823,7 +2787,6 @@
       "instanceId": "6496141f-883d-4657-8322-c176c055487f",
       "type": "StonePath-Tee-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -2892,7 +2855,6 @@
       "instanceId": "2030a157-3c86-4a47-9154-35517df1a236",
       "type": "Farm-Cabbage",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -2977,7 +2939,6 @@
       "instanceId": "6e6f263a-81dc-4217-a081-93195a939f05",
       "type": "Farm-Cabbage",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -3062,7 +3023,6 @@
       "instanceId": "9a973967-fa0b-4c00-9853-d9352c206c8d",
       "type": "Doctor",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -3134,7 +3094,6 @@
       "instanceId": "0af2f636-6910-4cd7-8f1a-15079df6b8a1",
       "type": "PrimarySchool",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -3206,7 +3165,6 @@
       "instanceId": "0c1a674e-5ac3-426b-8480-d011c3b46792",
       "type": "WaterTank",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -3294,7 +3252,6 @@
       "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "type": "House-Blue",
       "category": "construction",
-      "pop": 12,
       "sickCount": 0,
       "invalidCount": 0,
       "stocks": {
@@ -3654,7 +3611,6 @@
       "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -3723,7 +3679,6 @@
       "instanceId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "type": "House-Red",
       "category": "construction",
-      "pop": 12,
       "sickCount": 0,
       "invalidCount": 0,
       "stocks": {
@@ -3998,7 +3953,6 @@
       "instanceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
       "type": "Farm-Carrot",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 288,
@@ -4089,7 +4043,6 @@
       "instanceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
       "type": "Farm-Carrot",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 288,
@@ -4180,7 +4133,6 @@
       "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -4249,7 +4201,6 @@
       "instanceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
       "type": "Farm-Wheat",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 288,
         "carrot": 0,
@@ -4340,7 +4291,6 @@
       "instanceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
       "type": "Farm-Wheat",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 288,
         "carrot": 0,
@@ -4432,7 +4382,6 @@
       "category": "nature",
       "x": 16,
       "y": 12,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -4468,7 +4417,6 @@
       "instanceId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "type": "House-Blue",
       "category": "construction",
-      "pop": 6,
       "sickCount": 0,
       "invalidCount": 0,
       "stocks": {
@@ -4816,7 +4764,6 @@
       "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -4885,7 +4832,6 @@
       "instanceId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "type": "House-Red",
       "category": "construction",
-      "pop": 12,
       "sickCount": 0,
       "invalidCount": 0,
       "stocks": {
@@ -5160,7 +5106,6 @@
       "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "type": "House-Red",
       "category": "construction",
-      "pop": 12,
       "sickCount": 0,
       "invalidCount": 0,
       "stocks": {
@@ -5450,7 +5395,6 @@
       "instanceId": "5b6d0f8e-ec32-4826-8a43-8c5a40c8f86b",
       "type": "Bank",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -5534,7 +5478,6 @@
       "instanceId": "61bf43fc-c173-4395-9071-46ba5671a619",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -5604,7 +5547,6 @@
       "category": "nature",
       "x": 0,
       "y": 15,
-      "pop": 0,
       "stocks": {
         "rock": 50,
         "gold": 0,
@@ -5642,7 +5584,6 @@
       "instanceId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "type": "House-Purple",
       "category": "construction",
-      "pop": 12,
       "sickCount": 0,
       "invalidCount": 0,
       "stocks": {
@@ -5911,7 +5852,6 @@
       "instanceId": "07985189-f396-43af-bb61-16169bcc60d7",
       "type": "StonePath-Tee-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -5980,7 +5920,6 @@
       "instanceId": "1d0c209a-9d96-4ff3-b7e7-2cf48a9f02a7",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -6049,7 +5988,6 @@
       "instanceId": "bc7f8d0f-3a92-484f-a3ab-877ef3f66462",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -6118,7 +6056,6 @@
       "instanceId": "3e38d5d2-a44f-4873-bdd4-4deea693e87f",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -6187,7 +6124,6 @@
       "instanceId": "bb2c10c1-eeff-4de6-87c2-b34bca69d904",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -6256,7 +6192,6 @@
       "instanceId": "91737cde-7d72-4a9f-b2f3-7c6b5b427afd",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -6325,7 +6260,6 @@
       "instanceId": "dac9e01c-71c7-4390-aab5-13d5f6e35fec",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -6394,7 +6328,6 @@
       "instanceId": "e7d386c4-120f-4773-b9fb-15da27a55770",
       "type": "StonePath-001",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -6463,7 +6396,6 @@
       "instanceId": "ab5ec386-380c-4a68-851b-3187697f707f",
       "type": "FireStation",
       "category": "construction",
-      "pop": 0,
       "stocks": {
         "wheat": 0,
         "carrot": 0,
@@ -6544,7 +6476,6 @@
       "category": "nature",
       "x": 16,
       "y": 16,
-      "pop": 0,
       "stocks": {
         "rock": 50,
         "gold": 0,
@@ -6583,7 +6514,6 @@
       "category": "nature",
       "x": 4,
       "y": 17,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -6620,7 +6550,6 @@
       "category": "nature",
       "x": 16,
       "y": 17,
-      "pop": 0,
       "stocks": {
         "wood": 100
       },
@@ -6664,6 +6593,7 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "2030a157-3c86-4a47-9154-35517df1a236",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6679,6 +6609,7 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "2030a157-3c86-4a47-9154-35517df1a236",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6694,6 +6625,7 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "2030a157-3c86-4a47-9154-35517df1a236",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6709,6 +6641,7 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "6e6f263a-81dc-4217-a081-93195a939f05",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6724,6 +6657,7 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "6e6f263a-81dc-4217-a081-93195a939f05",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6739,6 +6673,7 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6754,6 +6689,7 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "6e6f263a-81dc-4217-a081-93195a939f05",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6769,6 +6705,7 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6784,6 +6721,7 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6799,6 +6737,7 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6814,6 +6753,7 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6829,6 +6769,7 @@
       },
       "houseId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6844,6 +6785,7 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "9a973967-fa0b-4c00-9853-d9352c206c8d",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6859,6 +6801,7 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "ab5ec386-380c-4a68-851b-3187697f707f",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6874,6 +6817,7 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "9a973967-fa0b-4c00-9853-d9352c206c8d",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6889,6 +6833,7 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "0af2f636-6910-4cd7-8f1a-15079df6b8a1",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6904,6 +6849,7 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6919,6 +6865,7 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "0af2f636-6910-4cd7-8f1a-15079df6b8a1",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6934,6 +6881,7 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "0c1a674e-5ac3-426b-8480-d011c3b46792",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6949,6 +6897,7 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6964,6 +6913,7 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "0c1a674e-5ac3-426b-8480-d011c3b46792",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6979,6 +6929,7 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -6994,6 +6945,7 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "ab5ec386-380c-4a68-851b-3187697f707f",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7009,6 +6961,7 @@
       },
       "houseId": "4b7424ba-d5b3-457b-90bf-ffe800df176d",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "ab5ec386-380c-4a68-851b-3187697f707f",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7024,6 +6977,7 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7039,6 +6993,7 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "379be3e3-acae-4a97-914e-62646b4ac608",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7054,6 +7009,7 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "379be3e3-acae-4a97-914e-62646b4ac608",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7069,6 +7025,7 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "379be3e3-acae-4a97-914e-62646b4ac608",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7084,6 +7041,7 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7099,6 +7057,7 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "9e120d40-0e2f-4f1e-8f9a-58bc164b4cd5",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7114,6 +7073,7 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "9e120d40-0e2f-4f1e-8f9a-58bc164b4cd5",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7129,6 +7089,7 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7144,6 +7105,7 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7159,6 +7121,7 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "aa4385de-5121-4412-9bf7-ddfeade791e9",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7174,6 +7137,7 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7189,6 +7153,7 @@
       },
       "houseId": "60c28a45-10cd-42a6-9a5a-5978b811d2e1",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7204,6 +7169,7 @@
       },
       "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "810be22f-5b2c-4087-a0f8-fe55bd849d9a",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7219,6 +7185,7 @@
       },
       "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "810be22f-5b2c-4087-a0f8-fe55bd849d9a",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7234,6 +7201,7 @@
       },
       "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "a3f6b1b2-a108-4489-8d83-65619d408211",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7249,6 +7217,7 @@
       },
       "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "a3f6b1b2-a108-4489-8d83-65619d408211",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7264,6 +7233,7 @@
       },
       "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "810be22f-5b2c-4087-a0f8-fe55bd849d9a",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7279,6 +7249,7 @@
       },
       "houseId": "9551cf7d-6669-4829-bde8-01d3d0456777",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "810be22f-5b2c-4087-a0f8-fe55bd849d9a",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7294,6 +7265,7 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7309,6 +7281,7 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7324,6 +7297,7 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "5b6d0f8e-ec32-4826-8a43-8c5a40c8f86b",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7339,6 +7313,7 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7354,6 +7329,7 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7369,6 +7345,7 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7384,6 +7361,7 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "9101dc05-005a-40a8-b1b0-068907e24961",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7399,6 +7377,7 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "9101dc05-005a-40a8-b1b0-068907e24961",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7414,6 +7393,7 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "9101dc05-005a-40a8-b1b0-068907e24961",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7429,6 +7409,7 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "9101dc05-005a-40a8-b1b0-068907e24961",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7444,6 +7425,7 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "5b6d0f8e-ec32-4826-8a43-8c5a40c8f86b",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7459,6 +7441,7 @@
       },
       "houseId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": "5b6d0f8e-ec32-4826-8a43-8c5a40c8f86b",
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7474,6 +7457,7 @@
       },
       "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7489,6 +7473,7 @@
       },
       "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7504,6 +7489,7 @@
       },
       "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7519,6 +7505,7 @@
       },
       "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7534,6 +7521,7 @@
       },
       "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7549,6 +7537,7 @@
       },
       "houseId": "d811803e-7b5a-4e62-8b71-9cc118b25fd6",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7564,6 +7553,7 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7579,6 +7569,7 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7594,6 +7585,7 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7609,6 +7601,7 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7624,6 +7617,7 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7639,6 +7633,7 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7654,6 +7649,7 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7669,6 +7665,7 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7684,6 +7681,7 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7699,6 +7697,7 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7714,6 +7713,7 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,
@@ -7729,6 +7729,7 @@
       },
       "houseId": "eca7d0ba-6c5c-4b36-8d58-be13a5b6c1c4",
       "hamletId": "3b383d94-a2c4-4912-b359-967fde804409",
+      "workplaceId": null,
       "mentalHealth": 70,
       "severeMonths": 0,
       "invalid": false,

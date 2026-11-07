@@ -14,7 +14,7 @@ export class GetCityPopulationSummary {
    */
   async execute() {
     const houses = await this.repository.listAllResidentialSnapshots();
-    const totalPop = houses.reduce((sum, house) => sum + (house.pop || 0), 0);
+    const totalPop = houses.reduce((sum, house) => sum + house.pop, 0);
     return {
       totalPop,
       houseCount: houses.length,

@@ -62,7 +62,7 @@ export function popByGroupFromHouses(houses) {
   for (const house of houses) {
     const group = residentialGroupForType(house.type || '');
     if (!group || mapped[group] == null) continue;
-    mapped[group] += house.pop || 0;
+    mapped[group] += residentsCountOf(house);
   }
   return mapped;
 }
@@ -209,7 +209,7 @@ export async function getHudPopulationScopeSnapshot(scope = 'active') {
     .filter((row) => isResidentialHouseType(normalizeResidentialType(row.type || '')))
     .map(toHousingSnapshot);
 
-  const totalPop = residential.reduce((sum, house) => sum + (house.pop || 0), 0);
+  const totalPop = residential.reduce((sum, house) => sum + house.pop, 0);
   const { famishedPopulation, disettePopulation, penuriePopulation } = computeCityFamishedPopulation(residential);
   const hungerRisk = computeCityHungerRisk(residential);
   const employment = computeCityEmploymentSummary(rows.map(toEmploymentSnapshot));

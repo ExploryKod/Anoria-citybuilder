@@ -167,10 +167,23 @@ export class HealthSectionPresenter {
             this.sicknessCover = await this.accounting.setSicknessCover(select.value);
             this.render();
         });
-        const note = document.createElement('small');
-        note.className = 'health-note';
-        note.textContent = sicknessCoverExplanation(this.sicknessCover);
-        section.append(select, note);
+        // Under the dropdown, every choice is explained in the same small text; a green dot precedes the one in force, a grey dot the other.
+        const notes = document.createElement('ul');
+        notes.className = 'health-cover-notes';
+        for (const cover of SICKNESS_COVERS) {
+            const active = cover === this.sicknessCover;
+            const item = document.createElement('li');
+            item.className = `health-note health-cover-note${active ? ' is-selected' : ''}`;
+            if (active) item.setAttribute('aria-current', 'true');
+            const dot = document.createElement('span');
+            dot.className = 'health-cover-dot';
+            dot.setAttribute('aria-hidden', 'true');
+            const name = document.createElement('strong');
+            name.textContent = SICKNESS_COVER_LABELS[cover];
+            item.append(dot, name, document.createTextNode(` : ${sicknessCoverExplanation(cover)}`));
+            notes.append(item);
+        }
+        section.append(select, notes);
         return section;
     }
 

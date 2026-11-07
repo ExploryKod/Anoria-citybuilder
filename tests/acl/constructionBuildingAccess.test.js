@@ -89,14 +89,14 @@ describe('ACL Construction — building access', () => {
 
   describe('updateBuildingFields', () => {
     test('updates existing row only', async () => {
-      const record = makeHouseRecord({ type: 'Farm-Wheat', x: 5, y: 5, extra: { pop: 0 } });
+      const record = makeHouseRecord({ type: 'Farm-Wheat', x: 5, y: 5, extra: { price: 0 } });
       await seedBuilding(record);
 
-      await updateBuildingFields(record.instanceId, { pop: 2 });
-      expect((await getBuildingById(record.instanceId)).pop).toBe(2);
+      await updateBuildingFields(record.instanceId, { price: 2 });
+      expect((await getBuildingById(record.instanceId)).price).toBe(2);
 
       const missingId = createBuildingInstanceId();
-      await updateBuildingFields(missingId, { pop: 1 });
+      await updateBuildingFields(missingId, { price: 1 });
       expect(await getBuildingById(missingId)).toBeUndefined();
     });
   });

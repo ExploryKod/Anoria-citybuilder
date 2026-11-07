@@ -1,4 +1,5 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { refuseResidentsField } from '../../../../core/persistence/dexie/residentsProjection.js';
 import { isActiveHamletRow } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { residentsCountOf } from '../../../../shared/population/residentsCount.js';
 import { createEmploymentBuildingSnapshot } from '../../domain/EmploymentBuildingSnapshot.js';
@@ -37,6 +38,7 @@ export class DexieEmploymentBuildingRepository {
    * @param {Record<string, unknown>} updates
    */
   async #putFields(instanceId, updates) {
+    refuseResidentsField(instanceId, updates);
     const row = await db.houses.get(instanceId);
     if (!row) return;
 
@@ -80,7 +82,7 @@ export class DexieEmploymentBuildingRepository {
       const buildingId = instanceIdFromHouseRow(house);
       try {
         await this.#putFields(buildingId, {
-          employees: { ...employees, worker: 0, workerSources: {}, appointedFrom: {} },
+          employees: { ...employees, worker: 0, workerSources: {}, absentSources: {}, appointedFrom: {} },
         });
       } catch (err) {
         console.warn('[DexieEmploymentBuildingRepository] Failed to reset workers:', {
@@ -116,14 +118,16 @@ export class DexieEmploymentBuildingRepository {
    * The houses the workers of a workplace come from: `{ houseId: workers }`, the trace of who is paid by whom.
    * @param {string} buildingId
    * @param {Record<string, number>} sources
+   * @param {Record<string, number>} absentSources of those workers, how many are sick (so do not work), by house: `{ houseId: absent }`
    */
-  async saveWorkerSources(buildingId, sources) {
+  async saveWorkerSources(buildingId, sources, absentSources) {
     if (!buildingId) return;
+    if (!absentSources || typeof absentSources !== 'object') throw new Error(`[employment] ${buildingId}: the absent workers must be told, got ${absentSources}`);
     const row = await db.houses.get(buildingId);
     if (!row) return;
     const employees = row.employees || { worker: 0, worker_need: 0 };
     await this.#putFields(buildingId, {
-      employees: { ...employees, workerSources: sources },
+      employees: { ...employees, workerSources: sources, absentSources },
     });
   }
 

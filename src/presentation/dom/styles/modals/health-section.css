@@ -130,9 +130,8 @@
     }
 }
 
-/* The sick-leave law: one select, full width, a touch target of at least 40 px, its explanation wrapping under it. */
+/* The sick-leave law: one select the width of its longest option (the panel's own limit), a touch target of at least 40 px, its explanation wrapping under it. */
 .health-section select {
-    width: 100%;
     min-height: 40px;
     box-sizing: border-box;
 }
@@ -140,6 +139,34 @@
 .health-section select + .health-note {
     display: block;
     margin-top: 8px;
+}
+
+/* Under a dropdown, each choice explained in the same small text, a green dot before the one in force and a grey dot before the other. Wraps on a phone, no table. */
+.health-cover-notes {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.health-cover-note {
+    margin-top: 0;
+    opacity: 1;
+}
+
+.health-cover-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 50%;
+    background: #9e9e9e;
+    vertical-align: baseline;
+}
+
+.health-cover-note.is-selected .health-cover-dot {
+    background: #2e7d32;
 }
 
 @media screen and (max-width: 768px) {

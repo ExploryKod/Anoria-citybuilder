@@ -344,3 +344,47 @@
     }
 }
 
+
+/*
+ * Every dropdown of the administrator panel and of the building sheets (houses, companies) looks the same: the browser's own widget is replaced by a bordered field with a
+ * chevron, a touch target of 40px, the orange focus of the game. `:where` keeps the rule at the weight of a bare element, so a panel's own class (the aid form, the storage
+ * months, the loans) still wins.
+ */
+:where(.administrator-panel, #info-building-overlay) select {
+    appearance: none;
+    -webkit-appearance: none;
+    box-sizing: border-box;
+    min-height: 40px;
+    /* As wide as its longest option, never wider than a readable field (26rem), never wider than the panel */
+    width: auto;
+    max-width: min(100%, 26rem);
+    padding: 0 36px 0 12px;
+    border: 1px solid rgba(0, 0, 0, 0.23);
+    border-radius: 8px;
+    background-color: white;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23fb8122' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    color: inherit;
+    font: inherit;
+    font-size: 0.95rem;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+:where(.administrator-panel, #info-building-overlay) select:hover:not(:disabled) {
+    border-color: var(--cta);
+}
+
+:where(.administrator-panel, #info-building-overlay) select:focus-visible {
+    outline: none;
+    border-color: var(--cta);
+    box-shadow: 0 0 0 3px rgba(251, 129, 34, 0.25);
+}
+
+:where(.administrator-panel, #info-building-overlay) select:disabled {
+    background-color: rgba(0, 0, 0, 0.06);
+    color: rgba(0, 0, 0, 0.38);
+    cursor: not-allowed;
+}

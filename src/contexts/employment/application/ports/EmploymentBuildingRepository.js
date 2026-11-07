@@ -30,8 +30,9 @@ export class EmploymentBuildingRepository {
    * The houses a workplace's workers come from: `{ houseId: workers }`.
    * @param {string} buildingId
    * @param {Record<string, number>} sources
+   * @param {Record<string, number>} absentSources of those workers, how many are sick and do not work, by house
    */
-  async saveWorkerSources(_buildingId, _sources) {
+  async saveWorkerSources(_buildingId, _sources, _absentSources) {
     throw new Error('EmploymentBuildingRepository: port not implemented');
   }
 

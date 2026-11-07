@@ -1,4 +1,9 @@
 import { DexieEmploymentBuildingRepository } from '../contexts/employment/infrastructure/dexie/DexieEmploymentBuildingRepository.js';
+import { getOrCreateCitizenRegistry } from './citizenRegistry.js';
+import { requireActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
+import { isInvalid } from '../contexts/housing/domain/policies/InvalidityPolicy.js';
+import { HEALTH_SICK_BELOW } from '../shared/population/HealthFactorCatalog.js';
+import { houseInvalidityRule } from '../shared/population/workforceQueries.js';
 import { DistributeCityWorkers } from '../contexts/employment/application/commands/DistributeCityWorkers.js';
 import { GetCityEmploymentSummary } from '../contexts/employment/application/queries/GetCityEmploymentSummary.js';
 import { DexieHamletSkillPriorityRepository } from '../contexts/employment/infrastructure/dexie/DexieHamletSkillPriorityRepository.js';
@@ -28,14 +33,25 @@ import {
  * @param {import('../contexts/employment/application/ports/EmploymentBuildingRepository.js').EmploymentBuildingRepository} [deps.employmentBuildingRepository]
  * @param {(house: { type?: string, level?: number }, skillKey: string, requiredLevel: number) => boolean} [deps.citizenProvidesSkillAtLevel]
  * @param {{ preload: (hamletId: string) => Promise<void>, loadUserPriorities: () => Record<string, number>, saveUserPriorities: (priorities: Record<string, number>) => void }} [deps.skillPriorityRepository]
+ * @param {object} [deps.citizens] the citizens port of the worker distribution (see DistributeCityWorkers.js); the registry's by default
  */
-export function createEmploymentContext({ employmentBuildingRepository, citizenProvidesSkillAtLevel, skillPriorityRepository: injectedSkillPriorityRepository } = {}) {
+export function createEmploymentContext({ employmentBuildingRepository, citizenProvidesSkillAtLevel, skillPriorityRepository: injectedSkillPriorityRepository, citizens: injectedCitizens } = {}) {
   const employmentBuildingRepositoryImpl =
     employmentBuildingRepository ?? new DexieEmploymentBuildingRepository();
   const skillPriorityRepository = injectedSkillPriorityRepository ?? new DexieHamletSkillPriorityRepository();
+  // The citizens of the hamlet, as the distribution of the workers needs them: by house, what ails each (an invalid one holds no post), and where each now works.
+  const citizenRegistry = injectedCitizens ? null : getOrCreateCitizenRegistry();
+  const citizens = injectedCitizens ?? {
+    byHouse: () => citizenRegistry.forHamlet(requireActiveHamletId()),
+    statusOf: (citizen, houseType) => {
+      if (isInvalid(citizen, houseInvalidityRule(houseType))) return 'invalid';
+      return citizen.health < HEALTH_SICK_BELOW || citizen.mentalHealth < HEALTH_SICK_BELOW ? 'sick' : 'fit';
+    },
+    assign: (changes) => citizenRegistry.assignWorkplaces(requireActiveHamletId(), changes),
+  };
   const distributeCityWorkersCommand = new DistributeCityWorkers(
     employmentBuildingRepositoryImpl,
-    { citizenProvidesSkillAtLevel },
+    { citizenProvidesSkillAtLevel, citizens },
   );
   const getCityEmploymentSummaryQuery = new GetCityEmploymentSummary(
     employmentBuildingRepositoryImpl

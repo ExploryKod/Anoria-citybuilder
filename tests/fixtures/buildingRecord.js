@@ -15,7 +15,8 @@ import {
  * @param {Record<string, unknown>} [params.extra]
  */
 export function makeHouseRecord({ type, x, y, instanceId, extra = {} }) {
-  return canonicalizeHouseRecord({
+  // The record keeps the `pop` it was asked for (default 0): it is not stored on the row, `seedBuilding` gives the house that many citizens.
+  return { pop: extra.pop ?? 0, ...canonicalizeHouseRecord({
     hamletId: TEST_HAMLET_ID,
     instanceId: instanceId ?? createBuildingInstanceId(),
     type,
@@ -26,7 +27,7 @@ export function makeHouseRecord({ type, x, y, instanceId, extra = {} }) {
     stocks: { food: 0, cabbage: 0, wheat: 0, carrot: 0 },
     roads: 0,
     ...extra,
-  });
+  }) };
 }
 
 export { createBuildingInstanceId };

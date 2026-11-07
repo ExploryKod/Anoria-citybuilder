@@ -1,14 +1,13 @@
 /**
  * The citizens follow the population of their house, in the same transaction as its row: arrivals are drawn, the latest
- * arrivals leave first, the identity of those who stay never changes, a demolished house takes its citizens with it, and a
- * house whose residents and citizens disagree is refused.
+ * arrivals leave first, the identity of those who stay never changes, a demolished house takes its citizens with it, and the
+ * residents of a house are the count of its citizens (never a stored number).
  */
 import 'fake-indexeddb/auto';
 import { describe, test, expect, beforeEach } from '@jest/globals';
 import db from '../../../src/core/persistence/dexie/db.js';
 import { DexieHousingBuildingRepository } from '../../../src/contexts/housing/infrastructure/dexie/DexieHousingBuildingRepository.js';
 import { DexieCitizenRegistry } from '../../../src/shared/citizens/DexieCitizenRegistry.js';
-import { assertCitizensMatchPop } from '../../../src/shared/citizens/Citizen.js';
 import { seedBuilding, clearBuildingsTable } from '../../helpers/buildingDb.js';
 import { TEST_HAMLET_ID } from '../../helpers/testHamlet.js';
 import { makeHouseRecord } from '../../fixtures/buildingRecord.js';
@@ -50,10 +49,22 @@ describe('citizens — one per resident, written with the house', () => {
     expect(after).toEqual(before.slice(0, 3));
   });
 
-  test('a house whose residents and citizens disagree is refused, naming the house', async () => {
+  // The residents of a house are its citizens: `pop` is never stored on the row, it is the count the citizens make, whatever a writer puts in the row.
+  test('a house\'s pop is the count of its citizens, never a stored number', async () => {
     await repository.savePopulation(houseId, { pop: 2 });
-    await expect(registry.forHouse({ ...house(), pop: 3 })).rejects.toThrow(new RegExp(houseId));
-    expect(() => assertCitizensMatchPop(houseId, 1, [])).toThrow(/counts 1 residents but holds 0/);
+    expect((await db.houses.get(houseId)).pop).toBe(2);
+    expect((await repository.findById(houseId)).pop).toBe(2);
+
+    // A writer that puts a number in the row changes nothing.
+    await db.houses.put({ ...(await db.houses.get(houseId)), pop: 9 });
+    expect((await db.houses.get(houseId)).pop).toBe(2);
+
+    // A transaction that aborts moves no count.
+    await expect(db.transaction('rw', db.houses, db.citizens, async () => {
+      await registry.removeHouse(houseId);
+      throw new Error('abort');
+    })).rejects.toThrow('abort');
+    expect((await db.houses.get(houseId)).pop).toBe(2);
   });
 
   test('a demolished house takes its citizens with it', async () => {

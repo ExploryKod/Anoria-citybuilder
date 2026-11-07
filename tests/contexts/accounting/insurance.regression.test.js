@@ -30,7 +30,7 @@ async function runMonths(months, { sicknessCover = 'none', reserve = 1e9, canPay
     await new SettleProducerCharges({
       getTimeInfo,
       listBuildings: async () => [
-        { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 4 }, absentSources: { 'house-1': 1 }, sickAbsentSources: { 'house-1': 1 }, invalidAbsentSources: {} },
+        { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 4 }, absentSources: { 'house-1': 1 }, sickAbsentSources: { 'house-1': 1 } },
         // Staffed, the insurer employs a worker of another house: the law of compulsory insurance can then be in force.
         { id: 'insurance-1', type: 'Insurance', companyId: 'ano', workerSources: staffedInsurer ? { 'house-2': 1 } : {}, absentSources: {} },
         { id: 'house-1', type: 'House-Blue', workerSources: {}, absentSources: {} },
@@ -47,7 +47,7 @@ async function runMonths(months, { sicknessCover = 'none', reserve = 1e9, canPay
       sumHouseSales: async () => [],
       sumBankInterestByBuilding: async () => [{ buildingId: 'bank-1', amountHT: 1000 }],
       sumOtherExpensesByBuilding: async () => [],
-      listHouses: async () => [{ id: 'house-1', pop: 4, salaried: 0 }, { id: 'house-2', pop: 1, salaried: 0 }],
+      listHouses: async () => [{ id: 'house-1', pop: 4, salaried: 0, invalid: 0 }, { id: 'house-2', pop: 1, salaried: 0, invalid: 0 }],
       getPublicPay: async () => ({ benefitBase: 100, unemploymentBenefitRate: 0, employerContributionRate: 0, employeeContributionRate: 0.1, administratorStipend: 0, sicknessCover, insuranceMandatory }),
       getWageRateOf: async () => () => 100,
       getSalaryTax: async () => ({ threshold1: 1e6, rate1: 0, threshold2: 1e6, rate2: 0 }),

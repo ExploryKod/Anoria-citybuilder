@@ -62,10 +62,10 @@ class InMemoryEmploymentBuildingRepository {
     this.raw.set(buildingId, { ...b, worker: workerCount });
   }
 
-  async saveWorkerSources(buildingId, sources) {
+  async saveWorkerSources(buildingId, sources, absentSources) {
     const b = this.raw.get(buildingId);
     if (!b) return;
-    this.raw.set(buildingId, { ...b, workerSources: sources });
+    this.raw.set(buildingId, { ...b, workerSources: sources, absentSources });
   }
 
   async saveAppointed(buildingId, appointedFrom) {
@@ -77,6 +77,24 @@ class InMemoryEmploymentBuildingRepository {
   get(id) {
     return this.raw.get(id);
   }
+}
+
+/** The citizens port of the distribution when a test is not about who works where: nobody to name, so only the counts are distributed. */
+const noCitizens = Object.freeze({ byHouse: async () => new Map(), statusOf: () => 'fit', assign: async () => {} });
+
+/** A citizens port over a plain list, the way the registry serves it: by house in a stable order, with the changes it is told to write kept for the test to read. */
+function citizensPort(byHouse, statusOf = () => 'fit') {
+  const written = [];
+  return {
+    written,
+    byHouse: async () => new Map(Object.entries(byHouse)),
+    statusOf: (citizen) => (typeof statusOf === 'function' ? statusOf(citizen) : statusOf),
+    assign: async (changes) => { written.push(...changes.map(({ citizen, workplaceId }) => [citizen.id, workplaceId])); },
+  };
+}
+
+function citizen(id, { health = 80, mentalHealth = 70, workplaceId = null } = {}) {
+  return { id, health, mentalHealth, workplaceId };
 }
 
 function house(id, pop, roadCount = 1, type = 'House-Red', level = 2) {
@@ -177,7 +195,7 @@ describe('Employment — DistributeCityWorkers', () => {
           type: 'Windmill-001',
         }),
       ]);
-      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
     });
 
     test('houses with roads contribute pop; without roads do not', async () => {
@@ -197,7 +215,7 @@ describe('Employment — DistributeCityWorkers', () => {
         house('House-Red-1-1', 4, 1),
         workplace('Farm-Wheat-0-0', { workerNeed: 3, sector: 1, roadCount: 0 }),
       ]);
-      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
 
       const result = await useCase.execute({});
       expect(result.assignments).toEqual([{ buildingId: 'Farm-Wheat-0-0', workers: 3 }]);
@@ -208,7 +226,7 @@ describe('Employment — DistributeCityWorkers', () => {
         house('House-Red-1-1', 5, 1, 'House-Red', 1),
         workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 }),
       ]);
-      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
 
       const result = await useCase.execute({});
       // Tier 1 grants 'fermier': the farm is staffed from the first level.
@@ -222,7 +240,7 @@ describe('Employment — DistributeCityWorkers', () => {
         house('House-Red-1-1', 2, 1, 'House-Red', 1),
         workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 }),
       ]);
-      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
 
       const { labourMarket } = await useCase.execute({});
 
@@ -242,7 +260,7 @@ describe('Employment — DistributeCityWorkers', () => {
         workplace('Windmill-c', { workerNeed: 4, sector: 2, type: 'Windmill-001' }),
         workplace('WaterTank-d', { workerNeed: 2, sector: 6, type: 'WaterTank' }),
       ]);
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
 
       const result = await useCase.execute({});
 
@@ -261,7 +279,7 @@ describe('Employment — DistributeCityWorkers', () => {
         workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 }),
         workplace('Market-Stall-b', { workerNeed: 5, sector: 2, type: 'Market-Stall-Red' }),
       ]);
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
 
       await useCase.execute({});
 
@@ -283,7 +301,7 @@ describe('Employment — DistributeCityWorkers', () => {
         house('House-Blue-2-2', 2, 1, 'House-Blue'),
         workplace('Farm-Wheat-a', { workerNeed: 4, sector: 1 }),
       ]);
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel: sharedSkill });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel: sharedSkill, citizens: noCitizens });
 
       const result = await useCase.execute({});
 
@@ -301,7 +319,7 @@ describe('Employment — DistributeCityWorkers', () => {
         house('House-Red-1-1', 12, 1, 'House-Red'),
         workplace('Farm-Wheat-a', { workerNeed: 20, sector: 1 }),
       ]);
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
 
       const result = await useCase.execute({});
 
@@ -316,7 +334,7 @@ describe('Employment — DistributeCityWorkers', () => {
         house('House-Purple-1-1', 5, 1, 'House-Purple', 1),
         workplace('WaterTank-x', { workerNeed: 2, sector: 6, type: 'WaterTank' }),
       ]);
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
 
       const result = await useCase.execute({});
 
@@ -333,7 +351,7 @@ describe('Employment — DistributeCityWorkers', () => {
         workplace('Doctor-a', { workerNeed: 2, sector: 6, type: 'Doctor' }),
         workplace('Hospital-a', { workerNeed: 4, sector: 6, type: 'Hospital' }),
       ]);
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
 
       await useCase.execute({});
 
@@ -350,7 +368,7 @@ describe('Employment — DistributeCityWorkers', () => {
         workplace('Doctor-a', { workerNeed: 4, sector: 6, type: 'Doctor' }),
         workplace('Hospital-a', { workerNeed: 1, sector: 6, type: 'Hospital' }),
       ]);
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
 
       await useCase.execute({});
 
@@ -369,7 +387,7 @@ describe('Employment — DistributeCityWorkers', () => {
         house('House-Purple-lo', 8, 1, 'House-Purple', 4), // tier 4: the highest tier reachable without a School
         workplace('School-a', { workerNeed: 3, sector: 6, type: 'School' }),
       ]);
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
 
       await useCase.execute({});
 
@@ -393,7 +411,7 @@ describe('Employment — DistributeCityWorkers', () => {
 
     test('ranking artisanat above fermier sends the shared labor to the factory first', async () => {
       const repo = dualSkillRepo();
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
 
       await useCase.execute({ skillPriorities: { artisanat: 1, fermier: 2 } });
 
@@ -403,12 +421,55 @@ describe('Employment — DistributeCityWorkers', () => {
 
     test('flipping the ranking sends the shared labor to the farm instead', async () => {
       const repo = dualSkillRepo();
-      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel });
+      const useCase = new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens });
 
       await useCase.execute({ skillPriorities: { fermier: 1, artisanat: 2 } });
 
       expect(repo.get('Farm-Wheat-a').worker).toBe(3);
       expect(repo.get('Factory-Plate-a').worker).toBe(1);
+    });
+  });
+
+  describe('who works where (the citizens)', () => {
+    const status = { c1: 'sick', c2: 'invalid' };
+    const residents = [citizen('c1', { health: 30 }), citizen('c2'), citizen('c3', { health: 60 }), citizen('c4', { health: 90 }), citizen('c5', { health: 75 })];
+
+    test('the fit are hired first, the sick only when needed, the invalid never; only the changes are written', async () => {
+      const repo = new InMemoryEmploymentBuildingRepository([house('H1', 5, 1), workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 })]);
+      const port = citizensPort({ H1: residents }, (c) => status[c.id] ?? 'fit');
+      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: port }).execute();
+
+      expect(repo.get('Farm-Wheat-a').worker).toBe(3);
+      expect(Object.fromEntries(port.written)).toEqual({ c3: 'Farm-Wheat-a', c4: 'Farm-Wheat-a', c5: 'Farm-Wheat-a' });
+    });
+
+    test('the sick who had to be hired are counted absent, by workplace and source house', async () => {
+      const repo = new InMemoryEmploymentBuildingRepository([house('H1', 3, 1), workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 })]);
+      const port = citizensPort({ H1: [citizen('c1', { health: 30 }), citizen('c2'), citizen('c3')] }, (c) => (c.id === 'c1' ? 'sick' : 'fit'));
+      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: port }).execute();
+
+      expect(repo.get('Farm-Wheat-a').workerSources).toEqual({ H1: 3 });
+      expect(repo.get('Farm-Wheat-a').absentSources).toEqual({ H1: 1 });
+    });
+
+    test('a house without road access employs nobody: its workers lose their post', async () => {
+      const repo = new InMemoryEmploymentBuildingRepository([house('H1', 2, 0), workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 })]);
+      const port = citizensPort({ H1: [citizen('c1', { workplaceId: 'Farm-Wheat-a' }), citizen('c2')] });
+      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: port }).execute();
+
+      expect(Object.fromEntries(port.written)).toEqual({ c1: null });
+    });
+
+    test('a resident who works already at the right place is not written again', async () => {
+      const repo = new InMemoryEmploymentBuildingRepository([house('H1', 1, 1), workplace('Farm-Wheat-a', { workerNeed: 3, sector: 1 })]);
+      const port = citizensPort({ H1: [citizen('c1', { workplaceId: 'Farm-Wheat-a' })] });
+      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: port }).execute();
+
+      expect(port.written).toEqual([]);
+    });
+
+    test('no citizens port: the distribution refuses to run', () => {
+      expect(() => new DistributeCityWorkers(new InMemoryEmploymentBuildingRepository([]), { citizenProvidesSkillAtLevel })).toThrow(/citizens/);
     });
   });
 
@@ -420,7 +481,7 @@ describe('Employment — DistributeCityWorkers', () => {
 
     test('two administrators are named to the two posts, whatever the labour market does', async () => {
       const repo = new InMemoryEmploymentBuildingRepository([mayorHouse(4), centralBank()]);
-      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel }).execute();
+      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens }).execute();
 
       expect(repo.get('CentralBank-1').worker).toBe(2);
       expect(repo.get('CentralBank-1').appointedFrom).toEqual({ 'House-Mayor-1': 2 });
@@ -430,14 +491,14 @@ describe('Employment — DistributeCityWorkers', () => {
 
     test('a house with a single administrator leaves a post empty', async () => {
       const repo = new InMemoryEmploymentBuildingRepository([mayorHouse(1), centralBank()]);
-      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel }).execute();
+      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens }).execute();
 
       expect(repo.get('CentralBank-1').worker).toBe(1);
     });
 
     test('no house of administrators, no post filled: the bank stays closed (the other categories do not fill it)', async () => {
       const repo = new InMemoryEmploymentBuildingRepository([house('House-Red-1-1', 6, 1, 'House-Red'), centralBank()]);
-      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel }).execute();
+      await new DistributeCityWorkers(repo, { citizenProvidesSkillAtLevel, citizens: noCitizens }).execute();
 
       expect(repo.get('CentralBank-1').worker).toBe(0);
     });

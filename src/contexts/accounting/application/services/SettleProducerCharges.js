@@ -123,7 +123,7 @@ export class SettleProducerCharges {
       const absentSources = ofStandingHouses(building.absentSources);
       const workerSources = Object.fromEntries(Object.entries(assignedSources).map(([houseId, workers]) => [houseId, workers - (absentSources[houseId] ?? 0)]));
       // Of the absent, the sick and the invalid apart (the social security pays them differently).
-      return { ...building, assignedSources, absentSources, sickAbsentSources: ofStandingHouses(building.sickAbsentSources), invalidAbsentSources: ofStandingHouses(building.invalidAbsentSources), workerSources };
+      return { ...building, assignedSources, absentSources, sickAbsentSources: ofStandingHouses(building.sickAbsentSources), workerSources };
     });
     const pairs = (await this.deps.sumGoodsFlowsByPair(timeInfo.year, timeInfo.monthIndex))
       .filter((pair) => standing.has(pair.sellerId) && (pair.buyerId === null || standing.has(pair.buyerId)));
@@ -196,8 +196,12 @@ export class SettleProducerCharges {
     const benefitByHouse = new Map();
     const unemployedCountByHouse = new Map();
     for (const household of households) {
+      if (!Number.isInteger(household.invalid) || household.invalid < 0 || household.invalid > household.pop) {
+        throw new Error(`[producer] house ${household.id} has no valid count of invalid residents (${household.invalid}): the month cannot be settled`);
+      }
       const pay = householdPublicPayOf({
-        pop: household.pop,
+        // The invalid are no job seekers: they draw a pension (below), not the unemployment benefit.
+        pop: household.pop - household.invalid,
         workers: workersIn(household.id),
         benefitBase: publicPay.benefitBase,
         unemploymentBenefitRate: publicPay.unemploymentBenefitRate,
@@ -221,9 +225,11 @@ export class SettleProducerCharges {
     // The social security's allowance to the households of the sick workers, when the player has chosen it (see SicknessCoverCatalog.js): a share of the wage the absent
     // worker would have earned, less the waiting period. The cover is read only when somebody is absent, so a month with nobody sick settles as it always did.
     const sicknessByHouse = new Map();
-    // The wages each house misses because its workers do not work (euros): the sick and the invalid together (what the insurance companies each pay a share of), and each
-    // apart (the social security pays a sick worker his allowance after the waiting period, an invalid one a pension from the first day).
+    // The wages each house misses because its sick workers do not work (euros); the social security pays a sick worker his allowance after the waiting period, and an invalid
+    // resident (who holds no post) a pension from the first day. The insurance companies measure their share on both.
     const someoneIsAway = buildings.some((building) => Object.keys(building.absentSources).length > 0);
+    // The pension of the invalid is a flat share of the base of the benefits (the same for every invalid resident, whatever he earned), so it needs no wage.
+    const invalidBaseByHouse = new Map(households.filter((household) => household.invalid > 0).map((household) => [household.id, household.invalid * publicPay.benefitBase]));
     const wageRateOf = someoneIsAway ? await this.deps.getWageRateOf() : null;
     const missedWages = (field) => {
       const missed = new Map();
@@ -234,12 +240,13 @@ export class SettleProducerCharges {
       }
       return missed;
     };
-    const missedByHouse = someoneIsAway ? missedWages('absentSources') : new Map();
-    if (someoneIsAway && assertSicknessCover(publicPay.sicknessCover) === 'secu') {
-      const missedSick = missedWages('sickAbsentSources');
-      const missedInvalid = missedWages('invalidAbsentSources');
-      for (const houseId of new Set([...missedSick.keys(), ...missedInvalid.keys()])) {
-        const allowance = centimes((missedSick.get(houseId) ?? 0) * SICKNESS_INDEMNITY_RATE * (1 - SICKNESS_WAITING_SHARE) + (missedInvalid.get(houseId) ?? 0) * INVALIDITY_PENSION_RATE);
+    const missedSick = someoneIsAway ? missedWages('sickAbsentSources') : new Map();
+    // What the insurers measure their indemnity on: the wages missed by the sick, and for the invalid the base of the benefits.
+    const missedByHouse = new Map(missedSick);
+    for (const [houseId, base] of invalidBaseByHouse) missedByHouse.set(houseId, (missedByHouse.get(houseId) ?? 0) + base);
+    if ((someoneIsAway || invalidBaseByHouse.size > 0) && assertSicknessCover(publicPay.sicknessCover) === 'secu') {
+      for (const houseId of new Set([...missedSick.keys(), ...invalidBaseByHouse.keys()])) {
+        const allowance = centimes((missedSick.get(houseId) ?? 0) * SICKNESS_INDEMNITY_RATE * (1 - SICKNESS_WAITING_SHARE) + (invalidBaseByHouse.get(houseId) ?? 0) * INVALIDITY_PENSION_RATE);
         if (allowance > 0) sicknessByHouse.set(houseId, allowance);
       }
     }

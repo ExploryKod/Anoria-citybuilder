@@ -1,12 +1,6 @@
 import { describeCitizenEnvironment, describeHealthEnvironment, describeMentalEnvironment } from '../../domain/policies/HealthEnvironmentPolicy.js';
-import {
-  CONTAGION_RADIUS,
-  HEALTH_SEVERE_BELOW,
-  HEALTH_SICK_BELOW,
-  neighbourSickShareOf,
-  unemployedShareOf,
-  workplaceExposureOf,
-} from '../../../../shared/population/HealthFactorCatalog.js';
+import { surroundingsOf, surroundingsOfCitizen } from '../../domain/policies/HealthSurroundingsPolicy.js';
+import { CONTAGION_RADIUS, HEALTH_SEVERE_BELOW, HEALTH_SICK_BELOW } from '../../../../shared/population/HealthFactorCatalog.js';
 import { houseIsOutsideHealth, residentsSeekingWork } from '../../../../shared/population/workforceQueries.js';
 
 /** How many of the given scores are mildly ill (under the sick threshold, not under the severe one) and how many gravely. */
@@ -17,13 +11,9 @@ function illnessOf(scores) {
   };
 }
 
-/** The facts a house's environments are read with that do not come from the house itself (see HealthEnvironmentPolicy.js). */
-function aroundOf(house, workplaces, neighbours) {
-  return {
-    workplaceExposure: workplaceExposureOf(workplaces.get(house.id)),
-    neighbourSickShare: neighbourSickShareOf(neighbours.get(house.id)),
-    unemployedShare: unemployedShareOf(residentsSeekingWork(house.type, house.pop), workplaces.get(house.id)?.workers ?? 0),
-  };
+/** The readings of a house's surroundings that do not come from the house itself (see HealthSurroundingsPolicy.js). */
+function surroundingsOfHouse(house, workplaces, neighbours) {
+  return surroundingsOf({ pop: house.pop, seeking: residentsSeekingWork(house.type, house.pop) }, workplaces.get(house.id), neighbours.get(house.id));
 }
 
 /** The environments of a set of houses weighted by their inhabitants, so the parts add up to the level like a house's. */
@@ -63,18 +53,29 @@ export class DescribeHouseHealth {
     if (!house) throw new Error(`[health] house ${houseId} is not in the hamlet`);
     // The administrators' house stands outside health: it has no score, no environment and no illness to describe, and the screen says so.
     if (houseIsOutsideHealth(house.type)) return { outsideHealth: true };
-    const inhabitants = await this.citizens.forHouse({ houseId, hamletId: house.hamletId, pop: house.pop });
+    const inhabitants = await this.citizens.forHouse({ houseId, hamletId: house.hamletId });
     const workplaces = await this.repository.workplaceExposureByHouse();
     const neighbours = await this.repository.neighbourSickByHouse(CONTAGION_RADIUS);
-    const around = aroundOf(house, workplaces, neighbours);
+    const around = surroundingsOfHouse(house, workplaces, neighbours);
+    // The house's own reading is the average over its residents; each citizen lives the one of his situation (unemployment weighs only on those with no job, the pollution
+    // of work only on those who work, by the level of his own workplace), as the monthly evolution reads it.
     const environment = describeHealthEnvironment(house, periodKey, around);
     const mentalEnvironment = describeMentalEnvironment(house, periodKey, around);
+    const pollution = await this.repository.pollutionByWorkplace();
+    const seeking = residentsSeekingWork(house.type, house.pop);
+    const variants = new Map();
+    const variantOf = (citizen) => {
+      const own = surroundingsOfCitizen(citizen, seeking, neighbours.get(houseId), pollution);
+      const key = `${own.workplaceExposure}|${own.unemployedShare}`;
+      if (!variants.has(key)) variants.set(key, { body: describeHealthEnvironment(house, periodKey, own), mind: describeMentalEnvironment(house, periodKey, own) });
+      return variants.get(key);
+    };
     const averageOf = (field) => (inhabitants.length === 0 ? null : inhabitants.reduce((sum, citizen) => sum + citizen[field], 0) / inhabitants.length);
     return {
       environment,
       mentalEnvironment,
-      citizenEnvironments: Object.fromEntries(inhabitants.map((citizen) => [citizen.id, describeCitizenEnvironment(environment, citizen.constitution)])),
-      citizenMentalEnvironments: Object.fromEntries(inhabitants.map((citizen) => [citizen.id, describeCitizenEnvironment(mentalEnvironment, citizen.constitution)])),
+      citizenEnvironments: Object.fromEntries(inhabitants.map((citizen) => [citizen.id, describeCitizenEnvironment(variantOf(citizen).body, citizen.constitution)])),
+      citizenMentalEnvironments: Object.fromEntries(inhabitants.map((citizen) => [citizen.id, describeCitizenEnvironment(variantOf(citizen).mind, citizen.constitution)])),
       average: averageOf('health'),
       mentalAverage: averageOf('mentalHealth'),
       citizens: inhabitants.length,
@@ -92,7 +93,7 @@ export class DescribeHouseHealth {
     const minds = [];
     for (const house of await this.repository.findResidentialHouses()) {
       if (houseIsOutsideHealth(house.type)) continue;
-      for (const citizen of await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId, pop: house.pop })) {
+      for (const citizen of await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId })) {
         bodies.push(citizen.health);
         minds.push(citizen.mentalHealth);
       }
@@ -131,9 +132,9 @@ export class DescribeHouseHealth {
     };
     for (const house of houses) {
       if (houseIsOutsideHealth(house.type)) continue;
-      const inhabitants = await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId, pop: house.pop });
+      const inhabitants = await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId });
       if (inhabitants.length === 0) continue;
-      const around = aroundOf(house, workplaces, neighbours);
+      const around = surroundingsOfHouse(house, workplaces, neighbours);
       add(physical, describeHealthEnvironment(house, periodKey, around), inhabitants.length);
       add(mental, describeMentalEnvironment(house, periodKey, around), inhabitants.length);
       for (const citizen of inhabitants) {

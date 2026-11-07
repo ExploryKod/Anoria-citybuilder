@@ -4,6 +4,7 @@ import db from '../../src/core/persistence/dexie/db.js';
 import { setActiveHamletId } from '../../src/core/persistence/hamlet/hamletSession.js';
 import { getHudPopulationScopeSnapshot } from '../../src/composition/hudPopulationAggregates.js';
 import { H, setupHamlets } from '../helpers/hamletIds.js';
+import { seedResidents } from '../helpers/buildingDb.js';
 
 describe('getHudPopulationScopeSnapshot', () => {
   beforeEach(async () => {
@@ -35,6 +36,8 @@ describe('getHudPopulationScopeSnapshot', () => {
         stocks: { food: 10 },
       },
     ]);
+    await seedResidents('11111111-1111-4111-8111-111111111111', H['eraanurbs'], 5);
+    await seedResidents('22222222-2222-4222-8222-222222222222', H['clairiere'], 3);
 
     const country = await getHudPopulationScopeSnapshot('country');
     const active = await getHudPopulationScopeSnapshot('active');

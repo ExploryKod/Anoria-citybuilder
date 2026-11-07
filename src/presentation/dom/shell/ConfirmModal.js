@@ -61,7 +61,8 @@ export function confirmModal({ title, message, items = [], confirmLabel, cancelL
     footer.className = 'news-event-modal-footer';
     const cancel = document.createElement('button');
     cancel.type = 'button';
-    cancel.className = 'modal-btn';
+    // "No" is outlined and "yes" filled, so the two never look alike.
+    cancel.className = 'modal-btn secondary';
     cancel.textContent = cancelLabel;
     const confirm = document.createElement('button');
     confirm.type = 'button';

@@ -4122,6 +4122,7 @@ button.building-info-metric-card[aria-pressed="true"] {
 }
 
 .company-aid-field {
+    justify-self: start;
     min-height: 44px;
     padding: 0 12px;
     border: 1px solid rgba(0, 0, 0, 0.23);
@@ -4130,11 +4131,20 @@ button.building-info-metric-card[aria-pressed="true"] {
     background: white;
 }
 
+/* The room for the chevron the shared dropdown style draws (administrator-panel.css) */
+select.company-aid-field {
+    padding-right: 36px;
+}
+
 .company-aid-error {
     color: #b71c1c;
 }
 
 .company-aid-apply {
+    /* In a grid that stretches its children: it keeps the width of its label, never the width of the sheet */
+    justify-self: start;
+    min-width: 140px;
+    max-width: 100%;
     min-height: 44px;
     padding: 0 24px;
     border: none;
@@ -4149,10 +4159,4 @@ button.building-info-metric-card[aria-pressed="true"] {
 .company-aid-apply:hover,
 .company-aid-apply:focus-visible {
     background: #1b5e20;
-}
-
-@media (max-width: 600px) {
-    .company-aid-apply {
-        width: 100%;
-    }
 }

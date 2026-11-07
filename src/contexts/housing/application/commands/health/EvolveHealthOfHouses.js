@@ -3,7 +3,8 @@ import { nextHealthOf, nextMentalHealthOf } from '../../../domain/policies/Healt
 import { dyingAmong, suicidesAmong } from '../../../domain/policies/HealthMortalityPolicy.js';
 import { invalidityAfter, isInvalid } from '../../../domain/policies/InvalidityPolicy.js';
 import { withHealth, withInvalidity, withMentalHealth } from '../../../../../shared/citizens/Citizen.js';
-import { CONTAGION_RADIUS, HEALTH_SICK_BELOW, neighbourSickShareOf, unemployedShareOf, workplaceExposureOf } from '../../../../../shared/population/HealthFactorCatalog.js';
+import { surroundingsOfCitizen } from '../../../domain/policies/HealthSurroundingsPolicy.js';
+import { CONTAGION_RADIUS, HEALTH_SICK_BELOW } from '../../../../../shared/population/HealthFactorCatalog.js';
 import { houseInvalidityRule, houseIsOutsideHealth, residentsSeekingWork } from '../../../../../shared/population/workforceQueries.js';
 
 /**
@@ -36,8 +37,8 @@ export class EvolveHealthOfHouses {
   async execute({ monthKey, periodKey, deathsEnabled }) {
     if (typeof deathsEnabled !== 'boolean') throw new Error(`[health] whether poor health kills must be told, got ${deathsEnabled}`);
     const houses = await this.repository.findResidentialHouses();
-    // What does not come from the house itself, read once for the month: the pollution of its workers' workplaces and the sick of the houses around.
-    const workplaces = await this.repository.workplaceExposureByHouse();
+    // What does not come from the house itself, read once for the month: the pollution of every workplace and the sick of the houses around.
+    const pollution = await this.repository.pollutionByWorkplace();
     const neighbours = await this.repository.neighbourSickByHouse(CONTAGION_RADIUS);
     let judged = 0;
     let deaths = 0;
@@ -46,18 +47,24 @@ export class EvolveHealthOfHouses {
       if (house.lastHealthMonth === monthKey) continue;
       // The administrators stand outside health: their house is never judged (no score moves, no one falls ill, is invalid or dies).
       if (houseIsOutsideHealth(house.type)) continue;
-      const inhabitants = await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId, pop: house.pop });
-      const around = {
-        workplaceExposure: workplaceExposureOf(workplaces.get(house.id)),
-        neighbourSickShare: neighbourSickShareOf(neighbours.get(house.id)),
-        unemployedShare: unemployedShareOf(residentsSeekingWork(house.type, house.pop), workplaces.get(house.id)?.workers ?? 0),
+      const inhabitants = await this.citizens.forHouse({ houseId: house.id, hamletId: house.hamletId });
+      // The surroundings weigh differently on each citizen: unemployment only on those who have no job, the pollution of work only on those who work, and by the level of the
+      // very workplace he works at. The environments are read once per distinct situation of the house.
+      const seeking = residentsSeekingWork(house.type, house.pop);
+      const environments = new Map();
+      const environmentOf = (citizen) => {
+        const around = surroundingsOfCitizen(citizen, seeking, neighbours.get(house.id), pollution);
+        const key = `${around.workplaceExposure}|${around.unemployedShare}`;
+        if (!environments.has(key)) {
+          environments.set(key, { body: describeHealthEnvironment(house, periodKey, around), mind: describeMentalEnvironment(house, periodKey, around) });
+        }
+        return environments.get(key);
       };
-      const environment = describeHealthEnvironment(house, periodKey, around);
-      const mentalEnvironment = describeMentalEnvironment(house, periodKey, around);
       const rule = houseInvalidityRule(house.type);
       const evolved = inhabitants.map((citizen) => {
-        const health = nextHealthOf(citizen, environment);
-        const mentalHealth = nextMentalHealthOf(citizen, mentalEnvironment);
+        const { body, mind } = environmentOf(citizen);
+        const health = nextHealthOf(citizen, body);
+        const mentalHealth = nextMentalHealthOf(citizen, mind);
         // A grave illness of either, the body's or the mind's, counts towards invalidity.
         return withInvalidity(withMentalHealth(withHealth(citizen, health), mentalHealth), invalidityAfter(citizen, Math.min(health, mentalHealth), rule));
       });

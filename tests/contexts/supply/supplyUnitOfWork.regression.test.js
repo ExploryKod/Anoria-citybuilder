@@ -31,19 +31,19 @@ describe('DexieSupplyBuildingRepository.inUnitOfWork', () => {
   });
 
   test('a field another context changed meanwhile survives the flush, and reads are copies', async () => {
-    await db.houses.bulkPut([row(A, { pop: 1 })]);
+    await db.houses.bulkPut([row(A, { price: 1 })]);
     const repository = new DexieSupplyBuildingRepository();
 
     await repository.inUnitOfWork(async () => {
       const copy = await repository.findBuildingRow(A);
       copy.lastProductionYear = 99;
       await repository.updateBuildingFields(A, { lastConsumptionMonth: 2 });
-      await db.houses.update(A, { pop: 7 });
+      await db.houses.update(A, { price: 7 });
       expect((await repository.findBuildingRow(A)).lastProductionYear).toBeUndefined();
     });
 
     const stored = await db.houses.get(A);
-    expect(stored.pop).toBe(7);
+    expect(stored.price).toBe(7);
     expect(stored.lastConsumptionMonth).toBe(2);
     expect(stored.lastProductionYear).toBeUndefined();
   });

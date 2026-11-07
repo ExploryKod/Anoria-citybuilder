@@ -99,9 +99,10 @@
 
 /* A select in a control row (the wage levers): it shrinks to the row, its long options are cut rather than pushing the row out of the panel */
 .taxes-board .commerce-customs-controls select {
-    flex: 1 1 0;
+    /* Not `flex: 1`: it keeps the width of its longest option, and only shrinks (cut, never overflowing) when the row is narrower */
+    flex: 0 1 auto;
     min-width: 0;
-    max-width: 100%;
+    max-width: min(100%, 26rem);
 }
 
 .taxes-board .commerce-customs-slider:disabled {
@@ -255,6 +256,12 @@
 
 /* Aide aux entreprises: the apply button, one touch-sized control under the sliders (the rows are the taxes' own) */
 .aid-apply-btn {
+    /* The rows around it are columns that stretch their children: left alone the button would take the whole width of the panel. It keeps the width of its label. */
+    align-self: flex-start;
+    justify-self: start;
+    width: auto;
+    max-width: 100%;
+    min-width: 140px;
     min-height: 44px;
     padding: 0 24px;
     margin: 8px 0;
@@ -280,11 +287,6 @@
     cursor: not-allowed;
 }
 
-@media (max-width: 600px) {
-    .aid-apply-btn {
-        width: 100%;
-    }
-}
 
 /* Aide aux entreprises: the form that puts money into a company, one field per line, full width on a phone */
 .aid-inject {

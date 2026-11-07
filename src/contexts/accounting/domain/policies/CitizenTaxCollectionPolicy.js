@@ -3,6 +3,7 @@ import {
   getCitizenStatusProfile,
 } from '../../../../shared/population/CitizenStatusCatalog.js';
 
+import { residentsCountOf } from '../../../../shared/population/residentsCount.js';
 import { listResidentialTypes, normalizeResidentialTypeLabel } from '../../../../shared/building-identity/index.js';
 
 /**
@@ -76,7 +77,7 @@ function* taxedHouses(houses, taxPerCapita) {
       continue;
     }
 
-    const pop = house.pop || 0;
+    const pop = residentsCountOf(house);
     if (pop <= 0) {
       continue;
     }

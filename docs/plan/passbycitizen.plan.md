@@ -1,6 +1,6 @@
 # Plan — Passer par l'habitant (`passbycitizen`)
 
-Statut : proposition, rien n'est construit. Écrit le 2026-11-04. Remplace le §4 de `health.plan.md` (le tableau
+Statut (2026-11-07) : toutes les étapes sont faites (`workplaceId` et `pop` dérivé des citoyens compris, voir §8 bis). Écrit le 2026-11-04. Remplace le §4 de `health.plan.md` (le tableau
 `health[]` par maison est abandonné : l'habitant devient une entité).
 
 ## 1. Idée générale
@@ -37,7 +37,7 @@ Aujourd'hui la maison porte `pop`, le lieu de travail (`employees.workerSources`
 ## 3. Modèle
 
 Table `citizens` (schéma Dexie v23, sans `upgrade` : il n'y a pas de partie à migrer) :
-`id, houseId, hamletId` (index). `clearGameTablesForNewGame` la vide déjà, car elle vide toutes les tables.
+`id, houseId, hamletId` (index). `deleteGameDatabaseForNewGame` (qui supprime toute la base à chaque nouvelle partie, hors `cheatCodes`) la repart de zéro.
 
 Une ligne se compose de deux parties :
 
@@ -220,7 +220,58 @@ Reste (non fait), avec le mécanisme retenu :
 - **Histogramme de la ville et de la carte d'habitant** : la maison l'a ; la ville a sa requête (`getCityHealth`) mais pas d'écran.
 - Les valeurs du catalogue (base, points, plages de constitution, capacités, seuil) sont un premier équilibrage à ajuster en jeu.
 
-Reste à faire : étape 6 (projection à la place de `pop`, `workplaceId`).
+### Étape 6, première partie : `workplaceId` (fait)
+
+- Le citoyen porte `workplaceId` (null = sans emploi). `DistributeCityWorkers` répartit d'abord les effectifs par maison (inchangé), puis
+  **nomme** les personnes (`WorkforceAssignmentPolicy`) : les valides d'abord, les malades seulement si le compte l'exige, jamais les invalides
+  (retirés du bassin d'embauche). Seuls les citoyens dont le lieu change sont écrits (un lot, `assignWorkplaces`). `workerSources` reste la
+  projection comptée de la même répartition.
+- La santé lit la situation **réelle** du citoyen : sans emploi (dans une maison qui cherche du travail) = chômage ; employé = pollution **de son
+  propre lieu** (`surroundingsOfCitizen`, `pollutionByWorkplace`). Le calcul positionnel (`unemployedIdsOf`) a disparu. Un `workplaceId` qui ne
+  désigne plus un lieu du hameau lève une erreur.
+- La liste des habitants d'une maison (`residentsOfHouse`) lit les statuts du `workplaceId` : plus de positions.
+- **Absents exacts** : la répartition compte les malades affectés par lieu et maison source (`employees.absentSources`) ; l'effectif de la
+  production (Supply) et la paie en dérivent. `absenteeism.js` (part fractionnelle) est supprimé.
+- **Pension d'invalidité forfaitaire** : `INVALIDITY_PENSION_RATE × base des allocations × invalides de la maison` (`invalidCount`), les
+  assureurs mesurent leur part sur la même base. L'invalide n'est plus un « travailleur absent » ni un chômeur indemnisé.
+- Limite connue : les moyennes de la maison et du hameau (en-têtes d'histogramme) lisent encore `workerSources` (la projection) ; seules les
+  situations par citoyen lisent `workplaceId`.
+
+### Étape 0, soldée (lectures strictes)
+
+- `createHousingBuildingSnapshot` exige `pop` (entier ≥ 0) et n'a plus de défaut ; `house.pop || 0` est remplacé par `residentsCountOf` /
+  `house.pop` là où il ne s'agit que de maisons (`hudPopulationAggregates`, `CitizenTaxCollectionPolicy`, `GetCityPopulationSummary`, le PIB
+  par habitant de `createAccountingContext`). `DexieHousingBuildingRepository.#putFields` lève une erreur si la maison n'existe pas.
+- Laissés tels quels, **à dessein** : le `pop = 0` des fabriques `Supply…`/`Employment…` et `SupplyBuildingView` (ces instantanés couvrent tous
+  les bâtiments ; un lieu de travail n'a réellement aucun résident) et `workerSources ?? {}` / `absentSources ?? {}` (un lieu qui n'a pas encore
+  été réparti n'a réellement aucun travailleur ; une maison n'a pas d'`employees`).
+
+### Étape 6, seconde partie : `pop` dérivé des citoyens (fait)
+
+Les habitants d'une maison **sont** ses citoyens ; `pop` n'est plus stocké sur la ligne.
+
+- **Projection** (`core/persistence/dexie/residentsProjection.js`) : le nombre de résidents par maison, en mémoire, reconstruit à chaque
+  ouverture de la base (`db.on('ready')`), vidé par `citizens.clear()`.
+- **Tenue à jour par les hooks de la table `citizens`** (`db.js`) : un citoyen ajouté ou retiré bouge le compte tout de suite (ce qu'on lit
+  juste après l'écriture est vrai) ; une transaction qui avorte rend ce qu'elle a bougé. Attendre `complete` ne convenait pas : la promesse
+  d'une transaction se résout avant son événement `complete`.
+- **Échec d'une transaction** : Dexie rejette la promesse d'une transaction *avant* l'événement `abort`, et une transaction imbriquée est la même
+  transaction IndexedDB que son parent. `db.transaction` est donc enveloppé (`db.js`) : il rend les comptes bougés par la transaction
+  **la plus externe** au moment où il rejette ; l'événement `abort` n'est qu'un filet (idempotent). Une écriture qui échoue seule rend son
+  incrément (`onerror` du hook) ; un `citizens.clear()` dans une transaction avortée recompte la table. Régression :
+  `tests/shared/citizens/residentsProjection.regression.test.js`.
+- **Servie à chaque lecture de `houses`** : un hook `reading` pose `row.pop` d'après la projection. Les ~68 lecteurs de `pop` n'ont pas changé.
+  Avant la construction de la projection, une lecture lève une erreur (jamais un 0 trompeur).
+- **Jamais écrit** : `canonicalizeHouseRecord` retire `pop` de toute ligne écrite (et le hook de lecture le réécrit de toute façon). Il ne peut
+  pas distinguer un `pop` relu d'un `pop` voulu ; les écrivains de champs nommés (emploi, construction, approvisionnement, parcelles)
+  **refusent** donc `pop` eux-mêmes (`refuseResidentsField`), pour qu'une écriture sans effet ne passe pas pour réussie. Les
+  commandes `savePopulation` / `applyLevelChange` / `saveDepartures` gardent leur nom : « amener la maison à N habitants » (arrivées tirées,
+  dernières arrivées parties), via `setHousePopulation`. Une mort retire le citoyen (plus de `pop − morts`).
+- L'invariant « un citoyen par résident » n'a plus lieu d'être (c'est la même donnée) : `assertCitizensMatchPop` et le paramètre `pop` de
+  `forHouse` sont supprimés. Le prefab n'a plus de `pop` sur ses maisons, l'export de ville non plus (`EXPORT_OMITTED_FIELDS`).
+- Tests : les fixtures donnent à une maison de test autant de citoyens que son `pop` demandé (`seedBuilding`, `seedResidents`) ;
+  régression dans `citizenRegistry.test.js` (le `pop` est le compte des citoyens, un nombre écrit dans la ligne ne change rien, une
+  transaction avortée ne bouge rien).
 
 ## 9. Tests (peu, essentiels)
 

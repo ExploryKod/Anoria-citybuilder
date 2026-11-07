@@ -1,14 +1,13 @@
 import db from '../dexie/db.js';
 import { canonicalizeHouseRecord } from '../../../shared/building-identity/index.js';
-import { createCitizen, assertCitizensMatchPop } from '../../../shared/citizens/Citizen.js';
+import { createCitizen } from '../../../shared/citizens/Citizen.js';
 import { CALENDAR_SETTING_NAME } from '../../../config/events.js';
 import { writeGameClock } from '../game-clock/gameClock.js';
 import { DEFAULT_HAMLET_SLUG } from '../hamlet/hamletSession.js';
 import { HAMLET_CATALOG } from '../../../shared/hamlet-catalog/hamletCatalog.js';
 
 /**
- * The citizens a city export carries, each one whole, and exactly as many per house as the house counts residents: a city whose
- * citizens and residents disagree is refused, never reconciled.
+ * The citizens a city export carries, each one whole, each living in a house of the city (the residents of a house are its citizens: a house carries no count of its own).
  * @param {{ buildings: ReadonlyArray<object>, citizens?: ReadonlyArray<object> }} city
  * @param {string} hamletId
  * @returns {ReadonlyArray<import('../../../shared/citizens/Citizen.js').Citizen>}
@@ -26,7 +25,6 @@ function citizensOfCityExport(city, hamletId) {
   for (const houseId of byHouse.keys()) {
     if (!houseIds.has(houseId)) throw new Error(`[prefab] citizens live in ${houseId}, which is not a house of the city`);
   }
-  for (const house of houses) assertCitizensMatchPop(house.instanceId, house.pop, byHouse.get(house.instanceId) ?? []);
   return citizens;
 }
 

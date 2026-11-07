@@ -21,7 +21,7 @@ import {
   getSessionService,
   updateSessionDisplayedFunds,
 } from '../../../composition/sessionRuntime.js';
-import { clearGameTablesForNewGame, waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
+import { deleteGameDatabaseForNewGame, waitForDatabaseReady } from '../../../core/persistence/dexie/db.js';
 import { importPrefab } from '../../../core/persistence/prefab/importPrefab.js';
 import { ensureHamletCatalog, listHamlets, parseGameHamletPath } from '../../../core/persistence/hamlet/hamletSession.js';
 import { initGameCalendar } from '../../../config/events.js';
@@ -170,7 +170,7 @@ export async function bootstrapGameSession(assetManager) {
   // A menu choice of a new game (new, tutorial, mission, editor, prefab) starts from an empty database.
   if (startsFromScratch) {
     loaderManager.setStep('Remise à zéro de la partie…');
-    await clearGameTablesForNewGame();
+    await deleteGameDatabaseForNewGame();
   }
   let prefabCitySize = null;
   if (bootMode === 'prefab') {
