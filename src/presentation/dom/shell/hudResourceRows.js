@@ -1,4 +1,5 @@
 import { goodIcon, goodLabel } from './CatalogVocabulary.js';
+import { html, raw } from './safeHtml.js';
 
 /**
  * The rows of the resource panels of the population rail — one per good, with the icon and name the catalog gives
@@ -17,8 +18,9 @@ export function renderHudResourceRows({ root, destination, panelId, products }) 
     row.dataset.metric = 'resource';
     row.dataset.destination = destination;
     row.dataset.product = product;
-    row.innerHTML = `
-      <span class="pop-detail-emoji" title="${goodLabel(product)}" aria-hidden="true">${goodIcon(product)}</span>
+    // The label is escaped (it sits in an attribute); the icon is the catalog's own markup.
+    row.innerHTML = html`
+      <span class="pop-detail-emoji" title="${goodLabel(product)}" aria-hidden="true">${raw(goodIcon(product))}</span>
       <span class="pop-detail-values">
         <span class="pop-detail-value pop-detail-value--scoped">0</span>
       </span>`;

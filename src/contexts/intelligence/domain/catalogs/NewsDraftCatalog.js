@@ -178,19 +178,21 @@ const MILESTONE_DRAFTS = {
   'mayor-house': () => {
     const house = getBuildingDefinition('House-Mayor').displayName;
     const owner = getSkillDisplay(OWNER_SKILL).label.toLowerCase();
-    // The collections the first tier grants: the simple taxes. The companies' tax and the customs come with the house's second tier.
+    // The collections the first tier grants: every tax.
     const collections = Object.keys(SOCIAL_CATEGORY.administrators.tiers[1].skills)
       .filter((skill) => skill !== OWNER_SKILL)
-      .map((skill) => getSkillDisplay(skill).label.toLowerCase())
-      .join(', ');
+      .map((skill) => `- **${getSkillDisplay(skill).label}**`)
+      .join('\n');
     const administrators = SOCIAL_CATEGORY.administrators.tiers[1].maxPopulation;
     return {
       sourceId: 'city',
       categoryId: 'announcement',
       title: 'La maison du maire est bâtie',
-      body: `Les ${house.toLowerCase()} de la ville s'installent (${administrators} au plus). Leur maison leur donne des compétences, d'office : `
-        + `${owner} — ils perçoivent les loyers et leur maison est la condition pour bâtir toutes les autres maisons ; `
-        + `${collections} — ils perçoivent les impôts des autres maisons.`,
+      body: [
+        `Les **${house.toLowerCase()}** de la ville s'installent (${administrators} au plus). Leur maison leur donne des compétences, d'office.`,
+        `## ${owner.charAt(0).toUpperCase()}${owner.slice(1)}\nIls perçoivent les **loyers**, et leur maison est la condition pour **bâtir toutes les autres maisons**.`,
+        `## Percevoir les impôts\nIls perçoivent les impôts des autres maisons :\n${collections}`,
+      ].join('\n\n'),
       teaser: 'Les administrateurs prennent leurs quartiers…',
       reliability: 'trusted',
       revelation: 'free',
@@ -204,8 +206,10 @@ const MILESTONE_DRAFTS = {
       sourceId: 'city',
       categoryId: 'announcement',
       title: "L'impôt n'a pas été levé",
-      body: `Personne n'a la compétence « ${collector} » : l'impôt citoyen de l'année n'a pas été collecté. Elle revient aux ${house.toLowerCase()}, `
-        + 'qui vivent dans la maison du maire : bâtissez-la et logez-y du monde, et l\'impôt sera levé dès ce mois.',
+      body: [
+        `Personne n'a la compétence « **${collector}** » : l'impôt citoyen de l'année **n'a pas été collecté**.`,
+        `## Que faire ?\nElle revient aux **${house.toLowerCase()}**, qui vivent dans la maison du maire : bâtissez-la et logez-y du monde, et l'impôt sera levé dès ce mois.`,
+      ].join('\n\n'),
       teaser: 'Les caisses restent vides…',
       reliability: 'trusted',
       revelation: 'free',
@@ -216,7 +220,8 @@ const MILESTONE_DRAFTS = {
   'state-unpaid': ({ items }) => {
     if (!Array.isArray(items) || items.length === 0) throw new Error('[news] the State\'s unpaid payments are announced with what stayed unpaid (items)');
     const total = items.reduce((sum, item) => sum + item.amount, 0);
-    const listOf = (list) => list.map((item) => `${item.label.toLowerCase()} : ${item.amount.toLocaleString('fr-FR')} €`).join(', ');
+    // One list line per payment: the amount in bold, the label first (the layout is richText.js's: headings with `## `, lists with `- `, bold with `**`).
+    const listOf = (list) => list.map((item) => `- ${item.label} : **${item.amount.toLocaleString('fr-FR')} €**`).join('\n');
     // What the State still owes (it will pay it, the households first, as soon as its Treasury allows) is told apart from what is lost for good.
     const carried = items.filter((item) => item.carried);
     const lost = items.filter((item) => !item.carried);
@@ -224,10 +229,12 @@ const MILESTONE_DRAFTS = {
       sourceId: 'city',
       categoryId: 'announcement',
       title: 'Le Trésor est vide',
-      body: `Ce mois-ci, l'État n'a pas pu payer ${total.toLocaleString('fr-FR')} € de ce qu'il devait : les ménages et les entreprises concernés n'ont pas reçu leur dû. `
-        + (carried.length > 0 ? `Reste dû, et réglé dès que le Trésor le permet (les ménages d'abord) : ${listOf(carried)}. ` : '')
-        + (lost.length > 0 ? `Perdu, jamais rattrapé : ${listOf(lost)}. ` : '')
-        + 'L\'État ne dépense pas plus que son Trésor ne contient. Il faut le remplir : lever des impôts, vendre à l\'étranger, ou emprunter à la banque.',
+      body: [
+        `Ce mois-ci, l'État n'a pas pu payer **${total.toLocaleString('fr-FR')} €** de ce qu'il devait : les ménages et les entreprises concernés n'ont pas reçu leur dû.`,
+        carried.length > 0 ? `## Reste dû\nRéglé dès que le Trésor le permet, les ménages d'abord.\n${listOf(carried)}` : null,
+        lost.length > 0 ? `## Perdu, jamais rattrapé\n${listOf(lost)}` : null,
+        '## Que faire ?\nL\'État ne dépense pas plus que son Trésor ne contient. Il faut le remplir :\n- **lever des impôts**\n- **vendre à l\'étranger**\n- **emprunter à la banque**',
+      ].filter(Boolean).join('\n\n'),
       teaser: 'Les caisses de l\'État sonnent creux…',
       reliability: 'trusted',
       revelation: 'free',

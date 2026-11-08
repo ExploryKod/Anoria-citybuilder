@@ -1,7 +1,8 @@
 import { labelForNewsSource, labelForNewsCategory } from '../../../../composition/intelligenceCatalog.js';
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
 import { listHamlets } from '../../../../core/persistence/hamlet/hamletSession.js';
-import { richTextHtml } from '../../intelligence/NewsEventModal.js';
+import { renderRichText } from '../../shell/richText.js';
+import { raw } from '../../shell/safeHtml.js';
 
 const TRASH_ICON = `
   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -73,52 +74,45 @@ export class ArchivesSectionPresenter {
     }
 
     const hamletNames = new Map((await listHamlets()).map((hamlet) => [hamlet.id, hamlet.name]));
-    this.listEl.innerHTML = items
-      .map((item) => {
-        const hamletName = hamletNames.get(item.hamletId);
-        if (hamletName === undefined) {
-          throw new Error(`[archives] news ${item.id} belongs to an unknown hamlet ${item.hamletId}`);
-        }
-        let when = `Tour ${item.turn}`;
-        try {
-          const info = TimeManager.getTimeInfo(item.turn);
-          when = `${info.month} — an ${info.year + 1}`;
-        } catch {
-          /* keep fallback */
-        }
-        const source = labelForNewsSource(item.sourceId);
-        const category = labelForNewsCategory(item.categoryId);
-        const safeId = escapeHtml(item.id);
-        return `
-          <article class="archives-news-item" data-news-id="${safeId}">
-            <header class="archives-news-item-header">
-              <div class="archives-news-item-heading">
-                <span class="archives-news-item-meta">${source} · ${category} · ${when} · ${escapeHtml(hamletName)}</span>
-                <h4 class="archives-news-item-title">${escapeHtml(item.title)}</h4>
-              </div>
-              <button
-                type="button"
-                class="archives-news-delete-btn"
-                data-archives-delete="${safeId}"
-                title="Supprimer cette dépêche"
-                aria-label="Supprimer la dépêche ${escapeHtml(item.title)}"
-              >${TRASH_ICON}</button>
-            </header>
-            <p class="archives-news-item-body">${richTextHtml(item.body)}</p>
-          </article>
-        `;
-      })
-      .join('');
+    // Built with the DOM: what a dépêche says (title, text, hamlet name) only ever becomes text nodes or attribute values, never markup. The one innerHTML left is the
+    // trash icon, a constant of this file.
+    this.listEl.replaceChildren(...items.map((item) => {
+      const hamletName = hamletNames.get(item.hamletId);
+      if (hamletName === undefined) {
+        throw new Error(`[archives] news ${item.id} belongs to an unknown hamlet ${item.hamletId}`);
+      }
+      let when = `Tour ${item.turn}`;
+      try {
+        const info = TimeManager.getTimeInfo(item.turn);
+        when = `${info.month} — an ${info.year + 1}`;
+      } catch {
+        /* keep fallback */
+      }
+      const element = (tag, className, text) => {
+        const node = document.createElement(tag);
+        if (className) node.className = className;
+        if (text !== undefined) node.textContent = text;
+        return node;
+      };
+      const article = element('article', 'archives-news-item');
+      article.dataset.newsId = item.id;
+      const header = element('header', 'archives-news-item-header');
+      const heading = element('div', 'archives-news-item-heading');
+      heading.append(
+        element('span', 'archives-news-item-meta', `${labelForNewsSource(item.sourceId)} · ${labelForNewsCategory(item.categoryId)} · ${when} · ${hamletName}`),
+        element('h4', 'archives-news-item-title', item.title),
+      );
+      const deleteButton = element('button', 'archives-news-delete-btn');
+      deleteButton.type = 'button';
+      deleteButton.dataset.archivesDelete = item.id;
+      deleteButton.title = 'Supprimer cette dépêche';
+      deleteButton.setAttribute('aria-label', `Supprimer la dépêche ${item.title}`);
+      deleteButton.innerHTML = raw(TRASH_ICON);
+      header.append(heading, deleteButton);
+      const body = element('div', 'archives-news-item-body');
+      renderRichText(body, item.body);
+      article.append(header, body);
+      return article;
+    }));
   }
-}
-
-/**
- * @param {string} value
- */
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;');
 }

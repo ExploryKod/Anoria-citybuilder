@@ -8,6 +8,10 @@ HOST=anoria-deploy   # the Host alias of ~/.ssh/config: the deployment user (ani
 RELEASE=$(date +%Y-%m-%d-%H%M)
 KEEP=2
 
+# The security barrier, before anything is changed or built: no innerHTML given a value that was not escaped (eslint.config.js). A failure stops the publication here,
+# before the version is bumped.
+pnpm run lint:security
+
 # The game's version is package.json's: one patch more at each publication, before the build so that the home page shows it (vite.config.js, {{APP_VERSION}}).
 # For a bigger step, set it by hand beforehand (`npm version minor --no-git-tag-version`) and the script goes on from there.
 VERSION=$(npm version patch --no-git-tag-version)

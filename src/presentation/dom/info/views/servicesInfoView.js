@@ -6,6 +6,8 @@
  * Both use the same chip markup.
  */
 
+import { html, raw } from '../../shell/safeHtml.js';
+
 const SERVICE_DENIED_ICON = `
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
     <circle cx="12" cy="12" r="10"></circle>
@@ -36,10 +38,10 @@ function appendServiceRow(container, chips) {
     chip.setAttribute('aria-label', item.ariaLabel);
 
     const valueMarkup = item.value == null
-      ? `<span class="building-info-service-item__denied">${SERVICE_DENIED_ICON}</span>`
-      : `<span class="building-info-service-item__value">${item.value}</span>`;
+      ? html`<span class="building-info-service-item__denied">${raw(SERVICE_DENIED_ICON)}</span>`
+      : html`<span class="building-info-service-item__value">${item.value}</span>`;
 
-    chip.innerHTML = `
+    chip.innerHTML = html`
       <span class="building-info-service-item__emoji" aria-hidden="true">${item.emoji}</span>
       ${valueMarkup}
       <span class="building-info-service-item__label">${item.label}</span>

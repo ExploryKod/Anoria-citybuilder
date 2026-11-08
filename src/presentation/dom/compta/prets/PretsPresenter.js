@@ -2,6 +2,7 @@
  * PretsPresenter — rendu DOM des prêts (données déjà chargées).
  */
 import { formatYearlyRate } from '../../../../contexts/accounting/presentation/formatMoney.js';
+import { html } from '../../shell/safeHtml.js';
 
 /**
  * @param {string} elementId
@@ -22,25 +23,21 @@ export function renderHealthImpact(financialHealth) {
   if (!healthImpactEl) return;
 
   let healthStatusClass = 'health-status-good';
-  let healthIcon = '✅';
-  let healthText = 'Finance saine - Taux préférentiels disponibles';
+  let healthText = 'Finance saine : taux préférentiels disponibles';
 
   if (financialHealth.status === 'critical') {
     healthStatusClass = 'health-status-critical';
-    healthIcon = '⚠️';
-    healthText = 'Finance critique - Taux élevés appliqués';
+    healthText = 'Finance critique : taux élevés appliqués';
   } else if (
     financialHealth.status === 'warning' ||
     financialHealth.status === 'deficit'
   ) {
     healthStatusClass = 'health-status-warning';
-    healthIcon = '⚠️';
-    healthText = 'Finance fragile - Taux majorés';
+    healthText = 'Finance fragile : taux majorés';
   }
 
-  healthImpactEl.innerHTML = `
+  healthImpactEl.innerHTML = html`
         <div class="${healthStatusClass}">
-            <span class="health-icon">${healthIcon}</span>
             <span class="health-text">${healthText}</span>
         </div>
     `;
@@ -50,8 +47,24 @@ export function renderHealthImpact(financialHealth) {
  * @param {{ bank: number, commercial: number }} rates per year, a fraction
  */
 export function renderLoanRates(rates) {
-  updateLoansElement('bank-rate', `Taux : ${formatYearlyRate(rates.bank)}`);
-  updateLoansElement('commercial-rate', `Taux : ${formatYearlyRate(rates.commercial)}`);
+  updateLoansElement('bank-rate', formatYearlyRate(rates.bank));
+  updateLoansElement('commercial-rate', formatYearlyRate(rates.commercial));
+}
+
+/**
+ * Puts the contract form back in its parking list and closes every offer: the form lives under the offer that was picked, and must not be lost when the offers are drawn again.
+ */
+export function parkLoanForm() {
+  const form = document.getElementById('loan-form-section');
+  const park = document.querySelector('.loan-form-park');
+  if (!form || !park) return;
+  form.style.display = 'none';
+  park.append(form);
+  document.querySelectorAll('#loans-panel .loan-option.is-open').forEach((option) => option.classList.remove('is-open'));
+  document.querySelectorAll('#loans-panel .loan-select-btn[aria-expanded="true"]').forEach((button) => {
+    button.setAttribute('aria-expanded', 'false');
+    button.textContent = 'Contracter';
+  });
 }
 
 /**
@@ -61,27 +74,28 @@ export function renderLoanRates(rates) {
 export function renderExternalLenders(lenders) {
   const container = document.getElementById('external-loans');
   if (!container) return;
+  // The form may sit under one of these offers: it is parked first, or drawing the list again would throw it away.
+  parkLoanForm();
   if (lenders.length === 0) {
-    container.innerHTML = '<div class="loan-description">Aucune ville partenaire ne prête pour l\'instant : il faut commercer avec elle.</div>';
+    container.innerHTML = html`<li class="loan-description">Aucune ville partenaire ne prête pour l'instant : il faut commercer avec elle.</li>`;
     return;
   }
-  container.innerHTML = lenders
+  container.innerHTML = html`${lenders
     .map(
-      (lender) => `
-                <div class="loan-option">
+      (lender) => html`
+                <li class="loan-option">
                     <div class="loan-info">
-                        <div class="loan-name">${lender.cityName}</div>
-                        <div class="loan-description">Argent venu de l'étranger : intérêts et remboursements sortent de l'économie</div>
+                        <h5 class="loan-name">${lender.cityName}</h5>
+                        <p class="loan-description">Argent venu de l'étranger : intérêts et remboursements sortent de l'économie</p>
+                        <dl class="loan-terms">
+                            <div><dt>Montant</dt><dd>jusqu'à ${lender.maxAmount} €</dd></div>
+                            <div><dt>Taux</dt><dd>${formatYearlyRate(lender.yearlyRate)}</dd></div>
+                            <div><dt>Durée</dt><dd>15 – 30 tours</dd></div>
+                        </dl>
                     </div>
-                    <div class="loan-details">
-                        <div class="loan-amount">Montant : jusqu'à ${lender.maxAmount}€</div>
-                        <div class="loan-rate">Taux : ${formatYearlyRate(lender.yearlyRate)}</div>
-                        <div class="loan-duration">Durée: 15-30 tours</div>
-                    </div>
-                    <button class="loan-select-btn" data-loan-type="external" data-lender-city="${lender.cityId}" data-lender-name="${lender.cityName}" data-max-amount="${lender.maxAmount}">Contracter</button>
-                </div>`
-    )
-    .join('');
+                    <button type="button" class="loan-select-btn" data-loan-type="external" data-lender-city="${lender.cityId}" data-lender-name="${lender.cityName}" data-max-amount="${lender.maxAmount}" aria-expanded="false">Contracter</button>
+                </li>`
+    )}`;
 }
 
 /**
@@ -127,9 +141,9 @@ export function generateAmortizationSchedule(loan, installmentOf) {
 function loanTypeLabelOf(loan) {
   if (loan.type === 'external') {
     if (!loan.lenderCityName) throw new Error(`[loans] the external loan ${loan.id} names no lender city`);
-    return `🌍 ${loan.lenderCityName}`;
+    return loan.lenderCityName;
   }
-  return loan.type === 'bank' ? '🏛️ Bancaire' : '🏪 Commercial';
+  return loan.type === 'bank' ? 'Prêt bancaire' : 'Prêt commercial';
 }
 
 /**
@@ -139,43 +153,30 @@ function loanTypeLabelOf(loan) {
  */
 export function renderActiveLoansHtml(activeLoans, installmentOf) {
   if (activeLoans.length === 0) {
-    return `
-                <div class="no-loans">
-                    <span class="no-loans-icon">📭</span>
-                    <span class="no-loans-text">Aucun prêt actif</span>
-                </div>
-            `;
+    return html`<p class="no-loans">Aucun prêt en cours</p>`;
   }
 
-  return activeLoans
+  return html`${activeLoans
     .map((loan) => {
       const amortizationSchedule = generateAmortizationSchedule(loan, installmentOf);
+      const paidShare = Math.round(((loan.duration - loan.remainingTurns) / loan.duration) * 100);
 
-      return `
-                <div class="loan-item">
-                    <div class="loan-item-header">
-                        <div class="loan-type">${loanTypeLabelOf(loan)}</div>
-                        <div class="loan-amount">${loan.amount}€</div>
-                        <div class="loan-progress">${loan.remainingTurns}/${loan.duration} tours</div>
-                    </div>
-                    <div class="loan-details">
-                        <div>Taux : ${formatYearlyRate(loan.interestRate)}</div>
-                        <div>Total à rembourser: ${loan.total}€ (intérêts: ${loan.interest}€)</div>
-                    </div>
-                    
-                    <div class="amortization-schedule">
-                        <h4>Tableau d'amortissement</h4>
-                        <div class="schedule-summary">
-                            <div class="summary-item">
-                                <span class="label">Intérêts totaux restants:</span>
-                                <span class="value">${amortizationSchedule.remainingInterest}€</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="label">Capital restant:</span>
-                                <span class="value">${loan.amount}€</span>
-                            </div>
-                        </div>
-                        
+      return html`
+                <article class="loan-item">
+                    <header class="loan-item-header">
+                        <h4 class="loan-type">${loanTypeLabelOf(loan)}</h4>
+                        <p class="loan-amount">${loan.amount} €</p>
+                    </header>
+                    <div class="loan-progress-bar" role="img" aria-label="${paidShare} % remboursé"><span style="width:${paidShare}%"></span></div>
+                    <p class="loan-progress">${loan.remainingTurns} tours restants sur ${loan.duration}</p>
+                    <dl class="loan-terms">
+                        <div><dt>Taux</dt><dd>${formatYearlyRate(loan.interestRate)}</dd></div>
+                        <div><dt>À rembourser</dt><dd>${loan.total} €</dd></div>
+                        <div><dt>Intérêts restants</dt><dd>${amortizationSchedule.remainingInterest} €</dd></div>
+                    </dl>
+
+                    <details class="amortization-schedule">
+                        <summary>Tableau d'amortissement</summary>
                         <div class="schedule-table">
                             <div class="schedule-header">
                                 <div class="col-turn">Tour</div>
@@ -186,7 +187,7 @@ export function renderActiveLoansHtml(activeLoans, installmentOf) {
                             </div>
                             ${amortizationSchedule.schedule
                               .map(
-                                (row) => `
+                                (row) => html`
                                 <div class="schedule-row ${row.paid ? 'paid' : ''}">
                                     <div class="col-turn">${row.turn}</div>
                                     <div class="col-payment">${row.payment}€</div>
@@ -195,22 +196,15 @@ export function renderActiveLoansHtml(activeLoans, installmentOf) {
                                     <div class="col-balance">${row.balance}€</div>
                                 </div>
                             `
-                              )
-                              .join('')}
+                              )}
                         </div>
-                    </div>
-                </div>
+                    </details>
+                </article>
             `;
-    })
-    .join('');
+    })}`;
 }
 
-/** @returns {string} */
+/** @returns {import('../../shell/safeHtml.js').SafeHtml} */
 export function renderActiveLoansErrorHtml() {
-  return `
-            <div class="no-loans">
-                <span class="no-loans-icon">❌</span>
-                <span class="no-loans-text">Erreur lors du chargement</span>
-            </div>
-        `;
+  return html`<p class="no-loans">Les prêts en cours n'ont pas pu être chargés.</p>`;
 }

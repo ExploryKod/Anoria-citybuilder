@@ -31,6 +31,7 @@ import { formatEuro } from '../../../../../contexts/accounting/presentation/form
 import { formatHousePopulationPresentation } from '../../population/formatHousePopulationPresentation.js';
 import { describeActivitySupplyGap } from '../../../shell/BuildingNotifications.js';
 import { getServiceCategoryDisplay } from './serviceCategoryPresentation.js';
+import { html, raw } from '../../../shell/safeHtml.js';
 
 /**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
@@ -44,7 +45,7 @@ export function formatHouseLayoutHeader(vm) {
   const dwellingLabel = getHouseDwellingLevelLabel(vm.houseLevel);
   const dwellingAria = getHouseDwellingLevelAriaLabel(vm.houseLevel);
   // The dwelling's name and its level in brackets: the level is the house's own (it moves as the house evolves).
-  const meta = `<span aria-label="${dwellingAria}">${dwellingLabel} (niv. ${vm.houseLevel})</span> ·<span aria-label="${vm.buildingPop} habitants sur ${maxPop}">${vm.buildingPop}/${maxPop} hab.</span>`;
+  const meta = html`<span aria-label="${dwellingAria}">${dwellingLabel} (niv. ${vm.houseLevel})</span> ·<span aria-label="${vm.buildingPop} habitants sur ${maxPop}">${vm.buildingPop}/${maxPop} hab.</span>`;
 
   return { title, meta, accent: group };
 }
@@ -57,7 +58,8 @@ export function formatHouseLayoutOptions() {
 }
 
 /** The unemployment icon, the same picture as the HUD's "Chômage" tab (game.html) and the buildings' no-work status. */
-const UNEMPLOYED_ICON_HTML = '<img src="/resources/textures/status/no-work_colored.png" alt="" class="building-info-building-icon" decoding="async" />';
+// Markup the code itself wrote, so `raw`: the chips that show it put their `emoji` through `html`, which would otherwise show the tag as text.
+const UNEMPLOYED_ICON_HTML = raw('<img src="/resources/textures/status/no-work_colored.png" alt="" class="building-info-building-icon" decoding="async" />');
 
 /**
  * Where a household's people work: one entry per type of building that employs some of them (the most first). The ones with no job are in the
@@ -77,7 +79,7 @@ function employersOf(residents) {
     .sort(([typeA, a], [typeB, b]) => b - a || typeA.localeCompare(typeB))
     .map(([type, count]) => {
       const name = buildingName(type);
-      return { emoji: buildingIconHtml(type), count, label: name, ariaLabel: `${count} de cette maison travaillent : ${name}` };
+      return { emoji: raw(buildingIconHtml(type)), count, label: name, ariaLabel: `${count} de cette maison travaillent : ${name}` };
     });
   // The administrators work in no building: their employer is the hamlet, which pays them a stipend.
   const administrators = residents.filter((resident) => resident.status === 'administrator').length;

@@ -1,10 +1,12 @@
 import { noticeModal } from './ConfirmModal.js';
 import { HELP, FRAGMENTS } from '../../../shared/help-catalog/HelpCatalog.js';
 import { formatEuro } from '../../../contexts/accounting/presentation/formatMoney.js';
+import { raw } from './safeHtml.js';
 
 const FORMATTERS = Object.freeze({
   euro: formatEuro,
   percent: (ratio) => `${(ratio * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %`,
+  count: (value) => value.toLocaleString('fr-FR'),
   index: (value) => value.toLocaleString('fr-FR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }),
 });
 
@@ -25,14 +27,16 @@ export function resolveHelp(id, { state = null, figures = {} } = {}) {
   for (const name of Object.keys(figures)) {
     if (!declared.includes(name)) throw new Error(`[help] "${id}" does not name the figure "${name}": remove it, or declare it in the entry`);
   }
-  const textOf = (text, where) => {
+  // A figure is put in bold in a paragraph (what the eye should catch first); in a label, which is bold already, it stays plain.
+  const textOf = (text, where, { emphasise = true } = {}) => {
     const chosen = typeof text === 'string' ? text : text[state];
     if (typeof chosen !== 'string') throw new Error(`[help] "${id}": ${where} has no text for the state "${state}"`);
     return chosen.replace(/\{(\w+)\}/g, (_, name) => {
       if (!declared.includes(name)) throw new Error(`[help] "${id}": ${where} writes {${name}}, which the entry does not declare as a figure`);
       // A state writes only the figures it needs: one it does not write is not asked for, one it writes must be given.
       if (!Number.isFinite(figures[name])) throw new Error(`[help] "${id}": ${where} writes {${name}}, which was not given (got ${figures[name]})`);
-      return FORMATTERS[entry.figures[name]](figures[name]);
+      const shown = FORMATTERS[entry.figures[name]](figures[name]);
+      return emphasise ? `**${shown}**` : shown;
     });
   };
   return {
@@ -40,9 +44,9 @@ export function resolveHelp(id, { state = null, figures = {} } = {}) {
     title: entry.title,
     message: textOf(entry.message, 'the message'),
     items: (entry.items ?? [])
-      .filter((item) => item.when === undefined || item.when === state)
+      .filter((item) => item.when === undefined || [].concat(item.when).includes(state))
       .map((item, index) => {
-        if (item.fragment === undefined) return { label: textOf(item.label, `item ${index} label`), text: textOf(item.text, `item ${index} text`) };
+        if (item.fragment === undefined) return { label: textOf(item.label, `item ${index} label`, { emphasise: false }), text: textOf(item.text, `item ${index} text`) };
         const fragment = FRAGMENTS[item.fragment];
         if (!fragment) throw new Error(`[help] "${id}" uses the fragment "${item.fragment}", which is not in HelpCatalog.js`);
         return { ...fragment };
@@ -74,30 +78,39 @@ export function helpButton(id, reading = {}) {
   return button;
 }
 
+/** The "?" a screen built as an html string asked for, by the key its slot carries: the entry and its reading stay in memory, none of them goes into the markup. */
+const pendingSlots = new Map();
+let slotCount = 0;
+
 /**
- * Puts a "?" at the end of every element of the page marked `data-help="<entry>"`: the markup of a page, or of a screen built as html (`helpSlotHtml`). An element
- * may carry the state (`data-help-state`) and the live figures (`data-help-figures`, JSON) its entry reads. Done once per element: calling it again does not double the buttons.
+ * Puts a "?" at the end of every element marked `data-help="<entry>"` in the page's own markup (an entry that names no figure), and in every slot a screen asked for with
+ * `helpSlotHtml`. Done once per element: calling it again does not double the buttons.
  * @param {ParentNode} root
  */
 export function bindStaticHelps(root) {
   for (const host of root.querySelectorAll('[data-help]')) {
     if (host.querySelector(':scope > .help-btn')) continue;
-    host.append(helpButton(host.dataset.help, {
-      state: host.dataset.helpState ?? null,
-      figures: host.dataset.helpFigures ? JSON.parse(host.dataset.helpFigures) : {},
-    }));
+    host.append(helpButton(host.dataset.help));
+  }
+  for (const slot of root.querySelectorAll('[data-help-slot]')) {
+    const asked = pendingSlots.get(slot.dataset.helpSlot);
+    if (!asked) throw new Error(`[help] the slot "${slot.dataset.helpSlot}" was not asked for with helpSlotHtml`);
+    pendingSlots.delete(slot.dataset.helpSlot);
+    slot.append(helpButton(asked.id, asked.reading));
   }
 }
 
 /**
- * The markup of a "?" for a screen that is written as an html string: a slot that `bindStaticHelps` turns into the button once the markup is in the page. The entry is
- * read at once, so a wrong state or figure fails where the screen is built, not when it is clicked.
+ * The markup of a "?" for a screen that is written as an html string: an empty slot, which `bindStaticHelps` turns into the button once the markup is in the page. The
+ * entry is read at once, so a wrong state or figure fails where the screen is built, not when it is clicked. The markup holds only a counter: nothing from the entry or the
+ * figures is written into it.
  * @param {string} id
  * @param {{ state?: string | null, figures?: Record<string, number> }} [reading]
  * @returns {string} html
  */
 export function helpSlotHtml(id, reading = {}) {
   resolveHelp(id, reading);
-  const attribute = (value) => String(value).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
-  return `<span class="help-slot" data-help="${attribute(id)}"${reading.state ? ` data-help-state="${attribute(reading.state)}"` : ''}${reading.figures ? ` data-help-figures="${attribute(JSON.stringify(reading.figures))}"` : ''}></span>`;
+  const key = String(++slotCount);
+  pendingSlots.set(key, { id, reading });
+  return raw(`<span class="help-slot" data-help-slot="${key}"></span>`);
 }

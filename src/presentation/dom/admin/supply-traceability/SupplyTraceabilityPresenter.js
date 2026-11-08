@@ -18,6 +18,7 @@ import { getTimeInfo, MONTHS, SEASON_EMOJI } from '../../../../shared/time/TimeC
 import { toSupplySeason } from '../../../../composition/supplyTimeLabels.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/buildingCatalog.js';
 import { BUILDING_ASSETS } from '../../../three/assets/buildingAssets.js';
+import { html } from '../../shell/safeHtml.js';
 
 const NO_WORK_ICON = '/resources/textures/status/no-work.png';
 
@@ -153,39 +154,40 @@ export function summarizeChain(transactions, year) {
   };
 }
 
-const noWorkIconHTML = `<img class="supply-stat-no-work-icon" src="${NO_WORK_ICON}" alt="Fermes inactives" title="Fermes inactives">`;
+// The pieces below return `html` markup (values escaped, see safeHtml.js): each one can be put inside another html`` without being escaped twice.
+const noWorkIconHTML = html`<img class="supply-stat-no-work-icon" src="${NO_WORK_ICON}" alt="Fermes inactives" title="Fermes inactives">`;
 
 /** " et 1 moulin (icon : 0)" — the hubs next to the farms, empty when the game has none. */
 function hubsClauseHTML(count, idle, label) {
-  if (count <= 0) return '';
-  return ` et ${count} ${label}${count > 1 ? 's' : ''} (${noWorkIconHTML} : ${idle})`;
+  if (count <= 0) return html``;
+  return html` et ${count} ${label}${count > 1 ? 's' : ''} (${noWorkIconHTML} : ${idle})`;
 }
 
 /** What a player can act on when a farm did not sell, by cause id. */
 const NON_SALE_CAUSES = {
-  no_workers: () => `${noWorkIconHTML} sans travailleurs à la récolte`,
-  no_road: () => '🛣️ sans route',
-  hub_full: (capacity, hub) => `📦 ${hub} plein${capacity ? ` (plafond ${goodAmount(chainTotalKey, capacity)})` : ''}`,
-  good_ceiling: (_capacity, hub) => `📦 ${hub} : plafond de ce bien atteint`,
-  hub_no_money: (_capacity, hub) => `💰 ${hub} sans de quoi payer`,
-  hub_idle: (_capacity, hub) => `🏚️ ${hub} sans travailleurs`,
-  no_hub: (_capacity, hub) => `❌ pas de ${hub}`,
-  demolished: () => '🚧 démolie avant la vente',
-  unknown: () => '❔ cause non enregistrée',
+  no_workers: () => html`${noWorkIconHTML} sans travailleurs à la récolte`,
+  no_road: () => html`🛣️ sans route`,
+  hub_full: (capacity, hub) => html`📦 ${hub} plein${capacity ? ` (plafond ${goodAmount(chainTotalKey, capacity)})` : ''}`,
+  good_ceiling: (_capacity, hub) => html`📦 ${hub} : plafond de ce bien atteint`,
+  hub_no_money: (_capacity, hub) => html`💰 ${hub} sans de quoi payer`,
+  hub_idle: (_capacity, hub) => html`🏚️ ${hub} sans travailleurs`,
+  no_hub: (_capacity, hub) => html`❌ pas de ${hub}`,
+  demolished: () => html`🚧 démolie avant la vente`,
+  unknown: () => html`❔ cause non enregistrée`,
 };
 
 /** Year row: farms that sold their harvest, out of the most farms standing at once that year. */
 function farmsSoldHTML({ farms, hubs, hubLabel }) {
-  return `${farms.sold}/${farms.total}${hubsClauseHTML(hubs.total, hubs.unsold, hubLabel)}`;
+  return html`${farms.sold}/${farms.total}${hubsClauseHTML(hubs.total, hubs.unsold, hubLabel)}`;
 }
 
 /** "Sans vente : <cause> N · <cause> N" — empty when every farm sold. */
 function nonSaleCausesHTML({ farms, hubCapacity, hubLabel }) {
-  if (farms.causes.length === 0) return '';
+  if (farms.causes.length === 0) return html``;
   const items = farms.causes.map(
-    ({ id, count }) => `${(NON_SALE_CAUSES[id] ?? NON_SALE_CAUSES.unknown)(hubCapacity, hubLabel)} : ${count}`
+    ({ id, count }) => html`${(NON_SALE_CAUSES[id] ?? NON_SALE_CAUSES.unknown)(hubCapacity, hubLabel)} : ${count}`
   );
-  return `<span class="supply-stat-farms causes">Sans vente : ${items.join(' · ')}</span>`;
+  return html`<span class="supply-stat-farms causes">Sans vente : ${items.flatMap((item, index) => (index === 0 ? [item] : [' · ', item]))}</span>`;
 }
 
 
@@ -235,9 +237,9 @@ export function fullCoverageSummary(months) {
 function monthFarmRowHTML(monthData, chain, coverage) {
   const month = chain?.byMonth[monthData.month];
   const figure = month
-    ? `${month.farms.present}/${coverage ? coverage.farmsNeeded : '?'} ${noWorkIconHTML} : (${month.farms.idle})${hubsClauseHTML(month.hubs.present, month.hubs.idle, chain.hubLabel)}`
-    : '—';
-  return `<div class="supply-stat-month-item farms">
+    ? html`${month.farms.present}/${coverage ? coverage.farmsNeeded : '?'} ${noWorkIconHTML} : (${month.farms.idle})${hubsClauseHTML(month.hubs.present, month.hubs.idle, chain.hubLabel)}`
+    : html`—`;
+  return html`<div class="supply-stat-month-item farms">
                                         <span class="supply-stat-month-icon">🌾</span>
                                         <span class="supply-stat-month-label">Fermes:</span>
                                         <span class="supply-stat-month-value">${figure}</span>
@@ -253,9 +255,7 @@ export function renderDietStats(container, dataByYear) {
 
   const years = Object.keys(dataByYear).sort((a, b) => parseInt(b) - parseInt(a));
 
-  let html = '';
-
-  years.forEach((year) => {
+  const yearSections = years.map((year) => {
     const yearData = dataByYear[year];
     const monthsWithoutFamine = yearData.months.filter(
       (month) => (month.unfedPopulation || 0) === 0
@@ -265,15 +265,15 @@ export function renderDietStats(container, dataByYear) {
     const inProgress =
       year === years[0] && yearData.chain && yearData.chain.hubs.total > 0 && !yearData.chain.collectionDone;
 
-    html += `
+    return html`
             <div class="supply-stats-year-section">
                 <div class="supply-stats-year-header">
                     <h4 class="supply-stats-year-title">Année ${year}</h4>
                     <div class="supply-stats-year-summary">
                         <span class="supply-stat-badge ${monthsWithoutFamine === yearData.months.length ? 'fed' : 'unfed'}">✅ ${monthsWithoutFamine}/${yearData.months.length} mois sans famine</span>
-                        ${inProgress ? `<span class="supply-stat-farms in-progress">⏳ Année en cours — le bilan des fermes sera calculé une fois la récolte vendue</span>` : `${yearData.chain && yearData.chain.farms.total > 0 ? `<span class="supply-stat-farms sold">🌾 Fermes ayant vendu leur récolte : ${farmsSoldHTML(yearData.chain)}</span>` : ''}
+                        ${inProgress ? html`<span class="supply-stat-farms in-progress">⏳ Année en cours — le bilan des fermes sera calculé une fois la récolte vendue</span>` : html`${yearData.chain && yearData.chain.farms.total > 0 ? html`<span class="supply-stat-farms sold">🌾 Fermes ayant vendu leur récolte : ${farmsSoldHTML(yearData.chain)}</span>` : ''}
                         ${yearData.chain && yearData.chain.farms.total > 0 ? nonSaleCausesHTML(yearData.chain) : ''}
-                        ${coverage ? `<span class="supply-stat-farms coverage">Fermes nécessaires pour nourrir les ${coverage.population} personnes : ${coverage.farmsNeeded}</span><span class="supply-stat-farms detail">${coverage.detail}</span>` : ''}`}
+                        ${coverage ? html`<span class="supply-stat-farms coverage">Fermes nécessaires pour nourrir les ${coverage.population} personnes : ${coverage.farmsNeeded}</span><span class="supply-stat-farms detail">${coverage.detail}</span>` : ''}`}
                     </div>
                 </div>
                 <div class="supply-stats-months">
@@ -281,7 +281,7 @@ export function renderDietStats(container, dataByYear) {
                       .map((monthData) => {
                         const totalPop =
                           (monthData.fedPopulation || 0) + (monthData.unfedPopulation || 0);
-                        return `
+                        return html`
                             <div class="supply-stat-month-card">
                                 <div class="supply-stat-month-header">
                                     <span class="supply-stat-month-name">${monthNames[monthData.month] || `Mois ${monthData.month + 1}`}</span>
@@ -307,14 +307,13 @@ export function renderDietStats(container, dataByYear) {
                                 </div>
                             </div>
                         `;
-                      })
-                      .join('')}
+                      })}
                 </div>
             </div>
         `;
   });
 
-  container.innerHTML = html;
+  container.innerHTML = html`${yearSections}`;
 }
 
 /** Per-tick states are folded into the monthly figures; every other row is an event worth keeping. */

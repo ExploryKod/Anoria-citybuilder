@@ -1,5 +1,6 @@
 import { goodLabel } from '../shell/CatalogVocabulary.js';
 import { TimeManager } from '../../../shared/time/TimeManager.js';
+import { html } from '../shell/safeHtml.js';
 
 /**
  * The "Échanges" modal — a city's full commerce history, one row per merchant_sale transaction
@@ -15,18 +16,18 @@ import { TimeManager } from '../../../shared/time/TimeManager.js';
  * It tells the player what kind of partner the city is, never the figures behind its satisfaction.
  * A city with no trade entry shows "…" and a warning, as any term the catalog does not give.
  * @param {{ cityId: string, culture: string, wants: ReadonlyArray<{ good: string }> } | null} entry
- * @returns {string}
+ * @returns {import('../shell/safeHtml.js').SafeHtml}
  */
 export function renderCityCultureTab(entry) {
   if (!entry) {
     console.warn('[vocabulary] culture: this city has no trade catalog entry');
-    return '<p class="city-exchange-empty">…</p>';
+    return html`<p class="city-exchange-empty">…</p>`;
   }
   if (typeof entry.culture !== 'string' || entry.culture.trim() === '') {
     throw new Error(`[trade] ${entry.cityId} declares no culture text in TradeCatalog`);
   }
   const wanted = entry.wants.map((want) => goodLabel(want.good)).join(', ');
-  return `
+  return html`
     <p class="city-exchange-culture">${entry.culture}</p>
     <p class="city-exchange-culture-goods">Recherche : <strong>${wanted}</strong></p>`;
 }
@@ -36,7 +37,7 @@ export function renderCityCultureTab(entry) {
  * @param {object} sale A stored merchant_sale record (extra fields spread onto it — see
  *   DexieSupplyTraceabilityRepository.addTransaction): { turn, good, quantity, price,
  *   grossRevenue, customsCollected, customsRate, netRevenue }.
- * @returns {string}
+ * @returns {import('../shell/safeHtml.js').SafeHtml}
  */
 function renderSaleRow(sale) {
   const when = TimeManager.formatTime(sale.turn);
@@ -48,7 +49,7 @@ function renderSaleRow(sale) {
   const customs = sale.customsCollected ?? 0;
   const net = sale.netRevenue ?? 0;
 
-  return `
+  return html`
     <tr>
       <td>${when}</td>
       <td>${good}</td>
@@ -63,20 +64,20 @@ function renderSaleRow(sale) {
 /**
  * @param {ReadonlyArray<object>} sales Every merchant_sale record for this city, newest first
  *   (see DexieSupplyTraceabilityRepository.getMerchantSalesForCity).
- * @returns {string}
+ * @returns {import('../shell/safeHtml.js').SafeHtml}
  */
 export function renderCityCommerceTab(sales) {
   if (!sales || sales.length === 0) {
-    return '<p class="city-exchange-empty">Aucun échange commercial pour le moment.</p>';
+    return html`<p class="city-exchange-empty">Aucun échange commercial pour le moment.</p>`;
   }
 
   const totalGross = sales.reduce((sum, s) => sum + (s.grossRevenue ?? 0), 0);
   const totalCustoms = sales.reduce((sum, s) => sum + (s.customsCollected ?? 0), 0);
   const totalNet = sales.reduce((sum, s) => sum + (s.netRevenue ?? 0), 0);
 
-  const rows = sales.map(renderSaleRow).join('');
+  const rows = sales.map(renderSaleRow);
 
-  return `
+  return html`
     <div class="city-exchange-summary">
       <span>${sales.length} transaction${sales.length > 1 ? 's' : ''}</span>
       <span>Brut total : <strong>${totalGross.toLocaleString('fr-FR')} €</strong></span>

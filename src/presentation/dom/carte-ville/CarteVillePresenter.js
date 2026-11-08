@@ -6,6 +6,7 @@ import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { getBuildingDefinition } from '../../../shared/building-catalog/buildingCatalog.js';
 import { isRoadBuildingType } from '../../../composition/constructionCatalog.js';
 import { buildingName, goodLabel, namesOfBuildings } from '../shell/CatalogVocabulary.js';
+import { html } from '../shell/safeHtml.js';
 import {
   getAnnualSupplyEntry,
   getAnnualYieldPerProducer,
@@ -27,11 +28,6 @@ export function getBuildingCode(type) {
   return getMapCode(type);
 }
 
-/** @param {unknown} value @returns {string} Safe inside an HTML attribute or text node. */
-function escapeHtml(value) {
-  return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
 /** Shown on a field whose stock is empty: not an alarm outside the harvest window. */
 const EMPTY_HARVEST_STOCK_NOTE = 'Stock vide (normal entre la vente et la prochaine récolte)';
 
@@ -45,8 +41,8 @@ const EMPTY_HARVEST_STOCK_NOTE = 'Stock vide (normal entre la vente et la procha
  */
 function styleClassOf(type) {
   const definition = getBuildingDefinition(type);
-  if (definition?.residentialGroup) return ` group-${escapeHtml(definition.residentialGroup)}`;
-  if (definition?.employment?.sector) return ` sector-${escapeHtml(definition.employment.sector)}`;
+  if (definition?.residentialGroup) return ` group-${definition.residentialGroup}`;
+  if (definition?.employment?.sector) return ` sector-${definition.employment.sector}`;
   return ' sector-none';
 }
 
@@ -152,13 +148,12 @@ export function renderCityMapLegendHtml(buildings) {
     rows.set(name, { code: getBuildingCode(building.type), styleClass: styleClassOf(building.type) });
   }
 
-  return [...rows.entries()]
+  return html`${[...rows.entries()]
     .sort(([nameA, a], [nameB, b]) => a.code.localeCompare(b.code) || nameA.localeCompare(nameB))
     .map(
       ([name, { code, styleClass }]) =>
-        `<div class="legend-item"><span class="legend-code legend-code-small ${escapeHtml(code.toLowerCase())}${styleClass}">${escapeHtml(code)}</span><span class="legend-label">${escapeHtml(name)}</span></div>`
-    )
-    .join('');
+        html`<div class="legend-item"><span class="legend-code legend-code-small ${code.toLowerCase()}${styleClass}">${code}</span><span class="legend-label">${name}</span></div>`
+    )}`;
 }
 
 /**
@@ -169,19 +164,9 @@ export function renderCityMapLegendHtml(buildings) {
  * @returns {string}
  */
 export function renderCityMapGridHtml({ citySize, buildingMap, hasRoadAccessFromCount }) {
-  let tableHTML = '<table class="city-grid-table"><thead><tr>';
-  tableHTML +=
-    '<th class="coord-label-cell"><span class="coord-label-x">X ↕</span><span class="coord-label-y">↔ Y</span></th>';
+  const headerCells = Array.from({ length: citySize }, (_, y) => html`<th class="y-header">${y}</th>`);
 
-  for (let y = 0; y < citySize; y++) {
-    tableHTML += `<th class="y-header">${y}</th>`;
-  }
-  tableHTML += '</tr></thead><tbody>';
-
-  for (let x = 0; x < citySize; x++) {
-    tableHTML += `<tr><th class="x-header">${x}</th>`;
-
-    for (let y = 0; y < citySize; y++) {
+  const cellOf = (x, y) => {
       const key = `${x},${y}`;
       const building = buildingMap.get(key);
 
@@ -203,43 +188,34 @@ export function renderCityMapGridHtml({ citySize, buildingMap, hasRoadAccessFrom
         // Filter group: what the building is, not what it is called
         const category = building.kind === 'house' ? 'houses' : isRoad ? 'infrastructure' : 'services';
 
-        tableHTML += `<td class="grid-cell" data-category="${category}" title="${escapeHtml(describeMapBuilding(building))}">`;
-
-        tableHTML += `<div class="status-indicators">`;
+        const indicators = [];
         if (needsRoadAccess && !hasRoad) {
-          tableHTML += `<span class="status-indicator no-road" title="Pas de route"></span>`;
+          indicators.push(html`<span class="status-indicator no-road" title="Pas de route"></span>`);
         }
         if (isHouse && !hasFood && marketTooFar) {
-          tableHTML += `<span class="status-indicator market-too-far" title="${escapeHtml(`${namesOfBuildings('distributor', getSuppliedCategories()).join('/')} trop loin`)}"></span>`;
+          indicators.push(html`<span class="status-indicator market-too-far" title="${`${namesOfBuildings('distributor', getSuppliedCategories()).join('/')} trop loin`}"></span>`);
         } else if (canHaveFood && !hasFood && !marketTooFar) {
           const noFoodTitle = getAnnualSupplyEntry(building.type) ? EMPTY_HARVEST_STOCK_NOTE : `Pas de ${goodLabel(getResourceStockShape().totalKey).toLowerCase()}`;
-          tableHTML += `<span class="status-indicator no-food" title="${escapeHtml(noFoodTitle)}"></span>`;
+          indicators.push(html`<span class="status-indicator no-food" title="${noFoodTitle}"></span>`);
         }
-        tableHTML += `</div>`;
 
-        tableHTML += `<span class="building-code ${code.toLowerCase()}${styleClassOf(building.type)}">${code}</span>`;
-        if (category === 'houses') {
-          const habitants = Number(building.pop || 0);
-          tableHTML += `<div class="habitants-count" title="Habitants">${habitants}</div>`;
-        }
-        tableHTML += `</td>`;
-      } else {
-        tableHTML += `<td class="grid-cell empty-cell" data-category="infrastructure"> 
+        return html`<td class="grid-cell" data-category="${category}" title="${describeMapBuilding(building)}"><div class="status-indicators">${indicators}</div><span class="building-code ${code.toLowerCase()}${styleClassOf(building.type)}">${code}</span>${category === 'houses' ? html`<div class="habitants-count" title="Habitants">${Number(building.pop || 0)}</div>` : ''}</td>`;
+      }
+      return html`<td class="grid-cell empty-cell" data-category="infrastructure">
                         <span class="building-code grass" style="opacity: 0.3;">G</span>
                     </td>`;
-      }
-    }
+  };
 
-    tableHTML += '</tr>';
-  }
+  const bodyRows = Array.from({ length: citySize }, (_, x) =>
+    html`<tr><th class="x-header">${x}</th>${Array.from({ length: citySize }, (_unused, y) => cellOf(x, y))}</tr>`
+  );
 
-  tableHTML += '</tbody></table>';
-  return tableHTML;
+  return html`<table class="city-grid-table"><thead><tr><th class="coord-label-cell"><span class="coord-label-x">X ↕</span><span class="coord-label-y">↔ Y</span></th>${headerCells}</tr></thead><tbody>${bodyRows}</tbody></table>`;
 }
 
-/** @returns {string} */
+/** @returns {import('../shell/safeHtml.js').SafeHtml} */
 export function renderCityMapLoadingHtml() {
-  return `
+  return html`
             <div class="grid-loading">
                 <div class="loading-spinner"></div>
                 <p>Chargement de la carte...</p>
@@ -253,7 +229,7 @@ export function renderCityMapLoadingHtml() {
  */
 export function renderCityMapErrorHtml(error) {
   const message = error?.message || 'Erreur inconnue';
-  return `
+  return html`
             <div class="grid-loading">
                 <p style="font-size: 1.2rem; margin-bottom: 10px;">⚠️ Impossible de charger la carte</p>
                 <p style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 20px;">

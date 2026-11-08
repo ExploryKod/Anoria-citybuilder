@@ -9,6 +9,7 @@ import {
 } from '../buildingInfoTabCatalog.js';
 import { createModalFocusSession } from '../../shell/modalFocus.js';
 import { getBuildingDefinition } from '../../../../shared/building-catalog/index.js';
+import { html } from '../../shell/safeHtml.js';
 
 /** @deprecated Prefer BUILDING_INFO_TAB_IDS — kept for existing imports */
 export const BUILDING_INFO_TABS = BUILDING_INFO_TAB_IDS;
@@ -42,16 +43,16 @@ export function setBuildingInfoTitle(title) {
   if (heading) heading.textContent = title;
 }
 
-/** @param {string} html Plain text or minimal HTML for meta line */
-export function setBuildingInfoMeta(html) {
+/** @param {string | import('../../shell/safeHtml.js').SafeHtml} markup The meta line: `html` markup (a plain string is shown as text, never as markup) */
+export function setBuildingInfoMeta(markup) {
   const meta = document.querySelector('#info-building-meta');
   if (!meta) return;
-  if (!html) {
+  if (!markup) {
     meta.textContent = '';
     meta.hidden = true;
     return;
   }
-  meta.innerHTML = html;
+  meta.innerHTML = html`${markup}`;
   meta.hidden = false;
 }
 
@@ -281,8 +282,8 @@ export function appendIconStatRow(container, items) {
     chip.setAttribute('aria-label', item.ariaLabel);
     // A chip with a `pill` is not held yet: dimmed, with the house level that brings it in a colored pill under it.
     // A chip with no `value` (a skill: the house has it or not, there is nothing to count) shows only its icon and its word.
-    const value = item.pill || item.value === undefined ? '' : `<span class="building-info-icon-chip__value">${item.value}</span>`;
-    chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span>${value}<span class="building-info-icon-chip__label">${item.label}</span>`;
+    const value = item.pill || item.value === undefined ? '' : html`<span class="building-info-icon-chip__value">${item.value}</span>`;
+    chip.innerHTML = html`<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span>${value}<span class="building-info-icon-chip__label">${item.label}</span>`;
     if (item.pill) {
       chip.classList.add('building-info-icon-chip--upcoming');
       const pill = document.createElement('span');
@@ -407,8 +408,8 @@ export function appendHouseholdProblems(container, problems) {
     chip.className = 'building-info-icon-chip';
     chip.title = item.ariaLabel;
     chip.setAttribute('aria-label', item.ariaLabel);
-    const count = withCount ? `<span class="building-info-icon-chip__value">${item.count}</span>` : '';
-    chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span>${count}<span class="building-info-icon-chip__label">${item.label}</span>`;
+    const count = withCount ? html`<span class="building-info-icon-chip__value">${item.count}</span>` : '';
+    chip.innerHTML = html`<span class="building-info-icon-chip__emoji" aria-hidden="true">${item.emoji}</span>${count}<span class="building-info-icon-chip__label">${item.label}</span>`;
     return chip;
   };
 
@@ -425,7 +426,7 @@ export function appendHouseholdProblems(container, problems) {
         mini.className = 'building-info-problems__cause';
         mini.title = cause.ariaLabel;
         mini.setAttribute('aria-label', cause.ariaLabel);
-        mini.innerHTML = `<span aria-hidden="true">${cause.emoji}</span><strong>${cause.count}</strong>`;
+        mini.innerHTML = html`<span aria-hidden="true">${cause.emoji}</span><strong>${cause.count}</strong>`;
         causes.appendChild(mini);
       }
       block.appendChild(causes);
@@ -463,7 +464,7 @@ function createMetricCardElement(card, { onSelect, scope } = {}) {
   }
   el.title = card.ariaLabel;
   el.setAttribute('aria-label', card.ariaLabel);
-  el.innerHTML = `<span class="building-info-metric-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-metric-card__label">${card.label}</span><span class="building-info-metric-card__value">${card.valueText}</span>${card.detailText ? `<span class="building-info-metric-card__detail">${card.detailText}</span>` : ''}`;
+  el.innerHTML = html`<span class="building-info-metric-card__icon" aria-hidden="true">${card.icon}</span><span class="building-info-metric-card__label">${card.label}</span><span class="building-info-metric-card__value">${card.valueText}</span>${card.detailText ? html`<span class="building-info-metric-card__detail">${card.detailText}</span>` : ''}`;
   if (card.keywords?.length) {
     const keywords = document.createElement('span');
     keywords.className = 'building-info-metric-card__keywords';
@@ -597,7 +598,7 @@ function buildCompactIconRow(stocks) {
     chip.className = 'building-info-icon-chip building-info-icon-chip--compact';
     chip.title = stock.ariaLabel;
     chip.setAttribute('aria-label', stock.ariaLabel);
-    chip.innerHTML = `<span class="building-info-icon-chip__emoji" aria-hidden="true">${stock.emoji}</span><span class="building-info-icon-chip__value">${stock.value}</span>`;
+    chip.innerHTML = html`<span class="building-info-icon-chip__emoji" aria-hidden="true">${stock.emoji}</span><span class="building-info-icon-chip__value">${stock.value}</span>`;
     row.appendChild(chip);
   }
 
@@ -621,7 +622,7 @@ export function renderMessagesTab(container, model) {
   const complaints = model?.complaints ?? [];
   const hasComplaints = complaints.length > 0;
 
-  container.innerHTML = `
+  container.innerHTML = html`
     <div class="building-info-messages">
       <p class="building-info-messages-empty" role="status" ${hasComplaints ? 'hidden' : ''}>Aucun message pour ce bâtiment.</p>
       <ul class="building-info-messages-list" aria-label="Messages du bâtiment"></ul>

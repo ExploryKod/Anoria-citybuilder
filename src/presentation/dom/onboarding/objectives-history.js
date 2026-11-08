@@ -2,6 +2,7 @@
  * Gestion de l'historique des objectifs (succès et échecs)
  */
 import { TimeManager } from '../../../shared/time/TimeManager.js';
+import { raw } from '../shell/safeHtml.js';
 
 class ObjectivesHistory {
     constructor() {
@@ -96,7 +97,7 @@ class ObjectivesHistory {
                 `;
             }
 
-            modal.innerHTML = html;
+            modal.innerHTML = raw(html);
             document.body.appendChild(overlay);
             document.body.appendChild(modal);
 

@@ -10,11 +10,13 @@ import {
   renderExternalLenders,
   renderActiveLoansHtml,
   renderActiveLoansErrorHtml,
+  parkLoanForm,
 } from './PretsPresenter.js';
 import { createModalFocusSession } from '../../shell/modalFocus.js';
 import { formatEuro, formatYearlyRate } from '../../../../contexts/accounting/presentation/formatMoney.js';
 import { buildingName } from '../../shell/CatalogVocabulary.js';
 import { noticeModal } from '../../shell/ConfirmModal.js';
+import { html } from '../../shell/safeHtml.js';
 
 /**
  * @type {{
@@ -91,15 +93,12 @@ export function initLoansPopup(panelDeps) {
   });
 
   loanSelectBtns.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const loanType = btn.dataset.loanType;
-      showLoanForm(loanType);
-    });
+    btn.addEventListener('click', () => toggleLoanForm(btn, btn.dataset.loanType));
   });
   // The partner cities that lend are listed when the panel opens: their buttons are born then, so the click is heard on their container.
   document.getElementById('external-loans')?.addEventListener('click', (event) => {
     const btn = event.target.closest('.loan-select-btn');
-    if (btn) showLoanForm('external', { cityId: btn.dataset.lenderCity, cityName: btn.dataset.lenderName, maxAmount: Number(btn.dataset.maxAmount) });
+    if (btn) toggleLoanForm(btn, 'external', { cityId: btn.dataset.lenderCity, cityName: btn.dataset.lenderName, maxAmount: Number(btn.dataset.maxAmount) });
   });
 
   if (loanCancelBtn) {
@@ -204,10 +203,30 @@ export async function updateLoansDisplay() {
   }
 }
 
-function showLoanForm(loanType, lender = null) {
+/**
+ * The "Contracter" button of an offer opens its contract right under it, and a second click closes it again: the player sees which offer is open, and where the form is.
+ * @param {HTMLButtonElement} button
+ * @param {string} loanType
+ * @param {{ cityId: string, cityName: string, maxAmount: number } | null} [lender]
+ */
+function toggleLoanForm(button, loanType, lender = null) {
+  const option = button.closest('.loan-option');
+  if (!option) throw new Error('[loans] a "Contracter" button is not inside an offer (.loan-option)');
+  const wasOpen = option.classList.contains('is-open');
+  hideLoanForm();
+  if (wasOpen) return;
+  showLoanForm(loanType, lender, { option, button });
+}
+
+function showLoanForm(loanType, lender = null, { option, button }) {
   const loanFormSection = document.getElementById('loan-form-section');
   if (loanFormSection) {
     loanFormSection.style.display = 'block';
+    // Under the offer that was picked, which wears the "open" mark; the form is brought into view and the amount is ready to type.
+    option.after(loanFormSection);
+    option.classList.add('is-open');
+    button.setAttribute('aria-expanded', 'true');
+    button.textContent = 'Fermer';
 
     const loanAmountInput = document.getElementById('loan-amount-input');
     const loanDurationInput = document.getElementById('loan-duration-input');
@@ -267,14 +286,13 @@ function showLoanForm(loanType, lender = null) {
       delete loanFormSection.dataset.maxAmount;
     }
     updateLoanSummary();
+    loanFormSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById('loan-amount-input')?.focus({ preventScroll: true });
   }
 }
 
 function hideLoanForm() {
-  const loanFormSection = document.getElementById('loan-form-section');
-  if (loanFormSection) {
-    loanFormSection.style.display = 'none';
-  }
+  parkLoanForm();
 }
 
 function updateLoanSummary() {
@@ -410,10 +428,10 @@ export async function loadActiveLoans() {
 
   try {
     const activeLoans = await deps.accounting.getActiveLoans();
-    activeLoansList.innerHTML = renderActiveLoansHtml(activeLoans, deps.accounting.loanInstallmentOf);
+    activeLoansList.innerHTML = html`${renderActiveLoansHtml(activeLoans, deps.accounting.loanInstallmentOf)}`;
   } catch (error) {
     console.error('Error loading active loans:', error);
-    activeLoansList.innerHTML = renderActiveLoansErrorHtml();
+    activeLoansList.innerHTML = html`${renderActiveLoansErrorHtml()}`;
   }
 }
 

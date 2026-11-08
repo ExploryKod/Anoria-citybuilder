@@ -1,8 +1,17 @@
 import ToastNotifier from 'js-toast-notifier';
 import 'js-toast-notifier/dist/toast.css';
 import '../styles/toast-notifier.css';
+import { escapeHtml } from './safeHtml.js';
 
 let toastInstance = null;
+
+/**
+ * The library puts a toast's message into innerHTML, as markup. A toast says what the game or another player says (a pseudo, a hamlet's name): it must reach the page as
+ * text. Every toast goes through here, so that no caller has to remember, and none can forget.
+ * @param {unknown} message
+ * @returns {string}
+ */
+const asText = (message) => escapeHtml(message);
 
 function getToast() {
   if (!toastInstance) {
@@ -23,7 +32,7 @@ function getToast() {
  * @param {{ timeout?: number }} [options]
  */
 export function showInfoToast(message, options = {}) {
-  return getToast().info(message, options);
+  return getToast().info(asText(message), options);
 }
 
 /**
@@ -31,7 +40,7 @@ export function showInfoToast(message, options = {}) {
  * @param {{ timeout?: number }} [options]
  */
 export function showSuccessToast(message, options = {}) {
-  return getToast().success(message, options);
+  return getToast().success(asText(message), options);
 }
 
 /**
@@ -39,7 +48,7 @@ export function showSuccessToast(message, options = {}) {
  * @param {{ timeout?: number }} [options]
  */
 export function showWarningToast(message, options = {}) {
-  return getToast().warning(message, options);
+  return getToast().warning(asText(message), options);
 }
 
 /**
@@ -47,7 +56,7 @@ export function showWarningToast(message, options = {}) {
  * @param {{ timeout?: number }} [options]
  */
 export function showErrorToast(message, options = {}) {
-  return getToast().error(message, options);
+  return getToast().error(asText(message), options);
 }
 
 /**

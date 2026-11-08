@@ -1,7 +1,8 @@
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { isTutorialMode } from '../../../shared/gameplay/gameMode.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
-import { illustrationFigure, makeImageZoomable, richTextHtml } from '../intelligence/NewsEventModal.js';
+import { illustrationFigure, makeImageZoomable } from '../intelligence/NewsEventModal.js';
+import { renderRichText } from '../shell/richText.js';
 
 const TUTORIAL_CATEGORY = 'tutorial';
 
@@ -21,9 +22,9 @@ function pagesOf(page) {
 function renderPage(page) {
   const section = document.createElement('div');
   section.className = 'tutorial-history-page';
-  const body = document.createElement('p');
+  const body = document.createElement('div');
   body.className = 'news-event-modal-body';
-  body.innerHTML = richTextHtml(page.body);
+  renderRichText(body, page.body);
   section.append(body);
 
   if (page.illustrations?.length) {

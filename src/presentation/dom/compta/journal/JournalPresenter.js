@@ -3,6 +3,7 @@
  */
 
 import { TimeManager } from '../../../../shared/time/TimeManager.js';
+import { html } from '../../shell/safeHtml.js';
 import { formatJournalEntryDetails } from './formatJournalEntryDescription.js';
 import { goodLabel, unresolvedTerm } from '../../shell/CatalogVocabulary.js';
 import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
@@ -20,9 +21,9 @@ const PLAN_NAMES = Object.freeze({ pcg: 'PCG', m57: 'M57' });
  * @returns {string}
  */
 function renderEntryLegs(entry, isInformative) {
-  if (isInformative) return '';
+  if (isInformative) return html``;
   // A year closed by a purge is shown from its totals per type: a digest of the year, not an écriture.
-  if (entry.closed) return '<div class="journal-entry-legs-note">Total de l’année close : ce n’est pas une écriture</div>';
+  if (entry.closed) return html`<div class="journal-entry-legs-note">Total de l’année close : ce n’est pas une écriture</div>`;
   if (!entry.legs) throw new Error(`[journal] the écriture ${entry.id} (${entry.type}) has no legs: it was written before the entries carried them`);
   const money = (centimes) => (centimes > 0 ? formatEuro(centimes / 100) : '');
   const totalDebit = entry.legs.reduce((sum, leg) => sum + leg.debit, 0);
@@ -30,16 +31,15 @@ function renderEntryLegs(entry, isInformative) {
   const plan = PLAN_NAMES[planOfAccount(entry.accountBuildingId)];
   const rows = entry.legs
     .map(
-      (leg) => `
+      (leg) => html`
         <tr class="${leg.credit > 0 ? 'journal-entry-leg--credit' : ''}">
             <td class="journal-entry-leg-account">${leg.account}</td>
             <td class="journal-entry-leg-label">${accountLabelOf(leg.account)}</td>
             <td class="journal-entry-leg-amount">${money(leg.debit)}</td>
             <td class="journal-entry-leg-amount">${money(leg.credit)}</td>
         </tr>`
-    )
-    .join('');
-  return `
+    );
+  return html`
         <table class="journal-entry-legs" aria-label="Jambes de l’écriture (${plan})">
             <thead><tr><th>Compte ${plan}</th><th>Libellé</th><th class="journal-entry-leg-amount">Débit</th><th class="journal-entry-leg-amount">Crédit</th></tr></thead>
             <tbody>${rows}</tbody>
@@ -72,7 +72,7 @@ function formatPrefixedEuro(sign, amount) {
  * @returns {string}
  */
 function renderSummaryItem({ label, amountHtml, className, tooltip }) {
-  return `
+  return html`
     <div class="journal-summary-item ${className}" title="${tooltip}">
         <span class="label">
             ${label}
@@ -92,24 +92,26 @@ function renderYearSummary(yearData) {
     `Résultat net de l'année : revenus (+${yearData.incomeTotal} €) − dépenses (−${yearData.expensesTotal} €) = ${formatSignedEuro(yearData.netFlow)}. ` +
     'Ne comprend pas le capital de départ ni les soldes des années précédentes.';
 
-  let html = renderSummaryItem({
-    label: 'Revenus:',
-    amountHtml: formatPrefixedEuro('+', yearData.incomeTotal),
-    className: 'income',
-    tooltip: 'Total des entrées comptables de l’année (impôts, exports, capital prêt, etc.).',
-  });
-  html += renderSummaryItem({
-    label: 'Dépenses:',
-    amountHtml: formatPrefixedEuro('-', yearData.expensesTotal),
-    className: 'expenses',
-    tooltip: 'Total des sorties comptables de l’année (salaires, maintenance, imports, intérêts, etc.).',
-  });
-  html += renderSummaryItem({
-    label: 'Résultat:',
-    amountHtml: formatSignedEuro(yearData.netFlow),
-    className: `netflow ${netClass}`,
-    tooltip: resultTooltip,
-  });
+  const items = [
+    renderSummaryItem({
+      label: 'Revenus:',
+      amountHtml: formatPrefixedEuro('+', yearData.incomeTotal),
+      className: 'income',
+      tooltip: 'Total des entrées comptables de l’année (impôts, exports, capital prêt, etc.).',
+    }),
+    renderSummaryItem({
+      label: 'Dépenses:',
+      amountHtml: formatPrefixedEuro('-', yearData.expensesTotal),
+      className: 'expenses',
+      tooltip: 'Total des sorties comptables de l’année (salaires, maintenance, imports, intérêts, etc.).',
+    }),
+    renderSummaryItem({
+      label: 'Résultat:',
+      amountHtml: formatSignedEuro(yearData.netFlow),
+      className: `netflow ${netClass}`,
+      tooltip: resultTooltip,
+    }),
+  ];
 
   if (yearData.isCurrentYear && yearData.treasuryBalance != null) {
     const treasuryClass = yearData.treasuryBalance >= 0 ? 'positive' : 'negative';
@@ -117,15 +119,15 @@ function renderYearSummary(yearData) {
       `Trésorerie actuelle en caisse : ${formatSignedEuro(yearData.treasuryBalance)}. ` +
       'Cumul depuis le début de la partie (capital initial + résultats de toutes les années jouées). ' +
       `Diffère du résultat de l'année (${formatSignedEuro(yearData.netFlow)}) si des années antérieures ont dégagé un excédent ou un déficit.`;
-    html += renderSummaryItem({
+    items.push(renderSummaryItem({
       label: 'Trésorerie:',
       amountHtml: formatSignedEuro(yearData.treasuryBalance),
       className: `treasury ${treasuryClass}`,
       tooltip: treasuryTooltip,
-    });
+    }));
   }
 
-  return html;
+  return html`${items}`;
 }
 
 /**
@@ -137,26 +139,26 @@ function renderMonthSummary(monthData) {
   const monthTooltip =
     `Résultat net du mois : revenus (+${monthData.incomeTotal} €) − dépenses (−${monthData.expensesTotal} €) = ${formatSignedEuro(monthData.netFlow)}.`;
 
-  return (
+  return html`${[
     renderSummaryItem({
       label: 'Revenus:',
       amountHtml: formatPrefixedEuro('+', monthData.incomeTotal),
       className: 'income',
       tooltip: 'Entrées comptables du mois.',
-    }) +
+    }),
     renderSummaryItem({
       label: 'Dépenses:',
       amountHtml: formatPrefixedEuro('-', monthData.expensesTotal),
       className: 'expenses',
       tooltip: 'Sorties comptables du mois.',
-    }) +
+    }),
     renderSummaryItem({
       label: 'Résultat:',
       amountHtml: formatSignedEuro(monthData.netFlow),
       className: `netflow ${monthNetClass}`,
       tooltip: monthTooltip,
-    })
-  );
+    }),
+  ]}`;
 }
 
 /**
@@ -171,17 +173,17 @@ function renderMonthSummary(monthData) {
  * @returns {string}
  */
 export function renderJournalList(ledger, accounting, hamletNames, scopeLabel) {
-  const sortHint = `
+  const sortHint = html`
         <p class="journal-sort-hint">Plus récent en haut — années et mois triés du plus récent au plus ancien.</p>
     `;
 
-  return (
-    sortHint +
-    ledger.years
+  return html`${[
+    sortHint,
+    ...ledger.years
       .map((yearData) => {
         const yearDisplay = yearData.year === 0 ? '0 JC' : `${yearData.year} ap JC`;
 
-        return `
+        return html`
             <div class="journal-year-group">
                 <div class="journal-year-header">
                     <h3>Année ${yearDisplay} <span class="journal-year-scope">${scopeLabel}</span></h3>
@@ -195,7 +197,7 @@ export function renderJournalList(ledger, accounting, hamletNames, scopeLabel) {
                     const yearDisplayMonth =
                       monthData.year === 0 ? '0 JC' : `${monthData.year} ap JC`;
 
-                    return `
+                    return html`
                         <div class="journal-month-group">
                             <div class="journal-month-header">
                                 <h4>${monthData.monthName} ${yearDisplayMonth}</h4>
@@ -204,17 +206,15 @@ export function renderJournalList(ledger, accounting, hamletNames, scopeLabel) {
                                 </div>
                             </div>
                             <div class="journal-month-entries">
-                                ${monthData.entries.map((entry) => createJournalEntryHTML(entry, accounting, hamletNames)).join('')}
+                                ${monthData.entries.map((entry) => createJournalEntryHTML(entry, accounting, hamletNames))}
                             </div>
                         </div>
                     `;
-                  })
-                  .join('')}
+                  })}
             </div>
         `;
-      })
-      .join('')
-  );
+      }),
+  ]}`;
 }
 
 /**
@@ -385,16 +385,16 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
   if (!pcg && !isInformative) unresolvedTerm('journal account', entry.type);
   // The journal code (BQ bank, OD opérations diverses…) the écriture is booked in; its accounts are in the legs below.
   const accountBadge = entry.journal
-    ? `<span class="journal-entry-account" title="Code journal${pcg?.household ? ' (hors PCG : un ménage n\'est pas une entité)' : ''}">${entry.journal}</span>`
+    ? html`<span class="journal-entry-account" title="Code journal${pcg?.household ? ' (hors PCG : un ménage n\'est pas une entité)' : ''}">${entry.journal}</span>`
     : '';
 
-  return `
+  return html`
         <div class="journal-entry${isInformative ? ' journal-entry--informative' : ''}">
             <div class="journal-entry-header">
-                ${isInformative ? '<span class="journal-entry-info" role="img" title="Informatif : cette ligne ne déplace aucun argent" aria-label="Informatif : aucun argent déplacé">ℹ️</span>' : ''}
-                <span class="journal-entry-type ${entry.type}"${pcg ? ` data-tone="${pcg.tone}"` : ''}>${accountBadge}${typeLabels[entry.type] ?? tradeLabel(entry.type) ?? unresolvedTerm('journal line label', entry.type)}</span>
+                ${isInformative ? html`<span class="journal-entry-info" role="img" title="Informatif : cette ligne ne déplace aucun argent" aria-label="Informatif : aucun argent déplacé">ℹ️</span>` : ''}
+                <span class="journal-entry-type ${entry.type}"${pcg ? html` data-tone="${pcg.tone}"` : ''}>${accountBadge}${typeLabels[entry.type] ?? tradeLabel(entry.type) ?? unresolvedTerm('journal line label', entry.type)}</span>
                 <span class="journal-entry-hamlet">${hamletName}</span>
-                ${partnerName ? `<span class="journal-entry-partner">🤝 ${partnerName}</span>` : ''}
+                ${partnerName ? html`<span class="journal-entry-partner">🤝 ${partnerName}</span>` : ''}
                 <span class="journal-entry-amount ${typeClass}">
                     ${typeClass === 'positive' ? '+' : '-'}${Math.abs(entry.amount)}€
                 </span>
@@ -403,26 +403,25 @@ function createJournalEntryHTML(entry, accounting, hamletNames) {
             <div class="journal-entry-details">
                 ${
                   entryDetails.length
-                    ? `
+                    ? html`
                 <div class="journal-entry-facts">
                     ${entryDetails
                       .map(
-                        ({ label, value }) => `
+                        ({ label, value }) => html`
                         <span class="journal-entry-fact">
                             <span class="journal-entry-fact-label">${label}:</span>
                             <span class="journal-entry-fact-value">${value}</span>
                         </span>
                     `
-                      )
-                      .join('')}
+                      )}
                 </div>
                 `
                     : ''
                 }
                 <div class="journal-entry-meta">
-                    ${entry.id != null ? `<span class="journal-entry-id">N° ${entry.id}</span>` : ''}
-                    ${entry.buildingInstanceId ? `<span class="journal-entry-asset-id" title="${entry.buildingInstanceId}">Id bâtiment: ${entry.buildingInstanceId}</span>` : ''}
-                    ${entry.turn !== undefined ? `<span class="journal-entry-turn-number">Tour: ${entry.turn}</span>` : ''}
+                    ${entry.id != null ? html`<span class="journal-entry-id">N° ${entry.id}</span>` : ''}
+                    ${entry.buildingInstanceId ? html`<span class="journal-entry-asset-id" title="${entry.buildingInstanceId}">Id bâtiment: ${entry.buildingInstanceId}</span>` : ''}
+                    ${entry.turn !== undefined ? html`<span class="journal-entry-turn-number">Tour: ${entry.turn}</span>` : ''}
                     <span class="journal-entry-date">${gameDate}</span>
                 </div>
             </div>

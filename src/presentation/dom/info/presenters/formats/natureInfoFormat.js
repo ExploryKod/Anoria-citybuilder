@@ -4,6 +4,7 @@
 
 import { depositKindsOf } from '../../../../../shared/building-catalog/depositQueries.js';
 import { buildingName, goodIcon, goodLabel } from '../../../shell/CatalogVocabulary.js';
+import { html } from '../../../shell/safeHtml.js';
 
 /**
  * @param {import('../../buildingInfoTypes.js').BuildingInfoViewModel} vm
@@ -11,7 +12,7 @@ import { buildingName, goodIcon, goodLabel } from '../../../shell/CatalogVocabul
 export function formatNatureLayoutHeader(vm) {
   return {
     title: buildingName(vm.buildingType),
-    meta: `📍 (${vm.anchorX}, ${vm.anchorY})`,
+    meta: html`📍 (${vm.anchorX}, ${vm.anchorY})`,
     accent: null,
   };
 }

@@ -1,4 +1,8 @@
-/* Loans Panel Styles */
+/*
+ * Loans panel — sober on purpose: one frame (the panel), thin dividers to tell the parts apart, no box inside a box. An offer is a row (its name, what it
+ * grants, one button); the contract opens under the row that was picked, on a soft tint, so the player sees which offer is open. Narrow screens first: a row stacks, the
+ * button takes the width, touch targets are 40 px or more.
+ */
 .loans-panel {
     position: fixed;
     top: 0;
@@ -12,725 +16,529 @@
     justify-content: center;
 }
 
-/* Amortization Schedule Styles */
-.amortization-schedule {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-
-.amortization-schedule h4 {
-    margin: 0 0 15px 0;
-    color: var(--primary);
-    font-size: 16px;
-    font-weight: 600;
-}
-
-.schedule-summary {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 15px;
-    padding: 10px;
-    background: white;
-    border-radius: 6px;
-    border: 1px solid #dee2e6;
-}
-
-.summary-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.summary-item .label {
-    font-size: 12px;
-    color: #6c757d;
-    font-weight: 500;
-}
-
-.summary-item .value {
-    font-size: 14px;
-    color: var(--primary);
-    font-weight: 600;
-}
-
-.schedule-table {
-    background: white;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid #dee2e6;
-}
-
-.schedule-header {
-    display: grid;
-    grid-template-columns: 60px 80px 80px 80px 80px;
-    gap: 1px;
-    background: var(--cta);
-    color: white;
-    font-weight: 600;
-    font-size: 12px;
-}
-
-.schedule-header > div {
-    padding: 8px 6px;
-    text-align: center;
-}
-
-.schedule-row {
-    display: grid;
-    grid-template-columns: 60px 80px 80px 80px 80px;
-    gap: 1px;
-    border-bottom: 1px solid #dee2e6;
-    font-size: 12px;
-    transition: background-color 0.2s ease;
-}
-
-.schedule-row:last-child {
-    border-bottom: none;
-}
-
-.schedule-row:hover {
-    background: #f8f9fa;
-}
-
-.schedule-row.paid {
-    background: #d4edda;
-    color: #155724;
-}
-
-.schedule-row.paid:hover {
-    background: #c3e6cb;
-}
-
-.schedule-row > div {
-    padding: 6px;
-    text-align: center;
-    border-right: 1px solid #dee2e6;
-}
-
-.schedule-row > div:last-child {
-    border-right: none;
-}
-
-.schedule-row.paid > div {
-    border-right-color: #c3e6cb;
-}
-
-.schedule-row.paid > div:last-child {
-    border-right: none;
-}
-
 .loans-panel.active {
     display: flex !important;
 }
 
 .loans-panel-wrapper {
-    background: #fafafa;
+    background: #fff;
     color: var(--primary);
     border-radius: var(--border-radius);
-    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-    width: 90%;
-    max-width: 1000px;
-    max-height: 85vh;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    width: min(94vw, 720px);
+    max-height: 88vh;
     overflow: hidden;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     flex-direction: column;
+    text-align: left;
 }
 
+/* ---- Header: the title, the city's financial health as a small pill, the way out ---- */
 .loans-panel-header {
-    background: white;
-    padding: 20px;
-    border-bottom: 2px solid var(--cta);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-}
-
-.loans-health-indicator {
-    background: rgba(76, 222, 128, 0.2);
-    color: #4ade80;
-    padding: 6px 12px;
-    border-radius: var(--border-radius);
-    font-size: 14px;
-    font-weight: 600;
-    border: 1px solid rgba(76, 222, 128, 0.3);
-}
-
-.loans-health-indicator.warning {
-    background: rgba(255, 167, 38, 0.2);
-    color: #ffa726;
-    border-color: rgba(255, 167, 38, 0.3);
-}
-
-.loans-health-indicator.critical {
-    background: rgba(255, 107, 107, 0.2);
-    color: #ff6b6b;
-    border-color: rgba(255, 107, 107, 0.3);
+    gap: 12px;
+    padding: 14px 16px 14px 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .loans-panel-header h2 {
     margin: 0;
-    font-size: 24px;
+    margin-right: auto;
+    font-size: 1.25rem;
     font-weight: 600;
-    color: var(--primary);
+}
+
+.loans-health-indicator {
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: rgba(34, 197, 94, 0.12);
+    color: #15803d;
+}
+
+.loans-health-indicator.warning {
+    background: rgba(245, 158, 11, 0.14);
+    color: #b45309;
+}
+
+.loans-health-indicator.critical {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
 }
 
 .loans-panel-close-btn {
-    background: white;
-    border: none;
-    color: var(--cta);
-    width: 40px;
-    height: 40px;
-    border-radius: var(--border-radius-small);
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease-in-out;
-    border: 3px solid var(--cta);
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--cta);
+    cursor: pointer;
     appearance: none;
     -webkit-appearance: none;
-    font: inherit;
-    padding: 0;
+    transition: background 0.2s ease;
 }
 
 .loans-panel-close-btn:hover {
-    background: var(--cta);
-    color: white;
+    background: rgba(251, 129, 34, 0.12);
 }
 
 .loans-panel-close-btn:focus-visible {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--cta);
     outline-offset: 2px;
 }
 
-/* Custom scrollbar for loans panel content */
+/* ---- Content: sections one under the other, a hairline between them ---- */
+.loans-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 20px 24px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+}
+
 .loans-panel-content::-webkit-scrollbar {
     width: 6px;
 }
 
-.loans-panel-content::-webkit-scrollbar-track {
-    background: transparent;
-}
-
 .loans-panel-content::-webkit-scrollbar-thumb {
-    background: var(--cta);
+    background: rgba(0, 0, 0, 0.25);
     border-radius: 3px;
 }
 
-.loans-panel-content::-webkit-scrollbar-thumb:hover {
-    background: var(--cta-05);
-}
-
-/* Firefox scrollbar for loans panel content */
-.loans-panel-content {
-    padding: 20px;
-    flex: 1;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--cta) transparent;
-}
-
-.loans-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-}
-
-.loans-header h3 {
-    color: var(--cta);
-    margin: 0;
-    font-size: 1.3rem;
-}
-
 .loans-date {
-    color: var(--primary);
-    font-size: 0.9rem;
-    font-weight: 500;
+    margin: 12px 0 0;
+    font-size: 0.8rem;
+    color: rgba(0, 0, 0, 0.5);
 }
 
-.loans-health-section {
-    margin-bottom: 25px;
-}
-
-.loans-health-section h4 {
-    color: var(--cta);
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0 0 15px 0;
-    padding: 8px 12px;
-    background: rgba(251, 129, 34, 0.1);
-    border-left: 4px solid var(--cta);
-    border-radius: 4px;
-}
-
-.health-impact {
-    background: rgba(251, 129, 34, 0.05);
-    border-radius: 8px;
-    padding: 15px;
-}
-
-.health-status-good {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #4ade80;
-}
-
-.health-status-warning {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #ffa726;
-}
-
-.health-status-critical {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #ff6b6b;
-}
-
-.loans-available h4 {
-    color: var(--cta);
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0 0 20px 0;
-    padding: 8px 12px;
-    background: rgba(251, 129, 34, 0.1);
-    border-left: 4px solid var(--cta);
-    border-radius: 4px;
-}
-
-.loan-category {
-    margin-bottom: 25px;
-}
-
-.loan-category h5 {
-    color: var(--primary);
+.loans-section-title {
+    margin: 0 0 4px;
     font-size: 1rem;
     font-weight: 600;
-    margin: 0 0 15px 0;
-    padding-left: 10px;
-    border-left: 3px solid var(--cta);
+}
+
+.loans-available,
+.active-loans-section {
+    padding-top: 20px;
+}
+
+.active-loans-section {
+    margin-top: 24px;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* What the city's health means for the rates: one line, a dot for the tone. */
+.health-impact {
+    margin: 4px 0 0;
+    font-size: 0.9rem;
+}
+
+.health-status-good,
+.health-status-warning,
+.health-status-critical {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.health-status-good::before,
+.health-status-warning::before,
+.health-status-critical::before {
+    content: '';
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    transform: translateY(-1px);
+}
+
+.health-status-warning::before { background: #f59e0b; }
+.health-status-critical::before { background: #ef4444; }
+
+/* ---- Offers ---- */
+.loan-category {
+    margin-top: 16px;
+}
+
+.loan-category h4 {
+    margin: 0 0 2px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.loan-options {
+    list-style: none;
+    margin: 0;
+    padding: 0;
 }
 
 .loan-option {
-    background: rgba(251, 129, 34, 0.05);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    border-left: 3px solid var(--cta);
+    gap: 6px 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.loan-info {
-    flex: 1;
+.loan-option.is-open {
+    border-bottom-color: transparent;
 }
 
 .loan-name {
+    margin: 0;
+    font-size: 1rem;
     font-weight: 600;
-    font-size: 1.1rem;
-    color: var(--primary);
-    margin-bottom: 5px;
 }
 
 .loan-description {
-    color: var(--cta);
-    font-size: 0.9rem;
+    margin: 2px 0 0;
+    font-size: 0.88rem;
+    color: rgba(0, 0, 0, 0.6);
 }
 
-.loan-details {
-    flex: 1;
-    text-align: center;
-    color: var(--cta);
-    font-size: 0.9rem;
+/* What an offer grants (and a loan carries): label above figure, wrapping as the width allows. */
+.loan-terms {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 24px;
+    margin: 10px 0 0;
+}
+
+.loan-terms > div {
+    min-width: 0;
+}
+
+.loan-terms dt {
+    font-size: 0.72rem;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.loan-terms dd {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 600;
 }
 
 .loan-select-btn {
-    background: linear-gradient(135deg, #4ade80, #22c55e);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
+    min-height: 40px;
+    padding: 0 20px;
+    border: 1.5px solid var(--cta);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--cta);
+    font: inherit;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
-.loan-select-btn:hover {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    transform: translateY(-2px);
+.loan-select-btn:hover:not(:disabled),
+.loan-select-btn[aria-expanded="true"] {
+    background: var(--cta);
+    color: #fff;
+}
+
+.loan-select-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
 }
 
 .loan-select-btn:disabled {
-    background: #9ca3af;
+    border-color: rgba(0, 0, 0, 0.2);
+    color: rgba(0, 0, 0, 0.4);
     cursor: not-allowed;
-    transform: none;
 }
 
+/* Why an offer cannot be taken: under it, across the row. */
 .loan-unavailable {
-    color: #b91c1c;
+    grid-column: 1 / -1;
+    margin: 0;
     font-size: 0.85rem;
-    margin-top: 8px;
-    flex-basis: 100%;
+    color: #b91c1c;
+}
+
+/* ---- The contract: a soft tint under the picked offer, no frame ---- */
+.loan-form-park {
+    display: none;
 }
 
 .loan-form-section {
-    background: rgba(251, 129, 34, 0.05);
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 25px;
+    list-style: none;
+    margin: 0 0 8px;
+    padding: 16px;
+    border-radius: 10px;
+    background: rgba(251, 129, 34, 0.07);
+    animation: loan-form-in 0.2s ease-out;
 }
 
-.loan-form-section h4 {
-    color: var(--cta);
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin: 0 0 20px 0;
+@keyframes loan-form-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: none; }
 }
 
-.loan-input-group {
-    margin-bottom: 15px;
+.loan-form-title {
+    margin: 0 0 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.loan-fields {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
 }
 
 .loan-input-group label {
     display: block;
-    color: var(--primary);
-    font-weight: 600;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
+    font-size: 0.78rem;
+    color: rgba(0, 0, 0, 0.6);
 }
 
 .loan-input-group input,
 .loan-input-group select {
+    box-sizing: border-box;
     width: 100%;
-    padding: 10px;
-    border: 1px solid rgba(251, 129, 34, 0.2);
-    border-radius: 6px;
-    background: rgba(251, 129, 34, 0.1);
-    color: var(--primary);
-    font-size: 1rem;
-}
-
-.loan-input-group input:focus,
-.loan-input-group select:focus {
-    border-color: #4ade80;
-    box-shadow: 0 0 0 2px rgba(76, 222, 128, 0.2);
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    background: #fff;
+    color: inherit;
+    font: inherit;
 }
 
 .loan-input-group input:focus-visible,
 .loan-input-group select:focus-visible {
-    outline: 2px solid #4ade80;
+    outline: 2px solid var(--cta);
     outline-offset: 1px;
+    border-color: var(--cta);
 }
 
 .loan-summary {
-    background: rgba(251, 129, 34, 0.05);
-    border-radius: 6px;
-    padding: 15px;
-    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+    margin: 16px 0 0;
 }
 
-.loan-summary-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 0;
-    border-bottom: 1px solid rgba(251, 129, 34, 0.2);
-    color: var(--primary);
+.loan-summary dt {
+    font-size: 0.72rem;
+    color: rgba(0, 0, 0, 0.5);
 }
 
-.loan-summary-item:last-child {
-    border-bottom: none;
+.loan-summary dd {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
 }
 
-.loan-summary-item.total {
-    font-weight: 700;
+.loan-summary .total dd {
     font-size: 1.1rem;
     color: var(--cta);
-    border-top: 2px solid var(--cta);
-    margin-top: 10px;
-    padding-top: 10px;
 }
 
 .loan-form-buttons {
     display: flex;
-    gap: 15px;
+    flex-wrap: wrap;
     justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.loan-cancel-btn,
+.loan-contract-btn {
+    flex: 1 1 140px;
+    min-height: 44px;
+    padding: 0 20px;
+    border-radius: 999px;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
 }
 
 .loan-cancel-btn {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    border: none;
+    background: transparent;
+    color: rgba(0, 0, 0, 0.6);
 }
 
 .loan-cancel-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.06);
 }
 
 .loan-contract-btn {
-    background: linear-gradient(135deg, #4ade80, #22c55e);
-    color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    background: var(--cta);
+    color: #fff;
 }
 
 .loan-contract-btn:hover {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    transform: translateY(-2px);
+    filter: brightness(0.95);
 }
 
-.active-loans-section h4 {
-    color: var(--cta);
+.loan-cancel-btn:focus-visible,
+.loan-contract-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* ---- Loans in progress: one row each, the schedule folded away ---- */
+.no-loans {
+    margin: 12px 0 0;
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.loan-item {
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.loan-item:last-child {
+    border-bottom: none;
+}
+
+.loan-item-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.loan-item .loan-type {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.loan-item .loan-amount {
+    margin: 0;
     font-size: 1.1rem;
     font-weight: 700;
-    margin: 0 0 15px 0;
-    padding: 8px 12px;
-    background: rgba(251, 129, 34, 0.1);
-    border-left: 4px solid var(--cta);
-    border-radius: 4px;
 }
 
-.no-loans {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--primary);
+.loan-progress-bar {
+    height: 6px;
+    margin-top: 10px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.08);
+    overflow: hidden;
 }
 
-.no-loans-icon {
-    font-size: 2rem;
+.loan-progress-bar > span {
     display: block;
-    margin-bottom: 10px;
+    height: 100%;
+    background: var(--cta);
+    border-radius: 3px;
 }
 
-.summary-label {
-    color: var(--primary);
-    font-weight: 500;
+.loan-progress {
+    margin: 6px 0 0;
+    font-size: 0.8rem;
+    color: rgba(0, 0, 0, 0.55);
 }
 
-/* Mobile Landscape Responsive Styles */
-@media screen and (max-width: 1024px) and (orientation: landscape) {
-    .loans-panel-wrapper {
-        width: 95%;
-        max-width: none;
-        max-height: 90vh;
-    }
+.amortization-schedule {
+    margin-top: 10px;
+}
 
-    .loans-panel-header {
-        padding: 15px;
-    }
+.amortization-schedule summary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    font-size: 0.85rem;
+    color: var(--cta);
+    cursor: pointer;
+}
 
-    .loans-panel-header h2 {
-        font-size: 1.3rem;
-    }
+.schedule-table {
+    max-height: 240px;
+    overflow-y: auto;
+    font-size: 0.82rem;
+    scrollbar-width: thin;
+}
 
-    .loans-health-indicator {
-        padding: 4px 8px;
-        font-size: 0.8rem;
-    }
+.schedule-header,
+.schedule-row {
+    display: grid;
+    grid-template-columns: 3rem repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 6px 0;
+    text-align: right;
+}
 
-    .loans-panel-close-btn {
-        width: 32px;
-        height: 32px;
-        padding: 4px;
-    }
+.schedule-header {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    font-size: 0.72rem;
+    color: rgba(0, 0, 0, 0.5);
+}
 
-    .loans-panel-content {
-        padding: 15px;
-    }
+.schedule-row {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
 
-    .loans-header {
-        margin-bottom: 15px;
-        padding-bottom: 8px;
-    }
+.schedule-header > div:first-child,
+.schedule-row > div:first-child {
+    text-align: left;
+}
 
-    .loans-header h3 {
-        font-size: 1.1rem;
-    }
+.schedule-row.paid {
+    color: rgba(0, 0, 0, 0.4);
+}
 
-    .loans-date {
-        font-size: 0.8rem;
-    }
-
-    .loans-health-section {
-        margin-bottom: 20px;
-    }
-
-    .loans-health-section h4 {
-        font-size: 1rem;
-        margin-bottom: 10px;
-        padding: 6px 10px;
-    }
-
-    .health-impact {
-        padding: 12px;
-    }
-
-    .loans-available h4 {
-        font-size: 1rem;
-        margin-bottom: 15px;
-        padding: 6px 10px;
-    }
-
-    .loan-category {
-        margin-bottom: 20px;
-    }
-
-    .loan-category h5 {
-        font-size: 0.9rem;
-        margin-bottom: 10px;
-    }
-
-    .loan-option {
-        padding: 12px;
-        margin-bottom: 8px;
-    }
-
-    .loan-name {
-        font-size: 1rem;
-        margin-bottom: 4px;
-    }
-
-    .loan-description {
-        font-size: 0.8rem;
-    }
-
-    .loan-details {
-        font-size: 0.8rem;
-    }
-
-    .loan-select-btn {
-        padding: 8px 16px;
-        font-size: 0.8rem;
-    }
-
-    .loan-form-section {
-        padding: 15px;
-        margin-bottom: 20px;
-    }
-
-    .loan-form-section h4 {
-        font-size: 1rem;
-        margin-bottom: 15px;
-    }
-
-    .loan-input-group {
-        margin-bottom: 12px;
-    }
-
-    .loan-input-group label {
-        font-size: 0.9rem;
-        margin-bottom: 4px;
-    }
-
-    .loan-input-group input,
-    .loan-input-group select {
-        padding: 8px;
-        font-size: 0.9rem;
+/* ---- Wider than a phone: the fields sit side by side, the summary on one line, the button and the row share the width ---- */
+@media (min-width: 560px) {
+    .loan-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .loan-summary {
-        padding: 12px;
-        margin-bottom: 15px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
-    .loan-summary-item {
-        padding: 4px 0;
-        font-size: 0.9rem;
-    }
-
-    .loan-summary-item.total {
-        font-size: 1rem;
-        margin-top: 8px;
-        padding-top: 8px;
-    }
-
-    .loan-form-buttons {
-        gap: 10px;
-    }
-
-    .loan-cancel-btn {
-        padding: 8px 16px;
-        font-size: 0.9rem;
-    }
-
+    .loan-cancel-btn,
     .loan-contract-btn {
-        padding: 8px 16px;
-        font-size: 0.9rem;
+        flex: 0 0 auto;
+    }
+}
+
+/* ---- Phone: the offer stacks, its button takes the width ---- */
+@media (max-width: 559px) {
+    .loan-option {
+        grid-template-columns: 1fr;
     }
 
-    .active-loans-section h4 {
-        font-size: 1rem;
-        margin-bottom: 12px;
-        padding: 6px 10px;
+    .loan-select-btn {
+        width: 100%;
     }
 
-    .no-loans {
-        padding: 30px 15px;
+    .loans-panel-content {
+        padding-inline: 16px;
     }
+}
 
-    .no-loans-icon {
-        font-size: 1.5rem;
-        margin-bottom: 8px;
+@media screen and (max-width: 1024px) and (orientation: landscape) {
+    .loans-panel-wrapper {
+        max-height: 94vh;
     }
+}
 
-    .amortization-schedule {
-        margin-top: 15px;
-        padding: 12px;
-    }
-
-    .amortization-schedule h4 {
-        font-size: 0.9rem;
-        margin-bottom: 10px;
-    }
-
-    .schedule-summary {
-        gap: 15px;
-        margin-bottom: 12px;
-        padding: 8px;
-    }
-
-    .summary-item .label {
-        font-size: 0.7rem;
-    }
-
-    .summary-item .value {
-        font-size: 0.8rem;
-    }
-
-    .schedule-header {
-        grid-template-columns: 50px 60px 60px 60px 60px;
-        font-size: 0.7rem;
-    }
-
-    .schedule-header > div {
-        padding: 6px 4px;
-    }
-
-    .schedule-row {
-        grid-template-columns: 50px 60px 60px 60px 60px;
-        font-size: 0.7rem;
-    }
-
-    .schedule-row > div {
-        padding: 4px;
+@media (prefers-reduced-motion: reduce) {
+    .loan-form-section {
+        animation: none;
     }
 }

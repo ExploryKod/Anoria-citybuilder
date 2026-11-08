@@ -1,6 +1,7 @@
 import { renderWorldMapPanel, renderWorldMapShell, renderWorldMapStats } from './renderWorldMap.js';
 import { mountWorldMap } from '../../world-map/canvas/CanvasWorldMap.js';
 import { CityExchangeModal } from './CityExchangeModal.js';
+import { html } from '../shell/safeHtml.js';
 
 /**
  * @param {HTMLElement} root
@@ -53,7 +54,7 @@ export class WorldMapController {
 
   mountLayout() {
     if (!this.view) return;
-    this.root.innerHTML = renderWorldMapShell(this.view, this.getSelection());
+    this.root.innerHTML = html`${renderWorldMapShell(this.view, this.getSelection())}`;
     this.mapHost = this.root.querySelector('#world-map-view');
   }
 
@@ -116,7 +117,7 @@ export class WorldMapController {
       tradeInfo = await this.mapApi.getCityTradeInfo(selection.cityId);
     }
     this.currentTradeInfo = tradeInfo;
-    panel.innerHTML = renderWorldMapPanel(this.view, selection, tradeInfo);
+    panel.innerHTML = html`${renderWorldMapPanel(this.view, selection, tradeInfo)}`;
     this.#bindPanelEvents(panel);
   }
 

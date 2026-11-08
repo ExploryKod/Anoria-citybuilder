@@ -3,6 +3,7 @@ import { goodLabel } from '../../shell/CatalogVocabulary.js';
 import { createSliderRow } from '../sliderRow.js';
 import { TAX_COLLECTION_SKILLS } from '../../../../shared/population/socialCategoryCatalog.js';
 import { applyTaxCollection } from '../taxCollectionNotice.js';
+import { helpButton } from '../../shell/HelpButton.js';
 
 /**
  * The Taxes section, in two sub-tabs. "Impôts": the taxes the city collects — the citizen tax and the progressive
@@ -58,6 +59,32 @@ export class TaxesSectionPresenter {
       notice: this.#element('tax-vat-notice'),
       controls: [this.#element('tax-vat-uniform'), this.#element('tax-vat-general-slider')],
     });
+
+    // The "?" of each tax (HelpCatalog.js), told in the state it is in: levied or not, and for the VAT one rate or one per category.
+    const state = (collected) => (collected ? 'collected' : 'uncollected');
+    this.#help('tax-citizen-slider', 'tax.citizen', { state: state(collection.citizen), figures: { amount: citizenTax } });
+    this.#help('tax-corporate-slider', 'tax.corporate', { state: state(collection.corporate), figures: { rate: corporateTaxRate } });
+    this.#help('tax-threshold-1-slider', 'tax.income', {
+      state: state(collection.income),
+      figures: { threshold1: salary.salaryTaxThreshold1, rate1: salary.salaryTaxRate1, threshold2: salary.salaryTaxThreshold2, rate2: salary.salaryTaxRate2 },
+    });
+    this.#help('tax-vat-general-slider', 'tax.vat', {
+      state: collection.vat ? (vat.uniform ? 'uniform' : 'byCategory') : 'uncollected',
+      figures: { rate: vat.generalRatePercent / 100 },
+    });
+  }
+
+  /**
+   * A "?" after the label of the row of a slider: what the tax is and what it does, with the figures set now.
+   * @param {string} sliderId
+   * @param {string} id the entry of the help catalog
+   * @param {{ state: string, figures: Record<string, number> }} reading
+   */
+  #help(sliderId, id, reading) {
+    const label = this.#element(sliderId).closest('.taxes-row')?.querySelector('.taxes-row-label');
+    if (!label) throw new Error(`[taxes] #${sliderId} is not in a row with a label to put a "?" on`);
+    label.querySelector(':scope > .help-btn')?.remove();
+    label.append(helpButton(id, reading));
   }
 
   /** @param {string} id */

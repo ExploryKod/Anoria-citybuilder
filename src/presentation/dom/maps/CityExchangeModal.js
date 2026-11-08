@@ -1,5 +1,6 @@
 import { createModalFocusSession } from '../shell/modalFocus.js';
 import { renderCityCommerceTab, renderCityCultureTab } from './renderCityExchangeModal.js';
+import { html } from '../shell/safeHtml.js';
 
 /**
  * The "Échanges" modal: a city's full commerce history, opened from the world map's city panel.
@@ -32,8 +33,8 @@ export class CityExchangeModal {
     if (!this.overlay) return;
 
     if (this.titleEl) this.titleEl.textContent = `Échanges — ${cityName}`;
-    if (this.commercePanel) this.commercePanel.innerHTML = renderCityCommerceTab(sales);
-    if (this.culturePanel) this.culturePanel.innerHTML = renderCityCultureTab(entry);
+    if (this.commercePanel) this.commercePanel.innerHTML = html`${renderCityCommerceTab(sales)}`;
+    if (this.culturePanel) this.culturePanel.innerHTML = html`${renderCityCultureTab(entry)}`;
     this.#selectTab('commerce');
 
     this.overlay.classList.add('active');

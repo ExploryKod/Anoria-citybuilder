@@ -67,6 +67,7 @@ import { getResidentialGroupTitle } from './ResidentialGroupLabels.js';
 import { allSocialGroups } from '../../../composition/employmentCatalog.js';
 import { laborSlotFromStats } from '../../../composition/hudPopulationAggregates.js';
 import { getHudPopRailScope, HUD_POP_RAIL_SCOPE_EVENT } from './hudPopRailScope.js';
+import { raw } from './safeHtml.js';
 import {
     HUD_CITY_RESOURCE_PRODUCTS,
     HUD_NATURE_RESOURCE_PRODUCTS,
@@ -697,7 +698,7 @@ class GameUI {
             if (objectToHTML && typeof objectToHTML === 'function') {
                 const content = infoObjectOverlay.querySelector('.info-content');
                 if (content) {
-                    content.innerHTML = objectToHTML(object);
+                    content.innerHTML = raw(objectToHTML(object));
                 }
             }
         } else {
