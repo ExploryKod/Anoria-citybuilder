@@ -14,7 +14,7 @@ const period = { year: 1, monthIndex: 4 };
 const afterRisk = (seller, category, price) => price * (1 - unsoldRiskDiscount(shelfLifeMonthsAt(seller.type, category)));
 
 const costing = { wageRateOf: () => 8, maintenanceCostOf: () => 2, employerContributionRate: 0 };
-const bookWith = (inflows, producerCosting = costing) => new PriceBook({ sumInflowCosts: async () => inflows, loadProducerCosting: async () => producerCosting });
+const bookWith = (inflows, producerCosting = costing) => new PriceBook({ sumInflowCosts: async () => inflows, loadProducerCosting: async () => producerCosting, loadScarcity: async () => new Map() });
 const ready = async (inflows, producerCosting) => {
   const book = bookWith(inflows, producerCosting);
   await book.ensure(period);

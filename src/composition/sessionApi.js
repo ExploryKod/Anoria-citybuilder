@@ -144,6 +144,7 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     hasBuildingAccount: (buildingType) => accounting.hasBuildingAccount(buildingType),
     isPropertyOwner: (houseId) => accounting.isPropertyOwner(houseId),
     findBankBuildingId: () => accounting.findBankBuildingId(),
+    isBankStaffed: (bankId) => accounting.isBankStaffed(bankId),
     getHouseholdDepositBalance: (houseId, bankId) => accounting.getHouseholdDepositBalance(houseId, bankId),
     recordHouseholdDeposit: (params) => accounting.recordHouseholdDeposit(params),
     recordHouseholdWithdrawal: (params) => accounting.recordHouseholdWithdrawal(params),
@@ -199,6 +200,8 @@ const gameTimeInfo = () => TimeManager.getTimeInfo(getSessionGameTime());
  */
 export function createSupplySessionApi(supply) {
   return Object.freeze({
+    getClimateOfYear: (year) => supply.getClimateOfYear(year),
+    describeScarcity: () => supply.describeScarcity(),
     listHubSupplyViews: () => supply.listHubSupplyViews(),
     listSupplyMapBuildings: () => supply.listSupplyMapBuildings(),
     listSupplyStockSnapshots: () => supply.listSupplyStockSnapshots(),

@@ -30,7 +30,12 @@ import { getWorldCityById } from '../contexts/geography/domain/catalogs/WorldCit
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { syncRemovedBuilding } from './parcelsOps.js';
 import { instanceIdFromHouseRow } from '../shared/building-identity/index.js';
-import { getNaturalSources, getSuppliedCategories } from '../shared/building-catalog/resourceRoleQueries.js';
+import { getNaturalSources, getQuantityConsumerEntries, getSuppliedCategories, getTotalKeyForCategory } from '../shared/building-catalog/resourceRoleQueries.js';
+import { YearClimate } from '../contexts/supply/application/services/YearClimate.js';
+import { ClimateRepository } from '../contexts/supply/infrastructure/dexie/ClimateRepository.js';
+import { coverOf, scarcityFactorOf } from '../contexts/supply/domain/policies/ScarcityPolicy.js';
+import { SCARCE_NEEDS } from '../shared/resource-catalog/ScarcityCatalog.js';
+import { monthsToHarvestAt } from './harvestTiming.js';
 import { depositKindsOf } from '../shared/building-catalog/depositQueries.js';
 import { listClientTypes } from '../shared/building-catalog/clientQueries.js';
 import { findNaturalSourcesInRange, isWithinRange } from '../contexts/supply/domain/policies/ResourceRangePolicy.js';
@@ -139,9 +144,39 @@ export function createSupplyContext({
     supplyBuildingRepositoryImpl
   );
   // Every seller's price is built on what its stock cost (see PriceBook): the traceability logs the transfers at it, the houses pay it.
+  // The climate of the years (YearClimate.js): a crop yields what its year lets it.
+  const yearClimate = new YearClimate({ repository: new ClimateRepository('climate'), random: Math.random });
+  // The world's own climate, apart from the city's: it sets the world price of the crops (WorldMarket.js).
+  const worldClimate = new YearClimate({ repository: new ClimateRepository('worldClimate'), random: Math.random });
+  /**
+   * How short or plentiful each need is now, and the factor it puts on the retail price of its goods: the city's stock of the need against the months it must last
+   * (ScarcityPolicy.js). Read from the buildings' stocks and the citizens' needs; nothing is stored.
+   * @returns {Promise<Array<{ need: string, categories: string[], stock: number, monthlyDemand: number, coverMonths: number, expectedMonths: number, gapMonths: number, factor: number }>>}
+   */
+  const describeScarcity = async () => {
+    const views = await supplyBuildingRepositoryImpl.listAllSupplyViews();
+    const monthsToHarvest = monthsToHarvestAt(getSessionGameTime());
+    if (monthsToHarvest === null) throw new Error('[supply] the catalog declares no annual harvest within a year: the scarcity of food cannot be told');
+    return SCARCE_NEEDS.map((need) => {
+      const categories = new Set();
+      let monthlyDemand = 0;
+      let stock = 0;
+      for (const view of views) {
+        stock += view.stocks?.[need] ?? 0;
+        for (const entry of getQuantityConsumerEntries(view.type)) {
+          if ((entry.totalKey ?? getTotalKeyForCategory(entry.categories[0])) !== need) continue;
+          entry.categories.forEach((category) => categories.add(category));
+          monthlyDemand += (view.pop ?? 0) * entry.amount;
+        }
+      }
+      const cover = coverOf({ stock, monthlyDemand, monthsToHarvest });
+      return { need, categories: [...categories], stock, monthlyDemand, ...cover, factor: scarcityFactorOf(cover.gapMonths) };
+    });
+  };
   const priceBook = new PriceBook({
     sumInflowCosts: (range) => supplyTraceabilityRepositoryImpl.sumInflowCosts(range),
     loadProducerCosting: () => consumerMoney.producerCosting(),
+    loadScarcity: async () => new Map((await describeScarcity()).flatMap((need) => need.categories.map((category) => [category, need.factor]))),
   });
   // What a company can still buy from its suppliers: its cash plus the credit its stage gets (sales of the past months), less this month's unpaid purchases.
   // What a building sold in a month that is over does not change any more (the month's rows are only compacted, their sums are kept): it is read once, not on every purchase of every tick.
@@ -209,6 +244,7 @@ export function createSupplyContext({
     dealGate,
     recordInputPurchase: (purchase) => traceability.recordInputPurchase(purchase),
     removeBuilding: (params) => syncRemovedBuilding(params),
+    yearClimate,
   });
   const runProducerCommand = new RunResourceCommandForRole(supplyBuildingRepositoryImpl, produceResource);
   const consumeResource = new ConsumeResource(supplyBuildingRepositoryImpl);
@@ -502,6 +538,21 @@ export function createSupplyContext({
     /** Structural gaps in a building's own recipe(s) — see DescribeActivitySupplyAccess.js. */
     async describeActivitySupplyAccess(building) {
       return describeActivitySupplyAccessQuery.execute(building);
+    },
+
+    /** The climate of a year of the game: its phase and the factor on the fields' yield (drawn once, kept). @param {number} year */
+    getClimateOfYear(year) {
+      return yearClimate.of(year);
+    },
+
+    /** The world's climate of a year (apart from the city's). @param {number} year */
+    getWorldClimateOfYear(year) {
+      return worldClimate.of(year);
+    },
+
+    /** How short or plentiful the food is now, and the factor on its retail price (ScarcityPolicy.js). */
+    describeScarcity() {
+      return describeScarcity();
     },
 
     /** Whether the producers make what the citizens use up, need by need, and how many are missing — see DescribeSupplyBalance.js. */

@@ -24,7 +24,6 @@ import { initHudFoldGroup } from '../shell/hudFoldGroup.js';
 import { initHudTopRight } from '../shell/hudTopRight.js';
 import { initHudPopRailScope } from '../shell/hudPopRailScope.js';
 import { adoptHudFabDockChildren } from '../shell/hudFabDock.js';
-import { initHudShellMenus } from '../shell/HudShellMenus.js';
 import { initCheatCodePrompt } from '../shell/CheatCodePrompt.js';
 import { initCompactToolbar } from '../tools/CompactToolbar.js';
 import { initHamletSwitcher } from '../hamlets/hamletSwitcher.js';
@@ -93,7 +92,7 @@ export async function initAppBoot() {
     foldedLabel: 'Ouvrir les outils',
     unfoldedLabel: 'Réduire les outils',
     foldedOnTouch: true,
-    openerIds: ['gestion-rail-btn', 'map-filters-btn'],
+    openerIds: ['map-filters-btn'],
   });
   initHudFoldGroup({
     rootSelector: '.legend-btns-container--mobile',
@@ -126,8 +125,6 @@ export async function initAppBoot() {
     getGame: getSessionGame,
     getScene: getSessionScene,
   });
-  // After ParametersPanel (it rebinds #parameters-btn).
-  initHudShellMenus();
   await bootstrapGameSession(assetManager);
   initCheatCodePrompt();
   initMapFiltersPanel({

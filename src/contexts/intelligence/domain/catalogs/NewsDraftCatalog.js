@@ -231,6 +231,26 @@ const MILESTONE_DRAFTS = {
       teaser: 'Les caisses de l\'État sonnent creux…',
       reliability: 'trusted',
       revelation: 'free',
+      quietAfterFirst: true,
+    };
+  },
+  // The year opens in a phase that is not an ordinary one (src/shared/climate): the fields will yield more or less than the catalog says.
+  'climate-year': ({ year, phase, harvestFactor }) => {
+    const words = {
+      plentiful: { title: 'Une année généreuse s’annonce', body: 'Le ciel est clément : les champs promettent plus que de coutume. Les greniers se rempliront, mais une récolte trop abondante fait baisser les prix.' },
+      poor: { title: 'Une mauvaise année s’annonce', body: 'Le temps est mauvais : les champs donneront moins que de coutume. Les grains seront plus rares et plus chers.' },
+      disastrous: { title: 'Une année désastreuse s’annonce', body: 'Hiver rigoureux, pluies noyées : les récoltes seront très en deçà de ce que la ville mange. Prévoyez des greniers, et attendez-vous à la cherté du grain.' },
+    }[phase];
+    if (!words) throw new Error(`[news] "${phase}" is not a phase of the climate that is announced`);
+    const share = Math.round(harvestFactor * 100);
+    return {
+      sourceId: 'city',
+      categoryId: 'announcement',
+      title: words.title,
+      body: `${words.body} (Année ${year + 1} : les récoltes de blé seront à environ ${share} % de l'ordinaire.)`,
+      teaser: words.title,
+      reliability: 'trusted',
+      revelation: 'free',
     };
   },
   // A partner city offers the city a gift when it has no money left (BenefactorGiftCatalog.js). The dépêche's button accepts it, its choice refuses it (no consequence yet).

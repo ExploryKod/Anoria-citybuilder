@@ -67,6 +67,11 @@ No row says who owns it: ownership is read (`OwnershipRegisterPolicy`, `getOwner
 names its lender: a bank of the game (`lenderBuildingId`) or a partner city (`lenderCityId`, `ExternalLenderCatalog`); one that names neither throws. The city may sell the shares it holds to the property company (`SellCityStake`: `stake_sold`/`stake_bought`, at their cost); every holder is paid its dividend in January
 (`SettleCompanyAid`), and the city has a balance sheet read from its account (`StateBalanceSheetPolicy`, never plugged). Plan: `docs/gameplay/PLAN_OWNERSHIP.md`.
 
+## Prices follow the climate, supply and demand, and the world
+
+A crop's yield is the catalog's times the year's climate (`src/shared/climate/`, drawn once and kept); the retail price of food is moved by how short or plentiful it is (`ScarcityPolicy`, applied by the `PriceBook` at the
+shelf); every traded good has a world price index (`WorldMarket`) that multiplies what the cities pay and ask. All three are in the game's settings, read strictly. Figures are first values: `docs/gameplay/PLAN_CRISES.md`.
+
 ## No saved games to migrate
 
 There are no saved games to keep. Never write a migration, a compatibility path, or a fallback for data written by an

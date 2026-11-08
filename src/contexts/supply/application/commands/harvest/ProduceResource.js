@@ -12,6 +12,7 @@ import {
   isWithinRange,
   manhattanDistance,
 } from '../../../domain/policies/ResourceRangePolicy.js';
+import { cropHarvestFactor, isClimateCrop } from '../../../../../shared/climate/ClimatePolicy.js';
 import { getMaxStockForBuilding } from '../../../../../shared/building-catalog/resourceRoleQueries.js';
 
 /**
@@ -73,8 +74,13 @@ export class ProduceResource {
    *   building removal, so Supply is handed it rather than reaching into it).
    *   `hubServing` says how much of a hub's goods this building may draw (see HubServing).
    */
-  constructor(supplyBuildingRepository, { removeBuilding, hubServing, dealGate, recordInputPurchase } = {}) {
+  constructor(supplyBuildingRepository, { removeBuilding, hubServing, dealGate, recordInputPurchase, yearClimate } = {}) {
     this.supplyBuildingRepository = supplyBuildingRepository;
+    /**
+     * The climate of a year (YearClimate.js): a crop's harvest is the catalog's yield times the factor of the year, as much as the crop feels it.
+     * @type {{ of: (year: number) => Promise<{ harvestFactor: number }> } | null}
+     */
+    this.yearClimate = yearClimate ?? null;
     /**
      * What a building draws from a hub for a recipe is bought from it: the supply logs each draw as a sale (hub → building)
      * at the hub's price, and the month's settlement turns it into the two accounts' lines. Without it, inputs would be free.
@@ -401,6 +407,11 @@ export class ProduceResource {
         if (entry.scale === 'population') multiplier = pop;
       }
       let amount = (entry.amount ?? 0) * multiplier;
+      // A crop yields what the year lets it (docs/gameplay/PLAN_CRISES.md): the climate of the year is a factor on the catalog's yield.
+      if (category && isClimateCrop(category)) {
+        if (!this.yearClimate) throw new Error(`[supply] ${building.type} grows ${category}, a crop, but the production was not given the climate of the year`);
+        amount = Math.round(amount * cropHarvestFactor({ category, yearFactor: (await this.yearClimate.of(period?.year ?? 0)).harvestFactor }));
+      }
 
       // A source that is drawn from gives what it holds, no more: the mine takes the month's amount, or what the rocks in range have left of it.
       const drawing = entry.source?.draw === true;

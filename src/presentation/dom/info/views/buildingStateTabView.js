@@ -6,6 +6,8 @@
 import { renderKvPanelView } from './kvPanelView.js';
 import { hasServicesToShow, renderServicesTab } from './servicesInfoView.js';
 import { shelfLifeBar } from './shelfLifeBars.js';
+import { helpButton } from '../../shell/HelpButton.js';
+import { CASUALTY_SHARE, MAX_MONTHLY_COLLAPSE_CHANCE, MONTHLY_WEAR, RISK_BELOW, SOLIDITY_MAX, WARNING_BELOW } from '../../../../shared/solidity/SolidityCatalog.js';
 
 /**
  * @typedef {object} BuildingStateModel
@@ -89,6 +91,18 @@ export function renderBuildingStateView(container, model) {
       const text = document.createElement('p');
       text.className = 'building-state-solidity__text';
       text.textContent = `${section.solidity.percent} % — ${section.solidity.text}`;
+      // The "?" explains the bar for every building alike: the text is the catalog's, the figures this building's and the game's (SolidityCatalog.js).
+      heading.append(helpButton('building.solidity', {
+        state: section.solidity.status,
+        figures: {
+          percent: section.solidity.percent / 100,
+          wear: MONTHLY_WEAR / SOLIDITY_MAX,
+          warningBelow: WARNING_BELOW / SOLIDITY_MAX,
+          riskBelow: RISK_BELOW / SOLIDITY_MAX,
+          chance: MAX_MONTHLY_COLLAPSE_CHANCE,
+          casualty: CASUALTY_SHARE,
+        },
+      }));
       body.append(bar, text);
     } else if (section.kv) renderKvPanelView(body, untitledWhenSingle(section.kv));
     else {

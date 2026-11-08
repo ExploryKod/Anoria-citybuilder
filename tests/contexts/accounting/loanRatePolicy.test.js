@@ -108,3 +108,9 @@ describe('a loan from a partner city', () => {
     expect(computeLoanRate({ loanType: 'external', financialHealthStatus: 'healthy', policyRate: 0.1, lenderSpread: 0.03 })).toBeCloseTo(0.2);
   });
 });
+
+describe('a young economy that loses money', () => {
+  test('a domestic product below nothing leaves the minimum ceiling, and the day does not fail (regression)', () => {
+    expect(debtCeilingOf({ debt: 0, gdp: -54 })).toMatchObject({ ceiling: 5000, headroom: 5000 });
+  });
+});

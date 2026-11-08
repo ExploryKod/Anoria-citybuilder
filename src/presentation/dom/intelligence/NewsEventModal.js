@@ -8,6 +8,7 @@ async function hamletNameOf(hamletId) {
 }
 import { TimeManager } from '../../../shared/time/TimeManager.js';
 import { createModalFocusSession } from '../shell/modalFocus.js';
+import { showWarningToast } from '../shell/ToastNotifier.js';
 import { formatEuro } from '../../../contexts/accounting/presentation/formatMoney.js';
 import { buildingIconHtml, buildingName } from '../shell/CatalogVocabulary.js';
 
@@ -640,7 +641,14 @@ export function initNewsEventModal(deps) {
     ) {
       return;
     }
-    queue = await deps.intelligence.listIncomingNews();
+    const incoming = await deps.intelligence.listIncomingNews();
+    // A quiet dépêche never opens the modal: a toast names it, and it goes to the archives where the player reads it when they want.
+    const nowQuiet = deps.getGameTime?.() ?? 0;
+    for (const item of incoming.filter((entry) => entry.quiet)) {
+      showWarningToast(`${item.title} — à lire dans les archives des dépêches.`, { timeout: 6000 });
+      await deps.intelligence.archiveNewsItem({ newsItemId: item.id, turn: nowQuiet });
+    }
+    queue = incoming.filter((entry) => !entry.quiet);
     // A blocking dépêche is done once its button has nothing left to offer (the building stands): it is archived without being shown. While it is not,
     // it is shown again a couple of turns after its button was pressed, not before (the player is placing the building).
     const now = deps.getGameTime?.() ?? 0;

@@ -25,7 +25,11 @@ export class AnnounceMilestone {
       return null;
     }
     const draft = milestoneDraft(milestoneId, params);
+    // A dépêche that comes back: the first one opens the modal, the next ones are quiet (a toast, then the archives), so the player is not interrupted again and again.
+    const quiet = draft.quietAfterFirst === true
+      && await this.repository.hasAnyWithIdPrefix(`milestone:${milestoneId}:${requireActiveHamletId()}:`);
     const item = createNewsItem({
+      quiet,
       id,
       turn: Number(turn) || 0,
       sourceId: draft.sourceId,

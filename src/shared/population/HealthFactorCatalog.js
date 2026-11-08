@@ -117,7 +117,7 @@ export const HEALTH_BASE_LEVEL = 40;
 export const WORKPLACE_POLLUTION_MAX_LEVEL = 3;
 export const POLLUTION_POINTS_PER_LEVEL = 4;
 
-/** @type {ReadonlyArray<Readonly<{ id: string, label: string, requirement?: object, measure: 'met' | 'current' | 'exposure' | 'proximity', points?: number, pointsPerUnit?: number, maxUnits?: number, pointsAtFull?: number, protection?: object }>>} */
+/** @type {ReadonlyArray<Readonly<{ id: string, label: string, requirement?: object, measure: 'met' | 'current' | 'exposure' | 'proximity' | 'hunger', points?: number, pointsPerUnit?: number, maxUnits?: number, pointsAtFull?: number, protection?: object }>>} */
 export const HEALTH_FACTORS = Object.freeze([
   Object.freeze({
     id: 'foodVariety',
@@ -148,7 +148,7 @@ export const HEALTH_FACTORS = Object.freeze([
     measure: 'met',
     points: 6,
   }),
-  // The only factor that takes points off: the average pollution of the workplaces of the house's workers (see above). It reads no requirement of the house's ladder.
+  // A factor that takes points off: the average pollution of the workplaces of the house's workers (see above). It reads no requirement of the house's ladder.
   Object.freeze({
     id: 'pollution',
     label: 'Lieu de travail pollué',
@@ -156,6 +156,9 @@ export const HEALTH_FACTORS = Object.freeze([
     pointsPerUnit: -POLLUTION_POINTS_PER_LEVEL,
     maxUnits: WORKPLACE_POLLUTION_MAX_LEVEL,
   }),
+  // A house that went hungry at its last consumption: the body weakens as the mind does (the 'hunger' measure, see MENTAL_HEALTH_FACTORS). A first balance: the worst house
+  // (base less pollution, contagion and hunger) must stay above nothing, which the check at the foot of this file enforces.
+  Object.freeze({ id: 'hunger', label: 'Faim', measure: 'hunger', points: -10 }),
   // The sick of the houses around (see CONTAGION_* above): takes points off in proportion to their share, less where a doctor or a hospital covers the house.
   Object.freeze({
     id: 'contagion',

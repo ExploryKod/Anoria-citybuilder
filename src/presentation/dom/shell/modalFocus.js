@@ -72,6 +72,9 @@ function resolveInitialFocus(panel, initialFocus) {
  * @property {() => boolean} isActive
  */
 
+/** The sessions that are open, the last one being the modal on top. */
+const openSessions = [];
+
 /**
  * Activate keyboard modal behaviour on a panel. Call `release()` on close.
  *
@@ -99,6 +102,9 @@ export function createModalFocusSession(options) {
   }
 
   let active = true;
+  // Sessions stack: a modal opened over another (the loans or the journal over the admin panel) owns Tab and Escape until it closes, then the one beneath gets them back.
+  const token = {};
+  openSessions.push(token);
   const lastFocused =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
@@ -120,7 +126,7 @@ export function createModalFocusSession(options) {
    * @param {KeyboardEvent} event
    */
   function handleDocumentKeyDown(event) {
-    if (!active) return;
+    if (!active || openSessions[openSessions.length - 1] !== token) return;
 
     if (event.key === 'Escape') {
       if (typeof onEscape === 'function') {
@@ -176,6 +182,7 @@ export function createModalFocusSession(options) {
     release({ restoreFocus = true } = {}) {
       if (!active) return;
       active = false;
+      openSessions.splice(openSessions.indexOf(token), 1);
       document.removeEventListener('keydown', handleDocumentKeyDown, true);
       // Focus must leave the panel BEFORE it is hidden from assistive technology: a hidden subtree that keeps the focus is what the browser warns about
       // ("Blocked aria-hidden on an element because its descendant retained focus"). Back to where it was when that can take it now, else off the panel.

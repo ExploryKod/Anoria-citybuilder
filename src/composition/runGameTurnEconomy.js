@@ -15,6 +15,8 @@ import { tickPerfEnabled } from '../core/diagnostics/tickPerf.js';
 import { DexieCityTradeRepository } from '../contexts/geography/infrastructure/dexie/DexieCityTradeRepository.js';
 import { STATE_ARREARS_KINDS } from '../shared/accounting-catalog/StateArrearsCatalog.js';
 import { getOrCreateGameplayContext } from './createGameplayContext.js';
+import { getOrCreateSupplyContext } from './createSupplyContext.js';
+import { ANNOUNCED_PHASES } from '../shared/climate/ClimateCatalog.js';
 import { getCumulativeDeaths } from './gameplayMortalityState.js';
 
 /**
@@ -85,6 +87,13 @@ export async function processGameTurnBudget({ city, buildings, time, totalPop })
     const partnerIds = (await new DexieCityTradeRepository().getActiveRelations()).map((relation) => relation.cityId);
     const gift = await getOrCreateAccountingContext().offerBenefactorGift({ time, partnerIds });
     if (gift) await getOrCreateIntelligenceContext().announceMilestone({ milestoneId: 'benefactor-gift', turn: time, params: gift });
+    // A year that is not an ordinary one is told when it opens: the fields will yield what it lets them (src/shared/climate).
+    if (timeInfo.monthIndex === 0) {
+      const climate = await getOrCreateSupplyContext().getClimateOfYear(timeInfo.year);
+      if (ANNOUNCED_PHASES.includes(climate.phase)) {
+        await getOrCreateIntelligenceContext().announceMilestone({ milestoneId: 'climate-year', turn: time, occurrence: timeInfo.year, params: { year: timeInfo.year, phase: climate.phase, harvestFactor: climate.harvestFactor } });
+      }
+    }
     // The buildings whose upkeep was not paid this month wear, and the ones worn out may collapse (docs/gameplay/PLAN_COLLAPSE.md).
     await getOrCreateGameplayContext().wearBuildings.execute({ neglected: result.neglectedBuildings ?? [] });
     // A bank whose losses ate its capital keeps running, and the player is told once a month what he can do (recapitalise it, or liquidate it).

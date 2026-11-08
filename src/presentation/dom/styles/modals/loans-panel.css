@@ -6,7 +6,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    z-index: var(--z-index-modal);
+    z-index: var(--z-index-modal-over);
     display: none;
     align-items: center;
     justify-content: center;
@@ -369,6 +369,19 @@
 .loan-select-btn:hover {
     background: linear-gradient(135deg, #22c55e, #16a34a);
     transform: translateY(-2px);
+}
+
+.loan-select-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.loan-unavailable {
+    color: #b91c1c;
+    font-size: 0.85rem;
+    margin-top: 8px;
+    flex-basis: 100%;
 }
 
 .loan-form-section {

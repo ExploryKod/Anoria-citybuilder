@@ -116,7 +116,7 @@ describe('Supply — a producer entry that transforms goods', () => {
       workshop('woodcutter-1', 'Fake-Woodcutter', {}),
       workshop('hut-1', 'Fake-Hut', { game: 10 }, { pop: 3 }),
     ]);
-    produce = new ProduceResource(repo);
+    produce = new ProduceResource(repo, { yearClimate: { of: async () => ({ harvestFactor: 1 }) } });
   });
 
   test('takes its inputs from its own stock and credits its output', async () => {

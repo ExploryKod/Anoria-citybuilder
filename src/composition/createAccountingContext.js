@@ -4,7 +4,7 @@ import { SellCityStake } from '../contexts/accounting/application/services/SellC
 import { InjectCompanyAid } from '../contexts/accounting/application/services/InjectCompanyAid.js';
 import { COMPANY_AID_BOUNDS, DEFAULT_COMPANY_AID } from '../contexts/accounting/domain/catalogs/CompanyAidCatalog.js';
 import { SettleCompanyAid } from '../contexts/accounting/application/services/SettleCompanyAid.js';
-import { domesticProductOf, externalInterestOf, privateDebtOf, publicDebtOf as hamletPublicDebtOf } from '../contexts/accounting/domain/policies/HamletEconomyPolicy.js';
+import { MINIMUM_MEASURED_MONTHS, domesticProductOf, externalInterestOf, privateDebtOf, publicDebtOf as hamletPublicDebtOf } from '../contexts/accounting/domain/policies/HamletEconomyPolicy.js';
 import { getSessionGameTime, getSessionProcessLoanPayments } from './sessionRuntime.js';
 import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 import { HamletFiscalRateRepository } from '../contexts/accounting/infrastructure/persistence/HamletFiscalRateRepository.js';
@@ -1752,7 +1752,8 @@ export function createAccountingContext(deps = {}) {
       const toKey = now.year * MONTHS_PER_YEAR + now.monthIndex;
       const fromKey = Math.max(0, toKey - (MONTHS_PER_YEAR - 1));
       const months = toKey - fromKey + 1;
-      if (toKey === 0) return { ready: false, months: 0 };
+      // Too few months of accounts say nothing of the economy (the companies are still founding themselves): it is not measured yet.
+      if (months < MINIMUM_MEASURED_MONTHS) return { ready: false, months: toKey === 0 ? 0 : months };
       const hamletId = requireActiveHamletId();
       const fold = await journalRepository.getLegsFold();
       const window = { hamletId, fromKey, toKey };
@@ -2235,6 +2236,18 @@ export function createAccountingContext(deps = {}) {
     },
 
     findBankBuildingId,
+
+    /**
+     * Whether the hamlet's bank has staff in post (a bank with no one at the counter lends nothing). Throws when no bank stands: the caller asks after finding one.
+     * @param {string} bankId
+     * @returns {Promise<boolean>}
+     */
+    async isBankStaffed(bankId) {
+      const row = await dexieDb.houses.get(bankId);
+      if (!row) throw new Error(`[bank] the bank ${bankId} has no row: whether it is staffed cannot be read`);
+      if (typeof row.employees?.worker !== 'number') throw new Error(`[bank] the bank ${bankId} has no staff count (employees.worker): whether it is staffed cannot be read`);
+      return row.employees.worker > 0;
+    },
 
     /**
      * What a house has sitting at the bank — never stored, derived from its deposit/withdrawal/interest lines

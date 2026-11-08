@@ -14,6 +14,7 @@ import {
 import { createModalFocusSession } from '../../shell/modalFocus.js';
 import { formatEuro, formatYearlyRate } from '../../../../contexts/accounting/presentation/formatMoney.js';
 import { buildingName } from '../../shell/CatalogVocabulary.js';
+import { noticeModal } from '../../shell/ConfirmModal.js';
 
 /**
  * @type {{
@@ -133,6 +134,38 @@ async function showExternalLenders() {
   renderExternalLenders(withRates);
 }
 
+/**
+ * A loan that cannot be asked has its button greyed and says why, under it, so the player learns the cause before trying (contractLoan still checks, for what depends on the amount).
+ * The bank's loans need a bank that stands, is staffed and is not frozen by the supervisor; every loan needs room under the debt ceiling.
+ */
+async function refreshLoanAvailability() {
+  const { accounting } = deps;
+  const borrowing = await accounting.getCityBorrowing();
+  const bankId = await accounting.findBankBuildingId();
+  const solvency = bankId ? await accounting.getBankSolvency() : null;
+  let bankRefusal = null;
+  if (!bankId) bankRefusal = `Aucune ${buildingName('Bank').toLowerCase()} construite.`;
+  else if (!(await accounting.isBankStaffed(bankId))) bankRefusal = `La ${buildingName('Bank').toLowerCase()} est à l'arrêt : personne n'y travaille.`;
+  else if (solvency.capitalStatus === 'frozen' || solvency.insolvent) bankRefusal = 'Le superviseur a gelé les prêts de la banque (fonds propres trop faibles).';
+  const ceilingRefusal = borrowing.headroom < 100
+    ? `Plafond d'endettement atteint : la ville doit ${formatEuro(borrowing.debt)} pour un plafond de ${formatEuro(borrowing.ceiling)}.`
+    : null;
+
+  document.querySelectorAll('#loans-panel .loan-select-btn').forEach((btn) => {
+    const external = btn.dataset.loanType === 'external';
+    const refusal = (external ? null : bankRefusal) ?? ceilingRefusal;
+    const option = btn.closest('.loan-option');
+    option?.querySelector('.loan-unavailable')?.remove();
+    btn.disabled = refusal !== null;
+    if (refusal) {
+      const note = document.createElement('div');
+      note.className = 'loan-unavailable';
+      note.textContent = refusal;
+      btn.insertAdjacentElement('afterend', note);
+    }
+  });
+}
+
 export async function updateLoansDisplay() {
   if (!deps?.accounting) return;
   const { accounting } = deps;
@@ -164,6 +197,7 @@ export async function updateLoansDisplay() {
     // The rates follow the policy rate in force (the central bank's, or the catalog's while none works) and the city's health.
     renderLoanRates((await accounting.getPolicyRate()).loanRates);
     await showExternalLenders();
+    await refreshLoanAvailability();
     loadActiveLoans();
   } catch (error) {
     console.error('Error updating loans display:', error);
@@ -281,8 +315,10 @@ export async function contractLoan() {
   const duration = parseInt(loanDurationInput.value);
   const loanType = loanFormSection.dataset.loanType;
 
+  const refuse = (message) => noticeModal({ title: 'Prêt refusé', message });
+
   if (!amount || amount < 100) {
-    alert("Le montant doit être d'au moins 100€");
+    await refuse("Le montant doit être d'au moins 100€.");
     return;
   }
 
@@ -294,19 +330,24 @@ export async function contractLoan() {
     const external = loanType === 'external';
     const lenderCityId = external ? loanFormSection.dataset.lenderCity : null;
     if (external && amount > Number(loanFormSection.dataset.maxAmount)) {
-      alert(`${loanFormSection.dataset.lenderName} ne prête pas plus de ${formatEuro(Number(loanFormSection.dataset.maxAmount))} en un prêt.`);
+      await refuse(`${loanFormSection.dataset.lenderName} ne prête pas plus de ${formatEuro(Number(loanFormSection.dataset.maxAmount))} en un prêt.`);
       return;
     }
     const lenderBuildingId = external ? null : await accounting.findBankBuildingId();
     if (!external && !lenderBuildingId) {
-      alert('Aucune banque construite : impossible de contracter un prêt.');
+      await refuse(`Aucune ${buildingName('Bank').toLowerCase()} construite : impossible de contracter un prêt.`);
+      return;
+    }
+    // A bank with no one at the counter lends nothing: the staff must be in post before the loan is asked.
+    if (!external && !(await accounting.isBankStaffed(lenderBuildingId))) {
+      await refuse(`La ${buildingName('Bank').toLowerCase()} est à l'arrêt : personne n'y travaille. Logez des travailleurs qualifiés pour la faire fonctionner, puis redemandez le prêt.`);
       return;
     }
     const { turn } = await accounting.getTreasurySnapshot();
     // Lenders judge the State by its debt against its income: past the ceiling, no one lends (before the bank is asked for reserves).
     const borrowing = await accounting.getCityBorrowing();
     if (amount > borrowing.headroom) {
-      alert(`Les prêteurs refusent : la ville doit déjà ${formatEuro(borrowing.debt)}, et son plafond d'endettement est de ${formatEuro(borrowing.ceiling)} (${formatEuro(borrowing.headroom)} encore possibles). Il dépend de la production de la ville sur l'année.`);
+      await refuse(`Les prêteurs refusent : la ville doit déjà ${formatEuro(borrowing.debt)}, et son plafond d'endettement est de ${formatEuro(borrowing.ceiling)} (${formatEuro(borrowing.headroom)} encore possibles). Il dépend de la production de la ville sur l'année.`);
       return;
     }
     // A loan to the State takes the bank's reserves (the money goes to the Treasury's account at the central bank), and must leave it the reserve the ratio asks.
@@ -314,14 +355,14 @@ export async function contractLoan() {
     if (!covered) {
       const { bankPosition } = await accounting.getPolicyRate();
       if (reason === 'capital') {
-        alert(`Le superviseur a gelé les prêts de la banque : ses fonds propres sont trop faibles par rapport à ses prêts. La ville peut la recapitaliser depuis la section « ${buildingName(accounting.getCentralBankType())} » du panneau d'administration.`);
+        await refuse(`Le superviseur a gelé les prêts de la banque : ses fonds propres sont trop faibles par rapport à ses prêts. La ville peut la recapitaliser depuis la section « ${buildingName(accounting.getCentralBankType())} » du panneau d'administration.`);
         return;
       }
       if (reason === 'collateral') {
-        alert(`La banque n'a plus de garanties à remettre à ${buildingName(accounting.getCentralBankType())} : elle ne peut pas être refinancée de plus (${formatEuro(bankPosition.loans)} de prêts, ${formatEuro(bankPosition.owedMain + bankPosition.owedMarginal)} déjà dus, ${formatEuro(bankPosition.collateralCapacity)} encore possibles).`);
+        await refuse(`La banque n'a plus de garanties à remettre à ${buildingName(accounting.getCentralBankType())} : elle ne peut pas être refinancée de plus (${formatEuro(bankPosition.loans)} de prêts, ${formatEuro(bankPosition.owedMain + bankPosition.owedMarginal)} déjà dus, ${formatEuro(bankPosition.collateralCapacity)} encore possibles).`);
         return;
       }
-      alert(`La banque n'a pas les réserves pour ce prêt tout en gardant la réserve obligatoire (${formatEuro(bankPosition.reserves)} de réserves, ${formatEuro(bankPosition.requiredReserve)} à garder), et ne peut pas être refinancée sans ${buildingName(accounting.getCentralBankType())} en activité dans cet État.`);
+      await refuse(`La banque n'a pas les réserves pour ce prêt tout en gardant la réserve obligatoire (${formatEuro(bankPosition.reserves)} de réserves, ${formatEuro(bankPosition.requiredReserve)} à garder), et ne peut pas être refinancée sans ${buildingName(accounting.getCentralBankType())} en activité dans cet État.`);
       return;
     }
 
@@ -346,15 +387,19 @@ export async function contractLoan() {
 
     await updateTreasuryDisplay();
 
-    alert(
-      `Prêt ${loanType} de ${amount}€ contracté ! Total à rembourser : ${total}€ sur ${duration} tours.`
-    );
-
     hideLoanForm();
-    loadActiveLoans();
+    await loadActiveLoans();
+    await refreshLoanAvailability();
+    // The form closes and the list of loans comes into view, so the player sees the new loan without scrolling for it.
+    document.getElementById('active-loans-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    await noticeModal({
+      title: 'Prêt contracté',
+      message: `${formatEuro(amount)} sont versés au Trésor. À rembourser : ${formatEuro(total)} sur ${duration} tours.`,
+    });
   } catch (error) {
     console.error('Error contracting loan:', error);
-    alert('Erreur lors de la contraction du prêt');
+    await noticeModal({ title: 'Le prêt a échoué', message: error.message });
   }
 }
 

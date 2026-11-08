@@ -44,7 +44,7 @@ describe('RunMonthlyCityTradeCycle — order rhythm survives a year rollover', (
       async take() { return []; },
       async recordDemand() {},
     };
-    const cycle = new RunMonthlyCityTradeCycle({
+    const cycle = new RunMonthlyCityTradeCycle({ worldIndexOf: async () => 1, homePriceOf: async () => null,
       cityTradeRepository,
       supplyBuildingRepository,
       hubServing,
@@ -155,7 +155,7 @@ describe('RunMonthlyCityTradeCycle — sells through HubServing (city is a real 
       async saveRelation() {},
     };
     const recordedSales = [];
-    const cycle = new RunMonthlyCityTradeCycle({
+    const cycle = new RunMonthlyCityTradeCycle({ worldIndexOf: async () => 1, homePriceOf: async () => null,
       cityTradeRepository,
       supplyBuildingRepository,
       hubServing,
@@ -200,7 +200,7 @@ describe('RunMonthlyCityTradeCycle — real calendar timeInfo (no turn field)', 
     const hubServing = new HubServing(repo, { listExternalClients: (c) => (c === 'dealDecoratedPot' ? [{ id: 'city:silvania', type: 'TradeCity' }] : []) });
     const relation = openRelationRow({ cityId: 'silvania', demandMultiplier: 1 });
     const sales = [];
-    const cycle = new RunMonthlyCityTradeCycle({
+    const cycle = new RunMonthlyCityTradeCycle({ worldIndexOf: async () => 1, homePriceOf: async () => null,
       cityTradeRepository: { async getActiveRelations() { return [relation]; }, async saveRelation() {} },
       supplyBuildingRepository: repo,
       hubServing,
@@ -243,7 +243,7 @@ describe('RunMonthlyCityTradeCycle — exports (the merchants export against the
     const booked = { merchantLines: [], cityLines: [], deliveries: [] };
     const sales = [];
     const row = openRelationRow({ cityId: 'silvania' });
-    const cycle = new RunMonthlyCityTradeCycle({
+    const cycle = new RunMonthlyCityTradeCycle({ worldIndexOf: async () => 1, homePriceOf: async () => null,
       cityTradeRepository: { async getActiveRelations() { return [row]; }, async saveRelation(next) { Object.assign(row, next); } },
       supplyBuildingRepository: repo,
       hubServing: new HubServing(repo, { listExternalClients: () => [] }),
@@ -307,7 +307,7 @@ describe('RunMonthlyCityTradeCycle — imports (the merchants import against the
     };
     const booked = { merchantLines: [], cityLines: [], deliveries: [] };
     const row = openRelationRow({ cityId: 'briga', ...relation });
-    const cycle = new RunMonthlyCityTradeCycle({
+    const cycle = new RunMonthlyCityTradeCycle({ worldIndexOf: async () => 1, homePriceOf: async () => null,
       cityTradeRepository: {
         async getActiveRelations() { return [row]; },
         async saveRelation(next) { Object.assign(row, next); },
@@ -334,7 +334,7 @@ describe('RunMonthlyCityTradeCycle — imports (the merchants import against the
     expect(hub.stocks.coal).toBe(40); // Briga's offer: 40 per order
     expect(hub.lots.coal).toEqual({ 'city:briga': 40 });
 
-    const priced = priceImportDelivery({ cityId: 'briga', offer: { good: 'coal', baseMultiplier: 1.35 }, quantity: 40, dutyRate: 0.1 });
+    const priced = priceImportDelivery({ cityId: 'briga', offer: { good: 'coal', baseMultiplier: 1.35 }, quantity: 40, dutyRate: 0.1, worldIndex: 1 });
     const amountOf = (type) => merchantLines.find((line) => line.type === type)?.amount;
     expect(merchantLines.every((line) => line.houseId === 'house-1' && line.partnerId === 'briga')).toBe(true);
     expect(amountOf('import_coal')).toBe(priced.foreign);

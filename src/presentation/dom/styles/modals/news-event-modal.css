@@ -3,7 +3,7 @@
 .news-event-modal {
   position: fixed;
   inset: 0;
-  z-index: var(--z-index-modal);
+  z-index: var(--z-index-modal-top);
   display: flex;
   align-items: center;
   justify-content: center;

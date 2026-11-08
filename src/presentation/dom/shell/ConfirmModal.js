@@ -68,7 +68,9 @@ export function confirmModal({ title, message, items = [], confirmLabel, cancelL
     confirm.type = 'button';
     confirm.className = 'modal-btn modal-btn-primary';
     confirm.textContent = confirmLabel;
-    footer.append(cancel, confirm);
+    // A notice has a single button: nothing to refuse.
+    if (cancelLabel === null) footer.append(confirm);
+    else footer.append(cancel, confirm);
 
     card.append(header, content, footer);
     modal.appendChild(card);
@@ -84,6 +86,15 @@ export function confirmModal({ title, message, items = [], confirmLabel, cancelL
 
     document.body.appendChild(modal);
     // Focus starts on "no": a stray Enter must not destroy anything.
-    session = createModalFocusSession({ panel: modal, onEscape: () => answer(false), initialFocus: cancel });
+    session = createModalFocusSession({ panel: modal, onEscape: () => answer(false), initialFocus: cancelLabel === null ? confirm : cancel });
   });
+}
+
+/**
+ * A message the player must read before going on (a refusal, a result), in the look of the game's modals: one button, no choice.
+ * @param {{ title: string, message: string, items?: Array<string | { label: string, text: string }>, closeLabel?: string }} options
+ * @returns {Promise<void>}
+ */
+export async function noticeModal({ title, message, items = [], closeLabel = 'Fermer' }) {
+  await confirmModal({ title, message, items, confirmLabel: closeLabel, cancelLabel: null });
 }

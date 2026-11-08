@@ -57,6 +57,8 @@ export function createNewsItem(raw) {
     hidden: raw.hidden === true,
     // A blocking dépêche cannot be closed: its button is the only way out, and it comes back until what it asks is done (see NewsEventModal.js).
     blocking: raw.blocking === true,
+    // A quiet dépêche does not open the modal: the player gets a toast and it is filed straight into the archives, readable there (a dépêche that comes back every month).
+    quiet: raw.quiet === true,
     // Small icons of the interface with a word each, shown under the text: `[{ icon, word }]` (the icon is a key the modal knows).
     legend: raw.legend ?? [],
     choices: raw.choices ?? [],

@@ -1094,28 +1094,6 @@
                 <svg class="hud-fold-toggle__icon hud-fold-toggle__icon--folded" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                 <svg class="hud-fold-toggle__icon hud-fold-toggle__icon--unfolded" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>
             </button>
-            <div
-                class="info-box gestion-box stats-buttons"
-                id="gestion-rail-btn"
-                title="Gestion"
-                aria-label="Ouvrir le panneau gestion"
-                aria-haspopup="dialog"
-                aria-controls="gestion-rail"
-                aria-expanded="false"
-                role="button"
-                tabindex="0"
-            >
-                <article class="budget-box">
-                    <span class="budget-icon" aria-hidden="true">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-column-increasing">
-                            <path d="M13 17V9"/>
-                            <path d="M18 17V5"/>
-                            <path d="M3 3v16a2 2 0 0 0 2 2h16"/>
-                            <path d="M8 17v-3"/>
-                        </svg>
-                    </span>
-                </article>
-            </div>
             <button
                 type="button"
                 class="info-box administrator-box stats-buttons"
@@ -1352,43 +1330,6 @@
                     </span>
                 </article>
             </button>
-        </aside>
-
-        <aside
-            id="gestion-rail"
-            class="gestion-rail"
-            role="dialog"
-            aria-modal="false"
-            aria-labelledby="gestion-rail-title"
-            aria-hidden="true"
-            hidden
-        >
-            <header class="gestion-rail__header">
-                <h2 id="gestion-rail-title" class="gestion-rail__title">Gestion</h2>
-                <button type="button" id="gestion-rail-close" class="gestion-rail__close" title="Fermer" aria-label="Fermer le panneau gestion">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="m18 6-12 12"/><path d="m6 6 12 12"/>
-                    </svg>
-                </button>
-            </header>
-            <div class="gestion-rail__buttons" role="group" aria-label="Outils de gestion">
-                <button type="button" id="loans-btn" data-toolid="loans" class="gestion-rail__btn" title="Prêts bancaires" aria-label="Ouvrir les prêts bancaires">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
-                        <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
-                        <path d="m2 16 6 6"/>
-                        <circle cx="16" cy="9" r="2.9"/><circle cx="6" cy="5" r="3"/>
-                    </svg>
-                    <span>Prêts</span>
-                </button>
-                <button type="button" id="journal-btn" data-toolid="journal" class="gestion-rail__btn" title="Journal" aria-label="Ouvrir le journal">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-                    </svg>
-                    <span>Journal</span>
-                </button>
-            </div>
         </aside>
 
         <section class="info-panel-wrapper hud" aria-label="Informations de jeu">
@@ -2039,6 +1980,19 @@
 
                 <button
                     class="administrator-nav-btn"
+                    id="admin-nav-market"
+                    data-section="market"
+                    title="Marché"
+                    aria-label="Ouvrir la section Marché">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 3v18h18"/>
+                        <path d="m7 15 4-4 3 3 5-6"/>
+                    </svg>
+                    <span class="sr-only">Marché</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
                     id="admin-nav-customs"
                     data-section="customs"
                     title="Douanes"
@@ -2154,6 +2108,26 @@
                     </div>
                     <div class="administrator-section-content">
                         <div class="finances-board" id="finances-board">
+                            <!-- The city's financial levers: each opens its own panel over this one (loans: PretsPanel.js, journal: JournalPanel.js, which bind these ids) -->
+                            <div class="finances-levers" role="group" aria-label="Leviers financiers de la ville">
+                                <button type="button" id="loans-btn" class="finances-lever-btn" title="Prêts bancaires" aria-label="Ouvrir les prêts bancaires">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/>
+                                        <path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9"/>
+                                        <path d="m2 16 6 6"/>
+                                        <circle cx="16" cy="9" r="2.9"/><circle cx="6" cy="5" r="3"/>
+                                    </svg>
+                                    <span>Prêts</span>
+                                </button>
+                                <button type="button" id="journal-btn" class="finances-lever-btn" title="Journal" aria-label="Ouvrir le journal">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                                        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                                    </svg>
+                                    <span>Journal</span>
+                                </button>
+                            </div>
+
                             <!-- The views of the board: the Caesar-style budget, then the city's statements (M57) read from the same journal. The JSON button downloads all of them in one file. -->
                             <div class="building-finance-toolbar finances-toolbar">
                                 <div class="building-finance-pills" role="tablist" aria-label="Vue des finances">
@@ -2813,19 +2787,35 @@
                 </div>
             </div>
 
+            <div class="administrator-section" id="admin-section-market">
+                <div class="administrator-section-title">
+                    Marché — <span class="admin-hamlet-label" data-hamlet-label></span>
+                </div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board ownership-board">
+                        <h4 class="ownership-title">Le climat de l'année</h4>
+                        <ul class="ownership-list" id="market-climate"></ul>
+                        <h4 class="ownership-title">La nourriture de la ville</h4>
+                        <ul class="ownership-list" id="market-food"></ul>
+                        <h4 class="ownership-title">Les prix du monde</h4>
+                        <ul class="ownership-list" id="market-world"></ul>
+                    </div>
+                </div>
+            </div>
+
             <div class="administrator-section" id="admin-section-ownership">
                 <div class="administrator-section-title">
                     Patrimoine — <span class="admin-hamlet-label" data-hamlet-label></span>
                 </div>
                 <div class="administrator-section-content">
                     <div class="taxes-board ownership-board">
-                        <h4 class="ownership-title">Les entreprises et leurs actionnaires</h4>
+                        <h4 class="ownership-title" data-help="city.ownership.shareholders">Les entreprises et leurs actionnaires</h4>
                         <ul class="ownership-list" id="ownership-companies"></ul>
                         <h4 class="ownership-title">Les coopératives des maisons</h4>
                         <ul class="ownership-list" id="ownership-cooperatives"></ul>
                         <h4 class="ownership-title">Les bâtiments et leurs propriétaires</h4>
                         <ul class="ownership-list" id="ownership-buildings"></ul>
-                        <h4 class="ownership-title">Dettes et créances</h4>
+                        <h4 class="ownership-title" data-help="city.ownership.claims">Dettes et créances</h4>
                         <label class="ownership-filter">
                             <span class="sr-only">Vue des dettes</span>
                             <select id="ownership-claims-filter"></select>
