@@ -444,3 +444,92 @@
     font-size: 1rem;
     background: white;
 }
+
+/* Patrimoine: who owns what. Lists with one fact per line, the subject first and the fact under it on a phone, side by side when there is room. */
+.ownership-board .ownership-title {
+    margin: 12px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.ownership-board .ownership-title:first-child {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.ownership-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.ownership-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    min-width: 0;
+}
+
+.ownership-row__subject {
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.ownership-row__fact,
+.ownership-none {
+    color: rgba(0, 0, 0, 0.7);
+    overflow-wrap: anywhere;
+}
+
+.ownership-filter select {
+    min-height: 44px;
+    width: 100%;
+}
+
+@media (min-width: 640px) {
+    .ownership-row {
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .ownership-row__fact {
+        text-align: right;
+    }
+
+    .ownership-filter select {
+        width: auto;
+    }
+}
+
+/* Patrimoine: the city's balance sheet, one side under the other on a phone, side by side when there is room. */
+.ownership-sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ownership-sheet__title {
+    margin: 0 0 4px;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+@media (min-width: 900px) {
+    .ownership-sheet {
+        flex-direction: row;
+        gap: 24px;
+    }
+
+    .ownership-sheet__side {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+}

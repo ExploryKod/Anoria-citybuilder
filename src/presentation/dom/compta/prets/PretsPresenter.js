@@ -55,6 +55,36 @@ export function renderLoanRates(rates) {
 }
 
 /**
+ * The partner cities that lend, one option each (same markup as the bank's), or a sentence when none does.
+ * @param {Array<{ cityId: string, cityName: string, maxAmount: number, yearlyRate: number }>} lenders
+ */
+export function renderExternalLenders(lenders) {
+  const container = document.getElementById('external-loans');
+  if (!container) return;
+  if (lenders.length === 0) {
+    container.innerHTML = '<div class="loan-description">Aucune ville partenaire ne prête pour l\'instant : il faut commercer avec elle.</div>';
+    return;
+  }
+  container.innerHTML = lenders
+    .map(
+      (lender) => `
+                <div class="loan-option">
+                    <div class="loan-info">
+                        <div class="loan-name">${lender.cityName}</div>
+                        <div class="loan-description">Argent venu de l'étranger : intérêts et remboursements sortent de l'économie</div>
+                    </div>
+                    <div class="loan-details">
+                        <div class="loan-amount">Montant : jusqu'à ${lender.maxAmount}€</div>
+                        <div class="loan-rate">Taux : ${formatYearlyRate(lender.yearlyRate)}</div>
+                        <div class="loan-duration">Durée: 15-30 tours</div>
+                    </div>
+                    <button class="loan-select-btn" data-loan-type="external" data-lender-city="${lender.cityId}" data-lender-name="${lender.cityName}" data-max-amount="${lender.maxAmount}">Contracter</button>
+                </div>`
+    )
+    .join('');
+}
+
+/**
  * The loan's schedule, turn by turn: the same installment every turn, the one the payments book (accounting.loanInstallmentOf).
  * @param {object} loan
  * @param {(loan: object) => { payment: number, interest: number, principal: number }} installmentOf
@@ -93,6 +123,15 @@ export function generateAmortizationSchedule(loan, installmentOf) {
   };
 }
 
+/** @param {{ type: string, lenderCityName?: string }} loan @returns {string} the kind of loan and, for a partner city's, who lends it */
+function loanTypeLabelOf(loan) {
+  if (loan.type === 'external') {
+    if (!loan.lenderCityName) throw new Error(`[loans] the external loan ${loan.id} names no lender city`);
+    return `🌍 ${loan.lenderCityName}`;
+  }
+  return loan.type === 'bank' ? '🏛️ Bancaire' : '🏪 Commercial';
+}
+
 /**
  * @param {Array<object>} activeLoans
  * @param {(loan: object) => { payment: number, interest: number, principal: number }} installmentOf a turn's installment of a loan (accounting.loanInstallmentOf)
@@ -115,7 +154,7 @@ export function renderActiveLoansHtml(activeLoans, installmentOf) {
       return `
                 <div class="loan-item">
                     <div class="loan-item-header">
-                        <div class="loan-type">${loan.type === 'bank' ? '🏛️ Bancaire' : '🏪 Commercial'}</div>
+                        <div class="loan-type">${loanTypeLabelOf(loan)}</div>
                         <div class="loan-amount">${loan.amount}€</div>
                         <div class="loan-progress">${loan.remainingTurns}/${loan.duration} tours</div>
                     </div>

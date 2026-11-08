@@ -1,5 +1,5 @@
 import { accountKeyOf } from '../../domain/policies/AccountKeyPolicy.js';
-import { aidEntriesOf, bookEquityOf, companyAidOf } from '../../domain/policies/CompanyAidLedgerPolicy.js';
+import { aidEntriesOf, bookEquityOf, companyAidOf, sharesHeldIn } from '../../domain/policies/CompanyAidLedgerPolicy.js';
 import { sharePriceOf, sharesBoughtBy, stakeOf } from '../../domain/policies/CompanyAidPolicy.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 
@@ -44,6 +44,8 @@ export class InjectCompanyAid {
     const hamletId = requireActiveHamletId();
     return (await this.deps.listCompanies()).map(({ buildingId, name, x, y }) => {
       const aid = companyAidOf(entries, buildingId);
+      // The shares the city holds now: those it bought, less the ones it sold to a private holder.
+      const cityShares = sharesHeldIn(entries, buildingId).city;
       const equity = bookEquityOf(fold.totalsOf({ hamletId, accountKey: accountKeyOf({ accountBuildingId: buildingId }) }));
       return {
         buildingId,
@@ -55,8 +57,8 @@ export class InjectCompanyAid {
         equity,
         sharePrice: sharePriceOf({ equity, totalShares: aid.totalShares }),
         shares: aid.totalShares,
-        shareholderShares: aid.shareholderShares,
-        stake: stakeOf(aid),
+        shareholderShares: cityShares,
+        stake: stakeOf({ shareholderShares: cityShares, totalShares: aid.totalShares }),
         loanOutstanding: aid.outstanding / 100,
       };
     });

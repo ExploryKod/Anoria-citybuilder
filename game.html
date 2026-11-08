@@ -905,6 +905,14 @@
                             <span class="pop-detail-value display-suicides-pop">0</span>
                         </span>
                     </div>
+                    <div class="pop-detail-metric pop-detail-accidents">
+                        <span class="pop-detail-icon pop-detail-icon--accidents" title="Accidents" aria-hidden="true">
+                            <img src="/icons/skull-accident.svg" alt="" class="deaths-icon" width="18" height="18" decoding="async">
+                        </span>
+                        <span class="pop-detail-values" aria-label="Morts d'accident depuis le début de la partie">
+                            <span class="pop-detail-value display-accidents-pop">0</span>
+                        </span>
+                    </div>
                 </div>
                 </div>
             </section>
@@ -1813,6 +1821,12 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Loans from the partner cities that lend (ExternalLenderCatalog.js), listed by the panel -->
+                        <div class="loan-category" id="external-loan-category">
+                            <h5>🌍 Prêts de villes partenaires</h5>
+                            <div class="loan-options" id="external-loans"></div>
+                        </div>
                     </div>
                     
                     <!-- Loan Form -->
@@ -2006,6 +2020,21 @@
                         <path d="m12 2 8 5H4z"/>
                     </svg>
                     <span class="sr-only">Banque centrale</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-ownership"
+                    data-section="ownership"
+                    title="Patrimoine"
+                    aria-label="Ouvrir la section Patrimoine">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 21h18"/>
+                        <path d="M5 21V7l7-4 7 4v14"/>
+                        <path d="M9 21v-6h6v6"/>
+                        <path d="M9 10h.01M15 10h.01"/>
+                    </svg>
+                    <span class="sr-only">Patrimoine</span>
                 </button>
 
                 <button
@@ -2426,6 +2455,12 @@
                                         <td class="last-year-col finances-value-negative" data-field="loanRepaymentLastYear" id="loan-repayment-last-year">0</td>
                                         <td class="this-year-col finances-value-negative" data-field="loanRepaymentThisYear" id="loan-repayment-this-year">0</td>
                                     </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Impayés de l'État réglés</td>
+                                        <td class="last-year-col finances-value-negative" data-field="stateArrearsPaidLastYear" id="state-arrears-paid-last-year">0</td>
+                                        <td class="this-year-col finances-value-negative" data-field="stateArrearsPaidThisYear" id="state-arrears-paid-this-year">0</td>
+                                    </tr>
                                     <tr class="finances-row-total">
                                         <td class="indicator-col"></td>
                                         <td class="label-col finances-row-label">
@@ -2774,6 +2809,30 @@
                             <button type="button" class="aid-apply-btn" id="aid-inject-apply">Verser</button>
                         </div>
                         <p class="commerce-customs-hint">Une fois validée, la politique vaut pour les entreprises créées à partir de maintenant et ne peut plus être changée avant la fin de l'engagement. Un prêt garde ses conditions jusqu'à son remboursement.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-ownership">
+                <div class="administrator-section-title">
+                    Patrimoine — <span class="admin-hamlet-label" data-hamlet-label></span>
+                </div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board ownership-board">
+                        <h4 class="ownership-title">Les entreprises et leurs actionnaires</h4>
+                        <ul class="ownership-list" id="ownership-companies"></ul>
+                        <h4 class="ownership-title">Les coopératives des maisons</h4>
+                        <ul class="ownership-list" id="ownership-cooperatives"></ul>
+                        <h4 class="ownership-title">Les bâtiments et leurs propriétaires</h4>
+                        <ul class="ownership-list" id="ownership-buildings"></ul>
+                        <h4 class="ownership-title">Dettes et créances</h4>
+                        <label class="ownership-filter">
+                            <span class="sr-only">Vue des dettes</span>
+                            <select id="ownership-claims-filter"></select>
+                        </label>
+                        <ul class="ownership-list" id="ownership-claims"></ul>
+                        <h4 class="ownership-title">Bilan de la ville</h4>
+                        <div class="ownership-sheet" id="ownership-sheet"></div>
                     </div>
                 </div>
             </div>

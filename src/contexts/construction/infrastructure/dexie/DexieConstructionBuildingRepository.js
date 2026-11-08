@@ -1,4 +1,6 @@
 import db from '../../../../core/persistence/dexie/db.js';
+import { SOLIDITY_MAX } from '../../../../shared/solidity/SolidityCatalog.js';
+import { kindHasSolidity, solidityOf } from '../../../../shared/solidity/SolidityPolicy.js';
 import { refuseResidentsField } from '../../../../core/persistence/dexie/residentsProjection.js';
 import {
   isActiveHamletRow,
@@ -103,6 +105,8 @@ export class DexieConstructionBuildingRepository {
         instanceId,
         hamletId: data.hamletId ?? requireActiveHamletId(),
       });
+      // A building that has a solidity bar is built with it full (a road or the nature has none); one given a bar keeps it, checked.
+      if (kindHasSolidity(record.kind)) record = { ...record, solidity: record.solidity === undefined ? SOLIDITY_MAX : solidityOf(record) };
     } catch (err) {
       return { success: false, error: err.message, reason: 'database_error' };
     }

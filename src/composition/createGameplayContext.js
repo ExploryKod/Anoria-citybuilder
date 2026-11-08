@@ -20,6 +20,9 @@ import { getAnnualHarvestSchedule, getConsumerEntries, getResourceStockShape } f
 import { matchesSchedule, monthsUntilNextMatch } from '../contexts/supply/domain/policies/ResourceSchedulePolicy.js';
 import { RandomEventsSimulationService } from '../contexts/gameplay/application/services/RandomEventsSimulationService.js';
 import { LiquidateInsolventCompanies } from '../contexts/gameplay/application/services/LiquidateInsolventCompanies.js';
+import { WearBuildings } from '../contexts/gameplay/application/services/WearBuildings.js';
+import { getOrCreateHousingContext } from './createHousingContext.js';
+import { recordDeaths } from './gameplayMortalityState.js';
 import { getBuildingDefinition } from '../shared/building-catalog/buildingCatalog.js';
 import { buildingNameOf } from '../shared/building-catalog/buildingCompanies.js';
 import { getSharedEventBus } from './sharedEventBus.js';
@@ -152,6 +155,24 @@ export function createGameplayContext(deps = {}) {
       reportFailure: (failure) => getSharedEventBus().publish({ type: 'gameplay.companyLiquidationFailed', ...failure }),
     });
 
+  // The buildings wear when their upkeep is not paid and may collapse (docs/gameplay/PLAN_COLLAPSE.md): the people inside who are hit die, the building is demolished.
+  const wearBuildings =
+    deps.wearBuildings ??
+    new WearBuildings({
+      listAllBuildingRows: simulationDeps.listAllBuildingRows,
+      instanceIdFromHouseRow,
+      updateBuildingFields: (instanceId, fields) => getOrCreateConstructionContext().updateBuildingFields(instanceId, fields),
+      citizensInside: (row) => getOrCreateHousingContext().citizensInside(row),
+      killCitizens: (dead) => getOrCreateHousingContext().killCitizens(dead),
+      recordAccidentDeaths: (count) => recordDeaths(count, 'accident'),
+      bulldozeBuildingAtTile: (params) => getOrCreateConstructionContext().bulldozeBuildingAtTile(params),
+      getGameCity: simulationDeps.getGameCity,
+      nameOfRow: (row) => buildingNameOf(row.type, row),
+      random: Math.random,
+      announce: (event) => getSharedEventBus().publish({ type: 'gameplay.buildingCollapsed', ...event }),
+      reportFailure: (failure) => getSharedEventBus().publish({ type: 'gameplay.buildingCollapseFailed', ...failure }),
+    });
+
   const advanceTutorial =
     deps.advanceTutorial ??
     new AdvanceTutorial({
@@ -188,6 +209,7 @@ export function createGameplayContext(deps = {}) {
   return {
     randomEventsSimulation,
     liquidateInsolventCompanies,
+    wearBuildings,
     simulationDeps,
     advanceTutorial,
     liquidateBank,

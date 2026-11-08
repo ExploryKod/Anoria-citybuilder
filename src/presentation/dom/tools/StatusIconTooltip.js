@@ -8,6 +8,7 @@ const MEANINGS = Object.freeze({
   'no-road': 'Sans route : aucun accès à une route',
   'no-work': 'Sans travailleurs : le bâtiment est à l’arrêt',
   'no-resource': 'Plus de ressource naturelle à portée',
+  'collapse-risk': 'Usé faute d’entretien : le bâtiment risque de s’effondrer dans les mois qui viennent',
   'input-shortage': 'Matière manquante : une activité attend ce qu’il lui faut',
   'failed-sell': 'Vente ratée : des produits sont restés invendus',
   'hub-full': 'Stock plein : plus de place pour de nouveaux produits',

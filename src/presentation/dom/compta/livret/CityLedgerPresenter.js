@@ -115,6 +115,7 @@ export function renderCityLedgerTable(comparison) {
     { key: 'imports', thisYear: 'importsThisYear', lastYear: 'importsLastYear' },
     { key: 'loanInterest', thisYear: 'loanInterestThisYear', lastYear: 'loanInterestLastYear' },
     { key: 'loanRepayment', thisYear: 'loanRepaymentThisYear', lastYear: 'loanRepaymentLastYear' },
+    { key: 'stateArrearsPaid', thisYear: 'stateArrearsPaidThisYear', lastYear: 'stateArrearsPaidLastYear' },
   ];
 
   incomeFields.forEach((field) => {

@@ -55,6 +55,18 @@ JSON directly (not a runtime migration — see "No saved games to migrate" below
 shipping the old, wrong values forever, exactly like a bug that was fixed in code but not in the save that
 exposed it.
 
+## A building wears when its upkeep is not paid, and may collapse
+
+Every building but a road or the nature has a `solidity` bar (`src/shared/solidity/`, row field, strict: a missing bar throws). Each month `WearBuildings` wears the buildings whose
+upkeep was not paid (`neglected`, told by the settlement: the State's refused upkeep, a company in difficulty), and a worn-out one may collapse: it is demolished as the player would,
+and part of the people inside die under the cause `accident`. Plan and figures: `docs/gameplay/PLAN_COLLAPSE.md`.
+
+## Who owns what is derived, and a loan names its lender
+
+No row says who owns it: ownership is read (`OwnershipRegisterPolicy`, `getOwnershipRegister`, the admin "Patrimoine" section) from the journal and the buildings, never stored. A city loan
+names its lender: a bank of the game (`lenderBuildingId`) or a partner city (`lenderCityId`, `ExternalLenderCatalog`); one that names neither throws. The city may sell the shares it holds to the property company (`SellCityStake`: `stake_sold`/`stake_bought`, at their cost); every holder is paid its dividend in January
+(`SettleCompanyAid`), and the city has a balance sheet read from its account (`StateBalanceSheetPolicy`, never plugged). Plan: `docs/gameplay/PLAN_OWNERSHIP.md`.
+
 ## No saved games to migrate
 
 There are no saved games to keep. Never write a migration, a compatibility path, or a fallback for data written by an
@@ -144,7 +156,10 @@ money left and a benefactor of `BenefactorGiftCatalog` (in order of priority) is
 (`centraliseExternal`), never a founding endowment. The central bank is the one place money is created: when the bank lacks cash for a withdrawal, or for a loan that leaves it the reserve the
 ratio in force asks (`reserveRatio` of its deposits), its State's working central bank lends it the shortfall, only against collateral (its loans, 274, less `COLLATERAL_HAIRCUT`; refused with the reason `collateral` beyond), in a corridor of rates around the policy rate: the **marginal lending** (urgent, to lend; 1648; policy rate + `MARGINAL_LENDING_SPREAD`), the **main refinancing** (the reserve upkeep at the month's close; 1649; the policy rate), and the **deposit facility** (reserves above the reserve due earn the policy rate − `DEPOSIT_FACILITY_SPREAD`, paid by the central bank; `corridorOf`) (bank: 512 against 1648/1649; central bank: 274 against the money
 issued, 1678, no cash), and the bank's repayment destroys it again (`BankRefinancing`). What the bank owes is the balance of its 1649, read from the fold. Every
-January the central bank pays the city what it earned and holds in cash (457 on its side, 758 for the city: the ledger's own line). A company short of cash for its
+January the central bank pays the city what it earned and holds in cash (457 on its side, 758 for the city: the ledger's own line). What the State cannot pay when its Treasury is empty and owes to a named creditor (a household's pay and benefits, a service's subsidy: `StateArrearsCatalog`) is booked all the same against what it owes
+(401, the `od_state_arrears_*` lines) and paid later, the households first (`SettleStateArrears`, before the month's own payments); owed to a building that is gone, it is
+abandoned. It counts in the gross public debt, so in the debt ceiling. The upkeep and the subsidies that name no creditor are still dropped, and the arrears are paid without the
+withholding of the original payslip: limits to lift. A company short of cash for its
 month borrows the shortfall from the bank (its 1643, the bank's 274) up to `COMPANY_CREDIT_CEILING_MONTHS` of its charges, the less of it the dearer the credit,
 before any charge becomes a debt (`BankCompanyCredit`). Each month a household keeps a cash buffer (a month of the larger of its income and its spending), saves at
 the bank a share of the rest that rises with the savings rate, and draws on its savings when short; one in debt pays before it saves (`SettleHouseholdSavings`).

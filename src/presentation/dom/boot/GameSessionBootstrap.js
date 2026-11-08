@@ -315,6 +315,7 @@ export async function bootstrapGameSession(assetManager) {
   initCarteVillePopup(panelDeps);
   initLoansPopup({
     accounting: sessionApi.accounting,
+    trade: getSessionService('trade') ?? null,
     popupManager,
     updateTreasuryDisplay: async () => {
       const { funds } = await sessionApi.accounting.getTreasurySnapshot();

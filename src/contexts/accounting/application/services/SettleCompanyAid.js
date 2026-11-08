@@ -1,5 +1,5 @@
 import { accountKeyOf } from '../../domain/policies/AccountKeyPolicy.js';
-import { aidEntriesOf, companyAidOf } from '../../domain/policies/CompanyAidLedgerPolicy.js';
+import { aidEntriesOf, companyAidOf, sharesHeldIn } from '../../domain/policies/CompanyAidLedgerPolicy.js';
 import { dividendOf, monthlyInterestOf, repaymentOf, stakeOf } from '../../domain/policies/CompanyAidPolicy.js';
 import { requireActiveHamletId } from '../../../../core/persistence/hamlet/hamletSession.js';
 import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
@@ -98,8 +98,16 @@ export class SettleCompanyAid {
       }
 
       if (isJanuary && aid.shareholderCapital > 0) {
+        const held = sharesHeldIn(entries, buildingId);
+        const distributable = {
+          payoutRate: policy.dividendPayoutRate,
+          yearResult: resultOf(yearTotals.get(accountKey)) - carriedOf(yearTotals.get(accountKey)),
+          accumulatedResult: resultOf(allTotals.get(accountKey)),
+        };
+        // The private holders are paid in turn, each its share of the shares, out of what the company still holds once the city's dividend is paid.
+        const privateDividends = held.privateHolders.map((holder) => ({ holder, stake: stakeOf({ shareholderShares: holder.shares, totalShares: aid.totalShares }) }));
         const dividend = dividendOf({
-          stake: stakeOf(aid),
+          stake: stakeOf({ shareholderShares: held.city, totalShares: aid.totalShares }),
           payoutRate: policy.dividendPayoutRate,
           yearResult: resultOf(yearTotals.get(accountKey)) - carriedOf(yearTotals.get(accountKey)),
           accumulatedResult: resultOf(allTotals.get(accountKey)),
@@ -108,6 +116,16 @@ export class SettleCompanyAid {
         if (dividend > 0) {
           await this.#record(line('state_dividend_paid', dividend, 'Dividendes versés à la ville par', 'state_dividend', 'company'));
           await this.#record(line('state_dividend_received', dividend, 'Dividendes reçus de', 'state_dividend', 'city'));
+          cash -= dividend;
+        }
+        for (const { holder, stake } of privateDividends) {
+          const paid = dividendOf({ stake, ...distributable, cash });
+          if (!(paid > 0)) continue;
+          const holderKey = accountKeyOf({ accountBuildingId: holder.holderId, accountKind: holder.accountKind });
+          const common = { turn: time, amount: paid / 100, buildingInstanceId: buildingId, transactionId: `private_dividend:${buildingId}:${holderKey}:${timeInfo.year}` };
+          await this.#record({ ...common, type: 'private_dividend_paid', description: `Dividendes versés à un actionnaire par ${name} - ${stamp}`, businessKey: `private_dividend_paid:${hamletId}:${accountKey}:${holderKey}:${timeInfo.year}`, accountBuildingId: buildingId, counterpartyBuildingId: holder.holderId });
+          await this.#record({ ...common, type: 'private_dividend_received', description: `Dividendes reçus de ${name} - ${stamp}`, businessKey: `private_dividend_received:${hamletId}:${accountKey}:${holderKey}:${timeInfo.year}`, accountBuildingId: holder.holderId, accountKind: holder.accountKind, counterpartyBuildingId: buildingId });
+          cash -= paid;
         }
       }
     }

@@ -7,6 +7,7 @@ import {
   updateLoansElement,
   renderHealthImpact,
   renderLoanRates,
+  renderExternalLenders,
   renderActiveLoansHtml,
   renderActiveLoansErrorHtml,
 } from './PretsPresenter.js';
@@ -94,6 +95,11 @@ export function initLoansPopup(panelDeps) {
       showLoanForm(loanType);
     });
   });
+  // The partner cities that lend are listed when the panel opens: their buttons are born then, so the click is heard on their container.
+  document.getElementById('external-loans')?.addEventListener('click', (event) => {
+    const btn = event.target.closest('.loan-select-btn');
+    if (btn) showLoanForm('external', { cityId: btn.dataset.lenderCity, cityName: btn.dataset.lenderName, maxAmount: Number(btn.dataset.maxAmount) });
+  });
 
   if (loanCancelBtn) {
     loanCancelBtn.addEventListener('click', () => {
@@ -111,6 +117,20 @@ export function initLoansPopup(panelDeps) {
     loanAmountInput.addEventListener('input', updateLoanSummary);
     loanDurationInput.addEventListener('change', updateLoanSummary);
   }
+}
+
+/** The partner cities that lend the city now (the ones it trades with and the catalog names), each with the rate it would ask. */
+async function showExternalLenders() {
+  const { accounting, trade } = deps;
+  const partnerIds = trade ? (await trade.getAllRelations()).filter((relation) => relation.status === 'active').map((relation) => relation.cityId) : [];
+  const lenders = accounting.listExternalLenders({ partnerIds });
+  const withRates = await Promise.all(
+    lenders.map(async (lender) => ({
+      ...lender,
+      yearlyRate: (await accounting.getLoanTerms({ loanType: 'external', amount: 100, durationTurns: 20, lenderCityId: lender.cityId })).yearlyRate,
+    }))
+  );
+  renderExternalLenders(withRates);
 }
 
 export async function updateLoansDisplay() {
@@ -143,13 +163,14 @@ export async function updateLoansDisplay() {
     renderHealthImpact(financialHealth);
     // The rates follow the policy rate in force (the central bank's, or the catalog's while none works) and the city's health.
     renderLoanRates((await accounting.getPolicyRate()).loanRates);
+    await showExternalLenders();
     loadActiveLoans();
   } catch (error) {
     console.error('Error updating loans display:', error);
   }
 }
 
-function showLoanForm(loanType) {
+function showLoanForm(loanType, lender = null) {
   const loanFormSection = document.getElementById('loan-form-section');
   if (loanFormSection) {
     loanFormSection.style.display = 'block';
@@ -184,9 +205,33 @@ function showLoanForm(loanType) {
                     <option value="30">30 tours</option>
                 `;
       }
+    } else if (loanType === 'external') {
+      if (!lender) throw new Error('[loans] an external loan is contracted with a lender city');
+      if (loanAmountInput) {
+        loanAmountInput.min = '100';
+        loanAmountInput.max = String(lender.maxAmount);
+        loanAmountInput.value = String(Math.min(1000, lender.maxAmount));
+      }
+      if (loanDurationInput) {
+        loanDurationInput.innerHTML = `
+                    <option value="15">15 tours</option>
+                    <option value="20">20 tours</option>
+                    <option value="25">25 tours</option>
+                    <option value="30">30 tours</option>
+                `;
+      }
     }
 
     loanFormSection.dataset.loanType = loanType;
+    if (lender) {
+      loanFormSection.dataset.lenderCity = lender.cityId;
+      loanFormSection.dataset.lenderName = lender.cityName;
+      loanFormSection.dataset.maxAmount = String(lender.maxAmount);
+    } else {
+      delete loanFormSection.dataset.lenderCity;
+      delete loanFormSection.dataset.lenderName;
+      delete loanFormSection.dataset.maxAmount;
+    }
     updateLoanSummary();
   }
 }
@@ -214,7 +259,7 @@ function updateLoanSummary() {
   const loanType = loanFormSection.dataset.loanType;
   if (!loanType) throw new Error('[loans] the loan form has no loan type: it must be opened by showLoanForm');
 
-  accounting.getLoanTerms({ loanType, amount, durationTurns }).then(({ yearlyRate, interest, total }) => {
+  accounting.getLoanTerms({ loanType, amount, durationTurns, lenderCityId: loanFormSection.dataset.lenderCity ?? null }).then(({ yearlyRate, interest, total }) => {
     updateLoansElement('loan-principal-display', formatEuro(amount));
     updateLoansElement('loan-rate-display', formatYearlyRate(yearlyRate));
     updateLoansElement('loan-interest-display', formatEuro(interest));
@@ -245,8 +290,15 @@ export async function contractLoan() {
     // No bank, no real lender: a loan is now a bank's own money, not a city-level abstraction (see
     // RecordLoanCapitalIncome.js). The bank must also actually hold the amount it is about to lend out: what it lacks, it borrows
     // from the central bank when one works (BankRefinancing.js); otherwise the loan is refused.
-    const lenderBuildingId = await accounting.findBankBuildingId();
-    if (!lenderBuildingId) {
+    // A loan from a partner city is foreign money: no bank lends it, and no bank's reserves are asked for it.
+    const external = loanType === 'external';
+    const lenderCityId = external ? loanFormSection.dataset.lenderCity : null;
+    if (external && amount > Number(loanFormSection.dataset.maxAmount)) {
+      alert(`${loanFormSection.dataset.lenderName} ne prête pas plus de ${formatEuro(Number(loanFormSection.dataset.maxAmount))} en un prêt.`);
+      return;
+    }
+    const lenderBuildingId = external ? null : await accounting.findBankBuildingId();
+    if (!external && !lenderBuildingId) {
       alert('Aucune banque construite : impossible de contracter un prêt.');
       return;
     }
@@ -258,7 +310,7 @@ export async function contractLoan() {
       return;
     }
     // A loan to the State takes the bank's reserves (the money goes to the Treasury's account at the central bank), and must leave it the reserve the ratio asks.
-    const { covered, reason } = await accounting.coverBankShortfall({ turn, bankId: lenderBuildingId, reservesOut: amount, depositsAdded: 0 });
+    const { covered, reason } = external ? { covered: true } : await accounting.coverBankShortfall({ turn, bankId: lenderBuildingId, reservesOut: amount, depositsAdded: 0 });
     if (!covered) {
       const { bankPosition } = await accounting.getPolicyRate();
       if (reason === 'capital') {
@@ -274,7 +326,7 @@ export async function contractLoan() {
     }
 
     // The terms the panel showed: the yearly rate in force and the interest for the loan's duration. The rate is stamped on the contract and never re-read.
-    const { yearlyRate, interest, total } = await accounting.getLoanTerms({ loanType, amount, durationTurns: duration });
+    const { yearlyRate, interest, total } = await accounting.getLoanTerms({ loanType, amount, durationTurns: duration, lenderCityId });
 
     const loan = {
       id: `loan_${Date.now()}`,
@@ -286,6 +338,8 @@ export async function contractLoan() {
       duration,
       remainingTurns: duration,
       lenderBuildingId,
+      // The city that lends it, for a loan from a partner city (null for a bank's): its name is stamped so the list of loans says who lent.
+      ...(external ? { lenderCityId, lenderCityName: loanFormSection.dataset.lenderName } : {}),
     };
 
     await accounting.recordLoanCapital(amount, `Prêt ${loanType} contracté (${duration} tours)`, loan, lenderBuildingId);

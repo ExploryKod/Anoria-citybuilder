@@ -41,6 +41,20 @@
   gap: 6px;
 }
 
+/* The solidity of a building (État tab): a thicker bar that turns amber, then red, as the building wears. */
+.shelf-life-bar[class*='shelf-life-bar--solidity-'] {
+  height: 12px;
+  background: #e3e0dc;
+}
+.shelf-life-bar--solidity-sound .shelf-life-bar__fill { background: #4a9d5b; }
+.shelf-life-bar--solidity-warning .shelf-life-bar__fill { background: #e08a1e; }
+.shelf-life-bar--solidity-at-risk .shelf-life-bar__fill { background: #cf3d2e; }
+.building-state-solidity__text {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
 /* What the good lost to spoilage over its delivery cycle: the same track, an orange fill. */
 .shelf-life-bar--spoilage .shelf-life-bar__fill {
   background: #e08a1e;

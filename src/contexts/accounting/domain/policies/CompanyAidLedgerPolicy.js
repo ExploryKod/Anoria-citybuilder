@@ -9,7 +9,7 @@ import { SHARE_NOMINAL_VALUE } from '../catalogs/CompanyAidCatalog.js';
 const toCentimes = (amount) => Math.round(amount * 100);
 
 /** Every type of line that says anything about the aid: a caller that reads many companies keeps only these once, then reads each company in the few that are left. */
-const AID_TYPES = new Set(['aid_loan_received', 'aid_loan_repaid', 'od_aid_loan_abandoned', 'company_capital_received', 'shareholder_capital_received', 'liquidation_surplus_paid']);
+const AID_TYPES = new Set(['aid_loan_received', 'aid_loan_repaid', 'od_aid_loan_abandoned', 'company_capital_received', 'shareholder_capital_received', 'liquidation_surplus_paid', 'stake_sold', 'stake_bought']);
 
 /** @param {Array<{ type: string }>} entries the journal's lines @returns {Array<{ type: string }>} the ones the aid is read from */
 export function aidEntriesOf(entries) {
@@ -82,4 +82,29 @@ export function bookEquityOf(totals) {
     else if (account === '457') equity -= total.debit - total.credit;
   }
   return equity / 100;
+}
+
+/**
+ * Who holds the shares of a company that entitle to its dividends: the city (the shares it bought as a shareholder, less the ones it sold) and the private holders it sold
+ * them to (the lines `stake_bought`, on the buyer's own account). The shares sold stay in the company's total.
+ * @param {Array<{ type: string, shares?: number, accountBuildingId?: string | null, accountKind?: string | null, counterpartyBuildingId?: string | null, amount: number }>} entries
+ *   the journal lines (at least the aid's and the sales of stakes: `aidEntriesOf`)
+ * @param {string} companyId
+ * @returns {{ city: number, privateHolders: Array<{ holderId: string, accountKind: string | null, shares: number, capital: number }> }} `capital` in centimes: what the holder paid
+ */
+export function sharesHeldIn(entries, companyId) {
+  let city = companyAidOf(entries, companyId).shareholderShares;
+  const privateHolders = new Map();
+  for (const entry of entries) {
+    if (entry.counterpartyBuildingId !== companyId) continue;
+    if (entry.type === 'stake_sold') city -= entry.shares;
+    else if (entry.type === 'stake_bought') {
+      const key = accountKeyOf(entry);
+      const held = privateHolders.get(key) ?? { holderId: entry.accountBuildingId, accountKind: entry.accountKind ?? null, shares: 0, capital: 0 };
+      held.shares += entry.shares;
+      held.capital += toCentimes(entry.amount);
+      privateHolders.set(key, held);
+    }
+  }
+  return { city, privateHolders: [...privateHolders.values()].filter((holder) => holder.shares > 0) };
 }

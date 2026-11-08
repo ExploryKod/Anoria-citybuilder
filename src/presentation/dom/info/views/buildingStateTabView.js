@@ -5,12 +5,14 @@
 
 import { renderKvPanelView } from './kvPanelView.js';
 import { hasServicesToShow, renderServicesTab } from './servicesInfoView.js';
+import { shelfLifeBar } from './shelfLifeBars.js';
 
 /**
  * @typedef {object} BuildingStateModel
  * @property {import('../buildingInfoTypes.js').InfoKvPanelModel | null} state What the group says of the building's state (null: nothing to say)
  * @property {import('../buildingInfoTypes.js').InfoKvPanelModel | null} staff The staffing panel (null: the building has no staff)
  * @property {object | null} services The services row's model
+ * @property {{ percent: number, status: string, text: string } | null} [solidity] The solidity bar (null: the building has none)
  */
 
 /**
@@ -63,8 +65,9 @@ export function renderBuildingStateView(container, model) {
   const sections = [
     { id: 'etat', icon: '🧭', title: 'État', kv: model.state },
     { id: 'personnel', icon: '👷', title: 'Personnel', kv: model.staff },
+    { id: 'solidite', icon: '🧱', title: 'Solidité', solidity: model.solidity },
     { id: 'services', icon: '🔧', title: 'Services', services: model.services },
-  ].filter((section) => section.kv?.sections?.length || hasServicesToShow(section.services));
+  ].filter((section) => section.kv?.sections?.length || hasServicesToShow(section.services) || section.solidity);
   if (sections.length === 0) return;
 
   const elements = sections.map((section) => {
@@ -80,7 +83,14 @@ export function renderBuildingStateView(container, model) {
     const body = document.createElement('div');
     element.append(heading, body);
 
-    if (section.kv) renderKvPanelView(body, untitledWhenSingle(section.kv));
+    if (section.solidity) {
+      // The bar is the building's solidity (green, then amber, then red as it wears); under it, what that means for the player.
+      const bar = shelfLifeBar(section.solidity.percent / 100, { label: 'Solidité', variant: `solidity-${section.solidity.status}` });
+      const text = document.createElement('p');
+      text.className = 'building-state-solidity__text';
+      text.textContent = `${section.solidity.percent} % — ${section.solidity.text}`;
+      body.append(bar, text);
+    } else if (section.kv) renderKvPanelView(body, untitledWhenSingle(section.kv));
     else {
       renderServicesTab(body, section.services);
       const row = body.querySelector('.building-info-services-row');

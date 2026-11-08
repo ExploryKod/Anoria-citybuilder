@@ -1,5 +1,6 @@
 import { getOrCreateGameSessionContext } from './createGameSessionContext.js';
 import { getQuantityConsumerEntries, salesNatureOf } from '../shared/building-catalog/resourceRoleQueries.js';
+import { SellCityStake } from '../contexts/accounting/application/services/SellCityStake.js';
 import { InjectCompanyAid } from '../contexts/accounting/application/services/InjectCompanyAid.js';
 import { COMPANY_AID_BOUNDS, DEFAULT_COMPANY_AID } from '../contexts/accounting/domain/catalogs/CompanyAidCatalog.js';
 import { SettleCompanyAid } from '../contexts/accounting/application/services/SettleCompanyAid.js';
@@ -63,7 +64,7 @@ import { buildingNameOf, companiesOf } from '../shared/building-catalog/building
 import { INSURANCE_LAW_LABELS } from '../shared/accounting-catalog/InsuranceCatalog.js';
 import { insuranceLawStatusOf, isStaffed } from '../contexts/accounting/domain/policies/InsuranceLawPolicy.js';
 import { isInvalid } from '../contexts/housing/domain/policies/InvalidityPolicy.js';
-import { INCOME_STATEMENT, pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
+import { INCOME_STATEMENT, accountLabelOf, pcgOfJournalType } from '../shared/accounting-catalog/PcgJournalCatalog.js';
 import { buildingFinanceFigures, cashMovementsOf, householdBudgetOf, householdLastMonthOf, incomeStatementOf } from '../contexts/accounting/domain/policies/BuildingFinancePolicy.js';
 import { residentsOfHouse } from '../contexts/accounting/domain/policies/HouseResidentsPolicy.js';
 import { residentPayBreakdownOf } from '../contexts/accounting/domain/policies/HouseResidentsPayPolicy.js';
@@ -96,6 +97,7 @@ import { buildingTypeOfConstruction } from '../contexts/accounting/domain/polici
 import { SettleProducerCharges } from '../contexts/accounting/application/services/SettleProducerCharges.js';
 import { RecordHouseholdDeposit } from '../contexts/accounting/application/services/RecordHouseholdDeposit.js';
 import { RecordHouseholdWithdrawal } from '../contexts/accounting/application/services/RecordHouseholdWithdrawal.js';
+import { SettleStateArrears } from '../contexts/accounting/application/services/SettleStateArrears.js';
 import { SettleBankDepositInterest } from '../contexts/accounting/application/services/SettleBankDepositInterest.js';
 import { v4 as uuidv4 } from 'uuid';
 import { BankRefinancing } from '../contexts/accounting/application/services/BankRefinancing.js';
@@ -106,6 +108,14 @@ import { CAPITAL_WARNING_RATIO, CENTRAL_BANK_SKILL, MIN_CAPITAL_RATIO } from '..
 import { CASH_ACCOUNTS, isCashAccount } from '../contexts/accounting/domain/policies/EntryLegsPolicy.js';
 import { DEFAULT_FEDERAL_MONETARY_POLICY } from '../contexts/accounting/domain/catalogs/FiscalRateCatalog.js';
 import { debtCeilingOf } from '../contexts/accounting/domain/policies/PublicDebtPolicy.js';
+import { EXTERNAL_LENDERS } from '../contexts/accounting/domain/catalogs/ExternalLenderCatalog.js';
+import { availableExternalLenders } from '../contexts/accounting/domain/policies/ExternalLenderPolicy.js';
+import { ownershipRegisterOf } from '../contexts/accounting/domain/policies/OwnershipRegisterPolicy.js';
+import { aidEntriesOf, companyAidOf, sharesHeldIn } from '../contexts/accounting/domain/policies/CompanyAidLedgerPolicy.js';
+import { depositBalancesAt } from '../contexts/accounting/domain/policies/DepositBalancePolicy.js';
+import { stateBalanceSheetOf } from '../contexts/accounting/domain/policies/StateBalanceSheetPolicy.js';
+import { stateArrearsOf } from '../contexts/accounting/domain/policies/StateArrearsPolicy.js';
+import { STATE_ARREARS_KINDS } from '../shared/accounting-catalog/StateArrearsCatalog.js';
 import { BenefactorGift } from '../contexts/accounting/application/services/BenefactorGift.js';
 import { BENEFACTOR_GIFT } from '../contexts/accounting/domain/catalogs/BenefactorGiftCatalog.js';
 import { BenefactorGiftRepository } from '../contexts/accounting/infrastructure/persistence/BenefactorGiftRepository.js';
@@ -675,6 +685,14 @@ export function createAccountingContext(deps = {}) {
     if (!shutReason && debt.headroom <= 0) shutReason = 'debt_ceiling';
     return { ...debt, open: shutReason === null, shutReason };
   }
+  // An external lender of the catalog, with its city's name (the world map's).
+  function externalLenderOf(cityId) {
+    const lender = EXTERNAL_LENDERS.find((candidate) => candidate.cityId === cityId);
+    if (!lender) throw new Error(`[loans] "${cityId}" is not an external lender (${EXTERNAL_LENDERS.map((candidate) => candidate.cityId).join(', ')})`);
+    const city = getWorldCityById(cityId);
+    if (!city) throw new Error(`[loans] "${cityId}" is not a city of the world map: its name is unknown`);
+    return { ...lender, cityName: city.name };
+  }
   // The supervisor's reading of the bank: its equity (its derived balance sheet) against its loans (its journal), read when it is asked to lend.
   async function bankCapitalStatusOf(bankId) {
     const { equity } = (await accountingApi.getBuildingBalanceSheet(bankId, null)).liabilities;
@@ -725,6 +743,16 @@ export function createAccountingContext(deps = {}) {
     listBuildings: async () => (await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => ({ id: row.id, type: row.type })),
     listDepositInterests: async (year, annualRate) => depositInterestsOf(await journalRepository.getJournalEntries(), { year, annualRate }),
     getDepositInterestRate: async () => savingsRateOf((await policyRateStatus()).rate),
+    getBuildingDisplayName: (buildingType) => getBuildingDefinition(buildingType)?.displayName,
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
+
+  // The State pays its arrears (what it owed and could not pay when its Treasury was empty) before the month's own payments.
+  const settleStateArrears = new SettleStateArrears({
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    getJournalEntries: () => journalRepository.getJournalEntries(),
+    stateCash: () => stateCashOf(requireActiveHamletId()),
+    listBuildings: async () => (await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => ({ id: row.id, type: row.type })),
     getBuildingDisplayName: (buildingType) => getBuildingDefinition(buildingType)?.displayName,
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
@@ -901,6 +929,14 @@ export function createAccountingContext(deps = {}) {
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
+  // The city sells shares it holds to the property company (SellCityStake.js).
+  const sellCityStake = new SellCityStake({
+    getJournalEntries: () => journalRepository.getJournalEntries(),
+    getBuyer: () => findPropertyOwner(),
+    cashOf: (buildingId, accountKind) => getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId, accountKind }),
+    isCompany: async (buildingId) => (await dexieDb.houses.get(buildingId)) !== undefined && isLucrativeBuilding((await dexieDb.houses.get(buildingId)).type),
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
   const settleHouseRents = new SettleHouseRents({
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
     getRentalHouses,
@@ -976,6 +1012,7 @@ export function createAccountingContext(deps = {}) {
       return supplyTraceabilityRepository.compactFlowsOfMonth(settled.year, settled.monthIndex);
     },
     settleBankDepositInterest: (params) => settleBankDepositInterest.execute(params),
+    settleStateArrears: (params) => settleStateArrears.execute(params),
     revalueMinimumWage: () => revalueMinimumWage.execute(),
     adjustWageRates: ({ time }) => {
       if (typeof deps.getLabourMarket !== 'function') throw new Error('[accounting] the labour market was not wired (deps.getLabourMarket): the wages could not be settled');
@@ -1385,6 +1422,11 @@ export function createAccountingContext(deps = {}) {
     },
 
     /** The player puts `amount` euros into a company that already lives, as a shareholder, a loan or a participation. */
+    /** The city sells shares it holds in a company to the property company. @param {{ buildingId: string, shares: number }} params */
+    sellCityStake({ buildingId, shares }) {
+      return sellCityStake.execute({ buildingId, shares, time: gameTimePort.currentTurn() });
+    },
+
     injectCompanyAid({ buildingId, amount, form }) {
       return injectCompanyAid.execute({ buildingId, amount, form, time: gameTimePort.currentTurn() });
     },
@@ -1537,6 +1579,72 @@ export function createAccountingContext(deps = {}) {
       return benefactorGift.offerIfDue(params);
     },
 
+    /**
+     * Who owns what, read from the journal and the buildings (OwnershipRegisterPolicy.js): the companies' capital, the buildings' owners, and every debt with its creditor and its
+     * debtor. Euros; nothing is stored.
+     */
+    async getOwnershipRegister() {
+      const hamletId = requireActiveHamletId();
+      const turn = getSessionGameTime();
+      const rows = (await dexieDb.houses.toArray()).filter(isActiveHamletRow);
+      const entries = await journalRepository.getJournalEntries();
+      const byAccount = (await journalRepository.getLegsFold()).totalsByAccount({ hamletId });
+      const bankId = await findBankBuildingId();
+      const aidEntries = aidEntriesOf(entries);
+      const ownable = rows.filter((row) => !['road', 'nature'].includes(resolveBuildingKind(row.type)));
+      const nameOfRow = new Map(ownable.map((row) => [row.id, buildingNameOf(row.type, row)]));
+      const kindOf = (row) => (resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE ? 'house' : isLucrativeBuilding(row.type) ? 'company' : 'public');
+      const creditBalance = (id, account) => {
+        const total = byAccount.get(accountKeyOf({ accountBuildingId: id }))?.get(account);
+        return total ? (total.credit - total.debit) / 100 : 0;
+      };
+      const companies = ownable.filter((row) => kindOf(row) === 'company').map((row) => {
+        const aid = companyAidOf(aidEntries, row.id);
+        const held = sharesHeldIn(aidEntries, row.id);
+        return {
+          id: row.id,
+          capital: aid.totalCapital / 100,
+          cityShares: held.city,
+          totalShares: aid.totalShares,
+          privateHolders: held.privateHolders.map((holder) => ({ holderId: holder.holderId, capital: holder.capital / 100, shares: holder.shares })),
+          aidOutstanding: aid.outstanding / 100,
+          bankCredit: creditBalance(row.id, '1643'),
+        };
+      });
+      const register = ownershipRegisterOf({
+        cityName: 'La ville',
+        centralBankName: getBuildingDefinition(centralBankType).displayName,
+        // A building that is gone but still owed or owing (a demolished house's savings) shows as "…" with a one-time warning, never a made-up name.
+        nameOf: (id) => {
+          const name = nameOfRow.get(id);
+          if (name) return name;
+          console.warn(`[ownership] building ${id} is not in the hamlet: its name is unknown`);
+          return '…';
+        },
+        buildings: ownable.map((row) => ({ id: row.id, name: nameOfRow.get(row.id), kind: kindOf(row) })),
+        propertyOwnerId: (await findPropertyOwner())?.id ?? null,
+        companies,
+        cooperatives: ownable
+          .filter((row) => kindOf(row) === 'house' && houseEnterprises(row.type).enterprises.length > 0)
+          .map((row) => ({ id: row.id, name: nameOfRow.get(row.id), residents: residentsCountOf(row) })),
+        bankId,
+        cityLoans: (await getTreasurySnapshotQuery.execute({ hamletId })).loans,
+        refinancing: bankId ? await bankRefinancing.outstanding(turn) : 0,
+        deposits: bankId ? [...depositBalancesAt(entries, bankId)].map(([houseId, centimes]) => ({ houseId, amount: centimes / 100 })) : [],
+        stateArrears: stateArrearsOf(entries).map((debt) => ({ creditorId: debt.creditorId, label: STATE_ARREARS_KINDS[debt.kind].label, amount: debt.centimes / 100 })),
+        payables: [...payablesOf(entries).values()].map((debt) => ({ debtorId: debt.debtorId, creditorId: debt.creditorId, label: PAYABLE_KINDS[debt.kind].label, amount: debt.centimes / 100 })),
+      });
+      // The State's own balance sheet: what it holds against what it owes, from the totals of its account.
+      const label = (account) => {
+        try {
+          return accountLabelOf(account);
+        } catch {
+          return `Compte ${account}`;
+        }
+      };
+      return { ...register, stateBalanceSheet: stateBalanceSheetOf(byAccount.get(null) ?? new Map(), label) };
+    },
+
     /** @returns {Promise<object>} what the State owes, the ceiling its income allows, and whether it can still borrow (see cityBorrowing) */
     getCityBorrowing() {
       return cityBorrowing();
@@ -1588,12 +1696,24 @@ export function createAccountingContext(deps = {}) {
      * @param {{ loanType: 'bank' | 'commercial', amount: number, durationTurns: number }} params
      * @returns {Promise<{ yearlyRate: number, interest: number, total: number }>}
      */
-    async getLoanTerms({ loanType, amount, durationTurns }) {
+    async getLoanTerms({ loanType, amount, durationTurns, lenderCityId = null }) {
       const { rate } = await policyRateStatus();
       const health = await getFinancialHealthQuery.execute();
-      const yearlyRate = computeLoanRate({ loanType, financialHealthStatus: health.status, policyRate: rate });
+      // An external loan adds the spread of the city that lends it; any other loan has no lender city.
+      if ((loanType === 'external') !== (lenderCityId !== null)) throw new Error(`[loans] a ${loanType} loan ${loanType === 'external' ? 'must name' : 'has no'} lender city (got ${lenderCityId})`);
+      const lenderSpread = lenderCityId === null ? 0 : externalLenderOf(lenderCityId).extraSpread;
+      const yearlyRate = computeLoanRate({ loanType, financialHealthStatus: health.status, policyRate: rate, lenderSpread });
       const interest = computeLoanInterestAmount({ amount, yearlyRate, durationTurns, turnsPerYear: turnsPerYear(getDaysPerMonth()) });
       return { yearlyRate, interest, total: amount + interest };
+    },
+
+    /**
+     * The partner cities that lend the city money now, in the catalog's order (ExternalLenderCatalog.js).
+     * @param {{ partnerIds: string[] }} params the cities the hamlet trades with
+     * @returns {Array<{ cityId: string, cityName: string, extraSpread: number, maxAmount: number }>}
+     */
+    listExternalLenders({ partnerIds }) {
+      return availableExternalLenders({ partnerIds, lenders: EXTERNAL_LENDERS }).map((lender) => ({ ...lender, cityName: externalLenderOf(lender.cityId).cityName }));
     },
 
     /** Who pays a worker who is sick: 'none' or 'secu' (see SicknessCoverCatalog.js). @returns {Promise<string>} */

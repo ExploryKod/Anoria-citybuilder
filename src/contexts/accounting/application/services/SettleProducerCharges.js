@@ -33,6 +33,7 @@ import { getBuildingDefinition } from '../../../../shared/building-catalog/build
 import { buildingNameOf, companiesOf } from '../../../../shared/building-catalog/buildingCompanies.js';
 import { INSURANCE_INDEMNITY_RATE, INSURANCE_SERVICE, INSURANCE_VOLUNTARY_BUFFER_MONTHS, INSURANCE_WAITING_MONTHS } from '../../../../shared/accounting-catalog/InsuranceCatalog.js';
 import { insuranceLawStatusOf, isStaffed } from '../../domain/policies/InsuranceLawPolicy.js';
+import { STATE_ARREARS_KINDS, stateArrearsTypesOf } from '../../../../shared/accounting-catalog/StateArrearsCatalog.js';
 import { INSOLVENCY_GRACE_MONTHS } from '../../domain/catalogs/PayableCatalog.js';
 import { claimsPaidOf, companyToJoin, membershipOf, premiumsPaidOf } from '../../domain/policies/InsurancePolicy.js';
 import { getResourceCategoryPresentation } from '../../../../shared/resource-catalog/ResourceCategoryCatalog.js';
@@ -111,11 +112,12 @@ export class SettleProducerCharges {
   async execute({ time, deliveredTime }) {
     this.#refusedFlows = new Set();
     this.#stateUnpaid = [];
+    this.#neglected = new Set();
     await this.#settle({ time, deliveredTime });
     // What the State could not pay this month, for the player to be told (the Treasury was empty): by kind of payment, in euros.
     const unpaid = {};
     for (const { kind, amount } of this.#stateUnpaid) unpaid[kind] = centimes((unpaid[kind] ?? 0) + amount);
-    return { stateUnpaid: unpaid };
+    return { stateUnpaid: unpaid, neglected: [...this.#neglected] };
   }
 
   async #settle({ time, deliveredTime }) {
@@ -558,6 +560,14 @@ export class SettleProducerCharges {
       }
     }
 
+    // The buildings whose upkeep was not paid this month (docs/gameplay/PLAN_COLLAPSE.md): the State's refused above, and the ones whose upkeep is borne by a company in
+    // difficulty (open debts): a company that cannot pay its wages does not keep its buildings up. A house's upkeep is its owner's (the State's when none stands).
+    const indebted = new Set([...payables.values()].map((debt) => debt.debtorId));
+    for (const building of buildings) {
+      const bearerId = isLucrativeBuilding(building.type) ? building.id : houseIds.has(building.id) ? owner?.id ?? null : null;
+      if (bearerId && indebted.has(bearerId)) this.#neglected.add(building.id);
+    }
+
     // The insurance of the households comes last: its premiums are paid out of the net wages the month's pay has just put on their accounts.
     await this.#settleInsurance({ buildings, households, slots, withholding, missedByHouse, publicPay, time, timeInfo, hamletId, monthLabel, nameOf });
   }
@@ -932,6 +942,14 @@ export class SettleProducerCharges {
     if (!paid) {
       if (line.flow) this.#refusedFlows.add(line.flow);
       this.#stateUnpaid.push({ kind: line.kind, amount: line.amount });
+      // An upkeep the State could not pay leaves its building to wear (docs/gameplay/PLAN_COLLAPSE.md).
+      if (line.kind === 'maintenance') this.#neglected.add(written.buildingInstanceId);
+      // What the State owes to a named creditor is booked all the same, against what it owes (StateArrearsCatalog.js), and paid when its Treasury allows (SettleStateArrears).
+      if (STATE_ARREARS_KINDS[line.kind] && line.counterparty) {
+        await recordLine(this.deps, { kind: stateArrearsTypesOf(line.kind).payable, amount: line.amount, holder: null, counterparty: line.counterparty, flow: null }, {
+          ...written, key: `${written.key}:arrears`, description: `[OD] ${written.description} : à payer`,
+        });
+      }
     }
     return paid;
   }
@@ -939,6 +957,8 @@ export class SettleProducerCharges {
   /** The flows whose payment by the State was refused this month, and what the State left unpaid: reset by each settlement. */
   #refusedFlows = new Set();
   #stateUnpaid = [];
+  /** The buildings whose upkeep was not paid this month: reset by each settlement. */
+  #neglected = new Set();
 }
 
 /**

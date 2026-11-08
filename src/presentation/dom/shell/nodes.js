@@ -50,6 +50,7 @@ export const displayHungerPop =document.querySelector(`${popHudRoot} .display-hu
 export const displayDeathsPop = document.querySelector(`${popHudRoot} .display-deaths-pop`);
 export const displaySickDeathsPop = document.querySelector(`${popHudRoot} .display-sick-deaths-pop`);
 export const displaySuicidesPop = document.querySelector(`${popHudRoot} .display-suicides-pop`);
+export const displayAccidentsPop = document.querySelector(`${popHudRoot} .display-accidents-pop`);
 export const displayIllness = Object.freeze({
   physicalMild: document.querySelector(`${popHudRoot} .display-sick-physical-mild`),
   physicalSevere: document.querySelector(`${popHudRoot} .display-sick-physical-severe`),

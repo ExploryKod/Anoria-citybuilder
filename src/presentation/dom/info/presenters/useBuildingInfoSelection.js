@@ -57,6 +57,12 @@ async function enrichBuildingInfoViewModel(groupId, vm, housing) {
     extra.insolvency = await vm.accounting.getInsolvency(vm.uniqueId);
   }
 
+  // What the Problems tab says of the map's alert icons: whether no natural resource is left in range, and the turn the month's alerts are read at.
+  if (groupId !== BUILDING_INFO_GROUPS.nature && vm.uniqueId) {
+    extra.noResource = (await vm.supply.listNoResourceBuildingIds()).includes(vm.uniqueId);
+    extra.turn = (await vm.accounting.getTreasurySnapshot()).turn;
+  }
+
   if (groupId === BUILDING_INFO_GROUPS.nature && vm.uniqueId) {
     if (!vm.stocks && vm.buildingRow?.stocks == null) {
       extra.stocks = await vm.construction.getBuildingField(vm.uniqueId, 'stocks');

@@ -76,6 +76,8 @@ export const STATUS_ICON_DEFAULTS = Object.freeze({
     backgroundColor: 0xe8ddff,
   },
   'no-resource': { position: { x: -0.5, y: 1, z: 0 }, scale: { x: 0.6, y: 0.6, z: 1 }, spriteColor: null, backgroundColor: null },
+  // Opposite corner from the road and no-resource icons: a worn-out building may also lack a road or a resource.
+  'collapse-risk': { position: { x: 0.5, y: 1, z: 0 }, scale: { x: 0.6, y: 0.6, z: 1 }, spriteColor: null, backgroundColor: null },
   'no-work': {
     position: { x: -0.8, y: 0.5, z: -0.2 },
     scale: { x: 0.5, y: 0.5, z: 0.5 },

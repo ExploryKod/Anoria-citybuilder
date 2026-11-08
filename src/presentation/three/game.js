@@ -169,6 +169,8 @@ ensureGameRuntimeBootstrapped();
 /** Stops the previous game's listener when a new game is created in the same page. */
 let stopPopulationDepartureToasts = null;
 let stopCompanyLiquidationToasts = null;
+let stopBuildingCollapseToasts = null;
+let stopBuildingCollapseFailureToasts = null;
 let stopCompanyLiquidationFailureToasts = null;
 let stopPlotsChanged = null;
 
@@ -584,6 +586,15 @@ export function createGame(gameStore, assetManager, citySize = null) {
   stopCompanyLiquidationToasts?.();
   stopCompanyLiquidationToasts = getSharedEventBus().subscribe('gameplay.companyLiquidated', (event) => {
     onCompanyLiquidated(event).catch((error) => console.error('[game] The screen could not follow a liquidated company:', error));
+  });
+  // A building that collapsed for want of upkeep: the map follows, and the player is told who died (see onBuildingCollapsed)
+  stopBuildingCollapseToasts?.();
+  stopBuildingCollapseToasts = getSharedEventBus().subscribe('gameplay.buildingCollapsed', (event) => {
+    onBuildingCollapsed(event).catch((error) => console.error('[game] The screen could not follow a collapsed building:', error));
+  });
+  stopBuildingCollapseFailureToasts?.();
+  stopBuildingCollapseFailureToasts = getSharedEventBus().subscribe('gameplay.buildingCollapseFailed', (failure) => {
+    showErrorToast(`🏚️ ${failure.name} menace de s'effondrer mais n'a pas pu être démoli : ${failure.reason}. Nouvel essai le mois prochain.`, { timeout: 8000 });
   });
   // A company that could not be liquidated stays, and the player is told (it is tried again next month)
   stopCompanyLiquidationFailureToasts?.();
@@ -1480,6 +1491,17 @@ export function createGame(gameStore, assetManager, citySize = null) {
       housePaint.busy = false;
       timer.done();
     }
+  }
+
+  /** A building collapsed for want of upkeep (WearBuildings.js, `gameplay.buildingCollapsed`): the player is told, and the map and the HUD follow as after a demolition. */
+  async function onBuildingCollapsed(event) {
+    const victims = event.deaths > 0 ? ` : ${event.deaths} mort${event.deaths > 1 ? 's' : ''}` : ', sans victime';
+    showErrorToast(`🏚️ ${event.name} s'est effondré${victims}.`, { timeout: 8000 });
+    await scene.update(city, time);
+    if (isLimitedBuilding(event.buildingType)) syncLimitedBuildingButtons();
+    await syncEmploymentAfterBuildingChange(scene, city, event.buildingType);
+    await refreshPlacementPresentation();
+    await syncSessionHud({ housing, employment, gameUI, includeEmployment: true });
   }
 
   /** The tiles of the square from where the player pressed to the cursor (inside the city). */

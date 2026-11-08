@@ -10,6 +10,7 @@
  * Deposit lines too: a house's savings at a bank outlive the year they were put there (DepositBalancePolicy.js).
  */
 import { DEPOSIT_TYPES } from './DepositBalancePolicy.js';
+import { isStateArrearsType } from './StateArrearsPolicy.js';
 import { moneyDirectionOf } from './TreasuryFromJournalPolicy.js';
 import { accountKeyOf } from './AccountKeyPolicy.js';
 import { postingsOf } from './AccountLedgerPolicy.js';
@@ -39,6 +40,8 @@ export function isFoldedIntoClosing(entry) {
   if (entry.type === YEAR_CLOSING_TYPE || KEPT_LOAN_TYPES.has(entry.type)) return false;
   // Deposit lines survive too: a house's savings at a bank are read from them, pair by pair, and the à-nouveaux has no counterparty.
   if (DEPOSIT_TYPES.has(entry.type)) return false;
+  // The State's arrears too: what it owes, and to whom, outlives the year it was booked in (StateArrearsPolicy.js).
+  if (isStateArrearsType(entry.type)) return false;
   return true;
 }
 

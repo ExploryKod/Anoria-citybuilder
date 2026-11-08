@@ -7,7 +7,7 @@ const STORAGE_KEY = 'anoria.mapFilters';
  */
 export const MAP_FILTERS = Object.freeze({
   // What is wrong: a building that cannot work, a good it cannot get, a sale that failed.
-  alerts: Object.freeze({ label: 'Alertes', defaultOn: true, sprites: Object.freeze(['no-work', 'no-resource', 'input-shortage', 'hub-full', 'failed-sell']) }),
+  alerts: Object.freeze({ label: 'Alertes', defaultOn: true, sprites: Object.freeze(['no-work', 'no-resource', 'collapse-risk', 'input-shortage', 'hub-full', 'failed-sell']) }),
   // Where a producer is in its cycle.
   cycle: Object.freeze({ label: 'Cycle de production', defaultOn: true, sprites: Object.freeze(['fallow', 'grow-food', 'harvest', 'sell-food']) }),
   // Goods changing hands.

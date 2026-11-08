@@ -22,6 +22,7 @@ import {
     displayDeathsPop,
     displaySickDeathsPop,
     displaySuicidesPop,
+    displayAccidentsPop,
     displayIllness,
     displayLabor,
     popGroupPopNodes,
@@ -572,6 +573,16 @@ class GameUI {
     updateSuicides(suicides) {
         if (displaySuicidesPop) {
             displaySuicidesPop.textContent = String(Math.max(0, Math.floor(suicides) || 0));
+        }
+    }
+
+    /**
+     * The deaths by accident since the start of the game (a building that collapsed: all count towards the end of the game).
+     * @param {number} accidents
+     */
+    updateAccidents(accidents) {
+        if (displayAccidentsPop) {
+            displayAccidentsPop.textContent = String(Math.max(0, Math.floor(accidents) || 0));
         }
     }
 

@@ -177,7 +177,8 @@
       "lastEnergyProductionMonth": 9,
       "unmetDemand": 6,
       "salesToDistributor": [],
-      "salesToHub": []
+      "salesToHub": [],
+      "solidity": 100
     },
     {
       "type": "Tree-Chene",
@@ -639,7 +640,8 @@
           "amount": 10,
           "turn": 105
         }
-      }
+      },
+      "solidity": 100
     },
     {
       "instanceId": "80e6ffe0-1610-44f6-ba12-323f8c290ab3",
@@ -1031,7 +1033,8 @@
           "bandwidth": 0,
           "book": 0
         }
-      }
+      },
+      "solidity": 100
     },
     {
       "instanceId": "9f54f5e2-bdb2-42dd-a769-d18f6337a690",
@@ -1361,7 +1364,8 @@
             "streak": 1
           }
         }
-      }
+      },
+      "solidity": 100
     },
     {
       "type": "Tree-Chene",
@@ -1606,7 +1610,8 @@
         "year": 1,
         "monthIndex": 9,
         "units": 84
-      }
+      },
+      "solidity": 100
     },
     {
       "instanceId": "f6a0454a-ef58-4a62-9a47-a70bebedec9e",
@@ -1875,7 +1880,8 @@
       },
       "goodsHubId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
       "heatHubId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
-      "lightHubId": "7a675d36-279d-40ed-8a76-45742bbdf8be"
+      "lightHubId": "7a675d36-279d-40ed-8a76-45742bbdf8be",
+      "solidity": 100
     },
     {
       "type": "Tree-Chene",
@@ -2201,7 +2207,8 @@
         "fire": 9,
         "primarySchool": 9
       },
-      "level": 2
+      "level": 2,
+      "solidity": 100
     },
     {
       "instanceId": "2f4ca1d3-c4f6-450f-99de-0bb1ea8c33ba",
@@ -2933,7 +2940,8 @@
       "saleWindowOpen": false,
       "salesToDistributor": [],
       "salesToHub": [],
-      "collectedByHub": false
+      "collectedByHub": false,
+      "solidity": 100
     },
     {
       "instanceId": "6e6f263a-81dc-4217-a081-93195a939f05",
@@ -3017,7 +3025,8 @@
       "saleWindowOpen": false,
       "salesToDistributor": [],
       "salesToHub": [],
-      "collectedByHub": false
+      "collectedByHub": false,
+      "solidity": 100
     },
     {
       "instanceId": "9a973967-fa0b-4c00-9853-d9352c206c8d",
@@ -3088,7 +3097,8 @@
           2,
           11
         ]
-      ]
+      ],
+      "solidity": 100
     },
     {
       "instanceId": "0af2f636-6910-4cd7-8f1a-15079df6b8a1",
@@ -3159,7 +3169,8 @@
           8,
           9
         ]
-      ]
+      ],
+      "solidity": 100
     },
     {
       "instanceId": "0c1a674e-5ac3-426b-8480-d011c3b46792",
@@ -3246,7 +3257,8 @@
       "lastWaterProductionMonth": 9,
       "unmetDemand": 24,
       "salesToDistributor": [],
-      "salesToHub": []
+      "salesToHub": [],
+      "solidity": 100
     },
     {
       "instanceId": "bf89cd9d-90c5-4019-8fce-7e02d72867d8",
@@ -3605,7 +3617,8 @@
           "amount": 10,
           "turn": 69
         }
-      }
+      },
+      "solidity": 100
     },
     {
       "instanceId": "5e582bbe-1669-449e-b862-cae4efd8f9bc",
@@ -3947,7 +3960,8 @@
       "salesToDistributor": [],
       "salesToHub": [],
       "level": 2,
-      "collectedByHub": false
+      "collectedByHub": false,
+      "solidity": 100
     },
     {
       "instanceId": "2e5b02f1-c266-47e4-b404-8a39ab52c18d",
@@ -4037,7 +4051,8 @@
           "amount": 288,
           "turn": 55
         }
-      }
+      },
+      "solidity": 100
     },
     {
       "instanceId": "52e11a7f-9f6f-40f7-9cd4-4946c3f2d475",
@@ -4127,7 +4142,8 @@
           "amount": 288,
           "turn": 55
         }
-      }
+      },
+      "solidity": 100
     },
     {
       "instanceId": "e6d15377-2b9b-4e7e-b57e-382046e752d2",
@@ -4285,7 +4301,8 @@
           "amount": 288,
           "turn": 55
         }
-      }
+      },
+      "solidity": 100
     },
     {
       "instanceId": "ccbdbad4-4d97-44bf-9dea-c6b4ce925d41",
@@ -4375,7 +4392,8 @@
           "amount": 288,
           "turn": 55
         }
-      }
+      },
+      "solidity": 100
     },
     {
       "type": "Tree-Chene",
@@ -4758,7 +4776,8 @@
           "amount": 10,
           "turn": 105
         }
-      }
+      },
+      "solidity": 100
     },
     {
       "instanceId": "33b91efb-4ff5-4aca-8517-91a09f393323",
@@ -5100,7 +5119,8 @@
       "salesToDistributor": [],
       "salesToHub": [],
       "level": 2,
-      "collectedByHub": false
+      "collectedByHub": false,
+      "solidity": 100
     },
     {
       "instanceId": "2cb16220-1c03-44cc-812e-a06f5c176d48",
@@ -5389,7 +5409,8 @@
         "monthIndex": 8,
         "units": 20,
         "cause": "no_hub"
-      }
+      },
+      "solidity": 100
     },
     {
       "instanceId": "5b6d0f8e-ec32-4826-8a43-8c5a40c8f86b",
@@ -5472,7 +5493,8 @@
           14,
           14
         ]
-      ]
+      ],
+      "solidity": 100
     },
     {
       "instanceId": "61bf43fc-c173-4395-9071-46ba5671a619",
@@ -5846,7 +5868,8 @@
       "salesToDistributor": [],
       "salesToHub": [],
       "level": 2,
-      "collectedByHub": false
+      "collectedByHub": false,
+      "solidity": 100
     },
     {
       "instanceId": "07985189-f396-43af-bb61-16169bcc60d7",
@@ -6469,7 +6492,8 @@
           10,
           16
         ]
-      ]
+      ],
+      "solidity": 100
     },
     {
       "type": "Boulder-001",

@@ -457,7 +457,7 @@ describe('monthly judgement of the houses', () => {
       recordDeaths(10, 'famine');
       recordDeaths(14, 'health');
 
-      expect(getDeathsByCause()).toEqual({ famine: 10, health: 14, suicide: 0 });
+      expect(getDeathsByCause()).toEqual({ famine: 10, health: 14, suicide: 0, accident: 0 });
       expect(getCumulativeDeaths()).toBe(24);
       expect(isDeathGameOverReached()).toBe(false);
       recordDeaths(1, 'health');

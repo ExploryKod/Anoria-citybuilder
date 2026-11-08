@@ -82,9 +82,14 @@ export class ProcessTurnBudget {
           await this.deps.settleBankDepositInterest({ time, deliveredTime: time - 1 });
         }
         stepDone('bankInterest');
+        // The State pays what it owes from the months it could not pay (its arrears), before this month's own payments: the oldest debts come first.
+        if (this.deps.settleStateArrears) await this.deps.settleStateArrears({ time });
+        stepDone('stateArrears');
         const producerMonth = await this.deps.settleProducerCharges({ time, deliveredTime: time - 1 });
         // What the State could not pay because its Treasury was empty (by kind of payment): the caller tells the player.
         if (producerMonth && Object.keys(producerMonth.stateUnpaid ?? {}).length > 0) result.stateUnpaid = { ...result.stateUnpaid, ...producerMonth.stateUnpaid };
+        // The buildings whose upkeep was not paid this month: they wear (see runGameTurnEconomy.js).
+        result.neglectedBuildings = producerMonth?.neglected ?? [];
         stepDone('producerCharges');
         // The rents come last of the month's charges: a house pays what is left of its month, and what it cannot pay stays a debt.
         if (this.deps.settleHouseRents) {

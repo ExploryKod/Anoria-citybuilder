@@ -221,6 +221,14 @@ export class DexieHousingBuildingRepository {
     });
   }
 
+  /** Citizens killed by an accident (a building that collapsed): they leave, and so does their share of their house's population (its `pop` is their count). */
+  async removeDeadCitizens(citizens) {
+    if (citizens.length === 0) return;
+    await db.transaction('rw', db.houses, db.citizens, async () => {
+      await this.citizens.remove(citizens);
+    });
+  }
+
   /** Persist the crises of a house (what made inhabitants leave, see RunMonthlyDepartures.js) with its population after the departures. */
   async saveDepartures(instanceId, { departures, repopulationBans, pop }) {
     if (!instanceId) return;

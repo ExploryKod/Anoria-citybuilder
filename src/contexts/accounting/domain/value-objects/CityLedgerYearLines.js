@@ -31,6 +31,7 @@
  * @property {number} imports
  * @property {number} loanInterest
  * @property {number} loanRepayment
+ * @property {number} stateArrearsPaid
  * @property {number} carryForwardExpense
  * @property {number} totalExpenses
  * @property {number} balance
@@ -71,6 +72,7 @@ export function createEmptyCityLedgerYearLines(year = 0) {
     imports: 0,
     loanInterest: 0,
     loanRepayment: 0,
+    stateArrearsPaid: 0,
     carryForwardExpense: 0,
     totalExpenses: 0,
     balance: 0,

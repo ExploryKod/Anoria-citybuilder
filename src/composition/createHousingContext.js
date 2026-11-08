@@ -15,6 +15,8 @@ import {
   residentialGroupForHouseType,
 } from '../contexts/housing/domain/policies/GroupSkillPolicy.js';
 import { computeHouseCitizenComposition } from '../contexts/housing/domain/policies/HouseCitizenCompositionPolicy.js';
+import { requireActiveHamletId } from '../core/persistence/hamlet/hamletSession.js';
+import { BUILDING_KIND_HOUSE, resolveBuildingKind } from '../shared/building-identity/index.js';
 import { getOrCreateCitizenRegistry } from './citizenRegistry.js';
 import { EvolveHealthOfHouses } from '../contexts/housing/application/commands/health/EvolveHealthOfHouses.js';
 import { DescribeHouseHealth } from '../contexts/housing/application/queries/DescribeHouseHealth.js';
@@ -99,6 +101,21 @@ export function createHousingContext({ housingBuildingRepository } = {}) {
     /** How many citizens of the hamlet are ill and how gravely, in the body and in the mind (the HUD's four counts): a light reading, cheap enough for every turn. */
     async describeIllness() {
       return describeHouseHealth.illnessOfHamlet();
+    },
+
+    /**
+     * The people in a building: the residents of a house, the workers of a workplace (those whose job is there).
+     * @param {{ instanceId: string, type: string }} row
+     */
+    async citizensInside(row) {
+      const byHouse = await citizens.forHamlet(requireActiveHamletId());
+      if (resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE) return byHouse.get(row.instanceId) ?? [];
+      return [...byHouse.values()].flat().filter((citizen) => citizen.workplaceId === row.instanceId);
+    },
+
+    /** Citizens who died in an accident leave the game, with their place in their house. */
+    async killCitizens(dead) {
+      return housingBuildingRepositoryImpl.removeDeadCitizens(dead);
     },
 
     async growHousePopulation(houseId, monthIndex, options = {}) {

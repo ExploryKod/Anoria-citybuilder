@@ -27,6 +27,8 @@
  * entries booked when due).
  */
 
+import { STATE_ARREARS_KINDS, stateArrearsTypesOf } from './StateArrearsCatalog.js';
+
 /** A company's or a household's money: its account at a bank (in the PCG, 512 "Banques"). */
 const BANK = '512';
 /**
@@ -98,8 +100,18 @@ const publicEntry = (legs, label, tone, detail = undefined) => {
   return Object.freeze({ ...m57, tone, journal: 'BQ', plans: Object.freeze({ m57 }) });
 };
 
+/**
+ * The State's arrears (StateArrearsCatalog.js), one family of types per kind: what the State owes and pays later (a payment out of the Treasury against 401, M57 only).
+ * @type {Record<string, PcgJournalEntry>}
+ */
+const STATE_ARREARS_PAYMENTS = Object.fromEntries(Object.entries(STATE_ARREARS_KINDS).map(([kind, facts]) => [
+  stateArrearsTypesOf(kind).settlement,
+  publicEntry(outflow('401'), 'Fournisseurs', 'personnel', `${facts.label} impayés réglés par l’État`),
+]));
+
 /** The lines whose type is exactly this. */
 const BY_TYPE = Object.freeze({
+  ...STATE_ARREARS_PAYMENTS,
   // Classe 1 — capitaux et emprunts
   // The city's starting funds are its dotations (1021) in the M57 chart; a company's capital is 101.
   capital_funds: entry(inflow('101'), 'Capital', 'capital', false, undefined, publicVariant(inflow('1021'), 'Dotations')),
@@ -116,6 +128,12 @@ const BY_TYPE = Object.freeze({
   aid_loan_repayment_received: entry(inflow('274'), 'Prêts', 'loan-repayment', false, undefined, publicVariant(inflow('274'), 'Prêts', 'Prêt à une entreprise remboursé')),
   aid_interest_paid: entry(outflow('6611'), 'Intérêts des emprunts et dettes', 'financial', false, 'Intérêts d’un prêt de la ville'),
   aid_interest_received: entry(inflow('7626'), 'Revenus des prêts', 'sales', false, undefined, publicVariant(inflow('7626'), 'Revenus des prêts', 'Intérêts d’un prêt à une entreprise')),
+  // The city sells shares it holds in a company to a private holder (the property company), at what they cost it: cash in against its holding (261); the buyer's cash out against its own.
+  stake_sold: publicEntry(inflow('261'), 'Titres de participation', 'capital', 'Parts d’une entreprise cédées par la ville'),
+  stake_bought: entry(outflow('261'), 'Titres de participation', 'capital', false, 'Parts d’une entreprise achetées à la ville'),
+  // The dividend of a company to a private shareholder (the city's has its own types above).
+  private_dividend_paid: entry(outflow('457'), 'Associés — dividendes à payer', 'financial', false, 'Dividendes versés à un actionnaire privé'),
+  private_dividend_received: entry(inflow('761'), 'Produits des participations', 'sales', false, 'Dividendes reçus d’une entreprise dont on est actionnaire'),
   state_dividend_paid: entry(outflow('457'), 'Associés — dividendes à payer', 'financial', false, 'Dividendes versés à la ville actionnaire'),
   state_dividend_received: entry(inflow('761'), 'Produits des participations', 'sales', false, undefined, publicVariant(inflow('761'), 'Produits des participations', 'Dividendes d’une entreprise dont la ville est actionnaire')),
   // A company the player demolishes is liquidated (see LiquidateDemolishedBuilding.js): its stock is sold off, what its creditors left of its cash goes back to the city
@@ -276,6 +294,11 @@ const BY_PREFIX = Object.freeze([
  * @type {Readonly<Record<string, { debit: string, credit: string, label: string, tone: JournalTone, detail: string, household?: boolean }>>}
  */
 const OPERATIONS_DIVERSES = Object.freeze({
+  // What the State could not pay when it fell due is booked all the same against what it owes (401); when the one it owes is gone, the debt is released (7718).
+  ...Object.fromEntries(Object.entries(STATE_ARREARS_KINDS).flatMap(([kind, facts]) => [
+    [stateArrearsTypesOf(kind).payable, Object.freeze({ debit: facts.expenseAccount, credit: '401', label: facts.label, tone: 'personnel', detail: `${facts.label} dus par l’État, pas encore payés` })],
+    [stateArrearsTypesOf(kind).abandonment, Object.freeze({ debit: '401', credit: '7718', label: 'Abandons de créances obtenus', tone: 'sales', detail: `${facts.label} dus à un bâtiment disparu : la dette est abandonnée` })],
+  ])),
   od_stock_up_merchandise: Object.freeze({ debit: '37', credit: '6037', label: 'Variation des stocks de marchandises', tone: 'purchase', detail: 'Le stock a grandi : une partie des achats n’est pas encore consommée' }),
   od_stock_down_merchandise: Object.freeze({ debit: '6037', credit: '37', label: 'Variation des stocks de marchandises', tone: 'purchase', detail: 'Le stock a baissé : des achats d’avant sont consommés' }),
   od_stock_up_production: Object.freeze({ debit: '35', credit: '713', label: 'Production stockée', tone: 'sales', detail: 'Le stock de ce qui est fabriqué a grandi' }),

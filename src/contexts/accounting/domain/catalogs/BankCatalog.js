@@ -76,6 +76,8 @@ export const HOUSEHOLD_SAVINGS_RATE_SENSITIVITY = 2;
 export const LOAN_RATE_SPREADS = Object.freeze({
   bank: 0.06,
   commercial: 0.08,
+  // A loan from a partner city (ExternalLenderCatalog.js, which adds its own spread): foreign money, dearer than the bank's.
+  external: 0.07,
 });
 
 /**
@@ -83,9 +85,9 @@ export const LOAN_RATE_SPREADS = Object.freeze({
  * borrows while it loses money is a riskier debtor. A status not listed here throws.
  */
 export const HEALTH_RATE_PENALTIES = Object.freeze({
-  excellent: Object.freeze({ bank: 0, commercial: 0 }),
-  healthy: Object.freeze({ bank: 0, commercial: 0 }),
-  warning: Object.freeze({ bank: 0.04, commercial: 0.05 }),
-  deficit: Object.freeze({ bank: 0.04, commercial: 0.05 }),
-  critical: Object.freeze({ bank: 0.10, commercial: 0.12 }),
+  excellent: Object.freeze({ bank: 0, commercial: 0, external: 0 }),
+  healthy: Object.freeze({ bank: 0, commercial: 0, external: 0 }),
+  warning: Object.freeze({ bank: 0.04, commercial: 0.05, external: 0.04 }),
+  deficit: Object.freeze({ bank: 0.04, commercial: 0.05, external: 0.04 }),
+  critical: Object.freeze({ bank: 0.10, commercial: 0.12, external: 0.10 }),
 });

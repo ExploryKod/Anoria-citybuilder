@@ -1,0 +1,9 @@
+<svg viewBox="0 0 64 64" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+<!-- A building about to collapse: a cracked wall and the orange warning badge. -->
+<rect width="64" height="64" rx="12" ry="12" fill="#5d4037"/>
+<path fill="#d7ccc8" d="M12 52V22l20-12 20 12v30z"/>
+<path fill="none" stroke="#5d4037" stroke-width="4" stroke-linejoin="round" d="M30 12l-4 14 8 6-6 12 4 8"/>
+<circle cx="47" cy="47" r="15" fill="#f57c00" stroke="#fff" stroke-width="3"/>
+<path stroke="#fff" stroke-width="4.5" stroke-linecap="round" d="M47 38v10"/>
+<circle cx="47" cy="54" r="2.6" fill="#fff"/>
+</svg>

@@ -29,7 +29,8 @@ export function spriteOf(status) {
 
 /** @param {import('three').Object3D} mesh */
 function isStaffedAndConnected(mesh) {
-  return mesh?.userData?.isUnderstaffed === false && mesh?.userData?.hasRoadAccess !== false;
+  // A building about to collapse shows only its collapse alert (scene.js refreshEmploymentPresentation).
+  return mesh?.userData?.isUnderstaffed === false && mesh?.userData?.hasRoadAccess !== false && mesh?.userData?.collapseRisk !== true;
 }
 
 /** A quantity distributor sells a depleting stock (a market); a flag one only covers houses (a fire station). */

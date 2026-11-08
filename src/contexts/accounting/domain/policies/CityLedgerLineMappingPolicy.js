@@ -51,12 +51,14 @@ const LINES = Object.freeze({
   imports: { out: ['607'] },
   loanInterest: { out: ['66111'] },
   loanRepayment: { out: ['1641'] },
+  // What the State pays later of what it could not pay when it fell due (StateArrearsCatalog.js): the arrears are an expense of the month they were booked in, paid in cash now.
+  stateArrearsPaid: { out: ['401'] },
 });
 
 const INCOME_LINES = ['initialFunds', 'incomeTax', 'payrollTax', 'vat', 'corporateTaxRevenue', 'exports', 'customsImport', 'socialContributions', 'centralBankProfit', 'bankPremiums', 'benefactorGifts', 'loanCapital'];
 const EXPENSE_LINES = [
   'construction', 'maintenance', 'salary', 'unemploymentBenefit', 'sicknessBenefit', 'serviceSubsidy', 'companySubsidy', 'housingSubsidy', 'repairs', 'commercialRoutes',
-  'contributions', 'imports', 'loanInterest', 'loanRepayment',
+  'contributions', 'imports', 'loanInterest', 'loanRepayment', 'stateArrearsPaid',
 ];
 
 /**
@@ -114,6 +116,7 @@ export function cityLedgerYearLinesFromCashFlows(year, flows, { balanceForYear, 
     imports: euros('imports'),
     loanInterest: euros('loanInterest'),
     loanRepayment: euros('loanRepayment'),
+    stateArrearsPaid: euros('stateArrearsPaid'),
     carryForwardExpense: Math.round(carryForwardExpense),
     totalExpenses: Math.round(totalExpenses),
     balance: Math.round(balanceForYear),

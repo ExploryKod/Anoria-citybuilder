@@ -122,6 +122,7 @@ export async function syncPopRailHud(gameUI) {
     gameUI.updateDeaths?.(byCause.famine);
     gameUI.updateSickDeaths?.(byCause.health);
     gameUI.updateSuicides?.(byCause.suicide);
+    gameUI.updateAccidents?.(byCause.accident);
   } catch (err) {
     console.warn('[syncPopRailHud] deaths:', err);
   }

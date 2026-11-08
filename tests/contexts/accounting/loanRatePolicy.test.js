@@ -100,3 +100,11 @@ describe('what a State can owe', () => {
     expect(debtCeilingOf({ debt: 15000, gdp: 20000 }).headroom).toBe(0);
   });
 });
+
+describe('a loan from a partner city', () => {
+  test('its rate is the external loan\'s, plus the spread its lender asks', () => {
+    const base = computeLoanRate({ loanType: 'external', financialHealthStatus: 'healthy', policyRate: 0.1 });
+    expect(base).toBeCloseTo(0.17);
+    expect(computeLoanRate({ loanType: 'external', financialHealthStatus: 'healthy', policyRate: 0.1, lenderSpread: 0.03 })).toBeCloseTo(0.2);
+  });
+});

@@ -1,7 +1,7 @@
 import { describe, test, expect } from '@jest/globals';
 import { asksPublicAid, formatProblemsModel, PUBLIC_AID_REQUEST_EMOJI } from '../../../../src/presentation/dom/info/presenters/formats/problemsInfoFormat.js';
 
-const hubRow = (extra = {}) => ({ type: 'Windmill-001', roads: 1, ...extra });
+const hubRow = (extra = {}) => ({ type: 'Windmill-001', kind: 'windmill', solidity: 100, roads: 1, ...extra });
 const vmOf = (buildingRow) => ({ buildingRow, buildingType: buildingRow.type });
 
 describe('the Problèmes tab: what stands in the way of a building, grouped, each line with its emoji', () => {
@@ -21,6 +21,18 @@ describe('the Problèmes tab: what stands in the way of a building, grouped, eac
 
     expect(asksPublicAid(row)).toBe(false);
     expect(formatProblemsModel(vmOf(row)).groups.map((group) => group.title)).toEqual(['Infrastructure', 'Achats']);
+  });
+
+  test('a worn-out building says so under Solidité, the same alert as the map\'s icon', () => {
+    const { groups } = formatProblemsModel(vmOf(hubRow({ solidity: 10 })));
+    expect(groups.map((group) => group.title)).toEqual(['Solidité']);
+    expect(groups[0].lines[0].emoji).toBe('🏚️');
+  });
+
+  test('each alert icon of the map has its line: no worker, no resource, an input missing, a full hub', () => {
+    const row = hubRow({ employees: { worker_need: 2, worker: 0 } });
+    const vm = { ...vmOf(row), noResource: true, turn: 0, supplyView: { type: 'Windmill-001', activityShortfall: { wheat: true }, stocks: {}, maxStock: 0 } };
+    expect(formatProblemsModel(vm).groups.map((group) => group.title)).toEqual(['Personnel', 'Ressources', 'Production', 'Stockage']);
   });
 
   test('nothing in the way: no group at all', () => {

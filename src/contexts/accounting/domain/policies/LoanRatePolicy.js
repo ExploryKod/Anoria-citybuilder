@@ -139,7 +139,7 @@ export function savingsRateOf(policyRate) {
  * @param {{ loanType: 'bank' | 'commercial', financialHealthStatus: 'excellent' | 'healthy' | 'warning' | 'deficit' | 'critical', policyRate: number }} params
  * @returns {number} the loan's rate, per year
  */
-export function computeLoanRate({ loanType, financialHealthStatus, policyRate }) {
+export function computeLoanRate({ loanType, financialHealthStatus, policyRate, lenderSpread = 0 }) {
   if (!Object.hasOwn(LOAN_RATE_SPREADS, loanType)) {
     throw new Error(`[loans] "${loanType}" is not a type of loan (${Object.keys(LOAN_RATE_SPREADS).join(', ')})`);
   }
@@ -147,18 +147,20 @@ export function computeLoanRate({ loanType, financialHealthStatus, policyRate })
     throw new Error(`[loans] "${financialHealthStatus}" is not a financial health status (${Object.keys(HEALTH_RATE_PENALTIES).join(', ')})`);
   }
   assertRate(policyRate, 'the policy rate');
-  return policyRate + LOAN_RATE_SPREADS[loanType] + HEALTH_RATE_PENALTIES[financialHealthStatus][loanType];
+  assertRate(lenderSpread, 'the lender\'s spread');
+  return policyRate + LOAN_RATE_SPREADS[loanType] + HEALTH_RATE_PENALTIES[financialHealthStatus][loanType] + lenderSpread;
 }
 
 /**
  * @param {'excellent' | 'healthy' | 'warning' | 'deficit' | 'critical'} financialHealthStatus
  * @param {number} policyRate the policy rate in force
- * @returns {{ bank: number, commercial: number }} each type's rate, per year
+ * @returns {{ bank: number, commercial: number, external: number }} each type's rate, per year (an external lender adds its own spread)
  */
 export function computeLoanRatesByType(financialHealthStatus, policyRate) {
   return {
     bank: computeLoanRate({ loanType: 'bank', financialHealthStatus, policyRate }),
     commercial: computeLoanRate({ loanType: 'commercial', financialHealthStatus, policyRate }),
+    external: computeLoanRate({ loanType: 'external', financialHealthStatus, policyRate }),
   };
 }
 

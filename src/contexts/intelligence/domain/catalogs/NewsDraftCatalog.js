@@ -216,12 +216,17 @@ const MILESTONE_DRAFTS = {
   'state-unpaid': ({ items }) => {
     if (!Array.isArray(items) || items.length === 0) throw new Error('[news] the State\'s unpaid payments are announced with what stayed unpaid (items)');
     const total = items.reduce((sum, item) => sum + item.amount, 0);
-    const detail = items.map((item) => `${item.label.toLowerCase()} : ${item.amount.toLocaleString('fr-FR')} €`).join(', ');
+    const listOf = (list) => list.map((item) => `${item.label.toLowerCase()} : ${item.amount.toLocaleString('fr-FR')} €`).join(', ');
+    // What the State still owes (it will pay it, the households first, as soon as its Treasury allows) is told apart from what is lost for good.
+    const carried = items.filter((item) => item.carried);
+    const lost = items.filter((item) => !item.carried);
     return {
       sourceId: 'city',
       categoryId: 'announcement',
       title: 'Le Trésor est vide',
-      body: `Ce mois-ci, l'État n'a pas pu payer ${total.toLocaleString('fr-FR')} € de ce qu'il devait (${detail}) : les ménages et les entreprises concernés n'ont pas reçu leur dû. `
+      body: `Ce mois-ci, l'État n'a pas pu payer ${total.toLocaleString('fr-FR')} € de ce qu'il devait : les ménages et les entreprises concernés n'ont pas reçu leur dû. `
+        + (carried.length > 0 ? `Reste dû, et réglé dès que le Trésor le permet (les ménages d'abord) : ${listOf(carried)}. ` : '')
+        + (lost.length > 0 ? `Perdu, jamais rattrapé : ${listOf(lost)}. ` : '')
         + 'L\'État ne dépense pas plus que son Trésor ne contient. Il faut le remplir : lever des impôts, vendre à l\'étranger, ou emprunter à la banque.',
       teaser: 'Les caisses de l\'État sonnent creux…',
       reliability: 'trusted',

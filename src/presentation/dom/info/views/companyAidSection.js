@@ -66,7 +66,43 @@ export async function companyAidSection({ accounting, buildingId }) {
       }
     });
 
-    section.replaceChildren(el('h4', 'company-aid-title', 'Aide de la ville'), held, form, amount, preview, error, apply);
+    // The city may sell the shares it holds to the property company, at what they cost it: the buyer then gets their dividends.
+    const sale = [];
+    if (company.shareholderShares > 0) {
+      const sold = el('input', 'company-aid-field');
+      sold.type = 'number';
+      sold.min = '0.01';
+      sold.step = 'any';
+      sold.value = String(Math.min(1, Math.floor(company.shareholderShares * 100) / 100));
+      sold.inputMode = 'decimal';
+      sold.setAttribute('aria-label', 'Parts à vendre');
+      const saleError = el('p', 'building-finance-note company-aid-error');
+      saleError.hidden = true;
+      const sell = el('button', 'company-aid-apply', 'Vendre à la société propriétaire');
+      sell.type = 'button';
+      const refusals = {
+        no_buyer: 'Aucune société propriétaire ne peut acheter.',
+        buyer_insufficient_funds: 'La société propriétaire n’a pas assez d’argent pour ces parts.',
+        not_enough_shares: 'L’État ne détient pas autant de parts.',
+      };
+      sell.addEventListener('click', async () => {
+        saleError.hidden = true;
+        try {
+          const outcome = await accounting.sellCityStake({ buildingId, shares: Number(sold.value) });
+          if (outcome.sold) await render();
+          else {
+            saleError.textContent = refusals[outcome.reason];
+            saleError.hidden = false;
+          }
+        } catch (failure) {
+          saleError.textContent = failure.message.replace(/^\[stake\]\s*/, '');
+          saleError.hidden = false;
+        }
+      });
+      sale.push(el('p', 'building-finance-note', `L'État détient ${Math.round(company.shareholderShares * 100) / 100} parts de cette entreprise.`), sold, saleError, sell);
+    }
+
+    section.replaceChildren(el('h4', 'company-aid-title', 'Aide de la ville'), held, form, amount, preview, error, apply, ...sale);
     return true;
   };
   return (await render()) ? section : null;

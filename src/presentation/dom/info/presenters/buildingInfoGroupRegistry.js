@@ -15,6 +15,7 @@ import {
   CONTEXT_MESSAGES_TAB_SPECS,
   WORKPLACE_CONTEXT_TAB_SPECS,
 } from '../buildingInfoSharedTabs.js';
+import { formatSolidityModel } from './formats/solidityFormat.js';
 import { formatServicesModel } from './formats/servicesInfoFormat.js';
 import { renderBuildingStateView } from '../views/buildingStateTabView.js';
 import {
@@ -107,7 +108,15 @@ const PROBLEMS_TAB_SPEC = Object.freeze({
  */
 const stateTabSpec = ({ state, staff }) => ({
   id: BUILDING_INFO_TAB_IDS.state,
-  format: (vm) => ({ state: state(vm), staff: staff(vm), services: formatServicesModel(vm) }),
+  format: (vm) => ({ state: state(vm), staff: staff(vm), services: formatServicesModel(vm), solidity: formatSolidityModel(vm) }),
+  render: (container, model) => renderBuildingStateView(container, model),
+});
+
+/** The État tab of a building that has nothing but its solidity to say about its state (a house, a generic building): hidden for one with no bar. */
+const SOLIDITY_ONLY_STATE_TAB_SPEC = Object.freeze({
+  id: BUILDING_INFO_TAB_IDS.state,
+  isVisible: (vm) => formatSolidityModel(vm) !== null,
+  format: (vm) => ({ state: null, staff: null, services: null, solidity: formatSolidityModel(vm) }),
   render: (container, model) => renderBuildingStateView(container, model),
 });
 
@@ -152,6 +161,8 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         format: (vm) => ({ land: vm.land }),
         render: (container, model) => renderLandPricesTab(container, model),
       },
+      SOLIDITY_ONLY_STATE_TAB_SPEC,
+      PROBLEMS_TAB_SPEC,
       // What the house needs to evolve to its next level.
       { id: BUILDING_INFO_TAB_IDS.services, label: '🌱 Évolution' },
       ...CONTEXT_MESSAGES_TAB_SPECS,
@@ -247,6 +258,7 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
     formatLayoutHeader: formatServiceLayoutHeader,
     tabs: [
       stateTabSpec({ state: formatServiceOverviewModel, staff: formatServiceStaffModel }),
+      PROBLEMS_TAB_SPEC,
       ...WORKPLACE_CONTEXT_TAB_SPECS,
       FINANCE_TAB_SPEC,
     ],
@@ -260,6 +272,8 @@ export const BUILDING_INFO_GROUP_DEFS = Object.freeze({
         format: formatGenericFoyerModel,
         render: (container, model) => renderKvPanelView(container, model),
       },
+      SOLIDITY_ONLY_STATE_TAB_SPEC,
+      PROBLEMS_TAB_SPEC,
       ...COMMON_BUILDING_INFO_TAB_SPECS,
       FINANCE_TAB_SPEC,
     ],

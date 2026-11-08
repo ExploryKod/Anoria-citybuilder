@@ -8,13 +8,15 @@ function tabIds(groupId) {
 }
 
 describe('buildingInfoGroupRegistry tabs', () => {
-  test('house exposes foyer, resources (stocks), its own business (activity) and common context tabs (no more Régime — see messagesInfoFormat.js)', () => {
+  test('house exposes foyer, resources (stocks), its own business (activity), its État (solidity) and common context tabs (no more Régime — see messagesInfoFormat.js)', () => {
     expect(tabIds(BUILDING_INFO_GROUPS.house)).toEqual([
       BUILDING_INFO_TAB_IDS.foyer,
       BUILDING_INFO_TAB_IDS.stocks,
       BUILDING_INFO_TAB_IDS.activity,
       BUILDING_INFO_TAB_IDS.residents,
       BUILDING_INFO_TAB_IDS.prices,
+      BUILDING_INFO_TAB_IDS.state,
+      BUILDING_INFO_TAB_IDS.problems,
       BUILDING_INFO_TAB_IDS.services,
       BUILDING_INFO_TAB_IDS.messages,
       BUILDING_INFO_TAB_IDS.finance,

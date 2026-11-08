@@ -13,6 +13,8 @@ import { MONTHS_PER_YEAR } from '../shared/time/TimeCalendar.js';
 import { LINE_LABELS } from '../contexts/accounting/application/services/DebtLines.js';
 import { tickPerfEnabled } from '../core/diagnostics/tickPerf.js';
 import { DexieCityTradeRepository } from '../contexts/geography/infrastructure/dexie/DexieCityTradeRepository.js';
+import { STATE_ARREARS_KINDS } from '../shared/accounting-catalog/StateArrearsCatalog.js';
+import { getOrCreateGameplayContext } from './createGameplayContext.js';
 import { getCumulativeDeaths } from './gameplayMortalityState.js';
 
 /**
@@ -83,6 +85,8 @@ export async function processGameTurnBudget({ city, buildings, time, totalPop })
     const partnerIds = (await new DexieCityTradeRepository().getActiveRelations()).map((relation) => relation.cityId);
     const gift = await getOrCreateAccountingContext().offerBenefactorGift({ time, partnerIds });
     if (gift) await getOrCreateIntelligenceContext().announceMilestone({ milestoneId: 'benefactor-gift', turn: time, params: gift });
+    // The buildings whose upkeep was not paid this month wear, and the ones worn out may collapse (docs/gameplay/PLAN_COLLAPSE.md).
+    await getOrCreateGameplayContext().wearBuildings.execute({ neglected: result.neglectedBuildings ?? [] });
     // A bank whose losses ate its capital keeps running, and the player is told once a month what he can do (recapitalise it, or liquidate it).
     const solvency = await getOrCreateAccountingContext().getBankSolvency();
     // Before that, the supervisor: a bank thin on capital is warned, then has its lending frozen, once a month, so the player can act before it is insolvent.
@@ -117,7 +121,8 @@ export async function processGameTurnBudget({ city, buildings, time, totalPop })
       params: {
         items: Object.entries(result.stateUnpaid).map(([kind, amount]) => {
           if (!LINE_LABELS[kind]) throw new Error(`[treasury] the State's payment "${kind}" has no label: what stayed unpaid cannot be announced`);
-          return { label: LINE_LABELS[kind], amount };
+          // Carried: what the State will still pay (its arrears, or the capital a new company waits for); otherwise the payment is lost for good.
+          return { label: LINE_LABELS[kind], amount, carried: Boolean(STATE_ARREARS_KINDS[kind]) || kind === 'company_capital_paid' };
         }),
       },
     });

@@ -11,6 +11,8 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { AnimationMixer } from 'three';
 import {applyHoverColor, resetHoveredObject, resetObjectColor} from './meshs/meshUtils.js';
+import { instanceIdFromHouseRow } from '../../shared/building-identity/index.js';
+import { solidityOf, solidityStatusOf } from '../../shared/solidity/SolidityPolicy.js';
 import { resolveIconAppearance, STATUS_ICON_DEFAULTS } from './meshs/statusIconAnchors.js';
 import { textures, whenTexturesLoaded } from './meshs/data.js'
 import {
@@ -1428,6 +1430,12 @@ export function createScene(_gameStore, assetManager, deps) {
         } catch (error) {
             console.warn('[scene.js] Error reading no-resource buildings:', error);
         }
+        // The buildings worn out by missing upkeep (docs/gameplay/PLAN_COLLAPSE.md): their alert shows whether or not they are workplaces.
+        const wornBuildingIds = new Set();
+        for (const row of await listAllBuildingRows()) {
+            const solidity = solidityOf(row);
+            if (solidity !== null && solidityStatusOf(solidity) !== 'sound') wornBuildingIds.add(instanceIdFromHouseRow(row));
+        }
         const noWorkSpriteColor = 0xFF0000;
         const noWorkBackgroundColor = 0xFFE8E8;
 
@@ -1450,6 +1458,24 @@ export function createScene(_gameStore, assetManager, deps) {
                 // same rule as the no-work icon below: understaffed = no worker at all.
                 mesh.userData.isUnderstaffed = understaffed.has(instanceId);
                 mesh.userData.applyStaffing?.(!mesh.userData.isUnderstaffed);
+
+                // The collapse alert outranks every other status (docs/gameplay/PLAN_COLLAPSE.md): a worn-out building shows it alone, and the activity sprites,
+                // which only show on a staffed, connected building, are told it is not (roleStatusSprites.js).
+                const collapseSprite = mesh.getObjectByName('collapse-risk');
+                mesh.userData.collapseRisk = wornBuildingIds.has(instanceId);
+                if (mesh.userData.collapseRisk) {
+                    for (const name of ['no-road', 'no-work', 'no-resource']) assetManager.removeStatusSprite(mesh, name);
+                    if (collapseSprite) {
+                        collapseSprite.visible = mapFilterOn('alerts');
+                    } else {
+                        const collapseIcon = resolveIconAppearance(
+                            mesh, 'collapse-risk', STATUS_ICON_DEFAULTS['collapse-risk'].position, STATUS_ICON_DEFAULTS['collapse-risk'].scale
+                        );
+                        assetManager.setStatusSprite(mesh, textures['collapse-risk'], 'collapse-risk', collapseIcon.scale, collapseIcon.position, mapFilterOn('alerts'));
+                    }
+                    continue;
+                }
+                if (collapseSprite) assetManager.removeStatusSprite(mesh, 'collapse-risk');
 
                 // Every workplace (a building the catalog gives staff to hire) follows the same status rules —
                 // no type is named here, only what the catalog says the building is.
