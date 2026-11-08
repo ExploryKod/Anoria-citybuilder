@@ -29,9 +29,10 @@ describe('constructionAccountOf — the account of what the city builds', () => 
   test('the legs the journal is given balance, and the journal books them', () => {
     const legs = constructionLegs('261', 30);
 
-    expect(legs).toEqual([{ account: '261', debit: 3000, credit: 0 }, { account: '512', debit: 0, credit: 3000 }]);
+    // The State pays from its account at its central bank (515).
+    expect(legs).toEqual([{ account: '261', debit: 3000, credit: 0 }, { account: '515', debit: 0, credit: 3000 }]);
     expect(() => assertBalanced(legs, 'construction')).not.toThrow();
     expect(entryLegsOf({ type: 'construction', amount: 30, accountBuildingId: null, legs }).legs).toEqual(legs);
-    expect(constructionLegs('261', 30, true)[0]).toEqual({ account: '512', debit: 3000, credit: 0 });
+    expect(constructionLegs('261', 30, true)[0]).toEqual({ account: '515', debit: 3000, credit: 0 });
   });
 });

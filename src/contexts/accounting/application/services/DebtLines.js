@@ -55,6 +55,8 @@ export const LINE_LABELS = Object.freeze({
   liquidation_surplus_received: 'Capital rendu par une entreprise liquidée',
   aid_loan_repaid: 'Prêt de la ville remboursé',
   aid_loan_repayment_received: 'Prêt à une entreprise remboursé',
+  // The capital the State pays a new company (its founding capital, with the working capital in the forms the aid policy sets): a company waits for it when the Treasury is short.
+  company_capital_paid: 'Fonds propres des entreprises nouvelles',
 });
 
 /**
@@ -62,9 +64,13 @@ export const LINE_LABELS = Object.freeze({
  * @param {{ recordLedgerEntry: Function }} deps
  * @param {{ kind: string, amount: number, holder: string | null, counterparty: string | null, accountKind?: string | null, flow?: string | null, legs?: Array<object>, resource?: string }} line
  * @param {{ time: number, key: string, description: string, buildingInstanceId: string, timeInfo: { year: number, monthIndex: number } }} written
- * @param {{ refuseDuplicate?: boolean }} [options] `refuseDuplicate`: a line that was already written is a defect, not a month already settled (the liquidation, once)
+ * @param {{ refuseDuplicate?: boolean, stateMayBeShort?: boolean }} [options] `refuseDuplicate`: a line that was already written is a defect, not a month already settled (the
+ *   liquidation, once). `stateMayBeShort`: the line is a payment the State may not be able to make (its Treasury holds less): refused, it is not written and the call says
+ *   so (false) instead of throwing, so the caller leaves it unpaid and skips the other side of its flow; any other refusal is a defect. Without it, a Treasury that cannot
+ *   pay is an error naming the line: a payment that must be made (a liquidation) stops there.
+ * @returns {Promise<boolean>} true when the line is written (or was already), false when the State could not pay it
  */
-export async function recordLine(deps, line, { time, key, description, buildingInstanceId, timeInfo }, { refuseDuplicate = false } = {}) {
+export async function recordLine(deps, line, { time, key, description, buildingInstanceId, timeInfo }, { refuseDuplicate = false, stateMayBeShort = false } = {}) {
   // A line that is one side of a flow between accounts names the flow (null when the other side is booked elsewhere): the other account books its own écriture
   // of it with the same transactionId, so the two can be set against one another. A writer that forgets is a defect.
   if (line.flow === undefined && hasCounterpart(line.kind)) {
@@ -84,11 +90,18 @@ export async function recordLine(deps, line, { time, key, description, buildingI
     // The legs of an écriture with more than two (a payslip that withholds); the journal gives the others their two.
     legs: line.legs ?? null,
     transactionId: line.flow ? `${timeInfo.year}:${timeInfo.monthIndex}:${line.flow}` : null,
+    // A line of a loan names its loan: the portfolio reads the principal and the schedule from it.
+    ...(line.loanId ? { loanId: line.loanId } : {}),
   });
+  if (!result.recorded && result.reason === 'treasury_insufficient') {
+    if (stateMayBeShort) return false;
+    throw new Error(`[treasury] Le Trésor de l'État ne peut pas payer ${line.amount} € (${description}) : l'État ne dépense pas plus que son compte ne contient.`);
+  }
   // A month already settled is not charged again; any other refusal is a defect, not a skipped line.
   if (!result.recorded && (refuseDuplicate || result.reason !== 'duplicate_business_key')) {
     throw new Error(`[producer] the ${line.kind} line for ${description} was not recorded: ${result.reason}`);
   }
+  return true;
 }
 
 /**

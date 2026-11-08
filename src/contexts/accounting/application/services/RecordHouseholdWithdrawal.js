@@ -1,21 +1,19 @@
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Application service — a house takes money back out of its bank: credited to its personal account, debited from
- * the bank's own account. Refused (not thrown) when the house asks for more than it actually has on deposit, or
- * when the bank's own cash can't cover it — a bank that lent most of its deposits out as loans can genuinely run
- * short, the same scoped, visible insolvency as a loan request the bank can't fund (see PretsPanel.js). Each call
- * creates a distinct pair of ledger lines (no businessKey — a one-off player action, not a recurring charge).
+ * Application service — a house takes money back out of its savings: from its savings account (275) to its current account (512), both deposits at the same bank
+ * (docs/gameplay/PLAN_BANK_MONEY.md, step 3): the bank's savings (165) fall and its sight deposits rise by as much, no reserve moves, so the bank never lacks the cash
+ * for it. Refused (not thrown) when the house asks for more than it has saved. Each call creates a distinct pair of ledger lines (no businessKey for the player's own
+ * withdrawal; the household's monthly one carries one).
  */
 export class RecordHouseholdWithdrawal {
   /**
    * @param {object} deps
    * @param {(params: object) => Promise<{ recorded: boolean, reason?: string }>} deps.recordLedgerEntry
    * @param {(houseId: string, bankId: string) => Promise<number>} deps.depositBalanceOf what the house has on deposit at this bank
-   * @param {(bankId: string) => Promise<number>} deps.fundsOf what the bank has in its own account right now
    */
-  constructor({ recordLedgerEntry, depositBalanceOf, fundsOf }) {
-    this.deps = { recordLedgerEntry, depositBalanceOf, fundsOf };
+  constructor({ recordLedgerEntry, depositBalanceOf }) {
+    this.deps = { recordLedgerEntry, depositBalanceOf };
   }
 
   /**
@@ -25,9 +23,10 @@ export class RecordHouseholdWithdrawal {
    * @param {string} params.bankId
    * @param {number} params.amount
    * @param {string} params.description
+   * @param {string} [params.businessKey] set when the withdrawal is the household's own (SettleHouseholdSavings): once a month; none for the player's own
    * @returns {Promise<{ recorded: boolean, skipped: boolean, reason?: string }>}
    */
-  async execute({ turn, houseId, bankId, amount, description }) {
+  async execute({ turn, houseId, bankId, amount, description, businessKey = null }) {
     if (!houseId) throw new Error('[withdrawal] a withdrawal needs its house');
     if (!bankId) throw new Error('[withdrawal] a withdrawal needs its bank');
     const roundedAmount = Math.round(amount);
@@ -38,11 +37,6 @@ export class RecordHouseholdWithdrawal {
     const deposited = await this.deps.depositBalanceOf(houseId, bankId);
     if (deposited < roundedAmount) {
       return { recorded: false, skipped: true, reason: 'insufficient_deposit' };
-    }
-
-    const bankFunds = await this.deps.fundsOf(bankId);
-    if (bankFunds < roundedAmount) {
-      return { recorded: false, skipped: true, reason: 'bank_insufficient_funds' };
     }
 
     // A one-off action of the player: the house and the bank each book their own écriture of it, tied by one flow.
@@ -56,6 +50,7 @@ export class RecordHouseholdWithdrawal {
       accountBuildingId: houseId,
       accountKind: 'particulier',
       counterpartyBuildingId: bankId,
+      ...(businessKey ? { businessKey } : {}),
     });
     if (!houseResult.recorded) {
       return { recorded: false, skipped: true, reason: houseResult.reason };
@@ -69,6 +64,7 @@ export class RecordHouseholdWithdrawal {
       description,
       accountBuildingId: bankId,
       counterpartyBuildingId: houseId,
+      ...(businessKey ? { businessKey: `${businessKey}:bank` } : {}),
     });
     if (!bankResult.recorded) {
       throw new Error(`[withdrawal] the bank's paying line for ${houseId} was not recorded: ${bankResult.reason}`);

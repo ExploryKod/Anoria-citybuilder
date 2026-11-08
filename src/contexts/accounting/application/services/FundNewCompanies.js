@@ -19,23 +19,38 @@ export class FundNewCompanies {
    * @param {() => Promise<Array<object>>} deps.getJournalEntries
    * @param {(params: object) => Promise<{ recorded: boolean, reason?: string }>} deps.recordLedgerEntry
    * @param {() => Promise<{ workingCapitalShare: number, loanShare: number, shareholderShare: number, loanInterestRate: number, interestStartsAfterMonths: number }>} deps.getCompanyAidPolicy the player's policy now
+   * @param {() => Promise<number>} deps.treasuryHeld what the State's account at its central bank holds now, in centimes: the State may not spend more
    */
   constructor(deps) {
+    if (typeof deps.treasuryHeld !== 'function') throw new Error('[founding] FundNewCompanies needs treasuryHeld: the State pays a new company only what its Treasury holds');
     this.deps = deps;
   }
 
-  /** @param {{ time: number }} params the turn the lines are dated by */
+  /**
+   * Every company not funded yet receives its capital from the State, all of it or nothing: the State may not spend more than its Treasury holds, so a company the
+   * Treasury cannot fund whole waits for a month when it can (it is not funded by halves, or the rest would never come: a company counts as funded as soon as it has
+   * any of its capital).
+   * @param {{ time: number }} params the turn the lines are dated by
+   * @returns {Promise<{ waiting: number }>} what the companies still waiting for their capital are owed, in euros
+   */
   async execute({ time }) {
     const timeInfo = this.deps.getTimeInfo(time);
     const monthLabel = `${timeInfo.month} ${timeInfo.year}`;
     const hamletId = requireActiveHamletId();
     const founded = foundedAccountsOf(await this.deps.getJournalEntries());
     const policy = await this.deps.getCompanyAidPolicy();
+    let waiting = 0;
     for (const { buildingId, accountKind, monthlyNeed, stockValue, name } of await this.deps.listFoundingNeeds()) {
       const accountKey = accountKeyOf({ accountBuildingId: buildingId, accountKind });
       if (founded.has(accountKey)) continue;
       const working = splitWorkingCapital(workingCapitalOf(stockValue, policy.workingCapitalShare), policy);
       const capital = foundingCapitalOf(monthlyNeed) + working.participation;
+      // All of it or nothing: the Treasury is read again for each company, since each one funded lowers it.
+      const owed = capital + working.shareholder + working.loan;
+      if (owed > (await this.deps.treasuryHeld())) {
+        waiting += owed;
+        continue;
+      }
       const given = (type, centimes, label, businessType) => ({ turn: time, amount: centimes / 100, buildingInstanceId: buildingId, type, description: `${label} ${name} - ${monthLabel}`, businessKey: `${businessType}:${hamletId}:${accountKey}` });
       if (capital > 0) {
         await this.#record({ ...given('company_capital_paid', capital, 'Fonds propres versés à', 'company_capital_paid'), accountBuildingId: null, counterpartyBuildingId: buildingId });
@@ -52,6 +67,7 @@ export class FundNewCompanies {
         await this.#record({ ...given('aid_loan_received', working.loan, 'Fonds de roulement prêté par la ville à', 'aid_loan_received'), accountBuildingId: buildingId, accountKind, loan });
       }
     }
+    return { waiting: waiting / 100 };
   }
 
   /** A company already funded is not funded again; any other refusal is a defect, not a skipped line. */

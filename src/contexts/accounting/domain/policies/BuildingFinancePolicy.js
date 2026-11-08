@@ -16,7 +16,8 @@
 import { accountKeyOf } from './AccountKeyPolicy.js';
 import { expandYearClosings } from './YearClosingPolicy.js';
 import { postingsOf } from './AccountLedgerPolicy.js';
-import { isEcriture } from './EntryLegsPolicy.js';
+import { isCashAccount, isEcriture } from './EntryLegsPolicy.js';
+import { DEPOSIT_INTEREST_TYPES } from './DepositBalancePolicy.js';
 import { INCOME_STATEMENT, goodOfJournalType, isVariableChargeAccount, pcgOfJournalType, statementLineOfAccount } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 
 const toCentimes = (amount) => Math.round(amount * 100);
@@ -149,10 +150,11 @@ export function cashMovementsOf(entries, buildingId, { accountKind = null } = {}
   for (const entry of entries) {
     if (accountKeyOf(entry) !== accountKey) continue;
     if (!isEcriture(entry.type)) continue;
-    // What moved the cash is the leg on the bank (512): debited is money in, credited is money out. A line with no leg on it (an opération diverse) moved none.
-    const cashLeg = postingsOf(entry).find((leg) => leg.account === '512');
-    if (!cashLeg) continue;
-    const signed = cashLeg.debit - cashLeg.credit;
+    // What moved the cash is the legs on the cash accounts (CASH_ACCOUNTS): debited is money in, credited is money out. A line with no leg on them (an opération
+    // diverse) moved none.
+    const cashLegs = postingsOf(entry).filter((leg) => isCashAccount(leg.account));
+    if (cashLegs.length === 0) continue;
+    const signed = cashLegs.reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
     let item;
     if (entry.type === 'year_closing') {
       item = { account: null, label: 'Années clôturées (résultat net)', detail: null, good: null, tone: 'treasury' };
@@ -356,7 +358,9 @@ export function householdBudgetOf(entries, houseId, { year, month, balance }) {
     } else if (['service_purchase', 'rent_paid', 'income_tax', 'citizen_tax_paid'].includes(entry.type)) services += amount;
     else if (entry.type === 'consumer_purchase') purchases += amount;
     else if (entry.type === 'deposit') depositedOut += amount;
-    else if (entry.type === 'withdrawal' || entry.type === 'household_deposit_interest') returnedIn += amount;
+    else if (entry.type === 'withdrawal' || entry.type === 'deposit_guarantee_received') returnedIn += amount;
+    // The interest on savings is added to the savings, not to the account's cash: it is no part of the month's budget.
+    else if (entry.type === DEPOSIT_INTEREST_TYPES.house || entry.type === 'od_deposit_lost') continue;
     else throw new Error(`[budget] a personal account holds a "${entry.type}" line, which the household budget does not know`);
   }
   const saved = toCentimes(balance);

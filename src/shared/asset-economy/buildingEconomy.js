@@ -940,11 +940,14 @@ export const BUILDING_ECONOMY = {
   // (merchants' tier 2, alongside 'vente-alimentaire' — see socialCategoryCatalog.js), and
   // ProducerChargePolicy.js's isLucrativeBuilding learns to treat a 'finance' requiredSkill
   // as lucrative the same way a resourceRole does, since this building has none to read.
+  // One bank per hamlet: a house's savings, the city's loans and the lender are read from "the" bank of the hamlet (findBankBuildingId). Several banks
+  // need a choice of bank first (whose savings, which lender), so the construction is greyed once one stands.
   'Bank': {
     displayName: 'Banque',
     construction: { price: 150, category: 'markets' },
     employment: { sector: 2, workerNeed: 3, requiredSkill: 'finance' },
     accounting: { maintenance: 6 },
+    maxPerHamlet: 1,
   },
 
   // The insurance building (see docs/plan/assurances.plan.md): a merchants' workplace (the 'assurance' skill, tier 2 of their houses) that holds no goods and,

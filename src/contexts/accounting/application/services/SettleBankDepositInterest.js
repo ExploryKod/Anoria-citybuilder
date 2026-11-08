@@ -1,9 +1,11 @@
 import { buildDepositInterestBusinessKey } from '../../domain/policies/LedgerBusinessKeys.js';
 import { MONTHS_PER_YEAR } from '../../../../shared/time/TimeCalendar.js';
+import { DEPOSIT_INTEREST_TYPES } from '../../domain/policies/DepositBalancePolicy.js';
 
 /**
  * Application service — once a year, when the fiscal year closes, every house with money on deposit is credited the interest its savings earned
- * over the year, paid by the bank that holds it (as a real savings account is credited at the end of the year). Run alongside
+ * over the year, owed by the bank that holds it (as a real savings account is credited at the end of the year). The interest is added to the savings,
+ * not paid in cash: an opération diverse on each side (the house's 275 against 768, the bank's 6615 against 165), and the house withdraws it like the rest. Run alongside
  * SettleProducerCharges (same day, same turn), but kept separate: this is the bank's own relationship with its depositors, not a goods/service
  * sale to settle through that already large pipeline. The lines are dated in the year they credit (its last turn), and written once per house,
  * per bank, per year: the business key refuses a second charge. It runs before SettleProducerCharges, so the bank's interest expense is in its
@@ -16,7 +18,8 @@ export class SettleBankDepositInterest {
    * @param {() => Promise<Array<{ id: string, type: string }>>} deps.listBuildings the hamlet's buildings, for the description's display names
    * @param {(year: number, annualRate: number) => Promise<Array<{ houseId: string, bankId: string, interest: number }>>} deps.listDepositInterests what each (house, bank)
    *   pair earned over the fiscal year at the annual rate, read from the journal (see depositInterestsOf)
-   * @param {() => number} deps.getDepositInterestRate the fraction of the savings paid per year
+   * @param {() => Promise<number>} deps.getDepositInterestRate the fraction of the savings paid per year: the savings rate, read from the policy rate in force
+   *   when the year closes (LoanRatePolicy.savingsRateOf)
    * @param {(buildingType: string) => string | undefined} deps.getBuildingDisplayName the catalog's own name for a building type
    * @param {(params: object) => Promise<{ recorded: boolean, reason?: string }>} deps.recordLedgerEntry
    */
@@ -33,7 +36,7 @@ export class SettleBankDepositInterest {
     const timeInfo = this.deps.getTimeInfo(deliveredTime);
     if (timeInfo.monthIndex !== MONTHS_PER_YEAR - 1) return;
 
-    const interests = await this.deps.listDepositInterests(timeInfo.year, this.deps.getDepositInterestRate());
+    const interests = await this.deps.listDepositInterests(timeInfo.year, await this.deps.getDepositInterestRate());
     if (interests.length === 0) return;
     const buildings = await this.deps.listBuildings();
     const yearLabel = `année ${timeInfo.year}`;
@@ -49,10 +52,10 @@ export class SettleBankDepositInterest {
 
       const houseResult = await this.deps.recordLedgerEntry({
         turn: deliveredTime,
-        type: 'household_deposit_interest',
+        type: DEPOSIT_INTEREST_TYPES.house,
         amount: interest,
         description,
-        businessKey: buildDepositInterestBusinessKey('household_deposit_interest', houseId, bankId, timeInfo.year, timeInfo.monthIndex),
+        businessKey: buildDepositInterestBusinessKey(DEPOSIT_INTEREST_TYPES.house, houseId, bankId, timeInfo.year, timeInfo.monthIndex),
         accountBuildingId: houseId,
         accountKind: 'particulier',
         counterpartyBuildingId: bankId,
@@ -65,10 +68,10 @@ export class SettleBankDepositInterest {
 
       const bankResult = await this.deps.recordLedgerEntry({
         turn: deliveredTime,
-        type: 'deposit_interest_paid',
+        type: DEPOSIT_INTEREST_TYPES.bank,
         amount: interest,
         description,
-        businessKey: buildDepositInterestBusinessKey('deposit_interest_paid', houseId, bankId, timeInfo.year, timeInfo.monthIndex),
+        businessKey: buildDepositInterestBusinessKey(DEPOSIT_INTEREST_TYPES.bank, houseId, bankId, timeInfo.year, timeInfo.monthIndex),
         accountBuildingId: bankId,
         counterpartyBuildingId: houseId,
         transactionId: `deposit_interest:${houseId}:${bankId}:${timeInfo.year}:${timeInfo.monthIndex}`,

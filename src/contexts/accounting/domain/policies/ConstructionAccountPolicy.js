@@ -6,6 +6,7 @@
  */
 
 import { BUILDING_INVESTMENT_MARKERS, REFUND_INVESTMENT_MARKERS, isBuildingInvestment } from './TreasuryFromJournalPolicy.js';
+import { TREASURY_ACCOUNT } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 
 /**
  * @param {{ description: string, refund?: boolean, ownerStands: boolean }} construction `ownerStands`: whether the property company that owns the buildings exists
@@ -19,6 +20,7 @@ export function constructionAccountOf({ description, refund = false, ownerStands
 }
 
 /**
+ * The legs of the city's construction: the State pays it from its account at its central bank (515, its compte au Trésor).
  * @param {string} account the account of the construction
  * @param {number} amount euros, a whole number
  * @param {boolean} refund true for money coming back
@@ -27,6 +29,6 @@ export function constructionAccountOf({ description, refund = false, ownerStands
 export function constructionLegs(account, amount, refund = false) {
   const centimes = Math.round(amount * 100);
   return refund
-    ? [{ account: '512', debit: centimes, credit: 0 }, { account, debit: 0, credit: centimes }]
-    : [{ account, debit: centimes, credit: 0 }, { account: '512', debit: 0, credit: centimes }];
+    ? [{ account: TREASURY_ACCOUNT, debit: centimes, credit: 0 }, { account, debit: 0, credit: centimes }]
+    : [{ account, debit: centimes, credit: 0 }, { account: TREASURY_ACCOUNT, debit: 0, credit: centimes }];
 }

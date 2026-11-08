@@ -13,6 +13,9 @@ import {
 /** The M57 accounts of what came in, and of what went out, for each line. A line may also take off what went the other way (a refund). */
 const LINES = Object.freeze({
   initialFunds: { in: ['1021'] },
+  // The gift of a partner city when the city is out of money (BenefactorGiftCatalog.js), and the premium the banks pay for the deposit guarantee (BankCatalog.js).
+  benefactorGifts: { in: ['1025'] },
+  bankPremiums: { in: ['7588'] },
   incomeTax: { in: ['73111'] },
   // The income tax the households paid, less what the city gave back at the year's close (an advance that was too high): a refund reduces the line it comes
   // from, so the ledger's totals still agree with the treasury.
@@ -25,6 +28,8 @@ const LINES = Object.freeze({
   // What a company owed and paid late reaches the cash against the receivable the city booked (4387 for the contributions, 411 for the tax).
   socialContributions: { in: ['431', '4387'] },
   loanCapital: { in: ['1641'] },
+  // What the central bank earned on refinancing the bank and pays over to the city every January (BankRefinancing.js).
+  centralBankProfit: { in: ['758'] },
   corporateTaxRevenue: { in: ['73118', '411'] },
   // The constructions, and the founding capital the city pays the companies: both are the city's investments, one line; a refund takes off.
   // A building the city holds through the owner (261), its own building (2131) or its roads (2151).
@@ -48,7 +53,7 @@ const LINES = Object.freeze({
   loanRepayment: { out: ['1641'] },
 });
 
-const INCOME_LINES = ['initialFunds', 'incomeTax', 'payrollTax', 'vat', 'corporateTaxRevenue', 'exports', 'customsImport', 'socialContributions', 'loanCapital'];
+const INCOME_LINES = ['initialFunds', 'incomeTax', 'payrollTax', 'vat', 'corporateTaxRevenue', 'exports', 'customsImport', 'socialContributions', 'centralBankProfit', 'bankPremiums', 'benefactorGifts', 'loanCapital'];
 const EXPENSE_LINES = [
   'construction', 'maintenance', 'salary', 'unemploymentBenefit', 'sicknessBenefit', 'serviceSubsidy', 'companySubsidy', 'housingSubsidy', 'repairs', 'commercialRoutes',
   'contributions', 'imports', 'loanInterest', 'loanRepayment',
@@ -88,6 +93,9 @@ export function cityLedgerYearLinesFromCashFlows(year, flows, { balanceForYear, 
     exports: euros('exports'),
     customsImport: euros('customsImport'),
     socialContributions: euros('socialContributions'),
+    centralBankProfit: euros('centralBankProfit'),
+    bankPremiums: euros('bankPremiums'),
+    benefactorGifts: euros('benefactorGifts'),
     loanCapital: euros('loanCapital'),
     carryForwardIncome: Math.round(carryForwardIncome),
     totalIncome: Math.round(totalIncome),

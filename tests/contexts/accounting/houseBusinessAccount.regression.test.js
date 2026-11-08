@@ -15,6 +15,7 @@ const HOUSE = 'house-1';
 function settle(pairs) {
   const journal = [];
   const service = new SettleProducerCharges({
+    borrowFromBank: async () => 0, // no bank: nothing is lent
     // The month delivered is the last of the year: the settlement that closes the fiscal year, the one that shares the cooperative's surplus.
     getTimeInfo: () => ({ year: 1, monthIndex: 11, month: 'Décembre' }),
     listBuildings: async () => [

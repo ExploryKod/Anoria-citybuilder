@@ -63,7 +63,8 @@ export async function recordConstructionExpense(amount, reason, options = {}) {
     if (!result.recorded) {
       return {
         success: false,
-        reason: result.reason ?? 'not_recorded',
+        // The State may not spend more than its Treasury holds: the screen's word for "the player cannot afford it" is `insufficient_funds`.
+        reason: result.reason === 'treasury_insufficient' ? 'insufficient_funds' : result.reason ?? 'not_recorded',
         message: `Construction expense not recorded: ${result.reason ?? 'unknown'}`,
       };
     }

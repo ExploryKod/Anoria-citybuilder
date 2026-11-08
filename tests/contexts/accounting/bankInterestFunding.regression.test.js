@@ -2,6 +2,7 @@ import { describe, test, expect } from '@jest/globals';
 import { SettleProducerCharges } from '../../../src/contexts/accounting/application/services/SettleProducerCharges.js';
 import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
 import { booked } from '../../helpers/booked.js';
+import { DEPOSIT_INTEREST_TYPES } from '../../../src/contexts/accounting/domain/policies/DepositBalancePolicy.js';
 
 // Regression: a bank earns no sale, no service, no goods flow — its only income is the interest the journal
 // already holds for it (RecordLoanInterestExpense.js's lender mirror line, read via sumBankInterestByBuilding).
@@ -12,6 +13,7 @@ const BANK = 'Bank';
 function settle(bankInterest, otherExpenses = []) {
   const journal = [];
   const service = new SettleProducerCharges({
+    borrowFromBank: async () => 0, // the bank does not lend to itself
     // The month delivered is the last of the year: the settlement that closes the fiscal year, the one that books the corporate tax.
     getTimeInfo: () => ({ year: 1, monthIndex: 11, month: 'Décembre' }),
     listBuildings: async () => [
@@ -47,7 +49,7 @@ function settle(bankInterest, otherExpenses = []) {
   // The interest the bank earned and paid already is in the journal (another settlement wrote it): the company's statement reads it there.
   journal.push(
     ...bankInterest.map((interest) => booked({ type: 'loan_interest_received', amount: interest.amountHT, accountBuildingId: interest.buildingId })),
-    ...otherExpenses.map((expense) => booked({ type: 'deposit_interest_paid', amount: expense.amountHT, accountBuildingId: expense.buildingId })),
+    ...otherExpenses.map((expense) => booked({ type: DEPOSIT_INTEREST_TYPES.bank, amount: expense.amountHT, accountBuildingId: expense.buildingId })),
   );
   return service.execute({ time: 2, deliveredTime: 1 }).then(() => journal);
 }
@@ -79,7 +81,7 @@ describe('a bank funds its own wages and corporate tax from the interest it earn
   test('deposit interest the bank already paid its savers reduces its taxable profit, not just its cash', async () => {
     const journal = await settle(
       [{ buildingId: 'bank-1', amountHT: 1000 }],
-      [{ buildingId: 'bank-1', amountHT: 300 }], // SettleBankDepositInterest.js's deposit_interest_paid, already booked
+      [{ buildingId: 'bank-1', amountHT: 300 }], // SettleBankDepositInterest.js's interest owed to its savers, already booked
     );
 
     const wage = journal.find((line) => line.type === 'producer_wage' && line.accountBuildingId === 'bank-1');

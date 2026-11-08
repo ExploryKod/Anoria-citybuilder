@@ -17,6 +17,24 @@ export function businessAccountOf(enterpriseId) {
   return `${BUSINESS_ACCOUNT_PREFIX}${enterpriseId}`;
 }
 
+const CENTRAL_BANK_ACCOUNT_PREFIX = 'central-bank:';
+
+/**
+ * The account of a State's central bank, the institution (docs/gameplay/PLAN_BANK_MONEY.md): it exists from the State's founding, with or without its building (the
+ * `CentralBank` building only opens its counter), so its books are held under the State, not under a building that may be demolished and built again.
+ * @param {string} hamletId the State
+ * @returns {string}
+ */
+export function centralBankAccountOf(hamletId) {
+  if (typeof hamletId !== 'string' || hamletId.length === 0) throw new Error(`[journal] a State's central bank needs its State, got ${hamletId}`);
+  return `${CENTRAL_BANK_ACCOUNT_PREFIX}${hamletId}`;
+}
+
+/** @param {string | null} accountKey @returns {boolean} whether the account is a State's central bank (an institution, not a building) */
+export function isCentralBankAccount(accountKey) {
+  return typeof accountKey === 'string' && accountKey.startsWith(CENTRAL_BANK_ACCOUNT_PREFIX);
+}
+
 /** @param {unknown} accountKind @returns {boolean} whether it is the business account of some enterprise */
 export function isBusinessAccount(accountKind) {
   return typeof accountKind === 'string' && accountKind.startsWith(BUSINESS_ACCOUNT_PREFIX) && accountKind.length > BUSINESS_ACCOUNT_PREFIX.length;

@@ -1,6 +1,7 @@
 /**
  * PretsPresenter — rendu DOM des prêts (données déjà chargées).
  */
+import { formatYearlyRate } from '../../../../contexts/accounting/presentation/formatMoney.js';
 
 /**
  * @param {string} elementId
@@ -46,48 +47,45 @@ export function renderHealthImpact(financialHealth) {
 }
 
 /**
- * @param {{ bank: number, commercial: number }} rates
+ * @param {{ bank: number, commercial: number }} rates per year, a fraction
  */
 export function renderLoanRates(rates) {
-  updateLoansElement('bank-rate', `Taux: ${rates.bank}%`);
-  updateLoansElement('commercial-rate', `Taux: ${rates.commercial}%`);
+  updateLoansElement('bank-rate', `Taux : ${formatYearlyRate(rates.bank)}`);
+  updateLoansElement('commercial-rate', `Taux : ${formatYearlyRate(rates.commercial)}`);
 }
 
 /**
+ * The loan's schedule, turn by turn: the same installment every turn, the one the payments book (accounting.loanInstallmentOf).
  * @param {object} loan
+ * @param {(loan: object) => { payment: number, interest: number, principal: number }} installmentOf
  * @returns {{ schedule: Array<object>, remainingInterest: number }}
  */
-export function generateAmortizationSchedule(loan) {
+export function generateAmortizationSchedule(loan, installmentOf) {
   const schedule = [];
-  const monthlyPayment = Math.round(loan.total / loan.duration);
-  const interestRate = loan.interestRate / 100;
+  const { payment, interest, principal } = installmentOf(loan);
   let remainingBalance = loan.amount;
   let totalInterestPaid = 0;
   const paidTurns = loan.duration - loan.remainingTurns;
 
-  const totalInterest = loan.interest || Math.round(loan.amount * interestRate);
-
   for (let turn = 1; turn <= loan.duration; turn++) {
-    const interestPayment = Math.round((remainingBalance * interestRate) / loan.duration);
-    const principalPayment = monthlyPayment - interestPayment;
     const isPaid = turn <= paidTurns;
 
     if (isPaid) {
-      remainingBalance = Math.max(0, remainingBalance - principalPayment);
-      totalInterestPaid += interestPayment;
+      remainingBalance = Math.max(0, remainingBalance - principal);
+      totalInterestPaid += interest;
     }
 
     schedule.push({
       turn,
-      payment: monthlyPayment,
-      interest: interestPayment,
-      principal: principalPayment,
+      payment,
+      interest,
+      principal,
       balance: remainingBalance,
       paid: isPaid,
     });
   }
 
-  const remainingInterest = Math.max(0, totalInterest - totalInterestPaid);
+  const remainingInterest = Math.max(0, loan.interest - totalInterestPaid);
 
   return {
     schedule,
@@ -97,9 +95,10 @@ export function generateAmortizationSchedule(loan) {
 
 /**
  * @param {Array<object>} activeLoans
+ * @param {(loan: object) => { payment: number, interest: number, principal: number }} installmentOf a turn's installment of a loan (accounting.loanInstallmentOf)
  * @returns {string}
  */
-export function renderActiveLoansHtml(activeLoans) {
+export function renderActiveLoansHtml(activeLoans, installmentOf) {
   if (activeLoans.length === 0) {
     return `
                 <div class="no-loans">
@@ -111,7 +110,7 @@ export function renderActiveLoansHtml(activeLoans) {
 
   return activeLoans
     .map((loan) => {
-      const amortizationSchedule = generateAmortizationSchedule(loan);
+      const amortizationSchedule = generateAmortizationSchedule(loan, installmentOf);
 
       return `
                 <div class="loan-item">
@@ -121,7 +120,7 @@ export function renderActiveLoansHtml(activeLoans) {
                         <div class="loan-progress">${loan.remainingTurns}/${loan.duration} tours</div>
                     </div>
                     <div class="loan-details">
-                        <div>Taux: ${loan.interestRate}%</div>
+                        <div>Taux : ${formatYearlyRate(loan.interestRate)}</div>
                         <div>Total à rembourser: ${loan.total}€ (intérêts: ${loan.interest}€)</div>
                     </div>
                     

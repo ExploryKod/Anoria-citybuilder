@@ -98,8 +98,12 @@ export class InjectCompanyAid {
       ...(loan ? { loan } : {}),
       ...(shares !== null ? { shares } : {}),
     });
+    // The city's line first: the State may not spend more than its Treasury holds, and then the company receives nothing (the player is told why, in the screen's words).
     for (const written of [line(kind.paid, kind.paidLabel, 'city'), line(kind.received, kind.receivedLabel, 'company')]) {
       const result = await this.deps.recordLedgerEntry(written);
+      if (!result.recorded && result.reason === 'treasury_insufficient') {
+        throw new Error(`[company-aid] Le Trésor de l'État ne contient pas ${centimes / 100} € : l'État ne dépense pas plus que son compte ne contient.`);
+      }
       if (!result.recorded) throw new Error(`[company-aid] the ${written.type} line "${written.description}" was not recorded: ${result.reason}`);
     }
     return { amount: centimes / 100, form };

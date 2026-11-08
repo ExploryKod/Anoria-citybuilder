@@ -1,7 +1,44 @@
 import { describe, test, expect } from '@jest/globals';
 import { RecordHouseholdDeposit } from '../../../src/contexts/accounting/application/services/RecordHouseholdDeposit.js';
 import { RecordHouseholdWithdrawal } from '../../../src/contexts/accounting/application/services/RecordHouseholdWithdrawal.js';
-import { depositBalanceOf, depositInterestsOf } from '../../../src/contexts/accounting/domain/policies/DepositBalancePolicy.js';
+import { SettleBankDepositInterest } from '../../../src/contexts/accounting/application/services/SettleBankDepositInterest.js';
+import { DEPOSIT_INTEREST_TYPES, depositBalanceOf, depositInterestsOf } from '../../../src/contexts/accounting/domain/policies/DepositBalancePolicy.js';
+import { booked } from '../../helpers/booked.js';
+
+// Regression: the interest was paid into the house's cash (512) and counted in its savings too, so the house could take it twice.
+describe('the interest on savings is added to the savings, once', () => {
+  test('it moves no cash: the house\'s claim (275) and the bank\'s debt (165) both grow by it, and stay equal', async () => {
+    const journal = [
+      booked({ type: 'deposit', amount: 1200, year: 0, month: 1, accountBuildingId: 'house-1', accountKind: 'particulier', counterpartyBuildingId: 'bank-1' }),
+      booked({ type: 'deposit_received', amount: 1200, year: 0, month: 1, accountBuildingId: 'bank-1', counterpartyBuildingId: 'house-1' }),
+    ];
+    const settle = new SettleBankDepositInterest({
+      getTimeInfo: () => ({ year: 0, monthIndex: 11 }),
+      listBuildings: async () => [{ id: 'house-1', type: 'House-Blue' }, { id: 'bank-1', type: 'Bank' }],
+      listDepositInterests: async (year, annualRate) => depositInterestsOf(journal, { year, annualRate }),
+      getDepositInterestRate: () => 0.12,
+      getBuildingDisplayName: (type) => type,
+      recordLedgerEntry: async (line) => {
+        journal.push(booked({ ...line, year: 0, month: 12 }));
+        return { recorded: true };
+      },
+    });
+    await settle.execute({ deliveredTime: 11 });
+
+    const net = (accountBuildingId, compte) => journal
+      .filter((line) => line.accountBuildingId === accountBuildingId)
+      .flatMap((line) => line.legs)
+      .filter((leg) => leg.account === compte)
+      .reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
+    // 11 months at 1200 × 12 % / 12 = 132 of interest, on top of the 1200 deposited.
+    expect(depositBalanceOf(journal, 'house-1', 'bank-1')).toBe(1332);
+    expect(net('house-1', '275')).toBe(133200);
+    expect(net('bank-1', '165')).toBe(-133200);
+    // The cash moved only by the deposit itself.
+    expect(net('house-1', '512')).toBe(-120000);
+    expect(net('bank-1', '512')).toBe(120000);
+  });
+});
 
 // Savings interest is credited once a year, on the lowest balance each month held (a twelfth of the annual rate per month).
 describe('the yearly interest on savings', () => {
@@ -17,7 +54,7 @@ describe('the yearly interest on savings', () => {
   });
 
   test('the interest of an earlier year is part of the balance of the next one', () => {
-    const journal = [line('deposit', 1000, 0, 1), line('household_deposit_interest', 100, 0, 12)];
+    const journal = [line('deposit', 1000, 0, 1), line(DEPOSIT_INTEREST_TYPES.house, 100, 0, 12)];
     expect(depositInterestsOf(journal, { year: 1, annualRate: 0.12 })).toEqual([{ houseId: 'house-1', bankId: 'bank-1', interest: 132 }]);
   });
 });
@@ -67,10 +104,10 @@ describe('a deposit moves money, it never invents or loses it', () => {
     const deposit = new RecordHouseholdDeposit({ recordLedgerEntry, fundsOf: async () => 500 });
     await deposit.execute({ turn: 1, houseId: 'house-1', bankId: 'bank-1', amount: 300, description: 'Dépôt' });
 
+    // A withdrawal moves money from the house's savings to its current account at the same bank: it never needs the bank's cash.
     const withdrawal = new RecordHouseholdWithdrawal({
       recordLedgerEntry,
       depositBalanceOf: async (houseId, bankId) => depositBalanceOf(journal, houseId, bankId),
-      fundsOf: async () => 1000, // the bank has plenty of cash
     });
 
     const tooMuch = await withdrawal.execute({ turn: 2, houseId: 'house-1', bankId: 'bank-1', amount: 400, description: 'Retrait' });
@@ -80,20 +117,5 @@ describe('a deposit moves money, it never invents or loses it', () => {
     expect(ok).toEqual({ recorded: true, skipped: false });
 
     expect(depositBalanceOf(journal, 'house-1', 'bank-1')).toBe(0);
-  });
-
-  test('refuses a withdrawal the bank itself cannot cover', async () => {
-    const { journal, recordLedgerEntry } = buildJournal();
-    const deposit = new RecordHouseholdDeposit({ recordLedgerEntry, fundsOf: async () => 500 });
-    await deposit.execute({ turn: 1, houseId: 'house-1', bankId: 'bank-1', amount: 300, description: 'Dépôt' });
-
-    const withdrawal = new RecordHouseholdWithdrawal({
-      recordLedgerEntry,
-      depositBalanceOf: async (houseId, bankId) => depositBalanceOf(journal, houseId, bankId),
-      fundsOf: async () => 50, // the bank lent most of its cash out
-    });
-
-    const result = await withdrawal.execute({ turn: 2, houseId: 'house-1', bankId: 'bank-1', amount: 300, description: 'Retrait' });
-    expect(result).toEqual({ recorded: false, skipped: true, reason: 'bank_insufficient_funds' });
   });
 });

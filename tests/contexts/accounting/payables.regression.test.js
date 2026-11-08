@@ -11,6 +11,7 @@ const HOUSE = 'House-Blue';
 // debts first as soon as it has the money.
 function settleMonth(journal, { monthIndex, cash }) {
   const service = new SettleProducerCharges({
+    borrowFromBank: async () => 0, // no bank: what a company cannot pay becomes a debt
     getTimeInfo: () => ({ year: 1, monthIndex, month: `Mois ${monthIndex}` }),
     listBuildings: async () => [
       { id: 'farm', type: FARM, workerSources: { house: 4 } },

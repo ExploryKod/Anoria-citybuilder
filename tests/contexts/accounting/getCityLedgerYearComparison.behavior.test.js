@@ -23,7 +23,8 @@ function portsOf(lines, currentYear) {
   return {
     journal: { getLegsFold: async () => fold },
     treasury: {
-      cashOf: async ({ hamletId = null, untilYear = null } = {}) => fold.balanceOf('512', { hamletId, accountKey: null, untilYear }) / 100,
+      // The city is a State: its money is its account at its central bank (515).
+      cashOf: async ({ hamletId = null, untilYear = null } = {}) => fold.balanceOf('515', { hamletId, accountKey: null, untilYear }) / 100,
     },
     time: { getTimeInfo: () => ({ year: currentYear }), currentTurn: () => currentYear * 12 },
   };

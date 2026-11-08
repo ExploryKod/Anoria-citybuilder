@@ -27,29 +27,54 @@
  * entries booked when due).
  */
 
+/** A company's or a household's money: its account at a bank (in the PCG, 512 "Banques"). */
 const BANK = '512';
+/**
+ * A State's money (the city and the hamlets are States of a federation: docs/gameplay/PLAN_BANK_MONEY.md): its account at its central bank, the M57's 515 "compte
+ * au Trésor", as the French Trésor's at the Banque de France.
+ */
+const TREASURY = '515';
+/** The State's cash account, for the écritures of the State that name their own legs (a construction). */
+export const TREASURY_ACCOUNT = TREASURY;
+
+/**
+ * The cash accounts: the money an account holds is their balance, and what moves them is what the cash flows tell (EntryLegsPolicy.cashFlowsOfLegs, the treasury,
+ * the balance sheet, the city's ledger). 512, an account at a bank; 515, a State's account at its central bank; 53, banknotes (the caisse).
+ */
+export const CASH_ACCOUNTS = Object.freeze(new Set([BANK, TREASURY, '53']));
+
+/** @param {string} account @returns {boolean} true for a cash account */
+export function isCashAccount(account) {
+  return CASH_ACCOUNTS.has(account);
+}
 
 /** @param {string} account @returns {EntryLegs} money arriving: the bank is debited, `account` credited. */
 const inflow = (account) => Object.freeze({ debit: BANK, credit: account });
 /** @param {string} account @returns {EntryLegs} money leaving: `account` is debited, the bank credited. */
 const outflow = (account) => Object.freeze({ debit: account, credit: BANK });
 
-/** @param {EntryLegs} legs @returns {string} the leg that is not the bank */
+/** @param {EntryLegs} legs @returns {string} the leg that is not the cash */
 function otherThanBank(legs) {
-  if (legs.debit === BANK) return legs.credit;
-  if (legs.credit === BANK) return legs.debit;
-  throw new Error(`[PcgJournalCatalog] the legs ${legs.debit} / ${legs.credit} do not touch the bank: an opération diverse names its own legs`);
+  if (isCashAccount(legs.debit)) return legs.credit;
+  if (isCashAccount(legs.credit)) return legs.debit;
+  throw new Error(`[PcgJournalCatalog] the legs ${legs.debit} / ${legs.credit} do not touch the cash: an opération diverse names its own legs`);
 }
 
 /** @returns {AccountingVariant} */
 const variant = (legs, label, detail = undefined) =>
   Object.freeze({ legs, account: otherThanBank(legs), label, ...(detail ? { detail } : {}) });
 
+/** @param {EntryLegs} legs @returns {EntryLegs} the same legs, the State's money on its account at its central bank instead of a bank account */
+const onTreasury = (legs) => Object.freeze({
+  debit: legs.debit === BANK ? TREASURY : legs.debit,
+  credit: legs.credit === BANK ? TREASURY : legs.credit,
+});
+
 /**
- * How the M57 chart books a type (the city and the hamlets). `detail` as in `entry`.
+ * How the M57 chart books a type (the city and the hamlets): the State's money is on its account at its central bank (515), never at a bank. `detail` as in `entry`.
  * @param {EntryLegs} legs @param {string} label @param {string} [detail]
  */
-const publicVariant = (legs, label, detail = undefined) => variant(legs, label, detail);
+const publicVariant = (legs, label, detail = undefined) => variant(onTreasury(legs), label, detail);
 
 /**
  * `detail` says what the line is in the game, in the player's words, where the account's own title does not (it is what the compte de
@@ -99,6 +124,26 @@ const BY_TYPE = Object.freeze({
   liquidation_surplus_paid: entry(outflow('101'), 'Capital', 'capital', false, 'Caisse rendue à la ville à la liquidation'),
   liquidation_surplus_received: publicEntry(inflow('261'), 'Titres de participation', 'capital', 'Capital rendu par une entreprise liquidée'),
   wage_guarantee: publicEntry(outflow('65741'), 'Subventions de fonctionnement aux ménages', 'subsidy-given', 'Salaires impayés avancés par la ville (garantie des salaires)'),
+  // The bank refinanced by the central bank (see BankRefinancing.js): it borrows the shortfall, pays the interest at the policy rate, and repays out of its surplus.
+  // Booked on a sub-account of 164 (1649) so that what it owes the central bank is read apart from any other loan of the bank (a city aid loan, 164).
+  // The central bank's side is an opération diverse (od_refinancing_*): it lends money it creates, so no cash leaves it.
+  refinancing_received: entry(inflow('1649'), 'Emprunts — refinancement de la banque centrale', 'loan', false, 'Refinancement de la banque centrale'),
+  refinancing_repaid: entry(outflow('1649'), 'Emprunts — refinancement de la banque centrale', 'loan-repayment', false, 'Refinancement remboursé à la banque centrale'),
+  // The marginal lending: reserves the bank borrows at once to lend while it is short, at the dearer rate of the corridor; a sub-account of its own (1648) so its rate is kept apart.
+  marginal_received: entry(inflow('1648'), 'Emprunts — prêt marginal de la banque centrale', 'loan', false, 'Prêt marginal de la banque centrale'),
+  marginal_repaid: entry(outflow('1648'), 'Emprunts — prêt marginal de la banque centrale', 'loan-repayment', false, 'Prêt marginal remboursé à la banque centrale'),
+  refinancing_interest_paid: entry(outflow('6611'), 'Intérêts des emprunts et dettes', 'financial', false, 'Intérêts du refinancement de la banque centrale'),
+  // The bank's credit to a company short of cash for its month (BankCompanyCredit.js): the company borrows on a sub-account of 164 (1643) so that what it owes the
+  // bank is read apart from a city aid loan (164); the bank lends it (274). Interest at the policy rate plus the business spread, repaid out of the month's profit.
+  bank_credit_received: entry(inflow('1643'), 'Emprunts — crédit de la banque', 'loan', false, 'Crédit de la banque pour payer le mois'),
+  bank_credit_lent: entry(outflow('274'), 'Prêts', 'loan', false, 'Crédit à une entreprise à court de trésorerie'),
+  bank_credit_repaid: entry(outflow('1643'), 'Emprunts — crédit de la banque', 'loan-repayment', false, 'Crédit de la banque remboursé'),
+  bank_credit_repayment_received: entry(inflow('274'), 'Prêts', 'loan-repayment', false, 'Crédit à une entreprise remboursé'),
+  bank_credit_interest_paid: entry(outflow('6611'), 'Intérêts des emprunts et dettes', 'financial', false, 'Intérêts du crédit de la banque'),
+  bank_credit_interest_received: entry(inflow('7626'), 'Revenus des prêts', 'sales', false, 'Intérêts du crédit à une entreprise'),
+  // Every January a State's central bank pays its State what it earned (BankRefinancing.payProfitToCity). Its own side is an opération diverse (od_central_bank_profit_paid):
+  // it holds no money, it credits the Treasury's account. The State receives it as a product (758 in the M57 chart: it holds no share of it, so it is no dividend).
+  central_bank_profit_received: publicEntry(inflow('758'), 'Produits divers de gestion courante', 'sales', 'Résultat de la banque centrale reversé à l’État'),
   loan_capital: entry(inflow('164'), 'Emprunts auprès des établissements de crédit', 'loan', false, undefined, publicVariant(inflow('1641'), 'Emprunts en euros')),
   loan_repayment: entry(outflow('164'), 'Emprunts auprès des établissements de crédit', 'loan-repayment', false, undefined, publicVariant(outflow('1641'), 'Emprunts en euros')),
   // Classe 2 — immobilisations
@@ -158,7 +203,17 @@ const BY_TYPE = Object.freeze({
   withdrawal: entry(inflow('275'), 'Dépôts et cautionnements versés', 'treasury'),
   deposit_received: entry(inflow('165'), 'Dépôts et cautionnements reçus', 'treasury'),
   withdrawal_paid: entry(outflow('165'), 'Dépôts et cautionnements reçus', 'treasury'),
-  household_deposit_interest: entry(inflow('768'), 'Autres produits financiers', 'treasury', true),
+  // The interest on savings moves no cash: it is added to the savings (od_deposit_interest_credited / od_deposit_interest_owed, below).
+  // A liquidated bank that cannot give its depositors their savings back: the city guarantees them (BankInsolvency): it pays the house (as the wage guarantee, a
+  // subsidy to the households, 65741), and the house's claim on the bank (275) closes. The bank's debt to the house is abandoned (od_deposit_abandoned).
+  deposit_guarantee: publicEntry(outflow('65741'), 'Subventions de fonctionnement aux ménages', 'subsidy-given', 'Épargne garantie par la ville (banque liquidée)'),
+  // The premium the bank pays the city each month for the guarantee of its depositors' savings (a charge for the bank, 616; a product of the State, 758): the guarantee is funded by the banks.
+  // A gift of another city (the benefactor, see BenefactorGiftCatalog.js): foreign money, a capital gift of the State (M57 1025, dons et legs en capital). The central bank converts it
+  // against its foreign reserves with the rest of the money from abroad (BankRefinancing.centraliseExternal): it is not a founding endowment.
+  benefactor_gift: publicEntry(inflow('1025'), 'Dons et legs en capital', 'capital', 'Don d’une ville partenaire'),
+  deposit_guarantee_premium: entry(outflow('616'), 'Primes d’assurances', 'financial', false, 'Prime de la garantie des dépôts payée à la ville'),
+  deposit_guarantee_premium_received: publicEntry(inflow('7588'), 'Autres produits divers de gestion courante', 'sales', 'Primes de la garantie des dépôts payées par la banque'),
+  deposit_guarantee_received: entry(inflow('275'), 'Dépôts et cautionnements versés', 'treasury', true, 'Épargne rendue par la garantie de la ville'),
   // Classe 6 — charges
   producer_purchase: entry(outflow('607'), 'Achats de marchandises', 'purchase', false, 'Biens achetés à un fournisseur'),
   consumer_purchase: entry(outflow('607'), 'Achats de marchandises', 'purchase', true),
@@ -180,7 +235,6 @@ const BY_TYPE = Object.freeze({
   // The sickness allowance is paid out of the health fund (431), the unemployment benefit out of the unemployment fund (4378): see SocialFundsCatalog.js.
   sickness_benefit: publicEntry(outflow('431'), 'Sécurité sociale', 'personnel', 'Indemnités journalières et pensions d’invalidité'),
   loan_interest: entry(outflow('6611'), 'Intérêts des emprunts et dettes', 'financial', false, undefined, publicVariant(outflow('66111'), 'Intérêts réglés à l’échéance')),
-  deposit_interest_paid: entry(outflow('6615'), 'Intérêts des comptes courants et des dépôts créditeurs', 'financial'),
   subsidy_housing: publicEntry(outflow('65741'), 'Subventions de fonctionnement aux ménages', 'subsidy-given', 'Aide au logement'),
   subsidy_companies: publicEntry(outflow('65742'), 'Subventions de fonctionnement aux entreprises', 'subsidy-given', 'Aide aux entreprises'),
   service_subsidy: publicEntry(outflow('65738'), 'Subventions de fonctionnement aux autres établissements publics', 'subsidy-given', 'Aide aux services publics'),
@@ -216,8 +270,10 @@ const BY_PREFIX = Object.freeze([
  * its two legs: the account debited and the account credited, one of them a charge or a product (the result) and the other a balance-sheet account.
  *   - the variation of stock: a stock that grows is debited to the stock account (37 goods bought and resold, 35 goods made) and credited to the
  *     variation (6037, 713); a stock that shrinks is the other way round. It is what turns purchases into the cost of the goods sold;
- *   - the depreciation: the monthly dotation (6811) against the accumulated depreciation of the constructions (281).
- * @type {Readonly<Record<string, { debit: string, credit: string, label: string, tone: JournalTone, detail: string }>>}
+ *   - the depreciation: the monthly dotation (6811) against the accumulated depreciation of the constructions (281);
+ *   - the interest on savings, written once a year by the settlement of the year's last month (SettleBankDepositInterest): added to the savings, not paid in cash.
+ * `household`: a line of a household's account, outside the PCG (a household is no entity of the plan), as for the `entry` types above.
+ * @type {Readonly<Record<string, { debit: string, credit: string, label: string, tone: JournalTone, detail: string, household?: boolean }>>}
  */
 const OPERATIONS_DIVERSES = Object.freeze({
   od_stock_up_merchandise: Object.freeze({ debit: '37', credit: '6037', label: 'Variation des stocks de marchandises', tone: 'purchase', detail: 'Le stock a grandi : une partie des achats n’est pas encore consommée' }),
@@ -259,6 +315,67 @@ const OPERATIONS_DIVERSES = Object.freeze({
   // A building that is gone leaves the owner's books: its depreciation so far is released, and what it was still worth is a loss (675).
   od_asset_disposal_amortization: Object.freeze({ debit: '281', credit: '213', label: 'Amortissements des constructions démolies', tone: 'fixed-asset', detail: 'Un bâtiment démoli sort du patrimoine : son amortissement est soldé' }),
   od_asset_disposal_loss: Object.freeze({ debit: '675', credit: '213', label: 'Valeur nette des constructions démolies', tone: 'external', detail: 'Ce que le bâtiment démoli valait encore dans les livres' }),
+  // The year's interest on savings is capitalised, as a savings account is: the house's claim on its bank (275) grows by it, and so does what the bank owes (165).
+  od_deposit_interest_credited: Object.freeze({ debit: '275', credit: '768', label: 'Autres produits financiers', tone: 'treasury', detail: 'Intérêts de l’épargne ajoutés au dépôt en banque', household: true }),
+  od_deposit_interest_owed: Object.freeze({ debit: '6615', credit: '165', label: 'Intérêts des comptes courants et des dépôts créditeurs', tone: 'financial', detail: 'Intérêts de l’épargne ajoutés aux dépôts des clients' }),
+  // A State's central bank holds no money of its own (docs/gameplay/PLAN_BANK_MONEY.md): what it is paid leaves circulation, what it pays is money it issues or the
+  // Treasury's account it credits. The interest the bank pays it is money withdrawn (1678) against its product (7626); the profit it pays its State is a distribution
+  // of its result (457) credited to the Treasury's account (1674).
+  od_refinancing_interest_received: Object.freeze({ debit: '1678', credit: '7626', label: 'Revenus des prêts', tone: 'sales', detail: 'Intérêts du refinancement payés par la banque : la monnaie revient à la banque centrale' }),
+  od_central_bank_profit_paid: Object.freeze({ debit: '457', credit: '1674', label: 'Associés — dividendes à payer', tone: 'financial', detail: 'Résultat de la banque centrale versé au compte du Trésor' }),
+  // The Treasury's account at its central bank kept level with the State's money, once a month (BankRefinancing.centraliseTreasury, the écriture de centralisation):
+  // what the State received from the public is money that came back (1678 debited), what it paid is money issued (1678 credited); the State's founding endowment is
+  // the money the central bank created for it once (2768).
+  od_treasury_founding: Object.freeze({ debit: '2768', credit: '1674', label: 'Compte du Trésor', tone: 'capital', detail: 'Monnaie créée par la banque centrale à la fondation de l’État' }),
+  od_treasury_inflow: Object.freeze({ debit: '1678', credit: '1674', label: 'Compte du Trésor', tone: 'treasury', detail: 'Ce que l’État a encaissé dans le mois : la monnaie revient à la banque centrale' }),
+  od_treasury_outflow: Object.freeze({ debit: '1674', credit: '1678', label: 'Compte du Trésor', tone: 'treasury', detail: 'Ce que l’État a payé dans le mois : de la monnaie émise' }),
+  // The bank's money (docs/gameplay/PLAN_BANK_MONEY.md, step 3): what its customers hold (their 512) is its debt to them, its sight deposits (1651); its own money is
+  // its reserves on its account at the central bank (5151). Once a month (BankRefinancing.centraliseBank, from balances) its own cash is put on its reserves, and its
+  // deposits are brought level with what its customers hold: a payment between two customers moves neither, a loan to a customer raises the deposits without touching
+  // the reserves, a payment out of the bank (the State, abroad) takes reserves. The central bank holds the banks' reserves as its debt (1673): what the bank holds there
+  // is money it issued, now held as reserves.
+  od_bank_cash_to_reserves: Object.freeze({ debit: '5151', credit: '512', label: 'Réserves à la banque centrale', tone: 'treasury', detail: 'La trésorerie de la banque portée sur son compte à la banque centrale' }),
+  od_bank_reserves_to_cash: Object.freeze({ debit: '512', credit: '5151', label: 'Réserves à la banque centrale', tone: 'treasury', detail: 'Les paiements de la banque pris sur son compte à la banque centrale' }),
+  od_deposits_up: Object.freeze({ debit: '5151', credit: '1651', label: 'Dépôts à vue de la clientèle', tone: 'treasury', detail: 'Ce que ses clients ont reçu de l’extérieur dans le mois : leurs dépôts et les réserves de la banque' }),
+  od_deposits_down: Object.freeze({ debit: '1651', credit: '5151', label: 'Dépôts à vue de la clientèle', tone: 'treasury', detail: 'Ce que ses clients ont payé à l’extérieur dans le mois : leurs dépôts et les réserves de la banque' }),
+  od_reserves_held_up: Object.freeze({ debit: '1678', credit: '1673', label: 'Réserves des banques', tone: 'treasury', detail: 'De la monnaie émise, désormais tenue en réserves par la banque' }),
+  od_reserves_held_down: Object.freeze({ debit: '1673', credit: '1678', label: 'Réserves des banques', tone: 'treasury', detail: 'Des réserves de la banque sorties en monnaie' }),
+  // What the State's economy received from abroad (an export sold) or paid there (an import, an upkeep paid outside the game), once a month from balances
+  // (BankRefinancing.centraliseExternal): the central bank converts the foreign money, so it holds foreign reserves (2761) against the money it issued for them (1678);
+  // what is paid abroad gives them back.
+  od_foreign_reserves_in: Object.freeze({ debit: '2761', credit: '1678', label: 'Avoirs en devises', tone: 'treasury', detail: 'L’argent venu de l’étranger dans le mois : la banque centrale l’a converti' }),
+  od_foreign_reserves_out: Object.freeze({ debit: '1678', credit: '2761', label: 'Avoirs en devises', tone: 'treasury', detail: 'L’argent payé à l’étranger dans le mois : la banque centrale a cédé des devises' }),
+  // A bank that is liquidated (LiquidateDemolishedBuilding.js): its customers' sight deposits are paid out in central bank money (banknotes, as in a State without a
+  // bank) out of its reserves, and the central bank's reserves for it become money issued; reserves below nothing at the end are abandoned by the bank and lost by the
+  // central bank.
+  od_sight_deposits_released: Object.freeze({ debit: '1651', credit: '5151', label: 'Dépôts à vue de la clientèle', tone: 'treasury', detail: 'Les dépôts des clients rendus en billets à la liquidation de la banque' }),
+  od_reserves_released: Object.freeze({ debit: '1673', credit: '1678', label: 'Réserves des banques', tone: 'treasury', detail: 'Les réserves de la banque liquidée sorties en billets' }),
+  od_reserves_overdraft_abandoned: Object.freeze({ debit: '5151', credit: '7718', label: 'Abandons de créances obtenus', tone: 'sales', detail: 'Le découvert de la banque liquidée à la banque centrale ne sera jamais remboursé' }),
+  od_reserves_overdraft_loss: Object.freeze({ debit: '654', credit: '1673', label: 'Pertes sur créances irrécouvrables', tone: 'external', detail: 'Le découvert d’une banque liquidée ne sera jamais remboursé' }),
+  // The central bank lends by creating money: its loan to the bank (274) against the money it issued (1678, see EXTRA_ACCOUNT_LABELS). The repayment destroys it again.
+  od_refinancing_issued: Object.freeze({ debit: '274', credit: '1678', label: 'Prêts', tone: 'loan', detail: 'Monnaie créée pour refinancer la banque' }),
+  od_refinancing_retired: Object.freeze({ debit: '1678', credit: '274', label: 'Prêts', tone: 'loan-repayment', detail: 'Monnaie détruite au remboursement du refinancement' }),
+  // A month's interest the bank cannot pay in cash is added to what it owes (no money moves): a charge of the bank against its debt, a product of the central bank against its loan.
+  od_refinancing_interest_capitalised: Object.freeze({ debit: '6611', credit: '1649', label: 'Intérêts des emprunts et dettes', tone: 'financial', detail: 'Intérêts du refinancement ajoutés à la dette, faute de trésorerie' }),
+  od_refinancing_interest_accrued: Object.freeze({ debit: '274', credit: '7626', label: 'Revenus des prêts', tone: 'sales', detail: 'Intérêts du refinancement ajoutés au prêt à la banque' }),
+  // The marginal lending's interest the bank cannot pay is added to its debt; the debt it never repays is abandoned (the central bank's loss is od_refinancing_loss).
+  od_marginal_interest_capitalised: Object.freeze({ debit: '6611', credit: '1648', label: 'Intérêts des emprunts et dettes', tone: 'financial', detail: 'Intérêts du prêt marginal ajoutés à la dette, faute de réserves' }),
+  od_marginal_abandoned: Object.freeze({ debit: '1648', credit: '7718', label: 'Abandons de créances obtenus', tone: 'sales', detail: 'Le prêt marginal ne sera jamais remboursé : la dette est abandonnée' }),
+  // The deposit facility: the central bank pays a bank each month on the reserves it holds above the reserve due, credited to its account there (no cash moves).
+  od_reserves_interest_received: Object.freeze({ debit: '5151', credit: '768', label: 'Autres produits financiers', tone: 'sales', detail: 'Intérêts de la facilité de dépôt sur les réserves au-delà de la réserve due' }),
+  od_reserves_interest_paid: Object.freeze({ debit: '6615', credit: '1673', label: 'Intérêts des comptes courants et des dépôts créditeurs', tone: 'financial', detail: 'Intérêts de la facilité de dépôt versés sur les réserves des banques' }),
+  // A company's credit: the interest it cannot pay in cash is added to what it owes, as the bank's refinancing.
+  od_bank_credit_interest_capitalised: Object.freeze({ debit: '6611', credit: '1643', label: 'Intérêts des emprunts et dettes', tone: 'financial', detail: 'Intérêts du crédit de la banque ajoutés à la dette, faute de trésorerie' }),
+  od_bank_credit_interest_accrued: Object.freeze({ debit: '274', credit: '7626', label: 'Revenus des prêts', tone: 'sales', detail: 'Intérêts du crédit ajoutés au prêt à l’entreprise' }),
+  // What a liquidation cannot repay of a credit: the debtor is released (7718), the lender bears the loss (654) — a company's credit to the bank, the bank's refinancing
+  // to the central bank, the savings of a liquidated bank's depositors (which the city then guarantees, deposit_guarantee).
+  od_bank_credit_abandoned: Object.freeze({ debit: '1643', credit: '7718', label: 'Abandons de créances obtenus', tone: 'sales', detail: 'Le crédit de la banque ne sera jamais remboursé : la dette est abandonnée' }),
+  od_bank_credit_loss: Object.freeze({ debit: '654', credit: '274', label: 'Pertes sur créances irrécouvrables', tone: 'external', detail: 'Un crédit à une entreprise liquidée ne sera jamais remboursé' }),
+  od_refinancing_abandoned: Object.freeze({ debit: '1649', credit: '7718', label: 'Abandons de créances obtenus', tone: 'sales', detail: 'Le refinancement ne sera jamais remboursé : la dette est abandonnée' }),
+  od_refinancing_loss: Object.freeze({ debit: '654', credit: '274', label: 'Pertes sur créances irrécouvrables', tone: 'external', detail: 'Le refinancement d’une banque liquidée ne sera jamais remboursé' }),
+  // The part of a saver's savings beyond the guarantee cap that a liquidated bank cannot give back: the saver loses it (its claim 275 closes against a loss, 654).
+  od_deposit_lost: Object.freeze({ debit: '654', credit: '275', label: 'Pertes sur créances irrécouvrables', tone: 'external', detail: 'L’épargne au-delà du plafond de la garantie, que la banque liquidée ne peut rendre', household: true }),
+  od_deposit_abandoned: Object.freeze({ debit: '165', credit: '7718', label: 'Abandons de créances obtenus', tone: 'sales', detail: 'L’épargne que la banque liquidée ne peut rendre : la ville la garantit' }),
 });
 
 /** @param {string} type @returns {boolean} true for an opération diverse: a line that moves no money. */
@@ -298,7 +415,7 @@ export function pcgOfJournalType(type) {
     if (!leg) return null;
     const legs = Object.freeze({ debit: od.debit, credit: od.credit });
     const own = Object.freeze({ legs, account: leg.account, label: od.label, detail: od.detail });
-    return Object.freeze({ ...own, tone: od.tone, journal: 'OD', plans: Object.freeze({ pcg: own }) });
+    return Object.freeze({ ...own, tone: od.tone, journal: 'OD', plans: Object.freeze({ pcg: own }), ...(od.household ? { household: true } : {}) });
   }
   return BY_PREFIX.find(([prefix]) => type.startsWith(prefix))?.[1] ?? null;
 }
@@ -339,6 +456,11 @@ const NO_COUNTERPART_PREFIXES = Object.freeze(['import_', 'freight_', 'abroad_sa
 /** The opérations diverses that are one side of a flow: the rent a company owes its owner is the owner's receivable. */
 const PAIRED_OPERATIONS = Object.freeze(new Set([
   'od_payable_premises_rent', 'od_receivable_premises_rent', 'od_payable_corporate_tax', 'od_receivable_corporate_tax', 'od_payable_contribution', 'od_receivable_contribution',
+  'od_deposit_interest_credited', 'od_deposit_interest_owed',
+  'od_refinancing_issued', 'od_refinancing_retired', 'od_refinancing_interest_capitalised', 'od_refinancing_interest_accrued',
+  'od_refinancing_interest_received', 'od_central_bank_profit_paid',
+  'od_deposit_lost', 'od_marginal_interest_capitalised', 'od_marginal_abandoned', 'od_reserves_interest_received', 'od_reserves_interest_paid',
+  'od_bank_credit_interest_capitalised', 'od_bank_credit_interest_accrued', 'od_bank_credit_abandoned', 'od_bank_credit_loss', 'od_refinancing_abandoned', 'od_refinancing_loss',
 ]));
 
 /**
@@ -363,9 +485,23 @@ export function journalCodeOf(type) {
 /** The accounts no line is "about" (the bank, a counter-account, the carried result of a purged year). */
 const EXTRA_ACCOUNT_LABELS = Object.freeze({
   '512': 'Banques',
+  '515': 'Compte au Trésor',
+  '53': 'Caisse',
   '12': 'Résultat reporté (années clôturées)',
   '275': 'Dépôts et cautionnements versés',
   '165': 'Dépôts et cautionnements reçus',
+  // The PCG has no account for a central bank's money (it keeps a chart of its own): 1678, the debts "assortis de conditions particulières", is the nearest, a
+  // liability no creditor asks back. The game books on it what the central bank issued and has not had back.
+  '1678': 'Monnaie émise par la banque centrale',
+  // A State's central bank: the account it holds for its Treasury (a debt of it, as the Banque de France's to the Trésor), and the money it created once for the
+  // State at its founding (a claim never repaid: the endowment of a new country). Game accounts, as 1678: the PCG has no chart for a central bank.
+  '1674': 'Compte du Trésor à la banque centrale',
+  '1673': 'Réserves des banques à la banque centrale',
+  '1648': 'Prêt marginal de la banque centrale',
+  '5151': 'Réserves à la banque centrale',
+  '1651': 'Dépôts à vue de la clientèle',
+  '2768': 'Dotation monétaire de la fondation de l’État',
+  '2761': 'Avoirs en devises (réserves de change)',
   '768': 'Autres produits financiers',
   '35': 'Stocks de produits',
   '37': 'Stocks de marchandises',

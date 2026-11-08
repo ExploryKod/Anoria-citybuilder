@@ -164,7 +164,7 @@ describe('sessionApi accounting (Barre 3)', () => {
     expect(Object.isFrozen(sessionApi.accounting)).toBe(true);
     expect(getSessionAccountingApi()).toBe(sessionApi.accounting);
     await expect(requireSessionAccountingApi().getCitizenTaxPerCapita()).resolves.toBe(42);
-    expect(typeof requireSessionAccountingApi().computeLoanRate).toBe('function');
+    expect(typeof requireSessionAccountingApi().loanInstallmentOf).toBe('function');
     expect(requireSessionAccountingApi().INFO_JOURNAL_TYPE_LABELS).toBeTruthy();
   });
 

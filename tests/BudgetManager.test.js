@@ -209,15 +209,15 @@ describe('BudgetManager', () => {
             expect(budget.dailyExpenses).toBe(0);
         });
 
-        test('peut avoir un budget négatif (dette)', async () => {
-            await budgetManager.addConstructionExpense(250, 'Grosse dépense');
-            
-            // Lire directement depuis la base
-            const budgetData = [await getTreasurySnapshot()];
-            const budget = budgetData[0];
-            
-            expect(budget.funds).toBe(-50); // 200 - 250 (debt allowed)
-            expect(budget.expenses).toBe(250);
+        // L'État ne peut pas dépenser plus que son compte au Trésor (docs/gameplay/PLAN_BANK_MONEY.md) : le paiement est refusé et rien n'est écrit.
+        test('ne peut pas dépenser plus que le Trésor : le paiement est refusé, le budget ne bouge pas', async () => {
+            const result = await budgetManager.addConstructionExpense(250, 'Grosse dépense');
+
+            const budget = await getTreasurySnapshot();
+
+            expect(result).toMatchObject({ success: false, reason: 'insufficient_funds' });
+            expect(budget.funds).toBe(200);
+            expect(budget.expenses).toBe(0);
         });
     });
 
@@ -298,15 +298,14 @@ describe('BudgetManager', () => {
             expect(budget.expenses).toBe(6);
         });
 
-        test('peut avoir un budget négatif après import (dette)', async () => {
+        test('ne peut pas importer pour plus que le Trésor : l\'achat est refusé, le budget ne bouge pas', async () => {
             await budgetManager.initialize(200);
             await budgetManager.addImportExpense(250, 'Gros import', 'wheat');
-            
-            const budgetData = [await getTreasurySnapshot()];
-            const budget = budgetData[0];
-            
-            expect(budget.funds).toBe(-50); // 200 - 250 (debt allowed)
-            expect(budget.expenses).toBe(250);
+
+            const budget = await getTreasurySnapshot();
+
+            expect(budget.funds).toBe(200);
+            expect(budget.expenses).toBe(0);
         });
     });
 

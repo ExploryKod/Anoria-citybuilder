@@ -347,7 +347,7 @@ export class SessionJournalStore {
 
     /**
      * Each full year before the cutoff is closed per hamlet and per account: its folded lines are replaced by one `year_closing` line
-     * that keeps the year's net and its totals per type. Loan lines stay. One transaction per purge: the lines are never
+     * that keeps the year's net and its totals per type. Loan and deposit lines stay. One transaction per purge: the lines are never
      * half-replaced.
      */
     async #closeOldYears(keepYears) {

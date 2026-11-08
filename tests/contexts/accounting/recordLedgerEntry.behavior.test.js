@@ -894,14 +894,14 @@ describe('Accounting — RecordLedgerEntry (misc operational slice)', () => {
   test('records commercial route fee once per partner', async () => {
     await accounting.recordCommercialRouteExpense({
       turn: 2,
-      amount: 500,
+      amount: 150,
       description: 'Route commerciale - Juin 0 JC',
       partnerId: 'city_savana',
     });
 
     const second = await accounting.recordCommercialRouteExpense({
       turn: 3,
-      amount: 500,
+      amount: 150,
       description: 'Duplicate route',
       partnerId: 'city_savana',
     });
@@ -909,8 +909,8 @@ describe('Accounting — RecordLedgerEntry (misc operational slice)', () => {
     expect(second.reason).toBe('duplicate_business_key');
 
     const budget = (await getTreasurySnapshot());
-    expect(budget.funds).toBe(-300);
-    expect(budget.expenses).toBe(500);
+    expect(budget.funds).toBe(50);
+    expect(budget.expenses).toBe(150);
 
     const entries = await journalManager.getJournalEntries();
     expect(entries.filter((e) => e.type === 'commercial_route')).toHaveLength(1);

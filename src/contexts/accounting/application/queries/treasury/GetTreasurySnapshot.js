@@ -1,5 +1,6 @@
 import { deriveTreasuryFigures, deriveLoanPortfolio, deriveCitizenTaxState, moneyDirectionOf } from '../../../domain/policies/TreasuryFromJournalPolicy.js';
 import { accountKeyOf } from '../../../domain/policies/AccountKeyPolicy.js';
+import { CASH_ACCOUNTS } from '../../../domain/policies/EntryLegsPolicy.js';
 
 /**
  * The treasury as the journal says it is. The row keeps only what is not money (turn, tax breakdown, tax year); every
@@ -61,7 +62,8 @@ export class GetTreasurySnapshot {
   }
 
   /**
-   * The cash alone, the balance of the bank account (512) in the fold of the journal's legs, without reading a line: what the HUD and every view of a balance ask.
+   * The cash alone, the balance of the cash accounts (CASH_ACCOUNTS: 512 a bank account, 515 a State's account at its central bank, 53 the banknotes) in the fold
+   * of the journal's legs, without reading a line: what the HUD and every view of a balance ask.
    * The scope is the one `execute` takes. A brand-new game has no journal yet: its treasury starts from the capital line, as in `execute`.
    * @param {{ hamletId?: string|null, untilYear?: number|null, untilMonth?: number|null, accountBuildingId?: string|null, accountKind?: string|null }} [options]
    * @returns {Promise<number>}
@@ -72,13 +74,11 @@ export class GetTreasurySnapshot {
       await this.initializeTreasury.execute(null);
       fold = await this.journalRepository.getLegsFold();
     }
-    const centimes = fold.balanceOf(CASH, { hamletId, accountKey: accountKeyOf({ accountBuildingId, accountKind }), untilYear, untilMonth });
+    const scope = { hamletId, accountKey: accountKeyOf({ accountBuildingId, accountKind }), untilYear, untilMonth };
+    const centimes = [...CASH_ACCOUNTS].reduce((sum, account) => sum + fold.balanceOf(account, scope), 0);
     return centimes / 100;
   }
 }
-
-/** The cash account of the chart of accounts: the treasury is its balance. */
-const CASH = '512';
 
 /**
  * The journal lines the treasury is folded from (money movements and the loan installments that move the schedule),

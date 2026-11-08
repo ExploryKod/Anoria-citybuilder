@@ -39,6 +39,27 @@ export const DEFAULT_HAMLET_FISCAL_RATES = Object.freeze({
 });
 
 /**
+ * The federation's monetary policy (see docs/gameplay/PLAN_BANK_MONEY.md): the hamlets are States of one federation with one currency, and its central bank (the
+ * ECB of the federation) sets ONE policy rate and ONE reserve ratio for all of them; each State's central bank applies them. Stored once for the game (not per
+ * hamlet), written at boot from these defaults. In force only while the central bank of some State works; otherwise these defaults are.
+ *   - `policyRate` (taux directeur), per year: the bank's rates follow it (BankCatalog.js). 14 %: the savings earn 12 % a year and a bank loan costs 20 % a year, the
+ *     rates the game had before the central bank;
+ *   - `reserveRatio` (réserve obligatoire): the share of its depositors' savings a bank must keep in cash. A loan that would bring its cash under it is refinanced, or
+ *     refused while no central bank works; a bank repays its refinancing only out of the cash above it.
+ * @type {Readonly<{ policyRate: number, reserveRatio: number }>}
+ */
+export const DEFAULT_FEDERAL_MONETARY_POLICY = Object.freeze({
+  policyRate: 0.14,
+  reserveRatio: 0.2,
+});
+
+/** @type {Readonly<Record<keyof typeof DEFAULT_FEDERAL_MONETARY_POLICY, { min: number, max: number }>>} */
+export const FEDERAL_MONETARY_POLICY_BOUNDS = Object.freeze({
+  policyRate: Object.freeze({ min: 0, max: 0.5 }),
+  reserveRatio: Object.freeze({ min: 0, max: 1 }),
+});
+
+/**
  * How a hamlet treats the minimum wage, the first lever of its economic regime:
  * - `none`: no floor at all, the labour market alone sets every wage (very liberal);
  * - `fixed`: a floor in euros a month that stays where the player set it (`minimumWage`), as in the US;
@@ -134,6 +155,8 @@ export function fiscalSliderBounds() {
     administratorStipend: HAMLET_FISCAL_RATE_BOUNDS.administratorStipend,
     corporateTaxPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.corporateTaxRate),
     houseMaintenanceSubsidyPercent: inPercent(HAMLET_FISCAL_RATE_BOUNDS.houseMaintenanceSubsidyRate),
+    policyRatePercent: inPercent(FEDERAL_MONETARY_POLICY_BOUNDS.policyRate),
+    reserveRatioPercent: inPercent(FEDERAL_MONETARY_POLICY_BOUNDS.reserveRatio),
     serviceSubsidyPercent: SERVICE_SUBSIDY_BOUNDS,
     customsPercent: inPercent(CUSTOMS_RATE_BOUNDS),
     vatPercent: VAT_RATE_BOUNDS,

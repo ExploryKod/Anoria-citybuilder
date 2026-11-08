@@ -11,6 +11,7 @@ import { booked } from '../../helpers/booked.js';
 function settle({ buildings, subsidyRate }) {
   const journal = [];
   const service = new SettleProducerCharges({
+    borrowFromBank: async () => 0, // no bank: nothing is lent
     getTimeInfo: () => ({ year: 1, monthIndex: 3, month: 'Avril' }),
     listBuildings: async () => buildings.map((building) => ({ ...building, workerSources: {} })),
     sumGoodsFlowsByPair: async () => [],

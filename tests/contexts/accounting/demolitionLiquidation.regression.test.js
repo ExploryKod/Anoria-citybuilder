@@ -3,6 +3,7 @@ import { SettleProducerCharges } from '../../../src/contexts/accounting/applicat
 import { LiquidateDemolishedBuilding } from '../../../src/contexts/accounting/application/services/LiquidateDemolishedBuilding.js';
 import { BulldozeBuildingAtTile } from '../../../src/contexts/construction/application/services/BulldozeBuildingAtTile.js';
 import { companyYearReaderOf } from '../../helpers/companyYearReader.js';
+import { planLiquidation } from '../../../src/contexts/accounting/domain/policies/LiquidationPlanPolicy.js';
 import { payablesOf } from '../../../src/contexts/accounting/domain/policies/DebtPolicy.js';
 import { assertBalanced, entryLegsOf } from '../../../src/contexts/accounting/domain/policies/EntryLegsPolicy.js';
 
@@ -12,6 +13,7 @@ const HOUSE = 'House-Blue';
 // The month of a farm whose workers live in `house`. `buildings` is what stands that month; `pairs`, `serviceFlows` and `spoilage` are what the supply says moved in the month.
 function settleMonth(journal, { monthIndex, cash, buildings, pairs = [], serviceFlows = [], spoilage = [] }) {
   const service = new SettleProducerCharges({
+    borrowFromBank: async () => 0, // no bank: nothing is lent
     getTimeInfo: () => ({ year: 1, monthIndex, month: `Mois ${monthIndex}` }),
     listBuildings: async () => buildings,
     sumGoodsFlowsByPair: async () => pairs,
@@ -64,6 +66,14 @@ function liquidatorOf(journal, { cash = 0, stock = 0, standing = ['farm', 'house
     cashOf: async () => cash,
     valueStock: async () => [{ value: stock }],
     getOwner: async () => null,
+    // No bank in these cases: no credit, no depositor, no refinancing.
+    getLegsFold: async () => ({ totalsByAccount: () => new Map() }),
+    findBankBuildingId: async () => null,
+    findCentralBankId: async () => 'central-bank:h',
+    bankBooks: {
+      liveReservesOf: async () => { throw new Error('no bank in these cases'); },
+      centraliseBankBooks: async () => { throw new Error('no bank in these cases'); },
+    },
   });
 }
 
@@ -135,6 +145,13 @@ describe('the liquidation of a company the player demolishes', () => {
       stockProceeds: 100,
       surplusToCity: 0,
       holdingLoss: 100,
+      // No bank in this city: no credit to lose, nothing the bank collects or owes.
+      bankCreditLost: 0,
+      cityLoansRepaid: 0,
+      depositsRepaid: 0,
+      depositsGuaranteed: 0,
+      depositsLost: 0,
+      refinancingLost: 0,
       paid: [{ kind: 'wage', label: 'Salaires', amount: 400 }],
       unpaid: [{ kind: 'contribution', label: 'Cotisations sociales', amount: 40, advancedByCity: false }],
     }]);
@@ -214,5 +231,21 @@ describe('the demolition of a building', () => {
     });
     await expect(bulldoze.execute({ city, x: 0, y: 0 })).rejects.toThrow(/could not be closed/);
     expect(city.tiles[0][0].buildingId).toBe(HOUSE);
+  });
+});
+
+describe('the deposit guarantee of a liquidated bank is capped', () => {
+  test('the city makes each saver whole only up to the cap; beyond it the saver loses what the bank cannot give back', () => {
+    // A bank with 300 left for savers who are owed 1000 and 200 (the cap is 500): they share 300 pro rata (250 and 50).
+    const plan = planLiquidation({
+      cash: 300, stocks: [], debts: [], holding: 0, loan: 0, recoveryRate: 0.5, bankCredit: 0, collected: 0, refinancing: 0,
+      deposits: [{ id: 'rich', amount: 1000 }, { id: 'poor', amount: 200 }], depositGuaranteeCap: 500,
+    });
+    expect(plan.depositsPaid.get('rich') + plan.depositsPaid.get('poor')).toBe(300);
+    // The poor saver is made whole; the rich one is topped up to the cap (what the bank paid counts) and loses the rest.
+    expect(plan.depositsGuaranteed.get('poor')).toBe(200 - plan.depositsPaid.get('poor'));
+    expect(plan.depositsPaid.get('rich') + plan.depositsGuaranteed.get('rich')).toBe(500);
+    expect(plan.depositsLost.get('rich')).toBe(500);
+    expect(plan.depositsLost.get('poor')).toBe(0);
   });
 });

@@ -1,4 +1,5 @@
-import { formatEuro } from './formatMoney.js';
+import { formatEuro, formatYearlyRate } from './formatMoney.js';
+import { loanInstallmentOf } from '../domain/policies/LoanRatePolicy.js';
 
 /** @param {string} status */
 export function financialHealthStatusLabel(status) {
@@ -89,7 +90,7 @@ export function buildRealtimeBudgetViewModel({
 }
 
 /**
- * @param {Array<{ id: string, type: string, amount: number, interestRate: number, duration: number }>} activeLoans
+ * @param {Array<{ id: string, type: string, amount: number, total: number, interest: number, interestRate: number, duration: number }>} activeLoans `interestRate` per year, a fraction
  */
 export function buildLoanInterestDetailHtml(activeLoans) {
   if (activeLoans.length === 0) {
@@ -104,7 +105,8 @@ export function buildLoanInterestDetailHtml(activeLoans) {
   let totalInterest = 0;
   const loanCalculations = activeLoans
     .map((loan) => {
-      const monthlyInterest = Math.round(loan.amount * (loan.interestRate / 100) / loan.duration);
+      // What a turn's installment pays of interest: the loan's whole interest (its yearly rate over its duration) shared over its turns.
+      const monthlyInterest = loanInstallmentOf(loan).interest;
       totalInterest += monthlyInterest;
 
       return `
@@ -122,7 +124,7 @@ export function buildLoanInterestDetailHtml(activeLoans) {
             </div>
             <div class="loan-interest-calculation-detail">
               <span class="loan-interest-calculation-detail-label">Taux d'intérêt:</span>
-              <span class="loan-interest-calculation-detail-value">${loan.interestRate}%</span>
+              <span class="loan-interest-calculation-detail-value">${formatYearlyRate(loan.interestRate)}</span>
             </div>
             <div class="loan-interest-calculation-detail">
               <span class="loan-interest-calculation-detail-label">Durée:</span>
@@ -130,7 +132,7 @@ export function buildLoanInterestDetailHtml(activeLoans) {
             </div>
             <div class="loan-interest-calculation-detail">
               <span class="loan-interest-calculation-detail-label">Calcul:</span>
-              <span class="loan-interest-calculation-detail-value">${loan.amount.toLocaleString('fr-FR')}€ × ${loan.interestRate}% ÷ ${loan.duration} = ${monthlyInterest.toLocaleString('fr-FR')}€/tour</span>
+              <span class="loan-interest-calculation-detail-value">${loan.interest.toLocaleString('fr-FR')}€ d'intérêts ÷ ${loan.duration} tours = ${monthlyInterest.toLocaleString('fr-FR')}€/tour</span>
             </div>
           </div>
         </div>

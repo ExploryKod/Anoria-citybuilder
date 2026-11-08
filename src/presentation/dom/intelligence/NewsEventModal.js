@@ -17,6 +17,30 @@ import { buildingIconHtml, buildingName } from '../shell/CatalogVocabulary.js';
  * @type {Readonly<Record<string, { relevant: (action: object, deps: object) => boolean, iconHtml: (action: object) => string, label: (action: object) => string, title: (action: object) => string, run: (action: object, deps: object) => void }>>}
  */
 const NEWS_ACTIONS = Object.freeze({
+  // A partner city's gift: the button accepts it (the choice "Refuser" of the same dépêche refuses it). Once answered, it offers nothing more.
+  acceptGift: {
+    relevant: (action, deps) => {
+      if (typeof deps.isGiftOffered !== 'function') throw new Error('[news] a dépêche offers a gift, but the modal was not given isGiftOffered');
+      return deps.isGiftOffered();
+    },
+    iconHtml: () => '',
+    label: () => 'Accepter',
+    title: (action) => `Accepter les ${formatEuro(action.amount)} de ${action.cityName}`,
+    run: (action, deps) => {
+      if (typeof deps.answerGift !== 'function') throw new Error('[news] a dépêche offers a gift, but the modal was not given answerGift');
+      deps.answerGift(true);
+    },
+  },
+  refuseGift: {
+    relevant: (action, deps) => typeof deps.isGiftOffered === 'function' && deps.isGiftOffered(),
+    iconHtml: () => '',
+    label: () => 'Refuser',
+    title: () => 'Refuser le don',
+    run: (action, deps) => {
+      if (typeof deps.answerGift !== 'function') throw new Error('[news] a dépêche offers a gift, but the modal was not given answerGift');
+      deps.answerGift(false);
+    },
+  },
   // Pick a building to place: the button wears its picture, a click closes the dépêche and puts the tool in hand. Once the building stands the
   // button has nothing left to offer: the dépêche is only a confirmation, and shows no button.
   buildTool: {
@@ -438,17 +462,24 @@ export function initNewsEventModal(deps) {
     if (choicesEl) {
       const buttons = [];
       if (showBody) {
-        for (const choice of view.choices ?? []) buttons.push({ label: choice.label, page: choice.page });
+        for (const choice of view.choices ?? []) {
+          // A choice may do something besides open its page (refuse a gift): only while that is still relevant.
+          const act = choice.action && newsActionOf(choice.action).relevant(choice.action, deps) ? choice.action : null;
+          buttons.push({ label: choice.label, page: choice.page, act });
+        }
         if (view.next) buttons.push({ label: 'Lire la suite', page: view.next });
       }
       choicesEl.hidden = buttons.length === 0;
       choicesEl.replaceChildren(
-        ...buttons.map(({ label, page }) => {
+        ...buttons.map(({ label, page, act }) => {
           const button = document.createElement('button');
           button.type = 'button';
           button.className = 'news-event-choice-btn';
           button.textContent = label;
-          button.addEventListener('click', () => openPage(page));
+          button.addEventListener('click', () => {
+            if (act) newsActionOf(act).run(act, deps);
+            openPage(page);
+          });
           return button;
         })
       );

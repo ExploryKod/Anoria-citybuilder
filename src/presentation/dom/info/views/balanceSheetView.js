@@ -41,16 +41,24 @@ export function sideTable(title, rows, total) {
   return table;
 }
 
+const COMPANY_NOTE = 'Le bilan est celui d’aujourd’hui. Le stock et l’amortissement sont passés chaque mois par la clôture des comptes. Un salaire, une cotisation, un impôt ou un loyer que l’entreprise ne peut pas payer devient une dette, réglée plus tard. Les bâtiments appartiennent à la SCI de la maison-mairie ; les autres entreprises les louent.';
+
 /**
  * @param {ReturnType<import('../../../../contexts/accounting/domain/policies/BalanceSheetPolicy.js').balanceSheetOf>} sheet
+ * @param {{ onlyHeld?: boolean, note?: string }} [options] `onlyHeld`: only the lines that hold something (the central bank has no stock, no buildings...), the equity always;
+ *   `note`: the sentence under the tables, when the sheet is not a company's
  * @returns {HTMLElement}
  */
-export function balanceSheetView(sheet) {
+export function balanceSheetView(sheet, { onlyHeld = false, note = COMPANY_NOTE } = {}) {
   const { assets, liabilities } = sheet;
+  const shown = (rows) => (onlyHeld ? rows.filter((row) => row.kind === 'subtotal' || Math.abs(row.amount) > 0) : rows);
   const assetRows = [
     { label: 'Immobilisations (213)', amount: assets.fixedAssets, note: 'Constructions, au coût' },
     { label: 'Amortissements (281)', amount: -assets.accumulatedDepreciation, note: 'Ce que les constructions ont perdu de leur valeur depuis leur construction' },
     { label: 'Prêts (274)', amount: assets.loansLent },
+    { label: 'Réserves à la banque centrale (5151)', amount: assets.reserves, note: 'La monnaie de la banque : son compte à la banque centrale, d’où partent ses paiements hors de la banque' },
+    { label: 'Avoirs en devises (2761)', amount: assets.foreignReserves, note: 'L’argent venu de l’étranger, converti par la banque centrale (sous zéro quand plus a été payé à l’étranger que reçu)' },
+    { label: 'Dotation de fondation de l’État (2768)', amount: assets.stateEndowment, note: 'La monnaie que la banque centrale a créée une fois pour l’État, à sa fondation' },
     { label: 'Stocks', amount: assets.stock.total, note: 'Valorisés au coût : coût de production pour ce que le bâtiment fabrique, coût moyen des livraisons pour ce qu’il revend' },
     ...assets.stock.items.map((item) => ({
       label: `${goodLabel(item.category)} — ${item.amount} × ${formatEuro(item.unitCost)}`,
@@ -69,6 +77,10 @@ export function balanceSheetView(sheet) {
     { label: 'Capitaux propres', amount: liabilities.equity, kind: 'subtotal' },
     { label: 'Emprunts (164)', amount: liabilities.loans },
     { label: 'Dépôts de la clientèle (165)', amount: liabilities.deposits, note: 'Ce que la banque doit à ceux qui lui ont confié leur épargne : leur argent est dans sa caisse, mais il leur revient' },
+    { label: 'Dépôts à vue de la clientèle (1651)', amount: liabilities.sightDeposits, note: 'L’argent des ménages et des entreprises : ce que la banque leur doit' },
+    { label: 'Réserves des banques (1673)', amount: liabilities.reservesHeld, note: 'Ce que la banque centrale doit aux banques : leurs comptes chez elle' },
+    { label: 'Compte du Trésor (1674)', amount: liabilities.treasuryAccount, note: 'L’argent de l’État, tenu par la banque centrale : ce qu’elle lui doit' },
+    { label: 'Monnaie émise (1678)', amount: liabilities.issuedMoney, note: 'Ce que la banque centrale a créé pour refinancer la banque : la monnaie disparaît quand la banque rembourse' },
     { label: 'Concours bancaires courants (519)', amount: liabilities.overdraft, note: 'Le compte est sous zéro : ce qui n’a pas de créancier (les achats, l’entretien) est payé tout de même, et le compte se creuse' },
     ...Object.entries(liabilities.payables).map(([account, amount]) => ({
       label: `${accountLabelOf(account)} (${account})`,
@@ -79,9 +91,9 @@ export function balanceSheetView(sheet) {
 
   const wrapper = el('div', 'building-finance-statement balance-sheet');
   wrapper.append(
-    sideTable('Actif', assetRows, assets.total),
-    sideTable('Passif', liabilityRows, liabilities.total),
-    el('p', 'building-finance-note', 'Le bilan est celui d’aujourd’hui. Le stock et l’amortissement sont passés chaque mois par la clôture des comptes. Un salaire, une cotisation, un impôt ou un loyer que l’entreprise ne peut pas payer devient une dette, réglée plus tard. Les bâtiments appartiennent à la SCI de la maison-mairie ; les autres entreprises les louent.'),
+    sideTable('Actif', shown(assetRows), assets.total),
+    sideTable('Passif', shown(liabilityRows), liabilities.total),
+    el('p', 'building-finance-note', note),
   );
   return wrapper;
 }

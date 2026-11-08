@@ -4,7 +4,7 @@
  *
  * Each line lands on one side through its account (PcgJournalCatalog):
  *   - class 6 and 7 (charges, produits): the result, accumulated since the account opened;
- *   - 101 capital, 164 loans and 165 deposits received (the bank's debt to its depositors): the liabilities; 213 constructions and 274 loans lent: the fixed assets and financial assets, at cost;
+ *   - 101 capital, 164 loans, 165 deposits received (the bank's debt to its depositors) and 1678 the money the central bank issued: the liabilities; 213 constructions and 274 loans lent: the fixed assets and financial assets, at cost;
  *   - 457 dividends paid: a distribution that comes off the equity;
  *   - the opérations diverses of the month's closing (they move no money): the variation of stock (37, 35), the depreciation (281), the buildings the
  *     city contributed (213 against the capital 101) and their sortie d'actif when demolished (281 released, the rest a loss in 675); a leg on a charge or
@@ -25,10 +25,8 @@
 
 import { accountKeyOf } from './AccountKeyPolicy.js';
 import { postingsOf } from './AccountLedgerPolicy.js';
-import { isEcriture } from './EntryLegsPolicy.js';
+import { isCashAccount, isEcriture } from './EntryLegsPolicy.js';
 
-/** The cash account: the treasury's, read apart, so the balance sheet takes the cash it is given. */
-const CASH = '512';
 
 /** The account that carries the result of the years closed (see YearClosingPolicy). */
 const CARRIED_RESULT = '12';
@@ -46,7 +44,7 @@ const fromCentimes = (centimes) => centimes / 100;
  *   `cash`: the account's treasury; `stock`: what the supply says the building holds, valued at cost; `currentYear`: tells the result of the year from the carried one
  * @returns {{
  *   assets: { fixedAssets: number, accumulatedDepreciation: number, loansLent: number, stock: { items: ReadonlyArray<object>, total: number }, cash: number, total: number },
- *   liabilities: { capital: number, accumulatedResult: number, carriedResult: number, yearResult: number, stockVariation: number, distributions: number, equity: number, loans: number, deposits: number, total: number },
+ *   liabilities: { capital: number, accumulatedResult: number, carriedResult: number, yearResult: number, stockVariation: number, distributions: number, equity: number, loans: number, deposits: number, issuedMoney: number, total: number },
  * }}
  */
 export function balanceSheetOf(entries, buildingId, { accountKind = null, cash, stock, currentYear }) {
@@ -70,6 +68,17 @@ export function balanceSheetOf(entries, buildingId, { accountKind = null, cash, 
   let loans = 0;
   // What a bank holds for its depositors (165): the cash a house put there is the bank's, and what it owes back is its debt to the depositor.
   let deposits = 0;
+  // What the central bank issued to refinance the bank and has not had back (1678): the counterpart of its loan, money it created.
+  let issuedMoney = 0;
+  // A State's central bank: the account it holds for its Treasury (1674, a debt of it) and the money it created for the State at its founding (2768, a claim).
+  let treasuryAccount = 0;
+  let stateEndowment = 0;
+  // A State's central bank: the foreign money it converted for the economy (2761, its foreign-exchange reserves: below nothing when more was paid abroad than received).
+  let foreignReserves = 0;
+  // A bank: its customers' sight deposits (1651, its debt to them) and its reserves at the central bank (5151); the central bank: the banks' reserves (1673, its debt).
+  let sightDeposits = 0;
+  let reserves = 0;
+  let reservesHeld = 0;
   let fixedAssets = 0;
   let accumulatedDepreciation = 0;
   let postedStock = 0;
@@ -86,15 +95,24 @@ export function balanceSheetOf(entries, buildingId, { accountKind = null, cash, 
     for (const leg of postingsOf(entry)) {
       const net = leg.debit - leg.credit;
       const { account } = leg;
-      if (account === CASH) continue;
+      // The cash accounts are the treasury's, read apart: the balance sheet takes the cash it is given.
+      if (isCashAccount(account)) continue;
       if (account[0] === '6' || account[0] === '7') addResult(-net, entry.year);
       else if (account === CARRIED_RESULT) {
         // The result of the years a purge closed, carried by their à-nouveaux: it is the report à nouveau, whatever the year it is read in.
         result -= net;
         previousResult -= net;
       } else if (account === '101') capital -= net;
-      else if (account === '164') loans -= net;
+      // 164 and its sub-accounts, 1643 (a company's credit from the bank) and 1649 (what the bank owes the central bank for its refinancing): all borrowings.
+      else if (account === '164' || account === '1643' || account === '1648' || account === '1649') loans -= net;
       else if (account === '165') deposits -= net;
+      else if (account === '1678') issuedMoney -= net;
+      else if (account === '1674') treasuryAccount -= net;
+      else if (account === '1673') reservesHeld -= net;
+      else if (account === '1651') sightDeposits -= net;
+      else if (account === '5151') reserves += net;
+      else if (account === '2768') stateEndowment += net;
+      else if (account === '2761') foreignReserves += net;
       else if (account === '213' || account === '211') fixedAssets += net;
       else if (account === '274') loansLent += net;
       else if (account === '457') distributions -= net;
@@ -113,9 +131,9 @@ export function balanceSheetOf(entries, buildingId, { accountKind = null, cash, 
   // An account below nothing is an overdraft (the bank's concours courants, 519), a debt of the company; only money held is an asset.
   const cashHeld = Math.max(0, cashCentimes);
   const overdraft = Math.max(0, -cashCentimes);
-  const assetsTotal = fixedAssets - accumulatedDepreciation + loansLent + receivables + stockTotal + cashHeld;
+  const assetsTotal = fixedAssets - accumulatedDepreciation + loansLent + stateEndowment + foreignReserves + receivables + stockTotal + cashHeld + reserves;
   const equity = capital + result + stockInProgress + distributions;
-  const liabilitiesTotal = equity + loans + deposits + payablesTotal + overdraft;
+  const liabilitiesTotal = equity + loans + deposits + sightDeposits + issuedMoney + treasuryAccount + reservesHeld + payablesTotal + overdraft;
   if (assetsTotal !== liabilitiesTotal) {
     throw new Error(`[balance-sheet] the balance sheet of ${buildingId} does not balance: assets ${fromCentimes(assetsTotal)}, liabilities ${fromCentimes(liabilitiesTotal)} (a line of its journal was not placed, or its cash is not the sum of its lines)`);
   }
@@ -125,6 +143,9 @@ export function balanceSheetOf(entries, buildingId, { accountKind = null, cash, 
       fixedAssets: fromCentimes(fixedAssets),
       accumulatedDepreciation: fromCentimes(accumulatedDepreciation),
       loansLent: fromCentimes(loansLent),
+      stateEndowment: fromCentimes(stateEndowment),
+      foreignReserves: fromCentimes(foreignReserves),
+      reserves: fromCentimes(reserves),
       receivables: fromCentimes(receivables),
       stock: { items: stock, total: fromCentimes(stockTotal) },
       cash: fromCentimes(cashHeld),
@@ -140,6 +161,10 @@ export function balanceSheetOf(entries, buildingId, { accountKind = null, cash, 
       equity: fromCentimes(equity),
       loans: fromCentimes(loans),
       deposits: fromCentimes(deposits),
+      issuedMoney: fromCentimes(issuedMoney),
+      treasuryAccount: fromCentimes(treasuryAccount),
+      sightDeposits: fromCentimes(sightDeposits),
+      reservesHeld: fromCentimes(reservesHeld),
       overdraft: fromCentimes(overdraft),
       payables: Object.fromEntries([...payables].filter(([, centimes]) => centimes !== 0).map(([account, centimes]) => [account, fromCentimes(centimes)])),
       total: fromCentimes(liabilitiesTotal),

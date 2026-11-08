@@ -164,11 +164,33 @@ export function createGameplayContext(deps = {}) {
       getGameTime: () => getSessionGameTime(),
     });
 
+  /**
+   * The player liquidates the insolvent bank (from the central bank's section): it is demolished as an insolvent company is, its books closed first (its depositors
+   * repaid, the city guaranteeing what its cash does not cover: LiquidateDemolishedBuilding.js), and the screen follows the announcement. Refused while the bank is solvent.
+   * @returns {Promise<{ liquidated: true } | { liquidated: false, refused: string }>}
+   */
+  async function liquidateBank() {
+    const accounting = getOrCreateAccountingContext();
+    const solvency = await accounting.getBankSolvency();
+    if (!solvency?.insolvent) throw new Error('[bank] only an insolvent bank is liquidated from the central bank: a solvent one is demolished like any building');
+    const row = (await simulationDeps.listAllBuildingRows()).find((candidate) => instanceIdFromHouseRow(candidate) === solvency.bankId);
+    if (!row) throw new Error(`[bank] the bank ${solvency.bankId} has no row: it cannot be liquidated`);
+    const city = simulationDeps.getGameCity();
+    if (!city) throw new Error('[bank] there is no city on screen to take the bank off');
+    const outcome = await getOrCreateConstructionContext().bulldozeBuildingAtTile({ city, x: row.x, y: row.y, meshInstanceId: solvency.bankId });
+    if (outcome.refused) return { liquidated: false, refused: outcome.refused };
+    const name = buildingNameOf(row.type, row);
+    if (!name) throw new Error(`[bank] ${row.type} has no catalog name: the liquidation cannot be announced`);
+    getSharedEventBus().publish({ type: 'gameplay.companyLiquidated', instanceId: solvency.bankId, buildingType: row.type, name, x: row.x, y: row.y });
+    return { liquidated: true };
+  }
+
   return {
     randomEventsSimulation,
     liquidateInsolventCompanies,
     simulationDeps,
     advanceTutorial,
+    liquidateBank,
   };
 }
 

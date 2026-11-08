@@ -53,7 +53,8 @@ describe('the statements of the city (M57)', () => {
     const fold = foldOf(lines);
     const { assets } = cityBalanceSheetOf(fold.totalsOf({ accountKey: null, untilYear: 1 }), { yearTotals: fold.totalsOf({ accountKey: null, year: 1 }) });
 
-    expect(assets.groups.find((group) => group.id === 'cash').total * 100).toBe(fold.balanceOf('512', { accountKey: null, untilYear: 1 }));
+    // The State's money is its account at its central bank (515).
+    expect(assets.groups.find((group) => group.id === 'cash').total * 100).toBe(fold.balanceOf('515', { accountKey: null, untilYear: 1 }));
   });
 
   test('an account below nothing is an overdraft, a debt of the city', () => {
@@ -69,7 +70,7 @@ describe('the statements of the city (M57)', () => {
   test('the balance lists each account with its debits, its credits and its balance, and the two columns are equal', () => {
     const { accounts, totals } = cityTrialBalanceOf(foldOf(lines).totalsOf({ accountKey: null, untilYear: 1 }));
 
-    expect(accounts.find((item) => item.account === '512')).toMatchObject({ debit: 3060, credit: 120, debitBalance: 2940, creditBalance: 0 });
+    expect(accounts.find((item) => item.account === '515')).toMatchObject({ debit: 3060, credit: 120, debitBalance: 2940, creditBalance: 0 });
     expect(accounts.find((item) => item.account === '1021')).toMatchObject({ credit: 3000, creditBalance: 3000 });
     expect(totals.debit).toBe(totals.credit);
     expect(() => cityTrialBalanceOf(new Map([['512', { debit: 100, credit: 0 }]]))).toThrow(/does not balance/);

@@ -13,6 +13,9 @@
  * @property {number} exports
  * @property {number} customsImport
  * @property {number} socialContributions
+ * @property {number} centralBankProfit
+ * @property {number} bankPremiums
+ * @property {number} benefactorGifts
  * @property {number} loanCapital
  * @property {number} carryForwardIncome
  * @property {number} totalIncome
@@ -47,6 +50,9 @@ export function createEmptyCityLedgerYearLines(year = 0) {
     exports: 0,
     customsImport: 0,
     socialContributions: 0,
+    centralBankProfit: 0,
+    bankPremiums: 0,
+    benefactorGifts: 0,
     loanCapital: 0,
     carryForwardIncome: 0,
     totalIncome: 0,

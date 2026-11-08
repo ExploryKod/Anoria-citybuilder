@@ -110,7 +110,7 @@ export function buildCitizenTaxPaymentBusinessKey(houseId, year, hamletId) {
  * Idempotence key for one house's deposit interest at one bank, per civil month — the household side and the
  * bank's own mirror share the same pair and month, so each gets its own key (the `side` suffix) rather than one
  * refusing the other as a duplicate.
- * @param {'household_deposit_interest' | 'deposit_interest_paid'} type
+ * @param {'od_deposit_interest_credited' | 'od_deposit_interest_owed'} type (DEPOSIT_INTEREST_TYPES, DepositBalancePolicy.js)
  * @param {string} houseId
  * @param {string} bankId
  * @param {number} year

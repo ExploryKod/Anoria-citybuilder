@@ -9,12 +9,14 @@ import { LegsFold } from '../../../src/contexts/accounting/domain/policies/LegsF
 import { booked } from '../../helpers/booked.js';
 
 // The city pays a company its founding capital once, as the company's equity: the company starts with money, the city's treasury pays it as an investment.
-function fund(journal, needs) {
+// The State pays out of its Treasury and may not spend more than it holds: `held` is what it holds, in centimes (plenty, unless a test says otherwise).
+function fund(journal, needs, held = 1e9) {
   const service = new FundNewCompanies({
     getTimeInfo: () => ({ year: 1, monthIndex: 2, month: 'Mars' }),
     listFoundingNeeds: async () => needs,
     getJournalEntries: async () => journal,
     getCompanyAidPolicy: async () => ({ workingCapitalShare: 0.5, loanShare: 0, shareholderShare: 0 }),
+    treasuryHeld: async () => held,
     recordLedgerEntry: async (line) => {
       journal.push(booked({ ...line, year: 1, month: 3 }));
       return { recorded: true };
@@ -38,6 +40,16 @@ describe('the founding capital of a company', () => {
     expect(journal.filter((line) => line.type === 'company_capital_received')).toHaveLength(1);
   });
 
+  // The State may not spend more than its Treasury holds: a company the Treasury cannot fund whole waits (it is never funded by halves), and is funded once it can.
+  test('a company the Treasury cannot fund whole waits for its capital, and is funded the month the Treasury can', async () => {
+    const journal = [];
+    expect(await fund(journal, NEEDS, 9999)).toEqual({ waiting: 100 });
+    expect(journal).toHaveLength(0);
+
+    expect(await fund(journal, NEEDS, 10000)).toEqual({ waiting: 0 });
+    expect(journal.filter((line) => line.type === 'company_capital_received')).toHaveLength(1);
+  });
+
   test('a company that carries a stock is also given working capital, in the forms the player\'s policy sets: participation, loan, shareholder', async () => {
     // 50 a month for 2 months, plus 50 % of a stock worth 1000 when full = 500: 20 % lent, 30 % as a shareholder, the rest a participation.
     const journal = [];
@@ -46,6 +58,7 @@ describe('the founding capital of a company', () => {
       listFoundingNeeds: async () => [{ buildingId: 'mill', accountKind: null, monthlyNeed: 50, stockValue: 1000, name: 'Moulin' }],
       getJournalEntries: async () => journal,
       getCompanyAidPolicy: async () => ({ workingCapitalShare: 0.5, loanShare: 0.2, shareholderShare: 0.3 }),
+      treasuryHeld: async () => 1e9,
       recordLedgerEntry: async (line) => {
         journal.push(booked({ ...line, year: 1, month: 3 }));
         return { recorded: true };
@@ -84,7 +97,7 @@ describe('the founding capital of a company', () => {
     const city = deriveTreasuryFigures(cityLines, { currentTurn: 70 });
     const fold = new LegsFold();
     for (const line of cityLines) fold.add(line);
-    expect(fold.balanceOf('512', { accountKey: null })).toBe(35000);
+    expect(fold.balanceOf('515', { accountKey: null })).toBe(35000);
     expect(city.expenses).toBe(0);
     expect(city.totalInvestments).toBe(150);
   });

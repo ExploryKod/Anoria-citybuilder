@@ -13,9 +13,9 @@ describe('entryLegsOf — the legs of an écriture', () => {
     });
   });
 
-  test('the city books the same kind of flow in M57: a tax is a product of class 7, not a debt to the taxpayer', () => {
+  test('the city books the same kind of flow in M57: a tax is a product of class 7, not a debt to the taxpayer, on its account at its central bank', () => {
     const { legs } = entryLegsOf({ type: 'citizen_tax', amount: 3, accountBuildingId: null });
-    expect(legs).toEqual([{ account: '512', debit: 300, credit: 0 }, { account: '73111', debit: 0, credit: 300 }]);
+    expect(legs).toEqual([{ account: '515', debit: 300, credit: 0 }, { account: '73111', debit: 0, credit: 300 }]);
   });
 
   test('a company that writes a type only the city books throws, naming it', () => {

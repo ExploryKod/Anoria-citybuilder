@@ -6,13 +6,14 @@ import { booked } from '../../helpers/booked.js';
 import { unpairedFlowsOf } from '../../../src/contexts/accounting/domain/policies/TransactionLinkPolicy.js';
 import { employerContributionLines } from '../../../src/contexts/accounting/domain/policies/ProducerChargePolicy.js';
 import { moneyDirectionOf } from '../../../src/contexts/accounting/domain/policies/TreasuryFromJournalPolicy.js';
-import { pcgOfJournalType } from '../../../src/shared/accounting-catalog/PcgJournalCatalog.js';
+import { isCashAccount, pcgOfJournalType } from '../../../src/shared/accounting-catalog/PcgJournalCatalog.js';
 
 // The social contributions: the employer pays a share of the gross wage on top (a charge, 645), the employee has a share withheld from it, both reach
 // the city's social security (which pays the unemployment benefit). The income tax is on the wage after the employee's share.
 function settle({ employerContributionRate, employeeContributionRate }) {
   const journal = [];
   const service = new SettleProducerCharges({
+    borrowFromBank: async () => 0, // no bank: nothing is lent
     // The month delivered is the last of the year: the settlement that closes the fiscal year, the one that books the corporate tax.
     getTimeInfo: () => ({ year: 1, monthIndex: 11, month: 'Décembre' }),
     listBuildings: async () => [
@@ -95,7 +96,8 @@ describe('social contributions — employer, employee, and the city\'s social se
     const cash = journal
       .filter((line) => line.transactionId === wageFlow)
       .flatMap((line) => line.legs)
-      .filter((leg) => leg.account === '512')
+      // The company's and the household's money (512) and the city's (515, its account at its central bank): no money is made or lost.
+      .filter((leg) => isCashAccount(leg.account))
       .reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
 
     expect(cash).toBe(0);

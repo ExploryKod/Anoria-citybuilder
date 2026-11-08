@@ -71,7 +71,8 @@ year and month stamped at write time), an account (the entity it belongs to) and
 `{ compte, débit, crédit }` in centimes. The legs must balance; the write refuses an unbalanced écriture, naming it. A leg
 never guesses its account: the writer names every compte (no implied bank leg, no counter-account looked up afterwards).
 The treasury (balance, income, expenses, totals, daily flows, loans, last tax year) is derived from the legs, the cash being
-the balance of the cash accounts (512, 53): there is no "money direction". Never store a derived money figure, never write a
+the balance of the cash accounts (`CASH_ACCOUNTS` in `PcgJournalCatalog`: 512 a bank account, 515 a State's account at its central bank, 53 banknotes; never a
+copy of the list, never a prefix match): there is no "money direction". The city is a State: its M57 lines book its money on 515. Never store a derived money figure, never write a
 balance into a row, never update a second store alongside the journal. Monthly charges are idempotent per hamlet and per month
 (business key `type:hamletId:year:month`): a second charge for the same key is refused, not silently recomputed.
 
@@ -90,7 +91,8 @@ balance-sheet accounts' balances (capital, fixed assets, depreciation, stock, de
 result (12), balanced, which the fold, the grand livre and the balance sheet read like any other écriture. A year's per-type totals
 (the sub-totals the yearly summary shows), what moved its cash by account (what the city's ledger reads) and what each building
 cost are kept in the line's `closing`, a read-only digest of the year dropped, never a leg. (The allocation of the result,
-110/119 and dividends, is not written: the dividends are already écritures of the year closed.) Loan écritures are kept whole, since a loan's schedule runs past the purge. A purge changes neither
+110/119 and dividends, is not written: the dividends are already écritures of the year closed.) Loan écritures are kept whole, since a loan's schedule runs past the purge; deposit écritures too, since a house's savings at a bank
+are read from them pair by pair (house, bank) and the à-nouveaux has no counterparty. A purge changes neither
 the treasury nor the balance sheet. Regression tests: `tests/contexts/accounting/yearClosing.regression.test.js` and
 `tests/contexts/accounting/balanceSheet.test.js`.
 
@@ -121,6 +123,36 @@ gives a stake, so a January dividend: stake × payout rate × distributable resu
 computed (the shares it holds over all the shares), never set: capital put in later as a shareholder buys shares at the price of a share then (the company's book equity over its shares, `CompanyAidCatalog`), so a company that has grown costs more to enter, and a participation buys none. A liquidated company repays its loan from its cash before the capital goes back; the rest is abandoned
 and lost by the city. The policy is global to the hamlet (one for all the companies); an aid to one company is a one-off contribution (`InjectCompanyAid`), made from the company's own sheet (Finances tab, "Aide de la ville") or from the admin panel's list. A policy per company or per sector is a limit still to lift. Whether a company is funded is read from the journal. A company already in a starter prefab carries its capital lines in the prefab's journal. An account below
 nothing shows on the balance sheet as an overdraft (519), a debt.
+
+Each hamlet is a State of one federation with one currency (`docs/gameplay/PLAN_BANK_MONEY.md`): the policy rate and the reserve ratio are the federation's, one
+setting for all (`FederalMonetaryPolicyRepository`, never on a hamlet), moved while the central bank of some State works; each State's central bank refinances its
+own State's bank only. A State's central bank is an institution, its books under the State (`centralBankAccountOf`), never a building's; it holds no money of its
+own (what it is paid comes back to it, 1678; what it pays credits the Treasury's account, 1674), and once a month its Treasury's account is centralised to the
+State's money (`BankRefinancing.centraliseTreasury`, from balances). A bank's customers' money (their 512) is its sight deposits (1651), its own money its reserves at
+the central bank (5151); its reserves are its own cash plus its customers' money (a payment between customers moves no reserves, a credit to a customer creates the
+deposit), read live from the fold, and centralised once a month (`BankRefinancing.centraliseBank`). The bank's constraint is its reserves against the reserve due on
+its deposits, never its cash. What the central bank issued and the public holds is banknotes (all its customers' money when the State has no bank, none when it has
+one); the difference is money that came from or went abroad, converted against its foreign reserves (2761), once a month (`BankRefinancing.centraliseExternal`). The
+starter prefab's city lines are on 515 in its JSON, its private flows (customers' money) on 512. The State may not spend more than its account at its central bank holds: `RecordLedgerEntry` refuses a payment of the State (an écriture with no account) that would take
+the Treasury below nothing, with the reason `treasury_insufficient`, after the idempotence check (`stateCanAfford`). A refusal is no defect, and whoever pays decides
+what it means: the player is told (`insufficient_funds` on screen), a company waits for its whole founding capital (`FundNewCompanies`, all or nothing), and in the month's
+settlement the State leaves the payment unpaid and its other side unwritten (`SettleProducerCharges` writes the State's line of a flow first, `stateFirst`), which is
+announced once a month (`state-unpaid`). A payment that must be made (a liquidation's guarantees) stops with a sentence the player reads. The starter city's opening
+capital is the founder's treasure (the State's dotation, 1021, money its own central bank created). A later gift is a partner city's: once per game and only in the game's first `firstYears` years, when the city has no
+money left and a benefactor of `BenefactorGiftCatalog` (in order of priority) is a commercial partner, that city offers `amount` € and the player accepts or refuses
+(`BenefactorGift`, a dépêche) — a last resort: only when the city can no longer borrow (`cityBorrowing`: no bank, lending frozen, no reserves or collateral, or its gross public debt at the ceiling `DEBT_CEILING_SHARE_OF_GDP` of its domestic product, never under `MINIMUM_DEBT_CEILING`; a loan past the ceiling is refused); accepted, it is a `benefactor_gift` écriture (M57 1025), foreign money that the central bank converts against its foreign reserves
+(`centraliseExternal`), never a founding endowment. The central bank is the one place money is created: when the bank lacks cash for a withdrawal, or for a loan that leaves it the reserve the
+ratio in force asks (`reserveRatio` of its deposits), its State's working central bank lends it the shortfall, only against collateral (its loans, 274, less `COLLATERAL_HAIRCUT`; refused with the reason `collateral` beyond), in a corridor of rates around the policy rate: the **marginal lending** (urgent, to lend; 1648; policy rate + `MARGINAL_LENDING_SPREAD`), the **main refinancing** (the reserve upkeep at the month's close; 1649; the policy rate), and the **deposit facility** (reserves above the reserve due earn the policy rate − `DEPOSIT_FACILITY_SPREAD`, paid by the central bank; `corridorOf`) (bank: 512 against 1648/1649; central bank: 274 against the money
+issued, 1678, no cash), and the bank's repayment destroys it again (`BankRefinancing`). What the bank owes is the balance of its 1649, read from the fold. Every
+January the central bank pays the city what it earned and holds in cash (457 on its side, 758 for the city: the ledger's own line). A company short of cash for its
+month borrows the shortfall from the bank (its 1643, the bank's 274) up to `COMPANY_CREDIT_CEILING_MONTHS` of its charges, the less of it the dearer the credit,
+before any charge becomes a debt (`BankCompanyCredit`). Each month a household keeps a cash buffer (a month of the larger of its income and its spending), saves at
+the bank a share of the rest that rises with the savings rate, and draws on its savings when short; one in debt pays before it saves (`SettleHouseholdSavings`).
+This is how the policy rate reaches the city: never a hand-written reaction to a rate, always these catalog figures (`BankCatalog`). The supervisor reads the bank's equity against its loans (`capitalStatusOf`): warned under `CAPITAL_WARNING_RATIO` (a monthly dépêche), its lending frozen under
+`MIN_CAPITAL_RATIO` (no loan to the State, no credit to a company: the reason `capital`), insolvent below nothing. The player recapitalises it (city capital, as a
+founding capital, up to the warning ratio) in any of the three, or liquidates it once insolvent; a liquidated bank collects its loans back, repays its depositors as far
+as its cash goes and the city guarantees each saver only up to `DEPOSIT_GUARANTEE_CAP` (`deposit_guarantee`; beyond it the saver loses, `od_deposit_lost`), a guarantee the banks
+fund by a monthly premium on their savings (`DEPOSIT_GUARANTEE_PREMIUM_RATE`, `deposit_guarantee_premium`), and the central bank loses the refinancing it cannot repay. Every rate of money is per year (`LoanRatePolicy`, `BankCatalog`).
 
 ## The balance sheet is derived, never written
 

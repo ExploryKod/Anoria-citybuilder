@@ -94,9 +94,12 @@ export class SettleProducerCharges {
    *   résultat courant avant impôts and the corporate tax booked so far in a year, read off its compte de résultat (the one the player reads): a company's account, or a
    *   house's business account (`accountKind`)
    * @param {(type: string) => number} deps.buildingMaintenanceCost
+   * @param {(params: { time: number, companyId: string, shortfall: number }) => Promise<number>} deps.borrowFromBank a company short of cash for its month borrows the
+   *   shortfall (centimes) from the bank, as far as its credit ceiling and the bank allow (BankCompanyCredit.lend): returns what it borrowed, in centimes
    * @param {(params: object) => Promise<{ recorded: boolean, reason?: string }>} deps.recordLedgerEntry
    */
   constructor(deps) {
+    if (typeof deps.borrowFromBank !== 'function') throw new Error('[producer] SettleProducerCharges needs borrowFromBank: a company short of cash asks the bank before it falls into debt');
     this.deps = deps;
   }
 
@@ -106,6 +109,16 @@ export class SettleProducerCharges {
    * @param {number} params.deliveredTime a turn of the delivered month
    */
   async execute({ time, deliveredTime }) {
+    this.#refusedFlows = new Set();
+    this.#stateUnpaid = [];
+    await this.#settle({ time, deliveredTime });
+    // What the State could not pay this month, for the player to be told (the Treasury was empty): by kind of payment, in euros.
+    const unpaid = {};
+    for (const { kind, amount } of this.#stateUnpaid) unpaid[kind] = centimes((unpaid[kind] ?? 0) + amount);
+    return { stateUnpaid: unpaid };
+  }
+
+  async #settle({ time, deliveredTime }) {
     const timeInfo = this.deps.getTimeInfo(deliveredTime);
     const settledAt = this.deps.getTimeInfo(time);
     const hamletId = requireActiveHamletId();
@@ -388,7 +401,7 @@ export class SettleProducerCharges {
         }));
       } else {
         // The city's subsidy to a company: a city expense and the company's receipt, both for the month.
-        for (const line of serviceSubsidyLines({ sellerId: building.id, citySubsidy: subsidyHT })) {
+        for (const line of stateFirst(serviceSubsidyLines({ sellerId: building.id, citySubsidy: subsidyHT }))) {
           await this.#record(line, {
             time,
             key: buildProducerLineBusinessKey(line.kind, building.id, timeInfo, hamletId),
@@ -398,13 +411,13 @@ export class SettleProducerCharges {
           });
         }
 
-        const lines = buildingChargeLines({
+        const lines = stateFirst(buildingChargeLines({
           id: building.id,
           type: building.type,
           maintenanceCost: this.deps.buildingMaintenanceCost(building.type),
           houseSubsidyRate,
           owner,
-        });
+        }));
         // A house's upkeep with no owner standing is the hamlet's: the line says why, so the player is not left to guess.
         const ownerless = owner === null && houseIds.has(building.id) ? ' (sans propriétaire : à la charge du hameau)' : '';
         for (const line of lines) {
@@ -521,22 +534,23 @@ export class SettleProducerCharges {
         const amount = Math.abs(balance);
         const description = `du foyer ${nameOf(household.id)} - régularisation ${timeInfo.year}`;
         const [householdKind, cityKind] = refund ? ['income_tax_refund', 'payroll_tax_refund'] : ['income_tax', 'payroll_tax'];
-        await this.#record(
-          { kind: householdKind, amount, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT, flow: `income_tax_annual:${household.id}` },
-          {
-            time: deliveredTime,
-            key: buildProducerLineBusinessKey(householdKind, `${household.id}:annual`, timeInfo, hamletId),
-            description: `${LINE_LABELS[householdKind]} ${description}`,
-            buildingInstanceId: household.id,
-            timeInfo,
-          },
-        );
+        // The State's line first: a refund is a payment it may not be able to make, and then the household is not refunded.
         await this.#record(
           { kind: cityKind, amount, holder: null, counterparty: household.id, accountKind: null, flow: `income_tax_annual:${household.id}` },
           {
             time: deliveredTime,
             key: buildProducerLineBusinessKey(cityKind, `${household.id}:annual`, timeInfo, hamletId),
             description: `${LINE_LABELS[cityKind]} ${description}`,
+            buildingInstanceId: household.id,
+            timeInfo,
+          },
+        );
+        await this.#record(
+          { kind: householdKind, amount, holder: household.id, counterparty: null, accountKind: PERSONAL_ACCOUNT, flow: `income_tax_annual:${household.id}` },
+          {
+            time: deliveredTime,
+            key: buildProducerLineBusinessKey(householdKind, `${household.id}:annual`, timeInfo, hamletId),
+            description: `${LINE_LABELS[householdKind]} ${description}`,
             buildingInstanceId: household.id,
             timeInfo,
           },
@@ -708,12 +722,12 @@ export class SettleProducerCharges {
     const write = (line, description, key) => this.#record(line, { time, key, description, buildingInstanceId: id, timeInfo });
 
     // What comes in, and what has no creditor, is written first: the company's money for the month is what is left of them.
-    for (const line of serviceSubsidyLines({ sellerId: id, citySubsidy: subsidyHT })) {
+    for (const line of stateFirst(serviceSubsidyLines({ sellerId: id, citySubsidy: subsidyHT }))) {
       await write(line, `${LINE_LABELS[line.kind]} ${nameOf(id)} - ${monthLabel}`, buildProducerLineBusinessKey(line.kind, id, timeInfo, hamletId));
     }
     const chargeLines = buildingChargeLines({ id, type: building.type, maintenanceCost: this.deps.buildingMaintenanceCost(building.type), houseSubsidyRate, owner });
     const isRentLine = (line) => line.kind === 'premises_rent_paid' || line.kind === 'premises_rent_received';
-    for (const line of chargeLines.filter((candidate) => !isRentLine(candidate))) {
+    for (const line of stateFirst(chargeLines.filter((candidate) => !isRentLine(candidate)))) {
       await write(line, `${LINE_LABELS[line.kind]} ${nameOf(id)} - ${monthLabel}`, buildProducerLineBusinessKey(line.kind, id, timeInfo, hamletId));
     }
 
@@ -731,7 +745,10 @@ export class SettleProducerCharges {
     const debts = [...payables.values()]
       .filter((debt) => debt.debtorId === id && debt.accountKind === null && (debt.kind !== 'premises_rent' || owner?.id === debt.creditorId))
       .map((debt) => ({ id: `${debt.kind}|${debt.creditorId ?? ''}`, rank: PAYABLE_KINDS[debt.kind].rank, amount: debt.centimes, debt }));
-    const cash = toC(await this.deps.companyFundsOf(id));
+    let cash = toC(await this.deps.companyFundsOf(id));
+    // Short of cash for its old debts and the month's charges, the company borrows the shortfall from the bank first; only what the bank does not lend becomes a debt.
+    const due = [...debts, ...charges].reduce((sum, claim) => sum + claim.amount, 0);
+    if (due > cash) cash += await this.deps.borrowFromBank({ time, companyId: id, shortfall: due - cash });
     const plan = planCompanyPayments({ cash, debts, charges });
 
     for (const { id: debtId, debt } of debts) {
@@ -908,8 +925,31 @@ export class SettleProducerCharges {
    * @param {{ time: number, key: string, description: string, buildingInstanceId: string, timeInfo: { year: number, monthIndex: number } }} written
    */
   async #record(line, written) {
-    await recordLine(this.deps, line, written);
+    // The other side of a flow whose State payment was refused is not written: the household, the company or the owner is not paid what the State did not pay.
+    if (line.flow && this.#refusedFlows.has(line.flow)) return false;
+    // The State pays out of its account at its central bank and may not spend more than it holds: a payment it cannot make stays unpaid, and so does its other side.
+    const paid = await recordLine(this.deps, line, written, { stateMayBeShort: line.holder === null });
+    if (!paid) {
+      if (line.flow) this.#refusedFlows.add(line.flow);
+      this.#stateUnpaid.push({ kind: line.kind, amount: line.amount });
+    }
+    return paid;
   }
+
+  /** The flows whose payment by the State was refused this month, and what the State left unpaid: reset by each settlement. */
+  #refusedFlows = new Set();
+  #stateUnpaid = [];
+}
+
+/**
+ * The lines of a flow with the State's first: the State pays out of what its Treasury holds, so its line is tried before the line of the one it pays, which is then
+ * written only if the State could pay (see `#record`). A stable sort: the other lines keep their order.
+ * @template {{ holder: string | null }} L
+ * @param {L[]} lines
+ * @returns {L[]}
+ */
+function stateFirst(lines) {
+  return [...lines].sort((a, b) => Number(b.holder === null) - Number(a.holder === null));
 }
 
 /** @param {Array<{ amountHT: number }>} pairs @param {(pair: object) => boolean} predicate */

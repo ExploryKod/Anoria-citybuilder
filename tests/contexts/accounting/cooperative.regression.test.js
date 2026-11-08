@@ -62,6 +62,7 @@ describe('a property company (SCI) follows its own legal form, not the cooperati
 function settle({ pairs, businessCash, taxRate = { threshold1: 0, rate1: 0, threshold2: 0, rate2: 0 } }) {
   const journal = [];
   const service = new SettleProducerCharges({
+    borrowFromBank: async () => 0, // no bank: nothing is lent
     // The month delivered is the last of the year: the settlement that closes the fiscal year, the one that shares the surplus.
     getTimeInfo: () => ({ year: 1, monthIndex: 11, month: 'Décembre' }),
     listBuildings: async () => [
@@ -140,6 +141,7 @@ describe('the year-end settlement of a house\'s cooperative', () => {
   test('an advance that went beyond the tax of the year is given back, to the household and out of the city\'s funds', async () => {
     const journal = [];
     const service = new SettleProducerCharges({
+    borrowFromBank: async () => 0, // no bank: nothing is lent
       getTimeInfo: () => ({ year: 1, monthIndex: 11, month: 'Décembre' }),
       listBuildings: async () => [{ id: 'house-1', type: 'House-Red', workerSources: {} }],
       sumGoodsFlowsByPair: async () => [],
@@ -182,6 +184,7 @@ describe('the year-end settlement of a house\'s cooperative', () => {
   test('the goods a building lost to spoilage are an informative line that moves no money', async () => {
     const journal = [];
     const service = new SettleProducerCharges({
+    borrowFromBank: async () => 0, // no bank: nothing is lent
       getTimeInfo: () => ({ year: 1, monthIndex: 3, month: 'Avril' }),
       listBuildings: async () => [{ id: 'field', type: 'Farm-Wheat', workerSources: {} }],
       sumGoodsFlowsByPair: async () => [],

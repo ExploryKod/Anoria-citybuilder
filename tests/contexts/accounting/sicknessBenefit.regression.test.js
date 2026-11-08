@@ -11,6 +11,7 @@ function settle({ sicknessCover, absent = { 'house-1': 1 }, invalid = 0 }) {
   const journal = [];
   // The workers who do not work are the sick (`absent`), house by house; the invalid (`invalid`, of the house) hold no post.
   const service = new SettleProducerCharges({
+    borrowFromBank: async () => 0, // no bank: nothing is lent
     getTimeInfo: () => ({ year: 1, monthIndex: 5, month: 'Juin' }),
     listBuildings: async () => [
       { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 4 }, absentSources: absent, sickAbsentSources: absent },

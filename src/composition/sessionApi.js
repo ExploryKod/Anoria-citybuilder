@@ -13,11 +13,7 @@ import { requireActiveHamletId } from '../core/persistence/hamlet/hamletSession.
 import { TimeManager } from '../shared/time/TimeManager.js';
 import { fiscalSliderBounds } from '../contexts/accounting/domain/catalogs/FiscalRateCatalog.js';
 import { createEmptyCityLedgerYearLines } from '../contexts/accounting/domain/value-objects/CityLedgerYearLines.js';
-import {
-  computeLoanRate,
-  computeLoanRatesByType,
-  computeLoanInterestAmount,
-} from '../contexts/accounting/domain/policies/LoanRatePolicy.js';
+import { loanInstallmentOf } from '../contexts/accounting/domain/policies/LoanRatePolicy.js';
 import {
   INFO_JOURNAL_TYPE_LABELS,
   isInfoPseudoMovementType,
@@ -112,9 +108,22 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     setSalarySettings: (partial) => accounting.setSalarySettings(partial),
     getInsuranceLaw: () => accounting.getInsuranceLaw(),
     setInsuranceMandatory: (mandatory) => accounting.setInsuranceMandatory(mandatory),
+    getPolicyRate: () => accounting.getPolicyRate(),
+    getCentralBankType: () => accounting.getCentralBankType(),
+    setPolicyRate: (rate) => accounting.setPolicyRate(rate),
+    setReserveRatio: (ratio) => accounting.setReserveRatio(ratio),
+    getLoanTerms: (params) => accounting.getLoanTerms(params),
+    coverBankShortfall: (params) => accounting.coverBankShortfall(params),
+    getBankSolvency: () => accounting.getBankSolvency(),
+    getCentralBankBooks: () => accounting.getCentralBankBooks(),
+    recapitaliseBank: () => accounting.recapitaliseBank(),
+    getBenefactorGift: () => accounting.getBenefactorGift(),
+    getCityBorrowing: () => accounting.getCityBorrowing(),
+    answerBenefactorGift: (params) => accounting.answerBenefactorGift(params),
     getSicknessCover: () => accounting.getSicknessCover(),
     setSicknessCover: (cover) => accounting.setSicknessCover(cover),
     ensureHamletFiscalRates: (hamletId) => accounting.ensureHamletFiscalRates(hamletId),
+    ensureFederalMonetaryPolicy: () => accounting.ensureFederalMonetaryPolicy(),
 
     ensureCustomsDuties: () => accounting.ensureCustomsDuties(),
     getServiceSubsidies: () => accounting.getServiceSubsidies(),
@@ -132,7 +141,7 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     hasBuildingAccount: (buildingType) => accounting.hasBuildingAccount(buildingType),
     isPropertyOwner: (houseId) => accounting.isPropertyOwner(houseId),
     findBankBuildingId: () => accounting.findBankBuildingId(),
-    getHouseholdDepositBalance: (houseId) => accounting.getHouseholdDepositBalance(houseId),
+    getHouseholdDepositBalance: (houseId, bankId) => accounting.getHouseholdDepositBalance(houseId, bankId),
     recordHouseholdDeposit: (params) => accounting.recordHouseholdDeposit(params),
     recordHouseholdWithdrawal: (params) => accounting.recordHouseholdWithdrawal(params),
     /** The range of every fiscal slider (see fiscalSliderBounds). */
@@ -155,9 +164,7 @@ export function createAccountingSessionApi(accounting, cityAssets = null) {
     recordInfoLoanInstallment: (params) => accounting.recordInfoLoanInstallmentFromGame(params),
 
     createEmptyCityLedgerYearLines: (...args) => createEmptyCityLedgerYearLines(...args),
-    computeLoanRate: (...args) => computeLoanRate(...args),
-    computeLoanRatesByType: (...args) => computeLoanRatesByType(...args),
-    computeLoanInterestAmount: (...args) => computeLoanInterestAmount(...args),
+    loanInstallmentOf: (loan) => loanInstallmentOf(loan),
 
     INFO_JOURNAL_TYPE_LABELS,
     isInfoPseudoMovementType: (...args) => isInfoPseudoMovementType(...args),
@@ -342,6 +349,8 @@ export function assembleSessionApi({
       // Gives the player the tutorial's next instruction when the city has reached it: `{ news, toasts }`, the dépêche written (or null) and the
       // toasts to show without blocking (see AdvanceTutorial.js).
       advanceTutorial: () => gameplay.advanceTutorial.execute(),
+      // The player liquidates the insolvent bank: demolished with its books closed, its depositors repaid (the city guarantees the rest).
+      liquidateBank: () => gameplay.liquidateBank(),
     });
   }
   return Object.freeze(api);

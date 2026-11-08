@@ -1,6 +1,6 @@
 /**
- * The fold of the journal's legs is the one derivation of every balance: the cash is the balance of 512, for the city, a hamlet or an account, at any
- * point in time, and a year closed by a purge leaves it as it was.
+ * The fold of the journal's legs is the one derivation of every balance: the cash is the balance of the cash accounts (a company's 512, a State's 515), for the
+ * city, a hamlet or an account, at any point in time, and a year closed by a purge leaves it as it was.
  */
 import { describe, test, expect } from '@jest/globals';
 import { LegsFold } from '../../../src/contexts/accounting/domain/policies/LegsFold.js';
@@ -14,7 +14,8 @@ const foldOf = (lines) => {
   return fold;
 };
 
-describe('LegsFold — the cash is the balance of 512', () => {
+// The city is a State: its money is its account at its central bank (515); a company's is at a bank (512).
+describe('LegsFold — the cash is the balance of the cash accounts', () => {
   const lines = [
     line('capital_funds', 1000),
     line('construction', 300, { month: 4 }),
@@ -25,15 +26,15 @@ describe('LegsFold — the cash is the balance of 512', () => {
 
   test('the city, a hamlet and a company each read their own cash, to the centime', () => {
     const fold = foldOf(lines);
-    expect(fold.balanceOf('512', { accountKey: null })).toBe(95000);
-    expect(fold.balanceOf('512', { accountKey: null, hamletId: 'h1' })).toBe(75000);
+    expect(fold.balanceOf('515', { accountKey: null })).toBe(95000);
+    expect(fold.balanceOf('515', { accountKey: null, hamletId: 'h1' })).toBe(75000);
     expect(fold.balanceOf('512', { accountKey: 'farm' })).toBe(7000);
   });
 
   test('the cash at the end of a year or of a month leaves out what came after', () => {
     const fold = foldOf(lines);
-    expect(fold.balanceOf('512', { accountKey: null, hamletId: 'h1', untilYear: 0 })).toBe(70000);
-    expect(fold.balanceOf('512', { accountKey: null, hamletId: 'h1', untilYear: 0, untilMonth: 3 })).toBe(100000);
+    expect(fold.balanceOf('515', { accountKey: null, hamletId: 'h1', untilYear: 0 })).toBe(70000);
+    expect(fold.balanceOf('515', { accountKey: null, hamletId: 'h1', untilYear: 0, untilMonth: 3 })).toBe(100000);
   });
 
   test('a year folded into its closing by a purge leaves the cash as it was', () => {
@@ -41,8 +42,8 @@ describe('LegsFold — the cash is the balance of 512', () => {
     const closed = lines.filter((entry) => entry.year === 0 && entry.hamletId === 'h1' && entry.accountBuildingId === null);
     const closing = buildYearClosingLine({ year: 0, hamletId: 'h1', accountBuildingId: null, accountKind: null, lines: closed, getTimeInfo: () => ({ monthIndex: 0 }) });
     const afterPurge = foldOf([closing, ...lines.filter((entry) => !closed.includes(entry))]);
-    expect(afterPurge.balanceOf('512', { accountKey: null, hamletId: 'h1' })).toBe(75000);
-    expect(afterPurge.balanceOf('512', { accountKey: null })).toBe(95000);
+    expect(afterPurge.balanceOf('515', { accountKey: null, hamletId: 'h1' })).toBe(75000);
+    expect(afterPurge.balanceOf('515', { accountKey: null })).toBe(95000);
   });
 
   test('an écriture with no legs is a defect, naming it', () => {

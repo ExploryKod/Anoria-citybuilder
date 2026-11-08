@@ -7,7 +7,9 @@
  *   - the year's totals per journal type, i.e. the sub-totals the yearly summary and the city ledger show (a digest, never a leg).
  *
  * Loan lines are kept as they are: a loan whose schedule runs past the purge still needs its contract and installments.
+ * Deposit lines too: a house's savings at a bank outlive the year they were put there (DepositBalancePolicy.js).
  */
+import { DEPOSIT_TYPES } from './DepositBalancePolicy.js';
 import { moneyDirectionOf } from './TreasuryFromJournalPolicy.js';
 import { accountKeyOf } from './AccountKeyPolicy.js';
 import { postingsOf } from './AccountLedgerPolicy.js';
@@ -35,6 +37,8 @@ const KEPT_LOAN_TYPES = new Set([
  */
 export function isFoldedIntoClosing(entry) {
   if (entry.type === YEAR_CLOSING_TYPE || KEPT_LOAN_TYPES.has(entry.type)) return false;
+  // Deposit lines survive too: a house's savings at a bank are read from them, pair by pair, and the à-nouveaux has no counterparty.
+  if (DEPOSIT_TYPES.has(entry.type)) return false;
   return true;
 }
 

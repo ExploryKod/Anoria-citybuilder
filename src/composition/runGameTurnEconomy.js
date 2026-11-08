@@ -10,7 +10,9 @@ import { getOrCreateIntelligenceContext } from './createIntelligenceContext.js';
 import { getOrCreateHousingContext } from './createHousingContext.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { MONTHS_PER_YEAR } from '../shared/time/TimeCalendar.js';
+import { LINE_LABELS } from '../contexts/accounting/application/services/DebtLines.js';
 import { tickPerfEnabled } from '../core/diagnostics/tickPerf.js';
+import { DexieCityTradeRepository } from '../contexts/geography/infrastructure/dexie/DexieCityTradeRepository.js';
 import { getCumulativeDeaths } from './gameplayMortalityState.js';
 
 /**
@@ -77,10 +79,48 @@ export async function processGameTurnBudget({ city, buildings, time, totalPop })
     const departuresMs = performance.now() - afterMonthStartedAt - rentArrearsMs;
     // The houses left empty owe nothing any more: the owner knows it will not be paid (no prosecution in the game).
     await getOrCreateAccountingContext().writeOffVacantRentDebts({ time });
+    // A city with no money left, that trades with a partner city, is offered a gift by it (once per game): the player is told and answers from the dépêche.
+    const partnerIds = (await new DexieCityTradeRepository().getActiveRelations()).map((relation) => relation.cityId);
+    const gift = await getOrCreateAccountingContext().offerBenefactorGift({ time, partnerIds });
+    if (gift) await getOrCreateIntelligenceContext().announceMilestone({ milestoneId: 'benefactor-gift', turn: time, params: gift });
+    // A bank whose losses ate its capital keeps running, and the player is told once a month what he can do (recapitalise it, or liquidate it).
+    const solvency = await getOrCreateAccountingContext().getBankSolvency();
+    // Before that, the supervisor: a bank thin on capital is warned, then has its lending frozen, once a month, so the player can act before it is insolvent.
+    if (solvency && ['warning', 'frozen'].includes(solvency.capitalStatus)) {
+      await getOrCreateIntelligenceContext().announceMilestone({
+        milestoneId: 'bank-capital',
+        turn: time,
+        occurrence: timeInfo.year * MONTHS_PER_YEAR + timeInfo.monthIndex,
+        params: { bankType: solvency.bankType, centralBankType: getOrCreateAccountingContext().getCentralBankType(), status: solvency.capitalStatus, ratio: solvency.ratio },
+      });
+    }
+    if (solvency?.insolvent) {
+      await getOrCreateIntelligenceContext().announceMilestone({
+        milestoneId: 'bank-insolvent',
+        turn: time,
+        occurrence: timeInfo.year * MONTHS_PER_YEAR + timeInfo.monthIndex,
+        params: { bankType: solvency.bankType, centralBankType: getOrCreateAccountingContext().getCentralBankType(), equity: solvency.equity },
+      });
+    }
     if (tickPerfEnabled()) {
       const steps = { ...result.stepMs, rentArrears: rentArrearsMs, departures: departuresMs, writeOffRents: performance.now() - afterMonthStartedAt - rentArrearsMs - departuresMs };
       console.info(`[tick-perf] month-end day=${time} ${Object.entries(steps).map(([step, ms]) => `${step}=${ms.toFixed(1)}`).join(' ')}`);
     }
+  }
+  // A month the State could not pay what it owed (its Treasury was empty): a dépêche says what stayed unpaid, once for the month.
+  if (result?.stateUnpaid) {
+    const timeInfo = resolveGetTimeInfo()(time);
+    await getOrCreateIntelligenceContext().announceMilestone({
+      milestoneId: 'state-unpaid',
+      turn: time,
+      occurrence: timeInfo.year * MONTHS_PER_YEAR + timeInfo.monthIndex,
+      params: {
+        items: Object.entries(result.stateUnpaid).map(([kind, amount]) => {
+          if (!LINE_LABELS[kind]) throw new Error(`[treasury] the State's payment "${kind}" has no label: what stayed unpaid cannot be announced`);
+          return { label: LINE_LABELS[kind], amount };
+        }),
+      },
+    });
   }
   // November without a tax collector: a dépêche says so, once for the year (the modal shows it at the end of the tick).
   if (result?.citizenTaxUncollectedYear != null) {

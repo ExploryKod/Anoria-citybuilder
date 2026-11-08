@@ -1787,7 +1787,7 @@
                                     </div>
                                     <div class="loan-details">
                                         <div class="loan-amount">Montant: 100€ - 1000€</div>
-                                        <div class="loan-rate" id="bank-rate">Taux: 5%</div>
+                                        <div class="loan-rate" id="bank-rate">Taux : …</div>
                                         <div class="loan-duration">Durée: 10-20 tours</div>
                                     </div>
                                     <button class="loan-select-btn" data-loan-type="bank">Contracter</button>
@@ -1806,7 +1806,7 @@
                                     </div>
                                     <div class="loan-details">
                                         <div class="loan-amount">Montant: 200€ - 2000€</div>
-                                        <div class="loan-rate" id="commercial-rate">Taux: 7%</div>
+                                        <div class="loan-rate" id="commercial-rate">Taux : …</div>
                                         <div class="loan-duration">Durée: 15-30 tours</div>
                                     </div>
                                     <button class="loan-select-btn" data-loan-type="commercial">Contracter</button>
@@ -1989,6 +1989,23 @@
                         <path d="M2 8v1a2 2 0 0 0 2 2h1"/>
                     </svg>
                     <span class="sr-only">Aide aux entreprises</span>
+                </button>
+
+                <button
+                    class="administrator-nav-btn"
+                    id="admin-nav-centralBank"
+                    data-section="centralBank"
+                    title="Banque centrale"
+                    aria-label="Ouvrir la section Banque centrale">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 22h18"/>
+                        <path d="M6 18v-7"/>
+                        <path d="M10 18v-7"/>
+                        <path d="M14 18v-7"/>
+                        <path d="M18 18v-7"/>
+                        <path d="m12 2 8 5H4z"/>
+                    </svg>
+                    <span class="sr-only">Banque centrale</span>
                 </button>
 
                 <button
@@ -2235,6 +2252,33 @@
                                         <td class="label-col finances-row-label">Cotisations sociales</td>
                                         <td class="last-year-col finances-value-positive" data-field="socialContributionsLastYear" id="social-contributions-last-year">0</td>
                                         <td class="this-year-col finances-value-positive" data-field="socialContributionsThisYear" id="social-contributions-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-landmark">
+                                                <path d="M3 22h18"/>
+                                                <path d="M6 18v-7"/>
+                                                <path d="M10 18v-7"/>
+                                                <path d="M14 18v-7"/>
+                                                <path d="M18 18v-7"/>
+                                                <path d="m12 2 8 5H4z"/>
+                                            </svg>
+                                        </td>
+                                        <td class="label-col finances-row-label" data-central-bank-name>…</td>
+                                        <td class="last-year-col finances-value-positive" data-field="centralBankProfitLastYear" id="central-bank-profit-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="centralBankProfitThisYear" id="central-bank-profit-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Primes de garantie des dépôts</td>
+                                        <td class="last-year-col finances-value-positive" data-field="bankPremiumsLastYear" id="bank-premiums-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="bankPremiumsThisYear" id="bank-premiums-this-year">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="indicator-col"></td>
+                                        <td class="label-col finances-row-label">Dons de villes partenaires</td>
+                                        <td class="last-year-col finances-value-positive" data-field="benefactorGiftsLastYear" id="benefactor-gifts-last-year">0</td>
+                                        <td class="this-year-col finances-value-positive" data-field="benefactorGiftsThisYear" id="benefactor-gifts-this-year">0</td>
                                     </tr>
                                     <tr>
                                         <td class="indicator-col">
@@ -2730,6 +2774,68 @@
                             <button type="button" class="aid-apply-btn" id="aid-inject-apply">Verser</button>
                         </div>
                         <p class="commerce-customs-hint">Une fois validée, la politique vaut pour les entreprises créées à partir de maintenant et ne peut plus être changée avant la fin de l'engagement. Un prêt garde ses conditions jusqu'à son remboursement.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="administrator-section" id="admin-section-centralBank">
+                <div class="administrator-section-title">
+                    <span data-central-bank-name>…</span> — <span class="admin-hamlet-label" data-hamlet-label></span>
+                </div>
+                <div class="administrator-section-content">
+                    <div class="taxes-board">
+                        <p class="commerce-customs-hint" id="policy-rate-notice" role="alert" hidden></p>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Taux directeur</span>
+                                <span class="taxes-row-scope">Fédération, par an</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="policy-rate-slider" class="commerce-customs-slider" step="1" aria-label="Taux directeur, en pourcentage par an" />
+                                <span class="commerce-customs-value" id="policy-rate-value">…</span>
+                            </div>
+                        </div>
+                        <div class="taxes-row">
+                            <div class="taxes-row-head">
+                                <span class="taxes-row-label">Réserve obligatoire</span>
+                                <span class="taxes-row-scope">Fédération, des dépôts</span>
+                            </div>
+                            <div class="commerce-customs-controls">
+                                <input type="range" id="reserve-ratio-slider" class="commerce-customs-slider" step="1" aria-label="Réserve obligatoire, en pourcentage des dépôts" />
+                                <span class="commerce-customs-value" id="reserve-ratio-value">…</span>
+                            </div>
+                        </div>
+                        <p class="commerce-customs-hint">Chaque hameau est un État de la fédération, et tous partagent une monnaie : la banque centrale fédérale fixe un seul taux directeur et une seule réserve obligatoire pour tous les États. La banque centrale de chaque État les applique, refinance les banques de son État et reverse son résultat à son État.</p>
+                        <p class="commerce-customs-hint" id="refinancing-notice" role="status" hidden></p>
+                        <p class="commerce-customs-hint" id="policy-rate-error" role="alert" hidden></p>
+                        <div class="bank-insolvency" id="bank-insolvency" hidden>
+                            <p class="commerce-customs-hint" id="bank-insolvency-text" role="alert"></p>
+                            <div class="bank-insolvency-actions">
+                                <button type="button" class="aid-apply-btn" id="bank-recapitalise">Recapitaliser</button>
+                                <button type="button" class="aid-apply-btn bank-liquidate-btn" id="bank-liquidate">Liquider</button>
+                            </div>
+                        </div>
+                        <dl class="policy-rate-effects">
+                            <div><dt>Épargne des ménages</dt><dd id="policy-rate-savings">…</dd></div>
+                            <div><dt>Part du surplus mise de côté</dt><dd id="policy-rate-saving-share">…</dd></div>
+                            <div><dt>Dépôts à la banque (comptes et livrets)</dt><dd id="bank-deposits">…</dd></div>
+                            <div><dt>Prêt bancaire à la ville</dt><dd id="policy-rate-loan-bank">…</dd></div>
+                            <div><dt>Prêt commercial à la ville</dt><dd id="policy-rate-loan-commercial">…</dd></div>
+                            <div><dt>Crédit aux entreprises</dt><dd id="policy-rate-company-credit">…</dd></div>
+                            <div><dt>Réserves de la banque / réserve due</dt><dd id="bank-reserve-position">…</dd></div>
+                            <div><dt>Fonds propres de la banque</dt><dd id="bank-equity">…</dd></div>
+                            <div><dt>Fonds propres / prêts de la banque</dt><dd id="bank-capital-ratio">…</dd></div>
+                            <div><dt>Facilité de dépôt · refinancement · prêt marginal</dt><dd id="policy-rate-corridor">…</dd></div>
+                            <div><dt>Dette de la ville / plafond (selon sa production)</dt><dd id="city-debt-ceiling">…</dd></div>
+                            <div><dt>Garanties encore disponibles pour emprunter</dt><dd id="bank-collateral">…</dd></div>
+                            <div><dt>Refinancement dû par la banque</dt><dd id="policy-rate-refinancing">…</dd></div>
+                        </dl>
+                        <p class="commerce-customs-hint">La banque prête au-dessus du taux directeur et rémunère l'épargne en dessous. Les taux des prêts tiennent compte de la santé financière de la ville. Un prêt garde le taux de sa signature ; l'épargne est créditée en fin d'année au taux alors en vigueur.</p>
+                        <p class="commerce-customs-hint">Quand la banque manque de trésorerie pour un retrait, ou pour un prêt qui lui laisse sa réserve obligatoire, la banque centrale lui prête ce qui manque, au taux directeur, en créant la monnaie. Chaque mois, la banque paie les intérêts puis rembourse avec ce qu'elle garde au-delà de sa réserve ; les intérêts qu'elle ne peut pas payer s'ajoutent à sa dette.</p>
+                        <p class="commerce-customs-hint">Une entreprise à court de trésorerie pour payer son mois emprunte ce qui manque à la banque, jusqu'à quelques mois de ses charges, et rembourse sur ses bénéfices ; plus le crédit est cher, moins elle emprunte, et au-delà ses charges impayées deviennent des dettes.</p>
+                        <p class="commerce-customs-hint">Chaque mois, un ménage garde de quoi vivre un mois et place à la banque une part de ce qu'il a en plus, d'autant plus grande que l'épargne rapporte ; il puise dans son épargne quand il lui manque de quoi vivre. Un ménage endetté rembourse avant d'épargner.</p>
+                        <h4 class="central-bank-books-title" id="central-bank-books-title">Comptes de la banque centrale</h4>
+                        <div class="central-bank-books" id="central-bank-books"></div>
                     </div>
                 </div>
             </div>

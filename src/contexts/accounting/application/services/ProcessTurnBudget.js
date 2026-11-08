@@ -10,10 +10,14 @@ export class ProcessTurnBudget {
    * @param {(time: number) => Promise<object>} deps.collectCitizenTaxes
    * @param {(time: number) => object} deps.getTimeInfo
    * @param {<T>(work: () => Promise<T>) => Promise<T>} [deps.inJournalBatch] runs the month's settlement so that all its lines are written to disk at once
-   * @param {({ time: number, deliveredTime: number }) => Promise<void>} deps.settleProducerCharges
+   * @param {({ time: number, deliveredTime: number }) => Promise<{ stateUnpaid?: Record<string, number> } | void>} deps.settleProducerCharges the month's charges; it says what the State
+   *   could not pay (`stateUnpaid`: euros by kind of payment) when its Treasury was empty
    * @param {({ time: number, deliveredTime: number }) => Promise<void>} [deps.settleBankDepositInterest] a bank's
    *   monthly interest to its depositors — run right before settleProducerCharges, same day, same month, so the
    *   expense it books already exists in the journal when the bank's own taxable profit is computed
+   * @param {({ time: number }) => Promise<void>} [deps.settleBankRefinancing] the month's interest and repayment of the bank's refinancing by the central bank
+   * @param {({ time: number }) => Promise<void>} [deps.settleBankCompanyCredit] the month's interest and repayment of the companies' credit from the bank
+   * @param {({ time: number }) => Promise<void>} [deps.settleHouseholdSavings] what the households save at the bank, or draw from it, once their month is paid
    * @param {({ time: number }) => Promise<unknown>} [deps.compactMonthFlows] the month just settled keeps one row per transfer of goods or services between two buildings, not one per delivery
    * @param {() => Promise<unknown>} [deps.revalueMinimumWage] an indexed minimum wage follows the cost of living, once a year (the first month of the year)
    * @param {({ time: number }) => Promise<unknown>} [deps.adjustWageRates] the labour market moves the wages, right after the month's payroll
@@ -66,7 +70,11 @@ export class ProcessTurnBudget {
       const settleMonth = async () => {
         // A company created since the last month receives its founding capital from the city before its first month is settled.
         stepStartedAt = performance.now();
-        if (this.deps.fundNewCompanies) await this.deps.fundNewCompanies({ time });
+        if (this.deps.fundNewCompanies) {
+          const founding = await this.deps.fundNewCompanies({ time });
+          // Companies the Treasury could not fund whole wait for their capital: they are among what the State left unpaid this month.
+          if (founding?.waiting > 0) result.stateUnpaid = { ...result.stateUnpaid, company_capital_paid: founding.waiting };
+        }
         stepDone('fundNewCompanies');
         // The bank's own interest expense must exist in the journal before settleProducerCharges reads it (its
         // otherExpensesHT) to compute the bank's taxable profit for the same month — see SettleBankDepositInterest.js.
@@ -74,7 +82,9 @@ export class ProcessTurnBudget {
           await this.deps.settleBankDepositInterest({ time, deliveredTime: time - 1 });
         }
         stepDone('bankInterest');
-        await this.deps.settleProducerCharges({ time, deliveredTime: time - 1 });
+        const producerMonth = await this.deps.settleProducerCharges({ time, deliveredTime: time - 1 });
+        // What the State could not pay because its Treasury was empty (by kind of payment): the caller tells the player.
+        if (producerMonth && Object.keys(producerMonth.stateUnpaid ?? {}).length > 0) result.stateUnpaid = { ...result.stateUnpaid, ...producerMonth.stateUnpaid };
         stepDone('producerCharges');
         // The rents come last of the month's charges: a house pays what is left of its month, and what it cannot pay stays a debt.
         if (this.deps.settleHouseRents) {
@@ -84,6 +94,17 @@ export class ProcessTurnBudget {
         // What the companies the city helped owe it back (the interest and the repayments of their loans, the dividends in January), once the month's charges are settled.
         if (this.deps.settleCompanyAid) await this.deps.settleCompanyAid({ time });
         stepDone('companyAid');
+        // What the bank owes the central bank: the month's interest at the policy rate, then a repayment out of its surplus (BankRefinancing.js).
+        // The households, their month paid, save what they hold above their cash buffer (more when the savings pay more) or draw on their savings when short
+        // (SettleHouseholdSavings.js): before the bank settles its own month, so what they put there is in its cash.
+        if (this.deps.settleHouseholdSavings) await this.deps.settleHouseholdSavings({ time });
+        stepDone('householdSavings');
+        // What the companies owe the bank for the credit it lent them short of cash: the interest, then a repayment out of the month's profit (BankCompanyCredit.js).
+        // Before the bank's own refinancing: what the companies pay it is in its cash when it repays the central bank.
+        if (this.deps.settleBankCompanyCredit) await this.deps.settleBankCompanyCredit({ time });
+        stepDone('bankCompanyCredit');
+        if (this.deps.settleBankRefinancing) await this.deps.settleBankRefinancing({ time });
+        stepDone('bankRefinancing');
         // The month is settled: the closing writes what the books need and no money moves (the variation of stock, the depreciation).
         if (this.deps.closeMonthAccounts) {
           await this.deps.closeMonthAccounts({ time, deliveredTime: time - 1 });

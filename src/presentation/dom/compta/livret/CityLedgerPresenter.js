@@ -92,6 +92,9 @@ export function renderCityLedgerTable(comparison) {
     { key: 'exports', thisYear: 'exportsThisYear', lastYear: 'exportsLastYear' },
     { key: 'customsImport', thisYear: 'customsImportThisYear', lastYear: 'customsImportLastYear' },
     { key: 'socialContributions', thisYear: 'socialContributionsThisYear', lastYear: 'socialContributionsLastYear' },
+    { key: 'centralBankProfit', thisYear: 'centralBankProfitThisYear', lastYear: 'centralBankProfitLastYear' },
+    { key: 'bankPremiums', thisYear: 'bankPremiumsThisYear', lastYear: 'bankPremiumsLastYear' },
+    { key: 'benefactorGifts', thisYear: 'benefactorGiftsThisYear', lastYear: 'benefactorGiftsLastYear' },
     { key: 'loanCapital', thisYear: 'loanCapitalThisYear', lastYear: 'loanCapitalLastYear' },
   ];
 

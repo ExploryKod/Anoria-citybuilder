@@ -289,6 +289,8 @@ export async function bootstrapGameSession(assetManager) {
     throw new Error('sessionApi is not bound after createGame');
   }
   sessionApi.accounting.ensureCustomsDuties();
+  // The federation's monetary policy (one policy rate and one reserve ratio for every State), held once for the game.
+  await sessionApi.accounting.ensureFederalMonetaryPolicy();
   // Every hamlet carries its fiscal rates (written once, at creation): a hamlet unlocked later already has them.
   for (const hamlet of await listHamlets()) {
     await sessionApi.accounting.ensureHamletFiscalRates(hamlet.id);
@@ -329,8 +331,16 @@ export async function bootstrapGameSession(assetManager) {
 
   if (sessionApi.intelligence) {
     initTutorialHistory({ intelligence: sessionApi.intelligence, popupManager });
+    // A partner city's gift is open to an answer until the player has given one (the dépêche's button accepts, its choice refuses).
+    const gift = await sessionApi.accounting.getBenefactorGift();
+    let giftOffered = !gift || gift.status === 'offered';
     initNewsEventModal({
       intelligence: sessionApi.intelligence,
+      isGiftOffered: () => giftOffered,
+      answerGift: (accept) => {
+        giftOffered = false;
+        void sessionApi.accounting.answerBenefactorGift({ accept });
+      },
       getGameTime,
       popupManager,
       registerAppService,
@@ -376,6 +386,7 @@ export async function bootstrapGameSession(assetManager) {
     ...panelDeps,
     employment: sessionApi.employment,
     intelligence: sessionApi.intelligence,
+    gameplay: sessionApi.gameplay,
     registerAppService,
     registerAppFunction,
     updateDisplayedFunds,

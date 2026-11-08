@@ -32,6 +32,7 @@ async function runMonths(months, { sicknessCover = 'none', absent = {} } = {}) {
     };
     journal.push(stamp({ type: 'loan_interest_received', amount: 1000, accountBuildingId: 'bank-1', turn: time - 1 }));
     await new SettleProducerCharges({
+      borrowFromBank: async () => 0, // no bank: nothing is lent
       getTimeInfo,
       listBuildings: async () => [
         { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 3 }, absentSources: absent, sickAbsentSources: absent },

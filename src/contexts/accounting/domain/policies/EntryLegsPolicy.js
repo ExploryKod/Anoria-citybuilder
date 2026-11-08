@@ -9,13 +9,13 @@
  * An écriture that does not balance, or whose type the account's chart does not book, throws, naming the type: it is a defect, never a line to patch.
  */
 
-import { isOperationDiverse, journalCodeOf, legsOfType, odLegsOf, planOfAccount } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
+import { isCashAccount, isOperationDiverse, journalCodeOf, legsOfType, odLegsOf, planOfAccount } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 import { isInformativeJournalType } from './JournalEntryClassificationPolicy.js';
 
 const toCentimes = (amount) => Math.round(amount * 100);
 
-/** The cash account of the chart of accounts: the treasury is its balance, and what moved it is what the cash flows tell. */
-export const CASH_ACCOUNT = '512';
+/** The cash accounts (PcgJournalCatalog's CASH_ACCOUNTS): the treasury is their balance, and what moved them is what the cash flows tell. */
+export { CASH_ACCOUNTS, isCashAccount } from '../../../../shared/accounting-catalog/PcgJournalCatalog.js';
 
 /** The journal code of the à-nouveaux: the opening entries of the accounts a purge carries into the following year. */
 export const OPENING_JOURNAL = 'AN';
@@ -27,12 +27,32 @@ export const OPENING_JOURNAL = 'AN';
  * @returns {Array<{ account: string, in: number, out: number }>} in centimes, one per account the money came from or went to
  */
 export function cashFlowsOfLegs(legs) {
-  const cash = legs.filter((leg) => leg.account === CASH_ACCOUNT).reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
+  const cash = legs.filter((leg) => isCashAccount(leg.account)).reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
   if (cash === 0) return [];
   return legs
-    .filter((leg) => leg.account !== CASH_ACCOUNT)
+    .filter((leg) => !isCashAccount(leg.account))
     .map((leg) => ({ account: leg.account, in: cash > 0 ? leg.credit - leg.debit : 0, out: cash < 0 ? leg.debit - leg.credit : 0 }))
     .filter((flow) => flow.in !== 0 || flow.out !== 0);
+}
+
+/**
+ * What an écriture does to the money of its account: the net of its legs on the cash accounts (debited is money in, credited is money out).
+ * @param {Array<{ account: string, debit: number, credit: number }>} legs
+ * @returns {number} centimes, negative when the account pays out
+ */
+export function cashChangeOfLegs(legs) {
+  return legs.filter((leg) => isCashAccount(leg.account)).reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
+}
+
+/**
+ * The State may not spend more than its account at its central bank holds (docs/gameplay/PLAN_BANK_MONEY.md): an écriture of the State that pays out is refused when
+ * the Treasury, after it, would be below nothing. A line that brings money in, or moves none, is never refused.
+ * @param {{ held: number, change: number }} params `held`: the Treasury's money now, `change`: the écriture's net on the cash accounts, both in centimes
+ * @returns {boolean} true when the State can afford it
+ */
+export function stateCanAfford({ held, change }) {
+  if (!Number.isInteger(held) || !Number.isInteger(change)) throw new Error(`[treasury] the Treasury's money and the change must be whole centimes, got ${held} and ${change}`);
+  return change >= 0 || held + change >= 0;
 }
 
 /**

@@ -288,6 +288,126 @@
 }
 
 
+/* Banque centrale: what the policy rate gives, one line per rate, its name left and the rate right on one grid; a thin divider between lines.
+   Narrow first: the name wraps, the rate keeps its line. */
+.taxes-board .policy-rate-effects {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.taxes-board .policy-rate-effects > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 40px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.taxes-board .policy-rate-effects > div:last-child {
+    border-bottom: none;
+}
+
+.taxes-board .policy-rate-effects dt {
+    font-size: 14px;
+    color: #424242;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.taxes-board .policy-rate-effects dd {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+    .taxes-board .policy-rate-effects > div {
+        padding: 6px 0;
+    }
+}
+
+/* Banque centrale: its own books (asset and liability tables, two columns each, the label wrapping), one under the other on a phone, full width. */
+.taxes-board .central-bank-books-title {
+    margin: 16px 0 0;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.taxes-board .central-bank-books {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.taxes-board .central-bank-books .balance-sheet {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.taxes-board .central-bank-books .balance-sheet-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.taxes-board .central-bank-books .balance-sheet-table th[scope="row"] {
+    overflow-wrap: anywhere;
+}
+
+/* Banque centrale: the insolvent bank's two ways out, one thin-ruled block; the buttons stack on a phone (full width, 44 px) and sit side by side when there is room. */
+.taxes-board .bank-insolvency {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.12);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.taxes-board .bank-insolvency[hidden] {
+    display: none;
+}
+
+.taxes-board .bank-insolvency-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.taxes-board .bank-insolvency-actions .aid-apply-btn {
+    align-self: stretch;
+    margin: 0;
+}
+
+.taxes-board .bank-liquidate-btn {
+    background: #c62828;
+}
+
+.taxes-board .bank-liquidate-btn:hover:not(:disabled),
+.taxes-board .bank-liquidate-btn:focus-visible {
+    background: #8e0000;
+}
+
+@media (min-width: 640px) {
+    .taxes-board .bank-insolvency-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .taxes-board .bank-insolvency-actions .aid-apply-btn {
+        align-self: flex-start;
+    }
+}
+
 /* Aide aux entreprises: the form that puts money into a company, one field per line, full width on a phone */
 .aid-inject {
     display: grid;

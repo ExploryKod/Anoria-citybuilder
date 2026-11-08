@@ -12,16 +12,19 @@
  * Sums are in centimes, so the figures are exact.
  */
 
-import { PERSONAL_ACCOUNT, isBusinessAccount } from './AccountKeyPolicy.js';
+import { PERSONAL_ACCOUNT, isBusinessAccount, isCentralBankAccount } from './AccountKeyPolicy.js';
+import { CASH_ACCOUNTS } from './EntryLegsPolicy.js';
 
 /** The accounts of what a company owes and has not paid: wages, contributions, taxes, suppliers. */
 const OPERATING_DEBT_ACCOUNTS = Object.freeze(['401', '421', '431', '444', '447']);
 
 /** @typedef {Map<string, { debit: number, credit: number }>} AccountTotals */
 
-/** @param {string | null} accountKey @returns {'city' | 'household' | 'business' | 'company'} the sort of account a key names */
+/** @param {string | null} accountKey @returns {'city' | 'centralBank' | 'household' | 'business' | 'company'} the sort of account a key names */
 export function sortOfAccount(accountKey) {
   if (accountKey === null) return 'city';
+  // The State's central bank is an institution of the State, no company: it makes no value added and owes no private debt.
+  if (isCentralBankAccount(accountKey)) return 'centralBank';
   if (accountKey.endsWith(`/${PERSONAL_ACCOUNT}`)) return 'household';
   const kind = accountKey.includes('/') ? accountKey.slice(accountKey.indexOf('/') + 1) : null;
   return kind !== null && isBusinessAccount(kind) ? 'business' : 'company';
@@ -32,6 +35,16 @@ const net = (totals, prefix, side) => {
   for (const [account, total] of totals) {
     if (!account.startsWith(prefix)) continue;
     sum += side === 'credit' ? total.credit - total.debit : total.debit - total.credit;
+  }
+  return sum;
+};
+
+/** What an account holds in cash: the balance of the cash accounts, each exactly (515 is not 5151, a bank's reserves). @param {AccountTotals} totals @returns {number} centimes */
+const cashOf = (totals) => {
+  let sum = 0;
+  for (const account of CASH_ACCOUNTS) {
+    const total = totals?.get(account);
+    if (total) sum += total.debit - total.credit;
   }
   return sum;
 };
@@ -75,7 +88,7 @@ export function domesticProductOf(byAccount) {
  *   `net` is negative when the city holds more than it owes (a net creditor, like a sovereign fund)
  */
 export function publicDebtOf(cityTotals, portfolio) {
-  const cashBalance = net(cityTotals, '512', 'debit') + net(cityTotals, '53', 'debit');
+  const cashBalance = cashOf(cityTotals);
   const loans = Math.round(portfolio.loans.reduce((sum, loan) => sum + loan.amount, 0) * 100);
   const domesticLoans = Math.round(portfolio.loans.filter((loan) => loan.lenderBuildingId).reduce((sum, loan) => sum + loan.amount, 0) * 100);
   const overdraft = Math.max(0, -cashBalance);
@@ -104,12 +117,12 @@ export function privateDebtOf(byAccount) {
   let companyCash = 0;
   for (const [accountKey, totals] of byAccount) {
     const sort = sortOfAccount(accountKey);
-    const cash = net(totals, '512', 'debit') + net(totals, '53', 'debit');
+    const cash = cashOf(totals);
     if (sort === 'household') {
       householdSavings += Math.max(0, cash);
       continue;
     }
-    if (sort === 'city') continue;
+    if (sort === 'city' || sort === 'centralBank') continue;
     companies += 1;
     companyCash += Math.max(0, cash);
     loans += Math.max(0, net(totals, '164', 'credit'));

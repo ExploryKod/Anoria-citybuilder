@@ -622,8 +622,7 @@ export function createGame(gameStore, assetManager, citySize = null) {
   stopPlotsChanged?.();
   stopPlotsChanged = getSharedEventBus().subscribe(PLOTS_CHANGED_EVENT, () => {
     loadPlots().catch((error) => console.error('[game] The plots could not be drawn again:', error));
-  });
-  const {
+  });  const {
     isRoadBuildingType,
     listRoadPaintCells,
     canPlaceBuildingAtTile,
@@ -1701,7 +1700,8 @@ export function createGame(gameStore, assetManager, citySize = null) {
       } catch (error) {
         // The accounts of the building could not be closed: it stays, and the player is told why (the tag reaches the dev log).
         console.error('[Construction] The demolition failed, the building stays:', error);
-        showErrorToast(`Démolition impossible : ${error.message}`);
+        // The tag in front of the message ("[treasury]") is for the console; the player reads the sentence.
+        showErrorToast(`Démolition impossible : ${error.message.replace(/^\[[a-z-]+\]\s*/i, '')}`);
         continue;
       }
       if (outcome.refused) {

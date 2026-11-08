@@ -24,9 +24,10 @@ export class RecordHouseholdDeposit {
    * @param {string} params.bankId
    * @param {number} params.amount
    * @param {string} params.description
+   * @param {string} [params.businessKey] set when the deposit is the household's own monthly saving (SettleHouseholdSavings): once a month; none for the player's own
    * @returns {Promise<{ recorded: boolean, skipped: boolean, reason?: string }>}
    */
-  async execute({ turn, houseId, bankId, amount, description }) {
+  async execute({ turn, houseId, bankId, amount, description, businessKey = null }) {
     if (!houseId) throw new Error('[deposit] a deposit needs its house');
     if (!bankId) throw new Error('[deposit] a deposit needs its bank');
     const roundedAmount = Math.round(amount);
@@ -50,6 +51,7 @@ export class RecordHouseholdDeposit {
       accountBuildingId: houseId,
       accountKind: 'particulier',
       counterpartyBuildingId: bankId,
+      ...(businessKey ? { businessKey } : {}),
     });
     if (!houseResult.recorded) {
       return { recorded: false, skipped: true, reason: houseResult.reason };
@@ -63,6 +65,7 @@ export class RecordHouseholdDeposit {
       description,
       accountBuildingId: bankId,
       counterpartyBuildingId: houseId,
+      ...(businessKey ? { businessKey: `${businessKey}:bank` } : {}),
     });
     if (!bankResult.recorded) {
       throw new Error(`[deposit] the bank's receiving line for ${houseId} was not recorded: ${bankResult.reason}`);

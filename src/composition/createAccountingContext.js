@@ -3,7 +3,7 @@ import { getQuantityConsumerEntries, salesNatureOf } from '../shared/building-ca
 import { InjectCompanyAid } from '../contexts/accounting/application/services/InjectCompanyAid.js';
 import { COMPANY_AID_BOUNDS, DEFAULT_COMPANY_AID } from '../contexts/accounting/domain/catalogs/CompanyAidCatalog.js';
 import { SettleCompanyAid } from '../contexts/accounting/application/services/SettleCompanyAid.js';
-import { domesticProductOf, externalInterestOf, privateDebtOf, publicDebtOf } from '../contexts/accounting/domain/policies/HamletEconomyPolicy.js';
+import { domesticProductOf, externalInterestOf, privateDebtOf, publicDebtOf as hamletPublicDebtOf } from '../contexts/accounting/domain/policies/HamletEconomyPolicy.js';
 import { getSessionGameTime, getSessionProcessLoanPayments } from './sessionRuntime.js';
 import { LocalStorageFiscalSettingsRepository } from '../contexts/accounting/infrastructure/persistence/LocalStorageFiscalSettingsRepository.js';
 import { HamletFiscalRateRepository } from '../contexts/accounting/infrastructure/persistence/HamletFiscalRateRepository.js';
@@ -51,7 +51,7 @@ import { ProcessTurnBudget } from '../contexts/accounting/application/services/P
 import { RecordConsumerPurchases } from '../contexts/accounting/application/services/RecordConsumerPurchases.js';
 import { GetProducerRevenues } from '../contexts/accounting/application/queries/GetProducerRevenues.js';
 import { buildingAccountTrace } from '../contexts/accounting/domain/policies/BuildingAccountTracePolicy.js';
-import { accountKeyOf, businessAccountOf } from '../contexts/accounting/domain/policies/AccountKeyPolicy.js';
+import { accountKeyOf, businessAccountOf, centralBankAccountOf } from '../contexts/accounting/domain/policies/AccountKeyPolicy.js';
 import { AdjustWageRates } from '../contexts/accounting/application/services/AdjustWageRates.js';
 import { RevalueMinimumWage } from '../contexts/accounting/application/services/RevalueMinimumWage.js';
 import { DexieWageRateRepository, wageKey } from '../contexts/accounting/infrastructure/persistence/DexieWageRateRepository.js';
@@ -97,9 +97,24 @@ import { SettleProducerCharges } from '../contexts/accounting/application/servic
 import { RecordHouseholdDeposit } from '../contexts/accounting/application/services/RecordHouseholdDeposit.js';
 import { RecordHouseholdWithdrawal } from '../contexts/accounting/application/services/RecordHouseholdWithdrawal.js';
 import { SettleBankDepositInterest } from '../contexts/accounting/application/services/SettleBankDepositInterest.js';
+import { v4 as uuidv4 } from 'uuid';
+import { BankRefinancing } from '../contexts/accounting/application/services/BankRefinancing.js';
+import { BankCompanyCredit } from '../contexts/accounting/application/services/BankCompanyCredit.js';
+import { SettleHouseholdSavings } from '../contexts/accounting/application/services/SettleHouseholdSavings.js';
 import { depositBalanceOf, depositInterestsOf } from '../contexts/accounting/domain/policies/DepositBalancePolicy.js';
-import { DEPOSIT_INTEREST_RATE } from '../contexts/accounting/domain/catalogs/BankCatalog.js';
-import { getBuildingDefinition } from '../shared/building-catalog/buildingCatalog.js';
+import { CAPITAL_WARNING_RATIO, CENTRAL_BANK_SKILL, MIN_CAPITAL_RATIO } from '../contexts/accounting/domain/catalogs/BankCatalog.js';
+import { CASH_ACCOUNTS, isCashAccount } from '../contexts/accounting/domain/policies/EntryLegsPolicy.js';
+import { DEFAULT_FEDERAL_MONETARY_POLICY } from '../contexts/accounting/domain/catalogs/FiscalRateCatalog.js';
+import { debtCeilingOf } from '../contexts/accounting/domain/policies/PublicDebtPolicy.js';
+import { BenefactorGift } from '../contexts/accounting/application/services/BenefactorGift.js';
+import { BENEFACTOR_GIFT } from '../contexts/accounting/domain/catalogs/BenefactorGiftCatalog.js';
+import { BenefactorGiftRepository } from '../contexts/accounting/infrastructure/persistence/BenefactorGiftRepository.js';
+import { getWorldCityById } from '../contexts/geography/domain/catalogs/WorldCityCatalog.js';
+import { FederalMonetaryPolicyRepository } from '../contexts/accounting/infrastructure/persistence/FederalMonetaryPolicyRepository.js';
+import { capitalStatusOf, companyCreditRateOf, corridorOf, computeLoanInterestAmount, computeLoanRate, computeLoanRatesByType, householdSavingShareOf, policyRateStatusOf, savingsRateOf } from '../contexts/accounting/domain/policies/LoanRatePolicy.js';
+import { buildingCatalog, getBuildingDefinition } from '../shared/building-catalog/buildingCatalog.js';
+import { getDaysPerMonth } from '../config/events.js';
+import { turnsPerYear } from '../shared/time/TimeCalendar.js';
 import { resolveGetTimeInfo } from './gameTimeBridge.js';
 import { SOCIAL_CATEGORY } from '../shared/population/socialCategoryCatalog.js';
 import { COST_OF_LIVING_BASKET } from '../contexts/accounting/domain/catalogs/LabourMarketCatalog.js';
@@ -175,6 +190,8 @@ export function createAccountingContext(deps = {}) {
   const fiscalSettingsRepository =
     deps.fiscalSettingsRepository ?? new LocalStorageFiscalSettingsRepository();
   const hamletFiscalRates = deps.hamletFiscalRateRepository ?? new HamletFiscalRateRepository(dexieDb);
+  // The federation's monetary policy: one policy rate and one reserve ratio for every State, held once for the game.
+  const federalMonetaryPolicy = deps.federalMonetaryPolicyRepository ?? new FederalMonetaryPolicyRepository(dexieDb);
 
   const getTimeInfo = deps.getTimeInfo ?? resolveGetTimeInfo();
 
@@ -194,10 +211,13 @@ export function createAccountingContext(deps = {}) {
     new SessionJournalWriteAdapter(sessionJournalStoreInstance);
 
 
-  const recordLedgerEntryCommand = new RecordLedgerEntry(
-    journalWritePort,
-    gameTimePort
-  );
+  // The State may not spend more than its account at its central bank holds: what that account holds is read from the fold (the repository is built below, so it is
+  // read when a payment is made, never before).
+  const stateCashOf = async (hamletId) => {
+    const fold = await journalRepository.getLegsFold();
+    return [...CASH_ACCOUNTS].reduce((sum, account) => sum + fold.balanceOf(account, { hamletId, accountKey: null }), 0);
+  };
+  const recordLedgerEntryCommand = new RecordLedgerEntry(journalWritePort, gameTimePort, stateCashOf);
   const recordMaintenanceExpense = new RecordMaintenanceExpense(
     recordLedgerEntryCommand
   );
@@ -531,6 +551,8 @@ export function createAccountingContext(deps = {}) {
       };
     },
     buildingMaintenanceCost,
+    // Read when the month is settled, after the bank's credit is wired below.
+    borrowFromBank: (params) => bankCompanyCredit.lend(params),
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
   const recordConsumerPurchases = new RecordConsumerPurchases({
@@ -539,15 +561,25 @@ export function createAccountingContext(deps = {}) {
   });
 
   /**
-   * The active hamlet's bank — the real lender/depositary behind a loan or a deposit (see
-   * RecordLoanCapitalIncome.js, RecordHouseholdDeposit.js). Several banks could exist in theory; this picks the
-   * first one built, same simplicity as any other single-hub lookup in the game today. Null when none is built
-   * yet — every caller refuses the action rather than inventing a bank.
-   * @returns {Promise<string | null>}
+   * What a company's month costs at full staffing: its payroll with the employer's contributions, and its upkeep. The founding capital is sized on it, and so is the
+   * ceiling of its credit from the bank. A company the catalog gives no staff count is a defect: it throws rather than costing nothing.
+   * @param {{ id: string, type: string }} row
+   * @param {(skill: string, level: number) => number} wageRateOf
+   * @param {number} employerContributionRate
+   * @returns {number} euros
    */
+  function companyMonthlyNeedOf(row, wageRateOf, employerContributionRate) {
+    const workers = getBuildingDefinition(row.type)?.employment?.workerNeed;
+    if (typeof workers !== 'number') throw new Error(`[accounting] the company ${row.id} (${row.type}) declares no staff (employment.workerNeed): its month cannot be costed`);
+    return payrollOf({ type: row.type, workers, wageRateOf }) * (1 + employerContributionRate) + buildingMaintenanceCost(row.type);
+  }
+
+  // The hamlet's bank (the lender and depositary behind a loan or a deposit, see RecordLoanCapitalIncome.js, RecordHouseholdDeposit.js), null while none is built (a real state: no savings, no loan). The catalog allows one per hamlet (maxPerHamlet), so a second one
+  // is a defect: it throws rather than quietly picking one and hiding the other's depositors.
   const findBankBuildingId = async () => {
-    const row = (await dexieDb.houses.toArray()).find((candidate) => isActiveHamletRow(candidate) && candidate.type === 'Bank');
-    return row?.id ?? null;
+    const banks = (await dexieDb.houses.toArray()).filter((candidate) => isActiveHamletRow(candidate) && candidate.type === 'Bank');
+    if (banks.length > 1) throw new Error(`[bank] the hamlet holds ${banks.length} banks (${banks.map((bank) => bank.id).join(', ')}): the catalog allows one`);
+    return banks.length === 1 ? banks[0].id : null;
   };
 
   const recordHouseholdDeposit = new RecordHouseholdDeposit({
@@ -555,16 +587,144 @@ export function createAccountingContext(deps = {}) {
     fundsOf: async (houseId) =>
       await getTreasurySnapshotQuery.cashOf({ accountBuildingId: houseId, accountKind: 'particulier' }),
   });
+  // The central bank is the building whose posts ask its skill, read from the catalog (never by its id).
+  const centralBankType = (() => {
+    const types = Object.keys(buildingCatalog).filter((type) => buildingCatalog[type].employment?.requiredSkill === CENTRAL_BANK_SKILL);
+    if (types.length !== 1) throw new Error(`[bank] the catalog must hold one central bank (a building asking "${CENTRAL_BANK_SKILL}"), it holds ${types.length}`);
+    return types[0];
+  })();
+  const centralBankRows = async () => (await dexieDb.houses.toArray()).filter((row) => isActiveHamletRow(row) && row.type === centralBankType);
+  // The hamlet's central bank, null while none stands. The catalog allows one per hamlet (maxPerHamlet): a second one is a defect.
+  // The account of this State's central bank, the institution: it exists from the founding, with or without its building (the building opens the counter), so its
+  // books (the Treasury's account, the refinancing, its result) are the State's, not a building's (PLAN_BANK_MONEY.md).
+  const findCentralBankId = async () => {
+    const rows = await centralBankRows();
+    if (rows.length > 1) throw new Error(`[bank] the hamlet holds ${rows.length} central banks (${rows.map((row) => row.id).join(', ')}): the catalog allows one`);
+    return centralBankAccountOf(requireActiveHamletId());
+  };
+  // The policy rate in force and whether the player can move it (LoanRatePolicy.js): read from the hamlet's central banks, how many residents are named to their posts.
+  // The levers are the federation's (one policy rate, one reserve ratio for every State: PLAN_BANK_MONEY.md), moved by the player while the central bank of some State
+  // works, whichever hamlet he stands in. The refinancing is each State's own: only this State's central bank lends to this State's bank.
+  const policyRateStatus = async () => {
+    const posts = getBuildingDefinition(centralBankType).employment.workerNeed;
+    const works = (row) => Object.values(row.employees?.appointedFrom ?? {}).reduce((sum, count) => sum + count, 0) >= posts;
+    const federationRows = (await dexieDb.houses.toArray()).filter((row) => row.type === centralBankType);
+    const policy = await federalMonetaryPolicy.get();
+    return {
+      ...policyRateStatusOf({
+        setRate: policy.policyRate,
+        defaultRate: DEFAULT_FEDERAL_MONETARY_POLICY.policyRate,
+        setReserveRatio: policy.reserveRatio,
+        defaultReserveRatio: DEFAULT_FEDERAL_MONETARY_POLICY.reserveRatio,
+        centralBanks: federationRows.map((row) => ({ named: works(row) ? posts : 0, posts })),
+      }),
+      // Whether this State's own central bank works: only then can it refinance this State's bank.
+      refinancingAvailable: (await centralBankRows()).some(works),
+      centralBankType,
+    };
+  };
+  // The central bank refinances the bank: it covers what the bank lacks to pay out, and is paid back each month (BankRefinancing.js).
+  const bankRefinancing = new BankRefinancing({
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    findBankBuildingId,
+    findCentralBankId,
+    getPolicyRateStatus: policyRateStatus,
+    getCapitalStatus: (bankId) => bankCapitalStatusOf(bankId),
+    getLegsFold: () => journalRepository.getLegsFold(),
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
+  // The gift of a partner city to a city with no money left, once per game (BenefactorGift.js).
+  const benefactorGift = new BenefactorGift({
+    repository: new BenefactorGiftRepository(dexieDb),
+    cityFunds: async () => (await getTreasurySnapshotQuery.execute()).funds,
+    borrowingOpen: async () => (await cityBorrowing()).open,
+    catalog: BENEFACTOR_GIFT,
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    currentTurn: () => getSessionGameTime(),
+    cityName: (cityId) => {
+      const city = getWorldCityById(cityId);
+      if (!city) throw new Error(`[benefactor-gift] "${cityId}" is not a city of the world map: its name is unknown`);
+      return city.name;
+    },
+    hamletId: () => requireActiveHamletId(),
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
+  /**
+   * Whether the State can still borrow, and why not: its gross public debt against the ceiling its domestic product allows (PublicDebtPolicy), and whether the bank can
+   * lend it (a bank is built, the supervisor has not frozen its lending, and it has reserves or collateral to lend from). Read from the journal's fold, never stored.
+   * @returns {Promise<{ debt: number, gdp: number, ceiling: number, headroom: number, open: boolean, shutReason: null | 'no_bank' | 'capital' | 'no_reserves' | 'debt_ceiling' }>} euros
+   */
+  async function cityBorrowing() {
+    const hamletId = requireActiveHamletId();
+    const turn = getSessionGameTime();
+    // The same debt and the same domestic product as the hamlet's economy screen (getHamletEconomy): one reading, no second one.
+    const cityTotals = (await journalRepository.getLegsFold()).totalsByAccount({ hamletId }).get(null) ?? new Map();
+    const gross = hamletPublicDebtOf(cityTotals, { loans: (await getTreasurySnapshotQuery.execute({ hamletId })).loans }).gross / 100;
+    const economy = await accountingApi.getHamletEconomy();
+    const debt = debtCeilingOf({ debt: gross, gdp: economy.ready ? economy.gdp : 0 });
+    const bankId = await findBankBuildingId();
+    let shutReason = null;
+    if (!bankId) shutReason = 'no_bank';
+    else if (['frozen', 'insolvent'].includes((await bankCapitalStatusOf(bankId)).status)) shutReason = 'capital';
+    else {
+      // What the bank can lend: the reserves above the reserve due, and what the central bank would still lend it against its loans.
+      const position = await bankRefinancing.position(turn);
+      const refinancing = (await policyRateStatus()).refinancingAvailable ? position.collateralCapacity : 0;
+      if (position.reserves - position.requiredReserve + refinancing <= 0) shutReason = 'no_reserves';
+    }
+    if (!shutReason && debt.headroom <= 0) shutReason = 'debt_ceiling';
+    return { ...debt, open: shutReason === null, shutReason };
+  }
+  // The supervisor's reading of the bank: its equity (its derived balance sheet) against its loans (its journal), read when it is asked to lend.
+  async function bankCapitalStatusOf(bankId) {
+    const { equity } = (await accountingApi.getBuildingBalanceSheet(bankId, null)).liabilities;
+    const position = await bankRefinancing.position(getSessionGameTime());
+    return { equity, loans: position.loans, ...capitalStatusOf({ equity, loans: position.loans }) };
+  }
+  // The bank's credit to the companies short of cash, and its monthly interest and repayment (BankCompanyCredit.js).
+  const bankCompanyCredit = new BankCompanyCredit({
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    findBankBuildingId,
+    coverBankShortfall: (params) => bankRefinancing.coverShortfall(params),
+    getPolicyRateStatus: policyRateStatus,
+    monthlyNeedOf: async (buildingId) => {
+      const row = await dexieDb.houses.get(buildingId);
+      if (!row) throw new Error(`[company-credit] company ${buildingId} has no row: its credit ceiling cannot be read`);
+      return companyMonthlyNeedOf(row, await marketWageRateOf(), (await hamletFiscalRates.getSalarySettings()).employerContributionRate);
+    },
+    listCompanies: async () =>
+      (await dexieDb.houses.toArray())
+        .filter((row) => isActiveHamletRow(row) && isLucrativeBuilding(row.type))
+        .map((row) => ({ buildingId: row.id, name: buildingNameOf(row.type, row) })),
+    cashOf: (buildingId) => getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId, accountKind: null }),
+    getLegsFold: () => journalRepository.getLegsFold(),
+    recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
+  });
   const recordHouseholdWithdrawal = new RecordHouseholdWithdrawal({
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
     depositBalanceOf: async (houseId, bankId) => depositBalanceOf(await journalRepository.getJournalEntries(), houseId, bankId),
-    fundsOf: async (bankId) => await getTreasurySnapshotQuery.cashOf({ accountBuildingId: bankId }),
   });
+  // What the households do with their money each month: save above their cash buffer, the more the better the savings pay, and draw on it when short.
+  const settleHouseholdSavings = new SettleHouseholdSavings({
+    getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
+    findBankBuildingId,
+    listHouseholds: async () =>
+      (await dexieDb.houses.toArray())
+        .filter((row) => isActiveHamletRow(row) && resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE && row.pop >= 1)
+        .map((row) => ({ houseId: row.id })),
+    getSavingsRate: async () => savingsRateOf((await policyRateStatus()).rate),
+    cashOf: (houseId) => getTreasurySnapshotQuery.cashOf({ accountBuildingId: houseId, accountKind: 'particulier' }),
+    getJournalEntries: () => journalRepository.getJournalEntries(),
+    getLegsFold: () => journalRepository.getLegsFold(),
+    recordDeposit: (params) => recordHouseholdDeposit.execute(params),
+    recordWithdrawal: (params) => recordHouseholdWithdrawal.execute(params),
+  });
+
   const settleBankDepositInterest = new SettleBankDepositInterest({
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
     listBuildings: async () => (await dexieDb.houses.toArray()).filter(isActiveHamletRow).map((row) => ({ id: row.id, type: row.type })),
     listDepositInterests: async (year, annualRate) => depositInterestsOf(await journalRepository.getJournalEntries(), { year, annualRate }),
-    getDepositInterestRate: () => DEPOSIT_INTEREST_RATE,
+    getDepositInterestRate: async () => savingsRateOf((await policyRateStatus()).rate),
     getBuildingDisplayName: (buildingType) => getBuildingDefinition(buildingType)?.displayName,
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
   });
@@ -658,6 +818,7 @@ export function createAccountingContext(deps = {}) {
     getTimeInfo: (turn) => gameTimePort.getTimeInfo(turn),
     getJournalEntries: () => journalRepository.getJournalEntries(),
     getCompanyAidPolicy: async () => (await hamletFiscalRates.getCompanyAid()).policy,
+    treasuryHeld: () => stateCashOf(requireActiveHamletId()),
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
     listFoundingNeeds: async () => {
       const wageRateOf = await marketWageRateOf();
@@ -671,8 +832,7 @@ export function createAccountingContext(deps = {}) {
           // The business of a house rents a share of it: its month is that rent.
           if (business && share > 0) needs.push({ buildingId: row.id, accountKind: businessAccountOf(business.id), monthlyNeed: buildingMaintenanceCost(row.type) * share, stockValue: 0, name });
         } else if (isLucrativeBuilding(row.type)) {
-          const payroll = payrollOf({ type: row.type, workers: getBuildingDefinition(row.type)?.employment?.workerNeed ?? 0, wageRateOf });
-          needs.push({ buildingId: row.id, accountKind: null, monthlyNeed: payroll * (1 + employerContributionRate) + buildingMaintenanceCost(row.type), stockValue: stockValueAtCapacity(row.type), name });
+          needs.push({ buildingId: row.id, accountKind: null, monthlyNeed: companyMonthlyNeedOf(row, wageRateOf, employerContributionRate), stockValue: stockValueAtCapacity(row.type), name });
         }
       }
       return needs;
@@ -763,6 +923,14 @@ export function createAccountingContext(deps = {}) {
   // The books of a building the player demolishes are closed as a liquidation would (see LiquidateDemolishedBuilding.js).
   const liquidateDemolishedBuilding = new LiquidateDemolishedBuilding({
     getJournalEntries: () => journalRepository.getJournalEntries(),
+    getLegsFold: () => journalRepository.getLegsFold(),
+    findBankBuildingId,
+    findCentralBankId,
+    // A liquidated bank pays out of its reserves at the central bank, its customers' deposits first (BankRefinancing.js).
+    bankBooks: {
+      liveReservesOf: (bankId, turn) => bankRefinancing.liveReservesOf(bankId, turn),
+      centraliseBankBooks: (params) => bankRefinancing.centraliseBankBooks(params),
+    },
     recordLedgerEntry: (params) => recordLedgerEntryCommand.execute({ ...params }),
     // The liquidation is written in one go, like a month's settlement: all its lines or none.
     inJournalBatch: (work) => sessionJournalStoreInstance.batch(work),
@@ -798,6 +966,9 @@ export function createAccountingContext(deps = {}) {
     settleProducerCharges: (params) => settleProducerCharges.execute(params),
     settleHouseRents: (params) => settleHouseRents.execute(params),
     settleCompanyAid: (params) => settleCompanyAid.execute(params),
+    settleBankRefinancing: (params) => bankRefinancing.settleMonth(params),
+    settleBankCompanyCredit: (params) => bankCompanyCredit.settleMonth(params),
+    settleHouseholdSavings: (params) => settleHouseholdSavings.execute(params),
     fundNewCompanies: (params) => fundNewCompanies.execute(params),
     closeMonthAccounts: (params) => closeMonthAccounts.execute(params),
     compactMonthFlows: ({ time }) => {
@@ -1275,6 +1446,156 @@ export function createAccountingContext(deps = {}) {
       return hamletFiscalRates.setInsuranceMandatory(mandatory);
     },
 
+    /**
+     * The central bank's levers: the policy rate and the reserve ratio the player set, the ones in force (the catalog's defaults while no central bank works),
+     * whether he can move them and why not, and what they give today: the savings rate, each loan's rate at the city's financial health, the bank's credit to the
+     * companies, the bank's cash against its reserve, and what it owes the central bank. Every rate per year, a fraction.
+     * @returns {Promise<{ setRate: number, defaultRate: number, rate: number, setReserveRatio: number, defaultReserveRatio: number, reserveRatio: number, available: boolean, reasons: string[], centralBankType: string, savingsRate: number, loanRates: { bank: number, commercial: number }, companyCreditRate: number, financialHealthStatus: string, refinancingOutstanding: number, bankPosition: { cash: number, deposits: number, requiredReserve: number } | null }>}
+     */
+    async getPolicyRate() {
+      const status = await policyRateStatus();
+      const health = await getFinancialHealthQuery.execute();
+      const turn = getSessionGameTime();
+      return {
+        ...status,
+        savingsRate: savingsRateOf(status.rate),
+        householdSavingShare: householdSavingShareOf(savingsRateOf(status.rate)),
+        loanRates: computeLoanRatesByType(health.status, status.rate),
+        companyCreditRate: companyCreditRateOf(status.rate),
+        // The corridor of the central bank's rates around the policy rate: deposit facility, main refinancing, marginal lending.
+        corridor: corridorOf(status.rate),
+        // The supervisor's thresholds, as shares of the bank's loans: warned under the first, lending frozen under the second.
+        capitalRatios: { warning: CAPITAL_WARNING_RATIO, minimum: MIN_CAPITAL_RATIO },
+        financialHealthStatus: health.status,
+        // What the bank owes the central bank for its refinancing, and its cash against the reserve: read from the journal.
+        refinancingOutstanding: await bankRefinancing.outstanding(turn),
+        bankPosition: await bankRefinancing.position(turn),
+      };
+    },
+
+    /**
+     * Before the bank lends the State (`reservesOut`: the money leaves its reserves for the Treasury's account): it borrows what its reserves lack, the required reserve
+     * kept, from its State's central bank when it works (BankRefinancing.coverShortfall).
+     * @param {{ turn: number, bankId: string, reservesOut: number, depositsAdded: number }} params
+     * @returns {Promise<{ covered: boolean, borrowed: number }>}
+     */
+    coverBankShortfall(params) {
+      return bankRefinancing.coverShortfall(params);
+    },
+
+    /**
+     * The balance sheet of this State's central bank, the institution (it belongs to no building, so no panel shows it): derived from its journal like any other, and it
+     * holds no money of its own, so its cash is nothing and a gap would throw.
+     */
+    async getCentralBankBooks() {
+      const centralBankId = await findCentralBankId();
+      const now = gameTimePort.getTimeInfo(gameTimePort.currentTurn());
+      const cash = await getTreasurySnapshotQuery.cashOf({ accountBuildingId: centralBankId });
+      return balanceSheetOf(await journalRepository.getJournalEntries(), centralBankId, { cash, stock: [], currentYear: now.year });
+    },
+
+    /**
+     * Whether the bank's losses ate its capital: its equity, read from its derived balance sheet. Null while no bank is built.
+     * @returns {Promise<{ bankId: string, bankType: string, equity: number, insolvent: boolean, loans: number, ratio: number | null, capitalStatus: 'sound' | 'warning' | 'frozen' | 'insolvent' } | null>}
+     *   `ratio`: its equity over its loans; `capitalStatus`: where it stands with its supervisor (warning, lending frozen, insolvent)
+     */
+    async getBankSolvency() {
+      const bankId = await findBankBuildingId();
+      if (!bankId) return null;
+      const row = await dexieDb.houses.get(bankId);
+      const { equity, loans, status, ratio } = await bankCapitalStatusOf(bankId);
+      return { bankId, bankType: row.type, equity, insolvent: equity < 0, loans, ratio, capitalStatus: status };
+    },
+
+    /**
+     * The city rescues an insolvent bank: it puts in, as capital, what its losses took beyond it (101 for the bank, the city's holding 261, as a company's founding
+     * capital), so that its equity is back to nothing or more. Refused while the bank is solvent, and while the city cannot pay it.
+     * @returns {Promise<{ recorded: true, amount: number } | { recorded: false, reason: 'insufficient_funds', amount: number }>}
+     */
+    async recapitaliseBank() {
+      const solvency = await accountingApi.getBankSolvency();
+      if (!solvency || solvency.capitalStatus === 'sound') throw new Error('[bank] only a bank thin on capital (warned, frozen or insolvent) is recapitalised');
+      // Enough capital to be back above the warning ratio of its loans (and above nothing).
+      const amount = Math.ceil(Math.max(0, CAPITAL_WARNING_RATIO * solvency.loans) - solvency.equity);
+      if ((await getTreasurySnapshotQuery.execute()).funds < amount) return { recorded: false, reason: 'insufficient_funds', amount };
+      const turn = getSessionGameTime();
+      const transactionId = uuidv4();
+      const description = `Recapitalisation de la banque par la ville (${amount} €)`;
+      const common = { turn, transactionId, amount, description, buildingInstanceId: solvency.bankId };
+      for (const line of [
+        { ...common, type: 'company_capital_paid', accountBuildingId: null, counterpartyBuildingId: solvency.bankId },
+        { ...common, type: 'company_capital_received', accountBuildingId: solvency.bankId },
+      ]) {
+        const result = await recordLedgerEntryCommand.execute(line);
+        if (!result.recorded) throw new Error(`[bank] the recapitalisation line ${line.type} was not recorded: ${result.reason}`);
+      }
+      return { recorded: true, amount };
+    },
+
+    /** Month's close: the offer of a partner city's gift when the city has no money left (once per game). @returns {Promise<{ cityId: string, cityName: string, amount: number } | null>} */
+    offerBenefactorGift(params) {
+      return benefactorGift.offerIfDue(params);
+    },
+
+    /** @returns {Promise<object>} what the State owes, the ceiling its income allows, and whether it can still borrow (see cityBorrowing) */
+    getCityBorrowing() {
+      return cityBorrowing();
+    },
+
+    /** @returns {Promise<{ cityId: string, cityName: string, amount: number, status: string } | null>} the gift offered to the city and its answer */
+    getBenefactorGift() {
+      return benefactorGift.current();
+    },
+
+    /** @param {{ accept: boolean }} params the player's answer to the offer */
+    answerBenefactorGift(params) {
+      return benefactorGift.answer(params);
+    },
+
+    /** @returns {string} the central bank's building type, read from the catalog (the building whose posts ask its skill) */
+    getCentralBankType() {
+      return centralBankType;
+    },
+
+    /**
+     * Moves the federation's policy rate, for every State. Refused while the central bank of no State works: the rate in force is then the catalog's.
+     * @param {number} rate per year, a fraction
+     */
+    async setPolicyRate(rate) {
+      const { available, reasons } = await policyRateStatus();
+      if (!available) throw new Error(`[federal-bank] the policy rate cannot be moved: ${reasons.join(', ')}`);
+      return federalMonetaryPolicy.set('policyRate', rate);
+    },
+
+    /**
+     * Moves the federation's reserve ratio, for every State. Refused while the central bank of no State works: the ratio in force is then the catalog's.
+     * @param {number} ratio a share of the deposits
+     */
+    async setReserveRatio(ratio) {
+      const { available, reasons } = await policyRateStatus();
+      if (!available) throw new Error(`[federal-bank] the reserve ratio cannot be moved: ${reasons.join(', ')}`);
+      return federalMonetaryPolicy.set('reserveRatio', ratio);
+    },
+
+    /** Boot: the game holds the federation's monetary policy from the catalog's defaults (a lever already set is kept). */
+    ensureFederalMonetaryPolicy() {
+      return federalMonetaryPolicy.ensure();
+    },
+
+    /**
+     * The terms the bank offers the city for a loan today: its yearly rate (the policy rate in force, the bank's spread, the city's health) and the whole interest
+     * for its duration. What the loans panel shows is what the contract writes.
+     * @param {{ loanType: 'bank' | 'commercial', amount: number, durationTurns: number }} params
+     * @returns {Promise<{ yearlyRate: number, interest: number, total: number }>}
+     */
+    async getLoanTerms({ loanType, amount, durationTurns }) {
+      const { rate } = await policyRateStatus();
+      const health = await getFinancialHealthQuery.execute();
+      const yearlyRate = computeLoanRate({ loanType, financialHealthStatus: health.status, policyRate: rate });
+      const interest = computeLoanInterestAmount({ amount, yearlyRate, durationTurns, turnsPerYear: turnsPerYear(getDaysPerMonth()) });
+      return { yearlyRate, interest, total: amount + interest };
+    },
+
     /** Who pays a worker who is sick: 'none' or 'secu' (see SicknessCoverCatalog.js). @returns {Promise<string>} */
     getSicknessCover() {
       return hamletFiscalRates.getSicknessCover();
@@ -1321,7 +1642,7 @@ export function createAccountingContext(deps = {}) {
       const upToNow = fold.totalsByAccount({ hamletId });
       const cityTotals = upToNow.get(null) ?? new Map();
       const portfolio = { loans: (await getTreasurySnapshotQuery.execute({ hamletId })).loans };
-      const debt = publicDebtOf(cityTotals, portfolio);
+      const debt = hamletPublicDebtOf(cityTotals, portfolio);
       const external = externalInterestOf(fold.totalsByAccount(window).get(null) ?? new Map(), debt);
       const privateDebt = privateDebtOf(upToNow);
       const population = (await dexieDb.houses.toArray()).filter((row) => isActiveHamletRow(row) && resolveBuildingKind(row.type) === BUILDING_KIND_HOUSE).reduce((sum, row) => sum + residentsCountOf(row), 0);
@@ -1553,7 +1874,8 @@ export function createAccountingContext(deps = {}) {
       const options = { accountKind, salesNature: salesNatureOf(building.type) };
       const ledger = accountLedgerOf(entries, buildingId, options);
       const balance = trialBalanceOf(entries, buildingId, options);
-      const bank = ledger.find((account) => account.account === '512')?.balance ?? 0;
+      // The cash accounts of the grand livre (a building's money is at a bank, 512, or in banknotes, 53): the same figure the treasury reads.
+      const bank = ledger.filter((account) => isCashAccount(account.account)).reduce((sum, account) => sum + account.balance, 0);
       const funds = await getTreasurySnapshotQuery.cashOf({ accountBuildingId: buildingId, accountKind });
       if (Math.round(bank * 100) !== Math.round(funds * 100)) {
         throw new Error(`[ledger] the bank account of ${buildingId} is ${bank} but its treasury is ${funds}: the same lines were read two ways`);
@@ -1796,13 +2118,13 @@ export function createAccountingContext(deps = {}) {
 
     /**
      * What a house has sitting at the bank — never stored, derived from its deposit/withdrawal/interest lines
-     * the same way any other balance is (see DepositBalancePolicy.js). Null bank (no Bank built yet) reads as 0.
+     * the same way any other balance is (see DepositBalancePolicy.js). The bank is named by the caller (findBankBuildingId): with no bank there are
+     * no savings to read, and asking for them throws rather than reading 0.
      * @param {string} houseId
+     * @param {string} bankId
      * @returns {Promise<number>}
      */
-    async getHouseholdDepositBalance(houseId) {
-      const bankId = await findBankBuildingId();
-      if (!bankId) return 0;
+    async getHouseholdDepositBalance(houseId, bankId) {
       return depositBalanceOf(await journalRepository.getJournalEntries(), houseId, bankId);
     },
 

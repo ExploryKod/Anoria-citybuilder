@@ -234,8 +234,15 @@ function demolitionConsequenceLines({ residents, workers, dependents, abandoned,
     lines.push(`${debt.debtorType ? buildingName(debt.debtorType) : 'Un bâtiment déjà démoli'} lui devait ${formatEuro(debt.amount)} (${debt.label.toLowerCase()}) : dette abandonnée, sans poursuite.`);
   }
   // What the liquidation of its accounts does: the stock sold, the creditors paid with its cash by rank, what is left of a debt, the cash given back to the city.
-  for (const { stockProceeds, paid, unpaid, surplusToCity, holdingLoss } of accounts) {
+  for (const { stockProceeds, paid, unpaid, surplusToCity, holdingLoss, bankCreditLost, cityLoansRepaid, depositsRepaid, depositsGuaranteed, depositsLost, refinancingLost } of accounts) {
     if (stockProceeds > 0) lines.push(`Son stock est vendu : ${formatEuro(stockProceeds)}.`);
+    // A bank's own books: what it collects back, what it owes its depositors and the central bank.
+    if (cityLoansRepaid > 0) lines.push(`La ville rembourse d'un coup ce qu'elle doit encore de ses prêts : ${formatEuro(cityLoansRepaid)}.`);
+    if (depositsRepaid > 0) lines.push(`${formatEuro(depositsRepaid)} d'épargne sont rendus aux ménages avec sa caisse.`);
+    if (depositsGuaranteed > 0) lines.push(`La ville garantit ${formatEuro(depositsGuaranteed)} d'épargne que sa caisse ne couvre pas.`);
+    if (depositsLost > 0) lines.push(`Au-delà du plafond de la garantie, les épargnants perdent ${formatEuro(depositsLost)}.`);
+    if (refinancingLost > 0) lines.push(`${formatEuro(refinancingLost)} de refinancement ne seront jamais remboursés : le prêteur perd cet argent.`);
+    if (bankCreditLost > 0) lines.push(`${formatEuro(bankCreditLost)} de crédit ne seront jamais remboursés : le prêteur perd cet argent.`);
     for (const debt of paid) lines.push(`${formatEuro(debt.amount)} de ${debt.label.toLowerCase()} dus sont payés avec sa caisse.`);
     for (const debt of unpaid) {
       lines.push(debt.advancedByCity
@@ -255,7 +262,8 @@ function demolitionConsequenceLines({ residents, workers, dependents, abandoned,
  * @property {Array<{ type: string, x: number, y: number }>} dependents Buildings that cannot work without it and go down with it (a hub).
  * @property {Array<{ debtorType: string | null, label: string, amount: number }>} abandoned Debts owed to it, released (`debtorType` is null when that building is gone too).
  * @property {Array<{ stockProceeds: number, surplusToCity: number, holdingLoss: number, paid: Array<{ label: string, amount: number }>,
- *   unpaid: Array<{ label: string, amount: number, advancedByCity: boolean }> }>} accounts What the liquidation of each of its accounts does (see LiquidateDemolishedBuilding.preview).
+ *   unpaid: Array<{ label: string, amount: number, advancedByCity: boolean }>, bankCreditLost: number, cityLoansRepaid: number, depositsRepaid: number,
+ *   depositsGuaranteed: number, refinancingLost: number }>} accounts What the liquidation of each of its accounts does (see LiquidateDemolishedBuilding.preview).
  */
 
 /**

@@ -1,4 +1,5 @@
 import { buildLedgerBusinessKey } from '../../../domain/policies/LedgerIdempotencePolicy.js';
+import { cashChangeOfLegs, entryLegsOf, isEcriture, stateCanAfford } from '../../../domain/policies/EntryLegsPolicy.js';
 import { requireActiveHamletId } from '../../../../../core/persistence/hamlet/hamletSession.js';
 
 /**
@@ -11,15 +12,22 @@ import { requireActiveHamletId } from '../../../../../core/persistence/hamlet/ha
 
 /**
  * Command — append one operational journal line (idempotent when businessKey applies).
+ *
+ * The State may not spend more than its account at its central bank holds: a line of the State (no account) that pays out more than the Treasury holds is refused,
+ * with the reason `treasury_insufficient`. It is no defect: whoever pays says what is not paid (the player is told, a company waits for its capital, the month's
+ * obligation stays unpaid).
  */
 export class RecordLedgerEntry {
   /**
    * @param {import('../../ports/JournalWritePort.js').JournalWritePort} journalWritePort
    * @param {import('../../ports/GameTimePort.js').GameTimePort} gameTimePort
+   * @param {(hamletId: string) => Promise<number>} stateCashOf what the State's account holds in this hamlet right now, in centimes (read from the fold of the journal)
    */
-  constructor(journalWritePort, gameTimePort) {
+  constructor(journalWritePort, gameTimePort, stateCashOf) {
+    if (typeof stateCashOf !== 'function') throw new Error('[journal] RecordLedgerEntry needs stateCashOf: the State may not spend more than its Treasury holds');
     this.journalWritePort = journalWritePort;
     this.gameTimePort = gameTimePort;
+    this.stateCashOf = stateCashOf;
   }
 
   /**
@@ -79,6 +87,15 @@ export class RecordLedgerEntry {
     const timeInfo = this.gameTimePort.getTimeInfo(turn);
     const resolvedBusinessKey =
       businessKey ?? buildLedgerBusinessKey(type, timeInfo, requireActiveHamletId());
+
+    // The State's Treasury is a floor: a payment of the State that its account at the central bank cannot cover is refused (its Treasury is read only for a payment).
+    // A line already written is a duplicate whatever the Treasury holds now: idempotence first.
+    if (accountBuildingId === null && isEcriture(type) && !(await this.journalWritePort.hasBusinessKey(resolvedBusinessKey))) {
+      const change = cashChangeOfLegs(entryLegsOf({ type, amount, accountBuildingId, legs }).legs);
+      if (change < 0 && !stateCanAfford({ held: await this.stateCashOf(requireActiveHamletId()), change })) {
+        return { recorded: false, skipped: true, reason: 'treasury_insufficient', businessKey: resolvedBusinessKey ?? undefined };
+      }
+    }
 
     const shouldPersist = persist ?? true;
 

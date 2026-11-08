@@ -9,6 +9,7 @@ const HOUSE = 'House-Blue';
 function settle({ pop, salaried = 0, minimumWage, administratorStipend = 0, unemploymentBenefitRate, taxRate }) {
   const journal = [];
   const service = new SettleProducerCharges({
+    borrowFromBank: async () => 0, // no bank: nothing is lent
     getTimeInfo: () => ({ year: 1, monthIndex: 0, month: 'Janvier' }),
     listBuildings: async () => [{ id: 'house', type: HOUSE, workerSources: {} }],
     sumGoodsFlowsByPair: async () => [],

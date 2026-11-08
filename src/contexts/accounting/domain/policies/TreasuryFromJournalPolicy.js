@@ -1,14 +1,11 @@
 /**
- * The treasury is derived from the journal, the single record of money. The balance is the balance of the cash account (512) in the
+ * The treasury is derived from the journal, the single record of money. The balance is the balance of the cash accounts (512, 515, 53) in the
  * fold of the journal's legs (LegsFold). The other figures the game shows (income, expenses, totals, daily flows, loans) are folded from
- * the journal lines here, in journal order: they say what the money was for, which the cash account does not.
+ * the journal lines here, in journal order: they say what the money was for, which the cash accounts do not.
  *
  * An unknown money type throws: a line the policy does not know must never be silently counted or skipped.
  */
-import { isEcriture } from './EntryLegsPolicy.js';
-
-/** The cash account of the chart of accounts. */
-const CASH = '512';
+import { isCashAccount, isEcriture } from './EntryLegsPolicy.js';
 
 /** The words a construction line's description carries when it is a building the city pays for (see PlaceBuildingWithPayment), and what its refund's carries. */
 export const BUILDING_INVESTMENT_MARKERS = ['Building:', 'building'];
@@ -25,7 +22,7 @@ function productOf(type, prefix) {
 }
 
 /**
- * Which way the money of a line went, read from the legs the journal booked: the cash account (512) debited is money in, credited is money out. A line with no
+ * Which way the money of a line went, read from the legs the journal booked: the cash accounts debited is money in, credited is money out. A line with no
  * leg on the cash (an opération diverse, an informative line) moves no money.
  * @param {object} entry
  * @returns {'credit' | 'debit' | 'closing' | null} null for a line that moves no money; 'closing' is a year's net.
@@ -34,7 +31,7 @@ export function moneyDirectionOf(entry) {
   if (entry.type === 'year_closing') return 'closing';
   if (!isEcriture(entry.type)) return null;
   if (!entry.legs) throw new Error(`[treasury] journal line ${entry.type} (turn ${entry.turn}) carries no legs: it was never booked`);
-  const net = entry.legs.filter((leg) => leg.account === CASH).reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
+  const net = entry.legs.filter((leg) => isCashAccount(leg.account)).reduce((sum, leg) => sum + leg.debit - leg.credit, 0);
   if (net > 0) return 'credit';
   if (net < 0) return 'debit';
   return null;

@@ -37,6 +37,15 @@ export function formatEuro(amount) {
   return `${formatEuroAmount(amount)}€`;
 }
 
+/**
+ * A yearly rate (a fraction) as the player reads it: "14 %/an", "12,5 %/an". Every rate of money in the game is per year (LoanRatePolicy.js).
+ * @param {number} rate
+ */
+export function formatYearlyRate(rate) {
+  if (typeof rate !== 'number' || !Number.isFinite(rate)) throw new Error(`formatYearlyRate: expected a rate, got ${rate}`);
+  return `${(rate * 100).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} %/an`;
+}
+
 /** @param {number|string} amount */
 export function formatEuroOrNa(amount) {
   if (typeof amount === 'number') {

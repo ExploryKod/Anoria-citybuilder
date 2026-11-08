@@ -35,6 +35,7 @@ export class AnnounceMilestone {
       teaser: draft.teaser,
       reliability: draft.reliability,
       action: draft.action ?? null,
+      choices: draft.choices ?? [],
       access: {},
       lifecycle: 'incoming',
       revelation: draft.revelation,

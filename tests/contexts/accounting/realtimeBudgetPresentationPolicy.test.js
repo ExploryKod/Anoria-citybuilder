@@ -50,7 +50,7 @@ describe('RealtimeBudgetViewModel', () => {
 
   test('buildLoanInterestDetailHtml lists active loans', () => {
     const html = buildLoanInterestDetailHtml([
-      { id: 'loan-abc123', type: 'bank', amount: 1000, interestRate: 12, duration: 4 },
+      { id: 'loan-abc123', type: 'bank', amount: 1000, total: 1040, interest: 40, interestRate: 0.2, duration: 4 },
     ]);
 
     expect(html).toContain('Prêt Bancaire');

@@ -28,6 +28,7 @@ async function runMonths(months, { sicknessCover = 'none', reserve = 1e9, canPay
     };
     await record({ type: 'loan_interest_received', amount: 1000, accountBuildingId: 'bank-1', turn: time - 1 });
     await new SettleProducerCharges({
+      borrowFromBank: async () => 0, // no bank: nothing is lent
       getTimeInfo,
       listBuildings: async () => [
         { id: 'bank-1', type: 'Bank', workerSources: { 'house-1': 4 }, absentSources: { 'house-1': 1 }, sickAbsentSources: { 'house-1': 1 } },

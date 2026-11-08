@@ -87,8 +87,9 @@ export class LegsFold {
    * @param {{ hamletId?: string | null, accountKey?: string | null, untilYear?: number | null, untilMonth?: number | null, year?: number | null }} scope
    * @param {(fold: MonthFold) => void} visit called for each month of the scope that is in the period
    */
-  #forEachMonth({ hamletId = null, accountKey = null, untilYear = null, untilMonth = null, year = null }, visit) {
+  #forEachMonth({ hamletId = null, accountKey = null, untilYear = null, untilMonth = null, year = null, month: onlyMonth = null }, visit) {
     if (untilMonth !== null && untilYear === null) throw new Error('[fold] a month needs its year: untilMonth was given without untilYear');
+    if (onlyMonth !== null && year === null) throw new Error('[fold] a month needs its year: month was given without year');
     for (const scope of this.#scopes.values()) {
       if (scope.accountKey !== accountKey || (hamletId !== null && scope.hamletId !== hamletId)) continue;
       for (const [fiscalYear, months] of scope.years) {
@@ -96,6 +97,7 @@ export class LegsFold {
         if (year !== null && fiscalYear !== year) continue;
         for (const [month, fold] of months) {
           if (untilYear !== null && fiscalYear === untilYear && untilMonth !== null && month > untilMonth) continue;
+          if (onlyMonth !== null && month !== onlyMonth) continue;
           visit(fold);
         }
       }
@@ -166,8 +168,8 @@ export class LegsFold {
   }
 
   /**
-   * What moved the cash of one account in one fiscal year, by the account the money came from or went to.
-   * @param {{ hamletId?: string | null, accountKey?: string | null, year: number }} scope
+   * What moved the cash of one account in one fiscal year (or one month of it), by the account the money came from or went to.
+   * @param {{ hamletId?: string | null, accountKey?: string | null, year: number, month?: number | null }} scope `month` 1 to 12: that month only
    * @returns {Map<string, { in: number, out: number }>} by account, in centimes
    */
   cashFlowsOf(scope) {

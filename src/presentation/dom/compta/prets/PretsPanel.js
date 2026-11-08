@@ -11,7 +11,8 @@ import {
   renderActiveLoansErrorHtml,
 } from './PretsPresenter.js';
 import { createModalFocusSession } from '../../shell/modalFocus.js';
-import { formatEuro } from '../../../../contexts/accounting/presentation/formatMoney.js';
+import { formatEuro, formatYearlyRate } from '../../../../contexts/accounting/presentation/formatMoney.js';
+import { buildingName } from '../../shell/CatalogVocabulary.js';
 
 /**
  * @type {{
@@ -140,7 +141,8 @@ export async function updateLoansDisplay() {
     }
 
     renderHealthImpact(financialHealth);
-    renderLoanRates(accounting.computeLoanRatesByType(financialHealth.status));
+    // The rates follow the policy rate in force (the central bank's, or the catalog's while none works) and the city's health.
+    renderLoanRates((await accounting.getPolicyRate()).loanRates);
     loadActiveLoans();
   } catch (error) {
     console.error('Error updating loans display:', error);
@@ -207,18 +209,14 @@ function updateLoanSummary() {
   if (!loanAmountInput || !loanDurationInput || !loanFormSection) return;
 
   const amount = parseInt(loanAmountInput.value) || 0;
-  const loanType = loanFormSection.dataset.loanType || 'bank';
+  const durationTurns = parseInt(loanDurationInput.value);
+  // The form is opened by showLoanForm, which sets the type: none here is a defect, never a bank loan by default.
+  const loanType = loanFormSection.dataset.loanType;
+  if (!loanType) throw new Error('[loans] the loan form has no loan type: it must be opened by showLoanForm');
 
-  accounting.getFinancialHealth().then((health) => {
-    const interestRate = accounting.computeLoanRate({
-      loanType,
-      financialHealthStatus: health.status,
-    });
-    const interest = accounting.computeLoanInterestAmount(amount, interestRate);
-    const total = amount + interest;
-
+  accounting.getLoanTerms({ loanType, amount, durationTurns }).then(({ yearlyRate, interest, total }) => {
     updateLoansElement('loan-principal-display', formatEuro(amount));
-    updateLoansElement('loan-rate-display', `${interestRate}%`);
+    updateLoansElement('loan-rate-display', formatYearlyRate(yearlyRate));
     updateLoansElement('loan-interest-display', formatEuro(interest));
     updateLoansElement('loan-total-display', formatEuro(total));
   });
@@ -245,26 +243,38 @@ export async function contractLoan() {
 
   try {
     // No bank, no real lender: a loan is now a bank's own money, not a city-level abstraction (see
-    // RecordLoanCapitalIncome.js). The bank must also actually hold the amount it is about to lend out.
+    // RecordLoanCapitalIncome.js). The bank must also actually hold the amount it is about to lend out: what it lacks, it borrows
+    // from the central bank when one works (BankRefinancing.js); otherwise the loan is refused.
     const lenderBuildingId = await accounting.findBankBuildingId();
     if (!lenderBuildingId) {
       alert('Aucune banque construite : impossible de contracter un prêt.');
       return;
     }
-    const lenderFunds = (await accounting.getTreasurySnapshot({ accountBuildingId: lenderBuildingId })).funds;
-    if (lenderFunds < amount) {
-      alert(`La banque n'a pas les fonds pour ce prêt (${formatEuro(lenderFunds)} disponibles).`);
+    const { turn } = await accounting.getTreasurySnapshot();
+    // Lenders judge the State by its debt against its income: past the ceiling, no one lends (before the bank is asked for reserves).
+    const borrowing = await accounting.getCityBorrowing();
+    if (amount > borrowing.headroom) {
+      alert(`Les prêteurs refusent : la ville doit déjà ${formatEuro(borrowing.debt)}, et son plafond d'endettement est de ${formatEuro(borrowing.ceiling)} (${formatEuro(borrowing.headroom)} encore possibles). Il dépend de la production de la ville sur l'année.`);
+      return;
+    }
+    // A loan to the State takes the bank's reserves (the money goes to the Treasury's account at the central bank), and must leave it the reserve the ratio asks.
+    const { covered, reason } = await accounting.coverBankShortfall({ turn, bankId: lenderBuildingId, reservesOut: amount, depositsAdded: 0 });
+    if (!covered) {
+      const { bankPosition } = await accounting.getPolicyRate();
+      if (reason === 'capital') {
+        alert(`Le superviseur a gelé les prêts de la banque : ses fonds propres sont trop faibles par rapport à ses prêts. La ville peut la recapitaliser depuis la section « ${buildingName(accounting.getCentralBankType())} » du panneau d'administration.`);
+        return;
+      }
+      if (reason === 'collateral') {
+        alert(`La banque n'a plus de garanties à remettre à ${buildingName(accounting.getCentralBankType())} : elle ne peut pas être refinancée de plus (${formatEuro(bankPosition.loans)} de prêts, ${formatEuro(bankPosition.owedMain + bankPosition.owedMarginal)} déjà dus, ${formatEuro(bankPosition.collateralCapacity)} encore possibles).`);
+        return;
+      }
+      alert(`La banque n'a pas les réserves pour ce prêt tout en gardant la réserve obligatoire (${formatEuro(bankPosition.reserves)} de réserves, ${formatEuro(bankPosition.requiredReserve)} à garder), et ne peut pas être refinancée sans ${buildingName(accounting.getCentralBankType())} en activité dans cet État.`);
       return;
     }
 
-    const financialHealth = await accounting.getFinancialHealth();
-    const interestRate = accounting.computeLoanRate({
-      loanType,
-      financialHealthStatus: financialHealth.status,
-    });
-
-    const interest = accounting.computeLoanInterestAmount(amount, interestRate);
-    const total = amount + interest;
+    // The terms the panel showed: the yearly rate in force and the interest for the loan's duration. The rate is stamped on the contract and never re-read.
+    const { yearlyRate, interest, total } = await accounting.getLoanTerms({ loanType, amount, durationTurns: duration });
 
     const loan = {
       id: `loan_${Date.now()}`,
@@ -272,7 +282,7 @@ export async function contractLoan() {
       amount,
       total,
       interest,
-      interestRate,
+      interestRate: yearlyRate,
       duration,
       remainingTurns: duration,
       lenderBuildingId,
@@ -301,7 +311,7 @@ export async function loadActiveLoans() {
 
   try {
     const activeLoans = await deps.accounting.getActiveLoans();
-    activeLoansList.innerHTML = renderActiveLoansHtml(activeLoans);
+    activeLoansList.innerHTML = renderActiveLoansHtml(activeLoans, deps.accounting.loanInstallmentOf);
   } catch (error) {
     console.error('Error loading active loans:', error);
     activeLoansList.innerHTML = renderActiveLoansErrorHtml();
@@ -321,11 +331,7 @@ export async function processLoanPayments() {
     if (activeLoans.length === 0) return;
 
     for (const loan of activeLoans) {
-      const monthlyPayment = Math.round(loan.total / loan.duration);
-      const interestPayment = Math.round(
-        (loan.amount * (loan.interestRate / 100)) / loan.duration
-      );
-      const principalPayment = Math.max(0, monthlyPayment - interestPayment);
+      const { payment: monthlyPayment, interest: interestPayment, principal: principalPayment } = accounting.loanInstallmentOf(loan);
 
       const budget = await accounting.getTreasurySnapshot();
 

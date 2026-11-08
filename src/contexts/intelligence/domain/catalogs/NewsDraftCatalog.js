@@ -211,6 +211,79 @@ const MILESTONE_DRAFTS = {
       revelation: 'free',
     };
   },
+  // The State may not spend more than its Treasury holds (docs/gameplay/PLAN_BANK_MONEY.md): in a month it could not pay what it owed, the player is told what stayed unpaid
+  // and how to fill the Treasury again. `items`: what was left unpaid, by kind of payment (`{ label, amount }` in euros).
+  'state-unpaid': ({ items }) => {
+    if (!Array.isArray(items) || items.length === 0) throw new Error('[news] the State\'s unpaid payments are announced with what stayed unpaid (items)');
+    const total = items.reduce((sum, item) => sum + item.amount, 0);
+    const detail = items.map((item) => `${item.label.toLowerCase()} : ${item.amount.toLocaleString('fr-FR')} €`).join(', ');
+    return {
+      sourceId: 'city',
+      categoryId: 'announcement',
+      title: 'Le Trésor est vide',
+      body: `Ce mois-ci, l'État n'a pas pu payer ${total.toLocaleString('fr-FR')} € de ce qu'il devait (${detail}) : les ménages et les entreprises concernés n'ont pas reçu leur dû. `
+        + 'L\'État ne dépense pas plus que son Trésor ne contient. Il faut le remplir : lever des impôts, vendre à l\'étranger, ou emprunter à la banque.',
+      teaser: 'Les caisses de l\'État sonnent creux…',
+      reliability: 'trusted',
+      revelation: 'free',
+    };
+  },
+  // A partner city offers the city a gift when it has no money left (BenefactorGiftCatalog.js). The dépêche's button accepts it, its choice refuses it (no consequence yet).
+  'benefactor-gift': ({ cityName, amount }) => {
+    if (!cityName || !Number.isFinite(amount)) throw new Error(`[news] the gift needs the benefactor city's name and the amount, got ${cityName} and ${amount}`);
+    const sum = amount.toLocaleString('fr-FR');
+    return {
+      sourceId: 'city',
+      categoryId: 'announcement',
+      title: `${cityName} vous offre un don`,
+      body: `Curieuse, ${cityName} aimerait vous voir évoluer et sait que vous le lui revaudrez : elle vous donne donc ${sum} € pour vous aider à démarrer.`,
+      teaser: `${cityName} tend la main…`,
+      action: { kind: 'acceptGift', cityName, amount },
+      choices: [{ label: 'Refuser', action: { kind: 'refuseGift' }, page: { body: `Vous remerciez ${cityName} et déclinez son offre. Elle n'en tiendra pas rigueur.` } }],
+      reliability: 'trusted',
+      revelation: 'free',
+    };
+  },
+  // The bank's capital is thin against its loans: warned, then its lending frozen by the supervisor (LoanRatePolicy.capitalStatusOf), before it is insolvent.
+  'bank-capital': ({ bankType, centralBankType, status, ratio }) => {
+    const bank = getBuildingDefinition(bankType)?.displayName;
+    const centralBank = getBuildingDefinition(centralBankType)?.displayName;
+    if (!bank || !centralBank) throw new Error(`[news] the bank (${bankType}) or the central bank (${centralBankType}) has no catalog name: its capital cannot be announced`);
+    if (!['warning', 'frozen'].includes(status)) throw new Error(`[news] "${status}" is not a state of the bank's capital that is announced`);
+    const share = `${(ratio * 100).toFixed(1).replace('.', ',')} %`;
+    const frozen = status === 'frozen';
+    return {
+      sourceId: 'city',
+      categoryId: 'announcement',
+      title: frozen ? `${bank} ne peut plus prêter` : `${bank} manque de fonds propres`,
+      body: `Les fonds propres de la banque ne représentent plus que ${share} de ses prêts. `
+        + (frozen
+          ? 'Le superviseur a gelé ses prêts : ni la ville ni les entreprises ne peuvent emprunter, tant qu\'elle n\'est pas recapitalisée ou que ses prêts n\'ont pas diminué. '
+          : 'Si cela baisse encore, le superviseur gèlera ses prêts. ')
+        + `Dans la section « ${centralBank} » du panneau d'administration, la ville peut la recapitaliser.`,
+      teaser: frozen ? 'Le crédit est gelé…' : 'La banque s\'amincit…',
+      reliability: 'trusted',
+      revelation: 'free',
+    };
+  },
+  // The bank's losses ate its capital: it is insolvent. Once a month while it stays so, the player is told what he can do, from the central bank's section.
+  'bank-insolvent': ({ bankType, centralBankType, equity }) => {
+    const bank = getBuildingDefinition(bankType)?.displayName;
+    const centralBank = getBuildingDefinition(centralBankType)?.displayName;
+    if (!bank || !centralBank) throw new Error(`[news] the bank (${bankType}) or the central bank (${centralBankType}) has no catalog name: the insolvency cannot be announced`);
+    const shortfall = Math.ceil(-equity).toLocaleString('fr-FR');
+    return {
+      sourceId: 'city',
+      categoryId: 'announcement',
+      title: `${bank} est insolvable`,
+      body: `Ses pertes dépassent son capital de ${shortfall} € : elle doit plus qu'elle ne possède. Dans la section « ${centralBank} » du panneau d'administration, `
+        + 'la ville peut la recapitaliser (elle apporte ce qui manque), ou la liquider : ses épargnants sont alors remboursés, la ville garantissant ce que sa caisse ne couvre pas. '
+        + 'Tant que rien n\'est décidé, elle continue de fonctionner.',
+      teaser: 'Les épargnants s\'inquiètent…',
+      reliability: 'trusted',
+      revelation: 'free',
+    };
+  },
 };
 
 /**

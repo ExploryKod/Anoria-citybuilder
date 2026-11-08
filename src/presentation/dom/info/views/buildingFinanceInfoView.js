@@ -291,7 +291,7 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
   const isPersonal = accountKind === 'particulier';
   let finance;
   let bankId = null;
-  let depositBalance = 0;
+  let depositBalance = null;
   let administratorPay = null;
   try {
     finance = await model.accounting.getBuildingFinance(model.buildingId, accountKind, { month: viewedMonth, year: viewedYear });
@@ -299,7 +299,7 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
     if (isPersonal && !houseSeeksWork(model.buildingType)) administratorPay = await model.accounting.getAdministratorPayStatus();
     if (isPersonal) {
       bankId = await model.accounting.findBankBuildingId();
-      if (bankId) depositBalance = await model.accounting.getHouseholdDepositBalance(model.buildingId);
+      if (bankId) depositBalance = await model.accounting.getHouseholdDepositBalance(model.buildingId, bankId);
     }
   } catch (error) {
     console.error('[BuildingFinanceTab] getBuildingFinance failed:', error);
@@ -368,7 +368,8 @@ async function renderAccount(container, model, accountKind, rows, stillCurrent =
     content,
     cash,
     cashDetails,
-    ...(isPersonal ? [depositBalanceLine(depositBalance)] : []),
+    // No bank, no savings to show: the line is not drawn rather than reading 0 €.
+    ...(isPersonal && bankId ? [depositBalanceLine(depositBalance)] : []),
     ...(isPersonal && finance.rentDebt > 0 ? [cashLine('Dette de loyer', finance.rentDebt)] : []),
     ...(isPersonal && bankId ? depositControls(model, bankId, rerender) : []),
     periodNote,
@@ -850,9 +851,8 @@ function depositControls(model, bankId, onChanged) {
   withdrawBtn.addEventListener('click', act(
     (params) => model.accounting.recordHouseholdWithdrawal(params),
     'Retrait de la banque',
-    (reason) => (reason === 'insufficient_deposit' ? "Vous n'avez pas autant d'épargne à la banque."
-      : reason === 'bank_insufficient_funds' ? "La banque n'a pas les fonds pour ce retrait."
-        : 'Le retrait a échoué.'),
+    // A withdrawal from savings moves money between two accounts at the same bank: the bank never lacks the cash for it, only the household its savings.
+    (reason) => (reason === 'insufficient_deposit' ? "Vous n'avez pas autant d'épargne à la banque." : 'Le retrait a échoué.'),
   ));
 
   row.append(input, depositBtn, withdrawBtn);
